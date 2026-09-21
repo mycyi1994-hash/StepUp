@@ -144,6 +144,19 @@ def text_of(node, *names: str) -> str:
     return ""
 
 
+def strip_source_suffix(title: str, source: str) -> str:
+    """제목 끝에 붙은 " - 매체명"을 뗀다.
+
+    구글 뉴스는 제목 뒤에 매체명을 붙여 보낸다. 화면에서는 매체명을 따로
+    보여 주므로 그대로 두면 "동대문 마라톤 대회 - 서울신문 · 서울신문"이
+    되어 같은 말이 두 번 나온다.
+    """
+    if not source:
+        return title
+    tail = f" - {source}"
+    return title[: -len(tail)].rstrip() if title.endswith(tail) else title
+
+
 def strip_tags(s: str) -> str:
     """요약에 섞여 오는 HTML 을 걷어낸다. 화면에 <a href=...> 를 보여 줄 수는 없다."""
     s = re.sub(r"<[^>]+>", " ", s)
@@ -211,7 +224,7 @@ def parse_feed(data: bytes, fallback_source: str = "") -> list[Item]:
         if len(summary) > 300:
             summary = summary[:297].rstrip() + "…"
 
-        out.append(Item(link, title, source, summary, published))
+        out.append(Item(link, strip_source_suffix(title, source), source, summary, published))
     return out
 
 
@@ -304,7 +317,7 @@ def upload(items: list[Item], base_url: str, key: str, now: dt.datetime) -> None
 SAMPLE_RSS = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>
   <item>
-    <title>서울하프마라톤 참가 접수 시작</title>
+    <title>서울하프마라톤 참가 접수 시작 - 달리기신문</title>
     <link>https://example.com/a</link>
     <pubDate>{recent}</pubDate>
     <description>&lt;a href="x"&gt;3월 대회&lt;/a&gt; 접수가 열렸다</description>
@@ -368,6 +381,10 @@ def self_test() -> int:
 
     first = kept[0]
     checks.append((first.source == "달리기신문", f"매체 이름을 읽는다 ({first.source})"))
+    checks.append((
+        first.title == "서울하프마라톤 참가 접수 시작",
+        f"제목 끝의 매체명은 뗀다 — 매체는 따로 보여 주므로 ({first.title!r})",
+    ))
     checks.append((
         "<a" not in first.summary and "3월 대회" in first.summary,
         f"요약의 HTML 을 걷어낸다 ({first.summary!r})",
