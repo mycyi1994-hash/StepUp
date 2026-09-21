@@ -469,6 +469,16 @@ class WalkSessionService : Service() {
         /** 마지막 세션의 GPS 트랙 — "코스 만들기"의 재료 */
         val lastTrack = MutableStateFlow<List<GeoPoint>>(emptyList())
 
+        /**
+         * 트랙을 다 쓰고 비운다.
+         *
+         * 코스로 저장했거나 저장하지 않기로 했을 때 부른다. 비우지 않으면
+         * 저장 창이 다음에 러닝 화면을 열 때마다 다시 올라온다.
+         */
+        fun clearLastTrack() {
+            lastTrack.value = emptyList()
+        }
+
         /** 수동 랩 — 마지막 랩에서 50m 이상 나아갔을 때만 추가한다. */
         fun recordManualLap() {
             _state.update { current ->

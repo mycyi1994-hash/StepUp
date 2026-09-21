@@ -2,6 +2,7 @@ package com.stepup.android.data.prefs
 
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -51,6 +52,10 @@ class UserPrefs(private val context: Context) {
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
         val LANGUAGE = stringPreferencesKey("language")
         val SELECTED_COURSE = longPreferencesKey("selected_course")
+        /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
+        val COURSE_RECORDING = booleanPreferencesKey("course_recording")
+        /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
+        val COURSE_SEED_VERSION = intPreferencesKey("course_seed_version")
         val TOP_SPEED = doublePreferencesKey("top_speed_kmh")
         val FACTION_KM = stringPreferencesKey("faction_km")
         val ACCOUNTED_STEPS = longPreferencesKey("accounted_steps")
@@ -175,6 +180,27 @@ class UserPrefs(private val context: Context) {
     }
 
     suspend fun selectedCourseNow(): Long = context.dataStore.data.first()[Keys.SELECTED_COURSE] ?: -1L
+
+    /**
+     * 코스 녹화 중인가 — "코스 만들기"를 누르고 아직 저장하지 않은 상태.
+     *
+     * 화면이 아니라 여기에 두는 이유는 러닝이 전경 서비스에서 돌기 때문이다.
+     * 러닝 중에 앱이 메모리에서 내려가도, 돌아왔을 때 "아, 이건 코스 녹화였지"를
+     * 기억하고 있어야 끝나고 저장 창을 띄울 수 있다.
+     */
+    val courseRecording: Flow<Boolean> =
+        context.dataStore.data.map { it[Keys.COURSE_RECORDING] ?: false }
+
+    suspend fun setCourseRecording(on: Boolean) {
+        context.dataStore.edit { it[Keys.COURSE_RECORDING] = on }
+    }
+
+    suspend fun courseSeedVersion(): Int =
+        context.dataStore.data.first()[Keys.COURSE_SEED_VERSION] ?: 0
+
+    suspend fun setCourseSeedVersion(version: Int) {
+        context.dataStore.edit { it[Keys.COURSE_SEED_VERSION] = version }
+    }
 
     // ── 적립 정산 기준점 ─────────────────────────────────────────
 

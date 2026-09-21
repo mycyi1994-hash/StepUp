@@ -6,6 +6,7 @@ import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.CourseRewards
+import com.stepup.android.domain.DemoCourses
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.simplify
@@ -34,7 +35,41 @@ class CourseRepository(
         list.firstOrNull { it.id == id }
     }
 
+    /**
+     * 코스 녹화 중인가 — "코스 만들기"를 누르고 아직 저장하지 않은 상태.
+     *
+     * 코스는 "실제로 뛴 길"이라야 지도 위에서 말이 된다. 손으로 선을 그으면
+     * 건물이나 강을 가로지르는 코스가 나오고, 그걸 받은 사람은 뛸 수 없다.
+     * 그래서 코스 만들기는 러닝 화면으로 보내 한 번 뛰게 한다.
+     */
+    val recording: Flow<Boolean> = prefs.courseRecording
+
     suspend fun select(id: Long) = prefs.setSelectedCourse(id)
+
+    /**
+     * 녹화 시작 — 다음 러닝이 코스가 된다.
+     *
+     * 고른 코스가 있으면 푼다. 남의 코스를 따라 뛰면서 동시에 새 코스를
+     * 만들면, 끝났을 때 완주 보상이 어느 코스 것인지가 흐려진다.
+     */
+    suspend fun beginRecording() {
+        prefs.setSelectedCourse(-1L)
+        prefs.setCourseRecording(true)
+    }
+
+    suspend fun cancelRecording() = prefs.setCourseRecording(false)
+
+    /** 녹화한 트랙을 코스로 저장하고 녹화를 끝낸다. @return 새 코스 id (트랙이 짧으면 null) */
+    suspend fun saveRecorded(
+        name: String,
+        area: String,
+        track: List<GeoPoint>,
+        shared: Boolean,
+    ): Long? {
+        val id = create(name, area, track, shared)
+        prefs.setCourseRecording(false)
+        return id
+    }
 
     suspend fun clearSelection() = prefs.setSelectedCourse(-1L)
 
@@ -116,103 +151,53 @@ class CourseRepository(
         return course
     }
 
+    /**
+     * 데모 코스를 심는다. 이미 최신 판이 들어 있으면 아무것도 하지 않는다.
+     *
+     * 판 번호가 다르면 **데모 코스만** 갈아 끼운다. 내가 만든 코스는 그대로
+     * 둔다 — 데모를 고치자고 사용자가 직접 뛰어서 만든 코스를 지울 수는 없다.
+     */
     suspend fun ensureSeeded() {
-        if (dao.count() > 0) return
+        val installed = prefs.courseSeedVersion()
+        if (installed == DemoCourses.VERSION && dao.count() > 0) return
+
+        if (installed != DemoCourses.VERSION) {
+            dao.deleteSeeded()
+            // 지운 코스를 고른 채로 두면 러닝 화면이 없는 코스를 가리킨다
+            val selected = prefs.selectedCourseNow()
+            if (selected >= 0 && dao.byId(selected) == null) prefs.setSelectedCourse(-1L)
+        }
         dao.insertAll(seedCourses())
+        prefs.setCourseSeedVersion(DemoCourses.VERSION)
     }
 
-    // ── 데모 시드 — 서울의 실제 러닝 명소를 본뜬 좌표 ─────────────
+    /**
+     * 데모 시드 — 큰 공원 안을 도는 고리.
+     *
+     * 좌표를 손으로 찍지 않고 [DemoCourses] 가 공원 상자 안에서 만들어 준다.
+     * 손으로 찍으면 점 사이가 멀어 선이 각지고, 조금만 빗나가도 강이나 건물
+     * 위를 지난다 — 예전 데모 코스가 한강을 가로지르던 이유다.
+     */
     private fun seedCourses(): List<CourseEntity> {
         val now = System.currentTimeMillis()
-
-        fun course(
-            name: String,
-            area: String,
-            author: String,
-            likes: Int,
-            runs: Int,
-            points: List<GeoPoint>,
-            hoursAgo: Int,
-        ): CourseEntity {
+        return DemoCourses.parks.map { park ->
+            val points = park.track()
             val km = points.trackDistanceKm()
-            return CourseEntity(
-                name = name,
-                area = area,
+            CourseEntity(
+                name = park.name,
+                area = park.area,
                 distanceKm = km,
                 elevationM = (km * 8).toInt(),
                 track = points.joinToString(";") { "${it.lat},${it.lng}" },
-                author = author,
+                author = park.author,
                 mine = false,
                 shared = true,
-                likes = likes,
+                likes = park.likes,
                 liked = false,
-                runCount = runs,
-                createdAt = now - hoursAgo * 3_600_000L,
+                runCount = park.runs,
+                createdAt = now - park.hoursAgo * 3_600_000L,
             )
         }
-
-        return listOf(
-            course(
-                name = "여의도 한강 루프", area = "여의도", author = "Sora K.",
-                likes = 128, runs = 342, hoursAgo = 96,
-                points = listOf(
-                    GeoPoint(37.5268, 126.9165), GeoPoint(37.5289, 126.9204),
-                    GeoPoint(37.5301, 126.9251), GeoPoint(37.5312, 126.9302),
-                    GeoPoint(37.5318, 126.9346), GeoPoint(37.5301, 126.9382),
-                    GeoPoint(37.5275, 126.9394), GeoPoint(37.5252, 126.9367),
-                    GeoPoint(37.5243, 126.9315), GeoPoint(37.5238, 126.9262),
-                    GeoPoint(37.5241, 126.9210), GeoPoint(37.5253, 126.9172),
-                    GeoPoint(37.5268, 126.9165),
-                ),
-            ),
-            course(
-                name = "서울숲 순환 코스", area = "성수", author = "Marco P.",
-                likes = 86, runs = 205, hoursAgo = 150,
-                points = listOf(
-                    GeoPoint(37.5432, 127.0357), GeoPoint(37.5446, 127.0382),
-                    GeoPoint(37.5459, 127.0411), GeoPoint(37.5452, 127.0442),
-                    GeoPoint(37.5434, 127.0456), GeoPoint(37.5415, 127.0447),
-                    GeoPoint(37.5404, 127.0419), GeoPoint(37.5407, 127.0388),
-                    GeoPoint(37.5419, 127.0365), GeoPoint(37.5432, 127.0357),
-                ),
-            ),
-            course(
-                name = "남산 야경 업힐", area = "남산", author = "Elena R.",
-                likes = 74, runs = 118, hoursAgo = 220,
-                points = listOf(
-                    GeoPoint(37.5512, 126.9882), GeoPoint(37.5527, 126.9904),
-                    GeoPoint(37.5541, 126.9931), GeoPoint(37.5552, 126.9962),
-                    GeoPoint(37.5546, 126.9995), GeoPoint(37.5530, 127.0012),
-                    GeoPoint(37.5511, 127.0003), GeoPoint(37.5499, 126.9974),
-                    GeoPoint(37.5497, 126.9938), GeoPoint(37.5503, 126.9905),
-                    GeoPoint(37.5512, 126.9882),
-                ),
-            ),
-            course(
-                name = "반포 달빛 러닝", area = "반포", author = "Kai W.",
-                likes = 143, runs = 276, hoursAgo = 40,
-                points = listOf(
-                    GeoPoint(37.5093, 126.9925), GeoPoint(37.5104, 126.9968),
-                    GeoPoint(37.5113, 127.0012), GeoPoint(37.5121, 127.0058),
-                    GeoPoint(37.5128, 127.0103), GeoPoint(37.5119, 127.0141),
-                    GeoPoint(37.5098, 127.0128), GeoPoint(37.5089, 127.0084),
-                    GeoPoint(37.5081, 127.0038), GeoPoint(37.5074, 126.9991),
-                    GeoPoint(37.5081, 126.9948), GeoPoint(37.5093, 126.9925),
-                ),
-            ),
-            course(
-                name = "올림픽공원 5K", area = "송파", author = "Aiko T.",
-                likes = 97, runs = 231, hoursAgo = 310,
-                points = listOf(
-                    GeoPoint(37.5188, 127.1170), GeoPoint(37.5206, 127.1201),
-                    GeoPoint(37.5222, 127.1236), GeoPoint(37.5230, 127.1275),
-                    GeoPoint(37.5221, 127.1311), GeoPoint(37.5199, 127.1323),
-                    GeoPoint(37.5177, 127.1305), GeoPoint(37.5165, 127.1268),
-                    GeoPoint(37.5163, 127.1228), GeoPoint(37.5173, 127.1192),
-                    GeoPoint(37.5188, 127.1170),
-                ),
-            ),
-        )
     }
 }
 

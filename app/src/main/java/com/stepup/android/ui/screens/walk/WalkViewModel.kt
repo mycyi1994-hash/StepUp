@@ -11,6 +11,7 @@ import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.data.repo.StepRepository
 import com.stepup.android.domain.BoostType
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.service.RunLap
@@ -20,13 +21,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class WalkViewModel(
     private val stepRepository: StepRepository,
     rewardRepository: RewardRepository,
     sneakerRepository: SneakerRepository,
     boostRepository: BoostRepository,
-    courseRepository: CourseRepository,
+    private val courseRepository: CourseRepository,
 ) : ViewModel() {
 
     /** 지금 달리기로 고른 코스 — 지도 카드와 완주 보상 표시에 쓴다 */
@@ -60,6 +62,38 @@ class WalkViewModel(
     val laps: StateFlow<List<RunLap>> = WalkSessionService.state
         .map { it.laps }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // ── 코스 녹화 ───────────────────────────────────────────────
+    //
+    // "코스 만들기"를 누르면 여기로 보내진다. 러닝을 끝내면 방금 지나온 길이
+    // 저장 창과 함께 올라온다 — 코스는 손으로 그은 선이 아니라 실제로 뛴
+    // 길이라야 남이 받아서 뛸 수 있다.
+
+    /** 이번 러닝이 코스 녹화인가 */
+    val courseRecording: StateFlow<Boolean> = courseRepository.recording
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** 방금 끝난 러닝의 GPS 트랙 — 저장 창의 재료 */
+    val lastTrack: StateFlow<List<GeoPoint>> = WalkSessionService.lastTrack
+
+    fun saveRecordedCourse(name: String, area: String, shared: Boolean) {
+        val track = WalkSessionService.lastTrack.value
+        viewModelScope.launch {
+            val id = courseRepository.saveRecorded(name, area, track, shared)
+            // 방금 만든 코스를 바로 고른 상태로 둔다 — 만들었으면 다음엔 그걸
+            // 뛰려는 것이다.
+            if (id != null) courseRepository.select(id)
+            WalkSessionService.clearLastTrack()
+        }
+    }
+
+    /** 저장하지 않고 녹화를 끝낸다 */
+    fun cancelRecording() {
+        viewModelScope.launch {
+            courseRepository.cancelRecording()
+            WalkSessionService.clearLastTrack()
+        }
+    }
 
     /** 수동 랩 */
     fun recordLap() = WalkSessionService.recordManualLap()

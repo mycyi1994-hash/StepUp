@@ -281,6 +281,15 @@ interface CourseDao {
     @Query("DELETE FROM courses WHERE id = :id AND mine = 1")
     suspend fun deleteMine(id: Long)
 
+    /**
+     * 데모 코스만 지운다. 내가 만든 코스는 남는다.
+     *
+     * 데모 코스의 좌표가 바뀔 때 갈아 끼우는 데 쓴다 — 예전 것은 지도 위에서
+     * 한강을 가로질렀고, 그대로 두면 이미 설치한 사람은 계속 그 선을 본다.
+     */
+    @Query("DELETE FROM courses WHERE mine = 0")
+    suspend fun deleteSeeded()
+
     @Query("SELECT * FROM courses ORDER BY mine DESC, createdAt DESC")
     fun observeAll(): Flow<List<CourseEntity>>
 

@@ -39,9 +39,12 @@ import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -80,6 +84,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.service.RunLap
 import com.stepup.android.service.WalkSessionService
+import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.LiveRouteMap
@@ -97,6 +102,7 @@ import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.breathing
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.screens.community.LabeledField
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
@@ -136,6 +142,12 @@ fun RunScreen(
     // 목표 거리(km) — 프로세스에 살아서 화면을 나갔다 와도, 회전해도 유지된다
     val goalKm by viewModel.goalKm.collectAsStateWithLifecycle()
     var showGoalDialog by remember { mutableStateOf(false) }
+
+    // 코스 녹화 — "코스 만들기"에서 넘어온 러닝인지, 그리고 방금 끝난 트랙.
+    // 러닝이 끝나고(isActive=false) 트랙이 남아 있으면 저장 창을 띄운다.
+    val recordingCourse by viewModel.courseRecording.collectAsStateWithLifecycle()
+    val recordedTrack by viewModel.lastTrack.collectAsStateWithLifecycle()
+    val readyToSaveCourse = recordingCourse && !session.isActive && recordedTrack.size >= 2
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -228,6 +240,12 @@ fun RunScreen(
                     )
                 }
             }
+        }
+
+        // 녹화 중이라는 것을 러닝 내내 보이게 둔다. 안 보이면 끝나고 뜨는
+        // 저장 창이 난데없이 느껴지고, 취소할 자리도 없다.
+        if (recordingCourse && !readyToSaveCourse) {
+            item { CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording) }
         }
 
         item {
@@ -758,6 +776,14 @@ fun RunScreen(
                 }
             }
         }
+    }
+
+    if (readyToSaveCourse) {
+        SaveCourseDialog(
+            track = recordedTrack,
+            onSave = viewModel::saveRecordedCourse,
+            onDismiss = viewModel::cancelRecording,
+        )
     }
 
     if (showGoalDialog) {
@@ -1453,4 +1479,156 @@ private fun CourseChallengeCard(
             }
         }
     }
+}
+
+/**
+ * 코스 녹화 중이라는 띠.
+ *
+ * 러닝 화면은 녹화 중이나 아니나 똑같이 생겼다. 표시가 없으면 끝나고 뜨는
+ * 저장 창이 난데없이 느껴지고, 그만두고 싶어도 그만둘 자리가 없다.
+ */
+@Composable
+private fun CourseRecordingStrip(running: Boolean, onCancel: () -> Unit) {
+    GlowCard(
+        accent = true,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        spacing = 6.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Route,
+                contentDescription = null,
+                tint = Volt,
+                modifier = Modifier.size(18.dp),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(R.string.course_rec_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Snow,
+                )
+                Text(
+                    text = stringResource(
+                        if (running) R.string.course_rec_running else R.string.course_rec_ready,
+                    ),
+                    fontSize = 11.sp,
+                    color = Silver,
+                    lineHeight = 16.sp,
+                )
+            }
+            Text(
+                text = stringResource(R.string.common_cancel),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Slate,
+                modifier = Modifier
+                    .quietClickable(onCancel)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 러닝이 끝나고 뜨는 코스 저장 창.
+ *
+ * 여기서 저장해야 방금 뛴 길이 코스가 된다. 닫으면 그 트랙은 버려진다 —
+ * 그래서 닫기 버튼에도 "저장 안 함"이라고 적는다. "취소"라고만 적으면
+ * 나중에 저장할 수 있다고 읽힌다.
+ */
+@Composable
+private fun SaveCourseDialog(
+    track: List<GeoPoint>,
+    onSave: (name: String, area: String, shared: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var area by rememberSaveable { mutableStateOf("") }
+    var share by rememberSaveable { mutableStateOf(true) }
+    val km = remember(track) { track.trackDistanceKm() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Carbon,
+        titleContentColor = Snow,
+        textContentColor = Silver,
+        title = {
+            Text(text = stringResource(R.string.course_save_title), fontWeight = FontWeight.Black)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Night)
+                        .border(1.dp, Edge, RoundedCornerShape(16.dp)),
+                ) {
+                    LiveRouteMap(
+                        points = track,
+                        seed = track.size,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.course_save_body, "%.2f".format(km)),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Volt,
+                )
+                LabeledField(
+                    label = stringResource(R.string.course_name_hint),
+                    value = name,
+                    onValueChange = { name = it },
+                )
+                LabeledField(
+                    label = stringResource(R.string.course_area_hint),
+                    value = area,
+                    onValueChange = { area = it },
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.course_share_toggle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Snow,
+                    )
+                    Switch(
+                        checked = share,
+                        onCheckedChange = { share = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Night,
+                            checkedTrackColor = Volt,
+                            uncheckedThumbColor = Silver,
+                            uncheckedTrackColor = CarbonHigh,
+                        ),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(name, area, share) },
+                enabled = name.isNotBlank(),
+            ) {
+                Text(
+                    text = stringResource(R.string.course_register),
+                    color = if (name.isNotBlank()) Volt else Slate,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.course_save_skip), color = Silver)
+            }
+        },
+    )
 }
