@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Storefront
@@ -59,6 +61,33 @@ data class FeedItem(
     @StringRes val body: Int,
     /** 아직 열리지 않은 것 — 뱃지를 붙여 기다리는 중임을 밝힌다 */
     val soon: Boolean = false,
+)
+
+/**
+ * 러닝 이벤트 소식 — "무슨 일이 열린다"를 알리는 쪽.
+ *
+ * 받을 보상과 진행률이 있는 **이벤트 탭**과는 다르다. 저쪽은 누르면 받는
+ * 자리이고, 여기는 읽는 자리다. 그래서 여기에는 버튼을 두지 않는다.
+ */
+val RUN_EVENT_FEED = listOf(
+    FeedItem(
+        icon = Icons.Filled.DirectionsRun,
+        eyebrow = R.string.feed_eyebrow_notice,
+        title = R.string.feed_run_weekly_title,
+        body = R.string.feed_run_weekly_body,
+    ),
+    FeedItem(
+        icon = Icons.Filled.Groups,
+        eyebrow = R.string.feed_eyebrow_notice,
+        title = R.string.feed_run_crew_title,
+        body = R.string.feed_run_crew_body,
+    ),
+    FeedItem(
+        icon = Icons.Filled.Bolt,
+        eyebrow = R.string.feed_eyebrow_notice,
+        title = R.string.feed_run_flash_title,
+        body = R.string.feed_run_flash_body,
+    ),
 )
 
 /** 특가 공지 — 마켓이 열리면 이 자리에 실제 할인이 올라온다 */

@@ -97,8 +97,9 @@ fun ItemsScreen(
     val context = LocalContext.current
     val inventory by viewModel.inventory.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
-    // 0 = 스토어, 1 = 아이템(보관함). 보관함이 이 탭의 본디 자리라 기본은 1이다.
-    var tab by rememberSaveable { mutableIntStateOf(1) }
+    // 0 = 스토어, 1 = NFT 마켓, 2 = 아이템(보관함).
+    // 보관함이 이 탭의 본디 자리이고 가이드 투어도 거기를 가리키므로 기본은 2다.
+    var tab by rememberSaveable { mutableIntStateOf(2) }
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var copiesFor by rememberSaveable { mutableStateOf<String?>(null) }
@@ -162,7 +163,11 @@ fun ItemsScreen(
                     )
                     Text(
                         text = stringResource(
-                            if (tab == 0) R.string.store_sub else R.string.items_sub,
+                            when (tab) {
+                                0 -> R.string.store_sub
+                                1 -> R.string.nft_sub
+                                else -> R.string.items_sub
+                            },
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = Silver,
@@ -199,6 +204,7 @@ fun ItemsScreen(
             SegmentedTabs(
                 labels = listOf(
                     stringResource(R.string.market_tab_store),
+                    stringResource(R.string.market_tab_nft),
                     stringResource(R.string.market_tab_items),
                 ),
                 selected = tab,
@@ -207,7 +213,11 @@ fun ItemsScreen(
         }
 
         if (tab == 0) {
-            storeSection(mySneakerCount = inventory.size)
+            storeSection()
+            return@LazyColumn
+        }
+        if (tab == 1) {
+            nftMarketSection(mySneakerCount = inventory.size)
             return@LazyColumn
         }
 

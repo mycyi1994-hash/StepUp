@@ -43,7 +43,7 @@ import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
 /**
- * 마켓의 "스토어" 쪽 — 유저 간 NFT 거래소와 스텝업 스토어.
+ * 마켓의 파는 쪽 — NFT 거래소와 스텝업 스토어.
  *
  * ── 왜 살 수 없는가 ──
  *
@@ -57,6 +57,7 @@ import com.stepup.android.ui.theme.Volt
  * 아래 물건 목록은 **무엇을 팔 것인지 보여 주는 견본**이다. 값은 SUP 로
  * 적어 두었지만 아직 결제되지 않는다.
  */
+/** 스토어에 올릴 물건 한 종류 */
 private data class StoreGood(
     val icon: ImageVector,
     @StringRes val name: Int,
@@ -71,7 +72,7 @@ private val GOODS = listOf(
 )
 
 /**
- * 스토어 목록을 [LazyListScope] 에 붙인다.
+ * NFT 마켓 — 러너끼리 스니커즈를 사고파는 자리.
  *
  * 화면을 따로 만들지 않고 마켓의 같은 목록에 얹는 이유는, 상단 탭을 오갈 때
  * 스크롤 위치와 머리글이 하나로 묶여 있어야 탭이 한 화면 안의 전환으로
@@ -79,8 +80,7 @@ private val GOODS = listOf(
  *
  * @param mySneakerCount 내가 가진 스니커즈 수 — 거래소에 내놓을 수 있는 것
  */
-fun LazyListScope.storeSection(mySneakerCount: Int) {
-    // ── 유저 간 NFT 거래소 ──
+fun LazyListScope.nftMarketSection(mySneakerCount: Int) {
     item { SectionHeader(title = stringResource(R.string.store_trade_title)) }
     item {
         GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
@@ -136,7 +136,15 @@ fun LazyListScope.storeSection(mySneakerCount: Int) {
         }
     }
 
-    // ── 스텝업 스토어 ──
+}
+
+/**
+ * 스텝업 스토어 — 실제 물건을 SUP 로.
+ *
+ * NFT 거래소와 갈라 둔 것은 사는 것이 다르기 때문이다. 저쪽은 다른 러너의
+ * 신발이고 여기는 가게의 물건이다. 파는 사람도, 열리는 시점도 다르다.
+ */
+fun LazyListScope.storeSection() {
     item { SectionHeader(title = stringResource(R.string.store_goods_title)) }
     item {
         GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {

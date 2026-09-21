@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
@@ -76,6 +77,7 @@ import com.stepup.android.ui.screens.community.PartyLobbyScreen
 import com.stepup.android.ui.screens.community.PostComposeScreen
 import com.stepup.android.ui.screens.community.RankingScreen
 import com.stepup.android.ui.screens.events.EventsScreen
+import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
 import com.stepup.android.ui.screens.login.LoginScreen
 import com.stepup.android.ui.screens.items.ItemsScreen
@@ -102,7 +104,9 @@ import com.stepup.android.ui.theme.Volt
 
 sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
     data object Home : Screen("home", R.string.tab_home, Icons.Filled.Hexagon)
-    data object Events : Screen("events", R.string.tab_events, Icons.Filled.Event)
+
+    /** 읽는 자리 — 러닝 이벤트 소식 · 특가 공지 · 건강 뉴스 */
+    data object News : Screen("news", R.string.tab_news, Icons.AutoMirrored.Filled.Article)
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
     /**
@@ -113,12 +117,25 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
      * 어긋난다.
      */
     data object Market : Screen("items", R.string.tab_market, Icons.Filled.ShoppingBag)
+
+    /** 받는 자리 — 챌린지 · 캠페인 · 미션의 진행률과 보상 */
+    data object Events : Screen("events", R.string.tab_events, Icons.Filled.Event)
     data object Profile : Screen("profile", R.string.tab_profile, Icons.Filled.Person)
 }
 
-// 홈 다음이 이벤트다 — 오늘 할 것(러닝)과 오늘 볼 것(이벤트·소식)이 붙어 있어야
+// 홈 다음이 뉴스다 — 오늘 할 것(러닝)과 오늘 볼 것(소식)이 붙어 있어야
 // 앱을 열고 왼쪽 둘만 오가게 된다.
-private val bottomTabs = listOf(Screen.Home, Screen.Events, Screen.Community, Screen.Market, Screen.Profile)
+//
+// 뉴스와 이벤트를 나눈 것은 하는 일이 달라서다. 이벤트는 진행률을 보고
+// 보상을 **받는** 자리라 누를 것이 있고, 뉴스는 **읽는** 자리라 없다.
+private val bottomTabs = listOf(
+    Screen.Home,
+    Screen.News,
+    Screen.Community,
+    Screen.Market,
+    Screen.Events,
+    Screen.Profile,
+)
 private val tabRoutes = bottomTabs.map { it.route }.toSet()
 
 object Routes {
@@ -269,6 +286,9 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                 )
+            }
+            composable(Screen.News.route) {
+                NewsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
             }
             composable(Screen.Events.route) {
                 EventsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
@@ -492,7 +512,9 @@ private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .quietClickable(onClick)
-            .padding(horizontal = 10.dp, vertical = 2.dp),
+            // 탭이 여섯 개라 좁은 화면에서는 한 칸이 60dp 남짓이다.
+            // 좌우 여백을 줄여 "커뮤니티" 같은 긴 이름이 줄바꿈되지 않게 한다.
+            .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -507,7 +529,9 @@ private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
             color = tint,
             fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            letterSpacing = 0.3.sp,
+            letterSpacing = 0.sp,
+            maxLines = 1,
+            softWrap = false,
         )
         Box(
             modifier = Modifier

@@ -150,6 +150,9 @@ object GuideTour {
         GuideStep(Targets.HOME_STEPS, "home", R.string.tour1_title, R.string.tour1_body),
         GuideStep(Targets.HOME_ENERGY, "home", R.string.tour2_title, R.string.tour2_body),
 
+        // ── 뉴스: 읽는 자리. 탭만 알려 준다 — 안의 글은 읽으면 바로 안다 ──
+        GuideStep(Targets.tab("news"), "news", R.string.tour_tab_news_title, R.string.tour_tab_news_body),
+
         // ── 커뮤니티 ──
         GuideStep(Targets.tab("community"), "community", R.string.tour_tab_community_title, R.string.tour_tab_community_body),
         GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour4_title, R.string.tour4_body),

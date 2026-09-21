@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -77,7 +75,6 @@ import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -523,38 +520,31 @@ private fun EnergyCard(
                 color = Snow,
             )
         }
+        // 숫자는 링 위로 뺐다. 작은 링 안에 넣으면 글자가 테두리에 닿고,
+        // 글자를 줄이면 이 카드에서 제일 먼저 읽어야 할 수가 제일 작아진다.
+        Text(
+            text = "$percent%",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = (-0.5).sp,
+            color = Snow,
+            maxLines = 1,
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
             contentAlignment = Alignment.Center,
         ) {
-            // 링 안에는 퍼센트 하나만 둔다. 두 줄을 넣으면 작은 링 안에서
-            // 글자끼리 겹쳐 둘 다 못 읽게 된다 — 숫자는 링 밖으로 뺐다.
-            //
-            // aspectRatio 로 정사각형을 못 박는 것이 핵심이다. 높이만 채우게
-            // 두면 폭은 글씨를 감싸는 만큼(≈40dp)이 되고, NeonRing 은 가로·세로
-            // 중 **작은 쪽**으로 원을 그리므로 원이 글씨보다 작아진다. 그러면
-            // "100%"가 테두리를 넘어 링 위에 겹쳐 찍힌다.
+            // 고리만 그린다. aspectRatio 로 정사각형을 못 박는 것은 여전히
+            // 필요하다 — 높이만 채우게 두면 폭이 0이 되어 원이 사라진다.
             NeonRing(
                 progress = percent / 100f,
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(1f),
                 ringWidth = 7.dp,
-            ) {
-                Text(
-                    // 링 안쪽 지름보다 확실히 좁게. 세 자리(100%)가 들어가는
-                    // 것이 기준이다 — 9%는 남지만 100%가 넘치면 안 된다.
-                    text = "$percent%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
+            ) {}
         }
         // %가 무엇의 %인지 — 오늘 남은 적립 여력이다.
         // "N 보"와 "N SUP"를 한 줄에 붙여 카드 높이를 늘리지 않는다.
@@ -672,27 +662,16 @@ private fun DistanceCard(
                         )
                     }
                     Spacer(Modifier.height(5.dp))
-                    // 동그라미는 칸 너비를 따라간다. 16dp 로 못 박아 두면
-                    // 좁은 화면에서 칸(≈15dp)보다 넓어져 옆 칸을 밀어내고,
-                    // 그렇게 밀린 만큼 요일이 막대와 어긋나 보인다.
-                    Box(
-                        modifier = Modifier
-                            .widthIn(max = 18.dp)
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .then(
-                                if (isToday) Modifier.background(Volt, CircleShape) else Modifier,
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = label,
-                            color = if (isToday) OnVolt else Slate,
-                            fontSize = 8.sp,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1,
-                        )
-                    }
+                    // 동그라미 없이 글자만. 오늘은 색과 굵기로 구분한다 —
+                    // 칸 하나가 15dp 남짓이라 동그라미를 넣으면 요일 일곱 개가
+                    // 서로 밀려 막대와 어긋나 보인다.
+                    Text(
+                        text = label,
+                        color = if (isToday) Volt else Slate,
+                        fontSize = 9.sp,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                    )
                 }
             }
         }
