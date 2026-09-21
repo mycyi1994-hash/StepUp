@@ -37,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -79,6 +80,7 @@ import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
+import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Silver
@@ -95,6 +97,8 @@ fun ItemsScreen(
     val context = LocalContext.current
     val inventory by viewModel.inventory.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
+    // 0 = 스토어, 1 = 아이템(보관함). 보관함이 이 탭의 본디 자리라 기본은 1이다.
+    var tab by rememberSaveable { mutableIntStateOf(1) }
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var copiesFor by rememberSaveable { mutableStateOf<String?>(null) }
@@ -150,14 +154,16 @@ fun ItemsScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.tab_items),
+                        text = stringResource(R.string.tab_market),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-1).sp,
                         color = Snow,
                     )
                     Text(
-                        text = stringResource(R.string.items_sub),
+                        text = stringResource(
+                            if (tab == 0) R.string.store_sub else R.string.items_sub,
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = Silver,
                     )
@@ -183,6 +189,26 @@ fun ItemsScreen(
                 }
                 TokenCard(balance = balance)
             }
+        }
+
+        // 탭 안의 탭 — 스토어와 아이템(보관함).
+        //
+        // 도감 입구와 토큰은 머리글에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
+        // 뜻이 같아서, 탭마다 옮기면 찾는 자리가 두 곳이 된다.
+        item {
+            SegmentedTabs(
+                labels = listOf(
+                    stringResource(R.string.market_tab_store),
+                    stringResource(R.string.market_tab_items),
+                ),
+                selected = tab,
+                onSelect = { tab = it },
+            )
+        }
+
+        if (tab == 0) {
+            storeSection(mySneakerCount = inventory.size)
+            return@LazyColumn
         }
 
         // ── 속성별 도감 진행도 — 탭하면 그 속성만 필터링 ─────────

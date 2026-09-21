@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -59,6 +58,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -96,7 +96,6 @@ import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.LevelAvatar
 import com.stepup.android.ui.components.NeonRing
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.TokenCard
 import com.stepup.android.ui.components.VerticalHairline
@@ -107,6 +106,7 @@ import com.stepup.android.ui.components.rememberCustomAvatar
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.Carbon
+import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -136,6 +136,12 @@ fun ProfileScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
+    // 탭 안의 탭 — 프로필(기록)과 설정.
+    //
+    // 설정은 원래 가로로 미는 알약 줄이었다. 열한 개가 한 줄에 들어가지 않아
+    // 여섯째부터는 밀어야 보였고, 밀 수 있다는 표시도 없어서 거기 있는 줄
+    // 모르는 항목이 생겼다. 세로 목록이면 한눈에 다 보인다.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     var showProfileEdit by rememberSaveable { mutableStateOf(false) }
     var showGoalDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -203,6 +209,41 @@ fun ProfileScreen(
             }
         }
 
+        item {
+            SegmentedTabs(
+                labels = listOf(
+                    stringResource(R.string.profile_tab_profile),
+                    stringResource(R.string.profile_tab_settings),
+                ),
+                selected = tab,
+                onSelect = { tab = it },
+            )
+        }
+
+        if (tab == 1) {
+            item { SectionHeader(title = stringResource(R.string.profile_account)) }
+            items(pills) { pill ->
+                SettingsRow(
+                    icon = pill.icon,
+                    label = stringResource(pill.label),
+                    onClick = pill.onClick,
+                )
+            }
+            item {
+                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
+                    AboutRow(
+                        label = stringResource(R.string.about_version),
+                        value = "StepUp " + BuildConfig.VERSION_NAME,
+                    )
+                    AboutRow(
+                        label = stringResource(R.string.about_network),
+                        value = stringResource(R.string.about_network_value),
+                    )
+                }
+            }
+            return@LazyColumn
+        }
+
         item { RecordsCard(state, onOpenAnalytics) }
 
         item {
@@ -220,34 +261,36 @@ fun ProfileScreen(
             }
         }
 
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = stringResource(R.string.profile_account))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(pills) { pill ->
-                        PillChip(
-                            text = stringResource(pill.label),
-                            selected = false,
-                            onClick = pill.onClick,
-                            icon = pill.icon,
-                        )
-                    }
-                }
-            }
-        }
+    }
+}
 
-        item {
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                AboutRow(
-                    label = stringResource(R.string.about_version),
-                    value = "StepUp " + BuildConfig.VERSION_NAME,
-                )
-                AboutRow(
-                    label = stringResource(R.string.about_network),
-                    value = stringResource(R.string.about_network_value),
-                )
-            }
-        }
+/** 설정 한 줄 — 아이콘 · 이름 · 들어가는 화살표 */
+@Composable
+private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(CarbonHigh)
+            .border(1.dp, Edge, RoundedCornerShape(18.dp))
+            .quietClickable(onClick)
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = Volt, modifier = Modifier.size(19.dp))
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Snow,
+        )
+        Icon(
+            imageVector = Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = Slate,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 

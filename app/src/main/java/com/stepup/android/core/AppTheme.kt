@@ -28,4 +28,20 @@ object AppTheme {
     fun change(next: ThemeMode) {
         state.value = next
     }
+
+    /**
+     * 해/달 버튼이 부르는 뒤집기 — 지금 **보이는 것**의 반대로 간다.
+     *
+     * 시스템 기본이면 기기가 지금 어느 쪽인지에 따라 반대쪽으로 고정된다.
+     * "시스템 기본 → 시스템 기본"으로 남겨 두면 버튼을 눌렀는데 아무 일도
+     * 안 일어나는 경우가 생긴다.
+     *
+     * @param systemDark 기기가 지금 다크인지
+     * @return 새로 고른 값. 저장은 부른 쪽에서 한다.
+     */
+    fun toggle(systemDark: Boolean): ThemeMode {
+        val next = if (state.value.isDark(systemDark)) ThemeMode.LIGHT else ThemeMode.DARK
+        state.value = next
+        return next
+    }
 }

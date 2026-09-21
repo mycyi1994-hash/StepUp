@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.home
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
@@ -50,6 +53,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.core.AppTheme
+import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.StepPermissions
@@ -76,11 +81,15 @@ import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Volt
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
 /**
@@ -207,6 +216,8 @@ private fun TopBar(
     onOpenNotifications: () -> Unit,
     onOpenWallet: () -> Unit,
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val dark = StepUpColors.dark
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -214,6 +225,23 @@ private fun TopBar(
     ) {
         Wordmark(fontSize = 20.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // 해·달 — 지금 보이는 것의 반대를 그린다. 어두운 화면에서 해를
+            // 보여 줘야 "누르면 밝아진다"로 읽힌다. 지금 상태를 그리면
+            // 버튼이 표시등처럼 보여 누를 것으로 읽히지 않는다.
+            DarkIconButton(
+                icon = if (dark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                contentDescription = stringResource(
+                    if (dark) R.string.cd_theme_to_light else R.string.cd_theme_to_dark,
+                ),
+                onClick = {
+                    val next = AppTheme.toggle(systemDark)
+                    // 저장은 화면 수명과 무관한 스코프에서 — 누르자마자
+                    // 화면을 옮겨도 선택이 남아야 한다
+                    CoroutineScope(Dispatchers.IO).launch {
+                        ServiceLocator.userPrefs.setThemeMode(next.name)
+                    }
+                },
+            )
             DarkIconButton(
                 icon = Icons.Filled.Language,
                 contentDescription = stringResource(R.string.cd_language),

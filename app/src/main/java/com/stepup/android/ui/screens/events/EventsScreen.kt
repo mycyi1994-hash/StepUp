@@ -75,6 +75,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -151,6 +152,10 @@ fun EventsScreen(
         System.currentTimeMillis() + ((2L * 24 + 14) * 3600 + 22 * 60) * 1000
     }
 
+    // 탭 안의 탭 — 러닝 이벤트 / 특가 공지 / 건강 뉴스.
+    // 챌린지 칩(전체·챌린지·캠페인·미션)은 러닝 이벤트 안에 그대로 남는다.
+    var section by rememberSaveable { mutableIntStateOf(0) }
+
     val showChallenges = selectedChip == 0 || selectedChip == 1
     val showCampaigns = selectedChip == 0 || selectedChip == 2
     val showMissions = selectedChip == 0 || selectedChip == 3
@@ -197,6 +202,29 @@ fun EventsScreen(
                     color = Silver,
                 )
             }
+        }
+
+        item {
+            SegmentedTabs(
+                labels = listOf(
+                    stringResource(R.string.events_section_runs),
+                    stringResource(R.string.events_section_deals),
+                    stringResource(R.string.events_section_health),
+                ),
+                selected = section,
+                onSelect = { section = it },
+            )
+        }
+
+        if (section == 1 || section == 2) {
+            val feed = if (section == 1) DEAL_FEED else HEALTH_FEED
+            items(feed.size) { index -> FeedCard(feed[index]) }
+            item {
+                FeedFootnote(
+                    if (section == 1) R.string.feed_note_deals else R.string.feed_note_health,
+                )
+            }
+            return@LazyColumn
         }
 
         item {

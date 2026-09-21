@@ -102,13 +102,23 @@ import com.stepup.android.ui.theme.Volt
 
 sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
     data object Home : Screen("home", R.string.tab_home, Icons.Filled.Hexagon)
-    data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
-    data object Items : Screen("items", R.string.tab_items, Icons.Filled.ShoppingBag)
     data object Events : Screen("events", R.string.tab_events, Icons.Filled.Event)
+    data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
+
+    /**
+     * 마켓 — 스토어와 아이템(보관함)을 담는다.
+     *
+     * 길(route)은 "items" 그대로 둔다. 화면 이름만 바뀐 것이라, 길까지 바꾸면
+     * 가이드 투어가 가리키는 자리와 다른 화면에서 넘어오는 이동이 전부
+     * 어긋난다.
+     */
+    data object Market : Screen("items", R.string.tab_market, Icons.Filled.ShoppingBag)
     data object Profile : Screen("profile", R.string.tab_profile, Icons.Filled.Person)
 }
 
-private val bottomTabs = listOf(Screen.Home, Screen.Community, Screen.Items, Screen.Events, Screen.Profile)
+// 홈 다음이 이벤트다 — 오늘 할 것(러닝)과 오늘 볼 것(이벤트·소식)이 붙어 있어야
+// 앱을 열고 왼쪽 둘만 오가게 된다.
+private val bottomTabs = listOf(Screen.Home, Screen.Events, Screen.Community, Screen.Market, Screen.Profile)
 private val tabRoutes = bottomTabs.map { it.route }.toSet()
 
 object Routes {
@@ -240,7 +250,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenProfile = { navController.switchTab(Screen.Profile) },
                     onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
-                    onOpenItems = { navController.switchTab(Screen.Items) },
+                    onOpenItems = { navController.switchTab(Screen.Market) },
                 )
             }
             composable(Screen.Community.route) {
@@ -254,7 +264,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
                 )
             }
-            composable(Screen.Items.route) {
+            composable(Screen.Market.route) {
                 ItemsScreen(
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
@@ -278,7 +288,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
-                    onOpenItems = { navController.switchTab(Screen.Items) },
+                    onOpenItems = { navController.switchTab(Screen.Market) },
                 )
             }
 
