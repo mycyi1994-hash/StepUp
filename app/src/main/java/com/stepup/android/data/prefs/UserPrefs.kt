@@ -64,6 +64,8 @@ class UserPrefs(private val context: Context) {
         val ACCOUNTED_DAY = longPreferencesKey("accounted_day")
         val RUNNER_ADDRESS = stringPreferencesKey("runner_address")
         val AUTH_SESSION = stringPreferencesKey("auth_session")
+        val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
+        val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
     }
 
     val dailyGoal: Flow<Int> = context.dataStore.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
@@ -184,6 +186,28 @@ class UserPrefs(private val context: Context) {
     }
 
     suspend fun themeModeNow(): String = context.dataStore.data.first()[Keys.THEME_MODE] ?: ""
+
+    /**
+     * 거래 원장을 어디까지 폰에 옮겨 적었는지.
+     *
+     * 거래는 서버 원장에서 일어나는데 화면이 보여 주는 잔고는 폰의 원장이다.
+     * 같은 거래를 두 번 적으면 잔고가 늘어나므로, 옮긴 줄의 번호를 기억해
+     * 그다음부터만 가져온다.
+     */
+    val marketLedgerCursor: Flow<Long> =
+        context.dataStore.data.map { it[Keys.MARKET_LEDGER_CURSOR] ?: 0L }
+
+    suspend fun setMarketLedgerCursor(id: Long) {
+        context.dataStore.edit { it[Keys.MARKET_LEDGER_CURSOR] = id }
+    }
+
+    /** 소식을 마지막으로 받아 온 시각. 하루에 한 번만 받으려고 쓴다. */
+    suspend fun newsFetchedAtNow(): Long =
+        context.dataStore.data.first()[Keys.NEWS_FETCHED_AT] ?: 0L
+
+    suspend fun setNewsFetchedAt(millis: Long) {
+        context.dataStore.edit { it[Keys.NEWS_FETCHED_AT] = millis }
+    }
 
     /** 선택한 러닝 코스 id. -1이면 선택 없음 */
     val selectedCourseId: Flow<Long> = context.dataStore.data.map { it[Keys.SELECTED_COURSE] ?: -1L }

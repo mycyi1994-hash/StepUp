@@ -89,6 +89,17 @@ object ExternalIntents {
     /** 구글 지도 URL이 안정적으로 받아주는 경유지 수 */
     private const val MAX_WAYPOINTS = 8
 
+    /**
+     * 웹 주소를 브라우저에서 연다.
+     *
+     * 소식의 본문은 원문에서 읽는다. 앱 안에 옮겨 담으면 남의 글을 우리
+     * 것처럼 두는 셈이고, 저작권 문제이기도 하다.
+     */
+    fun openUrl(context: Context, url: String) {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return
+        start(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
     private fun start(context: Context, intent: Intent): Boolean = try {
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         true

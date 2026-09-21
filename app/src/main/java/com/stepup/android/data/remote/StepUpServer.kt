@@ -30,6 +30,21 @@ data class SessionRecorded(
 private data class BalanceRow(val balance: Double)
 
 /**
+ * 소식 한 줄.
+ *
+ * 본문은 없다 — 제목·출처·날짜·원문 링크까지만 담는다. 남의 기사를 옮겨
+ * 오지 않고 읽으려면 원문으로 보낸다.
+ */
+@Serializable
+data class NewsItemRow(
+    val url: String,
+    val title: String,
+    val source: String,
+    val summary: String = "",
+    @SerialName("published_at") val publishedAt: String,
+)
+
+/**
  * 순위표 한 줄.
  *
  * `total` 은 받은 줄 수가 아니라 **순위에 오른 전체 인원**이다. 서버는 상위
@@ -82,12 +97,12 @@ class StepUpServer(
     private val baseUrl: String,
     private val apiKey: String,
     private val sessions: SessionHolder,
-    private val http: HttpPoster = UrlConnectionPoster(),
+    internal val http: HttpPoster = UrlConnectionPoster(),
 ) {
 
     val isConfigured: Boolean get() = baseUrl.isNotBlank() && apiKey.isNotBlank()
 
-    private val restUrl get() = "${baseUrl.trimEnd('/')}/rest/v1"
+    internal val restUrl get() = "${baseUrl.trimEnd('/')}/rest/v1"
 
     /**
      * 러닝 세션을 서버에 기록한다.
@@ -123,9 +138,9 @@ class StepUpServer(
                 body = body,
                 headers = headers(token),
             )
-        }.map { text ->
+        }.mapBody { text ->
             // 이 함수는 표를 돌려주므로 배열로 온다. 행이 없으면 뭔가 잘못된 것이다.
-            json.decodeFromString<List<SessionRecorded>>(text).firstOrNull()
+            serverJson.decodeFromString<List<SessionRecorded>>(text).firstOrNull()
         }
     }
 
@@ -150,7 +165,7 @@ class StepUpServer(
         }
         return authed { token ->
             http.post("$restUrl/rpc/leaderboard", body, headers(token))
-        }.map { text -> json.decodeFromString<List<LeaderboardRow>>(text) }
+        }.mapBody { text -> serverJson.decodeFromString<List<LeaderboardRow>>(text) }
     }
 
     /** 종족 순위. 아무도 안 뛴 종족도 0으로 온다. */
@@ -158,7 +173,7 @@ class StepUpServer(
         val body = jsonBody { put("p_period", period) }
         return authed { token ->
             http.post("$restUrl/rpc/faction_leaderboard", body, headers(token))
-        }.map { text -> json.decodeFromString<List<FactionRankRow>>(text) }
+        }.mapBody { text -> serverJson.decodeFromString<List<FactionRankRow>>(text) }
     }
 
     /** 지금 잔고. 서버 원장의 합이다. */
@@ -168,21 +183,33 @@ class StepUpServer(
                 url = "$restUrl/sup_balances?select=balance",
                 headers = headers(token),
             )
-        }.map { text ->
+        }.mapBody { text ->
             // 아직 한 번도 적립한 적이 없으면 행이 없다. 그건 오류가 아니라 0이다.
-            json.decodeFromString<List<BalanceRow>>(text).firstOrNull()?.balance ?: 0.0
+            serverJson.decodeFromString<List<BalanceRow>>(text).firstOrNull()?.balance ?: 0.0
         }
+
+    /**
+     * 러닝 소식. 로그인하지 않아도 읽힌다.
+     *
+     * 이 표는 하루 한 번 수집기가 채우고(.github/workflows/news-refresh.yml)
+     * 앱은 읽기만 한다. 쓰기는 RLS 가 막아 두었다.
+     */
+    suspend fun newsItems(kind: String, limit: Int = 30): ServerResult<List<NewsItemRow>> =
+        anonGet(
+            "$restUrl/news_items?select=url,title,source,summary,published_at" +
+                "&kind=eq.$kind&order=published_at.desc&limit=$limit"
+        ).mapBody { serverJson.decodeFromString<List<NewsItemRow>>(it) }
 
     // ── 공통 ────────────────────────────────────────────────────────
 
-    private fun headers(token: String) = mapOf(
+    internal fun headers(token: String) = mapOf(
         "apikey" to apiKey,
         "Authorization" to "Bearer $token",
         "Content-Type" to "application/json",
     )
 
     /** 출입증을 챙겨서 요청하고, 응답을 결말로 옮긴다. */
-    private suspend fun authed(call: suspend (String) -> HttpResponse): ServerResult<String> {
+    internal suspend fun authed(call: suspend (String) -> HttpResponse): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
 
         val token = when (val t = sessions.accessToken()) {
@@ -204,22 +231,39 @@ class StepUpServer(
         }
     }
 
-    private fun <T> ServerResult<String>.map(transform: (String) -> T?): ServerResult<T> =
-        when (this) {
-            is ServerResult.Ok -> {
-                val parsed = runCatching { transform(value) }.getOrNull()
-                if (parsed == null) ServerResult.Retry("응답을 이해할 수 없습니다")
-                else ServerResult.Ok(parsed)
-            }
-            is ServerResult.Rejected -> this
-            is ServerResult.Retry -> this
-            is ServerResult.SignInRequired -> this
+    /**
+     * 로그인 없이 읽는다.
+     *
+     * 소식은 가려 둘 것이 아니고, 로그인을 시켜야만 보인다면 처음 앱을 연
+     * 사람에게 빈 탭을 보여 주게 된다. 표 쪽 RLS 가 읽기만 열어 두었다.
+     */
+    internal suspend fun anonGet(url: String): ServerResult<String> {
+        if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
+        val response = http.get(url, mapOf("apikey" to apiKey, "Authorization" to "Bearer $apiKey"))
+        return when {
+            response.status in 200..299 -> ServerResult.Ok(response.body)
+            response.status == 0 -> ServerResult.Retry(response.body)
+            response.status == 429 || response.status >= 500 ->
+                ServerResult.Retry("서버가 바쁩니다 (${response.status})")
+            else -> ServerResult.Rejected(response.postgrestMessage())
         }
-
-    private companion object {
-        val json = Json { ignoreUnknownKeys = true }
     }
 }
+
+/** 서버 응답(JSON 글자)을 화면이 쓰는 값으로. 못 읽으면 나중에 다시 한다. */
+internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): ServerResult<T> =
+    when (this) {
+        is ServerResult.Ok -> {
+            val parsed = runCatching { transform(value) }.getOrNull()
+            if (parsed == null) ServerResult.Retry("응답을 이해할 수 없습니다")
+            else ServerResult.Ok(parsed)
+        }
+        is ServerResult.Rejected -> this
+        is ServerResult.Retry -> this
+        is ServerResult.SignInRequired -> this
+    }
+
+internal val serverJson = Json { ignoreUnknownKeys = true }
 
 /**
  * Postgres 가 보낸 실패 이유를 꺼낸다.
@@ -238,7 +282,7 @@ private fun HttpResponse.postgrestMessage(): String {
 internal fun Long.toIsoInstant(): String = java.time.Instant.ofEpochMilli(this).toString()
 
 /** 손으로 JSON 을 만들 때 따옴표·역슬래시로 깨지지 않게. */
-private fun jsonBody(build: MutableMap<String, Any>.() -> Unit): String {
+internal fun jsonBody(build: MutableMap<String, Any>.() -> Unit): String {
     val map = LinkedHashMap<String, Any>().apply(build)
     return map.entries.joinToString(",", "{", "}") { (key, value) ->
         val encoded = when (value) {

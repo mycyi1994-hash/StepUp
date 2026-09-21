@@ -6,6 +6,7 @@ import com.stepup.android.BuildConfig
 import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.GoogleSignIn
+import com.stepup.android.data.remote.MarketApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
@@ -18,6 +19,8 @@ import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.CourseRepository
 import com.stepup.android.data.repo.CrewRepository
 import com.stepup.android.data.repo.EventRepository
+import com.stepup.android.data.repo.MarketRepository
+import com.stepup.android.data.repo.NewsRepository
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
@@ -52,6 +55,14 @@ object ServiceLocator {
     lateinit var eventRepository: EventRepository
         private set
     lateinit var notificationRepository: NotificationRepository
+        private set
+
+    /** NFT 마켓 — 소유권과 값이 서버에서 정해지는 유일한 곳 */
+    lateinit var marketRepository: MarketRepository
+        private set
+
+    /** 러닝 소식 — 하루 한 번 받아 두고 그 사본을 보여 준다 */
+    lateinit var newsRepository: NewsRepository
         private set
 
     lateinit var claimRepository: ClaimRepository
@@ -136,5 +147,17 @@ object ServiceLocator {
         )
         eventRepository = EventRepository(database.claimedEventDao(), rewardRepository)
         notificationRepository = NotificationRepository(database.notificationDao(), rewardRepository)
+        marketRepository = MarketRepository(
+            api = MarketApi(server),
+            server = server,
+            sneakerDao = database.sneakerDao(),
+            rewardDao = database.rewardDao(),
+            prefs = userPrefs,
+        )
+        newsRepository = NewsRepository(
+            server = server,
+            dao = database.newsDao(),
+            prefs = userPrefs,
+        )
     }
 }

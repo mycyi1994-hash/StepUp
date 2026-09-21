@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Favorite
@@ -30,16 +31,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.data.local.NewsItemEntity
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * 이벤트 탭의 소식 — 특가 공지와 건강 뉴스.
@@ -196,6 +202,61 @@ fun FeedCard(item: FeedItem) {
         )
     }
 }
+
+/**
+ * 바깥에서 받아 온 소식 한 장.
+ *
+ * 제목·출처·날짜까지만 보여 주고 본문은 보여 주지 않는다. 누르면 원문으로
+ * 간다 — 남의 글을 앱 안에 옮겨 담지 않기 위해서다.
+ */
+@Composable
+fun NewsCard(item: NewsItemEntity, onOpen: () -> Unit) {
+    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 8.dp) {
+        Row(
+            modifier = Modifier.fillMaxWidth().quietClickable(onOpen),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(CarbonHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                    tint = Volt,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Eyebrow(text = item.source + " · " + newsDate(item.publishedAt))
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Snow,
+                    lineHeight = 21.sp,
+                )
+            }
+        }
+        if (item.summary.isNotBlank()) {
+            Text(
+                text = item.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = Silver,
+                lineHeight = 19.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** 날짜 한 줄. 시각까지는 필요 없다 — 소식은 날짜 단위로 읽는다. */
+private fun newsDate(millis: Long): String =
+    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
 
 /** 목록 끝에 한 줄 — 이 글들이 어디서 왔는지 밝힌다 */
 @Composable

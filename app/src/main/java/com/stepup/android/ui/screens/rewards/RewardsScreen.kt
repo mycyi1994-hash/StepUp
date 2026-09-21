@@ -21,6 +21,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Whatshot
@@ -387,6 +391,11 @@ private fun LedgerRow(entry: RewardEntity) {
         RewardType.SPEND_BOOST -> Icons.Filled.Whatshot to R.string.ledger_spend_boost
         RewardType.EARN_EVENT -> Icons.Filled.Redeem to R.string.ledger_earn_event
         RewardType.EARN_PARTY -> Icons.Filled.Groups to R.string.ledger_earn_party
+        RewardType.TRADE_BUY -> Icons.Filled.SwapHoriz to R.string.ledger_trade_buy
+        RewardType.TRADE_SELL -> Icons.Filled.SwapHoriz to R.string.ledger_trade_sell
+        RewardType.TRADE_FEE -> Icons.Filled.Receipt to R.string.ledger_trade_fee
+        RewardType.ESCROW_LOCK -> Icons.Filled.Lock to R.string.ledger_escrow_lock
+        RewardType.ESCROW_UNLOCK -> Icons.Filled.LockOpen to R.string.ledger_escrow_unlock
         else -> Icons.Filled.EmojiEvents to R.string.ledger_other
     }
     GlowCard(

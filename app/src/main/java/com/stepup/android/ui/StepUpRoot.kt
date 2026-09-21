@@ -80,6 +80,7 @@ import com.stepup.android.ui.screens.events.EventsScreen
 import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
 import com.stepup.android.ui.screens.login.LoginScreen
+import com.stepup.android.ui.screens.market.MarketModelScreen
 import com.stepup.android.ui.screens.items.ItemsScreen
 import com.stepup.android.ui.screens.items.SneakerDetailScreen
 import com.stepup.android.ui.screens.items.SneakerDexScreen
@@ -161,7 +162,13 @@ object Routes {
     const val COURSES = "courses"
     const val SNEAKER_DEX = "sneaker/dex"
 
+    /** 거래소의 모델 장부 — 속성 × 등급 × 변형 하나 */
+    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}"
+
     fun sneaker(id: Long) = "sneaker/$id"
+
+    fun marketModel(faction: String, rarity: String, variant: Int) =
+        "market/$faction/$rarity/$variant"
     fun lobby(crewId: String) = "lobby/$crewId"
     fun crewBoard(crewId: String) = "crew/board/$crewId"
 
@@ -285,6 +292,24 @@ private fun MainScaffold(startTour: Boolean = false) {
                 ItemsScreen(
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenMarketModel = { faction, rarity, variant ->
+                        navController.navigate(Routes.marketModel(faction, rarity, variant))
+                    },
+                )
+            }
+            composable(
+                route = Routes.MARKET_MODEL,
+                arguments = listOf(
+                    navArgument("faction") { type = NavType.StringType },
+                    navArgument("rarity") { type = NavType.StringType },
+                    navArgument("variant") { type = NavType.IntType },
+                ),
+            ) { entry ->
+                MarketModelScreen(
+                    faction = entry.arguments?.getString("faction").orEmpty(),
+                    rarity = entry.arguments?.getString("rarity").orEmpty(),
+                    variant = entry.arguments?.getInt("variant") ?: 0,
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(Screen.News.route) {

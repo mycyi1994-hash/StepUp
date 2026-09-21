@@ -605,6 +605,343 @@ begin
     '한 줄만 받아도 전체 인원은 2명으로 나온다');
 end $$;
 
+
+-- ════════════════════════════════════════════════════════════════
+--  NFT 마켓
+-- ════════════════════════════════════════════════════════════════
+--
+-- 돈과 소유권이 함께 움직이는 곳이라 한 줄씩 두드려 본다. "아마 맞을
+-- 것이다"로 넘어가면, 틀렸을 때 나타나는 곳은 남의 잔고다.
+
+reset role;
+
+-- 남의 잔고도 봐야 한다 (원장은 제 것만 보이게 막혀 있다).
+-- 검사 안에서만 쓰는 뒷문이고, Supabase 에는 올라가지 않는다.
+create or replace function pg_temp.bal(p_user uuid) returns numeric
+language sql security definer as $$
+  select coalesce(sum(amount), 0)::numeric(20,4) from public.sup_ledger where user_id = p_user
+$$;
+
+-- economy 스키마는 앱 역할에 열려 있지 않다 (열 이유가 없다). 검사에서만 읽는다.
+create or replace function pg_temp.cap() returns int
+language sql security definer as $$ select economy.market_import_cap() $$;
+
+-- 살 돈을 쥐여 준다. 실제로는 뛰어야 생기지만 여기서는 원장에 바로 적는다.
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('22222222-2222-2222-2222-222222222222', 'EARN_WALK', 10000, '검사용'),
+  ('33333333-3333-3333-3333-333333333333', 'EARN_WALK', 10000, '검사용');
+
+set role authenticated;
+
+-- ── 등록 ──
+call pg_temp.login(null);
+call pg_temp.must_fail(
+  $q$ select public.market_import(1, 'FIRE', 'COMMON', 0, 1, 1, 1, 100) $q$,
+  '로그인 없이는 등록할 수 없다');
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_a bigint; v_b bigint;
+begin
+  v_a := public.market_import(1, 'FIRE', 'RARE', 0, 7, 1.2, 1.1, 100);
+  perform pg_temp.ok(v_a is not null, '폰의 신발을 거래소에 올린다');
+
+  v_b := public.market_import(1, 'FIRE', 'RARE', 0, 9, 1.2, 1.1, 90);
+  perform pg_temp.ok(v_a = v_b, '같은 신발을 다시 올려도 늘어나지 않는다');
+  perform pg_temp.ok(
+    (select level from public.market_sneakers where id = v_a) = 9,
+    '다시 올리면 레벨은 최신으로 갱신된다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_sneakers) = 1,
+    '장부에는 한 켤레만 있다');
+  perform pg_temp.ok(
+    (select mint_number from public.market_sneakers where id = v_a) > 0,
+    '거래소 전체에서 유일한 민팅 번호가 붙는다');
+
+  insert into fix values ('sn1', v_a::text);
+end $$;
+
+call pg_temp.must_fail(
+  $q$ insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability)
+      values ('11111111-1111-1111-1111-111111111111', 'FIRE', 'LEGENDARY', 0, 30, 100) $q$,
+  '장부에 직접 신발을 적을 수는 없다');
+
+call pg_temp.must_fail(
+  $q$ insert into public.market_trades (faction, rarity, variant, level, price, kind)
+      values ('FIRE', 'LEGENDARY', 0, 30, 999999, 'BY_ASK') $q$,
+  '체결 내역을 직접 지어낼 수 없다');
+
+-- ── 매물 ──
+do $$
+declare v_listing bigint; v_sn bigint := pg_temp.fx('sn1')::bigint;
+begin
+  call pg_temp.must_fail(
+    format($q$ select public.market_list(%s, 0.5) $q$, v_sn),
+    '너무 싼 값은 걸리지 않는다');
+
+  v_listing := public.market_list(v_sn, 500);
+  perform pg_temp.ok(v_listing is not null, '내 스니커즈를 판다고 내놓는다');
+  perform pg_temp.ok(
+    (select status from public.market_sneakers where id = v_sn) = 'LISTED',
+    '내놓은 신발은 판매 중으로 바뀐다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_asks where sneaker_id = v_sn) = 1,
+    '매물 장부에 한 줄이 선다');
+  perform pg_temp.ok(
+    (select level from public.market_asks where sneaker_id = v_sn) = 9,
+    '매물 줄에 레벨이 함께 온다 — 같은 모델도 켤레마다 값이 다르므로');
+  perform pg_temp.ok(
+    (select ask from public.market_quotes where rarity = 'RARE') = 500,
+    '시세판의 즉시 구매가가 최저 매물 값이다');
+
+  call pg_temp.must_fail(
+    format($q$ select public.market_list(%s, 600) $q$, v_sn),
+    '한 켤레를 두 곳에 걸 수는 없다');
+
+  insert into fix values ('listing1', v_listing::text);
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.market_buy_now(pg_temp.fx('listing1')::bigint) $q$,
+  '내 매물은 내가 살 수 없다 (자전거래)');
+
+-- ── 즉시 구매 ──
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare
+  v_seller uuid := '11111111-1111-1111-1111-111111111111';
+  v_buyer  uuid := '22222222-2222-2222-2222-222222222222';
+  v_sn bigint := pg_temp.fx('sn1')::bigint;
+  v_before numeric := pg_temp.bal(v_buyer);
+  v_before_seller numeric := pg_temp.bal(v_seller);
+  v_trade bigint;
+begin
+  v_trade := public.market_buy_now(pg_temp.fx('listing1')::bigint);
+  perform pg_temp.ok(v_trade is not null, '매물을 산다');
+  perform pg_temp.ok(
+    (select owner_id from public.market_sneakers where id = v_sn) = v_buyer,
+    '신발의 주인이 바뀐다');
+  perform pg_temp.ok(
+    (select status from public.market_sneakers where id = v_sn) = 'OWNED',
+    '팔린 신발은 판매 중에서 풀린다');
+  perform pg_temp.ok(pg_temp.bal(v_buyer) = v_before - 500, '산 사람 잔고에서 값이 빠진다');
+  -- 수수료 2.5% = 12.5
+  -- 500 에서 수수료 2.5%(12.5)를 뗀 487.5
+  perform pg_temp.ok(pg_temp.bal(v_seller) = v_before_seller + 487.5,
+    '판 사람은 수수료를 뗀 만큼 받는다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_asks where sneaker_id = v_sn) = 0,
+    '팔린 매물은 장부에서 사라진다');
+  perform pg_temp.ok(
+    (select price from public.market_trades where id = v_trade) = 500,
+    '체결 내역에 값이 남는다');
+  perform pg_temp.ok(
+    (select last_price from public.market_quotes where rarity = 'RARE') = 500,
+    '시세판에 최근 체결가가 뜬다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.market_buy_now(pg_temp.fx('listing1')::bigint) $q$,
+  '이미 팔린 매물은 두 번 팔리지 않는다');
+
+-- ── 구매 입찰과 즉시 판매 ──
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+declare
+  v_me uuid := '33333333-3333-3333-3333-333333333333';
+  v_before numeric := pg_temp.bal(v_me);
+  v_bid bigint;
+begin
+  call pg_temp.must_fail(
+    $q$ select public.market_bid('FIRE', 'RARE', 0, 1, 999999) $q$,
+    '잔고보다 큰 값은 걸 수 없다');
+
+  v_bid := public.market_bid('FIRE', 'RARE', 0, 5, 300);
+  perform pg_temp.ok(v_bid is not null, '모델에 구매 입찰을 건다');
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 300,
+    '건 값은 잠긴다 — 같은 돈으로 여러 곳에 걸 수 없게');
+  perform pg_temp.ok(
+    (select bid from public.market_quotes where rarity = 'RARE') = 300,
+    '시세판의 즉시 판매가가 최고 입찰가다');
+  insert into fix values ('bid1', v_bid::text);
+end $$;
+
+-- 레벨이 모자란 신발은 그 입찰에 팔 수 없다
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_low bigint;
+begin
+  v_low := public.market_import(2, 'FIRE', 'RARE', 0, 3, 1, 1, 100);
+  insert into fix values ('sn_low', v_low::text);
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.market_sell_now(pg_temp.fx('sn_low')::bigint, pg_temp.fx('bid1')::bigint) $q$,
+  '최소 레벨에 못 미치면 그 입찰에 팔 수 없다');
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare
+  v_seller uuid := '22222222-2222-2222-2222-222222222222';
+  v_buyer  uuid := '33333333-3333-3333-3333-333333333333';
+  v_sn bigint := pg_temp.fx('sn1')::bigint;
+  v_before_seller numeric := pg_temp.bal(v_seller);
+  v_before_buyer  numeric := pg_temp.bal(v_buyer);
+begin
+  perform public.market_sell_now(v_sn, pg_temp.fx('bid1')::bigint);
+  perform pg_temp.ok(
+    (select owner_id from public.market_sneakers where id = v_sn) = v_buyer,
+    '즉시 판매로 주인이 바뀐다');
+  -- 300 - 2.5% = 292.5
+  perform pg_temp.ok(pg_temp.bal(v_seller) = v_before_seller + 292.5,
+    '판 사람은 입찰가에서 수수료를 뗀 만큼 받는다');
+  perform pg_temp.ok(pg_temp.bal(v_buyer) = v_before_buyer,
+    '산 사람 잔고는 그대로다 — 입찰할 때 이미 잠갔으므로 두 번 내지 않는다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_bid_book) = 0,
+    '체결된 입찰은 장부에서 사라진다');
+end $$;
+
+-- ── 입찰 취소 ──
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+declare
+  v_me uuid := '33333333-3333-3333-3333-333333333333';
+  v_before numeric := pg_temp.bal(v_me);
+  v_bid bigint;
+begin
+  v_bid := public.market_bid('WATER', 'EPIC', 1, 1, 200);
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 200, '입찰하면 잠긴다');
+  perform public.market_cancel_bid(v_bid);
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before, '입찰을 거두면 잠긴 SUP 가 풀린다');
+  perform public.market_cancel_bid(v_bid);
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before, '두 번 거둬도 두 번 풀리지 않는다');
+end $$;
+
+-- ── 교차 체결 ──
+--
+-- 값은 먼저 걸려 있던 쪽(메이커)의 값으로 정해진다. 나중에 들어온 쪽이
+-- 값을 밀어 올리거나 내리지 못하게 하는 거래소의 기본 규칙이다.
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+declare v_bid bigint;
+begin
+  v_bid := public.market_bid('FIRE', 'RARE', 0, 1, 400);
+  insert into fix values ('bid_cross', v_bid::text);
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare
+  v_me uuid := '11111111-1111-1111-1111-111111111111';
+  v_before numeric := pg_temp.bal(v_me);
+  v_sn bigint := pg_temp.fx('sn_low')::bigint;
+  v_listing bigint;
+begin
+  -- 250 에 내놨는데 400 을 부른 사람이 이미 있다 → 400 에 팔린다
+  v_listing := public.market_list(v_sn, 250);
+  perform pg_temp.ok(v_listing is null, '값이 맞으면 매물로 서지 않고 바로 팔린다');
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before + 390,
+    '체결가는 먼저 걸려 있던 입찰의 값이다 (400 - 수수료 10)');
+  perform pg_temp.ok(
+    (select owner_id from public.market_sneakers where id = v_sn)
+      = '33333333-3333-3333-3333-333333333333',
+    '교차 체결로도 주인이 바뀐다');
+  perform pg_temp.ok(
+    (select status from public.market_bids where id = pg_temp.fx('bid_cross')::bigint) = 'FILLED',
+    '체결된 입찰은 닫힌다');
+end $$;
+
+-- 반대 방향 — 매물이 먼저 있고 그보다 높은 값으로 입찰하면 매물 값에 산다
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+declare v_sn bigint; v_listing bigint;
+begin
+  v_sn := public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100);
+  v_listing := public.market_list(v_sn, 700);
+  perform pg_temp.ok(v_listing is not null, '매물이 먼저 선다');
+  insert into fix values ('sn_wind', v_sn::text);
+end $$;
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare
+  v_me uuid := '22222222-2222-2222-2222-222222222222';
+  v_before numeric := pg_temp.bal(v_me);
+  v_bid bigint;
+begin
+  v_bid := public.market_bid('WIND', 'EPIC', 2, 1, 900);
+  perform pg_temp.ok(v_bid is null, '살 수 있는 매물이 있으면 기다리지 않는다');
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 700,
+    '부른 값(900)이 아니라 매물 값(700)을 낸다');
+  perform pg_temp.ok(
+    (select owner_id from public.market_sneakers where id = pg_temp.fx('sn_wind')::bigint) = v_me,
+    '교차 체결로 신발을 받는다');
+end $$;
+
+-- ── 매물 거두기 ──
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_sn bigint := pg_temp.fx('sn_wind')::bigint; v_listing bigint;
+begin
+  v_listing := public.market_list(v_sn, 1200);
+  perform public.market_cancel_listing(v_listing);
+  perform pg_temp.ok(
+    (select status from public.market_sneakers where id = v_sn) = 'OWNED',
+    '매물을 거두면 신발이 판매 중에서 풀린다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_asks where sneaker_id = v_sn) = 0,
+    '거둔 매물은 장부에서 사라진다');
+  insert into fix values ('listing_gone', v_listing::text);
+end $$;
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+call pg_temp.must_fail(
+  $q$ select public.market_cancel_listing(pg_temp.fx('listing_gone')::bigint) $q$,
+  '남의 매물은 거둘 수 없다');
+
+-- ── 내 것 보기 ──
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.market_my_sneakers()) = 1,
+    '거래소가 아는 내 신발만 온다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_my_trades(30)) >= 2,
+    '내가 사고판 기록이 온다');
+  perform pg_temp.ok(
+    (select count(*) from public.market_my_trades(30) where not sold) >= 1,
+    '산 것과 판 것이 구분된다');
+end $$;
+
+-- ── 올릴 수 있는 수 ──
+--
+-- 폰의 신발은 서버가 확인할 길이 없어 앱의 말을 믿는 수밖에 없다.
+-- 그 믿음의 크기를 이 선으로 묶는다.
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare i int;
+begin
+  -- 이미 둘을 올렸다. 상한까지 채운다.
+  for i in 3..pg_temp.cap() loop
+    perform public.market_import(i, 'WATER', 'COMMON', 0, 1, 1, 1, 100);
+  end loop;
+  perform pg_temp.ok(
+    (select count(*) from public.market_imports
+      where user_id = '11111111-1111-1111-1111-111111111111') = pg_temp.cap(),
+    '상한까지는 올라간다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.market_import(9999, 'WATER', 'COMMON', 0, 1, 1, 1, 100) $q$,
+  '상한을 넘으면 더 올릴 수 없다');
+
+call pg_temp.must_fail(
+  $q$ select public.market_settle(1, '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222', 1, 'BY_ASK', true) $q$,
+  '체결 함수는 바깥에서 부를 수 없다');
+
 reset role;
 
 \echo ''

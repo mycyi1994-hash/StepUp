@@ -3,7 +3,9 @@ package com.stepup.android.data.local
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
@@ -171,6 +173,42 @@ interface SneakerDao {
 
     @Query("SELECT COALESCE(MAX(mintNumber), 0) FROM sneakers")
     suspend fun maxMintNumber(): Int
+
+    // ── 거래소와 맞춰 보기 ──────────────────────────────────────
+
+    @Query("SELECT * FROM sneakers")
+    suspend fun allNow(): List<SneakerEntity>
+
+    @Query("SELECT * FROM sneakers WHERE serverId = :serverId LIMIT 1")
+    suspend fun byServerId(serverId: Long): SneakerEntity?
+
+    @Query("UPDATE sneakers SET serverId = :serverId WHERE id = :id")
+    suspend fun setServerId(id: Long, serverId: Long)
+
+    /** 거래소가 아는 신발들. 팔렸는지 맞춰 보는 데 쓴다. */
+    @Query("SELECT * FROM sneakers WHERE serverId <> 0")
+    suspend fun registered(): List<SneakerEntity>
+}
+
+@Dao
+interface NewsDao {
+
+    // 기본값을 두지 않는다 — Room 의 @Query 는 코틀린 기본 인자와 잘 맞지 않는다.
+    @Query("SELECT * FROM news_items WHERE kind = :kind ORDER BY publishedAt DESC LIMIT :limit")
+    fun observe(kind: String, limit: Int): Flow<List<NewsItemEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(items: List<NewsItemEntity>)
+
+    /** 받아 온 것으로 갈아 끼운다. 지운 글이 계속 남아 있지 않게. */
+    @Query("DELETE FROM news_items WHERE kind = :kind")
+    suspend fun clear(kind: String)
+
+    @Transaction
+    suspend fun replace(kind: String, items: List<NewsItemEntity>) {
+        clear(kind)
+        upsert(items)
+    }
 }
 
 @Dao

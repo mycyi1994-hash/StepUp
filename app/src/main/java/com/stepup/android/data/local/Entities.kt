@@ -128,6 +128,16 @@ object RewardType {
     const val SPEND_BOOST = "SPEND_BOOST"
     const val EARN_EVENT = "EARN_EVENT"
     const val EARN_PARTY = "EARN_PARTY"
+
+    // ── 거래소 ─────────────────────────────────────────────────
+    //
+    // 이 값들은 서버 원장(0007_market.sql)이 적은 것을 그대로 옮겨 온다.
+    // 이름을 바꾸면 이미 옮겨 적힌 줄과 새 줄이 다른 종류가 된다.
+    const val ESCROW_LOCK = "ESCROW_LOCK"
+    const val ESCROW_UNLOCK = "ESCROW_UNLOCK"
+    const val TRADE_BUY = "TRADE_BUY"
+    const val TRADE_SELL = "TRADE_SELL"
+    const val TRADE_FEE = "TRADE_FEE"
 }
 
 /** 보유 스니커즈 NFT — 속성(Faction) × 등급(Rarity) × 변형(variant) */
@@ -144,6 +154,30 @@ data class SneakerEntity(
     val durability: Int,
     val equipped: Boolean,
     val acquiredAt: Long,
+    /**
+     * 거래소 장부에서의 번호. 0 이면 아직 거래소가 모르는 신발이다.
+     *
+     * 폰 안의 id 로는 남과 주고받을 수 없다 — 모든 폰에 1번 신발이 있다.
+     * 팔려고 내놓는 순간 서버가 전체에서 유일한 번호를 주고, 그 번호로
+     * 소유권이 오간다.
+     */
+    val serverId: Long = 0,
+)
+
+/**
+ * 하루 한 번 받아 둔 러닝 소식.
+ *
+ * 받아 두는 이유는 지하철이다. 서버에 못 닿는다고 탭이 비면, 어제 본 소식도
+ * 못 보게 된다. 받은 것을 그대로 두고 닿을 때 갈아 끼운다.
+ */
+@Entity(tableName = "news_items")
+data class NewsItemEntity(
+    @PrimaryKey val url: String,
+    val title: String,
+    val source: String,
+    val summary: String,
+    val kind: String,
+    val publishedAt: Long,
 )
 
 /** 구매한 부스트. 즉시형은 만들자마자 consumed=true */

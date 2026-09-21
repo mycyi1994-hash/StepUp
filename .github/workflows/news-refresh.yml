@@ -1,0 +1,89 @@
+# 러닝 이벤트 소식을 매일 아침 9시(KST)에 갱신한다.
+#
+# ── 왜 여기서 도는가 ────────────────────────────────────────────────
+#
+# 서버를 하나 띄워 크론을 걸면 매달 돈이 나간다. 앱이 직접 긁게 하면 폰이
+# 꺼져 있을 때 갱신되지 않고, 사용자 수만큼 남의 서버를 두드린다.
+#
+# GitHub Actions 는 이미 쓰고 있고, 하루 한 번 1분 남짓이면 무료 한도
+# (Free 플랜 월 2000분) 안이다. **새로 나가는 돈이 없다.**
+#
+# 모은 것은 Supabase 의 news_items 표에 넣는다. 그 표도 이미 쓰고 있는
+# 무료 한도 안이고, 앱은 그 표만 읽는다.
+#
+# ── 시각 ────────────────────────────────────────────────────────────
+#
+# 크론은 UTC 로 돈다. 00:00 UTC = 09:00 KST.
+#
+# GitHub 의 크론은 정확히 그 분에 돌지 않는다 — 요청이 몰리면 몇 분에서
+# 수십 분 늦는다. "9시에 새 소식"이 초 단위로 지켜져야 하는 일이 아니므로
+# 그대로 둔다. 급하면 Actions 탭에서 손으로 돌릴 수 있다.
+#
+# ── 준비물 (한 번만) ────────────────────────────────────────────────
+#
+# 저장소 Settings → Secrets and variables → Actions 에 두 개를 넣는다.
+#
+#     SUPABASE_URL          https://xxxx.supabase.co
+#     SUPABASE_SERVICE_KEY  service_role 키 (sb_secret_... 로 시작)
+#
+# service_role 키는 RLS 를 지나가므로 표 전체를 고칠 수 있다. 코드에 적거나
+# 앱에 넣지 않는다. 여기(Secrets)와 Supabase 대시보드에만 둔다.
+#
+# ── 예약 실행은 기본 브랜치에서만 돈다 ──────────────────────────────
+#
+# GitHub 의 규칙이다. 이 파일이 작업 브랜치에만 있으면 예약은 돌지 않고,
+# main 에 들어간 뒤부터 매일 돈다. 그 전에는 Actions 탭에서 손으로 돌린다.
+
+name: Refresh running news
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  # 수집기를 고쳤을 때 바로 확인할 수 있게
+  push:
+    paths:
+      - "scripts/news-fetch.py"
+      - ".github/workflows/news-refresh.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 파서부터 확인한다. 매일 도는 일이라 깨진 것을 사람이 알아채기까지
+      # 며칠이 걸린다 — 보내기 전에 여기서 멈추는 편이 낫다.
+      - name: 수집기 자체 검사
+        run: python3 scripts/news-fetch.py --self-test
+
+      # 열쇠가 없으면 모으기까지만 하고 끝낸다. 포크나 준비 전 저장소에서
+      # 빨간 X 가 나는 것을 막는다 — 실패가 아니라 아직 설정이 없는 것이다.
+      - name: 열쇠가 있는지
+        id: keys
+        run: |
+          if [ -n "${{ secrets.SUPABASE_SERVICE_KEY }}" ] && [ -n "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::SUPABASE_URL / SUPABASE_SERVICE_KEY 가 없어 모으기만 합니다."
+          fi
+
+      - name: 소식 모으기 (확인만)
+        if: steps.keys.outputs.ready != 'yes'
+        run: python3 scripts/news-fetch.py --dry-run
+
+      - name: 소식 모아서 표에 넣기
+        if: steps.keys.outputs.ready == 'yes'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python3 scripts/news-fetch.py

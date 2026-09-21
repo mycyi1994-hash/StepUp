@@ -19,8 +19,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CommentEntity::class,
         CourseEntity::class,
         NotificationEntity::class,
+        NewsItemEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,6 +37,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun commentDao(): CommentDao
     abstract fun courseDao(): CourseDao
     abstract fun notificationDao(): NotificationDao
+
+    abstract fun newsDao(): NewsDao
 
     companion object {
         /**
@@ -116,6 +119,34 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        val MIGRATIONS = arrayOf(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+        /**
+         * 스니커즈에 거래소 번호를, 그리고 소식을 담아 둘 표를 더한다.
+         *
+         * 기존 신발은 0 으로 남는다 — 아직 거래소가 모르는 신발이라는 뜻이고,
+         * 팔려고 내놓는 순간 번호가 붙는다. 갖고 있던 신발이 사라지지 않게
+         * 표를 새로 만들지 않고 열만 더한다.
+         */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sneakers ADD COLUMN serverId INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `news_items` (
+                        `url` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `source` TEXT NOT NULL,
+                        `summary` TEXT NOT NULL,
+                        `kind` TEXT NOT NULL,
+                        `publishedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`url`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        val MIGRATIONS = arrayOf(
+            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+        )
     }
 }

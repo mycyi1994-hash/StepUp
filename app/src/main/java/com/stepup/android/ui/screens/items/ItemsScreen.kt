@@ -85,6 +85,9 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.screens.market.MarketMessageBar
+import com.stepup.android.ui.screens.market.MarketViewModel
+import com.stepup.android.ui.screens.market.nftMarketSection
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
@@ -92,7 +95,9 @@ import com.stepup.android.ui.theme.Volt
 fun ItemsScreen(
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDex: () -> Unit = {},
+    onOpenMarketModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
+    marketViewModel: MarketViewModel = viewModel(factory = MarketViewModel.Factory),
 ) {
     val context = LocalContext.current
     val inventory by viewModel.inventory.collectAsStateWithLifecycle()
@@ -103,6 +108,10 @@ fun ItemsScreen(
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var copiesFor by rememberSaveable { mutableStateOf<String?>(null) }
+    // NFT 마켓 안의 자리 — 0 = 시세, 1 = 내 거래
+    var marketSection by rememberSaveable { mutableIntStateOf(0) }
+    val board by marketViewModel.board.collectAsStateWithLifecycle()
+    val marketMessage by marketViewModel.message.collectAsStateWithLifecycle()
     val equipped by viewModel.equipped.collectAsStateWithLifecycle()
     val balance by viewModel.balance.collectAsStateWithLifecycle()
     val boosts by viewModel.activeBoosts.collectAsStateWithLifecycle()
@@ -217,7 +226,21 @@ fun ItemsScreen(
             return@LazyColumn
         }
         if (tab == 1) {
-            nftMarketSection(mySneakerCount = inventory.size)
+            marketMessage?.let { note ->
+                item {
+                    Box(Modifier.quietClickable { marketViewModel.consumeMessage() }) {
+                        MarketMessageBar(note)
+                    }
+                }
+            }
+            nftMarketSection(
+                board = board,
+                section = marketSection,
+                onSection = { marketSection = it },
+                onOpenModel = { onOpenMarketModel(it.faction, it.rarity, it.variant) },
+                onCancelListing = marketViewModel::cancelListing,
+                onCancelBid = marketViewModel::cancelBid,
+            )
             return@LazyColumn
         }
 
