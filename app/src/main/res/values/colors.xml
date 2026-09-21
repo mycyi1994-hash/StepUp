@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Volt — Compose 테마(ui/theme/Color.kt)와 값을 맞춘다. -->
-    <color name="night">#060708</color>
-    <color name="volt">#C3FF3E</color>
-    <color name="ic_launcher_background">#060708</color>
+    <!-- Soft Balance — Compose 테마(ui/theme/Color.kt)와 값을 맞춘다. -->
+    <color name="night">#FFFFFF</color>
+    <color name="volt">#145BFF</color>
+    <!-- 런처 아이콘 바닥. 홈 화면에서 아이콘이 배경에 묻지 않게 짙은 네이비로 둔다. -->
+    <color name="ic_launcher_background">#101D40</color>
 </resources>

@@ -316,11 +316,11 @@ fun AchievementGrade.label(): String = stringResource(
 )
 
 fun AchievementGrade.tint(): Color = when (this) {
-    AchievementGrade.BRONZE -> Color(0xFFD08A5A)
-    AchievementGrade.SILVER -> Color(0xFFC8D2DA)
-    AchievementGrade.GOLD -> Color(0xFFFFC24F)
-    AchievementGrade.PLATINUM -> Color(0xFF8FE3D9)
-    AchievementGrade.DIAMOND -> Color(0xFFB47BFF)
+    AchievementGrade.BRONZE -> Color(0xFFB4703C)
+    AchievementGrade.SILVER -> Color(0xFF8C9BAD)
+    AchievementGrade.GOLD -> Color(0xFFD9A400)
+    AchievementGrade.PLATINUM -> Color(0xFF2FA898)
+    AchievementGrade.DIAMOND -> Color(0xFF8B4DE8)
 }
 
 @Composable

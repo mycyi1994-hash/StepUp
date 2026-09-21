@@ -1,14 +1,14 @@
 package com.stepup.android.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val StepUpDarkColors = darkColorScheme(
+private val StepUpLightColors = lightColorScheme(
     primary = Volt,
     onPrimary = Night,
     primaryContainer = CarbonHigh,
-    onPrimaryContainer = VoltSoft,
+    onPrimaryContainer = VoltDeep,
     secondary = VoltSoft,
     onSecondary = Night,
     secondaryContainer = CarbonHigh,
@@ -28,14 +28,14 @@ private val StepUpDarkColors = darkColorScheme(
     onError = Night,
     outline = Edge,
     outlineVariant = Edge,
-    scrim = Night,
+    scrim = Snow,
 )
 
-/** StepUp은 네온이 살아나는 딥 블랙 다크 테마만 사용한다. */
+/** StepUp은 화이트 캔버스에 블루 하나를 쓰는 라이트 테마만 사용한다. */
 @Composable
 fun StepUpTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = StepUpDarkColors,
+        colorScheme = StepUpLightColors,
         typography = StepUpTypography,
         shapes = StepUpShapes,
         content = content,

@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -110,19 +111,31 @@ fun NightCanvas(modifier: Modifier = Modifier) {
 // 컨테이너 · 구분선
 // ─────────────────────────────────────────────────────────────
 
-/** 기본 카드 — 카본 표면 + 헤어라인. accent = true면 볼트 외곽선 + 은은한 글로우. */
+/**
+ * 기본 카드 — 연한 블루 표면 + 헤어라인. accent = true면 파란 외곽선이 붙는다.
+ *
+ * 흰 바닥에서는 경계선만으로는 카드가 종이처럼 평평해 보인다. 아주 낮은
+ * 그림자를 깔아 한 겹 떠 있게 한다 — 색이 아니라 높이로 구분하는 쪽이
+ * 화면에 색을 하나 더 들이는 것보다 조용하다.
+ */
 @Composable
 fun GlowCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(18.dp),
     spacing: Dp = 13.dp,
     accent: Boolean = false,
-    shape: Shape = RoundedCornerShape(26.dp),
+    shape: Shape = RoundedCornerShape(22.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = 2.dp,
+                shape = shape,
+                ambientColor = Snow,
+                spotColor = Snow,
+            )
             .clip(shape)
             .background(CardFill, shape)
             .border(
@@ -156,7 +169,7 @@ fun VerticalHairline(height: Dp = 40.dp, modifier: Modifier = Modifier) {
             .height(height)
             .background(
                 Brush.verticalGradient(
-                    listOf(Color.Transparent, Color.White.copy(alpha = 0.12f), Color.Transparent),
+                    listOf(Color.Transparent, Snow.copy(alpha = 0.12f), Color.Transparent),
                 ),
             ),
     )
@@ -450,7 +463,7 @@ fun NeonRing(
             )
 
             drawArc(
-                color = Color.White.copy(alpha = 0.06f),
+                color = Snow.copy(alpha = 0.10f),
                 startAngle = 0f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -506,7 +519,7 @@ fun BarMeter(
             .fillMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(50))
-            .background(Color.White.copy(alpha = 0.08f)),
+            .background(Snow.copy(alpha = 0.09f)),
     ) {
         if (filled > 0.002f) {
             Box(
@@ -541,7 +554,7 @@ fun EnergyMeter(
                     .weight(1f)
                     .height(9.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(Color.White.copy(alpha = 0.07f)),
+                    .background(Snow.copy(alpha = 0.09f)),
             ) {
                 if (fill > 0.01f) {
                     Box(
@@ -938,7 +951,7 @@ fun RouteMap(modifier: Modifier = Modifier) {
         )
 
         // 깊이 방향 그리드 (지평선으로 수렴)
-        val gridColor = Color.White.copy(alpha = 0.05f)
+        val gridColor = Snow.copy(alpha = 0.07f)
         for (c in 0..8) {
             val u = c / 8f
             drawLine(gridColor, ground(u, 0f), ground(u, 1f), strokeWidth = 1f)
@@ -971,7 +984,7 @@ fun RouteMap(modifier: Modifier = Modifier) {
                 Path().apply {
                     moveTo(bl.x, bl.y); lineTo(br.x, br.y); lineTo(tr.x, tr.y); lineTo(tl.x, tl.y); close()
                 },
-                Color.White.copy(alpha = 0.045f),
+                Snow.copy(alpha = 0.06f),
             )
             // 지붕 (살짝 뒤로 기울여 입체감)
             val depth = rise * 0.30f
@@ -982,7 +995,7 @@ fun RouteMap(modifier: Modifier = Modifier) {
                     lineTo(tl.x + depth * 0.35f, tl.y - depth)
                     close()
                 },
-                Color.White.copy(alpha = 0.085f),
+                Snow.copy(alpha = 0.10f),
             )
             // 모서리 하이라이트
             drawLine(Volt.copy(alpha = 0.14f), tl, tr, strokeWidth = 1.4f)

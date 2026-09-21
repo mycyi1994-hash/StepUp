@@ -53,6 +53,7 @@ import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
@@ -453,10 +454,10 @@ private fun RankRow(entry: RankEntry, board: RankBoard) {
 }
 
 private fun medalColor(rank: Int): Color = when (rank) {
-    1 -> Color(0xFFFFC24F)
-    2 -> Color(0xFFC8D2DA)
-    3 -> Color(0xFFD08A5A)
-    else -> Color(0xFF6B7480)
+    1 -> Color(0xFFD9A400)
+    2 -> Color(0xFF8C9BAD)
+    3 -> Color(0xFFB4703C)
+    else -> Color(0xFF93A1BE)
 }
 
 @Composable
@@ -557,8 +558,8 @@ private fun FactionRow(row: FactionRank) {
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .background(Color(row.faction.accent).copy(alpha = 0.18f), CircleShape)
-                    .border(1.dp, Color(row.faction.accent), CircleShape),
+                    .background(row.faction.tint().copy(alpha = 0.18f), CircleShape)
+                    .border(1.dp, row.faction.tint(), CircleShape),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
@@ -595,7 +596,7 @@ private fun FactionRow(row: FactionRank) {
                         .fillMaxWidth(row.myShare.coerceAtLeast(0.012f))
                         .height(5.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Color(row.faction.accent)),
+                        .background(row.faction.tint()),
                 )
             }
             Text(

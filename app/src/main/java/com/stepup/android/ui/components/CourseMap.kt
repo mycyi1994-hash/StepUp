@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlin.math.abs
 
@@ -62,9 +63,10 @@ fun CourseTrackMap(
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
 
-        // 시작점 — 흰 심의 볼트 링
-        drawCircle(Volt.copy(alpha = 0.35f), radius = 7.dp.toPx(), center = first)
-        drawCircle(Color.White, radius = 3.dp.toPx(), center = first)
+        // 시작점 — 흰 심의 파란 링
+        drawCircle(Volt.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = first)
+        drawCircle(Volt, radius = 4.5f.dp.toPx(), center = first)
+        drawCircle(Color.White, radius = 2.dp.toPx(), center = first)
 
         // 도착 깃발
         val last = px(points.last())
@@ -75,7 +77,7 @@ fun CourseTrackMap(
             val at = pointAlong(points.map(::px), f.coerceIn(0f, 1f))
             drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
             drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
-            drawCircle(Color(0xFF060708), radius = 2.dp.toPx(), center = at)
+            drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
         }
     }
 }
@@ -90,8 +92,8 @@ internal fun DrawScope.drawStreets(seed: Int) {
         s = s * 1_103_515_245 + 12_345
         return abs(s % 1000) / 1000f
     }
-    val faint = Color.White.copy(alpha = 0.045f)
-    val fainter = Color.White.copy(alpha = 0.025f)
+    val faint = Snow.copy(alpha = 0.07f)
+    val fainter = Snow.copy(alpha = 0.04f)
     // 큰 도로 — 화면을 가로지르는 꺾인 선 몇 개
     repeat(4) {
         val y = rand() * size.height
@@ -127,10 +129,10 @@ internal fun DrawScope.drawStreets(seed: Int) {
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 8f)),
         )
     }
-    // 강 — 넓고 아주 어두운 띠 하나
+    // 강 — 넓고 연한 하늘색 띠 하나
     val riverY = size.height * (0.55f + rand() * 0.3f)
     drawLine(
-        color = Color(0xFF0D1A20).copy(alpha = 0.8f),
+        color = Color(0xFFBBD6F5).copy(alpha = 0.9f),
         start = Offset(0f, riverY),
         end = Offset(size.width, riverY - size.height * 0.12f),
         strokeWidth = 14.dp.toPx(),
@@ -166,7 +168,7 @@ private fun DrawScope.drawFlag(at: Offset) {
     val pole = 2.dp.toPx()
     drawCircle(Volt.copy(alpha = 0.30f), radius = 8.dp.toPx(), center = at)
     drawLine(
-        color = Color.White,
+        color = Snow,
         start = at,
         end = Offset(at.x, at.y - h),
         strokeWidth = pole,

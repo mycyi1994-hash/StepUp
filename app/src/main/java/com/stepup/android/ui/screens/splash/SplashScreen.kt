@@ -191,7 +191,7 @@ fun SplashScreen(onReady: () -> Unit) {
                     val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
                     val topLeft = Offset(inset, inset)
                     drawArc(
-                        color = Color.White.copy(alpha = 0.07f),
+                        color = Snow.copy(alpha = 0.08f),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,

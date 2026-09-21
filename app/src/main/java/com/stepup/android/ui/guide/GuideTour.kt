@@ -274,7 +274,7 @@ fun GuideOverlay(
                     }
                 },
         ) {
-            drawRect(Color.Black.copy(alpha = 0.84f))
+            drawRect(Snow.copy(alpha = 0.80f))
             if (target != null) {
                 val pad = 7.dp.toPx()
                 drawRoundRect(

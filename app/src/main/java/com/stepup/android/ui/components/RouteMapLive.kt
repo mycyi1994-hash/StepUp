@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.stepup.android.domain.GeoPoint
+import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlin.math.floor
 import kotlinx.coroutines.async
@@ -185,8 +186,8 @@ fun LiveRouteMap(
             drawStreets(seed)
             val drawn = if (plan != null && revision >= 0) drawTiles(plan) else 0
             if (drawn > 0) {
-                // 지도를 한 겹 눌러 카드 배경과 붙인다
-                drawRect(Color(0xFF060708).copy(alpha = 0.34f))
+                // 지도를 한 겹 띄워 카드 배경과 붙인다
+                drawRect(Color.White.copy(alpha = 0.30f))
             }
 
             if (plan == null) return@Canvas
@@ -216,15 +217,16 @@ fun LiveRouteMap(
                 style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
 
-            drawCircle(Volt.copy(alpha = 0.35f), radius = 7.dp.toPx(), center = screen.first())
-            drawCircle(Color.White, radius = 3.dp.toPx(), center = screen.first())
+            drawCircle(Volt.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
+            drawCircle(Volt, radius = 4.5f.dp.toPx(), center = screen.first())
+            drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
             drawRouteFlag(screen.last())
 
             progress?.let { f ->
                 val at = pointAlongRoute(screen, f.coerceIn(0f, 1f))
                 drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
                 drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
-                drawCircle(Color(0xFF060708), radius = 2.dp.toPx(), center = at)
+                drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
             }
         }
 
@@ -287,7 +289,7 @@ private fun MapButton(
         modifier = modifier
             .size(32.dp)
             .clip(CircleShape)
-            .background(Color(0xCC0B0D0F))
+            .background(Color(0xF2FFFFFF))
             .border(1.dp, Volt.copy(alpha = 0.4f), CircleShape)
             .quietClickable(onClick),
         contentAlignment = Alignment.Center,
@@ -388,17 +390,19 @@ internal data class TilePlan(
 }
 
 /**
- * 밝은 OSM 타일을 어두운 지도로 바꾸는 색 행렬.
+ * OSM 타일을 앱 톤에 맞추는 색 행렬.
  *
- * 반전으로 흰 배경을 검게 만들고 채도를 낮춰 도로가 회색 계열로만 남게 한다.
- * 그래야 그 위의 볼트 네온이 화면에서 유일한 색이 된다.
+ * 예전에는 밝은 타일을 **반전**시켜 검은 지도로 만들었다. 라이트 테마에서는
+ * 그럴 이유가 없다 — 타일은 원래 밝은 지도이므로 그대로 두고, 채도만 40%로
+ * 눌러 초록 공원과 노란 도로가 경로의 파랑과 다투지 않게 한다. 전체를
+ * 조금 띄워(+18) 카드 바닥과 이어지게 한다.
  */
-private val darkMapFilter: ColorFilter = ColorFilter.colorMatrix(
+private val softMapFilter: ColorFilter = ColorFilter.colorMatrix(
     ColorMatrix(
         floatArrayOf(
-            -0.62f, -0.20f, -0.10f, 0f, 232f,
-            -0.20f, -0.62f, -0.10f, 0f, 232f,
-            -0.16f, -0.20f, -0.56f, 0f, 236f,
+            0.5276f, 0.4291f, 0.0433f, 0f, 18f,
+            0.1276f, 0.8291f, 0.0433f, 0f, 18f,
+            0.1276f, 0.4291f, 0.4433f, 0f, 18f,
             0f, 0f, 0f, 1f, 0f,
         )
     )
@@ -424,7 +428,7 @@ private fun DrawScope.drawTiles(plan: TilePlan): Int {
                 image = image,
                 dstOffset = IntOffset(left, top),
                 dstSize = IntSize(side, side),
-                colorFilter = darkMapFilter,
+                colorFilter = softMapFilter,
             )
             drawn++
         }
@@ -459,7 +463,7 @@ private fun DrawScope.drawRouteFlag(at: Offset) {
     val h = 13.dp.toPx()
     drawCircle(Volt.copy(alpha = 0.30f), radius = 8.dp.toPx(), center = at)
     drawLine(
-        color = Color.White,
+        color = Snow,
         start = at,
         end = Offset(at.x, at.y - h),
         strokeWidth = 2.dp.toPx(),

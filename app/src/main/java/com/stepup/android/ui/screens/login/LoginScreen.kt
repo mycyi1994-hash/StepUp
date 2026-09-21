@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import com.stepup.android.data.remote.TokenResult
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -145,6 +147,9 @@ fun LoginScreen(onDone: () -> Unit) {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(50))
                     .background(Color.White)
+                    // 바닥이 흰색이라 테두리가 없으면 버튼이 사라진다.
+                    // 구글 브랜드 가이드가 허용하는 회색 선이다.
+                    .border(1.dp, Color(0xFFDADCE0), RoundedCornerShape(50))
                     .quietClickable { signIn() }
                     .padding(vertical = 15.dp),
                 horizontalArrangement = Arrangement.Center,
@@ -179,7 +184,7 @@ fun LoginScreen(onDone: () -> Unit) {
                     text = stringResource(message),
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 12.sp,
-                    color = Color(0xFFFF6B6B),
+                    color = Alert,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(10.dp))

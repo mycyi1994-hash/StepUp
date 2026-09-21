@@ -955,7 +955,7 @@ private fun GoalDialog(
                     colors = SliderDefaults.colors(
                         thumbColor = Volt,
                         activeTrackColor = Volt,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.08f),
+                        inactiveTrackColor = Snow.copy(alpha = 0.10f),
                         activeTickColor = Color.Transparent,
                         inactiveTickColor = Color.Transparent,
                     ),

@@ -607,7 +607,7 @@ fun RunScreen(
                         Icon(
                             Icons.Filled.Warning,
                             contentDescription = null,
-                            tint = if (voided) Color(0xFFFF6B4A) else Color(0xFFFFC24F),
+                            tint = if (voided) Alert else Color(0xFFD99A00),
                             modifier = Modifier.size(17.dp),
                         )
                         Text(
@@ -1004,7 +1004,7 @@ private fun PaceChart(paces: List<Long>, modifier: Modifier = Modifier) {
         val valid = paces.filter { it > 0 }
         if (valid.size < 2) {
             drawLine(
-                color = Color.White.copy(alpha = 0.10f),
+                color = Snow.copy(alpha = 0.12f),
                 start = Offset(0f, size.height * 0.55f),
                 end = Offset(size.width, size.height * 0.55f),
                 strokeWidth = 2f,

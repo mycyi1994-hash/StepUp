@@ -133,8 +133,8 @@ fun PostCategory.label(): String = stringResource(
 
 fun PostCategory.tint(): Color = when (this) {
     PostCategory.FLASH -> Volt
-    PostCategory.FREE -> Color(0xFF7FC7FF)
-    PostCategory.TIP -> Color(0xFFFFC24F)
+    PostCategory.FREE -> Color(0xFF1E8FE8)
+    PostCategory.TIP -> Color(0xFFD99A00)
 }
 
 @Composable

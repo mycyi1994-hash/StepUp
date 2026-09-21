@@ -37,6 +37,7 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.RunnerTitle
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
@@ -47,10 +48,10 @@ import com.stepup.android.ui.theme.Volt
 
 /** 희귀도 표시 색 — 속성색과 무관하게 등급을 한눈에 읽히게 한다. */
 fun Rarity.tint(): Color = when (this) {
-    Rarity.COMMON -> Color(0xFF9CA3AB)
-    Rarity.RARE -> Color(0xFF4FB3FF)
-    Rarity.EPIC -> Color(0xFFB47BFF)
-    Rarity.LEGENDARY -> Color(0xFFFFC24F)
+    Rarity.COMMON -> Color(0xFF7C8AA6)
+    Rarity.RARE -> Color(0xFF1E8FE8)
+    Rarity.EPIC -> Color(0xFF8B4DE8)
+    Rarity.LEGENDARY -> Color(0xFFD99A00)
 }
 
 @Composable
@@ -63,8 +64,19 @@ fun Rarity.label(): String = stringResource(
     }
 )
 
-/** 속성 표시색 — 도메인이 들고 있는 네온색을 그대로 쓴다. */
-fun Faction.tint(): Color = Color(accent)
+/**
+ * 속성 표시색.
+ *
+ * 도메인의 네온색([Faction.accent])은 신발 그림이 쓴다 — 검은 신발 위에서
+ * 빛나야 하므로 형광이다. 그 색을 흰 바닥의 글자에 그대로 쓰면 노랑·연두가
+ * 거의 안 보인다. 화면용은 같은 계열에서 한 단계 눌러 따로 둔다.
+ */
+fun Faction.tint(): Color = when (this) {
+    Faction.FIRE -> Color(0xFFE8352F)
+    Faction.WATER -> Color(0xFF1E8FE8)
+    Faction.LIGHTNING -> Color(0xFFD99A00)
+    Faction.WIND -> Color(0xFF4FA318)
+}
 
 @Composable
 fun Faction.label(): String = stringResource(factionNameRes(this))
@@ -181,7 +193,7 @@ fun SneakerCollectionCard(
             .clip(shape)
             .background(
                 Brush.verticalGradient(
-                    listOf(rc.copy(alpha = 0.10f), Color(0xFF0F1113)),
+                    listOf(rc.copy(alpha = 0.14f), Carbon),
                 ),
                 shape,
             )
@@ -297,7 +309,7 @@ fun SneakerLockedSlot(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(shape)
-            .background(Color(0xFF0C0E10), shape)
+            .background(Carbon, shape)
             .border(1.dp, Edge, shape)
             .height(210.dp),
         contentAlignment = Alignment.Center,
@@ -334,7 +346,7 @@ fun StatBar(
                 .fillMaxWidth()
                 .height(6.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.07f)),
+                .background(Snow.copy(alpha = 0.08f)),
         ) {
             val fraction = (value / max).coerceIn(0.0, 1.0).toFloat()
             if (fraction > 0.002f) {
