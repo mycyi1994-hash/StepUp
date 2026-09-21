@@ -32,8 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -46,6 +44,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.stepup.android.domain.GeoPoint
+import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlin.math.floor
@@ -186,8 +186,10 @@ fun LiveRouteMap(
             drawStreets(seed)
             val drawn = if (plan != null && revision >= 0) drawTiles(plan) else 0
             if (drawn > 0) {
-                // 지도를 한 겹 띄워 카드 배경과 붙인다
-                drawRect(Color.White.copy(alpha = 0.30f))
+                // 지도를 한 겹 눌러(또는 띄워) 카드 배경과 붙인다.
+                // Night 는 테마의 바닥색이라 밝은 테마에서는 흰 막, 어두운
+                // 테마에서는 검은 막이 된다.
+                drawRect(Night.copy(alpha = 0.30f))
             }
 
             if (plan == null) return@Canvas
@@ -289,7 +291,7 @@ private fun MapButton(
         modifier = modifier
             .size(32.dp)
             .clip(CircleShape)
-            .background(Color(0xF2FFFFFF))
+            .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.4f), CircleShape)
             .quietClickable(onClick),
         contentAlignment = Alignment.Center,
@@ -390,25 +392,6 @@ internal data class TilePlan(
 }
 
 /**
- * OSM 타일을 앱 톤에 맞추는 색 행렬.
- *
- * 예전에는 밝은 타일을 **반전**시켜 검은 지도로 만들었다. 라이트 테마에서는
- * 그럴 이유가 없다 — 타일은 원래 밝은 지도이므로 그대로 두고, 채도만 40%로
- * 눌러 초록 공원과 노란 도로가 경로의 파랑과 다투지 않게 한다. 전체를
- * 조금 띄워(+18) 카드 바닥과 이어지게 한다.
- */
-private val softMapFilter: ColorFilter = ColorFilter.colorMatrix(
-    ColorMatrix(
-        floatArrayOf(
-            0.5276f, 0.4291f, 0.0433f, 0f, 18f,
-            0.1276f, 0.8291f, 0.0433f, 0f, 18f,
-            0.1276f, 0.4291f, 0.4433f, 0f, 18f,
-            0f, 0f, 0f, 1f, 0f,
-        )
-    )
-)
-
-/**
  * 캐시에 있는 타일을 화면에 깐다. 그린 타일 수를 돌려준다.
  *
  * 비트맵을 컴포지션 상태로 따로 들지 않고 [MapTiles] 캐시에서 바로 읽는다.
@@ -428,7 +411,7 @@ private fun DrawScope.drawTiles(plan: TilePlan): Int {
                 image = image,
                 dstOffset = IntOffset(left, top),
                 dstSize = IntSize(side, side),
-                colorFilter = softMapFilter,
+                colorFilter = StepUpColors.mapFilter,
             )
             drawn++
         }

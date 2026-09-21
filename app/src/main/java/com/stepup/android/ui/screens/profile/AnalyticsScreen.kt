@@ -71,6 +71,7 @@ import com.stepup.android.ui.components.StatCell
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -364,7 +365,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                                 .background(Volt, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(label, color = Night, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            Text(label, color = OnVolt, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         Text(label, color = Slate, fontSize = 10.sp)

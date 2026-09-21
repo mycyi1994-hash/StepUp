@@ -52,7 +52,7 @@ import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -96,7 +96,7 @@ fun SegmentedTabs(
             ) {
                 Text(
                     text = label,
-                    color = if (active) Night else Silver,
+                    color = if (active) OnVolt else Silver,
                     fontSize = 13.sp,
                     fontWeight = if (active) FontWeight.Black else FontWeight.SemiBold,
                     letterSpacing = 0.2.sp,
@@ -439,7 +439,7 @@ private fun JoinPill(joined: Boolean, enabled: Boolean, onClick: () -> Unit) {
         Icon(
             Icons.Filled.Bolt,
             contentDescription = null,
-            tint = if (joined) Night else if (enabled) Volt else Slate,
+            tint = if (joined) OnVolt else if (enabled) Volt else Slate,
             modifier = Modifier.size(13.dp),
         )
         Text(
@@ -450,7 +450,7 @@ private fun JoinPill(joined: Boolean, enabled: Boolean, onClick: () -> Unit) {
                     else -> R.string.post_join
                 }
             ),
-            color = if (joined) Night else if (enabled) Volt else Slate,
+            color = if (joined) OnVolt else if (enabled) Volt else Slate,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
         )

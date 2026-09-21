@@ -55,7 +55,7 @@ import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -432,7 +432,7 @@ private fun RankRow(entry: RankEntry, board: RankBoard) {
         ) {
             Text(
                 text = entry.monogram,
-                color = if (entry.isMe) Night else Silver,
+                color = if (entry.isMe) OnVolt else Silver,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
             )
@@ -507,7 +507,7 @@ private fun CrewRow(row: CrewRank) {
         ) {
             Text(
                 text = row.monogram,
-                color = if (row.joined) Night else Silver,
+                color = if (row.joined) OnVolt else Silver,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
             )

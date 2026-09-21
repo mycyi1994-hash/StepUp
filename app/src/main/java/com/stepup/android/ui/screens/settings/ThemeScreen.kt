@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.settings
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,25 +17,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.core.AppLocale
+import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.Eyebrow
@@ -49,33 +46,34 @@ import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.ThemeMode
 import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/** 고를 수 있는 언어 — 이름은 그 언어 자체로 적어 어느 언어에서도 알아볼 수 있게 한다 */
-private data class LanguageOption(val tag: String, val nativeName: String, val labelRes: Int)
+private data class ThemeOption(
+    val mode: ThemeMode,
+    val icon: ImageVector,
+    val labelRes: Int,
+    val noteRes: Int,
+)
 
 private val OPTIONS = listOf(
-    LanguageOption(AppLocale.SYSTEM, "", R.string.language_system),
-    LanguageOption("en", "English", R.string.language_en),
-    LanguageOption("ko", "한국어", R.string.language_ko),
-    LanguageOption("zh", "中文", R.string.language_zh),
-    LanguageOption("ja", "日本語", R.string.language_ja),
+    ThemeOption(ThemeMode.SYSTEM, Icons.Filled.PhoneAndroid, R.string.theme_system, R.string.theme_system_note),
+    ThemeOption(ThemeMode.LIGHT, Icons.Filled.LightMode, R.string.theme_light, R.string.theme_light_note),
+    ThemeOption(ThemeMode.DARK, Icons.Filled.DarkMode, R.string.theme_dark, R.string.theme_dark_note),
 )
 
 /**
- * 언어 설정.
+ * 화면 테마 설정.
  *
- * 고르는 즉시 저장하고 화면을 새 언어로 다시 그린다.
- * Android 13 이상에서는 OS의 앱별 언어 설정에도 그대로 반영된다.
+ * 고르는 즉시 바뀐다. 액티비티를 다시 만들지 않으므로 보던 자리가 그대로
+ * 있고 색만 갈린다 — 언어와 달리 리소스를 다시 읽을 일이 없기 때문이다.
  */
 @Composable
-fun LanguageScreen(onBack: () -> Unit = {}) {
-    val context = LocalContext.current
-    val activity = remember(context) { context as? Activity }
-    var selected by remember { mutableStateOf(AppLocale.tag) }
+fun ThemeScreen(onBack: () -> Unit = {}) {
+    val selected = AppTheme.mode
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -98,7 +96,7 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
                 Column {
                     Eyebrow(text = stringResource(R.string.profile_account))
                     Text(
-                        text = stringResource(R.string.settings_language),
+                        text = stringResource(R.string.settings_theme),
                         fontSize = 21.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.5).sp,
@@ -114,9 +112,9 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    IconSquare(icon = Icons.Filled.Language, size = 38.dp, tint = Volt)
+                    IconSquare(icon = Icons.Filled.DarkMode, size = 38.dp, tint = Volt)
                     Text(
-                        text = stringResource(R.string.language_note),
+                        text = stringResource(R.string.theme_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = Silver,
                         lineHeight = 18.sp,
@@ -127,17 +125,17 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
 
         items(OPTIONS.size) { index ->
             val option = OPTIONS[index]
-            LanguageRow(
+            ThemeRow(
                 option = option,
-                checked = option.tag == selected,
+                checked = option.mode == selected,
                 onClick = {
-                    if (option.tag != selected) {
-                        selected = option.tag
-                        // 화면이 곧 재생성되므로 저장은 화면 수명과 무관한 스코프에서 한다
+                    if (option.mode != selected) {
+                        AppTheme.change(option.mode)
+                        // 저장은 화면 수명과 무관한 스코프에서 — 고르자마자
+                        // 뒤로 나가도 선택이 남아야 한다
                         CoroutineScope(Dispatchers.IO).launch {
-                            ServiceLocator.userPrefs.setLanguage(option.tag)
+                            ServiceLocator.userPrefs.setThemeMode(option.mode.name)
                         }
-                        if (AppLocale.change(context, option.tag)) activity?.recreate()
                     }
                 },
             )
@@ -146,12 +144,7 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
 }
 
 @Composable
-private fun LanguageRow(
-    option: LanguageOption,
-    checked: Boolean,
-    onClick: () -> Unit,
-) {
-    val label = stringResource(option.labelRes)
+private fun ThemeRow(option: ThemeOption, checked: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -167,18 +160,22 @@ private fun LanguageRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Icon(
+            imageVector = option.icon,
+            contentDescription = null,
+            tint = if (checked) Volt else Slate,
+            modifier = Modifier.size(20.dp),
+        )
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = label,
+                text = stringResource(option.labelRes),
                 style = MaterialTheme.typography.titleSmall,
                 color = if (checked) Volt else Snow,
             )
-            if (option.nativeName.isNotEmpty() && option.nativeName != label) {
-                Text(text = option.nativeName, fontSize = 11.sp, color = Slate)
-            }
+            Text(text = stringResource(option.noteRes), fontSize = 11.sp, color = Slate)
         }
         if (checked) {
             Box(

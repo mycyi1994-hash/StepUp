@@ -39,7 +39,7 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -224,12 +224,12 @@ fun CrewBoardScreen(
                 androidx.compose.material3.Icon(
                     Icons.Filled.Add,
                     contentDescription = null,
-                    tint = Night,
+                    tint = OnVolt,
                     modifier = Modifier.size(17.dp),
                 )
                 Text(
                     text = stringResource(R.string.post_write),
-                    color = Night,
+                    color = OnVolt,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
                 )

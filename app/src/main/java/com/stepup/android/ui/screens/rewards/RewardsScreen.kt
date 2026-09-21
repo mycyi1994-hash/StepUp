@@ -65,7 +65,7 @@ import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.sheen
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -193,7 +193,7 @@ private fun BalanceHero(balance: Double) {
             val cy = size.height * 0.35f
             repeat(3) { i ->
                 drawCircle(
-                    color = Night.copy(alpha = 0.10f),
+                    color = OnVolt.copy(alpha = 0.10f),
                     radius = size.minDimension * (0.35f + i * 0.22f),
                     center = Offset(cx, cy),
                     style = Stroke(width = 2f),
@@ -214,12 +214,12 @@ private fun BalanceHero(balance: Double) {
                         text = stringResource(R.string.wallet_balance),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Night.copy(alpha = 0.65f),
+                        color = OnVolt.copy(alpha = 0.65f),
                     )
                     Text(
                         text = stringResource(R.string.wallet_tagline),
                         fontSize = 10.sp,
-                        color = Night.copy(alpha = 0.5f),
+                        color = OnVolt.copy(alpha = 0.5f),
                     )
                 }
                 HexEmblem(size = 30.dp, glow = false)
@@ -230,14 +230,14 @@ private fun BalanceHero(balance: Double) {
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-1.5).sp,
-                    color = Night,
+                    color = OnVolt,
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "SUP",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Night.copy(alpha = 0.7f),
+                    color = OnVolt.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
@@ -245,7 +245,7 @@ private fun BalanceHero(balance: Double) {
                 text = "≈ $%,.2f".format(balance * 0.01) + "  ·  +0.51%",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Night.copy(alpha = 0.6f),
+                color = OnVolt.copy(alpha = 0.6f),
             )
         }
     }

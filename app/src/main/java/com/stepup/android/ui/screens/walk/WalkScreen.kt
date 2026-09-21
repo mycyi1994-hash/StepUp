@@ -108,6 +108,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -1604,7 +1605,7 @@ private fun SaveCourseDialog(
                         checked = share,
                         onCheckedChange = { share = it },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Night,
+                            checkedThumbColor = OnVolt,
                             checkedTrackColor = Volt,
                             uncheckedThumbColor = Silver,
                             uncheckedTrackColor = CarbonHigh,

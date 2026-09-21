@@ -838,6 +838,14 @@ StepUp과 함께 달려보세요.</string>
 
     <!-- Language -->
     <string name="settings_language">언어</string>
+    <string name="settings_theme">화면 테마</string>
+    <string name="theme_note">밝게 쓰든 어둡게 쓰든 파란색은 그대로입니다. 고른 값은 앱을 껐다 켜도 남습니다.</string>
+    <string name="theme_system">시스템 기본</string>
+    <string name="theme_system_note">기기 설정을 따라 바뀝니다</string>
+    <string name="theme_light">밝게</string>
+    <string name="theme_light_note">흰 바탕에 네이비 글자</string>
+    <string name="theme_dark">어둡게</string>
+    <string name="theme_dark_note">짙은 네이비 바탕에 흰 글자</string>
     <string name="language_system">시스템 기본</string>
     <string name="language_en">영어</string>
     <string name="language_ko">한국어</string>

@@ -58,7 +58,7 @@ import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -352,7 +352,7 @@ fun CommentSheet(
                         Icon(
                             Icons.AutoMirrored.Filled.Send,
                             contentDescription = stringResource(R.string.comments_send),
-                            tint = if (canSend) Night else Slate,
+                            tint = if (canSend) OnVolt else Slate,
                             modifier = Modifier.size(17.dp),
                         )
                     }

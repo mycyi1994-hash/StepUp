@@ -69,10 +69,12 @@ import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.HairlineFade
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.NightBackdrop
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltInk
 import com.stepup.android.ui.theme.VoltPlate
@@ -227,8 +229,11 @@ fun GradientText(
  */
 @Composable
 fun Wordmark(fontSize: TextUnit = 20.sp, modifier: Modifier = Modifier) {
+    // "STEP"은 바닥과 반대여야 읽힌다 — 밝은 바탕에서는 네이비, 어두운
+    // 바탕에서는 흰색. "UP"은 두 벌 모두 같은 블루다.
+    val asset = if (StepUpColors.dark) R.drawable.logo_wordmark_on_dark else R.drawable.logo_wordmark
     Image(
-        painter = painterResource(R.drawable.logo_wordmark),
+        painter = painterResource(asset),
         contentDescription = "STEPUP",
         modifier = modifier.height(fontSize.value.dp * 0.92f),
         contentScale = ContentScale.Fit,
@@ -599,7 +604,7 @@ fun StartRunButton(
             Canvas(Modifier.fillMaxSize()) {
                 val cx = size.width / 2f
                 val cy = size.height / 2f
-                drawPath(hexPath(cx, cy, size.minDimension / 2f * 0.95f), color = Night)
+                drawPath(hexPath(cx, cy, size.minDimension / 2f * 0.95f), color = OnVolt)
             }
             Icon(icon, contentDescription = null, tint = Volt, modifier = Modifier.size(22.dp))
         }
@@ -610,14 +615,14 @@ fun StartRunButton(
         ) {
             Text(
                 text = title,
-                color = Night,
+                color = OnVolt,
                 fontSize = 21.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 3.sp,
             )
             Text(
                 text = subtitle,
-                color = Night.copy(alpha = 0.65f),
+                color = OnVolt.copy(alpha = 0.65f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 2.sp,
@@ -626,7 +631,7 @@ fun StartRunButton(
         Box(
             modifier = Modifier
                 .size(46.dp)
-                .background(Night, CircleShape),
+                .background(OnVolt, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -662,7 +667,7 @@ fun VoltButton(
     ) {
         Text(
             text = text,
-            color = if (enabled) Night else Slate,
+            color = if (enabled) OnVolt else Slate,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.2.sp,
@@ -745,7 +750,7 @@ fun PillChip(
                 // 폰트 패딩을 빼야 숫자가 원의 정중앙에 온다
                 Text(
                     text = "$badge",
-                    color = Night,
+                    color = OnVolt,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(
                         fontSize = 9.sp,

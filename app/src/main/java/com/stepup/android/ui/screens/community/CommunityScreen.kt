@@ -68,6 +68,7 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -494,12 +495,12 @@ private fun WriteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Icon(
             Icons.Filled.Add,
             contentDescription = null,
-            tint = Night,
+            tint = OnVolt,
             modifier = Modifier.size(17.dp),
         )
         Text(
             text = stringResource(R.string.post_write),
-            color = Night,
+            color = OnVolt,
             fontSize = 13.sp,
             fontWeight = FontWeight.Black,
         )

@@ -51,6 +51,8 @@ class UserPrefs(private val context: Context) {
         val LOGIN_METHOD = stringPreferencesKey("login_method")
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
         val LANGUAGE = stringPreferencesKey("language")
+        /** 화면 테마 — ThemeMode 의 이름 문자열 */
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val SELECTED_COURSE = longPreferencesKey("selected_course")
         /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
         val COURSE_RECORDING = booleanPreferencesKey("course_recording")
@@ -171,6 +173,17 @@ class UserPrefs(private val context: Context) {
     }
 
     suspend fun languageNow(): String = context.dataStore.data.first()[Keys.LANGUAGE] ?: ""
+
+    // ── 화면 테마 ────────────────────────────────────────────
+
+    /** 고른 화면 테마의 이름. 빈 문자열이면 아직 안 골랐다(기기 설정을 따른다). */
+    val themeMode: Flow<String> = context.dataStore.data.map { it[Keys.THEME_MODE] ?: "" }
+
+    suspend fun setThemeMode(name: String) {
+        context.dataStore.edit { it[Keys.THEME_MODE] = name }
+    }
+
+    suspend fun themeModeNow(): String = context.dataStore.data.first()[Keys.THEME_MODE] ?: ""
 
     /** 선택한 러닝 코스 id. -1이면 선택 없음 */
     val selectedCourseId: Flow<Long> = context.dataStore.data.map { it[Keys.SELECTED_COURSE] ?: -1L }

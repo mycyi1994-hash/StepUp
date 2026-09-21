@@ -40,7 +40,7 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -190,7 +190,7 @@ private fun ToggleRow(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = Night,
+                    checkedThumbColor = OnVolt,
                     checkedTrackColor = Volt,
                     uncheckedThumbColor = Slate,
                     uncheckedTrackColor = CarbonHigh,

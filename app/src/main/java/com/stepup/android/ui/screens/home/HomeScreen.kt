@@ -72,7 +72,7 @@ import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -659,7 +659,7 @@ private fun DistanceCard(
                     ) {
                         Text(
                             text = label,
-                            color = if (isToday) Night else Slate,
+                            color = if (isToday) OnVolt else Slate,
                             fontSize = 8.sp,
                             fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 1,

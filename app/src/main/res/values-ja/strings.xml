@@ -839,6 +839,14 @@ StepUp と走り出そう。</string>
 
     <!-- Language -->
     <string name="settings_language">言語</string>
+    <string name="settings_theme">画面テーマ</string>
+    <string name="theme_note">明るくても暗くても、ブルーはそのままです。選んだ値はアプリを再起動しても残ります。</string>
+    <string name="theme_system">システム設定に従う</string>
+    <string name="theme_system_note">端末の設定に合わせて切り替わります</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_light_note">白い背景にネイビーの文字</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="theme_dark_note">濃紺の背景に白い文字</string>
     <string name="language_system">システムに合わせる</string>
     <string name="language_en">英語</string>
     <string name="language_ko">韓国語</string>

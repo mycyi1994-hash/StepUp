@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Language
@@ -108,7 +109,7 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -128,6 +129,7 @@ fun ProfileScreen(
     onOpenSupport: () -> Unit = {},
     onOpenConnected: () -> Unit = {},
     onOpenLanguage: () -> Unit = {},
+    onOpenTheme: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
@@ -179,6 +181,7 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
         SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
+        SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
         SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
         SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
         SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
@@ -663,7 +666,7 @@ private fun RowScope.StreakCard(state: ProfileViewModel.UiState) {
                             Icon(
                                 Icons.Filled.Check,
                                 contentDescription = null,
-                                tint = Night,
+                                tint = OnVolt,
                                 modifier = Modifier.size(13.dp),
                             )
                         }

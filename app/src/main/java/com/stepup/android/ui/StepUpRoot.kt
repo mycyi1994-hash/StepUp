@@ -88,6 +88,7 @@ import com.stepup.android.ui.screens.profile.ProfileScreen
 import com.stepup.android.ui.screens.rewards.WalletScreen
 import com.stepup.android.ui.screens.settings.ConnectedAccountsScreen
 import com.stepup.android.ui.screens.settings.LanguageScreen
+import com.stepup.android.ui.screens.settings.ThemeScreen
 import com.stepup.android.ui.screens.settings.NotificationSettingsScreen
 import com.stepup.android.ui.screens.settings.PrivacyScreen
 import com.stepup.android.ui.screens.settings.SupportScreen
@@ -121,6 +122,7 @@ object Routes {
     const val SETTINGS_SUPPORT = "settings/support"
     const val SETTINGS_CONNECTED = "settings/connected"
     const val SETTINGS_LANGUAGE = "settings/language"
+    const val SETTINGS_THEME = "settings/theme"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
     const val RANKING = "ranking"
@@ -275,6 +277,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+                    onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
                     onOpenItems = { navController.switchTab(Screen.Items) },
                 )
             }
@@ -319,6 +322,9 @@ private fun MainScaffold(startTour: Boolean = false) {
             }
             composable(Routes.SETTINGS_CONNECTED) {
                 ConnectedAccountsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_THEME) {
+                ThemeScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_LANGUAGE) {
                 LanguageScreen(onBack = { navController.popBackStack() })

@@ -73,6 +73,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -483,7 +484,7 @@ private fun SelectDot(selected: Boolean, onClick: () -> Unit) {
             Icon(
                 Icons.Filled.Check,
                 contentDescription = stringResource(R.string.course_selected),
-                tint = Night,
+                tint = OnVolt,
                 modifier = Modifier.size(16.dp),
             )
         } else {
@@ -572,7 +573,7 @@ private fun CourseMaker(
                     checked = share,
                     onCheckedChange = { share = it },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Night,
+                        checkedThumbColor = OnVolt,
                         checkedTrackColor = Volt,
                         uncheckedThumbColor = Silver,
                         uncheckedTrackColor = CarbonHigh,

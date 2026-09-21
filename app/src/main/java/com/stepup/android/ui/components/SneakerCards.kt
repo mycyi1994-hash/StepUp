@@ -41,6 +41,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -217,7 +218,7 @@ fun SneakerCollectionCard(
                 ) {
                     Text(
                         text = stringResource(R.string.items_equipped),
-                        color = Night,
+                        color = OnVolt,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Black,
                     )
@@ -408,7 +409,7 @@ fun EquippedSneakerCard(
                 ) {
                     Text(
                         text = stringResource(R.string.items_equipped),
-                        color = Night,
+                        color = OnVolt,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                     )

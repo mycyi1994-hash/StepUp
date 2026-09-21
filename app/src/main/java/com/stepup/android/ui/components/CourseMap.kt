@@ -129,10 +129,10 @@ internal fun DrawScope.drawStreets(seed: Int) {
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 8f)),
         )
     }
-    // 강 — 넓고 연한 하늘색 띠 하나
+    // 강 — 넓고 연한 파란 띠 하나
     val riverY = size.height * (0.55f + rand() * 0.3f)
     drawLine(
-        color = Color(0xFFBBD6F5).copy(alpha = 0.9f),
+        color = Volt.copy(alpha = 0.22f),
         start = Offset(0f, riverY),
         end = Offset(size.width, riverY - size.height * 0.12f),
         strokeWidth = 14.dp.toPx(),

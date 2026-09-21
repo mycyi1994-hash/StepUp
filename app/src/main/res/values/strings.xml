@@ -840,6 +840,14 @@ Start running with StepUp.</string>
 
     <!-- Language -->
     <string name="settings_language">Language</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="theme_note">Light or dark — the blue stays the same either way. Your choice sticks across restarts.</string>
+    <string name="theme_system">Follow the device</string>
+    <string name="theme_system_note">Switches when your phone does</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_light_note">White canvas, navy text</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_dark_note">Deep navy canvas, white text</string>
     <string name="language_system">System default</string>
     <string name="language_en">English</string>
     <string name="language_ko">Korean</string>

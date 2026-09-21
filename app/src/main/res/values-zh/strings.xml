@@ -838,6 +838,14 @@
 
     <!-- Language -->
     <string name="settings_language">语言</string>
+    <string name="settings_theme">界面主题</string>
+    <string name="theme_note">无论浅色还是深色，蓝色都不变。选择会在重启后保留。</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_system_note">随手机设置自动切换</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_light_note">白色背景，深蓝文字</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_dark_note">深蓝背景，白色文字</string>
     <string name="language_system">跟随系统</string>
     <string name="language_en">英语</string>
     <string name="language_ko">韩语</string>

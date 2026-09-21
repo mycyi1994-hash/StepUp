@@ -2,6 +2,7 @@ package com.stepup.android
 
 import android.app.Application
 import com.stepup.android.core.AppLocale
+import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
 import kotlinx.coroutines.runBlocking
 
@@ -16,5 +17,10 @@ class StepUpApp : Application() {
         val saved = runCatching { runBlocking { ServiceLocator.userPrefs.languageNow() } }
             .getOrDefault(AppLocale.SYSTEM)
         AppLocale.bootstrap(this, saved)
+        // 테마도 같은 이유로 첫 프레임 전에 확정한다. 나중에 정하면 어둡게
+        // 쓰는 사람이 앱을 켤 때마다 흰 화면이 한 번 번쩍인다.
+        val theme = runCatching { runBlocking { ServiceLocator.userPrefs.themeModeNow() } }
+            .getOrDefault("")
+        AppTheme.bootstrap(theme)
     }
 }
