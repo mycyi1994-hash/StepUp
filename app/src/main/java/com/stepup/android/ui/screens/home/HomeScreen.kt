@@ -417,11 +417,10 @@ private fun DistanceFactPanel(todaySteps: Int, modifier: Modifier = Modifier) {
             )
             Text(
                 text = text,
-                fontSize = 10.5.sp,
-                lineHeight = 14.sp,
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
                 color = Silver,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                maxLines = 4,
             )
         }
     }
@@ -443,19 +442,14 @@ private fun StepsHeroCard(
         contentPadding = PaddingValues(15.dp),
         spacing = 8.dp,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 130.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        val stepCount: @Composable (Modifier) -> Unit = { countModifier ->
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = countModifier,
                 verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 Text(
                     text = stringResource(R.string.home_total_steps),
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     color = Silver,
                 )
                 Text(
@@ -467,17 +461,25 @@ private fun StepsHeroCard(
                 )
                 Text(
                     text = stringResource(R.string.home_daily_goal, "%,d".format(state.goal)),
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = Slate,
                 )
             }
-            DistanceFactPanel(
-                todaySteps = state.todaySteps,
-                modifier = Modifier
-                    .weight(0.82f)
-                    .fillMaxHeight()
-                    .padding(vertical = 2.dp),
-            )
+        }
+        if (large) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                stepCount(Modifier.fillMaxWidth())
+                DistanceFactPanel(state.todaySteps, Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 130.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                stepCount(Modifier.weight(1f))
+                DistanceFactPanel(state.todaySteps, Modifier.weight(0.82f))
+            }
         }
 
         Row(

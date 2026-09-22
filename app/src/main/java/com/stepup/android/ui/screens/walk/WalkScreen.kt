@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -128,6 +131,7 @@ private data class LapSegment(
 )
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun RunScreen(
     onBack: () -> Unit = {},
     onOpenCourses: () -> Unit = {},
@@ -352,9 +356,10 @@ fun RunScreen(
             }
             val lastSplit = segments.lastOrNull()?.paceSec?.takeIf { it > 0 }
             GlowCard(spacing = 14.dp) {
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     MetricCell(
                         icon = Icons.Filled.Timer,
@@ -377,12 +382,7 @@ fun RunScreen(
                         chip = stringResource(R.string.measurement_unavailable),
                         chipColor = hrZone?.second ?: Volt,
                     )
-                }
-                HairlineDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
+
                     MetricCell(
                         icon = Icons.AutoMirrored.Filled.DirectionsRun,
                         label = stringResource(R.string.stat_cadence),
@@ -403,12 +403,7 @@ fun RunScreen(
                         value = "%,d".format(session.steps),
                         fraction = session.steps / 10_000f,
                     )
-                }
-                HairlineDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
+
                     MetricCell(
                         icon = Icons.Filled.Speed,
                         label = stringResource(R.string.stat_speed),
@@ -839,7 +834,8 @@ private fun StatusChip(isActive: Boolean, isPaused: Boolean) {
 
 /** 지표 그리드 셀 — 아이콘+라벨 / 큰 값+단위 / (선택) 존 칩 / 얇은 게이지 */
 @Composable
-private fun RowScope.MetricCell(
+@OptIn(ExperimentalLayoutApi::class)
+private fun MetricCell(
     icon: ImageVector,
     label: String,
     value: String,
@@ -849,7 +845,7 @@ private fun RowScope.MetricCell(
     chipColor: Color = Volt,
 ) {
     Column(
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.fillMaxWidth(if (LocalDensity.current.fontScale > 1.2f) 1f else 0.48f),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
@@ -860,18 +856,16 @@ private fun RowScope.MetricCell(
                 imageVector = icon,
                 contentDescription = null,
                 tint = Slate,
-                modifier = Modifier.size(11.dp),
+                modifier = Modifier.size(16.dp),
             )
             Text(
                 text = label,
-                fontSize = 9.sp,
+                fontSize = 12.sp,
                 color = Slate,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
-        Row(
-            verticalAlignment = Alignment.Bottom,
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
             Text(
@@ -881,12 +875,11 @@ private fun RowScope.MetricCell(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.3).sp,
                 color = Snow,
-                maxLines = 1,
             )
             if (unit != null) {
                 Text(
                     text = unit,
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Volt,
                     modifier = Modifier.padding(bottom = 2.dp),
@@ -901,7 +894,7 @@ private fun RowScope.MetricCell(
             ) {
                 Text(
                     text = chip,
-                    fontSize = 8.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = chipColor,
                 )

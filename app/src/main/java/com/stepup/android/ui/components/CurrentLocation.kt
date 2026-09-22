@@ -61,11 +61,16 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
 
         val provider = manager.bestProvider()
         if (provider != null) {
-            runCatching {
+            try {
                 // 3초·5m — 지도를 내 자리에 맞추는 데 필요한 만큼이다.
                 // 러닝 중의 경로 기록(2.5초·6m)과 달리 여기서는 정밀도가
                 // 아니라 "대충 어디냐"만 있으면 된다.
                 manager.requestLocationUpdates(provider, 3_000L, 5f, listener, Looper.getMainLooper())
+            } catch (_: SecurityException) {
+                // Permission can be revoked after the initial check.
+                here = null
+            } catch (_: IllegalArgumentException) {
+                // The provider may disappear while this screen is opening.
             }
         }
 
@@ -93,7 +98,15 @@ private fun LocationManager.lastKnown(): GeoPoint? = runCatching {
         LocationManager.NETWORK_PROVIDER,
         LocationManager.PASSIVE_PROVIDER,
     )
-        .mapNotNull { provider -> runCatching { getLastKnownLocation(provider) }.getOrNull() }
+        .mapNotNull { provider ->
+            try {
+                getLastKnownLocation(provider)
+            } catch (_: SecurityException) {
+                null
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+        }
         .maxByOrNull { it.time }
         ?.let { GeoPoint(it.latitude, it.longitude) }
 }.getOrNull()
