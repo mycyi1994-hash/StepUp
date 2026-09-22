@@ -1,5 +1,7 @@
 package com.giwa.strideup.ui.screens.items
 
+import com.giwa.strideup.ui.experience.ExperienceEvents
+import com.giwa.strideup.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -98,7 +100,10 @@ class ItemsViewModel(
         viewModelScope.launch {
             sneakerRepository.equip(id)
             val target = inventory.value.firstOrNull { it.id == id }
-            if (target != null) message.value = ItemsMessage.Equipped(target)
+            if (target != null) {
+                message.value = ItemsMessage.Equipped(target)
+                ExperienceEvents.emit(FeedbackCue.Success)
+            }
         }
     }
 
@@ -106,10 +111,12 @@ class ItemsViewModel(
         viewModelScope.launch {
             val target = inventory.value.firstOrNull { it.id == id }
             if (target != null && !target.canUpgrade) {
+                ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = ItemsMessage.MaxLevel
                 return@launch
             }
             val result = sneakerRepository.upgrade(id)
+            ExperienceEvents.emit(if (result != null) FeedbackCue.Success else FeedbackCue.Error)
             message.value = if (result != null) {
                 ItemsMessage.Upgraded(result)
             } else {
@@ -122,9 +129,11 @@ class ItemsViewModel(
         viewModelScope.launch {
             val minted = sneakerRepository.mint()
             if (minted == null) {
+                ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = ItemsMessage.NotEnoughBalance
             } else {
                 mintResult.value = minted
+                ExperienceEvents.emit(FeedbackCue.Reward)
             }
         }
     }
@@ -136,6 +145,7 @@ class ItemsViewModel(
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance
                 PurchaseError.ALREADY_ACTIVE -> ItemsMessage.BoostAlreadyActive
             }
+            ExperienceEvents.emit(if (message.value == ItemsMessage.BoostBought) FeedbackCue.Success else FeedbackCue.Error)
         }
     }
 

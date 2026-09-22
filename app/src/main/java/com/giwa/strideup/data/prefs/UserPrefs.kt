@@ -2,6 +2,7 @@ package com.giwa.strideup.data.prefs
 
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -17,6 +18,12 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "strideup_prefs")
 
+data class ExperiencePreferences(
+    val sounds: Boolean = true,
+    val haptics: Boolean = true,
+    val reducedMotion: Boolean = false,
+)
+
 /**
  * 사용자 설정과 가벼운 상태(DataStore Preferences).
  * 포인트 잔액은 Room의 rewards 원장 합계로 관리하고, 여기에는
@@ -25,6 +32,9 @@ private val Context.dataStore by preferencesDataStore(name = "strideup_prefs")
 class UserPrefs(private val context: Context) {
 
     private object Keys {
+        val SOUNDS = booleanPreferencesKey("experience_sounds")
+        val HAPTICS = booleanPreferencesKey("experience_haptics")
+        val REDUCED_MOTION = booleanPreferencesKey("experience_reduced_motion")
         val DAILY_GOAL = intPreferencesKey("daily_goal")
         val SNEAKER_LEVEL = intPreferencesKey("sneaker_level")
         val ENERGY = doublePreferencesKey("energy_remaining")
@@ -47,6 +57,14 @@ class UserPrefs(private val context: Context) {
     }
 
     val dailyGoal: Flow<Int> = context.dataStore.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
+
+    val experience: Flow<ExperiencePreferences> = context.dataStore.data.map {
+        ExperiencePreferences(it[Keys.SOUNDS] ?: true, it[Keys.HAPTICS] ?: true, it[Keys.REDUCED_MOTION] ?: false)
+    }
+
+    suspend fun setSounds(enabled: Boolean) { context.dataStore.edit { it[Keys.SOUNDS] = enabled } }
+    suspend fun setHaptics(enabled: Boolean) { context.dataStore.edit { it[Keys.HAPTICS] = enabled } }
+    suspend fun setReducedMotion(enabled: Boolean) { context.dataStore.edit { it[Keys.REDUCED_MOTION] = enabled } }
 
     // ── 러너 식별 · 프로필 ───────────────────────────────────
 

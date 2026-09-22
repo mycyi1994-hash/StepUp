@@ -3,6 +3,14 @@ package com.giwa.strideup.ui
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.graphicsLayer
+import com.giwa.strideup.ui.experience.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -117,6 +125,7 @@ object Routes {
     const val SETTINGS_PRIVACY = "settings/privacy"
     const val SETTINGS_SUPPORT = "settings/support"
     const val SETTINGS_CONNECTED = "settings/connected"
+    const val SETTINGS_EXPERIENCE = "settings/experience"
     const val SETTINGS_LANGUAGE = "settings/language"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
@@ -151,13 +160,21 @@ fun StrideUpRoot() {
     Box(Modifier.fillMaxSize()) {
         NightCanvas(Modifier.fillMaxSize())
 
-        when {
-            !ready || loginMethod == null || guideSeen == null ->
+        val stage = when {
+            !ready || loginMethod == null || guideSeen == null -> 0
+            loginMethod!!.isEmpty() -> 1
+            else -> 2
+        }
+        androidx.compose.animation.Crossfade(stage,
+            animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visibleStage ->
+        when (visibleStage) {
+            0 ->
                 SplashScreen(onReady = { ready = true })
 
-            loginMethod!!.isEmpty() -> LoginScreen(onDone = {})
+            1 -> LoginScreen(onDone = {})
 
             else -> MainScaffold(startTour = guideSeen == false)
+        }
         }
     }
 }
@@ -165,6 +182,8 @@ fun StrideUpRoot() {
 @Composable
 private fun MainScaffold(startTour: Boolean = false) {
     val context = LocalContext.current
+    val motion = LocalMotion.current
+    RunFeedback()
     val scope = rememberCoroutineScope()
 
     // 첫 실행이면 화면이 자리를 잡은 뒤 스포트라이트 투어를 시작한다
@@ -198,8 +217,8 @@ private fun MainScaffold(startTour: Boolean = false) {
         bottomBar = {
             AnimatedVisibility(
                 visible = showBar,
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut(),
+                enter = slideInVertically(tween(motion.duration(220))) { it } + fadeIn(tween(motion.duration(160))),
+                exit = slideOutVertically(tween(motion.duration(180))) { it } + fadeOut(tween(motion.duration(120))),
             ) {
                 VoltNavBar(navController, currentRoute)
             }
@@ -209,6 +228,18 @@ private fun MainScaffold(startTour: Boolean = false) {
             navController = navController,
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                val d = motion.duration(260)
+                if (initialState.destination.route in tabRoutes && targetState.destination.route in tabRoutes)
+                    fadeIn(tween(d)) + slideInHorizontally(tween(d)) { width ->
+                        val forward = bottomTabs.indexOfFirst { it.route == targetState.destination.route } > bottomTabs.indexOfFirst { it.route == initialState.destination.route }
+                        if (forward) width / 16 else -width / 16
+                    }
+                else fadeIn(tween(d)) + slideInHorizontally(tween(d)) { it / 10 }
+            },
+            exitTransition = { fadeOut(tween(motion.duration(160))) },
+            popEnterTransition = { fadeIn(tween(motion.duration(220))) + slideInHorizontally(tween(motion.duration(220))) { -it / 12 } },
+            popExitTransition = { fadeOut(tween(motion.duration(160))) + slideOutHorizontally(tween(motion.duration(220))) { it / 10 } },
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
@@ -249,6 +280,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenPrivacy = { navController.navigate(Routes.SETTINGS_PRIVACY) },
                     onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
+                    onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenItems = { navController.switchTab(Screen.Items) },
                 )
@@ -309,6 +341,9 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onBack = { navController.popBackStack() },
                     onRunStarted = { navController.navigate(Routes.RUN) },
                 )
+            }
+            composable(Routes.SETTINGS_EXPERIENCE) {
+                com.giwa.strideup.ui.screens.settings.ExperienceSettingsScreen { navController.popBackStack() }
             }
             composable(Routes.RANKING) {
                 RankingScreen(onBack = { navController.popBackStack() })
@@ -410,31 +445,35 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 
 @Composable
 private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
+    val motion = LocalMotion.current
     val tint by animateColorAsState(
         targetValue = if (selected) Volt else Slate,
+        animationSpec = tween(motion.duration(180)),
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(motion.duration(180)),
         label = "navTabDot",
     )
     Column(
         modifier = Modifier
-            .quietClickable(onClick)
+            .semantics { this.selected = selected }
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { if (!selected) onClick() }
             .padding(horizontal = 10.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(
             imageVector = screen.icon,
-            contentDescription = stringResource(screen.labelRes),
+            contentDescription = null,
             tint = tint,
             modifier = Modifier.size(22.dp),
         )
         Text(
             text = stringResource(screen.labelRes),
             color = tint,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             letterSpacing = 0.3.sp,
         )

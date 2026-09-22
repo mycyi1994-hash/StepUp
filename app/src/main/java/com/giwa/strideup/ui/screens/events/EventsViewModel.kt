@@ -1,5 +1,7 @@
 package com.giwa.strideup.ui.screens.events
 
+import com.giwa.strideup.ui.experience.ExperienceEvents
+import com.giwa.strideup.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -44,6 +46,7 @@ class EventsViewModel(
     fun claim(def: EventDef, progress: Float) {
         viewModelScope.launch {
             val amount = eventRepository.claim(def, progress)
+            ExperienceEvents.emit(if (amount != null) FeedbackCue.Reward else FeedbackCue.Error)
             claimResult.value = if (amount != null) {
                 ClaimResult.Success(amount)
             } else {

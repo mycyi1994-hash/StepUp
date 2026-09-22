@@ -1,6 +1,7 @@
 package com.giwa.strideup.ui.screens.settings
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -107,6 +108,7 @@ private fun FaqCard(
 ) {
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(com.giwa.strideup.ui.experience.LocalMotion.current.duration(180)),
         label = "faqChevron",
     )
     GlowCard(
@@ -136,13 +138,17 @@ private fun FaqCard(
                     .rotate(chevronRotation),
             )
         }
-        if (expanded) {
+        androidx.compose.animation.AnimatedVisibility(visible = expanded,
+            enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(com.giwa.strideup.ui.experience.LocalMotion.current.duration(160))),
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(com.giwa.strideup.ui.experience.LocalMotion.current.duration(120)))) {
+            Column {
             HairlineDivider()
             Text(
                 text = stringResource(answerRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = Silver,
             )
+            }
         }
     }
 }

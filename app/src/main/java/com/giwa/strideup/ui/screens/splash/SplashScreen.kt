@@ -69,14 +69,14 @@ import kotlinx.coroutines.withTimeoutOrNull
  * (스타터 스니커즈 지급, 만료 부스트 정리, 저장소 첫 방출 대기)을 수행한다.
  * 준비가 일찍 끝나도 최소 노출 시간은 지켜 화면이 깜빡이지 않게 한다.
  */
-private const val MIN_VISIBLE_MILLIS = 2100L
+private const val MIN_VISIBLE_MILLIS = 900L
 
 @Composable
 fun SplashScreen(onReady: () -> Unit) {
     var progress by remember { mutableFloatStateOf(0f) }
     val animated by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(420, easing = LinearEasing),
+        animationSpec = tween(com.giwa.strideup.ui.experience.LocalMotion.current.duration(420), easing = LinearEasing),
         label = "splashProgress",
     )
     // 실행할 때마다 다른 NFT를 세워둔다
@@ -298,16 +298,7 @@ fun SplashScreen(onReady: () -> Unit) {
 /** 도시를 가로지르는 속도선 배경 (목업의 모션 블러 느낌) */
 @Composable
 private fun SpeedBackdrop(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "speed")
-    val shift by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "speedShift",
-    )
+    val phase = com.giwa.strideup.ui.components.ambientPhase(4000)
 
     Canvas(modifier) {
         // 아래쪽에서 퍼지는 라임 안개
@@ -325,7 +316,7 @@ private fun SpeedBackdrop(modifier: Modifier = Modifier) {
         val lines = 22
         for (i in 0 until lines) {
             val seed = (i * 37 % 100) / 100f
-            val t = ((seed + shift) % 1f)
+            val t = ((seed + phase.value) % 1f)
             // t가 커질수록 소실점에서 멀어지고 길고 진해진다
             val spread = t * t
             val angle = (seed * 2f - 1f) * 1.15f

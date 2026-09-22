@@ -1,5 +1,7 @@
 package com.giwa.strideup.ui.screens.community
 
+import com.giwa.strideup.ui.experience.ExperienceEvents
+import com.giwa.strideup.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -90,6 +92,7 @@ class CommunityViewModel(
     fun sendComment(postId: Long, body: String, parentId: Long, author: String) {
         viewModelScope.launch {
             communityRepository.addComment(postId, body, author, parentId)
+            ExperienceEvents.emit(FeedbackCue.Success)
         }
     }
 
@@ -115,12 +118,13 @@ class CommunityViewModel(
                 crewRepository.leave(crewId)
             } else {
                 crewRepository.join(crewId)
+                ExperienceEvents.emit(FeedbackCue.Success)
             }
         }
     }
 
     fun toggleLike(postId: Long) {
-        viewModelScope.launch { communityRepository.toggleLike(postId) }
+        viewModelScope.launch { communityRepository.toggleLike(postId); ExperienceEvents.emit(FeedbackCue.Select) }
     }
 
     fun toggleJoinFlash(postId: Long) {
@@ -154,13 +158,17 @@ class CommunityViewModel(
                 meetInMinutes = meetInMinutes,
                 capacity = capacity,
             )
+            ExperienceEvents.emit(FeedbackCue.Success)
         }
     }
 
     fun createCrew(name: String, tagline: String, area: String, onCreated: (String) -> Unit) {
         viewModelScope.launch {
             val id = crewRepository.create(name, tagline, area)
-            if (id.isNotEmpty()) onCreated(id)
+            if (id.isNotEmpty()) {
+                ExperienceEvents.emit(FeedbackCue.Success)
+                onCreated(id)
+            }
         }
     }
 

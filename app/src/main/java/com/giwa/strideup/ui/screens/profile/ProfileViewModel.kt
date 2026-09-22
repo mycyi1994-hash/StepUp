@@ -1,5 +1,7 @@
 package com.giwa.strideup.ui.screens.profile
 
+import com.giwa.strideup.ui.experience.ExperienceEvents
+import com.giwa.strideup.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -104,11 +106,11 @@ class ProfileViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 
     fun setGoal(goal: Int) {
-        viewModelScope.launch { stepRepository.setDailyGoal(goal) }
+        viewModelScope.launch { stepRepository.setDailyGoal(goal); ExperienceEvents.emit(FeedbackCue.Success) }
     }
 
     fun setAvatar(id: Int) {
-        viewModelScope.launch { prefs.setAvatarId(id) }
+        viewModelScope.launch { prefs.setAvatarId(id); ExperienceEvents.emit(FeedbackCue.Select) }
     }
 
     /**
@@ -143,6 +145,7 @@ class ProfileViewModel(
             if (saved) {
                 prefs.setAvatarId(UserPrefs.AVATAR_CUSTOM)
                 prefs.bumpAvatarRev()
+                ExperienceEvents.emit(FeedbackCue.Success)
             }
         }
     }

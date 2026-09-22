@@ -482,7 +482,7 @@ fun LabeledField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = singleLine,
-                textStyle = TextStyle(color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
+                textStyle = TextStyle(fontFamily = com.giwa.strideup.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
                 cursorBrush = SolidColor(Volt),
                 modifier = Modifier
                     .fillMaxWidth()

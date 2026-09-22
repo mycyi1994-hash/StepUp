@@ -12,6 +12,7 @@ import com.giwa.strideup.core.ServiceLocator
 import com.giwa.strideup.ui.StepPermissions
 import com.giwa.strideup.ui.StrideUpRoot
 import com.giwa.strideup.ui.theme.StrideUpTheme
+import com.giwa.strideup.ui.experience.ExperienceProvider
 
 class MainActivity : ComponentActivity() {
 
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             StrideUpTheme {
-                StrideUpRoot()
+                ExperienceProvider { StrideUpRoot() }
             }
         }
     }

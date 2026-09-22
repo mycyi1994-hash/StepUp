@@ -178,6 +178,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                 Eyebrow(text = stringResource(R.string.analytics_week))
                 Text(
                     text = "%,d".format(weekSteps),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
@@ -204,7 +205,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
             ) {
                 days.forEach { day ->
                     val steps = byDay[day]?.steps ?: 0
-                    val fraction = (steps.toFloat() / maxValue).coerceIn(0.04f, 1f)
+                    val fraction = com.giwa.strideup.ui.components.animatedFloat((steps.toFloat() / maxValue).coerceIn(0.04f, 1f))
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -310,6 +311,7 @@ private fun StatGridCard(
             Spacer(Modifier.weight(1f))
             Text(
                 text = "%,d".format(lifetimeSteps),
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Snow,
@@ -375,6 +377,7 @@ private fun SessionRow(session: WalkSessionEntity) {
         }
         Text(
             text = "+%,.2f".format(session.pointsEarned),
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 15.sp,
             fontWeight = FontWeight.ExtraBold,
             color = Volt,

@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -122,6 +123,7 @@ fun ProfileScreen(
     onOpenSupport: () -> Unit = {},
     onOpenConnected: () -> Unit = {},
     onOpenLanguage: () -> Unit = {},
+    onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
@@ -169,6 +171,7 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
+        SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
         SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
         SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
         SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
@@ -495,6 +498,7 @@ private fun RowScope.RecordCell(
         )
         Text(
             text = value,
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = Snow,
@@ -540,6 +544,7 @@ private fun RowScope.DistanceCard(state: ProfileViewModel.UiState, onOpenAnalyti
         }
         Text(
             text = "%.2f km".format(state.lifetimeKm),
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 21.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = (-0.5).sp,
@@ -761,6 +766,7 @@ private fun SummaryStat(label: String, value: String) {
         Text(label, fontSize = 9.sp, color = Slate)
         Text(
             text = value,
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
             color = Snow,
@@ -970,6 +976,7 @@ private fun GoalDialog(
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "%,d".format(steps),
+                            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-1).sp,

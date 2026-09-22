@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import com.giwa.strideup.ui.experience.LocalMotion
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -167,10 +169,17 @@ fun SneakerVisual(
 ) {
     val res = sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant)
     if (res != null) {
+        val motion = LocalMotion.current
+        val float = if (animate && motion.decorative) ambientPhase(3600, reverse = true) else null
         Image(
             painter = painterResource(res),
             contentDescription = null,
-            modifier = modifier,
+            modifier = modifier.graphicsLayer {
+                if (float != null) {
+                    translationY = (float.value - .5f) * 5.dp.toPx()
+                    rotationZ = (float.value - .5f) * .6f
+                }
+            },
             contentScale = contentScale,
         )
     } else if (animate) {

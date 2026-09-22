@@ -259,6 +259,7 @@ fun SneakerCollectionCard(
             )
             Text(
                 text = "+%.1f%%".format(sneaker.boostPercent),
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 11.sp,
                 color = Silver,
             )
@@ -439,6 +440,7 @@ fun EquippedSneakerCard(
                     }
                     Text(
                         text = "+%.1f%%".format(sneaker.boostPercent),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         color = Volt,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,

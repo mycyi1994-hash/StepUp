@@ -282,7 +282,7 @@ fun CommentSheet(
                         BasicTextField(
                             value = input,
                             onValueChange = { input = it },
-                            textStyle = TextStyle(color = Snow, fontSize = 13.sp),
+                            textStyle = TextStyle(fontFamily = com.giwa.strideup.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp),
                             cursorBrush = SolidColor(Volt),
                             modifier = Modifier.fillMaxWidth(),
                         )

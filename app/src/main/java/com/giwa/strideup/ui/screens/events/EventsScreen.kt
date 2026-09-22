@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.giwa.strideup.ui.components.celebrate
 import com.giwa.strideup.R
 import com.giwa.strideup.data.repo.EventDef
 import com.giwa.strideup.data.repo.Events
@@ -85,12 +86,15 @@ fun EventsScreen(
     val claimed by viewModel.claimedIds.collectAsStateWithLifecycle()
     val claimResult by viewModel.claimResult.collectAsStateWithLifecycle()
 
+    var celebration by remember { mutableIntStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
     val notFinished = stringResource(R.string.toast_not_finished)
     LaunchedEffect(claimResult) {
         when (val r = claimResult) {
-            is ClaimResult.Success ->
+            is ClaimResult.Success -> {
+                celebration++
                 Toast.makeText(context, claimedFmt.format("%,.0f".format(r.amount)), Toast.LENGTH_SHORT).show()
+            }
             ClaimResult.NotFinished ->
                 Toast.makeText(context, notFinished, Toast.LENGTH_SHORT).show()
             null -> {}
@@ -292,11 +296,12 @@ private fun countdown(targetMillis: Long): String {
 }
 
 @Composable
-private fun TotalRewardsCard(balance: Double) {
+private fun TotalRewardsCard(balance: Double, celebration: Int) {
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = Modifier
             .clip(shape)
+            .celebrate(celebration.takeIf { it > 0 })
             .background(CarbonHigh, shape)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -316,6 +321,7 @@ private fun TotalRewardsCard(balance: Double) {
             ) {
                 Text(
                     text = "%,.2f".format(balance),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Snow,
@@ -323,6 +329,7 @@ private fun TotalRewardsCard(balance: Double) {
                 )
                 Text(
                     text = "+$%,.2f".format(balance * 0.01),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Volt,

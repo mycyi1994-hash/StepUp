@@ -3,6 +3,12 @@ package com.giwa.strideup.ui.screens.community
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import com.giwa.strideup.ui.experience.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -289,6 +295,7 @@ fun PartyLobbyScreen(
                                 )
                                 Text(
                                     text = "+%.2f SUP".format(party.resultPoints),
+                                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                                     fontSize = 34.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = (-1).sp,
@@ -555,11 +562,9 @@ private fun MemberRow(
 
 @Composable
 private fun CountdownOverlay(count: Int) {
-    val scale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(420, easing = EaseOutBack),
-        label = "countdownScale",
-    )
+    val motion = LocalMotion.current
+    val feedback = LocalFeedback.current
+    LaunchedEffect(count) { if (count > 0) feedback?.play(FeedbackCue.Countdown) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -580,14 +585,19 @@ private fun CountdownOverlay(count: Int) {
                 contentAlignment = Alignment.Center,
             ) {
                 HexEmblem(size = 180.dp)
+                AnimatedContent(targetState = count, transitionSpec = {
+                    (fadeIn(tween(motion.duration(130))) + scaleIn(tween(motion.duration(320)), initialScale = .78f)) togetherWith
+                        fadeOut(tween(motion.duration(100)))
+                }, label = "partyCountdown") { digit ->
                 Text(
-                    text = if (count > 0) "$count" else stringResource(R.string.crew_go),
-                    modifier = Modifier.scale(scale),
+                    text = if (digit > 0) "$digit" else stringResource(R.string.crew_go),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = if (count > 0) 92.sp else 44.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-3).sp,
                     color = Snow,
                 )
+                }
             }
         }
     }

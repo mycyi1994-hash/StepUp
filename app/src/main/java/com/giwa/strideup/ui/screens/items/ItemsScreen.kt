@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.giwa.strideup.ui.components.reveal
+import com.giwa.strideup.ui.components.celebrate
 import com.giwa.strideup.R
 import com.giwa.strideup.domain.BoostType
 import com.giwa.strideup.domain.Faction
@@ -266,6 +268,7 @@ fun ItemsScreen(
                             )
                             Text(
                                 text = "%,.0f / %,.0f SUP".format(balance.coerceAtMost(cost), cost),
+                               fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (balance >= cost) Volt else Slate,
@@ -475,7 +478,7 @@ fun ItemsScreen(
             },
             text = {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().reveal(sneaker.id).celebrate(sneaker.id),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {

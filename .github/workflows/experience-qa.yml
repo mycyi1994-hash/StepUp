@@ -1,0 +1,54 @@
+name: Experience QA
+
+on:
+  pull_request:
+  push:
+    branches: ["codex/release-experience"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: experience-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-experience:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Unit tests, lint and release compilation
+        run: |
+          python tools/check_experience_assets.py
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Device interaction and screenshot coverage
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: false
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          script: bash tools/run_device_qa.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StepUp-experience-qa
+          path: |
+            qa-captures/
+            app/build/reports/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/apk/debug/app-debug.apk

@@ -227,6 +227,7 @@ private fun BalanceHero(balance: Double) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = "%,.2f".format(balance),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-1.5).sp,
@@ -243,6 +244,7 @@ private fun BalanceHero(balance: Double) {
             }
             Text(
                 text = "≈ $%,.2f".format(balance * 0.01) + "  ·  +0.51%",
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Night.copy(alpha = 0.6f),

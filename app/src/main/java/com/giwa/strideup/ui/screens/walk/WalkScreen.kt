@@ -5,7 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.giwa.strideup.ui.experience.feedbackClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.giwa.strideup.BuildConfig
+import com.giwa.strideup.ui.components.reveal
+import com.giwa.strideup.ui.components.celebrate
 import com.giwa.strideup.R
 import com.giwa.strideup.domain.CourseRewards
 import com.giwa.strideup.domain.GeoPoint
@@ -221,6 +223,7 @@ fun RunScreen(
                     HexEmblem(size = 20.dp)
                     Text(
                         text = "%,.2f".format(balance),
+                       fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Snow,
@@ -258,6 +261,7 @@ fun RunScreen(
                         )
                         Text(
                             text = "%.2f".format(distanceKm),
+                            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
@@ -294,6 +298,7 @@ fun RunScreen(
                             )
                             Text(
                                 text = formatDuration(session.elapsedSec),
+                                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                                 fontSize = 23.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = (-0.5).sp,
@@ -330,6 +335,7 @@ fun RunScreen(
                         )
                         Text(
                             text = "%.2f".format(max(goalKm - distanceKm, 0.0)),
+                            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
@@ -546,6 +552,7 @@ fun RunScreen(
                     }
                     Text(
                         text = "+%.2f SUP".format(estimate.points),
+                       fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
@@ -615,7 +622,7 @@ fun RunScreen(
 
         session.lastRewardPoints?.let { points ->
             item {
-                GlowCard(accent = true, contentPadding = PaddingValues(22.dp), spacing = 11.dp) {
+                GlowCard(modifier = Modifier.reveal(session.startedAt).celebrate(if (session.lastVerdict != RunVerdict.VOID) session.startedAt else null), accent = true, contentPadding = PaddingValues(22.dp), spacing = 11.dp) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -629,6 +636,7 @@ fun RunScreen(
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = "+%.2f".format(points),
+                                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = (-1.5).sp,
@@ -791,6 +799,7 @@ fun RunScreen(
                     }
                     Text(
                         text = "%.1f km".format(goalKm),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Snow,
@@ -885,6 +894,7 @@ private fun RowScope.MetricCell(
         ) {
             Text(
                 text = value,
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.3).sp,
@@ -940,6 +950,7 @@ private fun LapRow(
     ) {
         Text(
             text = "%d".format(index),
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = if (highlight) Volt else Slate,
@@ -947,6 +958,7 @@ private fun LapRow(
         )
         Text(
             text = "%.2f".format(km),
+            fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
             color = main,
@@ -1049,7 +1061,7 @@ private fun LapButton(
             .clip(shape)
             .background(Volt.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
             .border(1.dp, Volt.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
-            .clickable(enabled = enabled, onClick = onClick),
+            .feedbackClickable(enabled = enabled, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -1079,7 +1091,7 @@ private fun StepperButton(text: String, onClick: () -> Unit) {
             .clip(CircleShape)
             .background(CarbonHigh, CircleShape)
             .border(1.dp, Edge, CircleShape)
-            .clickable(onClick = onClick),
+            .feedbackClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1293,6 +1305,7 @@ private fun CourseChallengeCard(
                 ) {
                     Text(
                         text = "%.2f km".format(course?.distanceKm ?: goalKm),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
@@ -1333,6 +1346,7 @@ private fun CourseChallengeCard(
                 )
                 Text(
                     text = "%d m".format(elevationM),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Snow,
@@ -1371,6 +1385,7 @@ private fun CourseChallengeCard(
                     )
                     Text(
                         text = "%.2f km".format(remaining),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         color = Snow,

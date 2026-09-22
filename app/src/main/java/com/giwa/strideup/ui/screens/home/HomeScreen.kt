@@ -3,6 +3,11 @@ package com.giwa.strideup.ui.screens.home
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,9 +123,12 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val spacious = maxHeight >= 680.dp && LocalDensity.current.fontScale <= 1.15f
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .then(if (spacious) Modifier else Modifier.verticalScroll(rememberScrollState()))
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
@@ -147,14 +155,14 @@ fun HomeScreen(
             onOpenProfile = onOpenProfile,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.30f)
+                .then(if (spacious) Modifier.weight(1.30f) else Modifier.heightIn(min = 190.dp))
                 .guideTarget(GuideTour.Targets.HOME_STEPS),
         )
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.12f),
+                .then(if (spacious) Modifier.weight(1.12f) else Modifier.heightIn(min = 200.dp)),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             EnergyCard(
@@ -180,7 +188,7 @@ fun HomeScreen(
             onOpenItems = onOpenItems,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.74f),
+                .then(if (spacious) Modifier.weight(0.74f) else Modifier.heightIn(min = 120.dp)),
         )
 
         StartRunButton(
@@ -189,6 +197,7 @@ fun HomeScreen(
             onClick = onStartRun,
             modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
         )
+    }
     }
 }
 
@@ -327,6 +336,7 @@ private fun DistanceFactPanel(todaySteps: Int, modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "%.2f km".format(km),
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = (-0.4).sp,
@@ -376,6 +386,7 @@ private fun StepsHeroCard(
                 )
                 Text(
                     text = "%,d".format(steps),
+                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                     fontSize = 40.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.8).sp,
@@ -468,6 +479,7 @@ private fun EnergyCard(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "$percent%",
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp,
@@ -475,6 +487,7 @@ private fun EnergyCard(
                     )
                     Text(
                         text = "%.0f / %.0f".format(energy, maxEnergy),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 8.sp,
                         color = Slate,
                     )
@@ -524,6 +537,7 @@ private fun DistanceCard(
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = "%.2f".format(weekKm),
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-1).sp,
@@ -649,6 +663,7 @@ private fun SneakerStrip(
                     }
                     Text(
                         text = "+%.1f%%".format(sneaker?.boostPercent ?: 0.0),
+                        fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = sneaker?.faction?.tint() ?: Silver,
