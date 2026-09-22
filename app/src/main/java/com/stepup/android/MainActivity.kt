@@ -81,7 +81,9 @@ class MainActivity : ComponentActivity() {
             // onCreate 가 아니라 여기서, dark 가 바뀔 때마다 다시 건다.
             LaunchedEffect(dark) { applySystemBars(dark) }
             StepUpTheme(mode) {
-                StepUpRoot()
+                com.stepup.android.ui.experience.ExperienceProvider {
+                    StepUpRoot()
+                }
             }
         }
     }

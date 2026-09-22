@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.experience.ExperienceEvents
+import com.stepup.android.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -30,6 +32,7 @@ class CourseHubViewModel(
             // 같은 코스를 다시 누르면 선택 해제
             if (selectedId.value == id) courseRepository.clearSelection()
             else courseRepository.select(id)
+            ExperienceEvents.emit(FeedbackCue.Select)
         }
     }
 
@@ -69,7 +72,10 @@ class CourseHubViewModel(
     fun create(name: String, area: String, track: List<GeoPoint>, shared: Boolean) {
         viewModelScope.launch {
             val id = courseRepository.create(name, area, track, shared)
-            if (id != null) courseRepository.select(id)
+            if (id != null) {
+                courseRepository.select(id)
+                ExperienceEvents.emit(FeedbackCue.Success)
+            } else ExperienceEvents.emit(FeedbackCue.Error)
         }
     }
 

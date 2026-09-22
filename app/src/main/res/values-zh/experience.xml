@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_experience">声音与动效</string>
+    <string name="experience_intro">根据每日跑步习惯调整 StepUp 的操作体验。</string>
+    <string name="experience_sound">音效</string>
+    <string name="experience_sound_desc">通过短音提示操作、跑步状态和已确认的奖励。</string>
+    <string name="experience_haptic">触感反馈</string>
+    <string name="experience_haptic_desc">用轻微振动提示操作和重要成就。</string>
+    <string name="experience_motion">减少动态效果</string>
+    <string name="experience_motion_desc">减少页面过渡和装饰动画。</string>
+    <string name="experience_preview">预览反馈</string>
+    <string name="experience_system_note">遵循静音、勿扰和系统触摸音效设置。播放音乐时不播放音效，同时遵循系统动画设置。</string>
+</resources>

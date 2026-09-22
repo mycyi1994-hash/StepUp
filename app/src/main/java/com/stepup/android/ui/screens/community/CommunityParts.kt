@@ -36,6 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +60,11 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.theme.Night
 
 // ─────────────────────────────────────────────────────────────
 // 세그먼트 컨트롤 — "게시판 / 크루"
@@ -83,6 +91,7 @@ fun SegmentedTabs(
             val active = index == selected
             val alpha by animateFloatAsState(
                 targetValue = if (active) 1f else 0f,
+                animationSpec = androidx.compose.animation.core.tween(LocalMotion.current.duration(180)),
                 label = "segment$index",
             )
             Box(
@@ -90,7 +99,8 @@ fun SegmentedTabs(
                     .weight(1f)
                     .clip(RoundedCornerShape(50))
                     .background(Volt.copy(alpha = alpha))
-                    .quietClickable { onSelect(index) }
+                    .semantics { this.selected = active }
+                    .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onSelect(index) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -494,7 +504,7 @@ fun LabeledField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = singleLine,
-                textStyle = TextStyle(color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
+                textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
                 cursorBrush = SolidColor(Volt),
                 modifier = Modifier
                     .fillMaxWidth()

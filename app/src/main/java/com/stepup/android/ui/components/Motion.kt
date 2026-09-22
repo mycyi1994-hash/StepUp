@@ -1,120 +1,111 @@
 package com.stepup.android.ui.components
 
-import android.provider.Settings
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.animation.core.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
+import com.stepup.android.ui.experience.LocalMotion
+import kotlin.math.cos
+import kotlin.math.sin
 
-/**
- * 값이 툭 바뀌지 않고 굴러 올라가게 한다. 숫자가 "쌓이는" 감각이 곧 리워드 앱의 만족감.
- */
+object StepUpMotion {
+    const val Quick = 160
+    const val Standard = 260
+    const val Emphasis = 440
+}
+
 @Composable
-fun animatedInt(target: Int, durationMillis: Int = 750): Int {
-    val value by animateIntAsState(
-        targetValue = target,
-        animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
-        label = "animatedInt",
-    )
+fun animatedInt(target: Int, durationMillis: Int = 650): Int {
+    val motion = LocalMotion.current
+    val value by animateIntAsState(target, tween(motion.duration(durationMillis), easing = FastOutSlowInEasing), label = "metricInt")
     return value
 }
 
-/**
- * 기기에서 애니메이션을 꺼 두었는가.
- *
- * 설정 > 접근성에서 애니메이션을 끄면 ANIMATOR_DURATION_SCALE 이 0이 된다.
- * 움직임에 어지러움을 느끼는 사람이 직접 끈 것이므로, 앱이 제 판단으로
- * 다시 움직이게 해서는 안 된다. 값이 바로 도착해야 하는 자리에서는
- * 이 함수가 true 를 돌려주고, 부르는 쪽은 애니메이션 없이 그린다.
- */
 @Composable
-fun reduceMotion(): Boolean {
-    val context = LocalContext.current
-    return remember(context) {
-        runCatching {
-            Settings.Global.getFloat(
-                context.contentResolver,
-                Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            )
-        }.getOrDefault(1f) == 0f
-    }
-}
-
-@Composable
-fun animatedFloat(target: Float, durationMillis: Int = 750): Float {
-    val value by animateFloatAsState(
-        targetValue = target,
-        animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
-        label = "animatedFloat",
-    )
+fun animatedFloat(target: Float, durationMillis: Int = 650): Float {
+    val motion = LocalMotion.current
+    val value by animateFloatAsState(target, tween(motion.duration(durationMillis), easing = FastOutSlowInEasing), label = "metricFloat")
     return value
 }
 
-/**
- * 금속 표면을 훑고 지나가는 광택 띠.
- *
- * 모디파이어 체인에서 배경 **뒤**에 붙여야 배경 위로 빛이 흐른다.
- * 클리핑이 필요한 경우 앞쪽에 `Modifier.clip(shape)`을 먼저 둘 것.
- */
+/** No infinite transition is composed while motion is reduced or the activity is paused. */
+@Composable
+fun ambientPhase(durationMillis: Int = 3600, reverse: Boolean = false): State<Float> {
+    if (!LocalMotion.current.decorative) return rememberUpdatedState(.5f)
+    val transition = rememberInfiniteTransition(label = "ambient")
+    return transition.animateFloat(0f, 1f, infiniteRepeatable(
+        tween(durationMillis, easing = if (reverse) FastOutSlowInEasing else LinearEasing),
+        if (reverse) RepeatMode.Reverse else RepeatMode.Restart), label = "ambientPhase")
+}
+
+/** Draw-phase reads avoid recomposing the button content on every frame. */
 @Composable
 fun Modifier.sheen(
     color: Color = Color.White,
-    alpha: Float = 0.16f,
-    bandFraction: Float = 0.28f,
+    alpha: Float = .12f,
+    bandFraction: Float = .24f,
     durationMillis: Int = 4200,
-    delayMillis: Int = 1400,
+    delayMillis: Int = 2000,
 ): Modifier {
-    val transition = rememberInfiniteTransition(label = "sheen")
-    val progress by transition.animateFloat(
-        initialValue = -0.5f,
-        targetValue = 1.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, delayMillis, LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "sheenProgress",
-    )
+    if (!LocalMotion.current.decorative) return this
+    val phase = ambientPhase(durationMillis + delayMillis)
     return drawWithContent {
         drawContent()
-        val band = size.width * bandFraction
-        val x = size.width * progress
-        drawRect(
-            brush = Brush.linearGradient(
-                colors = listOf(Color.Transparent, color.copy(alpha = alpha), Color.Transparent),
-                start = Offset(x - band, 0f),
-                end = Offset(x + band, size.height),
-            ),
-        )
+        val active = ((phase.value * (durationMillis + delayMillis) - delayMillis) / durationMillis).coerceIn(0f, 1f)
+        if (active > 0f && active < 1f) {
+            val band = size.width * bandFraction
+            val x = size.width * (-.5f + 2f * active)
+            drawRect(Brush.linearGradient(listOf(Color.Transparent, color.copy(alpha = alpha), Color.Transparent),
+                Offset(x - band, 0f), Offset(x + band, size.height)))
+        }
     }
 }
 
-/** 살아 있는 상태(워킹 중)를 알리는 아주 느린 호흡. 0.0~1.0 */
 @Composable
-fun breathing(durationMillis: Int = 2600): Float {
-    val transition = rememberInfiniteTransition(label = "breathing")
-    val value by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "breathingValue",
-    )
-    return value
+fun breathing(durationMillis: Int = 3000): Float = ambientPhase(durationMillis, reverse = true).value
+
+/** A small, finite entrance; never blocks input or delays data availability. */
+@Composable
+fun Modifier.reveal(key: Any? = Unit): Modifier {
+    val motion = LocalMotion.current
+    val amount = remember(key) { Animatable(if (motion.reduced) 1f else 0f) }
+    LaunchedEffect(key, motion.reduced) {
+        if (motion.reduced) amount.snapTo(1f)
+        else amount.animateTo(1f, tween(StepUpMotion.Emphasis, easing = FastOutSlowInEasing))
+    }
+    return graphicsLayer {
+        alpha = amount.value
+        translationY = 10.dp.toPx() * (1f - amount.value)
+    }
+}
+
+/** Bounded celebration inside a result card: no flashing, overlay, or input interception. */
+@Composable
+fun Modifier.celebrate(event: Any?, color: Color = com.stepup.android.ui.theme.Volt): Modifier {
+    val motion = LocalMotion.current
+    val progress = remember { Animatable(1f) }
+    LaunchedEffect(event, motion.reduced) {
+        if (event != null && motion.decorative) {
+            progress.snapTo(0f)
+            progress.animateTo(1f, tween(850, easing = LinearOutSlowInEasing))
+        } else progress.snapTo(1f)
+    }
+    return drawWithContent {
+        drawContent()
+        val t = progress.value
+        if (t < 1f) {
+            val center = Offset(size.width / 2, size.height * .36f)
+            repeat(14) { index ->
+                val angle = index * Math.PI * 2 / 14
+                val distance = size.minDimension * (.12f + .48f * t)
+                drawCircle(color.copy(alpha = (1 - t) * .65f), radius = (2.5f - t).dp.toPx(),
+                    center = center + Offset(cos(angle).toFloat() * distance, sin(angle).toFloat() * distance))
+            }
+        }
+    }
 }

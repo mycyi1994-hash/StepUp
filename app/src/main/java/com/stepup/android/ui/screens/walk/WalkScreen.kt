@@ -5,7 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.stepup.android.ui.experience.feedbackClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,6 +113,9 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+
+import com.stepup.android.ui.components.reveal
+import com.stepup.android.ui.components.celebrate
 import kotlin.math.max
 import kotlin.math.sin
 
@@ -139,6 +142,7 @@ fun RunScreen(
     val laps by viewModel.laps.collectAsStateWithLifecycle()
     val course by viewModel.selectedCourse.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f
 
     // 목표 거리(km) — 프로세스에 살아서 화면을 나갔다 와도, 회전해도 유지된다
     val goalKm by viewModel.goalKm.collectAsStateWithLifecycle()
@@ -176,8 +180,6 @@ fun RunScreen(
     val calories = RewardEconomy.calories(session.steps)
     val running = session.isActive && !session.isPaused
 
-    // 데모 고도 — 걸음 수 기반 결정값 (센서 없이도 항상 같은 값)
-    val elevationM = (session.steps * 0.011).toInt()
 
     val avgPaceSec: Long? = if (distanceKm >= 0.01 && session.elapsedSec > 0) {
         (session.elapsedSec / distanceKm).toLong()
@@ -193,12 +195,8 @@ fun RunScreen(
 
     val cadenceVal = if (session.elapsedSec > 0) (session.steps * 60L / session.elapsedSec).toInt() else 0
     val speedVal = if (session.elapsedSec > 0) distanceKm / (session.elapsedSec / 3600.0) else 0.0
-    // 데모 심박 — 케이던스 기반 결정값
-    val hr: Int? = if (running && session.elapsedSec > 0) {
-        96 + (cadenceVal.coerceAtMost(190) * 0.32).toInt()
-    } else {
-        null
-    }
+    // No heart-rate source is connected; never infer a health reading from steps.
+    val hr: Int? = null
 
     val segments = lapSegments(laps)
 
@@ -235,6 +233,7 @@ fun RunScreen(
                     HexEmblem(size = 20.dp)
                     Text(
                         text = "%,.2f".format(balance),
+                       fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Snow,
@@ -255,7 +254,6 @@ fun RunScreen(
                 sessionKm = distanceKm,
                 liveTrack = session.geoTrack,
                 gpsFix = session.gpsFix,
-                elevationM = elevationM,
                 goalKm = goalKm,
                 onOpenCourses = onOpenCourses,
             )
@@ -263,6 +261,11 @@ fun RunScreen(
 
         item {
             GlowCard(contentPadding = PaddingValues(vertical = 20.dp, horizontal = 12.dp)) {
+                if (largeText) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true }, Modifier.size(210.dp))
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -278,6 +281,7 @@ fun RunScreen(
                         )
                         Text(
                             text = "%.2f".format(distanceKm),
+                            fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
@@ -291,53 +295,7 @@ fun RunScreen(
                             color = Volt,
                         )
                     }
-                    NeonRing(
-                        progress = if (goalKm > 0) (distanceKm / goalKm).toFloat() else 0f,
-                        modifier = Modifier.size(150.dp),
-                        ringWidth = 9.dp,
-                        glowAlpha = if (running) 0.20f else 0.12f,
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
-                                contentDescription = null,
-                                tint = Volt,
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.run_total_time),
-                                fontSize = 9.sp,
-                                color = Slate,
-                            )
-                            Text(
-                                text = formatDuration(session.elapsedSec),
-                                fontSize = 23.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = (-0.5).sp,
-                                color = Snow,
-                            )
-                            Row(
-                                modifier = Modifier.quietClickable { showGoalDialog = true },
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.run_goal_label, "%.2f".format(goalKm)),
-                                    fontSize = 10.sp,
-                                    color = Silver,
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = null,
-                                    tint = Volt,
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        }
-                    }
+                    if (!largeText) RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true })
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End,
@@ -350,6 +308,7 @@ fun RunScreen(
                         )
                         Text(
                             text = "%.2f".format(max(goalKm - distanceKm, 0.0)),
+                            fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
@@ -415,7 +374,7 @@ fun RunScreen(
                         value = hr?.toString() ?: "—",
                         unit = "bpm",
                         fraction = (hr ?: 0) / 190f,
-                        chip = hrZone?.first,
+                        chip = stringResource(R.string.measurement_unavailable),
                         chipColor = hrZone?.second ?: Volt,
                     )
                 }
@@ -460,9 +419,10 @@ fun RunScreen(
                     MetricCell(
                         icon = Icons.Filled.Terrain,
                         label = stringResource(R.string.run_elevation),
-                        value = "%d".format(elevationM),
+                        value = "—",
                         unit = "m",
-                        fraction = elevationM / 250f,
+                        fraction = 0f,
+                        chip = stringResource(R.string.measurement_unavailable),
                     )
                     MetricCell(
                         icon = Icons.Filled.Schedule,
@@ -497,7 +457,7 @@ fun RunScreen(
                                     index = seg.index,
                                     km = seg.km,
                                     paceSec = seg.paceSec,
-                                    bpm = demoLapBpm(seg.paceSec),
+                                    bpm = 0,
                                     highlight = seg.index == segments.size,
                                 )
                             }
@@ -566,6 +526,7 @@ fun RunScreen(
                     }
                     Text(
                         text = "+%.2f SUP".format(estimate.points),
+                       fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
@@ -635,7 +596,7 @@ fun RunScreen(
 
         session.lastRewardPoints?.let { points ->
             item {
-                GlowCard(accent = true, contentPadding = PaddingValues(22.dp), spacing = 11.dp) {
+                GlowCard(modifier = Modifier.reveal(session.startedAt).celebrate(if (session.lastVerdict != RunVerdict.VOID) session.startedAt else null), accent = true, contentPadding = PaddingValues(22.dp), spacing = 11.dp) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -649,6 +610,7 @@ fun RunScreen(
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = "+%.2f".format(points),
+                                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = (-1.5).sp,
@@ -819,6 +781,7 @@ fun RunScreen(
                     }
                     Text(
                         text = "%.1f km".format(goalKm),
+                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Snow,
@@ -913,6 +876,7 @@ private fun RowScope.MetricCell(
         ) {
             Text(
                 text = value,
+                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.3).sp,
@@ -947,7 +911,7 @@ private fun RowScope.MetricCell(
     }
 }
 
-/** 랩 한 줄 — [번호] [구간 km] [스플릿 페이스] [데모 bpm] */
+/** Lap measurements; heart rate remains unavailable until actually measured. */
 @Composable
 private fun LapRow(
     index: Int,
@@ -968,6 +932,7 @@ private fun LapRow(
     ) {
         Text(
             text = "%d".format(index),
+            fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = if (highlight) Volt else Slate,
@@ -975,6 +940,7 @@ private fun LapRow(
         )
         Text(
             text = "%.2f".format(km),
+            fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
             color = main,
@@ -1039,28 +1005,6 @@ private fun PaceChart(paces: List<Long>, modifier: Modifier = Modifier) {
     }
 }
 
-/** 데모 고도 스파크라인 — sin 조합의 결정적 곡선 */
-@Composable
-private fun ElevationSparkline(modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        val steps = 22
-        val line = Path()
-        for (i in 0..steps) {
-            val t = i / steps.toFloat()
-            val x = size.width * t
-            val y = size.height * (0.55f - 0.22f * sin(t * 5.4f + 0.7f) - 0.12f * sin(t * 11.3f))
-            if (i == 0) line.moveTo(x, y) else line.lineTo(x, y)
-        }
-        val fill = Path().apply {
-            addPath(line)
-            lineTo(size.width, size.height)
-            lineTo(0f, size.height)
-            close()
-        }
-        drawPath(fill, Brush.verticalGradient(listOf(Volt.copy(alpha = 0.30f), Color.Transparent)))
-        drawPath(line, Volt, style = Stroke(width = 2f, cap = StrokeCap.Round))
-    }
-}
 
 /** GhostButton 톤의 랩 기록 버튼 — 깃발 아이콘 포함 */
 @Composable
@@ -1077,7 +1021,7 @@ private fun LapButton(
             .clip(shape)
             .background(Volt.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
             .border(1.dp, Volt.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
-            .clickable(enabled = enabled, onClick = onClick),
+            .feedbackClickable(enabled = enabled, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -1107,7 +1051,7 @@ private fun StepperButton(text: String, onClick: () -> Unit) {
             .clip(CircleShape)
             .background(CarbonHigh, CircleShape)
             .border(1.dp, Edge, CircleShape)
-            .clickable(onClick = onClick),
+            .feedbackClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1137,9 +1081,6 @@ private fun lapSegments(laps: List<RunLap>): List<LapSegment> {
     }
 }
 
-/** 스플릿 페이스 기반 데모 심박 — 빠를수록 높게 */
-private fun demoLapBpm(paceSec: Long): Int =
-    if (paceSec <= 0) 0 else (232 - paceSec / 2.4).toInt().coerceIn(98, 186)
 
 private fun formatPace(secPerKm: Long): String =
     "%d'%02d\"".format(secPerKm / 60, secPerKm % 60)
@@ -1173,7 +1114,6 @@ private fun CourseChallengeCard(
     sessionKm: Double,
     liveTrack: List<GeoPoint>,
     gpsFix: Boolean,
-    elevationM: Int,
     goalKm: Double,
     onOpenCourses: () -> Unit,
 ) {
@@ -1323,10 +1263,11 @@ private fun CourseChallengeCard(
                 Text(text = "N", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Volt)
             }
 
+        }
             // 코스 이름 · 거리 · 코스 변경
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
@@ -1342,6 +1283,7 @@ private fun CourseChallengeCard(
                 ) {
                     Text(
                         text = "%.2f km".format(course?.distanceKm ?: goalKm),
+                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
@@ -1367,32 +1309,6 @@ private fun CourseChallengeCard(
                 }
             }
 
-            // 고도(데모)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(14.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.run_elevation),
-                    fontSize = 9.sp,
-                    color = Slate,
-                )
-                Text(
-                    text = "%d m".format(elevationM),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                ElevationSparkline(
-                    modifier = Modifier
-                        .width(110.dp)
-                        .height(30.dp),
-                )
-            }
-        }
 
         // 완주 보상 줄 — 코스가 있을 때만
         if (course != null) {
@@ -1420,6 +1336,7 @@ private fun CourseChallengeCard(
                     )
                     Text(
                         text = "%.2f km".format(remaining),
+                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         color = Snow,
@@ -1632,4 +1549,59 @@ private fun SaveCourseDialog(
             }
         },
     )
+}
+
+@Composable
+private fun RunTimeRing(
+    distanceKm: Double, goalKm: Double, elapsedSec: Long, running: Boolean,
+    onEditGoal: () -> Unit, modifier: Modifier = Modifier.size(150.dp),
+) {
+    NeonRing(
+        progress = if (goalKm > 0) (distanceKm / goalKm).toFloat() else 0f,
+        modifier = modifier,
+        ringWidth = 9.dp,
+        glowAlpha = if (running) 0.20f else 0.12f,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
+                contentDescription = null,
+                tint = Volt,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = stringResource(R.string.run_total_time),
+                fontSize = 9.sp,
+                color = Slate,
+            )
+            Text(
+                text = formatDuration(elapsedSec),
+                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
+                fontSize = 23.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.5).sp,
+                color = Snow,
+            )
+            Row(
+                modifier = Modifier.quietClickable { onEditGoal() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.run_goal_label, "%.2f".format(goalKm)),
+                    fontSize = 10.sp,
+                    color = Silver,
+                )
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null,
+                    tint = Volt,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
+    }
 }

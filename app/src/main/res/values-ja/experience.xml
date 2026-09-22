@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_experience">サウンドと動き</string>
+    <string name="experience_intro">毎日のランニングに合わせて操作感を調整できます。</string>
+    <string name="experience_sound">効果音</string>
+    <string name="experience_sound_desc">操作、ランニング、確定した報酬を短い音でお知らせします。</string>
+    <string name="experience_haptic">触覚フィードバック</string>
+    <string name="experience_haptic_desc">操作や達成を軽い振動でお知らせします。</string>
+    <string name="experience_motion">動きを減らす</string>
+    <string name="experience_motion_desc">画面切り替えや装飾アニメーションを抑えます。</string>
+    <string name="experience_preview">効果をプレビュー</string>
+    <string name="experience_system_note">マナーモード、おやすみモード、システムの操作音設定に従います。音楽再生中は効果音を鳴らしません。システムのアニメーション設定も適用されます。</string>
+</resources>

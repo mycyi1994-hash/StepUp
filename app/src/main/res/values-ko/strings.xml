@@ -1270,4 +1270,5 @@ StepUp과 함께 달려보세요.</string>
     <string name="sneaker_fuse_pending">조합 규칙이 아직 정해지지 않았습니다. 정해지면 이 자리에서 바로 할 수 있어요.</string>
     <string name="sneaker_sell_equipped">신고 있는 신발은 팔 수 없어요. 다른 신발을 신은 뒤 다시 시도해 주세요.</string>
     <string name="sneaker_enhance_max">이미 최고 레벨이에요.</string>
+    <string name="measurement_unavailable">측정 안 됨</string>
 </resources>

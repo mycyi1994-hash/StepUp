@@ -1,5 +1,7 @@
 package com.stepup.android.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
+import com.stepup.android.ui.experience.LocalMotion
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -162,10 +164,16 @@ fun SneakerVisual(
 ) {
     val res = sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant)
     if (res != null) {
+        val float = if (animate && LocalMotion.current.decorative) ambientPhase(3600, reverse = true) else null
         Image(
             painter = painterResource(res),
             contentDescription = null,
-            modifier = modifier,
+            modifier = modifier.graphicsLayer {
+                if (float != null) {
+                    translationY = (float.value - .5f) * 5.dp.toPx()
+                    rotationZ = (float.value - .5f) * .6f
+                }
+            },
             contentScale = contentScale,
         )
     } else if (animate) {

@@ -1,5 +1,11 @@
 package com.stepup.android.ui.screens.home
 
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -132,9 +138,11 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
+    val largeText = LocalDensity.current.fontScale > 1.2f
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
@@ -162,14 +170,20 @@ fun HomeScreen(
             onOpenProfile = onOpenAnalytics,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.30f)
+                .heightIn(min = 180.dp)
                 .guideTarget(GuideTour.Targets.HOME_STEPS),
         )
 
+        if (largeText) {
+            EnergyCard(state.energy, state.maxEnergy, state.energyPercent, state.earnableSteps,
+                state.earnableSup, state.loaded && state.maxEnergy > 0,
+                Modifier.fillMaxWidth().height(350.dp).guideTarget(GuideTour.Targets.HOME_ENERGY))
+            DistanceCard(state.week, onOpenAnalytics, Modifier.fillMaxWidth().height(300.dp))
+        } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.12f),
+                .height(290.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             EnergyCard(
@@ -193,12 +207,14 @@ fun HomeScreen(
             )
         }
 
+        }
+
         SneakerStrip(
             state = state,
             onOpenItems = onOpenItems,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.74f),
+                .heightIn(min = 125.dp),
         )
 
         StartRunButton(
@@ -211,6 +227,7 @@ fun HomeScreen(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun TopBar(
     unread: Int,
     onOpenLanguage: () -> Unit,
@@ -219,10 +236,10 @@ private fun TopBar(
 ) {
     val systemDark = isSystemInDarkTheme()
     val dark = StepUpColors.dark
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Wordmark(fontSize = 20.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -419,6 +436,7 @@ private fun StepsHeroCard(
     val fraction = if (state.goal > 0) state.todaySteps.toFloat() / state.goal else 0f
     val steps = animatedInt(state.todaySteps)
 
+    val large = LocalDensity.current.fontScale > 1.2f
     GlowCard(
         modifier = modifier,
         accent = true,
@@ -428,7 +446,7 @@ private fun StepsHeroCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .heightIn(min = 130.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
@@ -588,14 +606,13 @@ private fun EnergyCard(
             } else {
                 stringResource(R.string.home_energy_loading)
             },
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             color = if (ready) Snow else Slate,
             fontWeight = FontWeight.Bold,
-            maxLines = 1,
         )
         Text(
             text = stringResource(R.string.home_recharge_in, countdown),
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             color = Volt,
             fontWeight = FontWeight.SemiBold,
         )

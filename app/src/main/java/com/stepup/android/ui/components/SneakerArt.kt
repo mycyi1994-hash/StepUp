@@ -686,34 +686,9 @@ fun SneakerHero(
     modifier: Modifier = Modifier,
     orbit: Boolean = true,
 ) {
-    val transition = rememberInfiniteTransition(label = "sneakerHero")
-    val shimmer by transition.animateFloat(
-        initialValue = -0.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3600, 900, LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "heroShimmer",
-    )
-    val float by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "heroFloat",
-    )
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2400, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "heroPhase",
-    )
+    val shimmer = ambientPhase(4500).value
+    val float = (ambientPhase(3200, reverse = true).value - .5f) * 2f
+    val phase = ambientPhase(3000).value
     val accent = Color(sneaker.faction.accent)
 
     Box(modifier, contentAlignment = Alignment.Center) {

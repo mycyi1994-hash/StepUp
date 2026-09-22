@@ -1,39 +1,53 @@
 package com.stepup.android.ui.theme
 
+import androidx.compose.ui.unit.em
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.stepup.android.R
 
-/**
- * 테크 + 몽글몽글의 균형:
- *  - 큰 숫자·제목은 두툼한 Bold/ExtraBold + 타이트한 자간 (토스식 신뢰감).
- *  - 소형 라벨(눈썹)은 넓은 자간의 대문자 — 크립토 대시보드의 긴장감.
- */
-val StepUpTypography = Typography().let { base ->
-    base.copy(
-        displayLarge = base.displayLarge.copy(
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-1.8).sp,
-        ),
-        displayMedium = base.displayMedium.copy(
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-1.4).sp,
-        ),
-        displaySmall = base.displaySmall.copy(
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-1.0).sp,
-        ),
-        headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-        headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-        headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
-        titleLarge = base.titleLarge.copy(fontWeight = FontWeight.Bold),
-        titleMedium = base.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
-        titleSmall = base.titleSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
-        bodyLarge = base.bodyLarge.copy(lineHeight = 25.sp),
-        bodyMedium = base.bodyMedium.copy(lineHeight = 22.sp),
-        bodySmall = base.bodySmall.copy(lineHeight = 18.sp, letterSpacing = 0.1.sp),
-        labelLarge = base.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
-        labelMedium = base.labelMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.1.sp),
-        labelSmall = base.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.3.sp),
-    )
-}
+/** Bundled OFL fonts work offline. Android supplies missing CJK/emoji glyphs. */
+val StepUpSans = FontFamily(
+    Font(R.font.pretendard_regular, FontWeight.Normal),
+    Font(R.font.pretendard_medium, FontWeight.Medium),
+    Font(R.font.pretendard_semibold, FontWeight.SemiBold),
+    Font(R.font.pretendard_bold, FontWeight.Bold),
+    Font(R.font.pretendard_extrabold, FontWeight.ExtraBold),
+)
+val StepUpNumbers = FontFamily(
+    Font(R.font.barlow_semibold, FontWeight.SemiBold),
+    Font(R.font.barlow_bold, FontWeight.Bold),
+)
+
+private fun type(size: Int, height: Int, weight: FontWeight, tracking: Double = 0.0) = TextStyle(
+    fontFamily = StepUpSans, fontWeight = weight, fontSize = size.sp, lineHeight = (height.toFloat() / size).em,
+    fontFeatureSettings = "tnum", letterSpacing = tracking.sp, platformStyle = PlatformTextStyle(includeFontPadding = false),
+)
+
+val StepUpTypography = Typography(
+    displayLarge = type(56, 62, FontWeight.ExtraBold, -1.1),
+    displayMedium = type(44, 50, FontWeight.ExtraBold, -.8),
+    displaySmall = type(36, 42, FontWeight.ExtraBold, -.6),
+    headlineLarge = type(32, 40, FontWeight.ExtraBold, -.5),
+    headlineMedium = type(28, 36, FontWeight.Bold, -.4),
+    headlineSmall = type(24, 32, FontWeight.Bold, -.3),
+    titleLarge = type(22, 30, FontWeight.Bold, -.2),
+    titleMedium = type(16, 24, FontWeight.SemiBold),
+    titleSmall = type(14, 21, FontWeight.SemiBold),
+    bodyLarge = type(16, 25, FontWeight.Normal),
+    bodyMedium = type(15, 23, FontWeight.Normal),
+    bodySmall = type(13, 20, FontWeight.Medium),
+    labelLarge = type(14, 20, FontWeight.SemiBold, .15),
+    labelMedium = type(12, 18, FontWeight.SemiBold, .2),
+    labelSmall = type(12, 18, FontWeight.SemiBold, .3),
+)
+
+val MetricTypography = TextStyle(
+    fontFamily = StepUpNumbers, fontWeight = FontWeight.Bold, lineHeight = 1.2.em,
+    fontFeatureSettings = "tnum", letterSpacing = (-.5).sp,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+)

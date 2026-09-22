@@ -1272,4 +1272,5 @@ Start running with StepUp.</string>
     <string name="sneaker_fuse_pending">Fusing rules are not decided yet. It will open here once they are.</string>
     <string name="sneaker_sell_equipped">You are wearing this pair, so it cannot be sold. Equip another pair first.</string>
     <string name="sneaker_enhance_max">This pair is already at max level.</string>
+    <string name="measurement_unavailable">Not measured</string>
 </resources>

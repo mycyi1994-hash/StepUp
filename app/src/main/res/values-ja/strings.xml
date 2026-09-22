@@ -1271,4 +1271,5 @@ StepUp と走り出そう。</string>
     <string name="sneaker_fuse_pending">合成のルールはまだ決まっていません。決まり次第、ここで行えます。</string>
     <string name="sneaker_sell_equipped">履いている靴は売れません。別の靴に履き替えてからお試しください。</string>
     <string name="sneaker_enhance_max">すでに最大レベルです。</string>
+    <string name="measurement_unavailable">未測定</string>
 </resources>

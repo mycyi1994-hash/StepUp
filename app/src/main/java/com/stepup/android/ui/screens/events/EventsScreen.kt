@@ -79,6 +79,8 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+
+import com.stepup.android.ui.components.celebrate
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -95,12 +97,15 @@ fun EventsScreen(
     val claimed by viewModel.claimedIds.collectAsStateWithLifecycle()
     val claimResult by viewModel.claimResult.collectAsStateWithLifecycle()
 
+    var celebration by remember { mutableIntStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
     val notFinished = stringResource(R.string.toast_not_finished)
     LaunchedEffect(claimResult) {
         when (val r = claimResult) {
-            is ClaimResult.Success ->
+            is ClaimResult.Success -> {
+                celebration++
                 Toast.makeText(context, claimedFmt.format("%,.0f".format(r.amount)), Toast.LENGTH_SHORT).show()
+            }
             ClaimResult.NotFinished ->
                 Toast.makeText(context, notFinished, Toast.LENGTH_SHORT).show()
             null -> {}
@@ -172,7 +177,7 @@ fun EventsScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Wordmark(fontSize = 22.sp, modifier = Modifier.weight(1f))
-                TotalRewardsCard(balance)
+                TotalRewardsCard(balance, celebration)
                 DarkIconButton(
                     icon = Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.cd_notifications),
@@ -319,11 +324,12 @@ private fun countdown(targetMillis: Long): String {
 
 /** 누적 리워드 카드 — 뉴스 화면도 같은 머리글을 쓴다 */
 @Composable
-internal fun TotalRewardsCard(balance: Double) {
+internal fun TotalRewardsCard(balance: Double, celebration: Int = 0) {
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = Modifier
             .clip(shape)
+            .celebrate(celebration.takeIf { it > 0 })
             .background(CarbonHigh, shape)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -343,6 +349,7 @@ internal fun TotalRewardsCard(balance: Double) {
             ) {
                 Text(
                     text = "%,.2f".format(balance),
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Snow,
@@ -350,6 +357,7 @@ internal fun TotalRewardsCard(balance: Double) {
                 )
                 Text(
                     text = "+$%,.2f".format(balance * 0.01),
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Volt,

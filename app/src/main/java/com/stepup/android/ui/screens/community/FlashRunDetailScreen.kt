@@ -407,6 +407,7 @@ private fun InfoCell(
             }
             Text(
                 text = value,
+                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,

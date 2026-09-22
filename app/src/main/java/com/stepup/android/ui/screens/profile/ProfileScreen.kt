@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.profile
 
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.material.icons.filled.Tune
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -130,6 +134,7 @@ fun ProfileScreen(
     onOpenConnected: () -> Unit = {},
     onOpenLanguage: () -> Unit = {},
     onOpenTheme: () -> Unit = {},
+    onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
@@ -187,6 +192,7 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
         SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
+        SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
         SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
         SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
         SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
@@ -247,9 +253,16 @@ fun ProfileScreen(
         item { RecordsCard(state, onOpenAnalytics) }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DistanceCard(state, onOpenAnalytics)
-                StreakCard(state)
+            if (LocalDensity.current.fontScale > 1.2f) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row { DistanceCard(state, onOpenAnalytics) }
+                    Row { StreakCard(state) }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DistanceCard(state, onOpenAnalytics)
+                    StreakCard(state)
+                }
             }
         }
 
@@ -477,56 +490,22 @@ private fun previewAchievements(state: ProfileViewModel.UiState): List<Boolean> 
 /** 나의 기록 — 누적 걸음/거리/칼로리/운동시간 4열 */
 @Composable
 private fun RecordsCard(state: ProfileViewModel.UiState, onOpenAnalytics: () -> Unit) {
-    GlowCard(
-        modifier = Modifier.quietClickable(onOpenAnalytics),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 16.dp),
-        spacing = 13.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.profile_my_records),
-                style = MaterialTheme.typography.titleMedium,
-                color = Snow,
-            )
-            Icon(
-                Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = Slate,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RecordCell(
-                label = stringResource(R.string.profile_lifetime_steps),
-                value = "%,d".format(state.lifetimeSteps),
-                unit = stringResource(R.string.stat_steps),
-            )
-            VerticalHairline(height = 44.dp)
-            RecordCell(
-                label = stringResource(R.string.profile_total_distance),
-                value = "%.2f".format(state.lifetimeKm),
-                unit = "km",
-            )
-            VerticalHairline(height = 44.dp)
-            RecordCell(
-                label = stringResource(R.string.profile_total_calories),
-                value = "%,.0f".format(state.lifetimeCalories),
-                unit = "kcal",
-            )
-            VerticalHairline(height = 44.dp)
-            RecordCell(
-                label = stringResource(R.string.profile_total_time),
-                value = if (state.totalDurationSec > 0) formatDuration(state.totalDurationSec) else "—",
-            )
+    val labels = listOf(stringResource(R.string.profile_lifetime_steps), stringResource(R.string.profile_total_distance),
+        stringResource(R.string.profile_total_calories), stringResource(R.string.profile_total_time))
+    val values = listOf("%,d".format(state.lifetimeSteps), "%.2f km".format(state.lifetimeKm),
+        "%,.0f kcal".format(state.lifetimeCalories), if (state.totalDurationSec > 0) formatDuration(state.totalDurationSec) else "—")
+    val columns = if (LocalDensity.current.fontScale > 1.3f) 1 else 2
+    GlowCard(modifier = Modifier.quietClickable(onOpenAnalytics)) {
+        SectionHeader(stringResource(R.string.profile_my_records))
+        labels.indices.chunked(columns).forEach { group ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                group.forEach { i ->
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(labels[i], style = MaterialTheme.typography.bodySmall, color = Silver)
+                        Text(values[i], style = MaterialTheme.typography.titleLarge, color = Snow)
+                    }
+                }
+            }
         }
     }
 }
@@ -572,7 +551,7 @@ private fun RowScope.DistanceCard(state: ProfileViewModel.UiState, onOpenAnalyti
     GlowCard(
         modifier = Modifier
             .weight(1f)
-            .height(210.dp)
+            .heightIn(min = 250.dp)
             .quietClickable(onOpenAnalytics),
         contentPadding = PaddingValues(16.dp),
         spacing = 7.dp,
@@ -606,7 +585,7 @@ private fun RowScope.DistanceCard(state: ProfileViewModel.UiState, onOpenAnalyti
             lineHeight = 13.sp,
             color = Slate,
         )
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(12.dp))
         // 미니 행성 — 방사형 볼트 그라데이션 원 + 점선 궤도 + 위성 점
         Canvas(
             modifier = Modifier
@@ -651,7 +630,7 @@ private fun RowScope.StreakCard(state: ProfileViewModel.UiState) {
     GlowCard(
         modifier = Modifier
             .weight(1f)
-            .height(210.dp),
+            .heightIn(min = 250.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 16.dp),
         spacing = 7.dp,
     ) {
@@ -684,7 +663,7 @@ private fun RowScope.StreakCard(state: ProfileViewModel.UiState) {
             lineHeight = 13.sp,
             color = Slate,
         )
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             weekSlots(state.week).forEachIndexed { index, (date, day) ->
                 val met = day != null && day.steps >= day.goal

@@ -91,6 +91,12 @@ import com.stepup.android.ui.screens.market.nftMarketSection
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
+import com.stepup.android.ui.components.reveal
+import com.stepup.android.ui.components.celebrate
+import com.stepup.android.domain.Rarity
+import com.stepup.android.ui.components.PillChip
+import com.stepup.android.ui.components.Wordmark
+
 @Composable
 fun ItemsScreen(
     onOpenSneaker: (Long) -> Unit = {},
@@ -358,6 +364,7 @@ fun ItemsScreen(
                             )
                             Text(
                                 text = "%,.0f / %,.0f SUP".format(balance.coerceAtMost(cost), cost),
+                               fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (balance >= cost) Volt else Slate,
@@ -589,7 +596,7 @@ fun ItemsScreen(
             },
             text = {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().reveal(sneaker.id).celebrate(sneaker.id),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {

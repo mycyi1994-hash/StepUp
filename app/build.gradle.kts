@@ -35,8 +35,8 @@ android {
         applicationId = "com.stepup.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "1.15.1"
+        versionCode = 25
+        versionName = "1.17.0"
 
         // 러닝 증명을 받을 서버 주소. 배포 전에는 비어 있고, 비어 있으면 앱은
         // 업로드를 시도하지 않고 세션을 대기열에 쌓아 둔다.
@@ -73,6 +73,7 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -161,6 +162,10 @@ tasks.matching {
         }
     }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.browser)
@@ -191,5 +196,11 @@ dependencies {
     implementation(libs.google.id)
 
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

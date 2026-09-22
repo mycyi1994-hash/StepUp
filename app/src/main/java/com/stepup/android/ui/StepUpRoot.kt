@@ -1,5 +1,13 @@
 package com.stepup.android.ui
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import com.stepup.android.ui.experience.*
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -150,6 +158,7 @@ object Routes {
     const val SETTINGS_SUPPORT = "settings/support"
     const val SETTINGS_CONNECTED = "settings/connected"
     const val SETTINGS_LANGUAGE = "settings/language"
+    const val SETTINGS_EXPERIENCE = "settings/experience"
     const val SETTINGS_THEME = "settings/theme"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
@@ -213,19 +222,28 @@ fun StepUpRoot() {
     Box(Modifier.fillMaxSize()) {
         NightCanvas(Modifier.fillMaxSize())
 
-        when {
-            !ready || loginMethod == null || guideSeen == null || !sessionChecked ->
+        val stage = when {
+            !ready || loginMethod == null || guideSeen == null || !sessionChecked -> 0
+            loginMethod!!.isEmpty() -> 1
+            else -> 2
+        }
+        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visible ->
+        when (visible) {
+            0 ->
                 SplashScreen(onReady = { ready = true })
 
-            loginMethod!!.isEmpty() -> LoginScreen(onDone = {})
+            1 -> LoginScreen(onDone = {})
 
             else -> MainScaffold(startTour = guideSeen == false)
+        }
         }
     }
 }
 
 @Composable
-private fun MainScaffold(startTour: Boolean = false) {
+internal fun MainScaffold(startTour: Boolean = false) {
+    RunFeedback()
+    val motion = LocalMotion.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -271,6 +289,10 @@ private fun MainScaffold(startTour: Boolean = false) {
             navController = navController,
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
+            exitTransition = { fadeOut(tween(motion.duration(140))) },
+            popEnterTransition = { fadeIn(tween(motion.duration(180))) },
+            popExitTransition = { fadeOut(tween(motion.duration(140))) + slideOutHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
@@ -343,6 +365,7 @@ private fun MainScaffold(startTour: Boolean = false) {
                     onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+                    onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
                     onOpenItems = { navController.switchTab(Screen.Market) },
                 )
@@ -388,6 +411,9 @@ private fun MainScaffold(startTour: Boolean = false) {
             }
             composable(Routes.SETTINGS_CONNECTED) {
                 ConnectedAccountsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_EXPERIENCE) {
+                com.stepup.android.ui.screens.settings.ExperienceSettingsScreen { navController.popBackStack() }
             }
             composable(Routes.SETTINGS_THEME) {
                 ThemeScreen(onBack = { navController.popBackStack() })
@@ -539,7 +565,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 }
 
 @Composable
-private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
     val tint by animateColorAsState(
         targetValue = if (selected) Volt else Slate,
         label = "navTabTint",
@@ -549,10 +575,11 @@ private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
         label = "navTabDot",
     )
     Column(
-        modifier = Modifier
+        modifier = Modifier.weight(1f)
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
-            .quietClickable(onClick)
+            .semantics { this.selected = selected }
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { if (!selected) onClick() }
             // 탭이 여섯 개라 좁은 화면에서는 한 칸이 60dp 남짓이다.
             // 좌우 여백을 줄여 "커뮤니티" 같은 긴 이름이 줄바꿈되지 않게 한다.
             .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -561,18 +588,18 @@ private fun NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = screen.icon,
-            contentDescription = stringResource(screen.labelRes),
+            contentDescription = null,
             tint = tint,
             modifier = Modifier.size(22.dp),
         )
         Text(
             text = stringResource(screen.labelRes),
             color = tint,
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             letterSpacing = 0.sp,
-            maxLines = 1,
-            softWrap = false,
+            textAlign = TextAlign.Center,
+            softWrap = true,
         )
         Box(
             modifier = Modifier

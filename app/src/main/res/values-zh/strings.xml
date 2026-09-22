@@ -1270,4 +1270,5 @@
     <string name="sneaker_fuse_pending">合成规则尚未确定。确定后即可在此进行。</string>
     <string name="sneaker_sell_equipped">正在穿着的鞋无法出售。请先换上其他鞋子。</string>
     <string name="sneaker_enhance_max">已经是最高等级。</string>
+    <string name="measurement_unavailable">未测量</string>
 </resources>

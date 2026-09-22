@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NewsItemEntity::class,
     ],
     version = 11,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stepDao(): StepDao

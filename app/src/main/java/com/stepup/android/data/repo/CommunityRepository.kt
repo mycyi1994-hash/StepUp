@@ -257,11 +257,11 @@ class CommunityRepository(
      *
      * @param parentId 0이면 새 댓글, 그 외에는 그 댓글에 대한 답글
      */
-    suspend fun addComment(postId: Long, body: String, author: String, parentId: Long = 0L) {
+    suspend fun addComment(postId: Long, body: String, author: String, parentId: Long = 0L): Long {
         val text = body.trim()
-        if (text.isEmpty()) return
-        if (postDao.byId(postId) == null) return
-        commentDao.insert(
+        if (text.isEmpty()) return 0L
+        if (postDao.byId(postId) == null) return 0L
+        val id = commentDao.insert(
             CommentEntity(
                 postId = postId,
                 parentId = parentId,
@@ -273,6 +273,7 @@ class CommunityRepository(
         )
         syncCount(postId)
         if (parentId == 0L) scheduleDemoReply(postId)
+        return id
     }
 
     suspend fun deleteComment(id: Long) {

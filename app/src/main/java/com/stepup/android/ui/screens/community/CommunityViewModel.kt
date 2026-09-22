@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.ui.experience.ExperienceEvents
+import com.stepup.android.ui.experience.FeedbackCue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -233,7 +235,7 @@ class CommunityViewModel(
 
     fun sendComment(postId: Long, body: String, parentId: Long, author: String) {
         viewModelScope.launch {
-            communityRepository.addComment(postId, body, author, parentId)
+            if (communityRepository.addComment(postId, body, author, parentId) > 0) ExperienceEvents.emit(FeedbackCue.Success)
         }
     }
 
@@ -300,7 +302,7 @@ class CommunityViewModel(
     fun createCrew(name: String, tagline: String, area: String, onCreated: (String) -> Unit) {
         viewModelScope.launch {
             val id = crewRepository.create(name, tagline, area)
-            if (id.isNotEmpty()) onCreated(id)
+            if (id.isNotEmpty()) { ExperienceEvents.emit(FeedbackCue.Success); onCreated(id) }
         }
     }
 

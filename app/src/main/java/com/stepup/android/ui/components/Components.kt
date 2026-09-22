@@ -4,7 +4,17 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.theme.StepUpSans
+import com.stepup.android.ui.theme.MetricTypography
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import com.stepup.android.ui.experience.LocalMotion
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -131,6 +141,7 @@ fun GlowCard(
 ) {
     Column(
         modifier = modifier
+            .reveal()
             .fillMaxWidth()
             .shadow(
                 elevation = 2.dp,
@@ -212,6 +223,7 @@ fun GradientText(
         modifier = modifier,
         textAlign = textAlign,
         style = TextStyle(
+            fontFamily = StepUpSans,
             brush = brush,
             fontSize = fontSize,
             fontWeight = fontWeight,
@@ -466,7 +478,7 @@ fun NeonRing(
 ) {
     val target = if (inactive) 0f else progress.coerceIn(0f, 1f)
     // 기기에서 애니메이션을 꺼 두었으면 값이 바로 도착한다.
-    val swept = if (reduceMotion()) target else animatedFloat(target, durationMillis)
+    val swept = animatedFloat(target, durationMillis)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = ringWidth.toPx()
@@ -559,13 +571,13 @@ fun EnergyMeter(
     segments: Int = 12,
 ) {
     val safeMax = if (max <= 0.0) 1.0 else max
-    val exact = (current / safeMax).coerceIn(0.0, 1.0) * segments
+    val exact = animatedFloat((current / safeMax).coerceIn(0.0, 1.0).toFloat()) * segments
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         repeat(segments) { index ->
-            val fill = (exact - index).coerceIn(0.0, 1.0).toFloat()
+            val fill = (exact - index).coerceIn(0f, 1f)
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -603,12 +615,12 @@ fun StartRunButton(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(74.dp)
+            .heightIn(min = 80.dp)
             .clip(shape)
             .background(VoltPlate, shape)
             .sheen(alpha = 0.22f)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp),
+            .feedbackClickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -630,14 +642,14 @@ fun StartRunButton(
                 color = OnVolt,
                 fontSize = 21.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 3.sp,
+                letterSpacing = 1.sp,
             )
             Text(
                 text = subtitle,
                 color = OnVolt.copy(alpha = 0.65f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 2.sp,
+                letterSpacing = 0.3.sp,
             )
         }
         Box(
@@ -667,14 +679,14 @@ fun VoltButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .height(44.dp)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .background(
                 if (enabled) VoltPlate else Brush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
                 shape,
             )
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 22.dp),
+            .feedbackClickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 22.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -682,7 +694,7 @@ fun VoltButton(
             color = if (enabled) OnVolt else Slate,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.2.sp,
+            letterSpacing = 0.2.sp,
         )
     }
 }
@@ -699,12 +711,12 @@ fun GhostButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .height(44.dp)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .background(accent.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
             .border(1.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp),
+            .feedbackClickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -728,12 +740,19 @@ fun PillChip(
     badge: Int = 0,
 ) {
     val shape = RoundedCornerShape(50)
+    val motion = LocalMotion.current
+    val fill by animateColorAsState(if (selected) Volt.copy(alpha = .12f) else CarbonHigh,
+        tween(motion.duration(180)), label = "chipFill")
+    val outline by animateColorAsState(if (selected) Volt.copy(alpha = .55f) else Edge,
+        tween(motion.duration(180)), label = "chipOutline")
     Row(
         modifier = modifier
+            .heightIn(min = 48.dp)
+            .semantics { this.selected = selected }
             .clip(shape)
-            .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
-            .border(1.dp, if (selected) Volt.copy(alpha = 0.55f) else Edge, shape)
-            .clickable(onClick = onClick)
+            .background(fill, shape)
+            .border(1.dp, outline, shape)
+            .feedbackClickable(cue = FeedbackCue.Select, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -765,6 +784,7 @@ fun PillChip(
                     color = OnVolt,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(
+            fontFamily = StepUpSans,
                         fontSize = 9.sp,
                         lineHeight = 9.sp,
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
@@ -784,14 +804,14 @@ fun DarkIconButton(
     modifier: Modifier = Modifier,
     badge: Boolean = false,
 ) {
-    Box(modifier = modifier.size(44.dp)) {
+    Box(modifier = modifier.size(48.dp)) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(14.dp))
                 .background(CarbonHigh)
                 .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                .clickable(onClick = onClick),
+                .feedbackClickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(19.dp))
@@ -836,7 +856,7 @@ fun CircleControl(
                         .border(1.5.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), CircleShape)
                 },
             )
-            .clickable(enabled = enabled, onClick = onClick),
+            .feedbackClickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -846,12 +866,7 @@ fun CircleControl(
 /** 리플 없는 클릭 영역 */
 @Composable
 fun Modifier.quietClickable(onClick: () -> Unit): Modifier {
-    val interactionSource = remember { MutableInteractionSource() }
-    return clickable(
-        interactionSource = interactionSource,
-        indication = null,
-        onClick = onClick,
-    )
+    return feedbackClickable(onClick = onClick)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -899,6 +914,7 @@ fun RowScope.StatCell(
         )
         Text(
             text = value,
+           fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
             style = MaterialTheme.typography.titleMedium,
             color = Snow,
             textAlign = TextAlign.Center,
@@ -921,7 +937,7 @@ fun ListRow(
             .clip(shape)
             .background(CarbonHigh.copy(alpha = 0.6f), shape)
             .border(1.dp, Edge, shape)
-            .clickable(onClick = onClick)
+            .feedbackClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
@@ -1069,7 +1085,7 @@ fun TokenCard(
             .clip(shape)
             .background(CardFill, shape)
             .border(1.dp, Edge, shape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1079,6 +1095,7 @@ fun TokenCard(
             Text("StepUp Token", color = Silver, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             Text(
                 text = "%,.2f".format(balance),
+                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                 color = Snow,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -1087,6 +1104,7 @@ fun TokenCard(
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = "≈ $%,.2f".format(balance * 0.01),
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     color = Slate,
                     fontSize = 10.sp,
                 )

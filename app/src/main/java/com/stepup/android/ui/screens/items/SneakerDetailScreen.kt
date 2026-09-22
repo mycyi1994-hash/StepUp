@@ -323,6 +323,7 @@ fun SneakerDetailScreen(
                         )
                         Text(
                             text = "%,.0f / %,.0f SUP".format(balance.coerceAtMost(cost), cost),
+                           fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = if (balance >= cost) Volt else Slate,

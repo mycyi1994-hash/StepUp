@@ -102,9 +102,8 @@ object ServiceLocator {
             // 근거가 되는 순간부터, 스키마를 고쳤다고 사용자 기록을 지우는 것은
             // 개발 편의가 아니라 데이터 손실이다.
             .addMigrations(*AppDatabase.MIGRATIONS)
-            // 마이그레이션 경로가 없는 옛 버전(6 미만)에서 올라오는 경우의
-            // 안전망. 여기 걸리면 데모 데이터만 다시 만들어진다.
-            .fallbackToDestructiveMigration()
+            // Unknown schemas must remain intact. Never erase records to make an
+            // unsupported upgrade or downgrade appear successful.
             .build()
         userPrefs = UserPrefs(app)
         googleSignIn = GoogleSignIn(BuildConfig.GOOGLE_WEB_CLIENT_ID)
