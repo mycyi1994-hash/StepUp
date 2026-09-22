@@ -4,6 +4,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.LocaleList
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
@@ -25,6 +27,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import com.giwa.strideup.ui.StrideUpRoot
 import com.giwa.strideup.core.ServiceLocator
 import com.giwa.strideup.ui.components.VoltButton
+import com.giwa.strideup.ui.components.animatedInt
 import com.giwa.strideup.ui.experience.*
 import com.giwa.strideup.ui.screens.home.HomeScreen
 import com.giwa.strideup.ui.screens.walk.*
@@ -39,6 +42,8 @@ import com.giwa.strideup.ui.screens.login.LoginScreen
 import com.giwa.strideup.ui.theme.*
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -91,7 +96,9 @@ class ExperienceUiTest {
                 screenHeightDp = if (large) 568 else 680
             }
             val localized = remember(language) { base.createConfigurationContext(config) }
-            CompositionLocalProvider(LocalContext provides localized, LocalConfiguration provides config,
+            CompositionLocalProvider(LocalActivityResultRegistryOwner provides compose.activity,
+                LocalOnBackPressedDispatcherOwner provides compose.activity,
+                LocalContext provides localized, LocalConfiguration provides config,
                 LocalDensity provides Density(LocalDensity.current.density, config.fontScale)) {
                 StrideUpTheme {
                     ExperienceProvider {
@@ -173,6 +180,36 @@ class ExperienceUiTest {
         compose.runOnIdle { assertEquals(0, clicks); enabled = true }
         compose.onNodeWithText("Confirm").performClick()
         compose.runOnIdle { assertEquals(1, clicks) }
+    }
+
+    @Test fun reducedMotionShowsFinalMetricWithoutInterpolation() {
+        var target by mutableIntStateOf(0)
+        compose.setContent { StrideUpTheme {
+            CompositionLocalProvider(LocalMotion provides MotionPreferences(reduced = true)) {
+                androidx.compose.material3.Text("${animatedInt(target)}")
+            }
+        } }
+        compose.onNodeWithText("0").assertExists()
+        compose.runOnIdle { target = 8000 }
+        compose.onNodeWithText("8000").assertExists()
+    }
+
+    @Test fun everyBundledCueDecodesWithAndroidSoundPool() {
+        val loaded = CountDownLatch(FeedbackCue.entries.size)
+        val failures = java.util.concurrent.CopyOnWriteArrayList<Int>()
+        lateinit var pool: android.media.SoundPool
+        compose.runOnUiThread {
+            pool = android.media.SoundPool.Builder().setMaxStreams(2).build()
+            pool.setOnLoadCompleteListener { _, id, status ->
+                if (status != 0) failures.add(id)
+                loaded.countDown()
+            }
+            FeedbackCue.entries.forEach { pool.load(compose.activity, it.sound, 1) }
+        }
+        try {
+            assertTrue("All nine cues should load", loaded.await(10, TimeUnit.SECONDS))
+            assertTrue("Decoder failures: $failures", failures.isEmpty())
+        } finally { compose.runOnUiThread { pool.release() } }
     }
 
     @Test fun mainNavigationAndSettingsAreReachable() {
