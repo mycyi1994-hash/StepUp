@@ -52,12 +52,22 @@ python tools/check_experience_assets.py
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-`ExperienceUiTest` renders the modules on Android in four languages, records
-compact-phone / 160% text captures, exercises primary navigation and checks
-setting persistence and disabled controls. The **Experience QA** workflow
-preserves PNG captures, Android test results, lint reports and the debug APK for
-review. Rendering checks and manual visual review complement each other; merely
-producing a PNG does not establish that its layout is correct.
+`ExperienceUiTest` renders 25 module screens in Korean, English, Japanese and
+Chinese, plus eight compact-phone / 160% text captures and six navigation captures.
+The dashboard fixture includes 12,840 steps so numeric clipping is visible.
+Navigation is exercised with motion enabled; reduced-motion metrics are checked
+separately. The tests also verify settings persistence, disabled controls and
+Android decoding of all nine sounds.
+
+The **Experience QA** workflow requires all 114 PNGs to be preserved, along with
+Android test results, lint reports and the debug APK. Its emulator-only command
+keeps the test APK installed until screenshots have been copied; normal app
+builds are unaffected. Rendering checks and manual visual review complement
+each other; merely producing a PNG does not establish that its layout is correct.
+
+The JVM suite contains 28 tests: existing reward/run-integrity checks, exhaustive
+sound policy combinations, and run cue transitions (including quiet timer/step
+updates, no repeated receipts, and rejection of invalid-session celebrations).
 
 Release signing still uses the existing external signing configuration described
 in `RELEASE-SIGNING.md`. No production signing key is stored in this repository.

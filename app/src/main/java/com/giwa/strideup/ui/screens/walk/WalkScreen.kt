@@ -133,6 +133,7 @@ fun RunScreen(
     val laps by viewModel.laps.collectAsStateWithLifecycle()
     val course by viewModel.selectedCourse.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f
 
     // 목표 거리(km) — 프로세스에 살아서 화면을 나갔다 와도, 회전해도 유지된다
     val goalKm by viewModel.goalKm.collectAsStateWithLifecycle()
@@ -246,6 +247,11 @@ fun RunScreen(
 
         item {
             GlowCard(contentPadding = PaddingValues(vertical = 20.dp, horizontal = 12.dp)) {
+                if (largeText) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true }, Modifier.size(210.dp))
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -275,54 +281,7 @@ fun RunScreen(
                             color = Volt,
                         )
                     }
-                    NeonRing(
-                        progress = if (goalKm > 0) (distanceKm / goalKm).toFloat() else 0f,
-                        modifier = Modifier.size(150.dp),
-                        ringWidth = 9.dp,
-                        glowAlpha = if (running) 0.20f else 0.12f,
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
-                                contentDescription = null,
-                                tint = Volt,
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.run_total_time),
-                                fontSize = 9.sp,
-                                color = Slate,
-                            )
-                            Text(
-                                text = formatDuration(session.elapsedSec),
-                                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
-                                fontSize = 23.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = (-0.5).sp,
-                                color = Snow,
-                            )
-                            Row(
-                                modifier = Modifier.quietClickable { showGoalDialog = true },
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.run_goal_label, "%.2f".format(goalKm)),
-                                    fontSize = 10.sp,
-                                    color = Silver,
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = null,
-                                    tint = Volt,
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        }
-                    }
+                    if (!largeText) RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true })
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End,
@@ -1442,6 +1401,61 @@ private fun CourseChallengeCard(
                     text = stringResource(R.string.course_pick),
                     onClick = onOpenCourses,
                     modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RunTimeRing(
+    distanceKm: Double, goalKm: Double, elapsedSec: Long, running: Boolean,
+    onEditGoal: () -> Unit, modifier: Modifier = Modifier.size(150.dp),
+) {
+    NeonRing(
+        progress = if (goalKm > 0) (distanceKm / goalKm).toFloat() else 0f,
+        modifier = modifier,
+        ringWidth = 9.dp,
+        glowAlpha = if (running) 0.20f else 0.12f,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
+                contentDescription = null,
+                tint = Volt,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = stringResource(R.string.run_total_time),
+                fontSize = 9.sp,
+                color = Slate,
+            )
+            Text(
+                text = formatDuration(elapsedSec),
+                fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
+                fontSize = 23.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.5).sp,
+                color = Snow,
+            )
+            Row(
+                modifier = Modifier.quietClickable { onEditGoal() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.run_goal_label, "%.2f".format(goalKm)),
+                    fontSize = 10.sp,
+                    color = Silver,
+                )
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null,
+                    tint = Volt,
+                    modifier = Modifier.size(14.dp),
                 )
             }
         }

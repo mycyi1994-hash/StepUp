@@ -36,6 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +51,9 @@ import com.giwa.strideup.domain.Post
 import com.giwa.strideup.domain.PostCategory
 import com.giwa.strideup.ui.components.GlowCard
 import com.giwa.strideup.ui.components.quietClickable
+import com.giwa.strideup.ui.experience.FeedbackCue
+import com.giwa.strideup.ui.experience.LocalMotion
+import com.giwa.strideup.ui.experience.feedbackClickable
 import com.giwa.strideup.ui.theme.Alert
 import com.giwa.strideup.ui.theme.Carbon
 import com.giwa.strideup.ui.theme.CarbonHigh
@@ -83,6 +89,7 @@ fun SegmentedTabs(
             val active = index == selected
             val alpha by animateFloatAsState(
                 targetValue = if (active) 1f else 0f,
+                animationSpec = androidx.compose.animation.core.tween(LocalMotion.current.duration(180)),
                 label = "segment$index",
             )
             Box(
@@ -90,7 +97,8 @@ fun SegmentedTabs(
                     .weight(1f)
                     .clip(RoundedCornerShape(50))
                     .background(Volt.copy(alpha = alpha))
-                    .quietClickable { onSelect(index) }
+                    .semantics { this.selected = active }
+                    .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onSelect(index) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {

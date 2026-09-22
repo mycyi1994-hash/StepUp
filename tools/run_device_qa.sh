@@ -10,8 +10,8 @@ status=0
 adb pull /sdcard/Android/data/com.giwa.strideup/files/experience-qa/. qa-captures/ || status=1
 adb logcat -d -s AndroidRuntime > qa-captures/android-crashes.txt || true
 captures=$(find qa-captures -maxdepth 1 -name '*.png' | wc -l)
-if [ "$captures" -lt 112 ]; then
-  echo "Expected 112 Android screenshots, found $captures"
+if [ "$captures" -lt 114 ]; then
+  echo "Expected 114 Android screenshots, found $captures"
   status=1
 fi
 exit "$status"

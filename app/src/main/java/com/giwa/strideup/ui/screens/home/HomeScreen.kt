@@ -86,10 +86,7 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 
 /**
- * 홈 — 스크롤 없이 한 화면에 전부 담는다.
- *
- * 고정 높이 요소(상단바 · 인사 · CTA)를 먼저 잡고, 남는 공간을 카드들이
- * weight로 나눠 갖는다. 화면이 작아도 잘리지 않고 비율대로 줄어든다.
+ * Spacious displays use balanced card heights; compact displays and large text scroll.
  */
 @Composable
 fun HomeScreen(
@@ -124,7 +121,8 @@ fun HomeScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-    val spacious = maxHeight >= 680.dp && LocalDensity.current.fontScale <= 1.15f
+    val largeText = LocalDensity.current.fontScale > 1.15f
+    val spacious = maxHeight >= 760.dp && !largeText
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -159,10 +157,14 @@ fun HomeScreen(
                 .guideTarget(GuideTour.Targets.HOME_STEPS),
         )
 
-        Row(
+        if (largeText) {
+            EnergyCard(state.energy, state.maxEnergy, state.energyPercent, flexible = true,
+                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_ENERGY))
+            DistanceCard(state.week, onOpenProfile, flexible = true)
+        } else Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (spacious) Modifier.weight(1.12f) else Modifier.heightIn(min = 200.dp)),
+                .then(if (spacious) Modifier.weight(1.12f) else Modifier.height(210.dp)),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             EnergyCard(
@@ -234,6 +236,24 @@ private fun GreetingRow(
     onOpenWallet: () -> Unit,
     onOpenProfile: () -> Unit,
 ) {
+    if (LocalDensity.current.fontScale > 1.15f) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            RunnerGreeting(level, avatarId, avatarRev, onOpenProfile, Modifier.fillMaxWidth())
+            TokenCard(balance, modifier = Modifier.fillMaxWidth(), onClick = onOpenWallet)
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RunnerGreeting(level, avatarId, avatarRev, onOpenProfile, Modifier.weight(1f))
+            TokenCard(balance, onClick = onOpenWallet)
+        }
+    }
+}
+
+@Composable
+private fun RunnerGreeting(
+    level: Int, avatarId: Int, avatarRev: Int, onOpenProfile: () -> Unit, modifier: Modifier,
+) {
     val greetingRes = when (LocalTime.now().hour) {
         in 0..4 -> R.string.greeting_dawn
         in 5..10 -> R.string.greeting_morning
@@ -241,7 +261,7 @@ private fun GreetingRow(
         else -> R.string.greeting_evening
     }
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -273,7 +293,6 @@ private fun GreetingRow(
                 fontWeight = FontWeight.SemiBold,
             )
         }
-        TokenCard(balance = balance, onClick = onOpenWallet)
     }
 }
 
@@ -362,6 +381,7 @@ private fun StepsHeroCard(
 ) {
     val fraction = if (state.goal > 0) state.todaySteps.toFloat() / state.goal else 0f
     val steps = animatedInt(state.todaySteps)
+    val largeText = LocalDensity.current.fontScale > 1.15f
 
     GlowCard(
         modifier = modifier,
@@ -369,35 +389,16 @@ private fun StepsHeroCard(
         contentPadding = PaddingValues(15.dp),
         spacing = 8.dp,
     ) {
-        Row(
+        if (largeText) {
+            StepCountHeadline(steps, state.goal)
+            DistanceFactPanel(state.todaySteps, Modifier.fillMaxWidth())
+        } else Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.home_total_steps),
-                    fontSize = 11.sp,
-                    color = Silver,
-                )
-                Text(
-                    text = "%,d".format(steps),
-                    fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-1.8).sp,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.home_daily_goal, "%,d".format(state.goal)),
-                    fontSize = 10.sp,
-                    color = Slate,
-                )
-            }
+            StepCountHeadline(steps, state.goal, Modifier.weight(1f))
             DistanceFactPanel(
                 todaySteps = state.todaySteps,
                 modifier = Modifier
@@ -431,6 +432,17 @@ private fun StepsHeroCard(
     }
 }
 
+@Composable
+private fun StepCountHeadline(steps: Int, goal: Int, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(stringResource(R.string.home_total_steps), fontSize = 11.sp, color = Silver)
+        Text("%,d".format(steps), fontFamily = com.giwa.strideup.ui.theme.StepUpNumbers,
+            fontSize = 40.sp, lineHeight = 46.sp, fontWeight = FontWeight.ExtraBold,
+            letterSpacing = (-1.8).sp, color = Snow, maxLines = 1)
+        Text(stringResource(R.string.home_daily_goal, "%,d".format(goal)), fontSize = 10.sp, color = Slate)
+    }
+}
+
 /** 에너지 카드 — 네온 링 + 자정까지 리필 카운트다운 */
 @Composable
 private fun EnergyCard(
@@ -438,6 +450,7 @@ private fun EnergyCard(
     maxEnergy: Double,
     percent: Int,
     modifier: Modifier = Modifier,
+    flexible: Boolean = false,
 ) {
     var secondsLeft by remember { mutableIntStateOf(86_400 - LocalTime.now().toSecondOfDay()) }
     LaunchedEffect(Unit) {
@@ -468,7 +481,7 @@ private fun EnergyCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .then(if (flexible) Modifier.height(140.dp) else Modifier.weight(1f)),
             contentAlignment = Alignment.Center,
         ) {
             NeonRing(
@@ -509,6 +522,7 @@ private fun DistanceCard(
     week: List<DailyStepsEntity>,
     onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier,
+    flexible: Boolean = false,
 ) {
     val today = LocalDate.now().toEpochDay()
     val days = (0..6).map { offset -> today - 6 + offset }
@@ -554,7 +568,7 @@ private fun DistanceCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .then(if (flexible) Modifier.height(90.dp) else Modifier.weight(1f)),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.Bottom,
         ) {

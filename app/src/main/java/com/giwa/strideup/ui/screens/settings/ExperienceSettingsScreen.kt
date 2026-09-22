@@ -34,7 +34,8 @@ fun ExperienceSettingsScreen(onBack: () -> Unit) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack)
-                Text(stringResource(R.string.settings_experience), style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.settings_experience), modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.headlineSmall, color = Snow)
             }
         }
         item {
@@ -70,7 +71,7 @@ private fun ExperienceToggle(title: Int, description: Int, checked: Boolean, onC
     GlowCard(Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onChange)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = Snow)
                 Text(stringResource(description), style = MaterialTheme.typography.bodySmall, color = Silver)
             }
             Switch(checked, onCheckedChange = null)

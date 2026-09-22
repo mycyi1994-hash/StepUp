@@ -44,5 +44,5 @@ val Snow = Color(0xFFF6F7F3)
 /** 보조 텍스트 */
 val Silver = Color(0xFF9CA3AB)
 
-/** 힌트 · 비활성 */
-val Slate = Color(0xFF62686F)
+/** Hints remain readable on CarbonHigh; disabled controls also use shape and interaction state. */
+val Slate = Color(0xFF8B929A)

@@ -84,6 +84,9 @@ class ExperienceUiTest {
     }
 
     @Test fun allModulesRenderInFourLanguagesAndLargeText() {
+        // Exercise realistic five-digit figures; a dashboard containing only zeros can hide clipping.
+        ServiceLocator.stepRepository.startTracking()
+        ServiceLocator.stepRepository.simulateSteps((12840 - ServiceLocator.stepRepository.todaySteps.value).coerceAtLeast(0))
         var screen by mutableIntStateOf(0)
         var language by mutableStateOf("ko")
         var large by mutableStateOf(false)
@@ -114,6 +117,9 @@ class ExperienceUiTest {
             for (index in 0..24) {
                 compose.runOnIdle { language = locale; screen = index; large = false }
                 compose.waitForIdle()
+                if (index == 0) compose.waitUntil(5_000) {
+                    compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty()
+                }
                 capture("$locale-${index.toString().padStart(2, '0')}")
             }
         }
@@ -122,6 +128,14 @@ class ExperienceUiTest {
             compose.runOnIdle { language = "ko"; screen = index; large = true }
             compose.waitForIdle()
             capture("large-$index")
+            if (index == 0) {
+                compose.onNodeWithText("START RUN").performScrollTo().assertIsDisplayed()
+                capture("large-home-controls")
+            }
+            if (index == 1) {
+                compose.onAllNodes(hasScrollAction())[0].performScrollToIndex(2)
+                capture("large-run-metrics")
+            }
         }
     }
 
@@ -213,6 +227,7 @@ class ExperienceUiTest {
     }
 
     @Test fun mainNavigationAndSettingsAreReachable() {
+        runBlocking { ServiceLocator.userPrefs.setReducedMotion(false) }
         compose.setContent { StrideUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { StrideUpRoot() }
         } } }
