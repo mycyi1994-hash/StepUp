@@ -587,7 +587,7 @@ private fun DistanceCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(18.dp),
+                .heightIn(min = 18.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -602,10 +602,10 @@ private fun DistanceCard(
                                 .background(Volt, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(label, color = Night, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            Text(label, color = Night, fontSize = 8.sp, lineHeight = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
-                        Text(label, color = Slate, fontSize = 8.sp)
+                        Text(label, color = Slate, fontSize = 8.sp, lineHeight = 10.sp)
                     }
                 }
             }
