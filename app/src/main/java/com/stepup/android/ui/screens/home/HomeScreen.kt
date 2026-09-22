@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -44,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -175,6 +178,7 @@ fun HomeScreen(
                 percent = state.energyPercent,
                 earnableSteps = state.earnableSteps,
                 earnableSup = state.earnableSup,
+                ready = state.loaded && state.maxEnergy > 0,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -492,6 +496,8 @@ private fun EnergyCard(
     earnableSteps: Int,
     /** 그 걸음을 다 걸었을 때 받는 SUP */
     earnableSup: Double,
+    /** 실제 값이 도착했는가. 아직이면 비율을 짓지 않고 트랙만 그린다. */
+    ready: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var secondsLeft by remember { mutableIntStateOf(86_400 - LocalTime.now().toSecondOfDay()) }
@@ -520,42 +526,70 @@ private fun EnergyCard(
                 color = Snow,
             )
         }
-        // 숫자는 링 위로 뺐다. 작은 링 안에 넣으면 글자가 테두리에 닿고,
-        // 글자를 줄이면 이 카드에서 제일 먼저 읽어야 할 수가 제일 작아진다.
-        Text(
-            text = "$percent%",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-0.5).sp,
-            color = Snow,
-            maxLines = 1,
-        )
+        // 잔량 게이지. 12시에서 출발해 시계방향으로 남은 만큼 채운다.
+        //
+        // 숫자를 고리 한가운데 둔다. 글자가 테두리에 닿지 않도록 크기를
+        // 고리의 안지름에서 계산한다 — 카드 폭은 화면마다 다르고, 글자를
+        // 한 값으로 못 박으면 좁은 기기에서 링에 걸친다.
+        val gaugeCd = if (ready) {
+            stringResource(R.string.cd_home_energy_gauge, percent)
+        } else {
+            stringResource(R.string.cd_home_energy_gauge_unknown)
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .weight(1f)
+                .semantics { contentDescription = gaugeCd },
             contentAlignment = Alignment.Center,
         ) {
-            // 고리만 그린다. aspectRatio 로 정사각형을 못 박는 것은 여전히
-            // 필요하다 — 높이만 채우게 두면 폭이 0이 되어 원이 사라진다.
-            NeonRing(
-                progress = percent / 100f,
+            // aspectRatio 로 정사각형을 못 박는 것은 여전히 필요하다 —
+            // 높이만 채우게 두면 폭이 0이 되어 원이 사라진다.
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(1f),
-                ringWidth = 7.dp,
-            ) {}
+                contentAlignment = Alignment.Center,
+            ) {
+                val ringWidth = 7.dp
+                // 고리 안쪽에 실제로 비는 지름. NeonRing 이 선 굵기의 절반과
+                // 6dp 를 안쪽으로 물리므로 그만큼을 빼고 남는 자리다.
+                val inner = maxWidth - ringWidth * 3 - 12.dp
+                val size = (inner.value * 0.34f).coerceIn(11f, 22f).sp
+                NeonRing(
+                    progress = percent / 100f,
+                    modifier = Modifier.fillMaxSize(),
+                    ringWidth = ringWidth,
+                    // 값이 바뀔 때 250~400ms 로 부드럽게. 기기에서 애니메이션을
+                    // 꺼 두었으면 NeonRing 이 바로 그린다.
+                    durationMillis = 320,
+                    inactive = !ready,
+                ) {
+                    Text(
+                        text = if (ready) "$percent%" else "—",
+                        fontSize = size,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.5).sp,
+                        color = if (ready) Snow else Slate,
+                        maxLines = 1,
+                    )
+                }
+            }
         }
-        // %가 무엇의 %인지 — 오늘 남은 적립 여력이다.
-        // "N 보"와 "N SUP"를 한 줄에 붙여 카드 높이를 늘리지 않는다.
+        // %가 무엇의 %인지 — 오늘 남은 적립 여력이다. 고리 아래 별도 줄로
+        // 둔다. "N 보"와 "N SUP"를 한 줄에 붙여 카드 높이를 늘리지 않는다.
         Text(
-            text = stringResource(
-                R.string.home_energy_left,
-                "%,d".format(earnableSteps),
-                "%,.0f".format(earnableSup),
-            ),
+            text = if (ready) {
+                stringResource(
+                    R.string.home_energy_left,
+                    "%,d".format(earnableSteps),
+                    "%,.0f".format(earnableSup),
+                )
+            } else {
+                stringResource(R.string.home_energy_loading)
+            },
             fontSize = 10.sp,
-            color = Snow,
+            color = if (ready) Snow else Slate,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
         )

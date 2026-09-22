@@ -41,7 +41,6 @@ import com.stepup.android.data.remote.NewsRow
 import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.CarbonHigh
@@ -201,38 +200,18 @@ fun FeedSearchField(
     }
 }
 
-/** 칩 한 줄. 가로로 밀어 고른다. */
-@Composable
-fun <T> FeedChipRow(
-    values: List<T>,
-    selected: T,
-    label: @Composable (T) -> String,
-    onSelect: (T) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-        contentPadding = PaddingValues(horizontal = 1.dp),
-    ) {
-        items(values.size) { index ->
-            val value = values[index]
-            PillChip(
-                text = label(value),
-                selected = value == selected,
-                onClick = { onSelect(value) },
-            )
-        }
-    }
-}
-
 /**
  * 못 가져왔을 때.
  *
  * 무엇을 해야 하는지까지 적는다. "오류"만 적으면 할 수 있는 일이 없다.
  */
 @Composable
-fun FeedProblemNote(problem: FeedProblem, loadedAtMillis: Long, modifier: Modifier = Modifier) {
+fun FeedProblemNote(
+    problem: FeedProblem,
+    loadedAtMillis: Long,
+    modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -257,12 +236,34 @@ fun FeedProblemNote(problem: FeedProblem, loadedAtMillis: Long, modifier: Modifi
                 color = Slate,
             )
         }
+        // 서버가 거절한 것은 다시 해도 같은 답이 온다. 그때는 다시 시도를
+        // 내놓지 않는다 — 눌러도 달라지지 않는 버튼을 두는 것은 거짓말이다.
+        if (onRetry != null && problem == FeedProblem.OFFLINE) {
+            Text(
+                text = stringResource(R.string.feed_retry),
+                modifier = Modifier
+                    .quietClickable(onRetry)
+                    .padding(top = 2.dp, bottom = 2.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Volt,
+            )
+        }
     }
 }
 
-/** 아무것도 없을 때. 진짜 상태를 적는다 — 가짜 대회로 채우지 않는다. */
+/**
+ * 아무것도 없을 때. 진짜 상태를 적는다 — 가짜 대회로 채우지 않는다.
+ *
+ * [action] 은 할 수 있는 일이 있을 때만 붙인다. 조건을 좁혀서 빈 것이라면
+ * 조건을 푸는 것이 답이고, 아직 등록된 것이 없다면 누를 것이 없다.
+ */
 @Composable
-fun FeedEmptyNote(@StringRes text: Int, @StringRes hint: Int? = null) {
+fun FeedEmptyNote(
+    @StringRes text: Int,
+    @StringRes hint: Int? = null,
+    action: Pair<Int, () -> Unit>? = null,
+) {
     GlowCard(contentPadding = PaddingValues(18.dp), spacing = 6.dp) {
         Text(
             text = stringResource(text),
@@ -275,6 +276,17 @@ fun FeedEmptyNote(@StringRes text: Int, @StringRes hint: Int? = null) {
                 fontSize = 11.sp,
                 color = Silver,
                 lineHeight = 17.sp,
+            )
+        }
+        if (action != null) {
+            Text(
+                text = stringResource(action.first),
+                modifier = Modifier
+                    .quietClickable(action.second)
+                    .padding(top = 4.dp, bottom = 2.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Volt,
             )
         }
     }

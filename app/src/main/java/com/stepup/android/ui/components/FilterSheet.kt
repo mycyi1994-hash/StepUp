@@ -1,0 +1,446 @@
+package com.stepup.android.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.stepup.android.R
+import com.stepup.android.ui.theme.Carbon
+import com.stepup.android.ui.theme.CarbonHigh
+import com.stepup.android.ui.theme.Edge
+import com.stepup.android.ui.theme.Silver
+import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.Volt
+
+/**
+ * 거르기 한 벌 — 버튼 둘, 요약 한 줄, 아래에서 올라오는 패널.
+ *
+ * 러닝 이벤트 · 러닝·건강 뉴스 · 마켓 아이템이 모두 이 조각을 쓴다. 세
+ * 화면이 같은 모양으로 걸러져야 한 번 배운 것이 다음 화면에서도 통한다.
+ *
+ * ── 왜 가로로 미는 칩을 버렸나 ──
+ *
+ * 칩을 한 줄에 늘어놓으면 화면에 안 들어오는 선택지가 생기고, 그것이 있는
+ * 줄도 모른 채 지나간다. 또 목록의 첫 카드가 한참 아래로 밀린다. 그래서
+ * 기본 화면에는 버튼 둘과 요약 한 줄만 두고, 선택지는 패널 안에서 줄을
+ * 바꿔 가며 전부 보여 준다.
+ *
+ * ── 임시 선택 ──
+ *
+ * 패널 안에서 고른 것은 "결과 보기"를 눌러야 적용된다. X·뒤로가기·바깥을
+ * 누르면 고르기 전으로 돌아간다. 고르는 족족 목록이 다시 불려 가면, 조건을
+ * 다 맞추기 전에 서버를 네 번 부르게 된다.
+ */
+
+/** 기본 화면의 버튼 두 개 — 왼쪽 거르기, 오른쪽 정렬 */
+@Composable
+fun FilterToolbar(
+    filterLabel: String,
+    filterCount: Int,
+    sortLabel: String,
+    onOpenFilters: () -> Unit,
+    onOpenSort: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        ToolbarButton(
+            text = if (filterCount > 0) "$filterLabel $filterCount" else filterLabel,
+            leading = Icons.Filled.Tune,
+            trailing = null,
+            active = filterCount > 0,
+            onClick = onOpenFilters,
+            modifier = Modifier.weight(1f),
+        )
+        ToolbarButton(
+            text = sortLabel,
+            leading = null,
+            trailing = Icons.Filled.ExpandMore,
+            active = false,
+            onClick = onOpenSort,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ToolbarButton(
+    text: String,
+    leading: androidx.compose.ui.graphics.vector.ImageVector?,
+    trailing: androidx.compose.ui.graphics.vector.ImageVector?,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier = modifier
+            .clip(shape)
+            .background(if (active) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
+            .border(1.dp, if (active) Volt.copy(alpha = 0.55f) else Edge, shape)
+            .quietClickable(onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        if (leading != null) {
+            Icon(
+                imageVector = leading,
+                contentDescription = null,
+                tint = if (active) Volt else Silver,
+                modifier = Modifier.size(15.dp),
+            )
+            Spacer(Modifier.size(6.dp))
+        }
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (active) Volt else Silver,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (trailing != null) {
+            Spacer(Modifier.size(4.dp))
+            Icon(
+                imageVector = trailing,
+                contentDescription = null,
+                tint = Silver,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 고른 조건을 짧은 글로.
+ *
+ * 세 개까지 적고 나머지는 "외 N개"로 줄인다. 두 줄을 넘기지 않는 것은
+ * 요약이 목록보다 길어지면 요약이 아니기 때문이다.
+ */
+@Composable
+fun FilterSummaryRow(
+    parts: List<String>,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+    resetLabel: String? = null,
+    extraAction: Pair<String, () -> Unit>? = null,
+) {
+    val shown = parts.take(3)
+    val rest = parts.size - shown.size
+    val text = when {
+        parts.isEmpty() -> stringResource(R.string.filter_summary_none)
+        rest > 0 -> shown.joinToString(" · ") + " " + stringResource(R.string.filter_summary_more, rest)
+        else -> shown.joinToString(" · ")
+    }
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f),
+            fontSize = 12.sp,
+            color = if (parts.isEmpty()) Slate else Silver,
+            lineHeight = 17.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (parts.isNotEmpty()) {
+            Text(
+                text = resetLabel ?: stringResource(R.string.filter_reset),
+                modifier = Modifier
+                    .quietClickable(onReset)
+                    .padding(vertical = 4.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Volt,
+                maxLines = 1,
+            )
+        }
+        if (extraAction != null) {
+            Text(
+                text = extraAction.first,
+                modifier = Modifier
+                    .quietClickable(extraAction.second)
+                    .padding(vertical = 4.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Slate,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/**
+ * 아래에서 올라오는 거르기 패널.
+ *
+ * Dialog 로 띄우는 것은 이 앱의 다른 창과 같은 틀을 쓰기 위해서이고, 그
+ * 덕에 뒤 배경이 스크롤되지 않고 뒤로가기·바깥 누르기가 그대로 닫기가
+ * 된다. 높이는 화면의 85%까지만 쓰고, 그 안에서 내용만 세로로 구른다.
+ */
+@Composable
+fun FilterBottomSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    onReset: () -> Unit,
+    onApply: () -> Unit,
+    modifier: Modifier = Modifier,
+    resetLabel: String? = null,
+    applyLabel: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    SheetFrame(title = title, onDismiss = onDismiss, modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+            content = content,
+        )
+        // 바닥 버튼은 구르지 않는다 — 조건을 한참 고르다 적용하려고 다시
+        // 위아래로 찾게 하지 않기 위해서다.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+        ) {
+            GhostButton(
+                text = resetLabel ?: stringResource(R.string.filter_reset),
+                onClick = onReset,
+                modifier = Modifier.weight(1f),
+            )
+            VoltButton(
+                text = applyLabel ?: stringResource(R.string.filter_apply),
+                onClick = onApply,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * 정렬만 고르는 작은 패널.
+ *
+ * 누르는 즉시 적용하고 닫는다. 정렬은 하나만 고르는 것이라 "결과 보기"를
+ * 한 번 더 누르게 할 이유가 없다.
+ */
+@Composable
+fun <T> SortBottomSheet(
+    title: String,
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onPick: (T) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    SheetFrame(title = title, onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { option ->
+                ChoiceChip(
+                    text = label(option),
+                    selected = option == selected,
+                    onClick = {
+                        onPick(option)
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+        Spacer(Modifier.size(6.dp))
+    }
+}
+
+@Composable
+private fun SheetFrame(
+    title: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .quietClickable(onDismiss),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            val sheetMax = maxHeight * 0.85f
+            val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+            Column(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .heightIn(max = sheetMax)
+                    // 패널 본체를 누른 것이 배경으로 새어 나가 닫히지 않게 흡수한다
+                    .quietClickable { }
+                    .clip(shape)
+                    .background(Carbon, shape)
+                    .border(1.dp, Edge, shape)
+                    .navigationBarsPadding()
+                    .padding(bottom = 14.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = title,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.3).sp,
+                        color = Snow,
+                    )
+                    DarkIconButton(
+                        icon = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.common_close),
+                        onClick = onDismiss,
+                    )
+                }
+                content()
+            }
+        }
+    }
+}
+
+/** 패널 안의 한 마당 — 제목 하나와 선택지 격자 하나 */
+@Composable
+fun FilterSection(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text(
+            text = title,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = Slate,
+        )
+        content()
+    }
+}
+
+/**
+ * 선택지 격자.
+ *
+ * 화면이 좁으면 2열, 넉넉하면 3열로 접는다. 칸은 모두 같은 너비이고 긴
+ * 이름은 두 줄까지 접힌다 — 화면 밖으로 잘려 나가는 칩이 없어야 한다.
+ */
+@Composable
+fun <T> ChoiceGrid(
+    values: List<T>,
+    isSelected: (T) -> Boolean,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    columns: Int = 3,
+) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val cols = if (maxWidth < 340.dp) minOf(columns, 2) else columns
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            values.chunked(cols).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    row.forEach { value ->
+                        ChoiceChip(
+                            text = label(value),
+                            selected = isSelected(value),
+                            onClick = { onSelect(value) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    // 마지막 줄이 모자라면 빈 자리로 채워 칸 너비를 맞춘다
+                    repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
+/** 격자 한 칸. 가운데 정렬에 두 줄까지 접힌다. */
+@Composable
+fun ChoiceChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
+            .border(1.dp, if (selected) Volt.copy(alpha = 0.55f) else Edge, shape)
+            .quietClickable(onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 8.dp, vertical = 11.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) Volt else Silver,
+            textAlign = TextAlign.Center,
+            lineHeight = 16.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}

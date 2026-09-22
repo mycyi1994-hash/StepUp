@@ -162,13 +162,19 @@ object Routes {
     const val COURSES = "courses"
     const val SNEAKER_DEX = "sneaker/dex"
 
-    /** 거래소의 모델 장부 — 속성 × 등급 × 변형 하나 */
-    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}"
+    /**
+     * 거래소의 모델 장부 — 속성 × 등급 × 변형 하나.
+     *
+     * sell 은 보관함에서 "판매"로 들어왔을 때 그 신발의 로컬 번호다. 값을
+     * 들고 오면 판매 등록 창이 그 켤레를 고른 채로 열린다. 등록은 값을 적고
+     * 확정해야 끝난다 — 번호를 들고 왔다고 저절로 올라가지 않는다.
+     */
+    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}"
 
     fun sneaker(id: Long) = "sneaker/$id"
 
-    fun marketModel(faction: String, rarity: String, variant: Int) =
-        "market/$faction/$rarity/$variant"
+    fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
+        "market/$faction/$rarity/$variant?sell=$sell"
     fun lobby(crewId: String) = "lobby/$crewId"
     fun crewBoard(crewId: String) = "crew/board/$crewId"
 
@@ -303,12 +309,17 @@ private fun MainScaffold(startTour: Boolean = false) {
                     navArgument("faction") { type = NavType.StringType },
                     navArgument("rarity") { type = NavType.StringType },
                     navArgument("variant") { type = NavType.IntType },
+                    navArgument("sell") {
+                        type = NavType.LongType
+                        defaultValue = 0L
+                    },
                 ),
             ) { entry ->
                 MarketModelScreen(
                     faction = entry.arguments?.getString("faction").orEmpty(),
                     rarity = entry.arguments?.getString("rarity").orEmpty(),
                     variant = entry.arguments?.getInt("variant") ?: 0,
+                    sellLocalId = entry.arguments?.getLong("sell") ?: 0L,
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -391,6 +402,11 @@ private fun MainScaffold(startTour: Boolean = false) {
                 SneakerDetailScreen(
                     sneakerId = entry.arguments?.getLong("id") ?: 0L,
                     onBack = { navController.popBackStack() },
+                    onSell = { faction, rarity, variant, localId ->
+                        navController.navigate(
+                            Routes.marketModel(faction, rarity, variant, localId),
+                        )
+                    },
                 )
             }
             composable(

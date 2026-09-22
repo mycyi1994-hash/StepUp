@@ -445,16 +445,28 @@ fun AvatarStack(visible: Int, extra: Int, modifier: Modifier = Modifier, dot: Dp
 // 게이지
 // ─────────────────────────────────────────────────────────────
 
-/** 네온 진행 링 — 볼트 스윕 + 확산광 + 폴리시드 헤드 */
+/**
+ * 네온 진행 링 — 볼트 스윕 + 확산광 + 폴리시드 헤드.
+ *
+ * 12시에서 출발해 시계방향으로 [progress] 만큼 채운다. 0이면 배경 트랙만
+ * 남는다 — 둥근 끝점 하나라도 그리면 "조금은 남았다"로 읽히기 때문에,
+ * 다 쓴 것과 조금 남은 것이 같아 보이면 안 된다.
+ *
+ * [inactive] 는 아직 값을 모를 때다. 이때는 비율을 짓지 않고 트랙만 그린다.
+ */
 @Composable
 fun NeonRing(
     progress: Float,
     modifier: Modifier = Modifier,
     ringWidth: Dp = 13.dp,
     glowAlpha: Float = 0.16f,
+    durationMillis: Int = 900,
+    inactive: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val swept = animatedFloat(progress.coerceIn(0f, 1f), durationMillis = 900)
+    val target = if (inactive) 0f else progress.coerceIn(0f, 1f)
+    // 기기에서 애니메이션을 꺼 두었으면 값이 바로 도착한다.
+    val swept = if (reduceMotion()) target else animatedFloat(target, durationMillis)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = ringWidth.toPx()

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.components
 
+import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -11,11 +12,13 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * 값이 툭 바뀌지 않고 굴러 올라가게 한다. 숫자가 "쌓이는" 감각이 곧 리워드 앱의 만족감.
@@ -28,6 +31,28 @@ fun animatedInt(target: Int, durationMillis: Int = 750): Int {
         label = "animatedInt",
     )
     return value
+}
+
+/**
+ * 기기에서 애니메이션을 꺼 두었는가.
+ *
+ * 설정 > 접근성에서 애니메이션을 끄면 ANIMATOR_DURATION_SCALE 이 0이 된다.
+ * 움직임에 어지러움을 느끼는 사람이 직접 끈 것이므로, 앱이 제 판단으로
+ * 다시 움직이게 해서는 안 된다. 값이 바로 도착해야 하는 자리에서는
+ * 이 함수가 true 를 돌려주고, 부르는 쪽은 애니메이션 없이 그린다.
+ */
+@Composable
+fun reduceMotion(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            )
+        }.getOrDefault(1f) == 0f
+    }
 }
 
 @Composable

@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +82,12 @@ fun MarketModelScreen(
     rarity: String,
     variant: Int,
     onBack: () -> Unit,
+    /**
+     * 보관함에서 "판매"로 들어왔을 때 그 신발의 로컬 번호. 0이면 그냥
+     * 들어온 것이다. 값이 있으면 판매 등록 창을 그 켤레로 열어 준다 —
+     * 창이 열릴 뿐이고, 값을 적고 확정해야 매물이 올라간다.
+     */
+    sellLocalId: Long = 0,
     viewModel: MarketModelViewModel = viewModel(factory = MarketModelViewModel.Factory),
 ) {
     val model = remember(faction, rarity, variant) { ModelKey(faction, rarity, variant) }
@@ -95,6 +102,18 @@ fun MarketModelScreen(
     // 팔 수 있는 신발 = 이 모델이면서 신고 있지 않은 것.
     // 신고 있는 것을 팔면 다음 러닝의 부스트가 말없이 사라진다.
     val sellable = state.mySneakers.filter { !it.equipped }
+
+    // 보관함에서 판매로 들어왔으면 등록 창을 한 번 열어 준다. 장부를
+    // 받아 온 뒤에 여는 것은, 그 전에는 고를 신발 목록이 비어 있어 창이
+    // 빈 채로 뜨기 때문이다. 한 번 열고 나면 다시 열지 않는다 — 사용자가
+    // 닫은 창을 앱이 도로 여는 것은 닫기를 무시하는 것이다.
+    var sellOpened by rememberSaveable(sellLocalId) { mutableStateOf(false) }
+    LaunchedEffect(sellLocalId, sellable) {
+        if (sellLocalId > 0 && !sellOpened && sellable.any { it.id == sellLocalId }) {
+            sellOpened = true
+            asking = true
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -271,6 +290,7 @@ fun MarketModelScreen(
     if (asking) {
         AskDialog(
             sneakers = sellable,
+            preselect = sellLocalId,
             suggested = state.quote?.ask ?: state.quote?.lastPrice,
             onDismiss = { asking = false },
             onConfirm = { sneaker, price ->
@@ -425,9 +445,15 @@ private fun AskDialog(
     suggested: Double?,
     onDismiss: () -> Unit,
     onConfirm: (SneakerEntity, Double) -> Unit,
+    /** 보관함에서 고르고 온 켤레. 목록에 없으면 첫 켤레를 고른다. */
+    preselect: Long = 0,
 ) {
     var price by remember { mutableStateOf(suggested?.toLong()?.toString() ?: "") }
-    var picked by remember { mutableStateOf(sneakers.firstOrNull()) }
+    var picked by remember {
+        mutableStateOf(
+            sneakers.firstOrNull { it.id == preselect } ?: sneakers.firstOrNull(),
+        )
+    }
     val amount = price.toDoubleOrNull() ?: 0.0
     val canSend = amount >= 1 && picked != null
 

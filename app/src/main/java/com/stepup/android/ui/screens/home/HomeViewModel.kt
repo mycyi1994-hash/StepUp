@@ -44,6 +44,14 @@ class HomeViewModel(
         val avatarRev: Int = 0,
         /** 프로필에서 정한 닉네임. 비어 있으면 화면이 기본 호칭을 쓴다. */
         val nickname: String = "",
+        /**
+         * 실제 값이 한 번이라도 도착했는가.
+         *
+         * 이 클래스의 기본값은 화면이 처음 그려질 때 쓰는 자리끼우개다.
+         * 그 상태의 에너지 0을 "다 썼다"로 그리면, 앱을 켜자마자 잠깐
+         * 빈 게이지가 보였다가 채워진다. 도착 전에는 비율을 짓지 않는다.
+         */
+        val loaded: Boolean = false,
     ) {
         val energyPercent: Int
             get() = if (maxEnergy > 0) ((energy / maxEnergy) * 100).toInt().coerceIn(0, 100) else 0
@@ -117,6 +125,7 @@ class HomeViewModel(
             avatarId = identity.avatarId,
             avatarRev = identity.avatarRev,
             nickname = identity.nickname,
+            loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 

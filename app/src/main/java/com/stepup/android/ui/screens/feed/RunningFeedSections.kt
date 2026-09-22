@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -13,8 +14,9 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.data.remote.EventRow
 import com.stepup.android.data.remote.NewsRow
-import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SourceRow
+import com.stepup.android.ui.components.FilterSummaryRow
+import com.stepup.android.ui.components.FilterToolbar
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.theme.Slate
 
@@ -23,28 +25,34 @@ import com.stepup.android.ui.theme.Slate
  *
  * 화면을 따로 만들지 않고 같은 목록에 얹는 것은, 탭을 오갈 때 머리글이 하나로
  * 묶여 있어야 한 화면 안의 전환으로 읽히기 때문이다.
+ *
+ * ── 거르기 ──
+ *
+ * 기본 화면에는 검색칸, 버튼 둘, 요약 한 줄만 둔다. 고를 것은 [EventFilterSheet]
+ * 와 [NewsFilterSheet] 안에 전부 있고, 패널은 화면(NewsScreen)이 띄운다 —
+ * LazyColumn 의 item 안에서 창을 띄우면 그 줄이 화면 밖으로 밀릴 때 창까지
+ * 같이 사라진다.
  */
 
 /** 러닝 이벤트 — 대회를 찾는 자리 */
 fun LazyListScope.runningEventsSection(
     ui: EventsUi,
     onQuery: (String) -> Unit,
-    onType: (String) -> Unit,
-    onDistance: (String) -> Unit,
-    onRegion: (String) -> Unit,
-    onStatus: (String) -> Unit,
-    onSort: (String) -> Unit,
+    onOpenFilters: () -> Unit,
+    onOpenSort: () -> Unit,
+    onResetFilters: () -> Unit,
     onTogglePast: () -> Unit,
     onToggleCalendar: () -> Unit,
     onShiftMonth: (Long) -> Unit,
     onPickDay: (java.time.LocalDate) -> Unit,
+    onRetry: () -> Unit,
     onOpen: (EventRow) -> Unit,
     onToggleSave: (EventRow) -> Unit,
 ) {
     item {
         Text(
             text = stringResource(R.string.feed_events_hint),
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall,
             color = Slate,
             lineHeight = 18.sp,
         )
@@ -58,62 +66,27 @@ fun LazyListScope.runningEventsSection(
         )
     }
 
-    // 유형과 거리는 따로 고른다. 트레일러닝도 10km 가 있고 걷기도 5km 가 있다.
     item {
-        FeedChipRow(
-            values = RunningFeedViewModel.TYPES,
-            selected = ui.filter.eventType,
-            label = { stringResource(eventTypeRes(it)) },
-            onSelect = onType,
-        )
-    }
-    item {
-        FeedChipRow(
-            values = RunningFeedViewModel.DISTANCES,
-            selected = ui.filter.distance,
-            label = { stringResource(distanceRes(it)) },
-            onSelect = onDistance,
-        )
-    }
-    item {
-        FeedChipRow(
-            values = RunningFeedViewModel.REGIONS,
-            selected = ui.filter.region,
-            label = { if (it == RunningFeedApi.ALL) stringResource(R.string.feed_region_all) else it },
-            onSelect = onRegion,
-        )
-    }
-    item {
-        FeedChipRow(
-            values = RunningFeedViewModel.STATUSES,
-            selected = ui.filter.status,
-            label = { stringResource(statusRes(it)) },
-            onSelect = onStatus,
+        FilterToolbar(
+            filterLabel = stringResource(R.string.filter_button),
+            filterCount = eventFilterCount(ui.filter),
+            sortLabel = eventSortLabel(ui.filter.sort),
+            onOpenFilters = onOpenFilters,
+            onOpenSort = onOpenSort,
         )
     }
 
     item {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            PillChip(
-                text = stringResource(R.string.feed_sort_date),
-                selected = ui.filter.sort == "DATE",
-                onClick = { onSort("DATE") },
-            )
-            PillChip(
-                text = stringResource(R.string.feed_sort_closing),
-                selected = ui.filter.sort == "CLOSING",
-                onClick = { onSort("CLOSING") },
-            )
-            PillChip(
-                text = stringResource(R.string.feed_sort_newest),
-                selected = ui.filter.sort == "NEWEST",
-                onClick = { onSort("NEWEST") },
-            )
-        }
+        FilterSummaryRow(
+            parts = eventFilterParts(ui.filter),
+            // 기본 화면의 초기화는 곧바로 기본 조건으로 돌아간다.
+            // 패널 안의 초기화와 달리 한 번 더 확인하지 않는다.
+            onReset = onResetFilters,
+        )
     }
+
+    // 보기 방식과 지난 대회는 거르기가 아니라 "무엇을 보여 줄까"다.
+    // 패널에 넣지 않고 화면에 남겨 한 번에 누를 수 있게 둔다.
     item {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -133,7 +106,7 @@ fun LazyListScope.runningEventsSection(
     }
 
     if (ui.problem != null) {
-        item { FeedProblemNote(ui.problem, ui.loadedAtMillis) }
+        item { FeedProblemNote(ui.problem, ui.loadedAtMillis, onRetry = onRetry) }
     }
 
     if (ui.calendar) {
@@ -154,11 +127,20 @@ fun LazyListScope.runningEventsSection(
     } ?: ui.rows
 
     if (shown.isEmpty()) {
+        // 비어 있는 까닭을 가른다. 조건을 좁혀서 빈 것과 아직 등록된 대회가
+        // 없는 것은 다음에 할 일이 다르다.
+        val narrowed = ui.filter.query.isNotBlank() ||
+            eventFilterCount(ui.filter) > 0 ||
+            ui.pickedDay != null
         item {
-            if (ui.loading) {
-                FeedEmptyNote(R.string.feed_loading)
-            } else {
-                FeedEmptyNote(R.string.feed_events_empty, R.string.feed_events_empty_hint)
+            when {
+                ui.loading -> FeedEmptyNote(R.string.feed_loading)
+                narrowed -> FeedEmptyNote(
+                    text = R.string.feed_events_no_match,
+                    hint = R.string.feed_events_no_match_hint,
+                    action = R.string.filter_reset to onResetFilters,
+                )
+                else -> FeedEmptyNote(R.string.feed_events_empty, R.string.feed_events_empty_hint)
             }
         }
         return
@@ -189,16 +171,17 @@ fun LazyListScope.runningNewsSection(
     ui: NewsUi,
     sources: List<SourceRow>,
     onQuery: (String) -> Unit,
-    onCategory: (String) -> Unit,
-    onPublisher: (String) -> Unit,
-    onSort: (String) -> Unit,
+    onOpenFilters: () -> Unit,
+    onOpenSort: () -> Unit,
+    onResetFilters: () -> Unit,
+    onRetry: () -> Unit,
     onOpen: (NewsRow) -> Unit,
     onToggleSave: (NewsRow) -> Unit,
 ) {
     item {
         Text(
             text = stringResource(R.string.feed_news_hint),
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall,
             color = Slate,
             lineHeight = 18.sp,
         )
@@ -213,57 +196,48 @@ fun LazyListScope.runningNewsSection(
     }
 
     item {
-        FeedChipRow(
-            values = RunningFeedViewModel.CATEGORIES,
-            selected = ui.filter.category,
-            label = { stringResource(categoryRes(it)) },
-            onSelect = onCategory,
+        FilterToolbar(
+            filterLabel = stringResource(R.string.filter_button),
+            filterCount = newsFilterCount(ui.filter),
+            sortLabel = newsSortLabel(ui.filter.sort),
+            onOpenFilters = onOpenFilters,
+            onOpenSort = onOpenSort,
         )
     }
 
-    if (ui.publishers.isNotEmpty()) {
-        item {
-            FeedChipRow(
-                values = listOf(RunningFeedApi.ALL to "") + ui.publishers,
-                selected = ui.publishers.firstOrNull { it.first == ui.filter.publisher }
-                    ?: (RunningFeedApi.ALL to ""),
-                label = {
-                    if (it.first == RunningFeedApi.ALL) stringResource(R.string.feed_publisher_all)
-                    else it.second.ifBlank { it.first }
-                },
-                onSelect = { onPublisher(it.first) },
-            )
-        }
-    }
-
     item {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            PillChip(
-                text = stringResource(R.string.feed_sort_recent),
-                selected = ui.filter.sort == "RECENT",
-                onClick = { onSort("RECENT") },
-            )
-            PillChip(
-                text = stringResource(R.string.feed_sort_relevance),
-                selected = ui.filter.sort == "RELEVANCE",
-                onClick = { onSort("RELEVANCE") },
-            )
-        }
+        FilterSummaryRow(
+            parts = newsFilterParts(ui.filter, ui.publishers),
+            onReset = onResetFilters,
+        )
     }
 
     if (ui.problem != null) {
-        item { FeedProblemNote(ui.problem, ui.loadedAtMillis) }
+        item { FeedProblemNote(ui.problem, ui.loadedAtMillis, onRetry = onRetry) }
     }
 
     if (ui.rows.isEmpty()) {
+        // 세 가지를 가른다.
+        //
+        //   * 아직 연결된 출처가 없다 — 우리가 준비 중이다.
+        //   * 조건에 맞는 것이 없다 — 조건을 줄이면 된다.
+        //   * 서버에 못 닿았다 — 위의 안내가 이미 다시 시도를 내놓았다.
+        val narrowed = ui.filter.query.isNotBlank() || newsFilterCount(ui.filter) > 0
+        val connected = sources.any { it.enabled && it.canDiscover }
         item {
-            if (ui.loading) {
-                FeedEmptyNote(R.string.feed_loading)
-            } else {
-                FeedEmptyNote(R.string.feed_news_empty, R.string.feed_news_empty_hint)
+            when {
+                ui.loading -> FeedEmptyNote(R.string.feed_loading)
+                ui.problem != null -> Unit
+                narrowed -> FeedEmptyNote(
+                    text = R.string.feed_news_no_match,
+                    hint = R.string.feed_news_no_match_hint,
+                    action = R.string.filter_reset to onResetFilters,
+                )
+                !connected -> FeedEmptyNote(
+                    R.string.feed_news_empty,
+                    R.string.feed_news_empty_hint,
+                )
+                else -> FeedEmptyNote(R.string.feed_news_empty)
             }
         }
     } else {

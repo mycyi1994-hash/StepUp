@@ -57,17 +57,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.domain.BoostType
 import com.stepup.android.domain.Faction
-import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.VARIANTS_PER_FACTION
 import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.EquippedSneakerCard
 import com.stepup.android.ui.components.FactionChip
+import com.stepup.android.ui.components.FilterSummaryRow
+import com.stepup.android.ui.components.FilterToolbar
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.IconSquare
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SneakerCollectionCard
@@ -107,6 +107,11 @@ fun ItemsScreen(
     var tab by rememberSaveable { mutableIntStateOf(2) }
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    // 추가 조건. 속성 카드와는 함께(AND) 걸린다.
+    var equipFilter by rememberSaveable { mutableStateOf(EquipFilter.ALL) }
+    var itemSort by rememberSaveable { mutableStateOf(ItemSort.RARITY) }
+    var itemFilterSheet by rememberSaveable { mutableStateOf(false) }
+    var itemSortSheet by rememberSaveable { mutableStateOf(false) }
     var copiesFor by rememberSaveable { mutableStateOf<String?>(null) }
     // NFT 마켓 안의 자리 — 0 = 시세, 1 = 내 거래
     var marketSection by rememberSaveable { mutableIntStateOf(0) }
@@ -265,36 +270,40 @@ fun ItemsScreen(
             }
         }
 
-        // ── 필터: 등급 · 속성 ───────────────────────────────
+        // ── 추가 필터: 등급 · 장착 상태 · 정렬 ─────────────────
+        //
+        // 가로로 밀던 칩 줄을 버튼 둘과 요약 한 줄로 바꾼다. 속성은 위
+        // 카드가 맡고, 여기서는 그 밖의 조건만 다룬다.
         item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    PillChip(
-                        text = stringResource(R.string.post_cat_all),
-                        selected = rarityFilter == null && factionFilter == null,
-                        onClick = {
-                            rarityFilter = null
-                            factionFilter = null
-                        },
-                    )
-                }
-                items(Rarity.entries.size) { i ->
-                    val r = Rarity.entries[i]
-                    PillChip(
-                        text = r.label(),
-                        selected = rarityFilter == r.id,
-                        onClick = { rarityFilter = if (rarityFilter == r.id) null else r.id },
-                    )
-                }
-                items(Faction.entries.size) { i ->
-                    val f = Faction.entries[i]
-                    PillChip(
-                        text = f.label(),
-                        selected = factionFilter == f.id,
-                        onClick = { factionFilter = if (factionFilter == f.id) null else f.id },
-                    )
-                }
-            }
+            FilterToolbar(
+                filterLabel = stringResource(R.string.filter_button_detail),
+                filterCount = itemFilterCount(rarityFilter, equipFilter),
+                sortLabel = stringResource(itemSortRes(itemSort)),
+                onOpenFilters = { itemFilterSheet = true },
+                onOpenSort = { itemSortSheet = true },
+            )
+        }
+
+        item {
+            FilterSummaryRow(
+                parts = itemFilterParts(rarityFilter, equipFilter),
+                // 요약 줄의 초기화는 추가 조건만 푼다. 위에서 고른 속성은
+                // 남는다 — 속성을 풀려면 그 카드를 다시 누르거나, 아래
+                // "전체 초기화"를 누른다.
+                onReset = {
+                    rarityFilter = null
+                    equipFilter = EquipFilter.ALL
+                },
+                extraAction = if (factionFilter != null) {
+                    stringResource(R.string.filter_reset_all) to {
+                        rarityFilter = null
+                        equipFilter = EquipFilter.ALL
+                        factionFilter = null
+                    }
+                } else {
+                    null
+                },
+            )
         }
 
         // ── 컬렉션 헤더 — "N / 52 조합" ───────────────────────
@@ -421,8 +430,30 @@ fun ItemsScreen(
         item {
             val filtered = groups.filter { g ->
                 (rarityFilter == null || g.representative.rarity.id == rarityFilter) &&
-                    (factionFilter == null || g.representative.faction.id == factionFilter)
+                    (factionFilter == null || g.representative.faction.id == factionFilter) &&
+                    (
+                        equipFilter == EquipFilter.ALL ||
+                            g.copies.any { it.equipped } == (equipFilter == EquipFilter.ON)
+                        )
             }
+                // 정렬은 실제 값으로만 한다 — 획득일 · 등급 차례 · 레벨.
+                // 착용 중인 것은 어느 차례에서나 맨 앞에 둔다. 지금 신고
+                // 있는 신발을 찾으러 목록을 뒤지게 하지 않는다.
+                .let { list ->
+                    when (itemSort) {
+                        ItemSort.RECENT -> list.sortedWith(
+                            compareByDescending<SneakerGroup> { it.representative.equipped }
+                                .thenByDescending { it.representative.acquiredAt },
+                        )
+                        ItemSort.LEVEL -> list.sortedWith(
+                            compareByDescending<SneakerGroup> { it.representative.equipped }
+                                .thenByDescending { it.representative.level }
+                                .thenByDescending { it.representative.acquiredAt },
+                        )
+                        // 등급 높은순은 ViewModel 이 이미 매겨 둔 차례다
+                        else -> list
+                    }
+                }
             if (filtered.isEmpty()) {
                 GlowCard(contentPadding = PaddingValues(24.dp)) {
                     Text(
@@ -587,6 +618,32 @@ fun ItemsScreen(
                     )
                 }
             },
+        )
+    }
+
+    // ── 추가 거르기 패널 ───────────────────────────────────────
+    //
+    // 목록 밖에서 띄운다. LazyColumn 의 item 안에서 창을 띄우면 그 줄이
+    // 화면 밖으로 밀릴 때 창까지 사라진다.
+    if (itemFilterSheet) {
+        ItemFilterSheet(
+            rarity = rarityFilter,
+            equip = equipFilter,
+            sort = itemSort,
+            onDismiss = { itemFilterSheet = false },
+            onApply = { rarity, equip, sort ->
+                itemFilterSheet = false
+                rarityFilter = rarity
+                equipFilter = equip
+                itemSort = sort
+            },
+        )
+    }
+    if (itemSortSheet) {
+        ItemSortSheet(
+            selected = itemSort,
+            onPick = { itemSort = it },
+            onDismiss = { itemSortSheet = false },
         )
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,10 +32,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.core.ExternalIntents
+import com.stepup.android.data.repo.EventFilter
+import com.stepup.android.data.repo.NewsFilter
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.community.SegmentedTabs
+import com.stepup.android.ui.screens.feed.EventFilterSheet
+import com.stepup.android.ui.screens.feed.EventSortSheet
+import com.stepup.android.ui.screens.feed.NewsFilterSheet
+import com.stepup.android.ui.screens.feed.NewsSortSheet
 import com.stepup.android.ui.screens.feed.RunningFeedViewModel
 import com.stepup.android.ui.screens.feed.runningEventsSection
 import com.stepup.android.ui.screens.feed.runningNewsSection
@@ -77,6 +84,13 @@ fun NewsScreen(
 
     // 마지막으로 본 탭을 기억한다. 화면을 껐다 켜도 돌아온다.
     var section by rememberSaveable { mutableIntStateOf(0) }
+
+    // 거르기 패널은 목록 **밖**에서 띄운다. LazyColumn 의 item 안에서
+    // 띄우면 그 줄이 화면 밖으로 밀릴 때 창까지 같이 사라진다.
+    var eventFilters by rememberSaveable { mutableStateOf(false) }
+    var eventSort by rememberSaveable { mutableStateOf(false) }
+    var newsFilters by rememberSaveable { mutableStateOf(false) }
+    var newsSort by rememberSaveable { mutableStateOf(false) }
 
     // 탭마다 제 스크롤 자리를 갖는다. 하나로 쓰면 대회를 한참 내려보다
     // 뉴스로 옮겼을 때 엉뚱한 곳에서 시작한다.
@@ -176,17 +190,25 @@ fun NewsScreen(
             0 -> runningEventsSection(
                 ui = events,
                 onQuery = { q -> feedViewModel.editEvents { it.copy(query = q) } },
-                onType = { v -> feedViewModel.editEvents { it.copy(eventType = v) } },
-                onDistance = { v -> feedViewModel.editEvents { it.copy(distance = v) } },
-                onRegion = { v -> feedViewModel.editEvents { it.copy(region = v) } },
-                onStatus = { v -> feedViewModel.editEvents { it.copy(status = v) } },
-                onSort = { v -> feedViewModel.editEvents { it.copy(sort = v) } },
+                onOpenFilters = { eventFilters = true },
+                onOpenSort = { eventSort = true },
+                // 기본 화면의 초기화 — 누르는 즉시 기본 조건으로 돌아간다.
+                // 검색어와 지난 대회 포함은 그대로 둔다. 그 둘은 패널이
+                // 아니라 화면에서 고른 것이라, 함께 지우면 방금 친 검색어가
+                // 말없이 사라진다.
+                onResetFilters = {
+                    feedViewModel.editEvents {
+                        EventFilter(query = it.query, includePast = it.includePast)
+                    }
+                    feedViewModel.pickDay(null)
+                },
                 onTogglePast = {
                     feedViewModel.editEvents { it.copy(includePast = !it.includePast) }
                 },
                 onToggleCalendar = feedViewModel::toggleCalendar,
                 onShiftMonth = feedViewModel::shiftMonth,
                 onPickDay = feedViewModel::pickDay,
+                onRetry = { feedViewModel.loadEvents(force = true) },
                 onOpen = { row ->
                     // 카드를 누르면 그 대회의 바깥 페이지로 바로 간다.
                     // 주소를 모르면 아무 데도 보내지 않는다 — 홈페이지로
@@ -200,9 +222,12 @@ fun NewsScreen(
                 ui = news,
                 sources = sources,
                 onQuery = { q -> feedViewModel.editNews { it.copy(query = q) } },
-                onCategory = { v -> feedViewModel.editNews { it.copy(category = v) } },
-                onPublisher = { v -> feedViewModel.editNews { it.copy(publisher = v) } },
-                onSort = { v -> feedViewModel.editNews { it.copy(sort = v) } },
+                onOpenFilters = { newsFilters = true },
+                onOpenSort = { newsSort = true },
+                onResetFilters = {
+                    feedViewModel.editNews { NewsFilter(query = it.query) }
+                },
+                onRetry = { feedViewModel.loadNews(force = true) },
                 onOpen = { row -> ExternalIntents.openUrl(context, row.originalUrl) },
                 onToggleSave = feedViewModel::toggleSaveNews,
             )
@@ -212,5 +237,45 @@ fun NewsScreen(
                 item { FeedFootnote(R.string.feed_note_deals) }
             }
         }
+    }
+
+    // ── 거르기 패널 ────────────────────────────────────────────
+    //
+    // 패널이 열린 동안에는 고른 것이 패널 안에만 있다. 닫기(X·뒤로가기·
+    // 바깥)는 그 임시 선택을 버리고, "결과 보기"만 밖으로 넘긴다.
+    if (eventFilters) {
+        EventFilterSheet(
+            initial = events.filter,
+            onDismiss = { eventFilters = false },
+            onApply = { applied ->
+                eventFilters = false
+                feedViewModel.editEvents { applied }
+            },
+        )
+    }
+    if (eventSort) {
+        EventSortSheet(
+            selected = events.filter.sort,
+            onPick = { v -> feedViewModel.editEvents { it.copy(sort = v) } },
+            onDismiss = { eventSort = false },
+        )
+    }
+    if (newsFilters) {
+        NewsFilterSheet(
+            initial = news.filter,
+            publishers = news.publishers,
+            onDismiss = { newsFilters = false },
+            onApply = { applied ->
+                newsFilters = false
+                feedViewModel.editNews { applied }
+            },
+        )
+    }
+    if (newsSort) {
+        NewsSortSheet(
+            selected = news.filter.sort,
+            onPick = { v -> feedViewModel.editNews { it.copy(sort = v) } },
+            onDismiss = { newsSort = false },
+        )
     }
 }
