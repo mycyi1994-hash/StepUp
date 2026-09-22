@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.giwa.strideup.domain.RunVerdict
 import com.giwa.strideup.service.WalkSessionService
+import com.giwa.strideup.service.WalkSessionState
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
@@ -13,6 +14,16 @@ object ExperienceEvents {
     fun emit(cue: FeedbackCue) { cues.tryEmit(cue) }
 }
 
+fun runFeedbackCue(previous: WalkSessionState, current: WalkSessionState): FeedbackCue? = when {
+    current.isActive && !previous.isActive -> FeedbackCue.Start
+    current.isActive && current.isPaused != previous.isPaused ->
+        if (current.isPaused) FeedbackCue.Pause else FeedbackCue.Start
+    current.lastRewardPoints != null && previous.lastRewardPoints == null ->
+        if (current.lastVerdict == RunVerdict.VOID) FeedbackCue.Error else FeedbackCue.Reward
+    current.isActive && current.laps.size > previous.laps.size -> FeedbackCue.Lap
+    else -> null
+}
+
 /** Compare authoritative service transitions, never the user's intention to start/stop. */
 @Composable
 fun RunFeedback() {
@@ -20,15 +31,7 @@ fun RunFeedback() {
     LaunchedEffect(feedback) {
         var previous = WalkSessionService.state.value
         WalkSessionService.state.collect { current ->
-            val cue = when {
-                current.isActive && !previous.isActive -> FeedbackCue.Start
-                current.isActive && current.isPaused != previous.isPaused ->
-                    if (current.isPaused) FeedbackCue.Pause else FeedbackCue.Start
-                current.lastRewardPoints != null && previous.lastRewardPoints == null ->
-                    if (current.lastVerdict == RunVerdict.VOID) FeedbackCue.Error else FeedbackCue.Reward
-                current.isActive && current.laps.size > previous.laps.size -> FeedbackCue.Lap
-                else -> null
-            }
+            val cue = runFeedbackCue(previous, current)
             previous = current
             if (cue != null) feedback?.play(cue)
         }

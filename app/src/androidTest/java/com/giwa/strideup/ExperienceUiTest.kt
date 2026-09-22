@@ -104,7 +104,7 @@ class ExperienceUiTest {
                     ExperienceProvider {
                         Box(Modifier.requiredSize(config.screenWidthDp.dp, config.screenHeightDp.dp)
                             .background(Night).testTag("capture")) {
-                            key(screen, language, large) { scene(screen) }
+                            key(screen, language, large) { Scene(screen) }
                         }
                     }
                 }
@@ -125,7 +125,7 @@ class ExperienceUiTest {
         }
     }
 
-    @Composable private fun scene(index: Int) {
+    @Composable private fun Scene(index: Int) {
         when (index) {
             0 -> HomeScreen()
             1 -> RunScreen()
