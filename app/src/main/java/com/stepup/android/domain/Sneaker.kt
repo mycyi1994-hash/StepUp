@@ -5,11 +5,12 @@ import kotlin.random.Random
 /**
  * StepUp 스니커즈 NFT — **속성(Faction) × 등급(Rarity) × 변형(Variant)** 체계.
  *
- * 속성 4개(불·물·번개·바람) × 등급별 변형 11종 = 총 44종.
+ * 속성 4개(불·물·번개·바람) × 등급별 변형 13종 = 총 52종.
  * 속성이 색과 이펙트를, 등급이 실루엣 정교함·오너먼트·부스트를 정한다.
  *
- * 부스트는 의도적으로 작게 잡았다 — 등급이 한 단계 오를 때마다 +1%.
- * 수집의 재미는 성능 격차가 아니라 외형과 도감 완성에서 나온다.
+ * 적립 보너스는 켤레마다 도감 시트에 적혀 있다(SneakerDesigns). 가장 높은
+ * 전설도 +2.55% 라 작게 잡혀 있다 — 수집의 재미는 성능 격차가 아니라 외형과
+ * 도감 완성에서 나온다.
  */
 
 // ─────────────────────────────────────────────────────────────
@@ -88,8 +89,8 @@ enum class Rarity(
     /** 민팅 가중치 */
     val weight: Int,
 ) {
-    COMMON("COMMON", variantCount = 3, boostPercent = 0.0, maxLevel = 10, weight = 55),
-    RARE("RARE", variantCount = 3, boostPercent = 1.0, maxLevel = 15, weight = 28),
+    COMMON("COMMON", variantCount = 4, boostPercent = 0.0, maxLevel = 10, weight = 55),
+    RARE("RARE", variantCount = 4, boostPercent = 1.0, maxLevel = 15, weight = 28),
     EPIC("EPIC", variantCount = 3, boostPercent = 2.0, maxLevel = 20, weight = 13),
     LEGENDARY("LEGENDARY", variantCount = 2, boostPercent = 3.0, maxLevel = 30, weight = 4);
 
@@ -112,11 +113,168 @@ enum class Rarity(
     }
 }
 
-/** 속성 하나가 가진 변형 개수 (3+3+3+2 = 11) */
+/** 속성 하나가 가진 변형 개수 (2+3+4+4 = 13) */
 val VARIANTS_PER_FACTION: Int = Rarity.entries.sumOf { it.variantCount }
 
-/** 전체 도감 크기 = 속성 4 × 변형 11 */
+/** 전체 도감 크기 = 속성 4 × 변형 13 = 52 */
 val TOTAL_COLLECTION: Int = Faction.entries.size * VARIANTS_PER_FACTION
+
+// ─────────────────────────────────────────────────────────────
+// 도감 — 속성마다 13종, 모두 52종
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 도감 한 칸.
+ *
+ * 값을 규칙으로 계산하지 않고 **한 켤레씩 적어 둔다.** 도감 시트에 찍힌
+ * 숫자가 곧 이 표이고, 규칙으로 만들면 시트와 앱이 조금씩 어긋난다.
+ *
+ * @property code 도감에 적힌 번호 — "FIR-001"
+ * @property boostPercent 레벨 1에서의 적립 보너스(%). 레벨이 오르면 더해진다.
+ * @property luck 행운. 강화로 조금씩 오르므로 이 값은 **기준값**이다.
+ * @property englishName 로그·알림에 쓰는 이름. 화면은 현지화 문자열을 쓴다.
+ */
+data class SneakerDesign(
+    val code: String,
+    val faction: Faction,
+    val rarity: Rarity,
+    val variant: Int,
+    val index: Int,
+    val boostPercent: Double,
+    val luck: Double,
+    val englishName: String,
+)
+
+/**
+ * 52종 전체.
+ *
+ * 속성 안에서의 번호(1..13)는 등급 순이다 — 레전더리 2, 희귀 3, 레어 4,
+ * 일반 4. 이 차례가 도감 시트의 차례이자 그림 파일 이름의 차례다.
+ */
+object SneakerDesigns {
+
+    /** 등급·변형 → 속성 안에서의 번호(1부터) */
+    fun indexOf(rarity: Rarity, variant: Int): Int = when (rarity) {
+        Rarity.LEGENDARY -> 1 + variant
+        Rarity.EPIC -> 3 + variant
+        Rarity.RARE -> 6 + variant
+        Rarity.COMMON -> 10 + variant
+    }
+
+    /** 번호(1..13) → 등급·변형. [indexOf] 의 반대. */
+    fun slotOf(index: Int): Pair<Rarity, Int> = when {
+        index <= 2 -> Rarity.LEGENDARY to index - 1
+        index <= 5 -> Rarity.EPIC to index - 3
+        index <= 9 -> Rarity.RARE to index - 6
+        else -> Rarity.COMMON to index - 10
+    }
+
+    /** 도감 번호의 앞자리 — 시트에 적힌 그대로 */
+    private val prefix = mapOf(
+        Faction.FIRE to "FIR",
+        Faction.WATER to "WAT",
+        Faction.LIGHTNING to "LIT",
+        Faction.WIND to "WND",
+    )
+
+    private fun row(index: Int, name: String, boost: Double, luck: Double) =
+        Triple(index, name, boost to luck)
+
+    private val raw: Map<Faction, List<Triple<Int, String, Pair<Double, Double>>>> = mapOf(
+        Faction.FIRE to listOf(
+            row(1, "INFERNO CROWN", 2.55, 1.36),
+            row(2, "PHOENIX SURGE", 2.35, 1.33),
+            row(3, "MAGMA PULSE", 1.70, 1.24),
+            row(4, "EMBER NOVA", 1.60, 1.22),
+            row(5, "CINDER VORTEX", 1.50, 1.20),
+            row(6, "HEAT RUNNER", 1.05, 1.15),
+            row(7, "TORCH SPRINT", 0.95, 1.14),
+            row(8, "ASH BLAZE", 0.85, 1.12),
+            row(9, "FLARE SHIFT", 0.75, 1.10),
+            row(10, "SPARK RUNNER", 0.55, 1.08),
+            row(11, "CORE RUNNER", 0.50, 1.07),
+            row(12, "REDLINE", 0.45, 1.06),
+            row(13, "WARM UP", 0.40, 1.05),
+        ),
+        Faction.WATER to listOf(
+            row(1, "ABYSS TIDE", 2.35, 1.34),
+            row(2, "LEVIATHAN FLOW", 2.15, 1.31),
+            row(3, "TSUNAMI ARC", 1.50, 1.22),
+            row(4, "AZURE CURRENT", 1.40, 1.20),
+            row(5, "DEEPWAVE PRIME", 1.30, 1.18),
+            row(6, "WATER RUNNER", 0.85, 1.13),
+            row(7, "RIPPLE PACE", 0.75, 1.11),
+            row(8, "REEF GLIDE", 0.65, 1.10),
+            row(9, "OCEAN SPRINT", 0.55, 1.08),
+            row(10, "BLUE RUNNER", 0.35, 1.06),
+            row(11, "BROOK RUNNER", 0.30, 1.05),
+            row(12, "MIST RUNNER", 0.25, 1.04),
+            row(13, "TIDE LITE", 0.20, 1.03),
+        ),
+        Faction.LIGHTNING to listOf(
+            row(1, "THUNDER ZENITH", 2.50, 1.37),
+            row(2, "VOLT PHANTOM", 2.30, 1.34),
+            row(3, "STORM CIRCUIT", 1.65, 1.25),
+            row(4, "VOLT APEX", 1.55, 1.23),
+            row(5, "PLASMA RUNNER", 1.45, 1.21),
+            row(6, "THUNDER RUNNER", 1.00, 1.16),
+            row(7, "VOLT DASH", 0.90, 1.15),
+            row(8, "FLASH PACE", 0.80, 1.13),
+            row(9, "SPARK BLADE", 0.70, 1.11),
+            row(10, "YELLOW RUNNER", 0.50, 1.09),
+            row(11, "STATIC RUNNER", 0.45, 1.08),
+            row(12, "PULSE RUNNER", 0.40, 1.07),
+            row(13, "CHARGE LITE", 0.35, 1.06),
+        ),
+        Faction.WIND to listOf(
+            row(1, "ZEPHYR CROWN", 2.40, 1.35),
+            row(2, "TEMPEST WING", 2.20, 1.32),
+            row(3, "AERO PHANTOM", 1.55, 1.23),
+            row(4, "GALE ORBIT", 1.45, 1.21),
+            row(5, "CYCLONE STEP", 1.35, 1.19),
+            row(6, "WIND RUNNER", 0.90, 1.14),
+            row(7, "BREEZE GLIDE", 0.80, 1.13),
+            row(8, "AIR DASH", 0.70, 1.11),
+            row(9, "SKY PACE", 0.60, 1.09),
+            row(10, "CLOUD RUNNER", 0.40, 1.07),
+            row(11, "FEATHER RUNNER", 0.35, 1.06),
+            row(12, "DRIFT RUNNER", 0.30, 1.05),
+            row(13, "LIFT LITE", 0.25, 1.04),
+        ),
+    )
+
+    val all: List<SneakerDesign> = raw.flatMap { (faction, rows) ->
+        rows.map { (index, name, stats) ->
+            val (rarity, variant) = slotOf(index)
+            SneakerDesign(
+                code = "${prefix[faction]}-%03d".format(index),
+                faction = faction,
+                rarity = rarity,
+                variant = variant,
+                index = index,
+                boostPercent = stats.first,
+                luck = stats.second,
+                englishName = name,
+            )
+        }
+    }
+
+    private val bySlot: Map<String, SneakerDesign> =
+        all.associateBy { "${it.faction.id}:${it.rarity.id}:${it.variant}" }
+
+    /**
+     * 한 칸을 찾는다.
+     *
+     * 없는 조합이 들어오면 그 등급의 첫 칸으로 떨어뜨린다 — 옛 저장값이
+     * 범위를 벗어나더라도 화면이 비지 않게 하려는 것이다.
+     */
+    fun of(faction: Faction, rarity: Rarity, variant: Int): SneakerDesign {
+        val v = variant.coerceIn(0, rarity.variantCount - 1)
+        return bySlot["${faction.id}:${rarity.id}:$v"]
+            ?: bySlot["${faction.id}:${rarity.id}:0"]
+            ?: all.first()
+    }
+}
 
 // ─────────────────────────────────────────────────────────────
 // 실루엣
@@ -143,30 +301,24 @@ data class Silhouette(
  * 여기 영문 값은 로그·저장용 식별자로만 남긴다.
  */
 object VariantNames {
-    private val common = listOf("Runner", "Trainer", "Trail")
-    private val rare = listOf("Racer", "Glide", "Blade")
-    private val epic = listOf("Apex", "Phantom", "Titan")
-    private val legendary = listOf("Seraph", "Dragon")
-
-    fun of(rarity: Rarity, variant: Int): String {
-        val list = when (rarity) {
-            Rarity.COMMON -> common
-            Rarity.RARE -> rare
-            Rarity.EPIC -> epic
-            Rarity.LEGENDARY -> legendary
-        }
-        return list[variant.coerceIn(0, list.size - 1)]
-    }
+    /**
+     * 이름은 속성마다 다르다 — 불의 전설은 "인페르노 크라운", 물의 전설은
+     * "어비스 타이드"다. 등급만으로는 정할 수 없으므로 속성을 함께 받는다.
+     */
+    fun of(faction: Faction, rarity: Rarity, variant: Int): String =
+        SneakerDesigns.of(faction, rarity, variant).englishName
 }
 
 object Silhouettes {
     private val common = listOf(
         Silhouette(0.098f, 0.026f, 0.150f, StripeStyle.SWOOSH, 2, false),
+        Silhouette(0.108f, 0.023f, 0.145f, StripeStyle.DUAL, 2, false),
         Silhouette(0.116f, 0.020f, 0.140f, StripeStyle.BLADE, 2, false),
         Silhouette(0.132f, 0.034f, 0.132f, StripeStyle.CHEVRON, 3, false),
     )
     private val rare = listOf(
         Silhouette(0.126f, 0.030f, 0.136f, StripeStyle.DUAL, 3, false),
+        Silhouette(0.134f, 0.027f, 0.131f, StripeStyle.SWOOSH, 3, false),
         Silhouette(0.142f, 0.024f, 0.126f, StripeStyle.WAVE, 3, false),
         Silhouette(0.150f, 0.040f, 0.118f, StripeStyle.SPLIT, 4, false),
     )
@@ -213,18 +365,27 @@ data class Sneaker(
 ) {
     val silhouette: Silhouette get() = Silhouettes.of(rarity, variant)
 
-    /** 모델명 — "Apex", "Dragon" */
-    val variantName: String get() = VariantNames.of(rarity, variant)
+    /** 이 신발이 도감의 어느 칸인지 */
+    val design: SneakerDesign get() = SneakerDesigns.of(faction, rarity, variant)
+
+    /** 도감 번호 — "FIR-001" */
+    val code: String get() = design.code
+
+    /** 모델명 — "Inferno Crown" */
+    val variantName: String get() = design.englishName
 
     /** 전체 이름 — "Fire Apex". 알림·토스트처럼 Composable 밖에서 쓴다. */
     val displayName: String get() = "${faction.displayName} $variantName"
 
     /**
-     * 적립 배율. 등급 +1%, 같은 등급 내 변형 +0.3%, 레벨 +0.5%.
-     * 최고 조합(전설2 Lv.30)이라도 약 +18% 수준으로 과하지 않다.
+     * 적립 보너스(%).
+     *
+     * 기본값은 도감에 적힌 값 그대로이고, 레벨 한 칸에 +0.5%가 더해진다.
+     * 규칙으로 다시 계산하지 않는 이유는, 그러면 도감 시트에 찍힌 숫자와
+     * 앱이 보여 주는 숫자가 어긋나기 때문이다.
      */
     val boostPercent: Double
-        get() = rarity.boostPercent + variant * 0.3 + (level - 1).coerceAtLeast(0) * 0.5
+        get() = design.boostPercent + (level - 1).coerceAtLeast(0) * 0.5
 
     val earningMultiplier: Double get() = 1.0 + boostPercent / 100.0
 
@@ -267,7 +428,9 @@ object SneakerMint {
             variant = variant,
             level = 1,
             mintNumber = mintNumber,
-            luck = rollStat(random, rarity, 0.45),
+            // 행운은 굴리지 않는다. 도감에 켤레마다 값이 적혀 있으므로
+            // 같은 모델인데 사람마다 다른 값이 나오면 그 표가 거짓이 된다.
+            luck = SneakerDesigns.of(faction, rarity, variant).luck,
             comfort = rollStat(random, rarity, 0.30),
             durability = 100,
             equipped = false,
@@ -283,7 +446,8 @@ object SneakerMint {
         variant = 0,
         level = 1,
         mintNumber = 1,
-        luck = 1.15,
+        // WND-010 클라우드 러너
+        luck = SneakerDesigns.of(Faction.WIND, Rarity.COMMON, 0).luck,
         comfort = 1.12,
         durability = 100,
         equipped = true,

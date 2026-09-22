@@ -15,105 +15,84 @@ import com.stepup.android.R
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.SneakerDesigns
 
 /**
- * 포스터에서 잘라낸 실사 신발 이미지.
+ * 도감 시트에서 잘라낸 실사 신발 그림.
  *
- * 44개 도감 슬롯 전부에 실제 이미지가 있다. 번개·바람의 레어·전설은
- * STRIDE VAULT 시트(#06~#10, #16~#20)를 팩션 색상으로 돌려 채웠다.
+ * 속성마다 13종, 모두 52종이다. 파일 이름의 번호는 도감 번호와 같다 —
+ * sneaker_fire_01 은 FIR-001 이다.
+ *
+ * 배경은 **투명**이다. 예전 그림은 검은 배경이 옅게 깔려 있어 밝은 테마에서
+ * 회색 얼룩처럼 보였다. 투명하게 두면 신발 뒤에 앱 배경이 그대로 비쳐서,
+ * 흰 배경이든 검은 배경이든 카드와 한 몸으로 읽힌다.
  */
 @DrawableRes
 fun sneakerImageRes(faction: Faction, rarity: Rarity, variant: Int): Int? {
-    val v = variant.coerceIn(0, rarity.variantCount - 1)
-    return when (faction) {
-        Faction.FIRE -> when (rarity) {
-            Rarity.COMMON -> listOf(
-                R.drawable.sneaker_fire_common_0,
-                R.drawable.sneaker_fire_common_1,
-                R.drawable.sneaker_fire_common_2,
-            )[v]
-            Rarity.RARE -> listOf(
-                R.drawable.sneaker_fire_rare_0,
-                R.drawable.sneaker_fire_rare_1,
-                R.drawable.sneaker_fire_rare_2,
-            )[v]
-            Rarity.EPIC -> listOf(
-                R.drawable.sneaker_fire_epic_0,
-                R.drawable.sneaker_fire_epic_1,
-                R.drawable.sneaker_fire_epic_2,
-            )[v]
-            Rarity.LEGENDARY -> listOf(
-                R.drawable.sneaker_fire_legendary_0,
-                R.drawable.sneaker_fire_legendary_1,
-            )[v]
-        }
-
-        Faction.WATER -> when (rarity) {
-            Rarity.COMMON -> listOf(
-                R.drawable.sneaker_water_common_0,
-                R.drawable.sneaker_water_common_1,
-                R.drawable.sneaker_water_common_2,
-            )[v]
-            Rarity.RARE -> listOf(
-                R.drawable.sneaker_water_rare_0,
-                R.drawable.sneaker_water_rare_1,
-                R.drawable.sneaker_water_rare_2,
-            )[v]
-            Rarity.EPIC -> listOf(
-                R.drawable.sneaker_water_epic_0,
-                R.drawable.sneaker_water_epic_1,
-                R.drawable.sneaker_water_epic_2,
-            )[v]
-            Rarity.LEGENDARY -> listOf(
-                R.drawable.sneaker_water_legendary_0,
-                R.drawable.sneaker_water_legendary_1,
-            )[v]
-        }
-
-        Faction.LIGHTNING -> when (rarity) {
-            Rarity.COMMON -> listOf(
-                R.drawable.sneaker_lightning_common_0,
-                R.drawable.sneaker_lightning_common_1,
-                R.drawable.sneaker_lightning_common_2,
-            )[v]
-            Rarity.RARE -> listOf(
-                R.drawable.sneaker_lightning_rare_0,
-                R.drawable.sneaker_lightning_rare_1,
-                R.drawable.sneaker_lightning_rare_2,
-            )[v]
-            Rarity.EPIC -> listOf(
-                R.drawable.sneaker_lightning_epic_0,
-                R.drawable.sneaker_lightning_epic_1,
-                R.drawable.sneaker_lightning_epic_2,
-            )[v]
-            Rarity.LEGENDARY -> listOf(
-                R.drawable.sneaker_lightning_legendary_0,
-                R.drawable.sneaker_lightning_legendary_1,
-            )[v]
-        }
-
-        Faction.WIND -> when (rarity) {
-            Rarity.COMMON -> listOf(
-                R.drawable.sneaker_wind_common_0,
-                R.drawable.sneaker_wind_common_1,
-                R.drawable.sneaker_wind_common_2,
-            )[v]
-            Rarity.RARE -> listOf(
-                R.drawable.sneaker_wind_rare_0,
-                R.drawable.sneaker_wind_rare_1,
-                R.drawable.sneaker_wind_rare_2,
-            )[v]
-            Rarity.EPIC -> listOf(
-                R.drawable.sneaker_wind_epic_0,
-                R.drawable.sneaker_wind_epic_1,
-                R.drawable.sneaker_wind_epic_2,
-            )[v]
-            Rarity.LEGENDARY -> listOf(
-                R.drawable.sneaker_wind_legendary_0,
-                R.drawable.sneaker_wind_legendary_1,
-            )[v]
-        }
+    val index = SneakerDesigns.indexOf(rarity, variant.coerceIn(0, rarity.variantCount - 1))
+    val list = when (faction) {
+        Faction.FIRE -> listOf(
+            R.drawable.sneaker_fire_01,
+            R.drawable.sneaker_fire_02,
+            R.drawable.sneaker_fire_03,
+            R.drawable.sneaker_fire_04,
+            R.drawable.sneaker_fire_05,
+            R.drawable.sneaker_fire_06,
+            R.drawable.sneaker_fire_07,
+            R.drawable.sneaker_fire_08,
+            R.drawable.sneaker_fire_09,
+            R.drawable.sneaker_fire_10,
+            R.drawable.sneaker_fire_11,
+            R.drawable.sneaker_fire_12,
+            R.drawable.sneaker_fire_13,
+        )
+        Faction.WATER -> listOf(
+            R.drawable.sneaker_water_01,
+            R.drawable.sneaker_water_02,
+            R.drawable.sneaker_water_03,
+            R.drawable.sneaker_water_04,
+            R.drawable.sneaker_water_05,
+            R.drawable.sneaker_water_06,
+            R.drawable.sneaker_water_07,
+            R.drawable.sneaker_water_08,
+            R.drawable.sneaker_water_09,
+            R.drawable.sneaker_water_10,
+            R.drawable.sneaker_water_11,
+            R.drawable.sneaker_water_12,
+            R.drawable.sneaker_water_13,
+        )
+        Faction.LIGHTNING -> listOf(
+            R.drawable.sneaker_lightning_01,
+            R.drawable.sneaker_lightning_02,
+            R.drawable.sneaker_lightning_03,
+            R.drawable.sneaker_lightning_04,
+            R.drawable.sneaker_lightning_05,
+            R.drawable.sneaker_lightning_06,
+            R.drawable.sneaker_lightning_07,
+            R.drawable.sneaker_lightning_08,
+            R.drawable.sneaker_lightning_09,
+            R.drawable.sneaker_lightning_10,
+            R.drawable.sneaker_lightning_11,
+            R.drawable.sneaker_lightning_12,
+            R.drawable.sneaker_lightning_13,
+        )
+        Faction.WIND -> listOf(
+            R.drawable.sneaker_wind_01,
+            R.drawable.sneaker_wind_02,
+            R.drawable.sneaker_wind_03,
+            R.drawable.sneaker_wind_04,
+            R.drawable.sneaker_wind_05,
+            R.drawable.sneaker_wind_06,
+            R.drawable.sneaker_wind_07,
+            R.drawable.sneaker_wind_08,
+            R.drawable.sneaker_wind_09,
+            R.drawable.sneaker_wind_10,
+            R.drawable.sneaker_wind_11,
+            R.drawable.sneaker_wind_12,
+            R.drawable.sneaker_wind_13,
+        )
     }
+    return list.getOrNull(index - 1)
 }
 
 /** 이미지가 있는 모든 도감 슬롯 — 스플래시 로테이션 등에 쓴다 */
@@ -132,9 +111,12 @@ val AllSneakerImages: List<Int> by lazy {
 /**
  * 신발 비주얼의 표준 프레임.
  *
- * 이미지 파일에 이미 알파 페더가 구워져 있어(배경은 검정, 가장자리는 투명)
- * 배경판이나 클립 없이 그대로 얹으면 어떤 카드 위에서도 이질감 없이 섞인다.
- * [ContentScale.Fit]이라 신발이 잘리지 않고, 남는 여백은 투명이라 보이지 않는다.
+ * 배경판을 깔지 않는다. 그림의 바탕이 투명이라 카드 색이 그대로 비치고,
+ * 그 카드 색은 테마를 따라간다 — 밝은 테마에서는 흰 바탕, 어두운 테마에서는
+ * 검은 바탕 위에 신발만 얹힌다. 배경판을 깔면 테마를 바꿀 때마다 그 판만
+ * 따로 남아 신발이 사각형 스티커처럼 보인다.
+ *
+ * ContentScale.Fit 이라 신발이 잘리지 않고, 남는 여백은 투명이다.
  */
 @Composable
 fun SneakerFrame(

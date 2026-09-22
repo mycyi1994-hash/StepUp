@@ -224,9 +224,9 @@
     <string name="sneaker_durability">내구도</string>
     <string name="sneaker_about">이 NFT 정보</string>
     <string name="sneaker_about_body" formatted="false">모든 스니커즈는 네 가지 속성과 등급을 가집니다. 부스트는 등급당 +1% 정도로 작게 잡았어요. 수집의 재미는 성능이 아니라 외형과 도감 완성에 있습니다.</string>
-    <string name="rarity_common">커먼</string>
+    <string name="rarity_common">일반</string>
     <string name="rarity_rare">레어</string>
-    <string name="rarity_epic">에픽</string>
+    <string name="rarity_epic">희귀</string>
     <string name="rarity_legendary">레전더리</string>
 
     <!-- Events -->
@@ -918,17 +918,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="tier_legend">레전드</string>
 
     <!-- Sneaker models -->
-    <string name="variant_runner">러너</string>
-    <string name="variant_trainer">트레이너</string>
-    <string name="variant_trail">트레일</string>
-    <string name="variant_racer">레이서</string>
-    <string name="variant_glide">글라이드</string>
-    <string name="variant_blade">블레이드</string>
-    <string name="variant_apex">에이펙스</string>
-    <string name="variant_phantom">팬텀</string>
-    <string name="variant_titan">타이탄</string>
-    <string name="variant_seraph">세라프</string>
-    <string name="variant_dragon">드래곤</string>
 
     <!-- Run metrics -->
     <string name="stat_pace">페이스 /km</string>
@@ -1113,4 +1102,56 @@ StepUp과 함께 달려보세요.</string>
     <string name="ledger_escrow_lock">입찰 잠금</string>
     <string name="ledger_escrow_unlock">입찰 해제</string>
     <string name="feed_note_runs_pending">아래 안내는 스텝업이 쓴 글입니다. 매일 모아 오는 소식이 도착하면 이 자리에 올라옵니다.</string>
+    <string name="nft_fire_01">인페르노 크라운</string>
+    <string name="nft_fire_02">피닉스 서지</string>
+    <string name="nft_fire_03">마그마 펄스</string>
+    <string name="nft_fire_04">엠버 노바</string>
+    <string name="nft_fire_05">신더 볼텍스</string>
+    <string name="nft_fire_06">히트 러너</string>
+    <string name="nft_fire_07">토치 스프린트</string>
+    <string name="nft_fire_08">애쉬 블레이즈</string>
+    <string name="nft_fire_09">플레어 시프트</string>
+    <string name="nft_fire_10">스파크 러너</string>
+    <string name="nft_fire_11">코어 러너</string>
+    <string name="nft_fire_12">레드라인</string>
+    <string name="nft_fire_13">워밍 업</string>
+    <string name="nft_water_01">어비스 타이드</string>
+    <string name="nft_water_02">레비아탄 플로우</string>
+    <string name="nft_water_03">쓰나미 아크</string>
+    <string name="nft_water_04">애저 커런트</string>
+    <string name="nft_water_05">딥웨이브 프라임</string>
+    <string name="nft_water_06">워터 러너</string>
+    <string name="nft_water_07">리플 페이스</string>
+    <string name="nft_water_08">리프 글라이드</string>
+    <string name="nft_water_09">오션 스프린트</string>
+    <string name="nft_water_10">블루 러너</string>
+    <string name="nft_water_11">브룩 러너</string>
+    <string name="nft_water_12">미스트 러너</string>
+    <string name="nft_water_13">타이드 라이트</string>
+    <string name="nft_lightning_01">썬더 제니스</string>
+    <string name="nft_lightning_02">볼트 팬텀</string>
+    <string name="nft_lightning_03">스톰 서킷</string>
+    <string name="nft_lightning_04">볼트 에이펙스</string>
+    <string name="nft_lightning_05">플라즈마 러너</string>
+    <string name="nft_lightning_06">썬더 러너</string>
+    <string name="nft_lightning_07">볼트 대시</string>
+    <string name="nft_lightning_08">플래시 페이스</string>
+    <string name="nft_lightning_09">스파크 블레이드</string>
+    <string name="nft_lightning_10">옐로 러너</string>
+    <string name="nft_lightning_11">스태틱 러너</string>
+    <string name="nft_lightning_12">펄스 러너</string>
+    <string name="nft_lightning_13">차지 라이트</string>
+    <string name="nft_wind_01">제피르 크라운</string>
+    <string name="nft_wind_02">템페스트 윙</string>
+    <string name="nft_wind_03">에어로 팬텀</string>
+    <string name="nft_wind_04">게일 오빗</string>
+    <string name="nft_wind_05">사이클론 스텝</string>
+    <string name="nft_wind_06">윈드 러너</string>
+    <string name="nft_wind_07">브리즈 글라이드</string>
+    <string name="nft_wind_08">에어 대시</string>
+    <string name="nft_wind_09">스카이 페이스</string>
+    <string name="nft_wind_10">클라우드 러너</string>
+    <string name="nft_wind_11">페더 러너</string>
+    <string name="nft_wind_12">드리프트 러너</string>
+    <string name="nft_wind_13">리프트 라이트</string>
 </resources>

@@ -50,7 +50,6 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.TOTAL_COLLECTION
-import com.stepup.android.domain.VariantNames
 import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
@@ -59,6 +58,7 @@ import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.tint
+import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
@@ -67,7 +67,7 @@ import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
 /**
- * NFT 도감 — 44칸 전부를 보여준다.
+ * NFT 도감 — 52칸 전부를 보여준다.
  *
  * 보유한 신발만 보여주는 보관함과 반대다. **아직 없는 것까지 보여주는 것이
  * 도감의 일**이다. 무엇이 비어 있는지 알아야 다음에 무엇을 노릴지 정할 수 있고,
@@ -265,7 +265,7 @@ private data class DexSlot(
     val key: String get() = "${faction.id}:${rarity.id}:$variant"
 }
 
-/** 44칸 전체 — 속성 × 등급 × 변형 */
+/** 52칸 전체 — 속성 4 × 등급별 변형(2+3+4+4) */
 private fun dexSlots(): List<DexSlot> = Faction.entries.flatMap { faction ->
     Rarity.entries.flatMap { rarity ->
         (0 until rarity.variantCount).map { variant -> DexSlot(faction, rarity, variant) }
@@ -342,7 +342,7 @@ private fun DexCell(
         }
 
         Text(
-            text = VariantNames.of(slot.rarity, slot.variant),
+            text = variantLabel(slot.faction, slot.rarity, slot.variant),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = if (hasIt) Snow else Slate,

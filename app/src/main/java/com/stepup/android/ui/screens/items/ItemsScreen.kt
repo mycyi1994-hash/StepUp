@@ -297,7 +297,7 @@ fun ItemsScreen(
             }
         }
 
-        // ── 컬렉션 헤더 — "N / 44 조합" ───────────────────────
+        // ── 컬렉션 헤더 — "N / 52 조합" ───────────────────────
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),

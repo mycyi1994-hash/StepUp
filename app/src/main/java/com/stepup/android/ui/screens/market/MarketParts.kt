@@ -71,7 +71,7 @@ fun previewSneaker(faction: String, rarity: String, variant: Int, level: Int = 1
 @Composable
 fun modelName(faction: String, rarity: String, variant: Int): String {
     val f = Faction.entries.firstOrNull { it.id == faction } ?: Faction.FIRE
-    return "${f.label()} ${stringResource(variantNameRes(Rarity.of(rarity), variant))}"
+    return stringResource(variantNameRes(f, Rarity.of(rarity), variant))
 }
 
 /** 값 한 칸 — 이름과 숫자. 없으면 "—" 로 둔다. 0 으로 적으면 거짓말이다. */

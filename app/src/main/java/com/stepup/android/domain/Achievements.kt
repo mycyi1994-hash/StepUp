@@ -34,8 +34,8 @@ enum class AchievementCategory(
     /** 민팅 횟수 */
     MINT("MINT", listOf(1.0, 2.0, 3.0, 5.0, 8.0, 12.0, 20.0, 30.0)),
 
-    /** 도감 슬롯 수집 (총 44) */
-    COLLECTION("COLLECTION", listOf(2.0, 4.0, 6.0, 11.0, 18.0, 26.0, 36.0, 44.0)),
+    /** 도감 슬롯 수집 (총 52) */
+    COLLECTION("COLLECTION", listOf(2.0, 5.0, 9.0, 14.0, 21.0, 30.0, 40.0, 52.0)),
 
     /** 강화 횟수 */
     UPGRADE("UPGRADE", listOf(1.0, 3.0, 7.0, 15.0, 25.0, 40.0, 60.0, 90.0)),

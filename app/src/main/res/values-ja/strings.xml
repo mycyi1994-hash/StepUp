@@ -919,17 +919,6 @@ StepUp と走り出そう。</string>
     <string name="tier_legend">レジェンド</string>
 
     <!-- Sneaker models -->
-    <string name="variant_runner">ランナー</string>
-    <string name="variant_trainer">トレーナー</string>
-    <string name="variant_trail">トレイル</string>
-    <string name="variant_racer">レーサー</string>
-    <string name="variant_glide">グライド</string>
-    <string name="variant_blade">ブレード</string>
-    <string name="variant_apex">エイペックス</string>
-    <string name="variant_phantom">ファントム</string>
-    <string name="variant_titan">タイタン</string>
-    <string name="variant_seraph">セラフ</string>
-    <string name="variant_dragon">ドラゴン</string>
 
     <!-- Run metrics -->
     <string name="stat_pace">ペース /km</string>
@@ -1114,4 +1103,56 @@ StepUp と走り出そう。</string>
     <string name="ledger_escrow_lock">入札ロック</string>
     <string name="ledger_escrow_unlock">入札解除</string>
     <string name="feed_note_runs_pending">下のお知らせはステップアップが書いた文章です。毎日集めた記事が届くとこの場所に並びます。</string>
+    <string name="nft_fire_01">Inferno Crown</string>
+    <string name="nft_fire_02">Phoenix Surge</string>
+    <string name="nft_fire_03">Magma Pulse</string>
+    <string name="nft_fire_04">Ember Nova</string>
+    <string name="nft_fire_05">Cinder Vortex</string>
+    <string name="nft_fire_06">Heat Runner</string>
+    <string name="nft_fire_07">Torch Sprint</string>
+    <string name="nft_fire_08">Ash Blaze</string>
+    <string name="nft_fire_09">Flare Shift</string>
+    <string name="nft_fire_10">Spark Runner</string>
+    <string name="nft_fire_11">Core Runner</string>
+    <string name="nft_fire_12">Redline</string>
+    <string name="nft_fire_13">Warm Up</string>
+    <string name="nft_water_01">Abyss Tide</string>
+    <string name="nft_water_02">Leviathan Flow</string>
+    <string name="nft_water_03">Tsunami Arc</string>
+    <string name="nft_water_04">Azure Current</string>
+    <string name="nft_water_05">Deepwave Prime</string>
+    <string name="nft_water_06">Water Runner</string>
+    <string name="nft_water_07">Ripple Pace</string>
+    <string name="nft_water_08">Reef Glide</string>
+    <string name="nft_water_09">Ocean Sprint</string>
+    <string name="nft_water_10">Blue Runner</string>
+    <string name="nft_water_11">Brook Runner</string>
+    <string name="nft_water_12">Mist Runner</string>
+    <string name="nft_water_13">Tide Lite</string>
+    <string name="nft_lightning_01">Thunder Zenith</string>
+    <string name="nft_lightning_02">Volt Phantom</string>
+    <string name="nft_lightning_03">Storm Circuit</string>
+    <string name="nft_lightning_04">Volt Apex</string>
+    <string name="nft_lightning_05">Plasma Runner</string>
+    <string name="nft_lightning_06">Thunder Runner</string>
+    <string name="nft_lightning_07">Volt Dash</string>
+    <string name="nft_lightning_08">Flash Pace</string>
+    <string name="nft_lightning_09">Spark Blade</string>
+    <string name="nft_lightning_10">Yellow Runner</string>
+    <string name="nft_lightning_11">Static Runner</string>
+    <string name="nft_lightning_12">Pulse Runner</string>
+    <string name="nft_lightning_13">Charge Lite</string>
+    <string name="nft_wind_01">Zephyr Crown</string>
+    <string name="nft_wind_02">Tempest Wing</string>
+    <string name="nft_wind_03">Aero Phantom</string>
+    <string name="nft_wind_04">Gale Orbit</string>
+    <string name="nft_wind_05">Cyclone Step</string>
+    <string name="nft_wind_06">Wind Runner</string>
+    <string name="nft_wind_07">Breeze Glide</string>
+    <string name="nft_wind_08">Air Dash</string>
+    <string name="nft_wind_09">Sky Pace</string>
+    <string name="nft_wind_10">Cloud Runner</string>
+    <string name="nft_wind_11">Feather Runner</string>
+    <string name="nft_wind_12">Drift Runner</string>
+    <string name="nft_wind_13">Lift Lite</string>
 </resources>

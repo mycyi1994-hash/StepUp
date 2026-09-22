@@ -371,7 +371,7 @@ private fun iconFor(type: String): ImageVector = when (type) {
 private fun sneakerLabel(slotKey: String): String {
     val parsed = parseSlotKey(slotKey) ?: return slotKey
     val (faction, rarity, variant) = parsed
-    return faction.label() + " " + variantLabel(rarity, variant)
+    return variantLabel(faction, rarity, variant)
 }
 
 @Composable

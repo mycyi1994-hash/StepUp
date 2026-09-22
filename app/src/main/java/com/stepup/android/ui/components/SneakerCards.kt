@@ -37,6 +37,7 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.RunnerTitle
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.SneakerDesigns
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
@@ -82,16 +83,78 @@ fun Faction.tint(): Color = when (this) {
 @Composable
 fun Faction.label(): String = stringResource(factionNameRes(this))
 
-/** 등급·변형별 모델명 리소스 */
+/**
+ * 도감 한 칸의 모델명 리소스.
+ *
+ * 이름이 속성마다 다르므로 속성을 함께 받는다 — 불의 전설 1번은 "인페르노
+ * 크라운", 물의 전설 1번은 "어비스 타이드"다. 등급만으로는 정할 수 없다.
+ */
 @StringRes
-fun variantNameRes(rarity: Rarity, variant: Int): Int {
-    val names = when (rarity) {
-        Rarity.COMMON -> listOf(R.string.variant_runner, R.string.variant_trainer, R.string.variant_trail)
-        Rarity.RARE -> listOf(R.string.variant_racer, R.string.variant_glide, R.string.variant_blade)
-        Rarity.EPIC -> listOf(R.string.variant_apex, R.string.variant_phantom, R.string.variant_titan)
-        Rarity.LEGENDARY -> listOf(R.string.variant_seraph, R.string.variant_dragon)
+fun variantNameRes(faction: Faction, rarity: Rarity, variant: Int): Int {
+    val index = SneakerDesigns.indexOf(rarity, variant.coerceIn(0, rarity.variantCount - 1))
+    val names = when (faction) {
+        Faction.FIRE -> listOf(
+            R.string.nft_fire_01,
+            R.string.nft_fire_02,
+            R.string.nft_fire_03,
+            R.string.nft_fire_04,
+            R.string.nft_fire_05,
+            R.string.nft_fire_06,
+            R.string.nft_fire_07,
+            R.string.nft_fire_08,
+            R.string.nft_fire_09,
+            R.string.nft_fire_10,
+            R.string.nft_fire_11,
+            R.string.nft_fire_12,
+            R.string.nft_fire_13,
+        )
+        Faction.WATER -> listOf(
+            R.string.nft_water_01,
+            R.string.nft_water_02,
+            R.string.nft_water_03,
+            R.string.nft_water_04,
+            R.string.nft_water_05,
+            R.string.nft_water_06,
+            R.string.nft_water_07,
+            R.string.nft_water_08,
+            R.string.nft_water_09,
+            R.string.nft_water_10,
+            R.string.nft_water_11,
+            R.string.nft_water_12,
+            R.string.nft_water_13,
+        )
+        Faction.LIGHTNING -> listOf(
+            R.string.nft_lightning_01,
+            R.string.nft_lightning_02,
+            R.string.nft_lightning_03,
+            R.string.nft_lightning_04,
+            R.string.nft_lightning_05,
+            R.string.nft_lightning_06,
+            R.string.nft_lightning_07,
+            R.string.nft_lightning_08,
+            R.string.nft_lightning_09,
+            R.string.nft_lightning_10,
+            R.string.nft_lightning_11,
+            R.string.nft_lightning_12,
+            R.string.nft_lightning_13,
+        )
+        Faction.WIND -> listOf(
+            R.string.nft_wind_01,
+            R.string.nft_wind_02,
+            R.string.nft_wind_03,
+            R.string.nft_wind_04,
+            R.string.nft_wind_05,
+            R.string.nft_wind_06,
+            R.string.nft_wind_07,
+            R.string.nft_wind_08,
+            R.string.nft_wind_09,
+            R.string.nft_wind_10,
+            R.string.nft_wind_11,
+            R.string.nft_wind_12,
+            R.string.nft_wind_13,
+        )
     }
-    return names[variant.coerceIn(0, names.lastIndex)]
+    return names[(index - 1).coerceIn(0, names.lastIndex)]
 }
 
 @StringRes
@@ -102,23 +165,29 @@ fun factionNameRes(faction: Faction): Int = when (faction) {
     Faction.WIND -> R.string.faction_wind
 }
 
-/** 등급·변형별 모델명 — "Apex", "드래곤" */
+/** 모델명 — "인페르노 크라운" */
 @Composable
-fun variantLabel(rarity: Rarity, variant: Int): String = stringResource(variantNameRes(rarity, variant))
+fun variantLabel(faction: Faction, rarity: Rarity, variant: Int): String =
+    stringResource(variantNameRes(faction, rarity, variant))
 
-/** 모델명만 — "드래곤" */
+/** 모델명만 — "인페르노 크라운" */
 @Composable
-fun Sneaker.variantLabel(): String = variantLabel(rarity, variant)
+fun Sneaker.variantLabel(): String = variantLabel(faction, rarity, variant)
 
-/** 속성 + 모델명 — "번개 드래곤" */
+/**
+ * 화면에 쓰는 이름 — "인페르노 크라운".
+ *
+ * 속성을 앞에 붙이지 않는다. 도감의 이름 자체가 이미 속성을 담고 있어
+ * ("인페르노"는 불이다) 붙이면 "불 인페르노 크라운"이 된다.
+ */
 @Composable
-fun Sneaker.fullLabel(): String = "${faction.label()} ${variantLabel()}"
+fun Sneaker.fullLabel(): String = variantLabel()
 
 /** Composable 밖(토스트·알림)에서 쓰는 같은 이름 */
 fun Sneaker.fullLabel(context: Context): String = fullSneakerLabel(context, faction, rarity, variant)
 
 fun fullSneakerLabel(context: Context, faction: Faction, rarity: Rarity, variant: Int): String =
-    context.getString(factionNameRes(faction)) + " " + context.getString(variantNameRes(rarity, variant))
+    context.getString(variantNameRes(faction, rarity, variant))
 
 /** 러너 칭호 */
 @Composable
