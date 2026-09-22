@@ -104,7 +104,7 @@ class ExperienceUiTest {
             }
         }
         for (locale in listOf("ko", "en", "ja", "zh")) {
-            for (index in 0..22) {
+            for (index in 0..24) {
                 compose.runOnIdle { language = locale; screen = index; large = false }
                 compose.waitForIdle()
                 capture("$locale-${index.toString().padStart(2, '0')}")
@@ -143,6 +143,8 @@ class ExperienceUiTest {
             20 -> SneakerDetailScreen(sneakerId)
             21 -> CrewBoardScreen(crewId)
             22 -> FlashRunDetailScreen(postId)
+            23 -> PartyLobbyScreen(crewId, onBack = {}, onRunStarted = {})
+            24 -> LoginScreen {}
         }
     }
 
@@ -185,7 +187,9 @@ class ExperienceUiTest {
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.settings_experience)).performScrollTo().performClick()
+        val settingsLabel = compose.activity.getString(R.string.settings_experience)
+        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
+        compose.onNodeWithText(settingsLabel).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).assertIsDisplayed()
         capture("navigation-experience")
     }

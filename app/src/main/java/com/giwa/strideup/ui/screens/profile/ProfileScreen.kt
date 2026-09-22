@@ -171,7 +171,6 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
-        SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
         SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
         SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
         SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
@@ -214,6 +213,11 @@ fun ProfileScreen(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SectionHeader(title = stringResource(R.string.profile_account))
+                com.giwa.strideup.ui.components.ListRow(
+                    icon = Icons.Filled.Tune,
+                    title = stringResource(R.string.settings_experience),
+                    onClick = onOpenExperience,
+                )
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(pills) { pill ->
                         PillChip(

@@ -150,7 +150,7 @@ fun EventsScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Wordmark(fontSize = 22.sp, modifier = Modifier.weight(1f))
-                TotalRewardsCard(balance)
+                TotalRewardsCard(balance, celebration)
                 DarkIconButton(
                     icon = Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.cd_notifications),
