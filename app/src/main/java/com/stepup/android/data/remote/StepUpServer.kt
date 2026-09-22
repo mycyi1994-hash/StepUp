@@ -237,16 +237,32 @@ class StepUpServer(
      * 소식은 가려 둘 것이 아니고, 로그인을 시켜야만 보인다면 처음 앱을 연
      * 사람에게 빈 탭을 보여 주게 된다. 표 쪽 RLS 가 읽기만 열어 두었다.
      */
+    /**
+     * 로그인했으면 그 자격으로, 아니면 anon 으로 부른다.
+     *
+     * 대회·뉴스는 로그인하지 않아도 볼 수 있어야 한다. 다만 로그인해 있으면
+     * 저장 여부(관심 대회)가 함께 와야 하므로, 있을 때는 출입증을 쓴다.
+     */
+    internal suspend fun openPost(url: String, body: String): ServerResult<String> {
+        if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
+        val token = (sessions.accessToken() as? TokenResult.Ok)?.accessToken
+        val response = http.post(
+            url,
+            body,
+            if (token != null) headers(token) else anonHeaders(),
+        )
+        return response.toResult()
+    }
+
+    internal fun anonHeaders() = mapOf(
+        "apikey" to apiKey,
+        "Authorization" to "Bearer $apiKey",
+        "Content-Type" to "application/json",
+    )
+
     internal suspend fun anonGet(url: String): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
-        val response = http.get(url, mapOf("apikey" to apiKey, "Authorization" to "Bearer $apiKey"))
-        return when {
-            response.status in 200..299 -> ServerResult.Ok(response.body)
-            response.status == 0 -> ServerResult.Retry(response.body)
-            response.status == 429 || response.status >= 500 ->
-                ServerResult.Retry("서버가 바쁩니다 (${response.status})")
-            else -> ServerResult.Rejected(response.postgrestMessage())
-        }
+        return http.get(url, anonHeaders()).toResult()
     }
 }
 
@@ -265,13 +281,22 @@ internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): Server
 
 internal val serverJson = Json { ignoreUnknownKeys = true }
 
+/** 응답 코드를 결말로. 다시 해 볼 것과 그래 봐야 같은 것을 가른다. */
+internal fun HttpResponse.toResult(): ServerResult<String> = when {
+    status in 200..299 -> ServerResult.Ok(body)
+    status == 0 -> ServerResult.Retry(body)
+    status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
+    status == 429 || status >= 500 -> ServerResult.Retry("서버가 바쁩니다 ($status)")
+    else -> ServerResult.Rejected(postgrestMessage())
+}
+
 /**
  * Postgres 가 보낸 실패 이유를 꺼낸다.
  *
  * 함수에서 raise 한 메시지(예: "SUP가 부족합니다")가 여기 들어 있다.
  * 흘리면 사용자에게 "알 수 없는 오류"만 보여주게 된다.
  */
-private fun HttpResponse.postgrestMessage(): String {
+internal fun HttpResponse.postgrestMessage(): String {
     val obj = runCatching { Json.parseToJsonElement(body) }.getOrNull() as? JsonObject
     val message = listOf("message", "hint", "details")
         .firstNotNullOfOrNull { key -> (obj?.get(key) as? JsonPrimitive)?.contentOrNull }

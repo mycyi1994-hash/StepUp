@@ -18,6 +18,7 @@ on:
     paths:
       - "supabase/**"
       - "scripts/build-setup-sql.py"
+      - "scripts/feed-collect.py"
       - ".github/workflows/test-sql.yml"
   pull_request:
   workflow_dispatch:
@@ -49,3 +50,8 @@ jobs:
 
       - name: 스키마 검사
         run: supabase/tests/run.sh
+
+      # 수집기의 규칙(허용 도메인·오탐 거르기·이용 범위)은 네트워크 없이
+      # 확인할 수 있다. 깨진 채로 한 시간마다 도는 것을 막는다.
+      - name: 수집기 규칙 검사
+        run: python3 scripts/feed-collect.py --self-test

@@ -942,6 +942,299 @@ call pg_temp.must_fail(
         '22222222-2222-2222-2222-222222222222', 1, 'BY_ASK', true) $q$,
   '체결 함수는 바깥에서 부를 수 없다');
 
+
+-- ════════════════════════════════════════════════════════════════
+--  러닝 이벤트 · 러닝 건강 뉴스
+-- ════════════════════════════════════════════════════════════════
+--
+-- 바깥 정보를 다루는 자리라, 틀렸을 때 나타나는 곳이 "헛걸음한 사용자"다.
+-- 접수 상태와 날짜, 그리고 어떤 링크가 열리는지를 특히 두드려 본다.
+
+reset role;
+
+insert into public.app_admins (user_id, note)
+values ('11111111-1111-1111-1111-111111111111', '검사용 운영자');
+
+set role authenticated;
+
+-- ── 주소 검사 ──
+do $$
+begin
+  perform pg_temp.ok(public.is_web_url('https://seoul-marathon.com/main'), 'https 주소는 통과한다');
+  perform pg_temp.ok(public.is_web_url(null), '주소가 없는 것은 막지 않는다 (모를 수 있다)');
+  perform pg_temp.ok(not public.is_web_url('javascript:alert(1)'), 'javascript 스킴은 막힌다');
+  perform pg_temp.ok(not public.is_web_url('data:text/html,hi'), 'data 스킴은 막힌다');
+  perform pg_temp.ok(not public.is_web_url('file:///etc/passwd'), 'file 스킴은 막힌다');
+  perform pg_temp.ok(not public.is_web_url('intent://x#Intent;end'), '앱 실행 스킴은 막힌다');
+end $$;
+
+-- ── 운영자만 고칠 수 있다 ──
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+call pg_temp.must_fail(
+  $q$ select public.admin_upsert_event(null, '남이 만든 대회') $q$,
+  '운영자가 아니면 대회를 등록할 수 없다');
+call pg_temp.must_fail(
+  $q$ insert into public.running_events (title) values ('직접 넣은 대회') $q$,
+  '표에 직접 대회를 적을 수는 없다');
+call pg_temp.must_fail(
+  $q$ insert into public.news_articles (title, original_url)
+      values ('직접 넣은 기사', 'https://example.com/x') $q$,
+  '표에 직접 기사를 적을 수는 없다');
+call pg_temp.must_fail(
+  $q$ insert into public.app_admins (user_id) values (auth.uid()) $q$,
+  '스스로를 운영자로 올릴 수 없다');
+
+-- ── 대회 등록 ──
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_id uuid; v_past uuid; v_unknown uuid;
+begin
+  call pg_temp.must_fail(
+    $q$ select public.admin_upsert_event(null, '나쁜 링크 대회',
+        p_official_url => 'javascript:alert(1)') $q$,
+    '이상한 주소가 든 대회는 등록되지 않는다');
+
+  v_id := public.admin_upsert_event(
+    null, '서울하프마라톤',
+    p_organizer => '서울시', p_region => '서울', p_venue => '여의도',
+    p_event_date => (current_date + 40),
+    p_event_type => 'ROAD',
+    p_registration_status => 'OPEN',
+    p_registration_close_at => now() + interval '20 days',
+    p_official_url => 'https://seoul-marathon.com/main',
+    p_registration_url => 'https://seoul-marathon.com/apply',
+    p_source_id => 'manual', p_edition_year => 2026,
+    p_visibility => 'PUBLIC');
+  perform pg_temp.ok(v_id is not null, '운영자는 대회를 등록한다');
+  insert into fix values ('ev1', v_id::text);
+
+  -- 한 대회에 여러 종목
+  perform public.admin_add_discipline(v_id, '10K', '10K', 10000,
+    now() + interval '20 days', 'OPEN', 30000);
+  perform public.admin_add_discipline(v_id, '하프', 'HALF', 21097,
+    now() + interval '10 days', 'OPEN', 50000);
+  perform public.admin_add_discipline(v_id, '5km 건강달리기', 'LTE_5K', 5000,
+    null, 'UNKNOWN', null);
+
+  -- 지난 대회
+  v_past := public.admin_upsert_event(
+    null, '작년 가을 마라톤', p_region => '부산',
+    p_event_date => (current_date - 30), p_visibility => 'PUBLIC',
+    p_source_url => 'https://example.org/past');
+  insert into fix values ('ev_past', v_past::text);
+
+  -- 접수 정보를 모르는 대회
+  v_unknown := public.admin_upsert_event(
+    null, '접수 미상 대회', p_region => '경기',
+    p_event_date => (current_date + 60), p_visibility => 'PUBLIC',
+    p_source_url => 'https://example.org/unknown');
+  insert into fix values ('ev_unknown', v_unknown::text);
+end $$;
+
+-- ── 목록 ──
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare r record; n int;
+begin
+  select count(*) into n from public.list_running_events();
+  perform pg_temp.ok(n = 2, '지난 대회는 기본 목록에 없다 (' || n || '건)');
+
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_events(p_include_past => true)) = 3,
+    '지난 대회는 따로 물으면 나온다');
+
+  -- 복수 종목 대회가 거리마다 나온다
+  for r in select unnest(array['10K', 'HALF', 'LTE_5K']) as d loop
+    perform pg_temp.ok(
+      (select count(*) from public.list_running_events(p_distance => r.d)) = 1,
+      r.d || ' 필터에 그 대회가 나온다');
+  end loop;
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_events(p_distance => 'FULL')) = 0,
+    '없는 거리로 거르면 나오지 않는다');
+
+  select * into r from public.list_running_events(p_query => '하프마라톤');
+  perform pg_temp.ok(r.title = '서울하프마라톤', '이름으로 찾는다');
+  perform pg_temp.ok(r.event_date = current_date + 40, '개최일이 그대로다');
+  perform pg_temp.ok(r.registration_close_at::date = (now() + interval '20 days')::date,
+    '접수 마감일이 개최일과 섞이지 않는다');
+  perform pg_temp.ok(not r.has_start_time,
+    '출발 시각을 모르면 시각이 없다고 알려 준다 (00:00 으로 지어내지 않는다)');
+  perform pg_temp.ok(r.destination_type = 'REGISTRATION' and r.target_url like '%/apply',
+    '접수 링크가 있으면 접수 사이트로 보낸다');
+  perform pg_temp.ok(r.total_count = 1,
+    '전체 건수는 거른 뒤의 수다 — 쪽나눔이 이 수를 보고 다음 쪽을 부른다');
+  perform pg_temp.ok(
+    (select max(total_count) from public.list_running_events()) = 2,
+    '거르지 않으면 전체 건수가 다 센다');
+
+  select * into r from public.list_running_events(p_region => '경기');
+  perform pg_temp.ok(r.registration_status = 'UNKNOWN', '접수 정보 미상은 미상으로 남는다');
+  perform pg_temp.ok(r.destination_type = 'SOURCE_ONLY',
+    '공식 링크를 모르면 출처에서 확인으로 보낸다');
+
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_events(p_status => 'OPEN')) = 1,
+    '접수 중으로 거르면 미상인 대회는 끼지 않는다');
+
+  perform pg_temp.ok(
+    (select count(*) from public.event_disciplines_of(pg_temp.fx('ev1')::uuid)) = 3,
+    '종목 세 개가 함께 온다');
+end $$;
+
+-- ── 취소·연기 ──
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform public.admin_set_event_state(pg_temp.fx('ev1')::uuid, p_cancelled => 'POSTPONED');
+end $$;
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare first_row record;
+begin
+  select * into first_row from public.list_running_events() limit 1;
+  perform pg_temp.ok(first_row.cancelled_or_postponed = 'NONE',
+    '연기된 대회는 뒤로 밀린다 — 달릴 수 있는 대회가 먼저다');
+  perform pg_temp.ok(
+    (select cancelled_or_postponed from public.list_running_events()
+      where id = pg_temp.fx('ev1')::uuid) = 'POSTPONED',
+    '연기 표시는 목록에 그대로 실린다');
+end $$;
+
+-- ── 숨김 ──
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform public.admin_set_event_state(pg_temp.fx('ev_unknown')::uuid, p_visibility => 'HIDDEN');
+end $$;
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_events()) = 1,
+    '숨긴 대회는 목록에서 빠진다');
+  perform pg_temp.ok(
+    (select count(*) from public.get_running_event(pg_temp.fx('ev_unknown')::uuid)) = 0,
+    '숨긴 대회는 상세로도 볼 수 없다');
+end $$;
+
+-- ── 관심 저장 ──
+do $$
+declare v_me uuid := '22222222-2222-2222-2222-222222222222';
+begin
+  perform public.save_event(pg_temp.fx('ev1')::uuid, true);
+  perform public.save_event(pg_temp.fx('ev1')::uuid, true);
+  perform pg_temp.ok(
+    (select count(*) from public.saved_events where user_id = v_me) = 1,
+    '두 번 저장해도 한 줄이다');
+  perform pg_temp.ok(
+    (select saved from public.list_running_events() where id = pg_temp.fx('ev1')::uuid),
+    '목록에 저장 여부가 함께 온다');
+  perform public.save_event(pg_temp.fx('ev1')::uuid, false);
+  perform public.save_event(pg_temp.fx('ev1')::uuid, false);
+  perform pg_temp.ok(
+    (select count(*) from public.saved_events where user_id = v_me) = 0,
+    '두 번 해제해도 탈이 없다');
+end $$;
+
+-- ── 뉴스 ──
+reset role;
+
+-- 수집기(service_role)가 하는 일을 흉내 낸다. 앱 역할로는 못 넣는다.
+insert into public.news_articles
+  (title, publisher_name, publisher_domain, original_url, published_at, fetched_at,
+   description, category, source_id, rights_status, relevance_score)
+values
+  ('러닝 초보를 위한 무릎 부상 예방법', 'SBS', 'news.sbs.co.kr',
+   'https://news.sbs.co.kr/news/endPage.do?news_id=1', now() - interval '2 days', now(),
+   '전문가들은 준비운동을 강조했다', 'INJURY', 'sbs', 'DESCRIPTION_OK', 8.5),
+  ('걷기만 해도 혈압이 내려간다', 'KBS', 'news.kbs.co.kr',
+   'https://news.kbs.co.kr/news/view.do?ncd=2', now() - interval '1 day', now(),
+   '하루 30분 걷기의 효과', 'WALK_JOG', 'kbs', 'LINK_ONLY', 6.0);
+
+-- 이용 범위가 확인되지 않은 기사에 요약과 이미지를 붙여 둔다.
+-- 표에 값이 있어도 내보내면 안 된다는 것을 확인하기 위해서다.
+update public.news_articles
+   set summary = '이 요약은 나가면 안 된다', summary_type = 'AI_SUMMARY',
+       thumbnail_url = 'https://news.kbs.co.kr/img/2.jpg', image_usage_status = 'UNKNOWN'
+ where publisher_domain = 'news.kbs.co.kr';
+
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+do $$
+declare r record;
+begin
+  perform pg_temp.ok((select count(*) from public.list_running_news()) = 2, '기사 두 건이 나온다');
+
+  select * into r from public.list_running_news() where publisher_domain = 'news.kbs.co.kr';
+  perform pg_temp.ok(r.summary is null,
+    '본문 이용이 확인되지 않은 출처의 요약은 내보내지 않는다');
+  perform pg_temp.ok(r.summary_type = 'NONE',
+    '설명 이용도 확인되지 않았으면 표시 방식이 없음이 된다');
+  perform pg_temp.ok(r.thumbnail_url is null,
+    '이미지 사용 권한이 없으면 사진을 내보내지 않는다');
+  perform pg_temp.ok(r.original_url like 'https://news.kbs.co.kr/%',
+    '원문 주소와 출처명이 같은 곳을 가리킨다');
+
+  select * into r from public.list_running_news() where publisher_domain = 'news.sbs.co.kr';
+  perform pg_temp.ok(r.summary_type = 'SEARCH_DESCRIPTION',
+    '검색 설명은 설명으로 표시된다 — AI 요약이라고 하지 않는다');
+  perform pg_temp.ok(r.published_at < r.fetched_at,
+    '기사 발행일과 우리가 주워 온 날이 구분된다');
+
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_news(p_category => 'INJURY')) = 1,
+    '주제로 거른다');
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_news(p_publisher => 'news.sbs.co.kr')) = 1,
+    '언론사로 거른다');
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_news(p_query => '무릎')) = 1,
+    '제목으로 찾는다');
+end $$;
+
+-- 중복은 수집기가 부딪히는 것이라 수집기 권한으로 확인한다.
+-- 앱 권한으로 하면 RLS 에 먼저 막혀서 정작 유일 색인은 확인되지 않는다.
+reset role;
+call pg_temp.must_fail(
+  $q$ insert into public.news_articles (title, original_url)
+      values ('같은 주소 기사', 'https://news.sbs.co.kr/news/endPage.do?news_id=1') $q$,
+  '같은 원문 주소는 두 번 들어가지 않는다');
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+-- ── 쪽나눔 한도 ──
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_news(p_limit => 100000)) <= 50,
+    '앱이 큰 수를 보내도 서버가 잘라 준다');
+  perform pg_temp.ok(
+    (select count(*) from public.list_running_events(p_limit => -5)) >= 1,
+    '앱이 음수를 보내도 빈 목록이 되지 않는다');
+end $$;
+
+-- ── 출처 ──
+do $$
+declare r record;
+begin
+  perform pg_temp.ok((select count(*) from public.running_sources_public) >= 8,
+    '초기 출처 목록이 들어 있다');
+  select * into r from public.running_sources_public where id = 'naver-news';
+  perform pg_temp.ok(not r.enabled,
+    '키가 없는 어댑터는 꺼진 채로 들어간다 — 켜져 있으면 연동이 끝난 것처럼 읽힌다');
+  perform pg_temp.ok(not r.can_summarize, '요약 권한은 기본이 꺼짐이다');
+  select * into r from public.running_sources_public where id = 'manual';
+  perform pg_temp.ok(r.enabled, '운영자 등록 경로는 처음부터 열려 있다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.admin_set_source('naver-news', p_enabled => true) $q$,
+  '운영자가 아니면 출처를 켤 수 없다');
+
 reset role;
 
 \echo ''

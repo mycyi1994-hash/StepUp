@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import com.stepup.android.domain.GeoPoint
 
 /**
@@ -90,14 +91,34 @@ object ExternalIntents {
     private const val MAX_WAYPOINTS = 8
 
     /**
-     * 웹 주소를 브라우저에서 연다.
+     * 웹 주소를 연다.
      *
-     * 소식의 본문은 원문에서 읽는다. 앱 안에 옮겨 담으면 남의 글을 우리
-     * 것처럼 두는 셈이고, 저작권 문제이기도 하다.
+     * 먼저 **커스텀 탭**을 쓴다. 앱 위에 브라우저가 얹히는 방식이라 닫으면
+     * 보던 화면이 그대로 남는다 — 필터와 스크롤을 다시 맞출 필요가 없다.
+     * 커스텀 탭을 지원하는 브라우저가 없으면 평범한 브라우저로 넘긴다.
+     *
+     * 기사 본문과 대회 안내는 원문에서 읽는다. 앱 안에 iframe 으로 통째로
+     * 옮겨 담지 않는다 — 남의 화면을 우리 것처럼 두는 셈이고, 로그인과
+     * 결제가 그 안에서 제대로 되지도 않는다.
+     *
+     * [SafeUrl] 을 지나지 못하는 주소는 조용히 무시한다. javascript: 하나가
+     * 열리면 그 카드를 누른 사용자가 위험해진다.
      */
     fun openUrl(context: Context, url: String) {
-        if (!url.startsWith("http://") && !url.startsWith("https://")) return
-        start(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        if (!SafeUrl.looksSafe(url)) return
+        val uri = Uri.parse(SafeUrl.preferHttps(url))
+        val tab = CustomTabsIntent.Builder()
+            .setShowTitle(true)
+            .setUrlBarHidingEnabled(false)
+            .build()
+        tab.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            tab.launchUrl(context, uri)
+            return
+        } catch (e: Exception) {
+            // 커스텀 탭을 받아 줄 브라우저가 없는 기기가 있다.
+        }
+        start(context, Intent(Intent.ACTION_VIEW, uri))
     }
 
     private fun start(context: Context, intent: Intent): Boolean = try {

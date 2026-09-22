@@ -1,0 +1,79 @@
+# 러닝·건강 뉴스를 한 시간마다 모은다.
+#
+# ── 왜 여기서 도는가 ────────────────────────────────────────────────
+#
+# 서버를 하나 띄워 크론을 걸면 매달 돈이 나간다. 앱이 직접 긁게 하면 폰이
+# 꺼져 있을 때 갱신되지 않고, 사용자 수만큼 남의 서버를 두드리며, 무엇보다
+# 인증 정보가 앱 번들에 들어간다.
+#
+# GitHub Actions 는 이미 쓰고 있고 하루 24번 1분 남짓이면 무료 한도 안이다.
+#
+# ── 준비물 (한 번만) ────────────────────────────────────────────────
+#
+# 저장소 Settings → Secrets and variables → Actions:
+#
+#     SUPABASE_URL           https://xxxx.supabase.co
+#     SUPABASE_SERVICE_KEY   service_role 키
+#     NAVER_CLIENT_ID        네이버 개발자센터 애플리케이션 ID
+#     NAVER_CLIENT_SECRET    같은 애플리케이션의 Secret
+#
+# 자세한 등록 방법은 docs/running-feed.md 를 보라.
+# **비밀값은 저장소 파일에 적지 않는다.** Secrets 에만 둔다.
+#
+# 네이버 키가 없으면 수집기는 "키 없음"만 적고 조용히 끝난다. 그것이 정상
+# 동작이다 — 연결되지 않았다는 사실을 숨기려고 아무 데서나 긁어 오지 않는다.
+#
+# ── 예약 실행은 기본 브랜치에서만 돈다 ──────────────────────────────
+#
+# GitHub 의 규칙이다. main 에 들어가기 전에는 Actions 탭에서 손으로 돌린다.
+
+name: Collect running feed
+
+on:
+  schedule:
+    # 정각마다 (뉴스 기본 주기 60분). 실제 간격은 표의 fetch_interval_minutes 가
+    # 다시 한 번 판단하므로, 여기서 자주 깨워도 남의 서버를 자주 두드리지 않는다.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/feed-collect.py"
+      - ".github/workflows/feed-collect.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feed-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 수집기부터 확인한다. 한 시간마다 도는 일이라 깨진 것을 사람이
+      # 알아채기까지 오래 걸린다 — 보내기 전에 여기서 멈추는 편이 낫다.
+      - name: 수집기 자체 검사
+        run: python3 scripts/feed-collect.py --self-test
+
+      - name: 열쇠가 있는지
+        id: keys
+        run: |
+          if [ -n "${{ secrets.SUPABASE_SERVICE_KEY }}" ] && [ -n "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::SUPABASE_URL / SUPABASE_SERVICE_KEY 가 없어 검사만 했습니다."
+          fi
+
+      - name: 소식 모아서 표에 넣기
+        if: steps.keys.outputs.ready == 'yes'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python3 scripts/feed-collect.py

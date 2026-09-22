@@ -7,6 +7,7 @@ import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
+import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
@@ -21,6 +22,7 @@ import com.stepup.android.data.repo.CrewRepository
 import com.stepup.android.data.repo.EventRepository
 import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.NewsRepository
+import com.stepup.android.data.repo.RunningFeedRepository
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
@@ -63,6 +65,15 @@ object ServiceLocator {
 
     /** 러닝 소식 — 하루 한 번 받아 두고 그 사본을 보여 준다 */
     lateinit var newsRepository: NewsRepository
+        private set
+
+    /**
+     * 바깥 대회와 언론사 기사.
+     *
+     * 기존 eventRepository(챌린지·미션·SUP 보상)와 **다른 것**이다. 이쪽은
+     * 보상을 주지 않는다 — 바깥으로 보내 줄 뿐이다.
+     */
+    lateinit var runningFeedRepository: RunningFeedRepository
         private set
 
     lateinit var claimRepository: ClaimRepository
@@ -154,6 +165,7 @@ object ServiceLocator {
             rewardDao = database.rewardDao(),
             prefs = userPrefs,
         )
+        runningFeedRepository = RunningFeedRepository(RunningFeedApi(server))
         newsRepository = NewsRepository(
             server = server,
             dao = database.newsDao(),
