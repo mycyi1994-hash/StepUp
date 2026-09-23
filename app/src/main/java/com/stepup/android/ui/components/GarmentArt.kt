@@ -28,13 +28,15 @@ fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
 }
 
 /**
- * 의상 상품 그림 — 의상 시트의 "ITEM" 줄에서 떼어 낸 앞면 그림이 있으면 그것을,
- * 없으면(기본 의상) 옷 아이콘을 그린다. 같은 의상도 캐릭터마다 상품이 다르다
+ * 의상 상품 그림 — 기본 의상은 실제 스타터 착장과 맞춘 입체 그림을 사용한다.
+ * 나머지는 의상 시트의 상품 그림, 없는 경우에만 아이콘을 쓴다. 같은 의상도 캐릭터마다 상품이 다르다
  * (LUMI 것은 같은 색 모자가 한 벌이다).
  */
 @Composable
 fun OutfitArt(outfit: Outfit, gender: AvatarGender, modifier: Modifier = Modifier) {
-    val res = outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id)
+    val res = if (outfit.id == Outfits.BASE_ID) {
+        if (gender == AvatarGender.FEMALE) R.drawable.outfit_lumi_base else R.drawable.outfit_runo_base
+    } else outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id)
     if (res != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(res),

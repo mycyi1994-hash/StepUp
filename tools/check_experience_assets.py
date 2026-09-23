@@ -34,6 +34,11 @@ for name in ['avatar_male_running', 'avatar_female_idle', 'avatar_runo_idle_wnd_
     height = int.from_bytes(head[27:30], 'little') + 1
     assert width >= 900 and height >= 1300, f'{name}: {width}x{height}'
 # RUNO 서 있기 — 캐릭터 가이드에서 떼어 낸 그림(원본 309×573 을 2배). 알파만 본다.
+for name in ['outfit_runo_base', 'outfit_lumi_base']:
+    head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
+    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+    assert int.from_bytes(head[24:27], 'little') + 1 >= 1000, name
+    assert int.from_bytes(head[27:30], 'little') + 1 >= 1000, name
 head = (RES / 'drawable-nodpi' / 'avatar_male_idle.webp').read_bytes()[:30]
 assert head[12:16] == b'VP8X' and head[20] & 0x10, 'avatar_male_idle: no alpha'
 # RUNO 장비 그림 — 신발 52 · 의상 5 착용 전신과 의상 상품 5 (design/equipment 시트에서 떼어 냄)

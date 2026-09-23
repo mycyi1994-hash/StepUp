@@ -32,6 +32,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## Environment / unverified dependencies
 
+## 2026-09-24 — shared floor anchor and starter outfit thumbnails
+
+- CharacterStage now compensates for each source image's transparent bottom margin using generated alpha-derived geometry and the actual Fit image height. It aligns the visible silhouette to the shared floor instead of adding per-screen offsets. Art pixels are unchanged. Regenerate geometry with tools/gen_avatar_res.py after adding sprites; Pillow is required for this read-only measurement.
+- Added separate transparent dimensional RUNO zip hoodie/shorts and LUMI pullover/shorts inventory art matching their equipped starter references. Original PNGs and exact generation prompts are saved under design/redesign-2026-09/assets. Runtime WebP assets have alpha extrema 0..255 and 1254px square dimensions. Base ownership and outfit IDs are unchanged. Native thumbnail and grounding review is pending.
+- 5324bb5 gallery 35903620682 completed successfully; report/capture download underway. Its Build APK run was cancelled by the next revision, not passed. Equipment revision 22d51bf build 35903932174 and gallery 35903932113 were still live during this work.
+
 ## 2026-09-24 — equipment persistence repair
 
 - Replaced separate clear/update equipment writes with one guarded SQL update. A missing target leaves the current equipment untouched; concurrent selections cannot leave multiple equipped rows; only the equipment flag changes, preserving current stats. Repository returns success explicitly, and wardrobe/vault no longer report success for a missing item.

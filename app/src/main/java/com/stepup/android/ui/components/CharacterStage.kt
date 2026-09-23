@@ -122,6 +122,8 @@ fun CharacterStage(
         ),
     ) {
         val stageH = maxHeight
+        val geometry = render.art.geometry()
+        val imageHeight = minOf(stageH * characterFraction, maxWidth / geometry.aspectRatio)
         Canvas(Modifier.fillMaxSize()) {
             if (skyline) drawSkyline(building, window)
             drawBackGlow(glow, cyan)
@@ -136,7 +138,10 @@ fun CharacterStage(
                 .height(stageH * characterFraction)
                 .graphicsLayer {
                     val p = phase?.value ?: 0.5f
-                    translationY = (p - 0.5f) * (if (running) 5.dp else 2.dp).toPx()
+                    // Fit includes transparent pixels below the soles. Anchor the visible feet,
+                    // not the source rectangle, to the shared floor on every screen.
+                    translationY = (imageHeight * geometry.bottomInsetFraction).toPx() +
+                        (p - 0.5f) * (if (running) 5.dp else 2.dp).toPx()
                 },
         ) {
             AvatarImage(art = render.art, modifier = Modifier.fillMaxSize())
