@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Schedule
@@ -179,6 +180,7 @@ fun FlashRunCard(
     onComment: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onOpen: () -> Unit = {},
+    onReport: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val hasPlace = post.place.isNotBlank()
@@ -215,6 +217,17 @@ fun FlashRunCard(
                     modifier = Modifier
                         .size(15.dp)
                         .quietClickable(onDelete),
+                )
+            }
+            // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
+            if (onReport != null && !post.mine) {
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = stringResource(R.string.report_title),
+                    tint = Slate,
+                    modifier = Modifier
+                        .size(15.dp)
+                        .quietClickable(onReport),
                 )
             }
         }
@@ -323,6 +336,7 @@ fun TextPostCard(
     onLike: () -> Unit,
     onComment: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    onReport: (() -> Unit)? = null,
 ) {
     GlowCard(contentPadding = PaddingValues(15.dp), spacing = 9.dp) {
         Row(
@@ -360,6 +374,17 @@ fun TextPostCard(
                     modifier = Modifier
                         .size(15.dp)
                         .quietClickable(onDelete),
+                )
+            }
+            // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
+            if (onReport != null && !post.mine) {
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = stringResource(R.string.report_title),
+                    tint = Slate,
+                    modifier = Modifier
+                        .size(15.dp)
+                        .quietClickable(onReport),
                 )
             }
         }

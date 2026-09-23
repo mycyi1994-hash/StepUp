@@ -550,6 +550,20 @@
     <string name="crew_loading">正在加载跑团…</string>
     <string name="crew_load_failed">无法加载跑团</string>
     <string name="crew_retry">重试</string>
+    <string name="board_loading">正在加载帖子…</string>
+    <string name="board_load_failed">无法加载帖子</string>
+    <string name="board_sign_in_needed">登录后即可查看和发布帖子</string>
+    <string name="board_notice_reported">已举报，感谢你维护社区环境。</string>
+    <string name="board_notice_blocked">已屏蔽，你将不再看到此人的帖子和评论。</string>
+    <string name="report_title">举报</string>
+    <string name="report_hint">请选择举报原因。累计 5 次举报后将对所有人隐藏。</string>
+    <string name="report_reason_spam">垃圾信息或广告</string>
+    <string name="report_reason_abuse">辱骂或仇恨言论</string>
+    <string name="report_reason_sexual">色情内容</string>
+    <string name="report_reason_danger">危险或违法内容</string>
+    <string name="report_reason_fraud">诈骗</string>
+    <string name="report_reason_other">其他</string>
+    <string name="report_block">屏蔽 %1$s</string>
 
     <!-- Ranking -->
     <string name="rank_me">我</string>
@@ -590,32 +604,6 @@
     <!-- Seed crews -->
 
     <!-- Seed posts -->
-    <string name="seed_flash1_title">夜跑滨江 5 公里，有人来吗？</string>
-    <string name="seed_flash1_body">轻松配速 6 分钟，第一次来的也欢迎。</string>
-    <string name="seed_flash2_title">上班前的晨跑</string>
-    <string name="seed_flash2_body">6:30 出发，正好跑 40 分钟就散。</string>
-    <string name="seed_flash3_title">找个间歇跑搭子</string>
-    <string name="seed_flash3_body">400 米 × 8 组。能陪我保持配速就更好了。</string>
-    <string name="seed_flash4_title">周末长距离 20 公里</string>
-    <string name="seed_flash4_body">慢慢跑，中途会停两次补给。</string>
-    <string name="seed_free1_title">终于跑完半马了</string>
-    <string name="seed_free1_body">半年前跑 3 公里都费劲，今天 1 小时 58 分完赛。坚持真的有用。</string>
-    <string name="seed_free2_title">下雨天大家都怎么跑？</string>
-    <string name="seed_free2_body">跑步机太无聊了，有没有能坚持下来的室内练法？</string>
-    <string name="seed_free3_title">刚刚突破 1000 SUP</string>
-    <string name="seed_free3_body">只是走路通勤而已，攒得比想象中快。</string>
-    <string name="seed_tip1_title">能量小技巧 —— 别在早上一次用光</string>
-    <string name="seed_tip1_body">能量在午夜刷新，所以晚上有跑步计划的日子，早上只用一半，总收益更高。</string>
-    <string name="seed_tip2_title">铸造前换上幸运值最高的鞋</string>
-    <string name="seed_tip2_body">装备中球鞋的幸运值会直接影响高稀有度的概率。铸造前换一双就行。</string>
-    <string name="seed_tip3_title">组队跑四个人起才划算</string>
-    <string name="seed_tip3_body">增幅按人数叠加，比一个人跑明显划算。要所有人在大厅点准备才会开始。</string>
-    <string name="seed_crew1_title">定一下本周的跑团目标</string>
-    <string name="seed_crew1_body">上周平均 32 公里，这周冲 35 怎么样？</string>
-    <string name="seed_crew2_title">更新了我们的路线图</string>
-    <string name="seed_crew2_body">因为桥梁施工，第 3 段加了绕行路线。下次聚跑前看一下。</string>
-    <string name="seed_crew3_title">今晚跑团例跑</string>
-    <string name="seed_crew3_body">8 点整出发，迟到很难追上！</string>
 
     <!-- Party host -->
     <string name="party_host_badge">队长</string>
@@ -902,16 +890,6 @@
     <string name="notif_comment_reply">%1$s 回复了你的评论</string>
 
     <!-- Seed comments -->
-    <string name="seed_comment1">算我一个，到时候见！</string>
-    <string name="seed_comment2">配速大概是多少？</string>
-    <string name="seed_comment3">我可能晚五分钟，可以吗？</string>
-    <string name="seed_comment4">干货满满，谢谢分享。</string>
-    <string name="seed_comment5">我带个朋友一起，可以吗？</string>
-    <string name="seed_comment6">上周跑过这条路线，晚上特别舒服。</string>
-    <string name="seed_reply1">我也是，门口见吧。</string>
-    <string name="seed_reply2">轻松配速，不会有人掉队。</string>
-    <string name="seed_reply3">完全没问题，我们等你。</string>
-    <string name="seed_reply4">好的，到时候见！</string>
 
     <!-- Language -->
     <string name="settings_language">语言</string>

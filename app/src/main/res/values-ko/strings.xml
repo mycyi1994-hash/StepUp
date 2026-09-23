@@ -550,6 +550,20 @@
     <string name="crew_loading">크루를 불러오는 중…</string>
     <string name="crew_load_failed">크루를 불러오지 못했어요</string>
     <string name="crew_retry">다시 시도</string>
+    <string name="board_loading">글을 불러오는 중…</string>
+    <string name="board_load_failed">글을 불러오지 못했어요</string>
+    <string name="board_sign_in_needed">로그인하면 글을 보고 쓸 수 있어요</string>
+    <string name="board_notice_reported">신고했어요. 깨끗한 게시판을 지켜 주셔서 고마워요.</string>
+    <string name="board_notice_blocked">차단했어요. 이제 이 사람의 글과 댓글이 보이지 않아요.</string>
+    <string name="report_title">신고</string>
+    <string name="report_hint">신고 사유를 골라 주세요. 신고가 5건 모이면 모두에게서 숨겨져요.</string>
+    <string name="report_reason_spam">스팸·광고</string>
+    <string name="report_reason_abuse">욕설·비방</string>
+    <string name="report_reason_sexual">음란물</string>
+    <string name="report_reason_danger">위험하거나 불법적인 내용</string>
+    <string name="report_reason_fraud">사기</string>
+    <string name="report_reason_other">기타</string>
+    <string name="report_block">%1$s 님 차단</string>
 
     <!-- Ranking -->
     <string name="rank_me">나</string>
@@ -590,32 +604,6 @@
     <!-- Seed crews -->
 
     <!-- Seed posts -->
-    <string name="seed_flash1_title">한강 야간 5K 같이 뛰실 분</string>
-    <string name="seed_flash1_body">가볍게 6분 페이스로 돕니다. 처음이신 분도 환영이에요.</string>
-    <string name="seed_flash2_title">출근 전 아침 러닝</string>
-    <string name="seed_flash2_body">6:30 출발해서 딱 40분만 뛰고 해산합니다.</string>
-    <string name="seed_flash3_title">인터벌 훈련 파트너 구해요</string>
-    <string name="seed_flash3_body">400m × 8세트. 페이스 맞춰줄 분이면 더 좋습니다.</string>
-    <string name="seed_flash4_title">주말 롱런 20K</string>
-    <string name="seed_flash4_body">천천히 오래 갑니다. 중간에 편의점 두 번 들러요.</string>
-    <string name="seed_free1_title">드디어 하프 완주했습니다</string>
-    <string name="seed_free1_body">6개월 전엔 3km도 힘들었는데 오늘 1:58로 끊었어요. 꾸준함이 답인 것 같습니다.</string>
-    <string name="seed_free2_title">비 오는 날엔 다들 어떻게 하세요?</string>
-    <string name="seed_free2_body">트레드밀은 지루해서 손이 안 가는데, 다들 실내 루틴 있으신가요?</string>
-    <string name="seed_free3_title">오늘 SUP 처음 1000 넘겼네요</string>
-    <string name="seed_free3_body">출퇴근 걷기만 했는데 생각보다 빨리 모입니다.</string>
-    <string name="seed_tip1_title">에너지 관리 팁 — 아침에 몰아 쓰지 마세요</string>
-    <string name="seed_tip1_body">에너지는 자정에 리필되니, 저녁 러닝이 있는 날은 아침에 절반만 쓰는 게 총 적립이 큽니다.</string>
-    <string name="seed_tip2_title">민팅은 행운 높은 신발 신고 하세요</string>
-    <string name="seed_tip2_body">착용 중인 스니커즈의 행운 수치가 상위 등급 확률에 그대로 반영됩니다. 민팅 직전에 갈아신으세요.</string>
-    <string name="seed_tip3_title">파티런은 4명부터가 이득</string>
-    <string name="seed_tip3_body">인원당 부스트가 붙어서 혼자 뛰는 것보다 확실히 많이 쌓입니다. 로비에서 전원 준비를 눌러야 시작돼요.</string>
-    <string name="seed_crew1_title">이번 주 크루 목표 정해요</string>
-    <string name="seed_crew1_body">지난주 평균 32km 나왔으니 이번엔 35km 가봅시다. 다들 어떠세요?</string>
-    <string name="seed_crew2_title">우리 코스 지도 업데이트했습니다</string>
-    <string name="seed_crew2_body">다리 공사 때문에 3구간 우회로 넣었어요. 다음 정모 때 참고하세요.</string>
-    <string name="seed_crew3_title">오늘 밤 크루 정기런</string>
-    <string name="seed_crew3_body">8시 정각 출발. 늦으면 따라잡기 힘듭니다!</string>
 
     <!-- Party host -->
     <string name="party_host_badge">파티장</string>
@@ -902,16 +890,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="notif_comment_reply">%1$s님이 내 댓글에 답글을 남겼어요</string>
 
     <!-- Seed comments -->
-    <string name="seed_comment1">저도 갈게요, 거기서 봬요!</string>
-    <string name="seed_comment2">페이스는 어느 정도로 잡나요?</string>
-    <string name="seed_comment3">5분 정도 늦어도 괜찮을까요?</string>
-    <string name="seed_comment4">좋은 정보 감사합니다.</string>
-    <string name="seed_comment5">친구 한 명 데려가도 될까요?</string>
-    <string name="seed_comment6">지난주에 이 코스 뛰었는데 밤에 정말 좋아요.</string>
-    <string name="seed_reply1">저도요! 입구에서 만나요.</string>
-    <string name="seed_reply2">가볍게 뛸 거예요. 아무도 안 떨어뜨려요.</string>
-    <string name="seed_reply3">괜찮아요, 기다릴게요.</string>
-    <string name="seed_reply4">좋아요, 현장에서 봬요!</string>
 
     <!-- Language -->
     <string name="settings_language">언어</string>

@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -314,6 +315,8 @@ internal fun jsonBody(build: MutableMap<String, Any>.() -> Unit): String {
             is String -> value.asJsonString()
             is Number -> value.toString()
             is Boolean -> value.toString()
+            // 서버 함수에 "값 없음"을 넘길 때. 문자열 "null" 과는 다르다.
+            is JsonNull -> "null"
             else -> value.toString().asJsonString()
         }
         "${key.asJsonString()}:$encoded"

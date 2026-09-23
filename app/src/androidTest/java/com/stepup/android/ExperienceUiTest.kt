@@ -28,6 +28,8 @@ import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.domain.Post
+import com.stepup.android.domain.PostCategory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.animatedInt
@@ -101,12 +103,39 @@ class ExperienceUiTest {
                 ),
             ),
         )
-        ServiceLocator.communityRepository.ensureSeeded()
+        // 글도 서버에만 있다. 번개 하나, 자유 글 하나, 크루 글 하나로 게시판 화면을 채운다.
+        val now = System.currentTimeMillis()
+        ServiceLocator.communityRepository.showForTest(
+            listOf(
+                Post(
+                    id = 101, category = PostCategory.FLASH, crewId = "", author = "Sora K.",
+                    authorId = "u-sora", title = "Tonight 7PM · 5K by the river",
+                    body = "Easy pace, everyone welcome.", createdAt = now - 3_600_000,
+                    likes = 12, liked = false, commentCount = 4, mine = false,
+                    place = "Yeouido Park Gate 3", distanceKm = 1.2, meetAt = now + 5_400_000,
+                    capacity = 8, joinedCount = 5, joined = false,
+                ),
+                Post(
+                    id = 102, category = PostCategory.TIP, crewId = "", author = "Ara Kim",
+                    authorId = "u-ara", title = "Wide-toe running shoes that worked for me",
+                    body = "Three picks after two months of testing.", createdAt = now - 7_200_000,
+                    likes = 31, liked = true, commentCount = 9, mine = true,
+                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
+                ),
+                Post(
+                    id = 103, category = PostCategory.FREE, crewId = "00000000-0000-0000-0000-00000000c0de",
+                    author = "Bo Lee", authorId = "u-bo", title = "Saturday route is set",
+                    body = "Meet at the bridge, 6:50.", createdAt = now - 10_800_000,
+                    likes = 6, liked = false, commentCount = 2, mine = false,
+                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
+                ),
+            ),
+        )
         ServiceLocator.courseRepository.ensureSeeded()
         ServiceLocator.notificationRepository.seedWelcome()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
         crewId = ServiceLocator.crewRepository.crews.value.first().id
-        postId = ServiceLocator.communityRepository.posts.first { it.isNotEmpty() }.first().id
+        postId = ServiceLocator.communityRepository.posts.value.first().id
     }
 
     @Test fun allModulesRenderInFourLanguagesAndLargeText() {

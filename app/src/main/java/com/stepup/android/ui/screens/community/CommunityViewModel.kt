@@ -8,8 +8,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.data.repo.BoardResult
+import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.CommunityRepository
+import com.stepup.android.data.repo.ReportReason
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewActionResult
@@ -21,6 +24,7 @@ import com.stepup.android.data.repo.FactionRankingState
 import com.stepup.android.data.repo.RankingRepository
 import com.stepup.android.data.repo.RankingState
 import com.stepup.android.data.repo.RewardRepository
+import com.stepup.android.domain.Comment
 import com.stepup.android.domain.CommentThread
 import com.stepup.android.domain.CrewRank
 import com.stepup.android.domain.Post
@@ -39,6 +43,29 @@ import kotlinx.coroutines.launch
 
 /** 크루에 무언가를 한 뒤 화면에 잠깐 띄울 말 */
 enum class CrewNotice { JOINED, REQUESTED, CANCELLED, LEFT, SAVED, APPROVED, REJECTED, FAILED, SIGN_IN }
+
+/** 게시판에서 무언가를 한 뒤 화면에 잠깐 띄울 말 */
+enum class BoardNotice { REPORTED, BLOCKED, FAILED, SIGN_IN }
+
+/** 신고 창이 가리키는 것 — 글 또는 댓글 */
+sealed interface ReportTarget {
+    val postId: Long
+    val authorId: String
+    val authorName: String
+
+    data class OfPost(
+        override val postId: Long,
+        override val authorId: String,
+        override val authorName: String,
+    ) : ReportTarget
+
+    data class OfComment(
+        override val postId: Long,
+        val commentId: Long,
+        override val authorId: String,
+        override val authorName: String,
+    ) : ReportTarget
+}
 
 /** 크루장이 보는 가입 신청 목록의 상태 */
 sealed interface CrewRequestsState {
@@ -76,7 +103,11 @@ class CommunityViewModel(
     init {
         // 갱신할 때가 지났으면 이번 주 핫글을 다시 뽑는다. 때가 아니면
         // 아무 일도 하지 않으므로 화면이 열릴 때마다 불러도 된다.
-        viewModelScope.launch { communityRepository.refreshHotIfDue() }
+        viewModelScope.launch {
+            // 글을 먼저 받고 핫글을 뽑는다. 순서가 바뀌면 빈 목록으로 뽑힌다.
+            communityRepository.refresh()
+            communityRepository.refreshHotIfDue()
+        }
         // 크루는 서버에만 있다. 화면을 열 때마다 새로 받아야 남이 만든 크루와
         // 크루장이 승인해 준 가입이 보인다.
         refreshCrews()
@@ -99,6 +130,30 @@ class CommunityViewModel(
 
     val joinedCrewIds: StateFlow<Set<String>> = crewRepository.joinedCrewIds
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** 게시판을 서버에서 받아 온 상태 — 비어 있을 때 이유를 보여 주는 데 쓴다 */
+    val boardSync: StateFlow<BoardSyncState> = communityRepository.sync
+
+    private val _boardNotice = MutableStateFlow<BoardNotice?>(null)
+    val boardNotice: StateFlow<BoardNotice?> = _boardNotice
+
+    fun consumeBoardNotice() {
+        _boardNotice.value = null
+    }
+
+    private val _reportTarget = MutableStateFlow<ReportTarget?>(null)
+
+    /** 열려 있는 신고 창. null 이면 닫혀 있다. */
+    val reportTarget: StateFlow<ReportTarget?> = _reportTarget
+
+    private val _posting = MutableStateFlow(false)
+
+    /** 글을 올리는 중 — 버튼을 두 번 눌러 같은 글이 두 개 올라가지 않게 한다 */
+    val posting: StateFlow<Boolean> = _posting
+
+    fun refreshBoard() {
+        viewModelScope.launch { communityRepository.refresh() }
+    }
 
     val boardPosts: StateFlow<List<Post>> = communityRepository.boardPosts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -264,14 +319,61 @@ class CommunityViewModel(
     fun commentThreads(postId: Long): Flow<List<CommentThread>> =
         communityRepository.commentThreads(postId)
 
-    fun sendComment(postId: Long, body: String, parentId: Long, author: String) {
+    fun sendComment(postId: Long, body: String, parentId: Long) {
         viewModelScope.launch {
-            if (communityRepository.addComment(postId, body, author, parentId) > 0) ExperienceEvents.emit(FeedbackCue.Success)
+            val result = communityRepository.addComment(postId, body, parentId)
+            if (result is BoardResult.Ok) ExperienceEvents.emit(FeedbackCue.Success) else noticeFailure(result)
         }
     }
 
     fun deleteComment(id: Long) {
-        viewModelScope.launch { communityRepository.deleteComment(id) }
+        val postId = openCommentsFor.value ?: return
+        viewModelScope.launch { noticeFailure(communityRepository.deleteComment(postId, id)) }
+    }
+
+    // ── 신고와 차단 ─────────────────────────────────────────────────
+
+    fun askReport(post: Post) {
+        _reportTarget.value = ReportTarget.OfPost(post.id, post.authorId, post.author)
+    }
+
+    fun askReport(comment: Comment) {
+        _reportTarget.value =
+            ReportTarget.OfComment(comment.postId, comment.id, comment.authorId, comment.author)
+    }
+
+    fun dismissReport() {
+        _reportTarget.value = null
+    }
+
+    fun submitReport(reason: ReportReason) {
+        val target = _reportTarget.value ?: return
+        _reportTarget.value = null
+        viewModelScope.launch {
+            val result = when (target) {
+                is ReportTarget.OfPost -> communityRepository.reportPost(target.postId, reason)
+                is ReportTarget.OfComment ->
+                    communityRepository.reportComment(target.postId, target.commentId, reason)
+            }
+            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.REPORTED else noticeFailure(result)
+        }
+    }
+
+    /** 신고 창에서 — 쓴 사람을 차단한다. 그 사람의 글·댓글이 내 화면에서 사라진다. */
+    fun blockReported() {
+        val target = _reportTarget.value ?: return
+        _reportTarget.value = null
+        viewModelScope.launch {
+            val result = communityRepository.block(target.authorId)
+            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.BLOCKED else noticeFailure(result)
+        }
+    }
+
+    /** 실패했으면 이유를 띄운다. 성공이면 아무것도 하지 않는다. */
+    private fun noticeFailure(result: BoardResult) {
+        if (result is BoardResult.Failed) {
+            _boardNotice.value = if (result.signIn) BoardNotice.SIGN_IN else BoardNotice.FAILED
+        }
     }
 
     fun crewOf(id: String): Crew? = crewRepository.crewOf(id)
@@ -304,6 +406,8 @@ class CommunityViewModel(
                 crew?.requested == true -> crewRepository.leave(crewId)
                 else -> crewRepository.join(crewId)
             }
+            // 크루에 들고 나면 볼 수 있는 크루 게시판 글도 바뀐다.
+            communityRepository.refresh()
             val success = when {
                 crew?.joined == true -> CrewNotice.LEFT
                 crew?.requested == true -> CrewNotice.CANCELLED
@@ -357,40 +461,54 @@ class CommunityViewModel(
     }
 
     fun toggleLike(postId: Long) {
-        viewModelScope.launch { communityRepository.toggleLike(postId) }
+        viewModelScope.launch { noticeFailure(communityRepository.toggleLike(postId)) }
     }
 
     fun toggleJoinFlash(postId: Long) {
-        viewModelScope.launch { communityRepository.toggleJoinFlash(postId) }
+        viewModelScope.launch { noticeFailure(communityRepository.toggleJoinFlash(postId)) }
     }
 
     fun deletePost(postId: Long) {
-        viewModelScope.launch { communityRepository.delete(postId) }
+        viewModelScope.launch { noticeFailure(communityRepository.delete(postId)) }
     }
 
+    /**
+     * 글쓰기. 서버가 받아 주면 [onDone] 을 부른다.
+     *
+     * 화면을 먼저 닫으면 이 뷰모델이 함께 사라지면서 요청도 끊긴다. 그래서
+     * 올라간 것을 확인한 뒤에 닫는다.
+     */
     fun writePost(
         category: PostCategory,
         title: String,
         body: String,
-        author: String,
         crewId: String,
         place: String,
         distanceKm: Double,
         meetInMinutes: Int,
         capacity: Int,
+        onDone: () -> Unit,
     ) {
+        if (_posting.value) return
+        _posting.value = true
         viewModelScope.launch {
-            communityRepository.write(
+            val result = communityRepository.write(
                 category = category,
                 title = title,
                 body = body,
-                author = author,
                 crewId = crewId,
                 place = place,
                 distanceKm = distanceKm,
                 meetInMinutes = meetInMinutes,
                 capacity = capacity,
             )
+            _posting.value = false
+            if (result is BoardResult.Ok) {
+                ExperienceEvents.emit(FeedbackCue.Success)
+                onDone()
+            } else {
+                noticeFailure(result)
+            }
         }
     }
 

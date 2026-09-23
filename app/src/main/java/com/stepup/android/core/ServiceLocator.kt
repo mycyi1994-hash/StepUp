@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.stepup.android.BuildConfig
 import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.remote.CommunityApi
 import com.stepup.android.data.remote.CrewApi
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
@@ -145,11 +146,11 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
         )
         communityRepository = CommunityRepository(
+            api = CommunityApi(server),
             postDao = database.postDao(),
             commentDao = database.commentDao(),
-            rewardRepository = rewardRepository,
+            notificationDao = database.notificationDao(),
             prefs = userPrefs,
-            appContext = app,
         )
         courseRepository = CourseRepository(
             dao = database.courseDao(),

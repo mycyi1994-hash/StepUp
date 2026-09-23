@@ -552,6 +552,20 @@
     <string name="crew_loading">Loading crews…</string>
     <string name="crew_load_failed">Could not load crews</string>
     <string name="crew_retry">TRY AGAIN</string>
+    <string name="board_loading">Loading posts…</string>
+    <string name="board_load_failed">Could not load posts</string>
+    <string name="board_sign_in_needed">Sign in to read and write posts</string>
+    <string name="board_notice_reported">Reported. Thank you for keeping the board clean.</string>
+    <string name="board_notice_blocked">Blocked. You will no longer see their posts or comments.</string>
+    <string name="report_title">Report</string>
+    <string name="report_hint">Why are you reporting this? Posts with 5 reports are hidden for everyone.</string>
+    <string name="report_reason_spam">Spam or ads</string>
+    <string name="report_reason_abuse">Harassment or hate</string>
+    <string name="report_reason_sexual">Sexual content</string>
+    <string name="report_reason_danger">Dangerous or illegal</string>
+    <string name="report_reason_fraud">Scam or fraud</string>
+    <string name="report_reason_other">Something else</string>
+    <string name="report_block">Block %1$s</string>
 
     <!-- Ranking -->
     <string name="rank_me">You</string>
@@ -592,32 +606,6 @@
     <!-- Seed crews -->
 
     <!-- Seed posts -->
-    <string name="seed_flash1_title">Night 5K by the river, anyone?</string>
-    <string name="seed_flash1_body">Easy 6:00/km pace. First-timers very welcome.</string>
-    <string name="seed_flash2_title">Morning run before work</string>
-    <string name="seed_flash2_body">We start at 6:30 and wrap up in exactly 40 minutes.</string>
-    <string name="seed_flash3_title">Looking for an interval partner</string>
-    <string name="seed_flash3_body">400m × 8. Bonus points if you can hold the pace with me.</string>
-    <string name="seed_flash4_title">Weekend long run, 20K</string>
-    <string name="seed_flash4_body">Slow and steady. We stop twice for snacks.</string>
-    <string name="seed_free1_title">Finally ran a half marathon</string>
-    <string name="seed_free1_body">Six months ago 3K wrecked me. Today I finished in 1:58. Consistency really is the whole trick.</string>
-    <string name="seed_free2_title">What do you all do on rainy days?</string>
-    <string name="seed_free2_body">The treadmill bores me to death. Anyone got an indoor routine that actually sticks?</string>
-    <string name="seed_free3_title">Just crossed 1,000 SUP</string>
-    <string name="seed_free3_body">All from commuting on foot. It adds up faster than I expected.</string>
-    <string name="seed_tip1_title">Energy tip — don\'t burn it all in the morning</string>
-    <string name="seed_tip1_body">Energy refills at midnight, so on evening-run days spend only half of it early. Your total earnings come out higher.</string>
-    <string name="seed_tip2_title">Mint while wearing your highest-luck pair</string>
-    <string name="seed_tip2_body">The luck stat on your equipped sneaker feeds straight into the odds for higher rarities. Swap right before you mint.</string>
-    <string name="seed_tip3_title">Party runs pay off from four people up</string>
-    <string name="seed_tip3_body">The boost scales with headcount, so it clearly beats running alone. Everyone has to hit ready in the lobby before it starts.</string>
-    <string name="seed_crew1_title">Let\'s set this week\'s crew goal</string>
-    <string name="seed_crew1_body">We averaged 32 km last week — how about 35 this time?</string>
-    <string name="seed_crew2_title">Updated our route map</string>
-    <string name="seed_crew2_body">Added a detour around section 3 because of the bridge works. Check it before the next meetup.</string>
-    <string name="seed_crew3_title">Crew run tonight</string>
-    <string name="seed_crew3_body">We leave at 8:00 sharp — catching up later is rough!</string>
 
     <!-- Party host -->
     <string name="party_host_badge">HOST</string>
@@ -904,16 +892,6 @@ Start running with StepUp.</string>
     <string name="notif_comment_reply">%1$s replied to your comment</string>
 
     <!-- Seed comments -->
-    <string name="seed_comment1">Count me in — see you there!</string>
-    <string name="seed_comment2">What pace are we running?</string>
-    <string name="seed_comment3">Is it okay if I\'m five minutes late?</string>
-    <string name="seed_comment4">Great tip, thanks for sharing.</string>
-    <string name="seed_comment5">Bringing a friend — hope that\'s fine.</string>
-    <string name="seed_comment6">Ran this route last week, it\'s lovely at night.</string>
-    <string name="seed_reply1">Same here, let\'s meet at the gate.</string>
-    <string name="seed_reply2">Easy pace, no one gets dropped.</string>
-    <string name="seed_reply3">Totally fine — we\'ll wait for you.</string>
-    <string name="seed_reply4">Nice, see you out there!</string>
 
     <!-- Language -->
     <string name="settings_language">Language</string>

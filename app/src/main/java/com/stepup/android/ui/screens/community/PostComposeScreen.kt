@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.domain.PostCategory
@@ -56,9 +57,12 @@ fun PostComposeScreen(
     var capacity by rememberSaveable { mutableStateOf("6") }
 
     val selected = PostCategory.of(category)
-    val author = stringResource(R.string.rank_me)
-    val canSubmit = title.isNotBlank() &&
+    val posting by viewModel.posting.collectAsStateWithLifecycle()
+    val canSubmit = !posting && title.isNotBlank() &&
         (selected != PostCategory.FLASH || place.isNotBlank())
+
+    // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
+    BoardNoticeToast(viewModel)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -181,14 +185,13 @@ fun PostComposeScreen(
                         category = selected,
                         title = title,
                         body = body,
-                        author = author,
                         crewId = crewId,
                         place = place,
                         distanceKm = distance.toDoubleOrNull() ?: 0.0,
                         meetInMinutes = startsIn.toIntOrNull() ?: 60,
                         capacity = capacity.toIntOrNull() ?: 6,
+                        onDone = onBack,
                     )
-                    onBack()
                 },
                 modifier = Modifier.fillMaxWidth(),
             )

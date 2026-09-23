@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
@@ -177,6 +178,7 @@ private fun BoardTab(
     onOpenFlash: (Long) -> Unit,
 ) {
     val posts by viewModel.boardPosts.collectAsStateWithLifecycle()
+    val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
     val filter by viewModel.boardFilter.collectAsStateWithLifecycle()
     val hotPosts by viewModel.hotPosts.collectAsStateWithLifecycle()
     val balance by viewModel.balance.collectAsStateWithLifecycle()
@@ -271,6 +273,7 @@ private fun BoardTab(
                         onComment = { viewModel.openComments(it) },
                         onDelete = { viewModel.deletePost(it) },
                         onOpen = onOpenFlash,
+                        onReport = { viewModel.askReport(it) },
                     )
                 }
             }
@@ -282,7 +285,9 @@ private fun BoardTab(
                 }
             }
 
-            if (visible.isEmpty()) {
+            if (posts.isEmpty() && boardSync != BoardSyncState.Ready) {
+                item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
+            } else if (visible.isEmpty()) {
                 item {
                     GlowCard(contentPadding = PaddingValues(26.dp)) {
                         Text(
@@ -307,6 +312,7 @@ private fun BoardTab(
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
                         onOpen = { onOpenFlash(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 } else {
                     TextPostCard(
@@ -314,6 +320,7 @@ private fun BoardTab(
                         onLike = { viewModel.toggleLike(post.id) },
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 }
             }
@@ -382,6 +389,7 @@ private fun FlashRunWindow(
     onComment: (Long) -> Unit,
     onDelete: (Long) -> Unit,
     onOpen: (Long) -> Unit,
+    onReport: (Post) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -404,6 +412,7 @@ private fun FlashRunWindow(
                     onComment = { onComment(post.id) },
                     onDelete = { onDelete(post.id) },
                     onOpen = { onOpen(post.id) },
+                    onReport = { onReport(post) },
                 )
             }
         }

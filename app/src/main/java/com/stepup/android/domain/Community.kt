@@ -32,6 +32,8 @@ data class Post(
     /** 빈 문자열이면 전체 게시판 */
     val crewId: String,
     val author: String,
+    /** 쓴 사람의 계정 id — 차단할 때 쓴다 */
+    val authorId: String = "",
     val title: String,
     val body: String,
     val createdAt: Long,
@@ -63,6 +65,8 @@ data class Comment(
     /** 0이면 최상위 댓글, 그 외에는 부모 댓글 id */
     val parentId: Long,
     val author: String,
+    /** 쓴 사람의 계정 id — 차단할 때 쓴다 */
+    val authorId: String = "",
     val body: String,
     val createdAt: Long,
     val mine: Boolean,

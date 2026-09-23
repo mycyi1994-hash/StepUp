@@ -1441,6 +1441,116 @@ begin
     '운영자가 신고를 기각해 5건 아래로 내려가면 다시 보인다');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 게시판 함수 ──────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+
+do $$
+declare v_post bigint;
+begin
+  v_post := public.post_create('FLASH', null, '내일 아침 번개', '석촌호수 한 바퀴',
+                               '석촌호수 동문', 5, now() + interval '1 day', 1);
+  insert into fix (k, v) values ('fn_flash', v_post::text);
+  perform pg_temp.ok(
+    (select joined and joined_count = 1 and capacity = 2 from public.post_feed where id = v_post),
+    '번개를 쓰면 쓴 사람이 첫 참가자이고, 정원은 최소 2명이다');
+
+  v_post := public.post_create('FREE', null, '러닝화 추천', '발볼 넓은 분들', '무시', 99, now(), 99);
+  insert into fix (k, v) values ('fn_free', v_post::text);
+  perform pg_temp.ok(
+    (select place = '' and capacity = 0 and meet_at is null from public.post_feed where id = v_post),
+    '번개가 아닌 글에는 장소·정원·모임 시각이 붙지 않는다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.post_create('FLASH', null, '지난 번개', '', '', 0, now() - interval '1 hour', 4) $q$,
+  '지난 시각으로는 번개를 열 수 없다');
+
+call pg_temp.must_fail(
+  format($q$ select public.post_create('FREE', '%s', '남의 크루', '', '', 0, null, 0) $q$,
+         pg_temp.fx('crew')),
+  '안 들어간 크루 게시판에는 함수로도 글을 못 쓴다');
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+do $$
+declare v_post bigint := pg_temp.fx('fn_free')::bigint; v_c bigint; v_r bigint;
+begin
+  perform pg_temp.ok(public.post_toggle_like(v_post), '좋아요를 누르면 눌린 상태가 돌아온다');
+  perform pg_temp.ok((select likes from public.post_feed where id = v_post) = 1, '좋아요가 세어진다');
+  perform pg_temp.ok(not public.post_toggle_like(v_post), '한 번 더 누르면 거둔다');
+  perform pg_temp.ok((select likes from public.post_feed where id = v_post) = 0, '거두면 빠진다');
+
+  v_c := public.comment_create(v_post, 0, '  저는 뉴발 추천요  ');
+  v_r := public.comment_create(v_post, v_c, '저도요');
+  insert into fix (k, v) values ('fn_comment', v_c::text);
+  perform pg_temp.ok(
+    (select body from public.comment_feed where id = v_c) = '저는 뉴발 추천요',
+    '댓글 앞뒤 공백은 지운다');
+  perform pg_temp.ok(
+    (select parent_id from public.comment_feed where id = v_r) = v_c,
+    '답글은 부모 댓글에 붙는다');
+  perform pg_temp.ok(
+    (select comment_count from public.post_feed where id = v_post) = 2,
+    '댓글 수가 세어진다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.comment_create(%s, %s, '엉뚱한 글의 답글') $q$,
+         pg_temp.fx('fn_flash'), pg_temp.fx('fn_comment')),
+  '다른 글의 댓글에는 답글을 달 수 없다');
+
+call pg_temp.must_fail(
+  format($q$ select public.post_delete(%s) $q$, pg_temp.fx('fn_free')),
+  '남의 글은 지울 수 없다');
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+call pg_temp.must_fail(
+  format($q$ select public.comment_delete(%s) $q$, pg_temp.fx('fn_comment')),
+  '남의 댓글은 지울 수 없다');
+
+-- 신고와 차단
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform public.content_report('POST', pg_temp.fx('fn_flash'), 'SPAM', '');
+  perform public.content_report('POST', pg_temp.fx('fn_flash'), 'ABUSE', '');
+  perform pg_temp.ok(
+    (select count(*) from public.content_reports
+      where target_type = 'POST' and target_id = pg_temp.fx('fn_flash')) = 1,
+    '같은 글을 두 번 신고해도 한 건이다');
+
+  perform public.user_block('33333333-3333-3333-3333-333333333333');
+  perform pg_temp.ok(
+    (select count(*) from public.post_feed where author_id = '33333333-3333-3333-3333-333333333333') = 0,
+    '차단한 사람의 글은 내 화면에서 사라진다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.user_block('22222222-2222-2222-2222-222222222222') $q$,
+  '나 자신은 차단할 수 없다');
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.post_feed where author_id = '33333333-3333-3333-3333-333333333333') = 2,
+    '차단은 차단한 사람에게만 적용된다');
+end $$;
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+begin
+  perform public.post_delete(pg_temp.fx('fn_free')::bigint);
+  perform pg_temp.ok(
+    (select count(*) from public.comments where post_id = pg_temp.fx('fn_free')::bigint) = 0,
+    '글을 지우면 달린 댓글도 함께 지워진다');
+end $$;
+
 reset role;
 
 \echo ''

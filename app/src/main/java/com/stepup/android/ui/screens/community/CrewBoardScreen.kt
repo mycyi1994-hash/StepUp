@@ -220,6 +220,7 @@ fun CrewBoardScreen(
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
                         onOpen = { onOpenFlash(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 } else {
                     TextPostCard(
@@ -227,6 +228,7 @@ fun CrewBoardScreen(
                         onLike = { viewModel.toggleLike(post.id) },
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 }
             }

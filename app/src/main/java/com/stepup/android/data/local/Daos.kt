@@ -310,6 +310,10 @@ interface PostDao {
 
     @Query("SELECT COUNT(*) FROM posts WHERE mine = 1")
     fun observeMineCount(): Flow<Int>
+
+    /** 게시판이 서버로 옮겨 가면서 폰 안의 글(데모 포함)은 더 쓰지 않는다 */
+    @Query("DELETE FROM posts")
+    suspend fun clear()
 }
 
 @Dao
@@ -381,6 +385,10 @@ interface CommentDao {
 
     @Query("SELECT COUNT(*) FROM comments")
     suspend fun count(): Int
+
+    /** 게시판이 서버로 옮겨 가면서 폰 안의 댓글(데모 포함)은 더 쓰지 않는다 */
+    @Query("DELETE FROM comments")
+    suspend fun clear()
 }
 
 @Dao
@@ -416,6 +424,9 @@ interface NotificationDao {
             "AND argExtra IN (:crewIds)",
     )
     suspend fun deleteInvitesTo(crewIds: List<String>)
+
+    @Query("DELETE FROM notifications WHERE type = :type")
+    suspend fun deleteByType(type: String)
 
     /**
      * "모두 읽음" 청소 — 아직 처리하지 않은 액션형 알림(초대·미수령 보상)은 남긴다.
