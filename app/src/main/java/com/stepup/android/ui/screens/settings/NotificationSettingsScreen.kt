@@ -26,6 +26,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -68,6 +73,19 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     var saving by remember { mutableStateOf(false) }
     val saveFailed = stringResource(R.string.feed_save_failed)
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var notificationsAllowed by remember(context) {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     fun save(next: NotifyPrefs) {
         if (saving || storedPrefs == null) return
         saving = true
@@ -89,6 +107,23 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     com.stepup.android.ui.components.DetailPage(
         title = stringResource(R.string.settings_notifications), onBack = onBack,
     ) {
+        if (storedPrefs == null) {
+            item { Text(stringResource(R.string.feed_loading), color = Silver) }
+            return@DetailPage
+        }
+        if (prefs.push && !notificationsAllowed) {
+            item {
+                GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+                    Text(stringResource(R.string.pref_notifications_blocked),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    com.stepup.android.ui.components.GhostButton(
+                        text = stringResource(R.string.cd_open_settings),
+                        onClick = { com.stepup.android.core.ExternalIntents.openAppSettings(context) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
         item {
             ToggleRow(
                 enabled = !saving && storedPrefs != null,

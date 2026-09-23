@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_notifications_blocked">Notifications are blocked in your phone settings. Allow StepUp notifications there to receive your selected alerts.</string>
     <string name="post_like_action">Like this post</string>
     <string name="post_unlike_action">Remove like</string>
     <string name="app_name" translatable="false">StepUp</string>

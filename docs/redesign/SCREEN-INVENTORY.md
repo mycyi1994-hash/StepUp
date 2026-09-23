@@ -73,7 +73,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ConnectedAccountsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:62 | pending | pending |
 | ExperienceSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt:25 | pending | pending |
 | LanguageScreen | app/src/main/java/com/stepup/android/ui/screens/settings/LanguageScreen.kt:75 | pending | pending |
-| NotificationSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt:61 | pending | pending |
+| NotificationSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt:66 | pending | pending |
 | PrivacyScreen | app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt:50 | pending | pending |
 | SupportScreen | app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt:55 | pending | pending |
 | ThemeScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt:75 | pending | pending |

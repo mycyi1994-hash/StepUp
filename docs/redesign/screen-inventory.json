@@ -427,7 +427,7 @@
     {
       "id": "NotificationSettingsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
-      "line": 61,
+      "line": 66,
       "implementation": "pending",
       "verification": "pending"
     },

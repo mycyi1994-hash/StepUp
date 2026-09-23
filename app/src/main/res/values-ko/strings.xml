@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_notifications_blocked">휴대폰 설정에서 알림이 차단되어 있어요. 선택한 알림을 받으려면 StepUp 알림을 허용해 주세요.</string>
     <string name="post_like_action">좋아요</string>
     <string name="post_unlike_action">좋아요 취소</string>
     <!-- Notification -->

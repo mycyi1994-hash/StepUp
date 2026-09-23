@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_notifications_blocked">端末の設定で通知がブロックされています。選択した通知を受け取るには、StepUpの通知を許可してください。</string>
     <string name="post_like_action">いいね</string>
     <string name="post_unlike_action">いいねを取り消す</string>
 

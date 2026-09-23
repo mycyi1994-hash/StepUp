@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — notification permission recovery
+
+- Notification settings now distinguish saved push preferences from Android's app-level notification permission. When push is selected but Android blocks notifications, a localized explanation and shared Open settings action appear. Lifecycle resume rechecks the actual permission after returning from Settings; opening the screen does not prompt for permission.
+- Before stored preferences arrive, show loading rather than fabricated enabled switches. Existing local saving/background server sync is unchanged; individual channel configuration and successful remote push delivery remain unverified.
+- Static design, four-locale resource, asset and whitespace checks pass. Native denied/granted/resume and enlarged-text captures remain pending. Latest pushed 787f31b build is still active, so these changes and the explicit renderer experiment remain queued locally.
+
 ## 2026-09-24 — explicit software renderer experiment
 
 - dee6cc3 API 35 still lost the emulator during the first interaction test. Guest-memory-start.txt confirms 4,014,392 kB total and 3,001,260 kB available at startup; increasing guest RAM alone did not establish stability. API 34 was still running when checked.

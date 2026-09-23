@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_notifications_blocked">手机设置已阻止通知。请允许 StepUp 发送通知，以接收你选择的提醒。</string>
     <string name="post_like_action">点赞</string>
     <string name="post_unlike_action">取消点赞</string>
     <!-- Notification -->
