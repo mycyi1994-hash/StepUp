@@ -73,6 +73,16 @@ for name in ('VoltButton', 'GhostButton'):
             errors.append(f'{name}: must use shared control token {token}')
 if re.search(r'fontWeight\s*=\s*if\s*\(selected\)', root):
     errors.append('Tab selection changes geometry through font weight')
+filters = (UI/'components/FilterSheet.kt').read_text(encoding='utf-8')
+for name in ('ToolbarButton', 'ChoiceChip'):
+    body = filters.split(f'fun {name}(', 1)[1].split('\n/**', 1)[0]
+    for token in ('StepUpDesign.TouchTarget', 'StepUpDesign.SecondaryLabel',
+                  'StepUpDesign.SecondaryHorizontalPadding', 'StepUpDesign.SecondaryVerticalPadding',
+                  'StepUpDesign.ControlRadius'):
+        if token not in body:
+            errors.append(f'{name}: must use shared control token {token}')
+    if 'TextOverflow.Ellipsis' in body:
+        errors.append(f'{name}: preserve complete control labels with wrapping')
 if 'barHiddenRoutes' in root:
     errors.append('Bottom visibility must come from AppChromePolicy')
 

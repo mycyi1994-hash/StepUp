@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — shared filters adopt fixed control tokens
+
+- Shared filter/sort toolbar and choice cells previously used independent 12/13sp labels, 14/16dp corners and unconstrained touch heights. They now use central secondary label/padding, control-radius and minimum-touch tokens; toolbar icons use the central icon size. Both expose button semantics.
+- Labels wrap completely instead of being ellipsized. Choice grids reduce to two columns for enlarged text and one at 1.5x or above; selected choice weight stays constant so selection does not change geometry. This applies through the existing shared component across inventory, events, news and sorting.
+- Extended source-contract checks to reject missing control tokens or restored truncation in these two components. Local inventory/design/resource/asset/whitespace checks pass; native compact/large-font layout and touch behavior still require captures. Latest 580a9e4 build/gallery remain live; changes are queued locally to preserve the active release build.
+
 ## 2026-09-24 — isolate font scenarios from focused editor disposal
 
 - 2f65026 API 35 log at 22:16:10–11 records overlapping show/hide IME requests, including onShown followed by HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED. The captured 1.3 form has no keyboard. The test replaced a focused form with key(scale) inside one Activity immediately after the first scenario, making disposal/next-focus interference a plausible fixture cause, not a proven production defect.

@@ -29,6 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +49,7 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.StepUpDesign
 
 /**
  * 거르기 한 벌 — 버튼 둘, 요약 한 줄, 아래에서 올라오는 패널.
@@ -109,14 +113,17 @@ private fun ToolbarButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(StepUpDesign.ControlRadius)
     Row(
         modifier = modifier
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(if (active) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
             .border(1.dp, if (active) Volt.copy(alpha = 0.55f) else Edge, shape)
             .quietClickable(onClick)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
+            .semantics { role = Role.Button }
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding,
+                vertical = StepUpDesign.SecondaryVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -125,17 +132,17 @@ private fun ToolbarButton(
                 imageVector = leading,
                 contentDescription = null,
                 tint = if (active) Volt else Silver,
-                modifier = Modifier.size(15.dp),
+                modifier = Modifier.size(StepUpDesign.ControlIcon),
             )
             Spacer(Modifier.size(6.dp))
         }
         Text(
             text = text,
-            fontSize = 13.sp,
+            modifier = Modifier.weight(1f),
+            fontSize = StepUpDesign.SecondaryLabel,
             fontWeight = FontWeight.Bold,
             color = if (active) Volt else Silver,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         if (trailing != null) {
             Spacer(Modifier.size(4.dp))
@@ -143,7 +150,7 @@ private fun ToolbarButton(
                 imageVector = trailing,
                 contentDescription = null,
                 tint = Silver,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(StepUpDesign.ControlIcon),
             )
         }
     }
@@ -390,7 +397,12 @@ fun <T> ChoiceGrid(
     columns: Int = 3,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val cols = if (maxWidth < 340.dp) minOf(columns, 2) else columns
+        val fontScale = LocalDensity.current.fontScale
+        val cols = when {
+            fontScale >= 1.5f -> 1
+            maxWidth < 340.dp || fontScale > 1f -> minOf(columns, 2)
+            else -> columns
+        }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             values.chunked(cols).forEach { row ->
                 Row(
@@ -413,7 +425,7 @@ fun <T> ChoiceGrid(
     }
 }
 
-/** 격자 한 칸. 가운데 정렬에 두 줄까지 접힌다. */
+/** Shared choice: full label, growing height and a stable selected-state weight. */
 @Composable
 fun ChoiceChip(
     text: String,
@@ -421,26 +433,26 @@ fun ChoiceChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(StepUpDesign.ControlRadius)
     Box(
         modifier = modifier
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
             .border(1.dp, if (selected) Volt.copy(alpha = 0.55f) else Edge, shape)
             .quietClickable(onClick)
-            .semantics { this.selected = selected }
-            .padding(horizontal = 8.dp, vertical = 11.dp),
+            .semantics { this.selected = selected; role = Role.Button }
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding,
+                vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = StepUpDesign.SecondaryLabel,
+            fontWeight = FontWeight.SemiBold,
             color = if (selected) Volt else Silver,
             textAlign = TextAlign.Center,
-            lineHeight = 16.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            lineHeight = 20.sp,
         )
     }
 }
