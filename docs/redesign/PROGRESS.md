@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — prevent stale market reads
+
+- Board/model reloads now cancel the preceding read job, preserve coroutine cancellation and check activity before publishing results. Opening another model clears its predecessor's book; reopening a model in error retries instead of accepting its cached book as success. Bid captures the selected model before launching the request.
+- Unexpected read/storage exceptions now produce an explicit retryable state instead of leaving loading active. These changes do not retry financial writes or claim server-side transaction idempotency. Native compilation and delayed-response runtime verification remain pending.
+
 ## 2026-09-24 — marketplace loading and ownership correctness
 
 - Market balance failure previously became 0 SUP and personal-trades failure became an empty account. Both now expose their actual failure category. During board loading/error the balance is an em dash, and loading no longer renders empty-trade content. Model loading hides transactional content/dialogs until the fetch completes.
