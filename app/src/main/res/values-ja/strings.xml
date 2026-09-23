@@ -1415,4 +1415,12 @@ StepUp と走り出そう。</string>
     <string name="map_waiting_title">現在地を探しています</string>
     <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
     <string name="finish_pending_short">サーバー確認中</string>
+
+    <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
+    <string name="me_greeting">今日もいい一日を。</string>
+    <string name="home_shortcuts_title">チャレンジ · お知らせ</string>
+    <string name="home_shortcut_challenges_sub">今すぐ挑戦しよう!</string>
+    <string name="home_shortcut_news_sub">大会 · ランニング情報</string>
+    <string name="challenge_hero_sub">走るほど、もっと報酬が待っています。</string>
+    <string name="challenge_reward_label">報酬</string>
 </resources>

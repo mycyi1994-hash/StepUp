@@ -71,6 +71,9 @@ class AvatarAndNavTest {
         assertEquals(Screen.Run, parentTabOf(Routes.NEWS))
         assertEquals(Screen.Run, parentTabOf(Routes.EVENTS))
         assertEquals(Screen.Run, parentTabOf(Routes.RUN))
+        assertEquals(Screen.Run, parentTabOf(Routes.RUN_ROUTE))
+        // "runner-market" 도 "run" 으로 시작하지만 꾸미기 밑이다
+        assertEquals(Screen.Customize, parentTabOf(Routes.RUNNER_MARKET))
     }
 
     @Test

@@ -47,6 +47,8 @@ import com.stepup.android.domain.Outfits
 import com.stepup.android.domain.Rarity
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.PageHero
+import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.components.GarmentArt
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.outfitNameRes
@@ -122,42 +124,19 @@ fun RunnerMarketScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(span = { GridItemSpan(cols) }) {
-            SubHeader(
-                title = stringResource(R.string.market_runner_title),
-                onBack = onBack,
-                balance = balance,
-                onOpenWallet = onOpenWallet,
-            )
+            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
         }
-        // 소개 한 줄과 내 러너 — 무엇을 사서 누구에게 입히는지
+        // 큰 제목 · 한 줄 소개 · 내 러너(내 성별의 그림 그대로 — 아이템을 입은 척하지 않는다)
         item(span = { GridItemSpan(cols) }) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.market_runner_sub),
-                        fontSize = 14.sp,
-                        color = Silver,
-                        lineHeight = 19.sp,
-                    )
-                    Text(
-                        text = stringResource(R.string.market_runner_owned),
-                        modifier = Modifier
-                            .feedbackClickable(onClick = onOpenVault)
-                            .padding(vertical = 6.dp),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = VoltText,
-                    )
-                }
-                // 내 성별의 그림 그대로. 아이템을 입은 것처럼 보이게 하지 않는다.
+            PageHero(
+                title = stringResource(R.string.market_runner_title),
+                subtitle = stringResource(R.string.market_runner_sub),
+            ) {
                 AvatarImage(
                     art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,
                     modifier = Modifier
-                        .width(96.dp)
-                        .height(if (cols == 1) 110.dp else 128.dp),
+                        .align(Alignment.BottomCenter)
+                        .fillMaxSize(),
                 )
             }
         }

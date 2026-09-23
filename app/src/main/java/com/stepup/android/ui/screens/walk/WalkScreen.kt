@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -82,6 +83,7 @@ import com.stepup.android.R
 import com.stepup.android.service.WalkSessionState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import com.stepup.android.data.local.UploadState
@@ -148,6 +150,8 @@ private data class LapSegment(
 fun RunScreen(
     onBack: () -> Unit = {},
     onOpenCourses: () -> Unit = {},
+    /** 러닝 홈의 "러닝 시작"에서 왔으면 곧바로 달리기를 시작한다 */
+    autoStart: Boolean = false,
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
 ) {
     val session by viewModel.session.collectAsStateWithLifecycle()
@@ -182,6 +186,20 @@ fun RunScreen(
     ) {
         if (StepPermissions.hasActivityRecognition(context)) {
             WalkSessionService.start(context)
+        }
+    }
+
+    // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
+    // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
+    var autoStartDone by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(autoStart) {
+        if (autoStart && !autoStartDone) {
+            autoStartDone = true
+            if (!WalkSessionService.state.value.isActive) {
+                viewModel.clearReward()
+                val missing = StepPermissions.missing(context)
+                if (missing.isEmpty()) WalkSessionService.start(context) else permissionLauncher.launch(missing)
+            }
         }
     }
 
@@ -307,61 +325,80 @@ fun RunScreen(
             }
         }
     }
+    // 예상 적립 — 한 줄. "확정이 아니다"는 ⓘ 를 누르면 펼쳐진다.
+    var showEstimateNote by rememberSaveable { mutableStateOf(false) }
     val estimateCard: @Composable () -> Unit = {
-        GlowCard(spacing = 12.dp) {
+        GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp), spacing = 8.dp) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Bolt,
-                        contentDescription = null,
-                        tint = Volt,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.run_estimated_points),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                    )
-                }
+                HexEmblem(size = 26.dp, glow = false)
                 Text(
-                    text = "+%.2f SUP".format(estimate.points),
-                   fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    style = MaterialTheme.typography.titleSmall,
+                    text = stringResource(R.string.run_estimated_points),
+                    fontSize = 14.sp,
+                    color = Silver,
+                    maxLines = 1,
+                )
+                Icon(
+                    Icons.Filled.Info,
+                    contentDescription = stringResource(R.string.run_estimated_note),
+                    tint = Slate,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .quietClickable { showEstimateNote = !showEstimateNote }
+                        .padding(6.dp),
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "+%,.2f".format(estimate.points),
+                    style = androidx.compose.ui.text.TextStyle(brush = com.stepup.android.ui.theme.VoltInk),
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Volt,
+                    maxLines = 1,
+                )
+                Text(
+                    text = "SUP",
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = com.stepup.android.ui.theme.VoltText,
                 )
             }
             // 확정 잔액이 아니다 — 러닝을 마치고 판정을 거친 걸음만 적립된다
-            Text(
-                text = stringResource(R.string.run_estimated_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = Slate,
-            )
-            EnergyMeter(current = energy, max = maxEnergy)
-            Text(
-                text = stringResource(R.string.run_earnable, "%,d".format(earnableSteps)),
-                style = MaterialTheme.typography.bodySmall,
-                color = Slate,
-            )
+            if (showEstimateNote) {
+                Text(
+                    text = stringResource(R.string.run_estimated_note),
+                    fontSize = 12.sp,
+                    color = Silver,
+                    lineHeight = 17.sp,
+                )
+            }
+            // 오늘 적립 한도를 다 썼으면 그것만 알린다 — 뛰는 것은 막지 않는다
+            if (earnableSteps <= 0) {
+                Text(
+                    text = stringResource(R.string.home_energy_empty),
+                    fontSize = 12.sp,
+                    color = Alert,
+                )
+            }
             if (xpBoosted) {
                 Text(
                     text = stringResource(R.string.run_boost_active),
-                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Volt,
+                    color = com.stepup.android.ui.theme.VoltText,
                 )
             }
             if (session.partySize > 1) {
                 Text(
                     text = stringResource(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)),
-                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Volt,
+                    color = com.stepup.android.ui.theme.VoltText,
                 )
             }
         }
@@ -374,25 +411,29 @@ fun RunScreen(
         verticalArrangement = Arrangement.spacedBy(15.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // 머리글 — 로고와 보유 SUP. 뒤로 가기는 러닝 전에만(달리는 중 · 완료 화면은 탭으로 돌아간다).
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp),
+                    .heightIn(min = 48.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (session.isActive) {
-                        StatusChip(isActive = session.isActive, isPaused = session.isPaused)
-                    } else {
-                        Wordmark(fontSize = 20.sp)
-                    }
+                if (!session.isActive && !finishing) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.cd_back),
+                        tint = Snow,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .quietClickable(onBack)
+                            .padding(8.dp),
+                    )
                 }
+                Wordmark(fontSize = 24.sp)
+                Spacer(Modifier.weight(1f))
                 SupPill(balance = balance, onClick = null)
             }
         }
@@ -542,173 +583,8 @@ fun RunScreen(
                                 stopButton(Modifier.weight(1f))
                             }
                         }
-                        LapButton(
-                            text = stringResource(R.string.run_lap),
-                            onClick = { viewModel.recordLap() },
-                            modifier = Modifier.fillMaxWidth(),
-                            // 직전 랩에서 최소 50m는 나아가야 새 랩을 찍을 수 있다
-                            enabled = running && distanceKm > (laps.lastOrNull()?.km ?: 0.0) + 0.05,
-                        )
                     }
                 }
-
-                item { goalRingCard() }
-
-                item {
-                    val hrZone = hr?.let {
-                        when {
-                            it < 120 -> stringResource(R.string.hr_zone_recovery) to Silver
-                            it < 150 -> stringResource(R.string.hr_zone_aerobic) to Volt
-                            else -> stringResource(R.string.hr_zone_anaerobic) to Alert
-                        }
-                    }
-                    val lastSplit = segments.lastOrNull()?.paceSec?.takeIf { it > 0 }
-                    GlowCard(spacing = 14.dp) {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            MetricCell(
-                                icon = Icons.Filled.Timer,
-                                label = stringResource(R.string.stat_pace),
-                                value = curPaceSec?.let { formatPace(it) } ?: "—",
-                                fraction = paceFraction(curPaceSec),
-                            )
-                            MetricCell(
-                                icon = Icons.Filled.Flag,
-                                label = stringResource(R.string.run_lap_split),
-                                value = lastSplit?.let { formatPace(it) } ?: "—",
-                                fraction = paceFraction(lastSplit),
-                            )
-                            MetricCell(
-                                icon = Icons.Filled.Favorite,
-                                label = stringResource(R.string.stat_hr),
-                                value = hr?.toString() ?: "—",
-                                unit = "bpm",
-                                fraction = (hr ?: 0) / 190f,
-                                chip = stringResource(R.string.measurement_unavailable),
-                                chipColor = hrZone?.second ?: Volt,
-                            )
-
-                            MetricCell(
-                                icon = Icons.AutoMirrored.Filled.DirectionsRun,
-                                label = stringResource(R.string.stat_cadence),
-                                value = if (session.elapsedSec > 0) "%d".format(cadenceVal) else "—",
-                                unit = "spm",
-                                fraction = cadenceVal / 200f,
-                            )
-                            MetricCell(
-                                icon = Icons.Filled.LocalFireDepartment,
-                                label = stringResource(R.string.stat_calories),
-                                value = "%,.0f".format(calories),
-                                unit = "kcal",
-                                fraction = (calories / 600.0).toFloat(),
-                            )
-                            MetricCell(
-                                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
-                                label = stringResource(R.string.stat_steps),
-                                value = "%,d".format(session.steps),
-                                fraction = session.steps / 10_000f,
-                            )
-
-                            MetricCell(
-                                icon = Icons.Filled.Speed,
-                                label = stringResource(R.string.stat_speed),
-                                value = if (session.elapsedSec > 0) "%.1f".format(speedVal) else "—",
-                                unit = "km/h",
-                                fraction = (speedVal / 15.0).toFloat(),
-                            )
-                            MetricCell(
-                                icon = Icons.Filled.Terrain,
-                                label = stringResource(R.string.run_elevation),
-                                value = "—",
-                                unit = "m",
-                                fraction = 0f,
-                                chip = stringResource(R.string.measurement_unavailable),
-                            )
-                            MetricCell(
-                                icon = Icons.Filled.Schedule,
-                                label = stringResource(R.string.run_total_time),
-                                value = formatDuration(session.elapsedSec),
-                                fraction = session.elapsedSec / 3_600f,
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (laps.isNotEmpty() || session.isActive) {
-                item {
-                    GlowCard {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(7.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.run_lap),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Snow,
-                                )
-                                // 최근 5개 랩만 — 마지막 완료 랩을 볼트로 강조
-                                segments.takeLast(5).forEach { seg ->
-                                    LapRow(
-                                        index = seg.index,
-                                        km = seg.km,
-                                        paceSec = seg.paceSec,
-                                        bpm = 0,
-                                        highlight = seg.index == segments.size,
-                                    )
-                                }
-                                // 진행 중인 부분 랩
-                                if (session.isActive && segKm > 0.01) {
-                                    LapRow(
-                                        index = laps.size + 1,
-                                        km = segKm,
-                                        paceSec = segPaceSec,
-                                        bpm = hr ?: 0,
-                                        highlight = false,
-                                        dimmed = true,
-                                    )
-                                }
-                            }
-                            Column(
-                                horizontalAlignment = Alignment.End,
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(CarbonHigh, RoundedCornerShape(50))
-                                        .border(1.dp, Edge, RoundedCornerShape(50))
-                                        .padding(horizontal = 9.dp, vertical = 3.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.run_pace_chart),
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.5.sp,
-                                        color = Silver,
-                                    )
-                                }
-                                PaceChart(
-                                    paces = segments.map { it.paceSec },
-                                    modifier = Modifier
-                                        .width(132.dp)
-                                        .height(104.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!session.isActive) {
-                item { estimateCard() }
             }
 
             if (BuildConfig.DEBUG) {
@@ -1187,7 +1063,7 @@ private fun CourseChallengeCard(
             }
 
             // 앱 안 지도는 어디를 뛰었는지까지, 확대·길안내는 구글 지도로
-            if (mapPoints.size >= 2) {
+            if (mapPoints.size >= 2 && !running) {
                 val context = LocalContext.current
                 Row(
                     modifier = Modifier
@@ -1215,8 +1091,8 @@ private fun CourseChallengeCard(
                 }
             }
 
-            // 오늘의 챌린지 + GPS 상태
-            Row(
+            // 오늘의 챌린지 + GPS 상태 — 달리는 중에는 머리의 GPS 알약이 대신한다
+            if (!running) Row(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp),
@@ -1261,7 +1137,7 @@ private fun CourseChallengeCard(
                 }
             }
 
-            Box(
+            if (!running) Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(12.dp)

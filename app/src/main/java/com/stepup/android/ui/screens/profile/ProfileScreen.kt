@@ -32,6 +32,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import com.stepup.android.ui.components.MainHeader
+import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -147,6 +150,7 @@ fun ProfileScreen(
     onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
+    onOpenRanking: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -203,6 +207,9 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
         SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
         SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
+        // 내 정보 첫 화면을 시안대로 비우면서 여기로 옮겼다
+        SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
+        SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
         SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
@@ -268,7 +275,10 @@ fun ProfileScreen(
             return@LazyColumn
         }
 
-        // ── 작은 캐릭터 · 닉네임 · 레벨 ──
+        // ── 머리글 — 로고 · 보유 SUP ──
+        item { MainHeader(balance = state.balance, onOpenWallet = onOpenWallet) }
+
+        // ── 작은 캐릭터 · 닉네임 · 인사 ──
         item {
             MeHeader(
                 state = state,
@@ -287,13 +297,6 @@ fun ProfileScreen(
 
         // ── 최근 러닝 기록 ──
         item { RecentRunsCard(runs = recentRuns, onOpenAll = onOpenAnalytics) }
-
-        // ── 업적 — 기존 자리 그대로 ──
-        item {
-            Box(Modifier.guideTarget(GuideTour.Targets.PROFILE_ACHIEVEMENTS)) {
-                BadgesCard(state, onOpenAchievements)
-            }
-        }
 
         // ── 내 아이템 · 설정 — 한 줄씩 ──
         item {
@@ -1248,40 +1251,29 @@ private fun MeHeader(
             ) {
                 Text(
                     text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-                    fontSize = 22.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
                     color = Snow,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                Icon(
-                    Icons.Filled.Edit,
-                    contentDescription = stringResource(R.string.profile_edit_profile),
-                    tint = Silver,
-                    modifier = Modifier.size(16.dp),
-                )
             }
             Text(
-                text = stringResource(R.string.level_chip, runner.level),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = VoltText,
+                text = stringResource(R.string.me_greeting),
+                fontSize = 14.sp,
+                color = Silver,
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BarMeter(fraction = runner.progress, height = 6.dp, modifier = Modifier.weight(1f))
-                Text(
-                    text = if (runner.isMax) "MAX" else "%.1f / %.0f km".format(runner.intoLevelKm, runner.levelSpanKm),
-                    fontSize = 11.sp,
-                    color = Silver,
-                    maxLines = 1,
-                )
-            }
         }
-        DarkIconButton(
-            icon = Icons.Filled.Settings,
-            contentDescription = stringResource(R.string.cd_open_settings),
-            onClick = onOpenSettings,
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = stringResource(R.string.profile_edit_profile),
+            tint = VoltText,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .feedbackClickable(onClick = onEditProfile)
+                .padding(8.dp),
         )
     }
 }

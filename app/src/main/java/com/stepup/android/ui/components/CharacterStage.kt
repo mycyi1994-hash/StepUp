@@ -67,6 +67,7 @@ import com.stepup.android.ui.theme.Volt
 @DrawableRes
 fun AvatarArt.drawableRes(): Int = when (this) {
     AvatarArt.MALE_RUN -> R.drawable.avatar_male_running
+    AvatarArt.MALE_IDLE -> R.drawable.avatar_male_idle
     AvatarArt.FEMALE_IDLE -> R.drawable.avatar_female_idle
 }
 

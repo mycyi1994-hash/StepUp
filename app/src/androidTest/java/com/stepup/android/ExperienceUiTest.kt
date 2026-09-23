@@ -263,8 +263,10 @@ class ExperienceUiTest {
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        // 설정은 내 정보 머리의 톱니바퀴로 들어간다 — 목록 맨 아래 버튼은 스크롤해야 보인다
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.cd_open_settings)).performClick()
+        // 설정은 내 정보 목록 맨 아래의 "설정" 줄로 들어간다 — 스크롤해야 보일 수 있다
+        val settingsRow = compose.activity.getString(R.string.profile_tab_settings)
+        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsRow))
+        compose.onNodeWithText(settingsRow).performClick()
         val settingsLabel = compose.activity.getString(R.string.settings_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()

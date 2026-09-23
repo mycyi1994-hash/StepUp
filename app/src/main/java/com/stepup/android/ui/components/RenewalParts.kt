@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -140,6 +142,117 @@ fun SubHeader(
 }
 
 /**
+ * 탭 첫 화면의 머리글 — 왼쪽 로고, 오른쪽 보유 SUP. 시안의 네 탭이 모두 이 모양이다.
+ */
+@Composable
+fun MainHeader(
+    balance: Double,
+    onOpenWallet: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    balanceModifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Wordmark(fontSize = 24.sp, modifier = Modifier.weight(1f, fill = false))
+        Spacer(Modifier.weight(1f))
+        SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
+    }
+}
+
+/**
+ * 하위 화면의 머리글 — 뒤로 · 가운데 로고 · 보유 SUP.
+ *
+ * 러너 마켓 · 소식 · 챌린지가 쓴다. 화면 이름은 이 줄이 아니라 아래 큰 제목이
+ * 말한다([PageHero]).
+ */
+@Composable
+fun SecondaryHeader(
+    onBack: () -> Unit,
+    balance: Double?,
+    onOpenWallet: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .feedbackClickable(onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.cd_back),
+                tint = Snow,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Wordmark(fontSize = 20.sp)
+        }
+        if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(44.dp))
+    }
+}
+
+/**
+ * 하위 화면의 큰 제목 — 제목 · 한 줄 소개, 오른쪽에 캐릭터 그림.
+ *
+ * 글자가 크면 그림을 빼고 제목에 폭을 다 준다.
+ */
+@Composable
+fun PageHero(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    art: (@Composable BoxScope.() -> Unit)? = null,
+) {
+    val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = if (art != null && !large) 150.dp else 0.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = title,
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-1).sp,
+                color = Snow,
+                lineHeight = 40.sp,
+            )
+            Text(text = subtitle, fontSize = 14.sp, color = Silver, lineHeight = 20.sp)
+        }
+        if (art != null && !large) {
+            Box(
+                modifier = Modifier
+                    .size(width = 168.dp, height = 150.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.radialGradient(
+                            0f to Volt.copy(alpha = 0.28f),
+                            1f to androidx.compose.ui.graphics.Color.Transparent,
+                        ),
+                    ),
+                content = art,
+            )
+        }
+    }
+}
+
+/**
  * 한 화면에서 가장 먼저 눌러야 하는 버튼 — 큰 파란 알약.
  *
  * "러닝 시작"처럼 그 화면의 이유가 되는 행동 하나에만 쓴다. 한 화면에
@@ -247,6 +360,8 @@ fun ShortcutButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 이름 아래 흐린 한 줄 — 시안의 "지금 도전하세요!" 자리 */
+    subtitle: String? = null,
 ) {
     val shape = RoundedCornerShape(16.dp)
     Row(
@@ -262,14 +377,18 @@ fun ShortcutButton(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(20.dp))
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
-            maxLines = 2,
-        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(
+                text = label,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+                maxLines = 2,
+            )
+            if (subtitle != null) {
+                Text(text = subtitle, fontSize = 12.sp, color = Silver, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(18.dp))
     }
 }

@@ -33,4 +33,7 @@ for name in ['avatar_male_running', 'avatar_female_idle']:
     width = int.from_bytes(head[24:27], 'little') + 1
     height = int.from_bytes(head[27:30], 'little') + 1
     assert width >= 900 and height >= 1300, f'{name}: {width}x{height}'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 2 alpha avatar images')
+# RUNO 서 있기 — 캐릭터 가이드에서 떼어 낸 그림(원본 309×573 을 2배). 알파만 본다.
+head = (RES / 'drawable-nodpi' / 'avatar_male_idle.webp').read_bytes()[:30]
+assert head[12:16] == b'VP8X' and head[20] & 0x10, 'avatar_male_idle: no alpha'
+print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images')

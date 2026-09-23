@@ -25,6 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.stepup.android.domain.AvatarArtCatalog
+import com.stepup.android.domain.AvatarPose
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.PageHero
+import com.stepup.android.ui.components.SecondaryHeader
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -99,6 +104,9 @@ fun NewsScreen(
         serverNews
     }
     val sources by feedViewModel.sources.collectAsStateWithLifecycle()
+    // 제목 옆 캐릭터 — 내 성별의 그림
+    val look by com.stepup.android.core.ServiceLocator.avatarRepository.look
+        .collectAsStateWithLifecycle(com.stepup.android.domain.AvatarLook())
     val message by feedViewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -127,29 +135,21 @@ fun NewsScreen(
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         item {
-            SubHeader(
-                title = stringResource(R.string.news_title),
-                onBack = onBack,
-                balance = balance,
-                onOpenWallet = onOpenWallet,
-            ) {
-                DarkIconButton(
-                    icon = Icons.Filled.Refresh,
-                    contentDescription = stringResource(R.string.news_refresh),
-                    onClick = {
-                        if (section == 0) feedViewModel.loadEvents(force = true) else feedViewModel.loadNews(force = true)
-                    },
-                )
-            }
+            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
         }
 
         item {
-            Text(
-                text = stringResource(R.string.news_hero_sub),
-                fontSize = 14.sp,
-                color = Silver,
-                modifier = Modifier.padding(horizontal = 2.dp),
-            )
+            PageHero(
+                title = stringResource(R.string.news_title),
+                subtitle = stringResource(R.string.news_hero_sub),
+            ) {
+                AvatarImage(
+                    art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxSize(),
+                )
+            }
         }
 
         item {

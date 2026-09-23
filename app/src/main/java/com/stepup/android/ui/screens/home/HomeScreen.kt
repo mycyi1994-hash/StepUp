@@ -60,6 +60,7 @@ import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.MainHeader
 import com.stepup.android.ui.components.GoalBar
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.CharacterStage
@@ -142,20 +143,11 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // ── 머리글 48dp — 로고와 작은 보유 포인트 ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Wordmark(fontSize = 24.sp, modifier = Modifier.weight(1f, fill = false))
-            Box(Modifier.weight(1f))
-            SupPill(
-                balance = state.balance,
-                onClick = onOpenWallet,
-                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
-            )
-        }
+        MainHeader(
+            balance = state.balance,
+            onOpenWallet = onOpenWallet,
+            balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
+        )
 
         if (!hasPermission) {
             PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
@@ -237,40 +229,46 @@ fun HomeScreen(
             )
         }
 
-        // ── 챌린지 · 소식 ──
-        // 큰 글자에서는 반 폭에 "챌린지"가 "챌린 / 지"로 끊긴다 — 위아래로 쌓는다.
-        val shortcutsModifier = Modifier
-            .fillMaxWidth()
-            .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
-        if (largeText) {
-            Column(modifier = shortcutsModifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .guideTarget(GuideTour.Targets.HOME_SHORTCUTS),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_shortcuts_title),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+            )
+            val challenge: @Composable (Modifier) -> Unit = { m ->
                 ShortcutButton(
                     icon = Icons.Filled.EmojiEvents,
                     label = stringResource(R.string.home_shortcut_challenges),
+                    subtitle = stringResource(R.string.home_shortcut_challenges_sub),
                     onClick = onOpenChallenges,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                ShortcutButton(
-                    icon = Icons.AutoMirrored.Filled.Article,
-                    label = stringResource(R.string.home_shortcut_news),
-                    onClick = onOpenNews,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = m,
                 )
             }
-        } else {
-            Row(modifier = shortcutsModifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ShortcutButton(
-                    icon = Icons.Filled.EmojiEvents,
-                    label = stringResource(R.string.home_shortcut_challenges),
-                    onClick = onOpenChallenges,
-                    modifier = Modifier.weight(1f),
-                )
+            val news: @Composable (Modifier) -> Unit = { m ->
                 ShortcutButton(
                     icon = Icons.AutoMirrored.Filled.Article,
                     label = stringResource(R.string.home_shortcut_news),
+                    subtitle = stringResource(R.string.home_shortcut_news_sub),
                     onClick = onOpenNews,
-                    modifier = Modifier.weight(1f),
+                    modifier = m,
                 )
+            }
+            // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
+            if (largeText) {
+                challenge(Modifier.fillMaxWidth())
+                news(Modifier.fillMaxWidth())
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    challenge(Modifier.weight(1f))
+                    news(Modifier.weight(1f))
+                }
             }
         }
 

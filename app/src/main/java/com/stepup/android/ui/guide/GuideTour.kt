@@ -170,7 +170,6 @@ object GuideTour {
         // ── 내 정보 ──
         GuideStep(Targets.tab("profile"), "profile", R.string.tour_tab_profile_title, R.string.tour_tab_profile_body),
         GuideStep(Targets.PROFILE_AVATAR, "profile", R.string.tour11_title, R.string.tour11_body),
-        GuideStep(Targets.PROFILE_ACHIEVEMENTS, "profile", R.string.tour12_title, R.string.tour12_body),
     )
 
     val current: GuideStep? get() = if (active) steps.getOrNull(stepIndex) else null

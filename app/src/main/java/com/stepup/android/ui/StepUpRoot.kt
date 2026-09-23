@@ -161,7 +161,7 @@ internal fun parentTabOf(route: String?): Screen? {
     if (route == null) return null
     return when {
         route == Screen.Run.route || route == Routes.NEWS || route == Routes.EVENTS ||
-            route == Routes.RUN || route == Routes.COURSES -> Screen.Run
+            route == Routes.RUN || route.startsWith("run?") || route == Routes.COURSES -> Screen.Run
         route == Screen.Customize.route || route == Routes.RUNNER_MARKET ||
             route == Routes.ITEMS || route.startsWith("sneaker") ||
             route.startsWith("market/") -> Screen.Customize
@@ -201,6 +201,10 @@ object Routes {
     const val RUNNER_MARKET = "runner-market"
 
     const val RUN = "run"
+
+    /** 러닝 화면 — start=true 면 들어오자마자 달리기를 시작한다 */
+    const val RUN_ROUTE = "run?start={start}"
+    const val RUN_NOW = "run?start=true"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
     const val ACHIEVEMENTS = "achievements"
@@ -348,7 +352,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
         ) {
             composable(Screen.Run.route) {
                 HomeScreen(
-                    onStartRun = { navController.navigate(Routes.RUN) },
+                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
@@ -424,7 +428,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
                 EventsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onStartRun = { navController.navigate(Routes.RUN) },
+                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
                 )
             }
             composable(Screen.Profile.route) {
@@ -443,15 +447,26 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
-                    onOpenItems = { navController.switchTab(Screen.Customize) },
+                    // 내 아이템 — 신발 보관함(강화 · 판매 · 조합 · 도감)
+                    onOpenItems = { navController.navigate(Routes.ITEMS) },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenRanking = { navController.navigate(Routes.RANKING) },
                 )
             }
 
-            composable(Routes.RUN) {
+            composable(
+                route = Routes.RUN_ROUTE,
+                arguments = listOf(
+                    navArgument("start") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                ),
+            ) { entry ->
                 RunScreen(
                     onBack = { navController.popBackStack() },
                     onOpenCourses = { navController.navigate(Routes.COURSES) },
+                    autoStart = entry.arguments?.getBoolean("start") ?: false,
                 )
             }
             composable(Routes.COURSES) {

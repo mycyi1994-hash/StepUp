@@ -1414,4 +1414,12 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_waiting_title">내 위치를 찾는 중이에요</string>
     <string name="map_waiting_body">GPS가 잡히면 실제로 달린 경로가 여기에 그려져요.</string>
     <string name="finish_pending_short">서버 확인 중</string>
+
+    <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
+    <string name="me_greeting">오늘도 좋은 하루예요.</string>
+    <string name="home_shortcuts_title">챌린지 · 소식</string>
+    <string name="home_shortcut_challenges_sub">지금 도전하세요!</string>
+    <string name="home_shortcut_news_sub">대회 · 러닝 소식</string>
+    <string name="challenge_hero_sub">달릴수록, 더 많은 보상이 기다려요.</string>
+    <string name="challenge_reward_label">보상</string>
 </resources>

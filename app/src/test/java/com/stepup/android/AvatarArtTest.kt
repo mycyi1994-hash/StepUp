@@ -71,7 +71,7 @@ class AvatarArtTest {
     fun `없는 자세는 exactPose 로 드러난다`() {
         val male = AvatarLook(gender = AvatarGender.MALE)
         assertTrue(AvatarArtCatalog.resolve(male, AvatarPose.RUN).exactPose)
-        assertFalse(AvatarArtCatalog.resolve(male, AvatarPose.IDLE).exactPose)
+        assertTrue(AvatarArtCatalog.resolve(male, AvatarPose.IDLE).exactPose)
         assertFalse(AvatarArtCatalog.resolve(male, AvatarPose.CHEER).exactPose)
         val female = AvatarLook(gender = AvatarGender.FEMALE)
         assertTrue(AvatarArtCatalog.resolve(female, AvatarPose.IDLE).exactPose)
@@ -83,7 +83,6 @@ class AvatarArtTest {
         val missing = AvatarArtCatalog.missingPoses().toSet()
         assertEquals(
             setOf(
-                AvatarGender.MALE to AvatarPose.IDLE,
                 AvatarGender.MALE to AvatarPose.CHEER,
                 AvatarGender.FEMALE to AvatarPose.RUN,
                 AvatarGender.FEMALE to AvatarPose.CHEER,

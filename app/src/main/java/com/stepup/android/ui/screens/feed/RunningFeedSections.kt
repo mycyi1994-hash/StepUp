@@ -49,60 +49,15 @@ fun LazyListScope.runningEventsSection(
     onOpen: (EventRow) -> Unit,
     onToggleSave: (EventRow) -> Unit,
 ) {
-    item {
-        Text(
-            text = stringResource(R.string.feed_events_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = Slate,
-            lineHeight = 18.sp,
-        )
-    }
-
+    // 시안대로 검색칸 하나. 거르기는 칸 끝의 버튼이 연다.
     item {
         FeedSearchField(
             value = ui.filter.query,
             hint = stringResource(R.string.feed_events_search_hint),
             onValueChange = onQuery,
-        )
-    }
-
-    item {
-        FilterToolbar(
-            filterLabel = stringResource(R.string.filter_button),
+            onFilter = onOpenFilters,
             filterCount = eventFilterCount(ui.filter),
-            sortLabel = eventSortLabel(ui.filter.sort),
-            onOpenFilters = onOpenFilters,
-            onOpenSort = onOpenSort,
         )
-    }
-
-    item {
-        FilterSummaryRow(
-            parts = eventFilterParts(ui.filter),
-            // 기본 화면의 초기화는 곧바로 기본 조건으로 돌아간다.
-            // 패널 안의 초기화와 달리 한 번 더 확인하지 않는다.
-            onReset = onResetFilters,
-        )
-    }
-
-    // 보기 방식과 지난 대회는 거르기가 아니라 "무엇을 보여 줄까"다.
-    // 패널에 넣지 않고 화면에 남겨 한 번에 누를 수 있게 둔다.
-    item {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            PillChip(
-                text = stringResource(R.string.feed_view_calendar),
-                selected = ui.calendar,
-                onClick = { onToggleCalendar() },
-            )
-            PillChip(
-                text = stringResource(R.string.feed_include_past),
-                selected = ui.filter.includePast,
-                onClick = { onTogglePast() },
-            )
-        }
     }
 
     if (ui.problem != null) {
@@ -179,36 +134,12 @@ fun LazyListScope.runningNewsSection(
     onToggleSave: (NewsRow) -> Unit,
 ) {
     item {
-        Text(
-            text = stringResource(R.string.feed_news_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = Slate,
-            lineHeight = 18.sp,
-        )
-    }
-
-    item {
         FeedSearchField(
             value = ui.filter.query,
             hint = stringResource(R.string.feed_news_search_hint),
             onValueChange = onQuery,
-        )
-    }
-
-    item {
-        FilterToolbar(
-            filterLabel = stringResource(R.string.filter_button),
+            onFilter = onOpenFilters,
             filterCount = newsFilterCount(ui.filter),
-            sortLabel = newsSortLabel(ui.filter.sort),
-            onOpenFilters = onOpenFilters,
-            onOpenSort = onOpenSort,
-        )
-    }
-
-    item {
-        FilterSummaryRow(
-            parts = newsFilterParts(ui.filter, ui.publishers),
-            onReset = onResetFilters,
         )
     }
 

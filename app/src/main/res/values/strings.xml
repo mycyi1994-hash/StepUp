@@ -1416,4 +1416,12 @@ Start running with StepUp.</string>
     <string name="map_waiting_title">Finding your location</string>
     <string name="map_waiting_body">Once GPS locks on, the route you actually run is drawn here.</string>
     <string name="finish_pending_short">Awaiting server check</string>
+
+    <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
+    <string name="me_greeting">Have a great day.</string>
+    <string name="home_shortcuts_title">Challenges · News</string>
+    <string name="home_shortcut_challenges_sub">Take one on now!</string>
+    <string name="home_shortcut_news_sub">Races · running news</string>
+    <string name="challenge_hero_sub">The more you run, the more rewards await.</string>
+    <string name="challenge_reward_label">Reward</string>
 </resources>

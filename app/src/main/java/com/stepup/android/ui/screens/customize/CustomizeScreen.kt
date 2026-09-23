@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
@@ -61,6 +62,8 @@ import com.stepup.android.domain.Outfits
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.components.AvatarImage
 import com.stepup.android.ui.components.CharacterStage
+import com.stepup.android.ui.components.MainHeader
+import com.stepup.android.ui.components.StepUpIcons
 import com.stepup.android.ui.components.GarmentArt
 import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.BadgeTone
@@ -139,15 +142,11 @@ fun CustomizeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = 8.dp, bottom = 16.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Wordmark(fontSize = 24.sp)
-            Box(Modifier.weight(1f))
-            SupPill(balance, onOpenWallet)
-        }
+        MainHeader(balance = balance, onOpenWallet = onOpenWallet)
 
         // ── 제목 · 기본 캐릭터 선택 · 전신 미리보기 ──
         //
@@ -179,16 +178,6 @@ fun CustomizeScreen(
                 }
             }
         }
-        val baseNote: @Composable () -> Unit = {
-            Text(
-                text = stringResource(R.string.customize_base_note),
-                modifier = Modifier.fillMaxWidth(),
-                fontSize = 11.sp,
-                color = Slate,
-                textAlign = TextAlign.Center,
-                lineHeight = 14.sp,
-            )
-        }
         val stage: @Composable (Modifier) -> Unit = { m ->
             CharacterStage(
                 look = preview,
@@ -215,7 +204,6 @@ fun CustomizeScreen(
         if (largeText) {
             titleBlock()
             genderRow()
-            baseNote()
             stage(Modifier.fillMaxWidth().height(300.dp))
         } else {
             Row(
@@ -232,14 +220,9 @@ fun CustomizeScreen(
                 ) {
                     titleBlock()
                     genderRow()
-                    baseNote()
                 }
                 stage(Modifier.weight(0.56f).fillMaxHeight())
             }
-        }
-        // 고른 옷·신발을 입은 그림이 없으면 무엇을 보고 있는지 적는다
-        if (!render.lookShown) {
-            PreviewMissingNote()
         }
 
         TwoWaySwitch(
@@ -247,6 +230,7 @@ fun CustomizeScreen(
                 stringResource(R.string.customize_tab_outfit),
                 stringResource(R.string.customize_tab_shoes),
             ),
+            icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
             selected = tab,
             onSelect = { tab = it },
         )
@@ -288,19 +272,6 @@ fun CustomizeScreen(
                     )
                 }
             }
-            // 고른 신발의 상세 — 강화 · 판매도 거기서 한다
-            pickedShoe?.let { shoe ->
-                Text(
-                    text = stringResource(R.string.customize_shoe_detail),
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .feedbackClickable { onOpenSneaker(shoe.id) }
-                        .padding(vertical = 6.dp, horizontal = 4.dp),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
-                )
-            }
         }
 
         // ── 장착하기 (주 행동) · 마켓 보기 ──
@@ -338,45 +309,6 @@ fun CustomizeScreen(
                 marketButton(Modifier.weight(1f))
             }
         }
-        // 보관함 — 강화 · 판매 · 조합은 거기서
-        Text(
-            text = stringResource(R.string.customize_open_vault) + " ›",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .feedbackClickable(onClick = onOpenVault)
-                .padding(vertical = 8.dp, horizontal = 12.dp),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = com.stepup.android.ui.theme.VoltText,
-        )
-    }
-}
-
-/** 고른 조합을 입은 그림이 없을 때 — 미리보기 아래 한 줄 */
-@Composable
-private fun PreviewMissingNote() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(CarbonHigh)
-            .border(1.dp, Edge, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            Icons.Filled.Info,
-            contentDescription = null,
-            tint = com.stepup.android.ui.theme.VoltText,
-            modifier = Modifier.size(16.dp),
-        )
-        Text(
-            text = stringResource(R.string.customize_preview_missing),
-            fontSize = 12.sp,
-            color = Silver,
-            lineHeight = 17.sp,
-        )
     }
 }
 

@@ -63,6 +63,8 @@ import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.PageHero
+import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.domain.AvatarArt
 import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.VoltButton
@@ -155,48 +157,27 @@ fun EventsScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            SubHeader(
-                title = stringResource(R.string.challenge_title),
-                onBack = onBack,
-                balance = balance,
-                onOpenWallet = onOpenWallet,
-            )
+            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
         }
+        // 큰 제목 · 한 줄 소개 · 두 러너(RUNO · LUMI 그림 그대로)
         item {
-            Row(
+            PageHero(
+                title = stringResource(R.string.challenge_title),
+                subtitle = stringResource(R.string.challenge_hero_sub),
                 modifier = Modifier.celebrate(celebration.takeIf { it > 0 }),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.challenge_today_title),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.6).sp,
-                        color = Snow,
-                    )
-                    Text(text = stringResource(R.string.challenge_today_sub), fontSize = 14.sp, color = Silver)
-                }
-                // 남녀 기본 캐릭터 그림 그대로
-                if (androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f) {
-                    Box(Modifier.size(width = 112.dp, height = 92.dp)) {
-                        AvatarImage(
-                            art = AvatarArt.MALE_RUN,
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .size(width = 60.dp, height = 88.dp),
-                        )
-                        AvatarImage(
-                            art = AvatarArt.FEMALE_IDLE,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(width = 56.dp, height = 88.dp),
-                        )
-                    }
-                }
+                AvatarImage(
+                    art = AvatarArt.MALE_IDLE,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .size(width = 84.dp, height = 140.dp),
+                )
+                AvatarImage(
+                    art = AvatarArt.FEMALE_IDLE,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(width = 84.dp, height = 140.dp),
+                )
             }
         }
 
@@ -257,29 +238,6 @@ fun EventsScreen(
             )
         }
 
-        // ── 친구 초대 — 초대한 사람을 셀 기록이 아직 없다 ──
-        item {
-            ChallengeCard(
-                tag = stringResource(R.string.tag_mission),
-                tagTone = BadgeTone.Muted,
-                icon = Icons.Filled.GroupAdd,
-                title = stringResource(R.string.event_refer),
-                desc = stringResource(R.string.challenge_refer_desc),
-                reward = Events.REFER.reward,
-                fraction = null,
-                progressText = stringResource(R.string.challenge_soon),
-                state = ChallengeState.Soon,
-                onClaim = null,
-                extra = {
-                    GhostButton(
-                        text = stringResource(R.string.events_invite),
-                        onClick = { showInvite = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                },
-            )
-        }
-
         item {
             PrimaryCta(
                 text = stringResource(R.string.home_start_run),
@@ -287,11 +245,6 @@ fun EventsScreen(
                 onClick = onStartRun,
             )
         }
-
-        // ── 공지 — StepUp 이 쓰는 안내. 예전 뉴스 탭의 특가 공지 ──
-        item { SectionHeader(title = stringResource(R.string.challenge_notices)) }
-        items(DEAL_FEED.size) { index -> FeedCard(DEAL_FEED[index]) }
-        item { FeedFootnote(R.string.feed_note_deals) }
     }
 }
 
@@ -320,56 +273,21 @@ private fun ChallengeCard(
     rewardNote: String? = null,
     extra: (@Composable () -> Unit)? = null,
 ) {
+    val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
     GlowCard(
         accent = state == ChallengeState.Ready,
         contentPadding = PaddingValues(16.dp),
         spacing = 12.dp,
     ) {
-        // 표시 · 상태 · 보상을 맨 위 한 줄에 둔다. 보상을 제목 옆에 두면 큰 글자에서
-        // 설명이 한 단어씩 세로로 쪼개진다.
-        //
-        // 보상 숫자를 먼저 재고 표시 둘은 남은 폭에 눕힌다 — 모자라면 표시가 다음
-        // 줄로 내려간다. 반대로 하면 큰 글자에서 "+20"이 "+2 / 0"으로 끊긴다.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            FlowRow(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                SmallBadge(tag, tone = tagTone)
-                StatusChip(state)
-            }
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                HexEmblem(size = 16.dp, glow = false)
-                Text(
-                    text = "+%,.0f".format(reward),
-                    fontFamily = StepUpNumbers,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-                Text(
-                    text = "SUP",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Silver,
-                    maxLines = 1,
-                    softWrap = false,
-                )
+        // 시안대로 — 아이콘 · 제목과 설명 · 오른쪽 위에 보상(받았으면 "지급 완료").
+        // 보상 표시를 먼저 재고 제목이 남은 폭을 쓴다. 글자가 크면 보상을 위로 올린다.
+        val badge: @Composable () -> Unit = {
+            when (state) {
+                ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
+                else -> RewardPill(reward)
             }
         }
+        if (large) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { badge() }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -388,6 +306,7 @@ private fun ChallengeCard(
                 Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
                 Text(text = desc, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
             }
+            if (!large) badge()
         }
         if (rewardNote != null) {
             Text(text = rewardNote, fontSize = 11.sp, color = Slate)
@@ -397,7 +316,7 @@ private fun ChallengeCard(
             Text(
                 text = progressText,
                 fontFamily = StepUpNumbers,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
             )
@@ -408,7 +327,7 @@ private fun ChallengeCard(
                     fontFamily = StepUpNumbers,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
+                    color = VoltText,
                 )
             }
         } else {
@@ -423,6 +342,32 @@ private fun ChallengeCard(
             )
         }
         extra?.invoke()
+    }
+}
+
+/** 보상 알약 — "보상 ⬡ 30 SUP" */
+@Composable
+private fun RewardPill(reward: Double) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 9.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Text(text = stringResource(R.string.challenge_reward_label), fontSize = 11.sp, color = Silver, maxLines = 1, softWrap = false)
+        HexEmblem(size = 15.dp, glow = false)
+        Text(
+            text = "%,.0f".format(reward),
+            fontFamily = StepUpNumbers,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Snow,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(text = "SUP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Silver, maxLines = 1, softWrap = false)
     }
 }
 

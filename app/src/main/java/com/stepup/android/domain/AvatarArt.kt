@@ -4,11 +4,16 @@ package com.stepup.android.domain
  * 캐릭터 그림 — 앱에 실제로 들어 있는 완성 그림과, 그 그림이 보여 줄 수
  * 있는 착장.
  *
- * ── 그림은 두 장뿐이다 ──
+ * ── 그림은 세 장뿐이다 ──
  *
- * 디자인 패키지(design/blue-black-2026-09)에서 받은 캐릭터는 **남자 달리기**와
- * **여자 서 있기** 두 장이다. 둘 다 기본 후드(검정 바탕에 파란 줄)와 기본
- * 운동화를 입고 있다. 다른 자세·다른 옷·다른 신발을 입은 그림은 없다.
+ * 남자 캐릭터는 **RUNO(루노)**, 여자 캐릭터는 **LUMI(루미)** 다
+ * (design/characters/ 의 캐릭터 가이드).
+ *
+ * 앱에 있는 그림은 **RUNO 달리기 · RUNO 서 있기 · LUMI 서 있기** 세 장이다.
+ * 셋 다 기본 후드(검정 바탕에 파란 줄)와 기본 운동화를 입고 있다. 다른
+ * 자세·다른 옷·다른 신발을 입은 그림은 없다. RUNO 서 있기는 캐릭터 가이드
+ * 시트에서 떼어 낸 것이라 해상도가 낮다(원본 309×573) — 고해상도 렌더가 오면
+ * 같은 이름으로 바꾼다.
  *
  * 그래서 화면이 그림을 고를 때 지키는 것은 둘이다.
  *
@@ -34,6 +39,7 @@ enum class AvatarArt(
     val wearsBaseShoes: Boolean,
 ) {
     MALE_RUN(AvatarGender.MALE, AvatarPose.RUN, Outfits.STARTER_HOODIE.id, wearsBaseShoes = true),
+    MALE_IDLE(AvatarGender.MALE, AvatarPose.IDLE, Outfits.STARTER_HOODIE.id, wearsBaseShoes = true),
     FEMALE_IDLE(AvatarGender.FEMALE, AvatarPose.IDLE, Outfits.STARTER_HOODIE.id, wearsBaseShoes = true),
 }
 
