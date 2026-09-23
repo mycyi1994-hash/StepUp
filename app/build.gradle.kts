@@ -3,13 +3,18 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // 릴리즈 서명 자격 — 환경변수(CI) 또는 ~/.gradle/gradle.properties(로컬)에서 읽는다.
 // 저장소에는 키도 비밀번호도 커밋하지 않는다. 값이 없으면 release 빌드는
 // 서명되지 않은 채로 만들어지고, 그 사실이 빌드 로그에 찍힌다.
+// 빈 문자열은 "없음"으로 취급한다. CI가 시크릿 없이 env를 넘기면 getenv는
+// null이 아니라 ""를 돌려주고, 그대로 file("")을 부르면 설정 단계에서 죽는다.
 fun secret(env: String, prop: String): String? =
-    System.getenv(env) ?: project.findProperty(prop) as String?
+    (System.getenv(env) ?: project.findProperty(prop) as String?)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
 
 val releaseStorePath = secret("RELEASE_KEYSTORE_PATH", "stepupReleaseKeystorePath")
 val releaseStorePassword = secret("RELEASE_KEYSTORE_PASSWORD", "stepupReleaseKeystorePassword")
@@ -23,15 +28,52 @@ val releaseSigningReady =
         file(releaseStorePath).exists()
 
 android {
-    namespace = "com.giwa.strideup"
+    namespace = "com.stepup.android"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.giwa.strideup"
+        applicationId = "com.stepup.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "1.15.1"
+        versionCode = 25
+        versionName = "1.17.0"
+
+        // 러닝 증명을 받을 서버 주소. 배포 전에는 비어 있고, 비어 있으면 앱은
+        // 업로드를 시도하지 않고 세션을 대기열에 쌓아 둔다.
+        // 로컬에서 바꾸려면 ~/.gradle/gradle.properties 에 stepupAttesterUrl 를 둔다.
+        buildConfigField(
+            "String",
+            "ATTESTER_URL",
+            "\"${secret("ATTESTER_URL", "stepupAttesterUrl") ?: ""}\"",
+        )
+
+        // ── 서버·로그인 설정 ────────────────────────────────────────
+        //
+        // 아래 세 값은 **공개되어도 되는 값**이다. APK 를 뜯으면 어차피 나오고,
+        // 애초에 앱에 넣으라고 발급되는 값이다. 실제 보호는 서버의 행 단위
+        // 보안 규칙(supabase/migrations/)이 한다.
+        //
+        // 절대 여기 넣으면 안 되는 것: sb_secret_ 로 시작하는 Supabase 키와
+        // GOCSPX- 로 시작하는 구글 보안 비밀. 둘 다 모든 검사를 건너뛴다.
+        //
+        // 값을 먼저 계산해 두는 이유는 buildConfigField 인자 안에서 계산하면
+        // 문자열 템플릿이 길어져 읽기도 어렵고 깨지기도 쉽기 때문이다.
+        val supabaseUrl = secret("SUPABASE_URL", "stepupSupabaseUrl")
+            ?: "https://pupjzcmybuoyhzfwrsdf.supabase.co"
+        val supabaseKey = secret("SUPABASE_KEY", "stepupSupabaseKey")
+            ?: "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
+
+        // 구글 로그인에는 **웹** 클라이언트 ID 를 쓴다. 안드로이드 클라이언트
+        // ID 가 아니다 — 그쪽은 "이 앱이 진짜 맞다"를 구글이 확인하는 용도로
+        // 등록만 해 두고 코드에는 넣지 않는다. 앱이 받는 ID 토큰의 수신자(aud)가
+        // 웹 클라이언트 ID 이고, 서버는 그 값으로 토큰을 검증한다.
+        val googleWebClientId = secret("GOOGLE_WEB_CLIENT_ID", "stepupGoogleWebClientId")
+            ?: "201996080239-8hrgea5hfe58ank2f6rbbqnkk5ek2mf3.apps.googleusercontent.com"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -120,8 +162,13 @@ tasks.matching {
         }
     }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)
 
     implementation(platform(libs.androidx.compose.bom))
@@ -142,7 +189,18 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.google.id)
 
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

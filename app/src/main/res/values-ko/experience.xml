@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_experience">사운드 및 모션</string>
+    <string name="experience_intro">오늘의 러닝에 맞게 StepUp의 반응을 조절하세요.</string>
+    <string name="experience_sound">효과음</string>
+    <string name="experience_sound_desc">버튼, 러닝 상태, 확정된 보상을 짧은 소리로 알려드려요.</string>
+    <string name="experience_haptic">터치 진동</string>
+    <string name="experience_haptic_desc">동작과 주요 달성 순간을 가벼운 진동으로 알려드려요.</string>
+    <string name="experience_motion">동작 줄이기</string>
+    <string name="experience_motion_desc">화면 전환과 장식 애니메이션을 줄여 편안하게 보세요.</string>
+    <string name="experience_preview">효과 미리 듣기</string>
+    <string name="experience_system_note">무음·방해금지·시스템 터치 소리 설정을 따르며, 음악 재생 중에는 효과음을 내지 않아요. 시스템의 애니메이션 설정도 함께 적용돼요.</string>
+</resources>

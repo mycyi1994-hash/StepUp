@@ -1,0 +1,617 @@
+package com.stepup.android.ui
+
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import com.stepup.android.ui.experience.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Hexagon
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import kotlinx.coroutines.launch
+import com.stepup.android.R
+import com.stepup.android.core.ServiceLocator
+import com.stepup.android.ui.components.HairlineDivider
+import com.stepup.android.ui.components.NightCanvas
+import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.guide.GuideOverlay
+import com.stepup.android.ui.guide.GuideTour
+import com.stepup.android.ui.guide.guideTarget
+import com.stepup.android.ui.screens.community.CommunityScreen
+import com.stepup.android.ui.screens.community.CrewBoardScreen
+import com.stepup.android.ui.screens.community.FlashRunDetailScreen
+import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
+import com.stepup.android.ui.screens.community.CrewCreateScreen
+import com.stepup.android.ui.screens.community.PartyLobbyScreen
+import com.stepup.android.ui.screens.community.PostComposeScreen
+import com.stepup.android.ui.screens.community.RankingScreen
+import com.stepup.android.ui.screens.events.EventsScreen
+import com.stepup.android.ui.screens.events.NewsScreen
+import com.stepup.android.ui.screens.home.HomeScreen
+import com.stepup.android.ui.screens.login.LoginScreen
+import com.stepup.android.ui.screens.market.MarketModelScreen
+import com.stepup.android.ui.screens.items.ItemsScreen
+import com.stepup.android.ui.screens.items.SneakerDetailScreen
+import com.stepup.android.ui.screens.items.SneakerDexScreen
+import com.stepup.android.ui.screens.notifications.NotificationsScreen
+import com.stepup.android.ui.screens.profile.AchievementsScreen
+import com.stepup.android.ui.screens.profile.AnalyticsScreen
+import com.stepup.android.ui.screens.profile.ProfileScreen
+import com.stepup.android.ui.screens.rewards.WalletScreen
+import com.stepup.android.ui.screens.settings.ConnectedAccountsScreen
+import com.stepup.android.ui.screens.settings.LanguageScreen
+import com.stepup.android.ui.screens.settings.ThemeScreen
+import com.stepup.android.ui.screens.settings.NotificationSettingsScreen
+import com.stepup.android.ui.screens.settings.PrivacyScreen
+import com.stepup.android.ui.screens.settings.SupportScreen
+import com.stepup.android.ui.screens.splash.SplashScreen
+import com.stepup.android.ui.screens.walk.CourseHubScreen
+import com.stepup.android.ui.screens.walk.RunScreen
+import com.stepup.android.ui.theme.Carbon
+import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.theme.Volt
+
+sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
+    data object Home : Screen("home", R.string.tab_home, Icons.Filled.Hexagon)
+
+    /** 읽는 자리 — 러닝 이벤트 소식 · 특가 공지 · 건강 뉴스 */
+    data object News : Screen("news", R.string.tab_news, Icons.AutoMirrored.Filled.Article)
+    data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
+
+    /**
+     * 마켓 — 스토어와 아이템(보관함)을 담는다.
+     *
+     * 길(route)은 "items" 그대로 둔다. 화면 이름만 바뀐 것이라, 길까지 바꾸면
+     * 가이드 투어가 가리키는 자리와 다른 화면에서 넘어오는 이동이 전부
+     * 어긋난다.
+     */
+    data object Market : Screen("items", R.string.tab_market, Icons.Filled.ShoppingBag)
+
+    /** 받는 자리 — 챌린지 · 캠페인 · 미션의 진행률과 보상 */
+    data object Events : Screen("events", R.string.tab_events, Icons.Filled.Event)
+    data object Profile : Screen("profile", R.string.tab_profile, Icons.Filled.Person)
+}
+
+// 홈 다음이 뉴스다 — 오늘 할 것(러닝)과 오늘 볼 것(소식)이 붙어 있어야
+// 앱을 열고 왼쪽 둘만 오가게 된다.
+//
+// 뉴스와 이벤트를 나눈 것은 하는 일이 달라서다. 이벤트는 진행률을 보고
+// 보상을 **받는** 자리라 누를 것이 있고, 뉴스는 **읽는** 자리라 없다.
+private val bottomTabs = listOf(
+    Screen.Home,
+    Screen.News,
+    Screen.Community,
+    Screen.Market,
+    Screen.Events,
+    Screen.Profile,
+)
+private val tabRoutes = bottomTabs.map { it.route }.toSet()
+
+object Routes {
+    const val RUN = "run"
+    const val WALLET = "wallet"
+    const val NOTIFICATIONS = "notifications"
+    const val ACHIEVEMENTS = "achievements"
+    const val ANALYTICS = "analytics"
+    const val SETTINGS_NOTIFICATIONS = "settings/notifications"
+    const val SETTINGS_PRIVACY = "settings/privacy"
+    const val SETTINGS_SUPPORT = "settings/support"
+    const val SETTINGS_CONNECTED = "settings/connected"
+    const val SETTINGS_LANGUAGE = "settings/language"
+    const val SETTINGS_EXPERIENCE = "settings/experience"
+    const val SETTINGS_THEME = "settings/theme"
+    const val SNEAKER = "sneaker/{id}"
+    const val LOBBY = "lobby/{crewId}"
+    const val RANKING = "ranking"
+    const val CREW_CREATE = "crew/create"
+    const val CREW_BOARD = "crew/board/{crewId}"
+    const val POST_COMPOSE = "post/compose/{crewId}"
+    const val FLASH_DETAIL = "flash/{postId}"
+    const val FLASH_LOBBY = "flash/lobby/{postId}"
+    const val COURSES = "courses"
+    const val SNEAKER_DEX = "sneaker/dex"
+
+    /**
+     * 거래소의 모델 장부 — 속성 × 등급 × 변형 하나.
+     *
+     * sell 은 보관함에서 "판매"로 들어왔을 때 그 신발의 로컬 번호다. 값을
+     * 들고 오면 판매 등록 창이 그 켤레를 고른 채로 열린다. 등록은 값을 적고
+     * 확정해야 끝난다 — 번호를 들고 왔다고 저절로 올라가지 않는다.
+     */
+    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}"
+
+    fun sneaker(id: Long) = "sneaker/$id"
+
+    fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
+        "market/$faction/$rarity/$variant?sell=$sell"
+    fun lobby(crewId: String) = "lobby/$crewId"
+    fun crewBoard(crewId: String) = "crew/board/$crewId"
+
+    /** crewId가 비어 있으면 전체 게시판에 쓰는 글 */
+    fun postCompose(crewId: String) = "post/compose/${crewId.ifBlank { NO_CREW }}"
+
+    fun flashDetail(postId: Long) = "flash/$postId"
+
+    fun flashLobby(postId: Long) = "flash/lobby/$postId"
+
+    const val NO_CREW = "_"
+}
+
+@Composable
+fun StepUpRoot() {
+    var ready by rememberSaveable { mutableStateOf(false) }
+    // 로그인/가이드는 DataStore 값이 로드될 때까지 null — 스플래시가 그 시간을 가려준다.
+    val loginMethod by ServiceLocator.userPrefs.loginMethod
+        .collectAsState(initial = null)
+    val guideSeen by ServiceLocator.userPrefs.guideSeen
+        .collectAsState(initial = null)
+
+    // 로그인 표시와 실제 세션이 어긋나면 로그인 화면을 다시 띄운다.
+    //
+    // 표시만 보고 통과시키면, 세션을 잃은 사람이 로그인돼 있다고 믿으면서
+    // 아무것도 서버에 안 올라가는 상태로 계속 뛰게 된다. 조용히 기록을
+    // 잃는 것보다 한 번 더 로그인하는 편이 낫다.
+    var sessionChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(loginMethod) {
+        if (loginMethod?.isNotEmpty() == true && !ServiceLocator.sessionHolder.isSignedIn()) {
+            ServiceLocator.userPrefs.setLoginMethod("")
+        }
+        sessionChecked = true
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        NightCanvas(Modifier.fillMaxSize())
+
+        val stage = when {
+            !ready || loginMethod == null || guideSeen == null || !sessionChecked -> 0
+            loginMethod!!.isEmpty() -> 1
+            else -> 2
+        }
+        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visible ->
+        when (visible) {
+            0 ->
+                SplashScreen(onReady = { ready = true })
+
+            1 -> LoginScreen(onDone = {})
+
+            else -> MainScaffold(startTour = guideSeen == false)
+        }
+        }
+    }
+}
+
+@Composable
+internal fun MainScaffold(startTour: Boolean = false) {
+    RunFeedback()
+    val motion = LocalMotion.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // 첫 실행이면 화면이 자리를 잡은 뒤 스포트라이트 투어를 시작한다
+    LaunchedEffect(startTour) {
+        if (startTour) {
+            kotlinx.coroutines.delay(450)
+            GuideTour.start()
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        if (StepPermissions.hasActivityRecognition(context)) {
+            ServiceLocator.stepRepository.startTracking()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val missing = StepPermissions.missing(context)
+        if (missing.isNotEmpty()) permissionLauncher.launch(missing)
+    }
+
+    val navController = rememberNavController()
+    val backStack by navController.currentBackStackEntryAsState()
+    val currentRoute = backStack?.destination?.route
+    val showBar = currentRoute in tabRoutes
+
+    Box(Modifier.fillMaxSize()) {
+    Scaffold(
+        containerColor = Color.Transparent,
+        bottomBar = {
+            AnimatedVisibility(
+                visible = showBar,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                VoltNavBar(navController, currentRoute)
+            }
+        },
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
+            exitTransition = { fadeOut(tween(motion.duration(140))) },
+            popEnterTransition = { fadeIn(tween(motion.duration(180))) },
+            popExitTransition = { fadeOut(tween(motion.duration(140))) + slideOutHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
+        ) {
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    onStartRun = { navController.navigate(Routes.RUN) },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+                    onOpenProfile = { navController.switchTab(Screen.Profile) },
+                    onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
+                    onOpenItems = { navController.switchTab(Screen.Market) },
+                )
+            }
+            composable(Screen.Community.route) {
+                CommunityScreen(
+                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenRanking = { navController.navigate(Routes.RANKING) },
+                    onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
+                    onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
+                    onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
+                    onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
+                )
+            }
+            composable(Screen.Market.route) {
+                ItemsScreen(
+                    onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
+                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenMarketModel = { faction, rarity, variant ->
+                        navController.navigate(Routes.marketModel(faction, rarity, variant))
+                    },
+                )
+            }
+            composable(
+                route = Routes.MARKET_MODEL,
+                arguments = listOf(
+                    navArgument("faction") { type = NavType.StringType },
+                    navArgument("rarity") { type = NavType.StringType },
+                    navArgument("variant") { type = NavType.IntType },
+                    navArgument("sell") {
+                        type = NavType.LongType
+                        defaultValue = 0L
+                    },
+                ),
+            ) { entry ->
+                MarketModelScreen(
+                    faction = entry.arguments?.getString("faction").orEmpty(),
+                    rarity = entry.arguments?.getString("rarity").orEmpty(),
+                    variant = entry.arguments?.getInt("variant") ?: 0,
+                    sellLocalId = entry.arguments?.getLong("sell") ?: 0L,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Screen.News.route) {
+                NewsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
+            }
+            composable(Screen.Events.route) {
+                EventsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
+            }
+            composable(Screen.Profile.route) {
+                ProfileScreen(
+                    onOpenGuide = {
+                        navController.switchTab(Screen.Home)
+                        GuideTour.start()
+                    },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
+                    onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
+                    onOpenNotificationSettings = { navController.navigate(Routes.SETTINGS_NOTIFICATIONS) },
+                    onOpenPrivacy = { navController.navigate(Routes.SETTINGS_PRIVACY) },
+                    onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
+                    onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
+                    onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
+                    onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
+                    onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
+                    onOpenItems = { navController.switchTab(Screen.Market) },
+                )
+            }
+
+            composable(Routes.RUN) {
+                RunScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenCourses = { navController.navigate(Routes.COURSES) },
+                )
+            }
+            composable(Routes.COURSES) {
+                CourseHubScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.WALLET) { WalletScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.NOTIFICATIONS) {
+                NotificationsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
+                    // 댓글은 게시판 위에 창으로 뜬다. 어느 댓글인지는 저장소에
+                    // 남겨 두고 커뮤니티 탭으로 보내면, 게시판이 그 창을 연다.
+                    onOpenComment = { target ->
+                        ServiceLocator.communityRepository.focusComment(target)
+                        navController.switchTab(Screen.Community)
+                    },
+                )
+            }
+            composable(Routes.ACHIEVEMENTS) {
+                AchievementsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.ANALYTICS) {
+                AnalyticsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_NOTIFICATIONS) {
+                NotificationSettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_PRIVACY) {
+                PrivacyScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_SUPPORT) {
+                SupportScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_CONNECTED) {
+                ConnectedAccountsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_EXPERIENCE) {
+                com.stepup.android.ui.screens.settings.ExperienceSettingsScreen { navController.popBackStack() }
+            }
+            composable(Routes.SETTINGS_THEME) {
+                ThemeScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_LANGUAGE) {
+                LanguageScreen(onBack = { navController.popBackStack() })
+            }
+            composable(
+                route = Routes.SNEAKER,
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+            ) { entry ->
+                SneakerDetailScreen(
+                    sneakerId = entry.arguments?.getLong("id") ?: 0L,
+                    onBack = { navController.popBackStack() },
+                    onSell = { faction, rarity, variant, localId ->
+                        navController.navigate(
+                            Routes.marketModel(faction, rarity, variant, localId),
+                        )
+                    },
+                )
+            }
+            composable(
+                route = Routes.LOBBY,
+                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+            ) { entry ->
+                PartyLobbyScreen(
+                    crewId = entry.arguments?.getString("crewId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onRunStarted = { navController.navigate(Routes.RUN) },
+                )
+            }
+            composable(Routes.SNEAKER_DEX) {
+                SneakerDexScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
+                )
+            }
+            composable(Routes.RANKING) {
+                RankingScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.CREW_CREATE) {
+                CrewCreateScreen(
+                    onBack = { navController.popBackStack() },
+                    onCreated = { crewId ->
+                        navController.popBackStack()
+                        navController.navigate(Routes.crewBoard(crewId))
+                    },
+                )
+            }
+            composable(
+                route = Routes.CREW_BOARD,
+                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+            ) { entry ->
+                CrewBoardScreen(
+                    crewId = entry.arguments?.getString("crewId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
+                    onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
+                )
+            }
+            composable(
+                route = Routes.FLASH_DETAIL,
+                arguments = listOf(navArgument("postId") { type = NavType.LongType }),
+            ) { entry ->
+                val postId = entry.arguments?.getLong("postId") ?: 0L
+                FlashRunDetailScreen(
+                    postId = postId,
+                    onBack = { navController.popBackStack() },
+                    onOpenLobby = { navController.navigate(Routes.flashLobby(postId)) },
+                )
+            }
+            composable(
+                route = Routes.FLASH_LOBBY,
+                arguments = listOf(navArgument("postId") { type = NavType.LongType }),
+            ) { entry ->
+                PartyLobbyScreen(
+                    flashPostId = entry.arguments?.getLong("postId") ?: 0L,
+                    onBack = { navController.popBackStack() },
+                    onRunStarted = { navController.navigate(Routes.RUN) },
+                )
+            }
+            composable(
+                route = Routes.POST_COMPOSE,
+                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+            ) { entry ->
+                val raw = entry.arguments?.getString("crewId").orEmpty()
+                val crewId = if (raw == Routes.NO_CREW) "" else raw
+                PostComposeScreen(
+                    crewId = crewId,
+                    crewName = ServiceLocator.crewRepository.crewOf(crewId)?.name.orEmpty(),
+                    onBack = { navController.popBackStack() },
+                )
+            }
+        }
+    }
+
+    // 알림에서 눌러 들어온 댓글 창. 어느 탭에 있든 여기서 연다.
+    FocusedCommentSheetHost()
+
+    // 스포트라이트 가이드 오버레이 — 하단 바까지 덮는다
+    if (GuideTour.active) {
+        GuideOverlay(
+            onSwitchTab = { route ->
+                bottomTabs.firstOrNull { it.route == route }?.let { navController.switchTab(it) }
+            },
+            onFinished = {
+                scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
+            },
+        )
+    }
+    }
+}
+
+/** 탭 전환 — 백스택을 쌓지 않고 각 탭의 상태를 보존한다. */
+private fun NavHostController.switchTab(screen: Screen) {
+    navigate(screen.route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+/** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
+const val BOTTOM_NAV_TAG = "bottom-nav"
+
+@Composable
+private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Carbon.copy(alpha = 0.97f), Night))),
+    ) {
+        HairlineDivider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
+                .testTag(BOTTOM_NAV_TAG)
+                .navigationBarsPadding()
+                .padding(top = 10.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            bottomTabs.forEach { screen ->
+                NavTab(
+                    screen = screen,
+                    selected = currentRoute == screen.route,
+                    onClick = { navController.switchTab(screen) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
+    val tint by animateColorAsState(
+        targetValue = if (selected) Volt else Slate,
+        label = "navTabTint",
+    )
+    val dotAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        label = "navTabDot",
+    )
+    Column(
+        modifier = Modifier.weight(1f)
+            // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
+            .guideTarget(GuideTour.Targets.tab(screen.route))
+            .semantics { this.selected = selected }
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { if (!selected) onClick() }
+            // 탭이 여섯 개라 좁은 화면에서는 한 칸이 60dp 남짓이다.
+            // 좌우 여백을 줄여 "커뮤니티" 같은 긴 이름이 줄바꿈되지 않게 한다.
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            imageVector = screen.icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(22.dp),
+        )
+        Text(
+            text = stringResource(screen.labelRes),
+            color = tint,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            letterSpacing = 0.sp,
+            textAlign = TextAlign.Center,
+            softWrap = true,
+        )
+        Box(
+            modifier = Modifier
+                .size(4.dp)
+                .alpha(dotAlpha)
+                .background(Volt, CircleShape),
+        )
+    }
+}
