@@ -28,11 +28,8 @@ class NotificationRepository(
     }
 
     /** 크루 초대 수락 — 크루 가입 후 알림을 처리 상태로 바꾼다 */
-    suspend fun acceptCrewInvite(entity: NotificationEntity, crewRepository: CrewRepository) {
-        if (entity.actioned || entity.type != NotificationType.CREW_INVITE) return
-        if (entity.argExtra.isNotBlank()) crewRepository.join(entity.argExtra)
-        dao.markActioned(entity.id)
-    }
+    suspend fun acceptCrewInvite(entity: NotificationEntity, crewRepository: CrewRepository): CrewActionResult =
+        acceptCrewInvitation(dao, entity, crewRepository::join)
 
     /** 초대 거절 — 알림만 지운다 */
     suspend fun decline(entity: NotificationEntity) = dao.delete(entity.id)
@@ -86,4 +83,21 @@ class NotificationRepository(
     private companion object {
         val LEGACY_CREW_IDS = listOf("trailblazer", "night_runners", "summit", "new_striders")
     }
+}
+
+/** Do not consume an invitation until the server accepts joining or requesting membership. */
+internal suspend fun acceptCrewInvitation(
+    dao: NotificationDao,
+    entity: NotificationEntity,
+    join: suspend (String) -> CrewActionResult,
+): CrewActionResult {
+    if (entity.actioned) return CrewActionResult.Done
+    if (entity.type != NotificationType.CREW_INVITE || entity.argExtra.isBlank()) {
+        return CrewActionResult.Failed("Invalid invitation")
+    }
+    val result = join(entity.argExtra)
+    if (result == CrewActionResult.Joined || result == CrewActionResult.Requested) {
+        dao.markActioned(entity.id)
+    }
+    return result
 }

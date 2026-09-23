@@ -58,6 +58,7 @@ import com.stepup.android.data.local.NotificationEntity
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.CrewRepository
+import com.stepup.android.data.repo.CrewActionResult
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.domain.parseSlotKey
 import com.stepup.android.ui.components.DetailPage
@@ -73,6 +74,9 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -83,6 +87,10 @@ class NotificationsViewModel(
     private val repo: NotificationRepository,
     private val crewRepository: CrewRepository,
 ) : ViewModel() {
+    private val _busy = MutableStateFlow<Set<Long>>(emptySet())
+    val busy = _busy.asStateFlow()
+    private val _notices = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    val notices = _notices.asStateFlow()
 
     val items: StateFlow<List<NotificationEntity>?> = repo.notifications()
         .map<List<NotificationEntity>, List<NotificationEntity>?> { it }
@@ -93,10 +101,29 @@ class NotificationsViewModel(
     }
 
     fun acceptCrewInvite(entity: NotificationEntity) {
-        viewModelScope.launch { repo.acceptCrewInvite(entity, crewRepository) }
+        if (entity.id in _busy.value) return
+        _busy.value += entity.id
+        _notices.value -= entity.id
+        viewModelScope.launch {
+            try {
+                val message = when (val result = repo.acceptCrewInvite(entity, crewRepository)) {
+                    CrewActionResult.Requested -> R.string.crew_notice_requested
+                    is CrewActionResult.Failed -> if (result.signIn) R.string.crew_sign_in_needed else R.string.crew_notice_failed
+                    else -> null
+                }
+                if (message != null) _notices.value += entity.id to message
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _notices.value += entity.id to R.string.crew_notice_failed
+            } finally {
+                _busy.value -= entity.id
+            }
+        }
     }
 
     fun decline(entity: NotificationEntity) {
+        if (entity.id in _busy.value) return
         viewModelScope.launch { repo.decline(entity) }
     }
 
@@ -134,6 +161,8 @@ fun NotificationsScreen(
     viewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.Factory),
 ) {
     val notifications by viewModel.items.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val notices by viewModel.notices.collectAsStateWithLifecycle()
     val now = remember { System.currentTimeMillis() }
 
     // 화면을 열면 배지를 비운다.
@@ -189,6 +218,8 @@ fun NotificationsScreen(
                 NotificationRow(
                     entity = entity,
                     now = now,
+                    busy = entity.id in busy,
+                    notice = notices[entity.id],
                     onAcceptCrew = { viewModel.acceptCrewInvite(entity) },
                     onDecline = { viewModel.decline(entity) },
                     onAcceptParty = { viewModel.acceptPartyInvite(entity, onOpenLobby) },
@@ -212,6 +243,8 @@ fun NotificationsScreen(
 private fun NotificationRow(
     entity: NotificationEntity,
     now: Long,
+    busy: Boolean,
+    notice: Int?,
     onAcceptCrew: () -> Unit,
     onDecline: () -> Unit,
     onAcceptParty: () -> Unit,
@@ -271,6 +304,9 @@ private fun NotificationRow(
             }
         }
 
+        if (notice != null) {
+            Text(text = stringResource(notice), color = Silver, fontSize = 14.sp)
+        }
         if (actionable) {
             if (entity.actioned) {
                 Text(
@@ -289,11 +325,13 @@ private fun NotificationRow(
                             VoltButton(
                                 text = stringResource(R.string.notif_accept),
                                 onClick = onAcceptCrew,
+                                enabled = !busy,
                                 modifier = Modifier.weight(1f),
                             )
                             GhostButton(
                                 text = stringResource(R.string.notif_decline),
                                 onClick = onDecline,
+                                enabled = !busy,
                                 accent = Silver,
                                 modifier = Modifier.weight(1f),
                             )

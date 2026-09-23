@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — crew invitation confirmation
+
+- Crew invitation handling now checks the actual join result: only Joined/Requested consumes the notification. Failed/missing-target/exception paths retain it for retry; an already processed entity is not resubmitted. The screen gates duplicate accept/decline while joining and shows localized failure, sign-in or approval-request feedback. Coroutine cancellation is propagated and busy state is always cleared.
+- Added native coverage for failure, thrown transport error, invalid target, requested membership and repeat handling, using the real notification DAO and controlled server responses. Local resource/design/asset checks pass; native execution remains pending. This test does not establish actual signed-in crew service availability or cross-device consistency.
+- Production welcome rewards remain an unresolved separate path: startup unconditionally calls seedWelcome, and local notification claim currently credits the embedded amount. EventRepository's server-confirmed challenge path does not cover this synthetic welcome entry. Preserve existing credited balances when addressing it.
+
 ## 2026-09-24 — notification detail and read semantics
 
 - Notifications now uses the fixed DetailPage header/gutter instead of a screen-local back/title layout. Initial repository loading is distinct from an empty inbox. Mark all read calls the read update, not clearAll (which deleted history); the action is shown only for unread items. Added architecture protection and a native Room test preserving ordinary history, pending actions and all fields except read through repeated reads. New native test is pending CI.
