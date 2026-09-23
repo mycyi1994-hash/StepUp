@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.runtime.snapshotFlow
@@ -303,6 +304,8 @@ fun GuideOverlay(
         onFinished()
     }
 
+    var tooltipHeightPx by remember { mutableIntStateOf(0) }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // 막의 높이 — 대상 좌표(루트 기준)와 같은 공간이다
         val screenHeightDp = maxHeight.value
@@ -372,7 +375,10 @@ fun GuideOverlay(
             0f
         }
 
-        // 설명 창 — 대상이 화면 위쪽이면 아래에, 아래쪽이면 위에 띄운다
+        // 설명 창 — 대상이 화면 위쪽이면 아래에, 아래쪽이면 위에 띄운다.
+        // 위에 띄울 때는 창의 실제 높이만큼 올린다 — 큰 글자에서는 창이 길어져
+        // 어림값(178dp)으로는 아래 버튼 줄에 겹쳤다.
+        val tooltipHeightDp = (with(density) { tooltipHeightPx.toDp().value } + 8f).coerceAtLeast(178f)
         val tooltipOffsetDp = if (target != null && targetTopDp != null) {
             with(density) {
                 val below = target.bottom.toDp().value + 18f
@@ -381,9 +387,9 @@ fun GuideOverlay(
                     below
                 } else if (controlsLiftDp > 0f) {
                     // 대상 위에 버튼 줄, 그 위에 설명 창
-                    (targetTopDp - 12f - GuideControlsRoom.value - 178f).coerceAtLeast(52f)
+                    (targetTopDp - 12f - GuideControlsRoom.value - tooltipHeightDp).coerceAtLeast(52f)
                 } else {
-                    (targetTopDp - 178f).coerceAtLeast(52f)
+                    (targetTopDp - tooltipHeightDp).coerceAtLeast(52f)
                 }
             }
         } else if (step.journey) {
@@ -404,6 +410,7 @@ fun GuideOverlay(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(y = tooltipOffsetDp.dp)
+                .onSizeChanged { tooltipHeightPx = it.height }
                 .padding(horizontal = 26.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
