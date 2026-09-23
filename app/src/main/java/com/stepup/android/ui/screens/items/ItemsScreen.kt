@@ -74,7 +74,7 @@ import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SneakerCollectionCard
 import com.stepup.android.ui.components.SneakerFrame
-import com.stepup.android.ui.components.TokenCard
+import com.stepup.android.ui.components.SupPill
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.fullLabel
 import com.stepup.android.ui.components.label
@@ -187,7 +187,9 @@ fun ItemsScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.items_vault_title),
-                        fontSize = 26.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-1).sp,
                         color = Snow,
@@ -223,7 +225,9 @@ fun ItemsScreen(
                         modifier = Modifier.size(21.dp),
                     )
                 }
-                TokenCard(balance = balance)
+                // 하위 화면이라 자리가 좁다. 시세·달러 환산이 붙은 토큰 카드 대신
+                // 다른 리뉴얼 화면과 같은 작은 SUP 알약을 쓴다.
+                SupPill(balance = balance, onClick = null)
             }
         }
 

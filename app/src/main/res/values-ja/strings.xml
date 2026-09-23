@@ -1309,7 +1309,7 @@ StepUp と走り出そう。</string>
     <string name="community_tab_my_crew">マイクルー</string>
     <string name="customize_title">マイランナー</string>
     <string name="customize_sub">自分らしく着せ替えましょう。</string>
-    <string name="customize_base_note">基本キャラクター · NFTではありません</string>
+    <string name="customize_base_note">基本キャラクター\nNFTではありません</string>
     <string name="customize_tab_outfit">服</string>
     <string name="customize_tab_shoes">靴</string>
     <string name="customize_equip">装備する</string>

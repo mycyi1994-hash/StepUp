@@ -298,10 +298,32 @@ private fun ChallengeCard(
         contentPadding = PaddingValues(16.dp),
         spacing = 12.dp,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // 표시 · 상태 · 보상을 맨 위 한 줄에 둔다. 보상을 제목 옆에 두면 큰 글자에서
+        // 설명이 한 단어씩 세로로 쪼개진다.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             SmallBadge(tag, tone = tagTone)
-            Box(Modifier.weight(1f))
             StatusChip(state)
+            Box(Modifier.weight(1f))
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                HexEmblem(size = 16.dp, glow = false)
+                Text(
+                    text = "+%,.0f".format(reward),
+                    fontFamily = StepUpNumbers,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Snow,
+                )
+            }
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -321,28 +343,9 @@ private fun ChallengeCard(
                 Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
                 Text(text = desc, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    HexEmblem(size = 16.dp, glow = false)
-                    Text(
-                        text = "+%,.0f".format(reward),
-                        fontFamily = StepUpNumbers,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Snow,
-                    )
-                }
-                if (rewardNote != null) {
-                    Text(text = rewardNote, fontSize = 10.sp, color = Slate, modifier = Modifier.padding(top = 3.dp))
-                }
-            }
+        }
+        if (rewardNote != null) {
+            Text(text = rewardNote, fontSize = 11.sp, color = Slate)
         }
         if (fraction != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

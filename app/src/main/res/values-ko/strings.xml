@@ -1308,7 +1308,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="community_tab_my_crew">내 크루</string>
     <string name="customize_title">내 러너</string>
     <string name="customize_sub">나만의 스타일로 꾸며보세요.</string>
-    <string name="customize_base_note">기본 캐릭터 · NFT 아님</string>
+    <string name="customize_base_note">기본 캐릭터\nNFT 아님</string>
     <string name="customize_tab_outfit">의상</string>
     <string name="customize_tab_shoes">신발</string>
     <string name="customize_equip">장착하기</string>

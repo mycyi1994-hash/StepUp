@@ -1308,7 +1308,7 @@
     <string name="community_tab_my_crew">我的跑团</string>
     <string name="customize_title">我的跑者</string>
     <string name="customize_sub">装扮成你的风格。</string>
-    <string name="customize_base_note">基础角色 · 非NFT</string>
+    <string name="customize_base_note">基础角色\n非NFT</string>
     <string name="customize_tab_outfit">服装</string>
     <string name="customize_tab_shoes">鞋子</string>
     <string name="customize_equip">装备</string>

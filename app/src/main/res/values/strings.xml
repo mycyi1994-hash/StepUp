@@ -1310,7 +1310,7 @@ Start running with StepUp.</string>
     <string name="community_tab_my_crew">My crew</string>
     <string name="customize_title">My runner</string>
     <string name="customize_sub">Style it your way.</string>
-    <string name="customize_base_note">Base character · not an NFT</string>
+    <string name="customize_base_note">Base character\nnot an NFT</string>
     <string name="customize_tab_outfit">Outfits</string>
     <string name="customize_tab_shoes">Shoes</string>
     <string name="customize_equip">Equip</string>

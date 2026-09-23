@@ -284,6 +284,9 @@ fun SmallBadge(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(50))
+            // 신발·옷 그림 위에 얹힐 때가 있다. 반투명만 두면 흰 모자 위에서
+            // 글자가 사라진다 — 불투명한 바닥을 먼저 깔고 그 위에 색을 얹는다.
+            .background(CarbonHigh)
             .background(color.copy(alpha = 0.16f))
             .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp),
@@ -362,6 +365,9 @@ fun GoalBar(
     /** 값 뒤에 흐리게 붙는 말 — " / 8,000 걸음" 같은 것 */
     suffix: String = "",
 ) {
+    // 큰 글자에서는 한 줄에 제목과 값이 다 들어가지 않는다. 그때 제목이 "…"로
+    // 줄어들면 무엇의 진행인지가 사라진다 — 두 줄로 나눈다.
+    val stacked = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(20.dp))
@@ -371,21 +377,12 @@ fun GoalBar(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 1,
+                maxLines = if (stacked) 2 else 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = value,
-                fontFamily = StepUpNumbers,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-                maxLines = 1,
-            )
-            if (suffix.isNotEmpty()) {
-                Text(text = suffix, fontSize = 13.sp, color = Silver, maxLines = 1)
-            }
+            if (!stacked) GoalValue(value, suffix)
         }
+        if (stacked) GoalValue(value, suffix)
         BarMeter(fraction = fraction, height = 8.dp)
     }
 }

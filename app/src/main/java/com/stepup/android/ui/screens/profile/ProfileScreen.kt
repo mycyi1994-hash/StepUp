@@ -1329,6 +1329,9 @@ private fun WeekCard(week: List<DailyStepsEntity>, onOpen: () -> Unit) {
     val total = kms.sum()
     val peak = kms.maxOrNull()?.takeIf { it > 0 } ?: 1.0
     val today = LocalDate.now()
+    // 요일 이름은 앱에 설정된 언어로 쓴다. 기기 기본 언어를 쓰면 한국어 화면에
+    // 영어 요일(T F S …)이 섞인다.
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     GlowCard(
         modifier = Modifier.feedbackClickable(onClick = onOpen),
         contentPadding = PaddingValues(16.dp),
@@ -1374,10 +1377,10 @@ private fun WeekCard(week: List<DailyStepsEntity>, onOpen: () -> Unit) {
                                 .background(if (isToday) Volt else Volt.copy(alpha = 0.55f)),
                         )
                         Text(
-                            text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()),
+                            text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, locale),
                             fontSize = 11.sp,
                             color = if (isToday) Snow else Silver,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
