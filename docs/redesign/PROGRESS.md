@@ -6,9 +6,16 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## 2026-09-24 — emulator disappearance diagnostics
 
+- Follow-up: a9ff894 Build APK 35917606763 passed. Its native interaction/gallery run 35917606795 remains active. Diagnostics revision c1641c1 has been pushed; Build APK 35918321735 and gallery 35918321776 are running.
+
 - Gallery runs 35913660999 and 35916741243 both lost emulator-5554 during allScreens; their XML contains an empty failure and incomplete test count. Current evidence does not establish app crash, emulator crash or host memory exhaustion. The bounded runner now terminates with failure instead of hanging until the job cap.
 - Capture runner now streams Android logs and host memory/process samples to host-side artifacts, captures kernel/emulator diagnostics on exit, and logs each scene before opening it. This preserves failure evidence even when adb can no longer reach the emulator. No test is skipped or retried to turn a failure green.
 - Latest purchase receipt revision a9ff894 still awaits native build/test results. Full screen verification and final deliverables remain incomplete.
+
+## 2026-09-24 — live boost expiration
+
+- An active boost previously stayed in the subscribed UI until a Room table change, despite its expiry passing. The flow now schedules its next emission at the nearest expiry and cancels/replaces that schedule when Room emits new data. Empty lists do not run a timer. This updates the existing Items/Run subscribers without requiring navigation or extra database writes.
+- Added native coverage that inserts a short-lived boost and keeps one subscription open through its expiry, then verifies the inactive repository state. Local source/resource checks pass; this new test has not run yet. Financial settlement still uses its own actual-time checks and is not proven by this display test.
 
 ## 2026-09-24 — recoverable energy purchase delivery
 

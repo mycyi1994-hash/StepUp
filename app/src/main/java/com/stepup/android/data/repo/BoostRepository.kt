@@ -9,7 +9,8 @@ import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.BoostType
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.transformLatest
 
 data class ActiveBoost(val type: BoostType, val expiresAt: Long)
 
@@ -23,13 +24,18 @@ class BoostRepository(
 
     /**
      * 지속형 활성 부스트. 만료 시각이 지나면 자동으로 목록에서 빠진다.
-     * (조회 시점의 now를 쓰므로 화면이 재구독될 때 갱신된다.)
+     * DB 변경이 없어도 다음 만료 시각에 다시 발행한다.
      */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val active: Flow<List<ActiveBoost>> =
-        boostDao.observeActive(System.currentTimeMillis()).map { list ->
-            val now = System.currentTimeMillis()
-            list.filter { it.expiresAt > now }
-                .map { ActiveBoost(BoostType.of(it.type), it.expiresAt) }
+        boostDao.observeActive(System.currentTimeMillis()).transformLatest { list ->
+            while (true) {
+                val now = System.currentTimeMillis()
+                val remaining = list.filter { it.expiresAt > now }
+                emit(remaining.map { ActiveBoost(BoostType.of(it.type), it.expiresAt) })
+                val nextExpiry = remaining.minOfOrNull { it.expiresAt } ?: break
+                delay((nextExpiry - System.currentTimeMillis()).coerceAtLeast(1L))
+            }
         }
 
     suspend fun isActive(type: BoostType): Boolean =

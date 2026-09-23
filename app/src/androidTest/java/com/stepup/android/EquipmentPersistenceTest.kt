@@ -9,10 +9,32 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.*
 import org.junit.Test
 
 class EquipmentPersistenceTest {
+    @Test fun activeBoostExpiresWhileScreenRemainsSubscribedWithoutDatabaseWrites() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val prefs = com.stepup.android.data.prefs.UserPrefs(context)
+            val rewards = com.stepup.android.data.repo.RewardRepository(db.rewardDao(), db.sneakerDao(),
+                db.boostDao(), db.notificationDao(), prefs)
+            val boosts = com.stepup.android.data.repo.BoostRepository(db, rewards, prefs)
+            val type = com.stepup.android.domain.BoostType.XP_BOOSTER
+            val now = System.currentTimeMillis()
+            db.boostDao().insert(com.stepup.android.data.local.BoostEntity(
+                type = type.id, activatedAt = now, expiresAt = now + 3000L))
+            val states = withTimeout(10000L) { boosts.active.take(2).toList() }
+            assertEquals(type, states.first().single().type)
+            assertTrue(states.last().isEmpty())
+            assertFalse(boosts.isActive(type))
+        } finally { db.close() }
+    }
+
     @Test fun timedBoostPurchaseRollsBackAndCompetesWithShoesForTheSameBalance() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
