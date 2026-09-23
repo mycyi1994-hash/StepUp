@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — equipment save failures
+
+- Vault and shoe-detail equip failures now show retry feedback instead of silently returning or allowing an uncaught storage exception. Customize gender/outfit/shoe writes likewise report storage failures; coroutine cancellation still propagates. Success messages follow the existing successful writes. This does not yet audit upgrade/mint/purchase transactions or serialize all avatar changes.
+- Extended the real Room equipment test with an injected failing UPDATE trigger, preservation of the prior equipped shoe, and a successful retry after the storage failure clears. Native execution remains pending; local source/resource/asset checks pass.
+- fbd387a Build APK 35915223394 completed successfully. Map/vault/course/capture diagnostics and this equipment follow-up can now be pushed for fresh validation without cancelling that build.
+
 ## 2026-09-24 — bounded capture diagnostics
 
 - Earlier gallery 35912849285 remains authoritatively in progress. Its job-log endpoint returns 404 before completion, so the stall location is not known; no inferred cause or restart is justified. NightCanvas and TerraceStage source have no self-running animation that alone establishes a cause.

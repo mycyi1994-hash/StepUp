@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /**
  * 꾸미기 · 러너 마켓이 함께 쓰는 상태.
@@ -65,11 +66,11 @@ class CustomizeViewModel(
     fun isOwned(outfit: Outfit): Boolean = avatars.isOwned(outfit)
 
     fun setGender(gender: AvatarGender) {
-        viewModelScope.launch { avatars.setGender(gender) }
+        saveLook { avatars.setGender(gender) }
     }
 
     fun equipOutfit(outfit: Outfit) {
-        viewModelScope.launch {
+        saveLook {
             message.value = if (avatars.equipOutfit(outfit)) {
                 when {
                     !avatars.isOwned(outfit) -> R.string.customize_trial_on
@@ -85,14 +86,26 @@ class CustomizeViewModel(
     }
 
     fun equipShoe(id: Long) {
-        viewModelScope.launch {
+        saveLook {
             val shoe = shoes.value?.firstOrNull { it.id == id }
             if (shoe == null || !sneakers.equip(id)) {
                 message.value = R.string.customize_not_owned
-                return@launch
+                return@saveLook
             }
             val shown = AvatarArtCatalog.resolve(look.value.copy(shoe = shoe), AvatarPose.IDLE).shoeShown
             message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
+        }
+    }
+
+    private fun saveLook(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = R.string.feed_save_failed
+            }
         }
     }
 

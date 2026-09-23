@@ -521,14 +521,14 @@
       "kind": "AlertDialog",
       "owner": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 532,
+      "line": 533,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 689,
+      "line": 690,
       "verification": "pending"
     },
     {

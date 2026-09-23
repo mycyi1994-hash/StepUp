@@ -143,6 +143,7 @@ fun ItemsScreen(
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
         val text = when (m) {
+            ItemsMessage.SaveFailed -> context.getString(R.string.feed_save_failed)
             ItemsMessage.NotEnoughBalance -> msgNoBalance
             ItemsMessage.BoostAlreadyActive -> msgBoostActive
             ItemsMessage.BoostBought -> msgBoostBought

@@ -93,6 +93,7 @@ fun SneakerDetailScreen(
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
         val text = when (m) {
+            ItemsMessage.SaveFailed -> context.getString(R.string.feed_save_failed)
             ItemsMessage.NotEnoughBalance -> msgNoBalance
             ItemsMessage.MaxLevel -> msgMaxLevel
             is ItemsMessage.Upgraded -> msgUpgraded

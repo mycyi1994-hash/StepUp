@@ -21,9 +21,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /** 화면에 한 번만 보여줄 메시지 */
 sealed interface ItemsMessage {
+    data object SaveFailed : ItemsMessage
     data object NotEnoughBalance : ItemsMessage
     data object BoostAlreadyActive : ItemsMessage
     data object BoostBought : ItemsMessage
@@ -98,11 +100,20 @@ class ItemsViewModel(
 
     fun equip(id: Long) {
         viewModelScope.launch {
-            if (!sneakerRepository.equip(id)) return@launch
-            val target = inventory.value.firstOrNull { it.id == id }
-            if (target != null) {
-                message.value = ItemsMessage.Equipped(target)
-                ExperienceEvents.emit(FeedbackCue.Success)
+            try {
+                if (!sneakerRepository.equip(id)) {
+                    message.value = ItemsMessage.SaveFailed
+                    return@launch
+                }
+                val target = inventory.value.firstOrNull { it.id == id }
+                if (target != null) {
+                    message.value = ItemsMessage.Equipped(target)
+                    ExperienceEvents.emit(FeedbackCue.Success)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = ItemsMessage.SaveFailed
             }
         }
     }

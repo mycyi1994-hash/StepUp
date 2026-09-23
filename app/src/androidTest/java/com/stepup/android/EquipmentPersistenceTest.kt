@@ -27,6 +27,17 @@ class EquipmentPersistenceTest {
             assertEquals(listOf(second), dao.allNow().filter { it.equipped }.map { it.id })
             assertEquals(0, dao.equipExclusively(Long.MAX_VALUE))
             assertEquals(second, dao.equippedNow()!!.id)
+            // A storage failure must not unequip the previous shoe or partially apply the new one.
+            db.openHelper.writableDatabase.execSQL("""
+                CREATE TRIGGER fail_equipment BEFORE UPDATE ON sneakers
+                BEGIN SELECT RAISE(ABORT, 'injected equipment storage failure'); END
+            """.trimIndent())
+            assertTrue(runCatching { dao.equipExclusively(first) }.isFailure)
+            assertEquals(second, dao.equippedNow()!!.id)
+            assertEquals(1, dao.allNow().count { it.equipped })
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_equipment")
+            assertTrue(dao.equipExclusively(first) > 0)
+            assertEquals(first, dao.equippedNow()!!.id)
             // Rapid independent selection requests still leave exactly one equipped row.
             coroutineScope {
                 (0 until 20).map { index -> async {
