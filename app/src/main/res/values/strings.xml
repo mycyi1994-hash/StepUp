@@ -423,8 +423,8 @@
     <string name="wallet_empty_title">No history yet</string>
     <string name="wallet_empty_body">One run is all it takes to earn your first SUP.</string>
     <string name="wallet_giwa">GIWA Wallet</string>
-    <string name="wallet_giwa_status">On-chain link in progress</string>
-    <string name="wallet_giwa_body">Soon you\'ll be able to swap SUP into tokens on GIWA Chain.</string>
+    <string name="wallet_giwa_status">Not available in this version</string>
+    <string name="wallet_giwa_body">This screen shows SUP recorded in the app. GIWA wallet connection and withdrawals are not supported in this version.</string>
     <string name="wallet_withdraw">Withdraw</string>
     <string name="wallet_withdraw_title">Withdraw to GIWA Chain</string>
     <string name="wallet_withdraw_body">On-chain settlement opens with the mainnet launch. Your balance carries over 1:1 when it does.</string>

@@ -13,6 +13,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class EventClaimPersistenceTest {
+    @Test fun walletTotalsIncludeEntriesOutsideRecentHistory() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val dao = db.rewardDao()
+            assertEquals(0.0, dao.observeTotals().first().balance, 0.0)
+            repeat(125) { index ->
+                dao.insert(com.stepup.android.data.local.RewardEntity(timestamp = index.toLong(),
+                    type = "EARN_EVENT", amount = 2.0, description = "test receipt"))
+            }
+            dao.insert(com.stepup.android.data.local.RewardEntity(timestamp = 200,
+                type = "SPEND_UPGRADE", amount = -25.0, description = "test purchase"))
+            assertEquals(100, dao.observeLedger(100).first().size)
+            val totals = dao.observeTotals().first()
+            assertEquals(250.0, totals.earned, 0.0)
+            assertEquals(25.0, totals.spent, 0.0)
+            assertEquals(225.0, totals.balance, 0.0)
+        } finally { db.close() }
+    }
+
     @Test fun receiptCreditAndNotificationRollbackAndRetryAsOneUnit() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()

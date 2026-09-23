@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — wallet truthfulness and shared detail structure
+
+- Wallet now uses the shared detail header above scrollable content, replacing its separate logo/back/title row. Initial balance/totals show an em dash, and ledger loading is distinct from a confirmed empty history.
+- Found cumulative totals summing only the latest 100 ledger entries. Added one full-ledger Room aggregate for balance/positive credits/debits, with a 126-entry native test that also checks the 100-row recent-history window remains bounded. No stored entries or schema identities change.
+- Removed the withdrawal button/dialog that performed no withdrawal and asserted unsupported 1:1 conversion, a 1,000-SUP minimum and launch eligibility. Four-language GIWA copy explicitly describes this build's missing connection/withdrawal support and the app-recorded SUP view. This is honest interim UI, NOT completion of the required GIWA integration.
+- Wallet gallery now goes through its real root route. Source contract/string checks passed; new aggregate and wallet visuals still need native verification.
+- 1b6eb54 Build APK 35910105134 and gallery 35910105018 passed; detailed test XML/captures are being downloaded for review.
+
 ## 2026-09-24 — post composition
 
 - Post composition now uses the same shared focus header and pinned native primary action as crew creation, with scrollable content and IME padding. Categories wrap instead of overflowing at enlarged font sizes; flash-run distance/start/capacity fields stack vertically instead of squeezing three labels into one row.

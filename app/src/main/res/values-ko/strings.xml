@@ -421,8 +421,8 @@
     <string name="wallet_empty_title">아직 내역이 없어요</string>
     <string name="wallet_empty_body">러닝 한 번이면 첫 SUP가 쌓여요.</string>
     <string name="wallet_giwa">GIWA 지갑</string>
-    <string name="wallet_giwa_status">온체인 연동 준비 중</string>
-    <string name="wallet_giwa_body">곧 SUP를 GIWA 체인 토큰으로 바꿀 수 있어요.</string>
+    <string name="wallet_giwa_status">현재 버전에서 지원하지 않음</string>
+    <string name="wallet_giwa_body">앱에 기록된 SUP를 표시합니다. 현재 버전에서는 GIWA 지갑 연결과 출금을 지원하지 않습니다.</string>
     <string name="wallet_withdraw">출금하기</string>
     <string name="wallet_withdraw_title">GIWA 체인으로 출금</string>
     <string name="wallet_withdraw_body">온체인 정산은 메인넷 출시와 함께 열려요. 그때 잔액이 1:1로 그대로 넘어가요.</string>

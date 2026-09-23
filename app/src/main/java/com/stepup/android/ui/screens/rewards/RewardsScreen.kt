@@ -87,49 +87,26 @@ fun WalletScreen(
     onBack: () -> Unit = {},
     viewModel: RewardsViewModel = viewModel(factory = RewardsViewModel.Factory),
 ) {
-    val balance by viewModel.balance.collectAsStateWithLifecycle()
+    val totals by viewModel.totals.collectAsStateWithLifecycle()
     val ledger by viewModel.ledger.collectAsStateWithLifecycle()
 
-    val earned = ledger.filter { it.amount > 0 }.sumOf { it.amount }
-    val spent = ledger.filter { it.amount < 0 }.sumOf { -it.amount }
+    val entries = ledger.orEmpty()
 
+    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+    com.stepup.android.ui.components.SecondaryHeader(
+        onBack = onBack, balance = null, onOpenWallet = null,
+        title = stringResource(R.string.settings_wallet),
+    )
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Wordmark(modifier = Modifier.weight(1f))
-            }
-        }
+        item { BalanceHero(totals?.balance) }
 
-        item {
-            Text(
-                text = stringResource(R.string.settings_wallet),
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                color = Snow,
-            )
-        }
+        item { SummaryRow(earned = totals?.earned, spent = totals?.spent) }
 
-        item { BalanceHero(balance) }
-
-        item { SummaryRow(earned = earned, spent = spent) }
-
-        item { GiwaCard(balance) }
+        item { GiwaCard() }
 
         item {
             Row(
@@ -145,14 +122,16 @@ fun WalletScreen(
                     color = Snow,
                 )
                 Text(
-                    text = stringResource(R.string.wallet_records, ledger.size),
+                    text = ledger?.let { stringResource(R.string.wallet_records, it.size) } ?: "—",
                     style = MaterialTheme.typography.bodySmall,
                     color = Slate,
                 )
             }
         }
 
-        if (ledger.isEmpty()) {
+        if (ledger == null) {
+            item { Text(stringResource(R.string.feed_loading), color = Silver, fontSize = 14.sp) }
+        } else if (entries.isEmpty()) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp), spacing = 6.dp) {
                     Column(
@@ -174,16 +153,17 @@ fun WalletScreen(
                 }
             }
         } else {
-            items(ledger, key = { it.id }) { entry ->
+            items(entries, key = { it.id }) { entry ->
                 LedgerRow(entry)
             }
         }
+    }
     }
 }
 
 /** 잔액 히어로 — 볼트 플레이트 + 헥사곤 워터마크 + sheen */
 @Composable
-private fun BalanceHero(balance: Double) {
+private fun BalanceHero(balance: Double?) {
     val shape = RoundedCornerShape(26.dp)
     Box(
         modifier = Modifier
@@ -230,7 +210,7 @@ private fun BalanceHero(balance: Double) {
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "%,.2f".format(balance),
+                    text = balance?.let { "%,.2f".format(it) } ?: "—",
                     fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Black,
@@ -251,7 +231,7 @@ private fun BalanceHero(balance: Double) {
 }
 
 @Composable
-private fun SummaryRow(earned: Double, spent: Double) {
+private fun SummaryRow(earned: Double?, spent: Double?) {
     GlowCard(contentPadding = PaddingValues(vertical = 17.dp, horizontal = 12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -259,13 +239,13 @@ private fun SummaryRow(earned: Double, spent: Double) {
         ) {
             SummaryCell(
                 label = stringResource(R.string.wallet_earned),
-                value = "+%,.2f".format(earned),
+                value = earned?.let { "+%,.2f".format(it) } ?: "—",
                 tint = Volt,
             )
             VerticalHairline(height = 38.dp)
             SummaryCell(
                 label = stringResource(R.string.wallet_spent),
-                value = "-%,.2f".format(spent),
+                value = spent?.let { "-%,.2f".format(it) } ?: "—",
                 tint = Alert,
             )
         }
@@ -287,92 +267,16 @@ private fun RowScope.SummaryCell(label: String, value: String, tint: Color) {
 }
 
 @Composable
-private fun GiwaCard(balance: Double) {
-    var showWithdraw by rememberSaveable { mutableStateOf(false) }
-    GlowCard(spacing = 12.dp) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
+private fun GiwaCard() {
+    GlowCard(spacing = 10.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IconSquare(icon = Icons.Filled.AccountBalanceWallet, size = 42.dp)
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.wallet_giwa),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.wallet_giwa_status),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Volt,
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.wallet_giwa), color = Snow, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.wallet_giwa_status), color = Silver, fontSize = 14.sp)
             }
         }
-        Text(
-            text = stringResource(R.string.wallet_giwa_body),
-            style = MaterialTheme.typography.bodySmall,
-            color = Silver,
-        )
-        GhostButton(
-            text = stringResource(R.string.wallet_withdraw),
-            onClick = { showWithdraw = true },
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-
-    if (showWithdraw) {
-        AlertDialog(
-            onDismissRequest = { showWithdraw = false },
-            containerColor = Carbon,
-            titleContentColor = Snow,
-            textContentColor = Silver,
-            confirmButton = {
-                TextButton(onClick = { showWithdraw = false }) {
-                    Text(
-                        text = stringResource(R.string.common_ok),
-                        color = Volt,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            },
-            title = { Text(stringResource(R.string.wallet_withdraw_title), fontWeight = FontWeight.Black) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Text(
-                        text = stringResource(R.string.wallet_withdraw_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Silver,
-                    )
-                    Text(
-                        text = stringResource(R.string.wallet_withdraw_min),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Snow,
-                    )
-                    if (balance >= 1_000.0) {
-                        Text(
-                            text = stringResource(R.string.wallet_withdraw_eligible),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Volt,
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(
-                                R.string.wallet_withdraw_short,
-                                "%,.0f".format(1_000.0 - balance),
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
-                    }
-                }
-            },
-        )
+        Text(stringResource(R.string.wallet_giwa_body), color = Silver, fontSize = 14.sp)
     }
 }
 

@@ -108,8 +108,13 @@ data class CrewDistance(
     val runs: Int,
 )
 
+data class RewardTotals(val balance: Double, val earned: Double, val spent: Double)
+
 @Dao
 interface RewardDao {
+
+    @Query("SELECT COALESCE(SUM(amount), 0.0) AS balance, COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent FROM rewards")
+    fun observeTotals(): Flow<RewardTotals>
 
     @Insert
     suspend fun insert(reward: RewardEntity)

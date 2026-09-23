@@ -421,8 +421,8 @@
     <string name="wallet_empty_title">还没有记录</string>
     <string name="wallet_empty_body">跑一次，就能赚到第一笔 SUP。</string>
     <string name="wallet_giwa">GIWA 钱包</string>
-    <string name="wallet_giwa_status">链上打通中</string>
-    <string name="wallet_giwa_body">很快你就能把 SUP 换成 GIWA 链上的代币。</string>
+    <string name="wallet_giwa_status">当前版本暂不支持</string>
+    <string name="wallet_giwa_body">此页面显示应用中记录的 SUP。当前版本暂不支持连接 GIWA 钱包和提现。</string>
     <string name="wallet_withdraw">提现</string>
     <string name="wallet_withdraw_title">提现到 GIWA 链</string>
     <string name="wallet_withdraw_body">链上结算会在主网上线时开放。到那时余额会 1:1 平移过去。</string>

@@ -422,8 +422,8 @@
     <string name="wallet_empty_title">まだ履歴がありません</string>
     <string name="wallet_empty_body">1回走るだけで、最初のSUPが手に入ります。</string>
     <string name="wallet_giwa">GIWA ウォレット</string>
-    <string name="wallet_giwa_status">オンチェーン連携を準備中</string>
-    <string name="wallet_giwa_body">もうすぐSUPをGIWA チェーンのトークンに交換できるようになります。</string>
+    <string name="wallet_giwa_status">現在のバージョンでは利用できません</string>
+    <string name="wallet_giwa_body">アプリに記録されたSUPを表示しています。現在のバージョンではGIWAウォレット接続と出金に対応していません。</string>
     <string name="wallet_withdraw">出金する</string>
     <string name="wallet_withdraw_title">GIWA チェーンへ出金</string>
     <string name="wallet_withdraw_body">オンチェーン決済はメインネットのローンチと同時にスタート。そのとき残高は1:1でそのまま引き継がれます。</string>

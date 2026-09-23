@@ -554,13 +554,6 @@
     },
     {
       "kind": "AlertDialog",
-      "owner": "GiwaCard",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
-      "line": 328,
-      "verification": "pending"
-    },
-    {
-      "kind": "AlertDialog",
       "owner": "ConnectedAccountsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
       "line": 71,

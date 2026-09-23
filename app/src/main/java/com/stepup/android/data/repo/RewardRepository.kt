@@ -30,6 +30,7 @@ class RewardRepository(
 ) {
 
     val balance: Flow<Double> = rewardDao.observeBalance()
+    val totals: Flow<com.stepup.android.data.local.RewardTotals> = rewardDao.observeTotals()
 
     val sneakerLevel: Flow<Int> = prefs.sneakerLevel
 

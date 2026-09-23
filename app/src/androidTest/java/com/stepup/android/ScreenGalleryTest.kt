@@ -228,7 +228,7 @@ class ScreenGalleryTest {
             3 -> ItemsScreen()
             4 -> MainScaffold(initialRoute = Routes.EVENTS)
             5 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Profile)
-            6 -> WalletScreen()
+            6 -> MainScaffold(initialRoute = Routes.WALLET)
             7 -> CourseHubScreen()
             8 -> AchievementsScreen()
             9 -> AnalyticsScreen()
