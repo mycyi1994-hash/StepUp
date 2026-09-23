@@ -1,13 +1,14 @@
 package com.stepup.android.data.repo
 
-import android.content.Context
-import com.stepup.android.R
+import androidx.annotation.VisibleForTesting
 import com.stepup.android.data.local.CrewDao
-import com.stepup.android.data.local.CrewEntity
 import com.stepup.android.data.local.CrewInfoDao
-import com.stepup.android.data.local.CrewMembershipEntity
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.WalkSessionDao
+import com.stepup.android.data.remote.CrewApi
+import com.stepup.android.data.remote.CrewRequestRow
+import com.stepup.android.data.remote.CrewRow
+import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.CrewRank
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
@@ -15,14 +16,27 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/** 크루 가입 방식 */
+enum class CrewJoinPolicy {
+    /** 누르면 바로 가입 */
+    OPEN,
+
+    /** 가입 신청 → 크루장이 승인하면 가입 */
+    APPROVAL;
+
+    companion object {
+        fun of(value: String): CrewJoinPolicy = if (value == "APPROVAL") APPROVAL else OPEN
+    }
+}
 
 /** 러닝 크루 */
 data class Crew(
@@ -31,12 +45,52 @@ data class Crew(
     val name: String,
     val tagline: String,
     val area: String,
-    val kmAway: Double,
+    /** 보는 사람과의 거리(km). 서버가 아직 크루 위치를 받지 않아 0 이면 지역 이름을 보여 준다. */
+    val kmAway: Double = 0.0,
     val memberCount: Int,
+    /** 크루장이 먼저, 그다음은 먼저 들어온 순으로 최대 8명 */
     val roster: List<String>,
-    /** 내가 만든 모임 */
+    /** 내가 만든 크루 */
     val owned: Boolean,
+    val joinPolicy: CrewJoinPolicy = CrewJoinPolicy.OPEN,
+    /** 내가 멤버인가 */
+    val joined: Boolean = false,
+    /** 내가 가입 신청을 넣고 기다리는 중인가 */
+    val requested: Boolean = false,
+    /** 기다리는 가입 신청 수. 크루장에게만 값이 있다. */
+    val pendingCount: Int = 0,
 )
+
+/** 크루장이 보는 가입 신청 */
+data class CrewJoinRequest(
+    val userId: String,
+    val name: String,
+    val requestedAt: String,
+)
+
+/** 크루 목록을 서버에서 가져온 상태 */
+sealed interface CrewSyncState {
+    data object Idle : CrewSyncState
+    data object Loading : CrewSyncState
+    data object Ready : CrewSyncState
+
+    /** 로그인하지 않았다. 크루는 계정이 있어야 보인다. */
+    data object SignInRequired : CrewSyncState
+
+    /** 서버에 닿지 못했거나 거절당했다. 다시 시도하면 될 수 있다. */
+    data class Failed(val reason: String) : CrewSyncState
+}
+
+/** 크루에 무언가를 했을 때의 결말 */
+sealed interface CrewActionResult {
+    data object Joined : CrewActionResult
+    data object Requested : CrewActionResult
+    data class Created(val crewId: String) : CrewActionResult
+    data object Done : CrewActionResult
+
+    /** @param signIn 로그인해야 할 수 있는 일이었다 */
+    data class Failed(val reason: String, val signIn: Boolean = false) : CrewActionResult
+}
 
 data class PartyMember(
     val id: String,
@@ -97,133 +151,171 @@ data class PartyState(
 /**
  * 크루 목록·가입 상태와 파티런 로비를 관리한다.
  *
- * 크루는 Room에 저장되며 기본 4개는 첫 실행 시 시드된다. 사용자가 만든 모임도
- * 같은 표에 들어가 목록·게시판·파티런을 그대로 쓴다.
+ * 크루는 서버(Supabase)에만 있다. 예전에는 폰 안에 가짜 크루 네 개를 심어
+ * 두었는데, 그러면 내가 만든 크루를 친구가 볼 수 없어 초대도 가입도 성립하지
+ * 않는다. 목록은 서버에서 받아 메모리에 들고 있고, 가입·탈퇴·만들기는 서버
+ * 함수를 부른 뒤 목록을 다시 받는다.
  *
- * 백엔드가 없으므로 크루원은 시뮬레이션한다. 내가 준비를 누르면 남은 크루원들이
- * 차례로 준비를 마치고, 전원 준비되면 카운트다운 후 다 같이 측정이 시작된다.
- * 인원수만큼 적립 부스트가 붙는다(RewardEconomy.partyMultiplier).
+ * 파티런 로비는 아직 서버에 붙지 않았다. 크루원의 준비·거리는 시뮬레이션이고,
+ * 실시간 연결은 다음 단계에서 붙인다.
  */
 class CrewRepository(
+    private val api: CrewApi,
     private val crewDao: CrewDao,
     private val crewInfoDao: CrewInfoDao,
     private val walkSessionDao: WalkSessionDao,
     private val rewardRepository: RewardRepository,
-    private val appContext: Context,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var simulationJob: Job? = null
 
-    val crews: StateFlow<List<Crew>> = crewInfoDao.observeAll()
-        .map { list -> list.map { it.toDomain() } }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+    private val _crews = MutableStateFlow<List<Crew>>(emptyList())
+    val crews: StateFlow<List<Crew>> = _crews
 
-    val joinedCrewIds: Flow<Set<String>> =
-        crewDao.observeAll().map { list -> list.map { it.crewId }.toSet() }
+    val joinedCrewIds: StateFlow<Set<String>> = _crews
+        .map { list -> list.filter { it.joined }.map { it.id }.toSet() }
+        .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    private val _sync = MutableStateFlow<CrewSyncState>(CrewSyncState.Idle)
+    val sync: StateFlow<CrewSyncState> = _sync
+
+    private val refreshLock = Mutex()
 
     fun crewOf(id: String): Crew? = crews.value.firstOrNull { it.id == id }
 
-    /** 기본 크루 시드. 이미 있으면 아무것도 하지 않는다. */
-    suspend fun ensureSeeded() {
-        if (crewInfoDao.count() > 0) return
-        val now = System.currentTimeMillis()
-        crewInfoDao.upsertAll(
-            listOf(
-                CrewEntity(
-                    id = "trailblazer",
-                    name = "Trailblazer Crew",
-                    monogram = "TB",
-                    tagline = appContext.getString(R.string.seed_crew_trailblazer_tagline),
-                    area = "Riverside",
-                    kmAway = 0.8,
-                    memberCount = 128,
-                    roster = "Maya C.|Jun H.|Elena R.|Marco P.",
-                    createdAt = now,
-                    owned = false,
-                ),
-                CrewEntity(
-                    id = "night_runners",
-                    name = "Night Runners",
-                    monogram = "NR",
-                    tagline = appContext.getString(R.string.seed_crew_night_tagline),
-                    area = "Downtown",
-                    kmAway = 1.3,
-                    memberCount = 86,
-                    roster = "Sora K.|Diego M.|Lena B.",
-                    createdAt = now,
-                    owned = false,
-                ),
-                CrewEntity(
-                    id = "summit",
-                    name = "Summit Seekers",
-                    monogram = "SS",
-                    tagline = appContext.getString(R.string.seed_crew_summit_tagline),
-                    area = "Highland",
-                    kmAway = 2.1,
-                    memberCount = 142,
-                    roster = "Aiko T.|Tomas L.|Priya N.|Owen D.|Zara F.",
-                    createdAt = now,
-                    owned = false,
-                ),
-                CrewEntity(
-                    id = "new_striders",
-                    name = "New Striders",
-                    monogram = "NS",
-                    tagline = appContext.getString(R.string.seed_crew_striders_tagline),
-                    area = "Cedar Park",
-                    kmAway = 0.5,
-                    memberCount = 42,
-                    roster = "Kai W.|Nora S.",
-                    createdAt = now,
-                    owned = false,
-                ),
-            )
-        )
+    /**
+     * 예전 버전이 폰 안에 만들어 둔 크루와 가입 기록을 지운다.
+     *
+     * 크루는 이제 서버에만 있다. 폰에 남은 것은 시드로 넣은 가짜 크루이거나
+     * 나 혼자만 보던 크루라, 남겨 두면 실제 크루와 섞여 헷갈린다.
+     */
+    suspend fun clearLegacy() {
+        crewInfoDao.clear()
+        crewDao.clear()
     }
 
-    suspend fun join(crewId: String) {
-        crewDao.insert(CrewMembershipEntity(crewId, System.currentTimeMillis()))
-        crewOf(crewId)?.let {
-            // 크루 id 를 함께 담는다. 알림을 눌렀을 때 그 크루로 갈 수 있어야 한다.
+    /** 서버에서 크루 목록을 다시 받는다. 동시에 여러 번 불려도 한 번씩 차례로 한다. */
+    suspend fun refresh(): CrewSyncState = refreshLock.withLock {
+        if (_crews.value.isEmpty()) _sync.value = CrewSyncState.Loading
+        val next = when (val result = api.crews()) {
+            is ServerResult.Ok -> {
+                val list = result.value.map { it.toDomain() }
+                announceApprovals(list)
+                _crews.value = list
+                CrewSyncState.Ready
+            }
+            is ServerResult.SignInRequired -> CrewSyncState.SignInRequired
+            is ServerResult.Rejected -> CrewSyncState.Failed(result.reason)
+            is ServerResult.Retry -> CrewSyncState.Failed(result.reason)
+        }
+        _sync.value = next
+        next
+    }
+
+    /**
+     * 기다리던 가입 신청이 승인됐으면 알림을 남긴다.
+     *
+     * 아직 푸시가 없어서 크루장이 승인해도 신청한 사람은 모른다. 목록을 다시
+     * 받았을 때 "신청함"이던 크루가 "가입함"이 되어 있으면 그게 승인이다.
+     */
+    private suspend fun announceApprovals(next: List<Crew>) {
+        val waiting = _crews.value.filter { it.requested }.map { it.id }.toSet()
+        if (waiting.isEmpty()) return
+        next.filter { it.joined && it.id in waiting }.forEach {
             rewardRepository.notify(NotificationType.CREW_JOINED, it.name, argExtra = it.id)
         }
     }
 
-    suspend fun leave(crewId: String) {
-        crewDao.leave(crewId)
+    /**
+     * 가입. 자유 가입 크루는 바로 들어가고([CrewActionResult.Joined]),
+     * 승인제 크루는 신청만 남는다([CrewActionResult.Requested]).
+     */
+    suspend fun join(crewId: String): CrewActionResult {
+        val outcome = when (val result = api.join(crewId)) {
+            is ServerResult.Ok ->
+                if (result.value == "REQUESTED") CrewActionResult.Requested else CrewActionResult.Joined
+            else -> result.asFailure()
+        }
+        refresh()
+        if (outcome == CrewActionResult.Joined) {
+            crewOf(crewId)?.let {
+                // 크루 id 를 함께 담는다. 알림을 눌렀을 때 그 크루로 갈 수 있어야 한다.
+                rewardRepository.notify(NotificationType.CREW_JOINED, it.name, argExtra = it.id)
+            }
+        }
+        return outcome
     }
 
-    /**
-     * 모임 만들기. 만든 사람은 곧바로 가입 상태가 된다.
-     *
-     * 새 모임에는 파티런을 바로 체험할 수 있도록 초대 멤버 몇 명을 넣어 둔다.
-     */
-    suspend fun create(name: String, tagline: String, area: String): String {
-        val trimmed = name.trim().ifBlank { return "" }
-        val id = "crew_${System.currentTimeMillis()}"
+    /** 탈퇴, 또는 기다리던 가입 신청 취소. 서버 함수 하나가 둘 다 한다. */
+    suspend fun leave(crewId: String): CrewActionResult {
+        val outcome = when (val result = api.leave(crewId)) {
+            is ServerResult.Ok -> CrewActionResult.Done
+            else -> result.asFailure()
+        }
+        refresh()
+        return outcome
+    }
+
+    /** 크루 만들기. 만든 사람은 서버가 주인 멤버로 넣는다. */
+    suspend fun create(
+        name: String,
+        tagline: String,
+        area: String,
+        joinPolicy: CrewJoinPolicy,
+    ): CrewActionResult {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return CrewActionResult.Failed("")
         val monogram = trimmed.split(" ", "-", "_")
             .filter { it.isNotBlank() }
             .take(2)
             .map { it.first().uppercaseChar() }
             .joinToString("")
             .ifBlank { trimmed.take(2).uppercase() }
-        crewInfoDao.upsert(
-            CrewEntity(
-                id = id,
-                name = trimmed,
-                monogram = monogram,
-                tagline = tagline.trim(),
-                area = area.trim(),
-                kmAway = 0.0,
-                memberCount = 4,
-                roster = "Riley P.|Sena K.|Théo M.",
-                createdAt = System.currentTimeMillis(),
-                owned = true,
-            )
-        )
-        join(id)
-        return id
+        val outcome = when (
+            val result = api.create(trimmed, monogram, tagline.trim(), area.trim(), joinPolicy.name)
+        ) {
+            is ServerResult.Ok -> CrewActionResult.Created(result.value)
+            else -> result.asFailure()
+        }
+        refresh()
+        return outcome
+    }
+
+    /** 크루장 — 가입 방식 바꾸기. 자유 가입으로 열면 기다리던 신청은 모두 받아 준다. */
+    suspend fun setJoinPolicy(crewId: String, joinPolicy: CrewJoinPolicy): CrewActionResult {
+        val outcome = when (val result = api.setJoinPolicy(crewId, joinPolicy.name)) {
+            is ServerResult.Ok -> CrewActionResult.Done
+            else -> result.asFailure()
+        }
+        refresh()
+        return outcome
+    }
+
+    /** 크루장 — 기다리는 가입 신청 목록 */
+    suspend fun requests(crewId: String): ServerResult<List<CrewJoinRequest>> =
+        when (val result = api.requests(crewId)) {
+            is ServerResult.Ok -> ServerResult.Ok(result.value.map { it.toDomain() })
+            is ServerResult.Rejected -> result
+            is ServerResult.Retry -> result
+            is ServerResult.SignInRequired -> result
+        }
+
+    /** 크루장 — 가입 신청 승인·거절 */
+    suspend fun decide(crewId: String, userId: String, approve: Boolean): CrewActionResult {
+        val outcome = when (val result = api.decide(crewId, userId, approve)) {
+            is ServerResult.Ok -> CrewActionResult.Done
+            else -> result.asFailure()
+        }
+        refresh()
+        return outcome
+    }
+
+    /** 화면 검사용 — 서버 없이 크루 목록을 채운다. */
+    @VisibleForTesting
+    fun showForTest(list: List<Crew>) {
+        _crews.value = list
+        _sync.value = CrewSyncState.Ready
     }
 
     // ── 파티런 로비 ──────────────────────────────────────────
@@ -506,15 +598,16 @@ class CrewRepository(
      * 빼 버리면 "우리 크루가 순위에 없다"가 되고, 사용자는 기능이 고장 난
      * 줄 안다. 0 km 는 고장이 아니라 아직 안 달렸다는 뜻이다.
      *
+     * 거리는 아직 이 폰에서 달린 크루 러닝만 센다. 크루원 전체의 거리를 모으는
+     * 일은 파티런을 서버에 붙일 때 함께 한다.
+     *
      * @param since 이 시각 이후에 시작한 러닝만 센다. 전체기간이면 0.
      */
     suspend fun ranking(since: Long): List<CrewRank> {
         val totals = walkSessionDao.crewDistances(since).associateBy { it.crewId }
-        val joined = joinedCrewIds.first()
-        // crews 대신 표를 직접 읽는다. 화면이 열리자마자 순위를 물으면
-        // StateFlow 가 아직 첫 값을 못 받아 빈 목록일 수 있다.
-        return crewInfoDao.observeAll().first()
-            .map { it.toDomain() }
+        // 화면이 열리자마자 순위를 물으면 목록을 아직 못 받았을 수 있다.
+        if (_crews.value.isEmpty()) refresh()
+        return _crews.value
             .map { crew ->
                 val total = totals[crew.id]
                 CrewRank(
@@ -525,7 +618,7 @@ class CrewRepository(
                     monogram = crew.monogram,
                     km = (total?.meters ?: 0.0) / 1000.0,
                     runs = total?.runs ?: 0,
-                    joined = crew.id in joined,
+                    joined = crew.joined,
                 )
             }
             // 같은 거리면 이름순. 순서가 매번 흔들리면 순위표를 믿지 않게 된다.
@@ -542,15 +635,28 @@ class CrewRepository(
     }
 }
 
-/** Room 엔티티 → 도메인 모델 */
-fun CrewEntity.toDomain(): Crew = Crew(
+/** 서버 줄 → 도메인 모델 */
+fun CrewRow.toDomain(): Crew = Crew(
     id = id,
-    monogram = monogram,
+    monogram = monogram.ifBlank { name.take(2).uppercase() },
     name = name,
     tagline = tagline,
     area = area,
-    kmAway = kmAway,
     memberCount = memberCount,
-    roster = roster.split("|").filter { it.isNotBlank() },
+    roster = roster,
     owned = owned,
+    joinPolicy = CrewJoinPolicy.of(joinPolicy),
+    joined = joined,
+    requested = requested,
+    pendingCount = pendingCount,
 )
+
+private fun CrewRequestRow.toDomain() = CrewJoinRequest(userId, name, requestedAt)
+
+/** 서버가 받아 주지 않은 결말을 화면이 쓰는 실패로 */
+private fun ServerResult<*>.asFailure(): CrewActionResult.Failed = when (this) {
+    is ServerResult.SignInRequired -> CrewActionResult.Failed(reason, signIn = true)
+    is ServerResult.Rejected -> CrewActionResult.Failed(reason)
+    is ServerResult.Retry -> CrewActionResult.Failed(reason)
+    is ServerResult.Ok -> CrewActionResult.Failed("")
+}

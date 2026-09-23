@@ -525,6 +525,32 @@
     <string name="crew_area_here">近く</string>
     <string name="crew_board">掲示板</string>
     <string name="crew_board_empty">クルーの投稿はまだありません。話しかけてみましょう。</string>
+    <string name="crew_policy_title">参加方法</string>
+    <string name="crew_policy_open">自由参加</string>
+    <string name="crew_policy_approval">承認制</string>
+    <string name="crew_policy_open_desc">誰でもすぐに参加できます</string>
+    <string name="crew_policy_approval_desc">クルーリーダーの承認で参加できます</string>
+    <string name="crew_apply">参加を申請</string>
+    <string name="crew_cancel_request">申請を取り消す</string>
+    <string name="crew_waiting_approval">承認待ち</string>
+    <string name="crew_manage_title">クルー管理</string>
+    <string name="crew_requests_title">参加申請</string>
+    <string name="crew_requests_empty">保留中の申請はありません</string>
+    <string name="crew_approve">承認</string>
+    <string name="crew_reject">拒否</string>
+    <string name="crew_pending_badge">申請 %1$d</string>
+    <string name="crew_notice_joined">クルーに参加しました</string>
+    <string name="crew_notice_requested">参加申請を送りました。承認されると参加できます。</string>
+    <string name="crew_notice_cancelled">申請を取り消しました</string>
+    <string name="crew_notice_left">クルーを退出しました</string>
+    <string name="crew_notice_saved">保存しました</string>
+    <string name="crew_notice_approved">承認しました</string>
+    <string name="crew_notice_rejected">拒否しました</string>
+    <string name="crew_notice_failed">サーバーに接続できませんでした。もう一度お試しください。</string>
+    <string name="crew_sign_in_needed">ログインするとクルーを見て参加できます</string>
+    <string name="crew_loading">クルーを読み込み中…</string>
+    <string name="crew_load_failed">クルーを読み込めませんでした</string>
+    <string name="crew_retry">再試行</string>
 
     <!-- Ranking -->
     <string name="rank_me">あなた</string>
@@ -563,10 +589,6 @@
     <string name="run_top_speed">最高速度</string>
 
     <!-- Seed crews -->
-    <string name="seed_crew_trailblazer_tagline">週末はトレイルコース</string>
-    <string name="seed_crew_night_tagline">日が暮れてから街を一周</string>
-    <string name="seed_crew_summit_tagline">坂とインターバル、言い訳なし</string>
-    <string name="seed_crew_striders_tagline">初心者歓迎、歩いてもOK</string>
 
     <!-- Seed posts -->
     <string name="seed_flash1_title">河沿いのナイト 5K、一緒にどうですか</string>

@@ -10,8 +10,13 @@ import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.CommunityRepository
+import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.repo.Crew
+import com.stepup.android.data.repo.CrewActionResult
+import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.data.repo.CrewJoinRequest
 import com.stepup.android.data.repo.CrewRepository
+import com.stepup.android.data.repo.CrewSyncState
 import com.stepup.android.data.repo.FactionRankingState
 import com.stepup.android.data.repo.RankingRepository
 import com.stepup.android.data.repo.RankingState
@@ -31,6 +36,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** 크루에 무언가를 한 뒤 화면에 잠깐 띄울 말 */
+enum class CrewNotice { JOINED, REQUESTED, CANCELLED, LEFT, SAVED, APPROVED, REJECTED, FAILED, SIGN_IN }
+
+/** 크루장이 보는 가입 신청 목록의 상태 */
+sealed interface CrewRequestsState {
+    data object Loading : CrewRequestsState
+    data class Ready(val requests: List<CrewJoinRequest>) : CrewRequestsState
+    data object Failed : CrewRequestsState
+}
 
 /** 커뮤니티 최상단 세그먼트 */
 enum class CommunityTab { BOARD, CREW }
@@ -62,9 +77,25 @@ class CommunityViewModel(
         // 갱신할 때가 지났으면 이번 주 핫글을 다시 뽑는다. 때가 아니면
         // 아무 일도 하지 않으므로 화면이 열릴 때마다 불러도 된다.
         viewModelScope.launch { communityRepository.refreshHotIfDue() }
+        // 크루는 서버에만 있다. 화면을 열 때마다 새로 받아야 남이 만든 크루와
+        // 크루장이 승인해 준 가입이 보인다.
+        refreshCrews()
     }
 
     val crews: StateFlow<List<Crew>> = crewRepository.crews
+
+    /** 크루 목록을 서버에서 받아 온 상태 — 비어 있을 때 이유를 보여 주는 데 쓴다 */
+    val crewSync: StateFlow<CrewSyncState> = crewRepository.sync
+
+    private val _crewNotice = MutableStateFlow<CrewNotice?>(null)
+
+    /** 크루 가입·탈퇴 등의 결과. 화면이 보여 준 뒤 [consumeCrewNotice] 로 비운다. */
+    val crewNotice: StateFlow<CrewNotice?> = _crewNotice
+
+    private val _crewRequests = MutableStateFlow<Map<String, CrewRequestsState>>(emptyMap())
+
+    /** 크루장이 보는 가입 신청 — 크루별 */
+    val crewRequests: StateFlow<Map<String, CrewRequestsState>> = _crewRequests
 
     val joinedCrewIds: StateFlow<Set<String>> = crewRepository.joinedCrewIds
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
@@ -251,12 +282,76 @@ class CommunityViewModel(
         tab.value = next
     }
 
+    fun refreshCrews() {
+        viewModelScope.launch { crewRepository.refresh() }
+    }
+
+    fun consumeCrewNotice() {
+        _crewNotice.value = null
+    }
+
+    /**
+     * 크루 버튼 하나 — 멤버면 탈퇴, 신청 중이면 신청 취소, 아니면 가입(또는 신청).
+     *
+     * 크루장은 여기로 오지 않는다. 크루장이 나가면 주인 없는 크루가 남으므로
+     * 화면이 탈퇴 버튼을 보여 주지 않고, 서버도 막는다.
+     */
     fun toggleJoin(crewId: String) {
+        val crew = crewRepository.crewOf(crewId)
         viewModelScope.launch {
-            if (joinedCrewIds.value.contains(crewId)) {
-                crewRepository.leave(crewId)
-            } else {
-                crewRepository.join(crewId)
+            val result = when {
+                crew?.joined == true -> crewRepository.leave(crewId)
+                crew?.requested == true -> crewRepository.leave(crewId)
+                else -> crewRepository.join(crewId)
+            }
+            val success = when {
+                crew?.joined == true -> CrewNotice.LEFT
+                crew?.requested == true -> CrewNotice.CANCELLED
+                result == CrewActionResult.Requested -> CrewNotice.REQUESTED
+                else -> CrewNotice.JOINED
+            }
+            report(result, success)
+        }
+    }
+
+    /** 크루장 — 가입 방식 바꾸기 */
+    fun setJoinPolicy(crewId: String, policy: CrewJoinPolicy) {
+        viewModelScope.launch {
+            report(crewRepository.setJoinPolicy(crewId, policy), CrewNotice.SAVED)
+            // 자유 가입으로 열면 기다리던 신청이 모두 받아들여진다. 목록도 따라가야 한다.
+            loadCrewRequests(crewId)
+        }
+    }
+
+    /** 크루장 — 가입 신청 목록을 다시 받는다 */
+    fun loadCrewRequests(crewId: String) {
+        viewModelScope.launch {
+            if (_crewRequests.value[crewId] !is CrewRequestsState.Ready) {
+                _crewRequests.value = _crewRequests.value + (crewId to CrewRequestsState.Loading)
+            }
+            val next = when (val result = crewRepository.requests(crewId)) {
+                is ServerResult.Ok -> CrewRequestsState.Ready(result.value)
+                else -> CrewRequestsState.Failed
+            }
+            _crewRequests.value = _crewRequests.value + (crewId to next)
+        }
+    }
+
+    /** 크루장 — 가입 신청 승인·거절 */
+    fun decideCrewRequest(crewId: String, userId: String, approve: Boolean) {
+        viewModelScope.launch {
+            val result = crewRepository.decide(crewId, userId, approve)
+            report(result, if (approve) CrewNotice.APPROVED else CrewNotice.REJECTED)
+            loadCrewRequests(crewId)
+        }
+    }
+
+    private fun report(result: CrewActionResult, success: CrewNotice) {
+        _crewNotice.value = when (result) {
+            is CrewActionResult.Failed -> if (result.signIn) CrewNotice.SIGN_IN else CrewNotice.FAILED
+            else -> {
+                ExperienceEvents.emit(FeedbackCue.Success)
+                success
             }
         }
     }
@@ -299,10 +394,23 @@ class CommunityViewModel(
         }
     }
 
-    fun createCrew(name: String, tagline: String, area: String, onCreated: (String) -> Unit) {
+    fun createCrew(
+        name: String,
+        tagline: String,
+        area: String,
+        policy: CrewJoinPolicy,
+        onCreated: (String) -> Unit,
+    ) {
         viewModelScope.launch {
-            val id = crewRepository.create(name, tagline, area)
-            if (id.isNotEmpty()) { ExperienceEvents.emit(FeedbackCue.Success); onCreated(id) }
+            when (val result = crewRepository.create(name, tagline, area, policy)) {
+                is CrewActionResult.Created -> {
+                    ExperienceEvents.emit(FeedbackCue.Success)
+                    onCreated(result.crewId)
+                }
+                is CrewActionResult.Failed ->
+                    _crewNotice.value = if (result.signIn) CrewNotice.SIGN_IN else CrewNotice.FAILED
+                else -> Unit
+            }
         }
     }
 

@@ -56,8 +56,8 @@ class NotificationRepository(
     }
 
     /**
-     * 첫 실행 웰컴 알림 — 액션형 알림을 바로 체험할 수 있게
-     * 크루 초대 · 파티런 초대 · 이벤트 보상을 하나씩 넣어 둔다.
+     * 첫 실행 웰컴 알림 — 액션형 알림을 바로 체험할 수 있게 이벤트 보상을
+     * 하나 넣어 둔다. 크루·파티런 초대는 실제 크루에서만 온다.
      */
     suspend fun seedWelcome() {
         if (dao.count() > 0) return
@@ -73,27 +73,17 @@ class NotificationRepository(
                 actioned = false,
             )
         )
-        dao.insert(
-            NotificationEntity(
-                timestamp = now - 25_000,
-                type = NotificationType.CREW_INVITE,
-                argText = "Night Runners",
-                argAmount = 0.0,
-                argExtra = "night_runners",
-                read = false,
-                actioned = false,
-            )
-        )
-        dao.insert(
-            NotificationEntity(
-                timestamp = now - 10_000,
-                type = NotificationType.PARTY_INVITE,
-                argText = "Trailblazer Crew",
-                argAmount = 0.0,
-                argExtra = "trailblazer",
-                read = false,
-                actioned = false,
-            )
-        )
+    }
+
+    /**
+     * 예전 첫 실행 알림에 들어 있던 크루·파티런 초대를 지운다.
+     *
+     * 그 초대는 폰 안에 심어 둔 가짜 크루로 가는 것이었다. 크루가 서버로
+     * 옮겨 가면서 그 크루들은 없어졌고, 수락해도 갈 곳이 없다.
+     */
+    suspend fun purgeLegacyInvites() = dao.deleteInvitesTo(LEGACY_CREW_IDS)
+
+    private companion object {
+        val LEGACY_CREW_IDS = listOf("trailblazer", "night_runners", "summit", "new_striders")
     }
 }

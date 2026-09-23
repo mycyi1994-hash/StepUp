@@ -1237,6 +1237,212 @@ call pg_temp.must_fail(
 
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 가입 방식 · 가입 신청 ───────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+
+do $$
+declare v_crew uuid;
+begin
+  v_crew := public.crew_create('새벽 6시 크루', 'D6', '출근 전 5km', '서울 성수', 'APPROVAL');
+  insert into fix (k, v) values ('crew_appr', v_crew::text);
+
+  perform pg_temp.ok(
+    (select owned and joined and join_policy = 'APPROVAL' from public.crew_feed where id = v_crew),
+    '승인제 크루를 만들면 만든 사람이 주인으로 들어가 있다');
+  perform pg_temp.ok(
+    (select roster[1] from public.crew_feed where id = v_crew) = 'Ara Kim',
+    '크루 명단은 크루장이 맨 앞이다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.crew_create('이상한 크루', 'X', '', '', 'SOMETIMES') $q$,
+  '없는 가입 방식으로는 크루를 못 만든다');
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+do $$
+declare v_crew uuid := pg_temp.fx('crew_appr')::uuid;
+begin
+  perform pg_temp.ok(public.crew_join(v_crew) = 'REQUESTED', '승인제 크루에 가입하면 신청이 된다');
+  perform pg_temp.ok(
+    (select requested and not joined and pending_count = 0 from public.crew_feed where id = v_crew),
+    '신청한 사람에게는 "신청함"으로 보이고, 기다리는 수는 보이지 않는다');
+  perform pg_temp.ok(public.crew_join(v_crew) = 'REQUESTED', '신청을 두 번 눌러도 한 건이다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ insert into public.crew_members (crew_id, user_id)
+             values ('%s', '22222222-2222-2222-2222-222222222222') $q$,
+         pg_temp.fx('crew_appr')),
+  '승인제 크루에는 표를 직접 두드려 들어갈 수 없다');
+
+call pg_temp.must_fail(
+  format($q$ select * from public.crew_requests('%s') $q$, pg_temp.fx('crew_appr')),
+  '크루장이 아니면 신청 목록을 못 본다');
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_decide('%s', '22222222-2222-2222-2222-222222222222', true) $q$,
+         pg_temp.fx('crew_appr')),
+  '크루장이 아니면 스스로를 승인할 수 없다');
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_set_join_policy('%s', 'OPEN') $q$, pg_temp.fx('crew_appr')),
+  '크루장이 아니면 가입 방식을 못 바꾼다');
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+
+do $$
+declare v_crew uuid := pg_temp.fx('crew_appr')::uuid;
+begin
+  perform pg_temp.ok(
+    (select pending_count from public.crew_feed where id = v_crew) = 1,
+    '크루장에게는 기다리는 신청 수가 보인다');
+  perform pg_temp.ok(
+    (select name from public.crew_requests(v_crew)) = 'Bo Lee',
+    '크루장은 누가 신청했는지 본다');
+  perform public.crew_decide(v_crew, '22222222-2222-2222-2222-222222222222', true);
+  perform pg_temp.ok(
+    (select member_count from public.crew_feed where id = v_crew) = 2
+      and (select pending_count from public.crew_feed where id = v_crew) = 0,
+    '승인하면 멤버가 되고 신청은 사라진다');
+end $$;
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+begin
+  perform pg_temp.ok(
+    public.crew_join(pg_temp.fx('crew_appr')::uuid) = 'REQUESTED', '다른 사람도 신청한다');
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_crew uuid := pg_temp.fx('crew_appr')::uuid;
+begin
+  perform public.crew_decide(v_crew, '33333333-3333-3333-3333-333333333333', false);
+  perform pg_temp.ok(
+    (select member_count from public.crew_feed where id = v_crew) = 2
+      and (select pending_count from public.crew_feed where id = v_crew) = 0,
+    '거절하면 멤버가 되지 않고 신청만 사라진다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_decide('%s', '33333333-3333-3333-3333-333333333333', true) $q$,
+         pg_temp.fx('crew_appr')),
+  '없는 신청은 승인할 수 없다');
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+begin
+  perform public.crew_join(pg_temp.fx('crew_appr')::uuid);
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_crew uuid := pg_temp.fx('crew_appr')::uuid;
+begin
+  perform pg_temp.ok(
+    public.crew_set_join_policy(v_crew, 'OPEN') = 1,
+    '자유 가입으로 열면 기다리던 신청을 모두 받아 준다');
+  perform pg_temp.ok(
+    (select member_count from public.crew_feed where id = v_crew) = 3
+      and (select join_policy from public.crew_feed where id = v_crew) = 'OPEN',
+    '받아 준 사람이 멤버로 세어진다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_leave('%s') $q$, pg_temp.fx('crew_appr')),
+  '크루장은 크루를 나갈 수 없다');
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_crew uuid := pg_temp.fx('crew_appr')::uuid;
+begin
+  perform public.crew_leave(v_crew);
+  perform pg_temp.ok(
+    not (select joined from public.crew_feed where id = v_crew),
+    '멤버는 크루를 나갈 수 있다');
+  perform pg_temp.ok(public.crew_join(v_crew) = 'JOINED', '자유 가입 크루는 누르면 바로 들어간다');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 신고 5건이면 숨김 ────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email) values
+  ('44444444-4444-4444-4444-444444444444', 'd@test'),
+  ('55555555-5555-5555-5555-555555555555', 'e@test');
+set role authenticated;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_post bigint;
+begin
+  insert into public.posts (author_id, category, title, body)
+  values ('11111111-1111-1111-1111-111111111111', 'FREE', '신고받을 글', '...')
+  returning id into v_post;
+  insert into fix (k, v) values ('post_reported', v_post::text);
+end $$;
+
+-- 네 사람이 신고한다. 아직 보인다.
+do $$
+declare
+  v_post text := pg_temp.fx('post_reported');
+  v_user text;
+begin
+  foreach v_user in array array[
+    '22222222-2222-2222-2222-222222222222',
+    '33333333-3333-3333-3333-333333333333',
+    '44444444-4444-4444-4444-444444444444',
+    '55555555-5555-5555-5555-555555555555']
+  loop
+    perform set_config('request.jwt.claim.sub', v_user, false);
+    insert into public.content_reports (reporter_id, target_type, target_id, reason)
+    values (v_user::uuid, 'POST', v_post, 'SPAM');
+  end loop;
+  perform pg_temp.ok(
+    (select count(*) from public.post_feed where id = v_post::bigint) = 1,
+    '신고 4건까지는 그대로 보인다');
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+call pg_temp.must_fail(
+  format($q$ insert into public.content_reports (reporter_id, target_type, target_id, reason)
+             values ('22222222-2222-2222-2222-222222222222', 'POST', '%s', 'SPAM') $q$,
+         pg_temp.fx('post_reported')),
+  '남의 이름으로 신고할 수 없다');
+
+do $$
+begin
+  insert into public.content_reports (reporter_id, target_type, target_id, reason)
+  values ('11111111-1111-1111-1111-111111111111', 'POST', pg_temp.fx('post_reported'), 'OTHER');
+  perform pg_temp.ok(
+    (select count(*) from public.post_feed where id = pg_temp.fx('post_reported')::bigint) = 0,
+    '신고가 5건이 되면 글이 사라진다');
+end $$;
+
+reset role;
+update public.content_reports set status = 'DISMISSED'
+ where target_type = 'POST' and target_id = pg_temp.fx('post_reported')
+   and reporter_id = '55555555-5555-5555-5555-555555555555';
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.post_feed where id = pg_temp.fx('post_reported')::bigint) = 1,
+    '운영자가 신고를 기각해 5건 아래로 내려가면 다시 보인다');
+end $$;
+
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

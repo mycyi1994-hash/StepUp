@@ -524,6 +524,32 @@
     <string name="crew_area_here">우리 동네</string>
     <string name="crew_board">게시판</string>
     <string name="crew_board_empty">아직 크루 글이 없어요. 먼저 말을 걸어보세요.</string>
+    <string name="crew_policy_title">가입 방식</string>
+    <string name="crew_policy_open">자유 가입</string>
+    <string name="crew_policy_approval">승인제</string>
+    <string name="crew_policy_open_desc">누구나 바로 가입할 수 있어요</string>
+    <string name="crew_policy_approval_desc">크루장이 승인해야 가입돼요</string>
+    <string name="crew_apply">가입 신청</string>
+    <string name="crew_cancel_request">신청 취소</string>
+    <string name="crew_waiting_approval">승인 대기 중</string>
+    <string name="crew_manage_title">크루 관리</string>
+    <string name="crew_requests_title">가입 신청</string>
+    <string name="crew_requests_empty">기다리는 신청이 없어요</string>
+    <string name="crew_approve">승인</string>
+    <string name="crew_reject">거절</string>
+    <string name="crew_pending_badge">신청 %1$d</string>
+    <string name="crew_notice_joined">크루에 가입했어요</string>
+    <string name="crew_notice_requested">가입 신청을 보냈어요. 크루장이 승인하면 가입돼요.</string>
+    <string name="crew_notice_cancelled">가입 신청을 취소했어요</string>
+    <string name="crew_notice_left">크루에서 나왔어요</string>
+    <string name="crew_notice_saved">저장했어요</string>
+    <string name="crew_notice_approved">승인했어요</string>
+    <string name="crew_notice_rejected">거절했어요</string>
+    <string name="crew_notice_failed">서버에 연결하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="crew_sign_in_needed">로그인하면 크루를 보고 가입할 수 있어요</string>
+    <string name="crew_loading">크루를 불러오는 중…</string>
+    <string name="crew_load_failed">크루를 불러오지 못했어요</string>
+    <string name="crew_retry">다시 시도</string>
 
     <!-- Ranking -->
     <string name="rank_me">나</string>
@@ -562,10 +588,6 @@
     <string name="run_top_speed">최고 속도</string>
 
     <!-- Seed crews -->
-    <string name="seed_crew_trailblazer_tagline">주말마다 트레일 코스</string>
-    <string name="seed_crew_night_tagline">해 지고 나서 도심 한 바퀴</string>
-    <string name="seed_crew_summit_tagline">언덕과 인터벌, 핑계는 없기</string>
-    <string name="seed_crew_striders_tagline">초보 환영, 걸어도 괜찮아요</string>
 
     <!-- Seed posts -->
     <string name="seed_flash1_title">한강 야간 5K 같이 뛰실 분</string>

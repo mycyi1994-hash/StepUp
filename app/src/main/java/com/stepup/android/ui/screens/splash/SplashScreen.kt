@@ -99,7 +99,8 @@ fun SplashScreen(onReady: () -> Unit) {
 
         progress = 0.50f
         withTimeoutOrNull(3_000) {
-            ServiceLocator.crewRepository.ensureSeeded()
+            ServiceLocator.crewRepository.clearLegacy()
+            ServiceLocator.notificationRepository.purgeLegacyInvites()
             ServiceLocator.communityRepository.ensureSeeded()
             ServiceLocator.courseRepository.ensureSeeded()
             ServiceLocator.notificationRepository.seedWelcome()
