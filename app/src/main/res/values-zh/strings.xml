@@ -407,9 +407,10 @@
     <string name="connected_giwa">GIWA 钱包</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">社交账号</string>
-    <string name="connected_status_soon">即将上线</string>
+    <string name="connected_status_soon">暂不支持</string>
+    <string name="connected_status_on">已登录</string>
     <string name="connected_status_off">未连接</string>
-    <string name="connected_body">绑定账号后，就能把 SUP 带上链，还能在多台设备之间同步步数。</string>
+    <string name="connected_body">查看登录状态及当前版本支持的外部服务。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 余额</string>

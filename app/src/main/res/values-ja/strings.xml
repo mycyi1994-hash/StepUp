@@ -408,9 +408,10 @@
     <string name="connected_giwa">GIWA ウォレット</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">ソーシャルアカウント</string>
-    <string name="connected_status_soon">近日公開</string>
+    <string name="connected_status_soon">未対応</string>
+    <string name="connected_status_on">ログイン中</string>
     <string name="connected_status_off">未連携</string>
-    <string name="connected_body">アカウントを連携すると、SUPをオンチェーンに持ち出したり、複数の端末で歩数を同期できるようになります。</string>
+    <string name="connected_body">ログイン状態と、このバージョンで対応している外部サービスを確認できます。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 残高</string>

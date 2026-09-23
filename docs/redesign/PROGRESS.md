@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — connected accounts
+
+- Replaced screen-local back/title chrome with the shared detail header and scrollable content. Account names/statuses stack to preserve space at larger fonts; status copy is 14sp.
+- Login account status now reflects the locally stored session, with an em dash while checking; it no longer always says disconnected. This is not an online token-validity check. GIWA/Health Connect are explicitly unsupported in this build rather than suggesting an active integration or imminent release.
+- Account deletion keeps the explicit user confirmation; unexpected exceptions now restore retry availability instead of leaving the dialog permanently busy. No real account deletion was executed. Server deletion/local-data cleanup still require a dedicated authenticated validation.
+- Source contract and four-language checks passed; native visual/state validation pending.
+
 ## 2026-09-24 — wallet truthfulness and shared detail structure
 
 - Wallet now uses the shared detail header above scrollable content, replacing its separate logo/back/title row. Initial balance/totals show an em dash, and ledger loading is distinct from a confirmed empty history.

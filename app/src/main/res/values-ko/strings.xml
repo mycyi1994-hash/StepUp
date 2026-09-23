@@ -407,9 +407,10 @@
     <string name="connected_giwa">GIWA 지갑</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">소셜 계정</string>
-    <string name="connected_status_soon">준비 중</string>
+    <string name="connected_status_soon">지원하지 않음</string>
+    <string name="connected_status_on">로그인됨</string>
     <string name="connected_status_off">연결 안 됨</string>
-    <string name="connected_body">계정을 연결하면 SUP를 온체인으로 옮기고 여러 기기에서 걸음을 동기화할 수 있어요.</string>
+    <string name="connected_body">로그인 상태와 현재 버전의 외부 서비스 지원 여부를 확인하세요.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 잔액</string>

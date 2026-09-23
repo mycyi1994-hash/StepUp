@@ -61,7 +61,7 @@ import com.stepup.android.ui.theme.Volt
 @Composable
 fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
-    var signedIn by remember { mutableStateOf(false) }
+    var signedIn by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { signedIn = ServiceLocator.sessionHolder.isSignedIn() }
     var confirming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -87,6 +87,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                     onClick = {
                         deleting = true
                         scope.launch {
+                            try {
                             val result = ServiceLocator.server.deleteAccount()
                             if (result is ServerResult.Ok) {
                                 // 서버 계정이 사라졌다. 이 폰의 로그인도 지우면 첫 화면(로그인)으로 돌아간다.
@@ -96,7 +97,13 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                             } else {
                                 failed = true
                             }
-                            deleting = false
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                failed = true
+                            } finally {
+                                deleting = false
+                            }
                         }
                     },
                 ) {
@@ -111,40 +118,16 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
         )
     }
 
+    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+    com.stepup.android.ui.components.SecondaryHeader(
+        onBack = onBack, balance = null, onOpenWallet = null,
+        title = stringResource(R.string.settings_connected),
+    )
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Eyebrow(text = stringResource(R.string.profile_account))
-                    Text(
-                        text = stringResource(R.string.settings_connected),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                }
-            }
-        }
-
         item {
             GlowCard {
                 Row(
@@ -186,7 +169,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
             AccountRow(
                 icon = Icons.Filled.Link,
                 name = stringResource(R.string.connected_social),
-                statusText = stringResource(R.string.connected_status_off),
+                statusText = if (signedIn == null) "—" else stringResource(
+                    if (signedIn == true) R.string.connected_status_on else R.string.connected_status_off),
                 statusColor = Slate,
                 statusBackground = CarbonHigh,
                 iconTint = Slate,
@@ -194,7 +178,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
         }
 
         // 계정 삭제 — 로그인한 사람에게만. 서버의 기록을 지우고 되돌릴 수 없다.
-        if (signedIn) {
+        if (signedIn == true) {
             item {
                 Text(
                     text = stringResource(R.string.account_delete_title),
@@ -209,6 +193,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                 )
             }
         }
+    }
     }
 }
 
@@ -232,9 +217,9 @@ private fun AccountRow(
             horizontalArrangement = Arrangement.spacedBy(13.dp),
         ) {
             IconSquare(icon = icon, size = 38.dp, tint = iconTint)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = name,
-                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleSmall,
                 color = Snow,
             )
@@ -243,6 +228,7 @@ private fun AccountRow(
                 color = statusColor,
                 background = statusBackground,
             )
+            }
         }
     }
 }
@@ -263,7 +249,7 @@ private fun StatusChip(
         Text(
             text = text,
             color = color,
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.3.sp,
         )

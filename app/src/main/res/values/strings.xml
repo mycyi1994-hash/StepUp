@@ -409,9 +409,10 @@
     <string name="connected_giwa">GIWA Wallet</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">Social account</string>
-    <string name="connected_status_soon">Coming soon</string>
+    <string name="connected_status_soon">Not supported</string>
+    <string name="connected_status_on">Signed in</string>
     <string name="connected_status_off">Not connected</string>
-    <string name="connected_body">Linking accounts will let you carry SUP on-chain and sync steps across devices.</string>
+    <string name="connected_body">Check your sign-in status and which external services this version supports.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP Balance</string>
