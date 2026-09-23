@@ -2007,6 +2007,277 @@ call pg_temp.must_fail($q$ select * from public.push_outbox $q$, '앱은 보낼 
 call pg_temp.must_fail($q$ select * from public.push_claim_batch(10) $q$, '앱은 보낼 푸시를 가져갈 수 없다');
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 서버 GPS 검증 ────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+-- 원하는 경도에서 시작하는 경로. 위의 pg_temp.track 은 늘 127.0 이다.
+create or replace function pg_temp.track_at(p_start timestamptz, p_secs int, p_dps numeric, p_lng numeric)
+returns text language sql as $$
+  select string_agg(
+    format('%s,%s,%s',
+      (37.5 + i * p_dps)::numeric(12, 6),
+      p_lng::numeric(12, 6),
+      (extract(epoch from p_start) * 1000)::bigint + i * 1000),
+    ';' order by i)
+  from generate_series(0, p_secs) i
+$$;
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'g@test', '{"full_name":"Eun Seo"}'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'f@test', '{"full_name":"Fin Yoo"}');
+
+do $$
+declare v record;
+begin
+  select * into v from economy.track_summary(pg_temp.fx('track_ok'));
+  perform pg_temp.ok(v.gps_m between 1950 and 2050,
+    format('경로에서 거리를 잰다 (%s m)', round(v.gps_m::numeric)));
+  perform pg_temp.ok(v.points = 601, '경로의 점을 센다');
+  select * into v from economy.track_summary('');
+  perform pg_temp.ok(v.gps_m = 0 and v.points = 0, '경로가 없으면 거리도 0');
+  select * into v from economy.track_summary(pg_temp.fx('track_car'));
+  perform pg_temp.ok(v.gps_m < 1000, '튄 구간(시속 60km 초과)은 거리에 넣지 않는다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('run_start')::timestamptz;
+begin
+  select * into r from public.record_session(
+    v_start, v_start + interval '601 seconds', 2000, 601, pg_temp.fx('track_ok'), 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'CLEAN', '걸음과 경로가 맞는 러닝은 CLEAN');
+  perform pg_temp.ok(
+    (select distance_meters from public.walk_sessions where id = r.session_id) between 1950 and 2050,
+    '거리는 걸음이 아니라 경로로 잰다');
+  perform pg_temp.ok(
+    (select gps_distance_m from public.walk_sessions where id = r.session_id) between 1950 and 2050,
+    '경로 거리가 따로 남는다');
+
+  -- 같은 경로를 1분 뒤 시작한 다른 세션으로 다시 올린다
+  select * into r from public.record_session(
+    v_start + interval '60 seconds', v_start + interval '600 seconds', 1800, 540,
+    pg_temp.fx('track_ok'), 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'VOID', '이미 올린 경로를 다시 쓰면 VOID');
+  perform pg_temp.ok(
+    (select verdict_reason from public.walk_sessions where id = r.session_id) = '이미 올린 경로입니다',
+    '이유가 남는다 — 이미 올린 경로');
+
+  -- 어제 경로를 오늘 저녁 세션에 붙인다
+  select * into r from public.record_session(
+    v_start + interval '8 hours', v_start + interval '8 hours 601 seconds', 2000, 601,
+    pg_temp.fx('track_ok') || ';37.6,127.0,1', 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'VOID', '경로 시각이 러닝 시간 밖이면 VOID');
+  perform pg_temp.ok(r.points_awarded = 0, '시각이 안 맞는 경로는 적립이 없다');
+end $$;
+
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('base')::timestamptz + interval '9 hours';
+begin
+  -- 시속 24km 로 10분, 걸음은 100보 — 자전거
+  select * into r from public.record_session(
+    v_start, v_start + interval '601 seconds', 100, 601,
+    pg_temp.track_at(v_start, 600, 0.00006, 127.1), 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'VOID', '걸음 없이 1km 넘게 움직이면 VOID');
+  perform pg_temp.ok(
+    (select verdict_reason from public.walk_sessions where id = r.session_id) = '걸음 없이 이동한 거리입니다',
+    '이유가 남는다 — 바퀴');
+
+  -- 30분에 2km 걸으면서 6,000보 — 폰을 흔들었다
+  select * into r from public.record_session(
+    v_start + interval '1 hour', v_start + interval '1 hour 1801 seconds', 6000, 1801,
+    pg_temp.track_at(v_start + interval '1 hour', 1800, 0.00001, 127.2), 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'FLAGGED', '걸음이 경로의 2배를 넘으면 FLAGGED');
+  perform pg_temp.ok(
+    (select rewarded_steps from public.walk_sessions where id = r.session_id) between 5100 and 5400,
+    format('경로가 받쳐 주는 만큼만 적립된다 (%s보)',
+      (select rewarded_steps from public.walk_sessions where id = r.session_id)));
+  perform pg_temp.ok(
+    (select distance_meters from public.walk_sessions where id = r.session_id) between 1950 and 2050,
+    '거리도 경로만큼이다');
+end $$;
+
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('base')::timestamptz + interval '12 hours';
+begin
+  -- 러닝머신 — 경로가 없다. 케이던스만 본다.
+  select * into r from public.record_session(
+    v_start, v_start + interval '1200 seconds', 3000, 1200, '', 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'CLEAN', '경로가 없는 실내 러닝은 걸음으로 받는다');
+  perform pg_temp.ok(
+    (select distance_meters from public.walk_sessions where id = r.session_id) = 3000 * 0.762,
+    '실내 러닝의 거리는 걸음으로 잰다');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 코스 기록 순위 ───────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+-- 코스는 track_ok 와 같은 길(시각 없이, 10점마다 하나)
+insert into fix (k, v)
+  select 'course_ok', string_agg(
+    format('%s,%s', (37.5 + i * 0.00003)::numeric(12, 6), 127.000000), ';' order by i)
+  from generate_series(0, 600, 10) i;
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+
+do $$
+declare v_id bigint; r record;
+begin
+  v_id := public.course_share('성수 한 바퀴', '서울 성수', 2.0, 0, pg_temp.fx('course_ok'));
+  perform pg_temp.ok(v_id is not null, '코스를 공유한다');
+
+  select * into r from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('run_start')::timestamptz);
+  perform pg_temp.ok(r.course_id = v_id, '길로 코스를 찾아 기록을 낸다');
+  perform pg_temp.ok(r.duration_sec = 601, '기록은 서버에 남은 러닝 시간이다');
+  perform pg_temp.ok(r.rank = 1 and r.runners = 1, '첫 기록은 1위');
+
+  select * into r from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('run_start')::timestamptz);
+  perform pg_temp.ok(
+    (select run_count from public.courses where id = v_id) = 1,
+    '같은 러닝을 다시 내도 달린 횟수는 한 번');
+
+  perform pg_temp.ok(
+    (select count(*) from public.course_run_submit('37.0,126.0;37.1,126.1', pg_temp.fx('run_start')::timestamptz)) = 0,
+    '서버에 없는 코스는 조용히 넘어간다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select * from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('car_start')::timestamptz) $q$,
+  '무효 판정 러닝은 코스 기록이 될 수 없다');
+call pg_temp.must_fail(
+  $q$ select * from public.course_run_submit(pg_temp.fx('course_ok'), now() - interval '3 days') $q$,
+  '서버에 없는 러닝은 코스 기록이 될 수 없다');
+call pg_temp.must_fail($q$ select * from public.course_runs $q$, '코스 기록 표를 직접 읽을 수 없다');
+call pg_temp.must_fail(
+  $q$ insert into public.course_runs (course_id, user_id, session_id, duration_sec) values (1, auth.uid(), 1, 1) $q$,
+  '코스 기록을 직접 쓸 수 없다');
+
+call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+do $$
+declare r record;
+begin
+  select * into r from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('run_start')::timestamptz);
+  perform pg_temp.ok(r.runners = 2, '다른 사람의 기록이 더해진다');
+end $$;
+
+-- 다른 동네를 달린 러닝은 이 코스 기록이 아니다
+call pg_temp.must_fail(
+  $q$ select * from public.course_run_submit(pg_temp.fx('course_ok'),
+        pg_temp.fx('base')::timestamptz + interval '10 hours') $q$,
+  '코스를 따라 달리지 않은 러닝은 받지 않는다');
+
+do $$
+declare n int; me record;
+begin
+  select count(*) into n from public.course_leaderboard(pg_temp.fx('course_ok'), 20);
+  perform pg_temp.ok(n = 2, '코스 순위에 두 사람이 나온다');
+  select * into me from public.course_leaderboard(pg_temp.fx('course_ok'), 20) where is_me;
+  perform pg_temp.ok(me.display_name = 'Eun Seo' and me.duration_sec = 601, '내 기록이 표시된다');
+  perform pg_temp.ok(
+    (select run_count from public.courses where md5(track) = md5(pg_temp.fx('course_ok'))) = 2,
+    '코스의 달린 횟수는 서버가 센다');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 땅따먹기 ─────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+do $$
+declare c text; v record;
+begin
+  c := economy.hex_cell(37.5443, 127.0557);
+  select * into v from economy.hex_center(c);
+  perform pg_temp.ok(economy.hex_cell(v.lat, v.lng) = c, format('칸 가운데는 그 칸 안이다 (%s)', c));
+  perform pg_temp.ok(economy.haversine_m(37.5443, 127.0557, v.lat, v.lng) < 200,
+    '칸 가운데는 좌표에서 200m 안이다');
+  perform pg_temp.ok(economy.hex_cell(37.5443, 127.0557) <> economy.hex_cell(37.5543, 127.0557),
+    '1km 떨어지면 다른 칸이다');
+end $$;
+
+insert into fix (k, v)
+  select 'terr_start', (pg_temp.fx('base')::timestamptz + interval '1 hour')::text;
+
+set role authenticated;
+call pg_temp.login('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+
+do $$
+declare v_a uuid; v_b uuid; r record; v_start timestamptz := pg_temp.fx('terr_start')::timestamptz;
+  v_marks int;
+begin
+  v_a := public.crew_create('뚝섬 크루', 'TS', '', '서울 성수', 'OPEN');
+  insert into fix (k, v) values ('terr_crew_a', v_a::text);
+
+  select * into r from public.record_session(
+    v_start, v_start + interval '601 seconds', 2000, 601,
+    pg_temp.track_at(v_start, 600, 0.00003, 129.0), 0, 1, '');
+  insert into fix (k, v) values ('terr_session', r.session_id::text);
+
+  select count(*) into v_marks from public.territory_view(37.49, 128.99, 37.53, 129.01);
+  perform pg_temp.ok(v_marks between 5 and 20, format('달린 길의 칸이 칠해진다 (%s칸)', v_marks));
+  perform pg_temp.ok(
+    (select bool_and(mine and crew_name = '뚝섬 크루') from public.territory_view(37.49, 128.99, 37.53, 129.01)),
+    '칸은 내 크루 색이다');
+  perform pg_temp.ok(
+    (select cells from public.territory_board(20) where crew_id = v_a) = v_marks,
+    '크루 순위에 차지한 칸 수가 나온다');
+
+  -- 크루 러닝이었다고 나중에 적으면 칸이 그 크루로 옮겨 간다
+  v_b := public.crew_create('새벽 크루', 'SB', '', '서울 성수', 'OPEN');
+  perform public.session_tag_crew(v_start, v_b);
+  perform pg_temp.ok(
+    (select bool_and(crew_id = v_b) from public.territory_view(37.49, 128.99, 37.53, 129.01)),
+    '크루 러닝으로 적으면 칸이 그 크루 몫이 된다');
+
+  -- 같은 날 같은 길을 또 달려도 칸 점수는 그대로다
+  select * into r from public.record_session(
+    v_start + interval '2 hours', v_start + interval '2 hours 601 seconds', 2000, 601,
+    pg_temp.track_at(v_start + interval '2 hours', 600, 0.00003, 129.0), 0, 1, '');
+  perform pg_temp.ok(
+    (select max(score) from public.territory_view(37.49, 128.99, 37.53, 129.01)) = 1,
+    '한 사람이 한 칸에 하루 한 번만 칠한다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select * from public.territory_view(37.0, 126.0, 38.0, 128.0) $q$,
+  '너무 넓은 지역은 한 번에 받지 않는다');
+call pg_temp.must_fail($q$ select * from public.territory_marks $q$, '땅 표시를 직접 읽을 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.territory_credit(pg_temp.fx('terr_session')::bigint) $q$,
+  '앱이 칸 칠하기를 직접 부를 수 없다');
+
+-- 크루가 없는 사람은 칠하지 않는다(aaaa 는 크루가 없다)
+call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.territory_view(37.49, 126.99, 37.53, 127.01)
+      where crew_name is null) = 0,
+    '크루가 없는 러닝은 칸을 칠하지 않는다');
+end $$;
+reset role;
+
+do $$
+begin
+  perform pg_temp.ok(
+    not exists (select 1 from public.territory_marks
+                 where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+    '크루가 없는 사람의 러닝은 표시를 남기지 않는다');
+  perform pg_temp.ok(
+    not exists (select 1 from public.territory_marks t
+                  join public.walk_sessions s on s.id = t.session_id
+                 where s.verdict = 'VOID'),
+    '무효 판정 러닝은 칸을 칠하지 않는다');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
