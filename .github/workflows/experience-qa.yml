@@ -7,7 +7,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # 수동 실행 때 검토용 화면 캡처를 qa-captures 사전 배포에 올린다(아래 마지막 단계).
+  # 그 밖의 실행에서는 쓰기를 하지 않는다.
+  contents: write
 
 concurrency:
   group: experience-qa-${{ github.ref }}
@@ -45,6 +47,33 @@ jobs:
           disable-animations: false
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
           script: bash tools/run_device_qa.sh
+      # 검토용 화면 캡처 — 수동 실행에서만.
+      #
+      # 아티팩트는 로그인해야 받을 수 있지만, 사전 배포의 첨부 파일은 테스트 APK 와
+      # 같은 방식으로 누구나 받는다. 전부(수백 장)가 아니라 한국어 기본·큰 글자,
+      # 다크·라이트 한 벌과 하단 탭 이동 캡처, 레이아웃 검사 기록만 묶는다.
+      - name: Publish review screenshots
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p review
+          for f in qa-captures/ko-dark-normal-*.png qa-captures/ko-light-normal-*.png \
+                   qa-captures/ko-dark-large-*.png qa-captures/navigation-*.png; do
+            if [ -f "$f" ]; then cp "$f" review/; fi
+          done
+          cp qa-captures/layout-audit.jsonl qa-captures/android-crashes.txt review/ 2>/dev/null || true
+          count=$(ls review | wc -l)
+          echo "review files: $count"
+          [ "$count" -gt 0 ] || exit 0
+          (cd review && zip -q ../qa-review.zip ./*)
+          if ! gh release view qa-captures >/dev/null 2>&1; then
+            gh release create qa-captures --prerelease --target "$GITHUB_SHA" \
+              --title "QA 화면 캡처" \
+              --notes "Experience QA 가 에뮬레이터에서 찍은 실제 화면. 수동 실행 때마다 덮어쓴다."
+          fi
+          gh release upload qa-captures qa-review.zip --clobber
+          gh release edit qa-captures --notes "Experience QA 캡처 · ${GITHUB_REF_NAME} · ${GITHUB_SHA::7}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
