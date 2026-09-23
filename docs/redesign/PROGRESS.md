@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — compiler-generated v12 schema preserved
+
+- 73d6f71 Build APK 35920433542 passed. Downloaded its StepUp-room-schemas artifact and copied the compiler-generated 12.json into app/schemas. Compared every serialized entity against committed v11: only energy_purchases was added; existing entity definitions are unchanged. This snapshot contains Room's actual generated identity hash.
+- Pushed e16e1e2, including disk-reopen recovery coverage and the Android 14/15 comparison matrix, after the preceding build completed. Native results remain pending. Previous 73d6f71 gallery 35920433661 is still active.
+
 ## 2026-09-24 — renderer result and cross-version diagnosis
 
 - 18b477c gallery 35919712989 failed during ChromeNavigationTest: expected 18 tests but none completed, emulator disconnected. Software mode selected swangle/lavapipe. Host kernel log again has no recorded OOM/segfault; streamed device logs stop without a StepUp fatal exception. Changing the renderer alone did not fix the issue.
