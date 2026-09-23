@@ -128,7 +128,7 @@ fun HomeScreen(
     val largeText = LocalDensity.current.fontScale > 1.2f
     var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
-    val render = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
+    val savedLook = look
 
     Column(
         Modifier.fillMaxSize()
@@ -137,12 +137,16 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-            CharacterStage(
-                look = look, pose = AvatarPose.IDLE, skyline = false,
+            if (savedLook != null) CharacterStage(
+                look = savedLook, pose = AvatarPose.IDLE, skyline = false,
                 characterFraction = 0.95f, animate = false,
                 contentDescription = stringResource(R.string.cd_home_character),
                 modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
                     .quietClickable(onOpenCustomize),
+            ) else Text(
+                text = stringResource(R.string.feed_loading),
+                color = Silver,
+                modifier = Modifier.align(Alignment.Center),
             )
             com.stepup.android.ui.components.DarkIconButton(
                 icon = Icons.Filled.MoreHoriz,
@@ -152,7 +156,7 @@ fun HomeScreen(
                     .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
                     .testTag("home-details"),
             )
-            if (look.trial) {
+            if (savedLook?.trial == true) {
                 SmallBadge(
                     text = stringResource(R.string.avatar_trial),
                     tone = BadgeTone.Glow,
@@ -160,7 +164,10 @@ fun HomeScreen(
                 )
             }
         }
-        AvatarLookNote(look = look, render = render, modifier = Modifier.padding(bottom = 8.dp))
+        if (savedLook != null) AvatarLookNote(
+            look = savedLook, render = AvatarArtCatalog.resolve(savedLook, AvatarPose.IDLE),
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
         PrimaryCta(
             text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
             icon = Icons.AutoMirrored.Filled.DirectionsRun,

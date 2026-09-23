@@ -90,7 +90,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:436 | pending |
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:434 | pending |
-| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
+| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:180 | pending |
 | ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:490 | pending |
 | CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:647 | pending |
 | SneakerDetailScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:257 | pending |

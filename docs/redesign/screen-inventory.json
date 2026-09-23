@@ -514,7 +514,7 @@
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 173,
+      "line": 180,
       "verification": "pending"
     },
     {

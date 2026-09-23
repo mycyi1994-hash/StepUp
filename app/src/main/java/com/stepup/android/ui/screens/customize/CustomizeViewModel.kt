@@ -17,6 +17,7 @@ import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Sneaker
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -75,7 +76,7 @@ class CustomizeViewModel(
                 when {
                     !avatars.isOwned(outfit) -> R.string.customize_trial_on
                     // 입었지만 그 옷을 입은 캐릭터 그림은 없다 — "장착 완료"라고만 하지 않는다
-                    !AvatarArtCatalog.resolve(look.value.copy(outfit = outfit), AvatarPose.IDLE).outfitShown ->
+                    !AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).outfitShown ->
                         R.string.customize_equipped_art_pending
                     else -> R.string.customize_equipped
                 }
@@ -92,7 +93,7 @@ class CustomizeViewModel(
                 message.value = R.string.customize_not_owned
                 return@saveLook
             }
-            val shown = AvatarArtCatalog.resolve(look.value.copy(shoe = shoe), AvatarPose.IDLE).shoeShown
+            val shown = AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).shoeShown
             message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
         }
     }

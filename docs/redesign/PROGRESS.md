@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — home waits for persisted appearance
+
+- Home no longer emits a fabricated default AvatarLook before reading stored appearance. The character area shows a loading label until actual data arrives; More and start/resume remain accessible. Profile already used nullable appearance; run and wardrobe initial appearance still need the corresponding audit.
+- Outfit/shoe equipment feedback now resolves the first persisted appearance after the write instead of copying potentially stale screen state, preserving the actual gender/outfit/shoe combination when checking art availability.
+- Static checks pass; cold-start native capture and immediate equipment-switch feedback remain unverified. dee6cc3 build and API 34/35 gallery were still live when checked.
+
 ## 2026-09-24 — inventory before purchase prompts
 
 - Vault now leads with the actual equipped sneaker, before faction statistics and filters. Removed its duplicate inline upgrade purchase panel; the sneaker card opens the detailed cost-confirmation flow implemented in fe3dc17. Owned collection now precedes minting, while filters, copies, mint, boosts and guide targets remain reachable.
