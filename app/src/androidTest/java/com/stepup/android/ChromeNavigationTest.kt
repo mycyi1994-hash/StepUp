@@ -154,6 +154,18 @@ class ChromeNavigationTest {
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
             capture("${next.width}-${next.font}-${next.mode}-run-paused")
+            compose.onNodeWithTag("run-finish").performClick()
+            compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_title)).assertIsDisplayed()
+            capture("${next.width}-${next.font}-${next.mode}-run-finish-confirm")
+            compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_no)).performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("run-primary-action").assertIsDisplayed()
+            compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
+            compose.onNodeWithTag("run-finish").performClick()
+            pressBack()
+            compose.waitForIdle()
+            compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_title)).assertDoesNotExist()
+            compose.onNodeWithTag("run-finish").assertIsDisplayed()
             // Presentation fixtures only: these do not simulate server settlement or GPS.
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
@@ -173,6 +185,7 @@ class ChromeNavigationTest {
             )
             compose.waitForIdle()
             compose.onNodeWithTag("run-result-reward").assertTextEquals("0")
+            capture("${next.width}-${next.font}-${next.mode}-result-void")
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().performClick()
             compose.waitForIdle()
             assertEquals("result returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
@@ -216,9 +229,14 @@ class ChromeNavigationTest {
 
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "chrome-checks").apply { mkdirs() }
-        val bitmap = compose.onNodeWithTag("chrome-viewport").captureToImage().asAndroidBitmap()
+        val hasDialogWindow = compose.onAllNodes(isRoot()).fetchSemanticsNodes().size > 1
+        val bitmap = if (hasDialogWindow) {
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                .uiAutomation.takeScreenshot() ?: error("Could not capture the dialog window")
+        } else compose.onNodeWithTag("chrome-viewport").captureToImage().asAndroidBitmap()
         java.io.File(directory, "$name.png").outputStream().use {
             bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
+        if (hasDialogWindow) bitmap.recycle()
     }
 }

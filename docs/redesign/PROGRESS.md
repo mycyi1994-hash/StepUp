@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — finish-dialog coverage and account boundary finding
+
+- ChromeNavigationTest now opens finish confirmation, captures its actual dialog window, cancels via its button and system Back, and checks that the run screen remains accessible without main navigation. Also saves the already-asserted void-result state. Runs across the existing compact/large/font/theme configurations; execution is pending.
+- Account audit: SessionHolder.signInWithGoogle replaces the stored session; signOut only clears auth. ConnectedAccountsScreen deletion clears server account/session/login marker but does not address local account-owned records. Room tables and preferences still share device storage. Cross-account record/balance isolation and post-deletion local handling remain major unresolved correctness requirements, not covered by existing persistence tests. Do not solve by silently erasing or renaming strideup.db/strideup_prefs.
+- Requested any programme-provided GIWA embedding documentation asynchronously; independent implementation and verification continue.
+
 ## 2026-09-24 — generated schemas and submission evidence
 
 - Build workflow now preserves generated Room schemas as a separate artifact so v12 can be reviewed/committed from actual Room compiler output. No hand-written identity hash or fake schema export. Existing migration tests passed in a9ff894, but generated v12 snapshot is still missing locally.
