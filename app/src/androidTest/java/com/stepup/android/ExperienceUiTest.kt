@@ -258,9 +258,11 @@ class ExperienceUiTest {
         var visible by mutableStateOf(true)
         compose.setContent { StepUpTheme { ExperienceProvider { if (visible) ExperienceSettingsScreen {} } } }
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).performClick()
-        compose.waitUntil { runBlocking { ServiceLocator.userPrefs.experience.first().sounds } }
+        // 설정은 DataStore 파일에 쓰인 뒤에야 읽힌다. 에뮬레이터에서는 첫 쓰기가 1초를
+        // 넘길 때가 있어(기본 대기 1초), 다른 대기와 같이 5초를 준다.
+        compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.experience.first().sounds } }
         compose.onNodeWithText(compose.activity.getString(R.string.experience_motion)).performClick()
-        compose.waitUntil { runBlocking { !ServiceLocator.userPrefs.experience.first().reducedMotion } }
+        compose.waitUntil(5_000) { runBlocking { !ServiceLocator.userPrefs.experience.first().reducedMotion } }
         compose.runOnIdle { visible = false }
         compose.runOnIdle { visible = true }
         compose.onNode(hasText(compose.activity.getString(R.string.experience_sound)) and isToggleable()).assertIsOn()
