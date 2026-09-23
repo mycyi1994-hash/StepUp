@@ -4,6 +4,7 @@
 
     <!-- Notification -->
     <string name="notification_channel_walk">Run session</string>
+    <string name="notification_channel_community">Crew &amp; flash run news</string>
     <string name="notification_walk_title">Run in progress</string>
     <string name="notification_steps">%1$d steps</string>
 
@@ -156,6 +157,10 @@
     <!-- Crew party run -->
     <string name="crew_lobby">Party Run Lobby</string>
     <string name="crew_open_lobby">OPEN LOBBY</string>
+    <string name="crew_invite_share">Share invite link</string>
+    <string name="crew_invite_message">Run with %1$s on StepUp 👟
+%2$s</string>
+    <string name="crew_invite_chooser">Invite to crew</string>
     <string name="crew_ready">I\'M READY</string>
     <string name="crew_ready_cancel">CANCEL READY</string>
     <string name="crew_ready_count">%1$d / %2$d ready</string>

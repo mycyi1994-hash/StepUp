@@ -16,6 +16,7 @@ import com.stepup.android.domain.FlashMember
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.toThreads
+import com.stepup.android.core.Analytics
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -188,6 +189,7 @@ class CommunityRepository(
         return when (result) {
             is ServerResult.Ok -> {
                 updatePost(id) { it.copy(joined = joining, joinedCount = result.value) }
+                if (joining) Analytics.flashJoined()
                 BoardResult.Ok()
             }
             else -> {
@@ -236,6 +238,7 @@ class CommunityRepository(
         )
         return when (result) {
             is ServerResult.Ok -> {
+                Analytics.postWritten(category.id)
                 refresh()
                 BoardResult.Ok(result.value)
             }

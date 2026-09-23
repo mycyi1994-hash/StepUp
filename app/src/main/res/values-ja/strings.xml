@@ -3,6 +3,7 @@
 
     <!-- Notification -->
     <string name="notification_channel_walk">ランセッション</string>
+    <string name="notification_channel_community">クルー・フラッシュランのお知らせ</string>
     <string name="notification_walk_title">ラン中</string>
     <string name="notification_steps">%1$d歩</string>
 
@@ -155,6 +156,10 @@
     <!-- Crew party run -->
     <string name="crew_lobby">パーティーランロビー</string>
     <string name="crew_open_lobby">ロビーを開く</string>
+    <string name="crew_invite_share">招待リンクを共有</string>
+    <string name="crew_invite_message">StepUpで%1$sと一緒に走ろう 👟
+%2$s</string>
+    <string name="crew_invite_chooser">クルーに招待</string>
     <string name="crew_ready">準備OK</string>
     <string name="crew_ready_cancel">準備を取り消す</string>
     <string name="crew_ready_count">%1$d / %2$d人 準備完了</string>

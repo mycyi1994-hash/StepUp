@@ -31,7 +31,8 @@
 
 로컬에 안드로이드 SDK 가 없다. 푸시하면 CI 가 돈다.
 
-- Build APK → `test-apk` 사전 배포에 `StepUp-test.apk`(모든 브랜치가 덮어쓴다).
+- Build APK → `test-apk` 사전 배포에 `StepUp-test.apk` — **main 에 들어간 것만** 올라간다.
+  작업 브랜치의 APK 는 그 실행의 Actions 아티팩트에서 받는다. 사용자가 받을 앱은 main 에 합쳐야 바뀐다.
 - Experience QA → 에뮬레이터 캡처를 `qa-captures` 사전 배포의 `qa-review.zip` 에.
 - 로컬에서 되는 검사: `python3 scripts/check-strings.py`,
   `python3 tools/check_experience_assets.py`.

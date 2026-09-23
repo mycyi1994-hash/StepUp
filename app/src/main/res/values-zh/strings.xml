@@ -2,6 +2,7 @@
 <resources>
     <!-- Notification -->
     <string name="notification_channel_walk">跑步记录</string>
+    <string name="notification_channel_community">跑团与闪电跑消息</string>
     <string name="notification_walk_title">正在跑步</string>
     <string name="notification_steps">%1$d 步</string>
 
@@ -154,6 +155,10 @@
     <!-- Crew party run -->
     <string name="crew_lobby">组队跑大厅</string>
     <string name="crew_open_lobby">打开大厅</string>
+    <string name="crew_invite_share">分享邀请链接</string>
+    <string name="crew_invite_message">在 StepUp 和 %1$s 一起跑步 👟
+%2$s</string>
+    <string name="crew_invite_chooser">邀请加入跑团</string>
     <string name="crew_ready">我准备好了</string>
     <string name="crew_ready_cancel">取消准备</string>
     <string name="crew_ready_count">%1$d / %2$d 人已准备</string>

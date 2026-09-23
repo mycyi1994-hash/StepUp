@@ -1,0 +1,2 @@
+# 크루 초대 링크 — /c/<크루 id> 는 모두 같은 초대 페이지(invite.html)가 받는다.
+/c/*  /invite.html  200

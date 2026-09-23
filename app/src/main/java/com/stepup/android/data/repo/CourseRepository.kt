@@ -14,6 +14,7 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.trackDistanceKm
+import com.stepup.android.core.Analytics
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -202,6 +203,7 @@ class CourseRepository(
         }
         if (result !is ServerResult.Ok) return result.asBoardFailure()
         dao.update(entity.copy(shared = shared))
+        if (shared) Analytics.courseShared()
         refreshBoard()
         return BoardResult.Ok()
     }

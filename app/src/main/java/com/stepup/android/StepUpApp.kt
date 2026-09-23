@@ -4,6 +4,7 @@ import android.app.Application
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.push.PushService
 import kotlinx.coroutines.runBlocking
 
 class StepUpApp : Application() {
@@ -22,5 +23,9 @@ class StepUpApp : Application() {
         val theme = runCatching { runBlocking { ServiceLocator.userPrefs.themeModeNow() } }
             .getOrDefault("")
         AppTheme.bootstrap(theme)
+        // 푸시 주소를 서버에 적어 둔다. 로그인 전이면 서버가 받지 않고, 로그인하면
+        // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
+        PushService.createChannel(this)
+        ServiceLocator.pushRegistrar.syncInBackground()
     }
 }

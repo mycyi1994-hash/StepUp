@@ -14,6 +14,7 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.CrewRank
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
+import com.stepup.android.core.Analytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -272,6 +273,9 @@ class CrewRepository(
             else -> result.asFailure()
         }
         refresh()
+        if (outcome == CrewActionResult.Joined || outcome == CrewActionResult.Requested) {
+            Analytics.crewJoined(requested = outcome == CrewActionResult.Requested)
+        }
         if (outcome == CrewActionResult.Joined) {
             crewOf(crewId)?.let {
                 // 크루 id 를 함께 담는다. 알림을 눌렀을 때 그 크루로 갈 수 있어야 한다.
@@ -309,7 +313,7 @@ class CrewRepository(
         val outcome = when (
             val result = api.create(trimmed, monogram, tagline.trim(), area.trim(), joinPolicy.name)
         ) {
-            is ServerResult.Ok -> CrewActionResult.Created(result.value)
+            is ServerResult.Ok -> CrewActionResult.Created(result.value).also { Analytics.crewCreated() }
             else -> result.asFailure()
         }
         refresh()
@@ -595,7 +599,9 @@ class CrewRepository(
     fun startParty() {
         val state = _party.value
         if (state.phase != PartyPhase.LOBBY || !state.canStart) return
-        act { partyApi.start(it) }
+        act { id ->
+            partyApi.start(id).also { if (it is ServerResult.Ok) Analytics.partyStarted(state.readyCount) }
+        }
     }
 
     /** 이상이 있어 멈춘 로비를 다시 연다. */

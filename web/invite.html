@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1448ef">
+<title>StepUp 크루 초대</title>
+<meta name="description" content="StepUp에서 크루와 함께 달려요. 앱을 열어 크루에 들어오세요.">
+<meta property="og:title" content="StepUp 크루 초대 👟">
+<meta property="og:description" content="같이 달려요. 링크를 누르면 StepUp 앱에서 크루가 열려요.">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-regular.otf') format('opentype');font-weight:400 600;font-display:swap}
+@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-extrabold.otf') format('opentype');font-weight:700 900;font-display:swap}
+@font-face{font-family:Manrope;src:url('/assets/fonts/manrope-extrabold.ttf') format('truetype');font-weight:800;font-display:swap}
+:root{--blue:#1448ef;--ink:#132346}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(ellipse at 30% 10%,#3a6bff,transparent 60%),var(--blue);color:#fff;
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+main{width:min(100%,400px);text-align:center}
+.wordmark{font-family:Manrope,Pretendard,sans-serif;font-size:30px;font-weight:800;letter-spacing:-.055em;margin:0 0 28px}
+.wordmark span{display:inline-block;width:7px;height:7px;margin-left:5px;background:#c3ff77;border-radius:50%}
+h1{font-size:27px;font-weight:800;letter-spacing:-.04em;line-height:1.35;margin:0 0 12px;word-break:keep-all}
+p{font-size:15px;line-height:1.7;color:#dfe8ff;margin:0 0 28px;word-break:keep-all}
+.button{display:flex;justify-content:center;align-items:center;min-height:54px;border-radius:30px;font-size:16px;font-weight:700;text-decoration:none;margin-bottom:10px}
+.primary{background:#fff;color:#173cac;box-shadow:0 10px 26px #051a5c30}
+.secondary{border:1px solid #ffffff66;color:#fff}
+.note{font-size:12px;color:#c6d8ff;margin:18px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <div class="wordmark">StepUp<span aria-hidden="true"></span></div>
+  <h1>크루에서 당신을<br>기다리고 있어요 👟</h1>
+  <p>StepUp 앱에서 크루 화면이 열려요.<br>들어와서 같이 달려요.</p>
+  <a class="button primary" id="open-app" href="/">StepUp 앱에서 열기</a>
+  <a class="button secondary" href="https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk/StepUp-test.apk">앱이 없으면 · Android 앱 받기</a>
+  <p class="note">Android 8.0 이상 · 테스트 버전이에요. iPhone은 아직 지원하지 않아요.</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  // /c/<크루 id> 만 받는다. 앱이 있으면 이 링크가 원래 앱으로 바로 열리므로,
+  // 여기까지 왔다는 건 앱이 없거나(또는 브라우저 안에서 열렸거나)다.
+  const match = location.pathname.match(/^\/c\/([0-9a-fA-F-]{36})\/?$/);
+  const open = document.getElementById('open-app');
+  if (!match) { open.hidden = true; return; }
+  const crew = match[1].toLowerCase();
+  // 카톡 같은 앱 안 브라우저에서도 설치된 앱으로 넘기는 안드로이드 인텐트 주소.
+  // 앱이 없으면 fallback 으로 이 페이지에 그대로 남는다.
+  const here = 'https://stepupcrew.com/c/' + crew;
+  open.href = 'intent://stepupcrew.com/c/' + crew +
+    '#Intent;scheme=https;package=com.stepup.android;S.browser_fallback_url=' +
+    encodeURIComponent(here) + ';end';
+})();
+</script>
+</body>
+</html>

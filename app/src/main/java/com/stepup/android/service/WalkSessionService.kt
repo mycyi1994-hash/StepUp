@@ -32,6 +32,7 @@ import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.sync.SessionUploadWorker
+import com.stepup.android.core.Analytics
 import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -361,6 +362,11 @@ class WalkSessionService : Service() {
             val equippedFaction = ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
             val reward = ServiceLocator.rewardRepository.settleSession(creditedSteps, settleSize)
+            // 성장 지표(주간 러닝 사용자) — 러닝으로 인정된 것만 센다
+            if (creditedSteps > 0) {
+                val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
+                Analytics.runFinished(km, settleSize)
+            }
             ServiceLocator.database.walkSessionDao().insert(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
