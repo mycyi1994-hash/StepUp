@@ -107,14 +107,17 @@ fun HomeScreen(
     var hasPermission by remember {
         mutableStateOf(StepPermissions.hasActivityRecognition(context))
     }
+    var permissionDenied by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
         hasPermission = StepPermissions.hasActivityRecognition(context)
+        permissionDenied = !hasPermission
         if (hasPermission) viewModel.onPermissionGranted()
     }
     LifecycleResumeEffect(Unit) {
         val granted = StepPermissions.hasActivityRecognition(context)
+        if (granted) permissionDenied = false
         if (granted != hasPermission) {
             hasPermission = granted
             if (granted) viewModel.onPermissionGranted()
@@ -177,7 +180,12 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (!hasPermission) {
-                    PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
+                    PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+                    if (permissionDenied) {
+                        androidx.compose.material3.TextButton(onClick = {
+                            com.stepup.android.core.ExternalIntents.openAppSettings(context)
+                        }) { Text(stringResource(R.string.cd_open_settings)) }
+                    }
                 }
                 TodayEarned(earned)
         // ── 오늘 거리 · 운동 시간 (≈60dp) ──

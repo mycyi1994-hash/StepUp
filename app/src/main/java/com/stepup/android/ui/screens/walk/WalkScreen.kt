@@ -184,10 +184,19 @@ fun RunScreen(
     val recordedTrack by viewModel.lastTrack.collectAsStateWithLifecycle()
     val readyToSaveCourse = recordingCourse && !session.isActive && recordedTrack.size >= 2
 
+    var permissionDenied by rememberSaveable { mutableStateOf(false) }
+    var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        locationAllowed = StepPermissions.hasLocation(context)
+        if (StepPermissions.hasActivityRecognition(context)) permissionDenied = false
+        onPauseOrDispose { }
+    }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        if (StepPermissions.hasActivityRecognition(context)) {
+        permissionDenied = !StepPermissions.hasActivityRecognition(context)
+        locationAllowed = StepPermissions.hasLocation(context)
+        if (!permissionDenied) {
             WalkSessionService.start(context)
         }
     }
@@ -431,6 +440,13 @@ fun RunScreen(
                 )
             },
         )
+        if (permissionDenied && !session.isActive) {
+            Text(stringResource(R.string.perm_body), color = Silver,
+                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+            TextButton(onClick = {
+                ExternalIntents.openAppSettings(context)
+            }) { Text(stringResource(R.string.cd_open_settings)) }
+        }
         if (finishing) {
             LazyColumn(
                 Modifier.fillMaxSize(),
@@ -456,7 +472,7 @@ fun RunScreen(
             )
             com.stepup.android.ui.components.AvatarLookNote(look, render)
             RunHero(
-                paused = session.isPaused, gpsFix = session.gpsFix,
+                paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                 elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
             )
             if (session.flaggedSegments > 0) {
@@ -1695,6 +1711,7 @@ private fun FinishCard(
 private fun RunHero(
     paused: Boolean,
     gpsFix: Boolean,
+    locationAllowed: Boolean,
     elapsedSec: Long,
     distanceKm: Double,
     avgPaceSec: Long?,
@@ -1705,7 +1722,7 @@ private fun RunHero(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        GpsChip(gpsFix)
+        GpsChip(gpsFix, locationAllowed)
         Text(
             text = formatDuration(elapsedSec),
             fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
@@ -1745,7 +1762,7 @@ private fun RunHero(
 
 /** GPS 상태 알약 — 잡혔으면 시안, 찾는 중이면 흐리게 */
 @Composable
-private fun GpsChip(fix: Boolean) {
+private fun GpsChip(fix: Boolean, allowed: Boolean = true) {
     val color = if (fix) com.stepup.android.ui.theme.Cyan else Slate
     Row(
         modifier = Modifier
@@ -1758,7 +1775,11 @@ private fun GpsChip(fix: Boolean) {
     ) {
         Icon(Icons.Filled.GpsFixed, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
         Text(
-            text = stringResource(if (fix) R.string.run_gps_ok else R.string.run_gps_search),
+            text = stringResource(when {
+                !allowed -> R.string.run_location_disabled
+                fix -> R.string.run_gps_ok
+                else -> R.string.run_gps_search
+            }),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = if (fix) Snow else Silver,

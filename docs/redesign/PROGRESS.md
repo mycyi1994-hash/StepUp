@@ -33,6 +33,7 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Wardrobe now has a large centered equipped/preview character, outfit/shoe categories and a separately scrollable item grid. Equip appears for a new selection. Character selection, market, vault and selected-shoe detail are reachable from More. Ownership and trial rules remain unchanged.
 - Wardrobe terrace artwork and exact built-in ImageGen prompt saved with the other production scenes. Native labels and controls remain separate.
 - Outstanding: actual screenshot review, wardrobe persistence/ownership interaction tests, result/reward redesign, other routes/states, permission onboarding and external/device functional validation. A default look can briefly precede stored avatar state in current view models; audit readiness before finalizing.
+- Permission follow-up: browsing main tabs no longer launches activity/location/notification prompts. The run action requests access; the home step-access control asks only for activity recognition. Location requests include FINE and COARSE together and respect an existing approximate grant. This fixes a documented Android 12+ issue with FINE-only requests: https://developer.android.com/develop/sensors-and-location/location/permissions/runtime . Added policy tests for fresh install, approximate-only grants and older Android versions. Activity denial exposes app settings, and missing location permission is not mislabeled as GPS acquisition.
 
 ## 2026-09-24 — startup and home implementation checkpoint
 

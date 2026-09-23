@@ -1492,5 +1492,6 @@ StepUp と走り出そう。</string>
     <string name="account_delete_confirm">削除</string>
     <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
     <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
+    <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

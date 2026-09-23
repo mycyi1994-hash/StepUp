@@ -13,8 +13,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import com.stepup.android.ui.experience.*
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -296,17 +294,11 @@ internal fun MainScaffold(
             GuideTour.start()
         }
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
+    // Browsing the app never prompts for run permissions. Start passive tracking only when already allowed.
+    LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
             ServiceLocator.stepRepository.startTracking()
         }
-    }
-
-    LaunchedEffect(Unit) {
-        val missing = StepPermissions.missing(context)
-        if (missing.isNotEmpty()) permissionLauncher.launch(missing)
     }
 
     val navController = rememberNavController()
