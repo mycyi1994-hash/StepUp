@@ -15,6 +15,42 @@ import org.junit.runner.RunWith
 class DatabaseMigrationTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @Test fun versionThirteenKeepsSignedRunsAndPendingPurchasesWithoutInventingSettlements() = runBlocking {
+        val name = "migration-v13-settlement-test.db"
+        context.deleteDatabase(name)
+        val path = context.getDatabasePath(name).apply { parentFile!!.mkdirs() }
+        val fixture = InstrumentationRegistry.getInstrumentation().context.assets
+            .open("schema-v13.sql").bufferedReader().use { it.readText() }
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { raw ->
+            fixture.lineSequence().filter { it.isNotBlank() }.forEach(raw::execSQL)
+            raw.execSQL("""INSERT INTO walk_sessions VALUES (
+                17, 1000, 3601000, 9000, 3600, 6840.0, 360.0, 62.82,
+                'account:runner-a', 'retained-track', 1200, 2, 'WIND', 'crew-A',
+                'SIGNED', 456, 2, '', 'CLEAN', 'saved-signature', 'saved-hash', '62820000', 20000, 999999)""")
+            raw.execSQL("INSERT INTO rewards VALUES (41, 12345, 'EARN_WALK', 62.82, 'Existing local credit')")
+            raw.execSQL("INSERT INTO energy_purchases VALUES ('pending-purchase', 12345, 2.0, 0)")
+            raw.version = 13
+        }
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
+            .addMigrations(*AppDatabase.MIGRATIONS).build()
+        try {
+            val sql = db.openHelper.writableDatabase // Triggers complete Room schema validation.
+            sql.query("SELECT recordingOwner, uploadState, claimSignature, claimSessionHash, claimAmount, pointsEarned FROM walk_sessions WHERE id=17").use {
+                assertTrue(it.moveToFirst())
+                assertEquals("account:runner-a", it.getString(0))
+                assertEquals("SIGNED", it.getString(1))
+                assertEquals("saved-signature", it.getString(2))
+                assertEquals("saved-hash", it.getString(3))
+                assertEquals("62820000", it.getString(4))
+                assertEquals(62.82, it.getDouble(5), 0.001)
+            }
+            assertEquals(62.82, db.rewardDao().balanceNow(), 0.001)
+            assertEquals("pending-purchase", db.energyPurchaseDao().pending().single().id)
+            assertNull(db.runSettlementDao().find("account:runner-a", 1000))
+            assertTrue(db.runSettlementDao().pendingEnergy().isEmpty())
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun versionTwelvePendingRunKeepsItsDataWithoutInventingAnOwner() = runBlocking {
         val name = "migration-v12-owner-test.db"
         context.deleteDatabase(name)

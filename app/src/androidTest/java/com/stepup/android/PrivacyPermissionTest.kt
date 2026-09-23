@@ -9,7 +9,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.test.platform.app.InstrumentationRegistry
-import com.stepup.android.ui.screens.settings.PrivacyScreen
+import com.stepup.android.core.ServiceLocator
+import com.stepup.android.ui.MainScaffold
+import com.stepup.android.ui.Routes
+import com.stepup.android.ui.experience.ExperienceProvider
+import kotlinx.coroutines.runBlocking
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
@@ -38,7 +42,12 @@ class PrivacyPermissionTest {
                 ContextCompat.checkSelfPermission(context, it))
         }
         assertFalse(NotificationManagerCompat.from(context).areNotificationsEnabled())
-        compose.setContent { StepUpTheme(ThemeMode.DARK) { PrivacyScreen() } }
+        runBlocking { ServiceLocator.userPrefs.setGuideSeen(); ServiceLocator.userPrefs.setReducedMotion(true) }
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) {
+                ExperienceProvider { MainScaffold(initialRoute = Routes.SETTINGS_PRIVACY) }
+            }
+        }
 
         fun status(label: Int, value: Int) {
             val labelText = context.getString(label)

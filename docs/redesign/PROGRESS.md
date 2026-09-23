@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — native receipt evidence and real save-error retry test
+
+- Previous turn progressed with 6497786 (save progress/failure handling and presentation checks), kept local while 9cd6746 Build APK 35934709879 remained live. Revalidated the handle; release/R8 was still running, not assumed stalled.
+- Downloaded 9cd6746 API 34 interaction XML: 29 tests, one failure. All three checkpoint tests, both atomic settlement/reopen tests, course outbox, energy-purchase and four existing migration tests passed. Chrome failed at challenge entry with 'No compose hierarchies found'; this run completed its other tests and is not an emulator-loss failure. Root cause remains to investigate.
+- Both API 34/35 permission jobs passed, including denied baseline, actual Settings launch, coarse grants/Back and precise grant/Back. Inspected API 35 approximate-location image: status is correct, but the isolated screen fixture omits the production canvas/inset shell, leaving a white background/header contrast issue. Changed this test to render the actual MainScaffold privacy route; the new shell-inclusive captures must be inspected separately.
+- Added schema-v13 fixture directly from the committed generated export and a native v13→14 test preserving signed claim metadata, account owner, local balance and undelivered energy purchases without fabricating historical settlement receipts. Execution pending.
+- Added RunSaveRecoveryTest: injects a Room receipt failure while ending a synthetic run through the real screen/service, checks retained FAILED state, removes the fault and uses Retry saving to reach a saved result with one session row. It runs in the required interaction suite. This is written, not executed; it does not validate GPS, server SUP or process death.
+
 ## 2026-09-24 — visible save progress and safe same-process retry
 
 - Previous turn made progress: 9cd6746 connected atomic local settlement, energy receipts and persistence tests. Revalidated its live Build APK 35934709879/gallery 35934709852; neither was assumed finished or restarted.

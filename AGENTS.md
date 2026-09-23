@@ -1,5 +1,9 @@
 # StepUp implementation rules
 
+## Current handoff / user priority
+
+Read `docs/redesign/HANDOFF.md` first when continuing this work. The user explicitly corrected the previous agent for prioritizing internal storage/tests over visual redesign and raised credit concerns. Prioritize reference-faithful visual completion and reviewable actual captures when implementation is requested. Preserve the pending local changes described there; do not automatically restart the previous long-running goal merely to read this handoff.
+
 Read `PRODUCT.md`, `DESIGN.md`, `CLAUDE.md` and `docs/redesign/PROGRESS.md` before changing UI. User decisions in this task are authoritative over older aesthetic notes.
 
 - Keep the full redesign objective and all existing flows in scope. Never mark an unverified item completed.
