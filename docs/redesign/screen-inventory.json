@@ -266,7 +266,7 @@
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
-      "line": 96,
+      "line": 94,
       "implementation": "pending",
       "verification": "pending"
     },

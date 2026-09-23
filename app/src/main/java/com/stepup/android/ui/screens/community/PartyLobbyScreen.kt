@@ -25,11 +25,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
@@ -62,7 +60,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
@@ -101,6 +99,10 @@ fun PartyLobbyScreen(
     viewModel: PartyLobbyViewModel = viewModel(factory = PartyLobbyViewModel.Factory),
     community: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
+    androidx.activity.compose.BackHandler {
+        viewModel.leaveLobby()
+        onBack()
+    }
     val context = LocalContext.current
     val party by viewModel.party.collectAsStateWithLifecycle()
 
@@ -111,8 +113,9 @@ fun PartyLobbyScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        if (StepPermissions.hasActivityRecognition(context)) {
+        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
             WalkSessionService.start(context, party.partySize)
+            onRunStarted()
         }
     }
 
@@ -139,41 +142,19 @@ fun PartyLobbyScreen(
     val boostPercent = RewardEconomy.partyBonusPercent(party.partySize)
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        DetailPage(
+            title = stringResource(R.string.crew_lobby),
+            onBack = { viewModel.leaveLobby(); onBack() },
         ) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = {
-                            viewModel.leaveLobby()
-                            onBack()
-                        },
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Snow,
                     )
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.crew_lobby),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Volt,
-                        )
-                        Text(
-                            text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp,
-                            color = Snow,
-                        )
-                    }
                     HexBadge(text = "${party.partySize}", size = 36.dp)
                 }
             }

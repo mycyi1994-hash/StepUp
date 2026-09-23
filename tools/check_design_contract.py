@@ -42,7 +42,7 @@ for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 
 notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
 for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
                  'community/FlashRunDetailScreen.kt', 'items/SneakerDexScreen.kt', 'profile/AnalyticsScreen.kt',
-                 'items/SneakerDetailScreen.kt', 'market/MarketModelScreen.kt'):
+                 'items/SneakerDetailScreen.kt', 'market/MarketModelScreen.kt', 'community/PartyLobbyScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
     if 'DetailPage(' not in detail or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail chrome')

@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — party lobby shell and exit path
+
+- Party lobby now uses DetailPage with its group identity/member count in content. Added system Back handling matching the existing explicit leave/back action. The activity-permission callback now opens the running screen after starting the service, and checks that the party is still RUNNING before starting; previously it started the service but left the user in the lobby.
+- Local design/string/asset checks pass; real multi-user lobby lifecycle, denied-permission recovery and background tracking still require runtime validation. CrewBoard still has its own share header/floating compose control and is the next structural migration.
+- Build 35914435874 and gallery 35912849285 are still confirmed in progress. Pending local commits remain unpushed until the build completes, with no workflow restart or completion claim.
+
 ## 2026-09-24 — owned shoe and marketplace model details
 
 - SneakerDetail and MarketModel now use the shared DetailPage. Model art moved from a tiny header thumbnail into a dedicated content preview; model identity remains the shared title. Existing enhance/equip/sell and market ask/bid controls are retained. Gallery uses their actual routes and architecture checks reject local back controls.
