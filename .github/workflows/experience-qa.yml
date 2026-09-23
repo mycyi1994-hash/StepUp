@@ -3,12 +3,12 @@ name: Experience QA
 on:
   pull_request:
   push:
-    branches: ["codex/release-readiness"]
+    branches: ["codex/release-readiness", "claude/quirky-rubin-dwm6yv"]
   workflow_dispatch:
 
 permissions:
-  # 수동 실행 때 검토용 화면 캡처를 qa-captures 사전 배포에 올린다(아래 마지막 단계).
-  # 그 밖의 실행에서는 쓰기를 하지 않는다.
+  # 브랜치 푸시·수동 실행 때 검토용 화면 캡처를 qa-captures 사전 배포에 올린다
+  # (아래 마지막 단계). 풀 리퀘스트 실행에서는 쓰기를 하지 않는다.
   contents: write
 
 concurrency:
@@ -47,13 +47,13 @@ jobs:
           disable-animations: false
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
           script: bash tools/run_device_qa.sh
-      # 검토용 화면 캡처 — 수동 실행에서만.
+      # 검토용 화면 캡처 — 브랜치 푸시와 수동 실행에서만. 풀 리퀘스트에서는 올리지 않는다.
       #
       # 아티팩트는 로그인해야 받을 수 있지만, 사전 배포의 첨부 파일은 테스트 APK 와
       # 같은 방식으로 누구나 받는다. 전부(수백 장)가 아니라 한국어 기본·큰 글자,
       # 다크·라이트 한 벌과 하단 탭 이동 캡처, 레이아웃 검사 기록만 묶는다.
       - name: Publish review screenshots
-        if: always() && github.event_name == 'workflow_dispatch'
+        if: always() && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
