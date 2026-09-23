@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — disk-backed energy recovery verification
+
+- Upgraded EnergyPurchaseTest to use unique disk-backed Room and preference stores. After injected acknowledgement failure and partial energy consumption it closes Room, cancels/joins the DataStore scope, then recreates both from disk before replay. It verifies retained debit, no repeated energy restoration and one acknowledgement notification. Cleanup targets only this test's UUID-named files.
+- This strengthens storage-reopen evidence; it is not an OS force-kill/device reboot test. Native execution is pending. Existing test passes used in-memory Room and must not be cited as proof of disk reopen.
+- Build 35919712929 passed for 18b477c; its supported-renderer gallery 35919712989 remains active. Latest pushed 73d6f71 has Build APK 35920433542 and gallery 35920433661 running.
+
 ## 2026-09-24 — finish-dialog coverage and account boundary finding
 
 - ChromeNavigationTest now opens finish confirmation, captures its actual dialog window, cancels via its button and system Back, and checks that the run screen remains accessible without main navigation. Also saves the already-asserted void-result state. Runs across the existing compact/large/font/theme configurations; execution is pending.

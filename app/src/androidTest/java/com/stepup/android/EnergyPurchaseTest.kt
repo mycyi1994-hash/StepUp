@@ -11,7 +11,8 @@ import com.stepup.android.domain.BoostType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -23,11 +24,13 @@ import java.util.UUID
 class EnergyPurchaseTest {
     @Test fun interruptedDeliveryRetriesWithoutAnotherDebitOrEnergyCredit() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val file = File(context.cacheDir, "energy-test-${UUID.randomUUID()}.preferences_pb")
-        val store = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
-        val prefs = UserPrefs(context, store)
-        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val fixtureId = UUID.randomUUID()
+        val file = File(context.cacheDir, "energy-test-$fixtureId.preferences_pb")
+        val databaseName = "energy-test-$fixtureId.db"
+        var store = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+        var prefs = UserPrefs(context, store)
+        var db = Room.databaseBuilder(context, AppDatabase::class.java, databaseName).build()
         try {
             val rewards = RewardRepository(db.rewardDao(), db.sneakerDao(), db.boostDao(), db.notificationDao(), prefs)
             val boosts = BoostRepository(db, rewards, prefs)
@@ -52,7 +55,15 @@ class EnergyPurchaseTest {
             assertEquals(1, db.energyPurchaseDao().pending().size)
             prefs.consumeEnergy(today, 1.0) // Activity after delivery must not be undone by replay.
             db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_energy_ack")
-            val recreated = BoostRepository(db, rewards, UserPrefs(context, store))
+            // Reopen both persistence layers from disk, rather than reusing their caches.
+            db.close()
+            scope.coroutineContext.job.cancelAndJoin()
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            store = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+            prefs = UserPrefs(context, store)
+            db = Room.databaseBuilder(context, AppDatabase::class.java, databaseName).build()
+            val reopenedRewards = RewardRepository(db.rewardDao(), db.sneakerDao(), db.boostDao(), db.notificationDao(), prefs)
+            val recreated = BoostRepository(db, reopenedRewards, prefs)
             assertNull(recreated.purchase(BoostType.ENERGY_CELL)) // Retries the pending receipt.
             recreated.recoverEnergyPurchases()
             assertEquals(50.0, db.rewardDao().balanceNow(), 0.0)
@@ -61,7 +72,9 @@ class EnergyPurchaseTest {
             assertEquals(1, db.notificationDao().count())
         } finally {
             db.close()
-            scope.cancel()
+            scope.coroutineContext.job.cancelAndJoin()
+            context.deleteDatabase(databaseName)
+            file.delete()
         }
     }
 }
