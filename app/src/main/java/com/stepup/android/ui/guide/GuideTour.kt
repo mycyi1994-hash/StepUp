@@ -67,7 +67,8 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
-import kotlinx.coroutines.delay
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.conflate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -231,12 +232,18 @@ fun Modifier.guideTarget(key: String): Modifier = composed {
     }
     val isCurrent = GuideTour.current?.key == key
     LaunchedEffect(isCurrent) {
-        if (isCurrent) {
-            // 탭이 바뀌는 스텝이면 새 화면이 자리를 잡을 때까지 잠깐 기다린다
-            delay(250)
-            val room = with(density) { GuideControlsRoom.toPx() }
-            requester.bringIntoView(Rect(0f, -room / 4f, size.width.toFloat(), size.height + room))
-        }
+        if (!isCurrent) return@LaunchedEffect
+        // 한 번만 스크롤하면 모자라다 — 화면이 뒤늦게 채워지면(목표 · 에너지 줄 등)
+        // 대상이 다시 아래로 밀려난다. 설명하는 동안 대상이 움직일 때마다 다시 요청한다.
+        // 이미 보이면 아무 일도 하지 않는다.
+        val room = with(density) { GuideControlsRoom.toPx() }
+        snapshotFlow { GuideTour.bounds[key] }
+            .conflate()
+            .collect {
+                if (size.height > 0) {
+                    requester.bringIntoView(Rect(0f, -room / 4f, size.width.toFloat(), size.height + room))
+                }
+            }
     }
     Modifier
         .bringIntoViewRequester(requester)
