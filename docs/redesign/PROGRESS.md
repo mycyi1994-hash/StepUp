@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — ranking authentication recovery uses shared controls
+
+- Viewed native 0383b12 screen-17.png: a sign-in-required explanation offered only Retry, which repeated the authenticated ranking read without opening login. Personal and faction ranking failures now use the existing shared SignInAgainButton for that specific problem; offline/rejected requests retain refresh.
+- Replaced the screen-local 12sp clickable Retry text with shared GhostButton, inheriting the central typography and touch target. Loading and empty states keep no fabricated rank or retry action. Real Google login and returning to a previous ranking selection remain unverified.
+- Viewed screen-03.png: equipped shoe leads, but faction progress and filters still occupy much of the first viewport; further simplification remains needed. No whole-screen approval is recorded. Local inventory/design/resource/asset/whitespace checks pass; fresh native validation remains required.
+- 35926758041 and the new 76c942d build/gallery (35927305897/35927305914) remain running. No restart or speculative failure diagnosis was performed.
+
 ## 2026-09-24 — unknown inventory balance is not zero
 
 - ItemsViewModel now keeps balance unknown until the repository emits. The shared SUP pill renders its existing unknown state; mint/boost/upgrade affordability is false until an actual value exists. The upgrade confirmation shows loading instead of insufficient balance while that value is unknown. Actual repository purchase validation and amounts are unchanged.

@@ -183,7 +183,9 @@ fun RankingScreen(
             when (val state = factionRanking) {
                 is FactionRankingState.Loading -> item { RankingNotice(R.string.rank_loading) }
                 is FactionRankingState.Failed -> item {
-                    RankingNotice(state.problem.message()) { viewModel.loadFactionRanking(force = true) }
+                    RankingNotice(state.problem.message(),
+                        signInRequired = state.problem == RankingProblem.SIGN_IN_REQUIRED,
+                    ) { viewModel.loadFactionRanking(force = true) }
                 }
                 is FactionRankingState.Ready ->
                     items(state.rows, key = { it.faction.id }) { row -> FactionRow(row) }
@@ -196,7 +198,9 @@ fun RankingScreen(
             item {
                 val state = ranking
                 if (state is RankingState.Failed) {
-                    RankingNotice(state.problem.message()) {
+                    RankingNotice(state.problem.message(),
+                        signInRequired = state.problem == RankingProblem.SIGN_IN_REQUIRED,
+                    ) {
                         viewModel.loadRanking(board, meLabel, force = true)
                     }
                 } else {
@@ -269,7 +273,11 @@ fun RankingScreen(
  * 해 볼 수 있는 것이면 누를 자리를 준다.
  */
 @Composable
-private fun RankingNotice(@StringRes message: Int, onRetry: (() -> Unit)? = null) {
+private fun RankingNotice(
+    @StringRes message: Int,
+    signInRequired: Boolean = false,
+    onRetry: (() -> Unit)? = null,
+) {
     GlowCard(contentPadding = PaddingValues(18.dp), spacing = 8.dp) {
         Text(
             text = stringResource(message),
@@ -278,17 +286,13 @@ private fun RankingNotice(@StringRes message: Int, onRetry: (() -> Unit)? = null
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
-        if (onRetry != null) {
-            Text(
+        if (signInRequired) {
+            com.stepup.android.ui.components.SignInAgainButton()
+        } else if (onRetry != null) {
+            com.stepup.android.ui.components.GhostButton(
                 text = stringResource(R.string.rank_retry),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .quietClickable(onRetry)
-                    .padding(vertical = 6.dp),
+                onClick = onRetry,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
