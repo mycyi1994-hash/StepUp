@@ -416,3 +416,21 @@ fun AvatarBadge(
         )
     }
 }
+
+/** 진행 막대의 값 — "12,840" 과 흐린 " / 8,000 걸음" */
+@Composable
+private fun GoalValue(value: String, suffix: String) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text(
+            text = value,
+            fontFamily = StepUpNumbers,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Snow,
+            maxLines = 1,
+        )
+        if (suffix.isNotEmpty()) {
+            Text(text = suffix, fontSize = 13.sp, color = Silver, maxLines = 1)
+        }
+    }
+}
