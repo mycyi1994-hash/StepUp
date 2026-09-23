@@ -15,9 +15,23 @@ logcat_pid=$!
   done
 ) > screen-gallery/host-memory.txt 2>&1 &
 monitor_pid=$!
+# Best-effort transport only; these files never substitute for final test reports.
+# A failed emulator otherwise takes all earlier screenshots with it.
+mkdir -p screen-gallery/partial-captures
+(
+  while true; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery; do
+      destination="screen-gallery/partial-captures/$capture_dir"
+      mkdir -p "$destination"
+      timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
+    done
+    sleep 20
+  done
+) > screen-gallery/partial-transfer-log.txt 2>&1 &
+capture_transfer_pid=$!
 collect_diagnostics() {
-  kill "$logcat_pid" "$monitor_pid" 2>/dev/null || true
-  wait "$logcat_pid" "$monitor_pid" 2>/dev/null || true
+  kill "$logcat_pid" "$monitor_pid" "$capture_transfer_pid" 2>/dev/null || true
+  wait "$logcat_pid" "$monitor_pid" "$capture_transfer_pid" 2>/dev/null || true
   sudo -n dmesg --ctime > screen-gallery/host-kernel.txt 2>&1 || true
   if [[ -d /tmp/android-runner ]]; then
     cp -R /tmp/android-runner screen-gallery/emulator-diagnostics || true

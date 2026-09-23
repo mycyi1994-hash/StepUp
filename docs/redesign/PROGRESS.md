@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — retain partial screenshots before device loss
+
+- 787f31b logs again show emulator offline/disappearance before final adb pulls could retrieve screenshots; post-failure window/ANR dumps are empty when the device is gone. Both explicit-SwiftShader jobs for 0383b12 remain live; do not restart or infer their outcome.
+- Added bounded background transport for only the four known screenshot directories into partial-captures. It never retries instrumentation, changes test status, or substitutes partial files for final captures/reports. Transfers are best effort and can catch a file while being written; individual images must be opened before using them as visual evidence.
+- Shell syntax and whitespace checks pass. Native capture survival and renderer stability remain unverified. This diagnostic supports the full UI review and does not reduce required device/API coverage.
+
 ## 2026-09-24 — chart interaction and accessible values
 
 - Weekly/quarter bars now expose date/range, step count, button role and selected state to accessibility services; previously their visual bars had no readable value. Test tags identify bars and expanded details without depending on translated captions.
