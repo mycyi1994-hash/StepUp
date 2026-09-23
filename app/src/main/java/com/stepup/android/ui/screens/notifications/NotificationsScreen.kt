@@ -134,10 +134,6 @@ class NotificationsViewModel(
         }
     }
 
-    fun claimEventReward(entity: NotificationEntity) {
-        viewModelScope.launch { repo.claimEventReward(entity) }
-    }
-
     companion object {
         val Factory = viewModelFactory {
             initializer {
@@ -158,6 +154,7 @@ fun NotificationsScreen(
     onOpenComment: (CommentTarget) -> Unit = {},
     /** 알림이 가리키는 크루 게시판으로 이동 */
     onOpenCrew: (String) -> Unit = {},
+    onOpenChallenges: () -> Unit = {},
     viewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.Factory),
 ) {
     val notifications by viewModel.items.collectAsStateWithLifecycle()
@@ -223,7 +220,7 @@ fun NotificationsScreen(
                     onAcceptCrew = { viewModel.acceptCrewInvite(entity) },
                     onDecline = { viewModel.decline(entity) },
                     onAcceptParty = { viewModel.acceptPartyInvite(entity, onOpenLobby) },
-                    onClaim = { viewModel.claimEventReward(entity) },
+                    onClaim = onOpenChallenges,
                     onOpen = destinationOf(entity)?.let { destination ->
                         {
                             when (destination) {
@@ -353,7 +350,7 @@ private fun NotificationRow(
 
                         else -> {
                             VoltButton(
-                                text = stringResource(R.string.notif_claim),
+                                text = stringResource(R.string.challenge_title),
                                 onClick = onClaim,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -436,7 +433,8 @@ private fun messageFor(entity: NotificationEntity): String {
             stringResource(R.string.notif_party_invite, entity.argText)
 
         NotificationType.EVENT_REWARD ->
-            stringResource(R.string.notif_event_reward, entity.argText, amount)
+            if (entity.actioned) stringResource(R.string.notif_event_reward, entity.argText, amount)
+            else stringResource(R.string.notif_reward_unverified)
 
         else -> stringResource(R.string.notif_title)
     }

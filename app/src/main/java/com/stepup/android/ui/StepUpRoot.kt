@@ -497,6 +497,7 @@ internal fun MainScaffold(
             composable(Routes.WALLET) { WalletScreen(onBack = { navController.popBackStack() }) }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onBack = { navController.popBackStack() },
                     onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
                     onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },

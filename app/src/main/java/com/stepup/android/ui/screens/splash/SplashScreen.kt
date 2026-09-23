@@ -50,7 +50,6 @@ fun SplashScreen(onReady: () -> Unit) {
                 ServiceLocator.notificationRepository.purgeLegacyInvites()
                 ServiceLocator.communityRepository.clearLegacy()
                 ServiceLocator.courseRepository.ensureSeeded()
-                ServiceLocator.notificationRepository.seedWelcome()
                 ServiceLocator.rewardRepository.balance.first()
                 ServiceLocator.stepRepository.dailyGoal.first()
                 ServiceLocator.sneakerRepository.equipped.first()

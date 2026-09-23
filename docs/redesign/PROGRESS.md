@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — remove unverified notification payouts
+
+- Removed synthetic welcome seeding from production startup and removed NotificationRepository's direct local reward-credit method/dependency. Legacy notification rows and previously credited ledger entries are preserved. Unprocessed legacy reward notices now explain that no verified payment record exists and open the real Challenges route, where server confirmation already gates challenge claims. This does not retroactively verify old credits or implement a welcome campaign on the server.
+- Welcome sample data now exists only in androidTest/TestData. Added a production-navigation test checking that the legacy notice reaches Challenges without changing the balance or deleting the notice. Gallery notification capture now uses MainScaffold. Native tests are pending; local resource, design and asset checks pass.
+- a71c7e8 Build APK 35913661076 has passed unit tests and debug APK; release build is still running. Prior terrace gallery 35912849285 is still executing. ce5d40b and this follow-up are queued locally to avoid cancelling the active build before its result is known.
+
 ## 2026-09-24 — crew invitation confirmation
 
 - Crew invitation handling now checks the actual join result: only Joined/Requested consumes the notification. Failed/missing-target/exception paths retain it for retry; an already processed entity is not resubmitted. The screen gates duplicate accept/decline while joining and shows localized failure, sign-in or approval-request feedback. Coroutine cancellation is propagated and busy state is always cleared.

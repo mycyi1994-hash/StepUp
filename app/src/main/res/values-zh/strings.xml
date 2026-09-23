@@ -1500,5 +1500,6 @@
     <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
     <string name="run_location_disabled">位置权限已关闭</string>
     <string name="finish_share_activity">我在StepUp用%2$s跑了%1$s公里。</string>
+    <string name="notif_reward_unverified">此历史奖励通知没有已验证的发放记录。请前往挑战查看可领取的奖励。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

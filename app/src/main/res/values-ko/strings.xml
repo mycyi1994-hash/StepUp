@@ -1500,5 +1500,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="splash_prepare_failed">앱을 준비하지 못했어요. 다시 시도해 주세요.</string>
     <string name="run_location_disabled">위치 권한 꺼짐</string>
     <string name="finish_share_activity">StepUp에서 %1$s km를 %2$s 동안 달렸어요.</string>
+    <string name="notif_reward_unverified">이전 보상 알림에는 확인된 지급 기록이 없어요. 받을 수 있는 보상은 도전에서 확인하세요.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

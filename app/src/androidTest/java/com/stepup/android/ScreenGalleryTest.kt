@@ -78,7 +78,7 @@ class ScreenGalleryTest {
             ServiceLocator.sneakerRepository.ensureStarter()
             TestData.seedCommunity()
             ServiceLocator.courseRepository.ensureSeeded()
-            ServiceLocator.notificationRepository.seedWelcome()
+            TestData.seedWelcomeNotification()
             sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
             crewId = ServiceLocator.crewRepository.crews.value.first().id
         }
@@ -232,7 +232,7 @@ class ScreenGalleryTest {
             7 -> CourseHubScreen()
             8 -> AchievementsScreen()
             9 -> AnalyticsScreen()
-            10 -> NotificationsScreen()
+            10 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.NOTIFICATIONS)
             11 -> ExperienceSettingsScreen {}
             12 -> NotificationSettingsScreen()
             13 -> PrivacyScreen()

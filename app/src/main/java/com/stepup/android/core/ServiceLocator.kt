@@ -196,7 +196,7 @@ object ServiceLocator {
             api = EventApi(server),
             stepDao = database.stepDao(),
         )
-        notificationRepository = NotificationRepository(database.notificationDao(), rewardRepository)
+        notificationRepository = NotificationRepository(database.notificationDao())
         marketRepository = MarketRepository(
             api = MarketApi(server),
             server = server,

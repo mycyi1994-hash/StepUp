@@ -1501,5 +1501,6 @@ StepUp と走り出そう。</string>
     <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
     <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
     <string name="finish_share_activity">StepUpで%1$s kmを%2$sで走りました。</string>
+    <string name="notif_reward_unverified">この過去の報酬通知には確認済みの支払い記録がありません。獲得できる報酬はチャレンジで確認してください。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

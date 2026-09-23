@@ -82,7 +82,7 @@ class ExperienceUiTest {
         ServiceLocator.sneakerRepository.ensureStarter()
         TestData.seedCommunity()
         ServiceLocator.courseRepository.ensureSeeded()
-        ServiceLocator.notificationRepository.seedWelcome()
+        TestData.seedWelcomeNotification()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
         crewId = ServiceLocator.crewRepository.crews.value.first().id
         postId = ServiceLocator.communityRepository.posts.value.first().id

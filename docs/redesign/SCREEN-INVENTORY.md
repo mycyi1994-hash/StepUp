@@ -64,7 +64,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:75 | pending | pending |
 | MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:85 | pending | pending |
 | MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:80 | pending | pending |
-| NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:154 | pending | pending |
+| NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:150 | pending | pending |
 | AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:186 | pending | pending |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:135 | pending | pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:121 | pending | pending |
