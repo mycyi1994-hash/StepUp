@@ -55,6 +55,33 @@ class StepUpPalette(
     val silver: Color,
     /** 힌트 · 비활성 */
     val slate: Color,
+    /**
+     * 화면 전체를 덮어 눌러 주는 막.
+     *
+     * 두 테마 모두 **어둡다.** 막의 일은 뒤를 가리는 것이고, 그 위에는 흰
+     * 글자와 밝은 패널이 뜬다. 이 자리에 [snow] 같은 테마 반전 색을 쓰면
+     * 다크 테마에서 화면이 흰 막으로 덮이고, 그 위의 밝은 글자가 통째로
+     * 사라진다.
+     */
+    val scrim: Color,
+    /** 그 막을 얼마나 진하게 칠하는가 */
+    val scrimAlpha: Float,
+    /**
+     * 막 **위에** 뜨는 패널의 바닥.
+     *
+     * 카드([carbon])와 다른 자리다. 카드는 앱 바닥 위에 뜨고, 이것은 어두운
+     * 막 위에 뜬다 — 밝은 테마에서는 흰 패널, 어두운 테마에서는 막보다 한
+     * 단계 들린 남색이라야 둘레가 읽힌다.
+     */
+    val overlay: Color,
+    /**
+     * 표면 **위에 글자로 얹는** 강조색.
+     *
+     * [volt] 는 버튼의 **바닥**이라 흰 글자가 얹힐 만큼 진해야 하고, 이것은
+     * 반대로 어두운 표면 위에서 읽힐 만큼 밝아야 한다. 한 색이 둘을 겸하면
+     * 어두운 테마에서 파란 글자가 카드에 묻는다.
+     */
+    val voltText: Color,
     /** 카드 표면 그라데이션의 위·아래 */
     val cardTop: Color,
     val cardBottom: Color,
@@ -113,7 +140,14 @@ val LightPalette = StepUpPalette(
     alert = Color(0xFFE5484D),
     snow = Color(0xFF101D40),
     silver = Color(0xFF5A6A8C),
-    slate = Color(0xFF586985),
+    // 힌트·비활성 자리. 처음 #93A1BE 는 흰 바탕에서 2.6:1 이라 안 읽혔다.
+    // 더 누르면 보조 텍스트(silver)보다 진해져 위계가 뒤집히므로, 흰 바탕
+    // 4.5:1 에서 멈춘다 — 하단 탭의 안 고른 이름도 이 색이다.
+    slate = Color(0xFF687796),
+    scrim = Color(0xFF0B1326),
+    scrimAlpha = 0.80f,
+    overlay = Color(0xFFFFFFFF),
+    voltText = Color(0xFF145BFF),
     cardTop = Color(0xFFFAFCFF),
     cardBottom = Color(0xFFF1F6FF),
     backdropTop = Color(0xFFFBFCFF),
@@ -148,6 +182,12 @@ val DarkPalette = StepUpPalette(
     snow = Color(0xFFF7FAFF),
     silver = Color(0xFFD7E2F2),
     slate = Color(0xFFA7B5CA),
+    scrim = Color(0xFF01030A),
+    scrimAlpha = 0.84f,
+    // 막이 거의 검정이라 패널은 카드보다 한 단계 더 들어 올린다.
+    overlay = Color(0xFF1D2C4C),
+    // 어두운 표면 위의 파란 글자. volt 그대로면 3.5:1 이라 묻힌다.
+    voltText = Color(0xFF5AA7FF),
     cardTop = Color(0xFF131C2E),
     cardBottom = Color(0xFF0D1422),
     backdropTop = Color(0xFF080D18),
@@ -190,6 +230,14 @@ val VoltSoft: Color get() = active.value.voltSoft
 
 /** 강조색 위에 얹는 글자·아이콘. 두 테마 모두 흰색이다. */
 val OnVolt: Color get() = active.value.onVolt
+
+/** 화면을 덮는 막과 그 위에 뜨는 패널 — 두 테마 모두 막은 어둡다 */
+val Scrim: Color get() = active.value.scrim
+val ScrimAlpha: Float get() = active.value.scrimAlpha
+val Overlay: Color get() = active.value.overlay
+
+/** 표면 위에 글자로 얹는 강조색. 버튼 바닥에는 [Volt] 를 쓴다. */
+val VoltText: Color get() = active.value.voltText
 
 val Alert: Color get() = active.value.alert
 val Snow: Color get() = active.value.snow

@@ -66,11 +66,17 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.theme.Carbon
+import com.stepup.android.ui.theme.CarbonHigh
+import com.stepup.android.ui.theme.OnVolt
+import com.stepup.android.ui.theme.Overlay
+import com.stepup.android.ui.theme.Scrim
+import com.stepup.android.ui.theme.ScrimAlpha
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltSoft
+import com.stepup.android.ui.theme.VoltText
 
 /**
  * 스포트라이트 가이드 투어.
@@ -277,7 +283,10 @@ fun GuideOverlay(
                     }
                 },
         ) {
-            drawRect(Snow.copy(alpha = 0.80f))
+            // 막은 두 테마 모두 어둡다. 예전에는 Snow 를 썼는데, 그 색은
+            // 테마를 따라 뒤집히는 **글자색**이라 어두운 테마에서 화면이
+            // 흰 막으로 덮였다. 그 위에 얹힌 흰 버튼들이 그대로 사라졌다.
+            drawRect(Scrim.copy(alpha = ScrimAlpha))
             if (target != null) {
                 val pad = 7.dp.toPx()
                 drawRoundRect(
@@ -295,7 +304,8 @@ fun GuideOverlay(
             Canvas(Modifier.fillMaxSize()) {
                 val pad = 7.dp.toPx()
                 drawRoundRect(
-                    color = Volt,
+                    // 어두운 막 위에서는 밝은 쪽 파랑이라야 테두리가 보인다
+                    color = VoltSoft,
                     topLeft = Offset(target.left - pad, target.top - pad),
                     size = Size(target.width + pad * 2, target.height + pad * 2),
                     cornerRadius = CornerRadius(22.dp.toPx()),
@@ -304,7 +314,7 @@ fun GuideOverlay(
                 // 물결처럼 한 겹 더 퍼졌다 사라진다
                 val spread = pad + 14.dp.toPx() * pulse
                 drawRoundRect(
-                    color = Volt.copy(alpha = 0.55f * (1f - pulse)),
+                    color = VoltSoft.copy(alpha = 0.55f * (1f - pulse)),
                     topLeft = Offset(target.left - spread, target.top - spread),
                     size = Size(target.width + spread * 2, target.height + spread * 2),
                     cornerRadius = CornerRadius(22.dp.toPx() + 14.dp.toPx() * pulse),
@@ -367,8 +377,10 @@ fun GuideOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Carbon)
-                    .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+                    // 카드가 아니라 막 위에 뜬 패널이다. 밝은 테마에서는
+                    // 흰 패널, 어두운 테마에서는 막보다 한 단계 들린 남색.
+                    .background(Overlay)
+                    .border(1.dp, VoltSoft.copy(alpha = 0.55f), RoundedCornerShape(20.dp))
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
@@ -377,7 +389,7 @@ fun GuideOverlay(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    color = Volt,
+                    color = VoltText,
                 )
                 Text(
                     text = stringResource(step.titleRes),
@@ -411,7 +423,10 @@ fun GuideOverlay(
                 GhostButton(
                     text = stringResource(R.string.guide_skip),
                     onClick = { finish() },
-                    accent = Silver,
+                    // 이 둘은 카드가 아니라 **막 위에** 그대로 서 있다.
+                    // Silver 는 테마를 따라 뒤집혀 막과 같은 밝기가 되곤
+                    // 했고, 그래서 안 보였다. 막이 늘 어두우니 흰색으로 둔다.
+                    accent = OnVolt,
                 )
             }
             // 첫 스텝에는 돌아갈 곳이 없다. 눌리지 않는 버튼을 남겨 두는 것은
@@ -420,7 +435,7 @@ fun GuideOverlay(
                 text = stringResource(R.string.guide_prev),
                 onClick = { GuideTour.back() },
                 enabled = GuideTour.stepIndex > 0,
-                accent = Silver,
+                accent = OnVolt,
             )
             VoltButton(
                 text = stringResource(if (isLast) R.string.guide_start else R.string.guide_next),
@@ -459,7 +474,8 @@ private fun Pointer(up: Boolean, pulse: Float) {
             }
             close()
         }
-        drawPath(path, color = Volt)
+        // 카드 테두리와 같은 파랑. 막 위에서 읽혀야 하므로 밝은 쪽을 쓴다.
+        drawPath(path, color = VoltSoft)
     }
 }
 
@@ -494,10 +510,12 @@ private fun JourneyFlow() {
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(if (soon) Carbon else Volt.copy(alpha = 0.16f))
+                            // 패널 바닥과 같은 색이면 원이 사라진다.
+                            // 한 단계 다른 면을 깔아 둘레가 보이게 한다.
+                            .background(if (soon) CarbonHigh else Volt.copy(alpha = 0.16f))
                             .border(
                                 1.dp,
-                                if (soon) Slate.copy(alpha = 0.5f) else Volt.copy(alpha = 0.55f),
+                                if (soon) Slate else VoltText.copy(alpha = 0.55f),
                                 CircleShape,
                             ),
                         contentAlignment = Alignment.Center,
@@ -505,7 +523,7 @@ private fun JourneyFlow() {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = if (soon) Slate else Volt,
+                            tint = if (soon) Silver else VoltText,
                             modifier = Modifier.size(13.dp),
                         )
                     }
@@ -514,7 +532,9 @@ private fun JourneyFlow() {
                             Modifier
                                 .width(1.dp)
                                 .height(19.dp)
-                                .background(Volt.copy(alpha = 0.3f)),
+                                // 잇는 선도 패널 위에 놓인다 — 어두운 테마에서
+                                // 묻히지 않게 밝은 쪽 파랑을 쓴다.
+                                .background(VoltText.copy(alpha = 0.45f)),
                         )
                     }
                 }
@@ -540,10 +560,12 @@ private fun JourneyFlow() {
                                 text = stringResource(R.string.journey_soon),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Slate,
+                                // 같은 회색을 바탕과 글자에 같이 쓰면 배지가
+                                // 읽히지 않는다. 글자만 한 단계 올린다.
+                                color = Silver,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .background(Slate.copy(alpha = 0.16f))
+                                    .background(Slate.copy(alpha = 0.18f))
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
