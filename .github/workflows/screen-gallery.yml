@@ -13,6 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         api-level: [34, 35]
+        suite: [interaction, gallery, large-font]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -40,11 +41,11 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
-            bash tools/run_screen_gallery.sh
+            bash tools/run_screen_gallery.sh ${{ matrix.suite }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: StepUp-screen-gallery-api-${{ matrix.api-level }}
+          name: StepUp-screen-gallery-api-${{ matrix.api-level }}-${{ matrix.suite }}
           path: |
             screen-gallery/
             app/build/reports/androidTests/

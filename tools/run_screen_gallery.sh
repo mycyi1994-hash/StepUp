@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -uo pipefail
 status=0
+suite="${1:-all}"
+case "$suite" in
+  all|interaction|gallery|large-font) ;;
+  *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
+esac
 original_font_scale=""
 # Persist evidence on the host while the emulator is alive: post-failure adb
 # cannot recover the last scene or Android logs after the device disappears.
@@ -81,6 +86,7 @@ run_instrumentation() {
     fi
   fi
 }
+if [[ "$suite" == "all" || "$suite" == "interaction" ]]; then
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
 run_instrumentation interaction "com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.DatabaseMigrationTest"
 cp -R app/build/reports/androidTests/. screen-gallery/chrome-reports/ || true
@@ -90,12 +96,16 @@ mkdir -p screen-gallery/login
 pull_captures /sdcard/Android/data/com.stepup.android/files/login-checks/. screen-gallery/login/ || status=1
 mkdir -p screen-gallery/forms
 pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
+fi
+if [[ "$suite" == "all" || "$suite" == "gallery" ]]; then
 run_instrumentation gallery "com.stepup.android.ScreenGalleryTest"
 mkdir -p screen-gallery/gallery-results
 cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+fi
 # Real system font enlargement reaches separate Dialog windows, unlike a
 # CompositionLocal override on only the parent screen. Preserve its own reports.
+if [[ "$suite" == "all" || "$suite" == "large-font" ]]; then
 original_font_scale="$(timeout 10s adb shell settings get system font_scale | tr -d '\r')"
 if [[ "$original_font_scale" == "null" || "$original_font_scale" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
   if timeout 10s adb shell settings put system font_scale 1.6; then
@@ -109,6 +119,7 @@ if [[ "$original_font_scale" == "null" || "$original_font_scale" =~ ^[0-9]+([.][
 else
   echo "Cannot verify original system font scale; enlarged-font validation not run" >&2
   status=1
+fi
 fi
 timeout 20s adb logcat -d -s ScreenGallery AndroidRuntime > screen-gallery/capture-log.txt || true
 exit "$status"

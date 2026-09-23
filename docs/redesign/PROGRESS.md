@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — isolate native verification suites from emulator loss
+
+- Both 580a9e4 API jobs lost their emulator in the first interaction phase, preventing any subsequent gallery/large-font run. The workflow now uses API 34/35 × interaction/gallery/large-font jobs, each with its own emulator. Every existing interaction class and both other suites remain required; fail-fast remains false and failures are not suppressed or retried.
+- Runner accepts an explicit suite, validates it before contacting a device, and preserves its existing all-suites default for manual use. Each job uploads an artifact with API and suite in the name. Large-font restores the prior system value as before. This isolates failure impact; it does not claim to cure emulator disappearance or prove device behavior.
+- Shell syntax passes; invalid-suite invocation fails before device work. Whitespace/source/resource checks pass. New matrix execution is pending; latest f8d93f7 build/gallery remain live, so no in-flight job was cancelled.
+
 ## 2026-09-24 — readable filter summaries and reachable reset
 
 - Shared filter summaries now separate the condition text from reset actions. The previous 12sp clickable labels with 4dp vertical padding are replaced by shared GhostButton controls; condition text uses the central 14sp secondary size and wraps instead of truncating. Up to three named conditions and the existing remaining-count summary are preserved.
