@@ -136,18 +136,21 @@ fun GlowCard(
     contentPadding: PaddingValues = PaddingValues(18.dp),
     spacing: Dp = 13.dp,
     accent: Boolean = false,
-    shape: Shape = RoundedCornerShape(22.dp),
+    shape: Shape = RoundedCornerShape(18.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier
             .reveal()
             .fillMaxWidth()
-            .shadow(
-                elevation = 2.dp,
-                shape = shape,
-                ambientColor = Snow,
-                spotColor = Snow,
+            // 어두운 테마에서는 그림자를 두지 않는다 — 얇은 경계선 하나로 층을
+            // 나눈다. 빛 번짐은 주요 버튼 · 포인트 · 캐릭터에만 쓴다.
+            .then(
+                if (com.stepup.android.ui.theme.StepUpColors.dark) {
+                    Modifier
+                } else {
+                    Modifier.shadow(elevation = 2.dp, shape = shape, ambientColor = Snow, spotColor = Snow)
+                },
             )
             .clip(shape)
             .background(CardFill, shape)

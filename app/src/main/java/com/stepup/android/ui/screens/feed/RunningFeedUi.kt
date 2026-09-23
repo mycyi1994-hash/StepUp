@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
+import com.stepup.android.ui.theme.VoltText
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -168,6 +170,9 @@ fun FeedSearchField(
     hint: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** 칸 오른쪽 끝의 거르기 버튼 — 따로 줄을 차지하지 않는다 */
+    onFilter: (() -> Unit)? = null,
+    filterCount: Int = 0,
 ) {
     Row(
         modifier = modifier
@@ -195,6 +200,25 @@ fun FeedSearchField(
             )
             if (value.isEmpty()) {
                 Text(text = hint, fontSize = 14.sp, color = Slate, maxLines = 1)
+            }
+        }
+        if (onFilter != null) {
+            val label = stringResource(R.string.filter_button)
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (filterCount > 0) Volt.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
+                    .quietClickable(onFilter)
+                    .semantics { contentDescription = label },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Tune,
+                    contentDescription = null,
+                    tint = if (filterCount > 0) VoltText else Silver,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
     }
@@ -397,6 +421,7 @@ fun EventCard(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_event), accent = true)
             FeedTag(statusText, accent = !statusMuted, warn = statusMuted)
             if (row.feeMin != null) {
                 FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin.toLong())))
@@ -479,6 +504,7 @@ fun NewsCard(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_news), accent = true)
                     FeedTag(stringResource(categoryRes(row.category)), accent = true)
                     Eyebrow(
                         text = listOfNotNull(

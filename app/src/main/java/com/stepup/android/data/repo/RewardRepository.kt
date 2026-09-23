@@ -35,6 +35,13 @@ class RewardRepository(
 
     fun ledger(limit: Int = 100): Flow<List<RewardEntity>> = rewardDao.observeLedger(limit)
 
+    /** [fromMillis] 이후 러닝·보너스·이벤트로 번 SUP. 거래 대금은 빠진다. */
+    fun earnedSince(fromMillis: Long): Flow<Double> = rewardDao.observeEarnedSince(fromMillis)
+
+    /** [type] 한 종류가 [fromMillis] 이후 적힌 합 */
+    fun sumOfTypeSince(type: String, fromMillis: Long): Flow<Double> =
+        rewardDao.observeSumOfTypeSince(type, fromMillis)
+
     suspend fun balanceNow(): Double = rewardDao.balanceNow()
 
     // ── 범용 적립 / 차감 ─────────────────────────────────────

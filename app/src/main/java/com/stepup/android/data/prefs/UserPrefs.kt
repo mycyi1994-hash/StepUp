@@ -75,9 +75,65 @@ class UserPrefs(private val context: Context) {
         val AUTH_SESSION = stringPreferencesKey("auth_session")
         val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
         val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
+
+        // ── 러너 캐릭터 ──
+        /** "M" / "F" — 기본 캐릭터 둘 중 무엇을 쓰는가 */
+        val AVATAR_GENDER = stringPreferencesKey("avatar_gender")
+        /** 입고 있는 의상 id. 실제로 가진 것만 들어간다. */
+        val AVATAR_OUTFIT = stringPreferencesKey("avatar_outfit")
+
+        // ── 데모 모드 ──
+        //
+        // 운영 데이터와 **다른 열쇠**를 쓴다. 데모에서 입혀 본 의상이
+        // AVATAR_OUTFIT 에 섞이면, 데모를 끈 뒤에도 갖지 않은 옷을 입고 있게 된다.
+        val DEMO_MODE = booleanPreferencesKey("demo_mode")
+        val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
     }
 
     val dailyGoal: Flow<Int> = context.dataStore.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
+
+    // ── 러너 캐릭터 ──────────────────────────────────────────
+
+    val avatarGender: Flow<String> = context.dataStore.data.map { it[Keys.AVATAR_GENDER] ?: "" }
+
+    suspend fun setAvatarGender(id: String) {
+        context.dataStore.edit { it[Keys.AVATAR_GENDER] = id }
+    }
+
+    val avatarOutfit: Flow<String> = context.dataStore.data.map { it[Keys.AVATAR_OUTFIT] ?: "" }
+
+    suspend fun setAvatarOutfit(id: String) {
+        context.dataStore.edit { it[Keys.AVATAR_OUTFIT] = id }
+    }
+
+    // ── 데모 모드 ────────────────────────────────────────────
+
+    /**
+     * 서버 없이 화면을 둘러보는 모드.
+     *
+     * 켜져 있으면 소식 · 러너 마켓이 **예시 데이터**를 보여 주고, 화면마다
+     * "데모"라고 적힌다. 원장(SUP)과 서버에는 아무것도 쓰지 않는다.
+     */
+    val demoMode: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEMO_MODE] ?: false }
+
+    suspend fun setDemoMode(on: Boolean) {
+        context.dataStore.edit {
+            it[Keys.DEMO_MODE] = on
+            // 끄면 체험으로 입힌 옷도 벗긴다. 남겨 두면 다음에 켤 때 갑자기
+            // 입고 나타난다 — 그 사이에 무엇을 했는지 사용자는 기억하지 못한다.
+            if (!on) it.remove(Keys.DEMO_OUTFIT)
+        }
+    }
+
+    /** 데모에서 체험으로 입혀 본 의상. 데모가 꺼지면 비어 있다. */
+    val demoOutfit: Flow<String> = context.dataStore.data.map { it[Keys.DEMO_OUTFIT] ?: "" }
+
+    suspend fun setDemoOutfit(id: String) {
+        context.dataStore.edit {
+            // 데모가 꺼져 있으면 체험 착용을 받지 않는다
+            if (it[Keys.DEMO_MODE] == true) it[Keys.DEMO_OUTFIT] = id
+        }
+    }
 
     val experience: Flow<ExperiencePreferences> = context.dataStore.data.map {
         ExperiencePreferences(it[Keys.SOUNDS] ?: true, it[Keys.HAPTICS] ?: true, it[Keys.REDUCED_MOTION] ?: false)

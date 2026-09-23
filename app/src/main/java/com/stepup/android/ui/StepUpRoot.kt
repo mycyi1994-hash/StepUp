@@ -29,13 +29,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Article
+import com.stepup.android.ui.screens.customize.RunnerMarketScreen
+import com.stepup.android.ui.screens.customize.CustomizeScreen
+import com.stepup.android.ui.components.StepUpIcons
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Hexagon
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -111,45 +112,99 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 
 sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
-    data object Home : Screen("home", R.string.tab_home, Icons.Filled.Hexagon)
+    /**
+     * 러닝 — 첫 화면. 오늘 번 포인트 · 내 캐릭터 · 러닝 시작.
+     *
+     * 길(route)은 "home" 그대로 둔다. 알림·가이드 투어·다른 화면에서 넘어오는
+     * 이동이 모두 이 이름을 쓴다.
+     */
+    data object Run : Screen("home", R.string.tab_run, Icons.AutoMirrored.Filled.DirectionsRun)
 
-    /** 읽는 자리 — 러닝 이벤트 소식 · 특가 공지 · 건강 뉴스 */
-    data object News : Screen("news", R.string.tab_news, Icons.AutoMirrored.Filled.Article)
+    /** 꾸미기 — 캐릭터에 의상과 신발을 입히는 곳. 러너 마켓은 이 안에 있다. */
+    data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shirt)
+
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
-    /**
-     * 마켓 — 스토어와 아이템(보관함)을 담는다.
-     *
-     * 길(route)은 "items" 그대로 둔다. 화면 이름만 바뀐 것이라, 길까지 바꾸면
-     * 가이드 투어가 가리키는 자리와 다른 화면에서 넘어오는 이동이 전부
-     * 어긋난다.
-     */
-    data object Market : Screen("items", R.string.tab_market, Icons.Filled.ShoppingBag)
-
-    /** 받는 자리 — 챌린지 · 캠페인 · 미션의 진행률과 보상 */
-    data object Events : Screen("events", R.string.tab_events, Icons.Filled.Event)
-    data object Profile : Screen("profile", R.string.tab_profile, Icons.Filled.Person)
+    /** 내 정보 — 프로필 · 기록 · 포인트 · 설정 */
+    data object Profile : Screen("profile", R.string.tab_me, Icons.Filled.Person)
 }
 
-// 홈 다음이 뉴스다 — 오늘 할 것(러닝)과 오늘 볼 것(소식)이 붙어 있어야
-// 앱을 열고 왼쪽 둘만 오가게 된다.
-//
-// 뉴스와 이벤트를 나눈 것은 하는 일이 달라서다. 이벤트는 진행률을 보고
-// 보상을 **받는** 자리라 누를 것이 있고, 뉴스는 **읽는** 자리라 없다.
+/**
+ * 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
+ *
+ * 예전의 뉴스 · 마켓 · 이벤트 탭은 없어진 것이 아니라 자리를 옮겼다.
+ *
+ *   * 뉴스(대회·건강 소식) → 러닝 안의 "소식"
+ *   * 이벤트(챌린지·미션) → 러닝 안의 "챌린지"
+ *   * 마켓(스토어·NFT 마켓·보관함) → 꾸미기 안의 "러너 마켓" · "신발 보관함"
+ *
+ * 길 이름("news" · "events" · "items")은 그대로라, 알림이나 다른 화면에서
+ * 그 자리로 가는 이동은 전처럼 동작한다.
+ */
 private val bottomTabs = listOf(
-    Screen.Home,
-    Screen.News,
+    Screen.Run,
+    Screen.Customize,
     Screen.Community,
-    Screen.Market,
-    Screen.Events,
     Screen.Profile,
 )
-private val tabRoutes = bottomTabs.map { it.route }.toSet()
+
+/**
+ * 하위 화면이 어느 탭 밑에 있는가.
+ *
+ * 소식을 보고 있으면 러닝 탭에 불이 들어와 있어야 "지금 러닝 안에 있다"가
+ * 읽힌다. 불이 꺼지면 사용자는 길을 잃은 것처럼 느낀다.
+ */
+internal fun parentTabOf(route: String?): Screen? {
+    if (route == null) return null
+    return when {
+        route == Screen.Run.route || route == Routes.NEWS || route == Routes.EVENTS ||
+            route == Routes.RUN || route.startsWith("run?") || route == Routes.COURSES -> Screen.Run
+        route == Screen.Customize.route || route == Routes.RUNNER_MARKET ||
+            route == Routes.ITEMS || route.startsWith("sneaker") ||
+            route.startsWith("market/") -> Screen.Customize
+        route == Screen.Community.route || route.startsWith("crew") ||
+            route.startsWith("post") || route.startsWith("flash") ||
+            route.startsWith("lobby") || route == Routes.RANKING -> Screen.Community
+        route == Screen.Profile.route || route == Routes.WALLET ||
+            route == Routes.NOTIFICATIONS || route == Routes.ACHIEVEMENTS ||
+            route == Routes.ANALYTICS || route.startsWith("settings") -> Screen.Profile
+        else -> null
+    }
+}
+
+/**
+ * 하단 탭을 숨기는 화면 — 글을 쓰는 동안에는 키보드와 탭이 겹친다.
+ *
+ * 러닝 중에는 숨기지 않는다. 러닝은 서비스에서 돌기 때문에 다른 탭으로
+ * 가도 끊기지 않고, 탭이 보여야 러닝 중에도 다른 것을 볼 수 있다.
+ */
+private val barHiddenRoutes = setOf(
+    "post/compose/{crewId}",
+    "crew/create",
+)
+
 
 object Routes {
+    /** 러닝 안의 소식 — 대회 · 러닝·건강 */
+    const val NEWS = "news"
+
+    /** 러닝 안의 챌린지 */
+    const val EVENTS = "events"
+
+    /** 꾸미기 안의 신발 보관함 · 거래소 · 스토어 */
+    const val ITEMS = "items"
+
+    /** 꾸미기 안의 러너 마켓 — 의상 / 신발 */
+    const val RUNNER_MARKET = "runner-market"
+
     const val RUN = "run"
+
+    /** 러닝 화면 — start=true 면 들어오자마자 달리기를 시작한다 */
+    const val RUN_ROUTE = "run?start={start}"
+    const val RUN_NOW = "run?start=true"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
     const val ACHIEVEMENTS = "achievements"
@@ -271,7 +326,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
-    val showBar = currentRoute in tabRoutes
+    val showBar = currentRoute != null && currentRoute !in barHiddenRoutes
 
     Box(Modifier.fillMaxSize()) {
     Scaffold(
@@ -288,22 +343,38 @@ internal fun MainScaffold(startTour: Boolean = false) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Run.route,
             modifier = Modifier.padding(innerPadding),
             enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
             exitTransition = { fadeOut(tween(motion.duration(140))) },
             popEnterTransition = { fadeIn(tween(motion.duration(180))) },
             popExitTransition = { fadeOut(tween(motion.duration(140))) + slideOutHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
         ) {
-            composable(Screen.Home.route) {
+            composable(Screen.Run.route) {
                 HomeScreen(
-                    onStartRun = { navController.navigate(Routes.RUN) },
+                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                    onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
-                    onOpenProfile = { navController.switchTab(Screen.Profile) },
-                    onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
-                    onOpenItems = { navController.switchTab(Screen.Market) },
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
+                    onOpenNews = { navController.navigate(Routes.NEWS) },
+                    onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                )
+            }
+            composable(Screen.Customize.route) {
+                CustomizeScreen(
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
+                    onOpenVault = { navController.navigate(Routes.ITEMS) },
+                    onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
+                )
+            }
+            composable(Routes.RUNNER_MARKET) {
+                RunnerMarketScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    onOpenModel = { faction, rarity, variant ->
+                        navController.navigate(Routes.marketModel(faction, rarity, variant))
+                    },
+                    onOpenVault = { navController.navigate(Routes.ITEMS) },
                 )
             }
             composable(Screen.Community.route) {
@@ -317,8 +388,9 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
                 )
             }
-            composable(Screen.Market.route) {
+            composable(Routes.ITEMS) {
                 ItemsScreen(
+                    onBack = { navController.popBackStack() },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenMarketModel = { faction, rarity, variant ->
@@ -346,16 +418,23 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onBack = { navController.popBackStack() },
                 )
             }
-            composable(Screen.News.route) {
-                NewsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
+            composable(Routes.NEWS) {
+                NewsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                )
             }
-            composable(Screen.Events.route) {
-                EventsScreen(onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) })
+            composable(Routes.EVENTS) {
+                EventsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
+                )
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onOpenGuide = {
-                        navController.switchTab(Screen.Home)
+                        navController.switchTab(Screen.Run)
                         GuideTour.start()
                     },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -368,14 +447,26 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
-                    onOpenItems = { navController.switchTab(Screen.Market) },
+                    // 내 아이템 — 신발 보관함(강화 · 판매 · 조합 · 도감)
+                    onOpenItems = { navController.navigate(Routes.ITEMS) },
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenRanking = { navController.navigate(Routes.RANKING) },
                 )
             }
 
-            composable(Routes.RUN) {
+            composable(
+                route = Routes.RUN_ROUTE,
+                arguments = listOf(
+                    navArgument("start") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                ),
+            ) { entry ->
                 RunScreen(
                     onBack = { navController.popBackStack() },
                     onOpenCourses = { navController.navigate(Routes.COURSES) },
+                    autoStart = entry.arguments?.getBoolean("start") ?: false,
                 )
             }
             composable(Routes.COURSES) {
@@ -555,15 +646,30 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
-                .padding(top = 10.dp, bottom = 8.dp),
+                // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
+                .heightIn(min = 64.dp)
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val parent = parentTabOf(currentRoute)
             bottomTabs.forEach { screen ->
                 NavTab(
                     screen = screen,
-                    selected = currentRoute == screen.route,
-                    onClick = { navController.switchTab(screen) },
+                    selected = parent == screen,
+                    onClick = {
+                        if (parent == screen) {
+                            // 같은 탭의 하위 화면에 있으면 그 탭의 첫 화면으로 돌아간다.
+                            // 첫 화면이 백스택에 없으면(다른 길로 들어왔으면) 탭 전환으로 간다.
+                            if (currentRoute != screen.route &&
+                                !navController.popBackStack(screen.route, inclusive = false)
+                            ) {
+                                navController.switchTab(screen)
+                            }
+                        } else {
+                            navController.switchTab(screen)
+                        }
+                    },
                 )
             }
         }
@@ -573,7 +679,8 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 @Composable
 private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
     val tint by animateColorAsState(
-        targetValue = if (selected) Volt else Slate,
+        // 선택한 탭은 밝은 파랑 — 버튼 바탕색(Volt)은 검은 바닥 위 작은 글자에 어둡다
+        targetValue = if (selected) VoltText else Slate,
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
@@ -585,9 +692,9 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
-            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { if (!selected) onClick() }
-            // 탭이 여섯 개라 좁은 화면에서는 한 칸이 60dp 남짓이다.
-            // 좌우 여백을 줄여 "커뮤니티" 같은 긴 이름이 줄바꿈되지 않게 한다.
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
+            // 탭이 넷이라 한 칸이 넉넉하다. 누르는 자리는 최소 48dp 로 잡는다.
+            .heightIn(min = 56.dp)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),

@@ -115,8 +115,12 @@ jobs:
       #
       # 태그는 test-apk 하나로 고정한다. 주소가 매번 바뀌면 받는 사람이
       # 어디서 받아야 하는지 매번 물어야 한다.
+      #
+      # main 에 들어간 것만 올린다. 작업 브랜치마다 올리면 여러 브랜치가 같은
+      # 주소를 번갈아 덮어써서, 받을 때마다 다른 브랜치의 앱(예전 디자인)이 나온다.
+      # 작업 브랜치의 APK 는 위의 아티팩트에서 받는다.
       - name: Publish test APK release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

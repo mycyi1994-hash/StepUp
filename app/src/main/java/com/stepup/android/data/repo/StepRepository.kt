@@ -43,6 +43,9 @@ class StepRepository(
     /** 세션 누적 운동 시간(초) — 프로필 '총 운동 시간' 표기용 */
     fun observeTotalDurationSec(): Flow<Long> = walkSessionDao.observeDurationSince(0L)
 
+    /** [fromMillis] 이후에 시작한 러닝 세션의 운동 시간 합(초) */
+    fun observeDurationSince(fromMillis: Long): Flow<Long> = walkSessionDao.observeDurationSince(fromMillis)
+
     /** ACTIVITY_RECOGNITION 권한 허용 후 호출. 중복 호출해도 안전하다. */
     fun startTracking() {
         tracker.start()

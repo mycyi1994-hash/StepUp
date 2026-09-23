@@ -92,6 +92,15 @@ data class WalkSessionState(
     val lastVerdict: RunVerdict = RunVerdict.CLEAN,
     val lastTopSpeedKmh: Double = 0.0,
     val lastGpsKm: Double = 0.0,
+    /**
+     * 방금 끝난 러닝의 운동 시간(초)과 시작 시각 — 완료 화면에 보이기만 한다.
+     *
+     * 시작 시각은 저장된 세션 줄을 찾는 열쇠다. 완료 화면이 "서버 확인" 상태를
+     * 그 러닝의 줄에서 읽어야 한다 — 가장 최근 줄을 아무거나 읽으면 지난 러닝의
+     * 상태를 이번 것처럼 보여 줄 수 있다.
+     */
+    val lastElapsedSec: Long = 0,
+    val lastStartedAt: Long = 0,
 ) {
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
@@ -407,6 +416,8 @@ class WalkSessionService : Service() {
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,
+                lastElapsedSec = session.elapsedSec,
+                lastStartedAt = session.startedAt,
             )
             // 파티런이었다면 로비를 결과 화면으로 전환하고 방에서 나온다. 혼자 남은
             // 방에서 출발했어도(인원 1) 방은 닫아야 한다 — 안 그러면 로비가 계속
@@ -464,6 +475,17 @@ class WalkSessionService : Service() {
     companion object {
         private val _state = MutableStateFlow(WalkSessionState())
         val state: StateFlow<WalkSessionState> = _state
+
+        /**
+         * 화면 검사 전용 — 러닝 중 · 러닝 완료 화면을 실제 세션 없이 그려 본다.
+         *
+         * 적립 · 저장 · 업로드는 하나도 일어나지 않는다. 화면이 읽는 상태만 바꾼다.
+         * 앱 코드에서는 부르지 않는다.
+         */
+        @androidx.annotation.VisibleForTesting
+        fun showStateForTest(state: WalkSessionState) {
+            _state.value = state
+        }
 
         /** 러닝 목표 거리(km). 화면이 아니라 프로세스에 살아서 화면을 오가도 유지된다. */
         val goalKm = MutableStateFlow(5.0)
