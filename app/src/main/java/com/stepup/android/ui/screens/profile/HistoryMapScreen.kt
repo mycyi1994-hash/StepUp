@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +41,8 @@ import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.formatKm
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.domain.trackDistanceKm
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.StepUpMap
@@ -127,29 +127,14 @@ fun HistoryMapScreen(
     val focus = remember(map) { map.routes.flatten() }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, top = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            DarkIconButton(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                onClick = onBack,
-            )
-            Text(
-                text = stringResource(R.string.history_map_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                color = Snow,
-            )
-        }
+        SecondaryHeader(
+            title = stringResource(R.string.history_map_title),
+            onBack = onBack, balance = null, onOpenWallet = null,
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+        )
 
         Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PillChip(
@@ -173,7 +158,7 @@ fun HistoryMapScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = StepUpDesign.Gutter)
                 .clip(RoundedCornerShape(18.dp)),
         ) {
             StepUpMap(
@@ -203,7 +188,7 @@ fun HistoryMapScreen(
             }
         }
 
-        Box(Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 18.dp)) {
+        Box(Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
             GlowCard(contentPadding = PaddingValues(16.dp), spacing = 6.dp) {
                 if (map.runs == 0) {
                     Text(

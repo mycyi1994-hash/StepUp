@@ -40,6 +40,10 @@ for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 
     if 'DetailPage(' not in path.read_text(encoding='utf-8'):
         errors.append(f'{path.name}: use the fixed shared detail page')
 notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
+for relative in ('map/MapScreen.kt', 'profile/HistoryMapScreen.kt'):
+    detail = (UI/'screens'/relative).read_text(encoding='utf-8')
+    if 'SecondaryHeader(' not in detail or 'ArrowBack' in detail:
+        errors.append(f'{relative}: map chrome must use the shared detail header')
 for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
                  'community/FlashRunDetailScreen.kt', 'items/SneakerDexScreen.kt', 'profile/AnalyticsScreen.kt',
                  'items/SneakerDetailScreen.kt', 'market/MarketModelScreen.kt', 'community/PartyLobbyScreen.kt',

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,7 +46,8 @@ import com.stepup.android.domain.Post
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.Territory
 import com.stepup.android.domain.formatKm
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.StepUpMap
 import com.stepup.android.ui.components.TilePlan
@@ -113,26 +113,11 @@ fun MapScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, top = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            DarkIconButton(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                onClick = onBack,
-            )
-            Text(
-                text = stringResource(R.string.map_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                color = Snow,
-            )
-        }
+        SecondaryHeader(
+            title = stringResource(R.string.map_title),
+            onBack = onBack, balance = null, onOpenWallet = null,
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+        )
 
         TwoWaySwitch(
             labels = listOf(stringResource(R.string.map_seg_nearby), stringResource(R.string.map_seg_territory)),
@@ -142,14 +127,14 @@ fun MapScreen(
                 selectedCell = null
                 viewModel.select(if (it == 0) MapMode.NEARBY else MapMode.TERRITORY)
             },
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
         )
 
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = StepUpDesign.Gutter)
                 .clip(RoundedCornerShape(18.dp)),
         ) {
             val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
@@ -188,7 +173,7 @@ fun MapScreen(
             }
         }
 
-        Box(Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 18.dp)) {
+        Box(Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
             when (mode) {
                 MapMode.NEARBY -> NearbyCard(
                     selected = selected,

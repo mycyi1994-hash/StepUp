@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — map detail chrome and queued build
+
+- Map and HistoryMap now use SecondaryHeader and StepUpDesign.Gutter while preserving their weighted interactive map area, filters and bottom context. Gallery opens both actual routes. Architecture checks reject screen-local back/header code in these map screens. Native large-font, map interaction and GPS permission coverage remain outstanding.
+- 0d78b62 Build APK 35914435874 completed successfully. Pushed accumulated changes through fbd387a (meetup/history/collection, shoe/market, party lobby and crew board) for fresh compile/native validation. Earlier galleries 35912849285 and 35913660999 remain live; no final captures or visual approval are available from them yet.
+
 ## 2026-09-24 — crew board shared fixed action
 
 - DetailPage now owns an optional primary action label/callback with the existing PrimaryCta and fixed spacing. CrewBoard uses it for member-only writing, replacing a separately styled floating button and guessed bottom padding. Posts scroll in the remaining space without being covered by the writing control. Invite sharing remains a labeled shared button in content; the header is the same back/title as other detail pages.
