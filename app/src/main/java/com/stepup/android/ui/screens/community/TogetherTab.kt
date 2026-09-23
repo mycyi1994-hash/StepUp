@@ -50,21 +50,26 @@ internal fun TogetherTab(
     }
     val featured = featuredMeetup(posts, now)
     val locale = LocalConfiguration.current.locales[0]
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val artworkHeight = (maxHeight * 0.30f / androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(100.dp, 210.dp)
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Image(painterResource(R.drawable.community_warmup), contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(250.dp))
+                    modifier = Modifier.fillMaxWidth().height(artworkHeight))
             }
             if (sync != BoardSyncState.Ready) {
                 item { BoardSyncCard(sync, onRetry = viewModel::refreshBoard) }
             }
             if (featured != null) {
                 item {
-                    GlowCard {
-                        Text(featured.title, color = Snow, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    GlowCard(spacing = 8.dp) {
+                        Text(featured.title, color = Snow, fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.testTag("community-featured-title"))
                         Text(featured.place, color = Silver, fontSize = 15.sp)
                         Text(Instant.ofEpochMilli(featured.meetAt).atZone(ZoneId.systemDefault())
                             .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)),
@@ -88,5 +93,6 @@ internal fun TogetherTab(
             modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag("community-all-meetups")) {
             Text(stringResource(R.string.community_other_meetups))
         }
+    }
     }
 }

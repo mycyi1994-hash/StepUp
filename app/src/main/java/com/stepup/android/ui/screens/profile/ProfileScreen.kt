@@ -227,6 +227,10 @@ fun ProfileScreen(
         SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
     )
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    // Reserve room for identity, totals and the three destinations before giving art the rest.
+    val artworkHeight = (maxHeight - 420.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(120.dp, 280.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
@@ -272,6 +276,7 @@ fun ProfileScreen(
             MeHeader(
                 state = state,
                 look = look,
+                artworkHeight = artworkHeight,
                 onEditProfile = { showProfileEdit = true },
                 onOpenCustomize = onOpenCustomize,
                 onOpenSettings = { tab = 1 },
@@ -301,22 +306,23 @@ fun ProfileScreen(
                     icon = Icons.AutoMirrored.Filled.DirectionsRun,
                     label = stringResource(R.string.me_recent_runs),
                     onClick = onOpenAnalytics,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-records"),
                 )
                 ShortcutButton(
                     icon = Icons.Filled.EmojiEvents,
                     label = stringResource(R.string.home_shortcut_challenges),
                     onClick = onOpenChallenges,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-challenges"),
                 )
                 ShortcutButton(
                     icon = Icons.Filled.AccountBalanceWallet,
                     label = stringResource(R.string.settings_wallet),
                     onClick = onOpenWallet,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-wallet"),
                 )
             }
         }
+    }
     }
 }
 
@@ -1222,6 +1228,7 @@ private fun ProfileEditDialog(
 private fun MeHeader(
     state: ProfileViewModel.UiState,
     look: com.stepup.android.domain.AvatarLook?,
+    artworkHeight: androidx.compose.ui.unit.Dp,
     onEditProfile: () -> Unit,
     onOpenCustomize: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -1231,7 +1238,7 @@ private fun MeHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(280.dp)) {
+        Box(Modifier.fillMaxWidth().height(artworkHeight)) {
             if (look != null) {
                 com.stepup.android.ui.components.CharacterStage(
                     look = look, pose = com.stepup.android.domain.AvatarPose.IDLE,

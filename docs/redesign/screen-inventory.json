@@ -542,14 +542,14 @@
       "kind": "AlertDialog",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 952,
+      "line": 958,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 1062,
+      "line": 1068,
       "verification": "pending"
     },
     {

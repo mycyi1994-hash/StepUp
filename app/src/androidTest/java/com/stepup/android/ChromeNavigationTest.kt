@@ -88,6 +88,13 @@ class ChromeNavigationTest {
                 assertEquals("balance $next/$tab", token, bounds("sup-balance"))
                 capture("${next.width}-${next.font}-${next.mode}-$tab")
                 if (tab == R.string.tab_me) {
+                    if (next.font == 1f) {
+                        val wallet = bounds("profile-wallet")
+                        org.junit.Assert.assertTrue("profile destinations fit above navigation $next", wallet.bottom <= bar.top)
+                    } else {
+                        compose.onNodeWithTag("profile-wallet").performScrollTo().assertIsDisplayed()
+                        compose.onNodeWithTag("profile-settings").performScrollTo()
+                    }
                     compose.onNodeWithContentDescription(compose.activity.getString(R.string.profile_tab_settings)).performClick()
                     compose.waitForIdle()
                     assertEquals("profile settings keep header", header, bounds("main-header"))

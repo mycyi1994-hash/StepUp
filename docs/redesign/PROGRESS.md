@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — scene space and evidence review
+
+- Inspected native 0bcd210 challenge and d7283d1 community captures. Community's fixed 250dp illustration pushes the real meetup information under the pinned action; profile's fixed 280dp illustration similarly pushes Wallet below the initial viewport. Replaced both fixed heights with available-space/font-aware art sizing, preserving shared chrome and scroll access. Added a normal-font profile destination visibility assertion and large-font scroll reachability checks. Native verification pending.
+- 0bcd210 downloaded XML proves four tests passed: chrome/navigation, exclusive equipment persistence, full-history run totals, and exclusion of unconfirmed/flagged/void runs from challenge progress. The gallery still reports the signed-out My trades variation as missing; a green run does not prove this state covered.
+- e7bf047 login compiled and unit tests passed; Build APK 35908357461 and native run 35908357497 were still executing at this checkpoint.
+- Follow-up source audit: EventRepository.claim writes the claimed marker before RewardRepository.credit without a shared local transaction. A local write failure between these calls can leave a claimed marker without the local credit, and AlreadyClaimed handling only writes a zero marker. Reconciliation/atomicity needs a dedicated fix and failure-injection tests; no actual money or server state was changed during this audit.
+
 ## 2026-09-24 — login presentation and recovery
 
 - Login now uses the shared launch wordmark, cinematic scene and decorative runner group, one native Google action, readable error/consent copy and reachable terms/privacy links. The official Google G asset replaces the text imitation; source and legal URLs are recorded in the asset note.
