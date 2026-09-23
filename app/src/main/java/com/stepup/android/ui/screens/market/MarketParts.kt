@@ -147,21 +147,24 @@ fun MarketProblemNote(problem: MarketProblem, modifier: Modifier = Modifier) {
             MarketProblem.OFFLINE -> R.string.market_problem_offline
         }
     )
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Alert.copy(alpha = 0.10f))
             .padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = Silver,
             lineHeight = 18.sp,
         )
+        if (problem == MarketProblem.SIGN_IN) {
+            com.stepup.android.ui.components.SignInAgainButton()
+        }
+
     }
 }
 

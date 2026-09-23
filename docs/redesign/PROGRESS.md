@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — shared sign-in recovery
+
+- Reused the existing board reauthentication behavior as SignInAgainButton, with a busy state and storage-error feedback. Board, crew and all MarketProblemNote consumers now share this control; previously crew/market sign-in errors offered no recovery action. It only changes the root login marker and does not clear local records or rewards.
+- Static design, localized resources, asset and whitespace checks pass. Real OAuth, returning to the prior destination, and account-specific storage isolation remain unverified/unresolved; this UI change does not claim to solve them.
+- fe3dc17 sneaker detail is committed locally. Waiting for bbe5a72 Build APK 35923005016 to finish before pushing so its release build is not cancelled. Its gallery 35923005015 is also live.
+
 ## 2026-09-24 — focused sneaker detail and energy evidence
 
 - Sneaker detail now uses the shared pinned action: equip for an unequipped pair, open upgrade confirmation for an equipped upgradable pair. Stats expand on request; selling remains a secondary shared button with the existing equipped restriction. Removed the screen-local ActionTile button implementation and the inert fusion control (there is no fusion operation to preserve).

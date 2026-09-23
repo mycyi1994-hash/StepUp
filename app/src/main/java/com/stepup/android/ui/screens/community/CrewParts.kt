@@ -82,6 +82,9 @@ fun CrewSyncCard(state: CrewSyncState, onRetry: () -> Unit) {
     }
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
         Text(message, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        if (state == CrewSyncState.SignInRequired) {
+            com.stepup.android.ui.components.SignInAgainButton()
+        }
         if (state is CrewSyncState.Failed) {
             GhostButton(
                 text = stringResource(R.string.crew_retry),

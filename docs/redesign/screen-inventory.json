@@ -479,7 +479,7 @@
       "kind": "AlertDialog",
       "owner": "ReportDialogHost",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
-      "line": 116,
+      "line": 96,
       "verification": "pending"
     },
     {
