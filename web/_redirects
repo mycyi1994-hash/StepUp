@@ -1,2 +1,4 @@
 # 크루 초대 링크 — /c/<크루 id> 는 모두 같은 초대 페이지(invite.html)가 받는다.
-/c/*  /invite.html  200
+# 대상은 확장자 없이 /invite 로 적는다. /invite.html 로 적으면 Pages 가 /invite 로
+# 308 넘기면서 주소창의 크루 id 가 사라진다(초대 페이지가 그 id 로 앱을 연다).
+/c/*  /invite  200
