@@ -8,7 +8,7 @@ adb shell settings put secure show_ime_with_hard_keyboard 1 || status=1
 pull_captures() {
   local source="$1" destination="$2"
   for attempt in 1 2 3; do
-    if adb pull "$source" "$destination"; then return 0; fi
+    if timeout 60s adb pull "$source" "$destination"; then return 0; fi
     echo "Capture transfer failed (attempt $attempt/3): $source" >&2
     sleep 2
   done
@@ -44,5 +44,5 @@ pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen
 run_instrumentation gallery "com.stepup.android.ScreenGalleryTest"
 mkdir -p screen-gallery
 pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
-adb logcat -d -s ScreenGallery AndroidRuntime > screen-gallery/capture-log.txt || true
+timeout 20s adb logcat -d -s ScreenGallery AndroidRuntime > screen-gallery/capture-log.txt || true
 exit "$status"

@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — first stalled-gallery evidence recovered
+
+- 859bba8 gallery 35912849285 terminated cancelled at the workflow deadline. Downloaded partial artifacts to C:/Users/gana0/StepUp-captures/redesign-859bba8: 55 PNGs and interaction XML with eight tests, zero failures. The whole gallery did not complete; this is only scoped interaction evidence.
+- Logs show the emulator was no longer found at 20:07:23 UTC during gallery artifact transfer, followed by no further progress until cancellation at 20:28:34. The final unbounded adb logcat could wait for a missing device. Added a 20-second logcat limit and a 60-second limit to each existing artifact-transfer attempt, retaining failure status. This addresses diagnostic hanging, not the unproven cause of emulator loss.
+
 ## 2026-09-24 — prevent local chrome regression
 
 - Completed a source scan of screen-local wordmark calls: only approved Splash/Login launch roles remain. Extended the global guard to reject other screen-local wordmarks and direct back-arrow chrome in every screen (not just individually migrated files). This enforces shared implementations; it does not prove all screen layouts match the concepts.
