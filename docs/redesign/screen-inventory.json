@@ -385,7 +385,7 @@
     {
       "id": "HistoryMapScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt",
-      "line": 121,
+      "line": 124,
       "implementation": "pending",
       "verification": "pending"
     },

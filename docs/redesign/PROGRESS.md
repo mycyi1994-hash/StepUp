@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — prevent local chrome regression
+
+- Completed a source scan of screen-local wordmark calls: only approved Splash/Login launch roles remain. Extended the global guard to reject other screen-local wordmarks and direct back-arrow chrome in every screen (not just individually migrated files). This enforces shared implementations; it does not prove all screen layouts match the concepts.
+- HistoryMap period chips now wrap rather than being constrained to a single Row, retaining all choices at larger fonts. Native map height/filter wrapping still needs capture verification.
+- Local design/resource/asset checks pass. Latest Build APK 35915951416 and earlier gallery 35912849285 remain live at this checkpoint.
+
 ## 2026-09-24 — secondary button token consistency
 
 - VoltButton and GhostButton now share explicit secondary label/padding tokens and the existing 48dp touch-height token. Labels increase from 13sp to 14sp and center when wrapping; primary action remains the separate 60dp/18sp role. Updated the design contract and source guard against divergence.

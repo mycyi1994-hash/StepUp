@@ -25,6 +25,10 @@ for path in UI.rglob('*.kt'):
     if re.search(r'Wordmark\([^)]*fontSize\s*=', text):
         errors.append(f'{rel}: numeric per-screen wordmark size')
     if 'screens' in path.parts:
+        if re.search(r'\bWordmark\(', text) and path.name not in ('SplashScreen.kt', 'LoginScreen.kt'):
+            errors.append(f'{rel}: screen-local wordmark outside the approved launch/login roles')
+        if re.search(r'Icons\.AutoMirrored\.Filled\.ArrowBack', text):
+            errors.append(f'{rel}: screen-local back chrome; use a shared header')
         for pattern, message in [
             (r'R\.drawable\.logo_wordmark', 'direct logo resource; use the shared wordmark'),
             (r'\bMainHeader\(', 'main header belongs to the root shell'),

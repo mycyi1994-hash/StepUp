@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -117,6 +119,7 @@ class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryMapScreen(
     onBack: () -> Unit = {},
@@ -133,9 +136,10 @@ fun HistoryMapScreen(
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
         )
 
-        Row(
+        FlowRow(
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PillChip(
                 text = stringResource(R.string.history_period_week),
