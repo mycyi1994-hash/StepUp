@@ -556,7 +556,7 @@
       "kind": "AlertDialog",
       "owner": "GiwaCard",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
-      "line": 335,
+      "line": 328,
       "verification": "pending"
     },
     {

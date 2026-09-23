@@ -96,7 +96,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:513 | pending |
 | GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:958 | pending |
 | ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1068 | pending |
-| GiwaCard | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:335 | pending |
+| GiwaCard | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:328 | pending |
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |
 | CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:295 | pending |
 | CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:877 | pending |

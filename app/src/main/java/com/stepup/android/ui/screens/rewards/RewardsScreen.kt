@@ -246,13 +246,6 @@ private fun BalanceHero(balance: Double) {
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
-            Text(
-                text = "≈ $%,.2f".format(balance * 0.01) + "  ·  +0.51%",
-                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = OnVolt.copy(alpha = 0.6f),
-            )
         }
     }
 }

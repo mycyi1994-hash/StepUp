@@ -10,6 +10,7 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - 0bcd210 downloaded XML proves four tests passed: chrome/navigation, exclusive equipment persistence, full-history run totals, and exclusion of unconfirmed/flagged/void runs from challenge progress. The gallery still reports the signed-out My trades variation as missing; a green run does not prove this state covered.
 - e7bf047 login compiled and unit tests passed; Build APK 35908357461 and native run 35908357497 were still executing at this checkpoint.
 - Follow-up source audit: EventRepository.claim writes the claimed marker before RewardRepository.credit without a shared local transaction. A local write failure between these calls can leave a claimed marker without the local credit, and AlreadyClaimed handling only writes a zero marker. Reconciliation/atomicity needs a dedicated fix and failure-injection tests; no actual money or server state was changed during this audit.
+- Wallet screenshot review exposed fabricated fiat conversion (balance * 0.01) and a fixed +0.51% change in the wallet card and reusable token component. Removed both unsupported market-value displays; stored SUP balances and ledger entries are unchanged. Wallet layout, chain integration and ledger truthfulness still need the broader audit.
 
 ## 2026-09-24 — login presentation and recovery
 

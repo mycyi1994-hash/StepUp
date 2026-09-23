@@ -1111,20 +1111,6 @@ fun TokenCard(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.5).sp,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "≈ $%,.2f".format(balance * 0.01),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    color = Slate,
-                    fontSize = 10.sp,
-                )
-                Text(
-                    text = "+0.51%",
-                    color = Volt,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
         }
         if (onClick != null) {
             Icon(
