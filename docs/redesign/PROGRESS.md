@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — unknown inventory balance is not zero
+
+- ItemsViewModel now keeps balance unknown until the repository emits. The shared SUP pill renders its existing unknown state; mint/boost/upgrade affordability is false until an actual value exists. The upgrade confirmation shows loading instead of insufficient balance while that value is unknown. Actual repository purchase validation and amounts are unchanged.
+- Viewed 0383b12 native screen-09.png: weekly chart now shows Korean weekdays and readable stacked goal/instructions; this does not validate expanded details or enlarged fonts. Native scene-20 previously confirmed the pinned primary action, but its dialog remains unverified.
+- Local inventory/design/resource/asset/whitespace checks pass. Build APK 35926757996 for 2f65026 has now completed successfully, allowing the queued notification and balance changes to be pushed without cancelling its release build. Gallery 35926758041 remains live. No build/runtime result is yet available for these new changes.
+
 ## 2026-09-24 — notification delivery recovery coverage
 
 - Extracted the actual serialized preference-delivery controller from the Firebase registrar so failures and interleaving can be tested without an Android/Firebase runtime. PushRegistrar uses this controller; there is no separate test-only implementation.

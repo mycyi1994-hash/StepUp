@@ -395,7 +395,7 @@ fun ItemsScreen(
                         "%,.0f".format(RewardEconomy.MINT_COST),
                     ),
                     onClick = { viewModel.mint() },
-                    enabled = balance >= RewardEconomy.MINT_COST,
+                    enabled = balance?.let { it >= RewardEconomy.MINT_COST } == true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -454,7 +454,7 @@ fun ItemsScreen(
                 BoostType.entries.forEach { type ->
                     BoostCard(
                         type = type,
-                        affordable = balance >= type.cost,
+                        affordable = balance?.let { it >= type.cost } == true,
                         onBuy = { viewModel.buyBoost(type) },
                         modifier = Modifier.weight(1f),
                     )

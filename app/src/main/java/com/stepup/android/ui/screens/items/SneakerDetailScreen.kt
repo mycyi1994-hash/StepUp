@@ -254,6 +254,7 @@ fun SneakerDetailScreen(
     }
     if (enhanceOpen && sneaker != null && sneaker.canUpgrade) {
         val cost = sneaker.upgradeCost
+        val currentBalance = balance
         AlertDialog(
             onDismissRequest = { enhanceOpen = false },
             title = { Text(stringResource(R.string.sneaker_action_enhance)) },
@@ -262,12 +263,16 @@ fun SneakerDetailScreen(
                     Text(stringResource(R.string.level_chip, sneaker.level) + " → " +
                         stringResource(R.string.level_chip, sneaker.level + 1))
                     Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)))
-                    if (balance < cost) Text(msgNoBalance)
+                    if (currentBalance == null) {
+                        Text(stringResource(R.string.feed_loading))
+                    } else if (currentBalance < cost) {
+                        Text(msgNoBalance)
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = balance >= cost,
+                    enabled = currentBalance?.let { it >= cost } == true,
                     onClick = {
                         enhanceOpen = false
                         viewModel.upgrade(sneaker.id)

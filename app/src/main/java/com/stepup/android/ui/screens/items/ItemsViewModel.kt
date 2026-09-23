@@ -82,8 +82,9 @@ class ItemsViewModel(
     val equipped: StateFlow<Sneaker?> = sneakerRepository.equipped
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val activeBoosts: StateFlow<List<ActiveBoost>> = boostRepository.active
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
