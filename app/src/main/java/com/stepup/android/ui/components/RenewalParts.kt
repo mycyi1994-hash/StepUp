@@ -1,5 +1,9 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.StepUpDesign
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.widthIn
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +82,9 @@ fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifi
             .border(1.dp, Volt.copy(alpha = 0.45f), shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
-            .heightIn(min = 40.dp)
+            .heightIn(min = StepUpDesign.BalanceHeight)
+            .widthIn(max = 160.dp)
+            .testTag("sup-balance")
             .padding(start = 8.dp, end = if (onClick != null) 6.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -86,13 +92,15 @@ fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifi
         HexEmblem(size = 20.dp, glow = false)
         Text(
             text = "%,.0f".format(balance),
+            modifier = Modifier.weight(1f, fill = false),
+            overflow = TextOverflow.Ellipsis,
             fontFamily = StepUpNumbers,
-            fontSize = 14.sp,
+            fontSize = StepUpDesign.BalanceAmount,
             fontWeight = FontWeight.Bold,
             color = Snow,
             maxLines = 1,
         )
-        Text(text = "SUP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Silver)
+        Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.Bold, color = Silver)
         if (onClick != null) {
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
         }
@@ -154,10 +162,11 @@ fun MainHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .heightIn(min = StepUpDesign.HeaderHeight)
+            .testTag("main-header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(fontSize = 24.sp, modifier = Modifier.weight(1f, fill = false))
+        Wordmark(modifier = Modifier.weight(1f, fill = false))
         Spacer(Modifier.weight(1f))
         SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
     }
@@ -197,7 +206,7 @@ fun SecondaryHeader(
             )
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Wordmark(fontSize = 20.sp)
+            Wordmark()
         }
         if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(44.dp))
     }
@@ -271,7 +280,7 @@ fun PrimaryCta(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 58.dp)
+            .heightIn(min = StepUpDesign.PrimaryHeight)
             // 화면의 주 행동 하나에만 푸른 번짐을 준다
             .then(
                 if (enabled) {
@@ -285,20 +294,20 @@ fun PrimaryCta(
                 if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.18f)
                 else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
             )
-            .feedbackClickable(enabled = enabled, onClick = onClick)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 22.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) OnVolt else Slate, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = if (enabled) OnVolt else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
             Spacer(Modifier.width(12.dp))
         }
         Text(
             text = text,
             modifier = Modifier.weight(1f, fill = false),
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Black,
+            fontSize = StepUpDesign.PrimaryLabel,
+            fontWeight = FontWeight.SemiBold,
             color = if (enabled) OnVolt else Slate,
             textAlign = TextAlign.Center,
         )

@@ -142,7 +142,7 @@ fun SplashScreen(onReady: () -> Unit) {
             // 로고 + 워드마크 + 슬로건 (전부 네이티브 — 배경과 완전히 이어진다)
             HexEmblem(size = 64.dp)
             Spacer(Modifier.height(14.dp))
-            Wordmark(fontSize = 44.sp)
+            Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),

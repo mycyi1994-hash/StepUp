@@ -127,7 +127,7 @@ fun LoginScreen(onDone: () -> Unit) {
 
             HexEmblem(size = 74.dp)
             Spacer(Modifier.height(18.dp))
-            Wordmark(fontSize = 42.sp)
+            Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
             Spacer(Modifier.height(10.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),

@@ -143,11 +143,6 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // ── 머리글 48dp — 로고와 작은 보유 포인트 ──
-        MainHeader(
-            balance = state.balance,
-            onOpenWallet = onOpenWallet,
-            balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
-        )
 
         if (!hasPermission) {
             PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })

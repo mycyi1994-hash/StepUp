@@ -121,7 +121,6 @@ fun CommunityScreen(
             // 시안대로 — 로고 · 보유 SUP, 그 아래 큰 제목과 함께 달리는 두 러너.
             // 알림함은 내 정보 › 설정에 있다.
             val balance by viewModel.balance.collectAsStateWithLifecycle()
-            MainHeader(balance = balance, onOpenWallet = null)
             PageHero(
                 title = stringResource(R.string.community_hero_title),
                 subtitle = stringResource(R.string.community_hero_sub),

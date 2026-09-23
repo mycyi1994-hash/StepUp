@@ -433,7 +433,7 @@ fun RunScreen(
                             .padding(8.dp),
                     )
                 }
-                Wordmark(fontSize = 24.sp)
+                Wordmark()
                 Spacer(Modifier.weight(1f))
                 SupPill(balance = balance, onClick = null)
             }

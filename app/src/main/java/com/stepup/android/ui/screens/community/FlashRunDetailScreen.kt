@@ -123,7 +123,7 @@ fun FlashRunDetailScreen(
                     contentDescription = stringResource(R.string.cd_back),
                     onClick = onBack,
                 )
-                Wordmark(fontSize = 20.sp, modifier = Modifier.weight(1f))
+                Wordmark(modifier = Modifier.weight(1f))
                 DarkIconButton(
                     icon = Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.cd_notifications),

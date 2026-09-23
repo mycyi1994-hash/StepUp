@@ -146,7 +146,6 @@ fun CustomizeScreen(
             .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        MainHeader(balance = balance, onOpenWallet = onOpenWallet)
 
         // ── 제목 · 기본 캐릭터 선택 · 전신 미리보기 ──
         //

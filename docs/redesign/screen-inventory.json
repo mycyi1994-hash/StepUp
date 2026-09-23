@@ -1,0 +1,624 @@
+{
+  "schema": 1,
+  "note": "Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.",
+  "routes": [
+    {
+      "id": "Screen.Run.route",
+      "parent": "Run",
+      "chrome": "Main",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Screen.Customize.route",
+      "parent": "Customize",
+      "chrome": "Main",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.RUNNER_MARKET",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Screen.Community.route",
+      "parent": "Community",
+      "chrome": "Main",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.MAP",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.ITEMS",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.MARKET_MODEL",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.NEWS",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.EVENTS",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Screen.Profile.route",
+      "parent": "Profile",
+      "chrome": "Main",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.RUN_ROUTE",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.COURSES",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.WALLET",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.NOTIFICATIONS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.ACHIEVEMENTS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.ANALYTICS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.HISTORY_MAP",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_NOTIFICATIONS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_PRIVACY",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_SUPPORT",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_CONNECTED",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_EXPERIENCE",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_THEME",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SETTINGS_LANGUAGE",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SNEAKER",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.LOBBY",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.SNEAKER_DEX",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.RANKING",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.CREW_CREATE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.CREW_BOARD",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.FLASH_DETAIL",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.FLASH_LOBBY",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.POST_COMPOSE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "pending",
+      "verification": "pending"
+    }
+  ],
+  "screen_functions": [
+    {
+      "id": "CommunityScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
+      "line": 96,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewBoardScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt",
+      "line": 61,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewCreateScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
+      "line": 41,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "FlashRunDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
+      "line": 90,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "PartyLobbyScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
+      "line": 96,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "PostComposeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
+      "line": 46,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "RankingScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt",
+      "line": 79,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CustomizeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
+      "line": 102,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "RunnerMarketScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt",
+      "line": 94,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "EventsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
+      "line": 100,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "NewsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt",
+      "line": 84,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "HomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
+      "line": 103,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ItemsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 104,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "SneakerDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
+      "line": 71,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "SneakerDexScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
+      "line": 80,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "LoginScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
+      "line": 64,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "MapScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt",
+      "line": 85,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "MarketModelScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
+      "line": 80,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "NotificationsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt",
+      "line": 132,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "AchievementsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
+      "line": 186,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "AnalyticsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt",
+      "line": 135,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "HistoryMapScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt",
+      "line": 121,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ProfileScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 139,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "WalletScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
+      "line": 86,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ConnectedAccountsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
+      "line": 62,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ExperienceSettingsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt",
+      "line": 25,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "LanguageScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/LanguageScreen.kt",
+      "line": 75,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "NotificationSettingsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
+      "line": 58,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "PrivacyScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt",
+      "line": 50,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "SupportScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt",
+      "line": 55,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ThemeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt",
+      "line": 75,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "SplashScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
+      "line": 75,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CourseHubScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 94,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 151,
+      "implementation": "pending",
+      "verification": "pending"
+    }
+  ],
+  "overlays": [
+    {
+      "kind": "AlertDialog",
+      "owner": "ReportDialogHost",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
+      "line": 93,
+      "verification": "pending"
+    },
+    {
+      "kind": "Dialog",
+      "owner": "CommentSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt",
+      "line": 150,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "FlashMembersDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
+      "line": 461,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "InviteDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
+      "line": 416,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "ItemsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 614,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "CopiesDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 771,
+      "verification": "pending"
+    },
+    {
+      "kind": "Dialog",
+      "owner": "MarketDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
+      "line": 513,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "GoalDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 953,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "ProfileEditDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 1063,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "GiwaCard",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
+      "line": 335,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "ConnectedAccountsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
+      "line": 71,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "CourseHubScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 295,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "CourseRankingDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 877,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 606,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 638,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "SaveCourseDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 1406,
+      "verification": "pending"
+    }
+  ],
+  "required_state_matrix": [
+    "initializing",
+    "ready/data",
+    "empty",
+    "loading",
+    "error/retry",
+    "permission denied",
+    "signed out",
+    "signed in",
+    "offline/reconnect",
+    "restore/back/relaunch",
+    "large font",
+    "light/dark"
+  ],
+  "additional_entry_states": [
+    "system launch",
+    "initialization",
+    "logo reveal",
+    "login",
+    "first-use tour"
+  ],
+  "additional_run_states": [
+    "ready",
+    "permission denied",
+    "acquiring GPS",
+    "active",
+    "paused",
+    "confirm finish",
+    "result",
+    "pending server reward",
+    "reward rejected",
+    "restored active session"
+  ]
+}

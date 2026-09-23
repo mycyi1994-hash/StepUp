@@ -1,5 +1,9 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.StepUpDesign
+import com.stepup.android.ui.theme.BrandLogoRole
+import androidx.compose.ui.platform.testTag
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -238,19 +242,22 @@ fun GradientText(
 /**
  * STEPUP 워드마크 — 브랜드 로고 이미지.
  *
- * [fontSize]는 기존 호출부와의 호환을 위해 남겨둔 이름이고, 실제로는
- * 로고 높이를 정한다(대문자 높이 기준이라 글자 크기와 비슷하게 보인다).
- * 가로폭은 5.76:1 비율로 자동 결정된다.
+ * 크기는 공통 디자인의 Header / Launch 역할만 허용한다.
+ * 화면마다 숫자 크기를 정하거나 로고 비율을 바꿀 수 없다.
  */
 @Composable
-fun Wordmark(fontSize: TextUnit = 20.sp, modifier: Modifier = Modifier) {
+fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Modifier) {
+    val logoHeight = when (role) {
+        BrandLogoRole.Header -> StepUpDesign.HeaderLogoHeight
+        BrandLogoRole.Launch -> StepUpDesign.LaunchLogoHeight
+    }
     // "STEP"은 바닥과 반대여야 읽힌다 — 밝은 바탕에서는 네이비, 어두운
     // 바탕에서는 흰색. "UP"은 두 벌 모두 같은 블루다.
     val asset = if (StepUpColors.dark) R.drawable.logo_wordmark_on_dark else R.drawable.logo_wordmark
     Image(
         painter = painterResource(asset),
         contentDescription = "STEPUP",
-        modifier = modifier.height(fontSize.value.dp * 0.92f),
+        modifier = modifier.size(width = logoHeight * StepUpDesign.LogoAspectRatio, height = logoHeight).testTag("brand-wordmark"),
         contentScale = ContentScale.Fit,
         // weight(1f)로 늘어난 헤더에서도 로고는 왼쪽에 붙어 있게 한다
         alignment = Alignment.CenterStart,
@@ -807,17 +814,17 @@ fun DarkIconButton(
     modifier: Modifier = Modifier,
     badge: Boolean = false,
 ) {
-    Box(modifier = modifier.size(48.dp)) {
+    Box(modifier = modifier.size(StepUpDesign.TouchTarget)) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(StepUpDesign.ControlRadius))
                 .background(CarbonHigh)
-                .border(1.dp, Edge, RoundedCornerShape(14.dp))
+                .border(1.dp, Edge, RoundedCornerShape(StepUpDesign.ControlRadius))
                 .feedbackClickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(19.dp))
+            Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(StepUpDesign.ControlIcon))
         }
         if (badge) {
             Box(

@@ -1,6 +1,9 @@
 package com.stepup.android.ui
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.statusBarsPadding
+import com.stepup.android.ui.components.MainHeader
+import com.stepup.android.ui.theme.StepUpDesign
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -147,12 +150,7 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
  * 길 이름("news" · "events" · "items")은 그대로라, 알림이나 다른 화면에서
  * 그 자리로 가는 이동은 전처럼 동작한다.
  */
-private val bottomTabs = listOf(
-    Screen.Run,
-    Screen.Customize,
-    Screen.Community,
-    Screen.Profile,
-)
+private val bottomTabs get() = AppChromePolicy.tabs
 
 /**
  * 하위 화면이 어느 탭 밑에 있는가.
@@ -160,34 +158,7 @@ private val bottomTabs = listOf(
  * 소식을 보고 있으면 러닝 탭에 불이 들어와 있어야 "지금 러닝 안에 있다"가
  * 읽힌다. 불이 꺼지면 사용자는 길을 잃은 것처럼 느낀다.
  */
-internal fun parentTabOf(route: String?): Screen? {
-    if (route == null) return null
-    return when {
-        route == Screen.Run.route || route == Routes.NEWS || route == Routes.EVENTS ||
-            route == Routes.RUN || route.startsWith("run?") || route == Routes.COURSES -> Screen.Run
-        route == Screen.Customize.route || route == Routes.RUNNER_MARKET ||
-            route == Routes.ITEMS || route.startsWith("sneaker") ||
-            route.startsWith("market/") -> Screen.Customize
-        route == Screen.Community.route || route.startsWith("crew") ||
-            route.startsWith("post") || route.startsWith("flash") ||
-            route.startsWith("lobby") || route == Routes.RANKING || route == Routes.MAP -> Screen.Community
-        route == Screen.Profile.route || route == Routes.WALLET ||
-            route == Routes.NOTIFICATIONS || route == Routes.ACHIEVEMENTS ||
-            route.startsWith(Routes.ANALYTICS) || route.startsWith("settings") -> Screen.Profile
-        else -> null
-    }
-}
-
-/**
- * 하단 탭을 숨기는 화면 — 글을 쓰는 동안에는 키보드와 탭이 겹친다.
- *
- * 러닝 중에는 숨기지 않는다. 러닝은 서비스에서 돌기 때문에 다른 탭으로
- * 가도 끊기지 않고, 탭이 보여야 러닝 중에도 다른 것을 볼 수 있다.
- */
-private val barHiddenRoutes = setOf(
-    "post/compose/{crewId}",
-    "crew/create",
-)
+internal fun parentTabOf(route: String?): Screen? = AppChromePolicy.destination(route)?.parent
 
 
 object Routes {
@@ -344,11 +315,23 @@ internal fun MainScaffold(startTour: Boolean = false) {
 
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
-    val showBar = currentRoute != null && currentRoute !in barHiddenRoutes
+    val chrome = AppChromePolicy.destination(currentRoute)
+    val showBar = chrome?.showBottomBar == true
+    val balance by ServiceLocator.rewardRepository.balance.collectAsState(initial = 0.0)
 
     Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Color.Transparent,
+        topBar = {
+            if (chrome?.header == AppChromePolicy.Header.Main) {
+                MainHeader(
+                    balance = balance,
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    modifier = Modifier.statusBarsPadding().padding(horizontal = StepUpDesign.Gutter),
+                    balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
+                )
+            }
+        },
         bottomBar = {
             AnimatedVisibility(
                 visible = showBar,
@@ -679,7 +662,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
                 // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
-                .heightIn(min = 64.dp)
+                .heightIn(min = StepUpDesign.NavigationHeight)
                 .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
@@ -726,7 +709,7 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
             // 탭이 넷이라 한 칸이 넉넉하다. 누르는 자리는 최소 48dp 로 잡는다.
-            .heightIn(min = 56.dp)
+            .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -735,20 +718,20 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             imageVector = screen.icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(StepUpDesign.NavigationIcon),
         )
         Text(
             text = stringResource(screen.labelRes),
             color = tint,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = StepUpDesign.NavigationLabel,
+            fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.sp,
             textAlign = TextAlign.Center,
             softWrap = true,
         )
         Box(
             modifier = Modifier
-                .size(4.dp)
+                .size(StepUpDesign.NavigationIndicator)
                 .alpha(dotAlpha)
                 .background(Volt, CircleShape),
         )

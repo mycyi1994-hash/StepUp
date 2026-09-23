@@ -1,7 +1,7 @@
 name: Screen Gallery Capture
 on:
   push:
-    branches: ["codex/screen-captures-20260924"]
+    branches: ["codex/screen-captures-20260924", "codex/stepup-cohesive-redesign"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,6 +34,7 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.stepup.android.ChromeNavigationTest --stacktrace
             bash tools/run_screen_gallery.sh
       - uses: actions/upload-artifact@v4
         if: always()

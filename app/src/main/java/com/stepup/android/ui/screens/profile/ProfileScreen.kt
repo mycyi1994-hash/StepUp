@@ -276,7 +276,6 @@ fun ProfileScreen(
         }
 
         // ── 머리글 — 로고 · 보유 SUP ──
-        item { MainHeader(balance = state.balance, onOpenWallet = onOpenWallet) }
 
         // ── 작은 캐릭터 · 닉네임 · 인사 ──
         item {

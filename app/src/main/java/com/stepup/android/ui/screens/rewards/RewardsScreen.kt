@@ -111,7 +111,7 @@ fun WalletScreen(
                     contentDescription = stringResource(R.string.cd_back),
                     onClick = onBack,
                 )
-                Wordmark(fontSize = 20.sp, modifier = Modifier.weight(1f))
+                Wordmark(modifier = Modifier.weight(1f))
             }
         }
 
