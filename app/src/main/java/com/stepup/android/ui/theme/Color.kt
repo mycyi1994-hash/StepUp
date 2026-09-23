@@ -82,6 +82,13 @@ class StepUpPalette(
      * 어두운 테마에서 파란 글자가 카드에 묻는다.
      */
     val voltText: Color,
+    /**
+     * 시안 — 보조 강조. 발광하는 눈, 진행 막대의 밝은 끝, 선택된 탭의 빛.
+     *
+     * 블루가 "누르는 것"이라면 시안은 "빛나는 것"이다. 버튼 바닥에는 쓰지
+     * 않는다 — 흰 글자가 얹히지 않는다.
+     */
+    val cyan: Color,
     /** 카드 표면 그라데이션의 위·아래 */
     val cardTop: Color,
     val cardBottom: Color,
@@ -148,6 +155,8 @@ val LightPalette = StepUpPalette(
     scrimAlpha = 0.80f,
     overlay = Color(0xFFFFFFFF),
     voltText = Color(0xFF145BFF),
+    // 흰 바탕에서는 밝은 시안이 날아가므로 한 단계 깊게
+    cyan = Color(0xFF0891B2),
     cardTop = Color(0xFFFAFCFF),
     cardBottom = Color(0xFFF1F6FF),
     backdropTop = Color(0xFFFBFCFF),
@@ -188,6 +197,7 @@ val DarkPalette = StepUpPalette(
     overlay = Color(0xFF1D2C4C),
     // 어두운 표면 위의 파란 글자. volt 그대로면 3.5:1 이라 묻힌다.
     voltText = Color(0xFF5AA7FF),
+    cyan = Color(0xFF22D3EE),
     cardTop = Color(0xFF131C2E),
     cardBottom = Color(0xFF0D1422),
     backdropTop = Color(0xFF080D18),
@@ -238,6 +248,9 @@ val Overlay: Color get() = active.value.overlay
 
 /** 표면 위에 글자로 얹는 강조색. 버튼 바닥에는 [Volt] 를 쓴다. */
 val VoltText: Color get() = active.value.voltText
+
+/** 보조 강조 — 빛나는 것. 버튼 바닥에는 쓰지 않는다. */
+val Cyan: Color get() = active.value.cyan
 
 val Alert: Color get() = active.value.alert
 val Snow: Color get() = active.value.snow

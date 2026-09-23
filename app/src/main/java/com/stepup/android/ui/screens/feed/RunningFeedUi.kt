@@ -397,6 +397,7 @@ fun EventCard(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_event), accent = true)
             FeedTag(statusText, accent = !statusMuted, warn = statusMuted)
             if (row.feeMin != null) {
                 FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin.toLong())))
@@ -479,6 +480,7 @@ fun NewsCard(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_news), accent = true)
                     FeedTag(stringResource(categoryRes(row.category)), accent = true)
                     Eyebrow(
                         text = listOfNotNull(

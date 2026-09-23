@@ -92,6 +92,15 @@ data class WalkSessionState(
     val lastVerdict: RunVerdict = RunVerdict.CLEAN,
     val lastTopSpeedKmh: Double = 0.0,
     val lastGpsKm: Double = 0.0,
+    /**
+     * 방금 끝난 러닝의 운동 시간(초)과 시작 시각 — 완료 화면에 보이기만 한다.
+     *
+     * 시작 시각은 저장된 세션 줄을 찾는 열쇠다. 완료 화면이 "서버 확인" 상태를
+     * 그 러닝의 줄에서 읽어야 한다 — 가장 최근 줄을 아무거나 읽으면 지난 러닝의
+     * 상태를 이번 것처럼 보여 줄 수 있다.
+     */
+    val lastElapsedSec: Long = 0,
+    val lastStartedAt: Long = 0,
 ) {
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
@@ -407,6 +416,8 @@ class WalkSessionService : Service() {
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,
+                lastElapsedSec = session.elapsedSec,
+                lastStartedAt = session.startedAt,
             )
             // 파티런이었다면 크루 로비를 결과 화면으로 전환한다.
             if (session.partySize > 1) {

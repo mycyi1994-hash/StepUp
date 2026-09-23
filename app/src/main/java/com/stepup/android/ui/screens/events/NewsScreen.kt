@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,19 +24,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.ui.theme.VoltText
+import com.stepup.android.ui.screens.feed.isDemo
+import com.stepup.android.ui.screens.feed.demoNews
+import com.stepup.android.ui.screens.feed.demoEvents
+import com.stepup.android.ui.components.TwoWaySwitch
+import com.stepup.android.ui.components.SubHeader
+import com.stepup.android.ui.components.SmallBadge
+import com.stepup.android.ui.components.BadgeTone
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import com.stepup.android.core.ExternalIntents
 import com.stepup.android.data.repo.EventFilter
 import com.stepup.android.data.repo.NewsFilter
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.screens.feed.EventFilterSheet
 import com.stepup.android.ui.screens.feed.EventSortSheet
 import com.stepup.android.ui.screens.feed.NewsFilterSheet
@@ -46,7 +53,6 @@ import com.stepup.android.ui.screens.feed.RunningFeedViewModel
 import com.stepup.android.ui.screens.feed.runningEventsSection
 import com.stepup.android.ui.screens.feed.runningNewsSection
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Snow
 
 /**
  * 뉴스 — 읽고 찾는 자리.
@@ -71,19 +77,36 @@ import com.stepup.android.ui.theme.Snow
  */
 @Composable
 fun NewsScreen(
-    onOpenNotifications: () -> Unit = {},
+    onBack: () -> Unit = {},
+    onOpenWallet: () -> Unit = {},
     viewModel: NewsViewModel = viewModel(factory = NewsViewModel.Factory),
     feedViewModel: RunningFeedViewModel = viewModel(factory = RunningFeedViewModel.Factory),
 ) {
     val balance by viewModel.balance.collectAsStateWithLifecycle()
-    val events by feedViewModel.events.collectAsStateWithLifecycle()
-    val news by feedViewModel.news.collectAsStateWithLifecycle()
+    val serverEvents by feedViewModel.events.collectAsStateWithLifecycle()
+    val serverNews by feedViewModel.news.collectAsStateWithLifecycle()
+    // 데모 모드 — 서버 대신 "예시"라고 적힌 목록을 보여 준다. 운영 목록과 섞지 않는다.
+    val demo by com.stepup.android.core.ServiceLocator.userPrefs.demoMode
+        .collectAsStateWithLifecycle(initialValue = false)
+    val events = if (demo) {
+        serverEvents.copy(rows = demoEvents(serverEvents.filter), loading = false, problem = null, pickedDay = serverEvents.pickedDay)
+    } else {
+        serverEvents
+    }
+    val news = if (demo) {
+        serverNews.copy(rows = demoNews(serverNews.filter), loading = false, problem = null)
+    } else {
+        serverNews
+    }
     val sources by feedViewModel.sources.collectAsStateWithLifecycle()
     val message by feedViewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // 마지막으로 본 탭을 기억한다. 화면을 껐다 켜도 돌아온다.
+    // 대회 / 러닝·건강 둘이다. 예전의 특가 공지는 챌린지 아래로 옮겼다 —
+    // 예전 판에서 세 번째 칸을 기억하고 있으면 첫 칸으로 돌린다.
     var section by rememberSaveable { mutableIntStateOf(0) }
+    if (section > 1) section = 0
 
     // 거르기 패널은 목록 **밖**에서 띄운다. LazyColumn 의 item 안에서
     // 띄우면 그 줄이 화면 밖으로 밀릴 때 창까지 같이 사라진다.
@@ -96,81 +119,43 @@ fun NewsScreen(
     // 뉴스로 옮겼을 때 엉뚱한 곳에서 시작한다.
     val eventsScroll = rememberLazyListState()
     val newsScroll = rememberLazyListState()
-    val dealsScroll = rememberLazyListState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        state = when (section) {
-            0 -> eventsScroll
-            1 -> newsScroll
-            else -> dealsScroll
-        },
+        state = if (section == 0) eventsScroll else newsScroll,
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            SubHeader(
+                title = stringResource(R.string.news_title),
+                onBack = onBack,
+                balance = balance,
+                onOpenWallet = onOpenWallet,
             ) {
-                Wordmark(fontSize = 22.sp, modifier = Modifier.weight(1f))
-                TotalRewardsCard(balance)
                 DarkIconButton(
                     icon = Icons.Filled.Refresh,
                     contentDescription = stringResource(R.string.news_refresh),
                     onClick = {
-                        when (section) {
-                            0 -> feedViewModel.loadEvents(force = true)
-                            1 -> feedViewModel.loadNews(force = true)
-                            else -> Unit
-                        }
+                        if (section == 0) feedViewModel.loadEvents(force = true) else feedViewModel.loadNews(force = true)
                     },
                 )
-                DarkIconButton(
-                    icon = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    onClick = onOpenNotifications,
-                    badge = true,
-                )
             }
         }
 
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(
-                        when (section) {
-                            0 -> R.string.feed_events_title
-                            1 -> R.string.feed_news_title
-                            else -> R.string.news_section_deals
-                        }
-                    ),
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-1).sp,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.news_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-            }
-        }
-
-        item {
-            SegmentedTabs(
+            TwoWaySwitch(
                 labels = listOf(
-                    stringResource(R.string.news_section_runs),
-                    stringResource(R.string.news_section_health),
-                    stringResource(R.string.news_section_deals),
+                    stringResource(R.string.news_tab_races),
+                    stringResource(R.string.news_tab_health),
                 ),
                 selected = section,
                 onSelect = { section = it },
             )
+        }
+
+        if (demo) {
+            item { FeedDemoNote() }
         }
 
         message?.let { note ->
@@ -213,12 +198,22 @@ fun NewsScreen(
                     // 카드를 누르면 그 대회의 바깥 페이지로 바로 간다.
                     // 주소를 모르면 아무 데도 보내지 않는다 — 홈페이지로
                     // 대충 보내면 사용자가 자기 대회를 다시 찾아야 한다.
-                    row.targetUrl?.let { ExternalIntents.openUrl(context, it) }
+                    if (isDemo(row.id)) {
+                        feedViewModel.message.value = R.string.demo_no_link
+                    } else {
+                        row.targetUrl?.let { ExternalIntents.openUrl(context, it) }
+                    }
                 },
-                onToggleSave = feedViewModel::toggleSaveEvent,
+                onToggleSave = { row ->
+                    if (isDemo(row.id)) {
+                        feedViewModel.message.value = R.string.demo_no_save
+                    } else {
+                        feedViewModel.toggleSaveEvent(row)
+                    }
+                },
             )
 
-            1 -> runningNewsSection(
+            else -> runningNewsSection(
                 ui = news,
                 sources = sources,
                 onQuery = { q -> feedViewModel.editNews { it.copy(query = q) } },
@@ -228,14 +223,21 @@ fun NewsScreen(
                     feedViewModel.editNews { NewsFilter(query = it.query) }
                 },
                 onRetry = { feedViewModel.loadNews(force = true) },
-                onOpen = { row -> ExternalIntents.openUrl(context, row.originalUrl) },
-                onToggleSave = feedViewModel::toggleSaveNews,
+                onOpen = { row ->
+                    if (isDemo(row.id) || row.originalUrl.isBlank()) {
+                        feedViewModel.message.value = R.string.demo_no_link
+                    } else {
+                        ExternalIntents.openUrl(context, row.originalUrl)
+                    }
+                },
+                onToggleSave = { row ->
+                    if (isDemo(row.id)) {
+                        feedViewModel.message.value = R.string.demo_no_save
+                    } else {
+                        feedViewModel.toggleSaveNews(row)
+                    }
+                },
             )
-
-            else -> {
-                items(DEAL_FEED.size) { index -> FeedCard(DEAL_FEED[index]) }
-                item { FeedFootnote(R.string.feed_note_deals) }
-            }
         }
     }
 
@@ -276,6 +278,28 @@ fun NewsScreen(
             selected = news.filter.sort,
             onPick = { v -> feedViewModel.editNews { it.copy(sort = v) } },
             onDismiss = { newsSort = false },
+        )
+    }
+}
+
+/** 데모 모드일 때 목록 위에 붙는 한 줄 — 아래가 예시라는 것을 먼저 말한다 */
+@Composable
+private fun FeedDemoNote() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(VoltText.copy(alpha = 0.10f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SmallBadge(stringResource(R.string.demo_badge), tone = BadgeTone.Glow)
+        Text(
+            text = stringResource(R.string.feed_demo_note),
+            fontSize = 13.sp,
+            color = Silver,
+            lineHeight = 18.sp,
         )
     }
 }

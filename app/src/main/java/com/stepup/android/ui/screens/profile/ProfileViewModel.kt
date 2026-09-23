@@ -7,6 +7,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
+import kotlinx.coroutines.flow.map
+import com.stepup.android.data.local.WalkSessionEntity
+import com.stepup.android.domain.AvatarLook
+import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.repo.RewardRepository
@@ -28,7 +32,26 @@ class ProfileViewModel(
     rewardRepository: RewardRepository,
     sneakerRepository: SneakerRepository,
     private val prefs: UserPrefs,
+    avatarRepository: AvatarRepository,
 ) : ViewModel() {
+
+    /** 캐릭터 — 러닝 홈 · 꾸미기와 같은 값 */
+    val look: StateFlow<AvatarLook> = avatarRepository.look
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+
+    /** 최근 러닝 세 번 — 거리 · 날짜 · 그 러닝으로 번 SUP */
+    val recentRuns: StateFlow<List<WalkSessionEntity>?> = stepRepository.recentSessions(3)
+        .map<List<WalkSessionEntity>, List<WalkSessionEntity>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val demoMode: StateFlow<Boolean> = avatarRepository.demoMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val avatars = avatarRepository
+
+    fun setDemoMode(on: Boolean) {
+        viewModelScope.launch { avatars.setDemoMode(on) }
+    }
 
     data class UiState(
         val goal: Int = UserPrefs.DEFAULT_GOAL,
@@ -175,6 +198,7 @@ class ProfileViewModel(
                     ServiceLocator.rewardRepository,
                     ServiceLocator.sneakerRepository,
                     ServiceLocator.userPrefs,
+                    ServiceLocator.avatarRepository,
                 )
             }
         }

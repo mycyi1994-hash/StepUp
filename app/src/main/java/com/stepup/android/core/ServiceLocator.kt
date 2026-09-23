@@ -11,6 +11,7 @@ import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.repo.BoostRepository
 import com.stepup.android.data.repo.ClaimRepository
 import com.stepup.android.data.repo.PrefsAuthSessionStore
@@ -45,6 +46,8 @@ object ServiceLocator {
     lateinit var stepRepository: StepRepository
         private set
     lateinit var sneakerRepository: SneakerRepository
+        private set
+    lateinit var avatarRepository: AvatarRepository
         private set
     lateinit var boostRepository: BoostRepository
         private set
@@ -135,6 +138,7 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
         )
         sneakerRepository = SneakerRepository(database.sneakerDao(), rewardRepository)
+        avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
         boostRepository = BoostRepository(database.boostDao(), rewardRepository, userPrefs)
         crewRepository = CrewRepository(
             crewDao = database.crewDao(),

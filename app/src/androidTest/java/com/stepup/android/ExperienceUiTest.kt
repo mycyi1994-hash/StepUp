@@ -123,7 +123,7 @@ class ExperienceUiTest {
         for (locale in listOf("ko", "en", "ja", "zh")) {
             for (night in listOf(false, true)) {
                 for (enlarged in listOf(false, true)) {
-                    for (index in 0..27) {
+                    for (index in 0..29) {
                         compose.runOnIdle { language = locale; dark = night; large = enlarged; screen = index }
                         compose.waitForIdle()
                         if (index == 0) compose.waitUntil(5_000) {
@@ -185,6 +185,8 @@ class ExperienceUiTest {
             25 -> ThemeScreen()
             26 -> SneakerDexScreen()
             27 -> com.stepup.android.ui.screens.events.NewsScreen()
+            28 -> com.stepup.android.ui.screens.customize.CustomizeScreen()
+            29 -> com.stepup.android.ui.screens.customize.RunnerMarketScreen()
         }
     }
 
@@ -250,17 +252,19 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        val tabs = listOf(R.string.tab_home, R.string.tab_news, R.string.tab_community, R.string.tab_market, R.string.tab_events, R.string.tab_profile)
+        // 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보
+        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
             hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
-        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 6 }
+        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 4 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.profile_tab_settings)).performClick()
+        // 설정은 내 정보 머리의 톱니바퀴로 들어간다 — 목록 맨 아래 버튼은 스크롤해야 보인다
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.cd_open_settings)).performClick()
         val settingsLabel = compose.activity.getString(R.string.settings_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()

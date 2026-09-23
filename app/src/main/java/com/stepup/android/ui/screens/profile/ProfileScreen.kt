@@ -89,6 +89,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.BuildConfig
 import com.stepup.android.R
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.stepup.android.ui.theme.StepUpNumbers
+import com.stepup.android.ui.theme.VoltText
+import com.stepup.android.data.local.WalkSessionEntity
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.StepUpIcons
+import com.stepup.android.ui.components.ShortcutButton
+import com.stepup.android.ui.components.AvatarBadge
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RewardEconomy
@@ -110,7 +121,6 @@ import com.stepup.android.ui.components.rememberCustomAvatar
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -136,9 +146,13 @@ fun ProfileScreen(
     onOpenTheme: () -> Unit = {},
     onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val look by viewModel.look.collectAsStateWithLifecycle()
+    val recentRuns by viewModel.recentRuns.collectAsStateWithLifecycle()
+    val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
     // 탭 안의 탭 — 프로필(기록)과 설정.
@@ -188,6 +202,7 @@ fun ProfileScreen(
     val pills = listOf(
         SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
         SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
+        SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
         SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
         SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
         SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
@@ -202,31 +217,32 @@ fun ProfileScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Box(Modifier.guideTarget(GuideTour.Targets.PROFILE_AVATAR)) {
-                ProfileHeader(
-                    state = state,
-                    onEditAvatar = { showProfileEdit = true },
-                    onOpenWallet = onOpenWallet,
-                )
-            }
-        }
-
-        item {
-            SegmentedTabs(
-                labels = listOf(
-                    stringResource(R.string.profile_tab_profile),
-                    stringResource(R.string.profile_tab_settings),
-                ),
-                selected = tab,
-                onSelect = { tab = it },
-            )
-        }
-
+        // ── 설정 — 안쪽 화면. 돌아가는 길을 맨 위에 둔다 ──
         if (tab == 1) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    DarkIconButton(
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.cd_back),
+                        onClick = { tab = 0 },
+                    )
+                    Text(
+                        text = stringResource(R.string.profile_tab_settings),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Snow,
+                    )
+                }
+            }
             item { SectionHeader(title = stringResource(R.string.profile_account)) }
             items(pills) { pill ->
                 SettingsRow(
@@ -235,6 +251,8 @@ fun ProfileScreen(
                     onClick = pill.onClick,
                 )
             }
+            // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 운영 데이터와 섞이지 않는다.
+            item { DemoModeRow(on = demo, onChange = viewModel::setDemoMode) }
             item {
                 GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
                     AboutRow(
@@ -250,30 +268,50 @@ fun ProfileScreen(
             return@LazyColumn
         }
 
-        item { RecordsCard(state, onOpenAnalytics) }
-
+        // ── 작은 캐릭터 · 닉네임 · 레벨 ──
         item {
-            if (LocalDensity.current.fontScale > 1.2f) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row { DistanceCard(state, onOpenAnalytics) }
-                    Row { StreakCard(state) }
-                }
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DistanceCard(state, onOpenAnalytics)
-                    StreakCard(state)
-                }
-            }
+            MeHeader(
+                state = state,
+                look = look,
+                onEditProfile = { showProfileEdit = true },
+                onOpenCustomize = onOpenItems,
+                onOpenSettings = { tab = 1 },
+            )
         }
 
-        item { RecentSummaryCard(state, onOpenAnalytics) }
+        // ── 보유 포인트 · 적립 내역 ──
+        item { PointsCard(balance = state.balance, onOpen = onOpenWallet) }
 
+        // ── 이번 주 러닝 거리 + 주간 그래프 ──
+        item { WeekCard(week = state.week, onOpen = onOpenAnalytics) }
+
+        // ── 최근 러닝 기록 ──
+        item { RecentRunsCard(runs = recentRuns, onOpenAll = onOpenAnalytics) }
+
+        // ── 업적 — 기존 자리 그대로 ──
         item {
             Box(Modifier.guideTarget(GuideTour.Targets.PROFILE_ACHIEVEMENTS)) {
                 BadgesCard(state, onOpenAchievements)
             }
         }
 
+        // ── 내 아이템 · 설정 ──
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShortcutButton(
+                    icon = StepUpIcons.Shirt,
+                    label = stringResource(R.string.me_items),
+                    onClick = onOpenItems,
+                    modifier = Modifier.weight(1f),
+                )
+                ShortcutButton(
+                    icon = Icons.Filled.Settings,
+                    label = stringResource(R.string.profile_tab_settings),
+                    onClick = { tab = 1 },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 
@@ -1165,4 +1203,285 @@ private fun ProfileEditDialog(
             }
         },
     )
+}
+
+// ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
+
+/**
+ * 머리 — 작은 캐릭터 · 닉네임 · 레벨.
+ *
+ * 캐릭터를 누르면 꾸미기로 간다. 여기서 크게 보여 줄 것은 "나"이지 잔액이
+ * 아니다 — 잔액은 아래 카드 한 군데에만 있다.
+ */
+@Composable
+private fun MeHeader(
+    state: ProfileViewModel.UiState,
+    look: com.stepup.android.domain.AvatarLook,
+    onEditProfile: () -> Unit,
+    onOpenCustomize: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val runner = state.runner
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        AvatarBadge(
+            look = look,
+            modifier = Modifier
+                .size(84.dp)
+                .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
+                .feedbackClickable(onClick = onOpenCustomize),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.feedbackClickable(onClick = onEditProfile),
+            ) {
+                Text(
+                    text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Snow,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.profile_edit_profile),
+                    tint = Silver,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Text(
+                text = stringResource(R.string.level_chip, runner.level),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = VoltText,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BarMeter(fraction = runner.progress, height = 6.dp, modifier = Modifier.weight(1f))
+                Text(
+                    text = if (runner.isMax) "MAX" else "%.1f / %.0f km".format(runner.intoLevelKm, runner.levelSpanKm),
+                    fontSize = 11.sp,
+                    color = Silver,
+                    maxLines = 1,
+                )
+            }
+        }
+        DarkIconButton(
+            icon = Icons.Filled.Settings,
+            contentDescription = stringResource(R.string.cd_open_settings),
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+/** 보유 포인트 — 누르면 지갑(적립 내역 · 출금) */
+@Composable
+private fun PointsCard(balance: Double, onOpen: () -> Unit) {
+    GlowCard(
+        modifier = Modifier.feedbackClickable(onClick = onOpen),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        spacing = 6.dp,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.me_points),
+                modifier = Modifier.weight(1f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Silver,
+            )
+            Text(
+                text = stringResource(R.string.me_points_history),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = VoltText,
+            )
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VoltText, modifier = Modifier.size(18.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HexEmblem(size = 30.dp)
+            Text(
+                text = "%,.0f".format(balance),
+                fontFamily = StepUpNumbers,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+                maxLines = 1,
+            )
+            Text(text = "SUP", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = VoltText)
+        }
+    }
+}
+
+/** 이번 주 — 합계 거리와 요일별 막대. 같은 걸음 기록에서 둘 다 계산한다. */
+@Composable
+private fun WeekCard(week: List<DailyStepsEntity>, onOpen: () -> Unit) {
+    val slots = weekSlots(week)
+    val kms = slots.map { (_, day) -> RewardEconomy.distanceMeters(day?.steps ?: 0) / 1000 }
+    val total = kms.sum()
+    val peak = kms.maxOrNull()?.takeIf { it > 0 } ?: 1.0
+    val today = LocalDate.now()
+    GlowCard(
+        modifier = Modifier.feedbackClickable(onClick = onOpen),
+        contentPadding = PaddingValues(16.dp),
+        spacing = 10.dp,
+    ) {
+        Text(text = stringResource(R.string.me_this_week), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Silver)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "%.1f".format(total),
+                    fontFamily = StepUpNumbers,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Snow,
+                )
+                Text(
+                    text = " km",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Silver,
+                    modifier = Modifier.padding(bottom = 5.dp),
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(64.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                slots.forEachIndexed { i, (date, _) ->
+                    val isToday = date == today
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height((40 * (kms[i] / peak)).coerceAtLeast(3.0).dp)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(if (isToday) Volt else Volt.copy(alpha = 0.55f)),
+                        )
+                        Text(
+                            text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()),
+                            fontSize = 11.sp,
+                            color = if (isToday) Snow else Silver,
+                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 최근 러닝 — 거리 · 날짜 · 그 러닝으로 번 SUP */
+@Composable
+private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit) {
+    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.me_recent_runs),
+                modifier = Modifier.weight(1f),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+            )
+            Text(
+                text = stringResource(R.string.me_see_all),
+                modifier = Modifier
+                    .feedbackClickable(onClick = onOpenAll)
+                    .padding(6.dp),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = VoltText,
+            )
+        }
+        when {
+            runs == null -> Unit
+            runs.isEmpty() -> Text(
+                text = stringResource(R.string.me_no_runs),
+                fontSize = 13.sp,
+                color = Silver,
+                lineHeight = 18.sp,
+            )
+            else -> runs.forEach { run ->
+                val date = java.time.Instant.ofEpochMilli(run.startedAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(CarbonHigh)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.DirectionsRun, contentDescription = null, tint = VoltText, modifier = Modifier.size(22.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = "%.1f km".format(run.distanceMeters / 1000),
+                            fontFamily = StepUpNumbers,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Snow,
+                        )
+                        Text(
+                            text = date.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)),
+                            fontSize = 12.sp,
+                            color = Silver,
+                        )
+                    }
+                    Text(
+                        text = "+%,.0f SUP".format(run.pointsEarned),
+                        fontFamily = StepUpNumbers,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VoltText,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 데모 모드 스위치 — 켜면 소식 · 러너 마켓에 "예시"가 뜬다 */
+@Composable
+private fun DemoModeRow(on: Boolean, onChange: (Boolean) -> Unit) {
+    GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), spacing = 4.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_demo),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Snow,
+                )
+                Text(
+                    text = stringResource(R.string.settings_demo_note),
+                    fontSize = 12.sp,
+                    color = Silver,
+                    lineHeight = 17.sp,
+                )
+            }
+            androidx.compose.material3.Switch(
+                checked = on,
+                onCheckedChange = onChange,
+                colors = androidx.compose.material3.SwitchDefaults.colors(
+                    checkedThumbColor = com.stepup.android.ui.theme.OnVolt,
+                    checkedTrackColor = Volt,
+                ),
+            )
+        }
+    }
 }

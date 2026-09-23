@@ -42,13 +42,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.ui.components.TwoWaySwitch
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.domain.Post
@@ -93,8 +93,8 @@ fun CommunityScreen(
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
     val segments = listOf(
-        stringResource(R.string.community_seg_board),
-        stringResource(R.string.community_seg_crew),
+        stringResource(R.string.community_tab_feed),
+        stringResource(R.string.community_tab_my_crew),
     )
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
@@ -110,24 +110,13 @@ fun CommunityScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.tab_community),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = " / GIWA",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Black,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = 1.sp,
-                        color = Volt,
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.tab_community),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.8).sp,
+                    color = Snow,
+                )
                 DarkIconButton(
                     icon = Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.cd_notifications),
@@ -136,7 +125,7 @@ fun CommunityScreen(
                 )
             }
 
-            SegmentedTabs(
+            TwoWaySwitch(
                 labels = segments,
                 selected = if (tab == CommunityTab.BOARD) 0 else 1,
                 onSelect = {

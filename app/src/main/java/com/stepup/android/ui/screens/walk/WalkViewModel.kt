@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
+import kotlinx.coroutines.flow.combine
+import com.stepup.android.domain.AvatarLook
 import com.stepup.android.data.repo.BoostRepository
 import com.stepup.android.data.repo.CourseRepository
 import com.stepup.android.data.repo.RewardRepository
@@ -111,6 +113,33 @@ class WalkViewModel(
     fun simulateSteps(count: Int) = stepRepository.simulateSteps(count)
 
     fun clearReward() = WalkSessionService.clearLastReward()
+
+    /**
+     * 방금 끝난 러닝이 서버에서 어디까지 확인됐는가.
+     *
+     * 완료 화면의 머리말이 이 값을 따른다. 서명을 받기 전에는 "적립 완료"라고
+     * 적지 않는다 — 앱 안에는 적혔어도, 서버가 인정한 것은 아직 아니다.
+     * 저장된 줄을 [WalkSessionState.lastStartedAt] 으로 찾는다.
+     */
+    val lastUpload: StateFlow<String?> = combine(
+        WalkSessionService.state,
+        stepRepository.recentSessions(5),
+    ) { state, rows ->
+        if (state.lastRewardPoints == null || state.lastStartedAt == 0L) {
+            null
+        } else {
+            rows.firstOrNull { it.startedAt == state.lastStartedAt }?.uploadState
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 완료 화면의 캐릭터 — 홈 · 꾸미기와 같은 모습 */
+    val look: StateFlow<AvatarLook> = ServiceLocator.avatarRepository.look
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+
+    /** 완료 화면의 오늘 목표 진행 */
+    val todaySteps: StateFlow<Int> = stepRepository.todaySteps
+    val dailyGoal: StateFlow<Int> = stepRepository.dailyGoal
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     companion object {
         val Factory = viewModelFactory {

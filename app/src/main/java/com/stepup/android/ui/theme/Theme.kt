@@ -31,8 +31,14 @@ enum class ThemeMode {
 
     companion object {
         /** 저장된 이름을 되읽는다. 모르는 값이면 기기 설정을 따른다. */
+        /**
+         * 저장된 이름을 테마로. 아직 고른 적이 없으면 **다크**다.
+         *
+         * StepUp 의 기본 모습은 블랙·블루다. 밝은 테마와 기기 설정 따르기는
+         * 설정 > 테마에서 고를 수 있고, 한 번 고르면 그 값이 남는다.
+         */
         fun of(name: String?): ThemeMode =
-            entries.firstOrNull { it.name == name } ?: SYSTEM
+            entries.firstOrNull { it.name == name } ?: DARK
     }
 }
 

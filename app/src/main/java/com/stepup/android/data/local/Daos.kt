@@ -120,6 +120,23 @@ interface RewardDao {
 
     @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0")
     fun observeEarnedTotal(): Flow<Double>
+
+    /**
+     * [fromMillis] 이후 **번** SUP — 러닝 · 목표 보너스 · 이벤트 · 파티.
+     *
+     * 거래소에서 옮겨 온 줄(판매 대금, 에스크로 해제)은 넣지 않는다. 신발을
+     * 판 돈이 "오늘 획득"에 섞이면 뛰지 않은 날도 많이 번 것처럼 보인다.
+     */
+    @Query(
+        "SELECT COALESCE(SUM(amount), 0.0) FROM rewards " +
+            "WHERE amount > 0 AND timestamp >= :fromMillis " +
+            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY')",
+    )
+    fun observeEarnedSince(fromMillis: Long): Flow<Double>
+
+    /** [type] 한 종류가 [fromMillis] 이후 적힌 합 — 오늘 목표 보너스가 나갔는지 같은 것 */
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE type = :type AND timestamp >= :fromMillis")
+    fun observeSumOfTypeSince(type: String, fromMillis: Long): Flow<Double>
 }
 
 @Dao

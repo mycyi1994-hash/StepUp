@@ -2,7 +2,6 @@ package com.stepup.android.ui.screens.events
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,19 +11,19 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,22 +32,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -60,35 +51,50 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.repo.EventDef
 import com.stepup.android.data.repo.Events
+import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
-import com.stepup.android.ui.components.PillChip
+import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.SectionHeader
+import com.stepup.android.ui.components.SmallBadge
+import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.guide.GuideTour
-import com.stepup.android.ui.guide.guideTarget
+import com.stepup.android.ui.components.celebrate
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 
-import com.stepup.android.ui.components.celebrate
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlinx.coroutines.delay
-
+/**
+ * 챌린지 — 러닝 안에서 여는 "추가로 받는" 자리.
+ *
+ * ── 진행률은 기록에서만 ──
+ *
+ * 예전 이벤트 화면에는 고정된 숫자가 있었다(친구 초대 2/3, 나이트 러너
+ * 12.4/20km). 아무도 초대하지 않았고 밤에 뛴 적이 없어도 그렇게 보였다.
+ * 이제 모든 진행률은 실제 기록에서 계산하고, 계산할 기록이 없는 것은
+ * "준비 중"으로 둔다.
+ *
+ * ── 받기 버튼 ──
+ *
+ * 목표를 채운 것에만 켜진다. 채우지 못한 것에 버튼을 켜 두면 누른 사람이
+ * 거절당하고, 그것은 버튼이 한 거짓말이다. 누르기만 하면 15,000 SUP 가
+ * 들어오던 캠페인 카드도 같은 이유로 뺐다 — 무엇을 해야 받는지가 정해지지
+ * 않은 보상이었다.
+ */
 @Composable
 fun EventsScreen(
-    onOpenNotifications: () -> Unit = {},
+    onBack: () -> Unit = {},
+    onOpenWallet: () -> Unit = {},
+    onStartRun: () -> Unit = {},
     viewModel: EventsViewModel = viewModel(factory = EventsViewModel.Factory),
 ) {
     val context = LocalContext.current
@@ -96,8 +102,10 @@ fun EventsScreen(
     val weekSteps by viewModel.weekSteps.collectAsStateWithLifecycle()
     val claimed by viewModel.claimedIds.collectAsStateWithLifecycle()
     val claimResult by viewModel.claimResult.collectAsStateWithLifecycle()
+    val daily by viewModel.daily.collectAsStateWithLifecycle()
+    val nightKm by viewModel.nightKm.collectAsStateWithLifecycle()
 
-    var celebration by remember { mutableIntStateOf(0) }
+    var celebration by rememberSaveable { mutableStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
     val notFinished = stringResource(R.string.toast_not_finished)
     LaunchedEffect(claimResult) {
@@ -113,16 +121,10 @@ fun EventsScreen(
         if (claimResult != null) viewModel.consumeClaimResult()
     }
 
-    // 초대는 두 걸음이다 — 무슨 말을 보낼지 먼저 정하고, 그다음에 어디로 보낼지 고른다.
-    //
-    // 예전에는 누르자마자 공유 시트가 떴다. 보낼 문구를 그때는 볼 수 없어서,
-    // 앱이 대신 써 준 한 줄이 그대로 상대에게 갔다. 친구에게 보내는 말은
-    // 보내는 사람이 정하는 것이 맞다.
+    // 초대 — 보낼 말을 먼저 정하고, 그다음에 어디로 보낼지 고른다.
     val inviteSubject = stringResource(R.string.invite_subject)
     val inviteText = stringResource(R.string.invite_text)
     var showInvite by rememberSaveable { mutableStateOf(false) }
-    val shareInvite = { showInvite = true }
-
     if (showInvite) {
         InviteDialog(
             subject = inviteSubject,
@@ -140,505 +142,247 @@ fun EventsScreen(
         )
     }
 
-    var selectedChip by rememberSaveable { mutableIntStateOf(0) }
-    val chips = listOf(
-        stringResource(R.string.chip_all_events),
-        stringResource(R.string.chip_challenges),
-        stringResource(R.string.chip_campaigns),
-        stringResource(R.string.chip_missions),
-    )
-
-    // 데모 카운트다운 목표 시각 (화면 최초 진입 기준)
-    val featuredTarget = rememberSaveable {
-        System.currentTimeMillis() + ((12L * 24 + 18) * 3600 + 42 * 60 + 6) * 1000
-    }
-    val questTarget = rememberSaveable {
-        System.currentTimeMillis() + ((2L * 24 + 14) * 3600 + 22 * 60) * 1000
-    }
-
-    val showChallenges = selectedChip == 0 || selectedChip == 1
-    val showCampaigns = selectedChip == 0 || selectedChip == 2
-    val showMissions = selectedChip == 0 || selectedChip == 3
-
-    val stepSurgeProgress = (weekSteps.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f)
+    val weekFraction = (weekSteps.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f)
+    val nightFraction = (nightKm / Events.NIGHT_QUEST.target).toFloat().coerceIn(0f, 1f)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            // 로고 · 누적 리워드 · 알림을 한 줄에 — 제목은 그 아래 전체 폭을 쓴다
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Wordmark(fontSize = 22.sp, modifier = Modifier.weight(1f))
-                TotalRewardsCard(balance, celebration)
-                DarkIconButton(
-                    icon = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    onClick = onOpenNotifications,
-                    badge = true,
-                )
-            }
+            SubHeader(
+                title = stringResource(R.string.challenge_title),
+                onBack = onBack,
+                balance = balance,
+                onOpenWallet = onOpenWallet,
+            )
         }
-
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(R.string.tab_events),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-1).sp,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.events_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-            }
-        }
-
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(chips.size) { index ->
-                    PillChip(
-                        text = chips[index],
-                        selected = selectedChip == index,
-                        onClick = { selectedChip = index },
-                    )
-                }
-            }
-        }
-
-        if (showCampaigns) {
-            item {
-                Box(Modifier.guideTarget(GuideTour.Targets.EVENTS_FEATURED)) {
-                FeaturedCampaign(
-                    targetMillis = featuredTarget,
-                    claimed = claimed.contains(Events.NEON_HORIZON.id),
-                    onClaim = { viewModel.claim(Events.NEON_HORIZON, 1f) },
-                )
-                }
-            }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    repeat(4) { index ->
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 3.dp)
-                                .size(if (index == 0) 7.dp else 5.dp)
-                                .alpha(if (index == 0) 1f else 0.35f)
-                                .background(if (index == 0) Volt else Silver, CircleShape),
-                        )
-                    }
-                }
-            }
-        }
-
-        item { SectionHeader(title = stringResource(R.string.events_active)) }
-
-        if (showChallenges) {
-            item {
-                EventCard(
-                    def = Events.STEP_SURGE,
-                    tag = stringResource(R.string.tag_weekly),
-                    title = stringResource(R.string.event_step_surge),
-                    desc = stringResource(R.string.event_step_surge_desc, "%,d".format(80_000)),
-                    progress = stepSurgeProgress,
-                    progressText = "%,d / %,d".format(weekSteps, 80_000),
-                    rewardAmount = "+250",
-                    claimed = claimed.contains(Events.STEP_SURGE.id),
-                    onClaim = { viewModel.claim(Events.STEP_SURGE, stepSurgeProgress) },
-                )
-            }
-        }
-
-        if (showMissions) {
-            item {
-                EventCard(
-                    def = Events.REFER,
-                    tag = stringResource(R.string.tag_mission),
-                    title = stringResource(R.string.event_refer),
-                    desc = stringResource(R.string.event_refer_desc),
-                    progress = 2f / 3f,
-                    progressText = "2 / 3",
-                    rewardAmount = "+500",
-                    claimed = claimed.contains(Events.REFER.id),
-                    onClaim = { viewModel.claim(Events.REFER, 2f / 3f) },
-                    secondaryButton = {
-                        GhostButton(
-                            text = stringResource(R.string.events_invite),
-                            onClick = shareInvite,
-                        )
-                    },
-                )
-            }
-        }
-
-        if (showChallenges) {
-            item {
-                EventCard(
-                    def = Events.NIGHT_QUEST,
-                    tag = stringResource(R.string.tag_limited),
-                    title = stringResource(R.string.event_night_quest),
-                    desc = stringResource(R.string.event_night_quest_desc),
-                    progress = 12.4f / 20f,
-                    progressText = "12.4 / 20 km",
-                    rewardAmount = "+300",
-                    claimed = claimed.contains(Events.NIGHT_QUEST.id),
-                    onClaim = { viewModel.claim(Events.NIGHT_QUEST, 12.4f / 20f) },
-                    countdownTarget = questTarget,
-                )
-            }
-        }
-    }
-}
-
-/** 매초 갱신되는 카운트다운 문자열 */
-@Composable
-private fun countdown(targetMillis: Long): String {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(targetMillis) {
-        while (true) {
-            now = System.currentTimeMillis()
-            delay(1_000)
-        }
-    }
-    val left = ((targetMillis - now) / 1000).coerceAtLeast(0)
-    val d = left / 86_400
-    val h = (left % 86_400) / 3_600
-    val m = (left % 3_600) / 60
-    val s = left % 60
-    return "%02dd : %02dh : %02dm : %02ds".format(d, h, m, s)
-}
-
-/** 누적 리워드 카드 — 뉴스 화면도 같은 머리글을 쓴다 */
-@Composable
-internal fun TotalRewardsCard(balance: Double, celebration: Int = 0) {
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        modifier = Modifier
-            .clip(shape)
-            .celebrate(celebration.takeIf { it > 0 })
-            .background(CarbonHigh, shape)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        HexEmblem(size = 24.dp)
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(
-                text = stringResource(R.string.events_total_rewards),
-                fontSize = 9.sp,
-                color = Silver,
-                maxLines = 1,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Text(
-                    text = "%,.2f".format(balance),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Snow,
-                    maxLines = 1,
-                )
-                Text(
-                    text = "+$%,.2f".format(balance * 0.01),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Volt,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-}
-
-/** 추천 캠페인 — Neon Horizon. 시즌 참가 보상(온보딩)은 즉시 수령 가능. */
-@Composable
-private fun FeaturedCampaign(
-    targetMillis: Long,
-    claimed: Boolean,
-    onClaim: () -> Unit,
-) {
-    GlowCard(accent = true, contentPadding = PaddingValues(20.dp), spacing = 13.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.events_featured),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Volt,
-                )
-                Text(
-                    text = "Neon Horizon",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.events_season),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-                Text(
-                    text = stringResource(R.string.events_campaign_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-            }
-            HorizonArt(
-                modifier = Modifier
-                    .width(120.dp)
-                    .height(120.dp),
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(Night.copy(alpha = 0.55f))
-                .padding(horizontal = 13.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(Icons.Filled.Schedule, contentDescription = null, tint = Volt, modifier = Modifier.size(15.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = stringResource(R.string.events_ends_in),
-                    fontSize = 10.sp,
-                    color = Silver,
-                )
-                Text(
-                    text = countdown(targetMillis),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                    letterSpacing = 0.5.sp,
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RewardPill(
-                modifier = Modifier.weight(1f),
-                top = "+15,000",
-                bottom = "StepUp Token",
-            )
-            if (claimed) {
-                GhostButton(
-                    text = stringResource(R.string.events_claimed),
-                    onClick = {},
-                    enabled = false,
-                )
-            } else {
-                VoltButton(
-                    text = stringResource(R.string.events_claim),
-                    onClick = onClaim,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RewardPill(modifier: Modifier = Modifier, top: String, bottom: String) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        HexEmblem(size = 24.dp, glow = false)
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            Text(top, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Snow)
-            Text(bottom, fontSize = 10.sp, color = Silver)
-        }
-    }
-}
-
-/** 캠페인 아트 — 지평선 위로 떠오르는 글로우 헥사곤 */
-@Composable
-private fun HorizonArt(modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        val cx = size.width / 2f
-        val cy = size.height * 0.42f
-        val r = size.minDimension * 0.30f
-
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Volt.copy(alpha = 0.40f), Color.Transparent),
-                center = Offset(cx, cy),
-                radius = r * 2.2f,
-            ),
-            radius = r * 2.2f,
-            center = Offset(cx, cy),
-        )
-
-        fun hex(radius: Float): Path = Path().apply {
-            for (i in 0 until 6) {
-                val a = (-90f + i * 60f) * (PI / 180.0)
-                val x = cx + radius * cos(a).toFloat()
-                val y = cy + radius * sin(a).toFloat()
-                if (i == 0) moveTo(x, y) else lineTo(x, y)
-            }
-            close()
-        }
-        drawPath(hex(r), color = Volt.copy(alpha = 0.14f))
-        drawPath(hex(r), color = Volt, style = Stroke(width = 2.5.dp.toPx()))
-        drawPath(hex(r * 0.55f), color = Volt, style = Stroke(width = 1.6.dp.toPx()))
-        drawCircle(Volt, radius = r * 0.14f, center = Offset(cx, cy))
-
-        val horizonY = size.height * 0.86f
-        drawArc(
-            color = Volt.copy(alpha = 0.35f),
-            startAngle = 200f,
-            sweepAngle = 140f,
-            useCenter = false,
-            topLeft = Offset(-size.width * 0.25f, horizonY - size.height * 0.06f),
-            size = androidx.compose.ui.geometry.Size(size.width * 1.5f, size.height * 0.9f),
-            style = Stroke(width = 2.dp.toPx()),
-        )
-        listOf(
-            0.15f to 0.12f, 0.85f to 0.20f, 0.72f to 0.06f, 0.30f to 0.80f, 0.90f to 0.70f,
-        ).forEach { (fx, fy) ->
-            drawCircle(
-                color = Snow.copy(alpha = 0.5f),
-                radius = 1.4.dp.toPx(),
-                center = Offset(size.width * fx, size.height * fy),
-            )
-        }
-    }
-}
-
-/** 진행형 이벤트 카드 — 목표를 채우면 Claim이 활성화되고 실제 SUP가 적립된다 */
-@Composable
-private fun EventCard(
-    def: EventDef,
-    tag: String,
-    title: String,
-    desc: String,
-    progress: Float,
-    progressText: String,
-    rewardAmount: String,
-    claimed: Boolean,
-    onClaim: () -> Unit,
-    countdownTarget: Long? = null,
-    secondaryButton: (@Composable () -> Unit)? = null,
-) {
-    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            HexEmblem(size = 52.dp, glow = false)
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(tag, style = MaterialTheme.typography.labelSmall, color = Volt)
-                Text(title, style = MaterialTheme.typography.titleMedium, color = Snow)
-                Text(desc, style = MaterialTheme.typography.bodySmall, color = Silver)
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
+                modifier = Modifier.celebrate(celebration.takeIf { it > 0 }),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.events_reward),
-                    fontSize = 10.sp,
-                    color = Slate,
+                    text = stringResource(R.string.challenge_today_title),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.6).sp,
+                    color = Snow,
                 )
+                Text(text = stringResource(R.string.challenge_today_sub), fontSize = 14.sp, color = Silver)
+            }
+        }
+
+        // ── 일일 — 걸음 목표. 달성하면 보너스가 저절로 들어온다 ──
+        item {
+            val d = daily
+            ChallengeCard(
+                tag = stringResource(R.string.challenge_tag_daily),
+                tagTone = BadgeTone.Accent,
+                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                title = stringResource(R.string.challenge_daily_title),
+                desc = stringResource(R.string.challenge_daily_desc),
+                reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
+                rewardNote = if (d != null && d.paidToday > 0) null else stringResource(R.string.challenge_daily_streak_note),
+                fraction = d?.fraction ?: 0f,
+                progressText = if (d == null) "—" else "%,d / %,d".format(d.steps, d.goal),
+                state = when {
+                    d == null -> ChallengeState.Loading
+                    d.paidToday > 0 -> ChallengeState.Paid
+                    d.done -> ChallengeState.Settling
+                    else -> ChallengeState.InProgress
+                },
+                onClaim = null,
+            )
+        }
+
+        // ── 주간 — 7일 걸음 합 ──
+        item {
+            val done = weekFraction >= 1f
+            ChallengeCard(
+                tag = stringResource(R.string.challenge_tag_weekly),
+                tagTone = BadgeTone.Nft,
+                icon = Icons.Filled.Whatshot,
+                title = stringResource(R.string.event_step_surge),
+                desc = stringResource(R.string.event_step_surge_desc, "%,d".format(Events.STEP_SURGE.target.toLong())),
+                reward = Events.STEP_SURGE.reward,
+                fraction = weekFraction,
+                progressText = "%,d / %,d".format(weekSteps, Events.STEP_SURGE.target.toLong()),
+                state = claimState(Events.STEP_SURGE, claimed, done),
+                onClaim = { viewModel.claim(Events.STEP_SURGE, weekFraction) },
+            )
+        }
+
+        // ── 나이트 러너 — 저녁 8시 이후 러닝 거리 합 ──
+        item {
+            val done = nightFraction >= 1f
+            ChallengeCard(
+                tag = stringResource(R.string.tag_limited),
+                tagTone = BadgeTone.Glow,
+                icon = Icons.Filled.DarkMode,
+                title = stringResource(R.string.event_night_quest),
+                desc = stringResource(R.string.event_night_quest_desc),
+                reward = Events.NIGHT_QUEST.reward,
+                fraction = nightFraction,
+                progressText = "%.1f / %.0f km".format(nightKm, Events.NIGHT_QUEST.target),
+                state = claimState(Events.NIGHT_QUEST, claimed, done),
+                onClaim = { viewModel.claim(Events.NIGHT_QUEST, nightFraction) },
+            )
+        }
+
+        // ── 친구 초대 — 초대한 사람을 셀 기록이 아직 없다 ──
+        item {
+            ChallengeCard(
+                tag = stringResource(R.string.tag_mission),
+                tagTone = BadgeTone.Muted,
+                icon = Icons.Filled.GroupAdd,
+                title = stringResource(R.string.event_refer),
+                desc = stringResource(R.string.challenge_refer_desc),
+                reward = Events.REFER.reward,
+                fraction = null,
+                progressText = stringResource(R.string.challenge_soon),
+                state = ChallengeState.Soon,
+                onClaim = null,
+                extra = {
+                    GhostButton(
+                        text = stringResource(R.string.events_invite),
+                        onClick = { showInvite = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                },
+            )
+        }
+
+        item {
+            PrimaryCta(
+                text = stringResource(R.string.home_start_run),
+                icon = Icons.AutoMirrored.Filled.DirectionsRun,
+                onClick = onStartRun,
+            )
+        }
+
+        // ── 공지 — StepUp 이 쓰는 안내. 예전 뉴스 탭의 특가 공지 ──
+        item { SectionHeader(title = stringResource(R.string.challenge_notices)) }
+        items(DEAL_FEED.size) { index -> FeedCard(DEAL_FEED[index]) }
+        item { FeedFootnote(R.string.feed_note_deals) }
+    }
+}
+
+private enum class ChallengeState { Loading, InProgress, Ready, Settling, Paid, Claimed, Soon }
+
+/** 받기형 도전의 상태 — 받았으면 받음, 채웠으면 받기, 아니면 진행 중 */
+private fun claimState(def: EventDef, claimed: Set<String>, done: Boolean): ChallengeState = when {
+    claimed.contains(def.id) -> ChallengeState.Claimed
+    done -> ChallengeState.Ready
+    else -> ChallengeState.InProgress
+}
+
+@Composable
+private fun ChallengeCard(
+    tag: String,
+    tagTone: BadgeTone,
+    icon: ImageVector,
+    title: String,
+    desc: String,
+    reward: Double,
+    fraction: Float?,
+    progressText: String,
+    state: ChallengeState,
+    onClaim: (() -> Unit)?,
+    rewardNote: String? = null,
+    extra: (@Composable () -> Unit)? = null,
+) {
+    GlowCard(
+        accent = state == ChallengeState.Ready,
+        contentPadding = PaddingValues(16.dp),
+        spacing = 12.dp,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SmallBadge(tag, tone = tagTone)
+            Box(Modifier.weight(1f))
+            StatusChip(state)
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(CarbonHigh, CircleShape)
+                    .border(1.dp, Edge, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
+                Text(text = desc, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
+            }
+            Column(horizontalAlignment = Alignment.End) {
                 Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     HexEmblem(size = 16.dp, glow = false)
                     Text(
-                        text = rewardAmount,
+                        text = "+%,.0f".format(reward),
+                        fontFamily = StepUpNumbers,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Volt,
+                        fontWeight = FontWeight.Bold,
+                        color = Snow,
                     )
                 }
-                Text("StepUp Token", fontSize = 9.sp, color = Slate)
+                if (rewardNote != null) {
+                    Text(text = rewardNote, fontSize = 10.sp, color = Slate, modifier = Modifier.padding(top = 3.dp))
+                }
             }
         }
-
-        if (countdownTarget != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(Icons.Filled.Schedule, contentDescription = null, tint = Volt, modifier = Modifier.size(13.dp))
+        if (fraction != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                BarMeter(fraction = fraction, height = 8.dp, modifier = Modifier.weight(1f))
                 Text(
-                    text = stringResource(R.string.events_ends_in) + " " + countdown(countdownTarget),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Volt,
+                    text = progressText,
+                    fontFamily = StepUpNumbers,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Snow,
                 )
             }
+        } else {
+            Text(text = progressText, fontSize = 13.sp, color = Slate)
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                BarMeter(fraction = progress, height = 7.dp)
-                Text(progressText, fontSize = 11.sp, color = Silver)
-            }
-            secondaryButton?.invoke()
-            when {
-                claimed -> GhostButton(
-                    text = stringResource(R.string.events_claimed),
-                    onClick = {},
-                    enabled = false,
-                )
-                progress >= 1f -> VoltButton(
-                    text = stringResource(R.string.events_claim),
-                    onClick = onClaim,
-                )
-                else -> GhostButton(
-                    text = stringResource(R.string.events_claim),
-                    onClick = onClaim,
-                    enabled = false,
-                )
-            }
+        // 받기 — 채운 것에만. 채우지 못했으면 버튼 자체를 보이지 않는다.
+        if (onClaim != null && state == ChallengeState.Ready) {
+            VoltButton(
+                text = stringResource(R.string.events_claim),
+                onClick = onClaim,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+        extra?.invoke()
     }
 }
 
+@Composable
+private fun StatusChip(state: ChallengeState) {
+    val (text, tone) = when (state) {
+        ChallengeState.Loading -> return
+        ChallengeState.InProgress -> stringResource(R.string.challenge_state_progress) to BadgeTone.Muted
+        ChallengeState.Ready -> stringResource(R.string.challenge_state_ready) to BadgeTone.Accent
+        ChallengeState.Settling -> stringResource(R.string.challenge_state_settling) to BadgeTone.Accent
+        ChallengeState.Paid -> stringResource(R.string.challenge_state_paid) to BadgeTone.Glow
+        ChallengeState.Claimed -> stringResource(R.string.events_claimed) to BadgeTone.Glow
+        ChallengeState.Soon -> stringResource(R.string.challenge_soon) to BadgeTone.Muted
+    }
+    SmallBadge(text, tone = tone)
+}
 
 /**
  * 친구 초대 — 보낼 문구를 먼저 보여 준다.

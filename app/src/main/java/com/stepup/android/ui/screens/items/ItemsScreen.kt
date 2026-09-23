@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -60,6 +61,7 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.VARIANTS_PER_FACTION
 import com.stepup.android.ui.components.BarMeter
+import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.EquippedSneakerCard
 import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.FilterSummaryRow
@@ -99,6 +101,7 @@ import com.stepup.android.ui.components.Wordmark
 
 @Composable
 fun ItemsScreen(
+    onBack: (() -> Unit)? = null,
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDex: () -> Unit = {},
     onOpenMarketModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
@@ -170,13 +173,21 @@ fun ItemsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                // 꾸미기 밑의 화면이다 — 돌아갈 길을 머리글 맨 앞에 둔다
+                if (onBack != null) {
+                    DarkIconButton(
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.cd_back),
+                        onClick = onBack,
+                    )
+                }
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.tab_market),
-                        fontSize = 32.sp,
+                        text = stringResource(R.string.items_vault_title),
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-1).sp,
                         color = Snow,
