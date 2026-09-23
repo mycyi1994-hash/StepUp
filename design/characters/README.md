@@ -24,5 +24,4 @@
 - RUNO · LUMI 축하 자세(러닝 완료)
 - LUMI 달리기(러닝 홈 · 러너 마켓 — 지금은 서 있기로 대신)
 - 표정 셋을 앱에 쓰려면 전신 그림마다 표정 변형이 필요하다(가이드의 표정은 얼굴 확대뿐)
-- 장비를 입은 LUMI — RUNO 장비 그림 57장은 `design/equipment/runtime-assets.md`
-- 새 의상 + NFT 신발 혼합 260 조합(정렬된 몸 · 의상 · 신발 레이어가 필요)
+- 장비 그림(RUNO 57 · LUMI 57)에 없는 혼합 조합 — `design/equipment/runtime-assets.md`

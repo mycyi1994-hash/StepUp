@@ -447,7 +447,7 @@ private fun OutfitCard(
                 if (outfit.starter) SmallBadge(stringResource(R.string.customize_basic_badge), tone = BadgeTone.Muted)
             }
         },
-        art = { OutfitArt(outfit, Modifier.fillMaxSize()) },
+        art = { OutfitArt(outfit, look.gender, Modifier.fillMaxSize()) },
     )
 }
 

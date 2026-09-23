@@ -4,7 +4,7 @@
 재고, 그 색과 가까운 픽셀만 가장자리에서부터 채워 지운다. 흰 옷 · 흰 밑창은 바탕보다
 확실히 밝고 희어서 남는다.
 """
-import sys, numpy as np
+import os, sys, numpy as np
 from PIL import Image, ImageFilter, ImageDraw
 from collections import deque
 from scipy import ndimage
@@ -45,6 +45,31 @@ while q:
         ny, nx = y+dy, x+dx
         if 0 <= ny < h and 0 <= nx < w and not seen[ny, nx] and bgish[ny, nx]:
             seen[ny, nx] = True; q.append((ny, nx))
+# CUTOUT_BG2D=1 — 바탕을 줄마다가 아니라 면으로 추정한다. 칸 안에 밝은 판 · 비네팅이
+# 있어 줄 모형이 안 맞는 시트(루미 바람 시트 등)용. 확실한 바탕(좁은 기준)만 표본으로
+# 잡고 가우스 정규화 합성곱으로 채운 뒤, 그 면과의 거리로 다시 채운다.
+if os.environ.get('CUTOUT_BG2D'):
+    samp = seen & (dist < 12)
+    samp = ndimage.binary_erosion(samp, iterations=2)
+    wgt = ndimage.gaussian_filter(samp.astype(np.float32), 14)
+    bg2 = np.stack([ndimage.gaussian_filter(im[..., c] * samp, 14) for c in range(3)], -1) / np.maximum(wgt, 1e-4)[..., None]
+    bg2[wgt < 1e-3] = bg_row[np.nonzero(wgt < 1e-3)[0]]
+    dist = np.sqrt(((im - bg2) ** 2).sum(2))
+    loose = dist < tol
+    bgish = loose
+    seen = np.zeros((h, w), bool); q = deque()
+    for x in range(w):
+        for y in (0, h-1):
+            if bgish[y, x]: seen[y, x] = True; q.append((y, x))
+    for y in range(h):
+        for x in (0, w-1):
+            if bgish[y, x] and not seen[y, x]: seen[y, x] = True; q.append((y, x))
+    while q:
+        y, x = q.popleft()
+        for dy, dx in ((1,0),(-1,0),(0,1),(0,-1)):
+            ny, nx = y+dy, x+dx
+            if 0 <= ny < h and 0 <= nx < w and not seen[ny, nx] and bgish[ny, nx]:
+                seen[ny, nx] = True; q.append((ny, nx))
 fg = ~seen
 # 좁은 기준의 바탕 — 신발 높이에서 바탕과 거의 같은 색(dist < 9)만 바탕으로 본다.
 # 흰 어퍼의 푸른 그늘은 바탕과 가까워 넉넉한 기준으로는 바깥 바탕과 함께 지워진다.
@@ -68,7 +93,14 @@ fg_tight = ~tseen
 fg = ndimage.binary_opening(fg, structure=np.ones((3, 3)))
 lab, n = ndimage.label(fg)
 if n > 1:
-    sizes = ndimage.sum(fg, lab, range(1, n+1)); fg = lab == (1 + int(np.argmax(sizes)))
+    sizes = ndimage.sum(fg, lab, range(1, n+1))
+    # CUTOUT_KEEP=0.03 — 가장 큰 덩어리의 3% 이상인 덩어리도 남긴다(흰 양말이 바탕으로
+    # 지워져 신발이 몸과 끊긴 경우)
+    keep = float(os.environ.get('CUTOUT_KEEP', '0'))
+    if keep > 0:
+        fg = np.isin(lab, 1 + np.nonzero(sizes >= keep * sizes.max())[0])
+    else:
+        fg = lab == (1 + int(np.argmax(sizes)))
 fg = ndimage.binary_fill_holes(fg)
 # 다리 사이 — 아래쪽의 바탕과 같은 색 덩어리만 지운다
 low = np.zeros_like(fg); low[int(h*low_from):] = True
@@ -76,9 +108,15 @@ shoe_top = int(h * 0.83)
 # 반바지 바로 아래(신발 위)의 바탕색 덩어리는 넉넉한 기준으로 찾는다.
 gap = loose & fg & low; gap[shoe_top:] = False
 hl, hn = ndimage.label(gap)
+bg_lum_row = 0.299*bg_row[:, 0] + 0.587*bg_row[:, 1] + 0.114*bg_row[:, 2]
 for i, sl in enumerate(ndimage.find_objects(hl), start=1):
     if sl is not None and (hl[sl] == i).sum() > 60:
-        fg[hl == i] = False
+        m = hl == i
+        # 흰 양말은 바탕보다 확실히 밝다 — 바탕 밝기 언저리인 덩어리만 다리 사이로 본다
+        # 흰 양말은 거의 무채색이고, 다리 사이 바닥은 바탕처럼 푸르다
+        bluish = (im[..., 2][m] - im[..., 0][m]).mean() > 16
+        if lum[m].mean() <= bg_lum_row[np.nonzero(m)[0]].mean() + 6 or bluish:
+            fg[m] = False
 # 그 아래로 이어진 바탕색도 지운다(발목 사이 · 발 옆 바닥). 신발 안의 흰 그늘까지 함께
 # 지워지는 것은 바로 아래에서 되살린다.
 el, en = ndimage.label(loose | ~fg)
@@ -122,7 +160,12 @@ if figure:
 fg = ndimage.binary_opening(fg, structure=np.ones((2, 2))) | hull
 lab, n = ndimage.label(fg)
 if n > 1:
-    sizes = ndimage.sum(fg, lab, range(1, n+1)); fg = lab == (1 + int(np.argmax(sizes)))
+    sizes = ndimage.sum(fg, lab, range(1, n+1))
+    keep = float(os.environ.get('CUTOUT_KEEP', '0'))
+    if keep > 0:
+        fg = np.isin(lab, 1 + np.nonzero(sizes >= keep * sizes.max())[0])
+    else:
+        fg = lab == (1 + int(np.argmax(sizes)))
 # 신발 안 되살리기 — 두 발 각각의 볼록 껍질 안에서 좁은 기준으로 전경인 픽셀
 st = int(h * 0.84)
 sb = np.zeros_like(fg); sb[st:] = fg[st:]
@@ -148,6 +191,8 @@ if ring.any():
     arr[ring] = arr[idx[0][ring], idx[1][ring]]
 alpha = Image.fromarray((fg*255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.7))
 out = Image.fromarray(arr).convert('RGBA'); out.putalpha(alpha)
-bbox = out.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox()
-out = out.crop((max(bbox[0]-6,0), max(bbox[1]-6,0), min(bbox[2]+6,w), min(bbox[3]+6,h)))
+# CUTOUT_NOCROP=1 이면 칸 크기 그대로 둔다(뒤에서 좌표로 더 손볼 때)
+if not os.environ.get('CUTOUT_NOCROP'):
+    bbox = out.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox()
+    out = out.crop((max(bbox[0]-6,0), max(bbox[1]-6,0), min(bbox[2]+6,w), min(bbox[3]+6,h)))
 out.save(dst); print(dst, out.size)

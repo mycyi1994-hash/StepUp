@@ -356,7 +356,7 @@ private fun OutfitProduct(
     ProductCard(
         onClick = if (demo) onTry else onInfo,
         badge = { SmallBadge("NFT", tone = BadgeTone.Nft) },
-        art = { OutfitArt(outfit, Modifier.fillMaxSize().padding(4.dp)) },
+        art = { OutfitArt(outfit, look.gender, Modifier.fillMaxSize().padding(4.dp)) },
         name = stringResource(outfitNameRes(outfit)),
         price = {
             // 팔지 않는 물건에 값을 적지 않는다

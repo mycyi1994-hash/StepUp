@@ -108,6 +108,8 @@ class DesignReferenceTest {
         HOME, RUN_ACTIVE, RUN_FINISH, CUSTOMIZE_M, CUSTOMIZE_F, MARKET, NEWS, CHALLENGE, COMMUNITY, PROFILE,
         // 장비 — 데모 체험으로 새 의상(엠버 셸)을 입고 시작 신발(클라우드 러너)을 신은 혼합 조합
         HOME_TRIAL_OUTFIT, PROFILE_TRIAL_OUTFIT, CUSTOMIZE_TRIAL_OUTFIT,
+        // 같은 체험을 루미로 — 엠버 셸(주황 모자) + 클라우드 러너
+        HOME_TRIAL_OUTFIT_F, CUSTOMIZE_TRIAL_OUTFIT_F,
     }
 
     @Test fun referenceViewports() {
@@ -165,7 +167,7 @@ class DesignReferenceTest {
                 // 저장소(DataStore · Room)의 값이 화면에 닿을 틈 — 성별 전환 등
                 Thread.sleep(400)
                 compose.waitForIdle()
-                if (s == Scene.HOME || s == Scene.HOME_TRIAL_OUTFIT) {
+                if (s == Scene.HOME || s == Scene.HOME_TRIAL_OUTFIT || s == Scene.HOME_TRIAL_OUTFIT_F) {
                     compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty() }
                 }
                 val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
@@ -204,8 +206,10 @@ class DesignReferenceTest {
             else -> WalkSessionService.showStateForTest(WalkSessionState())
         }
         runBlocking {
-            ServiceLocator.avatarRepository.setGender(if (s == Scene.CUSTOMIZE_F) AvatarGender.FEMALE else AvatarGender.MALE)
-            val trial = s == Scene.HOME_TRIAL_OUTFIT || s == Scene.PROFILE_TRIAL_OUTFIT || s == Scene.CUSTOMIZE_TRIAL_OUTFIT
+            val female = s == Scene.CUSTOMIZE_F || s == Scene.HOME_TRIAL_OUTFIT_F || s == Scene.CUSTOMIZE_TRIAL_OUTFIT_F
+            ServiceLocator.avatarRepository.setGender(if (female) AvatarGender.FEMALE else AvatarGender.MALE)
+            val trial = s == Scene.HOME_TRIAL_OUTFIT || s == Scene.PROFILE_TRIAL_OUTFIT || s == Scene.CUSTOMIZE_TRIAL_OUTFIT ||
+                s == Scene.HOME_TRIAL_OUTFIT_F || s == Scene.CUSTOMIZE_TRIAL_OUTFIT_F
             ServiceLocator.userPrefs.setDemoMode(trial)
             if (trial) ServiceLocator.userPrefs.setDemoOutfit("CLO-002")
         }
@@ -213,9 +217,9 @@ class DesignReferenceTest {
 
     @Composable private fun Render(s: Scene) {
         when (s) {
-            Scene.HOME, Scene.HOME_TRIAL_OUTFIT -> HomeScreen()
+            Scene.HOME, Scene.HOME_TRIAL_OUTFIT, Scene.HOME_TRIAL_OUTFIT_F -> HomeScreen()
             Scene.RUN_ACTIVE, Scene.RUN_FINISH -> RunScreen()
-            Scene.CUSTOMIZE_M, Scene.CUSTOMIZE_F, Scene.CUSTOMIZE_TRIAL_OUTFIT -> CustomizeScreen()
+            Scene.CUSTOMIZE_M, Scene.CUSTOMIZE_F, Scene.CUSTOMIZE_TRIAL_OUTFIT, Scene.CUSTOMIZE_TRIAL_OUTFIT_F -> CustomizeScreen()
             Scene.MARKET -> RunnerMarketScreen()
             Scene.NEWS -> NewsScreen()
             Scene.CHALLENGE -> EventsScreen()

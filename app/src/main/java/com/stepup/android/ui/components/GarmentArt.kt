@@ -12,8 +12,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import com.stepup.android.R
+import com.stepup.android.domain.AvatarGender
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Outfits
+import com.stepup.android.domain.designIdFor
 
 @StringRes
 fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
@@ -27,11 +29,12 @@ fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
 
 /**
  * 의상 상품 그림 — 의상 시트의 "ITEM" 줄에서 떼어 낸 앞면 그림이 있으면 그것을,
- * 없으면(기본 의상) 옷 아이콘을 그린다.
+ * 없으면(기본 의상) 옷 아이콘을 그린다. 같은 의상도 캐릭터마다 상품이 다르다
+ * (LUMI 것은 같은 색 모자가 한 벌이다).
  */
 @Composable
-fun OutfitArt(outfit: Outfit, modifier: Modifier = Modifier) {
-    val res = outfitProductRes(outfit.id)
+fun OutfitArt(outfit: Outfit, gender: AvatarGender, modifier: Modifier = Modifier) {
+    val res = outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id)
     if (res != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(res),

@@ -50,4 +50,14 @@ wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in outfit_ids]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
     assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images; 52 shoe + 5 outfit RUNO figures and 5 outfit products')
+# LUMI 장비 그림 — 신발 52(속성별 추천 의상) · 의상 5 착용 전신과 모자 포함 의상 상품 5
+lumi = json.loads((ROOT / 'design/equipment/lumi/equipment-catalog.json').read_text(encoding='utf-8'))
+assert sorted(x['id'] for x in lumi['shoes']) == sorted(shoe_ids), 'LUMI shoe ids differ from RUNO'
+lumi_outfits = [x['id'] for x in lumi['outfits']]
+assert lumi_outfits == ['LUM-' + i for i in outfit_ids], lumi_outfits
+wanted = [f"avatar_lumi_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + lumi_outfits]
+wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in lumi_outfits]
+for name in wanted:
+    head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
+    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')

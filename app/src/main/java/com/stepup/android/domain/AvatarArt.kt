@@ -12,10 +12,17 @@ package com.stepup.android.domain
  *  * RUNO 달리기 · RUNO 서 있기 · LUMI 서 있기 — 기본 의상(OUTFIT-BASE) + 기본 신발(SHOES-BASE)
  *  * RUNO 서 있기 × 신발 52종 — 기본 의상에 그 신발을 신은 모습 (design/equipment 신발 시트)
  *  * RUNO 서 있기 × 의상 5종(CLO-001~005) — 그 의상에 기본 신발을 신은 모습 (의상 시트)
+ *  * LUMI 서 있기 × 신발 52종 — 속성마다 정해진 추천 의상에 그 신발을 신은 모습
+ *    (불=엠버 셸, 물=타이드 아노락, 번개=볼트 저지, 바람=에어로 윈드브레이커 · design/equipment/lumi)
+ *  * LUMI 서 있기 × 의상 5종(LUM-CLO-001~005) — 그 의상 · 같은 색 모자에 기본 신발
  *
- * 시트는 한 칸에 한 조합만 그려져 있다. 새 의상에 NFT 신발을 함께 입은 모습
- * (5 × 52 = 260 조합)은 그림이 없다 — 그러려면 같은 포즈 · 같은 캔버스에 맞춘
- * 몸 · 의상 · 신발 투명 레이어가 따로 있어야 한다. LUMI 의 장비 그림도 아직 없다.
+ * 시트는 한 칸에 한 조합만 그려져 있다. 그 밖의 조합(RUNO 새 의상 + NFT 신발,
+ * LUMI 기본 의상 + NFT 신발 등)은 그림이 없다 — 그러려면 같은 포즈 · 같은 캔버스에
+ * 맞춘 몸 · 의상(+모자) · 신발 투명 레이어가 따로 있어야 한다.
+ *
+ * 의상은 한 디자인이 캐릭터마다 다른 디자인 번호를 가진다(RUNO CLO-001, LUMI
+ * LUM-CLO-001 — [designIdFor]). 앱 안의 착장 값은 캐릭터와 상관없이 [Outfit.id] 하나다.
+ * 루미의 모자 색은 의상을 따라가며 따로 저장하지 않는다 — 그림에 함께 그려져 있다.
  *
  * ── 그림을 고를 때 지키는 것 ──
  *
@@ -69,6 +76,16 @@ data class AvatarRender(
 fun shoeCode(faction: Faction, rarity: Rarity, variant: Int): String =
     SneakerDesigns.of(faction, rarity, variant).code
 
+/**
+ * 이 의상의 캐릭터별 디자인 번호 — 장비 카탈로그의 id.
+ * RUNO 는 "CLO-001", LUMI 는 "LUM-CLO-001", 기본 의상은 둘 다 "OUTFIT-BASE".
+ */
+fun Outfit.designIdFor(gender: AvatarGender): String = when {
+    !nft -> "OUTFIT-BASE"
+    gender == AvatarGender.FEMALE -> "LUM-$id"
+    else -> id
+}
+
 /** 이 신발 한 켤레(소유 인스턴스)의 디자인 번호. 인스턴스 id 와는 다르다. */
 fun Sneaker.designCode(): String = shoeCode(faction, rarity, variant)
 
@@ -78,6 +95,15 @@ object AvatarArtCatalog {
     val SHOE_CODES: List<String> = SneakerDesigns.all.map { it.code }
 
     private fun keyOf(id: String) = "runo_idle_" + id.lowercase().replace('-', '_')
+    private fun lumiKeyOf(id: String) = "lumi_idle_" + id.lowercase().replace('-', '_')
+
+    /** LUMI 신발 시트의 추천 의상 — 속성마다 하나. 그림 속 루미가 입은 옷이다(강제 조합은 아니다). */
+    val LUMI_SHEET_OUTFIT: Map<String, Outfit> = mapOf(
+        "FIR" to Outfits.EMBER_SHELL,
+        "WAT" to Outfits.TIDE_ANORAK,
+        "LIT" to Outfits.VOLT_JERSEY,
+        "WND" to Outfits.AERO_WINDBREAKER,
+    )
 
     /** 앱에 들어 있는 그림 전부 */
     val ALL: List<AvatarArt> = buildList {
@@ -91,6 +117,14 @@ object AvatarArtCatalog {
         // RUNO — 새 의상 5종 + 기본 신발
         Outfits.ALL.filter { it.nft }.forEach { o ->
             add(AvatarArt(keyOf(o.id), AvatarGender.MALE, AvatarPose.IDLE, o.id, null))
+        }
+        // LUMI — 속성별 추천 의상 + 신발 52종
+        SHOE_CODES.forEach { code ->
+            add(AvatarArt(lumiKeyOf(code), AvatarGender.FEMALE, AvatarPose.IDLE, LUMI_SHEET_OUTFIT.getValue(code.take(3)).id, code))
+        }
+        // LUMI — 새 의상 5종(모자 포함) + 기본 신발
+        Outfits.ALL.filter { it.nft }.forEach { o ->
+            add(AvatarArt(lumiKeyOf(o.designIdFor(AvatarGender.FEMALE)), AvatarGender.FEMALE, AvatarPose.IDLE, o.id, null))
         }
     }
 

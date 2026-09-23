@@ -2,14 +2,15 @@
 
 그림 이름 규칙
   avatar_<key>.webp   — AvatarArt.key 가 <key> 인 캐릭터 그림
-  outfit_clo_NNN.webp — CLO-NNN 의상 상품 그림
+  outfit_clo_NNN.webp — CLO-NNN 의상 상품 그림(RUNO)
+  outfit_lum_clo_NNN.webp — LUM-CLO-NNN 의상 상품 그림(LUMI, 모자 포함)
 """
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / 'app/src/main/res/drawable-nodpi'
 OUT = ROOT / 'app/src/main/java/com/stepup/android/ui/components/AvatarArtRes.kt'
 avatars = sorted(p.stem for p in RES.glob('avatar_*.webp'))
-outfits = sorted(p.stem for p in RES.glob('outfit_clo_*.webp'))
+outfits = sorted(p.stem for p in RES.glob('outfit_*clo_*.webp'))
 lines = [
     'package com.stepup.android.ui.components',
     '',
@@ -29,12 +30,12 @@ lines += ['    else -> null', '}', '',
           '@DrawableRes',
           'fun AvatarArt.drawableRes(): Int = avatarArtResOrNull(key) ?: R.drawable.avatar_male_idle',
           '',
-          '/** 의상 상품 그림 — 기본 의상은 없다 */',
+          '/** 의상 상품 그림 — 캐릭터별 디자인 번호로 찾는다. 기본 의상은 없다 */',
           '@DrawableRes',
           'fun outfitProductRes(outfitId: String): Int? = when (outfitId) {']
 for o in outfits:
-    n = o.split('_')[-1]
-    lines.append(f'    "CLO-{n}" -> R.drawable.{o}')
+    # outfit_clo_001 → "CLO-001", outfit_lum_clo_001 → "LUM-CLO-001"
+    lines.append(f'    "{o[len("outfit_"):].upper().replace("_", "-")}" -> R.drawable.{o}')
 lines += ['    else -> null', '}', '']
 OUT.write_text('\n'.join(lines))
 print(f'{len(avatars)} avatars, {len(outfits)} outfit products -> {OUT.relative_to(ROOT)}')

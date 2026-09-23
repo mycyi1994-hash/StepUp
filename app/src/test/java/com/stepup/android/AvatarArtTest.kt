@@ -11,6 +11,7 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.SneakerDesigns
 import com.stepup.android.domain.SneakerMint
 import com.stepup.android.domain.designCode
+import com.stepup.android.domain.designIdFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,7 +23,7 @@ import java.io.File
  *
  *   * 성별은 절대 바뀌지 않는다.
  *   * 입은 것이 그림에 보이면 보인다고, 아니면 아니라고 한다.
- *   * 신발 52 · 의상 5 — 장비 카탈로그(design/equipment)와 같은 id.
+ *   * 신발 52 · 의상 5 — 장비 카탈로그(design/equipment, design/equipment/lumi)와 같은 id.
  */
 class AvatarArtTest {
 
@@ -80,8 +81,36 @@ class AvatarArtTest {
             assertTrue("avatar_${art.key}.webp 가 없다", File(dir, "avatar_${art.key}.webp").exists())
         }
         Outfits.ALL.filter { it.nft }.forEach { o ->
-            val n = o.id.takeLast(3)
-            assertTrue("outfit_clo_$n.webp 가 없다", File(dir, "outfit_clo_$n.webp").exists())
+            AvatarGender.entries.forEach { g ->
+                val name = "outfit_" + o.designIdFor(g).lowercase().replace('-', '_') + ".webp"
+                assertTrue("$name 가 없다", File(dir, name).exists())
+            }
+        }
+    }
+
+    private val lumiCatalog: String by lazy {
+        listOf(File("../design/equipment/lumi/equipment-catalog.json"), File("design/equipment/lumi/equipment-catalog.json"))
+            .first { it.exists() }.readText()
+    }
+
+    @Test
+    fun `LUMI 카탈로그 — 신발 52종은 RUNO 와 같은 번호, 의상은 LUM-CLO 5종`() {
+        val shoes = Regex("\"id\"\\s*:\\s*\"((FIR|WAT|LIT|WND)-\\d{3})\"").findAll(lumiCatalog).map { it.groupValues[1] }.toSet()
+        assertEquals(AvatarArtCatalog.SHOE_CODES.toSet(), shoes)
+        val outfits = Regex("\"id\"\\s*:\\s*\"(LUM-CLO-\\d{3})\"").findAll(lumiCatalog).map { it.groupValues[1] }.toList()
+        assertEquals(Outfits.ALL.filter { it.nft }.map { it.designIdFor(AvatarGender.FEMALE) }, outfits)
+        assertEquals("OUTFIT-BASE", Outfits.STARTER_HOODIE.designIdFor(AvatarGender.FEMALE))
+    }
+
+    @Test
+    fun `LUMI 그림은 신발 52 · 의상 5 · 기본 1`() {
+        val lumi = AvatarArtCatalog.ALL.filter { it.gender == AvatarGender.FEMALE }
+        assertEquals(52, lumi.count { it.shoeCode != null })
+        assertEquals(5, lumi.count { it.shoeCode == null && it.outfitId != Outfits.BASE_ID })
+        assertEquals(1, lumi.count { it.shoeCode == null && it.outfitId == Outfits.BASE_ID })
+        // 신발 시트는 속성마다 추천 의상 하나를 입고 있다
+        lumi.filter { it.shoeCode != null }.forEach { a ->
+            assertEquals(AvatarArtCatalog.LUMI_SHEET_OUTFIT.getValue(a.shoeCode!!.take(3)).id, a.outfitId)
         }
     }
 
@@ -167,7 +196,53 @@ class AvatarArtTest {
     }
 
     @Test
-    fun `LUMI 는 장비 그림이 아직 없다 — 신발을 신으면 보이지 않는다고 한다`() {
+    fun `LUMI 6 x 53 조합 — 그림이 있는 조합만 그대로 보인다고 한다`() {
+        val shoes = listOf<Sneaker?>(null) + AvatarArtCatalog.SHOE_CODES.map { shoe(it) }
+        var shown = 0
+        Outfits.ALL.forEach { o ->
+            shoes.forEach { s ->
+                val r = AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.FEMALE, outfit = o, shoe = s), AvatarPose.IDLE)
+                val code = s?.designCode()
+                val drawn = s == null || (o.nft && AvatarArtCatalog.LUMI_SHEET_OUTFIT.getValue(code!!.take(3)) == o)
+                assertEquals("${o.id} + $code", drawn, r.lookShown)
+                assertEquals(r.art.outfitId == o.id, r.outfitShown)
+                assertEquals(r.art.shoeCode == code, r.shoeShown)
+                // 의상(모자 색까지)이 먼저다 — 입은 옷이 다른 그림은 고르지 않는다
+                assertTrue("${o.id} + $code", r.outfitShown)
+                if (r.lookShown) shown++
+            }
+        }
+        // 기본 착장 1 + 새 의상 5 + 추천 의상 × 신발 52
+        assertEquals(1 + 5 + 52, shown)
+    }
+
+    @Test
+    fun `LUMI — 신발을 바꿔도 의상 · 모자는 그대로, 의상을 바꾸면 모자가 함께 바뀐다`() {
+        val base = AvatarLook(gender = AvatarGender.FEMALE, outfit = Outfits.EMBER_SHELL, shoe = shoe("FIR-001"))
+        val r1 = AvatarArtCatalog.resolve(base, AvatarPose.IDLE)
+        assertEquals("lumi_idle_fir_001", r1.art.key)
+        assertTrue(r1.lookShown)
+        val r2 = AvatarArtCatalog.resolve(base.copy(shoe = shoe("FIR-008")), AvatarPose.IDLE)
+        assertEquals(Outfits.EMBER_SHELL.id, r2.art.outfitId)
+        assertEquals("FIR-008", r2.art.shoeCode)
+        val r3 = AvatarArtCatalog.resolve(base.copy(outfit = Outfits.CORE_ZIP, shoe = null), AvatarPose.IDLE)
+        assertEquals("lumi_idle_lum_clo_001", r3.art.key)
+    }
+
+    @Test
+    fun `LUMI 대표 혼합 조합 — 의상 그림에 신발은 아니라고 적는다`() {
+        listOf(Outfits.EMBER_SHELL to "WND-008", Outfits.VOLT_JERSEY to "WAT-004", Outfits.AERO_WINDBREAKER to "FIR-001").forEach { (o, c) ->
+            val look = AvatarLook(gender = AvatarGender.FEMALE, outfit = o, shoe = shoe(c))
+            val home = AvatarArtCatalog.resolve(look, AvatarPose.RUN)
+            val profile = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
+            assertEquals(profile.art, home.art)
+            assertEquals(o.id, home.art.outfitId)
+            assertFalse(home.shoeShown)
+        }
+    }
+
+    @Test
+    fun `LUMI 기본 의상 + 시작 신발 — 입지 않은 옷의 그림을 쓰지 않는다`() {
         val r = AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.FEMALE, shoe = shoe("WND-010")), AvatarPose.IDLE)
         assertEquals(AvatarArt.FEMALE_IDLE, r.art)
         assertFalse(r.shoeShown)
