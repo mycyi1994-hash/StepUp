@@ -1492,4 +1492,6 @@ Start running with StepUp.</string>
     <string name="account_delete_body">Your account and everything on the server — runs, GPS routes, SUP history, posts, comments, courses and territory marks — will be deleted and cannot be restored. If you own a crew, its longest-standing member becomes owner. Records left on this phone are removed when you uninstall the app.</string>
     <string name="account_delete_confirm">Delete</string>
     <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
+    <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

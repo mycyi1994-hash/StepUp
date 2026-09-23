@@ -12,7 +12,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.test.espresso.Espresso
 import androidx.test.rule.GrantPermissionRule
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.BOTTOM_NAV_TAG
@@ -70,6 +69,7 @@ class ChromeNavigationTest {
             val logo = bounds("brand-wordmark")
             val bar = bounds(BOTTOM_NAV_TAG)
             val token = bounds("sup-balance")
+            compose.onNodeWithTag("home-start-run").assertIsDisplayed().assertHasClickAction()
             listOf(R.string.tab_customize, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->
                 compose.onNode(hasText(compose.activity.getString(tab)) and hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
                     .performClick()
@@ -83,11 +83,18 @@ class ChromeNavigationTest {
             compose.waitForIdle()
             compose.onNodeWithTag("main-header").assertDoesNotExist()
             assertEquals("wallet keeps navigation geometry", bar, bounds(BOTTOM_NAV_TAG))
-            Espresso.pressBack()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.waitForIdle()
             assertEquals("restored header", header, bounds("main-header"))
             assertEquals("restored logo", logo, bounds("brand-wordmark"))
             assertEquals("restored navigation", bar, bounds(BOTTOM_NAV_TAG))
+            compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+            compose.onNodeWithTag("home-details").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithText(compose.activity.getString(R.string.home_today_earned)).assertIsDisplayed()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitForIdle()
+            compose.onNodeWithTag("home-start-run").assertIsDisplayed()
         }
     }
 

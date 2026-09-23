@@ -1,5 +1,7 @@
 package com.stepup.android.ui
 
+import kotlinx.coroutines.flow.map
+
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.stepup.android.ui.components.MainHeader
@@ -277,7 +279,7 @@ fun StepUpRoot() {
 }
 
 @Composable
-internal fun MainScaffold(startTour: Boolean = false) {
+internal fun MainScaffold(startTour: Boolean = false, initialTab: Screen = Screen.Run) {
     RunFeedback()
     val motion = LocalMotion.current
     val context = LocalContext.current
@@ -317,9 +319,13 @@ internal fun MainScaffold(startTour: Boolean = false) {
     val currentRoute = backStack?.destination?.route
     val chrome = AppChromePolicy.destination(currentRoute)
     val showBar = chrome?.showBottomBar == true
-    val balance by ServiceLocator.rewardRepository.balance.collectAsState(initial = 0.0)
+    val balanceFlow = remember { ServiceLocator.rewardRepository.balance.map<Double, Double?> { it } }
+    val balance by balanceFlow.collectAsState(initial = null)
 
     Box(Modifier.fillMaxSize()) {
+    if (currentRoute == Screen.Run.route) {
+        com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
+    }
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -344,7 +350,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Run.route,
+            startDestination = initialTab.route,
             modifier = Modifier.padding(innerPadding),
             enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
             exitTransition = { fadeOut(tween(motion.duration(140))) },

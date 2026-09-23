@@ -72,9 +72,10 @@ import com.stepup.android.ui.theme.VoltText
  * 여기 한 군데에서 작게 보이면 충분하다.
  */
 @Composable
-fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
-    val label = stringResource(R.string.cd_sup_balance, "%,.0f".format(balance))
+    val amount = balance?.let { "%,.0f".format(it) } ?: "—"
+    val label = stringResource(R.string.cd_sup_balance, amount)
     Row(
         modifier = modifier
             .clip(shape)
@@ -91,7 +92,7 @@ fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifi
     ) {
         HexEmblem(size = 20.dp, glow = false)
         Text(
-            text = "%,.0f".format(balance),
+            text = amount,
             modifier = Modifier.weight(1f, fill = false),
             overflow = TextOverflow.Ellipsis,
             fontFamily = StepUpNumbers,
@@ -154,7 +155,7 @@ fun SubHeader(
  */
 @Composable
 fun MainHeader(
-    balance: Double,
+    balance: Double?,
     onOpenWallet: (() -> Unit)?,
     modifier: Modifier = Modifier,
     balanceModifier: Modifier = Modifier,

@@ -315,7 +315,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 103,
+      "line": 93,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -455,7 +455,7 @@
     {
       "id": "SplashScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
-      "line": 75,
+      "line": 37,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -501,6 +501,13 @@
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
       "line": 416,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "HomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
+      "line": 169,
       "verification": "pending"
     },
     {

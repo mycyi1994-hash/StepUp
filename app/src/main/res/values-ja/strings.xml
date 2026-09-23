@@ -1491,4 +1491,6 @@ StepUp と走り出そう。</string>
     <string name="account_delete_body">アカウントとサーバー上のラン記録・GPSルート・SUP履歴・投稿・コメント・コース・陣地マークがすべて削除され、元に戻せません。クルー長の場合は最も古いメンバーがクルー長になります。この端末に残った記録はアプリを削除すると消えます。</string>
     <string name="account_delete_confirm">削除</string>
     <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
+    <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

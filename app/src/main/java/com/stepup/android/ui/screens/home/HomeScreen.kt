@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -85,20 +87,8 @@ import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
-/**
- * 러닝 — 앱을 열면 가장 먼저 보이는 화면.
- *
- * 세 가지가 바로 보여야 한다.
- *
- *   1. 오늘 받은 포인트
- *   2. 내 캐릭터
- *   3. 러닝 시작
- *
- * 나머지(거리 · 운동 시간 · 목표)는 그 셋을 받쳐 주는 줄이다. 예전 홈의 큰
- * 에너지 원형 차트, 겹치던 거리 카드, 통계 여러 장은 이 화면에서 뺐다.
- * 에너지는 러닝 시작 바로 위에 한 줄로만 남긴다 — 러닝을 누르기 직전에
- * 알아야 하는 제한이기 때문이다.
- */
+/** Home prioritizes the equipped character and one pinned run action. Details stay reachable in a sheet. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onStartRun: () -> Unit = {},
@@ -133,60 +123,63 @@ fun HomeScreen(
     }
 
     val largeText = LocalDensity.current.fontScale > 1.2f
+    var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
+    val render = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize()
+            .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // ── 머리글 48dp — 로고와 작은 보유 포인트 ──
-
-        if (!hasPermission) {
-            PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
-        }
-
-        // ── 1. 오늘 받은 포인트 + 2. 내 캐릭터(누르면 꾸미기) ──
-        //
-        // 숫자와 캐릭터를 한 덩어리로 둔다 — 캐릭터 무대의 조명이 숫자 뒤까지
-        // 번져 두 요소가 따로 떠 보이지 않는다.
-        val characterCd = stringResource(R.string.cd_home_character)
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
-            TodayEarned(earned)
-            CharacterStage(
-                look = look,
-                pose = AvatarPose.RUN,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (largeText) 230.dp else 300.dp)
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
+            com.stepup.android.ui.components.AvatarImage(
+                art = render.art,
+                contentDescription = stringResource(R.string.cd_home_character),
+                modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
                     .quietClickable(onOpenCustomize),
-                characterFraction = 0.92f,
-                contentDescription = characterCd,
-            ) { _ ->
-                if (look.trial) {
-                    SmallBadge(
-                        text = stringResource(R.string.avatar_trial),
-                        tone = BadgeTone.Glow,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp),
-                    )
-                }
-            }
-            // 그림 속 착장이 실제 착장과 다르면 여기서 밝힌다
-            AvatarLookNote(
-                look = look,
-                render = AvatarArtCatalog.resolve(look, AvatarPose.RUN),
-                modifier = Modifier.padding(top = 2.dp),
             )
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.MoreHoriz,
+                contentDescription = stringResource(R.string.common_more),
+                onClick = { showDetails = true },
+                modifier = Modifier.align(Alignment.TopEnd)
+                    .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
+                    .testTag("home-details"),
+            )
+            if (look.trial) {
+                SmallBadge(
+                    text = stringResource(R.string.avatar_trial),
+                    tone = BadgeTone.Glow,
+                    modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp),
+                )
+            }
         }
+        AvatarLookNote(look = look, render = render, modifier = Modifier.padding(bottom = 8.dp))
+        PrimaryCta(
+            text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
+            icon = Icons.AutoMirrored.Filled.DirectionsRun,
+            onClick = onStartRun,
+            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
+        )
+    }
 
+    if (showDetails) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showDetails = false },
+            containerColor = com.stepup.android.ui.theme.Night,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (!hasPermission) {
+                    PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
+                }
+                TodayEarned(earned)
         // ── 오늘 거리 · 운동 시간 (≈60dp) ──
         GlowCard(contentPadding = HomeCardPadding) {
             Row(
@@ -226,9 +219,7 @@ fun HomeScreen(
 
         // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .guideTarget(GuideTour.Targets.HOME_SHORTCUTS),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
@@ -242,7 +233,7 @@ fun HomeScreen(
                     icon = Icons.Filled.EmojiEvents,
                     label = stringResource(R.string.home_shortcut_challenges),
                     subtitle = stringResource(R.string.home_shortcut_challenges_sub),
-                    onClick = onOpenChallenges,
+                    onClick = { showDetails = false; onOpenChallenges() },
                     modifier = m,
                 )
             }
@@ -251,7 +242,7 @@ fun HomeScreen(
                     icon = Icons.AutoMirrored.Filled.Article,
                     label = stringResource(R.string.home_shortcut_news),
                     subtitle = stringResource(R.string.home_shortcut_news_sub),
-                    onClick = onOpenNews,
+                    onClick = { showDetails = false; onOpenNews() },
                     modifier = m,
                 )
             }
@@ -270,13 +261,9 @@ fun HomeScreen(
         // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
         EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
 
-        // ── 3. 러닝 시작 ──
-        PrimaryCta(
-            text = stringResource(R.string.home_start_run),
-            icon = Icons.AutoMirrored.Filled.DirectionsRun,
-            onClick = onStartRun,
-            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
-        )
+
+            }
+        }
     }
 }
 

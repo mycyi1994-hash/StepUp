@@ -128,6 +128,7 @@ class ScreenGalleryTest {
             capture("screen-${index.toString().padStart(2, '0')}")
         }
         val variations = listOf(
+            Triple(0, "home-details", listOf(R.string.common_more)),
             Triple(2, "community-crews", listOf(R.string.community_tab_my_crew)),
             Triple(3, "items-store", listOf(R.string.market_tab_store)),
             Triple(3, "items-exchange", listOf(R.string.market_tab_nft)),
@@ -174,6 +175,10 @@ class ScreenGalleryTest {
         for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_community to "community", R.string.tab_me to "profile")) {
             try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
         }
+        reset(39)
+        capture("launch-logo-reveal")
+        reset(40)
+        capture("launch-preparation-error")
         reset(38)
         for (index in GuideTour.steps.indices) {
             try {
@@ -187,6 +192,7 @@ class ScreenGalleryTest {
     private fun tap(resource: Int) {
         val label = localized.getString(resource)
         var matches = compose.onAllNodes(hasText(label) and hasClickAction())
+        if (matches.fetchSemanticsNodes().isEmpty()) matches = compose.onAllNodes(hasContentDescription(label) and hasClickAction())
         if (matches.fetchSemanticsNodes().isEmpty()) matches = compose.onAllNodesWithText(label)
         if (matches.fetchSemanticsNodes().isEmpty()) {
             compose.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText(label))
@@ -210,12 +216,12 @@ class ScreenGalleryTest {
 
     @Composable private fun Scene(index: Int) {
         when (index) {
-            0 -> HomeScreen()
+            0 -> MainScaffold()
             1, 34, 35 -> RunScreen()
-            2 -> CommunityScreen()
+            2 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
             3 -> ItemsScreen()
             4 -> EventsScreen()
-            5 -> ProfileScreen()
+            5 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Profile)
             6 -> WalletScreen()
             7 -> CourseHubScreen()
             8 -> AchievementsScreen()
@@ -238,15 +244,17 @@ class ScreenGalleryTest {
             25 -> ThemeScreen()
             26 -> SneakerDexScreen()
             27 -> NewsScreen()
-            28 -> CustomizeScreen()
+            28 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Customize)
             29 -> RunnerMarketScreen()
             30 -> MapScreen()
             31 -> HistoryMapScreen()
             32 -> MarketModelScreen("FIRE", "COMMON", 1, onBack = {})
-            33 -> SplashScreen {}
+            33 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
             36 -> PartyLobbyScreen(flashPostId = 101L, onBack = {}, onRunStarted = {})
             37 -> MainScaffold()
             38 -> MainScaffold(startTour = true)
+            39 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Reveal)
+            40 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Error)
         }
     }
 }

@@ -1490,4 +1490,6 @@
     <string name="account_delete_body">账户及服务器上的跑步记录、GPS 路线、SUP 记录、帖子、评论、路线和地盘标记将全部删除且无法恢复。如果你是团长，最早加入的成员将成为团长。留在本机的记录会在卸载应用时删除。</string>
     <string name="account_delete_confirm">删除</string>
     <string name="account_delete_failed">删除失败。请检查网络后重试。若仍失败，请发邮件至 support@stepupcrew.com。</string>
+    <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->
