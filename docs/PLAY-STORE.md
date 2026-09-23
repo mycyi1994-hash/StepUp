@@ -9,6 +9,7 @@ Play Console 에 앱을 등록할 때 채우는 칸을 이 앱의 실제 동작�
 |---|---|---|
 | Play 개발자 계정 | play.google.com/console | $25 한 번. 본인 인증에 며칠 걸린다 |
 | 업로드 키 + GitHub Secrets 4개 | [RELEASE-SIGNING.md](RELEASE-SIGNING.md) | 없으면 CI 가 서명하지 않은 AAB 만 만든다 |
+| 서버 지역 | Supabase › Settings › General | 싱가포르(ap-southeast-1) — 개인정보처리방침 국외 이전 항목에 반영됨 |
 | `support@stepupcrew.com` 받기 | Cloudflare › stepupcrew.com › Email › Email Routing | 개인 메일로 전달. 개인정보처리방침·계정 삭제 페이지·스토어 연락처가 이 주소를 쓴다 |
 | 위치기반서비스사업 신고 | 방송통신위원회(위치정보 사업 신고) | 위치를 서버에 저장하므로 국내 출시 전 확인 |
 | Play App Signing 인증서 SHA-256 | Play Console › 설정 › 앱 무결성 | `web/.well-known/assetlinks.json` 의 `sha256_cert_fingerprints` 에 **추가**(디버그 값은 남긴다). 그래야 스토어 판에서도 초대 링크가 앱으로 바로 열린다 |
