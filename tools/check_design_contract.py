@@ -60,6 +60,13 @@ if 'rewardRepository.credit' in notification_repo or 'seedWelcome' in notificati
     errors.append('Notifications cannot fabricate or locally pay rewards without a server receipt')
 if root.count('MainHeader(') != 1:
     errors.append('Root must own exactly one main header')
+controls = (UI/'components/Components.kt').read_text(encoding='utf-8')
+for name in ('VoltButton', 'GhostButton'):
+    body = controls.split(f'fun {name}(', 1)[1].split('\n/**', 1)[0]
+    for token in ('StepUpDesign.TouchTarget', 'StepUpDesign.SecondaryLabel',
+                  'StepUpDesign.SecondaryHorizontalPadding', 'StepUpDesign.SecondaryVerticalPadding'):
+        if token not in body:
+            errors.append(f'{name}: must use shared control token {token}')
 if re.search(r'fontWeight\s*=\s*if\s*\(selected\)', root):
     errors.append('Tab selection changes geometry through font weight')
 if 'barHiddenRoutes' in root:

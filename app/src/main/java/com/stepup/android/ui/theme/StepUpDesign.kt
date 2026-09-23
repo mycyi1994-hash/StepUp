@@ -18,6 +18,9 @@ object StepUpDesign {
     val BalanceUnit = 12.sp
     val PrimaryHeight = 60.dp
     val PrimaryLabel = 18.sp
+    val SecondaryLabel = 14.sp
+    val SecondaryHorizontalPadding = 20.dp
+    val SecondaryVerticalPadding = 12.dp
     val NavigationHeight = 76.dp
     val NavigationItemHeight = 68.dp
     val NavigationLabel = 13.sp

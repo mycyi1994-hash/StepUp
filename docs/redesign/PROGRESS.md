@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — secondary button token consistency
+
+- VoltButton and GhostButton now share explicit secondary label/padding tokens and the existing 48dp touch-height token. Labels increase from 13sp to 14sp and center when wrapping; primary action remains the separate 60dp/18sp role. Updated the design contract and source guard against divergence.
+- Local source/resource/asset checks pass. This affects many secondary actions, so compact/large-font captures still must establish wrapping and surrounding layout; no visual pass is implied by the guardrail.
+- f84b5ca Build APK 35915951416 and Gallery 35915951385 are running. Older 859bba8 gallery 35912849285 is still live, with no completed artifact to inspect.
+
 ## 2026-09-24 — equipment save failures
 
 - Vault and shoe-detail equip failures now show retry feedback instead of silently returning or allowing an uncaught storage exception. Customize gender/outfit/shoe writes likewise report storage failures; coroutine cancellation still propagates. Success messages follow the existing successful writes. This does not yet audit upgrade/mint/purchase transactions or serialize all avatar changes.

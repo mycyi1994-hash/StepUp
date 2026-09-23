@@ -14,6 +14,7 @@ An atmospheric running world: dimensional RUNO/LUMI, faithful equipment, riversi
 - Wordmark presets: Header (26 dp high, original aspect ratio); Launch (52 dp high, constrained to available width). Both use the existing original transparent assets. No text imitation or regenerated logo.
 - Main header: stable 64 dp minimum row; 20 dp outer content gutter; minimum 48 dp hit targets. The same available width produces the same logo bounds on every main tab.
 - Primary CTA: 60 dp minimum, pill shape, shared blue treatment, 18 sp semibold label, 24 dp icon. Font expansion can increase height; it must never clip.
+- Secondary filled/outlined buttons: 48 dp minimum touch height, 14 sp label, 20 dp horizontal and 12 dp vertical padding. Both use the same centralized tokens and center wrapped labels; increased font size may grow their height.
 - Bottom navigation: shared minimum 76 dp content plus Android navigation-bar insets. Same icons, label roles, spacing and hit geometry. Selection changes color and indicator only, not font weight or layout.
 - Detail header: shared back control and title; any contextual action follows a defined slot. A detail screen does not invent another brand header.
 - Startup/reveal/login: no bottom tabs. Running focus and full-screen forms: no bottom tabs. Maps/details otherwise retain their declared parent tab. Route policy is centralized and exhaustively checked.

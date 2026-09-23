@@ -689,20 +689,21 @@ fun VoltButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(
                 if (enabled) VoltPlate else Brush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
                 shape,
             )
             .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 12.dp),
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             color = if (enabled) OnVolt else Slate,
-            fontSize = 13.sp,
+            fontSize = StepUpDesign.SecondaryLabel,
+            textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.2.sp,
         )
@@ -721,18 +722,19 @@ fun GhostButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(accent.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
             .border(1.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
             .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             color = if (enabled) accent else Slate,
-            fontSize = 13.sp,
+            fontSize = StepUpDesign.SecondaryLabel,
+            textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp,
         )
