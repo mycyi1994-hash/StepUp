@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — inventory focuses on shoes before collection statistics
+
+- Based on native screen-03 review, removed the four tall faction-progress cards from the default inventory viewport and integrated their choices/counts into the existing filter sheet. The equipped shoe and owned collection remain primary; faction counts and all previous AND filters remain available.
+- The sheet drafts faction alongside rarity/equipment/sort; Apply commits the selection and dismissal leaves the prior conditions. Active faction appears in the visible summary and filter count, and summary reset clears all active conditions. Shared header, tabs, buttons and item ownership are unchanged. Four locales name the new section.
+- Local inventory/design/resource/asset/whitespace checks pass; native sheet scrolling, apply/dismiss/reset and large-font screenshots remain pending. Build 35927305897 is still running, so this change remains queued locally. Prior gallery 35926758041 has completed with failure; artifact download started for inspection, with no root-cause conclusion yet.
+
 ## 2026-09-24 — ranking authentication recovery uses shared controls
 
 - Viewed native 0383b12 screen-17.png: a sign-in-required explanation offered only Retry, which repeated the authenticated ranking read without opening login. Personal and faction ranking failures now use the existing shared SignInAgainButton for that specific problem; offline/rejected requests retain refresh.

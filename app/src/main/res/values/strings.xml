@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">Faction · collection</string>
     <string name="pref_saved_on_device">Saved on this phone</string>
     <string name="pref_sync_pending">Your choices are saved on this phone, but the server has not confirmed them. Previous notification settings may still apply. Sign in and retry when connected.</string>
     <string name="pref_sync_retry">Retry sync</string>

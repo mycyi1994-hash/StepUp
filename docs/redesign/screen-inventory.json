@@ -521,21 +521,21 @@
       "kind": "AlertDialog",
       "owner": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 490,
+      "line": 456,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 647,
+      "line": 616,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 257,
+      "line": 258,
       "verification": "pending"
     },
     {

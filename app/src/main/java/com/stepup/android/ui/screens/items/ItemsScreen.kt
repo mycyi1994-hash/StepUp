@@ -220,35 +220,11 @@ fun ItemsScreen(
             }
         }
 
-        // ── 속성별 도감 진행도 — 탭하면 그 속성만 필터링 ─────────
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Faction.entries.forEach { faction ->
-                    FactionProgressCell(
-                        faction = faction,
-                        owned = factions[faction] ?: 0,
-                        total = VARIANTS_PER_FACTION,
-                        selected = factionFilter == faction.id,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            factionFilter = if (factionFilter == faction.id) null else faction.id
-                        },
-                    )
-                }
-            }
-        }
-
-        // ── 추가 필터: 등급 · 장착 상태 · 정렬 ─────────────────
-        //
-        // 가로로 밀던 칩 줄을 버튼 둘과 요약 한 줄로 바꾼다. 속성은 위
-        // 카드가 맡고, 여기서는 그 밖의 조건만 다룬다.
+        // Detailed conditions and faction collection counts live in the filter sheet.
         item {
             FilterToolbar(
                 filterLabel = stringResource(R.string.filter_button_detail),
-                filterCount = itemFilterCount(rarityFilter, equipFilter),
+                filterCount = itemFilterCount(rarityFilter, equipFilter) + if (factionFilter != null) 1 else 0,
                 sortLabel = stringResource(itemSortRes(itemSort)),
                 onOpenFilters = { itemFilterSheet = true },
                 onOpenSort = { itemSortSheet = true },
@@ -257,22 +233,12 @@ fun ItemsScreen(
 
         item {
             FilterSummaryRow(
-                parts = itemFilterParts(rarityFilter, equipFilter),
-                // 요약 줄의 초기화는 추가 조건만 푼다. 위에서 고른 속성은
-                // 남는다 — 속성을 풀려면 그 카드를 다시 누르거나, 아래
-                // "전체 초기화"를 누른다.
+                parts = listOfNotNull(Faction.entries.firstOrNull { it.id == factionFilter }?.label()) +
+                    itemFilterParts(rarityFilter, equipFilter),
                 onReset = {
+                    factionFilter = null
                     rarityFilter = null
                     equipFilter = EquipFilter.ALL
-                },
-                extraAction = if (factionFilter != null) {
-                    stringResource(R.string.filter_reset_all) to {
-                        rarityFilter = null
-                        equipFilter = EquipFilter.ALL
-                        factionFilter = null
-                    }
-                } else {
-                    null
                 },
             )
         }
@@ -543,12 +509,15 @@ fun ItemsScreen(
     // 화면 밖으로 밀릴 때 창까지 사라진다.
     if (itemFilterSheet) {
         ItemFilterSheet(
+            faction = factionFilter,
+            factionProgress = factions,
             rarity = rarityFilter,
             equip = equipFilter,
             sort = itemSort,
             onDismiss = { itemFilterSheet = false },
-            onApply = { rarity, equip, sort ->
+            onApply = { faction, rarity, equip, sort ->
                 itemFilterSheet = false
+                factionFilter = faction
                 rarityFilter = rarity
                 equipFilter = equip
                 itemSort = sort

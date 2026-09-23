@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">属性・収集状況</string>
     <string name="pref_saved_on_device">この端末に保存しました</string>
     <string name="pref_sync_pending">選択はこの端末に保存しましたが、サーバーへの反映は確認できていません。以前の通知設定が適用される場合があります。ログインと接続を確認して再試行してください。</string>
     <string name="pref_sync_retry">再試行</string>

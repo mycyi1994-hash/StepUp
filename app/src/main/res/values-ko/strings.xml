@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">속성 · 수집 현황</string>
     <string name="pref_saved_on_device">이 휴대폰에 저장했어요</string>
     <string name="pref_sync_pending">선택은 이 휴대폰에 저장했지만 서버 반영은 확인하지 못했어요. 이전 알림 설정이 적용될 수 있어요. 로그인과 인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
     <string name="pref_sync_retry">다시 반영하기</string>
