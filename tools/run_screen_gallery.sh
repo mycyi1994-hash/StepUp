@@ -76,7 +76,7 @@ run_instrumentation() {
   fi
 }
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
-run_instrumentation interaction "com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.DatabaseMigrationTest"
+run_instrumentation interaction "com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.DatabaseMigrationTest"
 cp -R app/build/reports/androidTests/. screen-gallery/chrome-reports/ || true
 cp -R app/build/outputs/androidTest-results/. screen-gallery/chrome-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/chrome-checks/. screen-gallery/chrome/ || status=1

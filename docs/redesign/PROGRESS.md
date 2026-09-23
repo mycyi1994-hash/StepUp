@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — inventory filter commit/cancel interaction coverage
+
+- Added native coverage using the production ItemFilterSheet: choose a faction then close without applying; reopen and confirm the draft was discarded; apply while preserving other conditions; reopen and reset, verifying the reset remains a draft until Apply. Final assertion checks faction/rarity cleared and equipment/sort restored together.
+- The test checks visible footer Apply, actual selected semantics, callback count and committed state, and captures the reset panel. Added it to both API interaction suites. This is default-device-font coverage; a Compose-only density override outside a Dialog does not prove enlarged dialog layout, so real system-font coverage remains outstanding.
+- Local source-contract/resource/asset/whitespace and runner syntax checks pass. Test compilation/execution is pending; 580a9e4 build remains live, so these changes remain queued without cancelling that build.
+
 ## 2026-09-24 — shared filters adopt fixed control tokens
 
 - Shared filter/sort toolbar and choice cells previously used independent 12/13sp labels, 14/16dp corners and unconstrained touch heights. They now use central secondary label/padding, control-radius and minimum-touch tokens; toolbar icons use the central icon size. Both expose button semantics.
