@@ -152,7 +152,15 @@ jobs:
           EOF
 
           if gh release view test-apk >/dev/null 2>&1; then
-            gh release upload test-apk StepUp-test.apk --clobber
+            # --clobber 는 "지우고 올리기"라, 지운 것이 GitHub 쪽에 반영되기 전에
+            # 올리면 422(ReleaseAsset.name already exists)로 떨어진다. 빌드는
+            # 멀쩡한데 이 단계 때문에 CI 가 빨개지지 않게, 먼저 지우고 몇 번 다시 올린다.
+            gh release delete-asset test-apk StepUp-test.apk --yes >/dev/null 2>&1 || true
+            for attempt in 1 2 3 4; do
+              if gh release upload test-apk StepUp-test.apk --clobber; then break; fi
+              if [ "$attempt" = 4 ]; then exit 1; fi
+              sleep $((attempt * 5))
+            done
             gh release edit test-apk --title "테스트 APK — ${VERSION} (${SHORT})" --notes-file notes.md
           else
             gh release create test-apk StepUp-test.apk \
