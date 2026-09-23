@@ -73,12 +73,14 @@ jobs:
               --title "QA 화면 캡처" \
               --notes "Experience QA 가 에뮬레이터에서 찍은 실제 화면. 수동 실행 때마다 덮어쓴다."
           fi
-          # 파일 목록이 늦게 갱신되면 --clobber 가 404 로 끝난다 — 세 번까지 다시
-          for i in 1 2 3; do
-            gh release upload qa-captures qa-review.zip --clobber && break
-            [ "$i" = 3 ] && exit 1
-            sleep 15
-          done
+          # 파일 목록에 이미 지워진 파일이 남아 있으면 --clobber 가 404 로 끝난다 —
+          # 그때는 사전 배포를 새로 만든다(태그 qa-captures 는 그대로라 주소는 같다)
+          if ! gh release upload qa-captures qa-review.zip --clobber; then
+            gh release delete qa-captures --yes
+            gh release create qa-captures qa-review.zip --prerelease \
+              --title "QA 화면 캡처" \
+              --notes "Experience QA 가 에뮬레이터에서 찍은 실제 화면. 수동 실행 때마다 덮어쓴다."
+          fi
           gh release edit qa-captures --notes "Experience QA 캡처 · ${GITHUB_REF_NAME} · ${GITHUB_SHA::7}"
       - uses: actions/upload-artifact@v4
         if: always()
