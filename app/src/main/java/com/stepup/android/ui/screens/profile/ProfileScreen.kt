@@ -1238,7 +1238,7 @@ private fun MeHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(artworkHeight)) {
+        com.stepup.android.ui.components.TerraceStage(Modifier.fillMaxWidth().height(artworkHeight)) {
             if (look != null) {
                 com.stepup.android.ui.components.CharacterStage(
                     look = look, pose = com.stepup.android.domain.AvatarPose.IDLE,

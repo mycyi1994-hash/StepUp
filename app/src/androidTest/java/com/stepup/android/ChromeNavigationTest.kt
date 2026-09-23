@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -52,6 +53,7 @@ class ChromeNavigationTest {
                 StepUpTheme(viewport.mode) {
                     ExperienceProvider {
                         Box(Modifier.requiredSize(viewport.width.dp, viewport.height.dp).testTag("chrome-viewport")) {
+                            com.stepup.android.ui.components.NightCanvas(Modifier.fillMaxSize())
                             key(viewport) { MainScaffold() }
                         }
                     }

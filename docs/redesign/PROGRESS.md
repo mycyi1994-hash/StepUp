@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — character-ground composition
+
+- Created a landscape riverside terrace with the built-in image tool, preserving the approved sunset world and reserving a continuous ground plane. Original PNG and exact prompt are in design/redesign-2026-09/assets; WebP is bundled.
+- Profile and community now use TerraceStage so landscape and characters share the same responsive bounds; removed their unrelated full-screen sunset background. Actual equipped profile character and decorative community group remain separate and unchanged. Native review must still verify grounding, alpha margins and light/dark blending at all sizes; this is not final visual approval.
+- Chrome fixture now includes production NightCanvas, matching StepUpRoot rather than exposing the test activity's white window on non-scenic routes.
+- b263e80 wallet gallery 35911348022 completed successfully; detailed totals-test evidence and captures remain to be reviewed.
+
 ## 2026-09-24 — shared settings detail page
 
 - Added DetailPage: one pinned SecondaryHeader, fixed design gutter, and scrollable content with shared spacing. Migrated Language, Theme, Notifications, Privacy, Support and Experience settings; removed their separate back/title layouts while preserving controls and destinations.

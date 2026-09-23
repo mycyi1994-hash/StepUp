@@ -57,9 +57,11 @@ internal fun TogetherTab(
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
+                com.stepup.android.ui.components.TerraceStage(Modifier.fillMaxWidth().height(artworkHeight)) {
                 Image(painterResource(R.drawable.community_warmup), contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(artworkHeight))
+                    modifier = Modifier.fillMaxSize())
+                }
             }
             if (sync != BoardSyncState.Ready) {
                 item { BoardSyncCard(sync, onRetry = viewModel::refreshBoard) }
