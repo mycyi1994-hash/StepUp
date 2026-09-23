@@ -10,7 +10,13 @@ import com.stepup.android.ui.theme.StepUpDesign
 
 /** Fixed detail chrome and spacing; screens supply only their title, navigation and content. */
 @Composable
-fun DetailPage(title: String, onBack: () -> Unit, content: LazyListScope.() -> Unit) {
+fun DetailPage(
+    title: String,
+    onBack: () -> Unit,
+    primaryActionLabel: String? = null,
+    onPrimaryAction: (() -> Unit)? = null,
+    content: LazyListScope.() -> Unit,
+) {
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
         SecondaryHeader(onBack = onBack, balance = null, onOpenWallet = null, title = title)
         LazyColumn(
@@ -19,5 +25,12 @@ fun DetailPage(title: String, onBack: () -> Unit, content: LazyListScope.() -> U
             verticalArrangement = Arrangement.spacedBy(14.dp),
             content = content,
         )
+        if (primaryActionLabel != null && onPrimaryAction != null) {
+            PrimaryCta(
+                text = primaryActionLabel,
+                onClick = onPrimaryAction,
+                modifier = Modifier.padding(vertical = 12.dp),
+            )
+        }
     }
 }

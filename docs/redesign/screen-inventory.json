@@ -245,7 +245,7 @@
     {
       "id": "CrewBoardScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt",
-      "line": 61,
+      "line": 60,
       "implementation": "pending",
       "verification": "pending"
     },

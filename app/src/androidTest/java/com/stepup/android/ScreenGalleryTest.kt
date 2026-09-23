@@ -243,7 +243,7 @@ class ScreenGalleryTest {
             18 -> MainScaffold(initialRoute = Routes.CREW_CREATE)
             19 -> MainScaffold(initialRoute = Routes.postCompose(""))
             20 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.sneaker(sneakerId))
-            21 -> CrewBoardScreen(crewId)
+            21 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.crewBoard(crewId))
             22 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.flashDetail(101L))
             23 -> PartyLobbyScreen(crewId, onBack = {}, onRunStarted = {})
             24 -> LoginScreen {}

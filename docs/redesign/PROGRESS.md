@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — crew board shared fixed action
+
+- DetailPage now owns an optional primary action label/callback with the existing PrimaryCta and fixed spacing. CrewBoard uses it for member-only writing, replacing a separately styled floating button and guessed bottom padding. Posts scroll in the remaining space without being covered by the writing control. Invite sharing remains a labeled shared button in content; the header is the same back/title as other detail pages.
+- CrewBoard gallery now uses its actual navigation route. Local design/resource/asset checks pass. Native compact/large-font footer layout, sharing chooser and writing/Back remain pending; shared slot introduction is not proof of those interactions.
+
 ## 2026-09-24 — party lobby shell and exit path
 
 - Party lobby now uses DetailPage with its group identity/member count in content. Added system Back handling matching the existing explicit leave/back action. The activity-permission callback now opens the running screen after starting the service, and checks that the party is still RUNNING before starting; previously it started the service but left the user in the lobby.
