@@ -1411,4 +1411,9 @@ Start running with StepUp.</string>
     <string name="community_hero_title">Run together</string>
     <string name="community_hero_sub">Stories from runners going further, together.</string>
     <string name="news_hero_sub">More fun when we run together.</string>
+
+    <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
+    <string name="map_waiting_title">Finding your location</string>
+    <string name="map_waiting_body">Once GPS locks on, the route you actually run is drawn here.</string>
+    <string name="finish_pending_short">Awaiting server check</string>
 </resources>

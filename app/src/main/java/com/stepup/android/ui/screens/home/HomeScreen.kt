@@ -177,9 +177,9 @@ fun HomeScreen(
                 pose = AvatarPose.RUN,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (largeText) 220.dp else 280.dp)
+                    .height(if (largeText) 230.dp else 300.dp)
                     .quietClickable(onOpenCustomize),
-                characterFraction = 0.9f,
+                characterFraction = 0.92f,
                 contentDescription = characterCd,
             ) { _ ->
                 if (look.trial) {
@@ -314,7 +314,7 @@ private fun TodayEarned(earned: Double?) {
                     shadow = Shadow(color = Volt.copy(alpha = 0.55f), blurRadius = 28f),
                 ),
                 fontFamily = StepUpNumbers,
-                fontSize = 52.sp,
+                fontSize = 56.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-1).sp,
                 maxLines = 1,
@@ -322,10 +322,10 @@ private fun TodayEarned(earned: Double?) {
             Text(
                 text = " SUP",
                 fontFamily = StepUpNumbers,
-                fontSize = 26.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = VoltText,
-                modifier = Modifier.padding(bottom = 7.dp),
+                modifier = Modifier.padding(bottom = 8.dp),
             )
         }
     }

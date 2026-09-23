@@ -1409,4 +1409,9 @@
     <string name="community_hero_title">一起跑</string>
     <string name="community_hero_sub">今天也一起跑得更远——跑者们的故事。</string>
     <string name="news_hero_sub">一起跑，乐趣更多。</string>
+
+    <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
+    <string name="map_waiting_title">正在查找你的位置</string>
+    <string name="map_waiting_body">GPS连接后，这里会画出你实际跑过的路线。</string>
+    <string name="finish_pending_short">等待服务器确认</string>
 </resources>

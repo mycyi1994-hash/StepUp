@@ -228,8 +228,8 @@ private fun DrawScope.drawBackGlow(glow: Color, cyan: Color) {
 
 private fun DrawScope.drawFloor(glow: Color, cyan: Color) {
     val cy = size.height * FLOOR_Y
-    val ringW = size.width * 0.62f
-    val ringH = size.height * 0.085f
+    val ringW = size.width * 0.68f
+    val ringH = size.height * 0.09f
     // 접지 그림자
     val shadowW = ringW * 0.78f
     val shadowH = ringH * 0.7f
@@ -245,8 +245,9 @@ private fun DrawScope.drawFloor(glow: Color, cyan: Color) {
     )
     // 타원 무대 — 넓고 흐린 번짐 위에 가는 선
     val topLeft = Offset((size.width - ringW) / 2f, cy - ringH / 2f)
-    drawOval(color = glow.copy(alpha = 0.14f), topLeft = topLeft, size = Size(ringW, ringH), style = Stroke(width = 9.dp.toPx()))
-    drawOval(color = glow.copy(alpha = 0.85f), topLeft = topLeft, size = Size(ringW, ringH), style = Stroke(width = 1.6.dp.toPx()))
+    drawOval(color = glow.copy(alpha = 0.10f), topLeft = topLeft, size = Size(ringW, ringH), style = Stroke(width = 16.dp.toPx()))
+    drawOval(color = glow.copy(alpha = 0.22f), topLeft = topLeft, size = Size(ringW, ringH), style = Stroke(width = 6.dp.toPx()))
+    drawOval(color = glow.copy(alpha = 0.95f), topLeft = topLeft, size = Size(ringW, ringH), style = Stroke(width = 2.dp.toPx()))
     val innerW = ringW * 0.72f
     val innerH = ringH * 0.62f
     drawOval(

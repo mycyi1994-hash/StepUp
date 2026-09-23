@@ -221,7 +221,7 @@ fun CustomizeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(340.dp),
+                    .height(380.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Column(

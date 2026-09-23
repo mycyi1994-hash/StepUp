@@ -1410,4 +1410,9 @@ StepUp と走り出そう。</string>
     <string name="community_hero_title">一緒に走ろう</string>
     <string name="community_hero_sub">今日も、もっと遠くへ。一緒に走るランナーたちの話。</string>
     <string name="news_hero_sub">一緒に走る、もっと大きな楽しさ。</string>
+
+    <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
+    <string name="map_waiting_title">現在地を探しています</string>
+    <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
+    <string name="finish_pending_short">サーバー確認中</string>
 </resources>

@@ -113,7 +113,6 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.NeonRing
-import com.stepup.android.ui.components.RouteMap
 import com.stepup.android.ui.components.StartRunButton
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.Wordmark
@@ -440,6 +439,7 @@ fun RunScreen(
                     gpsFix = session.gpsFix,
                     goalKm = goalKm,
                     onOpenCourses = onOpenCourses,
+                    running = session.isActive,
                 )
             }
 
@@ -1122,6 +1122,8 @@ private fun CourseChallengeCard(
     gpsFix: Boolean,
     goalKm: Double,
     onOpenCourses: () -> Unit,
+    /** 달리는 중이면 지도와 완주 진행만 — 코스 고르기는 러닝 전에 한다 */
+    running: Boolean = false,
 ) {
     GlowCard(contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
         Box(
@@ -1178,8 +1180,10 @@ private fun CourseChallengeCard(
                     )
                 }
 
-                // 권한이 없거나 위치가 꺼져 있어 내 자리조차 모를 때만 아트 지도로 남는다
-                else -> RouteMap(Modifier.fillMaxSize())
+                // 권한이 없거나 위치가 꺼져 있어 내 자리조차 모를 때. 예전에는 아트
+                // 지도(지어낸 경로)가 나왔는데, 그 선은 실제로 달린 길처럼 읽힌다.
+                // 지도 대신 위치를 기다린다고만 적는다.
+                else -> MapWaiting(Modifier.fillMaxSize())
             }
 
             // 앱 안 지도는 어디를 뛰었는지까지, 확대·길안내는 구글 지도로
@@ -1270,8 +1274,8 @@ private fun CourseChallengeCard(
             }
 
         }
-            // 코스 이름 · 거리 · 코스 변경
-            Column(
+            // 코스 이름 · 거리 · 코스 변경 — 러닝 전에만
+            if (!running) Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp),
@@ -1382,7 +1386,7 @@ private fun CourseChallengeCard(
                     )
                 }
             }
-        } else {
+        } else if (!running) {
             // 코스 미선택 — 고르러 가기
             Column(
                 modifier = Modifier
@@ -1401,6 +1405,53 @@ private fun CourseChallengeCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
+    }
+}
+
+/**
+ * 위치를 모를 때의 지도 자리 — 흐린 격자와 안내 한 줄.
+ *
+ * 경로처럼 보이는 선은 긋지 않는다. GPS 가 잡히면 [LiveRouteMap] 이 이 자리를
+ * 실제 위치와 경로로 바꾼다.
+ */
+@Composable
+private fun MapWaiting(modifier: Modifier = Modifier) {
+    val grid = Edge
+    Box(modifier = modifier.background(Night), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            val step = 28.dp.toPx()
+            var x = 0f
+            while (x < size.width) {
+                drawLine(grid.copy(alpha = 0.45f), androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Offset(x, size.height), strokeWidth = 1f)
+                x += step
+            }
+            var y = 0f
+            while (y < size.height) {
+                drawLine(grid.copy(alpha = 0.45f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1f)
+                y += step
+            }
+        }
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(Icons.Filled.GpsFixed, contentDescription = null, tint = Slate, modifier = Modifier.size(22.dp))
+            Text(
+                text = stringResource(R.string.map_waiting_title),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(R.string.map_waiting_body),
+                fontSize = 12.sp,
+                color = Silver,
+                textAlign = TextAlign.Center,
+                lineHeight = 16.sp,
+            )
         }
     }
 }
@@ -1650,7 +1701,7 @@ private fun FinishCard(
         voided -> R.string.run_void_title
         upload == UploadState.SIGNED.name -> R.string.finish_confirmed
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
-        else -> R.string.finish_pending
+        else -> R.string.finish_pending_short
     }
     val shareText = stringResource(
         R.string.finish_share_text,

@@ -1409,4 +1409,9 @@ StepUp과 함께 달려보세요.</string>
     <string name="community_hero_title">함께 달리기</string>
     <string name="community_hero_sub">오늘도, 더 멀리, 함께 달리는 러너들의 이야기.</string>
     <string name="news_hero_sub">함께 달리는 더 큰 즐거움.</string>
+
+    <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
+    <string name="map_waiting_title">내 위치를 찾는 중이에요</string>
+    <string name="map_waiting_body">GPS가 잡히면 실제로 달린 경로가 여기에 그려져요.</string>
+    <string name="finish_pending_short">서버 확인 중</string>
 </resources>
