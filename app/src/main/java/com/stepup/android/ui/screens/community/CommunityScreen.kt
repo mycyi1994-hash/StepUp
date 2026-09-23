@@ -49,9 +49,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.RankBoard
@@ -64,6 +66,7 @@ import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.CarbonHigh
@@ -177,6 +180,7 @@ private fun BoardTab(
     onOpenFlash: (Long) -> Unit,
 ) {
     val posts by viewModel.boardPosts.collectAsStateWithLifecycle()
+    val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
     val filter by viewModel.boardFilter.collectAsStateWithLifecycle()
     val hotPosts by viewModel.hotPosts.collectAsStateWithLifecycle()
     val balance by viewModel.balance.collectAsStateWithLifecycle()
@@ -189,13 +193,16 @@ private fun BoardTab(
     val myRank by viewModel.mySupRank.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.loadRanking(RankBoard.TOTAL_SUP, meLabel) }
 
-    val visible = remember(posts, hotPosts, filter, query) {
+    // 번개러닝을 가까운 순으로 세우고 "몇 km"를 적는 데 쓴다. 모르면 null 이고,
+    // 그때는 모임 시각 순으로 선다.
+    val here = rememberCurrentLocation()
+    val visible = remember(posts, hotPosts, filter, query, here) {
         // 핫글은 이미 뽑혀 순서가 정해진 목록이라, 다시 정렬하지 않고 검색만 건다.
         if (filter == BoardFilter.HOT) searchPosts(hotPosts, query)
-        else filterPosts(posts, filter.category, query)
+        else filterPosts(posts, filter.category, query, here)
     }
-    val flashWindow = remember(posts, query) {
-        filterPosts(posts, PostCategory.FLASH, query)
+    val flashWindow = remember(posts, query, here) {
+        filterPosts(posts, PostCategory.FLASH, query, here)
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -271,6 +278,8 @@ private fun BoardTab(
                         onComment = { viewModel.openComments(it) },
                         onDelete = { viewModel.deletePost(it) },
                         onOpen = onOpenFlash,
+                        onReport = { viewModel.askReport(it) },
+                        here = here,
                     )
                 }
             }
@@ -282,7 +291,9 @@ private fun BoardTab(
                 }
             }
 
-            if (visible.isEmpty()) {
+            if (posts.isEmpty() && boardSync != BoardSyncState.Ready) {
+                item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
+            } else if (visible.isEmpty()) {
                 item {
                     GlowCard(contentPadding = PaddingValues(26.dp)) {
                         Text(
@@ -307,6 +318,8 @@ private fun BoardTab(
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
                         onOpen = { onOpenFlash(post.id) },
+                        onReport = { viewModel.askReport(post) },
+                        here = here,
                     )
                 } else {
                     TextPostCard(
@@ -314,6 +327,7 @@ private fun BoardTab(
                         onLike = { viewModel.toggleLike(post.id) },
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 }
             }
@@ -349,6 +363,7 @@ private fun filterPosts(
     posts: List<Post>,
     filter: PostCategory?,
     query: String,
+    here: GeoPoint?,
 ): List<Post> {
     val matched = posts.filter { post ->
         (filter == null || post.category == filter) &&
@@ -360,7 +375,11 @@ private fun filterPosts(
                 )
     }
     val (flash, rest) = matched.partition { it.isFlash }
-    val sortedFlash = flash.sortedWith(compareBy({ it.isClosed }, { it.distanceKm }))
+    // 마감된 번개는 아래로, 나머지는 가까운 순. 거리를 모르는 글은 가까운 글
+    // 뒤에 모임 시각 순으로 선다.
+    val sortedFlash = flash.sortedWith(
+        compareBy<Post>({ it.isClosed }, { it.awayKmFrom(here) ?: Double.MAX_VALUE }, { it.meetAt }),
+    )
     val sortedRest = rest.sortedByDescending { it.createdAt }
     return when (filter) {
         PostCategory.FLASH -> sortedFlash
@@ -382,6 +401,8 @@ private fun FlashRunWindow(
     onComment: (Long) -> Unit,
     onDelete: (Long) -> Unit,
     onOpen: (Long) -> Unit,
+    onReport: (Post) -> Unit,
+    here: GeoPoint?,
 ) {
     Box(
         modifier = Modifier
@@ -404,6 +425,8 @@ private fun FlashRunWindow(
                     onComment = { onComment(post.id) },
                     onDelete = { onDelete(post.id) },
                     onOpen = { onOpen(post.id) },
+                    onReport = { onReport(post) },
+                    here = here,
                 )
             }
         }

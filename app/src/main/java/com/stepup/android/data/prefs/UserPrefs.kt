@@ -129,6 +129,18 @@ class UserPrefs(private val context: Context) {
         }
     }
 
+    /**
+     * 핫글 기록을 비운다. 게시판이 서버로 옮겨 가 글 번호가 새로 매겨졌을 때 쓴다 —
+     * 옛 번호가 남아 있으면 같은 번호의 새 글이 "이미 올랐던 글"로 막힌다.
+     */
+    suspend fun clearHotPosts() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(Keys.HOT_POST_IDS)
+            prefs.remove(Keys.HOT_FEATURED_IDS)
+            prefs.remove(Keys.HOT_ROTATED_AT)
+        }
+    }
+
     /** 선택한 아바타 인덱스 (기본 0, [AVATAR_CUSTOM]이면 갤러리 사진) */
     val avatarId: Flow<Int> = context.dataStore.data.map { it[Keys.AVATAR_ID] ?: 0 }
 

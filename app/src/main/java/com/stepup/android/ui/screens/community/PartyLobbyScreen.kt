@@ -35,17 +35,12 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +57,7 @@ import com.stepup.android.R
 import com.stepup.android.data.repo.CrewRepository
 import com.stepup.android.data.repo.PartyMember
 import com.stepup.android.data.repo.PartyPhase
+import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.StepPermissions
@@ -73,7 +69,6 @@ import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
@@ -88,10 +83,11 @@ import com.stepup.android.ui.theme.Volt
  * 크루 로비와 번개러닝 로비가 같은 화면을 쓴다. 준비 → 시작 → 같이 측정까지
  * 흐름이 똑같고, 다른 것은 누가 모였는가뿐이다.
  *
- * 파티장은 사람을 초대·강퇴할 수 있고, **준비를 마친 사람들끼리** 시작한다.
- * 전원을 기다리지 않는다 — 한 사람 때문에 나머지가 길에 서 있게 되면,
- * 그 사람들은 다음부터 파티런을 안 쓴다.
- * 러닝 중 파티장에게서 일정 거리 이상 떨어진 사람은 자동으로 빠진다.
+ * 방은 서버에 있다. 같은 크루(번개 글)의 로비를 연 사람들이 한 방에 모이고,
+ * 처음 연 사람이 방장이다. 방장은 사람을 내보낼 수 있고, **준비를 마친
+ * 사람들끼리** 출발한다. 전원을 기다리지 않는다 — 한 사람 때문에 나머지가
+ * 길에 서 있게 되면, 그 사람들은 다음부터 파티런을 안 쓴다.
+ * 러닝 중 방장에게서 일정 거리 이상 떨어진 사람은 자동으로 빠진다.
  *
  * @param crewId 크루 로비면 크루 id, 번개러닝 로비면 빈 문자열
  * @param flashPostId 번개러닝 로비면 그 글의 id
@@ -107,9 +103,8 @@ fun PartyLobbyScreen(
 ) {
     val context = LocalContext.current
     val party by viewModel.party.collectAsStateWithLifecycle()
-    var showInvite by rememberSaveable { mutableStateOf(false) }
 
-    // 번개러닝이면 글에서 제목과 참가 인원을 가져온다.
+    // 번개러닝이면 글에서 제목을 가져온다.
     val posts by community.allPosts.collectAsStateWithLifecycle()
     val flashPost = flashPostId?.let { id -> posts.firstOrNull { it.id == id } }
 
@@ -121,15 +116,9 @@ fun PartyLobbyScreen(
         }
     }
 
-    LaunchedEffect(crewId, flashPost?.id) {
-        val post = flashPost
+    LaunchedEffect(crewId, flashPostId) {
         when {
-            post != null -> viewModel.openFlashLobby(
-                postId = post.id,
-                title = post.title,
-                // 나를 뺀 참가자. 글에서 내가 참가를 눌렀으면 한 명은 나다.
-                others = (post.joinedCount - if (post.joined) 1 else 0).coerceAtLeast(0),
-            )
+            flashPostId != null -> viewModel.openFlashLobby(flashPostId, flashPost?.title.orEmpty())
             crewId.isNotEmpty() -> viewModel.openLobby(crewId)
         }
     }
@@ -178,7 +167,7 @@ fun PartyLobbyScreen(
                             color = Volt,
                         )
                         Text(
-                            text = party.crewName,
+                            text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp,
@@ -186,6 +175,20 @@ fun PartyLobbyScreen(
                         )
                     }
                     HexBadge(text = "${party.partySize}", size = 36.dp)
+                }
+            }
+
+            // 방에 못 들어갔거나 멈췄으면 왜인지부터
+            party.problem?.let { problem ->
+                item {
+                    PartyProblemCard(
+                        problem = problem,
+                        onRetry = viewModel::retry,
+                        onLeave = {
+                            viewModel.leaveLobby()
+                            onBack()
+                        },
+                    )
                 }
             }
 
@@ -203,6 +206,8 @@ fun PartyLobbyScreen(
                                 // 파티장이 준비를 마치면 더는 "기다리는 중"이
                                 // 아니다. 출발 여부는 이제 본인이 정한다.
                                 party.canStart -> stringResource(R.string.crew_can_start)
+                                // 방장이 아니면 출발은 방장의 몫이다
+                                party.myReady && !party.isHost -> stringResource(R.string.party_wait_host)
                                 else -> stringResource(R.string.crew_waiting)
                             },
                             style = MaterialTheme.typography.titleMedium,
@@ -259,23 +264,23 @@ fun PartyLobbyScreen(
                 }
             }
 
-            // 멤버 목록 (파티장은 강퇴 가능)
-            items(party.members.size) { index ->
+            // 멤버 목록 (방장은 로비에서 내보낼 수 있다)
+            items(party.members.size, key = { party.members[it].id }) { index ->
                 val m = party.members[index]
                 MemberRow(
                     member = m,
-                    canKick = party.phase == PartyPhase.LOBBY && !m.isMe,
+                    canKick = party.phase == PartyPhase.LOBBY && party.isHost && !m.isMe,
                     onKick = { viewModel.kick(m.id) },
                 )
             }
 
-            // 초대 (로비 단계에서만)
+            // 누가 이 방에 들어올 수 있는지 (로비 단계에서만)
             if (party.phase == PartyPhase.LOBBY) {
                 item {
-                    GhostButton(
-                        text = stringResource(R.string.party_invite_button),
-                        onClick = { showInvite = true },
-                        modifier = Modifier.fillMaxWidth(),
+                    Text(
+                        text = stringResource(R.string.party_join_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Slate,
                     )
                 }
             }
@@ -408,79 +413,41 @@ fun PartyLobbyScreen(
         }
     }
 
-    // 초대 다이얼로그
-    if (showInvite) {
-        InviteDialog(
-            candidates = viewModel.inviteCandidates(),
-            onInvite = { name ->
-                viewModel.invite(name)
-                showInvite = false
-            },
-            onDismiss = { showInvite = false },
-        )
-    }
 }
 
 @Composable
-private fun InviteDialog(
-    candidates: List<String>,
-    onInvite: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.common_close),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        },
-        title = {
-            Text(
-                text = stringResource(R.string.party_invite_title),
-                fontWeight = FontWeight.Black,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (candidates.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.party_invite_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
-                    )
-                }
-                candidates.forEach { name ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CarbonHigh)
-                            .padding(horizontal = 13.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(
-                            text = name,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Snow,
-                        )
-                        GhostButton(
-                            text = stringResource(R.string.party_invite_action),
-                            onClick = { onInvite(name) },
-                        )
-                    }
-                }
-            }
+private fun PartyProblemCard(problem: PartyProblem, onRetry: () -> Unit, onLeave: () -> Unit) {
+    val message = stringResource(
+        when (problem) {
+            PartyProblem.SIGN_IN -> R.string.party_problem_sign_in
+            PartyProblem.REMOVED -> R.string.party_problem_removed
+            PartyProblem.NETWORK -> R.string.party_problem_network
+            PartyProblem.CLOSED -> R.string.party_problem_closed
+            PartyProblem.FAILED -> R.string.party_problem_failed
         },
     )
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = Snow)
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            // 서버에 닿지 못한 것은 저절로 다시 묻는다. 나머지는 사람이 정한다.
+            if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) {
+                GhostButton(
+                    text = stringResource(R.string.crew_retry),
+                    onClick = onRetry,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            // 누른 것이 막힌 것뿐이면 방에는 그대로 있다
+            if (problem != PartyProblem.FAILED) {
+                GhostButton(
+                    text = stringResource(R.string.party_leave),
+                    onClick = onLeave,
+                    accent = Silver,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -529,7 +496,7 @@ private fun MemberRow(
                         style = MaterialTheme.typography.titleSmall,
                         color = Snow,
                     )
-                    if (member.isMe) {
+                    if (member.isHost) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
@@ -545,10 +512,10 @@ private fun MemberRow(
                         }
                     }
                 }
-                if (!member.isMe) {
+                // 방장에게서의 거리 — 달리는 동안 위치를 보낸 사람만 안다
+                if (!member.isHost && member.distanceM >= 0) {
                     Text(
-                        text = stringResource(R.string.level_chip, member.level) +
-                            "  ·  ${member.uid}  ·  ${member.distanceM}m",
+                        text = "${member.distanceM}m",
                         fontSize = 11.sp,
                         color = Slate,
                     )

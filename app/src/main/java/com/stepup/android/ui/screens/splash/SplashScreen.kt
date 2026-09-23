@@ -101,7 +101,7 @@ fun SplashScreen(onReady: () -> Unit) {
         withTimeoutOrNull(3_000) {
             ServiceLocator.crewRepository.clearLegacy()
             ServiceLocator.notificationRepository.purgeLegacyInvites()
-            ServiceLocator.communityRepository.ensureSeeded()
+            ServiceLocator.communityRepository.clearLegacy()
             ServiceLocator.courseRepository.ensureSeeded()
             ServiceLocator.notificationRepository.seedWelcome()
         }

@@ -40,6 +40,7 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -68,6 +69,7 @@ fun CrewBoardScreen(
 
     val crew = crews.firstOrNull { it.id == crewId }
     val isMember = joined.contains(crewId)
+    val here = rememberCurrentLocation()
     val sorted = remember(posts) {
         posts.sortedWith(compareByDescending<com.stepup.android.domain.Post> { it.isFlash && !it.isClosed }
             .thenByDescending { it.createdAt })
@@ -220,6 +222,8 @@ fun CrewBoardScreen(
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
                         onOpen = { onOpenFlash(post.id) },
+                        onReport = { viewModel.askReport(post) },
+                        here = here,
                     )
                 } else {
                     TextPostCard(
@@ -227,6 +231,7 @@ fun CrewBoardScreen(
                         onLike = { viewModel.toggleLike(post.id) },
                         onComment = { viewModel.openComments(post.id) },
                         onDelete = { viewModel.deletePost(post.id) },
+                        onReport = { viewModel.askReport(post) },
                     )
                 }
             }

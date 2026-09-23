@@ -481,7 +481,11 @@
     <string name="post_cat_tip">お役立ち</string>
 
     <!-- Post card -->
-    <string name="post_km_away">%1$s km</string>
+    <string name="post_km_away">ここから %1$s km</string>
+    <string name="flash_unknown">—</string>
+    <string name="flash_from_me">ここから</string>
+    <string name="post_flash_no_location">位置を取得できませんでした。距離なしで投稿されます。</string>
+    <string name="post_run_km">%1$s km ラン</string>
     <string name="post_place_tbd">場所未定</string>
     <string name="post_slots">%1$d / %2$d 人</string>
     <string name="post_join">参加</string>
@@ -502,10 +506,10 @@
     <string name="post_flash_details">集合の詳細</string>
     <string name="post_field_place">集合場所</string>
     <string name="post_field_place_hint">Riverside Park Gate 3</string>
-    <string name="post_field_distance">距離 (km)</string>
+    <string name="post_field_distance">走る距離 (km)</string>
     <string name="post_field_starts_in">出発まで (分)</string>
     <string name="post_field_capacity">定員</string>
-    <string name="post_flash_hint">フラッシュランは近い順に並びます。近いほど上に表示されます。</string>
+    <string name="post_flash_hint">今いる場所が集合場所として保存されます。近くのランナーに先に表示されます。</string>
 
 
     <!-- Crew creation -->
@@ -551,6 +555,20 @@
     <string name="crew_loading">クルーを読み込み中…</string>
     <string name="crew_load_failed">クルーを読み込めませんでした</string>
     <string name="crew_retry">再試行</string>
+    <string name="board_loading">投稿を読み込み中…</string>
+    <string name="board_load_failed">投稿を読み込めませんでした</string>
+    <string name="board_sign_in_needed">ログインすると投稿を読んだり書いたりできます</string>
+    <string name="board_notice_reported">通報しました。ご協力ありがとうございます。</string>
+    <string name="board_notice_blocked">ブロックしました。この人の投稿とコメントは表示されません。</string>
+    <string name="report_title">通報</string>
+    <string name="report_hint">通報の理由を選んでください。5件集まると全員に非表示になります。</string>
+    <string name="report_reason_spam">スパム・広告</string>
+    <string name="report_reason_abuse">嫌がらせ・誹謗中傷</string>
+    <string name="report_reason_sexual">性的なコンテンツ</string>
+    <string name="report_reason_danger">危険・違法な内容</string>
+    <string name="report_reason_fraud">詐欺</string>
+    <string name="report_reason_other">その他</string>
+    <string name="report_block">%1$s さんをブロック</string>
 
     <!-- Ranking -->
     <string name="rank_me">あなた</string>
@@ -591,41 +609,19 @@
     <!-- Seed crews -->
 
     <!-- Seed posts -->
-    <string name="seed_flash1_title">河沿いのナイト 5K、一緒にどうですか</string>
-    <string name="seed_flash1_body">キロ6分のゆるいペースです。はじめての方も歓迎。</string>
-    <string name="seed_flash2_title">出勤前のモーニングラン</string>
-    <string name="seed_flash2_body">6:30 スタート、きっちり40分で解散します。</string>
-    <string name="seed_flash3_title">インターバルの相棒募集</string>
-    <string name="seed_flash3_body">400m × 8本。ペースを合わせてくれる方だと助かります。</string>
-    <string name="seed_flash4_title">週末ロング 20K</string>
-    <string name="seed_flash4_body">ゆっくり長く。途中でコンビニに2回寄ります。</string>
-    <string name="seed_free1_title">ついにハーフを完走しました</string>
-    <string name="seed_free1_body">半年前は3kmでバテていたのに、今日は1時間58分でゴール。続けることが全てですね。</string>
-    <string name="seed_free2_title">雨の日はみなさんどうしていますか？</string>
-    <string name="seed_free2_body">トレッドミルは退屈で続かなくて。室内で続けられるメニューありますか？</string>
-    <string name="seed_free3_title">SUP がはじめて1000を超えました</string>
-    <string name="seed_free3_body">通勤で歩いただけなのに、思ったより早く貯まりました。</string>
-    <string name="seed_tip1_title">エナジーのコツ — 朝に使い切らないこと</string>
-    <string name="seed_tip1_body">エナジーは深夜0時に回復するので、夜に走る日は朝に半分だけ使うと合計獲得量が増えます。</string>
-    <string name="seed_tip2_title">ミントは運の高いスニーカーを履いて</string>
-    <string name="seed_tip2_body">装備中のスニーカーの運が、上位レアリティの確率にそのまま効きます。ミント直前に履き替えを。</string>
-    <string name="seed_tip3_title">パーティランは4人からがお得</string>
-    <string name="seed_tip3_body">人数に応じてブーストが乗るので、ひとりで走るより明らかに多く貯まります。ロビーで全員が準備完了を押すと始まります。</string>
-    <string name="seed_crew1_title">今週のクルー目標を決めましょう</string>
-    <string name="seed_crew1_body">先週は平均32kmだったので、今週は35kmを目指しませんか？</string>
-    <string name="seed_crew2_title">コースマップを更新しました</string>
-    <string name="seed_crew2_body">橋の工事のため3区間に迂回路を追加しました。次の定例前に確認してください。</string>
-    <string name="seed_crew3_title">今夜のクルー定例ラン</string>
-    <string name="seed_crew3_body">8時ちょうどに出発。遅れると追いつくのが大変です！</string>
 
     <!-- Party host -->
     <string name="party_host_badge">ホスト</string>
     <string name="party_start">パーティランを開始</string>
-    <string name="party_invite_button">クルーを招待する</string>
-    <string name="party_invite_title">パーティに招待</string>
-    <string name="party_invite_action">招待</string>
-    <string name="party_invite_empty">すでに全員がパーティにいます。</string>
     <string name="party_kick">外す</string>
+    <string name="party_join_hint">クルーメンバーがこのロビーを開くと同じルームに入ります。フラッシュランは投稿に参加したランナーが入れます。</string>
+    <string name="party_wait_host">ホストのスタートを待っています…</string>
+    <string name="party_leave">ロビーを出る</string>
+    <string name="party_problem_sign_in">パーティーランにはログインが必要です。</string>
+    <string name="party_problem_removed">クルーメンバーかこのフラッシュランの参加者だけが入れます。またはホストに退出させられました。</string>
+    <string name="party_problem_network">サーバーに接続できません。再試行中…</string>
+    <string name="party_problem_closed">ルームは閉じられました。</string>
+    <string name="party_problem_failed">処理できませんでした。もう一度お試しください。</string>
     <string name="party_gps_rule">ホストから %1$dm 以上離れると自動的にパーティから外れます。</string>
 
     <!-- Notification actions -->
@@ -903,16 +899,6 @@ StepUp と走り出そう。</string>
     <string name="notif_comment_reply">%1$s さんがあなたのコメントに返信しました</string>
 
     <!-- Seed comments -->
-    <string name="seed_comment1">参加します、現地で会いましょう！</string>
-    <string name="seed_comment2">ペースはどのくらいですか？</string>
-    <string name="seed_comment3">5分ほど遅れても大丈夫ですか？</string>
-    <string name="seed_comment4">有益な情報、ありがとうございます。</string>
-    <string name="seed_comment5">友達を一人連れて行ってもいいですか？</string>
-    <string name="seed_comment6">先週このコースを走りました、夜が最高です。</string>
-    <string name="seed_reply1">私もです、ゲートで会いましょう。</string>
-    <string name="seed_reply2">ゆっくりペースなので誰も置いていきません。</string>
-    <string name="seed_reply3">大丈夫です、待っています。</string>
-    <string name="seed_reply4">いいですね、現地で！</string>
 
     <!-- Language -->
     <string name="settings_language">言語</string>
@@ -960,8 +946,7 @@ StepUp と走り出そう。</string>
     <string name="flash_host">ホスト</string>
     <string name="flash_place">集合場所</string>
     <string name="flash_time">集合時間</string>
-    <string name="flash_pace">ペース</string>
-    <string name="flash_est_distance">予想距離</string>
+    <string name="flash_est_distance">走る距離</string>
     <string name="flash_members">参加者</string>
     <string name="flash_view_members">メンバーを見る</string>
     <string name="flash_chat">パーティーチャット</string>
@@ -969,9 +954,6 @@ StepUp と走り出そう。</string>
     <string name="flash_enter_chat">チャットに入る</string>
     <string name="flash_join_cta">パーティーに参加</string>
     <string name="flash_joined_cta">参加中 · タップで取消</string>
-    <string name="pace_easy">イージー</string>
-    <string name="pace_normal">ふつう</string>
-    <string name="pace_fast">速い</string>
 
     <!-- Profile redesign -->
     <string name="profile_my_records">マイ記録</string>

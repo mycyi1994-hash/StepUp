@@ -408,8 +408,10 @@ class WalkSessionService : Service() {
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,
             )
-            // 파티런이었다면 크루 로비를 결과 화면으로 전환한다.
-            if (session.partySize > 1) {
+            // 파티런이었다면 로비를 결과 화면으로 전환하고 방에서 나온다. 혼자 남은
+            // 방에서 출발했어도(인원 1) 방은 닫아야 한다 — 안 그러면 로비가 계속
+            // 뛰는 중으로 남아 위치를 보낸다.
+            if (ServiceLocator.crewRepository.party.value.isActive) {
                 ServiceLocator.crewRepository.finishParty(reward.points, reward.rewardedSteps)
             }
             settling = false

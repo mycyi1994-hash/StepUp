@@ -28,6 +28,11 @@ import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.data.repo.PartyMember
+import com.stepup.android.data.repo.PartyPhase
+import com.stepup.android.data.repo.PartyState
+import com.stepup.android.domain.Post
+import com.stepup.android.domain.PostCategory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.animatedInt
@@ -101,12 +106,53 @@ class ExperienceUiTest {
                 ),
             ),
         )
-        ServiceLocator.communityRepository.ensureSeeded()
+        // 글도 서버에만 있다. 번개 하나, 자유 글 하나, 크루 글 하나로 게시판 화면을 채운다.
+        val now = System.currentTimeMillis()
+        ServiceLocator.communityRepository.showForTest(
+            listOf(
+                Post(
+                    id = 101, category = PostCategory.FLASH, crewId = "", author = "Sora K.",
+                    authorId = "u-sora", title = "Tonight 7PM · 5K by the river",
+                    body = "Easy pace, everyone welcome.", createdAt = now - 3_600_000,
+                    likes = 12, liked = false, commentCount = 4, mine = false,
+                    place = "Yeouido Park Gate 3", distanceKm = 1.2, meetAt = now + 5_400_000,
+                    capacity = 8, joinedCount = 5, joined = false,
+                ),
+                Post(
+                    id = 102, category = PostCategory.TIP, crewId = "", author = "Ara Kim",
+                    authorId = "u-ara", title = "Wide-toe running shoes that worked for me",
+                    body = "Three picks after two months of testing.", createdAt = now - 7_200_000,
+                    likes = 31, liked = true, commentCount = 9, mine = true,
+                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
+                ),
+                Post(
+                    id = 103, category = PostCategory.FREE, crewId = "00000000-0000-0000-0000-00000000c0de",
+                    author = "Bo Lee", authorId = "u-bo", title = "Saturday route is set",
+                    body = "Meet at the bridge, 6:50.", createdAt = now - 10_800_000,
+                    likes = 6, liked = false, commentCount = 2, mine = false,
+                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
+                ),
+            ),
+        )
+        // 파티 로비도 서버의 방이다. 방장인 나와 크루원 둘이 모인 로비를 채운다.
+        ServiceLocator.crewRepository.showPartyForTest(
+            PartyState(
+                phase = PartyPhase.LOBBY,
+                partyId = 1L,
+                crewId = "00000000-0000-0000-0000-00000000c0de",
+                crewName = "Hangang Runners",
+                members = listOf(
+                    PartyMember(id = "u-me", name = "", ready = true, isMe = true, isHost = true),
+                    PartyMember(id = "u-ara", name = "Ara Kim", ready = true, isMe = false),
+                    PartyMember(id = "u-bo", name = "Bo Lee", ready = false, isMe = false),
+                ),
+            ),
+        )
         ServiceLocator.courseRepository.ensureSeeded()
         ServiceLocator.notificationRepository.seedWelcome()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
         crewId = ServiceLocator.crewRepository.crews.value.first().id
-        postId = ServiceLocator.communityRepository.posts.first { it.isNotEmpty() }.first().id
+        postId = ServiceLocator.communityRepository.posts.value.first().id
     }
 
     @Test fun allModulesRenderInFourLanguagesAndLargeText() {
@@ -212,9 +258,11 @@ class ExperienceUiTest {
         var visible by mutableStateOf(true)
         compose.setContent { StepUpTheme { ExperienceProvider { if (visible) ExperienceSettingsScreen {} } } }
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).performClick()
-        compose.waitUntil { runBlocking { ServiceLocator.userPrefs.experience.first().sounds } }
+        // 설정은 DataStore 파일에 쓰인 뒤에야 읽힌다. 에뮬레이터에서는 첫 쓰기가 1초를
+        // 넘길 때가 있어(기본 대기 1초), 다른 대기와 같이 5초를 준다.
+        compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.experience.first().sounds } }
         compose.onNodeWithText(compose.activity.getString(R.string.experience_motion)).performClick()
-        compose.waitUntil { runBlocking { !ServiceLocator.userPrefs.experience.first().reducedMotion } }
+        compose.waitUntil(5_000) { runBlocking { !ServiceLocator.userPrefs.experience.first().reducedMotion } }
         compose.runOnIdle { visible = false }
         compose.runOnIdle { visible = true }
         compose.onNode(hasText(compose.activity.getString(R.string.experience_sound)) and isToggleable()).assertIsOn()

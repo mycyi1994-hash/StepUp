@@ -482,7 +482,11 @@
     <string name="post_cat_tip">Tips</string>
 
     <!-- Post card -->
-    <string name="post_km_away">%1$s km</string>
+    <string name="post_km_away">%1$s km away</string>
+    <string name="flash_unknown">—</string>
+    <string name="flash_from_me">From you</string>
+    <string name="post_flash_no_location">Couldn\'t get your location — the post will go up without a distance.</string>
+    <string name="post_run_km">%1$s km run</string>
     <string name="post_place_tbd">Place TBD</string>
     <string name="post_slots">%1$d / %2$d joined</string>
     <string name="post_join">Join</string>
@@ -503,10 +507,10 @@
     <string name="post_flash_details">Meetup details</string>
     <string name="post_field_place">MEETING POINT</string>
     <string name="post_field_place_hint">Riverside Park Gate 3</string>
-    <string name="post_field_distance">KM AWAY</string>
+    <string name="post_field_distance">RUN KM</string>
     <string name="post_field_starts_in">STARTS IN (MIN)</string>
     <string name="post_field_capacity">SLOTS</string>
-    <string name="post_flash_hint">Runners nearby see your flash run first — the closer it is, the higher it shows.</string>
+    <string name="post_flash_hint">Your current spot is saved as the meeting point, so runners nearby see it first.</string>
 
 
     <!-- Crew creation -->
@@ -552,6 +556,20 @@
     <string name="crew_loading">Loading crews…</string>
     <string name="crew_load_failed">Could not load crews</string>
     <string name="crew_retry">TRY AGAIN</string>
+    <string name="board_loading">Loading posts…</string>
+    <string name="board_load_failed">Could not load posts</string>
+    <string name="board_sign_in_needed">Sign in to read and write posts</string>
+    <string name="board_notice_reported">Reported. Thank you for keeping the board clean.</string>
+    <string name="board_notice_blocked">Blocked. You will no longer see their posts or comments.</string>
+    <string name="report_title">Report</string>
+    <string name="report_hint">Why are you reporting this? Posts with 5 reports are hidden for everyone.</string>
+    <string name="report_reason_spam">Spam or ads</string>
+    <string name="report_reason_abuse">Harassment or hate</string>
+    <string name="report_reason_sexual">Sexual content</string>
+    <string name="report_reason_danger">Dangerous or illegal</string>
+    <string name="report_reason_fraud">Scam or fraud</string>
+    <string name="report_reason_other">Something else</string>
+    <string name="report_block">Block %1$s</string>
 
     <!-- Ranking -->
     <string name="rank_me">You</string>
@@ -592,41 +610,19 @@
     <!-- Seed crews -->
 
     <!-- Seed posts -->
-    <string name="seed_flash1_title">Night 5K by the river, anyone?</string>
-    <string name="seed_flash1_body">Easy 6:00/km pace. First-timers very welcome.</string>
-    <string name="seed_flash2_title">Morning run before work</string>
-    <string name="seed_flash2_body">We start at 6:30 and wrap up in exactly 40 minutes.</string>
-    <string name="seed_flash3_title">Looking for an interval partner</string>
-    <string name="seed_flash3_body">400m × 8. Bonus points if you can hold the pace with me.</string>
-    <string name="seed_flash4_title">Weekend long run, 20K</string>
-    <string name="seed_flash4_body">Slow and steady. We stop twice for snacks.</string>
-    <string name="seed_free1_title">Finally ran a half marathon</string>
-    <string name="seed_free1_body">Six months ago 3K wrecked me. Today I finished in 1:58. Consistency really is the whole trick.</string>
-    <string name="seed_free2_title">What do you all do on rainy days?</string>
-    <string name="seed_free2_body">The treadmill bores me to death. Anyone got an indoor routine that actually sticks?</string>
-    <string name="seed_free3_title">Just crossed 1,000 SUP</string>
-    <string name="seed_free3_body">All from commuting on foot. It adds up faster than I expected.</string>
-    <string name="seed_tip1_title">Energy tip — don\'t burn it all in the morning</string>
-    <string name="seed_tip1_body">Energy refills at midnight, so on evening-run days spend only half of it early. Your total earnings come out higher.</string>
-    <string name="seed_tip2_title">Mint while wearing your highest-luck pair</string>
-    <string name="seed_tip2_body">The luck stat on your equipped sneaker feeds straight into the odds for higher rarities. Swap right before you mint.</string>
-    <string name="seed_tip3_title">Party runs pay off from four people up</string>
-    <string name="seed_tip3_body">The boost scales with headcount, so it clearly beats running alone. Everyone has to hit ready in the lobby before it starts.</string>
-    <string name="seed_crew1_title">Let\'s set this week\'s crew goal</string>
-    <string name="seed_crew1_body">We averaged 32 km last week — how about 35 this time?</string>
-    <string name="seed_crew2_title">Updated our route map</string>
-    <string name="seed_crew2_body">Added a detour around section 3 because of the bridge works. Check it before the next meetup.</string>
-    <string name="seed_crew3_title">Crew run tonight</string>
-    <string name="seed_crew3_body">We leave at 8:00 sharp — catching up later is rough!</string>
 
     <!-- Party host -->
     <string name="party_host_badge">HOST</string>
     <string name="party_start">Start party run</string>
-    <string name="party_invite_button">Invite crew members</string>
-    <string name="party_invite_title">Invite to party</string>
-    <string name="party_invite_action">Invite</string>
-    <string name="party_invite_empty">Everyone is already in the party.</string>
     <string name="party_kick">Remove</string>
+    <string name="party_join_hint">Crewmates who open this lobby join the same room. For a flash run, runners who joined the post can come in.</string>
+    <string name="party_wait_host">Waiting for the host to start…</string>
+    <string name="party_leave">Leave lobby</string>
+    <string name="party_problem_sign_in">Sign in to join a party run.</string>
+    <string name="party_problem_removed">Only crew members or runners who joined this flash run can enter — or the host removed you.</string>
+    <string name="party_problem_network">Can\'t reach the server. Trying again…</string>
+    <string name="party_problem_closed">This room has closed.</string>
+    <string name="party_problem_failed">That didn\'t go through. Try again.</string>
     <string name="party_gps_rule">Members further than %1$dm from the host are dropped automatically.</string>
 
     <!-- Notification actions -->
@@ -904,16 +900,6 @@ Start running with StepUp.</string>
     <string name="notif_comment_reply">%1$s replied to your comment</string>
 
     <!-- Seed comments -->
-    <string name="seed_comment1">Count me in — see you there!</string>
-    <string name="seed_comment2">What pace are we running?</string>
-    <string name="seed_comment3">Is it okay if I\'m five minutes late?</string>
-    <string name="seed_comment4">Great tip, thanks for sharing.</string>
-    <string name="seed_comment5">Bringing a friend — hope that\'s fine.</string>
-    <string name="seed_comment6">Ran this route last week, it\'s lovely at night.</string>
-    <string name="seed_reply1">Same here, let\'s meet at the gate.</string>
-    <string name="seed_reply2">Easy pace, no one gets dropped.</string>
-    <string name="seed_reply3">Totally fine — we\'ll wait for you.</string>
-    <string name="seed_reply4">Nice, see you out there!</string>
 
     <!-- Language -->
     <string name="settings_language">Language</string>
@@ -961,8 +947,7 @@ Start running with StepUp.</string>
     <string name="flash_host">Host</string>
     <string name="flash_place">Meeting point</string>
     <string name="flash_time">Meet-up time</string>
-    <string name="flash_pace">Pace</string>
-    <string name="flash_est_distance">Est. distance</string>
+    <string name="flash_est_distance">Run distance</string>
     <string name="flash_members">Participants</string>
     <string name="flash_view_members">View members</string>
     <string name="flash_chat">Party chat</string>
@@ -970,9 +955,6 @@ Start running with StepUp.</string>
     <string name="flash_enter_chat">Enter chat</string>
     <string name="flash_join_cta">Join the party</string>
     <string name="flash_joined_cta">Joined · tap to cancel</string>
-    <string name="pace_easy">EASY</string>
-    <string name="pace_normal">NORMAL</string>
-    <string name="pace_fast">FAST</string>
 
     <!-- Profile redesign -->
     <string name="profile_my_records">My records</string>

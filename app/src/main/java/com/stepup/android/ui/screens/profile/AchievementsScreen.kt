@@ -60,7 +60,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.data.local.PostDao
+import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.local.RewardDao
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.local.WalkSessionDao
@@ -90,6 +90,7 @@ import kotlin.math.sin
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -103,8 +104,16 @@ class AchievementsViewModel(
     crewRepository: CrewRepository,
     walkSessionDao: WalkSessionDao,
     rewardDao: RewardDao,
-    postDao: PostDao,
+    communityRepository: CommunityRepository,
 ) : ViewModel() {
+
+    init {
+        // 크루와 글은 서버에만 있다. 업적 화면만 먼저 열어도 세어지도록 받아 둔다.
+        viewModelScope.launch {
+            crewRepository.refresh()
+            communityRepository.refresh()
+        }
+    }
 
     private val activity = combine(
         stepRepository.observeLifetimeSteps(),
@@ -133,7 +142,7 @@ class AchievementsViewModel(
     private val social = combine(
         sneakerRepository.inventory,
         crewRepository.joinedCrewIds,
-        postDao.observeMineCount(),
+        communityRepository.myPostCount,
     ) { inventory, crews, posts ->
         Triple(inventory, crews.size, posts)
     }
@@ -166,7 +175,7 @@ class AchievementsViewModel(
                     crewRepository = ServiceLocator.crewRepository,
                     walkSessionDao = ServiceLocator.database.walkSessionDao(),
                     rewardDao = ServiceLocator.database.rewardDao(),
-                    postDao = ServiceLocator.database.postDao(),
+                    communityRepository = ServiceLocator.communityRepository,
                 )
             }
         }

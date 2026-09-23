@@ -310,6 +310,10 @@ interface PostDao {
 
     @Query("SELECT COUNT(*) FROM posts WHERE mine = 1")
     fun observeMineCount(): Flow<Int>
+
+    /** 게시판이 서버로 옮겨 가면서 폰 안의 글(데모 포함)은 더 쓰지 않는다 */
+    @Query("DELETE FROM posts")
+    suspend fun clear()
 }
 
 @Dao
@@ -324,8 +328,13 @@ interface CourseDao {
     @Update
     suspend fun update(entity: CourseEntity)
 
-    @Query("DELETE FROM courses WHERE id = :id AND mine = 1")
-    suspend fun deleteMine(id: Long)
+    /** 내 코스나 게시판에서 받아 둔 코스만 지운다. 기본 공원 코스는 남는다. */
+    @Query("DELETE FROM courses WHERE id = :id AND (mine = 1 OR shared = 0)")
+    suspend fun deleteLocal(id: Long)
+
+    /** 같은 길의 코스 — 게시판 코스를 두 번 받아 두지 않게 찾는다. */
+    @Query("SELECT * FROM courses WHERE track = :track ORDER BY mine DESC LIMIT 1")
+    suspend fun byTrack(track: String): CourseEntity?
 
     /**
      * 데모 코스만 지운다. 내가 만든 코스는 남는다.
@@ -333,7 +342,7 @@ interface CourseDao {
      * 데모 코스의 좌표가 바뀔 때 갈아 끼우는 데 쓴다 — 예전 것은 지도 위에서
      * 한강을 가로질렀고, 그대로 두면 이미 설치한 사람은 계속 그 선을 본다.
      */
-    @Query("DELETE FROM courses WHERE mine = 0")
+    @Query("DELETE FROM courses WHERE mine = 0 AND shared = 1")
     suspend fun deleteSeeded()
 
     @Query("SELECT * FROM courses ORDER BY mine DESC, createdAt DESC")
@@ -381,6 +390,10 @@ interface CommentDao {
 
     @Query("SELECT COUNT(*) FROM comments")
     suspend fun count(): Int
+
+    /** 게시판이 서버로 옮겨 가면서 폰 안의 댓글(데모 포함)은 더 쓰지 않는다 */
+    @Query("DELETE FROM comments")
+    suspend fun clear()
 }
 
 @Dao
@@ -416,6 +429,9 @@ interface NotificationDao {
             "AND argExtra IN (:crewIds)",
     )
     suspend fun deleteInvitesTo(crewIds: List<String>)
+
+    @Query("DELETE FROM notifications WHERE type = :type")
+    suspend fun deleteByType(type: String)
 
     /**
      * "모두 읽음" 청소 — 아직 처리하지 않은 액션형 알림(초대·미수령 보상)은 남긴다.

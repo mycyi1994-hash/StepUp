@@ -90,6 +90,10 @@ fun FocusedCommentSheetHost() {
  */
 @Composable
 fun CommentSheetHost(viewModel: CommunityViewModel) {
+    // 신고 창과 결과 알림은 댓글 창이 닫혀 있어도 뜬다 — 글 카드에서도 신고하기 때문이다.
+    ReportDialogHost(viewModel)
+    BoardNoticeToast(viewModel)
+
     val openId by viewModel.openCommentsFor.collectAsStateWithLifecycle()
     val posts by viewModel.allPosts.collectAsStateWithLifecycle()
     val focusId by viewModel.focusCommentId.collectAsStateWithLifecycle()
@@ -97,14 +101,14 @@ fun CommentSheetHost(viewModel: CommunityViewModel) {
     val post = posts.firstOrNull { it.id == id } ?: return
     val stream = remember(id) { viewModel.commentThreads(id) }
     val threads by stream.collectAsStateWithLifecycle(emptyList())
-    val author = stringResource(R.string.rank_me)
 
     CommentSheet(
         post = post,
         threads = threads,
         focusCommentId = focusId,
-        onSend = { body, parentId -> viewModel.sendComment(id, body, parentId, author) },
+        onSend = { body, parentId -> viewModel.sendComment(id, body, parentId) },
         onDeleteComment = viewModel::deleteComment,
+        onReportComment = { viewModel.askReport(it) },
         onDismiss = viewModel::closeComments,
     )
 }
@@ -122,6 +126,7 @@ fun CommentSheet(
     onSend: (body: String, parentId: Long) -> Unit,
     onDeleteComment: (Long) -> Unit,
     onDismiss: () -> Unit,
+    onReportComment: (Comment) -> Unit = {},
     /** 알림에서 들어왔다면 그 댓글. 0이면 없음. */
     focusCommentId: Long = 0L,
 ) {
@@ -245,6 +250,7 @@ fun CommentSheet(
                                     comment = thread.comment,
                                     onReply = { replyTo = thread.comment },
                                     onDelete = { onDeleteComment(thread.comment.id) },
+                                    onReport = { onReportComment(thread.comment) },
                                     highlighted = thread.comment.id == focusCommentId,
                                 )
                                 thread.replies.forEach { reply ->
@@ -252,6 +258,7 @@ fun CommentSheet(
                                         comment = reply,
                                         onReply = { replyTo = thread.comment },
                                         onDelete = { onDeleteComment(reply.id) },
+                                        onReport = { onReportComment(reply) },
                                         modifier = Modifier.padding(start = 30.dp),
                                         highlighted = reply.id == focusCommentId,
                                     )
@@ -367,6 +374,7 @@ private fun CommentRow(
     comment: Comment,
     onReply: () -> Unit,
     onDelete: () -> Unit,
+    onReport: () -> Unit,
     modifier: Modifier = Modifier,
     /** 알림이 가리킨 댓글 — 스크롤해 놓고 표시까지 해야 눈에 들어온다 */
     highlighted: Boolean = false,
@@ -445,6 +453,14 @@ private fun CommentRow(
                         modifier = Modifier
                             .size(13.dp)
                             .quietClickable(onDelete),
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.report_title),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Slate,
+                        modifier = Modifier.quietClickable(onReport),
                     )
                 }
             }

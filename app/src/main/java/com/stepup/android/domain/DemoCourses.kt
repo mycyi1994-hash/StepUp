@@ -36,8 +36,12 @@ object DemoCourses {
      *
      *  1 — 손으로 찍은 좌표 열두 점. 직선으로 이어 한강을 가로질렀다.
      *  2 — 공원 상자 안을 도는 고리.
+     *  3 — 지어낸 만든 사람·하트·완주 수를 뺐다. 기본 코스는 StepUp 이 깐 것이다.
      */
-    const val VERSION = 2
+    const val VERSION = 3
+
+    /** 기본 코스의 "만든 사람" */
+    const val AUTHOR = "StepUp"
 
     /** 이웃한 두 점 사이 거리(m). 이보다 촘촘하면 저장만 커지고 보기엔 같다. */
     const val SPACING_M = 40.0
@@ -54,10 +58,6 @@ object DemoCourses {
         DemoPark(
             name = "서울숲 순환",
             area = "성수",
-            author = "Marco P.",
-            likes = 86,
-            runs = 205,
-            hoursAgo = 150,
             center = GeoPoint(37.5444, 127.0374),
             halfNorthM = 380.0,
             halfEastM = 430.0,
@@ -66,10 +66,6 @@ object DemoCourses {
         DemoPark(
             name = "올림픽공원 순환",
             area = "송파",
-            author = "Aiko T.",
-            likes = 97,
-            runs = 231,
-            hoursAgo = 310,
             center = GeoPoint(37.5202, 127.1216),
             halfNorthM = 420.0,
             halfEastM = 580.0,
@@ -78,10 +74,6 @@ object DemoCourses {
         DemoPark(
             name = "여의도공원 순환",
             area = "여의도",
-            author = "Sora K.",
-            likes = 128,
-            runs = 342,
-            hoursAgo = 96,
             center = GeoPoint(37.5265, 126.9240),
             // 남북으로 긴 띠 모양 공원이라 동서 폭이 좁다
             halfNorthM = 480.0,
@@ -91,10 +83,6 @@ object DemoCourses {
         DemoPark(
             name = "평화의공원 순환",
             area = "상암",
-            author = "Kai W.",
-            likes = 143,
-            runs = 276,
-            hoursAgo = 40,
             center = GeoPoint(37.5700, 126.8850),
             halfNorthM = 330.0,
             halfEastM = 430.0,
@@ -103,10 +91,6 @@ object DemoCourses {
         DemoPark(
             name = "보라매공원 순환",
             area = "동작",
-            author = "Elena R.",
-            likes = 74,
-            runs = 118,
-            hoursAgo = 220,
             center = GeoPoint(37.4928, 126.9203),
             halfNorthM = 290.0,
             halfEastM = 340.0,
@@ -126,10 +110,6 @@ object DemoCourses {
 data class DemoPark(
     val name: String,
     val area: String,
-    val author: String,
-    val likes: Int,
-    val runs: Int,
-    val hoursAgo: Int,
     val center: GeoPoint,
     val halfNorthM: Double,
     val halfEastM: Double,

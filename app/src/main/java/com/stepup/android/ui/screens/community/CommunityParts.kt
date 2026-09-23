@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Schedule
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ExternalIntents
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.GlowCard
@@ -179,9 +181,14 @@ fun FlashRunCard(
     onComment: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onOpen: () -> Unit = {},
+    onReport: (() -> Unit)? = null,
+    here: GeoPoint? = null,
 ) {
     val context = LocalContext.current
     val hasPlace = post.place.isNotBlank()
+    // 모임 장소까지의 거리는 읽는 사람의 자리에서 잰다. 둘 중 하나라도 모르면
+    // 대신 함께 달릴 거리를 적는다 — 지어낸 거리보다 낫다.
+    val awayKm = post.awayKmFrom(here)
     GlowCard(
         // 카드 어디를 눌러도 상세로 — 참가/좋아요/장소 등 안쪽 클릭이 우선한다
         modifier = Modifier.quietClickable(onOpen),
@@ -196,7 +203,11 @@ fun FlashRunCard(
         ) {
             CategoryChip(PostCategory.FLASH)
             Text(
-                text = stringResource(R.string.post_km_away, "%.1f".format(post.distanceKm)),
+                text = if (awayKm != null) {
+                    stringResource(R.string.post_km_away, "%.1f".format(awayKm))
+                } else {
+                    stringResource(R.string.post_run_km, "%.1f".format(post.distanceKm))
+                },
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
@@ -215,6 +226,17 @@ fun FlashRunCard(
                     modifier = Modifier
                         .size(15.dp)
                         .quietClickable(onDelete),
+                )
+            }
+            // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
+            if (onReport != null && !post.mine) {
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = stringResource(R.string.report_title),
+                    tint = Slate,
+                    modifier = Modifier
+                        .size(15.dp)
+                        .quietClickable(onReport),
                 )
             }
         }
@@ -323,6 +345,7 @@ fun TextPostCard(
     onLike: () -> Unit,
     onComment: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    onReport: (() -> Unit)? = null,
 ) {
     GlowCard(contentPadding = PaddingValues(15.dp), spacing = 9.dp) {
         Row(
@@ -360,6 +383,17 @@ fun TextPostCard(
                     modifier = Modifier
                         .size(15.dp)
                         .quietClickable(onDelete),
+                )
+            }
+            // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
+            if (onReport != null && !post.mine) {
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = stringResource(R.string.report_title),
+                    tint = Slate,
+                    modifier = Modifier
+                        .size(15.dp)
+                        .quietClickable(onReport),
                 )
             }
         }
