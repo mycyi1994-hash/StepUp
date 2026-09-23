@@ -87,8 +87,8 @@ class DesignReferenceTest {
         ServiceLocator.userPrefs.setGuideSeen()
         ServiceLocator.userPrefs.ensureRunnerUid()
         ServiceLocator.sneakerRepository.ensureStarter()
-        ServiceLocator.crewRepository.ensureSeeded()
-        ServiceLocator.communityRepository.ensureSeeded()
+        // 크루·글은 서버에만 있다. 서버 없이 도는 검사라 같은 모양의 자료를 채운다.
+        TestData.seedCommunity()
         ServiceLocator.courseRepository.ensureSeeded()
     }
 
