@@ -1400,7 +1400,7 @@ Start running with StepUp.</string>
 
     <!-- 디자인 패키지 적용 — 캐릭터 그림 · 러닝 중 · 러닝 완료 · 커뮤니티 -->
     <string name="avatar_art_wearing">Wearing %1$s</string>
-    <string name="avatar_art_base_look">Character art shows the base outfit</string>
+    <string name="avatar_art_base_look">Art in progress · showing the base look</string>
     <string name="customize_preview_missing">There\'s no character art wearing this pick yet. The picture shows the base outfit.</string>
     <string name="customize_preview_missing_badge">Art coming</string>
     <string name="customize_equipped_art_pending">Equipped. Character art with this item is still in the works.</string>
@@ -1424,4 +1424,13 @@ Start running with StepUp.</string>
     <string name="home_shortcut_news_sub">Races · running news</string>
     <string name="challenge_hero_sub">The more you run, the more rewards await.</string>
     <string name="challenge_reward_label">Reward</string>
+
+    <!-- RUNO 장비 — 새 의상 5종 · 그림 안내 -->
+    <string name="outfit_clo_001">Core Zip</string>
+    <string name="outfit_clo_002">Ember Shell</string>
+    <string name="outfit_clo_003">Tide Anorak</string>
+    <string name="outfit_clo_004">Volt Jersey</string>
+    <string name="outfit_clo_005">Aero Windbreaker</string>
+    <string name="avatar_art_base_shoes">Combo art in progress · showing base sneakers</string>
+    <string name="avatar_art_base_outfit">Combo art in progress · showing base outfit</string>
 </resources>

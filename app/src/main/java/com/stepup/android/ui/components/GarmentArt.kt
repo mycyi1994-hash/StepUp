@@ -17,13 +17,31 @@ import com.stepup.android.domain.Outfits
 
 @StringRes
 fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
-    Outfits.STARTER_HOODIE.id -> R.string.outfit_starter_hoodie
-    Outfits.STARTER_TEE.id -> R.string.outfit_starter_tee
-    Outfits.UP_HOODIE.id -> R.string.outfit_up_hoodie
-    Outfits.SPORTY_JACKET.id -> R.string.outfit_sporty_jacket
-    Outfits.NEON_TRACK.id -> R.string.outfit_neon_track
-    Outfits.STORM_SHELL.id -> R.string.outfit_storm_shell
+    Outfits.CORE_ZIP.id -> R.string.outfit_clo_001
+    Outfits.EMBER_SHELL.id -> R.string.outfit_clo_002
+    Outfits.TIDE_ANORAK.id -> R.string.outfit_clo_003
+    Outfits.VOLT_JERSEY.id -> R.string.outfit_clo_004
+    Outfits.AERO_WINDBREAKER.id -> R.string.outfit_clo_005
     else -> R.string.outfit_starter_hoodie
+}
+
+/**
+ * 의상 상품 그림 — 의상 시트의 "ITEM" 줄에서 떼어 낸 앞면 그림이 있으면 그것을,
+ * 없으면(기본 의상) 옷 아이콘을 그린다.
+ */
+@Composable
+fun OutfitArt(outfit: Outfit, modifier: Modifier = Modifier) {
+    val res = outfitProductRes(outfit.id)
+    if (res != null) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(res),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+            modifier = modifier,
+        )
+    } else {
+        GarmentArt(outfit, modifier)
+    }
 }
 
 /**

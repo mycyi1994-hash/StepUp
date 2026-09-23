@@ -49,7 +49,7 @@ import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.AvatarImage
 import com.stepup.android.ui.components.PageHero
 import com.stepup.android.ui.components.SecondaryHeader
-import com.stepup.android.ui.components.GarmentArt
+import com.stepup.android.ui.components.OutfitArt
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.GlowCard
@@ -356,7 +356,7 @@ private fun OutfitProduct(
     ProductCard(
         onClick = if (demo) onTry else onInfo,
         badge = { SmallBadge("NFT", tone = BadgeTone.Nft) },
-        art = { GarmentArt(outfit, Modifier.fillMaxSize().padding(4.dp)) },
+        art = { OutfitArt(outfit, Modifier.fillMaxSize().padding(4.dp)) },
         name = stringResource(outfitNameRes(outfit)),
         price = {
             // 팔지 않는 물건에 값을 적지 않는다

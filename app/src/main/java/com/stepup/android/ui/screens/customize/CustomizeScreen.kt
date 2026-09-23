@@ -64,7 +64,7 @@ import com.stepup.android.ui.components.AvatarImage
 import com.stepup.android.ui.components.CharacterStage
 import com.stepup.android.ui.components.MainHeader
 import com.stepup.android.ui.components.StepUpIcons
-import com.stepup.android.ui.components.GarmentArt
+import com.stepup.android.ui.components.OutfitArt
 import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GhostButton
@@ -447,7 +447,7 @@ private fun OutfitCard(
                 if (outfit.starter) SmallBadge(stringResource(R.string.customize_basic_badge), tone = BadgeTone.Muted)
             }
         },
-        art = { GarmentArt(outfit, Modifier.fillMaxSize()) },
+        art = { OutfitArt(outfit, Modifier.fillMaxSize()) },
     )
 }
 

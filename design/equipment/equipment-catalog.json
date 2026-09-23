@@ -1,0 +1,1175 @@
+{
+  "schemaVersion": 1,
+  "assetType": "design_reference",
+  "avatar": {
+    "id": "RUNO",
+    "nameKo": "루노",
+    "free": true,
+    "defaultOutfitId": "OUTFIT-BASE",
+    "defaultShoeId": "SHOES-BASE",
+    "fixedFeatures": [
+      "face",
+      "hair",
+      "cap",
+      "cyanEyes",
+      "darkNavySkin",
+      "bodyProportions"
+    ]
+  },
+  "equipmentSlots": [
+    "outfit",
+    "shoes"
+  ],
+  "newOutfitShoeCombinations": 260,
+  "runtimeAssetsIncluded": false,
+  "notes": [
+    "Original shoe PNG files are supplied separately by the user.",
+    "Rarity labels 희귀 and 레어 are distinct source labels.",
+    "Generated sheet descriptors are not canonical product names.",
+    "CLO-001 differs from the original free base outfit."
+  ],
+  "outfits": [
+    {
+      "id": "CLO-001",
+      "slot": "outfit",
+      "nameKo": "코어 집",
+      "nameEn": "CORE ZIP",
+      "description": "남색 후드 집업과 반바지, 코발트 대각선 패널",
+      "includes": [
+        "top",
+        "shorts"
+      ],
+      "rarityLabel": null,
+      "referenceSheet": "05_RUNO_WARDROBE_05.png",
+      "referenceColumn": 1,
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "CLO-002",
+      "slot": "outfit",
+      "nameKo": "엠버 셸",
+      "nameEn": "EMBER SHELL",
+      "description": "검정 재킷과 반바지, 주황 불꽃 패널",
+      "includes": [
+        "top",
+        "shorts"
+      ],
+      "rarityLabel": null,
+      "referenceSheet": "05_RUNO_WARDROBE_05.png",
+      "referenceColumn": 2,
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "CLO-003",
+      "slot": "outfit",
+      "nameKo": "타이드 아노락",
+      "nameEn": "TIDE ANORAK",
+      "description": "흰색 로열블루 반집업 아노락과 남색 반바지",
+      "includes": [
+        "top",
+        "shorts"
+      ],
+      "rarityLabel": null,
+      "referenceSheet": "05_RUNO_WARDROBE_05.png",
+      "referenceColumn": 3,
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "CLO-004",
+      "slot": "outfit",
+      "nameKo": "볼트 저지",
+      "nameEn": "VOLT JERSEY",
+      "description": "차콜 반팔 저지와 반바지, 노랑 번개와 연보라 파이핑",
+      "includes": [
+        "top",
+        "shorts"
+      ],
+      "rarityLabel": null,
+      "referenceSheet": "05_RUNO_WARDROBE_05.png",
+      "referenceColumn": 4,
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "CLO-005",
+      "slot": "outfit",
+      "nameKo": "에어로 윈드브레이커",
+      "nameEn": "AERO WINDBREAKER",
+      "description": "흰색 민트 바람막이와 연회색 반바지",
+      "includes": [
+        "top",
+        "shorts"
+      ],
+      "rarityLabel": null,
+      "referenceSheet": "05_RUNO_WARDROBE_05.png",
+      "referenceColumn": 5,
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    }
+  ],
+  "shoes": [
+    {
+      "id": "FIR-001",
+      "slot": "shoes",
+      "nameKo": "인페르노 크라운",
+      "rarityLabel": "레전더리",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-001_레전더리_인페르노 크라운 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-002",
+      "slot": "shoes",
+      "nameKo": "피닉스 서지",
+      "rarityLabel": "레전더리",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-002_레전더리_피닉스 서지 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-003",
+      "slot": "shoes",
+      "nameKo": "마그마 펄스",
+      "rarityLabel": "희귀",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-003_희귀_마그마 펄스 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-004",
+      "slot": "shoes",
+      "nameKo": "엠버 노바",
+      "rarityLabel": "희귀",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-004_희귀_엠버 노바 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-005",
+      "slot": "shoes",
+      "nameKo": "신더 볼텍스",
+      "rarityLabel": "희귀",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-005_희귀_신더 볼텍스 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-006",
+      "slot": "shoes",
+      "nameKo": "히트 러너",
+      "rarityLabel": "레어",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-006_레어_히트 러너 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-007",
+      "slot": "shoes",
+      "nameKo": "토치 스프린트",
+      "rarityLabel": "레어",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-007_레어_토치 스프린트 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-008",
+      "slot": "shoes",
+      "nameKo": "애쉬 블레이즈",
+      "rarityLabel": "레어",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-008_레어_애쉬 블레이즈 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-009",
+      "slot": "shoes",
+      "nameKo": "플레어 시프트",
+      "rarityLabel": "레어",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-009_레어_플레어 시프트 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-010",
+      "slot": "shoes",
+      "nameKo": "스파크 러너",
+      "rarityLabel": "일반",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-010_일반_스파크 러너 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-011",
+      "slot": "shoes",
+      "nameKo": "코어 러너",
+      "rarityLabel": "일반",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-011_일반_코어 러너 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-012",
+      "slot": "shoes",
+      "nameKo": "레드라인",
+      "rarityLabel": "일반",
+      "collection": "불",
+      "additionalConcept": false,
+      "productSourceFilename": "FIR-012_일반_레드라인 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "FIR-013",
+      "slot": "shoes",
+      "nameKo": "워밍 업",
+      "rarityLabel": "일반",
+      "collection": "불",
+      "additionalConcept": true,
+      "productSourceFilename": "FIR-013_일반_워밍 업_추가시안 (1).png",
+      "referenceSheet": "01_RUNO_FIRE_13.png",
+      "referenceCell": {
+        "row": 4,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-001",
+      "slot": "shoes",
+      "nameKo": "썬더 제니스",
+      "rarityLabel": "레전더리",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-001_레전더리_썬더 제니스 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-002",
+      "slot": "shoes",
+      "nameKo": "볼트 팬텀",
+      "rarityLabel": "레전더리",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-002_레전더리_볼트 팬텀 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-003",
+      "slot": "shoes",
+      "nameKo": "스톰 서킷",
+      "rarityLabel": "희귀",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-003_희귀_스톰 서킷 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-004",
+      "slot": "shoes",
+      "nameKo": "볼트 에이펙스",
+      "rarityLabel": "희귀",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-004_희귀_볼트 에이펙스 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-005",
+      "slot": "shoes",
+      "nameKo": "플라즈마 러너",
+      "rarityLabel": "희귀",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-005_희귀_플라즈마 러너 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-006",
+      "slot": "shoes",
+      "nameKo": "썬더 러너",
+      "rarityLabel": "레어",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-006_레어_썬더 러너 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-007",
+      "slot": "shoes",
+      "nameKo": "볼트 대시",
+      "rarityLabel": "레어",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-007_레어_볼트 대시 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-008",
+      "slot": "shoes",
+      "nameKo": "플래시 페이스",
+      "rarityLabel": "레어",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-008_레어_플래시 페이스 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-009",
+      "slot": "shoes",
+      "nameKo": "스파크 블레이드",
+      "rarityLabel": "레어",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-009_레어_스파크 블레이드 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-010",
+      "slot": "shoes",
+      "nameKo": "옐로 러너",
+      "rarityLabel": "일반",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-010_일반_옐로 러너 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-011",
+      "slot": "shoes",
+      "nameKo": "스태틱 러너",
+      "rarityLabel": "일반",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-011_일반_스태틱 러너 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-012",
+      "slot": "shoes",
+      "nameKo": "펄스 러너",
+      "rarityLabel": "일반",
+      "collection": "번개",
+      "additionalConcept": false,
+      "productSourceFilename": "LIT-012_일반_펄스 러너 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "LIT-013",
+      "slot": "shoes",
+      "nameKo": "차지 라이트",
+      "rarityLabel": "일반",
+      "collection": "번개",
+      "additionalConcept": true,
+      "productSourceFilename": "LIT-013_일반_차지 라이트_추가시안 (1).png",
+      "referenceSheet": "03_RUNO_LIGHTNING_13.png",
+      "referenceCell": {
+        "row": 4,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-001",
+      "slot": "shoes",
+      "nameKo": "어비스 타이드",
+      "rarityLabel": "레전더리",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-001_레전더리_어비스 타이드 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-002",
+      "slot": "shoes",
+      "nameKo": "레비아탄 플로우",
+      "rarityLabel": "레전더리",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-002_레전더리_레비아탄 플로우 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-003",
+      "slot": "shoes",
+      "nameKo": "쓰나미 아크",
+      "rarityLabel": "희귀",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-003_희귀_쓰나미 아크 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-004",
+      "slot": "shoes",
+      "nameKo": "애저 커런트",
+      "rarityLabel": "희귀",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-004_희귀_애저 커런트 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-005",
+      "slot": "shoes",
+      "nameKo": "딥웨이브 프라임",
+      "rarityLabel": "희귀",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-005_희귀_딥웨이브 프라임 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-006",
+      "slot": "shoes",
+      "nameKo": "워터 러너",
+      "rarityLabel": "레어",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-006_레어_워터 러너 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-007",
+      "slot": "shoes",
+      "nameKo": "리플 페이스",
+      "rarityLabel": "레어",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-007_레어_리플 페이스 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-008",
+      "slot": "shoes",
+      "nameKo": "리프 글라이드",
+      "rarityLabel": "레어",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-008_레어_리프 글라이드 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-009",
+      "slot": "shoes",
+      "nameKo": "오션 스프린트",
+      "rarityLabel": "레어",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-009_레어_오션 스프린트 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-010",
+      "slot": "shoes",
+      "nameKo": "블루 러너",
+      "rarityLabel": "일반",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-010_일반_블루 러너 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-011",
+      "slot": "shoes",
+      "nameKo": "브룩 러너",
+      "rarityLabel": "일반",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-011_일반_브룩 러너 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-012",
+      "slot": "shoes",
+      "nameKo": "미스트 러너",
+      "rarityLabel": "일반",
+      "collection": "물",
+      "additionalConcept": false,
+      "productSourceFilename": "WAT-012_일반_미스트 러너 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WAT-013",
+      "slot": "shoes",
+      "nameKo": "타이드 라이트",
+      "rarityLabel": "일반",
+      "collection": "물",
+      "additionalConcept": true,
+      "productSourceFilename": "WAT-013_일반_타이드 라이트_추가시안 (1).png",
+      "referenceSheet": "02_RUNO_WATER_13.png",
+      "referenceCell": {
+        "row": 4,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-001",
+      "slot": "shoes",
+      "nameKo": "제피르 크라운",
+      "rarityLabel": "레전더리",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-001_레전더리_제피르 크라운 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-002",
+      "slot": "shoes",
+      "nameKo": "템페스트 윙",
+      "rarityLabel": "레전더리",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-002_레전더리_템페스트 윙 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-003",
+      "slot": "shoes",
+      "nameKo": "에어로 팬텀",
+      "rarityLabel": "희귀",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-003_희귀_에어로 팬텀 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-004",
+      "slot": "shoes",
+      "nameKo": "게일 오빗",
+      "rarityLabel": "희귀",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-004_희귀_게일 오빗 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 1,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-005",
+      "slot": "shoes",
+      "nameKo": "사이클론 스텝",
+      "rarityLabel": "희귀",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-005_희귀_사이클론 스텝 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-006",
+      "slot": "shoes",
+      "nameKo": "윈드 러너",
+      "rarityLabel": "레어",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-006_레어_윈드 러너 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-007",
+      "slot": "shoes",
+      "nameKo": "브리즈 글라이드",
+      "rarityLabel": "레어",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-007_레어_브리즈 글라이드 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-008",
+      "slot": "shoes",
+      "nameKo": "에어 대시",
+      "rarityLabel": "레어",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-008_레어_에어 대시 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 2,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-009",
+      "slot": "shoes",
+      "nameKo": "스카이 페이스",
+      "rarityLabel": "레어",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-009_레어_스카이 페이스 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-010",
+      "slot": "shoes",
+      "nameKo": "클라우드 러너",
+      "rarityLabel": "일반",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-010_일반_클라우드 러너 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 2
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-011",
+      "slot": "shoes",
+      "nameKo": "페더 러너",
+      "rarityLabel": "일반",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-011_일반_페더 러너 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 3
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-012",
+      "slot": "shoes",
+      "nameKo": "드리프트 러너",
+      "rarityLabel": "일반",
+      "collection": "바람",
+      "additionalConcept": false,
+      "productSourceFilename": "WND-012_일반_드리프트 러너 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 3,
+        "column": 4
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    },
+    {
+      "id": "WND-013",
+      "slot": "shoes",
+      "nameKo": "리프트 라이트",
+      "rarityLabel": "일반",
+      "collection": "바람",
+      "additionalConcept": true,
+      "productSourceFilename": "WND-013_일반_리프트 라이트_추가시안 (1).png",
+      "referenceSheet": "04_RUNO_WIND_13.png",
+      "referenceCell": {
+        "row": 4,
+        "column": 1
+      },
+      "runtimeAssets": {
+        "status": "not_provided",
+        "productImage": null,
+        "equippedLayer": null,
+        "model": null
+      }
+    }
+  ]
+}

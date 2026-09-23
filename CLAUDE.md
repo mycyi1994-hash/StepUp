@@ -11,6 +11,9 @@
 - **화면 시안 · 캐릭터**: `design/blue-black-2026-09/` — 적용 현황과 추가로 필요한
   그림은 `적용-현황.md`. 캐릭터는 `res/drawable-nodpi/avatar_*.webp` 완성 그림을 쓰고
   코드로 다시 그리지 않는다. 성별·착장을 속여 보이지 않는다(`domain/AvatarArt.kt`).
+- **RUNO 장비(신발 52 · 의상 5)**: `design/equipment/` — 원본 시트 · 카탈로그 · 요청문,
+  앱에 들어간 그림과 남은 그림은 `runtime-assets.md`. 그림을 더하면
+  `python3 tools/gen_avatar_res.py` 로 `AvatarArtRes.kt` 를 다시 만든다.
 
 ## 지킬 것
 

@@ -78,54 +78,68 @@ data class Outfit(
 )
 
 /**
- * 의상 목록.
+ * 의상 목록 — 장비 카탈로그(design/equipment/equipment-catalog.json)와 같다.
  *
- * NFT 의상은 **아직 살 수 없다.** 의상을 사고파는 흐름(서버·결제·민팅)이
- * 없기 때문이다. 그래서 가격도 적지 않는다 — 팔지도 않는 물건에 값을
- * 매겨 두면 그 값이 사실처럼 읽힌다. 화면에는 "출시 예정"으로 나간다.
+ *  * OUTFIT-BASE — 무료 기본 의상(남색 후드 · 반바지). 누구나 처음부터 입는다.
+ *  * CLO-001 ~ CLO-005 — 새 의상. 상의 + 반바지가 한 벌이다(슬롯을 나누지 않는다).
+ *
+ * 새 의상은 **아직 살 수 없다.** 등급 · 가격 · 발행량 · 토큰 주소가 정해지지
+ * 않았고 사고파는 흐름(서버 · 결제 · 민팅)도 없다. 그래서 값을 적지 않고 "출시
+ * 예정"으로 두며, 보유하지 않았으니 미리보기만 된다(데모 모드에서는 체험 착용).
+ *
+ * 색은 상품 그림이 없을 때 쓰는 옷 아이콘([com.stepup.android.ui.components.GarmentArt])용이다.
  */
 object Outfits {
+    /** 기본 의상의 id. 예전부터 이 값으로 저장돼 있어 카탈로그의 "OUTFIT-BASE" 대신 그대로 쓴다. */
+    const val BASE_ID = "starter_hoodie"
+
     val STARTER_HOODIE = Outfit(
-        id = "starter_hoodie",
+        id = BASE_ID,
         top = 0xFF141A26, topShade = 0xFF0C1019, trim = 0xFF2F7BFF,
         shorts = 0xFF10151F, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
         socks = 0xFFE8EEF8, longSleeve = true, nft = false, starter = true,
     )
-    val STARTER_TEE = Outfit(
-        id = "starter_tee",
-        top = 0xFF1C2A4A, topShade = 0xFF121C33, trim = 0xFF5AA7FF,
-        shorts = 0xFF10151F, cap = 0xFF1C2A4A, capLogo = 0xFFE8EEF8,
-        socks = 0xFF1C2A4A, longSleeve = false, nft = false, starter = true,
+    /** 코어 집 — 남색 집업 후드 · 반바지, 코발트 대각선 패널과 청록 파이핑 */
+    val CORE_ZIP = Outfit(
+        id = "CLO-001",
+        top = 0xFF141C33, topShade = 0xFF0B1122, trim = 0xFF1E5BFF,
+        shorts = 0xFF111830, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
+        socks = 0xFF1E5BFF, longSleeve = true, nft = true, starter = false,
     )
-    val UP_HOODIE = Outfit(
-        id = "up_hoodie",
-        top = 0xFF0E1320, topShade = 0xFF070A12, trim = 0xFF22D3EE,
-        shorts = 0xFF0E1320, cap = 0xFF0E1320, capLogo = 0xFF22D3EE,
-        socks = 0xFF22D3EE, longSleeve = true, nft = true, starter = false,
+    /** 엠버 셸 — 검정 기술형 재킷 · 반바지, 주황 불꽃형 패널 */
+    val EMBER_SHELL = Outfit(
+        id = "CLO-002",
+        top = 0xFF18181C, topShade = 0xFF0C0C10, trim = 0xFFFF6A1A,
+        shorts = 0xFF141418, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
+        socks = 0xFFFF6A1A, longSleeve = true, nft = true, starter = false,
     )
-    val SPORTY_JACKET = Outfit(
-        id = "sporty_jacket",
-        top = 0xFFE9EEF6, topShade = 0xFFC3CCDA, trim = 0xFF1677FF,
-        shorts = 0xFF1B2640, cap = 0xFFE9EEF6, capLogo = 0xFF1677FF,
-        socks = 0xFFE9EEF6, longSleeve = true, nft = true, starter = false,
+    /** 타이드 아노락 — 흰색 · 로열블루 반집업 아노락, 남색 반바지 */
+    val TIDE_ANORAK = Outfit(
+        id = "CLO-003",
+        top = 0xFFEEF3FA, topShade = 0xFFC7D3E6, trim = 0xFF1F4FE0,
+        shorts = 0xFF141C33, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
+        socks = 0xFF1F4FE0, longSleeve = true, nft = true, starter = false,
     )
-    val NEON_TRACK = Outfit(
-        id = "neon_track",
-        top = 0xFF0B3A5C, topShade = 0xFF072740, trim = 0xFF5CF2FF,
-        shorts = 0xFF0B3A5C, cap = 0xFF072740, capLogo = 0xFF5CF2FF,
-        socks = 0xFF0B3A5C, longSleeve = false, nft = true, starter = false,
+    /** 볼트 저지 — 차콜 반팔 저지 · 반바지, 노랑 번개와 연보라 파이핑 */
+    val VOLT_JERSEY = Outfit(
+        id = "CLO-004",
+        top = 0xFF2E3038, topShade = 0xFF1C1E24, trim = 0xFFFFD12A,
+        shorts = 0xFF26282E, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
+        socks = 0xFFFFD12A, longSleeve = false, nft = true, starter = false,
     )
-    val STORM_SHELL = Outfit(
-        id = "storm_shell",
-        top = 0xFF3A4152, topShade = 0xFF262B38, trim = 0xFFFFC53D,
-        shorts = 0xFF1C2029, cap = 0xFF262B38, capLogo = 0xFFFFC53D,
-        socks = 0xFF1C2029, longSleeve = true, nft = true, starter = false,
+    /** 에어로 윈드브레이커 — 흰색 바람막이 · 연회색 반바지, 민트 곡선 패널 */
+    val AERO_WINDBREAKER = Outfit(
+        id = "CLO-005",
+        top = 0xFFF4F6F8, topShade = 0xFFD2D9E0, trim = 0xFF3FE0C0,
+        shorts = 0xFFC9CED6, cap = 0xFF121826, capLogo = 0xFF3D8BFF,
+        socks = 0xFF3FE0C0, longSleeve = true, nft = true, starter = false,
     )
 
-    val ALL = listOf(STARTER_HOODIE, STARTER_TEE, UP_HOODIE, SPORTY_JACKET, NEON_TRACK, STORM_SHELL)
+    val ALL = listOf(STARTER_HOODIE, CORE_ZIP, EMBER_SHELL, TIDE_ANORAK, VOLT_JERSEY, AERO_WINDBREAKER)
 
     val DEFAULT = STARTER_HOODIE
 
+    /** 모르는 id(예전에 있던 기본 티셔츠 등)는 기본 의상으로 */
     fun of(id: String?): Outfit = ALL.firstOrNull { it.id == id } ?: DEFAULT
 }
 

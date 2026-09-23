@@ -1,6 +1,5 @@
 package com.stepup.android.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,15 +62,7 @@ import com.stepup.android.ui.theme.Volt
  * 그림은 ContentScale.Fit 이다 — 비율을 지키고, 모자와 신발 끝이 잘리지
  * 않는다. 어떤 그림을 쓸지와, 그 그림이 실제 착장과 맞는지는
  * [AvatarArtCatalog] 가 정한다.
- */
-@DrawableRes
-fun AvatarArt.drawableRes(): Int = when (this) {
-    AvatarArt.MALE_RUN -> R.drawable.avatar_male_running
-    AvatarArt.MALE_IDLE -> R.drawable.avatar_male_idle
-    AvatarArt.FEMALE_IDLE -> R.drawable.avatar_female_idle
-}
-
-/**
+ *
  * 캐릭터 그림 한 장 — 배경 없이.
  *
  * 작은 자리(성별 카드 · 내 정보 머리)에 쓴다. 전신을 Fit 으로 넣는다.
@@ -303,7 +294,13 @@ fun AvatarLookNote(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(R.string.avatar_art_base_look),
+                text = stringResource(
+                    when {
+                        !render.outfitShown && !render.shoeShown -> R.string.avatar_art_base_look
+                        !render.shoeShown -> R.string.avatar_art_base_shoes
+                        else -> R.string.avatar_art_base_outfit
+                    },
+                ),
                 fontSize = 10.sp,
                 color = Silver,
                 maxLines = 1,

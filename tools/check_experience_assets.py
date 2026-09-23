@@ -36,4 +36,18 @@ for name in ['avatar_male_running', 'avatar_female_idle']:
 # RUNO 서 있기 — 캐릭터 가이드에서 떼어 낸 그림(원본 309×573 을 2배). 알파만 본다.
 head = (RES / 'drawable-nodpi' / 'avatar_male_idle.webp').read_bytes()[:30]
 assert head[12:16] == b'VP8X' and head[20] & 0x10, 'avatar_male_idle: no alpha'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images')
+# RUNO 장비 그림 — 신발 52 · 의상 5 착용 전신과 의상 상품 5 (design/equipment 시트에서 떼어 냄)
+import json
+catalog = json.loads((ROOT / 'design/equipment/equipment-catalog.json').read_text(encoding='utf-8'))
+shoe_ids = [x['id'] for x in catalog['shoes']]
+outfit_ids = [x['id'] for x in catalog['outfits']]
+assert len(shoe_ids) == 52 and len(set(shoe_ids)) == 52, len(shoe_ids)
+for p in ['FIR', 'WAT', 'LIT', 'WND']:
+    assert sum(1 for i in shoe_ids if i.startswith(p)) == 13, p
+assert outfit_ids == ['CLO-001', 'CLO-002', 'CLO-003', 'CLO-004', 'CLO-005'], outfit_ids
+wanted = [f"avatar_runo_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + outfit_ids]
+wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in outfit_ids]
+for name in wanted:
+    head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
+    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images; 52 shoe + 5 outfit RUNO figures and 5 outfit products')

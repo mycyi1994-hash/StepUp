@@ -1398,7 +1398,7 @@
 
     <!-- 디자인 패키지 적용 — 캐릭터 그림 · 러닝 중 · 러닝 완료 · 커뮤니티 -->
     <string name="avatar_art_wearing">正在穿着%1$s</string>
-    <string name="avatar_art_base_look">角色图为基础装扮</string>
+    <string name="avatar_art_base_look">形象图准备中 · 暂显示基础装扮</string>
     <string name="customize_preview_missing">还没有穿着所选服装或鞋子的角色图。当前显示的是基础装扮。</string>
     <string name="customize_preview_missing_badge">图片准备中</string>
     <string name="customize_equipped_art_pending">已装备。穿着此物品的角色图正在准备中。</string>
@@ -1422,4 +1422,13 @@
     <string name="home_shortcut_news_sub">赛事 · 跑步资讯</string>
     <string name="challenge_hero_sub">跑得越多，奖励越多。</string>
     <string name="challenge_reward_label">奖励</string>
+
+    <!-- RUNO 장비 — 새 의상 5종 · 그림 안내 -->
+    <string name="outfit_clo_001">核心拉链衫</string>
+    <string name="outfit_clo_002">余烬外壳</string>
+    <string name="outfit_clo_003">潮汐冲锋衣</string>
+    <string name="outfit_clo_004">闪电球衣</string>
+    <string name="outfit_clo_005">风行防风衣</string>
+    <string name="avatar_art_base_shoes">搭配图准备中 · 鞋子暂显示基础运动鞋</string>
+    <string name="avatar_art_base_outfit">搭配图准备中 · 服装暂显示基础服装</string>
 </resources>

@@ -94,14 +94,21 @@ class DesignReferenceTest {
 
     @After fun restore() {
         WalkSessionService.showStateForTest(WalkSessionState())
-        runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.MALE) }
+        runBlocking {
+            ServiceLocator.avatarRepository.setGender(AvatarGender.MALE)
+            ServiceLocator.userPrefs.setDemoMode(false)
+        }
     }
 
     private companion object {
         const val CAPTURE_DENSITY = 1.8f
     }
 
-    private enum class Scene { HOME, RUN_ACTIVE, RUN_FINISH, CUSTOMIZE_M, CUSTOMIZE_F, MARKET, NEWS, CHALLENGE, COMMUNITY, PROFILE }
+    private enum class Scene {
+        HOME, RUN_ACTIVE, RUN_FINISH, CUSTOMIZE_M, CUSTOMIZE_F, MARKET, NEWS, CHALLENGE, COMMUNITY, PROFILE,
+        // 장비 — 데모 체험으로 새 의상(엠버 셸)을 입고 시작 신발(클라우드 러너)을 신은 혼합 조합
+        HOME_TRIAL_OUTFIT, PROFILE_TRIAL_OUTFIT, CUSTOMIZE_TRIAL_OUTFIT,
+    }
 
     @Test fun referenceViewports() {
         ServiceLocator.stepRepository.startTracking()
@@ -158,7 +165,7 @@ class DesignReferenceTest {
                 // 저장소(DataStore · Room)의 값이 화면에 닿을 틈 — 성별 전환 등
                 Thread.sleep(400)
                 compose.waitForIdle()
-                if (s == Scene.HOME) {
+                if (s == Scene.HOME || s == Scene.HOME_TRIAL_OUTFIT) {
                     compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty() }
                 }
                 val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
@@ -198,19 +205,22 @@ class DesignReferenceTest {
         }
         runBlocking {
             ServiceLocator.avatarRepository.setGender(if (s == Scene.CUSTOMIZE_F) AvatarGender.FEMALE else AvatarGender.MALE)
+            val trial = s == Scene.HOME_TRIAL_OUTFIT || s == Scene.PROFILE_TRIAL_OUTFIT || s == Scene.CUSTOMIZE_TRIAL_OUTFIT
+            ServiceLocator.userPrefs.setDemoMode(trial)
+            if (trial) ServiceLocator.userPrefs.setDemoOutfit("CLO-002")
         }
     }
 
     @Composable private fun Render(s: Scene) {
         when (s) {
-            Scene.HOME -> HomeScreen()
+            Scene.HOME, Scene.HOME_TRIAL_OUTFIT -> HomeScreen()
             Scene.RUN_ACTIVE, Scene.RUN_FINISH -> RunScreen()
-            Scene.CUSTOMIZE_M, Scene.CUSTOMIZE_F -> CustomizeScreen()
+            Scene.CUSTOMIZE_M, Scene.CUSTOMIZE_F, Scene.CUSTOMIZE_TRIAL_OUTFIT -> CustomizeScreen()
             Scene.MARKET -> RunnerMarketScreen()
             Scene.NEWS -> NewsScreen()
             Scene.CHALLENGE -> EventsScreen()
             Scene.COMMUNITY -> CommunityScreen()
-            Scene.PROFILE -> ProfileScreen()
+            Scene.PROFILE, Scene.PROFILE_TRIAL_OUTFIT -> ProfileScreen()
         }
     }
 
