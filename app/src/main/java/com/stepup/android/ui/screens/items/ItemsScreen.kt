@@ -146,6 +146,7 @@ fun ItemsScreen(
             ItemsMessage.SaveFailed -> context.getString(R.string.feed_save_failed)
             ItemsMessage.NotEnoughBalance -> msgNoBalance
             ItemsMessage.BoostAlreadyActive -> msgBoostActive
+            ItemsMessage.EnergyCapacity -> context.getString(R.string.energy_purchase_capacity)
             ItemsMessage.BoostBought -> msgBoostBought
             ItemsMessage.MaxLevel -> msgMaxLevel
             is ItemsMessage.Upgraded -> msgUpgraded

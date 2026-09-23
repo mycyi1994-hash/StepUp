@@ -1505,5 +1505,6 @@ Start running with StepUp.</string>
     <string name="notif_reward_unverified">This earlier reward notice has no verified payment record. Check Challenges for available rewards.</string>
     <string name="session_sign_in_again">Sign in again</string>
     <string name="post_invalid_numbers">Enter a distance above 0 km, at least 1 minute until departure, and 2–200 people.</string>
+    <string name="energy_purchase_capacity">Use at least 2 energy, then try again. Pending purchases resume without another charge.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

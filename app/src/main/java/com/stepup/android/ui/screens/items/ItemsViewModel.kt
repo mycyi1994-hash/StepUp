@@ -28,6 +28,7 @@ sealed interface ItemsMessage {
     data object SaveFailed : ItemsMessage
     data object NotEnoughBalance : ItemsMessage
     data object BoostAlreadyActive : ItemsMessage
+    data object EnergyCapacity : ItemsMessage
     data object BoostBought : ItemsMessage
     data object MaxLevel : ItemsMessage
     data class Upgraded(val sneaker: Sneaker) : ItemsMessage
@@ -167,6 +168,7 @@ class ItemsViewModel(
                 null -> ItemsMessage.BoostBought
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance
                 PurchaseError.ALREADY_ACTIVE -> ItemsMessage.BoostAlreadyActive
+                PurchaseError.ENERGY_CAPACITY -> ItemsMessage.EnergyCapacity
             }
             ExperienceEvents.emit(if (message.value == ItemsMessage.BoostBought) FeedbackCue.Success else FeedbackCue.Error)
         }

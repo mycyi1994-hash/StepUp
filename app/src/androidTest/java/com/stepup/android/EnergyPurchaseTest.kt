@@ -22,6 +22,31 @@ import java.time.LocalDate
 import java.util.UUID
 
 class EnergyPurchaseTest {
+    @Test fun paidEnergyWaitsForCapacityWithoutConsumingItsReceipt() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val file = File(context.cacheDir, "capacity-test-${UUID.randomUUID()}.preferences_pb")
+        val store = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+        val prefs = UserPrefs(context, store)
+        try {
+            val today = LocalDate.now().toEpochDay()
+            val full = prefs.energy.first()
+            assertFalse(prefs.restorePurchasedEnergy("paid", today, 2.0))
+            prefs.consumeEnergy(today, 1.0)
+            assertFalse(prefs.restorePurchasedEnergy("paid", today, 2.0))
+            assertEquals(full - 1.0, prefs.energy.first(), 0.0)
+            prefs.consumeEnergy(today, 1.0)
+            assertTrue(prefs.restorePurchasedEnergy("paid", today, 2.0))
+            assertEquals(full, prefs.energy.first(), 0.0)
+            prefs.consumeEnergy(today, 1.0)
+            assertTrue(prefs.restorePurchasedEnergy("paid", today, 2.0))
+            assertEquals(full - 1.0, prefs.energy.first(), 0.0)
+        } finally {
+            scope.coroutineContext.job.cancelAndJoin()
+            file.delete()
+        }
+    }
+
     @Test fun interruptedDeliveryRetriesWithoutAnotherDebitOrEnergyCredit() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -35,8 +60,14 @@ class EnergyPurchaseTest {
             val rewards = RewardRepository(db.rewardDao(), db.sneakerDao(), db.boostDao(), db.notificationDao(), prefs)
             val boosts = BoostRepository(db, rewards, prefs)
             val today = LocalDate.now().toEpochDay()
-            prefs.consumeEnergy(today, 100.0)
             rewards.credit("EARN_EVENT", 100.0, "test fixture")
+            assertEquals(com.stepup.android.data.repo.PurchaseError.ENERGY_CAPACITY, boosts.purchase(BoostType.ENERGY_CELL))
+            assertEquals(100.0, db.rewardDao().balanceNow(), 0.0)
+            assertTrue(db.energyPurchaseDao().pending().isEmpty())
+            prefs.consumeEnergy(today, 1.0)
+            assertEquals(com.stepup.android.data.repo.PurchaseError.ENERGY_CAPACITY, boosts.purchase(BoostType.ENERGY_CELL))
+            assertEquals(100.0, db.rewardDao().balanceNow(), 0.0)
+            prefs.consumeEnergy(today, 100.0)
             db.openHelper.writableDatabase.execSQL("""
                 CREATE TRIGGER fail_energy_receipt BEFORE INSERT ON energy_purchases
                 BEGIN SELECT RAISE(ABORT, 'receipt failure'); END

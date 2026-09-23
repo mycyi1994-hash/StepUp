@@ -51,28 +51,32 @@ class BoostRepository(
         else database.withTransaction { purchaseInternal(type) }
 
     private suspend fun purchaseEnergy(): PurchaseError? {
-        val receipts = database.withTransaction {
+        val (receipts, error) = database.withTransaction {
             val pending = database.energyPurchaseDao().pending()
-            if (pending.isNotEmpty()) return@withTransaction pending // Retry delivery, never charge again.
+            if (pending.isNotEmpty()) return@withTransaction pending to null // Retry delivery, never charge again.
+            if (!prefs.hasEnergyCapacity(LocalDate.now().toEpochDay(), 2.0)) {
+                return@withTransaction emptyList<com.stepup.android.data.local.EnergyPurchase>() to PurchaseError.ENERGY_CAPACITY
+            }
             val type = BoostType.ENERGY_CELL
             if (!rewardRepository.spend(RewardType.SPEND_BOOST, type.cost, "부스트 구매: ${type.id}")) {
-                return@withTransaction null
+                return@withTransaction emptyList<com.stepup.android.data.local.EnergyPurchase>() to PurchaseError.NOT_ENOUGH_BALANCE
             }
             val now = System.currentTimeMillis()
             val receipt = com.stepup.android.data.local.EnergyPurchase(java.util.UUID.randomUUID().toString(), now, 2.0)
             database.energyPurchaseDao().insert(receipt)
             boostDao.insert(BoostEntity(type = type.id, activatedAt = now, expiresAt = now))
-            listOf(receipt)
-        } ?: return PurchaseError.NOT_ENOUGH_BALANCE
-        deliverEnergy(receipts)
-        return null
+            listOf(receipt) to null
+        }
+        if (error != null) return error
+        return if (deliverEnergy(receipts)) null else PurchaseError.ENERGY_CAPACITY
     }
 
     suspend fun recoverEnergyPurchases() = deliverEnergy(database.energyPurchaseDao().pending())
 
-    private suspend fun deliverEnergy(receipts: List<com.stepup.android.data.local.EnergyPurchase>) {
+    private suspend fun deliverEnergy(receipts: List<com.stepup.android.data.local.EnergyPurchase>): Boolean {
         for (receipt in receipts) {
-            prefs.restorePurchasedEnergy(receipt.id, LocalDate.now().toEpochDay(), receipt.amount)
+            // A refill/level change between debit and delivery must not discard paid energy.
+            if (!prefs.restorePurchasedEnergy(receipt.id, LocalDate.now().toEpochDay(), receipt.amount)) return false
             database.withTransaction {
                 if (database.energyPurchaseDao().pending().any { it.id == receipt.id }) {
                     rewardRepository.notify(NotificationType.BOOST_ACTIVATED, BoostType.ENERGY_CELL.id, BoostType.ENERGY_CELL.cost)
@@ -80,6 +84,7 @@ class BoostRepository(
                 }
             }
         }
+        return true
     }
 
     private suspend fun purchaseInternal(type: BoostType): PurchaseError? {
@@ -108,4 +113,4 @@ class BoostRepository(
     }
 }
 
-enum class PurchaseError { NOT_ENOUGH_BALANCE, ALREADY_ACTIVE }
+enum class PurchaseError { NOT_ENOUGH_BALANCE, ALREADY_ACTIVE, ENERGY_CAPACITY }

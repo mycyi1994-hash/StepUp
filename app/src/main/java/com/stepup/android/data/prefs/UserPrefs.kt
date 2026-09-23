@@ -576,17 +576,31 @@ class UserPrefs(
     }
 
     /** Applying a receipt and remembering it are one durable edit, including on replay. */
-    suspend fun restorePurchasedEnergy(receiptId: String, today: Long, amount: Double) {
+    suspend fun hasEnergyCapacity(today: Long, amount: Double): Boolean {
+        require(amount.isFinite() && amount > 0)
+        val prefs = store.data.first()
+        return RewardEconomy.maxEnergy(prefs[Keys.SNEAKER_LEVEL] ?: 1) - energyIn(prefs, today) >= amount
+    }
+
+    suspend fun restorePurchasedEnergy(receiptId: String, today: Long, amount: Double): Boolean {
         require(receiptId.isNotBlank() && amount.isFinite() && amount > 0)
+        var applied = false
         store.edit { prefs ->
             val receipts = prefs[Keys.ENERGY_RECEIPTS].orEmpty()
-            if (receiptId !in receipts) {
+            if (receiptId in receipts) {
+                applied = true
+            } else {
                 val max = RewardEconomy.maxEnergy(prefs[Keys.SNEAKER_LEVEL] ?: 1)
-                prefs[Keys.ENERGY] = (energyIn(prefs, today) + amount).coerceIn(0.0, max)
-                prefs[Keys.ENERGY_DAY] = today
-                prefs[Keys.ENERGY_RECEIPTS] = receipts + receiptId
+                val remaining = energyIn(prefs, today)
+                if (max - remaining >= amount) {
+                    prefs[Keys.ENERGY] = remaining + amount
+                    prefs[Keys.ENERGY_DAY] = today
+                    prefs[Keys.ENERGY_RECEIPTS] = receipts + receiptId
+                    applied = true
+                }
             }
         }
+        return applied
     }
 
     /** 자정 리필을 반영한 현재 에너지. [consumeEnergy]/[restoreEnergy]가 edit 안에서 쓴다. */

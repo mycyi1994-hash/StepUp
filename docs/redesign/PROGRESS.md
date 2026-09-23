@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — preserve purchased energy at capacity
+
+- Found that instant energy purchases charged even when the capped energy value could not increase. New purchases now check room for the full two energy before debit. Atomic DataStore delivery independently checks capacity again, so a refill between debit and delivery cannot silently discard paid energy or consume its receipt.
+- Undelivered receipts remain pending; retry delivers without charging again once capacity is available. Already-applied receipts acknowledge idempotently even if current energy is full. Added four-language feedback and tests for full/partly-full no-charge, deferred application and replay after consumption. Native validation is pending; no completion claim.
+- e16e1e2 Build APK 35921149269 passed; API 34/35 capture jobs 35921149272 remain running. Queued actual-display capture, dialog synchronization and v12 snapshot are ready for the next candidate.
+
 ## 2026-09-24 — finish-dialog synchronization finding
 
 - Downloaded 73d6f71 capture 35920433661. Interaction XML: 18 tests, one failure at ChromeNavigationTest line 168 after system Back; other 17 pass, including new live boost expiry and invalid meetup-number correction. The second dialog opening immediately sent system Back without waiting for the window, unlike its first opening. Added a displayed-title assertion before Back so it targets the dialog window. Needs native confirmation; do not claim the test fixed yet.

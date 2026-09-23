@@ -1503,5 +1503,6 @@
     <string name="notif_reward_unverified">此历史奖励通知没有已验证的发放记录。请前往挑战查看可领取的奖励。</string>
     <string name="session_sign_in_again">重新登录</string>
     <string name="post_invalid_numbers">距离须大于0公里，出发时间至少为1分钟后，人数须为2至200人。</string>
+    <string name="energy_purchase_capacity">请消耗至少2点能量后重试。待处理的购买不会再次扣费。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
