@@ -1258,7 +1258,10 @@ private fun MeHeader(
                 modifier = Modifier.align(Alignment.TopEnd).testTag("profile-settings"),
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text(
                 text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
                 fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Snow,

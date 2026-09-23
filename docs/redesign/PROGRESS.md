@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — partial native scene review
+
+- Inspected 859bba8's actual 360dp dark Home/Customize/Community/Profile captures, plus Community/Profile at 1.3 font scale. Home/wardrobe starter art and fixed main chrome render; profile's three destinations remain visible. Profile/community characters now stand against the same local ground plane, but the landscape's left/right edges still form a harsh rectangle. Added shared horizontal edge blending to TerraceStage; native follow-up remains required.
+- Profile nickname/edit control have no gap in these captures. Added 8dp spacing while retaining the 48dp shared edit target. English Community navigation label ellipsizes at 1.3 font scale; this is observed and still needs a final accessibility/product decision, not hidden as a visual pass.
+- Community capture is signed out and shows no meetup. This verifies that state only, not an authenticated meetup or external service. All imagery/geometry assessment here is scoped to the older 859bba8 revision; the recent detail migrations still need native evidence.
+
 ## 2026-09-24 — first stalled-gallery evidence recovered
 
 - 859bba8 gallery 35912849285 terminated cancelled at the workflow deadline. Downloaded partial artifacts to C:/Users/gana0/StepUp-captures/redesign-859bba8: 55 PNGs and interaction XML with eight tests, zero failures. The whole gallery did not complete; this is only scoped interaction evidence.

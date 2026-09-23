@@ -24,6 +24,9 @@ fun TerraceStage(modifier: Modifier = Modifier, content: @Composable BoxScope.()
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
             0f to Night, 0.16f to Color.Transparent, 0.92f to Color.Transparent, 1f to Night,
         )))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(
+            0f to Night, 0.09f to Color.Transparent, 0.91f to Color.Transparent, 1f to Night,
+        )))
         content()
     }
 }
