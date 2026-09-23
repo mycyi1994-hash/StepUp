@@ -69,11 +69,11 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:135 | pending | pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:121 | pending | pending |
 | ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:141 | pending | pending |
-| WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:86 | pending | pending |
+| WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:88 | pending | pending |
 | ConnectedAccountsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:62 | pending | pending |
 | ExperienceSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt:25 | pending | pending |
 | LanguageScreen | app/src/main/java/com/stepup/android/ui/screens/settings/LanguageScreen.kt:75 | pending | pending |
-| NotificationSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt:58 | pending | pending |
+| NotificationSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt:61 | pending | pending |
 | PrivacyScreen | app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt:50 | pending | pending |
 | SupportScreen | app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt:55 | pending | pending |
 | ThemeScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt:75 | pending | pending |

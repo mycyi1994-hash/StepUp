@@ -27,6 +27,9 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -60,12 +63,27 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     val savedMessage = stringResource(R.string.pref_saved)
     val notifySaved = { Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show() }
 
-    val prefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = NotifyPrefs())
+    val storedPrefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = null)
+    val prefs = storedPrefs ?: NotifyPrefs()
+    var saving by remember { mutableStateOf(false) }
+    val saveFailed = stringResource(R.string.feed_save_failed)
     val scope = rememberCoroutineScope()
     fun save(next: NotifyPrefs) {
-        scope.launch { ServiceLocator.userPrefs.setNotifyPrefs(next) }
-        ServiceLocator.pushRegistrar.syncPrefsInBackground(next)
-        notifySaved()
+        if (saving || storedPrefs == null) return
+        saving = true
+        scope.launch {
+            try {
+                ServiceLocator.userPrefs.setNotifyPrefs(next)
+                ServiceLocator.pushRegistrar.syncPrefsInBackground(next)
+                notifySaved()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(context, saveFailed, Toast.LENGTH_SHORT).show()
+            } finally {
+                saving = false
+            }
+        }
     }
 
     com.stepup.android.ui.components.DetailPage(
@@ -73,6 +91,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     ) {
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.Notifications,
                 title = stringResource(R.string.pref_push),
                 description = stringResource(R.string.pref_push_desc),
@@ -83,6 +102,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.Schedule,
                 title = stringResource(R.string.pref_goal_reminder),
                 description = stringResource(R.string.pref_goal_reminder_desc),
@@ -93,6 +113,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                 title = stringResource(R.string.pref_party_invite),
                 description = stringResource(R.string.pref_party_invite_desc),
@@ -103,6 +124,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.EmojiEvents,
                 title = stringResource(R.string.pref_event_news),
                 description = stringResource(R.string.pref_event_news_desc),
@@ -120,6 +142,7 @@ private fun ToggleRow(
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     GlowCard(
@@ -149,6 +172,7 @@ private fun ToggleRow(
                 )
             }
             Switch(
+                enabled = enabled,
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(

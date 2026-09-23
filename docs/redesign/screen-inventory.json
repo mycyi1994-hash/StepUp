@@ -399,7 +399,7 @@
     {
       "id": "WalletScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
-      "line": 86,
+      "line": 88,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -427,7 +427,7 @@
     {
       "id": "NotificationSettingsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
-      "line": 58,
+      "line": 61,
       "implementation": "pending",
       "verification": "pending"
     },

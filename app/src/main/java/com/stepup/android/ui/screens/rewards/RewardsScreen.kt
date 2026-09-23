@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -163,6 +165,7 @@ fun WalletScreen(
 
 /** 잔액 히어로 — 볼트 플레이트 + 헥사곤 워터마크 + sheen */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun BalanceHero(balance: Double?) {
     val shape = RoundedCornerShape(26.dp)
     Box(
@@ -196,19 +199,20 @@ private fun BalanceHero(balance: Double?) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = stringResource(R.string.wallet_balance),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = OnVolt.copy(alpha = 0.65f),
                     )
                     Text(
                         text = stringResource(R.string.wallet_tagline),
-                        fontSize = 10.sp,
+                        fontSize = 14.sp,
                         color = OnVolt.copy(alpha = 0.5f),
                     )
                 }
                 HexEmblem(size = 30.dp, glow = false)
             }
-            Row(verticalAlignment = Alignment.Bottom) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = balance?.let { "%,.2f".format(it) } ?: "—",
                     fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
@@ -217,10 +221,9 @@ private fun BalanceHero(balance: Double?) {
                     letterSpacing = (-1.5).sp,
                     color = OnVolt,
                 )
-                Spacer(Modifier.width(8.dp))
                 Text(
                     text = "SUP",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = OnVolt.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = 8.dp),

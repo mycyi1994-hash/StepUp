@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — wallet and preference verification follow-up
+
+- b263e80 downloaded XML has eight tests, zero failures, including full-ledger totals beyond the 100-entry history limit. Native wallet capture confirms shared detail chrome, readable current-status notice and unchanged parent navigation. Increased remaining tiny hero labels to 14sp and allowed amount/unit wrapping for large amounts/fonts; new typography still needs capture review.
+- Notification settings previously announced saved and dispatched synchronization before the local write completed. Success now follows the awaited local save; failure exposes retry feedback, cancellation propagates, and controls are gated during initial preference loading/save. Remote delivery/synchronization remains separately unverified.
+- c469d45 Build APK 35912132177 passed. Its newly strengthened visible-keyboard test is still running; do not carry forward the earlier weaker pass as proof of keyboard avoidance.
+
 ## 2026-09-24 — character-ground composition
 
 - Created a landscape riverside terrace with the built-in image tool, preserving the approved sunset world and reserving a continuous ground plane. Original PNG and exact prompt are in design/redesign-2026-09/assets; WebP is bundled.
