@@ -21,6 +21,10 @@ class ItemFilterInteractionTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun dismissDiscardsDraftAndApplyAndResetCommitAllConditionsTogether() {
+        val expectedScale = android.provider.Settings.System.getFloat(
+            compose.activity.contentResolver, android.provider.Settings.System.FONT_SCALE, 1f,
+        )
+        assertEquals(expectedScale, compose.activity.resources.configuration.fontScale, 0.01f)
         var open by mutableStateOf(true)
         var faction by mutableStateOf<String?>(null)
         var rarity by mutableStateOf<String?>(null)
@@ -70,7 +74,7 @@ class ItemFilterInteractionTest {
         // Reset is also a draft until Show results is pressed.
         compose.runOnIdle { assertEquals(Faction.FIRE.id, faction) }
         val directory = File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
-        captureDisplay(File(directory, "inventory-filter-reset.png"))
+        captureDisplay(File(directory, "inventory-filter-reset-$expectedScale.png"))
         compose.onNodeWithText(label(R.string.filter_apply)).assertIsDisplayed().performClick()
         compose.runOnIdle {
             assertNull(faction)

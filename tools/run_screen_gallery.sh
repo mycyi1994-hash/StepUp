@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 status=0
+original_font_scale=""
 # Persist evidence on the host while the emulator is alive: post-failure adb
 # cannot recover the last scene or Android logs after the device disappears.
 mkdir -p screen-gallery
@@ -30,6 +31,11 @@ mkdir -p screen-gallery/partial-captures
 ) > screen-gallery/partial-transfer-log.txt 2>&1 &
 capture_transfer_pid=$!
 collect_diagnostics() {
+  if [[ "$original_font_scale" == "null" ]]; then
+    timeout 10s adb shell settings delete system font_scale || true
+  elif [[ "$original_font_scale" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    timeout 10s adb shell settings put system font_scale "$original_font_scale" || true
+  fi
   kill "$logcat_pid" "$monitor_pid" "$capture_transfer_pid" 2>/dev/null || true
   wait "$logcat_pid" "$monitor_pid" "$capture_transfer_pid" 2>/dev/null || true
   sudo -n dmesg --ctime > screen-gallery/host-kernel.txt 2>&1 || true
@@ -85,7 +91,24 @@ pull_captures /sdcard/Android/data/com.stepup.android/files/login-checks/. scree
 mkdir -p screen-gallery/forms
 pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
 run_instrumentation gallery "com.stepup.android.ScreenGalleryTest"
-mkdir -p screen-gallery
+mkdir -p screen-gallery/gallery-results
+cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+# Real system font enlargement reaches separate Dialog windows, unlike a
+# CompositionLocal override on only the parent screen. Preserve its own reports.
+original_font_scale="$(timeout 10s adb shell settings get system font_scale | tr -d '\r')"
+if [[ "$original_font_scale" == "null" || "$original_font_scale" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  if timeout 10s adb shell settings put system font_scale 1.6; then
+    run_instrumentation large-font "com.stepup.android.ItemFilterInteractionTest"
+    mkdir -p screen-gallery/large-font-results screen-gallery/large-font-forms
+    cp -R app/build/outputs/androidTest-results/. screen-gallery/large-font-results/ || true
+    pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/large-font-forms/ || status=1
+  else
+    status=1
+  fi
+else
+  echo "Cannot verify original system font scale; enlarged-font validation not run" >&2
+  status=1
+fi
 timeout 20s adb logcat -d -s ScreenGallery AndroidRuntime > screen-gallery/capture-log.txt || true
 exit "$status"

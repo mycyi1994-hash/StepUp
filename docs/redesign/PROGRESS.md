@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — actual system font coverage for filter dialogs
+
+- Capture runner now runs the production filter interaction test again after setting Android system font scale to 1.6. This reaches the Dialog window itself; the test verifies Activity configuration matches the system setting and names its capture with the observed scale. Applying/resetting/dismissing uses unchanged assertions.
+- Standard gallery XML is preserved before the additional instrumentation run, and enlarged-font XML/screenshots have separate artifact folders. Failures still fail the overall run. Original system font is restored by exit cleanup; an unreadable original value fails the phase instead of inventing a default.
+- Runner shell syntax, source design contract and whitespace checks pass. Both font runs still require execution; no 1.6x visual approval or whole-app font-coverage claim is made. 580a9e4 build remains live, so changes remain local pending that build's terminal result.
+
 ## 2026-09-24 — inventory filter commit/cancel interaction coverage
 
 - Added native coverage using the production ItemFilterSheet: choose a faction then close without applying; reopen and confirm the draft was discarded; apply while preserving other conditions; reopen and reset, verifying the reset remains a draft until Apply. Final assertion checks faction/rarity cleared and equipment/sort restored together.
