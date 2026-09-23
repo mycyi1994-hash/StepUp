@@ -1784,6 +1784,101 @@ begin
     '남의 폰 토큰은 지울 수 없다');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 도전 보상 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+-- 도전을 받을 사람: 4444 — 앞선 검사의 기록과 섞이지 않게 새 사람으로 한다.
+insert into auth.users (id) values ('44444444-4444-4444-4444-444444444444') on conflict do nothing;
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('step_surge', 'Asia/Seoul') $q$,
+  '걸음이 모자라면 주간 도전을 받을 수 없다');
+
+do $$
+declare v_today bigint := (now() at time zone 'Asia/Seoul')::date - date '1970-01-01';
+begin
+  -- 사흘치 걸음. 하루 상한(48,000)을 넘긴 날은 상한까지만 들어간다.
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 30000, 'goal', 8000),
+    json_build_object('epoch_day', v_today - 1, 'steps', 99999, 'goal', 8000),
+    json_build_object('epoch_day', v_today - 40, 'steps', 40000, 'goal', 8000)
+  ));
+  perform pg_temp.ok(
+    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
+    '올린 걸음은 하루 상한까지, 30일보다 오래된 날은 버린다');
+
+  -- 걸음은 줄지 않는다
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 100, 'goal', 8000)));
+  perform pg_temp.ok(
+    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
+    '같은 날 더 적은 걸음을 올려도 줄지 않는다');
+
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 32000, 'goal', 8000)));
+  perform pg_temp.ok(
+    public.event_claim('step_surge', 'Asia/Seoul') = 250,
+    '목표를 채우면 주간 도전 보상이 나온다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('step_surge', 'Asia/Seoul') $q$,
+  '같은 주에 두 번 받을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('night_quest', 'Asia/Seoul') $q$,
+  '밤에 뛴 거리가 모자라면 나이트 러너를 받을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ insert into public.event_claims (user_id, event_id, period, amount)
+      values ('44444444-4444-4444-4444-444444444444', 'night_quest', 'once', 300) $q$,
+  '앱은 받은 기록을 직접 적을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('free_money', 'Asia/Seoul') $q$,
+  '없는 도전은 받을 수 없다');
+
+reset role;
+
+-- 밤 9시(서울)에 21km 뛴 기록 하나와, 판정에서 걸린 30km 기록 하나
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+values
+  ('44444444-4444-4444-4444-444444444444',
+   (date '2026-09-01' + time '21:00') at time zone 'Asia/Seoul',
+   (date '2026-09-01' + time '23:00') at time zone 'Asia/Seoul', 7200, 25000, 21000, 'CLEAN'),
+  ('44444444-4444-4444-4444-444444444444',
+   (date '2026-09-02' + time '21:00') at time zone 'Asia/Seoul',
+   (date '2026-09-02' + time '23:00') at time zone 'Asia/Seoul', 7200, 30000, 30000, 'FLAGGED');
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+do $$
+begin
+  perform pg_temp.ok(
+    round(public.event_progress('night_quest', 'Asia/Seoul')::numeric, 1) = 21.0,
+    '나이트 러너는 판정에서 걸린 세션을 빼고 센다');
+  perform pg_temp.ok(
+    public.event_claim('night_quest', 'Asia/Seoul') = 300,
+    '밤 20km 를 채우면 나이트 러너 보상이 나온다');
+  perform pg_temp.ok(
+    (select count(*) from public.event_claims) = 2,
+    '받은 기록은 본인이 읽을 수 있다');
+end $$;
+reset role;
+
+do $$
+begin
+  perform pg_temp.ok(
+    (select sum(amount) from public.sup_ledger
+      where user_id = '44444444-4444-4444-4444-444444444444' and kind = 'EARN_EVENT') = 550,
+    '두 보상이 서버 원장에 EARN_EVENT 로 적힌다');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

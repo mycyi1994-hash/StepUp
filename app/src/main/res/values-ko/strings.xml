@@ -262,6 +262,9 @@
     <string name="events_claimed">수령 완료</string>
     <string name="toast_claimed">+%1$s SUP 받았어요!</string>
     <string name="toast_not_finished">아직 달성 전이에요 — 조금만 더!</string>
+    <string name="toast_claim_already">이번 기간에는 이미 받았어요.</string>
+    <string name="toast_claim_failed">서버에 닿지 못했어요. 다시 눌러 주세요.</string>
+    <string name="toast_claim_sign_in">보상을 받으려면 로그인해야 해요.</string>
     <string name="invite_subject">StepUp에서 같이 달려요</string>
     <string name="invite_text">걷기만 해도 SUP가 쌓이는 StepUp, 같이 해요!</string>
     <string name="invite_send">보내기</string>

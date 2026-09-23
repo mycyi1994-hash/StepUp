@@ -8,6 +8,7 @@ import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.CommunityApi
 import com.stepup.android.data.remote.CourseApi
 import com.stepup.android.data.remote.CrewApi
+import com.stepup.android.data.remote.EventApi
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
 import com.stepup.android.data.remote.PartyApi
@@ -176,7 +177,12 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
             api = CourseApi(server),
         )
-        eventRepository = EventRepository(database.claimedEventDao(), rewardRepository)
+        eventRepository = EventRepository(
+            dao = database.claimedEventDao(),
+            rewardRepository = rewardRepository,
+            api = EventApi(server),
+            stepDao = database.stepDao(),
+        )
         notificationRepository = NotificationRepository(database.notificationDao(), rewardRepository)
         marketRepository = MarketRepository(
             api = MarketApi(server),

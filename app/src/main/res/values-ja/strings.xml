@@ -263,6 +263,9 @@
     <string name="events_claimed">受取済み</string>
     <string name="toast_claimed">+%1$s SUP を受け取りました！</string>
     <string name="toast_not_finished">まだ達成していません — あともう少し！</string>
+    <string name="toast_claim_already">この期間はすでに受け取りました。</string>
+    <string name="toast_claim_failed">サーバーに接続できませんでした。もう一度お試しください。</string>
+    <string name="toast_claim_sign_in">報酬を受け取るにはログインが必要です。</string>
     <string name="invite_subject">StepUpで一緒に走ろう</string>
     <string name="invite_text">StepUpなら歩くだけでSUPが貯まるよ。一緒に走ろう！</string>
     <string name="invite_send">送信</string>

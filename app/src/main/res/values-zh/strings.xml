@@ -262,6 +262,9 @@
     <string name="events_claimed">已领取</string>
     <string name="toast_claimed">已领取 +%1$s SUP！</string>
     <string name="toast_not_finished">还没完成 —— 再加把劲！</string>
+    <string name="toast_claim_already">本期已领取过。</string>
+    <string name="toast_claim_failed">无法连接服务器，请重试。</string>
+    <string name="toast_claim_sign_in">登录后才能领取奖励。</string>
     <string name="invite_subject">来 StepUp 一起跑</string>
     <string name="invite_text">我在 StepUp 上走走路就能赚 SUP，一起来跑吧！</string>
     <string name="invite_send">发送</string>
