@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — account ownership audit traced end to end
+
+- Traced saved runs through ClaimRepository, ServerSessionRecorder, StepUpServer and SQL auth.uid(): no recorded owner is checked before the current account's token is used. SessionHolder replacing a login does not partition local records. This verifies an attribution risk in the code path, not an observed real-user incident.
+- Added ACCOUNT-DATA-AUDIT.md with concrete persistence, migration, request-token binding, related stores and required concurrency/reopen cases. Legacy ownership must not be inferred from the present login; preserving data while preventing ambiguous uploads is required. No live account, server financial mutation or destructive migration was performed.
+- This closes the investigation gap and establishes a substantive remaining implementation requirement; it is not a fix or account-isolation completion. Current UI build/gallery jobs remain live and independent work continues.
+
 ## 2026-09-24 — isolate native verification suites from emulator loss
 
 - Both 580a9e4 API jobs lost their emulator in the first interaction phase, preventing any subsequent gallery/large-font run. The workflow now uses API 34/35 × interaction/gallery/large-font jobs, each with its own emulator. Every existing interaction class and both other suites remain required; fail-fast remains false and failures are not suppressed or retried.
