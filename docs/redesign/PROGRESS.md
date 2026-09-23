@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — notification delivery recovery coverage
+
+- Extracted the actual serialized preference-delivery controller from the Firebase registrar so failures and interleaving can be tested without an Android/Firebase runtime. PushRegistrar uses this controller; there is no separate test-only implementation.
+- Added bounded coroutine tests for rejected response and offline failure followed by successful retry, queued requests reading the newest persisted choice after a previous request finishes, and cancellation releasing the mutex without claiming success. Tests use deterministic gates rather than sleep or live service requests.
+- Source/design/resource checks pass. These new tests are not executed locally because the Android/JDK toolchain remains unavailable. Build 35926757996 and gallery 35926758041 for the preceding pushed revision are still running; do not attribute their eventual results to this local change. Real server, account transition, push delivery and whole-app validation remain outstanding.
+
 ## 2026-09-24 — distinguish local notification choices from server acknowledgement
 
 - Push preference uploads now expose Sending/Synced/Pending based on the actual ServerResult, including transport exceptions and cancellation. Previously returned server failures were ignored. The existing serialized latest-value delivery and startup/login retry remain intact.
