@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — remaining reward-facing balance initialization
+
+- Walk, customization, challenge and news view models now preserve unknown balance until the repository first emits, matching the inventory/home approach. Run completion renders an em dash with the SUP unit instead of an invented zero while loading. Reward eligibility and credit processing are unchanged.
+- Shared SecondaryHeader now keeps its SUP control present whenever it has a wallet destination, even before a balance arrives. Detail headers with neither balance nor wallet destination retain their existing spacer. This prevents loading state from temporarily removing the wallet control and changing the header composition.
+- Local inventory/design/resource/asset/whitespace checks pass. Nullable call sites were inspected; native compilation/cold-start captures remain required. 3961d68 build 35928586875 and gallery 35928586797 are running; the 580a9e4 gallery was also live when last checked. No whole-app balance/error-state completion claim is made.
+
 ## 2026-09-24 — actual system font coverage for filter dialogs
 
 - Capture runner now runs the production filter interaction test again after setting Android system font scale to 1.6. This reaches the Dialog window itself; the test verifies Activity configuration matches the system setting and names its capture with the observed scale. Applying/resetting/dismissing uses unchanged assertions.

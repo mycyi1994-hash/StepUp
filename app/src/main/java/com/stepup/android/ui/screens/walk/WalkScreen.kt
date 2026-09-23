@@ -1530,7 +1530,7 @@ private fun FinishCard(
     points: Double,
     upload: String?,
     look: com.stepup.android.domain.AvatarLook?,
-    balance: Double,
+    balance: Double?,
 ) {
     val context = LocalContext.current
     val voided = session.lastVerdict == RunVerdict.VOID
@@ -1667,7 +1667,7 @@ private fun FinishCard(
                     color = Silver,
                 )
                 Text(
-                    text = "%,.0f SUP".format(balance),
+                    text = balance?.let { "%,.0f SUP".format(it) } ?: "— SUP",
                     fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,

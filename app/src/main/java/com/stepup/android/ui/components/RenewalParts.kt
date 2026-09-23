@@ -213,7 +213,9 @@ fun SecondaryHeader(
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (title == null) Wordmark() else Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
-        if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(StepUpDesign.TouchTarget))
+        // Wallet-enabled headers keep the same slot while the balance is loading.
+        if (balance != null || onOpenWallet != null) SupPill(balance, onOpenWallet)
+        else Spacer(Modifier.size(StepUpDesign.TouchTarget))
     }
 }
 

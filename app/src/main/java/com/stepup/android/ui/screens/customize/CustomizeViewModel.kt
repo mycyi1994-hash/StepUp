@@ -42,8 +42,9 @@ class CustomizeViewModel(
         .map<AvatarLook, AvatarLook?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val balance: StateFlow<Double> = rewards.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewards.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 가진 신발 — 착용 중인 것이 맨 앞, 그다음 등급 높은 순 */
     val shoes: StateFlow<List<Sneaker>?> = sneakers.inventory

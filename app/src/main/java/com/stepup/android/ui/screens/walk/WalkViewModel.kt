@@ -54,8 +54,9 @@ class WalkViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /** 헤더 컴팩트 토큰 표시용 SUP 잔액 */
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
      * 랩은 세션 상태의 일부로 서비스가 소유한다.

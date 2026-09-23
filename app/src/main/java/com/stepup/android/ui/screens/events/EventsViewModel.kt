@@ -49,8 +49,9 @@ class EventsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val claimingId = MutableStateFlow<String?>(null)
 
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 주간 챌린지(Step Surge) 진행도 — 실제 최근 7일 걸음 합계 */
     val weekSteps: StateFlow<Long?> = stepRepository.observeWeek()
