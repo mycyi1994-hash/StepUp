@@ -133,8 +133,9 @@ class WalkViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 완료 화면의 캐릭터 — 홈 · 꾸미기와 같은 모습 */
-    val look: StateFlow<AvatarLook> = ServiceLocator.avatarRepository.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = ServiceLocator.avatarRepository.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 완료 화면의 오늘 목표 진행 */
     val todaySteps: StateFlow<Int> = stepRepository.todaySteps

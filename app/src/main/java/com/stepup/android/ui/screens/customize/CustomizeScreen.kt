@@ -110,7 +110,15 @@ fun CustomizeScreen(
     viewModel: CustomizeViewModel = viewModel(factory = CustomizeViewModel.Factory),
 ) {
     val context = LocalContext.current
-    val look by viewModel.look.collectAsStateWithLifecycle()
+    val savedLook by viewModel.look.collectAsStateWithLifecycle()
+    val look = savedLook ?: run {
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxSize(), contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.feed_loading), color = Silver)
+        }
+        return
+    }
     val balance by viewModel.balance.collectAsStateWithLifecycle()
     val shoes by viewModel.shoes.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()

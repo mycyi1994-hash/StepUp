@@ -418,9 +418,10 @@ fun RunScreen(
     val finishing = !session.isActive && session.lastRewardPoints != null
 
     var showDetails by rememberSaveable { mutableStateOf(false) }
-    val render = com.stepup.android.domain.AvatarArtCatalog.resolve(
-        look, if (running) AvatarPose.RUN else AvatarPose.IDLE,
-    )
+    val savedLook = look
+    val render = savedLook?.let {
+        com.stepup.android.domain.AvatarArtCatalog.resolve(it, if (running) AvatarPose.RUN else AvatarPose.IDLE)
+    }
     Column(
         Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -470,12 +471,18 @@ fun RunScreen(
             if (recordingCourse && !readyToSaveCourse) {
                 CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
             }
-            com.stepup.android.ui.components.AvatarImage(
-                art = render.art,
-                contentDescription = stringResource(R.string.cd_home_character),
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
-            )
-            com.stepup.android.ui.components.AvatarLookNote(look, render)
+            if (render != null && savedLook != null) {
+                com.stepup.android.ui.components.AvatarImage(
+                    art = render.art,
+                    contentDescription = stringResource(R.string.cd_home_character),
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
+                )
+                com.stepup.android.ui.components.AvatarLookNote(savedLook, render)
+            } else {
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.feed_loading), color = Silver)
+                }
+            }
             RunHero(
                 paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                 elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
@@ -1522,7 +1529,7 @@ private fun FinishCard(
     session: WalkSessionState,
     points: Double,
     upload: String?,
-    look: com.stepup.android.domain.AvatarLook,
+    look: com.stepup.android.domain.AvatarLook?,
     balance: Double,
 ) {
     val context = LocalContext.current
@@ -1623,7 +1630,7 @@ private fun FinishCard(
 
         }
         // 내 캐릭터 — 축하 자세 그림이 아직 없어 같은 성별의 그림을 쓴다
-        CharacterStage(
+        if (look != null) CharacterStage(
             look = look,
             pose = if (voided) AvatarPose.IDLE else AvatarPose.CHEER,
             modifier = Modifier

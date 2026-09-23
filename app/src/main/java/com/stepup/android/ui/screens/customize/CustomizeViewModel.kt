@@ -38,8 +38,9 @@ class CustomizeViewModel(
     rewards: RewardRepository,
 ) : ViewModel() {
 
-    val look: StateFlow<AvatarLook> = avatars.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = avatars.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val balance: StateFlow<Double> = rewards.balance
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)

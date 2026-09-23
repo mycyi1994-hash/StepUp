@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — persisted appearance across run and wardrobe
+
+- Run/finish no longer initialize with a fabricated default AvatarLook. Running reserves the character area while waiting and keeps timer, metrics and controls independent; result data and Done remain available while art loads.
+- Customize and runner market wait for persisted appearance before rendering gender-specific previews or accepting appearance choices. Existing main chrome is owned by the root and remains visible. Profile/challenges already used nullable appearance.
+- Design-contract, resource, asset and whitespace checks pass. This closes the identified source-level default-avatar initialization sites, not the cold-start/device verification requirement. Native compilation, loading/error behavior and saved-LUMI relaunch captures remain pending.
+
 ## 2026-09-24 — home waits for persisted appearance
 
 - Home no longer emits a fabricated default AvatarLook before reading stored appearance. The character area shows a loading label until actual data arrives; More and start/resume remain accessible. Profile already used nullable appearance; run and wardrobe initial appearance still need the corresponding audit.
