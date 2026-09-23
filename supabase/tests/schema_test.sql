@@ -1932,6 +1932,81 @@ call pg_temp.must_fail(
   '앱은 알림 설정 표를 직접 고칠 수 없다');
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 푸시 보낼 목록 ───────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$ begin perform public.push_register('fcm-token-3333333333333333333333', 'ko'); end $$;
+reset role;
+
+do $$
+declare v_post bigint; v_c bigint; v_before int;
+begin
+  delete from public.push_outbox;
+  insert into public.posts (author_id, category, title, body)
+  values ('33333333-3333-3333-3333-333333333333', 'FREE', '푸시 검사 글', '')
+  returning id into v_post;
+
+  -- 2222 가 3333 의 글에 댓글 → 3333 에게
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '22222222-2222-2222-2222-222222222222', '좋은 글이에요') returning id into v_c;
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'COMMENT' and args->>'title' <> '')
+       from public.push_outbox where user_id = '33333333-3333-3333-3333-333333333333'),
+    '댓글이 달리면 글쓴이에게 보낼 푸시가 생긴다');
+
+  -- 3333 이 자기 글에 댓글 → 아무에게도 안 감. 2222 댓글에 답글 → 2222 에게
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '33333333-3333-3333-3333-333333333333', '감사합니다');
+  insert into public.comments (post_id, parent_id, author_id, body)
+  values (v_post, v_c, '33333333-3333-3333-3333-333333333333', '저도요');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox where user_id = '33333333-3333-3333-3333-333333333333') = 1,
+    '자기 글에 단 댓글은 자기에게 알리지 않는다');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '22222222-2222-2222-2222-222222222222' and kind = 'REPLY') = 1,
+    '답글이 달리면 댓글 단 사람에게 보낼 푸시가 생긴다');
+
+  -- 알림을 끈 사람에게는 쌓지 않는다
+  insert into public.notify_prefs (user_id, push) values ('33333333-3333-3333-3333-333333333333', false)
+    on conflict (user_id) do update set push = false;
+  select count(*) into v_before from public.push_outbox;
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '22222222-2222-2222-2222-222222222222', '한 번 더');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox) = v_before,
+    '푸시를 끈 사람에게는 보낼 푸시가 쌓이지 않는다');
+
+  -- 폰이 없는 사람(4444 는 토큰이 없다)에게도 쌓지 않는다
+  perform pg_temp.ok(
+    not exists (select 1 from public.push_outbox where user_id = '44444444-4444-4444-4444-444444444444'),
+    '받을 폰이 없는 사람에게는 쌓지 않는다');
+end $$;
+
+do $$
+declare r record; v_n int := 0;
+begin
+  for r in select * from public.push_claim_batch(10) loop
+    v_n := v_n + 1;
+    perform pg_temp.ok(jsonb_array_length(r.tokens) >= 1, '가져간 줄에는 받을 폰이 함께 온다');
+    perform public.push_mark(r.id, true, '');
+  end loop;
+  perform pg_temp.ok(v_n = 2, '쌓인 푸시를 한 번에 가져간다');
+  perform pg_temp.ok(
+    (select count(*) from public.push_claim_batch(10)) = 0,
+    '보냈다고 적은 줄은 다시 가져가지 않는다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+call pg_temp.must_fail($q$ select * from public.push_outbox $q$, '앱은 보낼 푸시 목록을 볼 수 없다');
+call pg_temp.must_fail($q$ select * from public.push_claim_batch(10) $q$, '앱은 보낼 푸시를 가져갈 수 없다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
