@@ -875,13 +875,13 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour2_title">에너지</string>
     <string name="tour2_body">적립할 때마다 에너지를 써요. 자정에 다시 차고, 0이 되면 내일까지 적립이 멈춰요.</string>
     <string name="tour3_title">러닝 시작</string>
-    <string name="tour3_body">여기를 눌러 시작하세요. 러닝 중의 걸음마다 스니커즈 부스트가 붙은 SUP가 쌓여요.</string>
+    <string name="tour3_body">홈의 러닝 시작을 누르세요. 필요한 권한을 확인한 뒤 운동을 기록해요.</string>
     <string name="tour4_title">게시판 / 크루</string>
     <string name="tour4_body">열린 게시판(번개러닝·꿀팁)과 크루(직접 만들 수 있는 소모임) 사이를 전환해요.</string>
     <string name="tour5_title">랭킹</string>
     <string name="tour5_body">이번 주 내 순위를 확인하세요. 누르면 주간 걸음/보유 SUP 전체 순위표가 열려요.</string>
     <string name="tour6_title">함께 달릴 사람 찾기</string>
-    <string name="tour6_body">함께 뛰기에서 예정된 모임을 찾아보세요. 이야기에서는 러너들의 글을 읽고 직접 글을 쓸 수 있어요.</string>
+    <string name="tour6_body">커뮤니티에서 함께 달릴 모임을 찾고 러너들의 이야기를 나눠보세요.</string>
     <string name="tour7_title">착용 중인 스니커즈</string>
     <string name="tour7_body">이 신발의 부스트가 모든 러닝에 적용돼요. 눌러서 스탯 확인·강화·교체를 할 수 있어요.</string>
     <string name="tour8_title">민팅</string>
@@ -891,7 +891,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour10_title">이벤트</string>
     <string name="tour10_body">주간 캠페인에서 실제 SUP를 받아요. 진행도를 확인하고 목표 달성 시 보상을 수령하세요.</string>
     <string name="tour11_title">내 프로필</string>
-    <string name="tour11_body">러너 ID가 여기 있어요. 연필을 눌러 아바타를 바꿔보세요 — 이모지나 갤러리 사진을 고를 수 있어요.</string>
+    <string name="tour11_body">내 정보에서 러닝 기록과 누적 거리를 확인해요. 이름 옆 연필로 닉네임을 바꿀 수 있어요.</string>
     <string name="tour12_title">업적 100종</string>
     <string name="tour12_body">브론즈부터 다이아까지, 1년 꾸준히 달리면 전부 달성할 수 있어요. 투어는 여기까지 — 이제 달려볼까요!</string>
 
@@ -1302,7 +1302,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour_tab_customize_title">② 꾸미기 탭</string>
     <string name="tour_tab_customize_body">내 캐릭터에 의상과 신발을 입히는 곳이에요. 러너 마켓도 이 안에 있어요.</string>
     <string name="tour_customize_title">내 캐릭터</string>
-    <string name="tour_customize_body">남자·여자를 고르고 의상과 신발을 장착해 보세요. 입힌 모습은 러닝·내 정보에도 똑같이 보여요.</string>
+    <string name="tour_customize_body">꾸미기에서 의상과 신발을 골라보세요. 장착한 모습은 러닝과 내 정보에도 그대로 보여요.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">체험 중</string>

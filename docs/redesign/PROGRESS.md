@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — short first-run flow and durable course outbox
+
+- First-use guide reduced from 11 steps to four everyday destinations: start running, customize, community and profile. Removed the payout-journey UI and its unavailable withdrawal/minimum claim. Updated four-language active copy to match current controls. Completing/skipping returns to Run; the gallery now checks completion reaches the home run action. New four-step captures and return behavior await this revision's execution.
+- Visual inspection of 9be0c87 guide-00 still showed the preceding home frame despite semantic availability; later steps were visible. Added a guide-title assertion and an extra Compose frame before each capture. Manual inspection remains required; the earlier successful gallery job alone does not establish image correctness.
+- Pending course records previously truncated to the newest 20 before acknowledgement. Removed that truncation: this is an upload outbox, not a recent-history list. Added a native 30-record persistence test covering reopen, repeated non-consuming reads, acknowledgement and a second reopen. Added the test to the required interaction suite; execution pending.
+- e537c44 Build APK 35932263780 passed. In run 35932263677, API 34 interaction, gallery and large-font jobs passed; API 35 large-font passed with the strict complete-footer-bounds assertion. Inspected its actual 1.6-font capture: both footer buttons now fully clear system navigation. API 35 interaction/gallery were still running at this checkpoint. This confirms the specific filter regression, not all dialog/IME states.
+- Local source/resource/shell checks pass. Account partitioning, active-run recovery, external integrations, all-state design review and final deliverables remain in scope and incomplete.
+
 ## 2026-09-24 — evidence-led settings fixes and Android 15 dialog dependency
 
 - Inspected eight native captures and recorded bounded findings/remaining states in VISUAL-REVIEW.md rather than overwriting generated inventory statuses. Wallet amount/unit baseline and faded hero labels corrected. Privacy no longer always paints granted checkmarks: it reads activity, precise/approximate location and app notification access, refreshes on resume, and opens real app settings. Four-language language-setting copy no longer promises automatic translation of every user post.

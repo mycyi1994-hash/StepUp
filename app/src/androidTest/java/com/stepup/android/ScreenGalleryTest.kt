@@ -258,9 +258,17 @@ class ScreenGalleryTest {
         compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
         for (index in GuideTour.steps.indices) {
             try {
+                compose.onNodeWithText(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
+                compose.mainClock.advanceTimeByFrame()
                 capture("guide-${index.toString().padStart(2, '0')}")
                 if (index < GuideTour.steps.lastIndex) tap(R.string.guide_next)
             } catch (error: Throwable) { failures.add("guide-$index: ${error.message}"); break }
+        }
+        if (GuideTour.stepIndex == GuideTour.steps.lastIndex) {
+            tap(R.string.guide_start)
+            compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+            org.junit.Assert.assertFalse("Guide completion returns to usable home", GuideTour.active)
+            capture("guide-finished-home")
         }
         File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
         org.junit.Assert.assertTrue("Missing gallery states:\n${failures.joinToString("\n")}", failures.isEmpty())

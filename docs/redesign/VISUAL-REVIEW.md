@@ -23,3 +23,7 @@ The fixture renders a 390×844dp viewport at density 1.8 inside a larger device 
 - 5c4fe1a large-font API 35 capture shows filter footer under system navigation despite passing clicks. API 34 shows full footer. The stronger bounds assertion subsequently catches the API 35 failure.
 - 9be0c87 API 35 large-font capture confirms `decorFitsSystemWindows=false` alone did not resolve it. Upstream Dialog inset handling is missing from installed UI 1.7.6 source and present in UI 1.8.2 source; BOM 2025.06.00 selects UI/Foundation/Runtime 1.8.2 and Material3 1.3.2. [Upstream fix](https://android.googlesource.com/platform/frameworks/support/+/8365bb7470019e7cf7bfc046dda9cc8d978a8d23). Upgrade requires full build/native regression checks.
 - 9be0c87 navigation diagnostics: first Run label reports layout size 40×28 versus paragraph width 148. Explicit full-width label layout now matches the tab's allocated width; overflow assertions remain mandatory. This is pending verification, not a waived assertion.
+
+### Verified follow-up at e537c44
+
+API 35 large-font capture from 35932263677 inspected at `C:/Users/gana0/StepUp-captures/redesign-e537c44/api-35-large-font/screen-gallery/large-font-forms/inventory-filter-reset-1.6.png`: the full Reset and Show results controls are above the gesture navigation area. Its stricter bounds/interaction test passes. API 34 interaction (including all Chrome viewport scenarios), gallery and large-font jobs also passed. Other dialog states, current edits and physical devices are not covered by this observation.

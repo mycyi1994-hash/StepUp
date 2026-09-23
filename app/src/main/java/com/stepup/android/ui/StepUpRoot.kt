@@ -643,6 +643,7 @@ internal fun MainScaffold(
             },
             onFinished = {
                 scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
+                navController.switchTab(Screen.Run)
             },
         )
     }

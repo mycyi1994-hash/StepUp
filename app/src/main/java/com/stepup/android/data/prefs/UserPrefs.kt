@@ -347,9 +347,9 @@ class UserPrefs(
         store.edit {
             val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
             rows[startedAt] = track
-            // 오래 못 올린 것까지 끝없이 쌓지 않는다 — 최근 20개만
-            val kept = rows.entries.sortedByDescending { e -> e.key }.take(20)
-            it[Keys.PENDING_COURSE_RUNS] = kept.joinToString("\n") { e -> "${e.key}\t${e.value}" }
+            // This is an outbox, not recent-history UI. Never discard an unacknowledged run.
+            it[Keys.PENDING_COURSE_RUNS] = rows.entries.sortedBy { e -> e.key }
+                .joinToString("\n") { e -> "${e.key}\t${e.value}" }
         }
     }
 

@@ -877,13 +877,13 @@ Start running with StepUp.</string>
     <string name="tour2_title">Energy</string>
     <string name="tour2_body">Earning uses energy — it refills at midnight. When it hits zero, steps stop paying until tomorrow.</string>
     <string name="tour3_title">Start Run</string>
-    <string name="tour3_body">Tap here to start. Steps during the run earn SUP with your sneaker boost.</string>
+    <string name="tour3_body">Tap Start run on Home. After checking the permissions you need, StepUp records your activity.</string>
     <string name="tour4_title">Board / Crews</string>
     <string name="tour4_body">Switch between the open board (flash runs, tips) and your crews — small communities you can create yourself.</string>
     <string name="tour5_title">Ranking</string>
     <string name="tour5_body">See where you stand this week. Tap to open the full leaderboard — weekly steps or SUP balance.</string>
     <string name="tour6_title">Meet other runners</string>
-    <string name="tour6_body">Find upcoming meetups in Run together. Open Stories to read posts, share tips or write your own.</string>
+    <string name="tour6_body">Find a group run and share stories with other runners in Community.</string>
     <string name="tour7_title">Equipped sneaker</string>
     <string name="tour7_body">This pair\'s boost applies to every run. Tap it to see stats, upgrade, or swap pairs.</string>
     <string name="tour8_title">Minting</string>
@@ -893,7 +893,7 @@ Start running with StepUp.</string>
     <string name="tour10_title">Events</string>
     <string name="tour10_body">Weekly campaigns pay real SUP. Check progress here and claim rewards when you hit the target.</string>
     <string name="tour11_title">Your profile</string>
-    <string name="tour11_body">Your runner ID lives here. Tap the pencil to change your avatar — pick an emoji or a photo from your gallery.</string>
+    <string name="tour11_body">In Profile, see your runs and total distance. Use the pencil beside your name to change your nickname.</string>
     <string name="tour12_title">100 achievements</string>
     <string name="tour12_body">From Bronze to Diamond — a year of steady running unlocks them all. That\'s the tour, enjoy StepUp!</string>
 
@@ -1304,7 +1304,7 @@ Start running with StepUp.</string>
     <string name="tour_tab_customize_title">② Style tab</string>
     <string name="tour_tab_customize_body">Dress your runner with outfits and shoes. The Runner Market is inside.</string>
     <string name="tour_customize_title">Your runner</string>
-    <string name="tour_customize_body">Pick male or female, then equip an outfit and shoes. What you wear shows up on Run and Me too.</string>
+    <string name="tour_customize_body">Choose clothes and shoes in Customize. Your equipped look also appears during runs and in your profile.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">Trying on</string>

@@ -88,15 +88,13 @@ import com.stepup.android.ui.theme.VoltText
 data class GuideStep(
     /**
      * [Modifier.guideTarget]로 등록한 대상 키.
-     * 비어 있으면 가리킬 곳 없이 설명만 보여준다(여정 개요).
+     * 대상의 배치가 준비되지 않았으면 설명만 보여준다.
      */
     val key: String,
     /** 이 스텝이 속한 하단 탭 라우트 */
     val tabRoute: String,
     val titleRes: Int,
     val bodyRes: Int,
-    /** 러닝 → 출금 전체 흐름 카드를 함께 보여준다 */
-    val journey: Boolean = false,
 )
 
 object GuideTour {
@@ -139,37 +137,13 @@ object GuideTour {
         fun tab(route: String) = "tab_$route"
     }
 
-    /*
-     * 순서에 두 가지 규칙이 있다.
-     *
-     * 하나, **돈이 흐르는 길을 맨 앞에** 둔다. 이 앱을 처음 여는 사람이
-     * 가장 먼저 묻는 것은 "그래서 뛰면 뭐가 남는데"이다. 걸음 수 카드 설명을
-     * 세 장 넘긴 뒤에 답하면 늦다.
-     *
-     * 둘, **탭을 소개한 다음에 그 안의 기능을 설명한다.** 기능만 설명하고
-     * 넘어가면 "좋은 기능이구나"까지는 가도 "어디서 다시 찾지"에서 막힌다.
-     */
+    /** Four everyday actions; no unsupported payout promises. */
     val steps: List<GuideStep> = listOf(
-        // ── 러닝 → 출금, 전체 흐름 ──
-        GuideStep("", "home", R.string.tour_journey_title, R.string.tour_journey_body, journey = true),
-
-        // ── 러닝: 그 흐름이 실제로 어디에 있는지 ──
-        GuideStep(Targets.tab("home"), "home", R.string.tour_tab_home_title, R.string.tour_tab_home_body),
+        // One useful action per main destination; advanced features remain in the app.
         GuideStep(Targets.HOME_START_RUN, "home", R.string.tour3_title, R.string.tour3_body),
-        GuideStep(Targets.HOME_TOKEN, "home", R.string.tour_token_title, R.string.tour_token_body),
-        GuideStep(Targets.HOME_SHORTCUTS, "home", R.string.tour_shortcuts_title, R.string.tour_shortcuts_body),
-
-        // ── 꾸미기 ──
-        GuideStep(Targets.tab("customize"), "customize", R.string.tour_tab_customize_title, R.string.tour_tab_customize_body),
         GuideStep(Targets.CUSTOMIZE_PREVIEW, "customize", R.string.tour_customize_title, R.string.tour_customize_body),
-
-        // ── 커뮤니티 ──
-        GuideStep(Targets.tab("community"), "community", R.string.tour_tab_community_title, R.string.tour_tab_community_body),
         GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour6_title, R.string.tour6_body),
-
-        // ── 내 정보 ──
-        GuideStep(Targets.tab("profile"), "profile", R.string.tour_tab_profile_title, R.string.tour_tab_profile_body),
-        GuideStep(Targets.PROFILE_AVATAR, "profile", R.string.tour11_title, R.string.tour11_body),
+        GuideStep(Targets.tab("profile"), "profile", R.string.tour11_title, R.string.tour11_body),
     )
 
     val current: GuideStep? get() = if (active) steps.getOrNull(stepIndex) else null
@@ -340,9 +314,6 @@ fun GuideOverlay(
                     (target.top.toDp().value - 178f - controlsLiftDp).coerceAtLeast(52f)
                 }
             }
-        } else if (step.journey) {
-            // 다섯 줄짜리 카드라 아래로 길다. 조금 위에서 시작해야 다 보인다.
-            screenHeightDp * 0.12f
         } else {
             screenHeightDp * 0.32f
         }
@@ -393,7 +364,6 @@ fun GuideOverlay(
                     color = Silver,
                     lineHeight = 19.sp,
                 )
-                if (step.journey) JourneyFlow()
             }
 
             if (target != null && !pointsUp) Pointer(up = false, pulse = pulse)
@@ -467,108 +437,5 @@ private fun Pointer(up: Boolean, pulse: Float) {
         }
         // 카드 테두리와 같은 파랑. 막 위에서 읽혀야 하므로 밝은 쪽을 쓴다.
         drawPath(path, color = VoltSoft)
-    }
-}
-
-/**
- * 러닝 → 출금까지 한 장.
- *
- * 투어의 첫 장에 둔다. 이 앱을 처음 여는 사람이 가장 먼저 묻는 것은
- * "뛰면 뭐가 남는가"이고, 그 답을 다섯 줄로 먼저 보여 준 다음에야
- * 화면 구경이 의미를 갖는다.
- *
- * 마지막 줄(출금)에는 "준비 중"을 붙인다. 지금 되는 것처럼 그려 놓으면
- * 첫 화면에서 한 거짓말이 되고, 그건 1,000 SUP 를 모은 사람이 발견한다.
- */
-@Composable
-private fun JourneyFlow() {
-    val rows = listOf(
-        Triple(Icons.AutoMirrored.Filled.DirectionsRun, R.string.journey_run_label, R.string.journey_run_desc),
-        Triple(Icons.Filled.CheckCircle, R.string.journey_finish_label, R.string.journey_finish_desc),
-        Triple(Icons.Filled.Bolt, R.string.journey_earn_label, R.string.journey_earn_desc),
-        Triple(Icons.Filled.AccountBalanceWallet, R.string.journey_wallet_label, R.string.journey_wallet_desc),
-        Triple(Icons.Filled.North, R.string.journey_withdraw_label, R.string.journey_withdraw_desc),
-    )
-
-    Column(Modifier.padding(top = 6.dp)) {
-        rows.forEachIndexed { index, (icon, label, desc) ->
-            val soon = index == rows.lastIndex
-            Row(verticalAlignment = Alignment.Top) {
-                // 번호 원 + 아래로 잇는 선. 선이 있어야 다섯 줄이 목록이
-                // 아니라 "순서"로 읽힌다.
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            // 패널 바닥과 같은 색이면 원이 사라진다.
-                            // 한 단계 다른 면을 깔아 둘레가 보이게 한다.
-                            .background(if (soon) CarbonHigh else Volt.copy(alpha = 0.16f))
-                            .border(
-                                1.dp,
-                                if (soon) Slate else VoltText.copy(alpha = 0.55f),
-                                CircleShape,
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = if (soon) Silver else VoltText,
-                            modifier = Modifier.size(13.dp),
-                        )
-                    }
-                    if (!soon) {
-                        Box(
-                            Modifier
-                                .width(1.dp)
-                                .height(19.dp)
-                                // 잇는 선도 패널 위에 놓인다 — 어두운 테마에서
-                                // 묻히지 않게 밝은 쪽 파랑을 쓴다.
-                                .background(VoltText.copy(alpha = 0.45f)),
-                        )
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .padding(start = 11.dp, bottom = if (soon) 0.dp else 6.dp)
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            text = stringResource(label),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (soon) Silver else Snow,
-                        )
-                        if (soon) {
-                            Text(
-                                text = stringResource(R.string.journey_soon),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                // 같은 회색을 바탕과 글자에 같이 쓰면 배지가
-                                // 읽히지 않는다. 글자만 한 단계 올린다.
-                                color = Silver,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Slate.copy(alpha = 0.18f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
-                    }
-                    Text(
-                        text = stringResource(desc),
-                        fontSize = 11.sp,
-                        color = Silver,
-                        lineHeight = 15.sp,
-                    )
-                }
-            }
-        }
     }
 }

@@ -875,13 +875,13 @@
     <string name="tour2_title">能量</string>
     <string name="tour2_body">赚取会消耗能量，午夜恢复。归零后要等到明天才能继续赚。</string>
     <string name="tour3_title">开始跑步</string>
-    <string name="tour3_body">点击这里开始。跑步中的每一步都会累积带球鞋加成的SUP。</string>
+    <string name="tour3_body">点击首页的开始跑步。确认所需权限后，StepUp 会记录你的运动。</string>
     <string name="tour4_title">帖子 / 跑团</string>
     <string name="tour4_body">在公开帖子（闪电跑、干货）和跑团（可自建的小社群）之间切换。</string>
     <string name="tour5_title">排行榜</string>
     <string name="tour5_body">查看你本周的名次。点开可见完整榜单：周步数或 SUP 余额。</string>
     <string name="tour6_title">认识跑步伙伴</string>
-    <string name="tour6_body">在一起跑中寻找即将开始的活动。在交流中阅读帖子、分享经验或自己发帖。</string>
+    <string name="tour6_body">在社区寻找一起跑步的伙伴，与其他跑者交流。</string>
     <string name="tour7_title">穿戴中的球鞋</string>
     <string name="tour7_body">这双鞋的加成作用于每次跑步。点开可查看属性、强化或更换。</string>
     <string name="tour8_title">铸造</string>
@@ -891,7 +891,7 @@
     <string name="tour10_title">活动</string>
     <string name="tour10_body">每周活动发放真 SUP。在这里查看进度，达标后领取奖励。</string>
     <string name="tour11_title">我的资料</string>
-    <string name="tour11_body">跑者 ID 在这里。点铅笔更换头像——可选表情或相册照片。</string>
+    <string name="tour11_body">在个人页面查看跑步记录和累计距离。点击名字旁的铅笔可修改昵称。</string>
     <string name="tour12_title">100 个成就</string>
     <string name="tour12_body">从青铜到钻石，坚持一年就能全部解锁。导览到此结束，开跑吧！</string>
 
@@ -1302,7 +1302,7 @@
     <string name="tour_tab_customize_title">② 装扮标签</string>
     <string name="tour_tab_customize_body">给角色穿衣服和鞋子的地方。跑者市场也在这里面。</string>
     <string name="tour_customize_title">我的角色</string>
-    <string name="tour_customize_body">选择男生或女生，再装备服装和鞋子。装扮会同样显示在跑步和我的页面。</string>
+    <string name="tour_customize_body">在装扮中选择衣服和跑鞋。装备后的形象也会显示在跑步和个人页面中。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">试穿中</string>
