@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — gallery failure localized; supported renderer experiment
+
+- c1641c1 diagnostic gallery 35918321776 failed. Host-side Android logs end after “Opening scene 5” (profile), before its capture. Host samples still show ~7.4 GB available immediately before emulator disappearance; kernel logs show no OOM kill/segfault, and emulator crash folder has no report. This narrows the failure but does not prove its cause.
+- The job uses emulator 37.1.11 with swiftshader_indirect, which official Android documentation marks deprecated since 36.4.9. Switched the gallery to documented `-gpu software` selection while retaining API/device/tests unchanged. This is a renderer experiment, not a claim that crashes are solved; inspect its full gallery results. Source: https://developer.android.com/studio/run/emulator-acceleration
+
 ## 2026-09-24 — meetup form validation
 
 - Removed silent numeric fallbacks/filtering from the meetup form: invalid distance/time/capacity remain editable and block submission with a localized explanation. Distance must be positive and finite, departure minutes positive, and capacity 2–200 (matching server bounds). Decimal-comma input is accepted; numeric keyboards are requested. Ordinary story/tip posts do not require meetup fields.

@@ -31,7 +31,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu software -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
             bash tools/run_screen_gallery.sh
