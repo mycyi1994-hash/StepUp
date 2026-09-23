@@ -159,8 +159,8 @@ private fun ToolbarButton(
 /**
  * 고른 조건을 짧은 글로.
  *
- * 세 개까지 적고 나머지는 "외 N개"로 줄인다. 두 줄을 넘기지 않는 것은
- * 요약이 목록보다 길어지면 요약이 아니기 때문이다.
+ * 세 개까지 적고 나머지는 "외 N개"로 줄인다. 요약과 초기화 동작을
+ * 분리해서 글자 확대 때도 조건과 버튼이 서로를 밀어내지 않는다.
  */
 @Composable
 fun FilterSummaryRow(
@@ -177,43 +177,30 @@ fun FilterSummaryRow(
         rest > 0 -> shown.joinToString(" · ") + " " + stringResource(R.string.filter_summary_more, rest)
         else -> shown.joinToString(" · ")
     }
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = text,
-            modifier = Modifier.weight(1f),
-            fontSize = 12.sp,
+            modifier = Modifier.fillMaxWidth(),
+            fontSize = StepUpDesign.SecondaryLabel,
             color = if (parts.isEmpty()) Slate else Silver,
-            lineHeight = 17.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            lineHeight = 20.sp,
         )
-        if (parts.isNotEmpty()) {
-            Text(
-                text = resetLabel ?: stringResource(R.string.filter_reset),
-                modifier = Modifier
-                    .quietClickable(onReset)
-                    .padding(vertical = 4.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-                maxLines = 1,
-            )
-        }
-        if (extraAction != null) {
-            Text(
-                text = extraAction.first,
-                modifier = Modifier
-                    .quietClickable(extraAction.second)
-                    .padding(vertical = 4.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Slate,
-                maxLines = 1,
-            )
+        if (parts.isNotEmpty() || extraAction != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (parts.isNotEmpty()) GhostButton(
+                    text = resetLabel ?: stringResource(R.string.filter_reset),
+                    onClick = onReset,
+                    modifier = Modifier.weight(1f),
+                )
+                if (extraAction != null) GhostButton(
+                    text = extraAction.first,
+                    onClick = extraAction.second,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }

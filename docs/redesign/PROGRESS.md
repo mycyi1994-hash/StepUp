@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — readable filter summaries and reachable reset
+
+- Shared filter summaries now separate the condition text from reset actions. The previous 12sp clickable labels with 4dp vertical padding are replaced by shared GhostButton controls; condition text uses the central 14sp secondary size and wraps instead of truncating. Up to three named conditions and the existing remaining-count summary are preserved.
+- This affects all consumers of FilterSummaryRow consistently, with existing callbacks unchanged. No reset action is added when no condition/extra action exists. Enlarged text layout and native list scrolling still need runtime verification.
+- Local inventory/design/resource/asset/whitespace checks pass. 3961d68 Build APK 35928586875 completed successfully; its gallery 35928586797 remains live. Queued unknown-balance, full navigation-label and home-readiness changes can now be pushed without cancelling that build. This build result does not validate those newer changes.
+
 ## 2026-09-24 — partial captures survive another emulator loss
 
 - Downloaded and inspected 580a9e4 gallery 35927968501. Both API jobs lost their emulator during ChromeNavigationTest before gallery execution; locale-dialog fix remains unverified. Host kernel logs contain no matched OOM/segfault evidence; no new root cause is claimed. Artifacts are under C:/Users/gana0/StepUp-captures/redesign-580a9e4.
