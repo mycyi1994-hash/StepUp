@@ -28,6 +28,21 @@ Supabase(Postgres) 에 올릴 표와 권한 규칙입니다.
 > 스키마를 고칠 때는 `migrations/` 쪽을 고치고 `scripts/build-setup-sql.py` 로
 > `setup.sql` 을 다시 만듭니다.
 
+### 매번 붙여넣기 싫다면 — 자동 적용
+
+GitHub 저장소 **Settings → Secrets and variables → Actions → New repository
+secret** 에 한 번만 넣어 두면, 이후로는 main 에 합쳐질 때마다
+`.github/workflows/deploy-sql.yml` 이 `setup.sql` 을 대신 올립니다.
+
+- 이름: `SUPABASE_DB_URL`
+- 값: Supabase 대시보드 위쪽 **Connect** → **Session pooler** 의 연결 문자열
+  (`postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-...pooler.supabase.com:5432/postgres`),
+  `[YOUR-PASSWORD]` 를 데이터베이스 비밀번호로 바꾼 것. **Direct connection 주소는
+  GitHub 에서 닿지 않습니다.**
+
+비밀이 없으면 이 작업은 건너뛰기만 합니다. 지금 것을 바로 올리려면 Actions →
+**Deploy server schema** → **Run workflow**.
+
 ---
 
 ## 무엇이 들어 있나

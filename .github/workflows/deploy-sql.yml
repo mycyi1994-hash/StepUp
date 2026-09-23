@@ -1,0 +1,58 @@
+# 서버 스키마 자동 적용.
+#
+# 지금까지는 migrations 가 늘 때마다 사용자가 setup.sql 을 SQL Editor 에
+# 붙여넣었다. main 에 합쳐지면 여기서 대신 올린다. setup.sql 은 몇 번을
+# 다시 올려도 안전하고(test-sql.yml 이 두 번 올려 확인한다) 한 트랜잭션이라
+# 중간에 실패하면 아무것도 바뀌지 않는다.
+#
+# 필요한 것: 저장소 Settings → Secrets and variables → Actions 에
+# SUPABASE_DB_URL (Supabase › Connect › Session pooler 의 연결 문자열,
+# 비밀번호를 채운 것). GitHub 러너는 IPv6 가 없어 db.<ref>.supabase.co
+# 직결 주소로는 닿지 않는다 — 반드시 pooler 주소를 쓴다.
+# 비밀이 없으면 건너뛰기만 하고 실패하지 않는다.
+name: Deploy server schema
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "supabase/setup.sql"
+      - ".github/workflows/deploy-sql.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 두 번 겹쳐 돌지 않게. 뒤에 온 것이 기다렸다가 최신 파일을 올린다.
+concurrency:
+  group: deploy-sql
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: setup.sql 이 migrations 와 일치하는가
+        run: |
+          python3 scripts/build-setup-sql.py
+          if ! git diff --quiet -- supabase/setup.sql; then
+            echo "::error::supabase/setup.sql 이 migrations/ 와 다릅니다. 올리지 않습니다."
+            exit 1
+          fi
+
+      - name: Supabase 에 적용
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL 비밀이 없어 건너뜁니다. setup.sql 을 SQL Editor 에 직접 붙여넣으세요."
+            exit 0
+          fi
+          command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -yq postgresql-client; }
+          # 연결 문자열은 로그에 찍지 않는다(비밀번호가 들어 있다).
+          PGCONNECT_TIMEOUT=20 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/setup.sql
+          echo "적용했습니다: $(git log -1 --format=%h -- supabase/setup.sql)"
