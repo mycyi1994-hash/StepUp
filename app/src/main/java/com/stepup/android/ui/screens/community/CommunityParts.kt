@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -518,7 +520,7 @@ fun LabeledField(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = label,
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp,
             color = Slate,
@@ -532,16 +534,18 @@ fun LabeledField(
                 .padding(horizontal = 13.dp, vertical = 12.dp),
         ) {
             if (value.isEmpty() && placeholder.isNotEmpty()) {
-                Text(placeholder, fontSize = 13.sp, color = Slate)
+                Text(placeholder, fontSize = 16.sp, color = Slate)
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = singleLine,
-                textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
+                textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 16.sp, lineHeight = 22.sp),
                 cursorBrush = SolidColor(Volt),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .semantics { contentDescription = label }
                     .then(if (minHeight > 0) Modifier.height(minHeight.dp) else Modifier),
             )
         }

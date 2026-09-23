@@ -48,7 +48,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 |---|---|---|---|
 | CommunityScreen | app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt:99 | pending | pending |
 | CrewBoardScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt:61 | pending | pending |
-| CrewCreateScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt:41 | pending | pending |
+| CrewCreateScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt:43 | pending | pending |
 | FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:90 | pending | pending |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:96 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:46 | pending | pending |

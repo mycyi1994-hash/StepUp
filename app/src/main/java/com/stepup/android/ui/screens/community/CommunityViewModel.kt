@@ -524,6 +524,9 @@ class CommunityViewModel(
         }
     }
 
+    private val _creatingCrew = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val creatingCrew: kotlinx.coroutines.flow.StateFlow<Boolean> = _creatingCrew
+
     fun createCrew(
         name: String,
         tagline: String,
@@ -531,7 +534,10 @@ class CommunityViewModel(
         policy: CrewJoinPolicy,
         onCreated: (String) -> Unit,
     ) {
+        if (name.isBlank() || _creatingCrew.value) return
+        _creatingCrew.value = true
         viewModelScope.launch {
+            try {
             when (val result = crewRepository.create(name, tagline, area, policy)) {
                 is CrewActionResult.Created -> {
                     ExperienceEvents.emit(FeedbackCue.Success)
@@ -540,6 +546,13 @@ class CommunityViewModel(
                 is CrewActionResult.Failed ->
                     _crewNotice.value = if (result.signIn) CrewNotice.SIGN_IN else CrewNotice.FAILED
                 else -> Unit
+            }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _crewNotice.value = CrewNotice.FAILED
+            } finally {
+                _creatingCrew.value = false
             }
         }
     }

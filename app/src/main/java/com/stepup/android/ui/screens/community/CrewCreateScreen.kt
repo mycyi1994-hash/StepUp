@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
 import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.ui.components.DarkIconButton
@@ -47,6 +49,7 @@ fun CrewCreateScreen(
     var tagline by rememberSaveable { mutableStateOf("") }
     var area by rememberSaveable { mutableStateOf("") }
     var policy by rememberSaveable { mutableStateOf(CrewJoinPolicy.OPEN) }
+    val creating by viewModel.creatingCrew.collectAsStateWithLifecycle()
 
     CrewNoticeToast(viewModel)
 
@@ -58,35 +61,13 @@ fun CrewCreateScreen(
         .joinToString("")
         .ifBlank { "ST" }
 
+    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+    com.stepup.android.ui.components.FocusHeader(stringResource(R.string.crew_create_title), onBack)
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 30.dp),
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.crew_create_title),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
         item {
             GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
                 Row(
@@ -103,16 +84,11 @@ fun CrewCreateScreen(
                         )
                         Text(
                             text = tagline.ifBlank { stringResource(R.string.crew_create_preview_tag) },
-                            fontSize = 11.sp,
+                            fontSize = 14.sp,
                             color = Silver,
                         )
                     }
                 }
-                Text(
-                    text = stringResource(R.string.crew_create_preview_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                )
             }
         }
 
@@ -146,13 +122,12 @@ fun CrewCreateScreen(
             }
         }
 
-        item {
-            VoltButton(
+    }
+            com.stepup.android.ui.components.PrimaryCta(
                 text = stringResource(R.string.crew_create_submit),
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && !creating,
                 onClick = { viewModel.createCrew(name, tagline, area, policy, onCreated) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             )
-        }
     }
 }

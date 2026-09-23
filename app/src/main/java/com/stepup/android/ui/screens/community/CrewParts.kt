@@ -145,31 +145,21 @@ fun CrewPolicyPicker(selected: CrewJoinPolicy, onSelect: (CrewJoinPolicy) -> Uni
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.crew_policy_title),
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Black,
             color = Slate,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            CrewJoinPolicy.entries.forEach { policy ->
-                val label = stringResource(policy.labelRes())
-                if (policy == selected) {
-                    VoltButton(text = label, onClick = {}, modifier = Modifier.weight(1f))
-                } else {
-                    GhostButton(
-                        text = label,
-                        onClick = { onSelect(policy) },
-                        modifier = Modifier.weight(1f),
-                        accent = Silver,
-                    )
-                }
-            }
-        }
+        com.stepup.android.ui.components.TwoWaySwitch(
+            labels = CrewJoinPolicy.entries.map { stringResource(it.labelRes()) },
+            selected = CrewJoinPolicy.entries.indexOf(selected),
+            onSelect = { onSelect(CrewJoinPolicy.entries[it]) },
+        )
         Text(
             text = stringResource(
                 if (selected == CrewJoinPolicy.APPROVAL) R.string.crew_policy_approval_desc
                 else R.string.crew_policy_open_desc,
             ),
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             color = Silver,
         )
     }

@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — crew creation form
+
+- Crew creation uses the shared focus header, scrolling inputs and a pinned primary action with IME padding. Removed redundant preview explanation; retained live identity preview and all fields/policy choices.
+- Shared community input labels are 14sp, input/placeholder text 16sp, editable targets at least 48dp with accessible labels. Crew policy now uses the shared two-way selector and 14sp explanation. These shared changes also affect post/course forms and crew management; native visual/keyboard validation remains required.
+- Creation is guarded synchronously against duplicate taps; exceptions clear busy state and surface the existing failure notice. This does not make a server request idempotent after a lost response; real authenticated creation/recovery is still unverified.
+- Local source contract, translated resources and whitespace checks pass. Latest prior efd1c88 build/capture still running while this change was prepared.
+
 ## 2026-09-24 — atomic local event receipt
 
 - Replaced the separate claim marker, credit and notification writes with a Room transaction. Duplicate concurrent local responses cannot add a second credit, and a notification/ledger write failure rolls the whole local operation back. Non-finite/non-positive receipt amounts are rejected.

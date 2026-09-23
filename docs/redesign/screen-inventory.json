@@ -252,7 +252,7 @@
     {
       "id": "CrewCreateScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
-      "line": 41,
+      "line": 43,
       "implementation": "pending",
       "verification": "pending"
     },
