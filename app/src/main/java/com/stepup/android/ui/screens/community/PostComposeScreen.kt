@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,6 +46,7 @@ import com.stepup.android.ui.theme.Snow
  * 번개러닝을 고르면 장소·거리·출발까지 남은 시간·정원 입력이 함께 열린다.
  * crewId가 비어 있으면 전체 게시판에, 값이 있으면 그 크루 게시판에 올라간다.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostComposeScreen(
     crewId: String = "",
@@ -67,43 +72,19 @@ fun PostComposeScreen(
     // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
     BoardNoticeToast(viewModel)
 
+    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+    com.stepup.android.ui.components.FocusHeader(stringResource(R.string.post_write), onBack)
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 30.dp),
+        modifier = Modifier.weight(1f),
+        contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.post_write),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = crewName.ifBlank { stringResource(R.string.community_seg_board) },
-                        fontSize = 11.sp,
-                        color = Slate,
-                    )
-                }
-            }
+        if (crewName.isNotBlank()) {
+            item { Text(crewName, color = Silver, fontSize = 14.sp) }
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PostCategory.entries.forEach { entry ->
                     PillChip(
                         text = entry.label(),
@@ -147,26 +128,23 @@ fun PostComposeScreen(
                         onValueChange = { place = it },
                         placeholder = stringResource(R.string.post_field_place_hint),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         LabeledField(
                             label = stringResource(R.string.post_field_distance),
                             value = distance,
                             onValueChange = { distance = it.filter { c -> c.isDigit() || c == '.' } },
-                            modifier = Modifier.weight(1f),
                             placeholder = "1.0",
                         )
                         LabeledField(
                             label = stringResource(R.string.post_field_starts_in),
                             value = startsIn,
                             onValueChange = { startsIn = it.filter(Char::isDigit).take(4) },
-                            modifier = Modifier.weight(1f),
                             placeholder = "60",
                         )
                         LabeledField(
                             label = stringResource(R.string.post_field_capacity),
                             value = capacity,
                             onValueChange = { capacity = it.filter(Char::isDigit).take(3) },
-                            modifier = Modifier.weight(1f),
                             placeholder = "6",
                         )
                     }
@@ -181,9 +159,9 @@ fun PostComposeScreen(
             }
         }
 
-        item {
-            VoltButton(
-                text = stringResource(R.string.post_submit),
+    }
+            com.stepup.android.ui.components.PrimaryCta(
+                text = stringResource(if (posting) R.string.feed_loading else R.string.post_submit),
                 enabled = canSubmit,
                 onClick = {
                     viewModel.writePost(
@@ -200,8 +178,7 @@ fun PostComposeScreen(
                         onDone = onBack,
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("post-submit"),
             )
-        }
     }
 }

@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — post composition
+
+- Post composition now uses the same shared focus header and pinned native primary action as crew creation, with scrollable content and IME padding. Categories wrap instead of overflowing at enlarged font sizes; flash-run distance/start/capacity fields stack vertically instead of squeezing three labels into one row.
+- Preserved all post categories, crew targeting and flash-run fields. Unexpected write exceptions restore the posting state and keep the draft visible with the existing failure notice; coroutine cancellation propagates. Real server idempotency after ambiguous network responses still needs work.
+- Gallery now renders post composition through the production root route, so safe areas and form chrome are actually exercised. Source design/string checks passed; native visual, keyboard and authenticated posting validation remain pending.
+
 ## 2026-09-24 — verified space correction and form coverage
 
 - efd1c88 Build APK 35909320324 and gallery 35909320120 passed. Downloaded XML shows five tests, zero failures: navigation/profile actions, equipment persistence, two run-total/verification tests and login presentation. Community Back passed with bounded state synchronization; this single pass does not prove all timing cases.

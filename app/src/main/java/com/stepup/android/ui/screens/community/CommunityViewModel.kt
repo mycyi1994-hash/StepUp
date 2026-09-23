@@ -502,6 +502,7 @@ class CommunityViewModel(
         if (_posting.value) return
         _posting.value = true
         viewModelScope.launch {
+            try {
             val result = communityRepository.write(
                 category = category,
                 title = title,
@@ -514,12 +515,18 @@ class CommunityViewModel(
                 lat = lat,
                 lng = lng,
             )
-            _posting.value = false
             if (result is BoardResult.Ok) {
                 ExperienceEvents.emit(FeedbackCue.Success)
                 onDone()
             } else {
                 noticeFailure(result)
+            }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _boardNotice.value = BoardNotice.FAILED
+            } finally {
+                _posting.value = false
             }
         }
     }

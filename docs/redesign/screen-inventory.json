@@ -273,7 +273,7 @@
     {
       "id": "PostComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
-      "line": 46,
+      "line": 51,
       "implementation": "pending",
       "verification": "pending"
     },

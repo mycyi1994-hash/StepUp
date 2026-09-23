@@ -241,7 +241,7 @@ class ScreenGalleryTest {
             16 -> LanguageScreen()
             17 -> RankingScreen()
             18 -> MainScaffold(initialRoute = Routes.CREW_CREATE)
-            19 -> PostComposeScreen()
+            19 -> MainScaffold(initialRoute = Routes.postCompose(""))
             20 -> SneakerDetailScreen(sneakerId)
             21 -> CrewBoardScreen(crewId)
             22 -> FlashRunDetailScreen(101L)
