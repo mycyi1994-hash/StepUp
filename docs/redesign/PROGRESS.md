@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — distinguish local notification choices from server acknowledgement
+
+- Push preference uploads now expose Sending/Synced/Pending based on the actual ServerResult, including transport exceptions and cancellation. Previously returned server failures were ignored. The existing serialized latest-value delivery and startup/login retry remain intact.
+- Notification settings explicitly say saved on this phone after DataStore succeeds. A failed/unconfirmed server send shows an explanation that previous settings may still apply and offers retry; an active send has a separate progress message. All four locales have equivalent copy. This does not claim actual notification delivery or OS permission/channel success.
+- Local inventory, design contract, resource parity, asset and whitespace checks pass. Native compilation, offline/retry interaction and server acknowledgement need execution. Changes remain local while Build APK 35926757996 for 2f65026 is running, to avoid cancelling its release build. Gallery 35926758041 was queued when checked.
+
 ## 2026-09-24 — native assertions now reach the upgrade dialog
 
 - Revalidated 0383b12: Build APK 35925659041 succeeded. Gallery 35925659229 failed on both APIs, but neither emulator disappeared in this execution. API 34 interaction XML reports 19 tests/0 failures; API 35 reports 19/1, the keyboard visibility wait in CrewFormTest. This single run does not prove renderer stability.

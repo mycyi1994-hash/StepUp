@@ -14,6 +14,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class NotificationSyncState { Idle, Sending, Synced, Pending }
 
 /**
  * 이 폰의 푸시 주소(FCM 토큰)를 서버에 적어 둔다.
@@ -31,6 +35,8 @@ class PushRegistrar(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val prefsMutex = Mutex()
+    private val _preferenceSync = MutableStateFlow(NotificationSyncState.Idle)
+    val preferenceSync = _preferenceSync.asStateFlow()
 
     /** 화면이 닫혀도 끝까지 가게 앱 수명의 코루틴에서 적는다. */
     fun syncInBackground(token: String? = null) {
@@ -47,14 +53,22 @@ class PushRegistrar(
     }
 
     private suspend fun syncPreferences() = prefsMutex.withLock {
+        _preferenceSync.value = NotificationSyncState.Sending
         try {
             // Read after acquiring the lock so queued calls send the latest stored choice.
             val prefs = preferences()
-            api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews)
+            val result = api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews)
+            _preferenceSync.value = if (result is ServerResult.Ok) {
+                NotificationSyncState.Synced
+            } else {
+                NotificationSyncState.Pending
+            }
         } catch (cancelled: CancellationException) {
+            _preferenceSync.value = NotificationSyncState.Pending
             throw cancelled
         } catch (_: Exception) {
             // Local preferences survive; startup/login or another edit retries delivery.
+            _preferenceSync.value = NotificationSyncState.Pending
         }
     }
 

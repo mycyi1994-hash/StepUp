@@ -65,10 +65,11 @@ import com.stepup.android.ui.theme.Volt
 @Composable
 fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
-    val savedMessage = stringResource(R.string.pref_saved)
+    val savedMessage = stringResource(R.string.pref_saved_on_device)
     val notifySaved = { Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show() }
 
     val storedPrefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = null)
+    val syncState by ServiceLocator.pushRegistrar.preferenceSync.collectAsState()
     val prefs = storedPrefs ?: NotifyPrefs()
     var saving by remember { mutableStateOf(false) }
     val saveFailed = stringResource(R.string.feed_save_failed)
@@ -110,6 +111,25 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
         if (storedPrefs == null) {
             item { Text(stringResource(R.string.feed_loading), color = Silver) }
             return@DetailPage
+        }
+        if (syncState == com.stepup.android.push.NotificationSyncState.Pending) {
+            item {
+                GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+                    Text(stringResource(R.string.pref_sync_pending),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    com.stepup.android.ui.components.GhostButton(
+                        text = stringResource(R.string.pref_sync_retry),
+                        onClick = { ServiceLocator.pushRegistrar.syncPrefsInBackground() },
+                        enabled = !saving,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        } else if (syncState == com.stepup.android.push.NotificationSyncState.Sending) {
+            item {
+                Text(stringResource(R.string.pref_sync_sending),
+                    style = MaterialTheme.typography.bodyMedium, color = Silver)
+            }
         }
         if (prefs.push && !notificationsAllowed) {
             item {

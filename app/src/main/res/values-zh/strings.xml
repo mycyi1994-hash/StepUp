@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_saved_on_device">已保存在这部手机上</string>
+    <string name="pref_sync_pending">选择已保存在这部手机上，但尚未确认服务器已更新。之前的通知设置可能仍然有效。请确认已登录并连接网络后重试。</string>
+    <string name="pref_sync_retry">重试同步</string>
+    <string name="pref_sync_sending">正在更新通知设置…</string>
     <string name="pref_notifications_blocked">手机设置已阻止通知。请允许 StepUp 发送通知，以接收你选择的提醒。</string>
     <string name="post_like_action">点赞</string>
     <string name="post_unlike_action">取消点赞</string>
