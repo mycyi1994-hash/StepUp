@@ -1912,6 +1912,26 @@ call pg_temp.must_fail(
   '크루원이 아니면 러닝에 그 크루를 적을 수 없다');
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 알림 설정 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+do $$
+begin
+  perform public.notify_prefs_set(true, false, false, true);
+  perform public.notify_prefs_set(true, true, false, true);
+  perform pg_temp.ok(
+    (select not party_invite and goal_reminder from public.notify_prefs),
+    '알림 설정은 한 사람에 한 줄로, 마지막 값이 남는다');
+end $$;
+call pg_temp.must_fail(
+  $q$ update public.notify_prefs set push = false $q$,
+  '앱은 알림 설정 표를 직접 고칠 수 없다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

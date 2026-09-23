@@ -1,6 +1,7 @@
 package com.stepup.android.push
 
 import com.google.firebase.messaging.FirebaseMessaging
+import com.stepup.android.data.prefs.NotifyPrefs
 import com.stepup.android.data.remote.PushApi
 import com.stepup.android.data.remote.ServerResult
 import java.util.Locale
@@ -29,6 +30,13 @@ class PushRegistrar(
     /** 화면이 닫혀도 끝까지 가게 앱 수명의 코루틴에서 적는다. */
     fun syncInBackground(token: String? = null) {
         scope.launch { runCatching { sync(token) } }
+    }
+
+    /** 알림 설정을 서버에 올린다. 로그인 전이면 조용히 넘어간다 — 다음에 켤 때 다시 올린다. */
+    fun syncPrefsInBackground(prefs: NotifyPrefs) {
+        scope.launch {
+            runCatching { api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews) }
+        }
     }
 
     suspend fun sync(token: String? = null): Boolean {

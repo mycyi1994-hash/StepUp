@@ -19,4 +19,19 @@ class PushApi(private val server: StepUpServer) {
                 server.headers(accessToken),
             )
         }.mapBody { }
+
+    /** 받을 푸시 종류를 적는다. 보내는 쪽이 보내기 전에 본다. */
+    suspend fun setPrefs(push: Boolean, goalReminder: Boolean, partyInvite: Boolean, eventNews: Boolean): ServerResult<Unit> =
+        server.authed { accessToken ->
+            server.http.post(
+                "${server.restUrl}/rpc/notify_prefs_set",
+                jsonBody {
+                    put("p_push", push)
+                    put("p_goal_reminder", goalReminder)
+                    put("p_party_invite", partyInvite)
+                    put("p_event_news", eventNews)
+                },
+                server.headers(accessToken),
+            )
+        }.mapBody { }
 }

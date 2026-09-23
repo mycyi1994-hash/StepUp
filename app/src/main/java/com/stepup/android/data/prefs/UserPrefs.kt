@@ -87,6 +87,10 @@ class UserPrefs(private val context: Context) {
         // 운영 데이터와 **다른 열쇠**를 쓴다. 데모에서 입혀 본 의상이
         // AVATAR_OUTFIT 에 섞이면, 데모를 끈 뒤에도 갖지 않은 옷을 입고 있게 된다.
         val DEMO_MODE = booleanPreferencesKey("demo_mode")
+        val NOTIFY_PUSH = booleanPreferencesKey("notify_push")
+        val NOTIFY_GOAL = booleanPreferencesKey("notify_goal_reminder")
+        val NOTIFY_PARTY = booleanPreferencesKey("notify_party_invite")
+        val NOTIFY_EVENT = booleanPreferencesKey("notify_event_news")
         val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
     }
 
@@ -142,6 +146,29 @@ class UserPrefs(private val context: Context) {
     suspend fun setSounds(enabled: Boolean) { context.dataStore.edit { it[Keys.SOUNDS] = enabled } }
     suspend fun setHaptics(enabled: Boolean) { context.dataStore.edit { it[Keys.HAPTICS] = enabled } }
     suspend fun setReducedMotion(enabled: Boolean) { context.dataStore.edit { it[Keys.REDUCED_MOTION] = enabled } }
+
+    // ── 알림 설정 ─────────────────────────────────────────────
+    //
+    // 알림은 서버가 보내므로 서버에도 같은 값을 올린다(notify_prefs). 여기는 화면이
+    // 바로 읽는 사본이다.
+
+    val notifyPrefs: Flow<NotifyPrefs> = context.dataStore.data.map {
+        NotifyPrefs(
+            push = it[Keys.NOTIFY_PUSH] ?: true,
+            goalReminder = it[Keys.NOTIFY_GOAL] ?: true,
+            partyInvite = it[Keys.NOTIFY_PARTY] ?: true,
+            eventNews = it[Keys.NOTIFY_EVENT] ?: true,
+        )
+    }
+
+    suspend fun setNotifyPrefs(prefs: NotifyPrefs) {
+        context.dataStore.edit {
+            it[Keys.NOTIFY_PUSH] = prefs.push
+            it[Keys.NOTIFY_GOAL] = prefs.goalReminder
+            it[Keys.NOTIFY_PARTY] = prefs.partyInvite
+            it[Keys.NOTIFY_EVENT] = prefs.eventNews
+        }
+    }
 
     // ── 러너 식별 · 프로필 ───────────────────────────────────
 
@@ -555,3 +582,11 @@ class UserPrefs(private val context: Context) {
         const val AVATAR_FILE = "avatar_custom.jpg"
     }
 }
+
+/** 받을 푸시 종류 — 알림 설정 화면의 네 가지 */
+data class NotifyPrefs(
+    val push: Boolean = true,
+    val goalReminder: Boolean = true,
+    val partyInvite: Boolean = true,
+    val eventNews: Boolean = true,
+)
