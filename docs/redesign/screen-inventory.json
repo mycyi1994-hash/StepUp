@@ -521,14 +521,14 @@
       "kind": "AlertDialog",
       "owner": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 534,
+      "line": 535,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 691,
+      "line": 692,
       "verification": "pending"
     },
     {
@@ -542,7 +542,7 @@
       "kind": "Dialog",
       "owner": "MarketDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 484,
+      "line": 488,
       "verification": "pending"
     },
     {

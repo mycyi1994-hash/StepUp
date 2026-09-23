@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — marketplace loading and ownership correctness
+
+- Market balance failure previously became 0 SUP and personal-trades failure became an empty account. Both now expose their actual failure category. During board loading/error the balance is an em dash, and loading no longer renders empty-trade content. Model loading hides transactional content/dialogs until the fetch completes.
+- Model sellable inventory was read from a WhileSubscribed StateFlow with no collectors, leaving its initial empty value. It now reads the first real Room inventory emission for the loaded model. Existing equipped restrictions remain intact.
+- Added retry callbacks to marketplace error notices on the NFT board, runner market and model detail; authentication still uses the shared sign-in action. Static checks pass; real marketplace server transactions, ownership synchronization and native recovery execution remain unverified.
+
 ## 2026-09-24 — system ANR found in failed navigation capture
 
 - Visually inspected ec91211 API 35 failed-wait-community-all-meetups.png: Android's "Pixel Launcher isn't responding" dialog overlays the crew screen. Live log confirms launcher input-dispatch ANR at 21:25:58 and guest CPU pressure avg10 80.40 / memory pressure 9.47. This execution cannot establish a StepUp Back-handler defect; it also does not prove that handler correct.

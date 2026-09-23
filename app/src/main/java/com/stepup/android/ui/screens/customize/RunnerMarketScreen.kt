@@ -188,7 +188,7 @@ fun RunnerMarketScreen(
                     StateCard(stringResource(R.string.feed_loading), null)
                 }
                 board.problem != null -> item(span = { GridItemSpan(cols) }) {
-                    MarketProblemNote(board.problem!!)
+                    MarketProblemNote(board.problem!!, onRetry = marketViewModel::refresh)
                 }
                 else -> {
                     val listed = board.quotes.filter { it.ask != null }.sortedBy { it.ask }

@@ -57,6 +57,7 @@ fun LazyListScope.nftMarketSection(
     onOpenModel: (ModelKey) -> Unit,
     onCancelListing: (Long) -> Unit,
     onCancelBid: (Long) -> Unit,
+    onRetry: () -> Unit,
 ) {
     item {
         GlowCard(contentPadding = MarketCardPadding, spacing = 12.dp) {
@@ -89,7 +90,8 @@ fun LazyListScope.nftMarketSection(
                     )
                 }
                 Text(
-                    text = stringResource(R.string.price_sup, formatSup(board.tradable)),
+                    text = if (board.loading || board.problem != null) "—"
+                        else stringResource(R.string.price_sup, formatSup(board.tradable)),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = Volt,
@@ -111,10 +113,14 @@ fun LazyListScope.nftMarketSection(
 
     // Keep destinations stable while loading/authentication/network errors are shown.
     if (board.problem != null) {
-        item { MarketProblemNote(board.problem) }
+        item { MarketProblemNote(board.problem, onRetry = onRetry) }
         return
     }
 
+    if (board.loading) {
+        item { Text(stringResource(R.string.feed_loading), color = Silver) }
+        return
+    }
     if (section == 1) {
         myMarketSection(board.mine, onCancelListing, onCancelBid)
         return

@@ -91,10 +91,10 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:434 | pending |
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
-| ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:534 | pending |
-| CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:691 | pending |
+| ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:535 | pending |
+| CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:692 | pending |
 | SneakerDetailScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:257 | pending |
-| MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:484 | pending |
+| MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:488 | pending |
 | GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:958 | pending |
 | ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1068 | pending |
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |

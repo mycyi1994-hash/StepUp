@@ -131,8 +131,12 @@ fun MarketModelScreen(
             }
         }
 
+        if (state.loading) {
+            item { Text(stringResource(R.string.feed_loading), color = Silver) }
+            return@DetailPage
+        }
         if (state.problem != null) {
-            item { MarketProblemNote(state.problem!!) }
+            item { MarketProblemNote(state.problem!!, onRetry = viewModel::load) }
             return@DetailPage
         }
 
@@ -246,7 +250,7 @@ fun MarketModelScreen(
         }
     }
 
-    if (bidding) {
+    if (bidding && !state.loading && state.problem == null) {
         BidDialog(
             tradable = state.tradable,
             suggested = state.quote?.bid ?: state.quote?.lastPrice,
@@ -258,7 +262,7 @@ fun MarketModelScreen(
         )
     }
 
-    if (asking) {
+    if (asking && !state.loading && state.problem == null) {
         AskDialog(
             sneakers = sellable,
             preselect = sellLocalId,

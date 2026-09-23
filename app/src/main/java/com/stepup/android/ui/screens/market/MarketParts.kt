@@ -139,7 +139,7 @@ fun Tag(text: String, accent: Boolean = false) {
  * 앱을 껐다 켜는 것뿐이다.
  */
 @Composable
-fun MarketProblemNote(problem: MarketProblem, modifier: Modifier = Modifier) {
+fun MarketProblemNote(problem: MarketProblem, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
     val text = stringResource(
         when (problem) {
             MarketProblem.SIGN_IN -> R.string.market_problem_sign_in
@@ -163,8 +163,13 @@ fun MarketProblemNote(problem: MarketProblem, modifier: Modifier = Modifier) {
         )
         if (problem == MarketProblem.SIGN_IN) {
             com.stepup.android.ui.components.SignInAgainButton()
+        } else if (onRetry != null) {
+            com.stepup.android.ui.components.GhostButton(
+                text = stringResource(R.string.crew_retry),
+                onClick = onRetry,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-
     }
 }
 

@@ -16,9 +16,7 @@ import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.ModelBook
 import com.stepup.android.data.repo.MyMarket
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -75,13 +73,18 @@ class MarketViewModel(private val repo: MarketRepository) : ViewModel() {
 
             when (val quotes = repo.quotes()) {
                 is ServerResult.Ok -> {
-                    // 내 거래와 잔고는 없어도 시세판은 보여 준다.
-                    // 셋을 묶어 하나가 실패했다고 전부 못 보게 할 이유가 없다.
                     val mineResult = repo.mine()
-                    val mine = if (mineResult is ServerResult.Ok) mineResult.value else null
+                    if (mineResult !is ServerResult.Ok) {
+                        board.value = board.value.copy(loading = false, problem = mineResult.problem())
+                        return@launch
+                    }
+                    val mine = mineResult.value
                     val balanceResult = repo.tradableBalance()
-                    val tradable =
-                        if (balanceResult is ServerResult.Ok) balanceResult.value else 0.0
+                    if (balanceResult !is ServerResult.Ok) {
+                        board.value = board.value.copy(loading = false, problem = balanceResult.problem())
+                        return@launch
+                    }
+                    val tradable = balanceResult.value
                     board.value = MarketBoard(
                         loading = false,
                         quotes = quotes.value,
@@ -135,9 +138,6 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
     val state = MutableStateFlow(MarketModelState())
     val message = MutableStateFlow<MarketMessage?>(null)
 
-    private val inventory: StateFlow<List<SneakerEntity>> = repo.inventory()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     private var model: ModelKey? = null
 
     fun open(key: ModelKey) {
@@ -163,14 +163,17 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
                         null
                     }
                     val balanceResult = repo.tradableBalance()
-                    val tradable =
-                        if (balanceResult is ServerResult.Ok) balanceResult.value else 0.0
+                    if (balanceResult !is ServerResult.Ok) {
+                        state.value = state.value.copy(loading = false, problem = balanceResult.problem())
+                        return@launch
+                    }
+                    val tradable = balanceResult.value
                     state.value = MarketModelState(
                         loading = false,
                         book = book.value,
                         quote = quote,
                         tradable = tradable,
-                        mySneakers = inventory.value.filter {
+                        mySneakers = repo.inventory().first().filter {
                             it.factionId == key.faction &&
                                 it.rarity == key.rarity &&
                                 it.variant == key.variant

@@ -204,6 +204,7 @@ fun ItemsScreen(
                 onOpenModel = { onOpenMarketModel(it.faction, it.rarity, it.variant) },
                 onCancelListing = marketViewModel::cancelListing,
                 onCancelBid = marketViewModel::cancelBid,
+                onRetry = marketViewModel::refresh,
             )
             return@DetailPage
         }
