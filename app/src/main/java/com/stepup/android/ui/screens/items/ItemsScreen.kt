@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -166,46 +167,10 @@ fun ItemsScreen(
         // 이미 "아이템"에 불을 켜 두었고, 그 위에 다시 STEPUP 이 있으면
         // 정작 이 화면이 무엇인지는 셋째 줄에 가서야 나온다.
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // 꾸미기 밑의 화면이다 — 돌아갈 길을 머리글 맨 앞에 둔다
-                if (onBack != null) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = onBack,
-                    )
-                }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.items_vault_title),
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-1).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(
-                            when (tab) {
-                                0 -> R.string.store_sub
-                                1 -> R.string.nft_sub
-                                else -> R.string.items_sub
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Silver,
-                    )
-                }
+            // 큰 글자에서는 제목 옆에 도감·토큰까지 서면 "신발 보…"로 잘린다 —
+            // 그때는 도감·토큰을 제목 아래 줄 오른쪽으로 내린다.
+            val stackedHeader = LocalDensity.current.fontScale > 1.3f
+            val headerActions: @Composable () -> Unit = {
                 // 도감 입구 — 아이콘만. 옆의 토큰 카드와 높이를 맞춰 두면
                 // 글자 없이도 "누르는 것"으로 읽힌다. 몇 개 모았는지는
                 // 아래 보관함 머리글이 이미 말하고 있다.
@@ -228,6 +193,59 @@ fun ItemsScreen(
                 // 하위 화면이라 자리가 좁다. 시세·달러 환산이 붙은 토큰 카드 대신
                 // 다른 리뉴얼 화면과 같은 작은 SUP 알약을 쓴다.
                 SupPill(balance = balance, onClick = null)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // 꾸미기 밑의 화면이다 — 돌아갈 길을 머리글 맨 앞에 둔다
+                    if (onBack != null) {
+                        DarkIconButton(
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                            onClick = onBack,
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.items_vault_title),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-1).sp,
+                            color = Snow,
+                        )
+                        Text(
+                            text = stringResource(
+                                when (tab) {
+                                    0 -> R.string.store_sub
+                                    1 -> R.string.nft_sub
+                                    else -> R.string.items_sub
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Silver,
+                        )
+                    }
+                    if (!stackedHeader) headerActions()
+                }
+                if (stackedHeader) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        headerActions()
+                    }
+                }
             }
         }
 

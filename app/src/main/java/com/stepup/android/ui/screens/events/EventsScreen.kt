@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -278,6 +280,7 @@ private fun claimState(def: EventDef, claimed: Set<String>, done: Boolean): Chal
     else -> ChallengeState.InProgress
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChallengeCard(
     tag: String,
@@ -300,13 +303,21 @@ private fun ChallengeCard(
     ) {
         // 표시 · 상태 · 보상을 맨 위 한 줄에 둔다. 보상을 제목 옆에 두면 큰 글자에서
         // 설명이 한 단어씩 세로로 쪼개진다.
+        //
+        // 보상 숫자를 먼저 재고 표시 둘은 남은 폭에 눕힌다 — 모자라면 표시가 다음
+        // 줄로 내려간다. 반대로 하면 큰 글자에서 "+20"이 "+2 / 0"으로 끊긴다.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            SmallBadge(tag, tone = tagTone)
-            StatusChip(state)
-            Box(Modifier.weight(1f))
+            FlowRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                SmallBadge(tag, tone = tagTone)
+                StatusChip(state)
+            }
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
@@ -322,6 +333,8 @@ private fun ChallengeCard(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Snow,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }

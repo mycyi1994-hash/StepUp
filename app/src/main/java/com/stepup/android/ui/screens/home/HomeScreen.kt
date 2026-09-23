@@ -222,24 +222,40 @@ fun HomeScreen(
         }
 
         // ── 챌린지 · 소식 ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .guideTarget(GuideTour.Targets.HOME_SHORTCUTS),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            ShortcutButton(
-                icon = Icons.Filled.EmojiEvents,
-                label = stringResource(R.string.home_shortcut_challenges),
-                onClick = onOpenChallenges,
-                modifier = Modifier.weight(1f),
-            )
-            ShortcutButton(
-                icon = Icons.AutoMirrored.Filled.Article,
-                label = stringResource(R.string.home_shortcut_news),
-                onClick = onOpenNews,
-                modifier = Modifier.weight(1f),
-            )
+        // 큰 글자에서는 반 폭에 "챌린지"가 "챌린 / 지"로 끊긴다 — 위아래로 쌓는다.
+        val shortcutsModifier = Modifier
+            .fillMaxWidth()
+            .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
+        if (largeText) {
+            Column(modifier = shortcutsModifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShortcutButton(
+                    icon = Icons.Filled.EmojiEvents,
+                    label = stringResource(R.string.home_shortcut_challenges),
+                    onClick = onOpenChallenges,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ShortcutButton(
+                    icon = Icons.AutoMirrored.Filled.Article,
+                    label = stringResource(R.string.home_shortcut_news),
+                    onClick = onOpenNews,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        } else {
+            Row(modifier = shortcutsModifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShortcutButton(
+                    icon = Icons.Filled.EmojiEvents,
+                    label = stringResource(R.string.home_shortcut_challenges),
+                    onClick = onOpenChallenges,
+                    modifier = Modifier.weight(1f),
+                )
+                ShortcutButton(
+                    icon = Icons.AutoMirrored.Filled.Article,
+                    label = stringResource(R.string.home_shortcut_news),
+                    onClick = onOpenNews,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
         // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
