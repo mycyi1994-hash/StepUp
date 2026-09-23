@@ -15,8 +15,8 @@ class ServerSessionRecorder(private val server: StepUpServer) : SessionRecorder 
 
     override val isConfigured: Boolean get() = server.isConfigured
 
-    override suspend fun record(session: WalkSessionEntity): ServerResult<SessionRecorded> =
-        server.recordSession(
+    override suspend fun record(session: WalkSessionEntity): ServerResult<SessionRecorded> {
+        val result = server.recordSession(
             startedAtMillis = session.startedAt,
             endedAtMillis = session.endedAt,
             steps = session.steps,
@@ -26,4 +26,11 @@ class ServerSessionRecorder(private val server: StepUpServer) : SessionRecorder 
             partySize = session.partySize,
             faction = session.faction,
         )
+        // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
+        // 못 적어도 러닝 기록과 적립은 이미 끝났으므로 실패를 되돌리지 않는다.
+        if (result is ServerResult.Ok && session.crewId.isNotBlank()) {
+            server.tagSessionCrew(session.startedAt, session.crewId)
+        }
+        return result
+    }
 }

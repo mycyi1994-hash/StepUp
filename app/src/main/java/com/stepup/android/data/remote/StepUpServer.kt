@@ -177,6 +177,17 @@ class StepUpServer(
         }.mapBody { text -> serverJson.decodeFromString<List<FactionRankRow>>(text) }
     }
 
+    /** 방금 올린 러닝이 어느 크루의 러닝이었는지 적는다(`session_tag_crew`). */
+    suspend fun tagSessionCrew(startedAtMillis: Long, crewId: String): ServerResult<Unit> {
+        val body = jsonBody {
+            put("p_started_at", startedAtMillis.toIsoInstant())
+            put("p_crew", crewId)
+        }
+        return authed { token ->
+            http.post("$restUrl/rpc/session_tag_crew", body, headers(token))
+        }.mapBody { }
+    }
+
     /** 지금 잔고. 서버 원장의 합이다. */
     suspend fun balance(): ServerResult<Double> =
         authed { token ->

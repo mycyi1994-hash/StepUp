@@ -15,6 +15,7 @@ import com.stepup.android.domain.CrewRank
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.core.Analytics
+import com.stepup.android.domain.RankPeriod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -657,26 +658,30 @@ class CrewRepository(
      * 빼 버리면 "우리 크루가 순위에 없다"가 되고, 사용자는 기능이 고장 난
      * 줄 안다. 0 km 는 고장이 아니라 아직 안 달렸다는 뜻이다.
      *
-     * 거리는 아직 이 폰에서 달린 크루 러닝만 센다. 크루원 전체의 거리를 모으는
-     * 일은 파티런을 서버에 붙일 때 함께 한다.
+     * 거리는 서버가 크루원 모두의 크루 러닝으로 센다(`crew_leaderboard`). 서버에
+     * 닿지 못하면 이 폰에서 달린 크루 러닝으로 대신 보여 준다 — 빈 표보다 낫다.
      *
-     * @param since 이 시각 이후에 시작한 러닝만 센다. 전체기간이면 0.
+     * @param period 기간. 서버에 물을 때 쓴다.
+     * @param since 이 시각 이후에 시작한 러닝만 센다(서버에 못 닿았을 때). 전체기간이면 0.
      */
-    suspend fun ranking(since: Long): List<CrewRank> {
-        val totals = walkSessionDao.crewDistances(since).associateBy { it.crewId }
+    suspend fun ranking(period: RankPeriod, since: Long): List<CrewRank> {
         // 화면이 열리자마자 순위를 물으면 목록을 아직 못 받았을 수 있다.
         if (_crews.value.isEmpty()) refresh()
+        val server = (api.leaderboard(period.name) as? ServerResult.Ok)?.value
+            ?.associateBy { it.crewId }
+        val local = if (server == null) walkSessionDao.crewDistances(since).associateBy { it.crewId } else null
         return _crews.value
             .map { crew ->
-                val total = totals[crew.id]
+                val km = server?.get(crew.id)?.km ?: ((local?.get(crew.id)?.meters ?: 0.0) / 1000.0)
+                val runs = server?.get(crew.id)?.runs ?: (local?.get(crew.id)?.runs ?: 0)
                 CrewRank(
                     // 번호는 정렬한 뒤에 붙인다
                     rank = 0,
                     crewId = crew.id,
                     name = crew.name,
                     monogram = crew.monogram,
-                    km = (total?.meters ?: 0.0) / 1000.0,
-                    runs = total?.runs ?: 0,
+                    km = km,
+                    runs = runs,
                     joined = crew.joined,
                 )
             }

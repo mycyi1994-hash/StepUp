@@ -35,6 +35,15 @@ data class CrewRequestRow(
     @SerialName("requested_at") val requestedAt: String,
 )
 
+/** 크루 순위 한 줄 — `crew_leaderboard` */
+@Serializable
+data class CrewRankRow(
+    @SerialName("crew_id") val crewId: String,
+    val km: Double = 0.0,
+    val runs: Int = 0,
+    val runners: Int = 0,
+)
+
 /**
  * 크루 — 서버와 말을 주고받는 쪽.
  *
@@ -108,6 +117,16 @@ class CrewApi(private val server: StepUpServer) {
                 put("p_approve", approve)
             },
         ) { }
+
+    /**
+     * 크루 순위 — 크루원 모두가 크루로 달린 거리(`crew_leaderboard`).
+     *
+     * @param period DAY · WEEK · MONTH · ALL
+     */
+    suspend fun leaderboard(period: String): ServerResult<List<CrewRankRow>> =
+        rpc("crew_leaderboard", jsonBody { put("p_period", period) }) {
+            serverJson.decodeFromString<List<CrewRankRow>>(it)
+        }
 
     private suspend fun <T> rpc(
         name: String,

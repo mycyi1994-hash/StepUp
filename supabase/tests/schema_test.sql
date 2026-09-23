@@ -1879,6 +1879,39 @@ begin
     '두 보상이 서버 원장에 EARN_EVENT 로 적힌다');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 순위 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+values
+  ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-20 07:00+09', timestamptz '2026-09-20 07:40+09', 2400, 6000, 5000, 'CLEAN'),
+  ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-21 07:00+09', timestamptz '2026-09-21 07:40+09', 2400, 6000, 9000, 'VOID');
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform pg_temp.ok(
+    public.session_tag_crew(timestamptz '2026-09-20 07:00+09', pg_temp.fx('crew')::uuid),
+    '크루원은 자기 러닝에 크루를 적을 수 있다');
+  perform public.session_tag_crew(timestamptz '2026-09-21 07:00+09', pg_temp.fx('crew')::uuid);
+  perform pg_temp.ok(
+    (select km = 5 and runs = 1 and runners = 1 from public.crew_leaderboard('ALL')
+      where crew_id = pg_temp.fx('crew')::uuid),
+    '크루 순위는 무효 판정 러닝을 빼고 센다');
+  perform pg_temp.ok(
+    (select count(*) from public.crew_leaderboard('ALL')) >= 1,
+    '아직 안 달린 크루도 순위표에 나온다');
+end $$;
+
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+call pg_temp.must_fail(
+  format($q$ select public.session_tag_crew(timestamptz '2026-09-01 21:00+09', '%s') $q$, pg_temp.fx('crew')),
+  '크루원이 아니면 러닝에 그 크루를 적을 수 없다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
