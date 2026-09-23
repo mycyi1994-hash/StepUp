@@ -77,6 +77,16 @@ class ChromeNavigationTest {
                 tabRoutes.map { bounds("nav-icon-$it").top }.distinct().size)
             assertEquals("labels stay on one baseline $next", 1,
                 tabRoutes.map { bounds("nav-label-$it").top }.distinct().size)
+            tabRoutes.forEach { route ->
+                val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+                compose.onNodeWithTag("nav-label-$route", useUnmergedTree = true)
+                    .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) {
+                        it(layouts)
+                    }
+                org.junit.Assert.assertTrue("tab has measured text $next/$route", layouts.isNotEmpty())
+                org.junit.Assert.assertFalse("tab label must not truncate $next/$route",
+                    layouts.any { it.hasVisualOverflow })
+            }
             capture("${next.width}-${next.font}-${next.mode}-home")
             compose.onNodeWithTag("home-start-run").assertIsDisplayed().assertHasClickAction()
             listOf(R.string.tab_customize, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->

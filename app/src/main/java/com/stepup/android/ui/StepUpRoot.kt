@@ -663,6 +663,21 @@ const val BOTTOM_NAV_TAG = "bottom-nav"
 
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val labelStyle = androidx.compose.material3.LocalTextStyle.current.copy(
+        fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.sp, textAlign = TextAlign.Center,
+    )
+    val labelWidth = with(density) { (maxWidth / bottomTabs.size - 8.dp).roundToPx().coerceAtLeast(1) }
+    val labelHeightPx = bottomTabs.map { screen ->
+        measurer.measure(
+            text = stringResource(screen.labelRes), style = labelStyle,
+            constraints = androidx.compose.ui.unit.Constraints(maxWidth = labelWidth),
+        ).size.height
+    }.maxOrNull() ?: 0
+    val labelHeight = with(density) { labelHeightPx.toDp() }
     Column(
         Modifier
             .fillMaxWidth()
@@ -685,6 +700,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             bottomTabs.forEach { screen ->
                 NavTab(
                     screen = screen,
+                    labelHeight = labelHeight,
                     selected = parent == screen,
                     onClick = {
                         if (parent == screen) {
@@ -703,10 +719,14 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             }
         }
     }
+    }
 }
 
 @Composable
-private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.NavTab(
+    screen: Screen, labelHeight: androidx.compose.ui.unit.Dp,
+    selected: Boolean, onClick: () -> Unit,
+) {
     val tint by animateColorAsState(
         // 선택한 탭은 밝은 파랑 — 버튼 바탕색(Volt)은 검은 바닥 위 작은 글자에 어둡다
         targetValue = if (selected) VoltText else Slate,
@@ -736,15 +756,13 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
         )
         Text(
             text = stringResource(screen.labelRes),
-            modifier = Modifier.testTag("nav-label-${screen.route}"),
+            modifier = Modifier.heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
             fontSize = StepUpDesign.NavigationLabel,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.sp,
             textAlign = TextAlign.Center,
-            maxLines = 1,
-            softWrap = false,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            softWrap = true,
         )
         Box(
             modifier = Modifier

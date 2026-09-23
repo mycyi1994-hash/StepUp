@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — complete bottom-tab labels at enlarged text
+
+- Replaced the root navigation's single-line ellipsis rule. The shared bar measures all four localized labels with their actual style, available tab width and system density/font scale, then gives every label the same maximum measured height. Labels wrap while icon, text-top and indicator alignment remain shared; selected state still changes no typography or geometry.
+- Added native text-layout overflow assertions for every tab in all existing width/font/theme chrome scenarios, alongside unchanged navigation bounds and baseline checks. This verifies full labels when executed, rather than considering an ellipsis a successful fit.
+- Source design contract and whitespace checks pass. Native compilation, measured geometry and actual enlarged-label captures remain pending. Current build/gallery handles were confirmed live; no completion claim or restart was made.
+
 ## 2026-09-24 — remaining reward-facing balance initialization
 
 - Walk, customization, challenge and news view models now preserve unknown balance until the repository first emits, matching the inventory/home approach. Run completion renders an em dash with the SUP unit instead of an invented zero while loading. Reward eligibility and credit processing are unchanged.
