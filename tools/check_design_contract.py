@@ -32,6 +32,13 @@ for path in UI.rglob('*.kt'):
         ]:
             if re.search(pattern, text):
                 errors.append(f'{rel}: {message}')
+    if 'settings' in path.parts and re.search(r'Icons\.AutoMirrored\.Filled\.ArrowBack|\bWordmark\(', text):
+        errors.append(f'{rel}: settings chrome must come from DetailPage/SecondaryHeader')
+
+for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 'ExperienceSettings'):
+    path = UI/'screens/settings'/f'{name}Screen.kt'
+    if 'DetailPage(' not in path.read_text(encoding='utf-8'):
+        errors.append(f'{path.name}: use the fixed shared detail page')
 if root.count('MainHeader(') != 1:
     errors.append('Root must own exactly one main header')
 if re.search(r'fontWeight\s*=\s*if\s*\(selected\)', root):
