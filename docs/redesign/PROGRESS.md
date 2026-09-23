@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — verified space correction and form coverage
+
+- efd1c88 Build APK 35909320324 and gallery 35909320120 passed. Downloaded XML shows five tests, zero failures: navigation/profile actions, equipment persistence, two run-total/verification tests and login presentation. Community Back passed with bounded state synchronization; this single pass does not prove all timing cases.
+- Inspected native profile/community captures: all three profile destinations and the meetup title/place/time/distance now fit in the regular viewport above navigation/action. Remaining visual issue: smaller character art appears suspended relative to the fixed scene perspective; faithful seated/grounded artwork or scene composition still needs work. Demo gallery content is fixture data, not a verified live meetup or balance.
+- Added CrewFormTest through the actual root route: name/area input, blank-name gating, reachable pinned submit and 1x/1.3x fonts without posting to the server. Capture runner preserves form screenshots; native execution pending.
+- Root navigation now consumes Scaffold's applied insets before child IME padding, preventing forms from adding the same system safe-area padding twice. This shared change requires the complete chrome regression suite.
+
 ## 2026-09-24 — crew creation form
 
 - Crew creation uses the shared focus header, scrolling inputs and a pinned primary action with IME padding. Removed redundant preview explanation; retained live identity preview and all fields/policy choices.
