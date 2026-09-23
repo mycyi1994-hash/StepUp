@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — native assertions now reach the upgrade dialog
+
+- Revalidated 0383b12: Build APK 35925659041 succeeded. Gallery 35925659229 failed on both APIs, but neither emulator disappeared in this execution. API 34 interaction XML reports 19 tests/0 failures; API 35 reports 19/1, the keyboard visibility wait in CrewFormTest. This single run does not prove renderer stability.
+- Both galleries reached scene 20 and failed the upgrade-cost displayed assertion after clicking Enhance. Viewed API 34 screen-20.png: the primary Enhance button is visibly pinned above navigation. The runner's failure screenshot shows the launcher after test teardown, so it cannot establish the dialog's layout or absence.
+- Added a bounded wait for the dialog's separately laid-out window, preserving the required cost visibility assertion. Capture and semantics now run before activity teardown even when that wait fails. Crew keyboard waits likewise capture the actual form in finally without weakening the IME requirement. These changes need execution; they are not a proven dialog or keyboard fix.
+- Downloaded artifacts to C:/Users/gana0/StepUp-captures/redesign-0383b12. Local inventory/design/resource/asset/whitespace checks pass. Whole-app visual review, current chart interactions, real services and other outstanding requirements remain incomplete.
+
 ## 2026-09-24 — resend persisted notification choices
 
 - PushRegistrar's comment promised a preference retry on next launch, but startup/login only registered the FCM token. Those paths now also resend persisted notification choices independently of token availability, so a failed prior settings upload has a recovery path.

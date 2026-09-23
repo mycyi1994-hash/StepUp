@@ -153,10 +153,20 @@ class ScreenGalleryTest {
                 if (shoe.canUpgrade) {
                     compose.onNodeWithText(localized.getString(R.string.sneaker_action_enhance))
                         .performClick()
-                    compose.onNodeWithText(localized.getString(
+                    val costNode = compose.onNodeWithText(localized.getString(
                         R.string.items_upgrade_cost, "%,.0f".format(shoe.upgradeCost),
-                    )).assertIsDisplayed()
-                    capture("extra-sneaker-upgrade-confirm")
+                    ))
+                    // A dialog owns a separate Android window. Compose idleness alone
+                    // does not establish that WindowManager has laid out that window.
+                    try {
+                        compose.waitUntil(timeoutMillis = 5_000) { costNode.isDisplayed() }
+                    } finally {
+                        capture("extra-sneaker-upgrade-confirm")
+                        File(directory, "sneaker-upgrade-semantics.txt").writeText(
+                            compose.onAllNodes(isRoot()).printToString(),
+                        )
+                    }
+                    costNode.assertIsDisplayed()
                     compose.onNodeWithText(localized.getString(R.string.common_cancel)).performClick()
                     org.junit.Assert.assertEquals(before,
                         runBlocking { ServiceLocator.sneakerRepository.inventory.first() })

@@ -83,9 +83,15 @@ class CrewFormTest {
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsNotEnabled()
             val name = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_name))
             name.performScrollTo().performClick().performTextInput("River runners")
-            compose.waitUntil(timeoutMillis = 5_000) {
-                androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
-                    ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+            try {
+                compose.waitUntil(timeoutMillis = 5_000) {
+                    androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                        ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+                }
+            } finally {
+                // Preserve the focused form before JUnit tears down its activity,
+                // including a missing keyboard; a post-test adb screenshot is too late.
+                capture("$font-keyboard-wait")
             }
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsEnabled()
             val area = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_area))
