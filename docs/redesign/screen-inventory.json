@@ -280,7 +280,7 @@
     {
       "id": "RankingScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt",
-      "line": 79,
+      "line": 77,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -371,7 +371,7 @@
     {
       "id": "AchievementsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
-      "line": 186,
+      "line": 184,
       "implementation": "pending",
       "verification": "pending"
     },

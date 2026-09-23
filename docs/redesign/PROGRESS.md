@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — ranking and achievements shared detail chrome
+
+- Ranking and Achievements now use DetailPage, removing per-screen back/title layouts and literal content gutters. Ranking categories/periods/remote states remain reachable; achievement progress stays in its existing summary, avoiding a duplicate counter in the header. Added source guardrails and switched both gallery cases to their real MainScaffold routes. This is structural migration; detailed typography, loading/error coverage and native visual review remain outstanding.
+- a71c7e8 Build APK 35913661076 completed successfully, including unit tests, debug APK and release build. This allows pushing the queued invitation/reward changes and this migration without cancelling that build. 859bba8 gallery 35912849285 remains live; no new visual approval is claimed.
+
 ## 2026-09-24 — remove unverified notification payouts
 
 - Removed synthetic welcome seeding from production startup and removed NotificationRepository's direct local reward-credit method/dependency. Legacy notification rows and previously credited ledger entries are preserved. Unprocessed legacy reward notices now explain that no verified payment record exists and open the real Challenges route, where server confirmation already gates challenge claims. This does not retroactively verify old credits or implement a welcome campaign on the server.

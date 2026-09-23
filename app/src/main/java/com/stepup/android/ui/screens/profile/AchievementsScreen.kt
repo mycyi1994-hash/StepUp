@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -74,7 +72,7 @@ import com.stepup.android.domain.AchievementGrade
 import com.stepup.android.domain.AchievementMetrics
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.theme.CarbonHigh
@@ -197,44 +195,7 @@ fun AchievementsScreen(
         achievements.filter { it.grade.name == filter }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.ach_all_title),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(R.string.ach_progress, unlockedCount, achievements.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Silver,
-                    )
-                }
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.ach_all_title), onBack = onBack) {
         // 전체 진행 바
         item {
             GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {

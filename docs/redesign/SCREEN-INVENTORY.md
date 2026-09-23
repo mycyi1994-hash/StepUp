@@ -52,7 +52,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:90 | pending | pending |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:96 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:51 | pending | pending |
-| RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:79 | pending | pending |
+| RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:77 | pending | pending |
 | CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:105 | pending | pending |
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:94 | pending | pending |
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:105 | pending | pending |
@@ -65,7 +65,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:85 | pending | pending |
 | MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:80 | pending | pending |
 | NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:150 | pending | pending |
-| AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:186 | pending | pending |
+| AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:184 | pending | pending |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:135 | pending | pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:121 | pending | pending |
 | ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:141 | pending | pending |

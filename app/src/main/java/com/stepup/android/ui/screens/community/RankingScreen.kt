@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.annotation.StringRes
@@ -49,7 +47,7 @@ import com.stepup.android.domain.FactionRank
 import com.stepup.android.domain.RankBoard
 import com.stepup.android.domain.RankEntry
 import com.stepup.android.domain.RankPeriod
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.quietClickable
@@ -104,35 +102,7 @@ fun RankingScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.community_ranking),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.community_ranking), onBack = onBack) {
         // 부문은 다섯이라 한 줄에 균등 분할로는 글자가 뭉개진다 — 옆으로
         // 밀어서 고른다. 기간은 넷이고 이름이 짧아 한 줄에 들어간다.
         item {
@@ -191,7 +161,7 @@ fun RankingScreen(
                 crews.none { it.runs > 0 } -> item { RankingNotice(R.string.rank_crew_empty) }
                 else -> items(crews, key = { it.crewId }) { row -> CrewRow(row) }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         if (boardIndex == factionIndex) {
@@ -218,7 +188,7 @@ fun RankingScreen(
                 is FactionRankingState.Ready ->
                     items(state.rows, key = { it.faction.id }) { row -> FactionRow(row) }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         val ready = ranking as? RankingState.Ready
@@ -233,7 +203,7 @@ fun RankingScreen(
                     RankingNotice(R.string.rank_loading)
                 }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         val entries = ready.entries

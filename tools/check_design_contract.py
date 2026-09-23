@@ -40,6 +40,10 @@ for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 
     if 'DetailPage(' not in path.read_text(encoding='utf-8'):
         errors.append(f'{path.name}: use the fixed shared detail page')
 notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
+for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt'):
+    detail = (UI/'screens'/relative).read_text(encoding='utf-8')
+    if 'DetailPage(' not in detail or 'ArrowBack' in detail:
+        errors.append(f'{relative}: use shared detail chrome')
 if 'DetailPage(' not in notifications or 'ArrowBack' in notifications:
     errors.append('Notifications must use the shared detail page')
 if 'viewModel::clearAll' in notifications:

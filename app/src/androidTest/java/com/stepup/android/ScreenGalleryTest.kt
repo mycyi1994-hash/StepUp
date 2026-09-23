@@ -230,7 +230,7 @@ class ScreenGalleryTest {
             5 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Profile)
             6 -> MainScaffold(initialRoute = Routes.WALLET)
             7 -> CourseHubScreen()
-            8 -> AchievementsScreen()
+            8 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.ACHIEVEMENTS)
             9 -> AnalyticsScreen()
             10 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.NOTIFICATIONS)
             11 -> ExperienceSettingsScreen {}
@@ -239,7 +239,7 @@ class ScreenGalleryTest {
             14 -> SupportScreen()
             15 -> ConnectedAccountsScreen()
             16 -> LanguageScreen()
-            17 -> RankingScreen()
+            17 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.RANKING)
             18 -> MainScaffold(initialRoute = Routes.CREW_CREATE)
             19 -> MainScaffold(initialRoute = Routes.postCompose(""))
             20 -> SneakerDetailScreen(sneakerId)
