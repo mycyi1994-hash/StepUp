@@ -251,6 +251,10 @@ interface CrewDao {
 
     @Query("DELETE FROM crew_memberships WHERE crewId = :id")
     suspend fun leave(id: String)
+
+    /** 크루가 서버로 옮겨 가면서 폰 안의 가입 기록은 더 쓰지 않는다 */
+    @Query("DELETE FROM crew_memberships")
+    suspend fun clear()
 }
 
 @Dao
@@ -270,6 +274,10 @@ interface CrewInfoDao {
 
     @Query("SELECT COUNT(*) FROM crews")
     suspend fun count(): Int
+
+    /** 크루가 서버로 옮겨 가면서 폰 안의 크루(시드 포함)는 더 쓰지 않는다 */
+    @Query("DELETE FROM crews")
+    suspend fun clear()
 }
 
 @Dao
@@ -401,6 +409,13 @@ interface NotificationDao {
 
     @Query("DELETE FROM notifications")
     suspend fun clear()
+
+    /** 예전 첫 실행 때 넣어 둔, 이제는 없는 크루로 가는 초대 알림 */
+    @Query(
+        "DELETE FROM notifications WHERE type IN ('CREW_INVITE', 'PARTY_INVITE') " +
+            "AND argExtra IN (:crewIds)",
+    )
+    suspend fun deleteInvitesTo(crewIds: List<String>)
 
     /**
      * "모두 읽음" 청소 — 아직 처리하지 않은 액션형 알림(초대·미수령 보상)은 남긴다.

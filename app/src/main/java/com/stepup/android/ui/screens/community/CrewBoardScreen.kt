@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,10 +32,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarStack
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.VoltButton
@@ -61,6 +62,7 @@ fun CrewBoardScreen(
 ) {
     val crews by viewModel.crews.collectAsStateWithLifecycle()
     val joined by viewModel.joinedCrewIds.collectAsStateWithLifecycle()
+    val requests by viewModel.crewRequests.collectAsStateWithLifecycle()
     val postFlow = remember(crewId) { viewModel.crewPosts(crewId) }
     val posts by postFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -72,6 +74,13 @@ fun CrewBoardScreen(
     }
 
     CommentSheetHost(viewModel)
+    CrewNoticeToast(viewModel)
+
+    // 크루장이면 들어올 때마다 기다리는 가입 신청을 새로 받는다.
+    val manages = crew != null && crew.owned && crew.joinPolicy == CrewJoinPolicy.APPROVAL
+    LaunchedEffect(crewId, manages) {
+        if (manages) viewModel.loadCrewRequests(crewId)
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -154,7 +163,7 @@ fun CrewBoardScreen(
                     Text(
                         text = stringResource(
                             R.string.crew_boost,
-                            RewardEconomy.partyBonusPercent(crew.roster.size + 1),
+                            RewardEconomy.partyBonusPercent(crew.memberCount.coerceAtLeast(1)),
                         ),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -167,12 +176,26 @@ fun CrewBoardScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
                     } else {
-                        GhostButton(
-                            text = stringResource(R.string.community_join_crew),
-                            onClick = { viewModel.toggleJoin(crewId) },
+                        CrewJoinAction(
+                            crew = crew,
+                            onToggleJoin = { viewModel.toggleJoin(crewId) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
+                }
+            }
+
+            if (crew.owned) {
+                item {
+                    CrewManageCard(
+                        crew = crew,
+                        requests = requests[crewId],
+                        onPolicy = { viewModel.setJoinPolicy(crewId, it) },
+                        onDecide = { request, approve ->
+                            viewModel.decideCrewRequest(crewId, request.userId, approve)
+                        },
+                        onRetry = { viewModel.loadCrewRequests(crewId) },
+                    )
                 }
             }
 

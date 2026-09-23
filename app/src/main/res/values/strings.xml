@@ -526,6 +526,32 @@
     <string name="crew_area_here">Nearby</string>
     <string name="crew_board">Board</string>
     <string name="crew_board_empty">No crew posts yet. Start the conversation.</string>
+    <string name="crew_policy_title">HOW PEOPLE JOIN</string>
+    <string name="crew_policy_open">Open</string>
+    <string name="crew_policy_approval">Approval</string>
+    <string name="crew_policy_open_desc">Anyone can join right away</string>
+    <string name="crew_policy_approval_desc">You approve each request</string>
+    <string name="crew_apply">REQUEST TO JOIN</string>
+    <string name="crew_cancel_request">CANCEL REQUEST</string>
+    <string name="crew_waiting_approval">Waiting for approval</string>
+    <string name="crew_manage_title">Manage crew</string>
+    <string name="crew_requests_title">Join requests</string>
+    <string name="crew_requests_empty">No pending requests</string>
+    <string name="crew_approve">Approve</string>
+    <string name="crew_reject">Decline</string>
+    <string name="crew_pending_badge">%1$d requests</string>
+    <string name="crew_notice_joined">You joined the crew</string>
+    <string name="crew_notice_requested">Request sent. You will join once the host approves.</string>
+    <string name="crew_notice_cancelled">Request cancelled</string>
+    <string name="crew_notice_left">You left the crew</string>
+    <string name="crew_notice_saved">Saved</string>
+    <string name="crew_notice_approved">Approved</string>
+    <string name="crew_notice_rejected">Declined</string>
+    <string name="crew_notice_failed">Could not reach the server. Please try again.</string>
+    <string name="crew_sign_in_needed">Sign in to see and join crews</string>
+    <string name="crew_loading">Loading crews…</string>
+    <string name="crew_load_failed">Could not load crews</string>
+    <string name="crew_retry">TRY AGAIN</string>
 
     <!-- Ranking -->
     <string name="rank_me">You</string>
@@ -564,10 +590,6 @@
     <string name="run_top_speed">Top speed</string>
 
     <!-- Seed crews -->
-    <string name="seed_crew_trailblazer_tagline">Trail routes every weekend</string>
-    <string name="seed_crew_night_tagline">City loops after dark</string>
-    <string name="seed_crew_summit_tagline">Hills, intervals, no excuses</string>
-    <string name="seed_crew_striders_tagline">Beginner friendly, walk breaks welcome</string>
 
     <!-- Seed posts -->
     <string name="seed_flash1_title">Night 5K by the river, anyone?</string>

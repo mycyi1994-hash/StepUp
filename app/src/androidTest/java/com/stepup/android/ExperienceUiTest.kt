@@ -26,6 +26,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
+import com.stepup.android.data.repo.Crew
+import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.animatedInt
@@ -80,12 +82,30 @@ class ExperienceUiTest {
         ServiceLocator.userPrefs.setGuideSeen()
         ServiceLocator.userPrefs.ensureRunnerUid()
         ServiceLocator.sneakerRepository.ensureStarter()
-        ServiceLocator.crewRepository.ensureSeeded()
+        // 크루는 서버에만 있다. 화면 검사는 서버 없이 도는 것이라, 실제 크루와 같은
+        // 모양의 크루 하나를 채워 넣는다. 크루장이고 승인제라 관리 카드까지 그려진다.
+        ServiceLocator.crewRepository.showForTest(
+            listOf(
+                Crew(
+                    id = "00000000-0000-0000-0000-00000000c0de",
+                    monogram = "HR",
+                    name = "Hangang Runners",
+                    tagline = "Saturday 7AM, 5K by the river",
+                    area = "Mapo",
+                    memberCount = 24,
+                    roster = listOf("Ara Kim", "Bo Lee", "Cha Park", "Dan Choi"),
+                    owned = true,
+                    joinPolicy = CrewJoinPolicy.APPROVAL,
+                    joined = true,
+                    pendingCount = 2,
+                ),
+            ),
+        )
         ServiceLocator.communityRepository.ensureSeeded()
         ServiceLocator.courseRepository.ensureSeeded()
         ServiceLocator.notificationRepository.seedWelcome()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
-        crewId = ServiceLocator.crewRepository.crews.first { it.isNotEmpty() }.first().id
+        crewId = ServiceLocator.crewRepository.crews.value.first().id
         postId = ServiceLocator.communityRepository.posts.first { it.isNotEmpty() }.first().id
     }
 

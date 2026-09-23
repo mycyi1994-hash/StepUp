@@ -51,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
+import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.RankBoard
@@ -519,12 +520,16 @@ private fun CrewTab(
     onCreateCrew: () -> Unit,
 ) {
     val crews by viewModel.crews.collectAsStateWithLifecycle()
-    val joined by viewModel.joinedCrewIds.collectAsStateWithLifecycle()
+    val sync by viewModel.crewSync.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
 
+    CrewNoticeToast(viewModel)
+
     val filtered = crews.filter { it.name.contains(query, ignoreCase = true) }
-    val myCrews = filtered.filter { joined.contains(it.id) }
-    val others = filtered.filterNot { joined.contains(it.id) }.sortedBy { it.kmAway }
+    val myCrews = filtered.filter { it.joined }
+    // 신청해 둔 크루를 위로. 기다리는 중인 것을 찾으러 목록을 뒤지지 않게 한다.
+    val others = filtered.filterNot { it.joined }
+        .sortedWith(compareByDescending<Crew> { it.requested }.thenBy { it.kmAway })
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -532,6 +537,10 @@ private fun CrewTab(
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         item { CreateCrewCard(onClick = onCreateCrew) }
+
+        if (crews.isEmpty()) {
+            item { CrewSyncCard(sync, onRetry = viewModel::refreshCrews) }
+        }
 
         item { SearchField(query, { query = it }) }
 
@@ -557,7 +566,6 @@ private fun CrewTab(
         items(myCrews, key = { "my_${it.id}" }) { crew ->
             CrewCard(
                 crew = crew,
-                joined = true,
                 onToggleJoin = { viewModel.toggleJoin(crew.id) },
                 onOpenLobby = { onOpenLobby(crew.id) },
                 onOpenBoard = { onOpenCrew(crew.id) },
@@ -585,7 +593,6 @@ private fun CrewTab(
         items(others, key = { "near_${it.id}" }) { crew ->
             CrewCard(
                 crew = crew,
-                joined = false,
                 onToggleJoin = { viewModel.toggleJoin(crew.id) },
                 onOpenLobby = { onOpenLobby(crew.id) },
                 onOpenBoard = { onOpenCrew(crew.id) },
@@ -646,11 +653,11 @@ private fun CreateCrewCard(onClick: () -> Unit) {
 @Composable
 private fun CrewCard(
     crew: Crew,
-    joined: Boolean,
     onToggleJoin: () -> Unit,
     onOpenLobby: () -> Unit,
     onOpenBoard: () -> Unit,
 ) {
+    val joined = crew.joined
     GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp, accent = joined) {
         Row(
             modifier = Modifier
@@ -665,21 +672,16 @@ private fun CrewCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text(crew.name, style = MaterialTheme.typography.titleSmall, color = Snow)
-                    if (crew.owned) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(Volt.copy(alpha = 0.16f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.crew_owner_badge),
-                                color = Volt,
-                                fontSize = 8.5.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
+                    Text(
+                        crew.name,
+                        modifier = Modifier.weight(1f, fill = false),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Snow,
+                        maxLines = 1,
+                    )
+                    if (crew.owned) CrewTag(stringResource(R.string.crew_owner_badge))
+                    if (crew.joinPolicy == CrewJoinPolicy.APPROVAL) {
+                        CrewTag(stringResource(R.string.crew_policy_approval))
                     }
                 }
                 if (crew.tagline.isNotBlank()) {
@@ -714,6 +716,17 @@ private fun CrewCard(
             }
             AvatarStack(visible = 3, extra = crew.memberCount / 10, dot = 22.dp)
         }
+        // 크루장에게는 기다리는 신청이 있다는 것을 카드에서 바로 알린다. 크루
+        // 안으로 들어가야만 보이면 신청한 사람이 며칠씩 기다리게 된다.
+        if (crew.owned && crew.pendingCount > 0) {
+            Text(
+                text = stringResource(R.string.crew_pending_badge, crew.pendingCount),
+                modifier = Modifier.quietClickable(onOpenBoard),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Volt,
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -728,17 +741,16 @@ private fun CrewCard(
                     text = stringResource(R.string.crew_board),
                     onClick = onOpenBoard,
                 )
-                GhostButton(
-                    text = stringResource(R.string.community_leave_crew),
-                    onClick = onToggleJoin,
-                    accent = Silver,
-                )
+                // 크루장은 나갈 수 없다 — 나가면 주인 없는 크루가 남는다.
+                if (!crew.owned) {
+                    GhostButton(
+                        text = stringResource(R.string.community_leave_crew),
+                        onClick = onToggleJoin,
+                        accent = Silver,
+                    )
+                }
             } else {
-                GhostButton(
-                    text = stringResource(R.string.community_join_crew),
-                    onClick = onToggleJoin,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                CrewJoinAction(crew, onToggleJoin, Modifier.fillMaxWidth())
             }
         }
     }

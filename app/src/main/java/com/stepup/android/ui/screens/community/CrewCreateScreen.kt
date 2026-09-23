@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
@@ -33,7 +34,9 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 
-/** 모임 만들기 — 당근 그룹처럼 이름·소개·활동 지역만 받고 바로 개설한다. */
+/**
+ * 모임 만들기 — 당근 그룹처럼 이름·소개·활동 지역과 가입 방식만 받고 바로 개설한다.
+ */
 @Composable
 fun CrewCreateScreen(
     onBack: () -> Unit = {},
@@ -43,6 +46,9 @@ fun CrewCreateScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var tagline by rememberSaveable { mutableStateOf("") }
     var area by rememberSaveable { mutableStateOf("") }
+    var policy by rememberSaveable { mutableStateOf(CrewJoinPolicy.OPEN) }
+
+    CrewNoticeToast(viewModel)
 
     val monogram = name.trim()
         .split(" ", "-", "_")
@@ -134,10 +140,17 @@ fun CrewCreateScreen(
         }
 
         item {
+            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+                // 나중에 크루 관리에서 바꿀 수 있다.
+                CrewPolicyPicker(selected = policy, onSelect = { policy = it })
+            }
+        }
+
+        item {
             VoltButton(
                 text = stringResource(R.string.crew_create_submit),
                 enabled = name.isNotBlank(),
-                onClick = { viewModel.createCrew(name, tagline, area, onCreated) },
+                onClick = { viewModel.createCrew(name, tagline, area, policy, onCreated) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }

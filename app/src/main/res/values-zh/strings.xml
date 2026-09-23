@@ -524,6 +524,32 @@
     <string name="crew_area_here">附近</string>
     <string name="crew_board">论坛</string>
     <string name="crew_board_empty">跑团里还没有帖子，来聊两句吧。</string>
+    <string name="crew_policy_title">加入方式</string>
+    <string name="crew_policy_open">自由加入</string>
+    <string name="crew_policy_approval">审核制</string>
+    <string name="crew_policy_open_desc">任何人都可以直接加入</string>
+    <string name="crew_policy_approval_desc">需要队长批准才能加入</string>
+    <string name="crew_apply">申请加入</string>
+    <string name="crew_cancel_request">取消申请</string>
+    <string name="crew_waiting_approval">等待批准</string>
+    <string name="crew_manage_title">管理跑团</string>
+    <string name="crew_requests_title">加入申请</string>
+    <string name="crew_requests_empty">没有待处理的申请</string>
+    <string name="crew_approve">批准</string>
+    <string name="crew_reject">拒绝</string>
+    <string name="crew_pending_badge">申请 %1$d</string>
+    <string name="crew_notice_joined">已加入跑团</string>
+    <string name="crew_notice_requested">已发送申请，队长批准后即可加入。</string>
+    <string name="crew_notice_cancelled">已取消申请</string>
+    <string name="crew_notice_left">已退出跑团</string>
+    <string name="crew_notice_saved">已保存</string>
+    <string name="crew_notice_approved">已批准</string>
+    <string name="crew_notice_rejected">已拒绝</string>
+    <string name="crew_notice_failed">无法连接服务器，请重试。</string>
+    <string name="crew_sign_in_needed">登录后即可查看并加入跑团</string>
+    <string name="crew_loading">正在加载跑团…</string>
+    <string name="crew_load_failed">无法加载跑团</string>
+    <string name="crew_retry">重试</string>
 
     <!-- Ranking -->
     <string name="rank_me">我</string>
@@ -562,10 +588,6 @@
     <string name="run_top_speed">最高速度</string>
 
     <!-- Seed crews -->
-    <string name="seed_crew_trailblazer_tagline">每个周末的越野路线</string>
-    <string name="seed_crew_night_tagline">夜幕后的城市环线</string>
-    <string name="seed_crew_summit_tagline">爬坡、间歇，没有借口</string>
-    <string name="seed_crew_striders_tagline">新手友好，走走也没关系</string>
 
     <!-- Seed posts -->
     <string name="seed_flash1_title">夜跑滨江 5 公里，有人来吗？</string>
