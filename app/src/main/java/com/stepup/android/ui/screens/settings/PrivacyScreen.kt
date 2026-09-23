@@ -52,40 +52,9 @@ fun PrivacyScreen(onBack: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val resetDoneMessage = stringResource(R.string.privacy_reset_done)
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_privacy), onBack = onBack,
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Eyebrow(text = stringResource(R.string.profile_account))
-                    Text(
-                        text = stringResource(R.string.settings_privacy),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                }
-            }
-        }
-
         item {
             GlowCard(spacing = 12.dp) {
                 Row(

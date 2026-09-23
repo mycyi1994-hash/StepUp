@@ -55,34 +55,9 @@ private val faqEntries = listOf(
 fun SupportScreen(onBack: () -> Unit = {}) {
     var expandedIndex by rememberSaveable { mutableStateOf(-1) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_support), onBack = onBack,
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.settings_support),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
         item { SectionHeader(title = stringResource(R.string.support_faq)) }
 
         itemsIndexed(faqEntries) { index, (questionRes, answerRes) ->

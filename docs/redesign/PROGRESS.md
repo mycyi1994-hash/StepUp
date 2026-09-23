@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — shared settings detail page
+
+- Added DetailPage: one pinned SecondaryHeader, fixed design gutter, and scrollable content with shared spacing. Migrated Language, Theme, Notifications, Privacy, Support and Experience settings; removed their separate back/title layouts while preserving controls and destinations.
+- This is a structural redesign, not proof that every existing setting/help text is correct. Screen-level typography, persistence failures, real notification delivery and full accessibility remain in the audit.
+- Source checks passed. 6a0c053 gallery 35910775823 has now completed successfully; detailed form evidence is being downloaded. b263e80 wallet build/native checks are still running.
+
 ## 2026-09-24 — connected accounts
 
 - Replaced screen-local back/title chrome with the shared detail header and scrollable content. Account names/statuses stack to preserve space at larger fonts; status copy is 14sp.

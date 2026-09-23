@@ -27,17 +27,9 @@ fun ExperienceSettingsScreen(onBack: () -> Unit) {
     val settings by prefs.experience.collectAsStateWithLifecycle(initialValue = ExperiencePreferences())
     val scope = rememberCoroutineScope()
     val feedback = LocalFeedback.current
-    LazyColumn(
-        Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_experience), onBack = onBack,
     ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack)
-                Text(stringResource(R.string.settings_experience), modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.headlineSmall, color = Snow)
-            }
-        }
         item {
             Text(stringResource(R.string.experience_intro), style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
