@@ -12,6 +12,7 @@ import java.time.LocalDate
 import java.time.Instant
 import kotlinx.coroutines.flow.combine
 import com.stepup.android.data.local.RewardType
+import com.stepup.android.data.repo.EventClaimResult
 import com.stepup.android.data.repo.EventDef
 import com.stepup.android.data.repo.EventRepository
 import com.stepup.android.data.repo.RewardRepository
@@ -33,6 +34,9 @@ data class DailyChallenge(val steps: Int, val goal: Int, val paidToday: Double) 
 sealed interface ClaimResult {
     data class Success(val amount: Double) : ClaimResult
     data object NotFinished : ClaimResult
+    data object AlreadyClaimed : ClaimResult
+    data object SignInRequired : ClaimResult
+    data object Failed : ClaimResult
 }
 
 class EventsViewModel(
@@ -88,13 +92,16 @@ class EventsViewModel(
 
     fun claim(def: EventDef, progress: Float) {
         viewModelScope.launch {
-            val amount = eventRepository.claim(def, progress)
-            ExperienceEvents.emit(if (amount != null) FeedbackCue.Reward else FeedbackCue.Error)
-            claimResult.value = if (amount != null) {
-                ClaimResult.Success(amount)
-            } else {
-                ClaimResult.NotFinished
+            // 서버가 목표를 다시 재고 지급한다. 지급이 확인된 뒤에만 "받음"이 된다.
+            val result = when (val r = eventRepository.claim(def, progress)) {
+                is EventClaimResult.Paid -> ClaimResult.Success(r.amount)
+                EventClaimResult.NotFinished -> ClaimResult.NotFinished
+                EventClaimResult.AlreadyClaimed -> ClaimResult.AlreadyClaimed
+                EventClaimResult.SignInRequired -> ClaimResult.SignInRequired
+                EventClaimResult.Failed -> ClaimResult.Failed
             }
+            ExperienceEvents.emit(if (result is ClaimResult.Success) FeedbackCue.Reward else FeedbackCue.Error)
+            claimResult.value = result
         }
     }
 

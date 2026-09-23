@@ -4895,6 +4895,629 @@ $$;
 grant execute on function public.push_register(text, text) to authenticated;
 grant execute on function public.push_unregister(text) to authenticated;
 
+-- ══════════════════════════════════════════════════════════════════
+-- 0014_events.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 도전 보상 — 서버가 확인하고 서버가 지급한다.
+--
+-- 도전(주간 걸음·나이트 러너)의 "받기"는 폰이 목표를 채웠다고 판단하면 폰 안
+-- 원장에만 SUP 를 적었다. 폰을 고치면 몇 번이든 받을 수 있었고, 서버 원장
+-- (sup_ledger)에는 남지 않아 기기를 바꾸면 사라졌다.
+--
+-- 이제 받기는 event_claim() 하나로만 한다. 서버가 자기 기록으로 목표를 다시
+-- 재고, 기간마다 한 번만, 원장에 EARN_EVENT 로 적는다. 앱은 서버가 준 금액을
+-- 받은 뒤에야 "받음"으로 바꾼다.
+
+-- ── 일별 걸음 올리기 ───────────────────────────────────────────────
+--
+-- 주간 걸음 도전은 러닝이 아닌 걸음까지 센다. 그 값은 폰에만 있었다. 표(0002
+-- daily_steps)에 직접 쓸 수도 있지만, 여기로만 받으면 두 가지를 지킨다.
+--   - 하루 걸음이 줄어들지 않는다(걸음은 하루 안에서 늘기만 한다).
+--   - 하루 상한(economy.max_daily_steps)을 넘지 못한다.
+create or replace function public.steps_sync(p_days json)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_today bigint := (now() at time zone 'UTC')::date - date '1970-01-01';
+  v_day json;
+  v_epoch bigint;
+  v_steps int;
+  v_goal int;
+  v_count int := 0;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_days is null or json_typeof(p_days) <> 'array' or json_array_length(p_days) > 31 then
+    raise exception '걸음 기록이 올바르지 않습니다' using errcode = '22023';
+  end if;
+
+  for v_day in select * from json_array_elements(p_days) loop
+    v_epoch := (v_day->>'epoch_day')::bigint;
+    v_steps := least(greatest(coalesce((v_day->>'steps')::int, 0), 0), economy.max_daily_steps());
+    v_goal := least(greatest(coalesce((v_day->>'goal')::int, 8000), 1), 100000);
+    -- 시간대 차이로 하루 앞선 날짜까지만 받는다. 먼 미래·먼 과거는 버린다.
+    if v_epoch is null or v_epoch > v_today + 1 or v_epoch < v_today - 30 then
+      continue;
+    end if;
+    insert into public.daily_steps (user_id, epoch_day, steps, goal, updated_at)
+    values (v_user, v_epoch, v_steps, v_goal, now())
+    on conflict (user_id, epoch_day) do update
+      set steps = greatest(public.daily_steps.steps, excluded.steps),
+          goal = excluded.goal,
+          updated_at = now();
+    v_count := v_count + 1;
+  end loop;
+  return v_count;
+end;
+$$;
+
+-- ── 도전 ───────────────────────────────────────────────────────────
+
+-- 도전 정의. 금액과 목표는 여기가 정본이다(앱의 Events 와 같은 값).
+create or replace function economy.event_reward(p_event text) returns numeric
+  language sql immutable as $$
+    select case p_event when 'step_surge' then 250 when 'night_quest' then 300 end
+  $$;
+
+create or replace function economy.event_target(p_event text) returns double precision
+  language sql immutable as $$
+    select case p_event when 'step_surge' then 80000 when 'night_quest' then 20 end
+  $$;
+
+-- 나이트 러너가 세는 시작 시각(현지 시각)
+create or replace function economy.night_from_hour() returns int
+  language sql immutable as $$ select 20 $$;
+
+create table if not exists public.event_claims (
+  user_id uuid not null references auth.users on delete cascade,
+  event_id text not null check (event_id in ('step_surge', 'night_quest')),
+  -- 한 번씩 받는 단위. 주간 도전은 ISO 주('2026-W39'), 한정 도전은 'once'.
+  period text not null,
+  amount numeric(20, 4) not null check (amount > 0),
+  progress double precision not null default 0,
+  claimed_at timestamptz not null default now(),
+  primary key (user_id, event_id, period)
+);
+
+comment on table public.event_claims is
+  '도전 보상을 받은 기록. 기간마다 한 줄 — 같은 기간에 두 번 받을 수 없다.';
+
+alter table public.event_claims enable row level security;
+revoke insert, update, delete on public.event_claims from anon, authenticated;
+drop policy if exists event_claims_select_own on public.event_claims;
+create policy event_claims_select_own on public.event_claims
+  for select using ((select auth.uid()) = user_id);
+grant select on public.event_claims to authenticated;
+
+-- 도전 기간. 주간 도전은 이번 ISO 주, 나머지는 한 번.
+create or replace function economy.event_period(p_event text, p_tz text) returns text
+  language sql stable as $$
+    select case p_event
+      when 'step_surge' then to_char(now() at time zone p_tz, 'IYYY-"W"IW')
+      else 'once'
+    end
+  $$;
+
+-- 서버 기록으로 잰 진행값. 주간 걸음: 최근 7일(오늘 포함) 걸음 합.
+-- 나이트 러너: 현지 저녁 8시 이후에 시작한 러닝 거리(km) 합 — 판정에서 걸린
+-- 세션(FLAGGED · VOID)은 빼고 센다.
+create or replace function public.event_progress(p_event text, p_tz text default 'Asia/Seoul')
+returns double precision
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_tz text := coalesce(nullif(p_tz, ''), 'Asia/Seoul');
+  v_today bigint;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if not exists (select 1 from pg_timezone_names where name = v_tz) then
+    v_tz := 'Asia/Seoul';
+  end if;
+  v_today := (now() at time zone v_tz)::date - date '1970-01-01';
+
+  if p_event = 'step_surge' then
+    return coalesce((
+      select sum(d.steps) from public.daily_steps d
+       where d.user_id = v_user and d.epoch_day between v_today - 6 and v_today
+    ), 0);
+  elsif p_event = 'night_quest' then
+    return coalesce((
+      select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
+       where s.user_id = v_user
+         and s.verdict not in ('FLAGGED', 'VOID')
+         and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
+    ), 0);
+  end if;
+  raise exception '없는 도전입니다' using errcode = '22023';
+end;
+$$;
+
+-- 도전 보상 받기. 목표를 채웠고 이번 기간에 아직 안 받았으면 원장에 적고 금액을
+-- 돌려준다. 이미 받았으면 23505, 목표 미달이면 23514 로 거절한다.
+create or replace function public.event_claim(p_event text, p_tz text default 'Asia/Seoul')
+returns numeric
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_tz text := coalesce(nullif(p_tz, ''), 'Asia/Seoul');
+  v_reward numeric := economy.event_reward(p_event);
+  v_progress double precision;
+  v_period text;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if v_reward is null then
+    raise exception '없는 도전입니다' using errcode = '22023';
+  end if;
+  if not exists (select 1 from pg_timezone_names where name = v_tz) then
+    v_tz := 'Asia/Seoul';
+  end if;
+
+  -- 같은 사람의 동시 요청이 둘 다 통과하지 않게 줄 세운다
+  perform pg_advisory_xact_lock(hashtext('event_claim:' || v_user::text));
+
+  v_period := economy.event_period(p_event, v_tz);
+  if exists (select 1 from public.event_claims
+              where user_id = v_user and event_id = p_event and period = v_period) then
+    raise exception '이미 받은 보상입니다' using errcode = '23505';
+  end if;
+
+  v_progress := public.event_progress(p_event, v_tz);
+  if v_progress < economy.event_target(p_event) then
+    raise exception '아직 목표를 채우지 않았습니다 (%/%)', round(v_progress::numeric, 1),
+      economy.event_target(p_event) using errcode = '23514';
+  end if;
+
+  insert into public.event_claims (user_id, event_id, period, amount, progress)
+  values (v_user, p_event, v_period, v_reward, v_progress);
+  insert into public.sup_ledger (user_id, kind, amount, description)
+  values (v_user, 'EARN_EVENT', v_reward, '도전 보상: ' || p_event || ' ' || v_period);
+  return v_reward;
+end;
+$$;
+
+revoke execute on function public.event_progress(text, text) from public, anon;
+revoke execute on function public.event_claim(text, text) from public, anon;
+revoke execute on function public.steps_sync(json) from public, anon;
+grant execute on function public.event_progress(text, text) to authenticated;
+grant execute on function public.event_claim(text, text) to authenticated;
+grant execute on function public.steps_sync(json) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0015_crew_ranking.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 크루 순위 — 크루원 모두가 크루로 달린 거리를 서버에서 합친다.
+--
+-- 크루 순위는 이 폰에서 달린 크루 러닝만 셌다. 크루원이 열 명이어도 순위에는
+-- 내 거리만 들어가서, 크루끼리 겨루는 표가 되지 못했다. 이제 러닝이 서버에
+-- 올라갈 때 어느 크루로 달렸는지를 적고(session_tag_crew), 순위는 서버가 모든
+-- 크루원의 기록으로 센다(crew_leaderboard).
+
+alter table public.walk_sessions
+  add column if not exists crew_id uuid references public.crews on delete set null;
+
+create index if not exists walk_sessions_crew
+  on public.walk_sessions (crew_id, started_at) where crew_id is not null;
+
+comment on column public.walk_sessions.crew_id is
+  '크루 러닝이었다면 그 크루. 러닝을 올린 뒤 session_tag_crew 로 적는다. 크루원일 때만 적힌다.';
+
+-- 방금 올린 러닝에 크루를 적는다. 그 크루원이어야 하고, 한 번 적힌 크루는 바꾸지
+-- 않는다 — 크루를 옮겨 다니며 같은 거리를 여러 크루에 얹지 못하게.
+create or replace function public.session_tag_crew(p_started_at timestamptz, p_crew uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_crew is null or not public.is_crew_member(p_crew) then
+    raise exception '이 크루의 멤버가 아닙니다' using errcode = '42501';
+  end if;
+  update public.walk_sessions
+     set crew_id = p_crew
+   where user_id = auth.uid() and started_at = p_started_at and crew_id is null;
+  return found;
+end;
+$$;
+
+-- 크루 순위. 모든 크루가 나온다 — 아직 안 달린 크루는 0 km 로.
+-- 판정에서 무효(VOID)가 된 러닝은 빼고, 숨겨진 크루(신고 5건)는 뺀다.
+create or replace function public.crew_leaderboard(p_period text default 'ALL')
+returns table (
+  crew_id uuid,
+  km double precision,
+  runs int,
+  runners int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    c.id,
+    coalesce(sum(s.distance_meters), 0) / 1000.0,
+    count(s.id)::int,
+    count(distinct s.user_id)::int
+  from public.crews c
+  left join public.walk_sessions s
+    on s.crew_id = c.id
+   and s.verdict <> 'VOID'
+   and s.started_at >= public.rank_period_start(p_period)
+  where not public.is_hidden('CREW', c.id::text)
+  group by c.id
+  order by 2 desc, c.id
+$$;
+
+comment on function public.crew_leaderboard(text) is
+  '크루별로 크루원 모두가 크루로 달린 거리를, p_period(DAY·WEEK·MONTH·ALL) 기간으로.';
+
+revoke execute on function public.session_tag_crew(timestamptz, uuid) from public, anon;
+revoke execute on function public.crew_leaderboard(text) from public, anon;
+grant execute on function public.session_tag_crew(timestamptz, uuid) to authenticated;
+grant execute on function public.crew_leaderboard(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0016_notify_prefs.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 알림 설정 — 어떤 푸시를 받을지. 폰의 설정 화면과 같은 네 가지.
+--
+-- 알림은 서버가 보낸다. 그래서 "파티 초대는 받지 않음" 같은 선택도 서버가
+-- 알아야 지켜진다. 폰에만 두면 끈 알림이 계속 온다.
+
+create table if not exists public.notify_prefs (
+  user_id uuid primary key references auth.users on delete cascade,
+  -- 끄면 어떤 푸시도 보내지 않는다
+  push boolean not null default true,
+  goal_reminder boolean not null default true,
+  party_invite boolean not null default true,
+  event_news boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.notify_prefs is
+  '받을 푸시 종류. 줄이 없으면 전부 받음. 보내는 쪽(Edge Function)이 보내기 전에 본다.';
+
+alter table public.notify_prefs enable row level security;
+revoke insert, update, delete on public.notify_prefs from anon, authenticated;
+drop policy if exists notify_prefs_select_own on public.notify_prefs;
+create policy notify_prefs_select_own on public.notify_prefs
+  for select using ((select auth.uid()) = user_id);
+grant select on public.notify_prefs to authenticated;
+
+create or replace function public.notify_prefs_set(
+  p_push boolean,
+  p_goal_reminder boolean,
+  p_party_invite boolean,
+  p_event_news boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  insert into public.notify_prefs (user_id, push, goal_reminder, party_invite, event_news, updated_at)
+  values (auth.uid(), coalesce(p_push, true), coalesce(p_goal_reminder, true),
+          coalesce(p_party_invite, true), coalesce(p_event_news, true), now())
+  on conflict (user_id) do update
+    set push = excluded.push,
+        goal_reminder = excluded.goal_reminder,
+        party_invite = excluded.party_invite,
+        event_news = excluded.event_news,
+        updated_at = now();
+end;
+$$;
+
+revoke execute on function public.notify_prefs_set(boolean, boolean, boolean, boolean) from public, anon;
+grant execute on function public.notify_prefs_set(boolean, boolean, boolean, boolean) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0017_push_outbox.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 푸시 보낼 목록 — 무엇을 누구에게 보낼지는 여기(데이터베이스)가 정하고,
+-- 실제로 보내는 일은 Edge Function(supabase/functions/push-send)이 한다.
+--
+-- 받는 사람을 고르는 규칙(자기 글에 자기 댓글은 알리지 않음, 알림 설정에서 끈
+-- 종류는 빼기)을 SQL 로 두면 테스트로 지킬 수 있다. 보내는 쪽은 이 표를 비우기만
+-- 한다 — 행이 생기면 Database Webhook 이 함수를 깨운다.
+
+create table if not exists public.push_outbox (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  -- COMMENT · REPLY · CREW_REQUEST · PARTY_OPEN · CREW_FLASH
+  kind text not null,
+  -- 알림 글에 넣을 값(누가 · 어느 글 · 어느 크루). 글은 받는 사람의 언어로 함수가 짓는다.
+  args jsonb not null default '{}'::jsonb,
+  -- 알림을 눌렀을 때 열 앱 안 자리(예: crew/<id>). 앱의 InviteLinks 가 읽는다.
+  link text not null default '',
+  created_at timestamptz not null default now(),
+  sent_at timestamptz,
+  attempts int not null default 0,
+  last_error text not null default ''
+);
+
+create index if not exists push_outbox_pending on public.push_outbox (created_at) where sent_at is null;
+
+comment on table public.push_outbox is
+  '보낼 푸시. 트리거가 채우고 push-send 함수가 보낸 뒤 sent_at 을 적는다. 앱은 볼 수 없다.';
+
+alter table public.push_outbox enable row level security;
+revoke all on public.push_outbox from anon, authenticated;
+
+-- 이 사람이 이 종류의 푸시를 받는가. 설정 줄이 없으면 받는다.
+create or replace function public.push_allowed(p_user uuid, p_kind text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((
+    select n.push and case p_kind
+      when 'PARTY_OPEN' then n.party_invite
+      when 'CREW_FLASH' then n.event_news
+      else true
+    end
+    from public.notify_prefs n where n.user_id = p_user
+  ), true)
+$$;
+
+create or replace function public.push_enqueue(p_user uuid, p_kind text, p_args jsonb, p_link text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_user is null or not public.push_allowed(p_user, p_kind) then
+    return;
+  end if;
+  -- 받을 폰이 없으면 적어 둘 까닭이 없다
+  if not exists (select 1 from public.push_tokens t where t.user_id = p_user) then
+    return;
+  end if;
+  insert into public.push_outbox (user_id, kind, args, link)
+  values (p_user, p_kind, coalesce(p_args, '{}'::jsonb), coalesce(p_link, ''));
+end;
+$$;
+
+create or replace function public.push_display_name(p_user uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select display_name from public.profiles where id = p_user), '러너')
+$$;
+
+-- 댓글 → 글쓴이에게, 답글 → 댓글 단 사람에게. 자기 자신에게는 보내지 않는다.
+create or replace function public.push_on_comment()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_to uuid;
+  v_kind text;
+  v_title text;
+  v_crew uuid;
+begin
+  select p.title, p.crew_id into v_title, v_crew from public.posts p where p.id = new.post_id;
+  if new.parent_id is not null then
+    select c.author_id into v_to from public.comments c where c.id = new.parent_id;
+    v_kind := 'REPLY';
+  else
+    select p.author_id into v_to from public.posts p where p.id = new.post_id;
+    v_kind := 'COMMENT';
+  end if;
+  if v_to is not null and v_to <> new.author_id then
+    perform public.push_enqueue(
+      v_to, v_kind,
+      jsonb_build_object('name', public.push_display_name(new.author_id), 'title', coalesce(v_title, '')),
+      case when v_crew is not null then 'crew/' || v_crew::text else '' end);
+  end if;
+  return new;
+end;
+$$;
+
+-- 가입 신청 → 크루장에게
+create or replace function public.push_on_crew_request()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid;
+  v_name text;
+begin
+  select c.owner_id, c.name into v_owner, v_name from public.crews c where c.id = new.crew_id;
+  if v_owner is not null and v_owner <> new.user_id then
+    perform public.push_enqueue(
+      v_owner, 'CREW_REQUEST',
+      jsonb_build_object('name', public.push_display_name(new.user_id), 'crew', coalesce(v_name, '')),
+      'crew/' || new.crew_id::text);
+  end if;
+  return new;
+end;
+$$;
+
+-- 크루 파티런 로비가 열렸다 → 그 크루원들에게(연 사람 빼고)
+create or replace function public.push_on_party()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text;
+  v_member uuid;
+begin
+  if new.crew_id is null then
+    return new;
+  end if;
+  select c.name into v_name from public.crews c where c.id = new.crew_id;
+  for v_member in
+    select m.user_id from public.crew_members m
+     where m.crew_id = new.crew_id and m.user_id <> new.host_id
+  loop
+    perform public.push_enqueue(
+      v_member, 'PARTY_OPEN',
+      jsonb_build_object('name', public.push_display_name(new.host_id), 'crew', coalesce(v_name, '')),
+      'crew/' || new.crew_id::text);
+  end loop;
+  return new;
+end;
+$$;
+
+-- 크루 게시판에 번개가 올라왔다 → 그 크루원들에게(쓴 사람 빼고)
+create or replace function public.push_on_flash()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_member uuid;
+begin
+  if new.category <> 'FLASH' or new.crew_id is null then
+    return new;
+  end if;
+  for v_member in
+    select m.user_id from public.crew_members m
+     where m.crew_id = new.crew_id and m.user_id <> new.author_id
+  loop
+    perform public.push_enqueue(
+      v_member, 'CREW_FLASH',
+      jsonb_build_object('name', public.push_display_name(new.author_id), 'title', new.title),
+      'crew/' || new.crew_id::text);
+  end loop;
+  return new;
+end;
+$$;
+
+drop trigger if exists push_on_comment on public.comments;
+create trigger push_on_comment after insert on public.comments
+  for each row execute function public.push_on_comment();
+
+drop trigger if exists push_on_crew_request on public.crew_join_requests;
+create trigger push_on_crew_request after insert on public.crew_join_requests
+  for each row execute function public.push_on_crew_request();
+
+drop trigger if exists push_on_party on public.parties;
+create trigger push_on_party after insert on public.parties
+  for each row execute function public.push_on_party();
+
+drop trigger if exists push_on_flash on public.posts;
+create trigger push_on_flash after insert on public.posts
+  for each row execute function public.push_on_flash();
+
+revoke execute on function public.push_allowed(uuid, text) from public, anon, authenticated;
+revoke execute on function public.push_enqueue(uuid, text, jsonb, text) from public, anon, authenticated;
+revoke execute on function public.push_display_name(uuid) from public, anon, authenticated;
+
+-- ── 보내는 쪽(push-send, service_role)만 쓰는 함수 ────────────────
+
+-- 보낼 것을 한 묶음 가져간다. 함수가 동시에 두 번 깨어나도 같은 줄을 두 번
+-- 보내지 않게 잠근 줄은 건너뛴다. 다섯 번 실패한 줄은 더 시도하지 않는다.
+create or replace function public.push_claim_batch(p_limit int default 100)
+returns table (
+  id bigint,
+  user_id uuid,
+  kind text,
+  args jsonb,
+  link text,
+  tokens jsonb
+)
+language sql
+security definer
+set search_path = public
+as $$
+  with picked as (
+    select o.id from public.push_outbox o
+     where o.sent_at is null and o.attempts < 5
+     order by o.id
+     limit least(greatest(coalesce(p_limit, 100), 1), 500)
+     for update skip locked
+  ), bumped as (
+    update public.push_outbox o
+       set attempts = o.attempts + 1
+      from picked
+     where o.id = picked.id
+    returning o.id, o.user_id, o.kind, o.args, o.link
+  )
+  select b.id, b.user_id, b.kind, b.args, b.link,
+         coalesce((select jsonb_agg(jsonb_build_object('token', t.token, 'locale', t.locale))
+                     from public.push_tokens t where t.user_id = b.user_id), '[]'::jsonb)
+    from bumped b
+$$;
+
+-- 보냈다고 적는다(실패면 이유를 남긴다)
+create or replace function public.push_mark(p_id bigint, p_sent boolean, p_error text default '')
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.push_outbox
+     set sent_at = case when p_sent then now() else sent_at end,
+         last_error = left(coalesce(p_error, ''), 500)
+   where id = p_id
+$$;
+
+-- 더는 받지 않는 폰(앱을 지웠거나 토큰이 바뀜)을 지운다
+create or replace function public.push_forget_token(p_token text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.push_tokens where token = p_token
+$$;
+
+revoke execute on function public.push_claim_batch(int) from public, anon, authenticated;
+revoke execute on function public.push_mark(bigint, boolean, text) from public, anon, authenticated;
+revoke execute on function public.push_forget_token(text) from public, anon, authenticated;
+do $$
+begin
+  -- 로컬 검사용 Postgres 에는 service_role 이 없을 수 있다
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function public.push_claim_batch(int) to service_role;
+    grant execute on function public.push_mark(bigint, boolean, text) to service_role;
+    grant execute on function public.push_forget_token(text) to service_role;
+    grant select, update on public.push_outbox to service_role;
+  end if;
+end $$;
+
 commit;
 
 -- ════════════════════════════════════════════════════════════════════

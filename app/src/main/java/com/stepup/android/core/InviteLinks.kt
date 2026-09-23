@@ -53,7 +53,10 @@ object InviteLinks {
     fun handle(intent: Intent?) {
         intent ?: return
         val crewId = crewIdOf(intent.dataString)
+            // 앱이 켜져 있을 때 받은 알림은 PushService 가 이 이름으로 싣는다
             ?: crewIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK))
+            // 앱이 꺼져 있을 때는 안드로이드가 알림을 띄우고, 누르면 data 칸이 그대로 온다
+            ?: crewIdOfPush(intent.getStringExtra("link"))
             ?: return
         _pendingCrew.value = crewId
     }

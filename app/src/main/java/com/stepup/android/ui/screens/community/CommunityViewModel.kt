@@ -271,7 +271,7 @@ class CommunityViewModel(
         if (!force && crewBoards.value.containsKey(period)) return
         viewModelScope.launch {
             crewBoards.value = crewBoards.value +
-                (period to crewRepository.ranking(period.sinceMillis()))
+                (period to crewRepository.ranking(period, period.sinceMillis()))
         }
     }
 

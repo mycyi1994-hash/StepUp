@@ -1784,6 +1784,229 @@ begin
     '남의 폰 토큰은 지울 수 없다');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 도전 보상 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+-- 도전을 받을 사람: 4444 — 앞선 검사의 기록과 섞이지 않게 새 사람으로 한다.
+insert into auth.users (id) values ('44444444-4444-4444-4444-444444444444') on conflict do nothing;
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('step_surge', 'Asia/Seoul') $q$,
+  '걸음이 모자라면 주간 도전을 받을 수 없다');
+
+do $$
+declare v_today bigint := (now() at time zone 'Asia/Seoul')::date - date '1970-01-01';
+begin
+  -- 사흘치 걸음. 하루 상한(48,000)을 넘긴 날은 상한까지만 들어간다.
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 30000, 'goal', 8000),
+    json_build_object('epoch_day', v_today - 1, 'steps', 99999, 'goal', 8000),
+    json_build_object('epoch_day', v_today - 40, 'steps', 40000, 'goal', 8000)
+  ));
+  perform pg_temp.ok(
+    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
+    '올린 걸음은 하루 상한까지, 30일보다 오래된 날은 버린다');
+
+  -- 걸음은 줄지 않는다
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 100, 'goal', 8000)));
+  perform pg_temp.ok(
+    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
+    '같은 날 더 적은 걸음을 올려도 줄지 않는다');
+
+  perform public.steps_sync(json_build_array(
+    json_build_object('epoch_day', v_today, 'steps', 32000, 'goal', 8000)));
+  perform pg_temp.ok(
+    public.event_claim('step_surge', 'Asia/Seoul') = 250,
+    '목표를 채우면 주간 도전 보상이 나온다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('step_surge', 'Asia/Seoul') $q$,
+  '같은 주에 두 번 받을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('night_quest', 'Asia/Seoul') $q$,
+  '밤에 뛴 거리가 모자라면 나이트 러너를 받을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ insert into public.event_claims (user_id, event_id, period, amount)
+      values ('44444444-4444-4444-4444-444444444444', 'night_quest', 'once', 300) $q$,
+  '앱은 받은 기록을 직접 적을 수 없다');
+
+call pg_temp.must_fail(
+  $q$ select public.event_claim('free_money', 'Asia/Seoul') $q$,
+  '없는 도전은 받을 수 없다');
+
+reset role;
+
+-- 밤 9시(서울)에 21km 뛴 기록 하나와, 판정에서 걸린 30km 기록 하나
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+values
+  ('44444444-4444-4444-4444-444444444444',
+   (date '2026-09-01' + time '21:00') at time zone 'Asia/Seoul',
+   (date '2026-09-01' + time '23:00') at time zone 'Asia/Seoul', 7200, 25000, 21000, 'CLEAN'),
+  ('44444444-4444-4444-4444-444444444444',
+   (date '2026-09-02' + time '21:00') at time zone 'Asia/Seoul',
+   (date '2026-09-02' + time '23:00') at time zone 'Asia/Seoul', 7200, 30000, 30000, 'FLAGGED');
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+do $$
+begin
+  perform pg_temp.ok(
+    round(public.event_progress('night_quest', 'Asia/Seoul')::numeric, 1) = 21.0,
+    '나이트 러너는 판정에서 걸린 세션을 빼고 센다');
+  perform pg_temp.ok(
+    public.event_claim('night_quest', 'Asia/Seoul') = 300,
+    '밤 20km 를 채우면 나이트 러너 보상이 나온다');
+  perform pg_temp.ok(
+    (select count(*) from public.event_claims) = 2,
+    '받은 기록은 본인이 읽을 수 있다');
+end $$;
+reset role;
+
+do $$
+begin
+  perform pg_temp.ok(
+    (select sum(amount) from public.sup_ledger
+      where user_id = '44444444-4444-4444-4444-444444444444' and kind = 'EARN_EVENT') = 550,
+    '두 보상이 서버 원장에 EARN_EVENT 로 적힌다');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 순위 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+values
+  ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-20 07:00+09', timestamptz '2026-09-20 07:40+09', 2400, 6000, 5000, 'CLEAN'),
+  ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-21 07:00+09', timestamptz '2026-09-21 07:40+09', 2400, 6000, 9000, 'VOID');
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform pg_temp.ok(
+    public.session_tag_crew(timestamptz '2026-09-20 07:00+09', pg_temp.fx('crew')::uuid),
+    '크루원은 자기 러닝에 크루를 적을 수 있다');
+  perform public.session_tag_crew(timestamptz '2026-09-21 07:00+09', pg_temp.fx('crew')::uuid);
+  perform pg_temp.ok(
+    (select km = 5 and runs = 1 and runners = 1 from public.crew_leaderboard('ALL')
+      where crew_id = pg_temp.fx('crew')::uuid),
+    '크루 순위는 무효 판정 러닝을 빼고 센다');
+  perform pg_temp.ok(
+    (select count(*) from public.crew_leaderboard('ALL')) >= 1,
+    '아직 안 달린 크루도 순위표에 나온다');
+end $$;
+
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+call pg_temp.must_fail(
+  format($q$ select public.session_tag_crew(timestamptz '2026-09-01 21:00+09', '%s') $q$, pg_temp.fx('crew')),
+  '크루원이 아니면 러닝에 그 크루를 적을 수 없다');
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 알림 설정 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('44444444-4444-4444-4444-444444444444');
+do $$
+begin
+  perform public.notify_prefs_set(true, false, false, true);
+  perform public.notify_prefs_set(true, true, false, true);
+  perform pg_temp.ok(
+    (select not party_invite and goal_reminder from public.notify_prefs),
+    '알림 설정은 한 사람에 한 줄로, 마지막 값이 남는다');
+end $$;
+call pg_temp.must_fail(
+  $q$ update public.notify_prefs set push = false $q$,
+  '앱은 알림 설정 표를 직접 고칠 수 없다');
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 푸시 보낼 목록 ───────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$ begin perform public.push_register('fcm-token-3333333333333333333333', 'ko'); end $$;
+reset role;
+
+do $$
+declare v_post bigint; v_c bigint; v_before int;
+begin
+  delete from public.push_outbox;
+  insert into public.posts (author_id, category, title, body)
+  values ('33333333-3333-3333-3333-333333333333', 'FREE', '푸시 검사 글', '')
+  returning id into v_post;
+
+  -- 2222 가 3333 의 글에 댓글 → 3333 에게
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '22222222-2222-2222-2222-222222222222', '좋은 글이에요') returning id into v_c;
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'COMMENT' and args->>'title' <> '')
+       from public.push_outbox where user_id = '33333333-3333-3333-3333-333333333333'),
+    '댓글이 달리면 글쓴이에게 보낼 푸시가 생긴다');
+
+  -- 3333 이 자기 글에 댓글 → 아무에게도 안 감. 2222 댓글에 답글 → 2222 에게
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '33333333-3333-3333-3333-333333333333', '감사합니다');
+  insert into public.comments (post_id, parent_id, author_id, body)
+  values (v_post, v_c, '33333333-3333-3333-3333-333333333333', '저도요');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox where user_id = '33333333-3333-3333-3333-333333333333') = 1,
+    '자기 글에 단 댓글은 자기에게 알리지 않는다');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '22222222-2222-2222-2222-222222222222' and kind = 'REPLY') = 1,
+    '답글이 달리면 댓글 단 사람에게 보낼 푸시가 생긴다');
+
+  -- 알림을 끈 사람에게는 쌓지 않는다
+  insert into public.notify_prefs (user_id, push) values ('33333333-3333-3333-3333-333333333333', false)
+    on conflict (user_id) do update set push = false;
+  select count(*) into v_before from public.push_outbox;
+  insert into public.comments (post_id, author_id, body)
+  values (v_post, '22222222-2222-2222-2222-222222222222', '한 번 더');
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox) = v_before,
+    '푸시를 끈 사람에게는 보낼 푸시가 쌓이지 않는다');
+
+  -- 폰이 없는 사람(4444 는 토큰이 없다)에게도 쌓지 않는다
+  perform pg_temp.ok(
+    not exists (select 1 from public.push_outbox where user_id = '44444444-4444-4444-4444-444444444444'),
+    '받을 폰이 없는 사람에게는 쌓지 않는다');
+end $$;
+
+do $$
+declare r record; v_n int := 0;
+begin
+  for r in select * from public.push_claim_batch(10) loop
+    v_n := v_n + 1;
+    perform pg_temp.ok(jsonb_array_length(r.tokens) >= 1, '가져간 줄에는 받을 폰이 함께 온다');
+    perform public.push_mark(r.id, true, '');
+  end loop;
+  perform pg_temp.ok(v_n = 2, '쌓인 푸시를 한 번에 가져간다');
+  perform pg_temp.ok(
+    (select count(*) from public.push_claim_batch(10)) = 0,
+    '보냈다고 적은 줄은 다시 가져가지 않는다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+call pg_temp.must_fail($q$ select * from public.push_outbox $q$, '앱은 보낼 푸시 목록을 볼 수 없다');
+call pg_temp.must_fail($q$ select * from public.push_claim_batch(10) $q$, '앱은 보낼 푸시를 가져갈 수 없다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

@@ -28,6 +28,21 @@ Supabase(Postgres) 에 올릴 표와 권한 규칙입니다.
 > 스키마를 고칠 때는 `migrations/` 쪽을 고치고 `scripts/build-setup-sql.py` 로
 > `setup.sql` 을 다시 만듭니다.
 
+### 매번 붙여넣기 싫다면 — 자동 적용
+
+GitHub 저장소 **Settings → Secrets and variables → Actions → New repository
+secret** 에 한 번만 넣어 두면, 이후로는 main 에 합쳐질 때마다
+`.github/workflows/deploy-sql.yml` 이 `setup.sql` 을 대신 올립니다.
+
+- 이름: `SUPABASE_DB_URL`
+- 값: Supabase 대시보드 위쪽 **Connect** → **Session pooler** 의 연결 문자열
+  (`postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-...pooler.supabase.com:5432/postgres`),
+  `[YOUR-PASSWORD]` 를 데이터베이스 비밀번호로 바꾼 것. **Direct connection 주소는
+  GitHub 에서 닿지 않습니다.**
+
+비밀이 없으면 이 작업은 건너뛰기만 합니다. 지금 것을 바로 올리려면 Actions →
+**Deploy server schema** → **Run workflow**.
+
 ---
 
 ## 무엇이 들어 있나
@@ -47,6 +62,10 @@ Supabase(Postgres) 에 올릴 표와 권한 규칙입니다.
 | `0011_board.sql` | 게시판 함수 — 글·댓글·좋아요 쓰기, 도배 제한, 신고·차단, 번개 모임 장소 좌표·참가자 명단 |
 | `0012_course_party.sql` | 코스 공유(올리기·내리기·하트)와 파티런 로비(방·준비·출발·위치 보고) |
 | `0013_push.sql` | 푸시 알림 받을 폰(FCM 토큰) 등록·해제 |
+| `0014_events.sql` | 도전 보상을 서버가 확인·지급(주간 걸음·나이트 러너), 일별 걸음 올리기 |
+| `0015_crew_ranking.sql` | 러닝에 크루 적기, 크루 순위를 크루원 모두의 기록으로 |
+| `0016_notify_prefs.sql` | 받을 푸시 종류(알림 설정) |
+| `0017_push_outbox.sql` | 보낼 푸시 목록 — 댓글·답글·가입 신청·크루 파티런·크루 번개 때 받는 사람을 골라 쌓는다(보내기는 `functions/push-send`) |
 
 ---
 

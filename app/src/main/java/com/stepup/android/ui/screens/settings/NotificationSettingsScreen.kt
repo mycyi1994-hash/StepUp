@@ -1,5 +1,10 @@
 package com.stepup.android.ui.screens.settings
 
+import com.stepup.android.data.prefs.NotifyPrefs
+import com.stepup.android.core.ServiceLocator
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.collectAsState
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,9 +27,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,8 +51,8 @@ import com.stepup.android.ui.theme.Volt
 /**
  * 알림 설정 — 네 개의 토글.
  *
- * 백엔드가 없으므로 상태는 화면 로컬(rememberSaveable)에만 머문다.
- * 스위치를 뒤집을 때마다 "저장됨" 토스트로 즉각적인 피드백만 준다.
+ * 폰(DataStore)에 저장하고 서버(notify_prefs)에도 올린다. 알림은 서버가
+ * 보내므로 서버가 알아야 끈 알림이 오지 않는다.
  */
 @Composable
 fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
@@ -58,10 +60,13 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     val savedMessage = stringResource(R.string.pref_saved)
     val notifySaved = { Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show() }
 
-    var push by rememberSaveable { mutableStateOf(true) }
-    var goalReminder by rememberSaveable { mutableStateOf(true) }
-    var partyInvite by rememberSaveable { mutableStateOf(true) }
-    var eventNews by rememberSaveable { mutableStateOf(true) }
+    val prefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = NotifyPrefs())
+    val scope = rememberCoroutineScope()
+    fun save(next: NotifyPrefs) {
+        scope.launch { ServiceLocator.userPrefs.setNotifyPrefs(next) }
+        ServiceLocator.pushRegistrar.syncPrefsInBackground(next)
+        notifySaved()
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -102,11 +107,8 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
                 icon = Icons.Filled.Notifications,
                 title = stringResource(R.string.pref_push),
                 description = stringResource(R.string.pref_push_desc),
-                checked = push,
-                onCheckedChange = {
-                    push = it
-                    notifySaved()
-                },
+                checked = prefs.push,
+                onCheckedChange = { save(prefs.copy(push = it)) },
             )
         }
 
@@ -115,11 +117,8 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
                 icon = Icons.Filled.Schedule,
                 title = stringResource(R.string.pref_goal_reminder),
                 description = stringResource(R.string.pref_goal_reminder_desc),
-                checked = goalReminder,
-                onCheckedChange = {
-                    goalReminder = it
-                    notifySaved()
-                },
+                checked = prefs.goalReminder,
+                onCheckedChange = { save(prefs.copy(goalReminder = it)) },
             )
         }
 
@@ -128,11 +127,8 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                 title = stringResource(R.string.pref_party_invite),
                 description = stringResource(R.string.pref_party_invite_desc),
-                checked = partyInvite,
-                onCheckedChange = {
-                    partyInvite = it
-                    notifySaved()
-                },
+                checked = prefs.partyInvite,
+                onCheckedChange = { save(prefs.copy(partyInvite = it)) },
             )
         }
 
@@ -141,11 +137,8 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
                 icon = Icons.Filled.EmojiEvents,
                 title = stringResource(R.string.pref_event_news),
                 description = stringResource(R.string.pref_event_news_desc),
-                checked = eventNews,
-                onCheckedChange = {
-                    eventNews = it
-                    notifySaved()
-                },
+                checked = prefs.eventNews,
+                onCheckedChange = { save(prefs.copy(eventNews = it)) },
             )
         }
     }

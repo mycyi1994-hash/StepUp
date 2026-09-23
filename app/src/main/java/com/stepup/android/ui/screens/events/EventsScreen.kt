@@ -114,6 +114,9 @@ fun EventsScreen(
     var celebration by rememberSaveable { mutableStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
     val notFinished = stringResource(R.string.toast_not_finished)
+    val alreadyClaimed = stringResource(R.string.toast_claim_already)
+    val claimFailed = stringResource(R.string.toast_claim_failed)
+    val signInNeeded = stringResource(R.string.toast_claim_sign_in)
     LaunchedEffect(claimResult) {
         when (val r = claimResult) {
             is ClaimResult.Success -> {
@@ -122,6 +125,12 @@ fun EventsScreen(
             }
             ClaimResult.NotFinished ->
                 Toast.makeText(context, notFinished, Toast.LENGTH_SHORT).show()
+            ClaimResult.AlreadyClaimed ->
+                Toast.makeText(context, alreadyClaimed, Toast.LENGTH_SHORT).show()
+            ClaimResult.SignInRequired ->
+                Toast.makeText(context, signInNeeded, Toast.LENGTH_SHORT).show()
+            ClaimResult.Failed ->
+                Toast.makeText(context, claimFailed, Toast.LENGTH_SHORT).show()
             null -> {}
         }
         if (claimResult != null) viewModel.consumeClaimResult()

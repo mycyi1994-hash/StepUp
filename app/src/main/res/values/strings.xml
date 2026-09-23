@@ -264,6 +264,9 @@
     <string name="events_claimed">CLAIMED</string>
     <string name="toast_claimed">+%1$s SUP claimed!</string>
     <string name="toast_not_finished">Not finished yet — keep going!</string>
+    <string name="toast_claim_already">Already claimed for this period.</string>
+    <string name="toast_claim_failed">Couldn\'t reach the server. Try again.</string>
+    <string name="toast_claim_sign_in">Sign in to claim rewards.</string>
     <string name="invite_subject">Join me on StepUp</string>
     <string name="invite_text">I\'m earning SUP just by walking on StepUp. Come run with me!</string>
     <string name="invite_send">Send</string>
@@ -1364,6 +1367,10 @@ Start running with StepUp.</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>
     <string name="finish_share">Share run</string>
+    <string name="share_card_distance">Distance</string>
+    <string name="share_card_time">Time</string>
+    <string name="share_card_pace">Pace</string>
+    <string name="share_card_footer">Run together · stepupcrew.com</string>
     <string name="finish_share_text">I ran %1$s km in %2$s on StepUp and earned +%3$s SUP.</string>
     <string name="home_today_earned">Earned today</string>
     <string name="home_run_time">Workout time</string>

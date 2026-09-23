@@ -262,6 +262,9 @@
     <string name="events_claimed">已领取</string>
     <string name="toast_claimed">已领取 +%1$s SUP！</string>
     <string name="toast_not_finished">还没完成 —— 再加把劲！</string>
+    <string name="toast_claim_already">本期已领取过。</string>
+    <string name="toast_claim_failed">无法连接服务器，请重试。</string>
+    <string name="toast_claim_sign_in">登录后才能领取奖励。</string>
     <string name="invite_subject">来 StepUp 一起跑</string>
     <string name="invite_text">我在 StepUp 上走走路就能赚 SUP，一起来跑吧！</string>
     <string name="invite_send">发送</string>
@@ -1362,6 +1365,10 @@
     <string name="finish_balance">持有</string>
     <string name="finish_done">完成</string>
     <string name="finish_share">分享记录</string>
+    <string name="share_card_distance">距离</string>
+    <string name="share_card_time">时间</string>
+    <string name="share_card_pace">配速</string>
+    <string name="share_card_footer">一起跑步 · stepupcrew.com</string>
     <string name="finish_share_text">我在StepUp用%2$s跑了%1$s公里，获得+%3$s SUP。</string>
     <string name="home_today_earned">今日获得</string>
     <string name="home_run_time">运动时间</string>
