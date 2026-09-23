@@ -60,26 +60,30 @@ class CrewFormTest {
         // Deliberately do not publish a real meetup from instrumentation.
     }
 
-    @Test fun nameInputAndKeyboardLeaveSubmitReachableAtLargeFont() {
+    @Test fun nameInputAndKeyboardLeaveSubmitReachable() = exerciseCrewForm(1f)
+
+    @Test fun nameInputAndKeyboardLeaveSubmitReachableAtLargeFont() = exerciseCrewForm(1.3f)
+
+    private fun exerciseCrewForm(font: Float) {
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setGuideSeen()
         }
-        var scale by mutableFloatStateOf(1f)
         compose.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(1.8f, scale)) {
+            CompositionLocalProvider(LocalDensity provides Density(1.8f, font)) {
                 StepUpTheme(ThemeMode.DARK) {
                     ExperienceProvider {
                         Box(Modifier.requiredSize(360.dp, 780.dp).testTag("crew-form-viewport")) {
                             com.stepup.android.ui.components.NightCanvas(Modifier.fillMaxSize())
-                            key(scale) { MainScaffold(initialRoute = Routes.CREW_CREATE) }
+                            MainScaffold(initialRoute = Routes.CREW_CREATE)
                         }
                     }
                 }
             }
         }
-        for (font in listOf(1f, 1.3f)) {
-            compose.runOnIdle { scale = font }
+        // Each font size gets a fresh rule-owned Activity. Replacing a focused
+        // editor in-place races its pending IME hide against the next editor's show.
+        run {
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsNotEnabled()
             val name = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_name))
             name.performScrollTo().performClick().performTextInput("River runners")

@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — isolate font scenarios from focused editor disposal
+
+- 2f65026 API 35 log at 22:16:10–11 records overlapping show/hide IME requests, including onShown followed by HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED. The captured 1.3 form has no keyboard. The test replaced a focused form with key(scale) inside one Activity immediately after the first scenario, making disposal/next-focus interference a plausible fixture cause, not a proven production defect.
+- Split normal and enlarged-font scenarios into two rule-owned Activity tests. Both retain the actual IME visibility requirement, entered text, pinned submit checks, empty-name disabling and pre-teardown screenshots; no keyboard forcing or relaxed assertion was added. Native execution remains required to confirm the diagnosis.
+- The completed 2f65026 API 34 artifact reports 19 interaction tests/0 failures, with the separate gallery still failing on upgrade-cost locale matching. Its download has completed. 76c942d gallery 35927305914 also ended in failure; the newer 580a9e4 locale-fix build/gallery are still live. Local design/resource/whitespace checks pass.
+
 ## 2026-09-24 — upgrade-dialog failure traced to gallery locale scope
 
 - Inspected 2f65026 API 35 extra-sneaker-upgrade-confirm.png: the actual dialog is displayed, with English Enhance/Upgrade/Cancel while the underlying gallery is Korean. The test searched Korean cost text. Thus increasing the wait cannot resolve this mismatch. Native production locale behavior is not disproved by this test-only configuration override.
