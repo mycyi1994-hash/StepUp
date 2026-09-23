@@ -32,6 +32,14 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## Environment / unverified dependencies
 
+## 2026-09-24 — community together/stories flow
+
+- Community now opens with a decorative warmup group and one actual upcoming public meetup. The selector excludes expired, full, private and unscheduled posts, chooses the soonest start and has no fabricated fallback. Native title/place/date/distance are repository data; View meetup opens the detail before any participation change. The selector refreshes its time boundary while displayed and has unit coverage.
+- Together/Stories are the main content choices. Other meetups opens the full flash list; Stories keeps ordinary posts and writing. Crew and map stay reachable through shared icon controls. System Back returns from crews/meetup list; chrome checks and gallery variations now cover these paths. First-use tour copy/target follows the new choices rather than pointing at a sometimes-absent write action.
+- Loading/sign-in/failure state remains explicit, including when cached posts exist; only a successful empty response shows no meetups. The group illustration is not a member list. Its original PNG and exact prompt are stored with the production assets; converted WebP is 1536x1024 with alpha extrema 0..254.
+- 2bafc3e Build APK 35905430519 failed compiling ClaimUploadTest.FakeDao because the newly added RunTotals query was missing from the fake. Added its real aggregate over the fake rows. Application compilation had passed; unit execution and the new community changes still require fresh verification.
+- 737ef71 gallery 35904606624 completed successfully. 2bafc3e gallery 35905430477 was still running during this change. Neither is evidence for the new community layout. Full authenticated meetup/create/join/error flows remain unverified.
+
 ## 2026-09-24 — profile redesign and record summary
 
 - Profile now leads with the actual equipped character, nickname, two saved-run totals and three destinations (records, challenges, wallet). Settings stays reachable through a shared icon control; inventory, goal, profile editing and the remaining tools stay inside settings. Character tap opens Customize rather than the unrelated inventory screen. The cinematic sunset uses the root scene while the original main header/navigation remain unchanged.

@@ -130,6 +130,8 @@ class ScreenGalleryTest {
         val variations = listOf(
             Triple(0, "home-details", listOf(R.string.common_more)),
             Triple(2, "community-crews", listOf(R.string.community_tab_my_crew)),
+            Triple(2, "community-stories", listOf(R.string.community_stories)),
+            Triple(2, "community-meetups", listOf(R.string.community_other_meetups)),
             Triple(3, "items-store", listOf(R.string.market_tab_store)),
             Triple(3, "items-exchange", listOf(R.string.market_tab_nft)),
             Triple(3, "items-my-trades", listOf(R.string.market_tab_nft, R.string.market_section_mine)),

@@ -325,7 +325,7 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Wardrobe,
         )
-    } else if (chrome?.header == AppChromePolicy.Header.Focus || currentRoute == Screen.Profile.route) {
+    } else if (chrome?.header == AppChromePolicy.Header.Focus || currentRoute == Screen.Profile.route || currentRoute == Screen.Community.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Sunset,
         )

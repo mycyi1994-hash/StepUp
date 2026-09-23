@@ -165,7 +165,7 @@ object GuideTour {
 
         // ── 커뮤니티 ──
         GuideStep(Targets.tab("community"), "community", R.string.tour_tab_community_title, R.string.tour_tab_community_body),
-        GuideStep(Targets.COMMUNITY_WRITE, "community", R.string.tour6_title, R.string.tour6_body),
+        GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour6_title, R.string.tour6_body),
 
         // ── 내 정보 ──
         GuideStep(Targets.tab("profile"), "profile", R.string.tour_tab_profile_title, R.string.tour_tab_profile_body),

@@ -873,8 +873,8 @@ Start running with StepUp.</string>
     <string name="tour4_body">Switch between the open board (flash runs, tips) and your crews — small communities you can create yourself.</string>
     <string name="tour5_title">Ranking</string>
     <string name="tour5_body">See where you stand this week. Tap to open the full leaderboard — weekly steps or SUP balance.</string>
-    <string name="tour6_title">Write a post</string>
-    <string name="tour6_body">Recruit a flash run or share tips. Flash runs are sorted by distance, so nearby runners see yours first.</string>
+    <string name="tour6_title">Meet other runners</string>
+    <string name="tour6_body">Find upcoming meetups in Run together. Open Stories to read posts, share tips or write your own.</string>
     <string name="tour7_title">Equipped sneaker</string>
     <string name="tour7_body">This pair\'s boost applies to every run. Tap it to see stats, upgrade, or swap pairs.</string>
     <string name="tour8_title">Minting</string>
@@ -1425,6 +1425,11 @@ Start running with StepUp.</string>
     <string name="run_gps_search">Finding GPS</string>
     <string name="run_avg_pace">Avg pace</string>
     <string name="finish_title">Run complete</string>
+    <string name="community_together">Run together</string>
+    <string name="community_stories">Stories</string>
+    <string name="community_view_meetup">View meetup</string>
+    <string name="community_other_meetups">Other meetups</string>
+    <string name="community_meetups_empty">No upcoming runs with open spots yet. Start a conversation and find someone to run with.</string>
     <string name="community_hero_title">Run together</string>
     <string name="community_hero_sub">Stories from runners going further, together.</string>
     <string name="news_hero_sub">More fun when we run together.</string>

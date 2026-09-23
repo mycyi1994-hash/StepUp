@@ -871,8 +871,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour4_body">열린 게시판(번개러닝·꿀팁)과 크루(직접 만들 수 있는 소모임) 사이를 전환해요.</string>
     <string name="tour5_title">랭킹</string>
     <string name="tour5_body">이번 주 내 순위를 확인하세요. 누르면 주간 걸음/보유 SUP 전체 순위표가 열려요.</string>
-    <string name="tour6_title">글쓰기</string>
-    <string name="tour6_body">번개러닝을 모집하거나 꿀팁을 나눠보세요. 번개러닝은 가까운 순이라 근처 러너에게 먼저 보여요.</string>
+    <string name="tour6_title">함께 달릴 사람 찾기</string>
+    <string name="tour6_body">함께 뛰기에서 예정된 모임을 찾아보세요. 이야기에서는 러너들의 글을 읽고 직접 글을 쓸 수 있어요.</string>
     <string name="tour7_title">착용 중인 스니커즈</string>
     <string name="tour7_body">이 신발의 부스트가 모든 러닝에 적용돼요. 눌러서 스탯 확인·강화·교체를 할 수 있어요.</string>
     <string name="tour8_title">민팅</string>
@@ -1423,6 +1423,11 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_gps_search">GPS 찾는 중</string>
     <string name="run_avg_pace">평균 페이스</string>
     <string name="finish_title">러닝 완료</string>
+    <string name="community_together">함께 뛰기</string>
+    <string name="community_stories">이야기</string>
+    <string name="community_view_meetup">모임 자세히 보기</string>
+    <string name="community_other_meetups">다른 모임 보기</string>
+    <string name="community_meetups_empty">아직 참가할 수 있는 예정된 러닝이 없어요. 글을 써서 함께 달릴 사람을 찾아보세요.</string>
     <string name="community_hero_title">함께 달리기</string>
     <string name="community_hero_sub">오늘도, 더 멀리, 함께 달리는 러너들의 이야기.</string>
     <string name="news_hero_sub">함께 달리는 더 큰 즐거움.</string>

@@ -871,8 +871,8 @@
     <string name="tour4_body">在公开帖子（闪电跑、干货）和跑团（可自建的小社群）之间切换。</string>
     <string name="tour5_title">排行榜</string>
     <string name="tour5_body">查看你本周的名次。点开可见完整榜单：周步数或 SUP 余额。</string>
-    <string name="tour6_title">发帖</string>
-    <string name="tour6_body">发起闪电跑或分享干货。闪电跑按距离排序，附近的跑者最先看到。</string>
+    <string name="tour6_title">认识跑步伙伴</string>
+    <string name="tour6_body">在一起跑中寻找即将开始的活动。在交流中阅读帖子、分享经验或自己发帖。</string>
     <string name="tour7_title">穿戴中的球鞋</string>
     <string name="tour7_body">这双鞋的加成作用于每次跑步。点开可查看属性、强化或更换。</string>
     <string name="tour8_title">铸造</string>
@@ -1423,6 +1423,11 @@
     <string name="run_gps_search">正在搜索GPS</string>
     <string name="run_avg_pace">平均配速</string>
     <string name="finish_title">跑步完成</string>
+    <string name="community_together">一起跑</string>
+    <string name="community_stories">交流</string>
+    <string name="community_view_meetup">查看活动详情</string>
+    <string name="community_other_meetups">查看其他活动</string>
+    <string name="community_meetups_empty">暂时没有可报名的跑步活动。发帖寻找一起跑步的伙伴吧。</string>
     <string name="community_hero_title">一起跑</string>
     <string name="community_hero_sub">今天也一起跑得更远——跑者们的故事。</string>
     <string name="news_hero_sub">一起跑，乐趣更多。</string>

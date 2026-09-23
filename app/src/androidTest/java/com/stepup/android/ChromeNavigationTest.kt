@@ -98,6 +98,19 @@ class ChromeNavigationTest {
                     compose.onNodeWithTag("profile-settings").assertIsDisplayed()
                     assertEquals("settings Back returns to profile", logo, bounds("brand-wordmark"))
                 }
+                if (tab == R.string.tab_community) {
+                    compose.onNodeWithContentDescription(compose.activity.getString(R.string.community_tab_my_crew)).performClick()
+                    compose.waitForIdle()
+                    assertEquals("crews keep navigation", bar, bounds(BOTTOM_NAV_TAG))
+                    pressBack()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("community-all-meetups").assertIsDisplayed().performClick()
+                    compose.waitForIdle()
+                    pressBack()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("community-all-meetups").assertIsDisplayed()
+                    assertEquals("meetups Back restores chrome", header, bounds("main-header"))
+                }
             }
             compose.onNodeWithTag("sup-balance").performClick()
             compose.waitForIdle()

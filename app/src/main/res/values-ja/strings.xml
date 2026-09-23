@@ -872,8 +872,8 @@ StepUp と走り出そう。</string>
     <string name="tour4_body">オープン掲示板（フラッシュラン・お役立ち）とクルー（自分で作れる小さなコミュニティ）を切り替えます。</string>
     <string name="tour5_title">ランキング</string>
     <string name="tour5_body">今週の順位をチェック。タップすると週間歩数／SUP 残高の全ランキングが開きます。</string>
-    <string name="tour6_title">投稿</string>
-    <string name="tour6_body">フラッシュランを募集したりお役立ち情報をシェア。近い順に並ぶので近くのランナーに先に届きます。</string>
+    <string name="tour6_title">ランナーとつながる</string>
+    <string name="tour6_body">一緒に走るタブで今後の集まりを探しましょう。トークでは投稿を読んだり、自分で書いたりできます。</string>
     <string name="tour7_title">装備中のスニーカー</string>
     <string name="tour7_body">この一足のブーストが毎回のランに反映。タップでステータス確認・強化・履き替え。</string>
     <string name="tour8_title">ミント</string>
@@ -1424,6 +1424,11 @@ StepUp と走り出そう。</string>
     <string name="run_gps_search">GPS検索中</string>
     <string name="run_avg_pace">平均ペース</string>
     <string name="finish_title">ラン完了</string>
+    <string name="community_together">一緒に走る</string>
+    <string name="community_stories">トーク</string>
+    <string name="community_view_meetup">集まりの詳細</string>
+    <string name="community_other_meetups">ほかの集まりを見る</string>
+    <string name="community_meetups_empty">参加できるランの予定はまだありません。投稿して一緒に走る仲間を探しましょう。</string>
     <string name="community_hero_title">一緒に走ろう</string>
     <string name="community_hero_sub">今日も、もっと遠くへ。一緒に走るランナーたちの話。</string>
     <string name="news_hero_sub">一緒に走る、もっと大きな楽しさ。</string>

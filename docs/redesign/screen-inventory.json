@@ -238,7 +238,7 @@
     {
       "id": "CommunityScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
-      "line": 96,
+      "line": 99,
       "implementation": "pending",
       "verification": "pending"
     },
