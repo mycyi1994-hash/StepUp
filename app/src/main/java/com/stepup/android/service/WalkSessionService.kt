@@ -60,6 +60,7 @@ data class WalkSessionState(
     val steps: Int = 0,
     val elapsedSec: Long = 0,
     val startedAt: Long = 0,
+    val recordingOwner: String = com.stepup.android.domain.RecordingOwner.LEGACY,
     /** 파티런 인원 (본인 포함). 1이면 개인 러닝. */
     val partySize: Int = 1,
     /** 마지막 세션 정산 결과 (종료 직후 화면 표시용) */
@@ -210,6 +211,7 @@ class WalkSessionService : Service() {
     /** 세션 걸음 집계 기준점. 첫 실측값 방출로 초기화된다(null = 아직 미정). */
     private var lastTodaySteps: Int? = null
     private var settling = false
+    private var startJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -224,7 +226,7 @@ class WalkSessionService : Service() {
     }
 
     private fun startSession(partySize: Int) {
-        if (_state.value.isActive) return
+        if (_state.value.isActive || startJob?.isActive == true) return
         speedAnchor = null
         speedAnchorAt = 0L
         createChannel()
@@ -241,9 +243,19 @@ class WalkSessionService : Service() {
             buildNotification(0),
             fgsType,
         )
+        startJob = scope.launch(Dispatchers.Main.immediate) {
+            // Begin tracking only after the recording account has been captured.
+            // Finishing later must never read the replacement login account.
+            val owner = ServiceLocator.sessionHolder.recordingOwner()
+            beginTracking(partySize, owner)
+        }
+    }
+
+    private fun beginTracking(partySize: Int, owner: String) {
         _state.value = WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
+            recordingOwner = owner,
             partySize = partySize,
         )
 
@@ -309,7 +321,10 @@ class WalkSessionService : Service() {
     private fun stopSession() {
         val session = _state.value
         if (!session.isActive || settling) {
-            if (!session.isActive) stopSelf()
+            if (!session.isActive) {
+                startJob?.cancel()
+                stopSelf()
+            }
             return
         }
         settling = true
@@ -370,6 +385,7 @@ class WalkSessionService : Service() {
             ServiceLocator.database.walkSessionDao().insert(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
+                    recordingOwner = session.recordingOwner,
                     endedAt = System.currentTimeMillis(),
                     steps = creditedSteps,
                     durationSec = if (verdict.isRewardable) session.elapsedSec else 0,

@@ -64,11 +64,12 @@ interface WalkSessionDao {
          WHERE uploadState IN ('PENDING', 'FAILED')
            AND track != ''
            AND steps > 0
+           AND recordingOwner = :owner
          ORDER BY startedAt ASC
          LIMIT :limit
         """,
     )
-    suspend fun pendingUploads(limit: Int): List<WalkSessionEntity>
+    suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != ''")
     fun observePendingUploadCount(): Flow<Int>

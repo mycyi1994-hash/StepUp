@@ -146,10 +146,12 @@ object ServiceLocator {
         territoryApi = TerritoryApi(server)
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
+            uploadOwner = { sessionHolder.recordingOwner() },
             recorder = ServerSessionRecorder(
                 server = server,
                 courseApi = CourseApi(server),
-                takeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt) },
+                readCourseRun = { startedAt -> userPrefs.pendingCourseRun(startedAt) },
+                acknowledgeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt); Unit },
             ),
         )
         rankingRepository = RankingRepository(server)

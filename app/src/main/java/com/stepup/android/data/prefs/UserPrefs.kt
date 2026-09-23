@@ -353,7 +353,11 @@ class UserPrefs(
         }
     }
 
-    /** [startedAt] 러닝의 코스 길을 꺼내고 목록에서 지운다. 없으면 null */
+    /** Read without consuming: a failed or account-mismatched request must retain it. */
+    suspend fun pendingCourseRun(startedAt: Long): String? =
+        decodePendingRuns(store.data.first()[Keys.PENDING_COURSE_RUNS])[startedAt]
+
+    /** Remove only after the server acknowledges this run. */
     suspend fun takePendingCourseRun(startedAt: Long): String? {
         var found: String? = null
         store.edit {

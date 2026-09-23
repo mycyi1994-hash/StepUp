@@ -15,14 +15,17 @@ import com.stepup.android.data.remote.StepUpServer
 class ServerSessionRecorder(
     private val server: StepUpServer,
     private val courseApi: CourseApi? = null,
-    /** 코스를 완주한 러닝이면 그 코스의 길을 꺼내 준다(한 번만) */
-    private val takeCourseRun: suspend (startedAt: Long) -> String? = { null },
+    private val readCourseRun: suspend (startedAt: Long) -> String? = { null },
+    private val acknowledgeCourseRun: suspend (startedAt: Long) -> Unit = {},
 ) : SessionRecorder {
 
     override val isConfigured: Boolean get() = server.isConfigured
 
     override suspend fun record(session: WalkSessionEntity): ServerResult<SessionRecorded> {
+        val owner = com.stepup.android.domain.RecordingOwner.userId(session.recordingOwner)
+            ?: return ServerResult.SignInRequired("이 러닝의 계정 소유권을 확인해야 합니다. 기록은 기기에 보관됩니다")
         val result = server.recordSession(
+            expectedUserId = owner,
             startedAtMillis = session.startedAt,
             endedAtMillis = session.endedAt,
             steps = session.steps,
@@ -33,15 +36,26 @@ class ServerSessionRecorder(
             faction = session.faction,
         )
         // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
-        // 못 적어도 러닝 기록과 적립은 이미 끝났으므로 실패를 되돌리지 않는다.
+        // Retry the idempotent run when a follow-up is temporarily unavailable.
+        // Never send a follow-up using another account's token.
         if (result is ServerResult.Ok && session.crewId.isNotBlank()) {
-            server.tagSessionCrew(session.startedAt, session.crewId)
+            when (val tagged = server.tagSessionCrew(session.startedAt, session.crewId, owner)) {
+                is ServerResult.SignInRequired -> return tagged
+                is ServerResult.Retry -> return tagged
+                else -> Unit
+            }
         }
         // 코스를 완주한 러닝이었으면 코스 기록으로 낸다. 서버가 올라온 경로로
-        // 코스를 따라갔는지 직접 보고 순위에 넣는다. 크루와 같은 이유로 실패해도
-        // 러닝 기록은 되돌리지 않는다.
+        // 코스를 따라갔는지 직접 보고 순위에 넣는다. 성공 전에는 대기 항목을 지우지 않는다.
         if (result is ServerResult.Ok && courseApi != null) {
-            takeCourseRun(session.startedAt)?.let { track -> courseApi.submitRun(track, session.startedAt) }
+            readCourseRun(session.startedAt)?.let { track ->
+                when (val submitted = courseApi.submitRun(track, session.startedAt, owner)) {
+                    is ServerResult.Ok -> acknowledgeCourseRun(session.startedAt)
+                    is ServerResult.SignInRequired -> return submitted
+                    is ServerResult.Retry -> return submitted
+                    is ServerResult.Rejected -> Unit // Preserve the course entry for recovery.
+                }
+            }
         }
         return result
     }

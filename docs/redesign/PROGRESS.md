@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — recorded-account upload guard and independent font evidence
+
+- Implemented the first account-ownership boundary: Room 12→13 preserves unknown historical owners, service captures new-run ownership, upload queries select that account, and run/crew/course requests validate the exact outgoing token identity. Course entries are acknowledged only after server success. Full account isolation remains incomplete; see ACCOUNT-DATA-AUDIT.md for limitations and required follow-up.
+- Added six unit scenarios and native migration/reopening queue checks. Local design/resource/asset checks pass. Kotlin compilation and new test execution are pending the next CI revision; generated Room 13 schema must be retrieved from that build.
+- Build APK 35929984626 at 5c4fe1a succeeded. Independently isolated large-font jobs in gallery run 35929984701 passed on both API 34 and 35 (real system font scale 1.6, filter selection/apply/reset). Artifacts downloaded to `C:/Users/gana0/StepUp-captures/redesign-5c4fe1a`. Interaction jobs failed; full gallery results still require inspection. These outcomes do not validate the new ownership changes.
+- Earlier 3961d68 gallery run 35928586797 again lost its emulator during the first Chrome test, leaving empty failure details/unfinished 21-test suites. No claim that the form/gallery tests executed there.
+
 ## 2026-09-24 — account ownership audit traced end to end
 
 - Traced saved runs through ClaimRepository, ServerSessionRecorder, StepUpServer and SQL auth.uid(): no recorded owner is checked before the current account's token is used. SessionHolder replacing a login does not partition local records. This verifies an attribution risk in the code path, not an observed real-user incident.

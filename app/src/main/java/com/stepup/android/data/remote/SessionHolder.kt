@@ -80,6 +80,14 @@ class SessionHolder(
 
     suspend fun currentUserId(): String? = store.load()?.user?.id
 
+    /** A local snapshot, including offline sessions; no refresh or account creation. */
+    suspend fun recordingOwner(): String = mutex.withLock {
+        val current = store.load() ?: return@withLock com.stepup.android.domain.RecordingOwner.GUEST
+        current.user?.id?.takeIf { it.isNotBlank() }
+            ?.let(com.stepup.android.domain.RecordingOwner::account)
+            ?: com.stepup.android.domain.RecordingOwner.LEGACY
+    }
+
     /** 로그인한 적이 있는가. 첫 화면을 로그인으로 띄울지 정하는 근거다. */
     suspend fun isSignedIn(): Boolean = store.load() != null
 

@@ -30,4 +30,11 @@ This is evidence of a cross-account attribution path, not evidence that a real u
 - Account switching and process/database reopening preserve each account's records, receipts, equipment and totals.
 - Server-confirmed receipt reconciliation remains separate from local ownership and must also be verified.
 
-Status: source audit completed; implementation and these tests remain outstanding. This requirement prevents a final release-readiness claim.
+## First implementation checkpoint (2026-09-24, validation pending)
+
+- Room 13 adds `recordingOwner`, preserving existing rows as `legacy`. New service runs capture the stored account before tracking starts; unauthenticated starts are `guest`. The completed row retains that captured value.
+- Upload selection is account-specific, so older unknown/other-account rows cannot block the selected account's queue. The recorder refuses guest/legacy records. Each run, crew and course request checks its expected user against the identity associated with the exact token being sent.
+- Course queue reads no longer consume an entry before server acknowledgement. Temporary failures/account changes during follow-up keep the run pending for an idempotent retry. Permanently rejected follow-up recovery still needs a visible state and dedicated resolution path.
+- Added unit scenarios for A-to-B switches before upload and between requests, guest/legacy blocking, matching-token writes and offline course retry. Added native v12 migration preservation and database-reopening/account-queue tests. These are written, not yet executed at this checkpoint.
+
+Still incomplete: process-death recovery of an active run (the service currently uses in-memory state and START_NOT_STICKY), per-account local reward/equipment/receipt/preferences partitioning, account-specific visible totals/pending counts, guest/legacy recovery UI, service-level start/switch/finish integration tests and real authenticated/server reconciliation. The current local settlement can still use another account's selected equipment/state. Do not describe this checkpoint as full account isolation or release readiness.

@@ -51,8 +51,9 @@ class ClaimUploadTest {
             rows[session.id] = session
         }
 
-        override suspend fun pendingUploads(limit: Int): List<WalkSessionEntity> =
+        override suspend fun pendingUploads(limit: Int, owner: String): List<WalkSessionEntity> =
             rows.values
+                .filter { it.recordingOwner == owner }
                 .filter { it.uploadState in setOf(UploadState.PENDING.name, UploadState.FAILED.name) }
                 .filter { it.track.isNotEmpty() && it.steps > 0 }
                 .sortedBy { it.startedAt }

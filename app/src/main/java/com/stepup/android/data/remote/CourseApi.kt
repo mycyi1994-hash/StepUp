@@ -91,7 +91,7 @@ class CourseApi(private val server: StepUpServer) {
      * 방금 올린 러닝을 코스 기록으로 낸다. 코스는 길로 찾는다 — 폰에 받아 둔
      * 코스는 서버 번호를 모른다. 서버에 없는 코스면 null 이 돌아온다.
      */
-    suspend fun submitRun(courseTrack: String, startedAtMillis: Long): ServerResult<CourseRunResult?> =
+    suspend fun submitRun(courseTrack: String, startedAtMillis: Long, expectedUserId: String): ServerResult<CourseRunResult?> =
         when (
             val result = rpc(
                 "course_run_submit",
@@ -99,6 +99,7 @@ class CourseApi(private val server: StepUpServer) {
                     put("p_course_track", courseTrack)
                     put("p_started_at", startedAtMillis.toIsoInstant())
                 },
+                expectedUserId = expectedUserId,
             ) { serverJson.decodeFromString<List<CourseRunResult>>(it) }
         ) {
             is ServerResult.Ok -> ServerResult.Ok(result.value.firstOrNull())
@@ -120,9 +121,10 @@ class CourseApi(private val server: StepUpServer) {
     private suspend fun <T> rpc(
         name: String,
         body: String,
+        expectedUserId: String? = null,
         parse: (String) -> T?,
     ): ServerResult<T> =
-        server.authed { token ->
+        server.authed(expectedUserId) { token ->
             server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
 }
