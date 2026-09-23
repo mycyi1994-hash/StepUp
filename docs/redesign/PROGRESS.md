@@ -37,6 +37,7 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Replaced separate clear/update equipment writes with one guarded SQL update. A missing target leaves the current equipment untouched; concurrent selections cannot leave multiple equipped rows; only the equipment flag changes, preserving current stats. Repository returns success explicitly, and wardrobe/vault no longer report success for a missing item.
 - Added a Room device test for switching, a missing target, concurrent selection requests, database reopening and preserved level/inventory. Included it in the gallery workflow alongside chrome checks. This test has not yet run; storage-error messaging and broader ownership/authentication flows remain outstanding.
 - 0ddfc53 gallery 35902803854 completed successfully; artifact download/visual inspection is underway. Its separate Build APK job failed the stale LUMI test described above. Newer 5324bb5 build and gallery remain live; no final candidate is verified yet.
+- Downloaded 0ddfc53 to C:/Users/gana0/StepUp-captures/redesign-0ddfc53. Inspected navigation-home.png and screen-28.png: the new starter is sharp and its exterior is transparent. Feet remain visibly above the floor ring, and the base outfit thumbnail is a low-detail outline unlike the dimensional character; both require further visual work. capture-notes.txt still reports the inaccessible signed-out My trades variation. Green gallery status does not resolve that missing capture.
 
 ## 2026-09-24 — wardrobe and native Back verification
 
