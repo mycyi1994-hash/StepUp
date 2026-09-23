@@ -155,6 +155,10 @@
     <!-- Crew party run -->
     <string name="crew_lobby">파티런 로비</string>
     <string name="crew_open_lobby">로비 열기</string>
+    <string name="crew_invite_share">초대 링크 공유</string>
+    <string name="crew_invite_message">StepUp에서 %1$s 크루와 같이 달려요 👟
+%2$s</string>
+    <string name="crew_invite_chooser">크루 초대</string>
     <string name="crew_ready">준비 완료</string>
     <string name="crew_ready_cancel">준비 취소</string>
     <string name="crew_ready_count">%1$d / %2$d명 준비</string>

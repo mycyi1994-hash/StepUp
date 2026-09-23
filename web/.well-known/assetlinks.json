@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.stepup.android",
+      "sha256_cert_fingerprints": [
+        "90:82:87:38:7B:4F:62:7C:5B:42:05:61:70:C3:B0:15:BF:BC:38:90:1D:EE:20:95:7F:38:B6:B1:3E:EB:34:D4"
+      ]
+    }
+  }
+]

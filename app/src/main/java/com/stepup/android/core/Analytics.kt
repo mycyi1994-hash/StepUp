@@ -41,6 +41,9 @@ object Analytics {
 
     fun crewCreated() = log("crew_create")
 
+    /** 크루 초대 링크를 보냈다 — 초대 계수의 시작 */
+    fun crewInviteShared() = log("crew_invite_share")
+
     fun postWritten(category: String) = log("post_create") { putString("category", category) }
 
     fun flashJoined() = log("flash_join")

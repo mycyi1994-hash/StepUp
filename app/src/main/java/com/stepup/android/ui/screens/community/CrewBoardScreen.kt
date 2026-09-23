@@ -1,5 +1,10 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.core.InviteLinks
+import com.stepup.android.core.Analytics
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Share
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -116,6 +121,28 @@ fun CrewBoardScreen(
                         letterSpacing = (-0.5).sp,
                         color = Snow,
                     )
+                    // 크루원은 초대 링크를 보낼 수 있다. 받은 사람이 누르면 앱이 이 크루를 연다.
+                    if (crew != null && isMember) {
+                        val context = LocalContext.current
+                        val message = stringResource(
+                            R.string.crew_invite_message,
+                            crew.name,
+                            InviteLinks.crewLink(crew.id),
+                        )
+                        val chooser = stringResource(R.string.crew_invite_chooser)
+                        DarkIconButton(
+                            icon = Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.crew_invite_share),
+                            onClick = {
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, message)
+                                }
+                                context.startActivity(Intent.createChooser(send, chooser))
+                                Analytics.crewInviteShared()
+                            },
+                        )
+                    }
                 }
             }
 

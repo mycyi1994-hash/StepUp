@@ -1,260 +1,82 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StepUp — Move-to-Earn running on GIWA</title>
-<meta name="description" content="StepUp turns everyday running into an on-chain reward loop on the GIWA chain. Working Android app — install the APK and try it.">
-<meta property="og:title" content="StepUp — Move-to-Earn running on GIWA">
-<meta property="og:description" content="Real GPS courses, 44 sneaker NFTs, crew party runs. The app shipped first; the earning ceiling is +17.8%, not 10×.">
+<meta name="theme-color" content="#1448ef">
+<title>StepUp — 함께 달리는 즐거움</title>
+<meta name="description" content="가볍게 달리고, 자연스럽게 만나고. 러닝 기록부터 크루와의 대화까지, StepUp Android MVP를 체험해 보세요. Powered by GIWA.">
+<meta property="og:title" content="StepUp — 함께 달리는 즐거움">
+<meta property="og:description" content="러닝, 크루, 대화를 한곳에서. Powered by GIWA.">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-<style>
-  :root{
-    --black:#060708; --carbon:#0E1113; --carbon-high:#171B1E;
-    --edge:#23282C; --volt:#C3FF3E; --snow:#F2F5F7; --silver:#A9B4BC; --slate:#6B7480;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    background:var(--black); color:var(--snow);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Pretendard,"Apple SD Gothic Neo",Roboto,sans-serif;
-    line-height:1.65; -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
-  a{color:var(--volt);text-decoration:none}
-  a:hover{text-decoration:underline}
-
-  /* ── nav ── */
-  nav{position:sticky;top:0;z-index:10;background:rgba(6,7,8,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--edge)}
-  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:20px}
-  .brand{font-weight:900;font-style:italic;letter-spacing:-.5px;font-size:20px;color:var(--snow)}
-  .brand em{color:var(--volt);font-style:italic}
-  nav ul{display:flex;gap:22px;list-style:none;font-size:14px}
-  nav ul a{color:var(--silver)}
-  nav ul a:hover{color:var(--volt);text-decoration:none}
-  @media(max-width:720px){nav ul{display:none}}
-
-  /* ── hero ── */
-  .hero{padding:88px 0 64px;text-align:center;position:relative;overflow:hidden}
-  .hero::before{
-    content:"";position:absolute;inset:-40% 20% auto;height:420px;
-    background:radial-gradient(ellipse at center,rgba(195,255,62,.13),transparent 68%);
-    pointer-events:none;
-  }
-  .eyebrow{
-    display:inline-block;font-size:11px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;
-    color:var(--volt);border:1px solid rgba(195,255,62,.4);background:rgba(195,255,62,.08);
-    padding:6px 14px;border-radius:99px;margin-bottom:26px;position:relative
-  }
-  h1{font-size:clamp(38px,7vw,68px);font-weight:900;letter-spacing:-2.4px;line-height:1.04;position:relative}
-  h1 span{color:var(--volt)}
-  .tagline{margin-top:18px;font-size:clamp(15px,2.2vw,19px);color:var(--silver);max-width:620px;margin-inline:auto;position:relative}
-  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px;position:relative}
-  .btn{
-    display:inline-flex;align-items:center;gap:9px;padding:14px 26px;border-radius:99px;
-    font-weight:800;font-size:15px;transition:transform .12s ease,box-shadow .12s ease
-  }
-  .btn:hover{transform:translateY(-2px);text-decoration:none}
-  .btn-primary{background:var(--volt);color:var(--black);box-shadow:0 0 32px rgba(195,255,62,.28)}
-  .btn-ghost{border:1px solid var(--edge);color:var(--snow);background:var(--carbon)}
-  .btn-ghost:hover{border-color:var(--volt);color:var(--volt)}
-  .sub{margin-top:16px;font-size:12.5px;color:var(--slate);position:relative}
-
-  /* ── stat strip ── */
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--edge);
-    border:1px solid var(--edge);border-radius:20px;overflow:hidden;margin:56px 0}
-  .stat{background:var(--carbon);padding:22px 16px;text-align:center}
-  .stat b{display:block;font-size:26px;font-weight:900;color:var(--volt);letter-spacing:-1px}
-  .stat span{font-size:11.5px;color:var(--slate);letter-spacing:.4px}
-
-  /* ── sections ── */
-  section{padding:66px 0;border-top:1px solid var(--edge)}
-  h2{font-size:clamp(24px,4vw,34px);font-weight:900;letter-spacing:-1.2px;margin-bottom:12px}
-  .lead{color:var(--silver);max-width:660px;margin-bottom:34px}
-
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:16px}
-  .card{background:var(--carbon);border:1px solid var(--edge);border-radius:20px;padding:24px}
-  .card h3{font-size:16px;font-weight:800;margin-bottom:9px}
-  .card p{font-size:14px;color:var(--silver)}
-  .card .k{color:var(--volt);font-weight:800}
-
-  /* ── shots ── */
-  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
-  .shot{border:1px solid var(--edge);border-radius:18px;overflow:hidden;background:var(--carbon)}
-  .shot img{width:100%;display:block}
-  .shot p{font-size:11.5px;color:var(--slate);padding:10px 12px;text-align:center}
-
-  /* ── economy table ── */
-  .tablewrap{overflow-x:auto;border:1px solid var(--edge);border-radius:18px}
-  table{width:100%;border-collapse:collapse;min-width:520px;font-size:14px}
-  th,td{padding:13px 18px;text-align:left;border-bottom:1px solid var(--edge)}
-  th{background:var(--carbon-high);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--slate);font-weight:700}
-  tr:last-child td{border-bottom:none}
-  td strong{color:var(--volt)}
-
-  /* ── status ── */
-  .status li{list-style:none;display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--edge);font-size:14.5px;align-items:flex-start}
-  .status li:last-child{border-bottom:none}
-  .status .mark{flex:none;width:20px;font-size:15px}
-  .done{color:var(--volt)}
-  .next{color:var(--slate)}
-
-  footer{padding:46px 0 60px;border-top:1px solid var(--edge);color:var(--slate);font-size:13px}
-  footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  footer a{color:var(--silver)}
-</style>
+<link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="./assets/fonts/pretendard-extrabold.otf" as="font" type="font/otf" crossorigin>
+<link rel="preload" href="./assets/fonts/manrope-extrabold.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="./styles.css">
+<script src="./site.js" defer></script>
 </head>
 <body>
-
-<nav>
-  <div class="wrap">
-    <span class="brand">Step<em>Up</em></span>
-    <ul>
-      <li><a href="#product">Product</a></li>
-      <li><a href="#economy">Economy</a></li>
-      <li><a href="#chain">GIWA</a></li>
-      <li><a href="#status">Status</a></li>
-      <li><a href="https://github.com/mycyi1994-hash/GIWASTEPN">GitHub</a></li>
-    </ul>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="wrap">
-    <span class="eyebrow">Move-to-Earn on GIWA</span>
-    <h1>Every step.<br>Every stride. <span>Every day.</span></h1>
-    <p class="tagline">
-      StepUp turns everyday running into an on-chain reward loop — real GPS courses,
-      44 sneaker NFTs, crew party runs. We built the app first and the token second.
-    </p>
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/mycyi1994-hash/GIWASTEPN/raw/apk-dist/StepUp-debug.apk">⬇ Download the APK</a>
-      <a class="btn btn-ghost" href="https://github.com/mycyi1994-hash/GIWASTEPN">View the source</a>
-    </div>
-    <p class="sub">Android 8.0+ · 19 MB · sign in with Google · no wallet needed</p>
-  </div>
-</header>
-
-<div class="wrap">
-  <div class="stats">
-    <div class="stat"><b>60+</b><span>SCREENS SHIPPED</span></div>
-    <div class="stat"><b>44</b><span>SNEAKER NFTS</span></div>
-    <div class="stat"><b>+17.8%</b><span>EARNING CEILING</span></div>
-    <div class="stat"><b>4</b><span>LANGUAGES</span></div>
-    <div class="stat"><b>80</b><span>TEST CASES</span></div>
-  </div>
+<a class="skip-link" href="#main">본문으로 이동</a>
+<div class="blue-stage" id="top">
+  <div class="ambient" aria-hidden="true"><div class="glow glow-one"></div><div class="glow glow-two"></div><div class="orbit"></div></div>
+  <header class="site-header wrap">
+    <a class="wordmark" href="#top" aria-label="StepUp 처음으로">StepUp<span class="brand-dot" aria-hidden="true"></span></a>
+    <nav aria-label="주요 메뉴"><a href="#about">서비스 소개</a><a class="nav-download" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk">앱 다운로드 <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow enter" style="--delay:0ms"><span aria-hidden="true"></span> YOUR PACE. OUR CREW.</p>
+        <div class="brand-lockup enter" style="--delay:80ms">
+          <h1 id="hero-title">StepUp<span class="hero-dot" aria-hidden="true">.</span></h1>
+          <p class="powered">Powered by <strong>GIWA</strong><svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true"><path d="M3 13 13 3M3 3h10v10" stroke="currentColor" stroke-width="1.5"/></svg></p>
+        </div>
+        <h2 class="hero-heading enter" style="--delay:160ms">가볍게 달리고.<br>자연스럽게 만나고.</h2>
+        <p class="hero-description enter" style="--delay:240ms">나만의 러닝 기록부터 함께 달릴 크루까지.<br>다음 러닝이 기다려지는 이유, StepUp.</p>
+        <div class="hero-actions enter" style="--delay:320ms">
+          <a class="button button-primary" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Android 앱 받기</a>
+          <a class="button button-film" id="film-open" href="./assets/mvp/StepUp-Film.mp4"><span class="play-icon" aria-hidden="true">▶</span>브랜드 영상 <span class="film-duration">24초</span></a>
+        </div>
+        <p class="download-note enter" style="--delay:380ms">Android 8.0+ · 약 20MB · 로그인 없이 MVP 체험</p>
+      </div>
+      <div class="product-stage enter" style="--delay:140ms">
+        <div class="product-halo" aria-hidden="true"></div>
+        <div class="screen-caption"><span class="scene-index" aria-hidden="true">01 / 03</span><span id="scene-caption">오늘도, 나만의 속도로.</span></div>
+        <div class="phone-drift">
+          <div class="phone" id="product-view"><div class="screen-stack">
+            <div id="panel-run" class="screen-panel is-active" role="tabpanel" aria-labelledby="tab-run"><img src="./assets/mvp/home.png" width="1080" height="2400" alt="StepUp 홈: 러닝 체험 시작과 크루 둘러보기" fetchpriority="high"></div>
+            <div id="panel-crew" class="screen-panel" role="tabpanel" aria-labelledby="tab-crew" hidden><img src="./assets/mvp/crews.png" width="1080" height="2400" alt="StepUp 크루: 러닝크루 가입하기와 만들기, 지역 검색"></div>
+            <div id="panel-chat" class="screen-panel" role="tabpanel" aria-labelledby="tab-chat" hidden><img src="./assets/mvp/chat.png" width="1080" height="2400" alt="StepUp 채팅: 크루 대화방과 빠른 인사, 메시지 입력"></div>
+          </div></div>
+        </div>
+        <div class="scene-tabs" role="tablist" aria-label="앱 화면 미리보기">
+          <button id="tab-run" role="tab" aria-controls="panel-run" aria-selected="true" data-scene="run" tabindex="0">러닝</button>
+          <button id="tab-crew" role="tab" aria-controls="panel-crew" aria-selected="false" data-scene="crew" tabindex="-1">크루</button>
+          <button id="tab-chat" role="tab" aria-controls="panel-chat" aria-selected="false" data-scene="chat" tabindex="-1">채팅</button>
+        </div>
+        <p class="preview-note">실제 MVP 화면 · 눌러서 둘러보세요</p>
+      </div>
+    </section>
+  </main>
+  <div class="hero-baseline wrap"><span>혼자 시작해도, 함께 이어지도록.</span><a href="#about" aria-label="서비스 소개로 이동">조금 더 알아보기 <span aria-hidden="true">↓</span></a></div>
 </div>
-
-<section id="product">
-  <div class="wrap">
-    <h2>A running app worth opening without the token</h2>
-    <p class="lead">
-      Most M2E apps died when emissions fell, because the token <em>was</em> the product.
-      Delete SUP from StepUp and it is still a running app people use.
-    </p>
-    <div class="shots">
-      <figure class="shot"><img src="assets/01-home.png" alt="Home screen"><p>Home · energy, streak, one-tap start</p></figure>
-      <figure class="shot"><img src="assets/02-live-run.png" alt="Live run screen"><p>Live run · real GPS, laps, 9 metrics</p></figure>
-      <figure class="shot"><img src="assets/03-community.png" alt="Community screen"><p>Community · crews, flash-runs</p></figure>
-      <figure class="shot"><img src="assets/04-items.png" alt="Items screen"><p>Items · 44-piece NFT collection</p></figure>
-      <figure class="shot"><img src="assets/05-events.png" alt="Events screen"><p>Events · seasonal campaigns</p></figure>
-      <figure class="shot"><img src="assets/06-profile.png" alt="Profile screen"><p>Profile · XP from real kilometres</p></figure>
-    </div>
-
-    <div class="grid" style="margin-top:34px">
-      <div class="card">
-        <h3>Real GPS courses</h3>
-        <p>Record a run, save the track as a course, publish it. Other runners take it and run it.
-        Completion pays <span class="k">km × 1.0 SUP</span>, capped at 42 — deterministic, no loot box.</p>
-      </div>
-      <div class="card">
-        <h3>Speed-verified runs</h3>
-        <p>GPS segments faster than <span class="k">25 km/h</span> are discarded, and a session that is
-        mostly implausible is voided outright. A car ride does not become a run.</p>
-      </div>
-      <div class="card">
-        <h3>Rankings that reward different runners</h3>
-        <p>Top speed, time on feet, and total SUP are three separate boards — plus a
-        <span class="k">faction ranking</span> where every kilometre counts for the sneaker you wore.</p>
-      </div>
-    </div>
-  </div>
+<section class="essentials wrap" id="about" aria-label="StepUp의 세 가지 경험">
+  <article class="essential" data-reveal><span class="essential-number">01</span><div><h2>달리면, 기록이 되고.</h2><p>나만의 속도와 지나온 길을<br>러닝 체험으로 가볍게 만나보세요.</p></div></article>
+  <article class="essential" data-reveal><span class="essential-number">02</span><div><h2>만나면, 크루가 되고.</h2><p>내 동네 크루를 찾거나 직접 만들고.<br>가입 승인 없이 바로 들어가요.</p></div></article>
+  <article class="essential" data-reveal><span class="essential-number">03</span><div><h2>인사하면, 다음 약속.</h2><p>첫 인사부터 함께 달릴 약속까지.<br>부담 없는 대화로 시작해요.</p></div></article>
 </section>
-
-<section id="economy">
-  <div class="wrap">
-    <h2>Capital cannot outrun legs</h2>
-    <p class="lead">
-      The strongest possible sneaker earns 17.8% more per step than a free one. Not 3×, not 10×.
-      That ceiling is a constant in the contract, not a parameter someone can raise.
-    </p>
-    <div class="tablewrap">
-      <table>
-        <tr><th>Rule</th><th>Value</th></tr>
-        <tr><td>Base accrual</td><td><strong>0.01 SUP</strong> per step</td></tr>
-        <tr><td>Energy gate</td><td>1 cell = 600 steps · refills at midnight · at zero, accrual stops</td></tr>
-        <tr><td>Sneaker boost</td><td>rarity +1% · variant +0.3% · level +0.5% → max <strong>+17.8%</strong></td></tr>
-        <tr><td>Party run</td><td>+10% per crew member, capped at <strong>+50%</strong></td></tr>
-        <tr><td>Course completion</td><td><strong>km × 1.0 SUP</strong>, capped at 42, paid at ≥98% GPS-verified</td></tr>
-        <tr><td>Sinks</td><td>Mint 500 · upgrade to max 4,500–76,125 · boosts 50–200</td></tr>
-      </table>
-    </div>
-    <p class="sub" style="margin-top:16px">
-      Full model with per-persona balance tables and the questions we have <em>not</em> solved →
-      <a href="https://github.com/mycyi1994-hash/GIWASTEPN/blob/claude/work-history-pjm57c/docs/TOKENOMICS.md">TOKENOMICS.md</a>
-    </p>
-  </div>
-</section>
-
-<section id="chain">
-  <div class="wrap">
-    <h2>Built for GIWA</h2>
-    <p class="lead">
-      M2E settlement is a high-frequency, low-value workload: many small claims, every day, from
-      consumer phones. It needs cheap, predictable execution on a chain where a consumer app is a
-      first-class citizen.
-    </p>
-    <div class="grid">
-      <div class="card"><h3>SUPToken</h3><p>ERC-20, 1B hard cap, <span class="k">no mint function</span> after deploy. Supply can only fall.</p></div>
-      <div class="card"><h3>SneakerNFT</h3><p>ERC-721 with stats on-chain, so a sneaker's earning power is verifiable rather than asserted.</p></div>
-      <div class="card"><h3>RewardDistributor</h3><p>Signed run proof, replay-protected, charged against a halving daily budget. <span class="k">No owner withdrawal path.</span></p></div>
-      <div class="card"><h3>CourseRegistry</h3><p>Course authorship is public and permissionless; the reward formula is a pure function.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="status">
-  <div class="wrap">
-    <h2>Where we actually are</h2>
-    <p class="lead">Stated plainly, because reviewers should not have to guess.</p>
-    <ul class="status">
-      <li><span class="mark done">✅</span><span><strong>App</strong> — shipped and installable. 60+ screens, 4 languages, CI-built APK on every push.</span></li>
-      <li><span class="mark done">✅</span><span><strong>Contracts</strong> — all four deployed to GIWA Sepolia (chain 91342), <span class="k">43 tests passing</span>, reward pool funded with 50M SUP.</span></li>
-      <li><span class="mark next">⏳</span><span><strong>Source verification</strong> — deployment is done; publishing the sources on the explorer is the remaining step.</span></li>
-      <li><span class="mark next">⏳</span><span><strong>Attester service</strong> — written and tested (7 tests); cadence and GPS checks run on-device today, the signing Worker is not deployed yet.</span></li>
-    </ul>
-    <div class="cta" style="justify-content:flex-start;margin-top:30px">
-      <a class="btn btn-ghost" href="https://github.com/mycyi1994-hash/GIWASTEPN/blob/claude/work-history-pjm57c/docs/ONEPAGER.md">One-pager</a>
-      <a class="btn btn-ghost" href="https://github.com/mycyi1994-hash/GIWASTEPN/blob/claude/work-history-pjm57c/docs/StepUp-Architecture.pdf">Architecture (PDF)</a>
-      <a class="btn btn-ghost" href="https://github.com/mycyi1994-hash/GIWASTEPN/blob/claude/work-history-pjm57c/docs/PITCH.md">Pitch deck</a>
-      <a class="btn btn-ghost" href="https://github.com/mycyi1994-hash/GIWASTEPN/tree/claude/work-history-pjm57c/contracts">Contracts</a>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap row">
-    <span><span class="brand" style="font-size:15px">Step<em>Up</em></span> · Seoul, Korea</span>
-    <span>
-      <a href="privacy.html">Privacy</a> ·
-      <a href="terms.html">Terms</a> ·
-      <a href="https://github.com/mycyi1994-hash/GIWASTEPN">GitHub</a> ·
-      <a href="https://giwa.io">GIWA</a> ·
-      Map data © OpenStreetMap contributors
-    </span>
-  </div>
+<footer class="footer wrap">
+  <p><strong>StepUp</strong><span>함께 달리는 즐거움.</span></p>
+  <div><button class="text-link" id="experience-info">MVP 이용 안내</button><a href="https://github.com/mycyi1994-hash/GIWASTEPN" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
 </footer>
-
-</body>
+<noscript><p class="no-script wrap">러닝·크루·채팅을 체험하는 Android MVP입니다. 샘플 크루·자동 답장·예시 러닝을 사용하며 데이터는 이 기기에만 저장됩니다. 앱 설치와 영상 재생 링크는 JavaScript 없이도 이용할 수 있습니다.</p></noscript>
+<dialog id="film-dialog" class="film-dialog" aria-labelledby="film-title">
+  <div class="dialog-bar"><h2 id="film-title">StepUp · 브랜드 영상</h2><button class="close-dialog" aria-label="영상 닫기" data-close="film-dialog">✕</button></div>
+  <video id="brand-film" controls playsinline preload="none" aria-label="StepUp 24초 브랜드 영상"><source src="./assets/mvp/StepUp-Film.mp4" type="video/mp4">브라우저에서 영상을 재생할 수 없어요. <a href="./assets/mvp/StepUp-Film.mp4">영상 파일 열기</a></video>
+</dialog>
+<dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title">
+  <div class="dialog-bar"><h2 id="info-title">가볍게 둘러보세요</h2><button class="close-dialog" aria-label="이용 안내 닫기" data-close="info-dialog">✕</button></div>
+  <div class="info-body"><p>이 앱은 <strong>오프라인 MVP 체험판</strong>이에요. 샘플 크루, 자동 답장, 예시 러닝 코스로 핵심 흐름을 경험할 수 있어요.</p><p>실제 GPS 운동량이나 다른 사용자의 실시간 대화는 아니에요. 입력한 이름·크루·메시지·체험 기록은 기기에만 저장되고, 앱을 삭제하면 함께 삭제돼요.</p><p>Android 8.0 이상에서 설치할 수 있으며 기존 StepUp 앱과 별도로 설치돼요. iPhone에서는 이 APK를 설치할 수 없어요.</p><div class="font-licenses"><a href="./assets/fonts/LICENSE.txt" target="_blank" rel="noopener">Pretendard 라이선스 ↗</a><a href="./assets/fonts/MANROPE-OFL.txt" target="_blank" rel="noopener">Manrope 라이선스 ↗</a></div></div>
+</dialog>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3f9679b490c5f97',t:'MTc5MDE2NDk5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

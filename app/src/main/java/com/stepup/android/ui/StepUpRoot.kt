@@ -71,6 +71,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import com.stepup.android.R
+import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.NightCanvas
@@ -324,6 +325,15 @@ internal fun MainScaffold(startTour: Boolean = false) {
     }
 
     val navController = rememberNavController()
+
+    // 초대 링크(stepupcrew.com/c/...)나 크루 알림으로 들어왔으면 그 크루 화면을 연다
+    val pendingCrew by InviteLinks.pendingCrew.collectAsState()
+    LaunchedEffect(pendingCrew) {
+        val crewId = pendingCrew ?: return@LaunchedEffect
+        navController.navigate(Routes.crewBoard(crewId))
+        InviteLinks.consume()
+    }
+
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val showBar = currentRoute != null && currentRoute !in barHiddenRoutes

@@ -55,6 +55,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- 크루 초대 링크 https://stepupcrew.com/c/<크루 id> 를 앱이 바로 연다.
+                 autoVerify 는 stepupcrew.com/.well-known/assetlinks.json 에 이 앱의
+                 서명이 있어야 통과한다(web/ 에 있다). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="stepupcrew.com" />
+                <data android:host="www.stepupcrew.com" />
+                <data android:pathPrefix="/c/" />
+            </intent-filter>
         </activity>
 
         <service

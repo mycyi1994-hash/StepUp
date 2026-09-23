@@ -1,6 +1,7 @@
 package com.stepup.android
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -13,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.AppTheme
+import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.StepUpRoot
@@ -51,6 +53,13 @@ class MainActivity : ComponentActivity() {
         const val WINDOW_DARK = 0xFF060A12.toInt()
     }
 
+    /** 앱이 이미 떠 있을 때 초대 링크를 누르면 여기로 온다(singleTop). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        InviteLinks.handle(intent)
+    }
+
     /** 선택한 언어로 리소스를 읽도록 액티비티 컨텍스트를 감싼다 (API 33 미만) */
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocale.wrap(newBase))
@@ -68,6 +77,9 @@ class MainActivity : ComponentActivity() {
                 Configuration.UI_MODE_NIGHT_YES,
         )
         window.setBackgroundDrawable(ColorDrawable(if (startDark) WINDOW_DARK else WINDOW_LIGHT))
+
+        // 초대 링크나 크루 알림으로 들어왔으면 그 크루를 연다(로그인 뒤에)
+        InviteLinks.handle(intent)
 
         // 이미 권한이 있으면 바로 추적 시작 (첫 요청은 StepUpRoot에서 처리)
         if (StepPermissions.hasActivityRecognition(this)) {
