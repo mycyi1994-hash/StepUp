@@ -13,6 +13,43 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class EquipmentPersistenceTest {
+    @Test fun timedBoostPurchaseRollsBackAndCompetesWithShoesForTheSameBalance() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val prefs = com.stepup.android.data.prefs.UserPrefs(context)
+            val rewards = com.stepup.android.data.repo.RewardRepository(db.rewardDao(), db.sneakerDao(),
+                db.boostDao(), db.notificationDao(), prefs)
+            val shoes = com.stepup.android.data.repo.SneakerRepository(db, rewards)
+            val boosts = com.stepup.android.data.repo.BoostRepository(db, rewards, prefs)
+            val type = com.stepup.android.domain.BoostType.XP_BOOSTER
+            shoes.ensureStarter()
+            rewards.credit("EARN_EVENT", 500.0, "test fixture")
+            db.openHelper.writableDatabase.execSQL("""
+                CREATE TRIGGER fail_boost_notice BEFORE INSERT ON notifications
+                BEGIN SELECT RAISE(ABORT, 'injected boost notification failure'); END
+            """.trimIndent())
+            assertTrue(runCatching { boosts.purchase(type) }.isFailure)
+            assertFalse(boosts.isActive(type))
+            assertEquals(500.0, db.rewardDao().balanceNow(), 0.0)
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_boost_notice")
+            coroutineScope {
+                val mint = async { shoes.mint() }
+                val boost = async { boosts.purchase(type) }
+                mint.await()
+                boost.await()
+            }
+            val hasBoost = boosts.isActive(type)
+            assertEquals(if (hasBoost) 1 else 2, db.sneakerDao().count())
+            assertEquals(if (hasBoost) 300.0 else 0.0, db.rewardDao().balanceNow(), 0.0)
+            assertEquals(1, db.notificationDao().count())
+            if (hasBoost) {
+                assertEquals(com.stepup.android.data.repo.PurchaseError.ALREADY_ACTIVE, boosts.purchase(type))
+                assertEquals(300.0, db.rewardDao().balanceNow(), 0.0)
+            }
+        } finally { db.close() }
+    }
+
     @Test fun purchasesRollbackOnNotificationFailureAndCannotOverspendConcurrently() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()

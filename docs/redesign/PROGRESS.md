@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — timed boost purchase consistency
+
+- Timed boosters now use the same Room database transaction boundary as local shoe purchases, covering duplicate-active checks, available funds, debit, activation and notification. UI storage exceptions show retry feedback. Added native rollback coverage and a concurrent shoe-versus-booster test with funds insufficient for both; tests remain pending CI.
+- ENERGY_CELL remains unresolved: it writes energy into DataStore as well as Room, so a Room transaction alone would falsely imply atomicity. It needs a durable receipt/replay design that prevents both lost credit and double restoration across process death. No prior energy/balance entries are removed. Global wallet consistency is not yet established because other writers also remain in the audit.
+- Local design/resource/asset checks pass; preceding Build APK 35916741262 remains active, so these queued transactional changes are not pushed yet.
+
 ## 2026-09-24 — atomic local shoe purchases
 
 - SneakerRepository now wraps starter creation, upgrade and local mint in Room transactions. Upgrade/mint balance check/debit, equipment mutation and notification succeed or roll back together; concurrent repository purchases serialize before checking funds. Storage failures surface the existing retry message through ItemsViewModel. Existing storage identities, amounts and ownership rules are unchanged.

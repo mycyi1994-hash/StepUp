@@ -1,6 +1,7 @@
 package com.stepup.android.data.repo
 
-import com.stepup.android.data.local.BoostDao
+import com.stepup.android.data.local.AppDatabase
+import androidx.room.withTransaction
 import com.stepup.android.data.local.BoostEntity
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
@@ -14,10 +15,11 @@ data class ActiveBoost(val type: BoostType, val expiresAt: Long)
 
 /** 부스트 구매 및 효과 적용 */
 class BoostRepository(
-    private val boostDao: BoostDao,
+    private val database: AppDatabase,
     private val rewardRepository: RewardRepository,
     private val prefs: UserPrefs,
 ) {
+    private val boostDao = database.boostDao()
 
     /**
      * 지속형 활성 부스트. 만료 시각이 지나면 자동으로 목록에서 빠진다.
@@ -38,7 +40,12 @@ class BoostRepository(
      *
      * @return 실패 사유. null이면 성공.
      */
-    suspend fun purchase(type: BoostType): PurchaseError? {
+    suspend fun purchase(type: BoostType): PurchaseError? =
+        if (type.isInstant) purchaseInternal(type)
+        else database.withTransaction { purchaseInternal(type) }
+
+    // Instant energy also writes DataStore; it needs a durable cross-store receipt, not a Room-only wrapper.
+    private suspend fun purchaseInternal(type: BoostType): PurchaseError? {
         val now = System.currentTimeMillis()
         if (!type.isInstant && boostDao.activeOf(type.id, now) != null) {
             return PurchaseError.ALREADY_ACTIVE

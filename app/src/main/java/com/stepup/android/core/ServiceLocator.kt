@@ -167,7 +167,7 @@ object ServiceLocator {
         )
         sneakerRepository = SneakerRepository(database, rewardRepository)
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
-        boostRepository = BoostRepository(database.boostDao(), rewardRepository, userPrefs)
+        boostRepository = BoostRepository(database, rewardRepository, userPrefs)
         crewRepository = CrewRepository(
             api = CrewApi(server),
             crewDao = database.crewDao(),

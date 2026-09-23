@@ -162,7 +162,7 @@ class ItemsViewModel(
     }
 
     fun buyBoost(type: BoostType) {
-        viewModelScope.launch {
+        savePurchase {
             message.value = when (boostRepository.purchase(type)) {
                 null -> ItemsMessage.BoostBought
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance
