@@ -194,6 +194,7 @@ class ScreenGalleryTest {
             } catch (error: Throwable) { failures.add("guide-$index: ${error.message}"); break }
         }
         File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
+        org.junit.Assert.assertTrue("Missing gallery states:\n${failures.joinToString("\n")}", failures.isEmpty())
     }
 
     private fun tap(resource: Int) {

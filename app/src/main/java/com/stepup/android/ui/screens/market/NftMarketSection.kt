@@ -98,11 +98,6 @@ fun LazyListScope.nftMarketSection(
         }
     }
 
-    if (board.problem != null) {
-        item { MarketProblemNote(board.problem) }
-        return
-    }
-
     item {
         com.stepup.android.ui.screens.community.SegmentedTabs(
             labels = listOf(
@@ -112,6 +107,12 @@ fun LazyListScope.nftMarketSection(
             selected = section,
             onSelect = onSection,
         )
+    }
+
+    // Keep destinations stable while loading/authentication/network errors are shown.
+    if (board.problem != null) {
+        item { MarketProblemNote(board.problem) }
+        return
     }
 
     if (section == 1) {

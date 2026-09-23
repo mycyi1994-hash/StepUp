@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — gallery completeness enforcement
+
+- The gallery previously wrote variation/navigation failures to capture-notes.txt but still passed its test. It now gathers all possible captures and fails at the end if any requested state was missed. Earlier green gallery jobs must not be read as complete-state evidence.
+- Investigated c469d45's missing My trades state: NftMarketSection returned on authentication/network problems before rendering its sub-tabs. Tabs now remain available in those states, with the truthful error in the selected content area. No balances, ownership or signed-in trading are fabricated. Existing capture attempts exercise both tabs; fresh native verification is pending.
+
 ## 2026-09-24 — gallery failure localized; supported renderer experiment
 
 - c1641c1 diagnostic gallery 35918321776 failed. Host-side Android logs end after “Opening scene 5” (profile), before its capture. Host samples still show ~7.4 GB available immediately before emulator disappearance; kernel logs show no OOM kill/segfault, and emulator crash folder has no report. This narrows the failure but does not prove its cause.
