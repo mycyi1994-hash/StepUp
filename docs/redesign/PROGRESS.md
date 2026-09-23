@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — terrace boundary visual correction
+
+- Inspected actual a9ff894 compact profile/community captures. Shared chrome and the nickname/edit spacing are intact, but painting Night over terrace edges still leaves a rectangular boundary against the root gradient.
+- TerraceStage now applies horizontal/vertical alpha masks to scenery alone, revealing the actual parent canvas. Character/content remain opaque and keep their existing bounds. This is native rendering, with original art unchanged. Local design/string checks pass; a fresh native capture is required before visual approval.
+
 ## 2026-09-24 — receipt tests verified; reauthentication recovery
 
 - Downloaded a9ff894 run 35917606795 artifacts to StepUp-captures/redesign-a9ff894. Interaction XML reports 16 tests, zero failures, including energy delivery interruption/retry without repeated debit/credit, shoe and timed-boost transaction rollback/concurrency, version-six migration and unsupported-version data preservation. Full gallery still failed after the emulator disappeared. These interaction passes do not validate all scenes, live OAuth or GIWA.
