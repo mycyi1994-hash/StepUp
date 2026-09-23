@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — readable weekly chart labels
+
+- Native analytics capture showed 8–10sp weekday/interaction labels and English weekday initials inside the Korean screen. Weekly chart now resolves weekday names from the app configuration locale, uses 14sp labels with a growing 28dp minimum selection badge, and separates target/instructions below the total to avoid horizontal crowding.
+- Step totals, target calculations, chart selection and history are unchanged. Static checks pass; current native layout and enlarged-text review remain pending. Quarter-chart and callout typography still require their own pass.
+- dee6cc3 API 34 also lost the emulator with only one failed interaction testcase retained. Thus explicit 4GB guest RAM did not establish stability on either API. The pending explicit SwiftShader experiment is a separate configuration change; no runtime-success claim is supported yet.
+
 ## 2026-09-24 — notification permission recovery
 
 - Notification settings now distinguish saved push preferences from Android's app-level notification permission. When push is selected but Android blocks notifications, a localized explanation and shared Open settings action appear. Lifecycle resume rechecks the actual permission after returning from Settings; opening the screen does not prompt for permission.

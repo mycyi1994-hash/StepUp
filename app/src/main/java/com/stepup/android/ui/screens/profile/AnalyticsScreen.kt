@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -204,6 +205,7 @@ fun AnalyticsScreen(
  */
 @Composable
 private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val today = LocalDate.now().toEpochDay()
     val days = (0..6).map { offset -> today - 6 + offset }
     val byDay = week.associateBy { it.epochDay }
@@ -214,10 +216,9 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
     var selectedDay by rememberSaveable { mutableStateOf<Long?>(null) }
 
     GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Eyebrow(text = stringResource(R.string.analytics_week))
@@ -230,20 +231,20 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                 )
             }
             Column(
-                horizontalAlignment = Alignment.End,
+                horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.padding(bottom = 6.dp),
             ) {
                 Text(
                     text = stringResource(R.string.home_daily_goal, "%,d".format(goal)),
-                    fontSize = 10.sp,
+                    fontSize = 14.sp,
                     color = Slate,
                 )
                 // 누를 수 있다는 것을 모르면 없는 기능이나 같다.
                 Text(
                     text = stringResource(R.string.analytics_tap_hint),
-                    fontSize = 9.sp,
-                    color = Volt.copy(alpha = 0.75f),
+                    fontSize = 14.sp,
+                    color = Silver,
                 )
             }
         }
@@ -335,19 +336,19 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
         ) {
             days.forEach { day ->
                 val label = LocalDate.ofEpochDay(day).dayOfWeek
-                    .getDisplayName(TextStyle.NARROW, Locale.getDefault())
+                    .getDisplayName(TextStyle.NARROW, locale)
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (day == today || day == selectedDay) {
                         Box(
                             modifier = Modifier
-                                .size(17.dp)
+                                .sizeIn(minWidth = 28.dp, minHeight = 28.dp)
                                 .background(Volt, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(label, color = OnVolt, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            Text(label, color = OnVolt, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
-                        Text(label, color = Slate, fontSize = 10.sp)
+                        Text(label, color = Slate, fontSize = 14.sp)
                     }
                 }
             }
