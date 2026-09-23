@@ -150,6 +150,7 @@ class AvatarArtTest {
                 // 그림 속 착장이 말하는 대로다
                 assertEquals(r.art.outfitId == o.id, r.outfitShown)
                 assertEquals(r.art.shoeCode == s?.designCode(), r.shoeShown)
+                if (!r.shoeShown) assertEquals(null, r.art.shoeCode)
                 if (!drawn) {
                     // 새 의상 + NFT 신발 — 의상이 보이는 그림을 고르고, 신발은 아니라고 한다
                     assertTrue(r.outfitShown)
@@ -209,6 +210,8 @@ class AvatarArtTest {
                 assertEquals(r.art.shoeCode == code, r.shoeShown)
                 // 의상(모자 색까지)이 먼저다 — 입은 옷이 다른 그림은 고르지 않는다
                 assertTrue("${o.id} + $code", r.outfitShown)
+                // 신발이 안 보인다고 할 때 그림 속 신발은 기본 운동화다(다른 NFT 신발이 아니다)
+                if (!r.shoeShown) assertEquals("${o.id} + $code", null, r.art.shoeCode)
                 if (r.lookShown) shown++
             }
         }

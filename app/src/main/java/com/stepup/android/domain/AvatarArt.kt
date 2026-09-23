@@ -135,6 +135,9 @@ object AvatarArtCatalog {
             var score = 0
             if (a.outfitId == look.outfit.id) score += 5 // 의상이 화면을 더 많이 차지한다
             if (a.shoeCode == shoe) score += 4
+            // 신은 신발의 그림이 없으면 기본 운동화 그림이 낫다 — 화면은 "신발은 기본 운동화로
+            // 보여요"라고 적는다. 다른 NFT 신발을 신은 그림을 고르면 그 말이 거짓이 된다.
+            else if (a.shoeCode == null) score += 2
             if (a.pose == pose) score += 1
             score
         }
