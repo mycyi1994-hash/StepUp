@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — inventory before purchase prompts
+
+- Vault now leads with the actual equipped sneaker, before faction statistics and filters. Removed its duplicate inline upgrade purchase panel; the sneaker card opens the detailed cost-confirmation flow implemented in fe3dc17. Owned collection now precedes minting, while filters, copies, mint, boosts and guide targets remain reachable.
+- Static checks pass. This layout still needs current native capture review; it is not marked visually complete.
+- Downloaded bbe5a72 and 991048c API 34/35 artifacts. Each only retained one failed interaction testcase with an empty failure after emulator loss; neither provides evidence for new detail-screen rendering. 991048c Build APK passed. The 4GB guest-memory configuration first runs in dee6cc3, whose build/capture jobs are still active.
+
 ## 2026-09-24 — prevent stale market reads
 
 - Board/model reloads now cancel the preceding read job, preserve coroutine cancellation and check activity before publishing results. Opening another model clears its predecessor's book; reopening a model in error retries instead of accepting its cached book as success. Bid captures the selected model before launching the request.

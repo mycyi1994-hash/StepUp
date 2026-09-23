@@ -209,6 +209,17 @@ fun ItemsScreen(
             return@DetailPage
         }
 
+        // ── 착용 중인 스니커즈 ──────────────────────────────
+        equipped?.let { sneaker ->
+            item {
+                EquippedSneakerCard(
+                    sneaker = sneaker,
+                    modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_EQUIPPED),
+                    onClick = { onOpenSneaker(sneaker.id) },
+                )
+            }
+        }
+
         // ── 속성별 도감 진행도 — 탭하면 그 속성만 필터링 ─────────
         item {
             Row(
@@ -294,100 +305,6 @@ fun ItemsScreen(
             }
         }
 
-        // ── 착용 중인 스니커즈 ──────────────────────────────
-        equipped?.let { sneaker ->
-            item {
-                EquippedSneakerCard(
-                    sneaker = sneaker,
-                    modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_EQUIPPED),
-                    onClick = { onOpenSneaker(sneaker.id) },
-                )
-            }
-            item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 11.dp) {
-                    if (sneaker.canUpgrade) {
-                        val cost = sneaker.upgradeCost
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.items_next_level),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Silver,
-                            )
-                            Text(
-                                text = "%,.0f / %,.0f SUP".format(balance.coerceAtMost(cost), cost),
-                               fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (balance >= cost) Volt else Slate,
-                            )
-                        }
-                        BarMeter(
-                            fraction = (balance / cost).coerceIn(0.0, 1.0).toFloat(),
-                            height = 7.dp,
-                        )
-                        VoltButton(
-                            text = stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
-                            onClick = { viewModel.upgrade(sneaker.id) },
-                            enabled = balance >= cost,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                            text = stringResource(R.string.items_upgrade_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.items_max_level),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Volt,
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── 민팅 ────────────────────────────────────────────
-        item {
-            GlowCard(
-                modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_MINT),
-                contentPadding = PaddingValues(18.dp),
-                spacing = 12.dp,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(13.dp),
-                ) {
-                    HexEmblem(size = 44.dp)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(
-                            text = stringResource(R.string.items_mint_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Snow,
-                        )
-                        Text(
-                            text = stringResource(R.string.items_mint_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Silver,
-                        )
-                    }
-                }
-                VoltButton(
-                    text = stringResource(
-                        R.string.items_mint_button,
-                        "%,.0f".format(RewardEconomy.MINT_COST),
-                    ),
-                    onClick = { viewModel.mint() },
-                    enabled = balance >= RewardEconomy.MINT_COST,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
-        // ── 컬렉션 — 한 줄, 옆으로 밀어서 넘긴다 ───────────────
         item {
             val filtered = groups.filter { g ->
                 (rarityFilter == null || g.representative.rarity.id == rarityFilter) &&
@@ -447,6 +364,44 @@ fun ItemsScreen(
             }
         }
 
+        // ── 민팅 ────────────────────────────────────────────
+        item {
+            GlowCard(
+                modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_MINT),
+                contentPadding = PaddingValues(18.dp),
+                spacing = 12.dp,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(13.dp),
+                ) {
+                    HexEmblem(size = 44.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            text = stringResource(R.string.items_mint_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Snow,
+                        )
+                        Text(
+                            text = stringResource(R.string.items_mint_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Silver,
+                        )
+                    }
+                }
+                VoltButton(
+                    text = stringResource(
+                        R.string.items_mint_button,
+                        "%,.0f".format(RewardEconomy.MINT_COST),
+                    ),
+                    onClick = { viewModel.mint() },
+                    enabled = balance >= RewardEconomy.MINT_COST,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        // ── 컬렉션 — 한 줄, 옆으로 밀어서 넘긴다 ───────────────
         // ── 활성 부스트 ─────────────────────────────────────
         if (boosts.isNotEmpty()) {
             item { SectionHeader(title = stringResource(R.string.items_active_boosts)) }
