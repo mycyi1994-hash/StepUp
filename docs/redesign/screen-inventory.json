@@ -378,7 +378,7 @@
     {
       "id": "AnalyticsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt",
-      "line": 134,
+      "line": 140,
       "implementation": "pending",
       "verification": "pending"
     },

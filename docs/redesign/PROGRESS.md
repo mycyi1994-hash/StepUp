@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — chart interaction and accessible values
+
+- Weekly/quarter bars now expose date/range, step count, button role and selected state to accessibility services; previously their visual bars had no readable value. Test tags identify bars and expanded details without depending on translated captions.
+- Gallery now clicks a day and a week, checks selection and visible expanded details, captures each, then clicks again and asserts dismissal. This verifies the new progressive disclosure when executed; it is currently pending native execution, not passing evidence.
+- Static checks pass. 787f31b gallery has ended in failure; 0383b12 build and explicit-SwiftShader gallery are still active. No full-screen/device verification completion is claimed.
+
 ## 2026-09-24 — chart details remain readable when expanded
 
 - Selected day/week details now appear below the chart at full content width instead of 132/150dp overlays that covered bars and constrained enlarged text. Detail labels/values and quarter-chart captions use 14sp; quarter total and instructions are stacked. Day detail weekday formatting follows the app configuration locale.

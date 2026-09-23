@@ -43,6 +43,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
@@ -206,6 +212,7 @@ fun AnalyticsScreen(
 @Composable
 private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val stepsLabel = stringResource(R.string.stat_steps)
     val today = LocalDate.now().toEpochDay()
     val days = (0..6).map { offset -> today - 6 + offset }
     val byDay = week.associateBy { it.epochDay }
@@ -273,6 +280,12 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                             // 막대만 누르면 손가락보다 얇아 자꾸 빗나간다.
                             // 칸 전체(빈 위쪽 포함)를 누를 수 있게 한다.
                             .fillMaxHeight()
+                            .testTag("analytics-day-$day")
+                            .semantics {
+                                contentDescription = "${LocalDate.ofEpochDay(day)}, $steps $stepsLabel"
+                                this.selected = selected
+                                role = Role.Button
+                            }
                             .quietClickable {
                                 selectedDay = if (selected) null else day
                             },
@@ -332,7 +345,8 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
             }
         }
         selectedDay?.takeIf { it in days }?.let { day ->
-            DayCallout(day, byDay[day]?.steps ?: 0, goal, Modifier.fillMaxWidth())
+            DayCallout(day, byDay[day]?.steps ?: 0, goal,
+                Modifier.fillMaxWidth().testTag("analytics-day-details"))
         }
     }
 }
@@ -623,6 +637,7 @@ private fun weekBuckets(days: List<DailyStepsEntity>, weeks: Int = 13): List<Wee
 /** 3개월 주간 막대 — 막대를 누르면 그 주 기록 */
 @Composable
 private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
+    val stepsLabel = stringResource(R.string.stat_steps)
     val buckets = remember(days) { weekBuckets(days) }
     val maxValue = maxOf(buckets.maxOfOrNull { it.steps } ?: 0L, 1L)
     val total = buckets.sumOf { it.steps }
@@ -673,6 +688,12 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
+                            .testTag("analytics-week-$index")
+                            .semantics {
+                                contentDescription = "${bucket.start} – ${bucket.end}, ${bucket.steps} $stepsLabel"
+                                this.selected = isSelected
+                                role = Role.Button
+                            }
                             .quietClickable { selected = if (isSelected) null else index },
                         contentAlignment = Alignment.BottomCenter,
                     ) {
@@ -727,7 +748,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
         }
         selected?.let { index ->
             buckets.getOrNull(index)?.let { bucket ->
-                WeekCallout(bucket, goal, Modifier.fillMaxWidth())
+                WeekCallout(bucket, goal, Modifier.fillMaxWidth().testTag("analytics-week-details"))
             }
         }
     }

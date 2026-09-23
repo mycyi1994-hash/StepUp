@@ -131,6 +131,21 @@ class ScreenGalleryTest {
                     .assertIsDisplayed().assertIsEnabled().assertHasClickAction()
             }
             capture("screen-${index.toString().padStart(2, '0')}")
+            if (index == 9) {
+                val dayTag = "analytics-day-${java.time.LocalDate.now().toEpochDay()}"
+                compose.onNodeWithTag(dayTag).performScrollTo().performClick().assertIsSelected()
+                compose.onNodeWithTag("analytics-day-details").performScrollTo().assertIsDisplayed()
+                capture("extra-analytics-day-details")
+                compose.onNodeWithTag(dayTag).performScrollTo().performClick().assertIsNotSelected()
+                compose.onNodeWithTag("analytics-day-details").assertDoesNotExist()
+                compose.onNodeWithText(localized.getString(R.string.analytics_tab_quarter))
+                    .performScrollTo().performClick()
+                compose.onNodeWithTag("analytics-week-0").performScrollTo().performClick().assertIsSelected()
+                compose.onNodeWithTag("analytics-week-details").performScrollTo().assertIsDisplayed()
+                capture("extra-analytics-week-details")
+                compose.onNodeWithTag("analytics-week-0").performScrollTo().performClick().assertIsNotSelected()
+                compose.onNodeWithTag("analytics-week-details").assertDoesNotExist()
+            }
             if (index == 20) {
                 compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
