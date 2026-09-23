@@ -6,6 +6,7 @@ import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.CourseApi
+import com.stepup.android.data.remote.CourseRankRow
 import com.stepup.android.data.remote.CourseRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.CourseRewards
@@ -212,6 +213,9 @@ class CourseRepository(
      * 하트. 게시판의 서버 코스는 서버에 누르고, 폰에만 있는 코스(기본 공원
      * 코스, 받아 둔 코스)는 나만 보는 표시다.
      */
+    /** 코스 기록 순위 — 코스는 길로 찾는다(폰의 코스는 서버 번호를 모른다) */
+    suspend fun leaderboard(track: String): ServerResult<List<CourseRankRow>> = api.leaderboard(track)
+
     suspend fun toggleLike(id: Long): BoardResult {
         if (id >= REMOTE_BASE) {
             val serverId = id - REMOTE_BASE

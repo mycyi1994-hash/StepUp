@@ -4,6 +4,7 @@ import android.app.Application
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.push.GoalReminderWorker
 import com.stepup.android.push.PushService
 import kotlinx.coroutines.runBlocking
 
@@ -27,5 +28,8 @@ class StepUpApp : Application() {
         // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
         PushService.createChannel(this)
         ServiceLocator.pushRegistrar.syncInBackground()
+        // 목표 알림 — 매일 저녁 한 번. 켜고 끄는 것은 일꾼이 알림 설정을 읽어 정한다.
+        GoalReminderWorker.createChannel(this)
+        runCatching { GoalReminderWorker.schedule(this) }
     }
 }

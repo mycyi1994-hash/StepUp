@@ -18,7 +18,15 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +36,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.core.ServiceLocator
+import com.stepup.android.data.remote.ServerResult
+import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.theme.Alert
+import com.stepup.android.ui.theme.Carbon
+import kotlinx.coroutines.launch
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
@@ -46,6 +60,57 @@ import com.stepup.android.ui.theme.Volt
  */
 @Composable
 fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
+    val scope = rememberCoroutineScope()
+    var signedIn by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { signedIn = ServiceLocator.sessionHolder.isSignedIn() }
+    var confirming by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { if (!deleting) confirming = false },
+            containerColor = Carbon,
+            titleContentColor = Snow,
+            textContentColor = Silver,
+            title = { Text(stringResource(R.string.account_delete_title), fontWeight = FontWeight.Black) },
+            text = {
+                Text(
+                    text = stringResource(if (failed) R.string.account_delete_failed else R.string.account_delete_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    lineHeight = 20.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !deleting,
+                    onClick = {
+                        deleting = true
+                        scope.launch {
+                            val result = ServiceLocator.server.deleteAccount()
+                            if (result is ServerResult.Ok) {
+                                // 서버 계정이 사라졌다. 이 폰의 로그인도 지우면 첫 화면(로그인)으로 돌아간다.
+                                ServiceLocator.sessionHolder.signOut()
+                                ServiceLocator.userPrefs.setLoginMethod("")
+                                confirming = false
+                            } else {
+                                failed = true
+                            }
+                            deleting = false
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.account_delete_confirm), color = Alert, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !deleting, onClick = { confirming = false; failed = false }) {
+                    Text(stringResource(R.string.common_cancel), color = Silver)
+                }
+            },
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
@@ -126,6 +191,23 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                 statusBackground = CarbonHigh,
                 iconTint = Slate,
             )
+        }
+
+        // 계정 삭제 — 로그인한 사람에게만. 서버의 기록을 지우고 되돌릴 수 없다.
+        if (signedIn) {
+            item {
+                Text(
+                    text = stringResource(R.string.account_delete_title),
+                    color = Alert,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 18.dp)
+                        .quietClickable { confirming = true }
+                        .padding(vertical = 12.dp),
+                )
+            }
         }
     }
 }

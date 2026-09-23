@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,6 +86,77 @@ fun LiveRouteMap(
      */
     interactive: Boolean = false,
 ) {
+    StepUpMap(
+        focus = points,
+        modifier = modifier,
+        seed = seed,
+        interactive = interactive,
+    ) { plan ->
+        drawRoute(plan, points, progress)
+    }
+}
+
+/** 경로 한 줄 — 글로우 · 본선 · 출발점 · 도착 깃발 · 진행 점 */
+private fun DrawScope.drawRoute(plan: TilePlan, points: List<GeoPoint>, progress: Float?) {
+    if (points.isEmpty()) return
+    if (points.size < 2) {
+        val at = plan.toScreen(points.first())
+        drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
+        drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
+        return
+    }
+
+    val screen = points.map { plan.toScreen(it) }
+    val path = Path().apply {
+        moveTo(screen.first().x, screen.first().y)
+        for (i in 1 until screen.size) lineTo(screen[i].x, screen[i].y)
+    }
+
+    // 글로우(넓고 옅게) → 본선(가늘고 진하게)
+    drawPath(
+        path,
+        color = Volt.copy(alpha = 0.20f),
+        style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
+    drawPath(
+        path,
+        brush = Brush.linearGradient(listOf(Volt.copy(alpha = 0.85f), Volt)),
+        style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
+
+    drawCircle(Volt.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
+    drawCircle(Volt, radius = 4.5f.dp.toPx(), center = screen.first())
+    drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
+    drawRouteFlag(screen.last())
+
+    progress?.let { f ->
+        val at = pointAlongRoute(screen, f.coerceIn(0f, 1f))
+        drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
+        drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
+        drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
+    }
+}
+
+/**
+ * 지도 한 칸 — 타일을 깔고 그 위에 [overlay] 를 그린다.
+ *
+ * 러닝 경로, 코스·번개 핀, 땅따먹기 칸, 기록 히트맵이 모두 이 부품 위에 그려진다.
+ * 지도 엔진을 바꾸게 되면(예: 한국만 다른 지도) 이 안쪽만 갈아 끼우면 된다.
+ *
+ * @param focus 처음 화면에 다 들어오게 맞출 좌표들. 비어 있으면 지도를 그리지 않는다.
+ * @param onTap 지도를 눌렀을 때 — 누른 화면 위치와 그때의 배치 계획
+ * @param onViewport 보이는 범위가 바뀔 때 — (최소 위도, 최소 경도, 최대 위도, 최대 경도)
+ */
+@Composable
+fun StepUpMap(
+    focus: List<GeoPoint>,
+    modifier: Modifier = Modifier,
+    seed: Int = 0,
+    interactive: Boolean = false,
+    onTap: ((Offset, TilePlan) -> Unit)? = null,
+    onViewport: ((Double, Double, Double, Double) -> Unit)? = null,
+    overlay: DrawScope.(TilePlan) -> Unit = {},
+) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
 
@@ -102,10 +175,13 @@ fun LiveRouteMap(
         val widthPx = if (constraints.hasBoundedWidth) constraints.maxWidth else 0
         val heightPx = if (constraints.hasBoundedHeight) constraints.maxHeight else 0
 
-        val plan = remember(points, widthPx, heightPx, density, zoomDelta, panX, panY) {
-            if (points.isEmpty() || widthPx <= 0 || heightPx <= 0) null
-            else TilePlan.of(points, widthPx, heightPx, density, zoomDelta, panX, panY)
+        val plan = remember(focus, widthPx, heightPx, density, zoomDelta, panX, panY) {
+            if (focus.isEmpty() || widthPx <= 0 || heightPx <= 0) null
+            else TilePlan.of(focus, widthPx, heightPx, density, zoomDelta, panX, panY)
         }
+        val currentPlan by rememberUpdatedState(plan)
+        val currentOnTap by rememberUpdatedState(onTap)
+        val currentOnViewport by rememberUpdatedState(onViewport)
 
         // 타일이 한 장 도착할 때마다 올라가는 카운터. Canvas가 이 값을 읽어
         // 스냅샷 의존성을 만들어 두므로, 도착이 곧 다시 그리기가 된다.
@@ -117,6 +193,10 @@ fun LiveRouteMap(
 
         LaunchedEffect(tileKey) {
             val current = plan ?: return@LaunchedEffect
+            currentOnViewport?.let { report ->
+                val (min, max) = current.bounds(widthPx, heightPx)
+                report(min.lat, min.lng, max.lat, max.lng)
+            }
             val wanted = buildList {
                 for (ty in current.minTileY..current.maxTileY) {
                     for (tx in current.minTileX..current.maxTileX) {
@@ -179,6 +259,18 @@ fun LiveRouteMap(
                             }
                         }
                     },
+                )
+                .then(
+                    if (onTap == null) {
+                        Modifier
+                    } else {
+                        Modifier.pointerInput(Unit) {
+                            detectTapGestures { at ->
+                                val plan = currentPlan ?: return@detectTapGestures
+                                currentOnTap?.invoke(at, plan)
+                            }
+                        }
+                    },
                 ),
         ) {
             // arrivals를 읽어야 타일 도착이 다시 그리기로 이어진다
@@ -196,43 +288,7 @@ fun LiveRouteMap(
             }
 
             if (plan == null) return@Canvas
-
-            if (points.size < 2) {
-                val at = plan.toScreen(points.first())
-                drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
-                drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
-                return@Canvas
-            }
-
-            val screen = points.map { plan.toScreen(it) }
-            val path = Path().apply {
-                moveTo(screen.first().x, screen.first().y)
-                for (i in 1 until screen.size) lineTo(screen[i].x, screen[i].y)
-            }
-
-            // 글로우(넓고 옅게) → 본선(가늘고 진하게)
-            drawPath(
-                path,
-                color = Volt.copy(alpha = 0.20f),
-                style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-            drawPath(
-                path,
-                brush = Brush.linearGradient(listOf(Volt.copy(alpha = 0.85f), Volt)),
-                style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-
-            drawCircle(Volt.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
-            drawCircle(Volt, radius = 4.5f.dp.toPx(), center = screen.first())
-            drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
-            drawRouteFlag(screen.last())
-
-            progress?.let { f ->
-                val at = pointAlongRoute(screen, f.coerceIn(0f, 1f))
-                drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
-                drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
-                drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
-            }
+            overlay(plan)
         }
 
         if (interactive) {
@@ -329,7 +385,7 @@ private fun MapButton(
  * [scale]을 곱한다. 이렇게 해야 3배 밀도 화면에서 타일이 실제 크기의 1/3로
  * 쪼그라들어 글씨를 못 읽는 일이 없다.
  */
-internal data class TilePlan(
+data class TilePlan(
     val zoom: Int,
     val originX: Double,
     val originY: Double,
@@ -352,6 +408,19 @@ internal data class TilePlan(
         val x = (MapTiles.worldX(point.lng, zoom) - originX) * scale
         val y = (MapTiles.worldY(point.lat, zoom) - originY) * scale
         return Offset(x.toFloat(), y.toFloat())
+    }
+
+    /** 화면 위치 → 좌표. [toScreen] 의 반대 */
+    fun fromScreen(at: Offset): GeoPoint = GeoPoint(
+        lat = MapTiles.latOf(at.y / scale + originY, zoom),
+        lng = MapTiles.lngOf(at.x / scale + originX, zoom),
+    )
+
+    /** 화면에 보이는 범위 — (남서쪽 끝, 북동쪽 끝) */
+    fun bounds(widthPx: Int, heightPx: Int): Pair<GeoPoint, GeoPoint> {
+        val topLeft = fromScreen(Offset.Zero)
+        val bottomRight = fromScreen(Offset(widthPx.toFloat(), heightPx.toFloat()))
+        return GeoPoint(bottomRight.lat, topLeft.lng) to GeoPoint(topLeft.lat, bottomRight.lng)
     }
 
     companion object {

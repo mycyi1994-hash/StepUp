@@ -63,6 +63,8 @@ class UserPrefs(private val context: Context) {
         /** 화면 테마 — ThemeMode 의 이름 문자열 */
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val SELECTED_COURSE = longPreferencesKey("selected_course")
+        /** 서버에 코스 기록으로 낼 러닝 — "시작시각\t코스 길" 줄들 */
+        val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
         /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
         val COURSE_RECORDING = booleanPreferencesKey("course_recording")
         /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
@@ -329,6 +331,44 @@ class UserPrefs(private val context: Context) {
     }
 
     suspend fun selectedCourseNow(): Long = context.dataStore.data.first()[Keys.SELECTED_COURSE] ?: -1L
+
+    // ── 코스 기록으로 낼 러닝 ─────────────────────────────────
+    //
+    // 코스를 완주한 러닝은 서버에 올라간 **뒤에** 코스 기록으로 낸다(서버가 올라온
+    // 경로로 코스를 따라갔는지 본다). 그 사이 앱이 꺼져도 잊지 않게 여기 적어 둔다.
+
+    /** 이 러닝이 끝나면 [track] 코스의 기록으로 낸다 */
+    suspend fun addPendingCourseRun(startedAt: Long, track: String) {
+        if (track.isBlank()) return
+        context.dataStore.edit {
+            val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
+            rows[startedAt] = track
+            // 오래 못 올린 것까지 끝없이 쌓지 않는다 — 최근 20개만
+            val kept = rows.entries.sortedByDescending { e -> e.key }.take(20)
+            it[Keys.PENDING_COURSE_RUNS] = kept.joinToString("\n") { e -> "${e.key}\t${e.value}" }
+        }
+    }
+
+    /** [startedAt] 러닝의 코스 길을 꺼내고 목록에서 지운다. 없으면 null */
+    suspend fun takePendingCourseRun(startedAt: Long): String? {
+        var found: String? = null
+        context.dataStore.edit {
+            val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
+            found = rows.remove(startedAt)
+            if (found != null) {
+                it[Keys.PENDING_COURSE_RUNS] = rows.entries.joinToString("\n") { e -> "${e.key}\t${e.value}" }
+            }
+        }
+        return found
+    }
+
+    private fun decodePendingRuns(raw: String?): Map<Long, String> =
+        raw.orEmpty().lineSequence().mapNotNull { line ->
+            val tab = line.indexOf('\t')
+            if (tab <= 0) return@mapNotNull null
+            val at = line.substring(0, tab).toLongOrNull() ?: return@mapNotNull null
+            at to line.substring(tab + 1)
+        }.toMap()
 
     /**
      * 코스 녹화 중인가 — "코스 만들기"를 누르고 아직 저장하지 않은 상태.

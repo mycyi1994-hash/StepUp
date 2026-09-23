@@ -383,7 +383,7 @@
 
     <!-- Privacy -->
     <string name="privacy_data_title">What we store</string>
-    <string name="privacy_data_body">Everything — your steps, sessions, SUP ledger and sneakers — stays in local storage on this device. There is no account and no server upload.</string>
+    <string name="privacy_data_body">When you sign in, your runs (including GPS routes), daily step totals, SUP history, posts and crew activity are kept on the StepUp server, so the server can compute rewards and crews, rankings, courses and territory can be shared. No advertising ID is collected. You can delete your account any time under Connected Accounts.</string>
     <string name="privacy_perm_title">Permissions in use</string>
     <string name="privacy_perm_activity">Physical activity — counts your steps</string>
     <string name="privacy_perm_notification">Notifications — shows the running session</string>
@@ -1449,4 +1449,47 @@ Start running with StepUp.</string>
     <string name="outfit_clo_005">Aero Windbreaker</string>
     <string name="avatar_art_base_shoes">Combo art in progress · showing base sneakers</string>
     <string name="avatar_art_base_outfit">Combo art in progress · showing base outfit</string>
+    <string name="map_title">Map</string>
+    <string name="map_seg_nearby">Nearby</string>
+    <string name="map_seg_territory">Territory</string>
+    <string name="map_legend_course">Course</string>
+    <string name="map_nearby_summary">%1$d flash runs · %2$d courses on the map. Tap a pin.</string>
+    <string name="map_empty_nearby">No flash runs or courses nearby yet.</string>
+    <string name="map_away_km">%1$s km away</string>
+    <string name="map_flash_people">%1$d/%2$d people</string>
+    <string name="map_open_flash">View flash run</string>
+    <string name="map_course_meta">%1$s km · run %2$d times</string>
+    <string name="map_open_courses">Go to courses</string>
+    <string name="map_territory_hint">Streets your crew runs get painted in your crew color. The crew that ran a cell most in the last 14 days owns it.</string>
+    <string name="map_territory_cell">%1$s · %2$d marks</string>
+    <string name="map_territory_board">Territory ranking</string>
+    <string name="map_territory_cells">%1$d cells</string>
+    <string name="map_territory_sign_in">Sign in to see territory</string>
+    <string name="map_territory_zoom">Zoom in to see territory</string>
+    <string name="map_territory_empty">No cells painted here yet</string>
+    <string name="map_territory_failed">Couldn\'t load territory</string>
+    <string name="map_retry">Retry</string>
+    <string name="community_map_title">Open map</string>
+    <string name="community_map_sub">Nearby flash runs · courses · territory</string>
+    <string name="history_map_title">Run map</string>
+    <string name="history_map_sub">All your routes, layered. The brighter, the more you ran it.</string>
+    <string name="history_map_entry_sub">See all your routes on one map</string>
+    <string name="history_period_week">This week</string>
+    <string name="history_period_month">This month</string>
+    <string name="history_period_all">All</string>
+    <string name="history_map_stats">%1$d runs · %2$s km</string>
+    <string name="history_map_empty">No GPS runs in this period.</string>
+    <string name="course_rank_open">Leaderboard</string>
+    <string name="course_rank_title">Course leaderboard</string>
+    <string name="course_rank_loading">Loading…</string>
+    <string name="course_rank_failed">Couldn\'t load the leaderboard. Only courses shared on the board have one.</string>
+    <string name="course_rank_empty">No records yet. Pick this course and finish it — the server checks your route and ranks you.</string>
+    <string name="course_rank_me">%1$s (me)</string>
+    <string name="notification_channel_reminder">Goal reminders</string>
+    <string name="reminder_goal_title">%1$d steps left to today\'s goal</string>
+    <string name="reminder_goal_body">How about a quick run to hit your goal?</string>
+    <string name="account_delete_title">Delete account</string>
+    <string name="account_delete_body">Your account and everything on the server — runs, GPS routes, SUP history, posts, comments, courses and territory marks — will be deleted and cannot be restored. If you own a crew, its longest-standing member becomes owner. Records left on this phone are removed when you uninstall the app.</string>
+    <string name="account_delete_confirm">Delete</string>
+    <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
 </resources>

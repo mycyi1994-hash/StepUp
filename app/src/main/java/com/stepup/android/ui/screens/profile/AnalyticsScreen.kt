@@ -31,6 +31,10 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import com.stepup.android.ui.theme.CarbonHigh
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -130,6 +134,7 @@ private val sessionTimeFormatter: DateTimeFormatter =
 @Composable
 fun AnalyticsScreen(
     onBack: () -> Unit = {},
+    onOpenHistoryMap: () -> Unit = {},
     viewModel: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory),
 ) {
     val week by viewModel.week.collectAsStateWithLifecycle()
@@ -171,6 +176,9 @@ fun AnalyticsScreen(
                 )
             }
         }
+
+        // 기록 지도 — 달린 길을 모두 겹쳐 본다
+        item { HistoryMapEntry(onClick = onOpenHistoryMap) }
 
         item {
             SegmentedTabs(
@@ -1012,3 +1020,34 @@ private val monthDayFormatter: DateTimeFormatter =
 
 private val monthFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy.M", Locale.getDefault())
+
+/** 기록 지도로 들어가는 한 줄 */
+@Composable
+private fun HistoryMapEntry(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CarbonHigh)
+            .quietClickable(onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Filled.Map, contentDescription = null, tint = Volt, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.history_map_title),
+                color = Snow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            Text(
+                text = stringResource(R.string.history_map_entry_sub),
+                color = Silver,
+                fontSize = 12.sp,
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)
+    }
+}

@@ -382,7 +382,7 @@
 
     <!-- Privacy -->
     <string name="privacy_data_title">保存されるデータ</string>
-    <string name="privacy_data_body">歩数・セッション・SUPの履歴・スニーカーまで、すべてこの端末のローカルストレージにだけ保存されます。アカウントもサーバーへのアップロードもありません。</string>
+    <string name="privacy_data_body">ログインすると、ラン記録（GPSルートを含む）・歩数の合計・SUP履歴・投稿とクルー活動がStepUpサーバーに保管されます。サーバーが付与を直接計算し、クルー・ランキング・コース・陣取りを共有するためです。広告IDは収集しません。アカウントは連携アカウント画面からいつでも削除できます。</string>
     <string name="privacy_perm_title">使用中の権限</string>
     <string name="privacy_perm_activity">身体活動 — 歩数のカウント</string>
     <string name="privacy_perm_notification">通知 — ラン中のセッション表示</string>
@@ -1448,4 +1448,47 @@ StepUp と走り出そう。</string>
     <string name="outfit_clo_005">エアロ ウインドブレーカー</string>
     <string name="avatar_art_base_shoes">組み合わせ画像準備中 · 靴は基本スニーカーで表示</string>
     <string name="avatar_art_base_outfit">組み合わせ画像準備中 · 服は基本の服で表示</string>
+    <string name="map_title">マップ</string>
+    <string name="map_seg_nearby">周辺</string>
+    <string name="map_seg_territory">陣取り</string>
+    <string name="map_legend_course">コース</string>
+    <string name="map_nearby_summary">フラッシュラン %1$d件 · コース %2$d件。ピンをタップしてください。</string>
+    <string name="map_empty_nearby">近くにフラッシュランやコースはまだありません。</string>
+    <string name="map_away_km">%1$s km先</string>
+    <string name="map_flash_people">%1$d/%2$d人</string>
+    <string name="map_open_flash">フラッシュランを見る</string>
+    <string name="map_course_meta">%1$s km · %2$d回走行</string>
+    <string name="map_open_courses">コースを見る</string>
+    <string name="map_territory_hint">クルーが走った道がクルーの色で塗られます。直近14日で最も多く走ったクルーがマスの持ち主です。</string>
+    <string name="map_territory_cell">%1$s · マーク %2$d</string>
+    <string name="map_territory_board">陣地ランキング</string>
+    <string name="map_territory_cells">%1$dマス</string>
+    <string name="map_territory_sign_in">ログインすると陣取りが見られます</string>
+    <string name="map_territory_zoom">地図をもっと拡大してください</string>
+    <string name="map_territory_empty">この辺りにはまだ塗られたマスがありません</string>
+    <string name="map_territory_failed">陣地を読み込めませんでした</string>
+    <string name="map_retry">再試行</string>
+    <string name="community_map_title">マップで見る</string>
+    <string name="community_map_sub">周辺のフラッシュラン · コース · 陣取り</string>
+    <string name="history_map_title">記録マップ</string>
+    <string name="history_map_sub">走った道をすべて重ねました。よく走った道ほど明るくなります。</string>
+    <string name="history_map_entry_sub">走った道を一枚の地図で</string>
+    <string name="history_period_week">今週</string>
+    <string name="history_period_month">今月</string>
+    <string name="history_period_all">すべて</string>
+    <string name="history_map_stats">ラン %1$d回 · %2$s km</string>
+    <string name="history_map_empty">この期間にGPSで記録したランはありません。</string>
+    <string name="course_rank_open">ランキング</string>
+    <string name="course_rank_title">コース記録ランキング</string>
+    <string name="course_rank_loading">読み込み中…</string>
+    <string name="course_rank_failed">ランキングを読み込めませんでした。掲示板に共有されたコースのみランキングがあります。</string>
+    <string name="course_rank_empty">まだ記録がありません。このコースを選んで完走すると、サーバーがルートを確認してランキングに載せます。</string>
+    <string name="course_rank_me">%1$s (自分)</string>
+    <string name="notification_channel_reminder">目標リマインダー</string>
+    <string name="reminder_goal_title">今日の目標まであと%1$d歩</string>
+    <string name="reminder_goal_body">軽くひと走りして目標を達成しましょう</string>
+    <string name="account_delete_title">アカウント削除</string>
+    <string name="account_delete_body">アカウントとサーバー上のラン記録・GPSルート・SUP履歴・投稿・コメント・コース・陣地マークがすべて削除され、元に戻せません。クルー長の場合は最も古いメンバーがクルー長になります。この端末に残った記録はアプリを削除すると消えます。</string>
+    <string name="account_delete_confirm">削除</string>
+    <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
 </resources>

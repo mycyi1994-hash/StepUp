@@ -98,6 +98,8 @@ import com.stepup.android.ui.screens.items.SneakerDexScreen
 import com.stepup.android.ui.screens.notifications.NotificationsScreen
 import com.stepup.android.ui.screens.profile.AchievementsScreen
 import com.stepup.android.ui.screens.profile.AnalyticsScreen
+import com.stepup.android.ui.screens.profile.HistoryMapScreen
+import com.stepup.android.ui.screens.map.MapScreen
 import com.stepup.android.ui.screens.profile.ProfileScreen
 import com.stepup.android.ui.screens.rewards.WalletScreen
 import com.stepup.android.ui.screens.settings.ConnectedAccountsScreen
@@ -168,10 +170,10 @@ internal fun parentTabOf(route: String?): Screen? {
             route.startsWith("market/") -> Screen.Customize
         route == Screen.Community.route || route.startsWith("crew") ||
             route.startsWith("post") || route.startsWith("flash") ||
-            route.startsWith("lobby") || route == Routes.RANKING -> Screen.Community
+            route.startsWith("lobby") || route == Routes.RANKING || route == Routes.MAP -> Screen.Community
         route == Screen.Profile.route || route == Routes.WALLET ||
             route == Routes.NOTIFICATIONS || route == Routes.ACHIEVEMENTS ||
-            route == Routes.ANALYTICS || route.startsWith("settings") -> Screen.Profile
+            route.startsWith(Routes.ANALYTICS) || route.startsWith("settings") -> Screen.Profile
         else -> null
     }
 }
@@ -226,6 +228,12 @@ object Routes {
     const val FLASH_DETAIL = "flash/{postId}"
     const val FLASH_LOBBY = "flash/lobby/{postId}"
     const val COURSES = "courses"
+
+    /** 지도 — 내 주변 번개·코스, 땅따먹기 */
+    const val MAP = "map"
+
+    /** 기록 지도 — 달린 길을 모두 겹친 히트맵 */
+    const val HISTORY_MAP = "analytics/map"
     const val SNEAKER_DEX = "sneaker/dex"
 
     /**
@@ -396,6 +404,14 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
                     onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
+                    onOpenMap = { navController.navigate(Routes.MAP) },
+                )
+            }
+            composable(Routes.MAP) {
+                MapScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
+                    onOpenCourses = { navController.navigate(Routes.COURSES) },
                 )
             }
             composable(Routes.ITEMS) {
@@ -500,7 +516,13 @@ internal fun MainScaffold(startTour: Boolean = false) {
                 AchievementsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.ANALYTICS) {
-                AnalyticsScreen(onBack = { navController.popBackStack() })
+                AnalyticsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenHistoryMap = { navController.navigate(Routes.HISTORY_MAP) },
+                )
+            }
+            composable(Routes.HISTORY_MAP) {
+                HistoryMapScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_NOTIFICATIONS) {
                 NotificationSettingsScreen(onBack = { navController.popBackStack() })
