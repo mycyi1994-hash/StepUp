@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -537,6 +538,9 @@ private fun NavHostController.switchTab(screen: Screen) {
     }
 }
 
+/** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
+const val BOTTOM_NAV_TAG = "bottom-nav"
+
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {
     Column(
@@ -548,6 +552,8 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
+                .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
                 .padding(top = 10.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,

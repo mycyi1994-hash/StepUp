@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.VoltButton
@@ -250,7 +251,9 @@ class ExperienceUiTest {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
         val tabs = listOf(R.string.tab_home, R.string.tab_news, R.string.tab_community, R.string.tab_market, R.string.tab_events, R.string.tab_profile)
-        val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
+        val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
+            hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
         compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 6 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
