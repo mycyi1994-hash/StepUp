@@ -26,13 +26,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
-import com.stepup.android.data.repo.Crew
-import com.stepup.android.data.repo.CrewJoinPolicy
-import com.stepup.android.data.repo.PartyMember
-import com.stepup.android.data.repo.PartyPhase
-import com.stepup.android.data.repo.PartyState
-import com.stepup.android.domain.Post
-import com.stepup.android.domain.PostCategory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.animatedInt
@@ -87,67 +80,7 @@ class ExperienceUiTest {
         ServiceLocator.userPrefs.setGuideSeen()
         ServiceLocator.userPrefs.ensureRunnerUid()
         ServiceLocator.sneakerRepository.ensureStarter()
-        // 크루는 서버에만 있다. 화면 검사는 서버 없이 도는 것이라, 실제 크루와 같은
-        // 모양의 크루 하나를 채워 넣는다. 크루장이고 승인제라 관리 카드까지 그려진다.
-        ServiceLocator.crewRepository.showForTest(
-            listOf(
-                Crew(
-                    id = "00000000-0000-0000-0000-00000000c0de",
-                    monogram = "HR",
-                    name = "Hangang Runners",
-                    tagline = "Saturday 7AM, 5K by the river",
-                    area = "Mapo",
-                    memberCount = 24,
-                    roster = listOf("Ara Kim", "Bo Lee", "Cha Park", "Dan Choi"),
-                    owned = true,
-                    joinPolicy = CrewJoinPolicy.APPROVAL,
-                    joined = true,
-                    pendingCount = 2,
-                ),
-            ),
-        )
-        // 글도 서버에만 있다. 번개 하나, 자유 글 하나, 크루 글 하나로 게시판 화면을 채운다.
-        val now = System.currentTimeMillis()
-        ServiceLocator.communityRepository.showForTest(
-            listOf(
-                Post(
-                    id = 101, category = PostCategory.FLASH, crewId = "", author = "Sora K.",
-                    authorId = "u-sora", title = "Tonight 7PM · 5K by the river",
-                    body = "Easy pace, everyone welcome.", createdAt = now - 3_600_000,
-                    likes = 12, liked = false, commentCount = 4, mine = false,
-                    place = "Yeouido Park Gate 3", distanceKm = 1.2, meetAt = now + 5_400_000,
-                    capacity = 8, joinedCount = 5, joined = false,
-                ),
-                Post(
-                    id = 102, category = PostCategory.TIP, crewId = "", author = "Ara Kim",
-                    authorId = "u-ara", title = "Wide-toe running shoes that worked for me",
-                    body = "Three picks after two months of testing.", createdAt = now - 7_200_000,
-                    likes = 31, liked = true, commentCount = 9, mine = true,
-                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
-                ),
-                Post(
-                    id = 103, category = PostCategory.FREE, crewId = "00000000-0000-0000-0000-00000000c0de",
-                    author = "Bo Lee", authorId = "u-bo", title = "Saturday route is set",
-                    body = "Meet at the bridge, 6:50.", createdAt = now - 10_800_000,
-                    likes = 6, liked = false, commentCount = 2, mine = false,
-                    place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
-                ),
-            ),
-        )
-        // 파티 로비도 서버의 방이다. 방장인 나와 크루원 둘이 모인 로비를 채운다.
-        ServiceLocator.crewRepository.showPartyForTest(
-            PartyState(
-                phase = PartyPhase.LOBBY,
-                partyId = 1L,
-                crewId = "00000000-0000-0000-0000-00000000c0de",
-                crewName = "Hangang Runners",
-                members = listOf(
-                    PartyMember(id = "u-me", name = "", ready = true, isMe = true, isHost = true),
-                    PartyMember(id = "u-ara", name = "Ara Kim", ready = true, isMe = false),
-                    PartyMember(id = "u-bo", name = "Bo Lee", ready = false, isMe = false),
-                ),
-            ),
-        )
+        TestData.seedCommunity()
         ServiceLocator.courseRepository.ensureSeeded()
         ServiceLocator.notificationRepository.seedWelcome()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
@@ -189,7 +122,7 @@ class ExperienceUiTest {
         for (locale in listOf("ko", "en", "ja", "zh")) {
             for (night in listOf(false, true)) {
                 for (enlarged in listOf(false, true)) {
-                    for (index in 0..27) {
+                    for (index in 0..29) {
                         compose.runOnIdle { language = locale; dark = night; large = enlarged; screen = index }
                         compose.waitForIdle()
                         if (index == 0) compose.waitUntil(5_000) {
@@ -251,6 +184,8 @@ class ExperienceUiTest {
             25 -> ThemeScreen()
             26 -> SneakerDexScreen()
             27 -> com.stepup.android.ui.screens.events.NewsScreen()
+            28 -> com.stepup.android.ui.screens.customize.CustomizeScreen()
+            29 -> com.stepup.android.ui.screens.customize.RunnerMarketScreen()
         }
     }
 
@@ -318,17 +253,21 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        val tabs = listOf(R.string.tab_home, R.string.tab_news, R.string.tab_community, R.string.tab_market, R.string.tab_events, R.string.tab_profile)
+        // 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보
+        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
             hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
-        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 6 }
+        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 4 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.profile_tab_settings)).performClick()
+        // 설정은 내 정보 목록 맨 아래의 "설정" 줄로 들어간다 — 스크롤해야 보일 수 있다
+        val settingsRow = compose.activity.getString(R.string.profile_tab_settings)
+        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsRow))
+        compose.onNodeWithText(settingsRow).performClick()
         val settingsLabel = compose.activity.getString(R.string.settings_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()

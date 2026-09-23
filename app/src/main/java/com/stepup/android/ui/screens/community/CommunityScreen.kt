@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.community
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
@@ -42,7 +44,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +51,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
+import com.stepup.android.ui.components.TwoWaySwitch
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.MainHeader
+import com.stepup.android.ui.components.PageHero
+import com.stepup.android.ui.components.PrimaryCta
+import com.stepup.android.domain.AvatarArt
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
@@ -97,8 +104,8 @@ fun CommunityScreen(
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
     val segments = listOf(
-        stringResource(R.string.community_seg_board),
-        stringResource(R.string.community_seg_crew),
+        stringResource(R.string.community_tab_feed),
+        stringResource(R.string.community_tab_my_crew),
     )
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
@@ -106,41 +113,32 @@ fun CommunityScreen(
 
     Column(Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            // 시안대로 — 로고 · 보유 SUP, 그 아래 큰 제목과 함께 달리는 두 러너.
+            // 알림함은 내 정보 › 설정에 있다.
+            val balance by viewModel.balance.collectAsStateWithLifecycle()
+            MainHeader(balance = balance, onOpenWallet = null)
+            PageHero(
+                title = stringResource(R.string.community_hero_title),
+                subtitle = stringResource(R.string.community_hero_sub),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.tab_community),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = " / GIWA",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Black,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = 1.sp,
-                        color = Volt,
-                    )
-                }
-                DarkIconButton(
-                    icon = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    onClick = onOpenNotifications,
-                    badge = true,
+                AvatarImage(
+                    art = AvatarArt.MALE_IDLE,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .size(width = 84.dp, height = 140.dp),
+                )
+                AvatarImage(
+                    art = AvatarArt.FEMALE_IDLE,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(width = 84.dp, height = 140.dp),
                 )
             }
 
-            SegmentedTabs(
+            TwoWaySwitch(
                 labels = segments,
                 selected = if (tab == CommunityTab.BOARD) 0 else 1,
                 onSelect = {
@@ -191,16 +189,12 @@ private fun BoardTab(
     // 모르는 등수를 지어내면 들어가 보는 순간 다른 숫자가 나온다.
     val meLabel = stringResource(R.string.rank_me)
     val myRank by viewModel.mySupRank.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { viewModel.loadRanking(RankBoard.TOTAL_SUP, meLabel) }
 
-    // 번개러닝을 가까운 순으로 세우고 "몇 km"를 적는 데 쓴다. 모르면 null 이고,
-    // 그때는 모임 시각 순으로 선다.
+    // 시안대로 한 줄 피드 — 번개러닝도 일반 글도 최신 순으로 섞어 보여 준다.
+    // 검색 · 분류 칩 · 랭킹 카드는 두지 않는다(랭킹은 내 정보 › 설정).
+    // 번개 카드의 "몇 km"는 내 자리에서 잰다. 모르면 함께 달릴 거리를 적는다.
     val here = rememberCurrentLocation()
-    val visible = remember(posts, hotPosts, filter, query, here) {
-        // 핫글은 이미 뽑혀 순서가 정해진 목록이라, 다시 정렬하지 않고 검색만 건다.
-        if (filter == BoardFilter.HOT) searchPosts(hotPosts, query)
-        else filterPosts(posts, filter.category, query, here)
-    }
+    val visible = remember(posts) { posts.sortedByDescending { it.createdAt } }
     val flashWindow = remember(posts, query, here) {
         filterPosts(posts, PostCategory.FLASH, query, here)
     }
@@ -208,89 +202,10 @@ private fun BoardTab(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 92.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
-            item {
-                RankingTeaser(
-                    rank = myRank,
-                    balance = balance,
-                    onClick = onOpenRanking,
-                )
-            }
-
-            item {
-                SearchField(query, { query = it })
-            }
-
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(BoardFilter.entries.size) { index ->
-                        val option = BoardFilter.entries[index]
-                        PillChip(
-                            text = option.label(),
-                            selected = filter == option,
-                            onClick = { viewModel.selectFilter(option) },
-                        )
-                    }
-                }
-            }
-
-            // 핫글은 왜 이 글들이 여기 있는지 한 줄로 알려 준다. 규칙을 모르면
-            // "왜 내 글은 없지"가 남고, 그건 대개 앱이 고장 난 것으로 읽힌다.
-            if (filter == BoardFilter.HOT) {
-                item {
-                    GlowCard(contentPadding = PaddingValues(14.dp), spacing = 4.dp) {
-                        Text(
-                            text = stringResource(R.string.board_hot_title),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Snow,
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.board_hot_rule,
-                                CommunityRepository.HOT_LIKE_POINTS,
-                                CommunityRepository.HOT_COMMENT_POINTS,
-                                CommunityRepository.HOT_LIMIT,
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 11.sp,
-                            color = Silver,
-                            lineHeight = 16.sp,
-                        )
-                    }
-                }
-            }
-
-            if (filter == BoardFilter.ALL || filter == BoardFilter.FLASH) {
-                item {
-                    SectionHeader(title = stringResource(R.string.community_flash_nearby))
-                }
-            }
-
-            // 번개러닝 창내창 — 카드 2개 높이만 차지하고 안에서 스크롤한다
-            if (filter == BoardFilter.ALL && flashWindow.isNotEmpty()) {
-                item {
-                    FlashRunWindow(
-                        posts = flashWindow,
-                        onJoin = { viewModel.toggleJoinFlash(it) },
-                        onLike = { viewModel.toggleLike(it) },
-                        onComment = { viewModel.openComments(it) },
-                        onDelete = { viewModel.deletePost(it) },
-                        onOpen = onOpenFlash,
-                        onReport = { viewModel.askReport(it) },
-                        here = here,
-                    )
-                }
-            }
-
-            // 일반 글 목록 제목 — "가까운 번개러닝"과 짝을 이룬다
-            if (filter == BoardFilter.ALL) {
-                item {
-                    SectionHeader(title = stringResource(R.string.community_board_section))
-                }
-            }
-
+            // 글은 서버에만 있다. 로그인·연결 문제로 비었으면 "아직 글이 없어요"와 섞지 않는다.
             if (posts.isEmpty() && boardSync != BoardSyncState.Ready) {
                 item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
             } else if (visible.isEmpty()) {
@@ -333,11 +248,15 @@ private fun BoardTab(
             }
         }
 
-        WriteFab(
+        // 글쓰기 — 화면의 주 행동 하나. 시안대로 아래에 넓게.
+        PrimaryCta(
+            text = stringResource(R.string.post_write),
+            icon = Icons.Filled.Edit,
+            showArrow = false,
             onClick = onWritePost,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 18.dp, bottom = 20.dp)
+                .align(Alignment.BottomCenter)
+                .padding(start = 20.dp, end = 20.dp, bottom = 14.dp)
                 .guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
         )
     }

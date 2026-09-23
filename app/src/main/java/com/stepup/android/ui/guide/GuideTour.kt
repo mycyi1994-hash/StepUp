@@ -122,6 +122,10 @@ object GuideTour {
         const val ITEMS_MINT = "items_mint"
         const val ITEMS_COLLECTION = "items_collection"
         const val EVENTS_FEATURED = "events_featured"
+        /** 러닝 홈의 챌린지 · 소식 바로가기 */
+        const val HOME_SHORTCUTS = "home_shortcuts"
+        /** 꾸미기의 캐릭터 미리보기 */
+        const val CUSTOMIZE_PREVIEW = "customize_preview"
         const val PROFILE_AVATAR = "profile_avatar"
         const val PROFILE_ACHIEVEMENTS = "profile_achievements"
 
@@ -149,36 +153,23 @@ object GuideTour {
         // ── 러닝 → 출금, 전체 흐름 ──
         GuideStep("", "home", R.string.tour_journey_title, R.string.tour_journey_body, journey = true),
 
-        // ── 홈: 그 흐름이 실제로 어디에 있는지 ──
+        // ── 러닝: 그 흐름이 실제로 어디에 있는지 ──
         GuideStep(Targets.tab("home"), "home", R.string.tour_tab_home_title, R.string.tour_tab_home_body),
         GuideStep(Targets.HOME_START_RUN, "home", R.string.tour3_title, R.string.tour3_body),
         GuideStep(Targets.HOME_TOKEN, "home", R.string.tour_token_title, R.string.tour_token_body),
-        GuideStep(Targets.HOME_STEPS, "home", R.string.tour1_title, R.string.tour1_body),
-        GuideStep(Targets.HOME_ENERGY, "home", R.string.tour2_title, R.string.tour2_body),
+        GuideStep(Targets.HOME_SHORTCUTS, "home", R.string.tour_shortcuts_title, R.string.tour_shortcuts_body),
 
-        // ── 뉴스: 읽는 자리. 탭만 알려 준다 — 안의 글은 읽으면 바로 안다 ──
-        GuideStep(Targets.tab("news"), "news", R.string.tour_tab_news_title, R.string.tour_tab_news_body),
+        // ── 꾸미기 ──
+        GuideStep(Targets.tab("customize"), "customize", R.string.tour_tab_customize_title, R.string.tour_tab_customize_body),
+        GuideStep(Targets.CUSTOMIZE_PREVIEW, "customize", R.string.tour_customize_title, R.string.tour_customize_body),
 
         // ── 커뮤니티 ──
         GuideStep(Targets.tab("community"), "community", R.string.tour_tab_community_title, R.string.tour_tab_community_body),
-        GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour4_title, R.string.tour4_body),
-        GuideStep(Targets.COMMUNITY_RANKING, "community", R.string.tour5_title, R.string.tour5_body),
         GuideStep(Targets.COMMUNITY_WRITE, "community", R.string.tour6_title, R.string.tour6_body),
 
-        // ── 아이템 ──
-        GuideStep(Targets.tab("items"), "items", R.string.tour_tab_items_title, R.string.tour_tab_items_body),
-        GuideStep(Targets.ITEMS_EQUIPPED, "items", R.string.tour7_title, R.string.tour7_body),
-        GuideStep(Targets.ITEMS_MINT, "items", R.string.tour8_title, R.string.tour8_body),
-        GuideStep(Targets.ITEMS_COLLECTION, "items", R.string.tour9_title, R.string.tour9_body),
-
-        // ── 이벤트 ──
-        GuideStep(Targets.tab("events"), "events", R.string.tour_tab_events_title, R.string.tour_tab_events_body),
-        GuideStep(Targets.EVENTS_FEATURED, "events", R.string.tour10_title, R.string.tour10_body),
-
-        // ── 프로필 ──
+        // ── 내 정보 ──
         GuideStep(Targets.tab("profile"), "profile", R.string.tour_tab_profile_title, R.string.tour_tab_profile_body),
         GuideStep(Targets.PROFILE_AVATAR, "profile", R.string.tour11_title, R.string.tour11_body),
-        GuideStep(Targets.PROFILE_ACHIEVEMENTS, "profile", R.string.tour12_title, R.string.tour12_body),
     )
 
     val current: GuideStep? get() = if (active) steps.getOrNull(stepIndex) else null

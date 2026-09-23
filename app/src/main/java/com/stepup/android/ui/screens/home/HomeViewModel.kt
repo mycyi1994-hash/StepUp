@@ -7,10 +7,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.data.repo.StepRepository
+import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunnerLevels
 import com.stepup.android.domain.RunnerProgress
@@ -18,7 +20,10 @@ import com.stepup.android.domain.Sneaker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
+import java.time.ZoneId
 
 class HomeViewModel(
     private val stepRepository: StepRepository,
@@ -26,7 +31,30 @@ class HomeViewModel(
     sneakerRepository: SneakerRepository,
     notificationRepository: NotificationRepository,
     prefs: UserPrefs,
+    avatarRepository: AvatarRepository,
 ) : ViewModel() {
+
+    /** 오늘 0시(기기 시간대). 오늘 번 포인트와 오늘 운동 시간의 기준이다. */
+    private val startOfToday: Long =
+        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    /**
+     * 오늘 러닝·목표 보너스·이벤트로 번 SUP.
+     *
+     * 원장에서 아직 못 읽었으면 null 이다. 0 으로 두면 앱을 켜자마자 잠깐
+     * "오늘 0 SUP"가 보였다가 바뀌는데, 그 순간에는 정말 못 번 것처럼 읽힌다.
+     */
+    val todayEarned: StateFlow<Double?> = rewardRepository.earnedSince(startOfToday)
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
+    val todayRunSec: StateFlow<Long> = stepRepository.observeDurationSince(startOfToday)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /** 캐릭터가 지금 입고 있는 것 — 꾸미기 · 내 정보와 같은 값 */
+    val look: StateFlow<AvatarLook> = avatarRepository.look
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
 
     data class UiState(
         val todaySteps: Int = 0,
@@ -141,6 +169,7 @@ class HomeViewModel(
                     ServiceLocator.sneakerRepository,
                     ServiceLocator.notificationRepository,
                     ServiceLocator.userPrefs,
+                    ServiceLocator.avatarRepository,
                 )
             }
         }
