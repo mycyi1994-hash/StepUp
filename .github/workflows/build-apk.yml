@@ -152,7 +152,13 @@ jobs:
           EOF
 
           if gh release view test-apk >/dev/null 2>&1; then
-            gh release upload test-apk StepUp-test.apk --clobber
+            # 사전 배포의 파일 목록이 늦게 갱신되면 --clobber 가 이미 지워진 파일을
+            # 지우려다 404 로 끝난다. 잠시 뒤 다시 올린다(세 번까지).
+            for i in 1 2 3; do
+              gh release upload test-apk StepUp-test.apk --clobber && break
+              [ "$i" = 3 ] && exit 1
+              sleep 15
+            done
             gh release edit test-apk --title "테스트 APK — ${VERSION} (${SHORT})" --notes-file notes.md
           else
             gh release create test-apk StepUp-test.apk \
