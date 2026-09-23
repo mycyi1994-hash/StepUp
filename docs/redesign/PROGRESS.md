@@ -11,6 +11,7 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Removed the withdrawal button/dialog that performed no withdrawal and asserted unsupported 1:1 conversion, a 1,000-SUP minimum and launch eligibility. Four-language GIWA copy explicitly describes this build's missing connection/withdrawal support and the app-recorded SUP view. This is honest interim UI, NOT completion of the required GIWA integration.
 - Wallet gallery now goes through its real root route. Source contract/string checks passed; new aggregate and wallet visuals still need native verification.
 - 1b6eb54 Build APK 35910105134 and gallery 35910105018 passed; detailed test XML/captures are being downloaded for review.
+- Downloaded 1b6eb54 XML confirms six tests and zero failures, including the transaction rollback/concurrent retry test. This proves local receipt atomicity under the injected failure, not server response-loss recovery. 6a0c053 Build APK 35910775780 also passed; its native form suite is still pending at this checkpoint.
 
 ## 2026-09-24 — post composition
 
