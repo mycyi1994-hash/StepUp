@@ -14,6 +14,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -110,6 +115,9 @@ fun EventsScreen(
     val claimResult by viewModel.claimResult.collectAsStateWithLifecycle()
     val daily by viewModel.daily.collectAsStateWithLifecycle()
     val nightKm by viewModel.nightKm.collectAsStateWithLifecycle()
+    val look by viewModel.look.collectAsStateWithLifecycle()
+    val claimingId by viewModel.claimingId.collectAsStateWithLifecycle()
+    var selected by rememberSaveable { mutableIntStateOf(0) }
 
     var celebration by rememberSaveable { mutableStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
@@ -157,41 +165,42 @@ fun EventsScreen(
         )
     }
 
-    val weekFraction = (weekSteps.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f)
-    val nightFraction = (nightKm / Events.NIGHT_QUEST.target).toFloat().coerceIn(0f, 1f)
+    val weekFraction = weekSteps?.let { (it.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f) }
+    val nightFraction = nightKm?.let { (it / Events.NIGHT_QUEST.target).toFloat().coerceIn(0f, 1f) }
+    val selectedEvent = when (selected) { 1 -> Events.STEP_SURGE; 2 -> Events.NIGHT_QUEST; else -> null }
+    val selectedFraction = when (selected) { 1 -> weekFraction; 2 -> nightFraction; else -> null }
+    val canClaim = selectedEvent != null && selectedFraction != null && selectedFraction >= 1f &&
+        claimed != null && selectedEvent.id !in claimed!!
 
+    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+        SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet,
+            title = stringResource(R.string.challenge_title))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
+            itemsIndexed(listOf(R.string.challenge_tag_daily, R.string.challenge_tag_weekly, R.string.event_night_quest)) { index, label ->
+                com.stepup.android.ui.components.PillChip(
+                    text = stringResource(label), selected = selected == index,
+                    onClick = { selected = index }, modifier = Modifier.testTag("challenge-choice-$index"),
+                )
+            }
+        }
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 18.dp),
+        modifier = Modifier.weight(1f).fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
-        }
-        // 큰 제목 · 한 줄 소개 · 두 러너(RUNO · LUMI 그림 그대로)
-        item {
-            PageHero(
-                title = stringResource(R.string.challenge_title),
-                subtitle = stringResource(R.string.challenge_hero_sub),
-                modifier = Modifier.celebrate(celebration.takeIf { it > 0 }),
-            ) {
-                AvatarImage(
-                    art = AvatarArt.MALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .size(width = 84.dp, height = 140.dp),
-                )
-                AvatarImage(
-                    art = AvatarArt.FEMALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(width = 84.dp, height = 140.dp),
-                )
+            Box(Modifier.fillMaxWidth().height(240.dp).celebrate(celebration.takeIf { it > 0 }), contentAlignment = Alignment.Center) {
+                look?.let {
+                    com.stepup.android.ui.components.CharacterStage(
+                        look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
+                        modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
+                    )
+                } ?: androidx.compose.material3.CircularProgressIndicator()
             }
         }
 
         // ── 일일 — 걸음 목표. 달성하면 보너스가 저절로 들어온다 ──
-        item {
+        if (selected == 0) item {
             val d = daily
             ChallengeCard(
                 tag = stringResource(R.string.challenge_tag_daily),
@@ -201,7 +210,7 @@ fun EventsScreen(
                 desc = stringResource(R.string.challenge_daily_desc),
                 reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
                 rewardNote = if (d != null && d.paidToday > 0) null else stringResource(R.string.challenge_daily_streak_note),
-                fraction = d?.fraction ?: 0f,
+                fraction = d?.fraction,
                 progressText = if (d == null) "—" else "%,d / %,d".format(d.steps, d.goal),
                 state = when {
                     d == null -> ChallengeState.Loading
@@ -214,8 +223,8 @@ fun EventsScreen(
         }
 
         // ── 주간 — 7일 걸음 합 ──
-        item {
-            val done = weekFraction >= 1f
+        if (selected == 1) item {
+            val done = weekFraction != null && weekFraction >= 1f
             ChallengeCard(
                 tag = stringResource(R.string.challenge_tag_weekly),
                 tagTone = BadgeTone.Nft,
@@ -224,15 +233,15 @@ fun EventsScreen(
                 desc = stringResource(R.string.event_step_surge_desc, "%,d".format(Events.STEP_SURGE.target.toLong())),
                 reward = Events.STEP_SURGE.reward,
                 fraction = weekFraction,
-                progressText = "%,d / %,d".format(weekSteps, Events.STEP_SURGE.target.toLong()),
-                state = claimState(Events.STEP_SURGE, claimed, done),
-                onClaim = { viewModel.claim(Events.STEP_SURGE, weekFraction) },
+                progressText = weekSteps?.let { "%,d / %,d".format(it, Events.STEP_SURGE.target.toLong()) } ?: "—",
+                state = if (claimingId == Events.STEP_SURGE.id) ChallengeState.Settling else claimState(Events.STEP_SURGE, claimed, done),
+                onClaim = null,
             )
         }
 
         // ── 나이트 러너 — 저녁 8시 이후 러닝 거리 합 ──
-        item {
-            val done = nightFraction >= 1f
+        if (selected == 2) item {
+            val done = nightFraction != null && nightFraction >= 1f
             ChallengeCard(
                 tag = stringResource(R.string.tag_limited),
                 tagTone = BadgeTone.Glow,
@@ -241,26 +250,34 @@ fun EventsScreen(
                 desc = stringResource(R.string.event_night_quest_desc),
                 reward = Events.NIGHT_QUEST.reward,
                 fraction = nightFraction,
-                progressText = "%.1f / %.0f km".format(nightKm, Events.NIGHT_QUEST.target),
-                state = claimState(Events.NIGHT_QUEST, claimed, done),
-                onClaim = { viewModel.claim(Events.NIGHT_QUEST, nightFraction) },
+                progressText = nightKm?.let { "%.1f / %.0f km".format(it, Events.NIGHT_QUEST.target) } ?: "—",
+                state = if (claimingId == Events.NIGHT_QUEST.id) ChallengeState.Settling else claimState(Events.NIGHT_QUEST, claimed, done),
+                onClaim = null,
             )
         }
 
-        item {
+    }
             PrimaryCta(
-                text = stringResource(R.string.home_start_run),
-                icon = Icons.AutoMirrored.Filled.DirectionsRun,
-                onClick = onStartRun,
+                text = stringResource(when {
+                    claimingId != null -> R.string.challenge_state_settling
+                    canClaim -> R.string.events_claim
+                    else -> R.string.home_start_run
+                }),
+                icon = if (canClaim) null else Icons.AutoMirrored.Filled.DirectionsRun,
+                enabled = claimingId == null,
+                onClick = {
+                    if (canClaim) viewModel.claim(selectedEvent!!, selectedFraction!!) else onStartRun()
+                },
+                modifier = Modifier.padding(vertical = 12.dp).testTag("challenge-primary-action"),
             )
-        }
     }
 }
 
 private enum class ChallengeState { Loading, InProgress, Ready, Settling, Paid, Claimed, Soon }
 
 /** 받기형 도전의 상태 — 받았으면 받음, 채웠으면 받기, 아니면 진행 중 */
-private fun claimState(def: EventDef, claimed: Set<String>, done: Boolean): ChallengeState = when {
+private fun claimState(def: EventDef, claimed: Set<String>?, done: Boolean): ChallengeState = when {
+    claimed == null -> ChallengeState.Loading
     claimed.contains(def.id) -> ChallengeState.Claimed
     done -> ChallengeState.Ready
     else -> ChallengeState.InProgress
@@ -293,6 +310,7 @@ private fun ChallengeCard(
         val badge: @Composable () -> Unit = {
             when (state) {
                 ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
+                ChallengeState.Loading -> Text("—", color = Silver)
                 else -> RewardPill(reward)
             }
         }
@@ -313,12 +331,12 @@ private fun ChallengeCard(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
-                Text(text = desc, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
+                Text(text = desc, fontSize = 14.sp, color = Silver, lineHeight = 20.sp)
             }
             if (!large) badge()
         }
         if (rewardNote != null) {
-            Text(text = rewardNote, fontSize = 11.sp, color = Slate)
+            Text(text = rewardNote, fontSize = 14.sp, color = Silver)
         }
         if (fraction != null) {
             // 큰 진행값 한 줄, 그 아래 막대와 백분율

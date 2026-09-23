@@ -27,6 +27,7 @@ import com.stepup.android.domain.AvatarGender
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.MainScaffold
+import com.stepup.android.ui.Routes
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.home.HomeScreen
@@ -132,6 +133,8 @@ class ScreenGalleryTest {
             Triple(2, "community-crews", listOf(R.string.community_tab_my_crew)),
             Triple(2, "community-stories", listOf(R.string.community_stories)),
             Triple(2, "community-meetups", listOf(R.string.community_other_meetups)),
+            Triple(4, "challenge-weekly", listOf(R.string.challenge_tag_weekly)),
+            Triple(4, "challenge-night", listOf(R.string.event_night_quest)),
             Triple(3, "items-store", listOf(R.string.market_tab_store)),
             Triple(3, "items-exchange", listOf(R.string.market_tab_nft)),
             Triple(3, "items-my-trades", listOf(R.string.market_tab_nft, R.string.market_section_mine)),
@@ -223,7 +226,7 @@ class ScreenGalleryTest {
             1, 34, 35 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.RUN)
             2 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
             3 -> ItemsScreen()
-            4 -> EventsScreen()
+            4 -> MainScaffold(initialRoute = Routes.EVENTS)
             5 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Profile)
             6 -> WalletScreen()
             7 -> CourseHubScreen()

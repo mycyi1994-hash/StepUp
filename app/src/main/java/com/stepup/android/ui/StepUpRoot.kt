@@ -319,7 +319,7 @@ internal fun MainScaffold(
     val balance by balanceFlow.collectAsState(initial = null)
 
     Box(Modifier.fillMaxSize()) {
-    if (currentRoute == Screen.Run.route) {
+    if (currentRoute == Screen.Run.route || currentRoute == Routes.EVENTS) {
         com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
     } else if (currentRoute == Screen.Customize.route) {
         com.stepup.android.ui.components.RunnerScene(

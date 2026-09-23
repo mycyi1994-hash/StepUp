@@ -301,7 +301,7 @@
     {
       "id": "EventsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 100,
+      "line": 105,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -507,7 +507,7 @@
       "kind": "AlertDialog",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 416,
+      "line": 423,
       "verification": "pending"
     },
     {

@@ -201,31 +201,19 @@ fun SecondaryHeader(
     balance: Double?,
     onOpenWallet: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    title: String? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .feedbackClickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                tint = Snow,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Wordmark()
+            if (title == null) Wordmark() else Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
-        if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(44.dp))
+        if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(StepUpDesign.TouchTarget))
     }
 }
 

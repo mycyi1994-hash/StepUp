@@ -44,6 +44,9 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions")
     fun observeRunTotals(): Flow<RunTotals>
 
+    @Query("SELECT * FROM walk_sessions WHERE uploadState = 'SIGNED' AND verdict NOT IN ('FLAGGED', 'VOID')")
+    fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>>
+
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis")
     fun observeDurationSince(fromMillis: Long): Flow<Long>
 

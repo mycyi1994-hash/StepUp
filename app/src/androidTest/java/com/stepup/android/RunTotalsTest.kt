@@ -11,6 +11,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RunTotalsTest {
+    @Test fun challengeRecordsExcludeUnconfirmedFlaggedAndVoidedRuns() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val dao = db.walkSessionDao()
+            val base = WalkSessionEntity(startedAt = 1, endedAt = 1000, steps = 1000,
+                durationSec = 600, distanceMeters = 1500.0, calories = 0.0, pointsEarned = 0.0)
+            dao.insert(base) // pending
+            dao.insert(base.copy(uploadState = "REJECTED", verdict = "VOID"))
+            dao.insert(base.copy(uploadState = "SIGNED", verdict = "FLAGGED"))
+            dao.insert(base.copy(uploadState = "SIGNED", verdict = "VOID"))
+            dao.insert(base.copy(uploadState = "SIGNED", verdict = "CLEAN"))
+            val verified = dao.observeVerifiedSessions().first()
+            assertEquals(1, verified.size)
+            assertEquals("CLEAN", verified.single().verdict)
+            assertEquals(5, dao.observeRunTotals().first().runs) // history is preserved
+        } finally { db.close() }
+    }
     @Test fun totalsUseEverySavedRunAndExcludePassiveSteps() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()

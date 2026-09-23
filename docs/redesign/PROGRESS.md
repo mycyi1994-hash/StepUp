@@ -32,6 +32,14 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## Environment / unverified dependencies
 
+## 2026-09-24 — focused challenge flow
+
+- Challenges now show one selected daily/weekly/night target at a time, an actual equipped character and a pinned primary action. The action becomes Claim only for an eligible unclaimed target; while a request is active it is disabled, and request errors restore retry ability. Loading progress/claim state is distinct from zero. Original target/reward definitions remain unchanged, rather than copying example values from the reference image.
+- Shared SecondaryHeader now uses the fixed 48dp back component and header-height token, and supports a detail title. Challenge captures use the real navigation shell. Added three challenge captures and four-viewport navigation checks from Profile through each selector and Back.
+- Inspection of supabase/migrations/0014_events.sql found night progress excludes FLAGGED/VOID server records. App progress previously counted recent 1,000 sessions regardless of verification. It now uses all SIGNED, non-FLAGGED/non-VOID sessions, then applies the existing local-time 20:00 boundary. Added Room coverage proving pending/rejected/flagged/void records are excluded from challenge eligibility while history still retains them. Real server claim reconciliation remains unverified.
+- d7283d1 Build APK 35906332879 passed. Its gallery 35906332769 remains live. Downloaded 2bafc3e gallery 35905430477: XML shows 3 tests/0 failures (chrome including profile settings Back, equipment persistence, all-record run totals). This does not validate the new challenge changes.
+- Inspected native navigation-profile.png: character and shared chrome render correctly; the wallet row requires scrolling at the gallery viewport. Profile hero height/scene grounding and seated reference pose need further refinement. No whole-app completion claim is supported.
+
 ## 2026-09-24 — community together/stories flow
 
 - Community now opens with a decorative warmup group and one actual upcoming public meetup. The selector excludes expired, full, private and unscheduled posts, chooses the soonest start and has no fabricated fallback. Native title/place/date/distance are repository data; View meetup opens the detail before any participation change. The selector refreshes its time boundary while displayed and has unit coverage.

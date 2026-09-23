@@ -43,18 +43,23 @@ class EventsViewModel(
     stepRepository: StepRepository,
     rewardRepository: RewardRepository,
     private val eventRepository: EventRepository,
+    avatarRepository: com.stepup.android.data.repo.AvatarRepository,
 ) : ViewModel() {
+    val look = avatarRepository.look.map<com.stepup.android.domain.AvatarLook, com.stepup.android.domain.AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val claimingId = MutableStateFlow<String?>(null)
 
     val balance: StateFlow<Double> = rewardRepository.balance
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
     /** 주간 챌린지(Step Surge) 진행도 — 실제 최근 7일 걸음 합계 */
-    val weekSteps: StateFlow<Long> = stepRepository.observeWeek()
-        .map { week -> week.sumOf { it.steps.toLong() } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+    val weekSteps: StateFlow<Long?> = stepRepository.observeWeek()
+        .map<List<com.stepup.android.data.local.DailyStepsEntity>, Long?> { week -> week.sumOf { it.steps.toLong() } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val claimedIds: StateFlow<Set<String>> = eventRepository.claimedIds
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    val claimedIds: StateFlow<Set<String>?> = eventRepository.claimedIds
+        .map<Set<String>, Set<String>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val startOfToday: Long =
         LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -79,19 +84,22 @@ class EventsViewModel(
      *
      * 예전에는 12.4km 로 고정된 숫자를 보여 줬다. 진짜 기록에서 계산한다.
      */
-    val nightKm: StateFlow<Double> = stepRepository.recentSessions(1_000)
-        .map { sessions ->
+    val nightKm: StateFlow<Double?> = stepRepository.observeVerifiedSessions()
+        .map<List<com.stepup.android.data.local.WalkSessionEntity>, Double?> { sessions ->
             sessions.filter { s ->
                 val hour = Instant.ofEpochMilli(s.startedAt).atZone(ZoneId.systemDefault()).hour
                 hour >= NIGHT_FROM_HOUR
             }.sumOf { it.distanceMeters } / 1000.0
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val claimResult = MutableStateFlow<ClaimResult?>(null)
 
     fun claim(def: EventDef, progress: Float) {
+        if (claimingId.value != null) return
+        claimingId.value = def.id
         viewModelScope.launch {
+          try {
             // 서버가 목표를 다시 재고 지급한다. 지급이 확인된 뒤에만 "받음"이 된다.
             val result = when (val r = eventRepository.claim(def, progress)) {
                 is EventClaimResult.Paid -> ClaimResult.Success(r.amount)
@@ -102,6 +110,13 @@ class EventsViewModel(
             }
             ExperienceEvents.emit(if (result is ClaimResult.Success) FeedbackCue.Reward else FeedbackCue.Error)
             claimResult.value = result
+          } catch (cancelled: kotlinx.coroutines.CancellationException) {
+              throw cancelled
+          } catch (_: Exception) {
+              claimResult.value = ClaimResult.Failed
+          } finally {
+              claimingId.value = null
+          }
         }
     }
 
@@ -119,6 +134,7 @@ class EventsViewModel(
                     ServiceLocator.stepRepository,
                     ServiceLocator.rewardRepository,
                     ServiceLocator.eventRepository,
+                    ServiceLocator.avatarRepository,
                 )
             }
         }

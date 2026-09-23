@@ -97,6 +97,19 @@ class ChromeNavigationTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("profile-settings").assertIsDisplayed()
                     assertEquals("settings Back returns to profile", logo, bounds("brand-wordmark"))
+                    compose.onNode(hasText(compose.activity.getString(R.string.home_shortcut_challenges)) and hasClickAction())
+                        .performScrollTo().performClick()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed().assertHasClickAction()
+                    (0..2).forEach { choice ->
+                        compose.onNodeWithTag("challenge-choice-$choice").performScrollTo().performClick()
+                        compose.waitForIdle()
+                        compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed()
+                        capture("${next.width}-${next.font}-${next.mode}-challenge-$choice")
+                    }
+                    pressBack()
+                    compose.waitForIdle()
+                    assertEquals("challenge returns to profile chrome", bar, bounds(BOTTOM_NAV_TAG))
                 }
                 if (tab == R.string.tab_community) {
                     compose.onNodeWithContentDescription(compose.activity.getString(R.string.community_tab_my_crew)).performClick()
