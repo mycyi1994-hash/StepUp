@@ -1,4 +1,5 @@
 package com.stepup.android.core
+import kotlinx.coroutines.flow.first
 
 import android.content.Context
 import androidx.room.Room
@@ -137,7 +138,11 @@ object ServiceLocator {
         )
         server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
         Analytics.init(app)
-        pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
+        pushRegistrar = PushRegistrar(
+            PushApi(server),
+            locale = { userPrefs.languageNow() },
+            preferences = { userPrefs.notifyPrefs.first() },
+        )
         territoryApi = TerritoryApi(server)
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),

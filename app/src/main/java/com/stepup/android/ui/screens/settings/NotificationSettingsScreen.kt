@@ -92,7 +92,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
         scope.launch {
             try {
                 ServiceLocator.userPrefs.setNotifyPrefs(next)
-                ServiceLocator.pushRegistrar.syncPrefsInBackground(next)
+                ServiceLocator.pushRegistrar.syncPrefsInBackground()
                 notifySaved()
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled

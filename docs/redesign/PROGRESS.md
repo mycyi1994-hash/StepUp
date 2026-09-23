@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — resend persisted notification choices
+
+- PushRegistrar's comment promised a preference retry on next launch, but startup/login only registered the FCM token. Those paths now also resend persisted notification choices independently of token availability, so a failed prior settings upload has a recovery path.
+- Preference sends are serialized and read the latest DataStore values inside the lock. Rapid edits cannot queue old captured preference objects behind newer choices. Coroutine cancellation is preserved; local settings survive transport errors. No automatic financial write retry is involved.
+- Static checks pass. Server delivery, offline-to-online retry on launch/login and rapid-edit behavior still require runtime validation. The UI's saved message currently confirms local persistence, not server acknowledgement; precise sync-state presentation remains an open item.
+
 ## 2026-09-24 — retain partial screenshots before device loss
 
 - 787f31b logs again show emulator offline/disappearance before final adb pulls could retrieve screenshots; post-failure window/ANR dumps are empty when the device is gone. Both explicit-SwiftShader jobs for 0383b12 remain live; do not restart or infer their outcome.
