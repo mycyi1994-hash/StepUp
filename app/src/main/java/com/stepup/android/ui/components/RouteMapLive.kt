@@ -1,5 +1,8 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.Silver
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Text
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,7 +59,7 @@ import kotlinx.coroutines.coroutineScope
 /**
  * 진짜 지도 위의 러닝 경로.
  *
- * OpenStreetMap 래스터 타일을 깔고 그 위에 볼트 네온 경로를 얹는다. 내가 달린
+ * 지도 타일([MapTiles] — MapTiler, 데이터는 OpenStreetMap)을 깔고 그 위에 볼트 네온 경로를 얹는다. 내가 달린
  * 길이 실제로 어느 도로였는지, 어느 공원을 돌았는지가 그대로 보인다.
  *
  * 타일은 원본이 밝은 지도라 그대로 쓰면 순블랙 테마와 부딪힌다. 색을 반전시켜
@@ -123,7 +126,7 @@ fun LiveRouteMap(
             }.take(MapTiles.MAX_TILES)
 
             // 순차로 받으면 타임아웃 하나에 지도 전체가 멈춘다. 4개씩 병렬로 —
-            // OSM 정책이 권하는 동시 연결 수 안이면서 체감이 확 달라진다.
+            // 타일 서버에 무리를 주지 않으면서 체감이 확 달라진다.
             for (chunk in wanted.chunked(4)) {
                 coroutineScope {
                     chunk.map { (tx, ty) ->
@@ -270,6 +273,20 @@ fun LiveRouteMap(
                     pinch = 1f
                 }
             }
+        }
+
+        // 지도 출처. 타일 서비스가 요구하고, 지도를 쓰는 앱이 지켜야 할 최소 예의다.
+        // 경로를 가리지 않게 구석에 작고 흐리게 둔다.
+        if (plan != null) {
+            Text(
+                text = MapTiles.ATTRIBUTION,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                fontSize = 8.sp,
+                color = Silver.copy(alpha = 0.75f),
+                maxLines = 1,
+            )
         }
     }
 }

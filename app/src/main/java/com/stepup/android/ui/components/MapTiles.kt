@@ -33,12 +33,18 @@ import kotlinx.coroutines.withContext
  * 지도를 크게 보거나 길 안내가 필요할 때는 [com.stepup.android.core.ExternalIntents]
  * 가 구글 지도로 넘긴다. 앱 안은 OSM, 앱 밖은 구글 지도 — 각자 잘하는 일을 맡긴다.
  *
- * ## OSM 타일 정책
+ * ## 어디서 받나
  *
- * 타일 서버는 자원봉사로 운영된다. 정책이 요구하는 것을 지킨다.
+ * MapTiler 의 streets 래스터 타일을 받는다(`BuildConfig.MAPTILER_KEY`). 데이터는
+ * 같은 OpenStreetMap 이지만, OSM 공용 타일 서버는 자원봉사로 운영돼 사용자가
+ * 늘면 막힐 수 있다 — 출시하는 앱이 기댈 곳이 아니다. MapTiler 는 사용량만큼
+ * 계약된 서비스다. 키가 비어 있으면(포크·로컬 빌드) OSM 공용 타일로 돌아간다.
+ *
+ * 어느 쪽이든 지키는 것:
  *  - 앱을 식별할 수 있는 User-Agent를 보낸다
  *  - 한 화면에 필요한 만큼만 받고([MAX_TILES] 상한), 대량 선인출을 하지 않는다
  *  - 메모리·디스크에 캐시해서 같은 타일을 다시 받지 않는다
+ *  - 지도 위에 출처를 적는다([ATTRIBUTION] — 두 서비스 모두 요구한다)
  */
 object MapTiles {
 
@@ -53,10 +59,20 @@ object MapTiles {
     const val MIN_ZOOM = 3
     const val MAX_ZOOM = 18
 
-    private const val TILE_URL = "https://tile.openstreetmap.org/%d/%d/%d.png"
+    private const val OSM_URL = "https://tile.openstreetmap.org/%d/%d/%d.png"
+    private const val MAPTILER_URL = "https://api.maptiler.com/maps/streets-v2/256/%d/%d/%d.png?key=%s"
+
+    private val mapTilerKey = BuildConfig.MAPTILER_KEY.trim()
+
+    /** 지금 타일을 어디서 받는지. 디스크 캐시도 출처별로 나눈다 — 섞이면 지도가 얼룩덜룩해진다. */
+    private val source = if (mapTilerKey.isNotEmpty()) "maptiler" else "osm"
+
+    /** 지도 위에 적을 출처 */
+    val ATTRIBUTION: String =
+        if (mapTilerKey.isNotEmpty()) "© MapTiler © OpenStreetMap contributors" else "© OpenStreetMap contributors"
 
     private val userAgent =
-        "StepUp/${BuildConfig.VERSION_NAME} (Android; +https://github.com/mycyi1994-hash/GIWASTEPN)"
+        "StepUp/${BuildConfig.VERSION_NAME} (Android; +https://stepupcrew.com)"
 
     /**
      * 타일 메모리 캐시 — **개수가 아니라 바이트로** 재는 것이 중요하다.
@@ -133,13 +149,17 @@ object MapTiles {
     }
 
     private fun diskFile(context: Context, zoom: Int, x: Int, y: Int): File =
-        File(context.cacheDir, "tiles/$zoom/${x}_$y.png")
+        File(context.cacheDir, "tiles/$source/$zoom/${x}_$y.png")
 
     private class Fetched(val bytes: ByteArray?, val permanent: Boolean)
 
     private fun download(zoom: Int, x: Int, y: Int): Fetched {
         // 로케일에 따라 %d가 아라비아 숫자가 아닌 글자를 뱉으면 URL이 깨진다
-        val url = String.format(Locale.ROOT, TILE_URL, zoom, x, y)
+        val url = if (mapTilerKey.isNotEmpty()) {
+            String.format(Locale.ROOT, MAPTILER_URL, zoom, x, y, mapTilerKey)
+        } else {
+            String.format(Locale.ROOT, OSM_URL, zoom, x, y)
+        }
         val connection = URL(url).openConnection() as HttpURLConnection
         return try {
             connection.setRequestProperty("User-Agent", userAgent)
