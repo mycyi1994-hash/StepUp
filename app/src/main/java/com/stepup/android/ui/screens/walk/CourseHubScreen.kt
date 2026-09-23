@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.walk
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.text.BasicTextField
@@ -36,6 +37,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.domain.CourseRewards
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.trackDistanceKm
@@ -67,6 +71,7 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.screens.community.BoardSyncCard
 import com.stepup.android.ui.screens.community.LabeledField
 import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Carbon
@@ -82,8 +87,8 @@ import com.stepup.android.ui.theme.Volt
 /**
  * 러닝 코스 허브 — 코스 선택 · 코스 만들기(마지막 GPS 트랙 등록) · 코스 게시판.
  *
- * 게시판은 shared 플래그가 켜진 코스들이다. 백엔드가 없으므로 다른 러너의
- * 코스는 시드로 채우고, 내 코스는 공유 토글로 게시판에 올린다.
+ * 게시판은 서버에 있다 — 러너들이 공유한 코스와 StepUp 이 까는 공원 코스.
+ * 내 코스는 공유 토글로 서버에 올린다.
  */
 @Composable
 fun CourseHubScreen(
@@ -91,7 +96,10 @@ fun CourseHubScreen(
     viewModel: CourseHubViewModel = viewModel(factory = CourseHubViewModel.Factory),
 ) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
+    val boardCourses by viewModel.board.collectAsStateWithLifecycle()
+    val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
     val selectedId by viewModel.selectedId.collectAsStateWithLifecycle()
+    val selectedTrack by viewModel.selectedTrack.collectAsStateWithLifecycle()
     val lastTrack by WalkSessionService.lastTrack.collectAsStateWithLifecycle()
     val recording by viewModel.recording.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
@@ -103,6 +111,29 @@ fun CourseHubScreen(
     // 목록이 갱신되면 내용도 따라가고, 그 코스가 지워지면 창이 저절로 닫힌다.
     var pendingId by rememberSaveable { mutableStateOf(-1L) }
     val pending = courses.firstOrNull { it.id == pendingId }
+        ?: boardCourses.firstOrNull { it.id == pendingId }
+
+    // 게시판의 서버 코스는 폰에 받아 둔 코스와 번호가 다르다. 같은 길이면 고른 코스다.
+    fun isSelected(course: RunCourse): Boolean =
+        course.id == selectedId || (selectedTrack != null && course.encode() == selectedTrack)
+
+    // 게시판 탭을 열 때마다 서버에서 새로 받는다.
+    LaunchedEffect(tab) {
+        if (tab == 2) viewModel.refreshBoard()
+    }
+
+    // 공유·하트·지우기가 서버에서 막혔으면 이유를 짧게 띄운다.
+    val problem by viewModel.problem.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val problemText = problem?.let {
+        stringResource(if (it.signIn) R.string.board_sign_in_needed else R.string.crew_notice_failed)
+    }
+    LaunchedEffect(problem) {
+        if (problemText != null) {
+            Toast.makeText(context, problemText, Toast.LENGTH_SHORT).show()
+            viewModel.consumeProblem()
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -212,13 +243,17 @@ fun CourseHubScreen(
                     item {
                         CourseSearchField(value = query, onValueChange = { query = it })
                     }
-                    val board = courses
-                        .filter { it.shared && it.matches(query) }
+                    val board = boardCourses
+                        .filter { it.matches(query) }
                         .sortedWith(
                             compareByDescending<RunCourse> { it.likes }
                                 .thenByDescending { it.runCount }
                                 .thenByDescending { it.createdAt },
                         )
+                    // 서버를 못 읽었으면 왜 못 읽었는지부터. 폰의 공원 코스는 그 아래에 그대로 둔다.
+                    if (boardSync !is BoardSyncState.Ready && boardSync !is BoardSyncState.Idle) {
+                        item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
+                    }
                     if (board.isEmpty()) {
                         item {
                             EmptyCard(
@@ -236,7 +271,7 @@ fun CourseHubScreen(
                             val course = board[index]
                             CourseCard(
                                 course = course,
-                                selected = course.id == selectedId,
+                                selected = isSelected(course),
                                 onSelect = { pendingId = course.id },
                                 onLike = { viewModel.toggleLike(course.id) },
                                 showAuthor = true,
@@ -249,7 +284,7 @@ fun CourseHubScreen(
         }
 
         if (pending != null) {
-            val clearing = pending.id == selectedId
+            val clearing = isSelected(pending)
             AlertDialog(
                 onDismissRequest = { pendingId = -1L },
                 containerColor = Carbon,

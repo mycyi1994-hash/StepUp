@@ -5,6 +5,9 @@ import com.stepup.android.data.local.CourseEntity
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.remote.CourseApi
+import com.stepup.android.data.remote.CourseRow
+import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.CourseRewards
 import com.stepup.android.domain.DemoCourses
 import com.stepup.android.domain.GeoPoint
@@ -12,23 +15,62 @@ import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.trackDistanceKm
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * 러닝 코스 — 선택 · 내 코스 등록 · 게시판 공유 · 완주 보상.
  *
- * 백엔드가 없으므로 "게시판"은 shared 플래그가 켜진 로컬 코스들이고,
- * 첫 실행 때 실제 서울 러닝 명소를 본뜬 데모 코스를 심는다.
+ * 코스는 폰(Room)에 있다 — 내가 뛰어 만든 코스, StepUp 이 까는 공원 코스,
+ * 게시판에서 골라 받아 둔 코스. 게시판은 서버에 있다. 내가 코스를 "공유"하면
+ * 서버에 올라가고 남의 게시판에도 뜬다.
+ *
+ * 게시판의 서버 코스는 [REMOTE_BASE] 를 더한 번호로 다닌다. 폰의 코스 번호와
+ * 겹치지 않게 하려는 것이다. 달리기로 고르면 폰에 한 벌 받아 두고 그 번호로
+ * 고른다 — 러닝 화면과 완주 보상은 폰의 코스만 본다.
  */
 class CourseRepository(
     private val dao: CourseDao,
     private val prefs: UserPrefs,
     private val rewardRepository: RewardRepository,
+    private val api: CourseApi,
 ) {
 
     val courses: Flow<List<RunCourse>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    private val _remote = MutableStateFlow<List<CourseRow>>(emptyList())
+    private val _boardSync = MutableStateFlow<BoardSyncState>(BoardSyncState.Idle)
+    val boardSync: StateFlow<BoardSyncState> = _boardSync
+    private val refreshLock = Mutex()
+
+    /**
+     * 코스 게시판 — 서버의 공유 코스와, 아직 서버에 없는 폰의 공유 코스(기본
+     * 공원 코스, 올리지 못한 내 코스). 같은 길이 둘 다에 있으면 서버 쪽을 쓴다.
+     */
+    val board: Flow<List<RunCourse>> = combine(courses, _remote) { local, remote ->
+        val onServer = remote.mapTo(HashSet()) { it.track }
+        remote.map { it.toDomain() } + local.filter { it.shared && it.encode() !in onServer }
+    }
+
+    /** 게시판을 서버에서 새로 받는다. */
+    suspend fun refreshBoard(): BoardSyncState = refreshLock.withLock {
+        if (_remote.value.isEmpty()) _boardSync.value = BoardSyncState.Loading
+        val state = when (val result = api.board()) {
+            is ServerResult.Ok -> {
+                _remote.value = result.value
+                BoardSyncState.Ready
+            }
+            is ServerResult.SignInRequired -> BoardSyncState.SignInRequired
+            is ServerResult.Rejected -> BoardSyncState.Failed(result.reason)
+            is ServerResult.Retry -> BoardSyncState.Failed(result.reason)
+        }
+        _boardSync.value = state
+        state
+    }
 
     /** 지금 달리기로 고른 코스 */
     val selectedCourse: Flow<RunCourse?> = combine(courses, prefs.selectedCourseId) { list, id ->
@@ -45,6 +87,37 @@ class CourseRepository(
     val recording: Flow<Boolean> = prefs.courseRecording
 
     suspend fun select(id: Long) = prefs.setSelectedCourse(id)
+
+    /**
+     * 게시판 번호를 폰의 코스 번호로. 서버 코스면 폰에 한 벌 받아 둔다 —
+     * 같은 길이 이미 있으면 그걸 쓴다.
+     *
+     * @return 폰의 코스 번호. 없어진 코스면 null
+     */
+    suspend fun localIdFor(id: Long): Long? {
+        if (id < REMOTE_BASE) return id
+        val row = _remote.value.firstOrNull { it.id == id - REMOTE_BASE } ?: return null
+        dao.byTrack(row.track)?.let { return it.id }
+        val points = RunCourse.decode(row.track)
+        if (points.size < 2) return null
+        return dao.insert(
+            CourseEntity(
+                name = row.name,
+                area = row.area,
+                distanceKm = row.distanceKm,
+                elevationM = row.elevationM,
+                track = row.track,
+                author = row.author,
+                mine = false,
+                // 받아 둔 코스는 게시판에 다시 올라가지 않는다 — 원래 코스가 거기 있다
+                shared = false,
+                likes = row.likes,
+                liked = row.liked,
+                runCount = row.runCount,
+                createdAt = row.createdAt.isoToMillis(),
+            )
+        )
+    }
 
     /**
      * 녹화 시작 — 다음 러닝이 코스가 된다.
@@ -79,7 +152,12 @@ class CourseRepository(
         return dao.byId(id)?.toDomain()
     }
 
-    /** 방금 달린 GPS 트랙을 코스로 등록한다. @return 새 코스 id (트랙이 짧으면 null) */
+    /**
+     * 방금 달린 GPS 트랙을 코스로 등록한다. [shared] 면 서버에도 올린다 —
+     * 올리지 못하면 폰에만 남고 공유는 꺼진다.
+     *
+     * @return 새 코스 id (트랙이 짧으면 null)
+     */
     suspend fun create(
         name: String,
         area: String,
@@ -99,35 +177,77 @@ class CourseRepository(
                 track = slim.joinToString(";") { "${it.lat},${it.lng}" },
                 author = "",
                 mine = true,
-                shared = shared,
+                shared = false,
                 likes = 0,
                 liked = false,
                 runCount = 0,
                 createdAt = System.currentTimeMillis(),
             )
         )
+        if (shared) setShared(id, true)
         return id
     }
 
-    suspend fun setShared(id: Long, shared: Boolean) {
-        val entity = dao.byId(id) ?: return
-        if (!entity.mine) return
+    /**
+     * 내 코스를 게시판에 올리거나 내린다. 서버가 받아 준 뒤에야 폰의 표시를
+     * 바꾼다 — 먼저 바꾸면 "공유됨"인데 아무도 못 보는 코스가 생긴다.
+     */
+    suspend fun setShared(id: Long, shared: Boolean): BoardResult {
+        val entity = dao.byId(id) ?: return BoardResult.Failed("")
+        if (!entity.mine) return BoardResult.Failed("")
+        val result = if (shared) {
+            api.share(entity.name, entity.area, entity.distanceKm, entity.elevationM, entity.track)
+        } else {
+            api.unshare(entity.track)
+        }
+        if (result !is ServerResult.Ok) return result.asBoardFailure()
         dao.update(entity.copy(shared = shared))
+        refreshBoard()
+        return BoardResult.Ok()
     }
 
-    suspend fun toggleLike(id: Long) {
-        val entity = dao.byId(id) ?: return
+    /**
+     * 하트. 게시판의 서버 코스는 서버에 누르고, 폰에만 있는 코스(기본 공원
+     * 코스, 받아 둔 코스)는 나만 보는 표시다.
+     */
+    suspend fun toggleLike(id: Long): BoardResult {
+        if (id >= REMOTE_BASE) {
+            val serverId = id - REMOTE_BASE
+            return when (val result = api.toggleLike(serverId)) {
+                is ServerResult.Ok -> {
+                    _remote.value = _remote.value.map { row ->
+                        if (row.id != serverId || row.liked == result.value) row
+                        else row.copy(
+                            liked = result.value,
+                            likes = (row.likes + if (result.value) 1 else -1).coerceAtLeast(0),
+                        )
+                    }
+                    BoardResult.Ok()
+                }
+                else -> result.asBoardFailure()
+            }
+        }
+        val entity = dao.byId(id) ?: return BoardResult.Failed("")
         dao.update(
             entity.copy(
                 liked = !entity.liked,
                 likes = (entity.likes + if (entity.liked) -1 else 1).coerceAtLeast(0),
             )
         )
+        return BoardResult.Ok()
     }
 
-    suspend fun delete(id: Long) {
-        dao.deleteMine(id)
+    /** 코스 지우기. 게시판에 올린 코스면 서버에서도 내린다. */
+    suspend fun delete(id: Long): BoardResult {
+        val entity = dao.byId(id) ?: return BoardResult.Ok()
+        if (entity.mine && entity.shared) {
+            val result = api.unshare(entity.track)
+            if (result !is ServerResult.Ok) return result.asBoardFailure()
+        }
+        dao.deleteLocal(id)
         if (prefs.selectedCourseNow() == id) prefs.setSelectedCourse(-1L)
+        if (entity.mine && entity.shared) refreshBoard()
+        return BoardResult.Ok()
     }
 
     /**
@@ -172,7 +292,9 @@ class CourseRepository(
     }
 
     /**
-     * 데모 시드 — 큰 공원 안을 도는 고리.
+     * 기본 코스 — 큰 공원 안을 도는 고리. 만든 사람은 StepUp 이고, 하트와
+     * 완주 수는 0 에서 시작한다. 남이 누른 것처럼 지어내지 않는다.
+     *
      *
      * 좌표를 손으로 찍지 않고 [DemoCourses] 가 공원 상자 안에서 만들어 준다.
      * 손으로 찍으면 점 사이가 멀어 선이 각지고, 조금만 빗나가도 강이나 건물
@@ -189,17 +311,39 @@ class CourseRepository(
                 distanceKm = km,
                 elevationM = (km * 8).toInt(),
                 track = points.joinToString(";") { "${it.lat},${it.lng}" },
-                author = park.author,
+                author = DemoCourses.AUTHOR,
                 mine = false,
                 shared = true,
-                likes = park.likes,
+                likes = 0,
                 liked = false,
-                runCount = park.runs,
-                createdAt = now - park.hoursAgo * 3_600_000L,
+                runCount = 0,
+                createdAt = now,
             )
         }
     }
+
+    companion object {
+        /** 게시판의 서버 코스 번호에 더하는 값. 폰의 코스 번호는 여기까지 가지 않는다. */
+        const val REMOTE_BASE = 1_000_000_000_000L
+    }
 }
+
+/** 서버 줄 → 도메인 모델. 번호는 [CourseRepository.REMOTE_BASE] 를 더해 폰의 코스와 가른다. */
+fun CourseRow.toDomain(): RunCourse = RunCourse(
+    id = CourseRepository.REMOTE_BASE + id,
+    name = name,
+    area = area,
+    distanceKm = distanceKm,
+    elevationM = elevationM,
+    points = RunCourse.decode(track),
+    author = author,
+    mine = mine,
+    shared = true,
+    likes = likes,
+    liked = liked,
+    runCount = runCount,
+    createdAt = createdAt.isoToMillis(),
+)
 
 /** Room 엔티티 → 도메인 모델 */
 fun CourseEntity.toDomain(): RunCourse = RunCourse(

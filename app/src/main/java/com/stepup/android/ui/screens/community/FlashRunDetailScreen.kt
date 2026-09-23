@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Verified
@@ -52,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.core.ExternalIntents
+import com.stepup.android.domain.FlashMember
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarStack
@@ -64,6 +67,7 @@ import com.stepup.android.ui.components.VerticalHairline
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
@@ -75,12 +79,6 @@ import com.stepup.android.ui.theme.VoltSoft
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-/** 백엔드가 없으므로 참가자 이름은 랭킹 라이벌처럼 고정 목록으로 만든다. */
-private val demoRunners = listOf(
-    "Maya C.", "Jun H.", "Elena R.", "Marco P.", "Sora K.",
-    "Diego M.", "Aiko T.", "Tomas L.", "Priya N.", "Owen D.",
-)
 
 /**
  * 번개러닝 상세 — 카드 어디를 눌러도 여기로 들어온다.
@@ -98,6 +96,7 @@ fun FlashRunDetailScreen(
     val posts by viewModel.allPosts.collectAsStateWithLifecycle()
     val post = posts.firstOrNull { it.id == postId }
     var showMembers by rememberSaveable { mutableStateOf(false) }
+    val here = rememberCurrentLocation()
 
     // 파티 채팅 카드가 최신 댓글을 미리 보여준다
     val threadsFlow = remember(postId) { viewModel.commentThreads(postId) }
@@ -148,7 +147,7 @@ fun FlashRunDetailScreen(
 
         item { FlashHeroCard(post) }
 
-        item { FlashInfoGrid(post) }
+        item { FlashInfoGrid(post, here) }
 
         item {
             FlashParticipantsCard(
@@ -176,7 +175,9 @@ fun FlashRunDetailScreen(
     }
 
     if (showMembers && post != null) {
-        FlashMembersDialog(post = post, onDismiss = { showMembers = false })
+        val rosterFlow = remember(post.id, post.joinedCount) { viewModel.flashRoster(post.id) }
+        val roster by rosterFlow.collectAsStateWithLifecycle(null)
+        FlashMembersDialog(roster = roster, onDismiss = { showMembers = false })
     }
 }
 
@@ -294,30 +295,15 @@ private fun FlashStatusPill(post: Post) {
 // ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun FlashInfoGrid(post: Post) {
+private fun FlashInfoGrid(post: Post, here: GeoPoint?) {
     val context = LocalContext.current
     val hasPlace = post.place.isNotBlank()
 
-    // 페이스·거리는 백엔드가 없어 글 id로 고정 시드를 만든다 (매번 흔들리면 신뢰를 잃는다)
-    val demoIndex = (post.id % 3).toInt()
-    val paceValue = when (demoIndex) {
-        0 -> "6'30\"~7'00\""
-        1 -> "5'30\"~6'00\""
-        else -> "4'30\"~5'00\""
-    }
-    val paceChip = stringResource(
-        when (demoIndex) {
-            0 -> R.string.pace_easy
-            1 -> R.string.pace_normal
-            else -> R.string.pace_fast
-        }
-    )
-    // 카드에 보이는 실제 거리값을 그대로 쓴다. 값이 없을 때만 데모 거리로 채운다.
-    val estDistance = if (post.distanceKm > 0.0) {
-        "%.2f km".format(post.distanceKm)
-    } else {
-        "%.2f km".format(listOf(5.0, 8.0, 10.0)[demoIndex])
-    }
+    // 둘 다 쓴 사람이 적은 값이거나 내 폰이 잰 값이다. 모르면 모른다고 적는다.
+    val unknown = stringResource(R.string.flash_unknown)
+    val awayKm = post.awayKmFrom(here)
+    val fromMe = if (awayKm != null) "%.1f km".format(awayKm) else unknown
+    val runDistance = if (post.distanceKm > 0.0) "%.1f km".format(post.distanceKm) else unknown
     val meetTime = remember(post.meetAt) {
         Instant.ofEpochMilli(post.meetAt)
             .atZone(ZoneId.systemDefault())
@@ -355,15 +341,15 @@ private fun FlashInfoGrid(post: Post) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             InfoCell(
-                label = stringResource(R.string.flash_pace),
-                value = paceValue,
+                label = stringResource(R.string.flash_from_me),
+                value = fromMe,
                 modifier = Modifier.weight(1f),
-                chip = paceChip,
+                icon = Icons.Filled.NearMe,
             )
             VerticalHairline(height = 44.dp)
             InfoCell(
                 label = stringResource(R.string.flash_est_distance),
-                value = estDistance,
+                value = runDistance,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -377,7 +363,6 @@ private fun InfoCell(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     sub: String? = null,
-    chip: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     Column(
@@ -422,22 +407,6 @@ private fun InfoCell(
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
-        }
-        if (chip != null) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(50))
-                    .padding(horizontal = 7.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = chip,
-                    color = Volt,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.6.sp,
-                )
-            }
         }
     }
 }
@@ -486,13 +455,9 @@ private fun FlashParticipantsCard(post: Post, onViewMembers: () -> Unit) {
 }
 
 @Composable
-private fun FlashMembersDialog(post: Post, onDismiss: () -> Unit) {
-    // 주최자를 맨 앞에 두고, 나머지는 고정 데모 러너로 채운다 (최대 10명)
-    val members = remember(post.id, post.author, post.joinedCount) {
-        (listOf(post.author) + demoRunners)
-            .distinct()
-            .take(post.joinedCount.coerceIn(1, 10))
-    }
+private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit) {
+    // 서버의 참가자 명단 그대로. 주최자가 첫 줄이다.
+    val members = roster.orEmpty()
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Carbon,
@@ -501,7 +466,11 @@ private fun FlashMembersDialog(post: Post, onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.flash_members)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                members.forEachIndexed { index, name ->
+                if (roster == null) {
+                    Text(stringResource(R.string.board_loading), fontSize = 13.sp, color = Silver)
+                }
+                members.forEach { member ->
+                    val name = member.name
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -510,14 +479,14 @@ private fun FlashMembersDialog(post: Post, onDismiss: () -> Unit) {
                             modifier = Modifier
                                 .size(28.dp)
                                 .background(
-                                    if (index == 0) Volt.copy(alpha = 0.18f) else CarbonHigh,
+                                    if (member.isHost) Volt.copy(alpha = 0.18f) else CarbonHigh,
                                     CircleShape,
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = name.take(1).uppercase(),
-                                color = if (index == 0) Volt else Silver,
+                                color = if (member.isHost) Volt else Silver,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                             )
@@ -529,7 +498,7 @@ private fun FlashMembersDialog(post: Post, onDismiss: () -> Unit) {
                             color = Snow,
                             modifier = Modifier.weight(1f),
                         )
-                        if (index == 0) {
+                        if (member.isHost) {
                             Text(
                                 text = stringResource(R.string.flash_host),
                                 fontSize = 10.sp,

@@ -138,6 +138,33 @@ class CommunityApiTest {
     }
 
     @Test
+    fun `번개 참가자 명단은 주최자와 나를 가려 읽는다`() = runBlocking {
+        val body = """
+            [{"user_id":"u-sora","name":"Sora K.","is_host":true,"is_me":false},
+             {"user_id":"me","name":"Ara Kim","is_host":false,"is_me":true}]
+        """.trimIndent()
+        val http = FakeHttp(HttpResponse(200, body))
+        val roster = (api(http).roster(7) as ServerResult.Ok).value
+
+        assertTrue(http.lastUrl, http.lastUrl.contains("/flash_roster?") && http.lastUrl.contains("post_id=eq.7"))
+        assertTrue(roster[0].isHost)
+        assertTrue(roster[1].isMe)
+        assertEquals("Ara Kim", roster[1].name)
+    }
+
+    @Test
+    fun `번개 모임 장소 좌표를 보내고 읽는다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(200, "8"))
+        api(http).createPost("FLASH", "", "번개", "", "여의도", 5.0, "2026-09-23T10:00:00Z", 6, 37.5265, 126.924)
+        assertTrue(http.lastBody, http.lastBody.contains("\"p_lat\":37.5265,\"p_lng\":126.924"))
+
+        val withPlace = feed.replace("\"place\":\"여의도 3문\",", "\"place\":\"여의도 3문\",\"lat\":37.5265,\"lng\":126.924,")
+        val post = (api(FakeHttp(HttpResponse(200, withPlace))).posts() as ServerResult.Ok).value.single().toDomain()
+        assertEquals(0.0, post.awayKmFrom(com.stepup.android.domain.GeoPoint(37.5265, 126.924))!!, 1e-6)
+        assertEquals(null, post.copy(lat = null).awayKmFrom(com.stepup.android.domain.GeoPoint(37.5, 127.0)))
+    }
+
+    @Test
     fun `정원이 찬 번개는 서버가 적어 보낸 이유로 거절된다`() = runBlocking {
         val http = FakeHttp(HttpResponse(400, """{"message":"정원이 찼습니다 (8명)"}"""))
         assertEquals(ServerResult.Rejected("정원이 찼습니다 (8명)"), api(http).joinFlash(7))

@@ -10,8 +10,89 @@
 --      한 시간에 몇 개까지인지는 서버가 센다.
 
 -- ════════════════════════════════════════════════════════════════════
+--  번개 모임 장소
+--
+--  번개 글의 "몇 km 떨어져 있나"는 쓴 사람이 손으로 적은 숫자였다. 그 숫자는
+--  쓴 사람 기준이라 읽는 사람에게는 뜻이 없다. 모임 장소 좌표를 받아 두고,
+--  거리는 읽는 사람의 폰이 자기 위치에서 잰다. distance_km 는 이제 "함께
+--  달릴 거리"다.
+-- ════════════════════════════════════════════════════════════════════
+
+alter table public.posts add column if not exists lat double precision;
+alter table public.posts add column if not exists lng double precision;
+
+comment on column public.posts.distance_km is '번개러닝에서 함께 달릴 거리(km)';
+
+drop view if exists public.post_feed;
+create view public.post_feed
+with (security_invoker = true) as
+  select
+    p.id,
+    p.category,
+    p.crew_id,
+    p.author_id,
+    coalesce(pr.display_name, '러너') as author,
+    p.title,
+    p.body,
+    p.place,
+    p.lat,
+    p.lng,
+    p.distance_km,
+    p.meet_at,
+    p.capacity,
+    p.created_at,
+    (select count(*) from public.post_likes l where l.post_id = p.id) as likes,
+    (select count(*) from public.comments c where c.post_id = p.id) as comment_count,
+    (select count(*) from public.flash_participants f where f.post_id = p.id) as joined_count,
+    exists (
+      select 1 from public.post_likes l
+       where l.post_id = p.id and l.user_id = auth.uid()
+    ) as liked,
+    exists (
+      select 1 from public.flash_participants f
+       where f.post_id = p.id and f.user_id = auth.uid()
+    ) as joined,
+    p.author_id = auth.uid() as mine
+  from public.posts p
+  left join public.profiles pr on pr.id = p.author_id
+  where not public.is_blocked(p.author_id)
+    and not public.is_hidden('POST', p.id::text);
+
+comment on view public.post_feed is
+  '게시글 목록. 좋아요·댓글·참가 수와 "내가 눌렀는지"까지 한 줄에 담는다.';
+
+grant select on public.post_feed to authenticated;
+
+-- 번개 참가자 명단. 상세 화면의 "참가자 보기"가 읽는다. 글을 볼 수 없는
+-- 사람(남의 크루 글)에게는 posts 규칙이 줄을 걸러 낸다.
+drop view if exists public.flash_roster;
+create view public.flash_roster
+with (security_invoker = true) as
+  select
+    f.post_id,
+    f.user_id,
+    coalesce(pr.display_name, '러너') as name,
+    f.joined_at,
+    f.user_id = p.author_id as is_host,
+    f.user_id = auth.uid() as is_me
+  from public.flash_participants f
+  join public.posts p on p.id = f.post_id
+  left join public.profiles pr on pr.id = f.user_id
+  where not public.is_blocked(f.user_id);
+
+comment on view public.flash_roster is '번개러닝 참가자 명단 — 주최자와 먼저 온 순서';
+
+grant select on public.flash_roster to authenticated;
+
+-- ════════════════════════════════════════════════════════════════════
 --  글
 -- ════════════════════════════════════════════════════════════════════
+
+-- 모임 장소 좌표가 없던 첫 판. 인자가 달라 새 함수와 나란히 남으면 앱이
+-- 어느 쪽을 부르는지 흐려지므로 지운다.
+drop function if exists public.post_create(
+  text, uuid, text, text, text, double precision, timestamptz, int
+);
 
 create or replace function public.post_create(
   p_category text,
@@ -21,7 +102,9 @@ create or replace function public.post_create(
   p_place text,
   p_distance_km double precision,
   p_meet_at timestamptz,
-  p_capacity int
+  p_capacity int,
+  p_lat double precision,
+  p_lng double precision
 )
 returns bigint
 language plpgsql
@@ -50,9 +133,14 @@ begin
     raise exception '번개러닝은 앞으로의 모임 시각이 있어야 합니다' using errcode = '23514';
   end if;
 
+  if p_lat is not null and (p_lat not between -90 and 90 or p_lng is null
+                            or p_lng not between -180 and 180) then
+    raise exception '모임 장소 좌표가 올바르지 않습니다' using errcode = '22023';
+  end if;
+
   insert into public.posts (
     author_id, category, crew_id, title, body,
-    place, distance_km, meet_at, capacity
+    place, distance_km, meet_at, capacity, lat, lng
   )
   values (
     v_user,
@@ -64,7 +152,9 @@ begin
     case when v_flash then greatest(coalesce(p_distance_km, 0), 0) else 0 end,
     case when v_flash then p_meet_at else null end,
     -- 번개는 둘 이상이 모여야 번개다. 정원 1은 혼자 뛰는 것과 같다.
-    case when v_flash then least(greatest(coalesce(p_capacity, 2), 2), 200) else 0 end
+    case when v_flash then least(greatest(coalesce(p_capacity, 2), 2), 200) else 0 end,
+    case when v_flash then p_lat else null end,
+    case when v_flash then p_lng else null end
   )
   returning id into v_id;
 
@@ -225,8 +315,9 @@ begin
 end;
 $$;
 
-grant execute on function public.post_create(text, uuid, text, text, text, double precision, timestamptz, int)
-  to authenticated;
+grant execute on function public.post_create(
+  text, uuid, text, text, text, double precision, timestamptz, int, double precision, double precision
+) to authenticated;
 grant execute on function public.post_delete(bigint) to authenticated;
 grant execute on function public.post_toggle_like(bigint) to authenticated;
 grant execute on function public.comment_create(bigint, bigint, text) to authenticated;

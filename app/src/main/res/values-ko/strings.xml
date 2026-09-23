@@ -480,7 +480,11 @@
     <string name="post_cat_tip">꿀팁</string>
 
     <!-- Post card -->
-    <string name="post_km_away">%1$s km</string>
+    <string name="post_km_away">%1$s km 거리</string>
+    <string name="flash_unknown">—</string>
+    <string name="flash_from_me">나와의 거리</string>
+    <string name="post_flash_no_location">위치를 잡지 못했어요. 거리 표시 없이 올라갑니다.</string>
+    <string name="post_run_km">%1$s km 달리기</string>
     <string name="post_place_tbd">장소 미정</string>
     <string name="post_slots">%1$d / %2$d명</string>
     <string name="post_join">참가</string>
@@ -501,10 +505,10 @@
     <string name="post_flash_details">모임 정보</string>
     <string name="post_field_place">만나는 곳</string>
     <string name="post_field_place_hint">Riverside Park Gate 3</string>
-    <string name="post_field_distance">거리 (km)</string>
+    <string name="post_field_distance">달릴 거리 (km)</string>
     <string name="post_field_starts_in">출발까지 (분)</string>
     <string name="post_field_capacity">정원</string>
-    <string name="post_flash_hint">번개러닝은 가까운 순으로 보여요. 가까울수록 위에 노출됩니다.</string>
+    <string name="post_flash_hint">지금 있는 자리가 모임 장소로 저장돼요. 가까운 러너에게 먼저 보입니다.</string>
 
 
     <!-- Crew creation -->
@@ -608,11 +612,15 @@
     <!-- Party host -->
     <string name="party_host_badge">파티장</string>
     <string name="party_start">파티 러닝 시작</string>
-    <string name="party_invite_button">크루원 초대하기</string>
-    <string name="party_invite_title">파티에 초대</string>
-    <string name="party_invite_action">초대</string>
-    <string name="party_invite_empty">이미 모든 크루원이 파티에 있어요.</string>
     <string name="party_kick">강퇴</string>
+    <string name="party_join_hint">크루원이 이 로비를 열면 같은 방에 들어와요. 번개러닝은 그 글에 참가한 러너가 들어올 수 있어요.</string>
+    <string name="party_wait_host">방장이 출발하기를 기다리는 중…</string>
+    <string name="party_leave">로비 나가기</string>
+    <string name="party_problem_sign_in">파티런은 로그인해야 들어갈 수 있어요.</string>
+    <string name="party_problem_removed">크루원이나 이 번개에 참가한 러너만 들어올 수 있어요. 또는 방장이 내보냈어요.</string>
+    <string name="party_problem_network">서버에 닿지 못했어요. 다시 시도하는 중…</string>
+    <string name="party_problem_closed">방이 닫혔어요.</string>
+    <string name="party_problem_failed">처리되지 않았어요. 다시 눌러 주세요.</string>
     <string name="party_gps_rule">파티장에게서 %1$dm 이상 떨어지면 자동으로 파티에서 빠져요.</string>
 
     <!-- Notification actions -->
@@ -937,8 +945,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="flash_host">호스트</string>
     <string name="flash_place">집결 장소</string>
     <string name="flash_time">집결 시간</string>
-    <string name="flash_pace">페이스</string>
-    <string name="flash_est_distance">예상 거리</string>
+    <string name="flash_est_distance">달릴 거리</string>
     <string name="flash_members">참여자</string>
     <string name="flash_view_members">멤버 보기</string>
     <string name="flash_chat">파티 채팅</string>
@@ -946,9 +953,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="flash_enter_chat">채팅방 입장</string>
     <string name="flash_join_cta">파티 참여하기</string>
     <string name="flash_joined_cta">참가 중 · 눌러서 취소</string>
-    <string name="pace_easy">이지</string>
-    <string name="pace_normal">보통</string>
-    <string name="pace_fast">빠름</string>
 
     <!-- Profile redesign -->
     <string name="profile_my_records">나의 기록</string>

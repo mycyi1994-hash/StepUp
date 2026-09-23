@@ -12,6 +12,7 @@ import com.stepup.android.data.remote.PostRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.Comment
 import com.stepup.android.domain.CommentThread
+import com.stepup.android.domain.FlashMember
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.toThreads
@@ -211,6 +212,8 @@ class CommunityRepository(
         distanceKm: Double = 0.0,
         meetInMinutes: Int = 0,
         capacity: Int = 0,
+        lat: Double? = null,
+        lng: Double? = null,
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
@@ -228,6 +231,8 @@ class CommunityRepository(
             distanceKm = distanceKm,
             meetAtIso = meetAt,
             capacity = if (flash) capacity.coerceAtLeast(2) else 0,
+            lat = if (flash) lat else null,
+            lng = if (flash) lng else null,
         )
         return when (result) {
             is ServerResult.Ok -> {
@@ -351,6 +356,12 @@ class CommunityRepository(
             .map { it[postId].orEmpty().toThreads() }
             .onStart { scope.launch { loadComments(postId) } }
 
+    /** 번개 참가자 명단. 서버에 닿지 못하면 null — 빈 명단과 섞지 않는다. */
+    suspend fun roster(postId: Long): List<FlashMember>? =
+        (api.roster(postId) as? ServerResult.Ok)?.value?.map {
+            FlashMember(userId = it.userId, name = it.name, isHost = it.isHost, isMe = it.isMe)
+        }
+
     suspend fun loadComments(postId: Long) {
         val result = api.comments(postId)
         if (result is ServerResult.Ok) {
@@ -443,6 +454,8 @@ fun PostRow.toDomain(): Post = Post(
     capacity = capacity,
     joinedCount = joinedCount,
     joined = joined,
+    lat = lat,
+    lng = lng,
 )
 
 /** 서버 줄 → 도메인 모델 */
@@ -458,7 +471,7 @@ fun CommentRow.toDomain(): Comment = Comment(
 )
 
 /** 서버가 받아 주지 않은 결말을 화면이 쓰는 실패로 */
-private fun ServerResult<*>.asBoardFailure(): BoardResult.Failed = when (this) {
+internal fun ServerResult<*>.asBoardFailure(): BoardResult.Failed = when (this) {
     is ServerResult.SignInRequired -> BoardResult.Failed(reason, signIn = true)
     is ServerResult.Rejected -> BoardResult.Failed(reason)
     is ServerResult.Retry -> BoardResult.Failed(reason)

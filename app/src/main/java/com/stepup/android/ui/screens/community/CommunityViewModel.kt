@@ -27,6 +27,7 @@ import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.domain.Comment
 import com.stepup.android.domain.CommentThread
 import com.stepup.android.domain.CrewRank
+import com.stepup.android.domain.FlashMember
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.RankBoard
@@ -34,6 +35,7 @@ import com.stepup.android.domain.RankPeriod
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -319,6 +321,12 @@ class CommunityViewModel(
     fun commentThreads(postId: Long): Flow<List<CommentThread>> =
         communityRepository.commentThreads(postId)
 
+    /** 번개 참가자 명단. 받는 중이거나 받지 못했으면 null 이 흐른다. */
+    fun flashRoster(postId: Long): Flow<List<FlashMember>?> = flow {
+        emit(null)
+        emit(communityRepository.roster(postId))
+    }
+
     fun sendComment(postId: Long, body: String, parentId: Long) {
         viewModelScope.launch {
             val result = communityRepository.addComment(postId, body, parentId)
@@ -487,6 +495,8 @@ class CommunityViewModel(
         distanceKm: Double,
         meetInMinutes: Int,
         capacity: Int,
+        lat: Double?,
+        lng: Double?,
         onDone: () -> Unit,
     ) {
         if (_posting.value) return
@@ -501,6 +511,8 @@ class CommunityViewModel(
                 distanceKm = distanceKm,
                 meetInMinutes = meetInMinutes,
                 capacity = capacity,
+                lat = lat,
+                lng = lng,
             )
             _posting.value = false
             if (result is BoardResult.Ok) {

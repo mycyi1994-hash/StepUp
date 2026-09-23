@@ -28,6 +28,9 @@ import com.stepup.android.ui.BOTTOM_NAV_TAG
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.data.repo.PartyMember
+import com.stepup.android.data.repo.PartyPhase
+import com.stepup.android.data.repo.PartyState
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.core.ServiceLocator
@@ -128,6 +131,20 @@ class ExperienceUiTest {
                     body = "Meet at the bridge, 6:50.", createdAt = now - 10_800_000,
                     likes = 6, liked = false, commentCount = 2, mine = false,
                     place = "", distanceKm = 0.0, meetAt = 0L, capacity = 0, joinedCount = 0, joined = false,
+                ),
+            ),
+        )
+        // 파티 로비도 서버의 방이다. 방장인 나와 크루원 둘이 모인 로비를 채운다.
+        ServiceLocator.crewRepository.showPartyForTest(
+            PartyState(
+                phase = PartyPhase.LOBBY,
+                partyId = 1L,
+                crewId = "00000000-0000-0000-0000-00000000c0de",
+                crewName = "Hangang Runners",
+                members = listOf(
+                    PartyMember(id = "u-me", name = "", ready = true, isMe = true, isHost = true),
+                    PartyMember(id = "u-ara", name = "Ara Kim", ready = true, isMe = false),
+                    PartyMember(id = "u-bo", name = "Bo Lee", ready = false, isMe = false),
                 ),
             ),
         )

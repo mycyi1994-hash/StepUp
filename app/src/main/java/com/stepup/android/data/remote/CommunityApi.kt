@@ -21,6 +21,10 @@ data class PostRow(
     val title: String,
     val body: String = "",
     val place: String = "",
+    /** 번개 모임 장소. 없으면 null — 좌표 없이 쓴 번개 */
+    val lat: Double? = null,
+    val lng: Double? = null,
+    /** 번개러닝에서 함께 달릴 거리(km) */
     @SerialName("distance_km") val distanceKm: Double = 0.0,
     @SerialName("meet_at") val meetAt: String? = null,
     val capacity: Int = 0,
@@ -44,6 +48,15 @@ data class CommentRow(
     val body: String,
     @SerialName("created_at") val createdAt: String,
     val mine: Boolean = false,
+)
+
+/** 번개 참가자 한 줄 — `flash_roster`. 먼저 들어온 순서. */
+@Serializable
+data class RosterRow(
+    @SerialName("user_id") val userId: String,
+    val name: String = "",
+    @SerialName("is_host") val isHost: Boolean = false,
+    @SerialName("is_me") val isMe: Boolean = false,
 )
 
 /**
@@ -75,11 +88,22 @@ class CommunityApi(private val server: StepUpServer) {
             )
         }.mapBody { serverJson.decodeFromString<List<CommentRow>>(it) }
 
+    /** 번개 참가자 명단. 주최자가 첫 줄이다. */
+    suspend fun roster(postId: Long): ServerResult<List<RosterRow>> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/flash_roster?select=user_id,name,is_host,is_me" +
+                    "&post_id=eq.$postId&order=is_host.desc,joined_at.asc",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<RosterRow>>(it) }
+
     /**
      * 글쓰기. 새 글 번호를 돌려받는다.
      *
      * @param crewId 비어 있으면 전체 게시판
      * @param meetAtIso 번개러닝의 모임 시각(ISO-8601). 번개가 아니면 비워 둔다.
+     * @param lat 번개 모임 장소. 모르면 null — 거리는 읽는 사람이 이 좌표에서 잰다.
      */
     suspend fun createPost(
         category: String,
@@ -90,6 +114,8 @@ class CommunityApi(private val server: StepUpServer) {
         distanceKm: Double,
         meetAtIso: String,
         capacity: Int,
+        lat: Double? = null,
+        lng: Double? = null,
     ): ServerResult<Long> = rpc(
         "post_create",
         jsonBody {
@@ -101,6 +127,8 @@ class CommunityApi(private val server: StepUpServer) {
             put("p_distance_km", distanceKm)
             put("p_meet_at", meetAtIso.ifBlank { null } ?: JsonNull)
             put("p_capacity", capacity)
+            put("p_lat", lat ?: JsonNull)
+            put("p_lng", lng ?: JsonNull)
         },
     ) { it.trim().toLongOrNull() }
 

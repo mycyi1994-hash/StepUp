@@ -31,6 +31,7 @@ import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.VoltButton
+import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -57,6 +58,8 @@ fun PostComposeScreen(
     var capacity by rememberSaveable { mutableStateOf("6") }
 
     val selected = PostCategory.of(category)
+    // 번개러닝은 쓰는 자리가 모임 장소다. 읽는 사람의 폰이 이 좌표에서 거리를 잰다.
+    val here = rememberCurrentLocation(enabled = selected == PostCategory.FLASH)
     val posting by viewModel.posting.collectAsStateWithLifecycle()
     val canSubmit = !posting && title.isNotBlank() &&
         (selected != PostCategory.FLASH || place.isNotBlank())
@@ -168,7 +171,9 @@ fun PostComposeScreen(
                         )
                     }
                     Text(
-                        text = stringResource(R.string.post_flash_hint),
+                        text = stringResource(
+                            if (here != null) R.string.post_flash_hint else R.string.post_flash_no_location,
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = Silver,
                     )
@@ -190,6 +195,8 @@ fun PostComposeScreen(
                         distanceKm = distance.toDoubleOrNull() ?: 0.0,
                         meetInMinutes = startsIn.toIntOrNull() ?: 60,
                         capacity = capacity.toIntOrNull() ?: 6,
+                        lat = here?.lat,
+                        lng = here?.lng,
                         onDone = onBack,
                     )
                 },

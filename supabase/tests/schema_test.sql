@@ -1453,27 +1453,37 @@ do $$
 declare v_post bigint;
 begin
   v_post := public.post_create('FLASH', null, '내일 아침 번개', '석촌호수 한 바퀴',
-                               '석촌호수 동문', 5, now() + interval '1 day', 1);
+                               '석촌호수 동문', 5, now() + interval '1 day', 1, 37.5096, 127.1057);
   insert into fix (k, v) values ('fn_flash', v_post::text);
   perform pg_temp.ok(
     (select joined and joined_count = 1 and capacity = 2 from public.post_feed where id = v_post),
     '번개를 쓰면 쓴 사람이 첫 참가자이고, 정원은 최소 2명이다');
+  perform pg_temp.ok(
+    (select lat = 37.5096 and lng = 127.1057 from public.post_feed where id = v_post),
+    '번개 모임 장소 좌표가 목록에 실린다');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(is_host and is_me) from public.flash_roster where post_id = v_post),
+    '참가자 명단에 주최자가 첫 줄로 있다');
 
-  v_post := public.post_create('FREE', null, '러닝화 추천', '발볼 넓은 분들', '무시', 99, now(), 99);
+  v_post := public.post_create('FREE', null, '러닝화 추천', '발볼 넓은 분들', '무시', 99, now(), 99, 37.5, 127.0);
   insert into fix (k, v) values ('fn_free', v_post::text);
   perform pg_temp.ok(
-    (select place = '' and capacity = 0 and meet_at is null from public.post_feed where id = v_post),
+    (select place = '' and capacity = 0 and meet_at is null and lat is null from public.post_feed where id = v_post),
     '번개가 아닌 글에는 장소·정원·모임 시각이 붙지 않는다');
 end $$;
 
 call pg_temp.must_fail(
-  $q$ select public.post_create('FLASH', null, '지난 번개', '', '', 0, now() - interval '1 hour', 4) $q$,
+  $q$ select public.post_create('FLASH', null, '지난 번개', '', '', 0, now() - interval '1 hour', 4, null, null) $q$,
   '지난 시각으로는 번개를 열 수 없다');
 
 call pg_temp.must_fail(
-  format($q$ select public.post_create('FREE', '%s', '남의 크루', '', '', 0, null, 0) $q$,
+  format($q$ select public.post_create('FREE', '%s', '남의 크루', '', '', 0, null, 0, null, null) $q$,
          pg_temp.fx('crew')),
   '안 들어간 크루 게시판에는 함수로도 글을 못 쓴다');
+
+call pg_temp.must_fail(
+  $q$ select public.post_create('FLASH', null, '바다 위 번개', '', '', 5, now() + interval '1 day', 4, 123.0, 127.0) $q$,
+  '있을 수 없는 좌표로는 번개를 열 수 없다');
 
 call pg_temp.login('22222222-2222-2222-2222-222222222222');
 
@@ -1550,6 +1560,185 @@ begin
     (select count(*) from public.comments where post_id = pg_temp.fx('fn_free')::bigint) = 0,
     '글을 지우면 달린 댓글도 함께 지워진다');
 end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 코스 공유 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_id bigint; v_again bigint;
+begin
+  v_id := public.course_share('망원 한강 루프', '서울 마포', 3.2, 20, '37.55,126.89;37.56,126.90');
+  v_again := public.course_share('망원 한 바퀴', '서울 마포', 3.2, 20, '37.55,126.89;37.56,126.90');
+  insert into fix (k, v) values ('course', v_id::text);
+  perform pg_temp.ok(v_id = v_again, '같은 길을 다시 올리면 새 코스가 아니라 이름만 바뀐다');
+  perform pg_temp.ok(
+    (select name from public.course_feed where id = v_id) = '망원 한 바퀴',
+    '올린 코스가 게시판에 보인다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.course_share('너무 짧은 코스', '', 0.05, 0, '37.55,126.89;37.55,126.89') $q$,
+  '200m 도 안 되는 코스는 올릴 수 없다');
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform pg_temp.ok(public.course_toggle_like(pg_temp.fx('course')::bigint), '남의 코스에 좋아요를 누른다');
+  perform pg_temp.ok(
+    (select likes from public.course_feed where id = pg_temp.fx('course')::bigint) = 1,
+    '코스 좋아요가 세어진다');
+  perform public.course_unshare('37.55,126.89;37.56,126.90');
+  perform pg_temp.ok(
+    (select count(*) from public.course_feed where id = pg_temp.fx('course')::bigint) = 1,
+    '남의 코스는 내릴 수 없다');
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform public.course_unshare('37.55,126.89;37.56,126.90');
+  perform pg_temp.ok(
+    (select count(*) from public.course_feed where id = pg_temp.fx('course')::bigint) = 0,
+    '내 코스를 내리면 게시판에서 사라진다');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 파티런 로비 ──────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint;
+begin
+  v_party := public.party_open(pg_temp.fx('crew')::uuid, null);
+  insert into fix (k, v) values ('party', v_party::text);
+  perform pg_temp.ok(
+    (public.party_state(v_party)->>'status') = 'LOBBY',
+    '크루원이 로비를 열면 방이 생긴다');
+end $$;
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint; v_state json;
+begin
+  v_party := public.party_open(pg_temp.fx('crew')::uuid, null);
+  perform pg_temp.ok(v_party = pg_temp.fx('party')::bigint, '같은 크루의 로비를 열면 같은 방에 들어간다');
+  v_state := public.party_state(v_party);
+  perform pg_temp.ok(json_array_length(v_state->'members') = 2, '방에 두 사람이 보인다');
+  perform pg_temp.ok(
+    (v_state->'members'->0->>'is_host')::boolean and (v_state->'members'->0->>'name') = 'Ara Kim',
+    '방장이 명단 맨 앞이다');
+  perform public.party_ready(v_party, true);
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.party_start(%s) $q$, pg_temp.fx('party')),
+  '방장이 아니면 출발시킬 수 없다');
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+call pg_temp.must_fail(
+  format($q$ select public.party_open('%s', null) $q$, pg_temp.fx('crew')),
+  '크루원이 아니면 로비에 들어갈 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.party_state(%s) $q$, pg_temp.fx('party')),
+  '방에 없는 사람은 방 상태를 볼 수 없다');
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+call pg_temp.must_fail(
+  format($q$ select public.party_start(%s) $q$, pg_temp.fx('party')),
+  '방장이 준비하지 않으면 출발할 수 없다');
+
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform public.party_ready(v_party, true);
+  perform public.party_start(v_party);
+  perform pg_temp.ok(
+    (public.party_state(v_party)->>'status') = 'COUNTDOWN',
+    '출발하면 카운트다운에 들어간다');
+end $$;
+
+-- 카운트다운이 지난 것으로 만든다.
+reset role;
+update public.parties set starts_at = now() - interval '1 second' where id = pg_temp.fx('party')::bigint;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform pg_temp.ok(
+    (public.party_state(v_party)->>'status') = 'RUNNING',
+    '카운트다운이 끝나면 다 같이 달리는 중이 된다');
+  perform public.party_ping(v_party, 37.5301, 126.9340);
+  perform pg_temp.ok(
+    (public.party_state(v_party)->'members'->1->>'lat')::double precision = 37.5301,
+    '달리는 동안의 위치가 방에 실린다');
+  perform pg_temp.ok(
+    public.party_open(pg_temp.fx('crew')::uuid, null) = v_party,
+    '달리는 중인 방의 멤버는 로비를 다시 열어도 같은 방이다');
+end $$;
+
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+begin
+  -- 3번은 크루원이 아니지만 번개 참가자다(앞의 게시판 검사에서 연 번개)
+  perform pg_temp.ok(
+    public.party_open(null, pg_temp.fx('fn_flash')::bigint) > 0,
+    '번개를 연 사람은 그 번개의 로비를 연다');
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform public.party_leave(v_party);
+end $$;
+
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform pg_temp.ok(
+    (public.party_state(v_party)->>'host_id') = '22222222-2222-2222-2222-222222222222',
+    '방장이 나가면 남은 사람이 방장이 된다');
+  perform public.party_leave(v_party);
+end $$;
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select status from public.parties where id = pg_temp.fx('party')::bigint) = 'FINISHED',
+    '아무도 안 남으면 방이 닫힌다');
+end $$;
+set role authenticated;
+
+-- 로비에서 내보내기
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  insert into fix (k, v) values ('party2', public.party_open(pg_temp.fx('crew')::uuid, null)::text);
+  perform pg_temp.ok(pg_temp.fx('party2')::bigint <> pg_temp.fx('party')::bigint, '닫힌 방 대신 새 방이 열린다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_open(pg_temp.fx('crew')::uuid, null); end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform public.party_kick(pg_temp.fx('party2')::bigint, '22222222-2222-2222-2222-222222222222');
+  perform pg_temp.ok(
+    json_array_length(public.party_state(pg_temp.fx('party2')::bigint)->'members') = 1,
+    '방장은 로비에서 한 사람을 내보낼 수 있다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select * from public.parties $q$,
+  '방 표는 앱이 직접 읽을 수 없다');
 
 reset role;
 

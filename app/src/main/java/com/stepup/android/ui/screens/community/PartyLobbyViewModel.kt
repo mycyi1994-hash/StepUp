@@ -15,8 +15,10 @@ class PartyLobbyViewModel(private val crewRepository: CrewRepository) : ViewMode
     fun openLobby(crewId: String) = crewRepository.openLobby(crewId)
 
     /** 번개러닝 로비. 크루 로비와 같은 판을 쓴다. */
-    fun openFlashLobby(postId: Long, title: String, others: Int) =
-        crewRepository.openFlashLobby(postId, title, others)
+    fun openFlashLobby(postId: Long, title: String) =
+        crewRepository.openFlashLobby(postId, title)
+
+    fun retry() = crewRepository.retryLobby()
 
     fun setReady(ready: Boolean) = crewRepository.setMyReady(ready)
 
@@ -29,10 +31,6 @@ class PartyLobbyViewModel(private val crewRepository: CrewRepository) : ViewMode
     fun startParty() = crewRepository.startParty()
 
     fun kick(memberId: String) = crewRepository.kick(memberId)
-
-    fun invite(name: String) = crewRepository.invite(name)
-
-    fun inviteCandidates(): List<String> = crewRepository.inviteCandidates()
 
     companion object {
         val Factory = viewModelFactory {

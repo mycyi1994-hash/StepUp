@@ -480,7 +480,11 @@
     <string name="post_cat_tip">干货</string>
 
     <!-- Post card -->
-    <string name="post_km_away">%1$s km</string>
+    <string name="post_km_away">距你 %1$s km</string>
+    <string name="flash_unknown">—</string>
+    <string name="flash_from_me">距离你</string>
+    <string name="post_flash_no_location">无法获取位置，帖子将不显示距离。</string>
+    <string name="post_run_km">跑 %1$s km</string>
     <string name="post_place_tbd">地点待定</string>
     <string name="post_slots">%1$d / %2$d 人</string>
     <string name="post_join">参加</string>
@@ -501,10 +505,10 @@
     <string name="post_flash_details">集合信息</string>
     <string name="post_field_place">集合地点</string>
     <string name="post_field_place_hint">Riverside Park Gate 3</string>
-    <string name="post_field_distance">距离 (km)</string>
+    <string name="post_field_distance">跑步距离 (km)</string>
     <string name="post_field_starts_in">多久后出发 (分)</string>
     <string name="post_field_capacity">名额</string>
-    <string name="post_flash_hint">闪电跑按距离排序，越近排得越靠前。</string>
+    <string name="post_flash_hint">你现在的位置会保存为集合地点，附近的跑者会先看到。</string>
 
 
     <!-- Crew creation -->
@@ -608,11 +612,15 @@
     <!-- Party host -->
     <string name="party_host_badge">队长</string>
     <string name="party_start">开始组队跑</string>
-    <string name="party_invite_button">邀请跑团成员</string>
-    <string name="party_invite_title">邀请加入队伍</string>
-    <string name="party_invite_action">邀请</string>
-    <string name="party_invite_empty">所有成员都已经在队伍里了。</string>
     <string name="party_kick">移出</string>
+    <string name="party_join_hint">队员打开这个大厅就会进入同一个房间。闪电跑则是报名该帖子的跑者可以进入。</string>
+    <string name="party_wait_host">等待房主出发…</string>
+    <string name="party_leave">离开大厅</string>
+    <string name="party_problem_sign_in">登录后才能加入组队跑。</string>
+    <string name="party_problem_removed">只有队员或报名这次闪电跑的跑者可以进入，或者你已被房主移出。</string>
+    <string name="party_problem_network">无法连接服务器，正在重试…</string>
+    <string name="party_problem_closed">房间已关闭。</string>
+    <string name="party_problem_failed">操作未成功，请再试一次。</string>
     <string name="party_gps_rule">离队长超过 %1$d 米会被自动移出队伍。</string>
 
     <!-- Notification actions -->
@@ -937,8 +945,7 @@
     <string name="flash_host">发起人</string>
     <string name="flash_place">集合地点</string>
     <string name="flash_time">集合时间</string>
-    <string name="flash_pace">配速</string>
-    <string name="flash_est_distance">预计距离</string>
+    <string name="flash_est_distance">跑步距离</string>
     <string name="flash_members">参与者</string>
     <string name="flash_view_members">查看成员</string>
     <string name="flash_chat">队伍聊天</string>
@@ -946,9 +953,6 @@
     <string name="flash_enter_chat">进入聊天室</string>
     <string name="flash_join_cta">加入队伍</string>
     <string name="flash_joined_cta">已加入 · 点按取消</string>
-    <string name="pace_easy">轻松</string>
-    <string name="pace_normal">适中</string>
-    <string name="pace_fast">快速</string>
 
     <!-- Profile redesign -->
     <string name="profile_my_records">我的记录</string>

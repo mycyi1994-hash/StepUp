@@ -44,16 +44,36 @@ data class Post(
     val mine: Boolean,
     // ── 번개러닝 전용 ──
     val place: String,
+    /** 함께 달릴 거리(km) */
     val distanceKm: Double,
     val meetAt: Long,
     val capacity: Int,
     val joinedCount: Int,
     val joined: Boolean,
+    /** 번개 모임 장소. 모르면 null */
+    val lat: Double? = null,
+    val lng: Double? = null,
 ) {
     val isFlash: Boolean get() = category == PostCategory.FLASH
+
+    /** [here] 에서 모임 장소까지(km). 내 위치나 모임 장소를 모르면 null. */
+    fun awayKmFrom(here: GeoPoint?): Double? {
+        val lat = lat ?: return null
+        val lng = lng ?: return null
+        here ?: return null
+        return haversineMeters(here, GeoPoint(lat, lng)) / 1000.0
+    }
     val isFull: Boolean get() = capacity > 0 && joinedCount >= capacity
     val isClosed: Boolean get() = isFlash && meetAt > 0L && meetAt < System.currentTimeMillis()
 }
+
+/** 번개러닝에 참가한 사람 한 명 */
+data class FlashMember(
+    val userId: String,
+    val name: String,
+    val isHost: Boolean,
+    val isMe: Boolean,
+)
 
 // ─────────────────────────────────────────────────────────────
 // 댓글

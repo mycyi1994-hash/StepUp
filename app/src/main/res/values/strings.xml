@@ -482,7 +482,11 @@
     <string name="post_cat_tip">Tips</string>
 
     <!-- Post card -->
-    <string name="post_km_away">%1$s km</string>
+    <string name="post_km_away">%1$s km away</string>
+    <string name="flash_unknown">—</string>
+    <string name="flash_from_me">From you</string>
+    <string name="post_flash_no_location">Couldn\'t get your location — the post will go up without a distance.</string>
+    <string name="post_run_km">%1$s km run</string>
     <string name="post_place_tbd">Place TBD</string>
     <string name="post_slots">%1$d / %2$d joined</string>
     <string name="post_join">Join</string>
@@ -503,10 +507,10 @@
     <string name="post_flash_details">Meetup details</string>
     <string name="post_field_place">MEETING POINT</string>
     <string name="post_field_place_hint">Riverside Park Gate 3</string>
-    <string name="post_field_distance">KM AWAY</string>
+    <string name="post_field_distance">RUN KM</string>
     <string name="post_field_starts_in">STARTS IN (MIN)</string>
     <string name="post_field_capacity">SLOTS</string>
-    <string name="post_flash_hint">Runners nearby see your flash run first — the closer it is, the higher it shows.</string>
+    <string name="post_flash_hint">Your current spot is saved as the meeting point, so runners nearby see it first.</string>
 
 
     <!-- Crew creation -->
@@ -610,11 +614,15 @@
     <!-- Party host -->
     <string name="party_host_badge">HOST</string>
     <string name="party_start">Start party run</string>
-    <string name="party_invite_button">Invite crew members</string>
-    <string name="party_invite_title">Invite to party</string>
-    <string name="party_invite_action">Invite</string>
-    <string name="party_invite_empty">Everyone is already in the party.</string>
     <string name="party_kick">Remove</string>
+    <string name="party_join_hint">Crewmates who open this lobby join the same room. For a flash run, runners who joined the post can come in.</string>
+    <string name="party_wait_host">Waiting for the host to start…</string>
+    <string name="party_leave">Leave lobby</string>
+    <string name="party_problem_sign_in">Sign in to join a party run.</string>
+    <string name="party_problem_removed">Only crew members or runners who joined this flash run can enter — or the host removed you.</string>
+    <string name="party_problem_network">Can\'t reach the server. Trying again…</string>
+    <string name="party_problem_closed">This room has closed.</string>
+    <string name="party_problem_failed">That didn\'t go through. Try again.</string>
     <string name="party_gps_rule">Members further than %1$dm from the host are dropped automatically.</string>
 
     <!-- Notification actions -->
@@ -939,8 +947,7 @@ Start running with StepUp.</string>
     <string name="flash_host">Host</string>
     <string name="flash_place">Meeting point</string>
     <string name="flash_time">Meet-up time</string>
-    <string name="flash_pace">Pace</string>
-    <string name="flash_est_distance">Est. distance</string>
+    <string name="flash_est_distance">Run distance</string>
     <string name="flash_members">Participants</string>
     <string name="flash_view_members">View members</string>
     <string name="flash_chat">Party chat</string>
@@ -948,9 +955,6 @@ Start running with StepUp.</string>
     <string name="flash_enter_chat">Enter chat</string>
     <string name="flash_join_cta">Join the party</string>
     <string name="flash_joined_cta">Joined · tap to cancel</string>
-    <string name="pace_easy">EASY</string>
-    <string name="pace_normal">NORMAL</string>
-    <string name="pace_fast">FAST</string>
 
     <!-- Profile redesign -->
     <string name="profile_my_records">My records</string>

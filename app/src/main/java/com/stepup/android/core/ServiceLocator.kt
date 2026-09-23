@@ -6,9 +6,11 @@ import com.stepup.android.BuildConfig
 import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.CommunityApi
+import com.stepup.android.data.remote.CourseApi
 import com.stepup.android.data.remote.CrewApi
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
+import com.stepup.android.data.remote.PartyApi
 import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
@@ -30,6 +32,7 @@ import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.data.repo.StepRepository
 import com.stepup.android.sensor.StepTracker
+import com.stepup.android.service.WalkSessionService
 
 /** 간단한 수동 DI 컨테이너. Application.onCreate에서 [init]을 호출한다. */
 object ServiceLocator {
@@ -144,6 +147,9 @@ object ServiceLocator {
             crewInfoDao = database.crewInfoDao(),
             walkSessionDao = database.walkSessionDao(),
             rewardRepository = rewardRepository,
+            partyApi = PartyApi(server),
+            // 파티런 중 방에 보내는 위치 — 러닝 서비스가 받은 마지막 GPS 점
+            currentLocation = { WalkSessionService.state.value.track.lastOrNull()?.toGeoPoint() },
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),
@@ -156,6 +162,7 @@ object ServiceLocator {
             dao = database.courseDao(),
             prefs = userPrefs,
             rewardRepository = rewardRepository,
+            api = CourseApi(server),
         )
         eventRepository = EventRepository(database.claimedEventDao(), rewardRepository)
         notificationRepository = NotificationRepository(database.notificationDao(), rewardRepository)
