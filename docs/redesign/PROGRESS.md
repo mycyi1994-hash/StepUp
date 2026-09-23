@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — chart details remain readable when expanded
+
+- Selected day/week details now appear below the chart at full content width instead of 132/150dp overlays that covered bars and constrained enlarged text. Detail labels/values and quarter-chart captions use 14sp; quarter total and instructions are stacked. Day detail weekday formatting follows the app configuration locale.
+- Existing selection, totals, goal rates and navigation remain unchanged; safe getOrNull prevents an obsolete quarter selection index from indexing a changed bucket list. Static checks pass. Chart tapping, layout growth and large-font native captures remain pending.
+
 ## 2026-09-24 — readable weekly chart labels
 
 - Native analytics capture showed 8–10sp weekday/interaction labels and English weekday initials inside the Korean screen. Weekly chart now resolves weekday names from the app configuration locale, uses 14sp labels with a growing 28dp minimum selection badge, and separates target/instructions below the total to avoid horizontal crowding.

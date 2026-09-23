@@ -305,29 +305,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                 )
             }
 
-            // 고른 막대 위에 뜨는 작은 창.
-            //
-            // 카드 아래에 붙이지 않고 차트 안에 띄우는 이유는, 창이 생길 때마다
-            // 카드가 늘어나면 아래 내용이 밀려 내려가 눈이 따라가야 하기 때문이다.
-            // 막대 쪽으로 붙여 두면 어느 날 것인지도 따로 읽을 필요가 없다.
-            selectedDay?.let { day ->
-                val index = days.indexOf(day)
-                if (index >= 0) {
-                    val panelWidth = 132.dp
-                    val center = slot * index + slot / 2 + gap * index
-                    val x = (center - panelWidth / 2)
-                        .coerceIn(0.dp, (chartWidth - panelWidth).coerceAtLeast(0.dp))
-                    DayCallout(
-                        day = day,
-                        steps = byDay[day]?.steps ?: 0,
-                        goal = goal,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(x = x)
-                            .width(panelWidth),
-                    )
-                }
-            }
+
         }
 
         Row(
@@ -352,6 +330,9 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                     }
                 }
             }
+        }
+        selectedDay?.takeIf { it in days }?.let { day ->
+            DayCallout(day, byDay[day]?.steps ?: 0, goal, Modifier.fillMaxWidth())
         }
     }
 }
@@ -518,14 +499,15 @@ private fun DayCallout(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = date.format(calloutDateFormatter),
-                fontSize = 11.sp,
+                text = date.format(DateTimeFormatter.ofPattern("M.d (E)",
+                    androidx.compose.ui.platform.LocalConfiguration.current.locales[0])),
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
             )
             Text(
                 text = "$rate%",
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 // 목표를 넘긴 날은 색으로 먼저 보인다.
                 color = if (steps >= goal) Volt else Slate,
@@ -544,8 +526,8 @@ private fun CalloutRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = label, fontSize = 10.sp, color = Slate)
-        Text(text = value, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Snow)
+        Text(text = label, fontSize = 14.sp, color = Slate)
+        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Snow)
     }
 }
 
@@ -647,10 +629,9 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
 
     GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Eyebrow(text = stringResource(R.string.analytics_tab_quarter))
@@ -664,7 +645,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
             }
             Text(
                 text = stringResource(R.string.analytics_tap_hint_week),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Volt.copy(alpha = 0.75f),
                 modifier = Modifier.padding(bottom = 6.dp),
             )
@@ -725,21 +706,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                 )
             }
 
-            selected?.let { index ->
-                val bucket = buckets[index]
-                val panelWidth = 150.dp
-                val center = slot * index + slot / 2 + gap * index
-                val x = (center - panelWidth / 2)
-                    .coerceIn(0.dp, (chartWidth - panelWidth).coerceAtLeast(0.dp))
-                WeekCallout(
-                    bucket = bucket,
-                    goal = goal,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = x)
-                        .width(panelWidth),
-                )
-            }
+
         }
 
         // 맨 왼쪽 주와 이번 주만 적는다. 13개를 다 적으면 글자가 겹친다.
@@ -749,14 +716,19 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
         ) {
             Text(
                 text = buckets.firstOrNull()?.start?.format(monthDayFormatter).orEmpty(),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
             Text(
                 text = stringResource(R.string.analytics_this_week),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
+        }
+        selected?.let { index ->
+            buckets.getOrNull(index)?.let { bucket ->
+                WeekCallout(bucket, goal, Modifier.fillMaxWidth())
+            }
         }
     }
 }
@@ -784,13 +756,13 @@ private fun WeekCallout(bucket: WeekBucket, goal: Int, modifier: Modifier = Modi
             Text(
                 text = bucket.start.format(monthDayFormatter) + " – " +
                     bucket.end.format(monthDayFormatter),
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
             )
             Text(
                 text = "$rate%",
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (rate >= 100) Volt else Slate,
             )
