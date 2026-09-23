@@ -144,7 +144,7 @@ class ScreenGalleryTest {
             Triple(17, "ranking-factions", listOf(R.string.rank_board_faction)),
             Triple(17, "ranking-sup", listOf(R.string.rank_board_sup)),
             Triple(17, "ranking-crews", listOf(R.string.rank_board_crew)),
-            Triple(19, "compose-flash", listOf(R.string.post_cat_flash)),
+            Triple(19, "compose-free", listOf(R.string.post_cat_free)),
             Triple(19, "compose-tip", listOf(R.string.post_cat_tip)),
             Triple(27, "news-health", listOf(R.string.news_tab_health)),
             Triple(28, "customize-shoes", listOf(R.string.customize_tab_shoes)),
@@ -159,14 +159,10 @@ class ScreenGalleryTest {
                 reset(index)
                 actions.forEach { tap(it) }
                 capture("extra-$name")
-                // Android dialogs have their own root. Dismiss without saving or submitting.
-                if (compose.onAllNodes(isRoot()).fetchSemanticsNodes().size > 1) {
-                    InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)
-                    compose.waitForIdle()
-                }
+                // The next keyed scene disposes any open dialog without saving it.
             } catch (error: Throwable) {
                 failures.add("$name: ${error.message}")
-                InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)
+                File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
             }
         }
         reset(28)
@@ -204,6 +200,7 @@ class ScreenGalleryTest {
     }
 
     private fun capture(name: String) {
+        android.util.Log.i("ScreenGallery", "Capturing $name")
         compose.waitForIdle()
         val bitmap = if (compose.onAllNodes(isRoot()).fetchSemanticsNodes().size > 1) {
             InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
