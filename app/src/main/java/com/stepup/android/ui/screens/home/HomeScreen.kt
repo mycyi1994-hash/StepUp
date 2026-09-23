@@ -142,6 +142,7 @@ fun HomeScreen(
                 characterFraction = 0.95f, animate = false,
                 contentDescription = stringResource(R.string.cd_home_character),
                 modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
+                    .testTag("home-character-ready")
                     .quietClickable(onOpenCustomize),
             ) else Text(
                 text = stringResource(R.string.feed_loading),

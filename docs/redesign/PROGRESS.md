@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — partial captures survive another emulator loss
+
+- Downloaded and inspected 580a9e4 gallery 35927968501. Both API jobs lost their emulator during ChromeNavigationTest before gallery execution; locale-dialog fix remains unverified. Host kernel logs contain no matched OOM/segfault evidence; no new root cause is claimed. Artifacts are under C:/Users/gana0/StepUp-captures/redesign-580a9e4.
+- Background transport preserved several chrome PNGs before device loss. Viewed API 34 partial home PNG: shared chrome/start button are present, but the character is still loading. This is valid loading-state evidence, not a completed-home capture.
+- Added a readiness tag only on the persisted-look character stage and a bounded displayed check before normal-home geometry/captures. Test failure remains visible if the character never arrives; no arbitrary sleep, default avatar or data substitution is used. Static checks pass; native execution remains pending.
+
 ## 2026-09-24 — complete bottom-tab labels at enlarged text
 
 - Replaced the root navigation's single-line ellipsis rule. The shared bar measures all four localized labels with their actual style, available tab width and system density/font scale, then gives every label the same maximum measured height. Labels wrap while icon, text-top and indicator alignment remain shared; selected state still changes no typography or geometry.
