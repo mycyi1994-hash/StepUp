@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — finish-dialog synchronization finding
+
+- Downloaded 73d6f71 capture 35920433661. Interaction XML: 18 tests, one failure at ChromeNavigationTest line 168 after system Back; other 17 pass, including new live boost expiry and invalid meetup-number correction. The second dialog opening immediately sent system Back without waiting for the window, unlike its first opening. Added a displayed-title assertion before Back so it targets the dialog window. Needs native confirmation; do not claim the test fixed yet.
+- That run's full gallery still lost the emulator. Dialog timing and emulator disappearance are separate findings, not a single established root cause. Latest API 34/35 comparison remains running.
+
 ## 2026-09-24 — actual-display capture path
 
 - Gallery, chrome, login and form captures now share UiAutomation.takeScreenshot rather than Compose node captureToImage. Images preserve the physical display (including dialog/IME windows and any surrounding viewport area); they are not cropped virtual-viewport images. Geometry assertions still use the same Compose semantics and all existing interaction/state checks remain.
