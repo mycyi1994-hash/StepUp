@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — upgrade-dialog failure traced to gallery locale scope
+
+- Inspected 2f65026 API 35 extra-sneaker-upgrade-confirm.png: the actual dialog is displayed, with English Enhance/Upgrade/Cancel while the underlying gallery is Korean. The test searched Korean cost text. Thus increasing the wait cannot resolve this mismatch. Native production locale behavior is not disproved by this test-only configuration override.
+- Gallery now applies the real app locale before creating its Activity and restores the prior selection after teardown. This gives newly created dialog windows the same locale as the activity, retaining Korean assertions and the pre-teardown failure capture. Existing viewport overrides remain for layout coverage. Fresh native verification is required.
+- API 35 XML reports 19 interaction tests/1 failure (CrewFormTest IME wait) and gallery timeout at the upgrade-cost wait. Viewed 1.3-keyboard-wait.png: form and pinned submit are visible, but the keyboard is absent. That separate issue remains unresolved. Artifact download session 87227 is still active; API 35 files are available, API 34 final report inspection pending.
+
 ## 2026-09-24 — inventory focuses on shoes before collection statistics
 
 - Based on native screen-03 review, removed the four tall faction-progress cards from the default inventory viewport and integrated their choices/counts into the existing filter sheet. The equipped shoe and owned collection remain primary; faction counts and all previous AND filters remain available.

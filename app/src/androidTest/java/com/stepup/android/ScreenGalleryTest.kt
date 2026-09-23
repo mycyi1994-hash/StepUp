@@ -52,13 +52,33 @@ import org.junit.Test
 
 /** Temporary read-only UI gallery. No production screen or backend code changes. */
 class ScreenGalleryTest {
-    @get:Rule(order = 0) val permissions = GrantPermissionRule.grant(
+    @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
+        private var previous = ""
+        override fun before() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val context = instrumentation.targetContext
+            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            previous = com.stepup.android.core.AppLocale.tag
+            // Apply before the Activity exists: Dialog windows must receive the
+            // same application locale as their parent, not a Compose-only override.
+            instrumentation.runOnMainSync {
+                com.stepup.android.core.AppLocale.change(context, "ko")
+            }
+        }
+        override fun after() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.runOnMainSync {
+                com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous)
+            }
+        }
+    }
+    @get:Rule(order = 1) val permissions = GrantPermissionRule.grant(
         android.Manifest.permission.ACTIVITY_RECOGNITION,
         android.Manifest.permission.ACCESS_FINE_LOCATION,
         android.Manifest.permission.ACCESS_COARSE_LOCATION,
         android.Manifest.permission.POST_NOTIFICATIONS,
     )
-    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule(order = 2) val compose = createAndroidComposeRule<ComponentActivity>()
     private var sneakerId = 0L
     private var crewId = ""
     private lateinit var localized: android.content.Context
