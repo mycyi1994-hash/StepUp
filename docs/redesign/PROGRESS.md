@@ -9,6 +9,7 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Added DetailPage: one pinned SecondaryHeader, fixed design gutter, and scrollable content with shared spacing. Migrated Language, Theme, Notifications, Privacy, Support and Experience settings; removed their separate back/title layouts while preserving controls and destinations.
 - This is a structural redesign, not proof that every existing setting/help text is correct. Screen-level typography, persistence failures, real notification delivery and full accessibility remain in the audit.
 - Source checks passed. 6a0c053 gallery 35910775823 has now completed successfully; detailed form evidence is being downloaded. b263e80 wallet build/native checks are still running.
+- Downloaded 6a0c053 XML confirms seven tests passed, including form input. However, visual inspection found no visible IME and a white fixture background absent from the real StepUpRoot. Added production NightCanvas to the fixture, enabled software keyboard with hardware-keyboard emulation, and require actual IME visibility before accepting form access. The prior pass proves text input/gating, not keyboard avoidance.
 
 ## 2026-09-24 — connected accounts
 

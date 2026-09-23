@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 status=0
+# Exercise actual IME in form tests even when the emulator exposes a hardware keyboard.
+adb shell settings put secure show_ime_with_hard_keyboard 1 || status=1
 # adb can fail while enumerating screenshots even after instrumentation passed.
 # Retry only artifact transport, never rerun or suppress a failed test.
 pull_captures() {
