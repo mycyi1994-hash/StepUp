@@ -20,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -124,10 +125,10 @@ fun CrewCreateScreen(
 
     }
             com.stepup.android.ui.components.PrimaryCta(
-                text = stringResource(R.string.crew_create_submit),
+                text = stringResource(if (creating) R.string.feed_loading else R.string.crew_create_submit),
                 enabled = name.isNotBlank() && !creating,
                 onClick = { viewModel.createCrew(name, tagline, area, policy, onCreated) },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("crew-create-submit"),
             )
     }
 }
