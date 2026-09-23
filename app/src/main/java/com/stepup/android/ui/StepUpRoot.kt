@@ -666,7 +666,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val labelStyle = androidx.compose.material3.LocalTextStyle.current.copy(
+    val labelStyle = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
         fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
@@ -701,6 +701,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 NavTab(
                     screen = screen,
                     labelHeight = labelHeight,
+                    labelStyle = labelStyle,
                     selected = parent == screen,
                     onClick = {
                         if (parent == screen) {
@@ -725,6 +726,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 @Composable
 private fun RowScope.NavTab(
     screen: Screen, labelHeight: androidx.compose.ui.unit.Dp,
+    labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
     val tint by animateColorAsState(
@@ -758,10 +760,7 @@ private fun RowScope.NavTab(
             text = stringResource(screen.labelRes),
             modifier = Modifier.heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
-            fontSize = StepUpDesign.NavigationLabel,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.sp,
-            textAlign = TextAlign.Center,
+            style = labelStyle,
             softWrap = true,
         )
         Box(

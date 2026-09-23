@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — complete native runs expose actionable failures
+
+- Downloaded 5c4fe1a API 34 gallery and API 35 interaction evidence from 35929984701. API 35 completed 21 tests: 20 passed (including both separate CrewForm IME cases); Chrome failed its new text-overflow assertion for the first Run tab at 360dp/1.0. This run did not lose its emulator.
+- Navigation now measures and renders the same explicit shared bodySmall-based label style instead of independently inheriting text defaults. The strict overflow assertion stays enabled and now reports text, paragraph dimensions and constraints if it fails. Runtime confirmation is pending; no claim yet that all viewport scenarios pass.
+- API 34 gallery reached the final guide capture and failed because the guide had not started. The guide-00 image is the ordinary home screen. Its delayed start runs on Compose's virtual clock, whereas the fixture had slept in wall-clock time. Advance the test clock before asserting/capturing guide controls; production timing is unchanged.
+- At c01b8e4, Build APK 35930751043 unit tests (including new ownership scenarios) and debug APK steps passed; release R8 step was still running. Native ownership/migration scenarios and generated Room 13 schema remain to be inspected. The local filter inset fix awaits the next push after that build is terminal.
+
 ## 2026-09-24 — visual evidence overrides partial-visibility test success
 
 - Inspected the 5c4fe1a API 34/35 1.6-font filter captures. API 34 shows both actions above navigation; API 35 visibly puts the action row under the gesture area/partly offscreen. The prior passing click test is not a visual pass.

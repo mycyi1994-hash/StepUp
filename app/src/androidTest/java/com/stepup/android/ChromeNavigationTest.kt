@@ -87,7 +87,8 @@ class ChromeNavigationTest {
                         it(layouts)
                     }
                 org.junit.Assert.assertTrue("tab has measured text $next/$route", layouts.isNotEmpty())
-                org.junit.Assert.assertFalse("tab label must not truncate $next/$route",
+                org.junit.Assert.assertFalse("tab label must not truncate $next/$route: " +
+                    layouts.joinToString { "text=${it.layoutInput.text}, size=${it.size}, paragraph=${it.multiParagraph.width}x${it.multiParagraph.height}, constraints=${it.layoutInput.constraints}" },
                     layouts.any { it.hasVisualOverflow })
             }
             capture("${next.width}-${next.font}-${next.mode}-home")

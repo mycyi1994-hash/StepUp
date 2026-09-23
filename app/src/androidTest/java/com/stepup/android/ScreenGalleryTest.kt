@@ -252,6 +252,10 @@ class ScreenGalleryTest {
         reset(40)
         capture("launch-preparation-error")
         reset(38)
+        // The launch delay uses Compose's test clock; wall-clock sleep alone does not advance it.
+        compose.mainClock.advanceTimeBy(500)
+        compose.waitForIdle()
+        compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
         for (index in GuideTour.steps.indices) {
             try {
                 capture("guide-${index.toString().padStart(2, '0')}")
