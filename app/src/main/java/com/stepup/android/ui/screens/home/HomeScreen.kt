@@ -51,7 +51,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
-import com.stepup.android.core.StepPermissions
+import com.stepup.android.ui.StepPermissions
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarPose
 import com.stepup.android.ui.components.BadgeTone
