@@ -111,6 +111,12 @@ jobs:
           name: StepUp-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Preserve generated Room schemas
+        uses: actions/upload-artifact@v4
+        with:
+          name: StepUp-room-schemas
+          path: app/schemas/
+
       # 폰에서 주소 하나로 바로 받을 수 있게 릴리스에 붙인다.
       #
       # 위의 아티팩트는 깃허브에 로그인해 zip 을 받아 풀어야 한다. 폰에서

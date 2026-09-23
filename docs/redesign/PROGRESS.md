@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — generated schemas and submission evidence
+
+- Build workflow now preserves generated Room schemas as a separate artifact so v12 can be reviewed/committed from actual Room compiler output. No hand-written identity hash or fake schema export. Existing migration tests passed in a9ff894, but generated v12 snapshot is still missing locally.
+- Re-read official GASOK and GIWA connection pages; added GASOK-EVIDENCE.md linking requirements to actual evidence gaps. Public wallet documentation still says under development; no official embedding integration API has been verified. Native UI completion must not be confused with wallet embedding or real-user acquisition evidence.
+- Latest published 18b477c Build APK 35919712929 and gallery 35919712989 remain running. Previous 57d916a gallery 35919048227 also remains running; do not restart on observation delay.
+
 ## 2026-09-24 — gallery completeness enforcement
 
 - The gallery previously wrote variation/navigation failures to capture-notes.txt but still passed its test. It now gathers all possible captures and fails at the end if any requested state was missed. Earlier green gallery jobs must not be read as complete-state evidence.
