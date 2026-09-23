@@ -1360,7 +1360,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="feed_demo_note">데모 모드예요. 아래는 테스트용 예시이며 실제 대회·기사가 아니에요.</string>
     <string name="finish_confirmed">포인트 적립 완료</string>
     <string name="finish_pending">러닝 완료 · 서버 확인 중</string>
-    <string name="finish_pending_note">앱에는 적립됐어요. 서버가 기록을 확인하면 완료로 바뀌어요.</string>
+    <string name="finish_pending_note">러닝 기록을 저장했어요. 보상은 서버 확인 후 확정돼요.</string>
     <string name="finish_rejected">서버가 이 기록을 인정하지 않았어요</string>
     <string name="finish_balance">보유</string>
     <string name="finish_done">완료</string>

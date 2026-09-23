@@ -108,6 +108,34 @@ class ChromeNavigationTest {
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
             capture("${next.width}-${next.font}-${next.mode}-run-paused")
+            // Presentation fixtures only: these do not simulate server settlement or GPS.
+            com.stepup.android.service.WalkSessionService.showStateForTest(
+                com.stepup.android.service.WalkSessionState(
+                    lastRewardPoints = 4.0, lastSessionSteps = 1200, lastElapsedSec = 623,
+                    lastStartedAt = 1L,
+                ),
+            )
+            compose.waitForIdle()
+            compose.onNodeWithTag("run-result-done").assertIsDisplayed().assertHasClickAction()
+            compose.onNodeWithTag("run-result-reward").assertTextEquals("—")
+            capture("${next.width}-${next.font}-${next.mode}-result-pending")
+            com.stepup.android.service.WalkSessionService.showStateForTest(
+                com.stepup.android.service.WalkSessionState(
+                    lastRewardPoints = 4.0, lastSessionSteps = 1200, lastElapsedSec = 623,
+                    lastStartedAt = 1L, lastVerdict = com.stepup.android.domain.RunVerdict.VOID,
+                ),
+            )
+            compose.waitForIdle()
+            compose.onNodeWithTag("run-result-reward").assertTextEquals("0")
+            compose.onNodeWithTag("run-result-done").assertIsDisplayed().performClick()
+            compose.waitForIdle()
+            assertEquals("result returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
+            // Re-enter the paused fixture to check the independent system Back route as well.
+            com.stepup.android.service.WalkSessionService.showStateForTest(
+                com.stepup.android.service.WalkSessionState(isActive = true, isPaused = true),
+            )
+            compose.onNodeWithTag("home-start-run").performClick()
+            compose.waitForIdle()
             pressBack()
             compose.waitForIdle()
             assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))

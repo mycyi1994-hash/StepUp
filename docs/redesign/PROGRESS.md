@@ -23,6 +23,13 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 | Native visual/interaction/device validation | pending | Build/CI/emulator, then device-only checks explicitly tracked |
 | Final APK, screenshot gallery, change/test report | pending | Must all describe the same candidate revision |
 
+## 2026-09-24 — result accessibility and reward presentation
+
+- Build 35902803927 for 0ddfc53 completed with one failing unit test out of 176: the LUMI sheet-count test still included the newly added independent starter combination. Split the sheet's 52 design identities from the base/WND-010 starter assertion; retained checks for the five outfits and base art. This is a test expectation correction, not a passing build yet.
+- The run result now keeps Done outside the scrolling content, removes the duplicate completion title, and uses the shared character stage without a second skyline. Pending rewards show an em dash; rejected/void rewards show zero; only server-confirmed rewards show a positive credit and celebration. Pending copy in all four languages describes a saved run awaiting confirmation.
+- Added actual navigation assertions for the result Done action, pending/void reward presentation and restored chrome across the existing four viewport/theme/font scenarios. Fixtures validate presentation/navigation only, not server settlement or GPS.
+- Local design contract, translated string/resource checks, asset integrity and whitespace checks pass. Native compilation, new assertions and result screenshot review remain pending. Previous gallery 35902803854 was still running during this change.
+
 ## Environment / unverified dependencies
 
 ## 2026-09-24 — wardrobe and native Back verification

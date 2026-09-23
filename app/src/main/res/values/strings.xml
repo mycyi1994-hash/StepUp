@@ -1362,7 +1362,7 @@ Start running with StepUp.</string>
     <string name="feed_demo_note">Demo mode. These are samples for testing, not real races or articles.</string>
     <string name="finish_confirmed">Points confirmed</string>
     <string name="finish_pending">Run complete · server check pending</string>
-    <string name="finish_pending_note">Added to the app. It becomes final once the server confirms the record.</string>
+    <string name="finish_pending_note">Your run is saved. Your reward is final only after the server confirms it.</string>
     <string name="finish_rejected">The server did not accept this record</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>

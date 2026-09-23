@@ -103,13 +103,18 @@ class AvatarArtTest {
     }
 
     @Test
-    fun `LUMI 그림은 신발 52 · 의상 5 · 기본 1`() {
+    fun `LUMI 그림은 신발 시트 52 · 스타터 조합 1 · 의상 5 · 기본 1`() {
         val lumi = AvatarArtCatalog.ALL.filter { it.gender == AvatarGender.FEMALE }
-        assertEquals(52, lumi.count { it.shoeCode != null })
+        val sheetShoes = lumi.filter { it.shoeCode != null && it.outfitId != Outfits.BASE_ID }
+        assertEquals(52, sheetShoes.size)
+        assertEquals(AvatarArtCatalog.SHOE_CODES.toSet(), sheetShoes.map { it.shoeCode }.toSet())
+        val starter = lumi.single { it.shoeCode != null && it.outfitId == Outfits.BASE_ID }
+        assertEquals("WND-010", starter.shoeCode)
+        assertEquals("lumi_idle_base_wnd_010", starter.key)
         assertEquals(5, lumi.count { it.shoeCode == null && it.outfitId != Outfits.BASE_ID })
         assertEquals(1, lumi.count { it.shoeCode == null && it.outfitId == Outfits.BASE_ID })
         // 신발 시트는 속성마다 추천 의상 하나를 입고 있다
-        lumi.filter { it.shoeCode != null }.forEach { a ->
+        sheetShoes.forEach { a ->
             assertEquals(AvatarArtCatalog.LUMI_SHEET_OUTFIT.getValue(a.shoeCode!!.take(3)).id, a.outfitId)
         }
     }

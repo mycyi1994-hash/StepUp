@@ -1360,7 +1360,7 @@
     <string name="feed_demo_note">演示模式。以下为测试示例，并非真实赛事或文章。</string>
     <string name="finish_confirmed">积分已确认</string>
     <string name="finish_pending">跑步完成 · 服务器确认中</string>
-    <string name="finish_pending_note">已计入应用。服务器确认记录后将变为完成。</string>
+    <string name="finish_pending_note">跑步记录已保存。奖励将在服务器确认后确定。</string>
     <string name="finish_rejected">服务器未认可此记录</string>
     <string name="finish_balance">持有</string>
     <string name="finish_done">完成</string>

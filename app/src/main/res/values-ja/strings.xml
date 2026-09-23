@@ -1361,7 +1361,7 @@ StepUp と走り出そう。</string>
     <string name="feed_demo_note">デモモードです。以下はテスト用のサンプルで、実際の大会・記事ではありません。</string>
     <string name="finish_confirmed">ポイント付与完了</string>
     <string name="finish_pending">ラン完了 · サーバー確認中</string>
-    <string name="finish_pending_note">アプリには付与されました。サーバーが記録を確認すると完了になります。</string>
+    <string name="finish_pending_note">ランの記録を保存しました。報酬はサーバーの確認後に確定します。</string>
     <string name="finish_rejected">サーバーがこの記録を認めませんでした</string>
     <string name="finish_balance">保有</string>
     <string name="finish_done">完了</string>

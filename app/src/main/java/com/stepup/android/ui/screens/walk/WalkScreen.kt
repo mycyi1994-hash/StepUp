@@ -449,18 +449,23 @@ fun RunScreen(
         }
         if (finishing) {
             LazyColumn(
-                Modifier.fillMaxSize(),
+                Modifier.weight(1f).fillMaxWidth(),
                 contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 item {
                     FinishCard(
                         session = session, points = session.lastRewardPoints!!,
                         upload = lastUpload, look = look, balance = balance,
-                        todaySteps = todaySteps, goal = dailyGoal,
-                        onDone = { viewModel.clearReward(); onBack() },
                     )
                 }
             }
+            PrimaryCta(
+                text = stringResource(R.string.finish_done),
+                icon = Icons.Filled.Check,
+                showArrow = false,
+                modifier = Modifier.testTag("run-result-done").padding(vertical = 12.dp),
+                onClick = { viewModel.clearReward(); onBack() },
+            )
         } else {
             if (recordingCourse && !readyToSaveCourse) {
                 CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
@@ -1519,12 +1524,11 @@ private fun FinishCard(
     upload: String?,
     look: com.stepup.android.domain.AvatarLook,
     balance: Double,
-    @Suppress("UNUSED_PARAMETER") todaySteps: Int,
-    @Suppress("UNUSED_PARAMETER") goal: Int,
-    onDone: () -> Unit,
 ) {
     val context = LocalContext.current
     val voided = session.lastVerdict == RunVerdict.VOID
+    val confirmed = !voided && upload == UploadState.SIGNED.name
+    val rejected = voided || upload == UploadState.REJECTED.name
     val km = if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
     val paceSec: Long? = if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
     // 서버가 확인한 뒤에만 "적립 완료". 그 전에는 확인 중이라고 적는다.
@@ -1551,7 +1555,7 @@ private fun FinishCard(
         modifier = Modifier
             .fillMaxWidth()
             .reveal(session.lastStartedAt)
-            .celebrate(if (!voided) session.lastStartedAt else null),
+            .celebrate(if (confirmed) session.lastStartedAt else null),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1561,13 +1565,6 @@ private fun FinishCard(
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = stringResource(R.string.finish_title),
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.6).sp,
-                color = Snow,
-            )
-            Text(
                 text = stringResource(headline),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -1576,7 +1573,12 @@ private fun FinishCard(
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "+%,.0f".format(points),
+                    text = when {
+                        confirmed -> "+%,.0f".format(points)
+                        rejected -> "0"
+                        else -> "—"
+                    },
+                    modifier = Modifier.testTag("run-result-reward"),
                     style = androidx.compose.ui.text.TextStyle(
                         brush = com.stepup.android.ui.theme.VoltInk,
                         shadow = androidx.compose.ui.graphics.Shadow(
@@ -1602,10 +1604,10 @@ private fun FinishCard(
             if (!voided && upload != UploadState.SIGNED.name && upload != UploadState.REJECTED.name) {
                 Text(
                     text = stringResource(R.string.finish_pending_note),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                     textAlign = TextAlign.Center,
-                    lineHeight = 17.sp,
+                    lineHeight = 20.sp,
                 )
             }
             if (voided) {
@@ -1626,6 +1628,8 @@ private fun FinishCard(
                 .fillMaxWidth()
                 .height(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 200.dp else 240.dp),
             characterFraction = 0.9f,
+            skyline = false,
+            animate = false,
         )
 
         // 거리 · 시간 · 페이스
@@ -1663,12 +1667,6 @@ private fun FinishCard(
             }
         }
 
-        PrimaryCta(
-            text = stringResource(R.string.finish_done),
-            icon = Icons.Filled.Check,
-            showArrow = false,
-            onClick = onDone,
-        )
         GhostButton(
             text = stringResource(R.string.finish_share),
             onClick = {
