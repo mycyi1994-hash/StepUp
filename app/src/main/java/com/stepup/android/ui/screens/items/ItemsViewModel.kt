@@ -98,7 +98,7 @@ class ItemsViewModel(
 
     fun equip(id: Long) {
         viewModelScope.launch {
-            sneakerRepository.equip(id)
+            if (!sneakerRepository.equip(id)) return@launch
             val target = inventory.value.firstOrNull { it.id == id }
             if (target != null) {
                 message.value = ItemsMessage.Equipped(target)

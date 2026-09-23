@@ -2,7 +2,7 @@
 set -uo pipefail
 status=0
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
-./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.stepup.android.ChromeNavigationTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || status=$?
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || status=$?
 cp -R app/build/reports/androidTests/. screen-gallery/chrome-reports/ || true
 cp -R app/build/outputs/androidTest-results/. screen-gallery/chrome-results/ || true
 adb pull /sdcard/Android/data/com.stepup.android/files/chrome-checks/. screen-gallery/chrome/ || status=1

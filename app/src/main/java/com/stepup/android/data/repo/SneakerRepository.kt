@@ -32,11 +32,7 @@ class SneakerRepository(
         sneakerDao.insert(SneakerMint.starter().toEntity())
     }
 
-    suspend fun equip(id: Long) {
-        val target = sneakerDao.byId(id) ?: return
-        sneakerDao.clearEquipped()
-        sneakerDao.update(target.copy(equipped = true))
-    }
+    suspend fun equip(id: Long): Boolean = sneakerDao.equipExclusively(id) > 0
 
     /** 강화. 잔액 부족이거나 최대 레벨이면 null. */
     suspend fun upgrade(id: Long): Sneaker? {

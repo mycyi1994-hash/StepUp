@@ -182,6 +182,10 @@ interface SneakerDao {
     @Query("UPDATE sneakers SET equipped = 0")
     suspend fun clearEquipped()
 
+    /** One atomic write; a stale/missing target must not clear the current equipment. */
+    @Query("UPDATE sneakers SET equipped = CASE WHEN id = :id THEN 1 ELSE 0 END WHERE EXISTS (SELECT 1 FROM sneakers WHERE id = :id)")
+    suspend fun equipExclusively(id: Long): Int
+
     @Query("SELECT COUNT(*) FROM sneakers")
     suspend fun count(): Int
 

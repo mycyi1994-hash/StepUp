@@ -87,7 +87,10 @@ class CustomizeViewModel(
     fun equipShoe(id: Long) {
         viewModelScope.launch {
             val shoe = shoes.value?.firstOrNull { it.id == id }
-            sneakers.equip(id)
+            if (shoe == null || !sneakers.equip(id)) {
+                message.value = R.string.customize_not_owned
+                return@launch
+            }
             val shown = AvatarArtCatalog.resolve(look.value.copy(shoe = shoe), AvatarPose.IDLE).shoeShown
             message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
         }

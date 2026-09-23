@@ -32,6 +32,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## Environment / unverified dependencies
 
+## 2026-09-24 — equipment persistence repair
+
+- Replaced separate clear/update equipment writes with one guarded SQL update. A missing target leaves the current equipment untouched; concurrent selections cannot leave multiple equipped rows; only the equipment flag changes, preserving current stats. Repository returns success explicitly, and wardrobe/vault no longer report success for a missing item.
+- Added a Room device test for switching, a missing target, concurrent selection requests, database reopening and preserved level/inventory. Included it in the gallery workflow alongside chrome checks. This test has not yet run; storage-error messaging and broader ownership/authentication flows remain outstanding.
+- 0ddfc53 gallery 35902803854 completed successfully; artifact download/visual inspection is underway. Its separate Build APK job failed the stale LUMI test described above. Newer 5324bb5 build and gallery remain live; no final candidate is verified yet.
+
 ## 2026-09-24 — wardrobe and native Back verification
 
 - Revision 80beb62 native run 35900771499 passed ChromeNavigationTest across all four viewport/font/theme scenarios (XML: 1 test, 0 failures), then completed the gallery. Captures downloaded to C:/Users/gana0/StepUp-captures/redesign-80beb62. The gallery note still reports the signed-out My trades variation as inaccessible; this remains unverified despite the green job.

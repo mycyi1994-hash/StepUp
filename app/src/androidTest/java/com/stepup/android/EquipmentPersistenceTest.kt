@@ -1,0 +1,48 @@
+package com.stepup.android
+
+import androidx.room.Room
+import androidx.test.platform.app.InstrumentationRegistry
+import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.repo.toEntity
+import com.stepup.android.domain.SneakerMint
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
+import org.junit.Test
+
+class EquipmentPersistenceTest {
+    @Test fun equipmentIsExclusiveSurvivesReopenAndRejectsMissingTargets() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val name = "equipment-persistence-test.db"
+        context.deleteDatabase(name)
+        fun open() = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+        var db = open()
+        try {
+            val dao = db.sneakerDao()
+            val first = dao.insert(SneakerMint.starter().toEntity())
+            val second = dao.insert(SneakerMint.starter().toEntity().copy(equipped = false, level = 7))
+            assertTrue(dao.equipExclusively(second) > 0)
+            assertEquals(listOf(second), dao.allNow().filter { it.equipped }.map { it.id })
+            assertEquals(0, dao.equipExclusively(Long.MAX_VALUE))
+            assertEquals(second, dao.equippedNow()!!.id)
+            // Rapid independent selection requests still leave exactly one equipped row.
+            coroutineScope {
+                (0 until 20).map { index -> async {
+                    dao.equipExclusively(if (index % 2 == 0) first else second)
+                } }.awaitAll()
+            }
+            assertEquals(1, dao.allNow().count { it.equipped })
+            dao.equipExclusively(second)
+            db.close()
+            db = open()
+            assertEquals(second, db.sneakerDao().equippedNow()!!.id)
+            assertEquals(7, db.sneakerDao().byId(second)!!.level)
+            assertEquals(2, db.sneakerDao().allNow().size)
+        } finally {
+            db.close()
+            context.deleteDatabase(name)
+        }
+    }
+}
