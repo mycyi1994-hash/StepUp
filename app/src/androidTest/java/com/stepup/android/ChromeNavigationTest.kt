@@ -123,7 +123,7 @@ class ChromeNavigationTest {
                     compose.waitForIdle()
                     assertEquals("crews keep navigation", bar, bounds(BOTTOM_NAV_TAG))
                     pressBack()
-                    compose.waitForIdle()
+                    awaitVisible("community-all-meetups")
                     compose.onNodeWithTag("community-all-meetups").assertIsDisplayed().performClick()
                     compose.waitForIdle()
                     pressBack()
@@ -195,6 +195,18 @@ class ChromeNavigationTest {
 
     private fun bounds(tag: String): Rect = compose.onNodeWithTag(tag, useUnmergedTree = true)
         .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+
+    private fun awaitVisible(tag: String) {
+        try {
+            // A system Back key and lifecycle-backed state can settle after Compose first becomes idle.
+            compose.waitUntil(timeoutMillis = 5_000) {
+                runCatching { compose.onNodeWithTag(tag).assertIsDisplayed(); true }.getOrDefault(false)
+            }
+        } catch (failure: Throwable) {
+            capture("failed-wait-$tag")
+            throw failure
+        }
+    }
 
     // Dispatch an actual system Back key so dialog windows receive it before the activity.
     private fun pressBack() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
