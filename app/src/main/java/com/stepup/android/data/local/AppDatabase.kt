@@ -12,6 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RewardEntity::class,
         SneakerEntity::class,
         BoostEntity::class,
+        EnergyPurchase::class,
         ClaimedEventEntity::class,
         CrewMembershipEntity::class,
         CrewEntity::class,
@@ -21,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotificationEntity::class,
         NewsItemEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun rewardDao(): RewardDao
     abstract fun sneakerDao(): SneakerDao
     abstract fun boostDao(): BoostDao
+    abstract fun energyPurchaseDao(): EnergyPurchaseDao
     abstract fun claimedEventDao(): ClaimedEventDao
     abstract fun crewDao(): CrewDao
     abstract fun crewInfoDao(): CrewInfoDao
@@ -145,8 +147,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS energy_purchases (id TEXT NOT NULL PRIMARY KEY, createdAt INTEGER NOT NULL, amount REAL NOT NULL, delivered INTEGER NOT NULL)")
+            }
+        }
+
         val MIGRATIONS = arrayOf(
-            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+            MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
         )
     }
 }

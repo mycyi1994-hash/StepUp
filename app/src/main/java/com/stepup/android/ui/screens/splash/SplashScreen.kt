@@ -45,6 +45,7 @@ fun SplashScreen(onReady: () -> Unit) {
             withTimeoutOrNull(14_000) {
                 ServiceLocator.userPrefs.ensureRunnerUid()
                 ServiceLocator.sneakerRepository.ensureStarter()
+                ServiceLocator.boostRepository.recoverEnergyPurchases()
                 ServiceLocator.boostRepository.purgeExpired()
                 ServiceLocator.crewRepository.clearLegacy()
                 ServiceLocator.notificationRepository.purgeLegacyInvites()

@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — recoverable energy purchase delivery
+
+- Added Room v12 energy_purchases receipt table with additive 11→12 migration. Energy purchase debit/receipt/history commit together. DataStore applies energy and records receipt identity in one edit; Room acknowledges delivery and writes the notification together afterward. Startup replays pending receipts; pressing purchase with a pending receipt retries delivery without another debit. Existing ledgers/energy values and storage identities are preserved.
+- UserPrefs accepts an optional DataStore for isolated tests; production still uses strideup_prefs. Added test failure injection before receipt creation and after energy delivery but before acknowledgement, including consumption between failure/retry to prove replay cannot restore spent energy again. Included energy and existing migration tests in the capture verification phase. Native execution/schema validation are pending, not claimed passes.
+- Receipt IDs remain retained for idempotence; account switching/deletion and receipt retention policy still require the wider account-data audit. This repairs new purchase recovery, not historic partial purchases lacking receipts or actual GIWA settlement.
+
 ## 2026-09-24 — timed boost purchase consistency
 
 - Timed boosters now use the same Room database transaction boundary as local shoe purchases, covering duplicate-active checks, available funds, debit, activation and notification. UI storage exceptions show retry feedback. Added native rollback coverage and a concurrent shoe-versus-booster test with funds insufficient for both; tests remain pending CI.

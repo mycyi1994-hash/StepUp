@@ -41,11 +41,43 @@ class BoostRepository(
      * @return 실패 사유. null이면 성공.
      */
     suspend fun purchase(type: BoostType): PurchaseError? =
-        if (type.isInstant) purchaseInternal(type)
+        if (type.isInstant) purchaseEnergy()
         else database.withTransaction { purchaseInternal(type) }
 
-    // Instant energy also writes DataStore; it needs a durable cross-store receipt, not a Room-only wrapper.
+    private suspend fun purchaseEnergy(): PurchaseError? {
+        val receipts = database.withTransaction {
+            val pending = database.energyPurchaseDao().pending()
+            if (pending.isNotEmpty()) return@withTransaction pending // Retry delivery, never charge again.
+            val type = BoostType.ENERGY_CELL
+            if (!rewardRepository.spend(RewardType.SPEND_BOOST, type.cost, "부스트 구매: ${type.id}")) {
+                return@withTransaction null
+            }
+            val now = System.currentTimeMillis()
+            val receipt = com.stepup.android.data.local.EnergyPurchase(java.util.UUID.randomUUID().toString(), now, 2.0)
+            database.energyPurchaseDao().insert(receipt)
+            boostDao.insert(BoostEntity(type = type.id, activatedAt = now, expiresAt = now))
+            listOf(receipt)
+        } ?: return PurchaseError.NOT_ENOUGH_BALANCE
+        deliverEnergy(receipts)
+        return null
+    }
+
+    suspend fun recoverEnergyPurchases() = deliverEnergy(database.energyPurchaseDao().pending())
+
+    private suspend fun deliverEnergy(receipts: List<com.stepup.android.data.local.EnergyPurchase>) {
+        for (receipt in receipts) {
+            prefs.restorePurchasedEnergy(receipt.id, LocalDate.now().toEpochDay(), receipt.amount)
+            database.withTransaction {
+                if (database.energyPurchaseDao().pending().any { it.id == receipt.id }) {
+                    rewardRepository.notify(NotificationType.BOOST_ACTIVATED, BoostType.ENERGY_CELL.id, BoostType.ENERGY_CELL.cost)
+                    database.energyPurchaseDao().markDelivered(receipt.id)
+                }
+            }
+        }
+    }
+
     private suspend fun purchaseInternal(type: BoostType): PurchaseError? {
+        require(!type.isInstant)
         val now = System.currentTimeMillis()
         if (!type.isInstant && boostDao.activeOf(type.id, now) != null) {
             return PurchaseError.ALREADY_ACTIVE
@@ -54,22 +86,13 @@ class BoostRepository(
             return PurchaseError.NOT_ENOUGH_BALANCE
         }
 
-        when (type) {
-            BoostType.ENERGY_CELL -> {
-                // 즉시형 — 에너지 2칸 회복
-                prefs.restoreEnergy(LocalDate.now().toEpochDay(), 2.0)
-                boostDao.insert(BoostEntity(type = type.id, activatedAt = now, expiresAt = now))
-            }
-            else -> {
-                boostDao.insert(
-                    BoostEntity(
-                        type = type.id,
-                        activatedAt = now,
-                        expiresAt = now + type.durationMillis,
-                    )
-                )
-            }
-        }
+        boostDao.insert(
+            BoostEntity(
+                type = type.id,
+                activatedAt = now,
+                expiresAt = now + type.durationMillis,
+            )
+        )
         rewardRepository.notify(NotificationType.BOOST_ACTIVATED, type.id, type.cost)
         return null
     }
