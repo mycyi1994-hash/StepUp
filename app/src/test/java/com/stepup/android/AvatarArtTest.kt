@@ -34,7 +34,7 @@ class AvatarArtTest {
             "LIT" -> Faction.LIGHTNING
             else -> Faction.WIND
         }
-        val (rarity, variant) = SneakerDesigns.slotOf(code.takeLast(3).toInt() - 1)
+        val (rarity, variant) = SneakerDesigns.slotOf(code.takeLast(3).toInt())
         return SneakerMint.starter().copy(faction = faction, rarity = rarity, variant = variant)
     }
 

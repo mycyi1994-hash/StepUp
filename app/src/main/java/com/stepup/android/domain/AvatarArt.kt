@@ -66,16 +66,8 @@ data class AvatarRender(
 }
 
 /** 신발 도감 번호 — "FIR-001" … "WND-013". 장비 카탈로그(design/equipment)의 id 와 같다. */
-fun shoeCode(faction: Faction, rarity: Rarity, variant: Int): String {
-    val prefix = when (faction) {
-        Faction.FIRE -> "FIR"
-        Faction.WATER -> "WAT"
-        Faction.LIGHTNING -> "LIT"
-        Faction.WIND -> "WND"
-    }
-    val index = SneakerDesigns.indexOf(rarity, variant.coerceIn(0, rarity.variantCount - 1))
-    return "%s-%03d".format(prefix, index + 1)
-}
+fun shoeCode(faction: Faction, rarity: Rarity, variant: Int): String =
+    SneakerDesigns.of(faction, rarity, variant).code
 
 /** 이 신발 한 켤레(소유 인스턴스)의 디자인 번호. 인스턴스 id 와는 다르다. */
 fun Sneaker.designCode(): String = shoeCode(faction, rarity, variant)
@@ -83,12 +75,7 @@ fun Sneaker.designCode(): String = shoeCode(faction, rarity, variant)
 object AvatarArtCatalog {
 
     /** 신발 52종 도감 번호 — 속성마다 13 */
-    val SHOE_CODES: List<String> = Faction.entries.flatMap { f ->
-        (0 until VARIANTS_PER_FACTION).map { i ->
-            val (rarity, variant) = SneakerDesigns.slotOf(i)
-            shoeCode(f, rarity, variant)
-        }
-    }
+    val SHOE_CODES: List<String> = SneakerDesigns.all.map { it.code }
 
     private fun keyOf(id: String) = "runo_idle_" + id.lowercase().replace('-', '_')
 
