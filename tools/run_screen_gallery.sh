@@ -24,6 +24,10 @@ collect_diagnostics() {
   fi
 }
 trap collect_diagnostics EXIT
+# Record guest capacity as well as host capacity: available host RAM does not
+# establish that the Android guest has enough room for its launcher and the app.
+timeout 20s adb shell cat /proc/meminfo > screen-gallery/guest-memory-start.txt || true
+timeout 20s adb shell dumpsys activity lastanr > screen-gallery/guest-anr-start.txt || true
 # Exercise actual IME in form tests even when the emulator exposes a hardware keyboard.
 adb shell settings put secure show_ime_with_hard_keyboard 1 || status=1
 # adb can fail while enumerating screenshots even after instrumentation passed.
@@ -48,6 +52,8 @@ run_instrumentation() {
     status=$result
     timeout 20s adb exec-out screencap -p > "screen-gallery/$phase-failure-display.png" || true
     timeout 20s adb logcat -d > "screen-gallery/$phase-failure-logcat.txt" || true
+    timeout 20s adb shell dumpsys activity lastanr > "screen-gallery/$phase-last-anr.txt" || true
+    timeout 20s adb shell dumpsys window > "screen-gallery/$phase-windows.txt" || true
     # A timed-out Gradle client can leave its instrumentation process running on the device.
     if (( result == 124 || result == 137 )); then
       timeout 20s adb shell am force-stop com.stepup.android.test || true

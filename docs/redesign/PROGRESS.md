@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — system ANR found in failed navigation capture
+
+- Visually inspected ec91211 API 35 failed-wait-community-all-meetups.png: Android's "Pixel Launcher isn't responding" dialog overlays the crew screen. Live log confirms launcher input-dispatch ANR at 21:25:58 and guest CPU pressure avg10 80.40 / memory pressure 9.47. This execution cannot establish a StepUp Back-handler defect; it also does not prove that handler correct.
+- Host memory remained available, so guest RAM is now explicitly 4096M with a 512M heap using supported android-emulator-runner inputs. Both API levels, all assertions and failure reporting remain enabled. This is an environment experiment pending runtime evidence, not a claim to have fixed disappearing emulators or IME failures.
+- Capture runner now preserves guest memory at startup and last-ANR/window dumps after failures so system dialogs/focus failures can be distinguished from app state. Source-shell syntax validation is required; actual navigation validation remains open.
+
 ## 2026-09-24 — shared sign-in recovery
 
 - Reused the existing board reauthentication behavior as SignInAgainButton, with a busy state and storage-error feedback. Board, crew and all MarketProblemNote consumers now share this control; previously crew/market sign-in errors offered no recovery action. It only changes the root login marker and does not clear local records or rewards.
