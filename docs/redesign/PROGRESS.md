@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — actual permission-state and settings-return verification
+
+- Revalidated the clean e501763 worktree and live build/gallery jobs. Previous implementation work produced the shorter guide and durable outbox; this continuation adds executable evidence for a remaining user-visible state rather than treating the existing source check as completion.
+- Inspected e537c44 API 35 interaction XML: only the first Chrome test is reported, with an empty failure after device loss. Failed gallery logs likewise show the emulator disappearing. Host diagnostics do not establish an out-of-memory cause. Neither job is a navigation/gallery pass, and this evidence does not identify a new product assertion failure. e501763 execution remains independent.
+- Added a dedicated API 34/35 permissions suite. It installs the app and revokes activity, location and notification permissions before instrumentation starts, avoiding process termination during tests. PrivacyPermissionTest requires that denied baseline, checks the production screen, opens actual Android app settings, grants coarse location/activity/notifications, returns via system Back, then repeats for precise location. It checks refreshed status text and saves three actual display captures. The system grants are test automation; this does not validate the runtime permission-prompt UX or notification delivery.
+- Source design/resource and shell syntax checks pass. New Kotlin/native test execution and permission capture inspection remain pending; no permission verification success is claimed yet. Updated the ownership audit to separate its original findings from the now-executed migration/owner tests.
+- e501763 Build APK 35933027929 completed successfully before the next push. Both API large-font jobs passed; remaining native evidence is not yet complete. Inspected e537c44 API 34 privacy capture: the precise-location status and app-settings action fit the fixture; denied/return states require the new suite.
+
 ## 2026-09-24 — short first-run flow and durable course outbox
 
 - First-use guide reduced from 11 steps to four everyday destinations: start running, customize, community and profile. Removed the payout-journey UI and its unavailable withdrawal/minimum claim. Updated four-language active copy to match current controls. Completing/skipping returns to Run; the gallery now checks completion reaches the home run action. New four-step captures and return behavior await this revision's execution.

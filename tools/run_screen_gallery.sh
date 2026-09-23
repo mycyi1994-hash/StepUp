@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font) ;;
+  all|interaction|gallery|large-font|permissions) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -120,6 +120,25 @@ else
   echo "Cannot verify original system font scale; enlarged-font validation not run" >&2
   status=1
 fi
+fi
+if [[ "$suite" == "all" || "$suite" == "permissions" ]]; then
+  # Revocation can kill the target process. Prepare the emulator before launching
+  # instrumentation, in its own suite; never revoke while a test is running.
+  prepared=1
+  timeout 60s adb install -r app/build/outputs/apk/debug/app-debug.apk || prepared=0
+  timeout 20s adb shell am force-stop com.stepup.android || prepared=0
+  for permission in ACTIVITY_RECOGNITION ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION POST_NOTIFICATIONS; do
+    timeout 20s adb shell pm revoke com.stepup.android "android.permission.$permission" || prepared=0
+  done
+  if (( prepared == 1 )); then
+    run_instrumentation permissions "com.stepup.android.PrivacyPermissionTest"
+    mkdir -p screen-gallery/permissions-results screen-gallery/permissions-forms
+    cp -R app/build/outputs/androidTest-results/. screen-gallery/permissions-results/ || true
+    pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/permissions-forms/ || status=1
+  else
+    echo "Permission preparation failed; denied-state test not run" >&2
+    status=1
+  fi
 fi
 timeout 20s adb logcat -d -s ScreenGallery AndroidRuntime > screen-gallery/capture-log.txt || true
 exit "$status"

@@ -26,4 +26,6 @@ The fixture renders a 390×844dp viewport at density 1.8 inside a larger device 
 
 ### Verified follow-up at e537c44
 
+API 34 gallery `screen-13.png` visually inspected: all three permission descriptions/statuses, the app-settings action and the notification-only cleanup explanation fit the fixture viewport. Location now explicitly says precise access. This fixture grants permissions in advance; the image does not prove denied states or settings-return refresh. A dedicated permission suite now covers those transitions, awaiting execution.
+
 API 35 large-font capture from 35932263677 inspected at `C:/Users/gana0/StepUp-captures/redesign-e537c44/api-35-large-font/screen-gallery/large-font-forms/inventory-filter-reset-1.6.png`: the full Reset and Show results controls are above the gesture navigation area. Its stricter bounds/interaction test passes. API 34 interaction (including all Chrome viewport scenarios), gallery and large-font jobs also passed. Other dialog states, current edits and physical devices are not covered by this observation.
