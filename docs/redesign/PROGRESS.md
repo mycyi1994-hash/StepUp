@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — Room 13 build and native preservation evidence
+
+- c01b8e4 Build APK 35930751043 completed successfully, including all unit tests, debug signature verification and release/R8 compilation. Retrieved its generated Room 13 schema: the only changed table is walk_sessions, with the recordingOwner TEXT NOT NULL DEFAULT 'legacy' field added.
+- API 35 interaction artifact from 35930751025 completed 23 tests with one failure: the previously identified Chrome tab-text assertion. All four DatabaseMigrationTest cases passed, including v12 pending-run preservation without assigning an account, per-account queues after database reopening, v6 preservation and unsupported-version data protection. This is native emulator evidence for those cases only; active-service recovery and local per-account reward/equipment partitioning remain incomplete.
+- Filter inset ownership, explicit navigation label style and guide-clock changes are pushed in 9be0c87; their new build/gallery execution is in progress. Do not equate earlier capture success or click success with verification of these fixes.
+
 ## 2026-09-24 — complete native runs expose actionable failures
 
 - Downloaded 5c4fe1a API 34 gallery and API 35 interaction evidence from 35929984701. API 35 completed 21 tests: 20 passed (including both separate CrewForm IME cases); Chrome failed its new text-overflow assertion for the first Run tab at 360dp/1.0. This run did not lose its emulator.
