@@ -343,7 +343,7 @@
     {
       "id": "LoginScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
-      "line": 64,
+      "line": 75,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -507,7 +507,7 @@
       "kind": "AlertDialog",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 423,
+      "line": 434,
       "verification": "pending"
     },
     {

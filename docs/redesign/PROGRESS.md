@@ -4,6 +4,15 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — login presentation and recovery
+
+- Login now uses the shared launch wordmark, cinematic scene and decorative runner group, one native Google action, readable error/consent copy and reachable terms/privacy links. The official Google G asset replaces the text imitation; source and legal URLs are recorded in the asset note.
+- Unexpected sign-in exceptions restore retry availability; coroutine cancellation propagates instead of masquerading as a failed account. Existing account/session persistence remains unchanged.
+- Added production LoginContent interaction fixtures at 360x640, 1x/1.3x/2x font: busy input disabled, retry clears an error, and both legal actions are reachable. These are presentation tests, not real OAuth verification; native run pending.
+- Source design contract, four-language resources, experience assets and whitespace checks passed. Whole-app completion remains unproven.
+- d7283d1 gallery 35906332769: downloaded XML proves 3 navigation/storage tests passed, and gallery test succeeded, but chrome images were not recovered (adb stopped at file enumeration). Added three bounded artifact-transfer attempts without suppressing test failures. The underlying transport cause is unconfirmed.
+- 0bcd210 Build APK 35907161448 and gallery 35907161579 succeeded. Capture download/review is in progress; this does not verify real GPS, login, wallet or settlement.
+
 ## 2026-09-24 — baseline and foundation
 
 - Latest origin/main verified: d066164122a4dc31fbe1b4c88526e4d690f1bbdb.
