@@ -165,7 +165,7 @@ object ServiceLocator {
             tracker = stepTracker,
             rewardRepository = rewardRepository,
         )
-        sneakerRepository = SneakerRepository(database.sneakerDao(), rewardRepository)
+        sneakerRepository = SneakerRepository(database, rewardRepository)
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
         boostRepository = BoostRepository(database.boostDao(), rewardRepository, userPrefs)
         crewRepository = CrewRepository(

@@ -13,6 +13,37 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class EquipmentPersistenceTest {
+    @Test fun purchasesRollbackOnNotificationFailureAndCannotOverspendConcurrently() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val rewards = com.stepup.android.data.repo.RewardRepository(db.rewardDao(), db.sneakerDao(),
+                db.boostDao(), db.notificationDao(), com.stepup.android.data.prefs.UserPrefs(context))
+            val repository = com.stepup.android.data.repo.SneakerRepository(db, rewards)
+            coroutineScope { (1..8).map { async { repository.ensureStarter() } }.awaitAll() }
+            assertEquals(1, db.sneakerDao().count())
+            val original = db.sneakerDao().allNow().single()
+            rewards.credit("EARN_EVENT", 500.0, "test fixture")
+            db.openHelper.writableDatabase.execSQL("""
+                CREATE TRIGGER fail_purchase_notice BEFORE INSERT ON notifications
+                BEGIN SELECT RAISE(ABORT, 'injected purchase notification failure'); END
+            """.trimIndent())
+            assertTrue(runCatching { repository.upgrade(original.id) }.isFailure)
+            assertEquals(original, db.sneakerDao().byId(original.id))
+            assertEquals(500.0, db.rewardDao().balanceNow(), 0.0)
+            assertTrue(runCatching { repository.mint() }.isFailure)
+            assertEquals(1, db.sneakerDao().count())
+            assertEquals(500.0, db.rewardDao().balanceNow(), 0.0)
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_purchase_notice")
+            val results = coroutineScope { (1..8).map { async { repository.mint() } }.awaitAll() }
+            assertEquals(1, results.count { it != null })
+            assertEquals(2, db.sneakerDao().count())
+            assertEquals(0.0, db.rewardDao().balanceNow(), 0.0)
+            assertEquals(1, db.notificationDao().count())
+            assertEquals(original, db.sneakerDao().byId(original.id))
+        } finally { db.close() }
+    }
+
     @Test fun equipmentIsExclusiveSurvivesReopenAndRejectsMissingTargets() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val name = "equipment-persistence-test.db"

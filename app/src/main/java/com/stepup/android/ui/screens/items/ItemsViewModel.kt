@@ -119,12 +119,12 @@ class ItemsViewModel(
     }
 
     fun upgrade(id: Long) {
-        viewModelScope.launch {
+        savePurchase {
             val target = inventory.value.firstOrNull { it.id == id }
             if (target != null && !target.canUpgrade) {
                 ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = ItemsMessage.MaxLevel
-                return@launch
+                return@savePurchase
             }
             val result = sneakerRepository.upgrade(id)
             ExperienceEvents.emit(if (result != null) FeedbackCue.Success else FeedbackCue.Error)
@@ -137,7 +137,7 @@ class ItemsViewModel(
     }
 
     fun mint() {
-        viewModelScope.launch {
+        savePurchase {
             val minted = sneakerRepository.mint()
             if (minted == null) {
                 ExperienceEvents.emit(FeedbackCue.Error)
@@ -145,6 +145,18 @@ class ItemsViewModel(
             } else {
                 mintResult.value = minted
                 ExperienceEvents.emit(FeedbackCue.Reward)
+            }
+        }
+    }
+
+    private fun savePurchase(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = ItemsMessage.SaveFailed
             }
         }
     }

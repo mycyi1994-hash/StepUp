@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — atomic local shoe purchases
+
+- SneakerRepository now wraps starter creation, upgrade and local mint in Room transactions. Upgrade/mint balance check/debit, equipment mutation and notification succeed or roll back together; concurrent repository purchases serialize before checking funds. Storage failures surface the existing retry message through ItemsViewModel. Existing storage identities, amounts and ownership rules are unchanged.
+- Added native tests for concurrent starter creation, injected notification failure after upgrade/mint writes, preserved balance/equipment on rollback, and eight concurrent mint requests with funds for exactly one. Test is pending CI, not a claimed pass. This covers local inventory operations only; it is not on-chain minting or marketplace settlement. Other reward/boost writers still need their own transaction audit.
+- Local design/string/asset checks pass. Build 35916741262 for 7bfd37c is still the preceding candidate; this transactional change needs its own build and native result.
+
 ## 2026-09-24 — partial native scene review
 
 - Inspected 859bba8's actual 360dp dark Home/Customize/Community/Profile captures, plus Community/Profile at 1.3 font scale. Home/wardrobe starter art and fixed main chrome render; profile's three destinations remain visible. Profile/community characters now stand against the same local ground plane, but the landscape's left/right edges still form a harsh rectangle. Added shared horizontal edge blending to TerraceStage; native follow-up remains required.
