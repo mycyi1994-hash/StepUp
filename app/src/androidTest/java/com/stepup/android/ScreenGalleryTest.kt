@@ -258,7 +258,8 @@ class ScreenGalleryTest {
         compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
         for (index in GuideTour.steps.indices) {
             try {
-                compose.onNodeWithText(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
+                compose.onNodeWithTag("guide-step-title")
+                    .assertTextEquals(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
                 compose.mainClock.advanceTimeByFrame()
                 capture("guide-${index.toString().padStart(2, '0')}")
                 if (index < GuideTour.steps.lastIndex) tap(R.string.guide_next)

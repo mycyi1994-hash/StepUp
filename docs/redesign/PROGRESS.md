@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — interrupted-run persistence foundation and precise guide assertion
+
+- Previous goal turn made progress: committed 12b8840 added real permission/settings-return verification. Revalidated its live Build APK 35933717767 and gallery 35933717791; no restart or duplicate workflow dispatched.
+- Traced service shutdown: ledger/notification/energy settlement precedes the separate walk-session insertion. Automatic restart/replay would therefore risk duplicate mutations. Added RUN-RECOVERY.md with exact integration prerequisites and remaining boundaries.
+- Implemented RunCheckpointStore with AtomicFile/versioned data, captured owner, exact route timestamps, steps/duration, laps, goal and integrity metrics. Interrupted recordings recover as paused without invented downtime; interrupted settlement is a distinct non-resumable phase. A different run/account cannot replace unresolved data, stale snapshots fail, and corrupt/unsupported files are preserved. Added three native reopen/interrupted-write/settlement-boundary tests to the required interaction suite. This foundation is deliberately not connected to production service until durable idempotent settlement is implemented; active-run recovery remains incomplete.
+- e501763 API 34 interaction passed. Downloaded API 34 gallery failure: guide title '러닝 시작' matches both the overlay title and underlying run button. Added a specific title tag and retained exact expected text/display assertions, fixing selector ambiguity rather than weakening the check. Full four-step captures still need rerun and manual inspection. API 35 failures remain separately unverified.
+- Local inventory, design-contract, four-language resources, asset integrity, shell syntax and whitespace checks pass. New checkpoint tests/compilation and guide captures await CI; no whole-app completion claim.
+
 ## 2026-09-24 — actual permission-state and settings-return verification
 
 - Revalidated the clean e501763 worktree and live build/gallery jobs. Previous implementation work produced the shorter guide and durable outbox; this continuation adds executable evidence for a remaining user-visible state rather than treating the existing source check as completion.

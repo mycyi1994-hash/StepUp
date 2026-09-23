@@ -59,6 +59,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -355,6 +356,7 @@ fun GuideOverlay(
                 )
                 Text(
                     text = stringResource(step.titleRes),
+                    modifier = Modifier.testTag("guide-step-title"),
                     style = MaterialTheme.typography.titleMedium,
                     color = Snow,
                 )
