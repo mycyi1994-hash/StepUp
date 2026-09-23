@@ -27,6 +27,7 @@ class RewardRepository(
     private val boostDao: BoostDao,
     private val notificationDao: NotificationDao,
     private val prefs: UserPrefs,
+    private val recoverRunEnergy: suspend () -> Unit = {},
 ) {
 
     val balance: Flow<Double> = rewardDao.observeBalance()
@@ -126,8 +127,8 @@ class RewardRepository(
         return ((multiplier - 1.0) * 10_000).roundToInt().coerceAtLeast(0)
     }
 
-    suspend fun settleSession(steps: Int, partySize: Int = 1): SessionReward {
-        val today = LocalDate.now().toEpochDay()
+    /** Calculation only; RunSettlementRepository commits the record and local effects together. */
+    suspend fun calculateSessionReward(steps: Int, partySize: Int = 1, today: Long = LocalDate.now().toEpochDay()): SessionReward {
         val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
 
@@ -148,18 +149,6 @@ class RewardRepository(
             boostMultiplier = boostMultiplier,
         )
 
-        if (reward.points > 0) {
-            val type = if (partySize > 1) RewardType.EARN_PARTY else RewardType.EARN_WALK
-            credit(type, reward.points, "러닝 세션 적립 (${reward.rewardedSteps}보)")
-            if (partySize > 1) {
-                notify(NotificationType.PARTY_FINISHED, partySize.toString(), reward.points)
-            } else {
-                notify(NotificationType.REWARD_EARNED, reward.rewardedSteps.toString(), reward.points)
-            }
-        }
-        if (reward.energyUsed > 0) {
-            prefs.consumeEnergy(today, reward.energyUsed)
-        }
         return reward
     }
 
@@ -179,6 +168,7 @@ class RewardRepository(
      */
     suspend fun settleBackground(steps: Int): SessionReward {
         if (steps <= 0) return SessionReward(0, 0.0, 0.0)
+        recoverRunEnergy()
         val today = LocalDate.now().toEpochDay()
         val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()

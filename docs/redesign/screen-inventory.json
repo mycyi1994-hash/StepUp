@@ -434,7 +434,7 @@
     {
       "id": "PrivacyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt",
-      "line": 59,
+      "line": 60,
       "implementation": "pending",
       "verification": "pending"
     },

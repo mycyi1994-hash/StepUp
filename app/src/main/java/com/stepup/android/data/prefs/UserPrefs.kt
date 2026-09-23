@@ -45,6 +45,7 @@ class UserPrefs(
         val ENERGY = doublePreferencesKey("energy_remaining")
         val ENERGY_DAY = longPreferencesKey("energy_day")
         val ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("energy_purchase_receipts")
+        val RUN_ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("run_energy_receipts")
         val STREAK = intPreferencesKey("streak")
         val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
         val BASELINE_DAY = longPreferencesKey("baseline_day")
@@ -565,6 +566,23 @@ class UserPrefs(
             val remaining = energyIn(prefs, today)
             prefs[Keys.ENERGY] = (remaining - amount).coerceAtLeast(0.0)
             prefs[Keys.ENERGY_DAY] = today
+        }
+    }
+
+    /** Receipt and debit are one durable preference edit, safe to replay after a Room-ack failure. */
+    suspend fun consumeRunEnergy(receiptId: String, energyDay: Long, amount: Double, today: Long = LocalDate.now().toEpochDay()) {
+        require(receiptId.isNotBlank() && amount.isFinite() && amount >= 0)
+        require(energyDay <= today) { "Cannot apply a future energy receipt" }
+        store.edit { prefs ->
+            val receipts = prefs[Keys.RUN_ENERGY_RECEIPTS].orEmpty()
+            if (receiptId !in receipts) {
+                // A later day's refill supersedes the old day's consumption. Do not debit it twice.
+                if (energyDay == today) {
+                    prefs[Keys.ENERGY] = (energyIn(prefs, today) - amount).coerceAtLeast(0.0)
+                    prefs[Keys.ENERGY_DAY] = today
+                }
+                prefs[Keys.RUN_ENERGY_RECEIPTS] = receipts + receiptId
+            }
         }
     }
 

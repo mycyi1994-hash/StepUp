@@ -43,7 +43,7 @@ class PrivacyPermissionTest {
         fun status(label: Int, value: Int) {
             val labelText = context.getString(label)
             compose.onNodeWithText(labelText).performScrollTo()
-            compose.onNode(hasText(context.getString(value)) and hasAnySibling(hasText(labelText)))
+            compose.onNode(hasText(context.getString(value)) and hasText(labelText))
                 .assertIsDisplayed()
         }
         fun capture(name: String) {

@@ -1,12 +1,30 @@
 # Interrupted-run recovery — implementation in progress
 
-## Existing production behavior
+## Original production behavior (before Room 14)
 
 `WalkSessionService` retains the active state only in memory and returns START_NOT_STICKY.
 `stopSession` currently raises the accounted-step preference, calls `RewardRepository.settleSession`
 (ledger insert, notification insert and energy preference write), then inserts the walk-session row.
 These operations are not one transaction. Replaying this sequence after interruption can duplicate
 credit or energy consumption; merely enabling service restart would not solve recovery.
+
+## Room 14 settlement boundary (implemented, native validation pending)
+
+The service now delegates the core local settlement to RunSettlementRepository. One Room transaction
+inserts the activity, local ledger entry, notification and a receipt keyed by recordingOwner/startedAt.
+Replaying that identity returns the saved result without recalculation or a second insert. A receipt
+failure rolls all four tables back together. This receipt does not certify server-confirmed SUP.
+
+Energy remains in the existing preference store. A run receipt ID and debit are applied in one
+DataStore edit, then acknowledged in Room. A failed acknowledgement can be replayed without another
+debit; older-day receipts do not consume a new day's refill. Pending energy is reconciled before the
+next run calculation and before background settlement. Added native failure-injection, concurrent
+finish and database/preferences reopening tests. Execution is pending.
+
+Still outside this boundary: accounted-step advancement before settlement, course/faction/party
+follow-up operations, background settlement itself, shared account/equipment state, storage-error UI,
+startup recovery, receipt retention/compaction and physical process-termination tests. The service
+checkpoint is not enabled until these recovery paths can represent their actual status safely.
 
 ## Storage boundary implemented, not connected to service yet
 
@@ -29,9 +47,9 @@ in the required interaction suite. Native execution is pending; no real process-
 
 ## Remaining integration requirements
 
-1. Introduce a unique durable settlement receipt tied to the recording identity/start. Commit the
-   session row, local ledger/notification changes and receipt together in Room. Make energy application
-   idempotent across the separate preference store; reconcile pending receipts before new calculation.
+1. Validate the new Room 14 migration and settlement/energy receipt boundary against actual native
+   failures and reopening. Extend durable completion to the remaining follow-up effects and the
+   accounted-step baseline before claiming the entire finish flow is recoverable.
 2. Capture equipment/crew/course attribution under the correct account. Current-account reads at
    finish and globally shared reward/equipment stores remain unsafe (see ACCOUNT-DATA-AUDIT.md).
 3. Connect serialized checkpoint writes at start, periodic updates, pause and the settlement boundary.

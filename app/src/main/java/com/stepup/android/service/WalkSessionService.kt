@@ -376,13 +376,7 @@ class WalkSessionService : Service() {
             // 이 거리가 어느 편에 쌓일지를 정한다.
             val equippedFaction = ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
-            val reward = ServiceLocator.rewardRepository.settleSession(creditedSteps, settleSize)
-            // 성장 지표(주간 러닝 사용자) — 러닝으로 인정된 것만 센다
-            if (creditedSteps > 0) {
-                val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
-                Analytics.runFinished(km, settleSize)
-            }
-            ServiceLocator.database.walkSessionDao().insert(
+            val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
                     recordingOwner = session.recordingOwner,
@@ -391,7 +385,7 @@ class WalkSessionService : Service() {
                     durationSec = if (verdict.isRewardable) session.elapsedSec else 0,
                     distanceMeters = RewardEconomy.distanceMeters(creditedSteps),
                     calories = RewardEconomy.calories(creditedSteps),
-                    pointsEarned = reward.points,
+                    pointsEarned = 0.0, // Replaced by the committed settlement calculation.
                     // 경로는 판정에 쓰이므로 화면용으로 솎아내기 전 원본을 남긴다.
                     // 점을 걷어내면 그만큼 구간이 길어져 서버가 다시 계산할
                     // 속도가 실제와 달라진다.
@@ -401,7 +395,11 @@ class WalkSessionService : Service() {
                     faction = equippedFaction?.id.orEmpty(),
                     crewId = partyCrewId,
                 )
-            )
+            ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
+            if (creditedSteps > 0) {
+                val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
+                Analytics.runFinished(km, settleSize)
+            }
             if (verdict.isRewardable) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {

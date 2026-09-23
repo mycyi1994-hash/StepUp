@@ -4,6 +4,15 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — atomic local run settlement and replayable energy consumption
+
+- Previous turn made progress with b2560df (checkpoint storage/tests and guide selector fix), held locally while build 35933717767 was live. Rechecked that build and observed successful completion before pushing the next revision.
+- Room 14 adds run_settlements with a composite captured-owner/start identity; existing tables/data remain intact. RunSettlementRepository commits the activity, local ledger, notification and receipt in one transaction. The service uses this path; reward calculation itself no longer writes credits. A repeated identity returns its saved outcome. These are local receipts, not fabricated server acknowledgement.
+- DataStore now applies a run energy debit and receipt marker together; Room acknowledgement can fail/retry without a second debit. Previous-day energy cannot consume a later-day refill. Pending receipts reconcile before another run calculation/background settlement. Added native trigger-induced rollback, eight concurrent finish requests, acknowledgement failure, database/preferences reopening and delayed old-day coverage. Compilation/execution/exported schema remain pending.
+- Active checkpoint restoration is still not enabled. Account partitioning, accounted-step baseline atomicity, course/faction/party follow-ups, service error/retry UI and actual process-death behavior remain incomplete. RUN-RECOVERY.md distinguishes the newly connected core settlement from these remaining requirements.
+- Downloaded 12b8840 API 34 permission XML: all three denied status texts were siblings in the accessibility tree, so the test could not uniquely associate a label. Permission rows now merge their own label/status semantics; the test asserts both on the same node. No claim yet that the settings-return cases passed. That revision's large-font suites passed; other failed suites require their own evidence, not inference from this test.
+- Source inventory/design/resources/assets/shell/whitespace checks pass. Whole-app completion and final APK/gallery remain unproven.
+
 ## 2026-09-24 — interrupted-run persistence foundation and precise guide assertion
 
 - Previous goal turn made progress: committed 12b8840 added real permission/settings-return verification. Revalidated its live Build APK 35933717767 and gallery 35933717791; no restart or duplicate workflow dispatched.

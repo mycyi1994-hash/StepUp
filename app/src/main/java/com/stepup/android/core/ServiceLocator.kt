@@ -53,6 +53,8 @@ object ServiceLocator {
         private set
     lateinit var rewardRepository: RewardRepository
         private set
+    lateinit var runSettlementRepository: com.stepup.android.data.repo.RunSettlementRepository
+        private set
     lateinit var stepRepository: StepRepository
         private set
     lateinit var sneakerRepository: SneakerRepository
@@ -164,7 +166,9 @@ object ServiceLocator {
             boostDao = database.boostDao(),
             notificationDao = database.notificationDao(),
             prefs = userPrefs,
+            recoverRunEnergy = { runSettlementRepository.recoverEnergy() },
         )
+        runSettlementRepository = com.stepup.android.data.repo.RunSettlementRepository(database, userPrefs)
         stepRepository = StepRepository(
             stepDao = database.stepDao(),
             walkSessionDao = database.walkSessionDao(),
