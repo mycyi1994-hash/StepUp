@@ -2,6 +2,7 @@
 <resources>
     <!-- Notification -->
     <string name="notification_channel_walk">러닝 세션</string>
+    <string name="notification_channel_community">크루·번개 소식</string>
     <string name="notification_walk_title">러닝 진행 중</string>
     <string name="notification_steps">%1$d걸음</string>
 

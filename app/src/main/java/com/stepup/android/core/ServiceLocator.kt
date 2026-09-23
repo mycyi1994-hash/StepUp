@@ -11,6 +11,7 @@ import com.stepup.android.data.remote.CrewApi
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
 import com.stepup.android.data.remote.PartyApi
+import com.stepup.android.data.remote.PushApi
 import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
@@ -33,6 +34,7 @@ import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.data.repo.StepRepository
 import com.stepup.android.sensor.StepTracker
+import com.stepup.android.push.PushRegistrar
 import com.stepup.android.service.WalkSessionService
 
 /** 간단한 수동 DI 컨테이너. Application.onCreate에서 [init]을 호출한다. */
@@ -98,6 +100,10 @@ object ServiceLocator {
     lateinit var googleSignIn: GoogleSignIn
         private set
 
+    /** 이 폰의 푸시 주소를 서버에 적는 쪽 */
+    lateinit var pushRegistrar: PushRegistrar
+        private set
+
     fun init(context: Context) {
         if (this::database.isInitialized) return
         val app = context.applicationContext
@@ -120,6 +126,8 @@ object ServiceLocator {
             store = PrefsAuthSessionStore(userPrefs),
         )
         val server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
+        Analytics.init(app)
+        pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
             recorder = ServerSessionRecorder(server),

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.core.Analytics
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.remote.GoogleIdResult
 import com.stepup.android.data.remote.TokenResult
@@ -85,6 +86,9 @@ fun LoginScreen(onDone: () -> Unit) {
                             ServiceLocator.sessionHolder.signInWithGoogle(id.idToken, id.nonce)) {
                             is TokenResult.Ok -> {
                                 ServiceLocator.userPrefs.setLoginMethod("google")
+                                Analytics.login()
+                                // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
+                                ServiceLocator.pushRegistrar.syncInBackground()
                                 onDone()
                             }
                             // 서버가 토큰을 거절했다. 대개 설정 문제다 —

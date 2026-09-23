@@ -3,6 +3,7 @@
 
     <!-- Notification -->
     <string name="notification_channel_walk">ランセッション</string>
+    <string name="notification_channel_community">クルー・フラッシュランのお知らせ</string>
     <string name="notification_walk_title">ラン中</string>
     <string name="notification_steps">%1$d歩</string>
 

@@ -4,6 +4,7 @@
 
     <!-- Notification -->
     <string name="notification_channel_walk">Run session</string>
+    <string name="notification_channel_community">Crew &amp; flash run news</string>
     <string name="notification_walk_title">Run in progress</string>
     <string name="notification_steps">%1$d steps</string>
 

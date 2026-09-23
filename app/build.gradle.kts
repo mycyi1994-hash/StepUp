@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    // app/google-services.json 을 읽어 Firebase(푸시·분석) 설정을 앱에 넣는다
+    alias(libs.plugins.google.services)
 }
 
 // 릴리즈 서명 자격 — 환경변수(CI) 또는 ~/.gradle/gradle.properties(로컬)에서 읽는다.
@@ -194,6 +196,10 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.google.id)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

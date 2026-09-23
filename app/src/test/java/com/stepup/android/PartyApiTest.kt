@@ -7,6 +7,7 @@ import com.stepup.android.data.remote.CourseApi
 import com.stepup.android.data.remote.HttpPoster
 import com.stepup.android.data.remote.HttpResponse
 import com.stepup.android.data.remote.PartyApi
+import com.stepup.android.data.remote.PushApi
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
@@ -149,5 +150,15 @@ class PartyApiTest {
                 """"p_track":"37.5,127.0;37.51,127.01"}""",
             http.lastBody,
         )
+    }
+
+    @Test
+    fun `푸시 토큰은 앱 언어와 함께 적는다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(204, ""))
+        val result = PushApi(server(http)).register("fcm-token-aaaaaaaaaaaaaaaaaaaa", "ko")
+
+        assertEquals(ServerResult.Ok(Unit), result)
+        assertTrue(http.lastUrl.endsWith("/rpc/push_register"))
+        assertEquals("""{"p_token":"fcm-token-aaaaaaaaaaaaaaaaaaaa","p_locale":"ko"}""", http.lastBody)
     }
 }

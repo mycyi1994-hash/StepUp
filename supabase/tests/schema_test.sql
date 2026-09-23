@@ -1742,6 +1742,48 @@ call pg_temp.must_fail(
 
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 푸시 토큰 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.push_register('fcm-token-aaaaaaaaaaaaaaaaaaaa', 'ko'); end $$;
+-- 같은 폰에서 다른 계정으로 로그인하면 토큰이 새 계정으로 옮겨 간다
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.push_register('fcm-token-aaaaaaaaaaaaaaaaaaaa', 'en'); end $$;
+
+call pg_temp.must_fail(
+  $q$ select * from public.push_tokens $q$,
+  '앱은 토큰 표를 읽을 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.push_register('short', 'ko') $q$,
+  '짧은 토큰은 받지 않는다');
+reset role;
+
+do $$
+begin
+  perform pg_temp.ok(
+    (select user_id = '22222222-2222-2222-2222-222222222222' and locale = 'en'
+       from public.push_tokens where token = 'fcm-token-aaaaaaaaaaaaaaaaaaaa'),
+    '한 폰의 토큰은 마지막으로 로그인한 사람의 것이다');
+  perform pg_temp.ok(
+    (select count(*) from public.push_tokens where token = 'fcm-token-aaaaaaaaaaaaaaaaaaaa') = 1,
+    '토큰은 한 줄뿐이다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.push_unregister('fcm-token-aaaaaaaaaaaaaaaaaaaa'); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    exists (select 1 from public.push_tokens where token = 'fcm-token-aaaaaaaaaaaaaaaaaaaa'),
+    '남의 폰 토큰은 지울 수 없다');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "502795262314",
+    "project_id": "stepup-16d6e",
+    "storage_bucket": "stepup-16d6e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:502795262314:android:27872feb11dfb2cf406d13",
+        "android_client_info": {
+          "package_name": "com.stepup.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwHYN6QLnLWo3vMHSwkObABcMp8pRS-K0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,6 +2,7 @@
 <resources>
     <!-- Notification -->
     <string name="notification_channel_walk">跑步记录</string>
+    <string name="notification_channel_community">跑团与闪电跑消息</string>
     <string name="notification_walk_title">正在跑步</string>
     <string name="notification_steps">%1$d 步</string>
 
