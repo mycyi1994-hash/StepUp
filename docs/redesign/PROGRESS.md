@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — focused sneaker detail and energy evidence
+
+- Sneaker detail now uses the shared pinned action: equip for an unequipped pair, open upgrade confirmation for an equipped upgradable pair. Stats expand on request; selling remains a secondary shared button with the existing equipped restriction. Removed the screen-local ActionTile button implementation and the inert fusion control (there is no fusion operation to preserve).
+- Upgrade cost and next level are shown in a dismissible dialog; only explicit confirmation invokes the existing atomic repository upgrade. Added gallery coverage for initial primary-action visibility, opening/cancelling the dialog, unchanged inventory and its actual screenshot. Native compilation/capture is pending.
+- ec91211 API 35 interaction XML reports 19 tests, 2 failures: chrome navigation timeout at line 127 and crew keyboard timeout at line 86. Both energy tests passed, including capacity deferral/idempotency and disk reopen recovery. Full gallery still failed; these results do not establish full navigation or capture stability. API 34 had lost the emulator before completing its suite.
+
 ## 2026-09-24 — meetup detail action and capture evidence
 
 - Reviewed API 34 e16e1e2 native captures for vault, sneaker detail, meetup detail and market model. Legacy content remains too dense; meetup participation was below the initial viewport. Its primary join/lobby action now uses the shared DetailPage pinned footer, with full/closed states disabled. Leave and like remain secondary actions. Added an initial-viewport gallery assertion, pending native execution.

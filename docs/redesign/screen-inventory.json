@@ -329,7 +329,7 @@
     {
       "id": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 69,
+      "line": 45,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -529,6 +529,13 @@
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
       "line": 691,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "SneakerDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
+      "line": 257,
       "verification": "pending"
     },
     {

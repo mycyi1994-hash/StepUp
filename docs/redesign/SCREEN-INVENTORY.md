@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-33 registered navigation routes; 34 screen functions; 18 overlay declarations. These counts are different measures, not completed screens.
+33 registered navigation routes; 34 screen functions; 19 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -59,7 +59,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:84 | pending | pending |
 | HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:93 | pending | pending |
 | ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:102 | pending | pending |
-| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:69 | pending | pending |
+| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:45 | pending | pending |
 | SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:78 | pending | pending |
 | LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:75 | pending | pending |
 | MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:85 | pending | pending |
@@ -93,6 +93,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
 | ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:534 | pending |
 | CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:691 | pending |
+| SneakerDetailScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:257 | pending |
 | MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:484 | pending |
 | GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:958 | pending |
 | ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1068 | pending |

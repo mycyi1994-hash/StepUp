@@ -131,6 +131,23 @@ class ScreenGalleryTest {
                     .assertIsDisplayed().assertIsEnabled().assertHasClickAction()
             }
             capture("screen-${index.toString().padStart(2, '0')}")
+            if (index == 20) {
+                compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
+                val shoe = before.first { it.id == sneakerId }
+                if (shoe.canUpgrade) {
+                    compose.onNodeWithText(localized.getString(R.string.sneaker_action_enhance))
+                        .performClick()
+                    compose.onNodeWithText(localized.getString(
+                        R.string.items_upgrade_cost, "%,.0f".format(shoe.upgradeCost),
+                    )).assertIsDisplayed()
+                    capture("extra-sneaker-upgrade-confirm")
+                    compose.onNodeWithText(localized.getString(R.string.common_cancel)).performClick()
+                    org.junit.Assert.assertEquals(before,
+                        runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
+                    compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                }
+            }
         }
         val variations = listOf(
             Triple(0, "home-details", listOf(R.string.common_more)),

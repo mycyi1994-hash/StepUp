@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.stepup.android.ui.theme.StepUpDesign
 
@@ -31,7 +32,7 @@ fun DetailPage(
                 text = primaryActionLabel,
                 onClick = onPrimaryAction,
                 enabled = primaryActionEnabled,
-                modifier = Modifier.padding(vertical = 12.dp),
+                modifier = Modifier.padding(vertical = 12.dp).testTag("detail-primary-action"),
             )
         }
     }
