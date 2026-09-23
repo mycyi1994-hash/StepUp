@@ -1559,11 +1559,12 @@ private fun FinishCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
+        GlowCard(contentPadding = PaddingValues(16.dp)) {
+          Column(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalAlignment = Alignment.CenterHorizontally,
+              verticalArrangement = Arrangement.spacedBy(6.dp),
+          ) {
             Text(
                 text = stringResource(headline),
                 fontSize = 15.sp,
@@ -1620,6 +1621,7 @@ private fun FinishCard(
             }
         }
 
+        }
         // 내 캐릭터 — 축하 자세 그림이 아직 없어 같은 성별의 그림을 쓴다
         CharacterStage(
             look = look,

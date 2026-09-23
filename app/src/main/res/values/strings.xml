@@ -1392,6 +1392,7 @@ Start running with StepUp.</string>
     <string name="market_outfit_try">Try on (demo)</string>
     <string name="market_demo_note">Demo mode. These are test items and can\'t be bought.</string>
     <string name="market_demo_toast">Demo items can\'t be bought.</string>
+    <string name="me_total_runs">Recorded runs</string>
     <string name="me_default_name">Runner</string>
     <string name="me_points">Points</string>
     <string name="me_points_history">History</string>

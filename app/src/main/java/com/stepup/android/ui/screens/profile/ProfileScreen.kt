@@ -1,6 +1,8 @@
 package com.stepup.android.ui.screens.profile
 
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material.icons.filled.Tune
@@ -137,6 +139,8 @@ import java.util.Locale
 
 @Composable
 fun ProfileScreen(
+    onOpenCustomize: () -> Unit = {},
+    onOpenChallenges: () -> Unit = {},
     onOpenGuide: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenAchievements: () -> Unit = {},
@@ -155,7 +159,7 @@ fun ProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val look by viewModel.look.collectAsStateWithLifecycle()
-    val recentRuns by viewModel.recentRuns.collectAsStateWithLifecycle()
+    val totals by viewModel.runTotals.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
@@ -167,6 +171,7 @@ fun ProfileScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var showProfileEdit by rememberSaveable { mutableStateOf(false) }
     var showGoalDialog by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = tab == 1 && !showProfileEdit && !showGoalDialog) { tab = 0 }
 
     // 갤러리 사진 선택 — 시스템 포토 피커 (권한 불필요)
     val photoPicker = rememberLauncherForActivityResult(
@@ -224,31 +229,16 @@ fun ProfileScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 22.dp),
+        contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // ── 설정 — 안쪽 화면. 돌아가는 길을 맨 위에 둔다 ──
         if (tab == 1) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = { tab = 0 },
-                    )
-                    Text(
-                        text = stringResource(R.string.profile_tab_settings),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Snow,
-                    )
-                }
+                com.stepup.android.ui.components.FocusHeader(
+                    title = stringResource(R.string.profile_tab_settings),
+                    onBack = { tab = 0 },
+                )
             }
             item { SectionHeader(title = stringResource(R.string.profile_account)) }
             items(pills) { pill ->
@@ -283,38 +273,47 @@ fun ProfileScreen(
                 state = state,
                 look = look,
                 onEditProfile = { showProfileEdit = true },
-                onOpenCustomize = onOpenItems,
+                onOpenCustomize = onOpenCustomize,
                 onOpenSettings = { tab = 1 },
             )
         }
 
-        // ── 보유 포인트 · 적립 내역 ──
-        item { PointsCard(balance = state.balance, onOpen = onOpenWallet) }
-
-        // ── 이번 주 러닝 거리 + 주간 그래프 ──
-        item { WeekCard(week = state.week, onOpen = onOpenAnalytics) }
-
-        // ── 최근 러닝 기록 ──
-        item { RecentRunsCard(runs = recentRuns, onOpenAll = onOpenAnalytics) }
-
-        // ── 내 아이템 · 설정 — 한 줄씩 ──
+        item {
+            GlowCard {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—",
+                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.me_total_runs), color = Silver, fontSize = 14.sp)
+                    }
+                    VerticalHairline()
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—",
+                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.profile_total_distance), color = Silver, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
         item {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ShortcutButton(
-                    icon = StepUpIcons.Shirt,
-                    label = stringResource(R.string.me_items),
-                    onClick = onOpenItems,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 52.dp),
+                    icon = Icons.AutoMirrored.Filled.DirectionsRun,
+                    label = stringResource(R.string.me_recent_runs),
+                    onClick = onOpenAnalytics,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 )
                 ShortcutButton(
-                    icon = Icons.Filled.Settings,
-                    label = stringResource(R.string.profile_tab_settings),
-                    onClick = { tab = 1 },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 52.dp),
+                    icon = Icons.Filled.EmojiEvents,
+                    label = stringResource(R.string.home_shortcut_challenges),
+                    onClick = onOpenChallenges,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                )
+                ShortcutButton(
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    label = stringResource(R.string.settings_wallet),
+                    onClick = onOpenWallet,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 )
             }
         }
@@ -1222,58 +1221,46 @@ private fun ProfileEditDialog(
 @Composable
 private fun MeHeader(
     state: ProfileViewModel.UiState,
-    look: com.stepup.android.domain.AvatarLook,
+    look: com.stepup.android.domain.AvatarLook?,
     onEditProfile: () -> Unit,
     onOpenCustomize: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val runner = state.runner
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AvatarBadge(
-            look = look,
-            modifier = Modifier
-                .size(width = 88.dp, height = 104.dp)
-                .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
-                .feedbackClickable(onClick = onOpenCustomize),
-        )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.feedbackClickable(onClick = onEditProfile),
-            ) {
-                Text(
-                    text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Snow,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
+        Box(Modifier.fillMaxWidth().height(280.dp)) {
+            if (look != null) {
+                com.stepup.android.ui.components.CharacterStage(
+                    look = look, pose = com.stepup.android.domain.AvatarPose.IDLE,
+                    skyline = false, animate = false, characterFraction = 0.95f,
+                    contentDescription = stringResource(R.string.cd_home_character),
+                    modifier = Modifier.fillMaxSize()
+                        .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
+                        .feedbackClickable(onClick = onOpenCustomize),
                 )
+            } else {
+                androidx.compose.material3.CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
-            Text(
-                text = stringResource(R.string.me_greeting),
-                fontSize = 14.sp,
-                color = Silver,
+            DarkIconButton(
+                icon = Icons.Filled.Settings,
+                contentDescription = stringResource(R.string.profile_tab_settings),
+                onClick = onOpenSettings,
+                modifier = Modifier.align(Alignment.TopEnd).testTag("profile-settings"),
             )
         }
-        Icon(
-            Icons.Filled.ChevronRight,
-            contentDescription = stringResource(R.string.profile_edit_profile),
-            tint = VoltText,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .feedbackClickable(onClick = onEditProfile)
-                .padding(8.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
+                fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Snow,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            DarkIconButton(Icons.Filled.Edit, stringResource(R.string.profile_edit_profile), onClick = onEditProfile)
+        }
+        Text(stringResource(R.string.me_greeting), color = Silver, fontSize = 14.sp)
     }
 }
 

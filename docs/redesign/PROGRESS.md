@@ -32,6 +32,15 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## Environment / unverified dependencies
 
+## 2026-09-24 — profile redesign and record summary
+
+- Profile now leads with the actual equipped character, nickname, two saved-run totals and three destinations (records, challenges, wallet). Settings stays reachable through a shared icon control; inventory, goal, profile editing and the remaining tools stay inside settings. Character tap opens Customize rather than the unrelated inventory screen. The cinematic sunset uses the root scene while the original main header/navigation remain unchanged.
+- Profile no longer briefly renders a default male character before persisted appearance arrives. Record totals have an explicit loading state and aggregate every saved session, independent of passive daily steps or the recent-list limit. Added a Room test with 205 sessions plus passive steps to validate this distinction.
+- Profile settings uses the shared focus title/back control; system Back returns to the profile content. Added geometry and Back assertions in all existing four viewport/font/theme scenarios. Screenshot review, profile contrast and full state validation remain pending; the current portrait is standing until a faithful seated-art set is available.
+- Run completion explanation now sits on the shared card surface, addressing poor contrast against sunset imagery seen in the 5324bb5 360dp/1.3-font capture.
+- Downloaded 22d51bf gallery 35903932113. Its XML reports 2 tests, 0 failures: ChromeNavigationTest and EquipmentPersistenceTest. Equipment switching, missing target, concurrent writes and reopening assertions passed. This does not prove marketplace/server ownership or storage-error recovery.
+- 737ef71 Build APK 35904606952 passed including unit tests/debug/release stages. Its gallery 35904606624 is still live. These results precede this profile change and are not validation of it.
+
 ## 2026-09-24 — shared floor anchor and starter outfit thumbnails
 
 - CharacterStage now compensates for each source image's transparent bottom margin using generated alpha-derived geometry and the actual Fit image height. It aligns the visible silhouette to the shared floor instead of adding per-screen offsets. Art pixels are unchanged. Regenerate geometry with tools/gen_avatar_res.py after adding sprites; Pillow is required for this read-only measurement.

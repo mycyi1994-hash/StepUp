@@ -1390,6 +1390,7 @@
     <string name="market_outfit_try">试穿（演示）</string>
     <string name="market_demo_note">演示模式。这些是测试商品，无法购买。</string>
     <string name="market_demo_toast">演示商品无法购买。</string>
+    <string name="me_total_runs">跑步记录</string>
     <string name="me_default_name">跑者</string>
     <string name="me_points">持有积分</string>
     <string name="me_points_history">积分记录</string>

@@ -87,6 +87,17 @@ class ChromeNavigationTest {
                 assertEquals("navigation $next/$tab", bar, bounds(BOTTOM_NAV_TAG))
                 assertEquals("balance $next/$tab", token, bounds("sup-balance"))
                 capture("${next.width}-${next.font}-${next.mode}-$tab")
+                if (tab == R.string.tab_me) {
+                    compose.onNodeWithContentDescription(compose.activity.getString(R.string.profile_tab_settings)).performClick()
+                    compose.waitForIdle()
+                    assertEquals("profile settings keep header", header, bounds("main-header"))
+                    assertEquals("profile settings keep navigation", bar, bounds(BOTTOM_NAV_TAG))
+                    capture("${next.width}-${next.font}-${next.mode}-profile-settings")
+                    pressBack()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("profile-settings").assertIsDisplayed()
+                    assertEquals("settings Back returns to profile", logo, bounds("brand-wordmark"))
+                }
             }
             compose.onNodeWithTag("sup-balance").performClick()
             compose.waitForIdle()

@@ -36,8 +36,13 @@ class ProfileViewModel(
 ) : ViewModel() {
 
     /** 캐릭터 — 러닝 홈 · 꾸미기와 같은 값 */
-    val look: StateFlow<AvatarLook> = avatarRepository.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = avatarRepository.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val runTotals = stepRepository.observeRunTotals()
+        .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 최근 러닝 세 번 — 거리 · 날짜 · 그 러닝으로 번 SUP */
     val recentRuns: StateFlow<List<WalkSessionEntity>?> = stepRepository.recentSessions(3)

@@ -392,7 +392,7 @@
     {
       "id": "ProfileScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 139,
+      "line": 141,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -500,7 +500,7 @@
       "kind": "ModalBottomSheet",
       "owner": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 241,
+      "line": 242,
       "verification": "pending"
     },
     {
@@ -514,7 +514,7 @@
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 169,
+      "line": 173,
       "verification": "pending"
     },
     {
@@ -542,14 +542,14 @@
       "kind": "AlertDialog",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 953,
+      "line": 952,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 1063,
+      "line": 1062,
       "verification": "pending"
     },
     {
@@ -584,28 +584,28 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 506,
+      "line": 527,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 544,
+      "line": 565,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 576,
+      "line": 597,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1344,
+      "line": 1365,
       "verification": "pending"
     }
   ],

@@ -41,6 +41,9 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions")
     fun observeSessionCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions")
+    fun observeRunTotals(): Flow<RunTotals>
+
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis")
     fun observeDurationSince(fromMillis: Long): Flow<Long>
 
@@ -94,6 +97,8 @@ interface WalkSessionDao {
 }
 
 /** [WalkSessionDao.crewDistances] 의 한 줄 — 크루 하나의 누적 거리(m)와 횟수 */
+data class RunTotals(val runs: Int, val meters: Double)
+
 data class CrewDistance(
     val crewId: String,
     val meters: Double,

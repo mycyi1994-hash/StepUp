@@ -68,7 +68,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:186 | pending | pending |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:135 | pending | pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:121 | pending | pending |
-| ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:139 | pending | pending |
+| ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:141 | pending | pending |
 | WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:86 | pending | pending |
 | ConnectedAccountsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:62 | pending | pending |
 | ExperienceSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt:25 | pending | pending |
@@ -88,22 +88,22 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ReportDialogHost | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt:93 | pending |
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:150 | pending |
 | FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:461 | pending |
-| CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:241 | pending |
+| CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:416 | pending |
-| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:169 | pending |
+| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
 | ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:614 | pending |
 | CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:771 | pending |
 | MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:513 | pending |
-| GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:953 | pending |
-| ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1063 | pending |
+| GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:952 | pending |
+| ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1062 | pending |
 | GiwaCard | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:335 | pending |
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |
 | CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:295 | pending |
 | CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:877 | pending |
-| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:506 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:544 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:576 | pending |
-| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1344 | pending |
+| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:527 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:565 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:597 | pending |
+| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1365 | pending |
 
 ## State review
 

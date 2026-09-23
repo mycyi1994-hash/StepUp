@@ -325,7 +325,7 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Wardrobe,
         )
-    } else if (chrome?.header == AppChromePolicy.Header.Focus) {
+    } else if (chrome?.header == AppChromePolicy.Header.Focus || currentRoute == Screen.Profile.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Sunset,
         )
@@ -452,6 +452,8 @@ internal fun MainScaffold(
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
+                    onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenGuide = {
                         navController.switchTab(Screen.Run)
                         GuideTour.start()

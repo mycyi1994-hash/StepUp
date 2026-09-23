@@ -1391,6 +1391,7 @@ StepUp と走り出そう。</string>
     <string name="market_outfit_try">試着（デモ）</string>
     <string name="market_demo_note">デモモードです。テスト用商品のため購入できません。</string>
     <string name="market_demo_toast">デモ商品は購入できません。</string>
+    <string name="me_total_runs">記録したラン</string>
     <string name="me_default_name">ランナー</string>
     <string name="me_points">保有ポイント</string>
     <string name="me_points_history">獲得履歴</string>

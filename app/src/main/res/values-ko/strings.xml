@@ -1390,6 +1390,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_outfit_try">체험 착용 (데모)</string>
     <string name="market_demo_note">데모 모드예요. 테스트용 상품이라 살 수 없어요.</string>
     <string name="market_demo_toast">데모 상품은 살 수 없어요.</string>
+    <string name="me_total_runs">기록한 러닝</string>
     <string name="me_default_name">러너님</string>
     <string name="me_points">보유 포인트</string>
     <string name="me_points_history">적립 내역</string>
