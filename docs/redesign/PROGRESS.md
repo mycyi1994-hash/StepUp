@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — notification detail and read semantics
+
+- Notifications now uses the fixed DetailPage header/gutter instead of a screen-local back/title layout. Initial repository loading is distinct from an empty inbox. Mark all read calls the read update, not clearAll (which deleted history); the action is shown only for unread items. Added architecture protection and a native Room test preserving ordinary history, pending actions and all fields except read through repeated reads. New native test is pending CI.
+- c469d45 downloaded XML confirms eight tests with zero failures, including the strengthened actual-IME visibility test. Its Compose-only capture excludes the keyboard window, so added a full-display capture for direct visual review; do not treat the blank lower part of the Compose capture as the real keyboard appearance.
+- 859bba8 Build APK 35912849430 passed debug/release and unit tests. Its gallery remains running. New terrace composition still needs native inspection.
+- Further notification audit found production startup seeds a locally claimable welcome reward, and crew invite acceptance marks actioned without checking the join result. These are unresolved financial/action truthfulness defects, not validated features. Existing balances must remain preserved while fixing the payout source and failure handling.
+
 ## 2026-09-24 — wallet and preference verification follow-up
 
 - b263e80 downloaded XML has eight tests, zero failures, including full-ledger totals beyond the 100-entry history limit. Native wallet capture confirms shared detail chrome, readable current-status notice and unchanged parent navigation. Increased remaining tiny hero labels to 14sp and allowed amount/unit wrapping for large amounts/fonts; new typography still needs capture review.

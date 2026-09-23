@@ -71,5 +71,12 @@ class CrewFormTest {
         java.io.File(directory, "$name.png").outputStream().use {
             bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
+        // Compose captures omit the IME's separate window. Preserve the real display too.
+        val display = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+            .uiAutomation.takeScreenshot() ?: error("Could not capture the keyboard window")
+        java.io.File(directory, "$name-display.png").outputStream().use {
+            display.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+        display.recycle()
     }
 }

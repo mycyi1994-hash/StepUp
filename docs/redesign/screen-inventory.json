@@ -364,7 +364,7 @@
     {
       "id": "NotificationsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt",
-      "line": 132,
+      "line": 127,
       "implementation": "pending",
       "verification": "pending"
     },

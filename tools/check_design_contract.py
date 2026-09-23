@@ -39,6 +39,11 @@ for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 
     path = UI/'screens/settings'/f'{name}Screen.kt'
     if 'DetailPage(' not in path.read_text(encoding='utf-8'):
         errors.append(f'{path.name}: use the fixed shared detail page')
+notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
+if 'DetailPage(' not in notifications or 'ArrowBack' in notifications:
+    errors.append('Notifications must use the shared detail page')
+if 'viewModel::clearAll' in notifications:
+    errors.append('Mark all read must preserve notifications, not delete them')
 if root.count('MainHeader(') != 1:
     errors.append('Root must own exactly one main header')
 if re.search(r'fontWeight\s*=\s*if\s*\(selected\)', root):

@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -62,7 +60,7 @@ import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.CrewRepository
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.domain.parseSlotKey
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.IconSquare
@@ -76,6 +74,7 @@ import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -85,16 +84,12 @@ class NotificationsViewModel(
     private val crewRepository: CrewRepository,
 ) : ViewModel() {
 
-    val items: StateFlow<List<NotificationEntity>> = repo.notifications()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val items: StateFlow<List<NotificationEntity>?> = repo.notifications()
+        .map<List<NotificationEntity>, List<NotificationEntity>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun markAllRead() {
         viewModelScope.launch { repo.markAllRead() }
-    }
-
-    /** "모두 읽음" — 알림함 전체 비우기 */
-    fun clearAll() {
-        viewModelScope.launch { repo.clearAll() }
     }
 
     fun acceptCrewInvite(entity: NotificationEntity) {
@@ -144,42 +139,27 @@ fun NotificationsScreen(
     // 화면을 열면 배지를 비운다.
     LaunchedEffect(Unit) { viewModel.markAllRead() }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.notif_title),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-                Spacer(Modifier.weight(1f))
-                if (notifications.isNotEmpty()) {
+    DetailPage(title = stringResource(R.string.notif_title), onBack = onBack) {
+        if (notifications?.any { !it.read } == true) {
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     GhostButton(
                         text = stringResource(R.string.notif_mark_read),
-                        onClick = viewModel::clearAll,
+                        onClick = viewModel::markAllRead,
                     )
                 }
             }
         }
 
-        if (notifications.isEmpty()) {
+        if (notifications == null) {
+            item {
+                Text(
+                    text = stringResource(R.string.feed_loading),
+                    color = Silver,
+                    fontSize = 14.sp,
+                )
+            }
+        } else if (notifications.orEmpty().isEmpty()) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp), spacing = 6.dp) {
                     Column(
@@ -205,7 +185,7 @@ fun NotificationsScreen(
                 }
             }
         } else {
-            items(notifications, key = { it.id }) { entity ->
+            items(notifications.orEmpty(), key = { it.id }) { entity ->
                 NotificationRow(
                     entity = entity,
                     now = now,
