@@ -66,8 +66,13 @@ fun PostComposeScreen(
     // 번개러닝은 쓰는 자리가 모임 장소다. 읽는 사람의 폰이 이 좌표에서 거리를 잰다.
     val here = rememberCurrentLocation(enabled = selected == PostCategory.FLASH)
     val posting by viewModel.posting.collectAsStateWithLifecycle()
+    val parsedDistance = distance.trim().replace(',', '.').toDoubleOrNull()
+    val parsedMinutes = startsIn.trim().toIntOrNull()
+    val parsedCapacity = capacity.trim().toIntOrNull()
+    val validNumbers = parsedDistance != null && parsedDistance.isFinite() && parsedDistance > 0 &&
+        parsedMinutes != null && parsedMinutes > 0 && parsedCapacity != null && parsedCapacity in 2..200
     val canSubmit = !posting && title.isNotBlank() &&
-        (selected != PostCategory.FLASH || place.isNotBlank())
+        (selected != PostCategory.FLASH || (place.isNotBlank() && validNumbers))
 
     // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
     BoardNoticeToast(viewModel)
@@ -132,21 +137,29 @@ fun PostComposeScreen(
                         LabeledField(
                             label = stringResource(R.string.post_field_distance),
                             value = distance,
-                            onValueChange = { distance = it.filter { c -> c.isDigit() || c == '.' } },
+                            onValueChange = { distance = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
                             placeholder = "1.0",
                         )
                         LabeledField(
                             label = stringResource(R.string.post_field_starts_in),
                             value = startsIn,
-                            onValueChange = { startsIn = it.filter(Char::isDigit).take(4) },
+                            onValueChange = { startsIn = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
                             placeholder = "60",
                         )
                         LabeledField(
                             label = stringResource(R.string.post_field_capacity),
                             value = capacity,
-                            onValueChange = { capacity = it.filter(Char::isDigit).take(3) },
+                            onValueChange = { capacity = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
                             placeholder = "6",
                         )
+                    }
+                    if (!validNumbers) {
+                        Text(stringResource(R.string.post_invalid_numbers),
+                            color = com.stepup.android.ui.theme.Alert,
+                            style = MaterialTheme.typography.bodyMedium)
                     }
                     Text(
                         text = stringResource(
@@ -170,9 +183,9 @@ fun PostComposeScreen(
                         body = body,
                         crewId = crewId,
                         place = place,
-                        distanceKm = distance.toDoubleOrNull() ?: 0.0,
-                        meetInMinutes = startsIn.toIntOrNull() ?: 60,
-                        capacity = capacity.toIntOrNull() ?: 6,
+                        distanceKm = if (selected == PostCategory.FLASH) requireNotNull(parsedDistance) else 0.0,
+                        meetInMinutes = if (selected == PostCategory.FLASH) requireNotNull(parsedMinutes) else 0,
+                        capacity = if (selected == PostCategory.FLASH) requireNotNull(parsedCapacity) else 0,
                         lat = here?.lat,
                         lng = here?.lng,
                         onDone = onBack,

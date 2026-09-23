@@ -1503,5 +1503,6 @@ StepUp と走り出そう。</string>
     <string name="finish_share_activity">StepUpで%1$s kmを%2$sで走りました。</string>
     <string name="notif_reward_unverified">この過去の報酬通知には確認済みの支払い記録がありません。獲得できる報酬はチャレンジで確認してください。</string>
     <string name="session_sign_in_again">再ログイン</string>
+    <string name="post_invalid_numbers">距離は0kmより大きく、出発までは1分以上、定員は2〜200人で入力してください。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

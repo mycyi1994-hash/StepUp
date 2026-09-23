@@ -516,6 +516,7 @@ fun LabeledField(
     placeholder: String = "",
     minHeight: Int = 0,
     singleLine: Boolean = true,
+    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -540,6 +541,7 @@ fun LabeledField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = singleLine,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
                 textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 16.sp, lineHeight = 22.sp),
                 cursorBrush = SolidColor(Volt),
                 modifier = Modifier

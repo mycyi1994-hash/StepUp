@@ -27,6 +27,40 @@ import org.junit.Test
 class CrewFormTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    @Test fun meetupFormKeepsInvalidNumbersAndRequiresCorrectionBeforeSubmission() {
+        runBlocking {
+            ServiceLocator.userPrefs.setReducedMotion(true)
+            ServiceLocator.userPrefs.setGuideSeen()
+        }
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) {
+                ExperienceProvider { MainScaffold(initialRoute = Routes.postCompose("")) }
+            }
+        }
+        fun fill(label: Int, value: String) {
+            compose.onNodeWithContentDescription(compose.activity.getString(label))
+                .performScrollTo().performTextReplacement(value)
+        }
+        fill(R.string.post_field_title, "Riverside run")
+        fill(R.string.post_field_place, "Bridge entrance")
+        compose.onNodeWithTag("post-submit").assertIsEnabled()
+        fill(R.string.post_field_capacity, "201")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
+        fill(R.string.post_field_capacity, "2")
+        fill(R.string.post_field_starts_in, "")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
+        fill(R.string.post_field_starts_in, "30")
+        fill(R.string.post_field_distance, "1..2")
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_distance))
+            .assertTextEquals("1..2")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
+        fill(R.string.post_field_distance, "NaN")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
+        fill(R.string.post_field_distance, "1,5")
+        compose.onNodeWithTag("post-submit").assertIsEnabled()
+        // Deliberately do not publish a real meetup from instrumentation.
+    }
+
     @Test fun nameInputAndKeyboardLeaveSubmitReachableAtLargeFont() {
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)

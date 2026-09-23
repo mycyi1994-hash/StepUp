@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — meetup form validation
+
+- Removed silent numeric fallbacks/filtering from the meetup form: invalid distance/time/capacity remain editable and block submission with a localized explanation. Distance must be positive and finite, departure minutes positive, and capacity 2–200 (matching server bounds). Decimal-comma input is accepted; numeric keyboards are requested. Ordinary story/tip posts do not require meetup fields.
+- Added actual Compose form coverage for blank departure, over-capacity, malformed/non-finite distance and recovery with decimal-comma input, without publishing a real event. Local design/string checks pass; native execution remains pending.
+- c1641c1 build 35918321735 passed. Pushed through 57d916a for boost expiry, sign-in recovery and terrace blending; that candidate's build/captures are pending. Diagnostic gallery 35918321776 is still running.
+
 ## 2026-09-24 — terrace boundary visual correction
 
 - Inspected actual a9ff894 compact profile/community captures. Shared chrome and the nickname/edit spacing are intact, but painting Night over terrace edges still leaves a rectangular boundary against the root gradient.
