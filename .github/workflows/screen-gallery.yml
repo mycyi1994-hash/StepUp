@@ -9,6 +9,10 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [34, 35]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -26,7 +30,7 @@ jobs:
       - name: Capture every screen and inner tab
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
           profile: pixel_2
@@ -38,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: StepUp-screen-gallery
+          name: StepUp-screen-gallery-api-${{ matrix.api-level }}
           path: |
             screen-gallery/
             app/build/reports/androidTests/

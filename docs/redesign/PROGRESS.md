@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — renderer result and cross-version diagnosis
+
+- 18b477c gallery 35919712989 failed during ChromeNavigationTest: expected 18 tests but none completed, emulator disconnected. Software mode selected swangle/lavapipe. Host kernel log again has no recorded OOM/segfault; streamed device logs stop without a StepUp fatal exception. Changing the renderer alone did not fix the issue.
+- Added Android API 34 alongside 35 to the same full test/capture workflow, with fail-fast disabled and separate API-labelled artifacts. API 35 remains required and failing until actually repaired; API 34 is a diagnostic comparison and wider compatibility check, not a replacement or a green-only retry. No scene or interaction test was removed.
+
 ## 2026-09-24 — disk-backed energy recovery verification
 
 - Upgraded EnergyPurchaseTest to use unique disk-backed Room and preference stores. After injected acknowledgement failure and partial energy consumption it closes Room, cancels/joins the DataStore scope, then recreates both from disk before replay. It verifies retained debit, no repeated energy restoration and one acknowledgement notification. Cleanup targets only this test's UUID-named files.
