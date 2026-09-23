@@ -2,8 +2,6 @@ package com.stepup.android.data.repo
 
 import com.stepup.android.data.local.ClaimedEventDao
 import com.stepup.android.data.local.ClaimedEventEntity
-import com.stepup.android.data.local.NotificationType
-import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.local.StepDao
 import com.stepup.android.data.remote.DaySteps
 import com.stepup.android.data.remote.EventApi
@@ -62,7 +60,6 @@ sealed interface EventClaimResult {
  */
 class EventRepository(
     private val dao: ClaimedEventDao,
-    private val rewardRepository: RewardRepository,
     private val api: EventApi,
     private val stepDao: StepDao,
     private val zone: () -> ZoneId = { ZoneId.systemDefault() },
@@ -100,14 +97,15 @@ class EventRepository(
 
         return when (val result = api.claim(def.id, zone().id)) {
             is ServerResult.Ok -> {
-                dao.insert(ClaimedEventEntity(key, System.currentTimeMillis(), result.value))
-                rewardRepository.credit(RewardType.EARN_EVENT, result.value, "이벤트 보상: ${def.id}")
-                rewardRepository.notify(NotificationType.EVENT_CLAIMED, def.id, result.value)
-                EventClaimResult.Paid(result.value)
+                if (!result.value.isFinite() || result.value <= 0) return EventClaimResult.Failed
+                val recorded = dao.recordPaidClaim(
+                    ClaimedEventEntity(key, System.currentTimeMillis(), result.value), def.id)
+                if (recorded) EventClaimResult.Paid(result.value) else EventClaimResult.AlreadyClaimed
             }
             is ServerResult.Rejected ->
                 if (result.reason.contains(ALREADY_CLAIMED)) {
-                    // 다른 기기에서 받았다. 잔고는 그 기기 쪽에서 이미 올랐으므로 여기선 표시만 맞춘다.
+                    // Server says paid, but this response has no receipt amount to reconcile locally.
+                    // Do not invent credit. Cross-device/server receipt recovery remains separate work.
                     dao.insert(ClaimedEventEntity(key, System.currentTimeMillis(), 0.0))
                     EventClaimResult.AlreadyClaimed
                 } else {

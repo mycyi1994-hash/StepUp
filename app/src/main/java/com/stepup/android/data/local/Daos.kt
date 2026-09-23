@@ -267,6 +267,26 @@ interface ClaimedEventDao {
 
     @Query("SELECT * FROM claimed_events WHERE eventId = :id")
     suspend fun byId(id: String): ClaimedEventEntity?
+
+    @Insert
+    suspend fun insertReward(reward: RewardEntity)
+
+    @Insert
+    suspend fun insertNotification(notification: NotificationEntity)
+
+    /** The receipt, local credit and notification commit together, or none of them do. */
+    @Transaction
+    suspend fun recordPaidClaim(claim: ClaimedEventEntity, eventId: String): Boolean {
+        require(claim.amount.isFinite() && claim.amount > 0)
+        if (byId(claim.eventId) != null) return false
+        insert(claim)
+        insertReward(RewardEntity(timestamp = claim.claimedAt, type = RewardType.EARN_EVENT,
+            amount = claim.amount, description = "이벤트 보상: $eventId"))
+        insertNotification(NotificationEntity(timestamp = claim.claimedAt,
+            type = NotificationType.EVENT_CLAIMED, argText = eventId, argAmount = claim.amount,
+            argExtra = "", read = false, actioned = false))
+        return true
+    }
 }
 
 @Dao

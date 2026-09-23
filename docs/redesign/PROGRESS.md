@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — atomic local event receipt
+
+- Replaced the separate claim marker, credit and notification writes with a Room transaction. Duplicate concurrent local responses cannot add a second credit, and a notification/ledger write failure rolls the whole local operation back. Non-finite/non-positive receipt amounts are rejected.
+- Added a real Room failure-injection test using a SQLite trigger to abort the last write, then retry ten concurrent calls and verify exactly one receipt, credit and notification. Included it in the native suite; compilation/runtime execution pending. Existing schema and database identity remain unchanged.
+- This fixes local atomicity only. A server payout whose response is lost, another-device claim, and legacy markers without corresponding credit still need authenticated receipt reconciliation. The existing server RPC rejects repeat claims, and its response does not carry a receipt amount on rejection; do not invent a recovery credit.
+
 ## 2026-09-24 — scene space and evidence review
 
 - Inspected native 0bcd210 challenge and d7283d1 community captures. Community's fixed 250dp illustration pushes the real meetup information under the pinned action; profile's fixed 280dp illustration similarly pushes Wallet below the initial viewport. Replaced both fixed heights with available-space/font-aware art sizing, preserving shared chrome and scroll access. Added a normal-font profile destination visibility assertion and large-font scroll reachability checks. Native verification pending.

@@ -193,7 +193,6 @@ object ServiceLocator {
         )
         eventRepository = EventRepository(
             dao = database.claimedEventDao(),
-            rewardRepository = rewardRepository,
             api = EventApi(server),
             stepDao = database.stepDao(),
         )
