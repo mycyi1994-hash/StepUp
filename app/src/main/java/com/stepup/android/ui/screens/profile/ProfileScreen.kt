@@ -295,20 +295,24 @@ fun ProfileScreen(
             }
         }
 
-        // ── 내 아이템 · 설정 ──
+        // ── 내 아이템 · 설정 — 한 줄씩 ──
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ShortcutButton(
                     icon = StepUpIcons.Shirt,
                     label = stringResource(R.string.me_items),
                     onClick = onOpenItems,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp),
                 )
                 ShortcutButton(
                     icon = Icons.Filled.Settings,
                     label = stringResource(R.string.profile_tab_settings),
                     onClick = { tab = 1 },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp),
                 )
             }
         }
@@ -1232,7 +1236,7 @@ private fun MeHeader(
         AvatarBadge(
             look = look,
             modifier = Modifier
-                .size(84.dp)
+                .size(width = 88.dp, height = 104.dp)
                 .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
                 .feedbackClickable(onClick = onOpenCustomize),
         )

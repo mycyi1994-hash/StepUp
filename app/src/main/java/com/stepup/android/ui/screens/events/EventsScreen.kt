@@ -62,6 +62,8 @@ import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SmallBadge
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.domain.AvatarArt
 import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.celebrate
@@ -161,18 +163,40 @@ fun EventsScreen(
             )
         }
         item {
-            Column(
+            Row(
                 modifier = Modifier.celebrate(celebration.takeIf { it > 0 }),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.challenge_today_title),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.6).sp,
-                    color = Snow,
-                )
-                Text(text = stringResource(R.string.challenge_today_sub), fontSize = 14.sp, color = Silver)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.challenge_today_title),
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.6).sp,
+                        color = Snow,
+                    )
+                    Text(text = stringResource(R.string.challenge_today_sub), fontSize = 14.sp, color = Silver)
+                }
+                // 남녀 기본 캐릭터 그림 그대로
+                if (androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f) {
+                    Box(Modifier.size(width = 112.dp, height = 92.dp)) {
+                        AvatarImage(
+                            art = AvatarArt.MALE_RUN,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .size(width = 60.dp, height = 88.dp),
+                        )
+                        AvatarImage(
+                            art = AvatarArt.FEMALE_IDLE,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(width = 56.dp, height = 88.dp),
+                        )
+                    }
+                }
             }
         }
 
@@ -336,6 +360,14 @@ private fun ChallengeCard(
                     maxLines = 1,
                     softWrap = false,
                 )
+                Text(
+                    text = "SUP",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Silver,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
         }
         Row(
@@ -361,14 +393,22 @@ private fun ChallengeCard(
             Text(text = rewardNote, fontSize = 11.sp, color = Slate)
         }
         if (fraction != null) {
+            // 큰 진행값 한 줄, 그 아래 막대와 백분율
+            Text(
+                text = progressText,
+                fontFamily = StepUpNumbers,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+            )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BarMeter(fraction = fraction, height = 8.dp, modifier = Modifier.weight(1f))
                 Text(
-                    text = progressText,
+                    text = "%d%%".format((fraction.coerceIn(0f, 1f) * 100).toInt()),
                     fontFamily = StepUpNumbers,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Snow,
+                    color = com.stepup.android.ui.theme.VoltText,
                 )
             }
         } else {

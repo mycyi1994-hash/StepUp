@@ -25,13 +25,19 @@ enum class AvatarGender(val id: String) {
     }
 }
 
-/** 피부 — 짙은 블랙·네이비 한 벌. 남녀가 같다. */
+/**
+ * 피부 — 짙은 블랙·네이비 한 벌. 남녀가 같다.
+ *
+ * 캐릭터 그림(res/drawable-nodpi/avatar_*.webp)이 이 색으로 그려져 있다.
+ * 앱이 캐릭터를 직접 그리지는 않지만, 새 그림을 주문하거나 검수할 때의
+ * 기준값으로 여기 남긴다.
+ */
 object AvatarSkin {
-    /** 기본 피부 */
-    const val BASE: Long = 0xFF1B2230
+    /** 기본 피부 — 디자인 패키지의 #07111F */
+    const val BASE: Long = 0xFF07111F
 
     /** 빛을 받는 쪽 — 같은 색상의 밝은 음영. 다른 피부색이 아니다. */
-    const val LIGHT: Long = 0xFF2A3548
+    const val LIGHT: Long = 0xFF14223A
 
     /** 가장자리 파란 조명 */
     const val RIM: Long = 0xFF3D8BFF

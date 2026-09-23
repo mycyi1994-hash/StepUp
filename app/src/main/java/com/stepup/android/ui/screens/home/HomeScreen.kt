@@ -6,10 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,13 +56,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.domain.RewardEconomy
-import com.stepup.android.ui.components.AvatarPose
+import com.stepup.android.domain.AvatarPose
+import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.GoalBar
 import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.ui.components.RenewalCardPadding
-import com.stepup.android.ui.components.RunnerAvatar
+import com.stepup.android.ui.components.CharacterStage
+import com.stepup.android.ui.components.AvatarLookNote
 import com.stepup.android.ui.components.ShortcutButton
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.StatCell
@@ -133,13 +137,15 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = 8.dp, bottom = 16.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // ── 머리글 — 로고와 작은 보유 포인트 ──
+        // ── 머리글 48dp — 로고와 작은 보유 포인트 ──
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Wordmark(fontSize = 24.sp, modifier = Modifier.weight(1f, fill = false))
@@ -155,37 +161,47 @@ fun HomeScreen(
             PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
         }
 
-        // ── 1. 오늘 받은 포인트 ──
-        TodayEarned(earned)
-
-        // ── 2. 내 캐릭터 — 누르면 꾸미기 ──
+        // ── 1. 오늘 받은 포인트 + 2. 내 캐릭터(누르면 꾸미기) ──
+        //
+        // 숫자와 캐릭터를 한 덩어리로 둔다 — 캐릭터 무대의 조명이 숫자 뒤까지
+        // 번져 두 요소가 따로 떠 보이지 않는다.
         val characterCd = stringResource(R.string.cd_home_character)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (largeText) 190.dp else 230.dp)
-                .quietClickable(onOpenCustomize)
-                .semantics { contentDescription = characterCd },
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            RunnerAvatar(
+            TodayEarned(earned)
+            CharacterStage(
                 look = look,
                 pose = AvatarPose.RUN,
-                modifier = Modifier.fillMaxSize(),
-            )
-            if (look.trial) {
-                SmallBadge(
-                    text = stringResource(R.string.avatar_trial),
-                    tone = BadgeTone.Glow,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp),
-                )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (largeText) 220.dp else 280.dp)
+                    .quietClickable(onOpenCustomize),
+                characterFraction = 0.9f,
+                contentDescription = characterCd,
+            ) { _ ->
+                if (look.trial) {
+                    SmallBadge(
+                        text = stringResource(R.string.avatar_trial),
+                        tone = BadgeTone.Glow,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp),
+                    )
+                }
             }
+            // 그림 속 착장이 실제 착장과 다르면 여기서 밝힌다
+            AvatarLookNote(
+                look = look,
+                render = AvatarArtCatalog.resolve(look, AvatarPose.RUN),
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
 
-        // ── 오늘 거리 · 운동 시간 ──
-        GlowCard(contentPadding = RenewalCardPadding) {
+        // ── 오늘 거리 · 운동 시간 (≈60dp) ──
+        GlowCard(contentPadding = HomeCardPadding) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -210,8 +226,8 @@ fun HomeScreen(
             }
         }
 
-        // ── 오늘의 목표 — 걸음 목표. 단위를 바꾸지 않는다 ──
-        GlowCard(contentPadding = RenewalCardPadding) {
+        // ── 오늘의 목표 — 걸음 목표. 단위를 바꾸지 않는다 (≈56dp) ──
+        GlowCard(contentPadding = HomeCardPadding) {
             GoalBar(
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                 title = stringResource(R.string.home_goal),
@@ -271,6 +287,9 @@ fun HomeScreen(
     }
 }
 
+/** 홈의 얇은 카드 — 지표 60dp · 목표 56dp 안팎 */
+private val HomeCardPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+
 /** 오늘 받은 포인트 — 이 화면에서 가장 큰 숫자 */
 @Composable
 private fun TodayEarned(earned: Double?) {
@@ -289,9 +308,13 @@ private fun TodayEarned(earned: Double?) {
             Text(
                 // 아직 못 읽었으면 대시. "0"은 정말 못 번 날에만 보인다.
                 text = earned?.let { "+%,.0f".format(it) } ?: "—",
-                style = TextStyle(brush = VoltInk),
+                // 포인트는 빛 번짐을 쓰는 몇 안 되는 자리다
+                style = TextStyle(
+                    brush = VoltInk,
+                    shadow = Shadow(color = Volt.copy(alpha = 0.55f), blurRadius = 28f),
+                ),
                 fontFamily = StepUpNumbers,
-                fontSize = 46.sp,
+                fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-1).sp,
                 maxLines = 1,
@@ -299,10 +322,10 @@ private fun TodayEarned(earned: Double?) {
             Text(
                 text = " SUP",
                 fontFamily = StepUpNumbers,
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = VoltText,
-                modifier = Modifier.padding(bottom = 6.dp),
+                modifier = Modifier.padding(bottom = 7.dp),
             )
         }
     }

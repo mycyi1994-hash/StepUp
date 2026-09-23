@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,12 +11,9 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -161,7 +158,15 @@ fun PrimaryCta(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 60.dp)
+            .heightIn(min = 58.dp)
+            // 화면의 주 행동 하나에만 푸른 번짐을 준다
+            .then(
+                if (enabled) {
+                    Modifier.shadow(elevation = 14.dp, shape = shape, ambientColor = Volt, spotColor = Volt)
+                } else {
+                    Modifier
+                },
+            )
             .clip(shape)
             .then(
                 if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.18f)
@@ -246,12 +251,13 @@ fun ShortcutButton(
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier = modifier
-            .heightIn(min = 52.dp)
+            // 보조 진입점 — 러닝 시작보다 확실히 작게(44dp)
+            .heightIn(min = 44.dp)
             .clip(shape)
             .background(CarbonHigh, shape)
             .border(1.dp, Edge, shape)
             .feedbackClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -388,32 +394,34 @@ fun GoalBar(
 }
 
 /**
- * 원형 아바타 틀 — 내 정보 · 커뮤니티 머리의 캐릭터.
+ * 작은 캐릭터 액자 — 내 정보 머리.
  *
- * 전신을 작게 넣으면 얼굴이 점만 해진다. 캐릭터를 원보다 크게 그리고 아래로
- * 내려, 원 안에는 머리와 어깨만 보이게 한다.
+ * 전신을 Fit 으로 넣는다. 얼굴만 오려 내면 신발이 잘리고, 캐릭터 그림을
+ * 자르지 않는다는 원칙이 화면마다 달라진다.
  */
 @Composable
 fun AvatarBadge(
     look: com.stepup.android.domain.AvatarLook,
     modifier: Modifier = Modifier,
+    pose: com.stepup.android.domain.AvatarPose = com.stepup.android.domain.AvatarPose.IDLE,
 ) {
-    BoxWithConstraints(
+    val render = com.stepup.android.domain.AvatarArtCatalog.resolve(look, pose)
+    val shape = RoundedCornerShape(20.dp)
+    Box(
         modifier = modifier
-            .clip(CircleShape)
-            .background(CarbonHigh, CircleShape)
-            .border(2.dp, Volt.copy(alpha = 0.7f), CircleShape),
-        contentAlignment = Alignment.Center,
+            .clip(shape)
+            .background(
+                androidx.compose.ui.graphics.Brush.radialGradient(
+                    0f to Volt.copy(alpha = 0.30f),
+                    1f to CarbonHigh,
+                ),
+                shape,
+            )
+            .border(1.dp, Volt.copy(alpha = 0.55f), shape)
+            .padding(6.dp),
+        contentAlignment = Alignment.BottomCenter,
     ) {
-        val d = maxWidth
-        RunnerAvatar(
-            look = look,
-            modifier = Modifier
-                .requiredSize(d * 1.7f, d * 1.7f * 1.42f)
-                .offset(y = d * 0.49f),
-            showGround = false,
-            animate = false,
-        )
+        AvatarImage(art = render.art, modifier = Modifier.matchParentSize())
     }
 }
 

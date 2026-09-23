@@ -1395,4 +1395,18 @@ StepUp과 함께 달려보세요.</string>
     <string name="settings_demo">데모 모드</string>
     <string name="settings_demo_note">서버 없이 예시 대회·기사·상품으로 둘러봐요. 포인트나 서버에는 아무것도 저장되지 않아요.</string>
     <string name="settings_inbox">알림함</string>
+
+    <!-- 디자인 패키지 적용 — 캐릭터 그림 · 러닝 중 · 러닝 완료 · 커뮤니티 -->
+    <string name="avatar_art_wearing">%1$s 착용 중</string>
+    <string name="avatar_art_base_look">캐릭터 그림은 기본 착장</string>
+    <string name="customize_preview_missing">고른 옷·신발을 입은 캐릭터 그림은 아직 없어요. 지금 보이는 그림은 기본 착장이에요.</string>
+    <string name="customize_preview_missing_badge">그림 준비 중</string>
+    <string name="customize_equipped_art_pending">장착했어요. 이 아이템을 입은 캐릭터 그림은 준비 중이에요.</string>
+    <string name="run_gps_ok">GPS 연결됨</string>
+    <string name="run_gps_search">GPS 찾는 중</string>
+    <string name="run_avg_pace">평균 페이스</string>
+    <string name="finish_title">러닝 완료</string>
+    <string name="community_hero_title">함께 달리기</string>
+    <string name="community_hero_sub">오늘도, 더 멀리, 함께 달리는 러너들의 이야기.</string>
+    <string name="news_hero_sub">함께 달리는 더 큰 즐거움.</string>
 </resources>

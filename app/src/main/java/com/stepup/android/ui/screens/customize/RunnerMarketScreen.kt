@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -38,12 +39,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.AvatarArtCatalog
+import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Outfits
 import com.stepup.android.domain.Rarity
 import com.stepup.android.ui.components.BadgeTone
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.GarmentArt
 import com.stepup.android.ui.components.GhostButton
+import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.RenewalCardPadding
@@ -123,29 +129,42 @@ fun RunnerMarketScreen(
                 onOpenWallet = onOpenWallet,
             )
         }
+        // 소개 한 줄과 내 러너 — 무엇을 사서 누구에게 입히는지
         item(span = { GridItemSpan(cols) }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.market_runner_sub),
+                Column(
                     modifier = Modifier.weight(1f),
-                    fontSize = 14.sp,
-                    color = Silver,
-                    lineHeight = 19.sp,
-                )
-                Text(
-                    text = stringResource(R.string.market_runner_owned),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.market_runner_sub),
+                        fontSize = 14.sp,
+                        color = Silver,
+                        lineHeight = 19.sp,
+                    )
+                    Text(
+                        text = stringResource(R.string.market_runner_owned),
+                        modifier = Modifier
+                            .feedbackClickable(onClick = onOpenVault)
+                            .padding(vertical = 6.dp),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VoltText,
+                    )
+                }
+                // 내 성별의 그림 그대로. 아이템을 입은 것처럼 보이게 하지 않는다.
+                AvatarImage(
+                    art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,
                     modifier = Modifier
-                        .feedbackClickable(onClick = onOpenVault)
-                        .padding(8.dp),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VoltText,
+                        .width(96.dp)
+                        .height(if (cols == 1) 110.dp else 128.dp),
                 )
             }
         }
         item(span = { GridItemSpan(cols) }) {
             TwoWaySwitch(
                 labels = listOf(
+                    stringResource(R.string.feed_filter_all),
                     stringResource(R.string.customize_tab_outfit),
                     stringResource(R.string.customize_tab_shoes),
                 ),
@@ -157,7 +176,8 @@ fun RunnerMarketScreen(
             item(span = { GridItemSpan(cols) }) { DemoNote() }
         }
 
-        if (filter == 0) {
+        // 0 = 전체, 1 = 의상, 2 = 신발
+        if (filter != 2) {
             // ── 의상 — NFT 의상만. 기본 의상은 이미 갖고 있다 ──
             val nft = Outfits.ALL.filter { it.nft }
             items(nft, key = { it.id }) { outfit ->
@@ -171,7 +191,8 @@ fun RunnerMarketScreen(
                     onInfo = { viewModel.say(R.string.market_outfit_soon_toast) },
                 )
             }
-        } else {
+        }
+        if (filter != 1) {
             // ── 신발 ──
             when {
                 demo -> items(DEMO_SHOES, key = { "demo-${it.faction}-${it.rarity}-${it.variant}" }) { d ->
@@ -356,7 +377,7 @@ private fun OutfitProduct(
     ProductCard(
         onClick = if (demo) onTry else onInfo,
         badge = { SmallBadge("NFT", tone = BadgeTone.Nft) },
-        art = { OutfitThumb(look, outfit, Modifier.fillMaxSize()) },
+        art = { GarmentArt(outfit, Modifier.fillMaxSize().padding(4.dp)) },
         name = stringResource(outfitNameRes(outfit)),
         price = {
             // 팔지 않는 물건에 값을 적지 않는다

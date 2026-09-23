@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,19 +52,22 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.domain.AvatarGender
 import com.stepup.android.domain.AvatarLook
+import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Outfits
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.ui.components.AvatarBadge
-import com.stepup.android.ui.components.AvatarPose
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.ui.components.CharacterStage
+import com.stepup.android.ui.components.GarmentArt
+import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.RenewalCardPadding
-import com.stepup.android.ui.components.RunnerAvatar
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.SupPill
@@ -143,68 +149,97 @@ fun CustomizeScreen(
             SupPill(balance, onOpenWallet)
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                text = stringResource(R.string.customize_title),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.8).sp,
-                color = Snow,
-            )
-            Text(text = stringResource(R.string.customize_sub), fontSize = 14.sp, color = Silver)
+        // ── 제목 · 기본 캐릭터 선택 · 전신 미리보기 ──
+        //
+        // 넓으면 왼쪽에 제목과 성별 카드, 오른쪽에 큰 캐릭터. 글자가 크면 위아래로.
+        val render = AvatarArtCatalog.resolve(preview, AvatarPose.IDLE)
+        val titleBlock: @Composable () -> Unit = {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = stringResource(R.string.customize_title),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.8).sp,
+                    color = Snow,
+                )
+                Text(text = stringResource(R.string.customize_sub), fontSize = 14.sp, color = Silver, lineHeight = 19.sp)
+            }
         }
-
-        // ── 기본 캐릭터 선택 + 전신 미리보기 ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (largeText) 280.dp else 320.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .width(96.dp)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+        val genderRow: @Composable () -> Unit = {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AvatarGender.entries.forEach { gender ->
                     GenderCard(
                         gender = gender,
-                        look = preview,
                         selected = look.gender == gender,
                         onClick = { viewModel.setGender(gender) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(if (largeText) 132.dp else 118.dp),
                     )
                 }
-                Text(
-                    text = stringResource(R.string.customize_base_note),
-                    modifier = Modifier.fillMaxWidth(),
-                    fontSize = 11.sp,
-                    color = Slate,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 14.sp,
-                )
             }
-            Box(
+        }
+        val baseNote: @Composable () -> Unit = {
+            Text(
+                text = stringResource(R.string.customize_base_note),
+                modifier = Modifier.fillMaxWidth(),
+                fontSize = 11.sp,
+                color = Slate,
+                textAlign = TextAlign.Center,
+                lineHeight = 14.sp,
+            )
+        }
+        val stage: @Composable (Modifier) -> Unit = { m ->
+            CharacterStage(
+                look = preview,
+                pose = AvatarPose.IDLE,
+                modifier = m.guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
+                characterFraction = 0.92f,
+                skyline = false,
+                contentDescription = stringResource(R.string.cd_customize_preview),
+            ) { r ->
+                Column(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (preview.trial) {
+                        SmallBadge(text = stringResource(R.string.customize_trial_badge), tone = BadgeTone.Glow)
+                    }
+                    if (!r.lookShown) {
+                        SmallBadge(text = stringResource(R.string.customize_preview_missing_badge), tone = BadgeTone.Muted)
+                    }
+                }
+            }
+        }
+        if (largeText) {
+            titleBlock()
+            genderRow()
+            baseNote()
+            stage(Modifier.fillMaxWidth().height(300.dp))
+        } else {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
+                    .fillMaxWidth()
+                    .height(340.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                RunnerAvatar(
-                    look = preview,
-                    pose = AvatarPose.IDLE,
-                    modifier = Modifier.fillMaxSize(),
-                    contentDescription = stringResource(R.string.cd_customize_preview),
-                )
-                if (preview.trial) {
-                    SmallBadge(
-                        text = stringResource(R.string.customize_trial_badge),
-                        tone = BadgeTone.Glow,
-                        modifier = Modifier.align(Alignment.TopEnd),
-                    )
+                Column(
+                    modifier = Modifier
+                        .weight(0.44f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    titleBlock()
+                    genderRow()
+                    baseNote()
                 }
+                stage(Modifier.weight(0.56f).fillMaxHeight())
             }
+        }
+        // 고른 옷·신발을 입은 그림이 없으면 무엇을 보고 있는지 적는다
+        if (!render.lookShown) {
+            PreviewMissingNote()
         }
 
         TwoWaySwitch(
@@ -268,30 +303,80 @@ fun CustomizeScreen(
             }
         }
 
-        // ── 장착하기 ──
+        // ── 장착하기 (주 행동) · 마켓 보기 ──
         val wearing = if (tab == 0) look.outfit.id == pickedOutfit.id else pickedShoe?.equipped == true
         val canEquip = if (tab == 0) true else pickedShoe != null
-        PrimaryCta(
-            text = stringResource(if (wearing) R.string.customize_wearing else R.string.customize_equip),
-            enabled = canEquip && !wearing,
-            showArrow = false,
-            onClick = {
-                if (tab == 0) viewModel.equipOutfit(pickedOutfit) else pickedShoe?.let { viewModel.equipShoe(it.id) }
-            },
-        )
-
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        val equipCta: @Composable (Modifier) -> Unit = { m ->
+            PrimaryCta(
+                text = stringResource(if (wearing) R.string.customize_wearing else R.string.customize_equip),
+                icon = Icons.Filled.Checkroom,
+                enabled = canEquip && !wearing,
+                showArrow = false,
+                onClick = {
+                    if (tab == 0) viewModel.equipOutfit(pickedOutfit) else pickedShoe?.let { viewModel.equipShoe(it.id) }
+                },
+                modifier = m,
+            )
+        }
+        val marketButton: @Composable (Modifier) -> Unit = { m ->
             GhostButton(
                 text = stringResource(R.string.customize_open_market),
                 onClick = onOpenMarket,
-                modifier = Modifier.weight(1f),
-            )
-            GhostButton(
-                text = stringResource(R.string.customize_open_vault),
-                onClick = onOpenVault,
-                modifier = Modifier.weight(1f),
+                modifier = m.heightIn(min = 58.dp),
             )
         }
+        if (largeText) {
+            equipCta(Modifier.fillMaxWidth())
+            marketButton(Modifier.fillMaxWidth())
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                equipCta(Modifier.weight(1.45f))
+                marketButton(Modifier.weight(1f))
+            }
+        }
+        // 보관함 — 강화 · 판매 · 조합은 거기서
+        Text(
+            text = stringResource(R.string.customize_open_vault) + " ›",
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .feedbackClickable(onClick = onOpenVault)
+                .padding(vertical = 8.dp, horizontal = 12.dp),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = com.stepup.android.ui.theme.VoltText,
+        )
+    }
+}
+
+/** 고른 조합을 입은 그림이 없을 때 — 미리보기 아래 한 줄 */
+@Composable
+private fun PreviewMissingNote() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(CarbonHigh)
+            .border(1.dp, Edge, RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Filled.Info,
+            contentDescription = null,
+            tint = com.stepup.android.ui.theme.VoltText,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = stringResource(R.string.customize_preview_missing),
+            fontSize = 12.sp,
+            color = Silver,
+            lineHeight = 17.sp,
+        )
     }
 }
 
@@ -311,33 +396,33 @@ private fun <T> ItemGrid(items: List<T>, cell: @Composable (T) -> Unit) {
 @Composable
 private fun GenderCard(
     gender: AvatarGender,
-    look: AvatarLook,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(16.dp)
     val label = stringResource(if (gender == AvatarGender.MALE) R.string.gender_male else R.string.gender_female)
+    // 성별마다 제 그림을 쓴다 — 여자 카드에 남자 그림을 넣지 않는다
+    val art = AvatarArtCatalog.resolve(AvatarLook(gender = gender), AvatarPose.IDLE).art
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .clip(shape)
-            .background(if (selected) Volt.copy(alpha = 0.14f) else CarbonHigh, shape)
+            .background(if (selected) Volt.copy(alpha = 0.16f) else CarbonHigh, shape)
             .border(if (selected) 2.dp else 1.dp, if (selected) Volt else Edge, shape)
             .feedbackClickable(role = Role.RadioButton, onClick = onClick)
             .semantics {
                 this.selected = selected
                 contentDescription = label
             }
-            .padding(6.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        AvatarBadge(
-            look = look.copy(gender = gender),
+        AvatarImage(
+            art = art,
             modifier = Modifier
-                .weight(1f, fill = false)
-                .size(62.dp),
+                .weight(1f)
+                .fillMaxWidth(),
         )
         Text(
             text = label,
@@ -430,7 +515,7 @@ private fun OutfitCard(
                 if (outfit.starter) SmallBadge(stringResource(R.string.customize_basic_badge), tone = BadgeTone.Muted)
             }
         },
-        art = { OutfitThumb(look, outfit, Modifier.fillMaxSize()) },
+        art = { GarmentArt(outfit, Modifier.fillMaxSize()) },
     )
 }
 
@@ -446,10 +531,8 @@ private fun ShoeCard(
         name = shoe.variantLabel(),
         onClick = onClick,
         badges = {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                SmallBadge("NFT", tone = BadgeTone.Nft)
-                SmallBadge(stringResource(R.string.level_chip, shoe.level), tone = BadgeTone.Muted)
-            }
+            // 레벨 · 능력치는 신발 상세에서. 꾸미기 칸에는 NFT 표시만 둔다.
+            SmallBadge("NFT", tone = BadgeTone.Nft)
         },
         art = { SneakerFrame(sneaker = shoe, modifier = Modifier.fillMaxSize()) },
     )

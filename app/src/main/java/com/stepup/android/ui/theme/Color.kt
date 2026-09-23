@@ -179,29 +179,35 @@ val LightPalette = StepUpPalette(
  * 카드와 바닥을 밝기만으로 나누면 층이 잘 안 읽힌다.
  */
 val DarkPalette = StepUpPalette(
-    night = Color(0xFF060A12),
-    carbon = Color(0xFF101827),
-    carbonHigh = Color(0xFF132038),
-    edge = Color(0xFF203557),
-    volt = Color(0xFF1677FF),
-    voltDeep = Color(0xFF0B4FC4),
+    // 디자인 패키지(design/blue-black-2026-09)의 토큰 — 배경 #040C1B · 카드
+    // #0B1D35 · 경계 #1A3B61 · 파랑 #147BFF · 시안 #24D8FF · 본문 #F4F8FF ·
+    // 보조글 #A8BDD9.
+    night = Color(0xFF040C1B),
+    carbon = Color(0xFF0B1D35),
+    carbonHigh = Color(0xFF0F2542),
+    edge = Color(0xFF1A3B61),
+    // 버튼 바탕. 토큰 #147BFF 위의 흰 글자는 3.96:1 이라 초록 채널만 셋 내려
+    // 4:1 을 넘긴다(#1478FF). 눈으로는 같은 파랑이다.
+    volt = Color(0xFF1478FF),
+    voltDeep = Color(0xFF0B5BD6),
     voltSoft = Color(0xFF5AA7FF),
     onVolt = Color(0xFFFFFFFF),
     alert = Color(0xFFFF6B5E),
-    snow = Color(0xFFF7FAFF),
-    silver = Color(0xFFD7E2F2),
-    slate = Color(0xFFA7B5CA),
+    snow = Color(0xFFF4F8FF),
+    silver = Color(0xFFA8BDD9),
+    // 힌트 · 비활성 — 카드 위 5:1
+    slate = Color(0xFF7F95B5),
     scrim = Color(0xFF01030A),
     scrimAlpha = 0.84f,
     // 막이 거의 검정이라 패널은 카드보다 한 단계 더 들어 올린다.
-    overlay = Color(0xFF1D2C4C),
-    // 어두운 표면 위의 파란 글자. volt 그대로면 3.5:1 이라 묻힌다.
+    overlay = Color(0xFF132B4E),
+    // 어두운 표면 위의 파란 글자. volt 그대로면 4.3:1 로 작은 글자에 모자란다.
     voltText = Color(0xFF5AA7FF),
-    cyan = Color(0xFF22D3EE),
-    cardTop = Color(0xFF131C2E),
-    cardBottom = Color(0xFF0D1422),
-    backdropTop = Color(0xFF080D18),
-    backdropBottom = Color(0xFF060A12),
+    cyan = Color(0xFF24D8FF),
+    cardTop = Color(0xFF0D2140),
+    cardBottom = Color(0xFF0A1A30),
+    backdropTop = Color(0xFF06122A),
+    backdropBottom = Color(0xFF040C1B),
     // 밝은 타일을 뒤집어 어두운 지도로 만든다. 채도를 낮춰 도로가 회색 계열로만
     // 남고, 그 위의 파란 경로가 화면에서 유일한 색이 된다.
     mapMatrix = floatArrayOf(

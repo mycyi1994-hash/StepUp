@@ -144,6 +144,15 @@ fun NewsScreen(
         }
 
         item {
+            Text(
+                text = stringResource(R.string.news_hero_sub),
+                fontSize = 14.sp,
+                color = Silver,
+                modifier = Modifier.padding(horizontal = 2.dp),
+            )
+        }
+
+        item {
             TwoWaySwitch(
                 labels = listOf(
                     stringResource(R.string.news_tab_races),

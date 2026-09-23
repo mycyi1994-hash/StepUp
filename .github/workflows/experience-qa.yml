@@ -59,7 +59,8 @@ jobs:
         run: |
           mkdir -p review
           for f in qa-captures/ko-dark-normal-*.png qa-captures/ko-light-normal-*.png \
-                   qa-captures/ko-dark-large-*.png qa-captures/navigation-*.png; do
+                   qa-captures/ko-dark-large-*.png qa-captures/navigation-*.png \
+                   qa-captures/ref-*.png qa-captures/ref-audit.jsonl; do
             if [ -f "$f" ]; then cp "$f" review/; fi
           done
           cp qa-captures/layout-audit.jsonl qa-captures/android-crashes.txt review/ 2>/dev/null || true

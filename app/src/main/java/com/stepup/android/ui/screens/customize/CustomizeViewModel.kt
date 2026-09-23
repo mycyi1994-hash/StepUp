@@ -10,8 +10,10 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
+import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.domain.AvatarGender
 import com.stepup.android.domain.AvatarLook
+import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Sneaker
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +71,13 @@ class CustomizeViewModel(
     fun equipOutfit(outfit: Outfit) {
         viewModelScope.launch {
             message.value = if (avatars.equipOutfit(outfit)) {
-                if (avatars.isOwned(outfit)) R.string.customize_equipped else R.string.customize_trial_on
+                when {
+                    !avatars.isOwned(outfit) -> R.string.customize_trial_on
+                    // 입었지만 그 옷을 입은 캐릭터 그림은 없다 — "장착 완료"라고만 하지 않는다
+                    !AvatarArtCatalog.resolve(look.value.copy(outfit = outfit), AvatarPose.IDLE).outfitShown ->
+                        R.string.customize_equipped_art_pending
+                    else -> R.string.customize_equipped
+                }
             } else {
                 R.string.customize_not_owned
             }
@@ -78,8 +86,10 @@ class CustomizeViewModel(
 
     fun equipShoe(id: Long) {
         viewModelScope.launch {
+            val shoe = shoes.value?.firstOrNull { it.id == id }
             sneakers.equip(id)
-            message.value = R.string.customize_equipped
+            val shown = AvatarArtCatalog.resolve(look.value.copy(shoe = shoe), AvatarPose.IDLE).shoeShown
+            message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
         }
     }
 

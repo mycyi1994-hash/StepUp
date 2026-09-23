@@ -1395,4 +1395,18 @@
     <string name="settings_demo">演示模式</string>
     <string name="settings_demo_note">无需服务器，用示例赛事、文章和商品浏览。不会保存到积分或服务器。</string>
     <string name="settings_inbox">通知中心</string>
+
+    <!-- 디자인 패키지 적용 — 캐릭터 그림 · 러닝 중 · 러닝 완료 · 커뮤니티 -->
+    <string name="avatar_art_wearing">正在穿着%1$s</string>
+    <string name="avatar_art_base_look">角色图为基础装扮</string>
+    <string name="customize_preview_missing">还没有穿着所选服装或鞋子的角色图。当前显示的是基础装扮。</string>
+    <string name="customize_preview_missing_badge">图片准备中</string>
+    <string name="customize_equipped_art_pending">已装备。穿着此物品的角色图正在准备中。</string>
+    <string name="run_gps_ok">GPS已连接</string>
+    <string name="run_gps_search">正在搜索GPS</string>
+    <string name="run_avg_pace">平均配速</string>
+    <string name="finish_title">跑步完成</string>
+    <string name="community_hero_title">一起跑</string>
+    <string name="community_hero_sub">今天也一起跑得更远——跑者们的故事。</string>
+    <string name="news_hero_sub">一起跑，乐趣更多。</string>
 </resources>

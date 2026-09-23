@@ -474,6 +474,17 @@ class WalkSessionService : Service() {
         private val _state = MutableStateFlow(WalkSessionState())
         val state: StateFlow<WalkSessionState> = _state
 
+        /**
+         * 화면 검사 전용 — 러닝 중 · 러닝 완료 화면을 실제 세션 없이 그려 본다.
+         *
+         * 적립 · 저장 · 업로드는 하나도 일어나지 않는다. 화면이 읽는 상태만 바꾼다.
+         * 앱 코드에서는 부르지 않는다.
+         */
+        @androidx.annotation.VisibleForTesting
+        fun showStateForTest(state: WalkSessionState) {
+            _state.value = state
+        }
+
         /** 러닝 목표 거리(km). 화면이 아니라 프로세스에 살아서 화면을 오가도 유지된다. */
         val goalKm = MutableStateFlow(5.0)
 

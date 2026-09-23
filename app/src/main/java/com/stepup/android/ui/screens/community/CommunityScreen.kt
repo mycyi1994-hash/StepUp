@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.community
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,6 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.ui.components.TwoWaySwitch
+import com.stepup.android.ui.components.AvatarImage
+import com.stepup.android.domain.AvatarArt
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.domain.Post
@@ -105,18 +108,55 @@ fun CommunityScreen(
             modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 14.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
+            // 제목 · 한 줄 소개 · 함께 달리는 두 러너. 알림은 오른쪽 위.
+            val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = stringResource(R.string.tab_community),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.8).sp,
-                    color = Snow,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.community_hero_title),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.8).sp,
+                        color = Snow,
+                    )
+                    Text(
+                        text = stringResource(R.string.community_hero_sub),
+                        fontSize = 13.sp,
+                        color = Silver,
+                        lineHeight = 18.sp,
+                    )
+                }
+                if (!largeText) {
+                    // 남녀 기본 캐릭터 그림 그대로 — 각자 제 그림이다
+                    Box(
+                        modifier = Modifier
+                            .width(118.dp)
+                            .height(96.dp),
+                    ) {
+                        AvatarImage(
+                            art = AvatarArt.MALE_RUN,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .width(64.dp)
+                                .height(92.dp),
+                        )
+                        AvatarImage(
+                            art = AvatarArt.FEMALE_IDLE,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .width(60.dp)
+                                .height(92.dp),
+                        )
+                    }
+                }
                 DarkIconButton(
                     icon = Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.cd_notifications),

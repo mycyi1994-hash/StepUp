@@ -112,6 +112,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 
 sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
     /**
@@ -630,7 +631,9 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
-                .padding(top = 10.dp, bottom = 8.dp),
+                // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
+                .heightIn(min = 64.dp)
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -661,7 +664,8 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 @Composable
 private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
     val tint by animateColorAsState(
-        targetValue = if (selected) Volt else Slate,
+        // 선택한 탭은 밝은 파랑 — 버튼 바탕색(Volt)은 검은 바닥 위 작은 글자에 어둡다
+        targetValue = if (selected) VoltText else Slate,
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
@@ -675,7 +679,7 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
             // 탭이 넷이라 한 칸이 넉넉하다. 누르는 자리는 최소 48dp 로 잡는다.
-            .heightIn(min = 52.dp)
+            .heightIn(min = 56.dp)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),

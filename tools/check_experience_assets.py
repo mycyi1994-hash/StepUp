@@ -24,4 +24,13 @@ for font in (RES / 'font').glob('*.ttf'):
     assert font.read_bytes()[:4] == b'\x00\x01\x00\x00', font.name
 for family in ['Pretendard', 'Barlow']:
     assert 'SIL OPEN FONT LICENSE' in (ROOT / f'app/src/main/assets/licenses/{family}-OFL.txt').read_text()
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses')
+# 러너 캐릭터 그림 — 투명 배경(알파)이 있는 WebP 이고, 화면에서 크게 쓰므로
+# 작은 썸네일로 바뀌지 않았는지 캔버스 크기도 본다.
+for name in ['avatar_male_running', 'avatar_female_idle']:
+    head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
+    assert head[:4] == b'RIFF' and head[8:12] == b'WEBP' and head[12:16] == b'VP8X', name
+    assert head[20] & 0x10, f'{name}: no alpha channel'
+    width = int.from_bytes(head[24:27], 'little') + 1
+    height = int.from_bytes(head[27:30], 'little') + 1
+    assert width >= 900 and height >= 1300, f'{name}: {width}x{height}'
+print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 2 alpha avatar images')
