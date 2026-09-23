@@ -758,7 +758,7 @@ private fun RowScope.NavTab(
         )
         Text(
             text = stringResource(screen.labelRes),
-            modifier = Modifier.heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
+            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
             style = labelStyle,
             softWrap = true,

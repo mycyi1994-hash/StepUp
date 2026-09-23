@@ -391,7 +391,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">保存されるデータ</string>
     <string name="privacy_data_body">ログインすると、ラン記録（GPSルートを含む）・歩数の合計・SUP履歴・投稿とクルー活動がStepUpサーバーに保管されます。サーバーが付与を直接計算し、クルー・ランキング・コース・陣取りを共有するためです。広告IDは収集しません。アカウントは連携アカウント画面からいつでも削除できます。</string>
-    <string name="privacy_perm_title">使用中の権限</string>
+    <string name="privacy_perm_title">アプリの権限</string>
     <string name="privacy_perm_activity">身体活動 — 歩数のカウント</string>
     <string name="privacy_perm_notification">通知 — ラン中のセッション表示</string>
     <string name="privacy_reset_title">ローカルデータをリセット</string>
@@ -932,7 +932,7 @@ StepUp と走り出そう。</string>
     <string name="language_ko">韓国語</string>
     <string name="language_zh">中国語</string>
     <string name="language_ja">日本語</string>
-    <string name="language_note">アプリ全体がすぐ切り替わります — 画面も通知も投稿も。人名とクルー名だけそのままです。</string>
+    <string name="language_note">選択した言語でアプリを表示します。ユーザーの投稿や名前は元の言語で表示される場合があります。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">ルーキー</string>
@@ -1513,5 +1513,10 @@ StepUp と走り出そう。</string>
     <string name="session_sign_in_again">再ログイン</string>
     <string name="post_invalid_numbers">距離は0kmより大きく、出発までは1分以上、定員は2〜200人で入力してください。</string>
     <string name="energy_purchase_capacity">エネルギーを2以上使ってから再試行してください。保留中の購入は追加の支払いなしで再開します。</string>
+    <string name="privacy_permission_allowed">許可済み</string>
+    <string name="privacy_permission_not_allowed">未許可</string>
+    <string name="privacy_perm_location">位置情報 — ランのルートを記録</string>
+    <string name="privacy_location_precise">正確な位置情報を許可</string>
+    <string name="privacy_location_approximate">おおよその位置情報を許可</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

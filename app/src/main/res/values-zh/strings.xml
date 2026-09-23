@@ -390,7 +390,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">我们存了什么</string>
     <string name="privacy_data_body">登录后，跑步记录（含 GPS 路线）、每日步数、SUP 记录、帖子和跑团活动会保存在 StepUp 服务器上，以便服务器直接计算奖励，并共享跑团、排行、路线和占地盘。不收集广告标识符。可随时在已连接账户中删除账户。</string>
-    <string name="privacy_perm_title">正在使用的权限</string>
+    <string name="privacy_perm_title">应用权限</string>
     <string name="privacy_perm_activity">身体活动 —— 统计你的步数</string>
     <string name="privacy_perm_notification">通知 —— 显示进行中的跑步</string>
     <string name="privacy_reset_title">重置本地数据</string>
@@ -931,7 +931,7 @@
     <string name="language_ko">韩语</string>
     <string name="language_zh">中文</string>
     <string name="language_ja">日语</string>
-    <string name="language_note">整个应用会立刻切换——界面、通知、帖子都是。只有人名和跑团名保持原样。</string>
+    <string name="language_note">应用将使用所选语言。用户发布的内容和名称可能保留原文。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">新秀</string>
@@ -1512,5 +1512,10 @@
     <string name="session_sign_in_again">重新登录</string>
     <string name="post_invalid_numbers">距离须大于0公里，出发时间至少为1分钟后，人数须为2至200人。</string>
     <string name="energy_purchase_capacity">请消耗至少2点能量后重试。待处理的购买不会再次扣费。</string>
+    <string name="privacy_permission_allowed">已允许</string>
+    <string name="privacy_permission_not_allowed">未允许</string>
+    <string name="privacy_perm_location">位置信息 — 记录跑步路线</string>
+    <string name="privacy_location_precise">已允许精确位置</string>
+    <string name="privacy_location_approximate">已允许大致位置</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

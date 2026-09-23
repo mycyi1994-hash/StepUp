@@ -392,7 +392,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">What we store</string>
     <string name="privacy_data_body">When you sign in, your runs (including GPS routes), daily step totals, SUP history, posts and crew activity are kept on the StepUp server, so the server can compute rewards and crews, rankings, courses and territory can be shared. No advertising ID is collected. You can delete your account any time under Connected Accounts.</string>
-    <string name="privacy_perm_title">Permissions in use</string>
+    <string name="privacy_perm_title">App permissions</string>
     <string name="privacy_perm_activity">Physical activity — counts your steps</string>
     <string name="privacy_perm_notification">Notifications — shows the running session</string>
     <string name="privacy_reset_title">Reset local data</string>
@@ -933,7 +933,7 @@ Start running with StepUp.</string>
     <string name="language_ko">Korean</string>
     <string name="language_zh">Chinese</string>
     <string name="language_ja">Japanese</string>
-    <string name="language_note">Everything in the app switches instantly — screens, notifications and posts. Only names stay as they are.</string>
+    <string name="language_note">The app uses your selected language. User posts and names may remain in their original language.</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">Rookie</string>
@@ -1514,5 +1514,10 @@ Start running with StepUp.</string>
     <string name="session_sign_in_again">Sign in again</string>
     <string name="post_invalid_numbers">Enter a distance above 0 km, at least 1 minute until departure, and 2–200 people.</string>
     <string name="energy_purchase_capacity">Use at least 2 energy, then try again. Pending purchases resume without another charge.</string>
+    <string name="privacy_permission_allowed">Allowed</string>
+    <string name="privacy_permission_not_allowed">Not allowed</string>
+    <string name="privacy_perm_location">Location — records your route</string>
+    <string name="privacy_location_precise">Precise location allowed</string>
+    <string name="privacy_location_approximate">Approximate location allowed</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

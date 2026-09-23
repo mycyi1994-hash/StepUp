@@ -201,12 +201,12 @@ private fun BalanceHero(balance: Double?) {
                         text = stringResource(R.string.wallet_balance),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = OnVolt.copy(alpha = 0.65f),
+                        color = OnVolt,
                     )
                     Text(
                         text = stringResource(R.string.wallet_tagline),
                         fontSize = 14.sp,
-                        color = OnVolt.copy(alpha = 0.5f),
+                        color = OnVolt,
                     )
                 }
                 HexEmblem(size = 30.dp, glow = false)
@@ -215,6 +215,7 @@ private fun BalanceHero(balance: Double?) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = balance?.let { "%,.2f".format(it) } ?: "—",
+                    modifier = Modifier.alignByBaseline(),
                     fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Black,
@@ -225,8 +226,8 @@ private fun BalanceHero(balance: Double?) {
                     text = "SUP",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = OnVolt.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    color = OnVolt,
+                    modifier = Modifier.alignByBaseline(),
                 )
             }
         }

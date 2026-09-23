@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — evidence-led settings fixes and Android 15 dialog dependency
+
+- Inspected eight native captures and recorded bounded findings/remaining states in VISUAL-REVIEW.md rather than overwriting generated inventory statuses. Wallet amount/unit baseline and faded hero labels corrected. Privacy no longer always paints granted checkmarks: it reads activity, precise/approximate location and app notification access, refreshes on resume, and opens real app settings. Four-language language-setting copy no longer promises automatic translation of every user post.
+- 9be0c87 Build APK 35931315935 passed. Its API 35 large-font test correctly fails the new complete-footer-bounds assertion (Reset bottom=1882px); the captured footer is still under navigation. No native success claim for the previous inset-only fix.
+- Compared Google's published UI 1.7.6 and 1.8.2 source jars: Dialog's OnApplyWindowInsetsListener/fullscreen measurement handling is absent in the former and present in the latter. Updated BOM 2024.12.01 → 2025.06.00 (UI/Foundation/Runtime 1.8.2, Material3 1.3.2) for that specific Android 15 defect. Links/evidence in VISUAL-REVIEW.md. All build/native suites must run again; no local SDK is available.
+- Navigation failure now reports a 40px text layout with a 148px paragraph. The label fills its allocated tab width, keeping shared measurement/centering and the strict overflow test. Both navigation and Dialog fixes still await new runtime evidence.
+- Source contract, inventory, four-language resources and asset checks pass for these edits. Privacy permission denial/settings-return and full account partitioning remain outstanding; no completion conclusion.
+
 ## 2026-09-24 — Room 13 build and native preservation evidence
 
 - c01b8e4 Build APK 35930751043 completed successfully, including all unit tests, debug signature verification and release/R8 compilation. Retrieved its generated Room 13 schema: the only changed table is walk_sessions, with the recordingOwner TEXT NOT NULL DEFAULT 'legacy' field added.
