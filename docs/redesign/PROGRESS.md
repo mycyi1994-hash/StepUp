@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — vault and course detail structure
+
+- Items/Vault and CourseHub now use DetailPage instead of local title/back rows and gutters. Vault keeps its balance and Dex destination in content, with an explicitly labeled shared Dex button replacing the 42dp custom icon target. Store/market/vault tabs and course selection/recording/community actions remain in place. Source rules cover both screens.
+- This pass fixes structural consistency only. Vault balance readiness, mint/enhance transaction correctness, course permission/recovery and detailed large-font UI still need review. Local design/resource/asset checks pass; current native jobs remain running.
+
 ## 2026-09-24 — map detail chrome and queued build
 
 - Map and HistoryMap now use SecondaryHeader and StepUpDesign.Gutter while preserving their weighted interactive map area, filters and bottom context. Gallery opens both actual routes. Architecture checks reject screen-local back/header code in these map screens. Native large-font, map interaction and GPS permission coverage remain outstanding.

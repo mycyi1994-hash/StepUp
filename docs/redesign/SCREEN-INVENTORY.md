@@ -58,7 +58,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:105 | pending | pending |
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:84 | pending | pending |
 | HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:93 | pending | pending |
-| ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:104 | pending | pending |
+| ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:102 | pending | pending |
 | SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:69 | pending | pending |
 | SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:78 | pending | pending |
 | LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:75 | pending | pending |
@@ -78,7 +78,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | SupportScreen | app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt:55 | pending | pending |
 | ThemeScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt:75 | pending | pending |
 | SplashScreen | app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt:37 | pending | pending |
-| CourseHubScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:94 | pending | pending |
+| CourseHubScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:92 | pending | pending |
 | RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:153 | pending | pending |
 
 ## Dialog / sheet / menu declarations
@@ -91,14 +91,14 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:434 | pending |
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
-| ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:614 | pending |
-| CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:771 | pending |
+| ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:532 | pending |
+| CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:689 | pending |
 | MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:484 | pending |
 | GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:958 | pending |
 | ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1068 | pending |
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |
-| CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:295 | pending |
-| CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:877 | pending |
+| CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:263 | pending |
+| CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:845 | pending |
 | RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:527 | pending |
 | RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:565 | pending |
 | RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:597 | pending |

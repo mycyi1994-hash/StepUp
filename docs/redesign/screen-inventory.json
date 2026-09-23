@@ -322,7 +322,7 @@
     {
       "id": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 104,
+      "line": 102,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -462,7 +462,7 @@
     {
       "id": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 94,
+      "line": 92,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -521,14 +521,14 @@
       "kind": "AlertDialog",
       "owner": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 614,
+      "line": 532,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 771,
+      "line": 689,
       "verification": "pending"
     },
     {
@@ -563,14 +563,14 @@
       "kind": "AlertDialog",
       "owner": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 295,
+      "line": 263,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "CourseRankingDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 877,
+      "line": 845,
       "verification": "pending"
     },
     {

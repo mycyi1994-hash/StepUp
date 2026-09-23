@@ -15,13 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -62,7 +60,7 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.VARIANTS_PER_FACTION
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.EquippedSneakerCard
 import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.FilterSummaryRow
@@ -156,102 +154,22 @@ fun ItemsScreen(
         viewModel.consumeMessage()
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
-    ) {
-        // 머리글 한 줄 — 제목이 로고 자리에 서고, 도감과 토큰이 그 맞은편에 선다.
-        //
-        // 로고를 뺀 것은 탭 하나에 이름이 둘 필요가 없어서다. 아래 탭 막대가
-        // 이미 "아이템"에 불을 켜 두었고, 그 위에 다시 STEPUP 이 있으면
-        // 정작 이 화면이 무엇인지는 셋째 줄에 가서야 나온다.
+    DetailPage(title = stringResource(R.string.items_vault_title), onBack = onBack ?: {}) {
         item {
-            // 큰 글자에서는 제목 옆에 도감·토큰까지 서면 "신발 보…"로 잘린다 —
-            // 그때는 도감·토큰을 제목 아래 줄 오른쪽으로 내린다.
-            val stackedHeader = LocalDensity.current.fontScale > 1.3f
-            val headerActions: @Composable () -> Unit = {
-                // 도감 입구 — 아이콘만. 옆의 토큰 카드와 높이를 맞춰 두면
-                // 글자 없이도 "누르는 것"으로 읽힌다. 몇 개 모았는지는
-                // 아래 보관함 머리글이 이미 말하고 있다.
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(CarbonHigh)
-                        .border(1.dp, Volt.copy(alpha = 0.35f), RoundedCornerShape(15.dp))
-                        .quietClickable(onOpenDex),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                        contentDescription = stringResource(R.string.dex_title),
-                        tint = Volt,
-                        modifier = Modifier.size(21.dp),
-                    )
-                }
-                // 하위 화면이라 자리가 좁다. 시세·달러 환산이 붙은 토큰 카드 대신
-                // 다른 리뉴얼 화면과 같은 작은 SUP 알약을 쓴다.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                GhostButton(
+                    text = stringResource(R.string.dex_title),
+                    onClick = onOpenDex,
+                    modifier = Modifier.weight(1f),
+                )
                 SupPill(balance = balance, onClick = null)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    // 꾸미기 밑의 화면이다 — 돌아갈 길을 머리글 맨 앞에 둔다
-                    if (onBack != null) {
-                        DarkIconButton(
-                            icon = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                            onClick = onBack,
-                        )
-                    }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.items_vault_title),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1).sp,
-                            color = Snow,
-                        )
-                        Text(
-                            text = stringResource(
-                                when (tab) {
-                                    0 -> R.string.store_sub
-                                    1 -> R.string.nft_sub
-                                    else -> R.string.items_sub
-                                },
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Silver,
-                        )
-                    }
-                    if (!stackedHeader) headerActions()
-                }
-                if (stackedHeader) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        headerActions()
-                    }
-                }
             }
         }
 
         // 탭 안의 탭 — 스토어와 아이템(보관함).
         //
-        // 도감 입구와 토큰은 머리글에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
+        // 도감 입구와 토큰은 탭 위에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
         // 뜻이 같아서, 탭마다 옮기면 찾는 자리가 두 곳이 된다.
         item {
             SegmentedTabs(
@@ -267,7 +185,7 @@ fun ItemsScreen(
 
         if (tab == 0) {
             storeSection()
-            return@LazyColumn
+            return@DetailPage
         }
         if (tab == 1) {
             marketMessage?.let { note ->
@@ -285,7 +203,7 @@ fun ItemsScreen(
                 onCancelListing = marketViewModel::cancelListing,
                 onCancelBid = marketViewModel::cancelBid,
             )
-            return@LazyColumn
+            return@DetailPage
         }
 
         // ── 속성별 도감 진행도 — 탭하면 그 속성만 필터링 ─────────

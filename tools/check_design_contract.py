@@ -47,7 +47,7 @@ for relative in ('map/MapScreen.kt', 'profile/HistoryMapScreen.kt'):
 for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
                  'community/FlashRunDetailScreen.kt', 'items/SneakerDexScreen.kt', 'profile/AnalyticsScreen.kt',
                  'items/SneakerDetailScreen.kt', 'market/MarketModelScreen.kt', 'community/PartyLobbyScreen.kt',
-                 'community/CrewBoardScreen.kt'):
+                 'community/CrewBoardScreen.kt', 'items/ItemsScreen.kt', 'walk/CourseHubScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
     if 'DetailPage(' not in detail or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail chrome')

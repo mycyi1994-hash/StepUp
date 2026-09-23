@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
@@ -63,7 +61,7 @@ import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.components.CourseTrackMap
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.LiveRouteMap
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GhostButton
@@ -136,37 +134,7 @@ fun CourseHubScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = onBack,
-                    )
-                    Column {
-                        Eyebrow(text = stringResource(R.string.run_live))
-                        Text(
-                            text = stringResource(R.string.courses_title),
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp,
-                            color = Snow,
-                        )
-                    }
-                }
-            }
-
+        DetailPage(title = stringResource(R.string.courses_title), onBack = onBack) {
             item {
                 SegmentedTabs(
                     labels = listOf(
