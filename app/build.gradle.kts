@@ -72,6 +72,11 @@ android {
         val googleWebClientId = secret("GOOGLE_WEB_CLIENT_ID", "stepupGoogleWebClientId")
             ?: "201996080239-8hrgea5hfe58ank2f6rbbqnkk5ek2mf3.apps.googleusercontent.com"
 
+        // 지도 타일(MapTiler). 앱에 넣으라고 발급되는 공개 키다 — MapTiler 대시보드에서
+        // 이 앱에서만 쓰이도록 제한해 둔다. 비워 두면 OpenStreetMap 공용 타일로 돌아간다.
+        val mapTilerKey = secret("MAPTILER_KEY", "stepupMapTilerKey") ?: "Tsagjrb4rNikrZug4jBG"
+        buildConfigField("String", "MAPTILER_KEY", "\"$mapTilerKey\"")
+
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
