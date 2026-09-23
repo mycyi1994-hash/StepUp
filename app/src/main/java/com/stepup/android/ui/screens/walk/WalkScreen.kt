@@ -87,6 +87,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import com.stepup.android.data.local.UploadState
+import com.stepup.android.ui.components.RunShareCard
 import com.stepup.android.ui.components.VerticalHairline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Stop
@@ -1579,6 +1580,12 @@ private fun FinishCard(
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
     }
+    val shareLabels = RunShareCard.Labels(
+        distance = stringResource(R.string.share_card_distance),
+        time = stringResource(R.string.share_card_time),
+        pace = stringResource(R.string.share_card_pace),
+        footer = stringResource(R.string.share_card_footer),
+    )
     val shareText = stringResource(
         R.string.finish_share_text,
         "%.1f".format(km),
@@ -1711,11 +1718,26 @@ private fun FinishCard(
         GhostButton(
             text = stringResource(R.string.finish_share),
             onClick = {
-                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                // 달린 길과 기록을 그림 한 장으로. 그림을 못 만들면 글만 보낸다.
+                val card = runCatching {
+                    RunShareCard.render(
+                        context = context,
+                        km = km,
+                        elapsed = formatDuration(session.lastElapsedSec),
+                        pace = paceSec?.let { "%d'%02d\"".format(it / 60, it % 60) } ?: "—",
+                        track = session.geoTrack,
+                        labels = shareLabels,
+                    )
+                }.getOrNull()
+                if (card != null) {
+                    RunShareCard.share(context, card, shareText, null)
+                } else {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, null))
                 }
-                context.startActivity(android.content.Intent.createChooser(send, null))
             },
             modifier = Modifier
                 .fillMaxWidth()

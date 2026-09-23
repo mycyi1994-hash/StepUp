@@ -1367,6 +1367,10 @@ Start running with StepUp.</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>
     <string name="finish_share">Share run</string>
+    <string name="share_card_distance">Distance</string>
+    <string name="share_card_time">Time</string>
+    <string name="share_card_pace">Pace</string>
+    <string name="share_card_footer">Run together · stepupcrew.com</string>
     <string name="finish_share_text">I ran %1$s km in %2$s on StepUp and earned +%3$s SUP.</string>
     <string name="home_today_earned">Earned today</string>
     <string name="home_run_time">Workout time</string>
