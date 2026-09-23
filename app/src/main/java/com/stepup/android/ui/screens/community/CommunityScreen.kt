@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChevronRight
@@ -100,6 +101,7 @@ fun CommunityScreen(
     onCreateCrew: () -> Unit = {},
     onWritePost: (String) -> Unit = {},
     onOpenFlash: (Long) -> Unit = {},
+    onOpenMap: () -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
@@ -154,6 +156,7 @@ fun CommunityScreen(
                 onOpenRanking = onOpenRanking,
                 onWritePost = { onWritePost("") },
                 onOpenFlash = onOpenFlash,
+                onOpenMap = onOpenMap,
             )
 
             CommunityTab.CREW -> CrewTab(
@@ -176,6 +179,7 @@ private fun BoardTab(
     onOpenRanking: () -> Unit,
     onWritePost: () -> Unit,
     onOpenFlash: (Long) -> Unit,
+    onOpenMap: () -> Unit,
 ) {
     val posts by viewModel.boardPosts.collectAsStateWithLifecycle()
     val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
@@ -205,6 +209,10 @@ private fun BoardTab(
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
+            // 지도 — 번개·코스를 내 주변에서, 그리고 땅따먹기. 목록 맨 위 한 줄이라
+            // 글쓰기(주 행동)와 겹치지 않는다.
+            item { MapEntryCard(onClick = onOpenMap) }
+
             // 글은 서버에만 있다. 로그인·연결 문제로 비었으면 "아직 글이 없어요"와 섞지 않는다.
             if (posts.isEmpty() && boardSync != BoardSyncState.Ready) {
                 item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
@@ -739,5 +747,36 @@ private fun SearchField(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/** 게시판 맨 위 한 줄 — 지도로 들어가는 입구 */
+@Composable
+private fun MapEntryCard(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CarbonHigh)
+            .quietClickable(onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Filled.Map, contentDescription = null, tint = Volt, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.community_map_title),
+                color = Snow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            Text(
+                text = stringResource(R.string.community_map_sub),
+                color = Silver,
+                fontSize = 12.sp,
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)
     }
 }

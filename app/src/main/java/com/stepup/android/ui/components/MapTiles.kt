@@ -216,6 +216,15 @@ object MapTiles {
         return (0.5 - ln((1 + s) / (1 - s)) / (4 * PI)) * worldSize(zoom)
     }
 
+    /** [worldX] 의 반대 — 세계 픽셀 x → 경도 */
+    fun lngOf(worldX: Double, zoom: Int): Double = worldX / worldSize(zoom) * 360.0 - 180.0
+
+    /** [worldY] 의 반대 — 세계 픽셀 y → 위도 */
+    fun latOf(worldY: Double, zoom: Int): Double {
+        val n = PI - 2.0 * PI * worldY / worldSize(zoom)
+        return Math.toDegrees(kotlin.math.atan(kotlin.math.sinh(n)))
+    }
+
     fun worldSize(zoom: Int): Double = (1 shl zoom).toDouble() * TILE_SIZE
 
     /**

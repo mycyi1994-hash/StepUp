@@ -8,6 +8,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.remote.CourseRankRow
+import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.repo.BoardResult
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CourseRepository
@@ -19,6 +21,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** 코스 기록 순위 창 */
+sealed interface CourseRankingState {
+    val courseName: String
+
+    data class Loading(override val courseName: String) : CourseRankingState
+    data class Ready(override val courseName: String, val rows: List<CourseRankRow>) : CourseRankingState
+    data class Failed(override val courseName: String, val signIn: Boolean) : CourseRankingState
+}
 
 class CourseHubViewModel(
     private val courseRepository: CourseRepository,
@@ -82,6 +93,26 @@ class CourseHubViewModel(
 
     fun delete(id: Long) {
         viewModelScope.launch { report(courseRepository.delete(id)) }
+    }
+
+    private val _ranking = MutableStateFlow<CourseRankingState?>(null)
+
+    /** 열려 있는 코스 기록 순위. null 이면 닫혀 있다. */
+    val ranking: StateFlow<CourseRankingState?> = _ranking
+
+    fun openRanking(course: RunCourse) {
+        _ranking.value = CourseRankingState.Loading(course.name)
+        viewModelScope.launch {
+            _ranking.value = when (val result = courseRepository.leaderboard(course.encode())) {
+                is ServerResult.Ok -> CourseRankingState.Ready(course.name, result.value)
+                is ServerResult.SignInRequired -> CourseRankingState.Failed(course.name, signIn = true)
+                is ServerResult.Rejected, is ServerResult.Retry -> CourseRankingState.Failed(course.name, signIn = false)
+            }
+        }
+    }
+
+    fun closeRanking() {
+        _ranking.value = null
     }
 
     private fun report(result: BoardResult) {

@@ -22,6 +22,25 @@ data class CourseRow(
     val mine: Boolean = false,
 )
 
+/** 코스 기록을 낸 결과 — `course_run_submit` */
+@Serializable
+data class CourseRunResult(
+    @SerialName("course_id") val courseId: Long,
+    @SerialName("duration_sec") val durationSec: Int,
+    val rank: Int,
+    val runners: Int,
+)
+
+/** 코스 순위 한 줄 — `course_leaderboard`. 사람마다 가장 빠른 기록 하나. */
+@Serializable
+data class CourseRankRow(
+    val rank: Int,
+    @SerialName("display_name") val displayName: String = "",
+    @SerialName("duration_sec") val durationSec: Int,
+    val runs: Int = 1,
+    @SerialName("is_me") val isMe: Boolean = false,
+)
+
 /**
  * 코스 게시판 — 서버와 말을 주고받는 쪽 (`supabase/migrations/0012_course_party.sql`).
  *
@@ -67,6 +86,36 @@ class CourseApi(private val server: StepUpServer) {
         rpc("course_toggle_like", jsonBody { put("p_course", courseId) }) {
             it.trim().toBooleanStrictOrNull()
         }
+
+    /**
+     * 방금 올린 러닝을 코스 기록으로 낸다. 코스는 길로 찾는다 — 폰에 받아 둔
+     * 코스는 서버 번호를 모른다. 서버에 없는 코스면 null 이 돌아온다.
+     */
+    suspend fun submitRun(courseTrack: String, startedAtMillis: Long): ServerResult<CourseRunResult?> =
+        when (
+            val result = rpc(
+                "course_run_submit",
+                jsonBody {
+                    put("p_course_track", courseTrack)
+                    put("p_started_at", startedAtMillis.toIsoInstant())
+                },
+            ) { serverJson.decodeFromString<List<CourseRunResult>>(it) }
+        ) {
+            is ServerResult.Ok -> ServerResult.Ok(result.value.firstOrNull())
+            is ServerResult.Rejected -> result
+            is ServerResult.Retry -> result
+            is ServerResult.SignInRequired -> result
+        }
+
+    /** 코스 순위 — 상위 [limit] 명과 나 */
+    suspend fun leaderboard(courseTrack: String, limit: Int = 20): ServerResult<List<CourseRankRow>> =
+        rpc(
+            "course_leaderboard",
+            jsonBody {
+                put("p_course_track", courseTrack)
+                put("p_limit", limit)
+            },
+        ) { serverJson.decodeFromString<List<CourseRankRow>>(it) }
 
     private suspend fun <T> rpc(
         name: String,

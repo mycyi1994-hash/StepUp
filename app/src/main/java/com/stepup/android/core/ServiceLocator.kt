@@ -17,6 +17,7 @@ import com.stepup.android.data.remote.RunningFeedApi
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import com.stepup.android.data.remote.TerritoryApi
 import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.repo.BoostRepository
 import com.stepup.android.data.repo.ClaimRepository
@@ -105,6 +106,10 @@ object ServiceLocator {
     lateinit var pushRegistrar: PushRegistrar
         private set
 
+    /** 땅따먹기 — 지도에 보이는 칸과 크루 순위 */
+    lateinit var territoryApi: TerritoryApi
+        private set
+
     fun init(context: Context) {
         if (this::database.isInitialized) return
         val app = context.applicationContext
@@ -129,9 +134,14 @@ object ServiceLocator {
         val server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
         Analytics.init(app)
         pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
+        territoryApi = TerritoryApi(server)
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
-            recorder = ServerSessionRecorder(server),
+            recorder = ServerSessionRecorder(
+                server = server,
+                courseApi = CourseApi(server),
+                takeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt) },
+            ),
         )
         rankingRepository = RankingRepository(server)
         stepTracker = StepTracker(app, userPrefs) { day ->

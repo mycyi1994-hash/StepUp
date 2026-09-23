@@ -91,6 +91,7 @@ class AvatarAndNavTest {
         assertEquals(Screen.Community, parentTabOf(Routes.CREW_BOARD))
         assertEquals(Screen.Community, parentTabOf(Routes.POST_COMPOSE))
         assertEquals(Screen.Community, parentTabOf(Routes.RANKING))
+        assertEquals(Screen.Community, parentTabOf(Routes.MAP))
     }
 
     @Test
@@ -98,6 +99,8 @@ class AvatarAndNavTest {
         assertEquals(Screen.Profile, parentTabOf(Routes.WALLET))
         assertEquals(Screen.Profile, parentTabOf(Routes.SETTINGS_THEME))
         assertEquals(Screen.Profile, parentTabOf(Routes.NOTIFICATIONS))
+        assertEquals(Screen.Profile, parentTabOf(Routes.ANALYTICS))
+        assertEquals(Screen.Profile, parentTabOf(Routes.HISTORY_MAP))
     }
 
     // ── 데모 ────────────────────────────────────────────────────

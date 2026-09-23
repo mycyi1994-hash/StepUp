@@ -389,9 +389,14 @@ class WalkSessionService : Service() {
             if (verdict.isRewardable) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {
-                    ServiceLocator.courseRepository.grantCompletionIfFinished(
+                    val finished = ServiceLocator.courseRepository.grantCompletionIfFinished(
                         RewardEconomy.distanceMeters(creditedSteps) / 1000,
                     )
+                    // 완주한 코스는 러닝이 서버에 올라간 뒤 코스 기록으로 낸다
+                    // (ServerSessionRecorder). 서버가 경로로 다시 확인한다.
+                    if (finished != null) {
+                        ServiceLocator.userPrefs.addPendingCourseRun(session.startedAt, finished.encode())
+                    }
                 }
                 // 랭킹 재료 — 최고 속도와, 착용 신발의 종족별 누적 거리.
                 // 거리는 GPS 실측이 있으면 그걸 쓰고, 없으면 걸음 환산으로 대체한다.

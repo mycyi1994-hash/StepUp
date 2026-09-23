@@ -193,6 +193,7 @@ fun CourseHubScreen(
                                 selected = course.id == selectedId,
                                 onSelect = { pendingId = course.id },
                                 onLike = { viewModel.toggleLike(course.id) },
+                                onOpenRanking = { viewModel.openRanking(course) },
                                 onShareToggle = if (course.mine) {
                                     { viewModel.setShared(course.id, !course.shared) }
                                 } else {
@@ -276,11 +277,17 @@ fun CourseHubScreen(
                                 onLike = { viewModel.toggleLike(course.id) },
                                 showAuthor = true,
                                 rank = index + 1,
+                                onOpenRanking = { viewModel.openRanking(course) },
                             )
                         }
                     }
                 }
             }
+        }
+
+        val ranking by viewModel.ranking.collectAsStateWithLifecycle()
+        ranking?.let { state ->
+            CourseRankingDialog(state = state, onDismiss = viewModel::closeRanking)
         }
 
         if (pending != null) {
@@ -357,6 +364,8 @@ private fun CourseCard(
     onDelete: (() -> Unit)? = null,
     /** 게시판 순위. 0이면 붙이지 않는다. */
     rank: Int = 0,
+    /** 이 코스의 기록 순위 보기. null 이면 붙이지 않는다. */
+    onOpenRanking: (() -> Unit)? = null,
 ) {
     GlowCard(
         accent = selected,
@@ -433,6 +442,15 @@ private fun CourseCard(
                         fontSize = 10.sp,
                         color = Slate,
                     )
+                    if (onOpenRanking != null) {
+                        Text(
+                            text = stringResource(R.string.course_rank_open),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Volt,
+                            modifier = Modifier.quietClickable(onOpenRanking),
+                        )
+                    }
                 }
                 if (showAuthor && course.author.isNotBlank()) {
                     Text(
@@ -851,4 +869,76 @@ private fun CourseUploadCard(
             }
         }
     }
+}
+
+/** 코스 기록 순위 — 사람마다 가장 빠른 기록 하나. 서버가 경로로 확인한 기록만 올라온다. */
+@Composable
+private fun CourseRankingDialog(state: CourseRankingState, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Carbon,
+        titleContentColor = Snow,
+        textContentColor = Silver,
+        title = {
+            Column {
+                Text(stringResource(R.string.course_rank_title), fontWeight = FontWeight.Black)
+                Text(
+                    text = state.courseName,
+                    fontSize = 12.sp,
+                    color = Silver,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        },
+        text = {
+            when (state) {
+                is CourseRankingState.Loading -> Text(stringResource(R.string.course_rank_loading))
+                is CourseRankingState.Failed -> Text(
+                    stringResource(if (state.signIn) R.string.board_sign_in_needed else R.string.course_rank_failed),
+                )
+                is CourseRankingState.Ready -> if (state.rows.isEmpty()) {
+                    Text(stringResource(R.string.course_rank_empty), lineHeight = 20.sp)
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.rows.forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Text(
+                                    text = "${row.rank}",
+                                    fontWeight = FontWeight.Black,
+                                    color = if (row.rank <= 3) Volt else Slate,
+                                    modifier = Modifier.width(24.dp),
+                                )
+                                Text(
+                                    text = if (row.isMe) stringResource(R.string.course_rank_me, row.displayName) else row.displayName,
+                                    color = if (row.isMe) Volt else Snow,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(text = formatDuration(row.durationSec), color = Snow, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_close), color = Volt, fontWeight = FontWeight.Bold)
+            }
+        },
+    )
+}
+
+/** 초 → "m:ss" 또는 "h:mm:ss" */
+private fun formatDuration(sec: Int): String {
+    val h = sec / 3600
+    val m = sec % 3600 / 60
+    val s = sec % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }

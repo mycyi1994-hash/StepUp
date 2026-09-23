@@ -2201,6 +2201,13 @@ begin
     '칸 가운데는 좌표에서 200m 안이다');
   perform pg_temp.ok(economy.hex_cell(37.5443, 127.0557) <> economy.hex_cell(37.5543, 127.0557),
     '1km 떨어지면 다른 칸이다');
+  -- 앱(domain/Territory.kt, TerritoryTest)과 같은 값이어야 한다. 어긋나면 한 칸씩 밀려 보인다.
+  perform pg_temp.ok(
+    economy.hex_cell(37.5443, 127.0557) = '44405:20068'
+    and economy.hex_cell(37.440309273233716, 127.13897349477489) = '44474:20003'
+    and economy.hex_cell(37.629132385692984, 126.90202761029576) = '44313:20121'
+    and economy.hex_cell(37.428157876032266, 126.8113389906088) = '44337:19995',
+    '칸 이름이 앱과 같은 식으로 나온다');
 end $$;
 
 insert into fix (k, v)
