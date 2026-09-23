@@ -125,6 +125,11 @@ class ScreenGalleryTest {
         }
         for (index in 0..36) {
             reset(index)
+            if (index == 22) {
+                // Joining must be reachable without scrolling through the roster/chat.
+                compose.onNodeWithText(localized.getString(R.string.flash_join_cta))
+                    .assertIsDisplayed().assertIsEnabled().assertHasClickAction()
+            }
             capture("screen-${index.toString().padStart(2, '0')}")
         }
         val variations = listOf(

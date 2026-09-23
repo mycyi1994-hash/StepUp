@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="post_like_action">点赞</string>
+    <string name="post_unlike_action">取消点赞</string>
     <!-- Notification -->
     <string name="notification_channel_walk">跑步记录</string>
     <string name="notification_channel_community">跑团与闪电跑消息</string>

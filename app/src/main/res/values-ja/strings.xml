@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="post_like_action">いいね</string>
+    <string name="post_unlike_action">いいねを取り消す</string>
 
     <!-- Notification -->
     <string name="notification_channel_walk">ランセッション</string>

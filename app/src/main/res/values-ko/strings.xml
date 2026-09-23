@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="post_like_action">좋아요</string>
+    <string name="post_unlike_action">좋아요 취소</string>
     <!-- Notification -->
     <string name="notification_channel_walk">러닝 세션</string>
     <string name="notification_channel_community">크루·번개 소식</string>

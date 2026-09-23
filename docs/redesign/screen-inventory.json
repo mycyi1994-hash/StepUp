@@ -259,7 +259,7 @@
     {
       "id": "FlashRunDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
-      "line": 87,
+      "line": 85,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -493,7 +493,7 @@
       "kind": "AlertDialog",
       "owner": "FlashMembersDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
-      "line": 432,
+      "line": 436,
       "verification": "pending"
     },
     {

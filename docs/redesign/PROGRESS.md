@@ -4,6 +4,13 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — meetup detail action and capture evidence
+
+- Reviewed API 34 e16e1e2 native captures for vault, sneaker detail, meetup detail and market model. Legacy content remains too dense; meetup participation was below the initial viewport. Its primary join/lobby action now uses the shared DetailPage pinned footer, with full/closed states disabled. Leave and like remain secondary actions. Added an initial-viewport gallery assertion, pending native execution.
+- Meetup descriptions no longer silently truncate after three lines; place values wrap and key meeting labels use readable text sizes. Removed an unconditional verified-host icon unsupported by any verification field. Like/unlike now has localized accessibility labels.
+- e16e1e2 API 34 full gallery passed with empty capture-notes; interaction suite had 18 tests and one ChromeNavigationTest failure. Disk-backed energy close/reopen/retry test passed in that revision. This does not validate the newer energy-capacity test or real process death.
+- ec91211 Build APK 35921962092 passed. Its API 34 gallery job lost the emulator during the first interaction test, producing an empty failure instead of a completed suite; physical-display capture did not establish stability. API 35 job still live when checked. Do not count unexecuted tests as passing. Full UI, external-service and device validation remain open.
+
 ## 2026-09-24 — preserve purchased energy at capacity
 
 - Found that instant energy purchases charged even when the capped energy value could not increase. New purchases now check room for the full two energy before debit. Atomic DataStore delivery independently checks capacity again, so a refill between debit and delivery cannot silently discard paid energy or consume its receipt.

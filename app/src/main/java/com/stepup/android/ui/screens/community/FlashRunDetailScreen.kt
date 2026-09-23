@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,7 +61,6 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.RouteMap
 import com.stepup.android.ui.components.VerticalHairline
-import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Alert
@@ -102,7 +100,24 @@ fun FlashRunDetailScreen(
     // "채팅 입장"이 여는 댓글 창은 이 화면 위에 그대로 뜬다
     CommentSheetHost(viewModel)
 
-    DetailPage(title = stringResource(R.string.post_flash_details), onBack = onBack) {
+    DetailPage(
+        title = stringResource(R.string.post_flash_details),
+        onBack = onBack,
+        primaryActionLabel = post?.let {
+            stringResource(when {
+                it.isClosed -> R.string.flash_closed_badge
+                it.joined -> R.string.flash_lobby_cta
+                it.isFull -> R.string.flash_full_badge
+                else -> R.string.flash_join_cta
+            })
+        },
+        primaryActionEnabled = post != null && !post.isClosed && (post.joined || !post.isFull),
+        onPrimaryAction = {
+            post?.let {
+                if (it.joined) onOpenLobby() else viewModel.toggleJoinFlash(it.id)
+            }
+        },
+    ) {
         if (post == null) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp)) {
@@ -137,7 +152,6 @@ fun FlashRunDetailScreen(
 
         item {
             FlashCtaRow(
-                onOpenLobby = onOpenLobby,
                 post = post,
                 onLike = { viewModel.toggleLike(post.id) },
                 onToggleJoin = { viewModel.toggleJoinFlash(post.id) },
@@ -190,8 +204,6 @@ private fun FlashHeroCard(post: Post) {
                         text = post.body,
                         style = MaterialTheme.typography.bodyMedium,
                         color = VoltSoft.copy(alpha = 0.85f),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Spacer(Modifier.height(14.dp))
@@ -214,22 +226,16 @@ private fun FlashHeroCard(post: Post) {
                     }
                     Text(
                         text = stringResource(R.string.flash_host),
-                        fontSize = 10.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.6.sp,
                         color = Slate,
                     )
                     Text(
                         text = post.author,
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Snow,
-                    )
-                    Icon(
-                        Icons.Filled.Verified,
-                        contentDescription = null,
-                        tint = Volt,
-                        modifier = Modifier.size(14.dp),
                     )
                 }
             }
@@ -254,7 +260,7 @@ private fun FlashStatusPill(post: Post) {
         Text(
             text = label,
             color = tint,
-            fontSize = 10.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 0.6.sp,
         )
@@ -344,7 +350,7 @@ private fun InfoCell(
     ) {
         Text(
             text = label,
-            fontSize = 9.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.8.sp,
             color = Slate,
@@ -364,17 +370,15 @@ private fun InfoCell(
             Text(
                 text = value,
                 fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                fontSize = 13.5.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
         if (sub != null) {
             Text(
                 text = sub,
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -607,7 +611,6 @@ private fun FlashCtaRow(
     post: Post,
     onLike: () -> Unit,
     onToggleJoin: () -> Unit,
-    onOpenLobby: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
     Row(
@@ -625,19 +628,12 @@ private fun FlashCtaRow(
         ) {
             Icon(
                 imageVector = if (post.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = null,
+                contentDescription = stringResource(if (post.liked) R.string.post_unlike_action else R.string.post_like_action),
                 tint = if (post.liked) Alert else Silver,
                 modifier = Modifier.size(20.dp),
             )
         }
-        if (!post.joined) {
-            VoltButton(
-                text = stringResource(R.string.flash_join_cta),
-                onClick = onToggleJoin,
-                modifier = Modifier.weight(1f),
-                enabled = !post.isClosed && !post.isFull,
-            )
-        } else {
+        if (post.joined) {
             GhostButton(
                 text = stringResource(R.string.flash_joined_cta),
                 onClick = onToggleJoin,
@@ -649,11 +645,6 @@ private fun FlashCtaRow(
     // 참가만 눌러 놓고 끝나면 이 글은 게시판 글일 뿐이다. 실제로 같이
     // 뛰려면 크루 파티런과 같은 자리 — 준비하고, 모이면 출발하는 — 가 있어야 한다.
     if (post.joined && !post.isClosed) {
-        VoltButton(
-            text = stringResource(R.string.flash_lobby_cta),
-            onClick = onOpenLobby,
-            modifier = Modifier.fillMaxWidth(),
-        )
         Text(
             text = stringResource(
                 R.string.flash_lobby_hint,

@@ -49,7 +49,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CommunityScreen | app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt:99 | pending | pending |
 | CrewBoardScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt:60 | pending | pending |
 | CrewCreateScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt:44 | pending | pending |
-| FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:87 | pending | pending |
+| FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:85 | pending | pending |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:94 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:51 | pending | pending |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:77 | pending | pending |
@@ -87,7 +87,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 |---|---|---|---|
 | ReportDialogHost | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt:116 | pending |
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:150 | pending |
-| FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:432 | pending |
+| FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:436 | pending |
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:434 | pending |
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |

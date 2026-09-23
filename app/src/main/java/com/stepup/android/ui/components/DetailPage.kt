@@ -15,6 +15,7 @@ fun DetailPage(
     onBack: () -> Unit,
     primaryActionLabel: String? = null,
     onPrimaryAction: (() -> Unit)? = null,
+    primaryActionEnabled: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
@@ -29,6 +30,7 @@ fun DetailPage(
             PrimaryCta(
                 text = primaryActionLabel,
                 onClick = onPrimaryAction,
+                enabled = primaryActionEnabled,
                 modifier = Modifier.padding(vertical = 12.dp),
             )
         }
