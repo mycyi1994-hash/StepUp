@@ -18,12 +18,21 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 |---|---|---|
 | Full route/state inventory | in progress | Inspect root routes, dialogs, screens and existing capture fixtures |
 | Locked shared chrome and guardrails | in progress | Implement tokens, fixed logo variants, route policy, tests |
-| Startup → home → run → result/reward → wardrobe | pending | Preserve real initialization, tracking, data and ownership |
+| Startup → home → run → result/reward → wardrobe | in progress | Startup/home/run implemented; wardrobe migration underway; screenshots and full flow still pending |
 | All remaining screens and states | pending | Apply the same system; track every row |
 | Native visual/interaction/device validation | pending | Build/CI/emulator, then device-only checks explicitly tracked |
 | Final APK, screenshot gallery, change/test report | pending | Must all describe the same candidate revision |
 
 ## Environment / unverified dependencies
+
+## 2026-09-24 — wardrobe and native Back verification
+
+- Revision 04dc0a6 Build APK run 35899906910 passed, including the release build. Capture run 35899907027 compiled and launched the emulator but failed at ChromeNavigationTest line 110 after dismissing the home sheet.
+- The test called the activity Back dispatcher directly while a dialog window was open; this finished the activity instead of sending Back to the sheet. Replaced it with a real system Back key. The first viewport's tab/wallet/run assertions reached that line; the remaining viewport scenarios are not yet verified.
+- The capture script now preserves chrome reports/screenshots and runs the full gallery even if a chrome assertion fails, while keeping the job failing on test failure. This prevents a test error from hiding all visual evidence.
+- Wardrobe now has a large centered equipped/preview character, outfit/shoe categories and a separately scrollable item grid. Equip appears for a new selection. Character selection, market, vault and selected-shoe detail are reachable from More. Ownership and trial rules remain unchanged.
+- Wardrobe terrace artwork and exact built-in ImageGen prompt saved with the other production scenes. Native labels and controls remain separate.
+- Outstanding: actual screenshot review, wardrobe persistence/ownership interaction tests, result/reward redesign, other routes/states, permission onboarding and external/device functional validation. A default look can briefly precede stored avatar state in current view models; audit readiness before finalizing.
 
 ## 2026-09-24 — startup and home implementation checkpoint
 

@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
@@ -49,7 +51,7 @@ class ChromeNavigationTest {
             CompositionLocalProvider(LocalDensity provides Density(1.8f, viewport.font)) {
                 StepUpTheme(viewport.mode) {
                     ExperienceProvider {
-                        Box(Modifier.requiredSize(viewport.width.dp, viewport.height.dp)) {
+                        Box(Modifier.requiredSize(viewport.width.dp, viewport.height.dp).testTag("chrome-viewport")) {
                             key(viewport) { MainScaffold() }
                         }
                     }
@@ -69,6 +71,7 @@ class ChromeNavigationTest {
             val logo = bounds("brand-wordmark")
             val bar = bounds(BOTTOM_NAV_TAG)
             val token = bounds("sup-balance")
+            capture("${next.width}-${next.font}-${next.mode}-home")
             compose.onNodeWithTag("home-start-run").assertIsDisplayed().assertHasClickAction()
             listOf(R.string.tab_customize, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->
                 compose.onNode(hasText(compose.activity.getString(tab)) and hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
@@ -78,12 +81,13 @@ class ChromeNavigationTest {
                 assertEquals("logo $next/$tab", logo, bounds("brand-wordmark"))
                 assertEquals("navigation $next/$tab", bar, bounds(BOTTOM_NAV_TAG))
                 assertEquals("balance $next/$tab", token, bounds("sup-balance"))
+                capture("${next.width}-${next.font}-${next.mode}-$tab")
             }
             compose.onNodeWithTag("sup-balance").performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("main-header").assertDoesNotExist()
             assertEquals("wallet keeps navigation geometry", bar, bounds(BOTTOM_NAV_TAG))
-            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            pressBack()
             compose.waitForIdle()
             assertEquals("restored header", header, bounds("main-header"))
             assertEquals("restored logo", logo, bounds("brand-wordmark"))
@@ -98,14 +102,15 @@ class ChromeNavigationTest {
             compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
-            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            capture("${next.width}-${next.font}-${next.mode}-run-paused")
+            pressBack()
             compose.waitForIdle()
             assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
             com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
             compose.onNodeWithTag("home-details").performClick()
             compose.waitForIdle()
             compose.onNodeWithText(compose.activity.getString(R.string.home_today_earned)).assertIsDisplayed()
-            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            pressBack()
             compose.waitForIdle()
             compose.onNodeWithTag("home-start-run").assertIsDisplayed()
         }
@@ -113,4 +118,16 @@ class ChromeNavigationTest {
 
     private fun bounds(tag: String): Rect = compose.onNodeWithTag(tag, useUnmergedTree = true)
         .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+
+    // Dispatch an actual system Back key so dialog windows receive it before the activity.
+    private fun pressBack() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+
+    private fun capture(name: String) {
+        val directory = java.io.File(compose.activity.getExternalFilesDir(null), "chrome-checks").apply { mkdirs() }
+        val bitmap = compose.onNodeWithTag("chrome-viewport").captureToImage().asAndroidBitmap()
+        java.io.File(directory, "$name.png").outputStream().use {
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+    }
 }

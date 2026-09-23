@@ -149,6 +149,7 @@ class ScreenGalleryTest {
             Triple(19, "compose-tip", listOf(R.string.post_cat_tip)),
             Triple(27, "news-health", listOf(R.string.news_tab_health)),
             Triple(28, "customize-shoes", listOf(R.string.customize_tab_shoes)),
+            Triple(28, "customize-options", listOf(R.string.common_more)),
             Triple(29, "market-outfits", listOf(R.string.customize_tab_outfit)),
             Triple(29, "market-shoes", listOf(R.string.customize_tab_shoes)),
             Triple(30, "map-territory", listOf(R.string.map_seg_territory)),

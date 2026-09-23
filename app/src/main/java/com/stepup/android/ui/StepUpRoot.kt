@@ -329,6 +329,10 @@ internal fun MainScaffold(
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
         com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
+    } else if (currentRoute == Screen.Customize.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Wardrobe,
+        )
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Sunset,

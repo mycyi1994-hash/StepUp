@@ -287,7 +287,7 @@
     {
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 102,
+      "line": 105,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -494,6 +494,13 @@
       "owner": "FlashMembersDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
       "line": 461,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "CustomizeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
+      "line": 241,
       "verification": "pending"
     },
     {

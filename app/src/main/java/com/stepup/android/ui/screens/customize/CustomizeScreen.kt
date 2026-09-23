@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -99,6 +101,7 @@ import com.stepup.android.ui.theme.Volt
  * 체형은 바꾸지 않는다. NFT 인 것은 입히는 것(의상 · 신발)뿐이다.
  */
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun CustomizeScreen(
     onOpenWallet: () -> Unit = {},
     onOpenMarket: () -> Unit = {},
@@ -136,104 +139,48 @@ fun CustomizeScreen(
         shoe = pickedShoe,
         trial = !viewModel.isOwned(pickedOutfit),
     )
-    val largeText = LocalDensity.current.fontScale > 1.2f
+    var showOptions by rememberSaveable { mutableStateOf(false) }
+    val render = AvatarArtCatalog.resolve(preview, AvatarPose.IDLE)
+    val wearing = if (tab == 0) look.outfit.id == pickedOutfit.id else pickedShoe?.equipped == true
+    val canEquip = if (tab == 0) true else pickedShoe != null
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-
-        // ── 제목 · 기본 캐릭터 선택 · 전신 미리보기 ──
-        //
-        // 넓으면 왼쪽에 제목과 성별 카드, 오른쪽에 큰 캐릭터. 글자가 크면 위아래로.
-        val render = AvatarArtCatalog.resolve(preview, AvatarPose.IDLE)
-        val titleBlock: @Composable () -> Unit = {
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    text = stringResource(R.string.customize_title),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.8).sp,
-                    color = Snow,
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+        val previewHeight = maxHeight * 0.48f
+        Column(
+            Modifier.fillMaxSize()
+                .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+                .padding(bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(Modifier.fillMaxWidth().height(previewHeight)) {
+                AvatarImage(
+                    art = render.art,
+                    contentDescription = stringResource(R.string.cd_customize_preview),
+                    modifier = Modifier.fillMaxSize().padding(top = 12.dp, bottom = 6.dp)
+                        .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
                 )
-                Text(text = stringResource(R.string.customize_sub), fontSize = 14.sp, color = Silver, lineHeight = 19.sp)
-            }
-        }
-        val genderRow: @Composable () -> Unit = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AvatarGender.entries.forEach { gender ->
-                    GenderCard(
-                        gender = gender,
-                        selected = look.gender == gender,
-                        onClick = { viewModel.setGender(gender) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(if (largeText) 132.dp else 118.dp),
+                com.stepup.android.ui.components.DarkIconButton(
+                    Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
+                    onClick = { showOptions = true },
+                    modifier = Modifier.align(Alignment.TopEnd).testTag("wardrobe-options"),
+                )
+                if (preview.trial) {
+                    SmallBadge(
+                        stringResource(R.string.customize_trial_badge), tone = BadgeTone.Glow,
+                        modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp),
                     )
                 }
             }
-        }
-        val stage: @Composable (Modifier) -> Unit = { m ->
-            CharacterStage(
-                look = preview,
-                pose = AvatarPose.IDLE,
-                modifier = m.guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
-                characterFraction = 0.92f,
-                skyline = false,
-                contentDescription = stringResource(R.string.cd_customize_preview),
-            ) { r ->
-                Column(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (preview.trial) {
-                        SmallBadge(text = stringResource(R.string.customize_trial_badge), tone = BadgeTone.Glow)
-                    }
-                    if (!r.lookShown) {
-                        SmallBadge(text = stringResource(R.string.customize_preview_missing_badge), tone = BadgeTone.Muted)
-                    }
-                }
-            }
-        }
-        if (largeText) {
-            titleBlock()
-            genderRow()
-            stage(Modifier.fillMaxWidth().height(300.dp))
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(380.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            com.stepup.android.ui.components.AvatarLookNote(preview, render)
+            TwoWaySwitch(
+                labels = listOf(stringResource(R.string.customize_tab_outfit), stringResource(R.string.customize_tab_shoes)),
+                icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
+                selected = tab, onSelect = { tab = it },
+            )
+            Column(
+                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Column(
-                    modifier = Modifier
-                        .weight(0.44f)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    titleBlock()
-                    genderRow()
-                }
-                stage(Modifier.weight(0.56f).fillMaxHeight())
-            }
-        }
-
-        TwoWaySwitch(
-            labels = listOf(
-                stringResource(R.string.customize_tab_outfit),
-                stringResource(R.string.customize_tab_shoes),
-            ),
-            icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
-            selected = tab,
-            onSelect = { tab = it },
-        )
-
         if (tab == 0) {
             ItemGrid(outfits) { outfit ->
                 OutfitCard(
@@ -248,7 +195,9 @@ fun CustomizeScreen(
         } else {
             val list = shoes
             when {
-                list == null -> Unit
+                list == null -> Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator(color = Volt)
+                }
                 list.isEmpty() -> GlowCard(contentPadding = RenewalCardPadding, spacing = 6.dp) {
                     Text(
                         text = stringResource(R.string.customize_no_shoes),
@@ -273,39 +222,56 @@ fun CustomizeScreen(
             }
         }
 
-        // ── 장착하기 (주 행동) · 마켓 보기 ──
-        val wearing = if (tab == 0) look.outfit.id == pickedOutfit.id else pickedShoe?.equipped == true
-        val canEquip = if (tab == 0) true else pickedShoe != null
-        val equipCta: @Composable (Modifier) -> Unit = { m ->
-            PrimaryCta(
-                text = stringResource(if (wearing) R.string.customize_wearing else R.string.customize_equip),
-                icon = Icons.Filled.Checkroom,
-                enabled = canEquip && !wearing,
-                showArrow = false,
-                onClick = {
-                    if (tab == 0) viewModel.equipOutfit(pickedOutfit) else pickedShoe?.let { viewModel.equipShoe(it.id) }
-                },
-                modifier = m,
-            )
+
+            }
+            if (!wearing && canEquip) {
+                PrimaryCta(
+                    text = stringResource(R.string.customize_equip),
+                    icon = Icons.Filled.Checkroom, showArrow = false,
+                    onClick = {
+                        if (tab == 0) viewModel.equipOutfit(pickedOutfit)
+                        else pickedShoe?.let { viewModel.equipShoe(it.id) }
+                    },
+                    modifier = Modifier.testTag("wardrobe-equip"),
+                )
+            }
         }
-        val marketButton: @Composable (Modifier) -> Unit = { m ->
-            GhostButton(
-                text = stringResource(R.string.customize_open_market),
-                onClick = onOpenMarket,
-                modifier = m.heightIn(min = 58.dp),
-            )
-        }
-        if (largeText) {
-            equipCta(Modifier.fillMaxWidth())
-            marketButton(Modifier.fillMaxWidth())
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
+    }
+    if (showOptions) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showOptions = false },
+            containerColor = com.stepup.android.ui.theme.Night,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                equipCta(Modifier.weight(1.45f))
-                marketButton(Modifier.weight(1f))
+                Text(stringResource(R.string.customize_title), color = Snow,
+                    style = androidx.compose.material3.MaterialTheme.typography.titleLarge)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AvatarGender.entries.forEach { gender ->
+                        GenderCard(
+                            gender, look.gender == gender, onClick = { viewModel.setGender(gender) },
+                            modifier = Modifier.weight(1f).height(144.dp),
+                        )
+                    }
+                }
+                GhostButton(
+                    text = stringResource(R.string.customize_open_market),
+                    onClick = { showOptions = false; onOpenMarket() },
+                )
+                GhostButton(
+                    text = stringResource(R.string.customize_open_vault),
+                    onClick = { showOptions = false; onOpenVault() },
+                )
+                pickedShoe?.let { shoe ->
+                    GhostButton(
+                        text = stringResource(R.string.customize_shoe_detail),
+                        onClick = { showOptions = false; onOpenSneaker(shoe.id) },
+                    )
+                }
             }
         }
     }
@@ -468,4 +434,3 @@ private fun ShoeCard(
         art = { SneakerFrame(sneaker = shoe, modifier = Modifier.fillMaxSize()) },
     )
 }
-

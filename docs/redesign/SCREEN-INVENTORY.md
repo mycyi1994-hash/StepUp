@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-33 registered navigation routes; 34 screen functions; 18 overlay declarations. These counts are different measures, not completed screens.
+33 registered navigation routes; 34 screen functions; 19 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -53,7 +53,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:96 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:46 | pending | pending |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:79 | pending | pending |
-| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:102 | pending | pending |
+| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:105 | pending | pending |
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:94 | pending | pending |
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:100 | pending | pending |
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:84 | pending | pending |
@@ -88,6 +88,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ReportDialogHost | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt:93 | pending |
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:150 | pending |
 | FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:461 | pending |
+| CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:241 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:416 | pending |
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:169 | pending |
 | ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:614 | pending |

@@ -1,5 +1,11 @@
 # Production scene artwork
 
+## Wardrobe terrace
+
+`wardrobe-terrace.png` / `scene_wardrobe_terrace.webp`: built-in ImageGen from `../concepts/06-wardrobe.png`, WebP quality 88. Inspected: clean terrace with no UI or character. Exact prompt:
+
+Use case: precise-object-edit. Production full-bleed portrait 9:19.5 backdrop for StepUp native Android wardrobe. Input is approved wardrobe concept. Reconstruct ONLY its sunset riverside terrace environment. Remove character, all logos, text, icons, top header, balance, status bar, category tabs, item cards, bottom navigation, all UI, and circular glowing platform. Preserve polished stylized 3D city skyline, purple-orange sunset, river reflections, bridge and terrace railing. No new subjects. Composition for separate native character overlay: railing and river horizon around 48 percent image height, flat open wet terrace pavement below, central standing space around 62 percent height, quiet dark navy pavement throughout bottom third for item controls. Top is dusk sky. Same art world, lighting and rich depth as reference. No people, no characters, no lettering, no symbols, no phone frame, no controls.
+
 ## Sunset running path
 
 `riverside-sunset.png` / `scene_riverside_sunset.webp`: built-in ImageGen from `../concepts/04-running.png`, WebP quality 88. Inspected: no character, text or controls. Exact prompt:

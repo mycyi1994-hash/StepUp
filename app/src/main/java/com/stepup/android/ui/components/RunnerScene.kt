@@ -14,13 +14,17 @@ import com.stepup.android.R
 import com.stepup.android.ui.theme.Night
 
 /** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
-enum class RunnerSetting { Night, Sunset }
+enum class RunnerSetting { Night, Sunset, Wardrobe }
 
 @Composable
 fun RunnerScene(modifier: Modifier = Modifier, setting: RunnerSetting = RunnerSetting.Night) {
     Box(modifier) {
         Image(
-            painterResource(if (setting == RunnerSetting.Sunset) R.drawable.scene_riverside_sunset else R.drawable.scene_riverside_night),
+            painterResource(when (setting) {
+                RunnerSetting.Night -> R.drawable.scene_riverside_night
+                RunnerSetting.Sunset -> R.drawable.scene_riverside_sunset
+                RunnerSetting.Wardrobe -> R.drawable.scene_wardrobe_terrace
+            }),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
