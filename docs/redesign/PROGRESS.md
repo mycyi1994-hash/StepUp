@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — explicit software renderer experiment
+
+- dee6cc3 API 35 still lost the emulator during the first interaction test. Guest-memory-start.txt confirms 4,014,392 kB total and 3,001,260 kB available at startup; increasing guest RAM alone did not establish stability. API 34 was still running when checked.
+- Changed automatic `-gpu software` backend selection to the explicitly supported `-gpu swiftshader`, preserving memory, both API levels and every test. Official Android docs describe software as automatic backend selection and swiftshader as a specific GLES/Vulkan renderer: https://developer.android.com/studio/run/emulator-acceleration . This is an unverified backend comparison, not a proven diagnosis or fix.
+- Reviewed e16e1e2 native analytics and notification-settings captures. Analytics still has tiny explanatory labels and a dense summary; notification settings are readable at the captured default size but system permission status/large-font interaction need verification. These older images are not validation of the latest revision.
+
 ## 2026-09-24 — persisted appearance across run and wardrobe
 
 - Run/finish no longer initialize with a fabricated default AvatarLook. Running reserves the character area while waiting and keeps timer, metrics and controls independent; result data and Done remain available while art loads.

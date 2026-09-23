@@ -37,7 +37,7 @@ jobs:
           ram-size: 4096M
           heap-size: 512M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu software -camera-back none
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
             bash tools/run_screen_gallery.sh
