@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — actual-display capture path
+
+- Gallery, chrome, login and form captures now share UiAutomation.takeScreenshot rather than Compose node captureToImage. Images preserve the physical display (including dialog/IME windows and any surrounding viewport area); they are not cropped virtual-viewport images. Geometry assertions still use the same Compose semantics and all existing interaction/state checks remain.
+- Central capture checks PNG writes and recycles the owned screenshot bitmap. This avoids repeated node-render capture and inconsistent dialog handling. It is a capture-path diagnostic, not proven to fix emulator loss. Existing older-node captures remain distinct evidence; fresh display captures must be reviewed.
+
 ## 2026-09-24 — compiler-generated v12 schema preserved
 
 - 73d6f71 Build APK 35920433542 passed. Downloaded its StepUp-room-schemas artifact and copied the compiler-generated 12.json into app/schemas. Compared every serialized entity against committed v11: only energy_purchases was added; existing entity definitions are unchanged. This snapshot contains Room's actual generated identity hash.

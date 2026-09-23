@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
@@ -229,14 +228,6 @@ class ChromeNavigationTest {
 
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "chrome-checks").apply { mkdirs() }
-        val hasDialogWindow = compose.onAllNodes(isRoot()).fetchSemanticsNodes().size > 1
-        val bitmap = if (hasDialogWindow) {
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                .uiAutomation.takeScreenshot() ?: error("Could not capture the dialog window")
-        } else compose.onNodeWithTag("chrome-viewport").captureToImage().asAndroidBitmap()
-        java.io.File(directory, "$name.png").outputStream().use {
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-        }
-        if (hasDialogWindow) bitmap.recycle()
+        captureDisplay(java.io.File(directory, "$name.png"))
     }
 }

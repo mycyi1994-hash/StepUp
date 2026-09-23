@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
@@ -59,9 +58,6 @@ class LoginPresentationTest {
 
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "login-checks").apply { mkdirs() }
-        val bitmap = compose.onNodeWithTag("login-viewport").captureToImage().asAndroidBitmap()
-        java.io.File(directory, "$name.png").outputStream().use {
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-        }
+        captureDisplay(java.io.File(directory, "$name.png"))
     }
 }

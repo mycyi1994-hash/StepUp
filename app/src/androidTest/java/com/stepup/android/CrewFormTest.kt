@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
@@ -101,16 +100,6 @@ class CrewFormTest {
 
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
-        val bitmap = compose.onNodeWithTag("crew-form-viewport").captureToImage().asAndroidBitmap()
-        java.io.File(directory, "$name.png").outputStream().use {
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-        }
-        // Compose captures omit the IME's separate window. Preserve the real display too.
-        val display = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-            .uiAutomation.takeScreenshot() ?: error("Could not capture the keyboard window")
-        java.io.File(directory, "$name-display.png").outputStream().use {
-            display.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-        }
-        display.recycle()
+        captureDisplay(java.io.File(directory, "$name.png"))
     }
 }

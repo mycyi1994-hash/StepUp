@@ -1,7 +1,6 @@
 package com.stepup.android
 
 import android.content.res.Configuration
-import android.graphics.Bitmap
 import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -216,10 +214,7 @@ class ScreenGalleryTest {
     private fun capture(name: String) {
         android.util.Log.i("ScreenGallery", "Capturing $name")
         compose.waitForIdle()
-        val bitmap = if (compose.onAllNodes(isRoot()).fetchSemanticsNodes().size > 1) {
-            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-        } else compose.onNodeWithTag("gallery").captureToImage().asAndroidBitmap()
-        File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        captureDisplay(File(directory, "$name.png"))
     }
 
     @Composable private fun Scene(index: Int) {
