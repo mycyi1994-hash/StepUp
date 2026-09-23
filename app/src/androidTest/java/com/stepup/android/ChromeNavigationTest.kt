@@ -89,6 +89,19 @@ class ChromeNavigationTest {
             assertEquals("restored logo", logo, bounds("brand-wordmark"))
             assertEquals("restored navigation", bar, bounds(BOTTOM_NAV_TAG))
             compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+            com.stepup.android.service.WalkSessionService.showStateForTest(
+                com.stepup.android.service.WalkSessionState(isActive = true, isPaused = true, elapsedSec = 623, steps = 1200),
+            )
+            compose.onNodeWithTag("home-start-run").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("main-header").assertDoesNotExist()
+            compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
+            compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
+            compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitForIdle()
+            assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
+            com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
             compose.onNodeWithTag("home-details").performClick()
             compose.waitForIdle()
             compose.onNodeWithText(compose.activity.getString(R.string.home_today_earned)).assertIsDisplayed()

@@ -217,7 +217,7 @@ class ScreenGalleryTest {
     @Composable private fun Scene(index: Int) {
         when (index) {
             0 -> MainScaffold()
-            1, 34, 35 -> RunScreen()
+            1, 34, 35 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.RUN)
             2 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
             3 -> ItemsScreen()
             4 -> EventsScreen()

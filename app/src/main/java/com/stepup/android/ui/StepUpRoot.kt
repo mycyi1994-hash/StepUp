@@ -279,7 +279,11 @@ fun StepUpRoot() {
 }
 
 @Composable
-internal fun MainScaffold(startTour: Boolean = false, initialTab: Screen = Screen.Run) {
+internal fun MainScaffold(
+    startTour: Boolean = false,
+    initialTab: Screen = Screen.Run,
+    initialRoute: String = initialTab.route,
+) {
     RunFeedback()
     val motion = LocalMotion.current
     val context = LocalContext.current
@@ -325,6 +329,10 @@ internal fun MainScaffold(startTour: Boolean = false, initialTab: Screen = Scree
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
         com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
+    } else if (chrome?.header == AppChromePolicy.Header.Focus) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Sunset,
+        )
     }
     Scaffold(
         containerColor = Color.Transparent,
@@ -350,7 +358,7 @@ internal fun MainScaffold(startTour: Boolean = false, initialTab: Screen = Scree
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = initialTab.route,
+            startDestination = initialRoute,
             modifier = Modifier.padding(innerPadding),
             enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
             exitTransition = { fadeOut(tween(motion.duration(140))) },

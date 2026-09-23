@@ -1,5 +1,11 @@
 # Production scene artwork
 
+## Sunset running path
+
+`riverside-sunset.png` / `scene_riverside_sunset.webp`: built-in ImageGen from `../concepts/04-running.png`, WebP quality 88. Inspected: no character, text or controls. Exact prompt:
+
+Use case: precise-object-edit. Production portrait 9:19.5 Android running background. Input is approved StepUp running concept, reference only for its environment. Produce ONLY the full-bleed cinematic sunset riverside running path. Remove the runner entirely and remove all UI: title, back button, status icons, timer, metrics, numbers, letters, buttons. Seamlessly reconstruct those regions as scenery. Preserve stylized high quality 3D sunset clouds orange/pink into navy, bridge and skyline across river to the right, trees and lamps to the left, railing beside the jogging path. Path stretches toward a vanishing point at about 50 percent image height. Leave central path clear for a separate dynamic runner character. Lower 30 percent has dark navy quiet pavement for native legible metrics and controls; top 15 percent quiet dusk sky. Consistent world, depth, lighting and materials with the reference, no figure, no text, no logos, no icons, no UI, no border.
+
 `riverside-night.png` / `scene_riverside_night.webp`: generated with the built-in ImageGen tool from the approved `../concepts/03-home.png`. WebP is a format conversion (quality 88); no semantic edits after generation.
 
 ## Prompt

@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-33 registered navigation routes; 34 screen functions; 17 overlay declarations. These counts are different measures, not completed screens.
+33 registered navigation routes; 34 screen functions; 18 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -79,7 +79,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ThemeScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt:75 | pending | pending |
 | SplashScreen | app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt:37 | pending | pending |
 | CourseHubScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:94 | pending | pending |
-| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:151 | pending | pending |
+| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:153 | pending | pending |
 
 ## Dialog / sheet / menu declarations
 
@@ -99,9 +99,10 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |
 | CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:295 | pending |
 | CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:877 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:606 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:638 | pending |
-| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1406 | pending |
+| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:506 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:544 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:576 | pending |
+| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1344 | pending |
 
 ## State review
 

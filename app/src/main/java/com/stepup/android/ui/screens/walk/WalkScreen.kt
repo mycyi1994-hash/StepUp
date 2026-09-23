@@ -91,6 +91,8 @@ import com.stepup.android.ui.components.RunShareCard
 import com.stepup.android.ui.components.VerticalHairline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.ui.platform.testTag
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.ui.components.CharacterStage
 import com.stepup.android.ui.components.StatCell
@@ -147,7 +149,7 @@ private data class LapSegment(
 )
 
 @Composable
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun RunScreen(
     onBack: () -> Unit = {},
     onOpenCourses: () -> Unit = {},
@@ -406,196 +408,132 @@ fun RunScreen(
     }
     val finishing = !session.isActive && session.lastRewardPoints != null
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
+    var showDetails by rememberSaveable { mutableStateOf(false) }
+    val render = com.stepup.android.domain.AvatarArtCatalog.resolve(
+        look, if (running) AvatarPose.RUN else AvatarPose.IDLE,
+    )
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 머리글 — 로고와 보유 SUP. 뒤로 가기는 러닝 전에만(달리는 중 · 완료 화면은 탭으로 돌아간다).
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (!session.isActive && !finishing) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        tint = Snow,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .quietClickable(onBack)
-                            .padding(8.dp),
-                    )
-                }
-                Wordmark()
-                Spacer(Modifier.weight(1f))
-                SupPill(balance = balance, onClick = null)
-            }
-        }
-
+        com.stepup.android.ui.components.FocusHeader(
+            title = stringResource(when {
+                finishing -> R.string.finish_title
+                session.isPaused -> R.string.run_paused
+                session.isActive -> R.string.run_active
+                else -> R.string.run_ready
+            }),
+            onBack = onBack,
+            action = {
+                DarkIconButton(
+                    Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
+                    onClick = { showDetails = true },
+                )
+            },
+        )
         if (finishing) {
-            session.lastRewardPoints?.let { points ->
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+            ) {
                 item {
                     FinishCard(
-                        session = session,
-                        points = points,
-                        upload = lastUpload,
-                        look = look,
-                        balance = balance,
-                        todaySteps = todaySteps,
-                        goal = dailyGoal,
-                        onDone = viewModel::clearReward,
+                        session = session, points = session.lastRewardPoints!!,
+                        upload = lastUpload, look = look, balance = balance,
+                        todaySteps = todaySteps, goal = dailyGoal,
+                        onDone = { viewModel.clearReward(); onBack() },
                     )
                 }
             }
         } else {
-            // 녹화 중이라는 것을 러닝 내내 보이게 둔다. 안 보이면 끝나고 뜨는
-            // 저장 창이 난데없이 느껴지고, 취소할 자리도 없다.
             if (recordingCourse && !readyToSaveCourse) {
-                item { CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording) }
+                CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
             }
-
-            if (session.isActive) {
-                item {
-                    RunHero(
-                        paused = session.isPaused,
-                        gpsFix = session.gpsFix,
-                        elapsedSec = session.elapsedSec,
-                        distanceKm = distanceKm,
-                        avgPaceSec = avgPaceSec,
-                    )
+            com.stepup.android.ui.components.AvatarImage(
+                art = render.art,
+                contentDescription = stringResource(R.string.cd_home_character),
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
+            )
+            com.stepup.android.ui.components.AvatarLookNote(look, render)
+            RunHero(
+                paused = session.isPaused, gpsFix = session.gpsFix,
+                elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
+            )
+            if (session.flaggedSegments > 0) {
+                TextButton(onClick = { showDetails = true }) {
+                    Icon(Icons.Filled.Warning, null, tint = Alert, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(
+                        if (session.liveVerdict == RunVerdict.VOID) R.string.run_void_title else R.string.run_flagged_title,
+                    ), color = Alert)
                 }
+            } else {
+                Spacer(Modifier.height(16.dp))
             }
-
-            item {
-                CourseChallengeCard(
-                    course = course,
-                    sessionKm = distanceKm,
-                    liveTrack = session.geoTrack,
-                    gpsFix = session.gpsFix,
-                    goalKm = goalKm,
-                    onOpenCourses = onOpenCourses,
-                    running = session.isActive,
-                )
-            }
-
-            if (!session.isActive) {
-                item { goalRingCard() }
-                item {
-                    StartRunButton(
-                        title = stringResource(R.string.start_run),
-                        subtitle = stringResource(R.string.start_run_sub),
-                        onClick = {
+            PrimaryCta(
+                text = stringResource(when {
+                    !session.isActive -> R.string.home_start_run
+                    session.isPaused -> R.string.cd_resume
+                    else -> R.string.cd_pause
+                }),
+                icon = if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                onClick = {
+                    when {
+                        running -> WalkSessionService.pause(context)
+                        session.isActive -> WalkSessionService.resume(context)
+                        else -> {
                             val missing = StepPermissions.missing(context)
-                            if (missing.isEmpty()) {
-                                WalkSessionService.start(context)
-                            } else {
-                                permissionLauncher.launch(missing)
-                            }
-                        },
+                            if (missing.isEmpty()) WalkSessionService.start(context)
+                            else permissionLauncher.launch(missing)
+                        }
+                    }
+                },
+                modifier = Modifier.testTag("run-primary-action"),
+            )
+            if (session.isActive) {
+                TextButton(
+                    onClick = { confirmStop = true },
+                    modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
+                        .testTag("run-finish"),
+                ) { Text(stringResource(R.string.run_finish), color = Silver) }
+            } else {
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+
+    if (showDetails) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showDetails = false }, containerColor = Night,
+        ) {
+            LazyColumn(
+                Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item { goalRingCard() }
+                item { estimateCard() }
+                item {
+                    CourseChallengeCard(
+                        course = course, sessionKm = distanceKm, liveTrack = session.geoTrack,
+                        gpsFix = session.gpsFix, goalKm = goalKm,
+                        onOpenCourses = { showDetails = false; onOpenCourses() }, running = session.isActive,
                     )
                 }
-            }
-
-            if (session.isActive) {
-                item { estimateCard() }
-                // 러닝 중 실시간 경고 — 왜 거리가 안 늘어나는지 바로 알 수 있게 한다
-                if (session.isActive && session.flaggedSegments > 0) {
+                if (session.flaggedSegments > 0) {
                     item {
-                        val voided = session.liveVerdict == RunVerdict.VOID
-                        GlowCard(contentPadding = PaddingValues(14.dp), spacing = 5.dp) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(9.dp),
-                            ) {
-                                Icon(
-                                    Icons.Filled.Warning,
-                                    contentDescription = null,
-                                    tint = if (voided) Alert else Color(0xFFD99A00),
-                                    modifier = Modifier.size(17.dp),
-                                )
-                                Text(
-                                    text = stringResource(
-                                        if (voided) R.string.run_void_title else R.string.run_flagged_title,
-                                    ),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = Snow,
-                                )
-                            }
-                            Text(
-                                text = if (voided) {
-                                    stringResource(R.string.run_void_body)
-                                } else {
-                                    stringResource(R.string.run_flagged_body, session.flaggedSegments)
-                                },
-                                fontSize = 11.sp,
-                                color = Silver,
-                                lineHeight = 17.sp,
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        // 일시정지 / 재개 · 종료 — 같은 크기로 나란히. 종료는 붉은 테로 갈라
-                        // 손이 헷갈리지 않게 하고, 누르면 한 번 더 묻는다. 글자가 크면 위아래로.
-                        val pauseButton: @Composable (Modifier) -> Unit = { m ->
-                            RunControlButton(
-                                text = if (session.isPaused) {
-                                    stringResource(R.string.cd_resume)
-                                } else {
-                                    stringResource(R.string.cd_pause)
-                                },
-                                icon = if (session.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                                accent = if (session.isPaused) Volt else Snow,
-                                onClick = {
-                                    if (session.isPaused) WalkSessionService.resume(context)
-                                    else WalkSessionService.pause(context)
-                                },
-                                modifier = m,
-                            )
-                        }
-                        val stopButton: @Composable (Modifier) -> Unit = { m ->
-                            RunControlButton(
-                                text = stringResource(R.string.run_finish),
-                                icon = Icons.Filled.Stop,
-                                accent = Alert,
-                                onClick = { confirmStop = true },
-                                modifier = m,
-                            )
-                        }
-                        if (largeText) {
-                            pauseButton(Modifier.fillMaxWidth())
-                            stopButton(Modifier.fillMaxWidth())
-                        } else {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                pauseButton(Modifier.weight(1f))
-                                stopButton(Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (BuildConfig.DEBUG) {
-                item {
-                    TextButton(onClick = { viewModel.simulateSteps(100) }) {
                         Text(
-                            text = stringResource(R.string.run_simulate),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
+                            if (session.liveVerdict == RunVerdict.VOID) stringResource(R.string.run_void_body)
+                            else stringResource(R.string.run_flagged_body, session.flaggedSegments),
+                            color = Silver,
                         )
+                    }
+                }
+                if (BuildConfig.DEBUG) {
+                    item {
+                        TextButton(onClick = { viewModel.simulateSteps(100) }) {
+                            Text(stringResource(R.string.run_simulate), color = Slate)
+                        }
                     }
                 }
             }
@@ -1767,17 +1705,11 @@ private fun RunHero(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = stringResource(if (paused) R.string.run_paused else R.string.run_active),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Black,
-            color = Snow,
-        )
         GpsChip(gpsFix)
         Text(
             text = formatDuration(elapsedSec),
             fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-            fontSize = with(density) { 68.dp.toSp() },
+            fontSize = if (elapsedSec >= 3600) 44.sp else 64.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = (-1).sp,
             color = if (paused) Silver else Snow,

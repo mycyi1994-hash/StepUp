@@ -115,6 +115,22 @@ fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modif
  * 어느 화면에서든 손이 먼저 간다.
  */
 @Composable
+fun FocusHeader(title: String, onBack: () -> Unit, action: (@Composable () -> Unit)? = null) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack)
+        Text(
+            title, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            fontSize = StepUpDesign.PrimaryLabel, fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center, color = Snow,
+        )
+        if (action != null) action() else Spacer(Modifier.size(StepUpDesign.TouchTarget))
+    }
+}
+
+@Composable
 fun SubHeader(
     title: String,
     onBack: () -> Unit,

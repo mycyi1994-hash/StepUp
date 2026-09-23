@@ -469,7 +469,7 @@
     {
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 151,
+      "line": 153,
       "implementation": "pending",
       "verification": "pending"
     }
@@ -574,24 +574,31 @@
       "verification": "pending"
     },
     {
-      "kind": "AlertDialog",
+      "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 606,
+      "line": 506,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 638,
+      "line": 544,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 576,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1406,
+      "line": 1344,
       "verification": "pending"
     }
   ],
