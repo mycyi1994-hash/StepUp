@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +46,7 @@ import com.stepup.android.data.remote.AskRow
 import com.stepup.android.data.remote.BidRow
 import com.stepup.android.data.remote.ModelKey
 import com.stepup.android.data.remote.TradeRow
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
@@ -115,41 +114,13 @@ fun MarketModelScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Eyebrow(text = stringResource(R.string.market_tab_nft))
-                    Text(
-                        text = modelName(faction, rarity, variant),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.6).sp,
-                        color = Snow,
-                        maxLines = 1,
-                    )
-                }
-                SneakerFrame(
-                    sneaker = previewSneaker(faction, rarity, variant),
-                    modifier = Modifier.size(52.dp),
-                    corner = 15.dp,
-                )
-            }
+            SneakerFrame(
+                sneaker = previewSneaker(faction, rarity, variant),
+                modifier = Modifier.fillMaxWidth().height(160.dp),
+                corner = 24.dp,
+            )
         }
 
         message?.let { note ->
@@ -162,7 +133,7 @@ fun MarketModelScreen(
 
         if (state.problem != null) {
             item { MarketProblemNote(state.problem!!) }
-            return@LazyColumn
+            return@DetailPage
         }
 
         // ── 시세 ──

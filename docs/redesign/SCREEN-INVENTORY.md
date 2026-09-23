@@ -59,11 +59,11 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:84 | pending | pending |
 | HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:93 | pending | pending |
 | ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:104 | pending | pending |
-| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:71 | pending | pending |
+| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:69 | pending | pending |
 | SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:78 | pending | pending |
 | LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:75 | pending | pending |
 | MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:85 | pending | pending |
-| MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:80 | pending | pending |
+| MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:79 | pending | pending |
 | NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:150 | pending | pending |
 | AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:184 | pending | pending |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:133 | pending | pending |
@@ -93,7 +93,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
 | ItemsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:614 | pending |
 | CopiesDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:771 | pending |
-| MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:513 | pending |
+| MarketDialog | Dialog | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:484 | pending |
 | GoalDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:958 | pending |
 | ProfileEditDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:1068 | pending |
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |

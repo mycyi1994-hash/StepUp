@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
@@ -47,7 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
@@ -105,35 +103,7 @@ fun SneakerDetailScreen(
         viewModel.consumeMessage()
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = if (sneaker != null) sneaker.fullLabel() else "",
-                    modifier = Modifier.weight(1f),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
+    DetailPage(title = sneaker?.fullLabel() ?: stringResource(R.string.profile_my_sneakers), onBack = onBack) {
         if (sneaker == null) {
             item {
                 GlowCard(contentPadding = PaddingValues(24.dp)) {
@@ -144,7 +114,7 @@ fun SneakerDetailScreen(
                     )
                 }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         // 히어로

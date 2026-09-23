@@ -329,7 +329,7 @@
     {
       "id": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 71,
+      "line": 69,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -357,7 +357,7 @@
     {
       "id": "MarketModelScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 80,
+      "line": 79,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -535,7 +535,7 @@
       "kind": "Dialog",
       "owner": "MarketDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 513,
+      "line": 484,
       "verification": "pending"
     },
     {

@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — owned shoe and marketplace model details
+
+- SneakerDetail and MarketModel now use the shared DetailPage. Model art moved from a tiny header thumbnail into a dedicated content preview; model identity remains the shared title. Existing enhance/equip/sell and market ask/bid controls are retained. Gallery uses their actual routes and architecture checks reject local back controls.
+- Local design, four-language and asset checks pass. These changes and af2480d await a push after the active 0d78b62 Build APK 35914435874 reaches a terminal state. Native layout, long model names and transaction behavior remain unverified for these screens; this migration is not a marketplace completion claim.
+
 ## 2026-09-24 — meetup, collection and history detail shell
 
 - Flash-run detail, Sneaker Dex and Analytics now use DetailPage's pinned back/title, gutter and scrolling rules. Removed the meetup screen's separate wordmark and inert notification button. Existing meetup participation/chat, collection filters/details and history/chart destinations remain in the content.
