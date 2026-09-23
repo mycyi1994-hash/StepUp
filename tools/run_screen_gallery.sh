@@ -1,6 +1,29 @@
 #!/usr/bin/env bash
 set -uo pipefail
 status=0
+# Persist evidence on the host while the emulator is alive: post-failure adb
+# cannot recover the last scene or Android logs after the device disappears.
+mkdir -p screen-gallery
+adb logcat -v threadtime > screen-gallery/device-live-logcat.txt 2>&1 &
+logcat_pid=$!
+(
+  while true; do
+    date -u
+    free -m
+    ps -eo pid,ppid,rss,comm --sort=-rss | head -16
+    sleep 10
+  done
+) > screen-gallery/host-memory.txt 2>&1 &
+monitor_pid=$!
+collect_diagnostics() {
+  kill "$logcat_pid" "$monitor_pid" 2>/dev/null || true
+  wait "$logcat_pid" "$monitor_pid" 2>/dev/null || true
+  sudo -n dmesg --ctime > screen-gallery/host-kernel.txt 2>&1 || true
+  if [[ -d /tmp/android-runner ]]; then
+    cp -R /tmp/android-runner screen-gallery/emulator-diagnostics || true
+  fi
+}
+trap collect_diagnostics EXIT
 # Exercise actual IME in form tests even when the emulator exposes a hardware keyboard.
 adb shell settings put secure show_ime_with_hard_keyboard 1 || status=1
 # adb can fail while enumerating screenshots even after instrumentation passed.

@@ -111,6 +111,7 @@ class ScreenGalleryTest {
             }
         }
         fun reset(index: Int) {
+            android.util.Log.i("ScreenGallery", "Opening scene $index")
             runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.MALE) }
             WalkSessionService.showStateForTest(when (index) {
                 34 -> WalkSessionState(isActive = true, steps = 4200, elapsedSec = 1458,

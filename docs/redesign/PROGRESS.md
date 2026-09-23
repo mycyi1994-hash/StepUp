@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — emulator disappearance diagnostics
+
+- Gallery runs 35913660999 and 35916741243 both lost emulator-5554 during allScreens; their XML contains an empty failure and incomplete test count. Current evidence does not establish app crash, emulator crash or host memory exhaustion. The bounded runner now terminates with failure instead of hanging until the job cap.
+- Capture runner now streams Android logs and host memory/process samples to host-side artifacts, captures kernel/emulator diagnostics on exit, and logs each scene before opening it. This preserves failure evidence even when adb can no longer reach the emulator. No test is skipped or retried to turn a failure green.
+- Latest purchase receipt revision a9ff894 still awaits native build/test results. Full screen verification and final deliverables remain incomplete.
+
 ## 2026-09-24 — recoverable energy purchase delivery
 
 - Added Room v12 energy_purchases receipt table with additive 11→12 migration. Energy purchase debit/receipt/history commit together. DataStore applies energy and records receipt identity in one edit; Room acknowledges delivery and writes the notification together afterward. Startup replays pending receipts; pressing purchase with a pending receipt retries delivery without another debit. Existing ledgers/energy values and storage identities are preserved.
