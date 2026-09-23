@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — meetup, collection and history detail shell
+
+- Flash-run detail, Sneaker Dex and Analytics now use DetailPage's pinned back/title, gutter and scrolling rules. Removed the meetup screen's separate wordmark and inert notification button. Existing meetup participation/chat, collection filters/details and history/chart destinations remain in the content.
+- Gallery fixtures now open all three production navigation routes. Source architecture checks cover their shared chrome. Local design/string checks pass; compilation, native layout and inner-state review are pending.
+- 0d78b62 Build APK 35914435874 and gallery 35914436196 are running. Earlier galleries 35912849285 and 35913660999 are still confirmed live, not treated as failures or restarted. Their workflow has a 30-minute cap; wait for terminal state before diagnosing or retrieving final artifacts. New terrace composition has not yet received native visual approval.
+
 ## 2026-09-24 — ranking and achievements shared detail chrome
 
 - Ranking and Achievements now use DetailPage, removing per-screen back/title layouts and literal content gutters. Ranking categories/periods/remote states remain reachable; achievement progress stays in its existing summary, avoiding a duplicate counter in the header. Added source guardrails and switched both gallery cases to their real MainScaffold routes. This is structural migration; detailed typography, loading/error coverage and native visual review remain outstanding.

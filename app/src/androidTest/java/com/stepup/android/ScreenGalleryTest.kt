@@ -231,7 +231,7 @@ class ScreenGalleryTest {
             6 -> MainScaffold(initialRoute = Routes.WALLET)
             7 -> CourseHubScreen()
             8 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.ACHIEVEMENTS)
-            9 -> AnalyticsScreen()
+            9 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.ANALYTICS)
             10 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.NOTIFICATIONS)
             11 -> ExperienceSettingsScreen {}
             12 -> NotificationSettingsScreen()
@@ -244,11 +244,11 @@ class ScreenGalleryTest {
             19 -> MainScaffold(initialRoute = Routes.postCompose(""))
             20 -> SneakerDetailScreen(sneakerId)
             21 -> CrewBoardScreen(crewId)
-            22 -> FlashRunDetailScreen(101L)
+            22 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.flashDetail(101L))
             23 -> PartyLobbyScreen(crewId, onBack = {}, onRunStarted = {})
             24 -> LoginScreen {}
             25 -> ThemeScreen()
-            26 -> SneakerDexScreen()
+            26 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.SNEAKER_DEX)
             27 -> NewsScreen()
             28 -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Customize)
             29 -> RunnerMarketScreen()

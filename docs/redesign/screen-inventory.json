@@ -259,7 +259,7 @@
     {
       "id": "FlashRunDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
-      "line": 90,
+      "line": 87,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -336,7 +336,7 @@
     {
       "id": "SneakerDexScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
-      "line": 80,
+      "line": 78,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -378,7 +378,7 @@
     {
       "id": "AnalyticsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt",
-      "line": 135,
+      "line": 133,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -493,7 +493,7 @@
       "kind": "AlertDialog",
       "owner": "FlashMembersDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
-      "line": 461,
+      "line": 432,
       "verification": "pending"
     },
     {

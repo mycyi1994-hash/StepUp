@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -58,14 +56,13 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarStack
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.RouteMap
 import com.stepup.android.ui.components.VerticalHairline
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Alert
@@ -105,33 +102,7 @@ fun FlashRunDetailScreen(
     // "채팅 입장"이 여는 댓글 창은 이 화면 위에 그대로 뜬다
     CommentSheetHost(viewModel)
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Wordmark(modifier = Modifier.weight(1f))
-                DarkIconButton(
-                    icon = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    onClick = {},
-                )
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.post_flash_details), onBack = onBack) {
         if (post == null) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp)) {
@@ -142,7 +113,7 @@ fun FlashRunDetailScreen(
                     )
                 }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         item { FlashHeroCard(post) }

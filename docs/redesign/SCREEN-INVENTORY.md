@@ -49,7 +49,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CommunityScreen | app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt:99 | pending | pending |
 | CrewBoardScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt:61 | pending | pending |
 | CrewCreateScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt:44 | pending | pending |
-| FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:90 | pending | pending |
+| FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:87 | pending | pending |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:96 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:51 | pending | pending |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:77 | pending | pending |
@@ -60,13 +60,13 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:93 | pending | pending |
 | ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:104 | pending | pending |
 | SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:71 | pending | pending |
-| SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:80 | pending | pending |
+| SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:78 | pending | pending |
 | LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:75 | pending | pending |
 | MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:85 | pending | pending |
 | MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:80 | pending | pending |
 | NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:150 | pending | pending |
 | AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:184 | pending | pending |
-| AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:135 | pending | pending |
+| AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:133 | pending | pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:121 | pending | pending |
 | ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:141 | pending | pending |
 | WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:88 | pending | pending |
@@ -87,7 +87,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 |---|---|---|---|
 | ReportDialogHost | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt:93 | pending |
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:150 | pending |
-| FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:461 | pending |
+| FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:432 | pending |
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:242 | pending |
 | InviteDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:434 | pending |
 | HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:173 | pending |
