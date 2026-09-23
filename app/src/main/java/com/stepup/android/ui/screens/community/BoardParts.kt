@@ -13,6 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -31,6 +32,7 @@ import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import kotlinx.coroutines.launch
 
 /** 게시판에서 한 일의 결과를 짧게 띄우고 비운다. */
 @Composable
@@ -61,6 +63,8 @@ private fun BoardNotice.messageRes(): Int = when (this) {
  */
 @Composable
 fun BoardSyncCard(state: BoardSyncState, onRetry: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val message = when (state) {
         BoardSyncState.Idle, BoardSyncState.Loading -> stringResource(R.string.board_loading)
         BoardSyncState.SignInRequired -> stringResource(R.string.board_sign_in_needed)
@@ -69,6 +73,25 @@ fun BoardSyncCard(state: BoardSyncState, onRetry: () -> Unit) {
     }
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
         Text(message, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        if (state == BoardSyncState.SignInRequired) {
+            GhostButton(
+                text = stringResource(R.string.session_sign_in_again),
+                onClick = {
+                    scope.launch {
+                        try {
+                            // The root observes this marker and opens the actual login flow.
+                            // Keep local records and rewards intact during reauthentication.
+                            com.stepup.android.core.ServiceLocator.userPrefs.setLoginMethod("")
+                        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            Toast.makeText(context, R.string.feed_save_failed, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         if (state is BoardSyncState.Failed) {
             GhostButton(
                 text = stringResource(R.string.crew_retry),

@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — receipt tests verified; reauthentication recovery
+
+- Downloaded a9ff894 run 35917606795 artifacts to StepUp-captures/redesign-a9ff894. Interaction XML reports 16 tests, zero failures, including energy delivery interruption/retry without repeated debit/credit, shoe and timed-boost transaction rollback/concurrency, version-six migration and unsupported-version data preservation. Full gallery still failed after the emulator disappeared. These interaction passes do not validate all scenes, live OAuth or GIWA.
+- BoardSyncCard now gives SignInRequired a shared “Sign in again” action in four languages. Community Together/Stories and the course board all reuse it. It clears only the login UI marker, so StepUpRoot opens the actual login screen; it does not erase records, equipment or balances. Storage failure shows retry feedback. Native click/visual verification is pending.
+
 ## 2026-09-24 — emulator disappearance diagnostics
 
 - Follow-up: a9ff894 Build APK 35917606763 passed. Its native interaction/gallery run 35917606795 remains active. Diagnostics revision c1641c1 has been pushed; Build APK 35918321735 and gallery 35918321776 are running.

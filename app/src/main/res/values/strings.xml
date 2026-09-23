@@ -1503,5 +1503,6 @@ Start running with StepUp.</string>
     <string name="run_location_disabled">Location access off</string>
     <string name="finish_share_activity">I ran %1$s km in %2$s on StepUp.</string>
     <string name="notif_reward_unverified">This earlier reward notice has no verified payment record. Check Challenges for available rewards.</string>
+    <string name="session_sign_in_again">Sign in again</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
