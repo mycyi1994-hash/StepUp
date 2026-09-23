@@ -50,11 +50,17 @@ data class AvatarArt(
     val pose: AvatarPose,
     val outfitId: String,
     val shoeCode: String?,
+    /**
+     * 캐릭터 원화급 그림인가 — 디자인 패키지의 두 장(RUNO 달리기 · LUMI 서 있기)과
+     * 캐릭터 가이드에서 뜬 RUNO 서 있기. 장비 그림은 시트 한 칸(150×290px)을 키운 것이라
+     * 비율 · 선명도가 이 셋과 다르다.
+     */
+    val hd: Boolean = false,
 ) {
     companion object {
-        val MALE_RUN = AvatarArt("male_running", AvatarGender.MALE, AvatarPose.RUN, Outfits.BASE_ID, null)
-        val MALE_IDLE = AvatarArt("male_idle", AvatarGender.MALE, AvatarPose.IDLE, Outfits.BASE_ID, null)
-        val FEMALE_IDLE = AvatarArt("female_idle", AvatarGender.FEMALE, AvatarPose.IDLE, Outfits.BASE_ID, null)
+        val MALE_RUN = AvatarArt("male_running", AvatarGender.MALE, AvatarPose.RUN, Outfits.BASE_ID, null, hd = true)
+        val MALE_IDLE = AvatarArt("male_idle", AvatarGender.MALE, AvatarPose.IDLE, Outfits.BASE_ID, null, hd = true)
+        val FEMALE_IDLE = AvatarArt("female_idle", AvatarGender.FEMALE, AvatarPose.IDLE, Outfits.BASE_ID, null, hd = true)
     }
 }
 
@@ -67,6 +73,11 @@ data class AvatarRender(
     val outfitShown: Boolean,
     /** 그림 속 신발이 신은 신발과 같은가 */
     val shoeShown: Boolean,
+    /**
+     * 기본 의상 + 시작 신발(클라우드 러너)이라 캐릭터 원화를 골랐다. 두 캐릭터의 첫
+     * 모습이 같은 원화에서 나오게 하려는 것이다 — 신발은 기본 운동화로 보인다고 적는다.
+     */
+    val starterBase: Boolean = false,
 ) {
     /** 입은 것이 그림에 그대로 보이는가 */
     val lookShown: Boolean get() = outfitShown && shoeShown
@@ -128,8 +139,26 @@ object AvatarArtCatalog {
         }
     }
 
+    /** 누구나 처음 신고 시작하는 신발(클라우드 러너) */
+    val STARTER_SHOE: String by lazy { SneakerMint.starter().designCode() }
+
     fun resolve(look: AvatarLook, pose: AvatarPose): AvatarRender {
         val shoe = look.shoe?.designCode()
+        // 처음 모습(기본 의상 + 시작 신발)은 두 캐릭터 모두 원화로 — RUNO 만 시트 그림으로
+        // 나오면 해상도 · 비율이 LUMI 와 확연히 달라 보인다. 신발은 기본 운동화로 보인다고 적는다.
+        if (look.outfit.starter && shoe == STARTER_SHOE) {
+            ALL.filter { it.gender == look.gender && it.hd }
+                .maxByOrNull { if (it.pose == pose) 1 else 0 }
+                ?.let { base ->
+                    return AvatarRender(
+                        art = base,
+                        exactPose = base.pose == pose,
+                        outfitShown = true,
+                        shoeShown = false,
+                        starterBase = true,
+                    )
+                }
+        }
         // 성별마다 그림이 적어도 한 장 있다 — AvatarArtTest 가 지킨다
         val art = ALL.filter { it.gender == look.gender }.maxBy { a ->
             var score = 0

@@ -1282,7 +1282,7 @@ StepUp と走り出そう。</string>
     <string name="tour_tab_customize_title">② 着せ替えタブ</string>
     <string name="tour_tab_customize_body">キャラクターに服と靴を着せる場所です。ランナーマーケットもここにあります。</string>
     <string name="tour_customize_title">マイキャラクター</string>
-    <string name="tour_customize_body">男性・女性を選び、服と靴を装備しましょう。着せた姿はラン・マイにも同じように表示されます。</string>
+    <string name="tour_customize_body">RUNO・LUMI から選び、服と靴を装備しましょう。着せた姿はラン・マイにも同じように表示されます。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">試着中</string>
@@ -1324,8 +1324,8 @@ StepUp と走り出そう。</string>
     <string name="customize_not_owned">持っていない服です</string>
     <string name="customize_trial_badge">試着</string>
     <string name="customize_basic_badge">基本</string>
-    <string name="gender_male">男性</string>
-    <string name="gender_female">女性</string>
+    <string name="gender_male">RUNO</string>
+    <string name="gender_female">LUMI</string>
     <string name="outfit_starter_hoodie">ベーシックランパーカー</string>
     <string name="outfit_starter_tee">ベーシックランT</string>
     <string name="outfit_up_hoodie">UPパーカー</string>
@@ -1432,4 +1432,7 @@ StepUp と走り出そう。</string>
     <string name="outfit_clo_005">エアロ ウインドブレーカー</string>
     <string name="avatar_art_base_shoes">組み合わせ画像準備中 · 靴は基本スニーカーで表示</string>
     <string name="avatar_art_base_outfit">組み合わせ画像準備中 · 服は基本の服で表示</string>
+
+    <!-- 시작 -->
+    <string name="avatar_art_starter_shoes">基本の姿 · 靴は基本スニーカーで表示</string>
 </resources>

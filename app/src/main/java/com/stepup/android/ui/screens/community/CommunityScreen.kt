@@ -184,9 +184,10 @@ private fun BoardTab(
     // 모르는 등수를 지어내면 들어가 보는 순간 다른 숫자가 나온다.
     val meLabel = stringResource(R.string.rank_me)
     val myRank by viewModel.mySupRank.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { viewModel.loadRanking(RankBoard.TOTAL_SUP, meLabel) }
 
     // 시안대로 한 줄 피드 — 번개러닝도 일반 글도 최신 순으로 섞어 보여 준다.
-    // 검색 · 분류 칩 · 랭킹 카드는 두지 않는다(랭킹은 내 정보 › 설정).
+    // 검색 · 분류 칩은 두지 않는다. 랭킹은 커뮤니티의 기능이라 맨 위에 둔다.
     val visible = remember(posts) { posts.sortedByDescending { it.createdAt } }
     val flashWindow = remember(posts, query) {
         filterPosts(posts, PostCategory.FLASH, query)
@@ -198,6 +199,14 @@ private fun BoardTab(
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
+            item {
+                RankingTeaser(
+                    rank = myRank,
+                    balance = balance,
+                    onClick = onOpenRanking,
+                )
+            }
+
             if (visible.isEmpty()) {
                 item {
                     GlowCard(contentPadding = PaddingValues(26.dp)) {

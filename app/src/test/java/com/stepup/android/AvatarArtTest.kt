@@ -145,7 +145,11 @@ class AvatarArtTest {
         Outfits.ALL.forEach { o ->
             shoes.forEach { s ->
                 val r = AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.MALE, outfit = o, shoe = s), AvatarPose.IDLE)
-                val drawn = o.starter || s == null
+                // 처음 모습(기본 의상 + 클라우드 러너)은 원화로 — 신발은 기본 운동화라고 적는다
+                val starterLook = o.starter && s?.designCode() == AvatarArtCatalog.STARTER_SHOE
+                assertEquals(starterLook, r.starterBase)
+                if (starterLook) assertTrue(r.art.hd)
+                val drawn = !starterLook && (o.starter || s == null)
                 assertEquals("${o.id} + ${s?.designCode()}", drawn, r.lookShown)
                 // 그림 속 착장이 말하는 대로다
                 assertEquals(r.art.outfitId == o.id, r.outfitShown)
@@ -181,12 +185,23 @@ class AvatarArtTest {
     }
 
     @Test
-    fun `홈과 내 정보는 같은 착장을 같은 그림으로 — 착장이 자세보다 먼저다`() {
-        val look = AvatarLook(gender = AvatarGender.MALE, shoe = shoe("WND-010"))
-        val home = AvatarArtCatalog.resolve(look, AvatarPose.RUN)
-        val profile = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
-        assertEquals(profile.art, home.art)
-        assertTrue(home.lookShown)
+    fun `처음 모습은 두 캐릭터 모두 원화 — 홈과 내 정보가 같은 착장을 보여 준다`() {
+        AvatarGender.entries.forEach { g ->
+            val look = AvatarLook(gender = g, shoe = shoe("WND-010"))
+            val home = AvatarArtCatalog.resolve(look, AvatarPose.RUN)
+            val profile = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
+            listOf(home, profile).forEach { r ->
+                assertTrue(r.art.hd && r.starterBase && r.outfitShown)
+                assertFalse(r.shoeShown)
+                assertEquals(null, r.art.shoeCode)
+            }
+        }
+        assertEquals(AvatarArt.MALE_RUN, AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.MALE, shoe = shoe("WND-010")), AvatarPose.RUN).art)
+        // NFT 신발로 바꾸면 그 신발을 신은 그림이 홈 · 내 정보에 똑같이 나온다
+        val nft = AvatarLook(gender = AvatarGender.MALE, shoe = shoe("FIR-001"))
+        val h = AvatarArtCatalog.resolve(nft, AvatarPose.RUN)
+        assertEquals(AvatarArtCatalog.resolve(nft, AvatarPose.IDLE).art, h.art)
+        assertTrue(h.lookShown)
     }
 
     @Test

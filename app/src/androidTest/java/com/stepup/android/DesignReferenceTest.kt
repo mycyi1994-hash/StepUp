@@ -41,6 +41,8 @@ import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
 import com.stepup.android.ui.screens.profile.ProfileScreen
 import com.stepup.android.ui.screens.walk.RunScreen
+import com.stepup.android.ui.guide.GuideTour
+import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
@@ -94,6 +96,7 @@ class DesignReferenceTest {
 
     @After fun restore() {
         WalkSessionService.showStateForTest(WalkSessionState())
+        GuideTour.stop()
         runBlocking {
             ServiceLocator.avatarRepository.setGender(AvatarGender.MALE)
             ServiceLocator.userPrefs.setDemoMode(false)
@@ -110,6 +113,8 @@ class DesignReferenceTest {
         HOME_TRIAL_OUTFIT, PROFILE_TRIAL_OUTFIT, CUSTOMIZE_TRIAL_OUTFIT,
         // 같은 체험을 루미로 — 엠버 셸(주황 모자) + 클라우드 러너
         HOME_TRIAL_OUTFIT_F, CUSTOMIZE_TRIAL_OUTFIT_F,
+        // 가이드 3단계(러닝 시작) — 화면 끝의 버튼이 온전히 보이고 조작 버튼에 가리지 않아야 한다
+        GUIDE_START_RUN,
     }
 
     @Test fun referenceViewports() {
@@ -181,6 +186,12 @@ class DesignReferenceTest {
 
     private fun prepareScene(s: Scene) {
         val now = System.currentTimeMillis()
+        if (s == Scene.GUIDE_START_RUN) {
+            GuideTour.start()
+            repeat(GuideTour.steps.indexOfFirst { it.key == GuideTour.Targets.HOME_START_RUN }) { GuideTour.advance() }
+        } else {
+            GuideTour.stop()
+        }
         when (s) {
             // 24분 18초째 달리는 중 — GPS 잡힘
             Scene.RUN_ACTIVE -> WalkSessionService.showStateForTest(
@@ -225,6 +236,7 @@ class DesignReferenceTest {
             Scene.CHALLENGE -> EventsScreen()
             Scene.COMMUNITY -> CommunityScreen()
             Scene.PROFILE, Scene.PROFILE_TRIAL_OUTFIT -> ProfileScreen()
+            Scene.GUIDE_START_RUN -> MainScaffold(startTour = false)
         }
     }
 

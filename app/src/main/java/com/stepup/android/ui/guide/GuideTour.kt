@@ -8,11 +8,17 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +65,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -165,6 +174,7 @@ object GuideTour {
 
         // ── 커뮤니티 ──
         GuideStep(Targets.tab("community"), "community", R.string.tour_tab_community_title, R.string.tour_tab_community_body),
+        GuideStep(Targets.COMMUNITY_RANKING, "community", R.string.tour5_title, R.string.tour5_body),
         GuideStep(Targets.COMMUNITY_WRITE, "community", R.string.tour6_title, R.string.tour6_body),
 
         // ── 내 정보 ──
@@ -206,13 +216,38 @@ object GuideTour {
 /**
  * 이 요소를 가이드 투어 스포트라이트 대상으로 등록한다.
  * 화면에서 사라지면 등록도 해제해, 옛 좌표에 구멍이 뚫리는 일을 막는다.
+ *
+ * 이 요소를 설명할 차례가 되면 스크롤을 움직여 **온전히** 보이게 한다. 아래쪽에
+ * 조작 버튼이 들어갈 자리까지 함께 보이게 요청한다 — 화면 끝에 반쯤 잘린 버튼에
+ * 스포트라이트를 켜 봐야 무엇을 가리키는지 알 수 없다.
  */
+@OptIn(ExperimentalFoundationApi::class)
 fun Modifier.guideTarget(key: String): Modifier = composed {
+    val requester = remember { BringIntoViewRequester() }
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
     DisposableEffect(key) {
         onDispose { GuideTour.bounds.remove(key) }
     }
-    Modifier.onGloballyPositioned { GuideTour.bounds[key] = it.boundsInRoot() }
+    val isCurrent = GuideTour.current?.key == key
+    LaunchedEffect(isCurrent) {
+        if (isCurrent) {
+            // 탭이 바뀌는 스텝이면 새 화면이 자리를 잡을 때까지 잠깐 기다린다
+            delay(250)
+            val room = with(density) { GuideControlsRoom.toPx() }
+            requester.bringIntoView(Rect(0f, -room / 4f, size.width.toFloat(), size.height + room))
+        }
+    }
+    Modifier
+        .bringIntoViewRequester(requester)
+        .onGloballyPositioned {
+            size = it.size
+            GuideTour.bounds[key] = it.boundsInRoot()
+        }
 }
+
+/** 하단 조작 버튼 한 줄이 차지하는 높이(버튼 48 + 위아래 여백 18) */
+private val GuideControlsRoom = 84.dp
 
 /**
  * 투어 오버레이 — MainScaffold 최상단에 올린다.
@@ -243,7 +278,6 @@ fun GuideOverlay(
     LaunchedEffect(step.tabRoute) { onSwitchTab(step.tabRoute) }
 
     val target: Rect? = GuideTour.bounds[step.key]
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp.toFloat()
 
     // 테두리가 천천히 숨 쉰다. 정지한 사각형은 배경으로 읽히지만, 움직이는
     // 것은 눈이 먼저 찾는다 — "여기를 보세요"를 글로 쓰지 않고 전달하는 방법이다.
@@ -262,7 +296,9 @@ fun GuideOverlay(
         onFinished()
     }
 
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // 막의 높이 — 대상 좌표(루트 기준)와 같은 공간이다
+        val screenHeightDp = maxHeight.value
         // 딤 + 대상 구멍 — 탭하면 다음으로
         Canvas(
             Modifier
@@ -314,30 +350,33 @@ fun GuideOverlay(
             }
         }
 
-        val density = androidx.compose.ui.platform.LocalDensity.current
+        val density = LocalDensity.current
+        val navInsetDp = with(density) { WindowInsets.navigationBars.getBottom(density).toDp().value }
 
-        // 가리키는 것이 화면 맨 아래(하단 탭)면, 아래에 붙은 조작 버튼이
-        // 하필 그 위를 덮는다. 스포트라이트를 켜 놓고 그 자리를 자기 버튼으로
-        // 가리는 셈이라, 그만큼 버튼을 위로 올린다.
-        val controlsLiftDp = if (target != null) {
-            with(density) {
-                val topDp = target.top.toDp().value
-                if (topDp > screenHeightDp - 130f) screenHeightDp - topDp + 12f else 0f
-            }
+        // 대상이 아래쪽 조작 버튼 자리에 걸리면(하단 탭, 화면 끝의 러닝 시작 버튼 등)
+        // 버튼이 하필 그 위를 덮는다. 스포트라이트를 켜 놓고 자기 버튼으로 가리는
+        // 셈이라, 그때는 버튼 줄을 대상 바로 위로 올린다.
+        val controlsTopDp = screenHeightDp - navInsetDp - GuideControlsRoom.value
+        val targetTopDp = target?.let { with(density) { it.top.toDp().value } }
+        val targetBottomDp = target?.let { with(density) { it.bottom.toDp().value } }
+        val controlsLiftDp = if (targetTopDp != null && targetBottomDp != null && targetBottomDp + 10f > controlsTopDp) {
+            (screenHeightDp - navInsetDp - (targetTopDp - 12f)).coerceAtLeast(0f)
         } else {
             0f
         }
 
         // 설명 창 — 대상이 화면 위쪽이면 아래에, 아래쪽이면 위에 띄운다
-        val tooltipOffsetDp = if (target != null) {
+        val tooltipOffsetDp = if (target != null && targetTopDp != null) {
             with(density) {
                 val below = target.bottom.toDp().value + 18f
                 val targetCenterDp = target.center.y.toDp().value
                 if (targetCenterDp < screenHeightDp * 0.45f) {
                     below
+                } else if (controlsLiftDp > 0f) {
+                    // 대상 위에 버튼 줄, 그 위에 설명 창
+                    (targetTopDp - 12f - GuideControlsRoom.value - 178f).coerceAtLeast(52f)
                 } else {
-                    // 버튼을 올린 만큼 설명 창도 같이 올라가야 서로 겹치지 않는다.
-                    (target.top.toDp().value - 178f - controlsLiftDp).coerceAtLeast(52f)
+                    (targetTopDp - 178f).coerceAtLeast(52f)
                 }
             }
         } else if (step.journey) {

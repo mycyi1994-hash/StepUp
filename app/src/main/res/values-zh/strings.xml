@@ -1281,7 +1281,7 @@
     <string name="tour_tab_customize_title">② 装扮标签</string>
     <string name="tour_tab_customize_body">给角色穿衣服和鞋子的地方。跑者市场也在这里面。</string>
     <string name="tour_customize_title">我的角色</string>
-    <string name="tour_customize_body">选择男生或女生，再装备服装和鞋子。装扮会同样显示在跑步和我的页面。</string>
+    <string name="tour_customize_body">选择 RUNO 或 LUMI，再装备服装和鞋子。装扮会同样显示在跑步和我的页面。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">试穿中</string>
@@ -1323,8 +1323,8 @@
     <string name="customize_not_owned">你没有这件服装</string>
     <string name="customize_trial_badge">试穿</string>
     <string name="customize_basic_badge">基础</string>
-    <string name="gender_male">男生</string>
-    <string name="gender_female">女生</string>
+    <string name="gender_male">RUNO</string>
+    <string name="gender_female">LUMI</string>
     <string name="outfit_starter_hoodie">基础跑步连帽衫</string>
     <string name="outfit_starter_tee">基础跑步T恤</string>
     <string name="outfit_up_hoodie">UP连帽衫</string>
@@ -1431,4 +1431,7 @@
     <string name="outfit_clo_005">风行防风衣</string>
     <string name="avatar_art_base_shoes">搭配图准备中 · 鞋子暂显示基础运动鞋</string>
     <string name="avatar_art_base_outfit">搭配图准备中 · 服装暂显示基础服装</string>
+
+    <!-- 시작 -->
+    <string name="avatar_art_starter_shoes">基础形象 · 鞋子暂显示基础运动鞋</string>
 </resources>

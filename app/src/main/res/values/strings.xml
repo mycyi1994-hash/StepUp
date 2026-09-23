@@ -1283,7 +1283,7 @@ Start running with StepUp.</string>
     <string name="tour_tab_customize_title">② Style tab</string>
     <string name="tour_tab_customize_body">Dress your runner with outfits and shoes. The Runner Market is inside.</string>
     <string name="tour_customize_title">Your runner</string>
-    <string name="tour_customize_body">Pick male or female, then equip an outfit and shoes. What you wear shows up on Run and Me too.</string>
+    <string name="tour_customize_body">Pick RUNO or LUMI, then equip an outfit and shoes. What you wear shows up on Run and Me too.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">Trying on</string>
@@ -1325,8 +1325,8 @@ Start running with StepUp.</string>
     <string name="customize_not_owned">You don\'t own this outfit</string>
     <string name="customize_trial_badge">Trial</string>
     <string name="customize_basic_badge">Basic</string>
-    <string name="gender_male">Male</string>
-    <string name="gender_female">Female</string>
+    <string name="gender_male">RUNO</string>
+    <string name="gender_female">LUMI</string>
     <string name="outfit_starter_hoodie">Basic Run Hoodie</string>
     <string name="outfit_starter_tee">Basic Run Tee</string>
     <string name="outfit_up_hoodie">UP Hoodie</string>
@@ -1433,4 +1433,7 @@ Start running with StepUp.</string>
     <string name="outfit_clo_005">Aero Windbreaker</string>
     <string name="avatar_art_base_shoes">Combo art in progress · showing base sneakers</string>
     <string name="avatar_art_base_outfit">Combo art in progress · showing base outfit</string>
+
+    <!-- 시작 -->
+    <string name="avatar_art_starter_shoes">Base look · art shows the base sneakers</string>
 </resources>

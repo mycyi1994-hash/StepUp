@@ -202,9 +202,11 @@ object Routes {
 
     const val RUN = "run"
 
-    /** 러닝 화면 — start=true 면 들어오자마자 달리기를 시작한다 */
+    /**
+     * 러닝 화면. 홈 · 챌린지의 "러닝 시작"은 [RUN] 으로 들어와 코스를 고른 뒤 화면 안의
+     * 시작 버튼으로 달린다. start=true 면 들어오자마자 달리기를 시작한다(지금은 쓰지 않는다).
+     */
     const val RUN_ROUTE = "run?start={start}"
-    const val RUN_NOW = "run?start=true"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
     const val ACHIEVEMENTS = "achievements"
@@ -352,7 +354,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
         ) {
             composable(Screen.Run.route) {
                 HomeScreen(
-                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
+                    onStartRun = { navController.navigate(Routes.RUN) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
@@ -428,7 +430,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
                 EventsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
+                    onStartRun = { navController.navigate(Routes.RUN) },
                 )
             }
             composable(Screen.Profile.route) {

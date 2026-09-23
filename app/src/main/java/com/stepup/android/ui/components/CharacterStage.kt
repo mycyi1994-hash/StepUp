@@ -296,6 +296,7 @@ fun AvatarLookNote(
             Text(
                 text = stringResource(
                     when {
+                        render.starterBase -> R.string.avatar_art_starter_shoes
                         !render.outfitShown && !render.shoeShown -> R.string.avatar_art_base_look
                         !render.shoeShown -> R.string.avatar_art_base_shoes
                         else -> R.string.avatar_art_base_outfit

@@ -9,20 +9,20 @@
 같은 칸의 상품 신발은 캐릭터 오른손 뒤에 겹쳐 있어 손 · 다리의 짙은 남색 윤곽을 기준으로 자른다.
 """
 import os, sys, subprocess, numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image
 from scipy import ndimage
 SRC, OUT, RES = sys.argv[1], sys.argv[2], sys.argv[3]
 CUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cutout_character_sheet.py')
 os.makedirs(OUT, exist_ok=True)
 
 
-def upscale(src, dst, scale=3):
-    im = Image.open(src).convert('RGBA')
-    big = im.resize((im.width*scale, im.height*scale), Image.LANCZOS)
-    rgb = big.convert('RGB').filter(ImageFilter.UnsharpMask(radius=1.4, percent=70, threshold=2))
-    out = rgb.convert('RGBA'); out.putalpha(big.getchannel('A'))
-    out.save(dst, 'WEBP', quality=90, method=6, exact=True)
-    return out.size
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from upscale_cutout import upscale_cutout
+
+
+def upscale(raw, cut, dst):
+    """원래 크기의 알파 + Real-ESRGAN 4배 색 — tools/upscale_cutout.py"""
+    return upscale_cutout(raw, cut, dst, os.path.join(OUT, 'esr_cache'))
 
 
 def find_heads(path, dbg=False):
@@ -130,8 +130,7 @@ def split_product(png, raw, ey, ex):
     alpha = np.array(im.getchannel('A')); alpha[~a] = 0
     im.putalpha(Image.fromarray(alpha))
     bb = im.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox()
-    im = im.crop((max(bb[0]-6, 0), max(bb[1]-6, 0), min(bb[2]+6, w), min(bb[3]+6, h)))
-    im.save(png)
+    im.save(png)  # 칸 크기 그대로 — 알파를 upscale_cutout 에 넘긴다
     return (int(cutA - ex), int(hb - ey), int(cutB - ex))
 sheets = [('01_LUMI_FIRE_13', 'fir'), ('02_LUMI_WATER_13', 'wat'), ('03_LUMI_LIGHTNING_13', 'lit'), ('04_LUMI_WIND_13', 'wnd')]
 # 칸 격자선(열 · 줄) — 줄마다 중앙값 밝기가 푹 꺼지는 자리. 칸 안쪽만 잘라야
@@ -160,7 +159,7 @@ for name, prefix in sheets:
         subprocess.run([sys.executable, CUT, raw, cut, '16', '0.74'], check=True, capture_output=True, env={**os.environ, 'CUTOUT_NOCROP': '1', 'CUTOUT_BG2D': '1'})
         k = split_product(cut, raw, ey - y0, ex - x0)
         # cutout crops to bbox — redo without crop: keep the offset by re-running on the same canvas
-        print(key, upscale(cut, os.path.join(RES, f'avatar_lumi_idle_{key}.webp')))
+        print(key, upscale(raw, cut, os.path.join(RES, f'avatar_lumi_idle_{key}.webp')))
 
 # 의상 시트
 img = Image.open(os.path.join(SRC, '05_LUMI_WARDROBE_05.webp')).convert('RGB')
@@ -171,11 +170,11 @@ for i in range(5):
     cut = os.path.join(OUT, f'clo_{i+1:03d}_cut.png')
     # 흰 양말이 바탕으로 지워져 신발이 몸과 끊겨도 남기도록 CUTOUT_KEEP
     subprocess.run([sys.executable, CUT, raw, cut, '24', '0.78'], check=True, capture_output=True,
-                   env={**os.environ, 'CUTOUT_BG2D': '1', 'CUTOUT_KEEP': '0.03'})
-    print('LUM-CLO', i+1, upscale(cut, os.path.join(RES, f'avatar_lumi_idle_lum_clo_{i+1:03d}.webp')))
+                   env={**os.environ, 'CUTOUT_BG2D': '1', 'CUTOUT_KEEP': '0.03', 'CUTOUT_NOCROP': '1'})
+    print('LUM-CLO', i+1, upscale(raw, cut, os.path.join(RES, f'avatar_lumi_idle_lum_clo_{i+1:03d}.webp')))
     raw = os.path.join(OUT, f'clo_{i+1:03d}_item_raw.png'); img.crop((l+2, 136, mid+6, 392)).save(raw)
     cut = os.path.join(OUT, f'clo_{i+1:03d}_item_cut.png')
     # 모자 · 상의 · 반바지는 따로 떨어진 세 덩어리다
     subprocess.run([sys.executable, CUT, raw, cut, '24' if i + 1 in (1, 2, 4) else '16', '1.0'],
-                   check=True, capture_output=True, env={**os.environ, 'CUTOUT_KEEP': '0.06'})
-    print('LUM-CLO item', i+1, upscale(cut, os.path.join(RES, f'outfit_lum_clo_{i+1:03d}.webp'), scale=2))
+                   check=True, capture_output=True, env={**os.environ, 'CUTOUT_KEEP': '0.06', 'CUTOUT_NOCROP': '1'})
+    print('LUM-CLO item', i+1, upscale(raw, cut, os.path.join(RES, f'outfit_lum_clo_{i+1:03d}.webp')))

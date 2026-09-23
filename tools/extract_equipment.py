@@ -9,6 +9,8 @@ from PIL import Image, ImageFilter
 from scipy import ndimage
 SRC = sys.argv[1]; OUT = sys.argv[2]; RES = sys.argv[3]
 CUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cutout_character_sheet.py')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from upscale_cutout import upscale_cutout
 os.makedirs(OUT, exist_ok=True)
 
 def boxes(path):
@@ -25,15 +27,13 @@ def boxes(path):
     return res
 
 def finish(raw, dst, scale=3, low=0.74, tol=24):
+    """떼어 내고(원래 크기의 알파) Real-ESRGAN 으로 4배 키운다 — tools/upscale_cutout.py"""
     tmp = dst + '.cut.png'
-    subprocess.run([sys.executable, CUT, raw, tmp, str(tol), str(low)], check=True, capture_output=True)
-    im = Image.open(tmp).convert('RGBA')
-    big = im.resize((im.width*scale, im.height*scale), Image.LANCZOS)
-    rgb = big.convert('RGB').filter(ImageFilter.UnsharpMask(radius=1.4, percent=70, threshold=2))
-    out = rgb.convert('RGBA'); out.putalpha(big.getchannel('A'))
-    out.save(dst, 'WEBP', quality=90, method=6, exact=True)
+    subprocess.run([sys.executable, CUT, raw, tmp, str(tol), str(low)], check=True, capture_output=True,
+                   env={**os.environ, 'CUTOUT_NOCROP': '1'})
+    size = upscale_cutout(raw, tmp, dst, os.path.join(OUT, 'esr_cache'))
     os.remove(tmp)
-    return out.size
+    return size
 
 sheets = [('01_RUNO_FIRE_13', 'fir'), ('02_RUNO_WATER_13', 'wat'), ('03_RUNO_LIGHTNING_13', 'lit'), ('04_RUNO_WIND_13', 'wnd')]
 for name, prefix in sheets:
