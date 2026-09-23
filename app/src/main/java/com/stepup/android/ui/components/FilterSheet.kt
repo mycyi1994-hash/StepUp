@@ -302,7 +302,8 @@ private fun SheetFrame(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        // This dialog owns its system insets on API 34 and enforced edge-to-edge API 35.
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         BoxWithConstraints(
             modifier = Modifier

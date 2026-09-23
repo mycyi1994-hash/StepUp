@@ -14,6 +14,7 @@ import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -52,6 +53,19 @@ class ItemFilterInteractionTest {
         fun label(id: Int) = compose.activity.getString(id)
         fun fire() = compose.onNodeWithText(label(R.string.faction_fire), substring = true)
         fun reopen() { compose.onNodeWithText("Open filters").performClick() }
+        fun assertActionsFullyVisible() {
+            val metrics = compose.activity.windowManager.currentWindowMetrics
+            val insets = metrics.windowInsets.getInsets(
+                android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout(),
+            )
+            for (id in listOf(R.string.filter_reset, R.string.filter_apply)) {
+                val node = compose.onNodeWithText(label(id)).fetchSemanticsNode()
+                val bottom = node.positionInWindow.y + node.size.height
+                assertTrue("Entire ${label(id)} button must clear system navigation: $bottom",
+                    bottom <= metrics.bounds.height() - insets.bottom + 1f)
+                assertTrue(node.positionInWindow.y >= insets.top)
+            }
+        }
         fire().performScrollTo().performClick().assertIsSelected()
         compose.onNodeWithContentDescription(label(R.string.common_close)).performClick()
         compose.runOnIdle {
@@ -75,6 +89,7 @@ class ItemFilterInteractionTest {
         compose.runOnIdle { assertEquals(Faction.FIRE.id, faction) }
         val directory = File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
         captureDisplay(File(directory, "inventory-filter-reset-$expectedScale.png"))
+        assertActionsFullyVisible()
         compose.onNodeWithText(label(R.string.filter_apply)).assertIsDisplayed().performClick()
         compose.runOnIdle {
             assertNull(faction)

@@ -4,6 +4,11 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — visual evidence overrides partial-visibility test success
+
+- Inspected the 5c4fe1a API 34/35 1.6-font filter captures. API 34 shows both actions above navigation; API 35 visibly puts the action row under the gesture area/partly offscreen. The prior passing click test is not a visual pass.
+- Shared SheetFrame now explicitly owns insets with `decorFitsSystemWindows = false`, retaining its navigation-bar padding. Added a check of the complete action bounds against the system navigation inset. Fix and stronger assertion await native execution; do not claim the overlap resolved before the new capture.
+
 ## 2026-09-24 — recorded-account upload guard and independent font evidence
 
 - Implemented the first account-ownership boundary: Room 12→13 preserves unknown historical owners, service captures new-run ownership, upload queries select that account, and run/crew/course requests validate the exact outgoing token identity. Course entries are acknowledged only after server success. Full account isolation remains incomplete; see ACCOUNT-DATA-AUDIT.md for limitations and required follow-up.
