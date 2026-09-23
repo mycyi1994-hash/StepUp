@@ -37,6 +37,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -54,9 +55,12 @@ data class RunLap(
 )
 
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
+enum class RunSaveStatus { IDLE, SAVING, FAILED }
+
 data class WalkSessionState(
     val isActive: Boolean = false,
     val isPaused: Boolean = false,
+    val saveStatus: RunSaveStatus = RunSaveStatus.IDLE,
     val steps: Int = 0,
     val elapsedSec: Long = 0,
     val startedAt: Long = 0,
@@ -210,8 +214,9 @@ class WalkSessionService : Service() {
 
     /** 세션 걸음 집계 기준점. 첫 실측값 방출로 초기화된다(null = 아직 미정). */
     private var lastTodaySteps: Int? = null
-    private var settling = false
+    @Volatile private var settling = false
     private var startJob: Job? = null
+    private var followupsAttempted = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -252,6 +257,7 @@ class WalkSessionService : Service() {
     }
 
     private fun beginTracking(partySize: Int, owner: String) {
+        followupsAttempted = false
         _state.value = WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
@@ -313,25 +319,28 @@ class WalkSessionService : Service() {
 
     private fun setPaused(paused: Boolean) {
         val current = _state.value
-        if (current.isActive) {
+        if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) {
             _state.value = current.copy(isPaused = paused)
         }
     }
 
     private fun stopSession() {
-        val session = _state.value
-        if (!session.isActive || settling) {
-            if (!session.isActive) {
+        val current = _state.value
+        if (!current.isActive || settling) {
+            if (!current.isActive) {
                 startJob?.cancel()
                 stopSelf()
             }
             return
         }
         settling = true
+        _state.update { it.copy(isPaused = true, saveStatus = RunSaveStatus.SAVING) }
+        val session = _state.value
         stepJob?.cancel()
         timerJob?.cancel()
         stopLocation()
         scope.launch {
+          try {
             // 파티런이면 정산 시점의 실제 인원을 쓴다 — 러닝 중 거리 이탈로 빠진 인원 반영.
             val settleSize = if (session.partySize > 1) {
                 ServiceLocator.crewRepository.currentPartySize()
@@ -396,9 +405,13 @@ class WalkSessionService : Service() {
                     crewId = partyCrewId,
                 )
             ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
+            // These legacy follow-ups are not durable yet. A same-process save retry
+            // must not issue them again after a scheduling failure.
+            if (!followupsAttempted) {
+                followupsAttempted = true
             if (creditedSteps > 0) {
                 val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
-                Analytics.runFinished(km, settleSize)
+                runCatching { Analytics.runFinished(km, settleSize) }
             }
             if (verdict.isRewardable) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
@@ -424,6 +437,7 @@ class WalkSessionService : Service() {
                     }
                     if (km > 0.0 && equippedFaction != null) prefs.addFactionKm(equippedFaction, km)
                 }
+            }
             }
             // 방금 달린 트랙을 남겨 "코스 만들기"의 재료로 쓴다
             if (session.track.size >= 2) {
@@ -455,6 +469,15 @@ class WalkSessionService : Service() {
             settling = false
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
+          } catch (cancelled: CancellationException) {
+            throw cancelled
+          } catch (_: Exception) {
+            // Preserve the stopped run. A retry uses the same identity and durable receipt.
+            // Never resume collecting steps into a run whose settlement may already exist.
+            _state.update { if (it.isActive) it.copy(isPaused = true, saveStatus = RunSaveStatus.FAILED) else it }
+          } finally {
+            settling = false
+          }
         }
     }
 

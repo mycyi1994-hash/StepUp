@@ -1518,5 +1518,8 @@ StepUp と走り出そう。</string>
     <string name="privacy_perm_location">位置情報 — ランのルートを記録</string>
     <string name="privacy_location_precise">正確な位置情報を許可</string>
     <string name="privacy_location_approximate">おおよその位置情報を許可</string>
+    <string name="run_saving">ランニングを保存中</string>
+    <string name="run_save_retry">保存を再試行</string>
+    <string name="run_save_failed">保存を完了できませんでした。アプリを開いたまま再試行してください。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -79,7 +79,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ThemeScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt:75 | pending | pending |
 | SplashScreen | app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt:37 | pending | pending |
 | CourseHubScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:92 | pending | pending |
-| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:153 | pending | pending |
+| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:154 | pending | pending |
 
 ## Dialog / sheet / menu declarations
 
@@ -100,10 +100,10 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:71 | pending |
 | CourseHubScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:263 | pending |
 | CourseRankingDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:845 | pending |
-| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:534 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:572 | pending |
-| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:604 | pending |
-| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1372 | pending |
+| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:546 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:584 | pending |
+| RunScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:616 | pending |
+| SaveCourseDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:1384 | pending |
 
 ## State review
 

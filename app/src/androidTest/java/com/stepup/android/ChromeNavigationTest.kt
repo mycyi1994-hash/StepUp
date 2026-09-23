@@ -181,6 +181,24 @@ class ChromeNavigationTest {
             compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_title)).assertDoesNotExist()
             compose.onNodeWithTag("run-finish").assertIsDisplayed()
             // Presentation fixtures only: these do not simulate server settlement or GPS.
+            for (saveStatus in listOf(com.stepup.android.service.RunSaveStatus.SAVING,
+                com.stepup.android.service.RunSaveStatus.FAILED)) {
+                com.stepup.android.service.WalkSessionService.showStateForTest(
+                    com.stepup.android.service.WalkSessionState(isActive = true, isPaused = true,
+                        elapsedSec = 623, steps = 1200, saveStatus = saveStatus),
+                )
+                compose.waitForIdle()
+                compose.onNodeWithTag("run-finish").assertDoesNotExist()
+                val action = compose.onNodeWithTag("run-primary-action").assertIsDisplayed()
+                if (saveStatus == com.stepup.android.service.RunSaveStatus.SAVING) {
+                    action.assertIsNotEnabled()
+                    compose.onNodeWithTag("run-save-error").assertDoesNotExist()
+                } else {
+                    action.assertIsEnabled()
+                    compose.onNodeWithTag("run-save-error").assertIsDisplayed()
+                }
+                capture("${next.width}-${next.font}-${next.mode}-save-$saveStatus")
+            }
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
                     lastRewardPoints = 4.0, lastSessionSteps = 1200, lastElapsedSec = 623,

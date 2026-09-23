@@ -22,6 +22,7 @@ data class RunCheckpoint(
 ) {
     init {
         require(state.isActive && state.startedAt > 0 && state.recordingOwner.isNotBlank())
+        require(phase == RunCheckpointPhase.SETTLING || state.saveStatus == RunSaveStatus.IDLE)
         require(state.steps >= 0 && state.elapsedSec >= 0 && state.partySize >= 1)
         require(savedAt >= state.startedAt && goalKm.isFinite() && goalKm > 0)
         require(state.gpsKm.isFinite() && state.gpsKm >= 0)

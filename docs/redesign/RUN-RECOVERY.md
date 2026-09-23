@@ -62,3 +62,14 @@ in the required interaction suite. Native execution is pending; no real process-
    preserved last route/laps. Physical background GPS behavior requires separate device evidence.
 
 The storage layer is a foundation for the requested full recovery, not a replacement for it.
+
+## Save failure presentation (native validation pending)
+
+Stopping now freezes sensor/timer state before settlement and publishes SAVING. Core failures leave
+the same active identity paused as FAILED, expose Retry saving, and prevent Resume/manual mutation
+of a potentially settled record. A same-process retry uses the Room receipt and does not repeat
+already-attempted legacy course/faction follow-ups if upload scheduling fails. This attempt marker
+is not durable, and those follow-ups still use their existing best-effort behavior; neither is proof
+of complete course/party recovery. Four viewport/theme/font fixtures exercise saving/failed layouts
+and disabled/enabled controls, not actual service failure injection. Real service errors/process
+termination still require integration evidence.

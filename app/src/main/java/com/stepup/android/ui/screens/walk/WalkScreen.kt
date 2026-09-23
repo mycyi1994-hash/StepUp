@@ -81,6 +81,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.BuildConfig
 import com.stepup.android.R
 import com.stepup.android.service.WalkSessionState
+import com.stepup.android.service.RunSaveStatus
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
@@ -429,6 +430,8 @@ fun RunScreen(
         com.stepup.android.ui.components.FocusHeader(
             title = stringResource(when {
                 finishing -> R.string.finish_title
+                session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
+                session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
                 session.isPaused -> R.string.run_paused
                 session.isActive -> R.string.run_active
                 else -> R.string.run_ready
@@ -500,13 +503,18 @@ fun RunScreen(
             }
             PrimaryCta(
                 text = stringResource(when {
+                    session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
+                    session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
                     !session.isActive -> R.string.home_start_run
                     session.isPaused -> R.string.cd_resume
                     else -> R.string.cd_pause
                 }),
-                icon = if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
+                    else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                enabled = session.saveStatus != RunSaveStatus.SAVING,
                 onClick = {
                     when {
+                        session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
                         running -> WalkSessionService.pause(context)
                         session.isActive -> WalkSessionService.resume(context)
                         else -> {
@@ -518,7 +526,11 @@ fun RunScreen(
                 },
                 modifier = Modifier.testTag("run-primary-action"),
             )
-            if (session.isActive) {
+            if (session.saveStatus == RunSaveStatus.FAILED) {
+                Text(stringResource(R.string.run_save_failed), color = Alert,
+                    style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 12.dp).testTag("run-save-error"))
+            } else if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
                 TextButton(
                     onClick = { confirmStop = true },
                     modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)

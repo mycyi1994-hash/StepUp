@@ -1519,5 +1519,8 @@ Start running with StepUp.</string>
     <string name="privacy_perm_location">Location — records your route</string>
     <string name="privacy_location_precise">Precise location allowed</string>
     <string name="privacy_location_approximate">Approximate location allowed</string>
+    <string name="run_saving">Saving run</string>
+    <string name="run_save_retry">Retry saving</string>
+    <string name="run_save_failed">Your run could not finish saving. Keep the app open and try again.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -4,6 +4,14 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — visible save progress and safe same-process retry
+
+- Previous turn made progress: 9cd6746 connected atomic local settlement, energy receipts and persistence tests. Revalidated its live Build APK 35934709879/gallery 35934709852; neither was assumed finished or restarted.
+- Stopping now freezes current state before cancellation/settlement and exposes SAVING. An exception retains the same run as paused/FAILED, resets the in-flight guard and exposes Retry saving. Resume is refused once saving starts; the UI disables the primary action while saving and hides the duplicate Finish action. Four-locale failure copy explicitly asks to keep the app open because durable active-run restoration is not enabled yet.
+- Same-process retries do not repeat attempted legacy course/faction follow-ups after scheduling failure. Their full durable recovery/acknowledgement remains incomplete; this is not a replacement for it. Checkpoint construction rejects a non-idle save state mislabeled RECORDING.
+- Added saving/failed fixtures, captures and control assertions to all Chrome viewport/theme/font scenarios. These are presentation checks; repository failure/reopen tests and future service-level process-death tests establish different evidence. Native execution is pending.
+- Source inventory/design/resources and whitespace checks pass. Current changes are not a completed recovery feature or final release.
+
 ## 2026-09-24 — atomic local run settlement and replayable energy consumption
 
 - Previous turn made progress with b2560df (checkpoint storage/tests and guide selector fix), held locally while build 35933717767 was live. Rechecked that build and observed successful completion before pushing the next revision.
