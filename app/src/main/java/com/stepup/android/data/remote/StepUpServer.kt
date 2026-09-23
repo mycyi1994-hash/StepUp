@@ -188,6 +188,15 @@ class StepUpServer(
         }.mapBody { }
     }
 
+    /**
+     * 계정 삭제(`account_delete`). 서버의 프로필·러닝·원장·글·코스·땅 표시가 함께
+     * 지워지고 되돌릴 수 없다. 크루장이면 가장 오래된 크루원에게 넘어간다.
+     */
+    suspend fun deleteAccount(): ServerResult<Unit> =
+        authed { token ->
+            http.post("$restUrl/rpc/account_delete", "{}", headers(token))
+        }.mapBody { }
+
     /** 지금 잔고. 서버 원장의 합이다. */
     suspend fun balance(): ServerResult<Double> =
         authed { token ->

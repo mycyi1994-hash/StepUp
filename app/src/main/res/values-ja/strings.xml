@@ -382,7 +382,7 @@
 
     <!-- Privacy -->
     <string name="privacy_data_title">保存されるデータ</string>
-    <string name="privacy_data_body">歩数・セッション・SUPの履歴・スニーカーまで、すべてこの端末のローカルストレージにだけ保存されます。アカウントもサーバーへのアップロードもありません。</string>
+    <string name="privacy_data_body">ログインすると、ラン記録（GPSルートを含む）・歩数の合計・SUP履歴・投稿とクルー活動がStepUpサーバーに保管されます。サーバーが付与を直接計算し、クルー・ランキング・コース・陣取りを共有するためです。広告IDは収集しません。アカウントは連携アカウント画面からいつでも削除できます。</string>
     <string name="privacy_perm_title">使用中の権限</string>
     <string name="privacy_perm_activity">身体活動 — 歩数のカウント</string>
     <string name="privacy_perm_notification">通知 — ラン中のセッション表示</string>
@@ -1487,4 +1487,8 @@ StepUp と走り出そう。</string>
     <string name="notification_channel_reminder">目標リマインダー</string>
     <string name="reminder_goal_title">今日の目標まであと%1$d歩</string>
     <string name="reminder_goal_body">軽くひと走りして目標を達成しましょう</string>
+    <string name="account_delete_title">アカウント削除</string>
+    <string name="account_delete_body">アカウントとサーバー上のラン記録・GPSルート・SUP履歴・投稿・コメント・コース・陣地マークがすべて削除され、元に戻せません。クルー長の場合は最も古いメンバーがクルー長になります。この端末に残った記録はアプリを削除すると消えます。</string>
+    <string name="account_delete_confirm">削除</string>
+    <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
 </resources>

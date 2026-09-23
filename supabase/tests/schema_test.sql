@@ -2285,6 +2285,53 @@ begin
     '무효 판정 러닝은 칸을 칠하지 않는다');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 계정 삭제 ────────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'h@test', '{"full_name":"Del Me"}');
+
+set role authenticated;
+call pg_temp.login('dddddddd-dddd-dddd-dddd-dddddddddddd');
+do $$
+declare v_crew uuid; v_start timestamptz := pg_temp.fx('base')::timestamptz + interval '13 hours';
+begin
+  v_crew := public.crew_create('떠나는 크루', 'DM', '', '서울', 'OPEN');
+  insert into fix (k, v) values ('del_crew', v_crew::text);
+  perform public.record_session(v_start, v_start + interval '601 seconds', 2000, 601,
+    pg_temp.track_at(v_start, 600, 0.00003, 130.0), 0, 1, '');
+end $$;
+
+call pg_temp.login('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+do $$ begin perform public.crew_join(pg_temp.fx('del_crew')::uuid); end $$;
+
+call pg_temp.login('dddddddd-dddd-dddd-dddd-dddddddddddd');
+do $$ begin perform public.account_delete(); end $$;
+reset role;
+
+do $$
+begin
+  perform pg_temp.ok(
+    not exists (select 1 from auth.users where id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
+    '계정이 지워진다');
+  perform pg_temp.ok(
+    not exists (select 1 from public.profiles where id = 'dddddddd-dddd-dddd-dddd-dddddddddddd')
+    and not exists (select 1 from public.walk_sessions where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd')
+    and not exists (select 1 from public.sup_ledger where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
+    '프로필·러닝·원장이 함께 지워진다');
+  perform pg_temp.ok(
+    (select owner_id from public.crews where id = pg_temp.fx('del_crew')::uuid)
+      = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    '크루장이 떠나면 가장 오래된 크루원이 크루장이 된다');
+end $$;
+
+set role authenticated;
+call pg_temp.login(null);
+call pg_temp.must_fail($q$ select public.account_delete() $q$, '로그인하지 않으면 지울 수 없다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

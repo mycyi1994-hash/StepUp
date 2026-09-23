@@ -383,7 +383,7 @@
 
     <!-- Privacy -->
     <string name="privacy_data_title">What we store</string>
-    <string name="privacy_data_body">Everything — your steps, sessions, SUP ledger and sneakers — stays in local storage on this device. There is no account and no server upload.</string>
+    <string name="privacy_data_body">When you sign in, your runs (including GPS routes), daily step totals, SUP history, posts and crew activity are kept on the StepUp server, so the server can compute rewards and crews, rankings, courses and territory can be shared. No advertising ID is collected. You can delete your account any time under Connected Accounts.</string>
     <string name="privacy_perm_title">Permissions in use</string>
     <string name="privacy_perm_activity">Physical activity — counts your steps</string>
     <string name="privacy_perm_notification">Notifications — shows the running session</string>
@@ -1488,4 +1488,8 @@ Start running with StepUp.</string>
     <string name="notification_channel_reminder">Goal reminders</string>
     <string name="reminder_goal_title">%1$d steps left to today\'s goal</string>
     <string name="reminder_goal_body">How about a quick run to hit your goal?</string>
+    <string name="account_delete_title">Delete account</string>
+    <string name="account_delete_body">Your account and everything on the server — runs, GPS routes, SUP history, posts, comments, courses and territory marks — will be deleted and cannot be restored. If you own a crew, its longest-standing member becomes owner. Records left on this phone are removed when you uninstall the app.</string>
+    <string name="account_delete_confirm">Delete</string>
+    <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
 </resources>

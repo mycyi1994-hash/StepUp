@@ -222,7 +222,7 @@ private fun DrawScope.drawPins(plan: TilePlan, pins: List<Pin>, selected: Pin?) 
         val color = if (pin is Pin.Flash) Volt else Cyan
         val big = pin == selected
         drawCircle(color.copy(alpha = 0.28f), radius = (if (big) 16 else 11).dp.toPx(), center = at)
-        drawCircle(color, radius = (if (big) 7 else 5.5f).dp.toPx(), center = at)
+        drawCircle(color, radius = (if (big) 7f else 5.5f).dp.toPx(), center = at)
         drawCircle(Night, radius = 2.dp.toPx(), center = at)
     }
 }

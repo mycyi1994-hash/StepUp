@@ -381,7 +381,7 @@
 
     <!-- Privacy -->
     <string name="privacy_data_title">我们存了什么</string>
-    <string name="privacy_data_body">所有数据 —— 步数、跑步记录、SUP 账本和球鞋 —— 都只存在这台设备的本地。没有账号，也不会上传到服务器。</string>
+    <string name="privacy_data_body">登录后，跑步记录（含 GPS 路线）、每日步数、SUP 记录、帖子和跑团活动会保存在 StepUp 服务器上，以便服务器直接计算奖励，并共享跑团、排行、路线和占地盘。不收集广告标识符。可随时在已连接账户中删除账户。</string>
     <string name="privacy_perm_title">正在使用的权限</string>
     <string name="privacy_perm_activity">身体活动 —— 统计你的步数</string>
     <string name="privacy_perm_notification">通知 —— 显示进行中的跑步</string>
@@ -1486,4 +1486,8 @@
     <string name="notification_channel_reminder">目标提醒</string>
     <string name="reminder_goal_title">距离今日目标还差 %1$d 步</string>
     <string name="reminder_goal_body">去轻松跑一圈完成目标吧？</string>
+    <string name="account_delete_title">删除账户</string>
+    <string name="account_delete_body">账户及服务器上的跑步记录、GPS 路线、SUP 记录、帖子、评论、路线和地盘标记将全部删除且无法恢复。如果你是团长，最早加入的成员将成为团长。留在本机的记录会在卸载应用时删除。</string>
+    <string name="account_delete_confirm">删除</string>
+    <string name="account_delete_failed">删除失败。请检查网络后重试。若仍失败，请发邮件至 support@stepupcrew.com。</string>
 </resources>

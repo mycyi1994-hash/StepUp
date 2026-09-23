@@ -106,6 +106,10 @@ object ServiceLocator {
     lateinit var pushRegistrar: PushRegistrar
         private set
 
+    /** 서버 — 계정 삭제처럼 저장소를 거치지 않는 호출에 쓴다 */
+    lateinit var server: StepUpServer
+        private set
+
     /** 땅따먹기 — 지도에 보이는 칸과 크루 순위 */
     lateinit var territoryApi: TerritoryApi
         private set
@@ -131,7 +135,7 @@ object ServiceLocator {
             auth = SupabaseAuth(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY),
             store = PrefsAuthSessionStore(userPrefs),
         )
-        val server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
+        server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
         Analytics.init(app)
         pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
         territoryApi = TerritoryApi(server)
