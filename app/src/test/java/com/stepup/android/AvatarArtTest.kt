@@ -204,7 +204,8 @@ class AvatarArtTest {
             shoes.forEach { s ->
                 val r = AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.FEMALE, outfit = o, shoe = s), AvatarPose.IDLE)
                 val code = s?.designCode()
-                val drawn = s == null || (o.nft && AvatarArtCatalog.LUMI_SHEET_OUTFIT.getValue(code!!.take(3)) == o)
+                val drawn = s == null || (o.starter && code == "WND-010") ||
+                    (o.nft && AvatarArtCatalog.LUMI_SHEET_OUTFIT.getValue(code!!.take(3)) == o)
                 assertEquals("${o.id} + $code", drawn, r.lookShown)
                 assertEquals(r.art.outfitId == o.id, r.outfitShown)
                 assertEquals(r.art.shoeCode == code, r.shoeShown)
@@ -216,7 +217,7 @@ class AvatarArtTest {
             }
         }
         // 기본 착장 1 + 새 의상 5 + 추천 의상 × 신발 52
-        assertEquals(1 + 5 + 52, shown)
+        assertEquals(1 + 5 + 52 + 1, shown)
     }
 
     @Test
@@ -247,8 +248,9 @@ class AvatarArtTest {
     @Test
     fun `LUMI 기본 의상 + 시작 신발 — 입지 않은 옷의 그림을 쓰지 않는다`() {
         val r = AvatarArtCatalog.resolve(AvatarLook(gender = AvatarGender.FEMALE, shoe = shoe("WND-010")), AvatarPose.IDLE)
-        assertEquals(AvatarArt.FEMALE_IDLE, r.art)
-        assertFalse(r.shoeShown)
+        assertEquals(Outfits.BASE_ID, r.art.outfitId)
+        assertEquals("WND-010", r.art.shoeCode)
+        assertTrue(r.lookShown)
     }
 
     @Test

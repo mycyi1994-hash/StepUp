@@ -26,7 +26,7 @@ for family in ['Pretendard', 'Barlow']:
     assert 'SIL OPEN FONT LICENSE' in (ROOT / f'app/src/main/assets/licenses/{family}-OFL.txt').read_text()
 # 러너 캐릭터 그림 — 투명 배경(알파)이 있는 WebP 이고, 화면에서 크게 쓰므로
 # 작은 썸네일로 바뀌지 않았는지 캔버스 크기도 본다.
-for name in ['avatar_male_running', 'avatar_female_idle']:
+for name in ['avatar_male_running', 'avatar_female_idle', 'avatar_runo_idle_wnd_010_v2', 'avatar_lumi_idle_base_wnd_010']:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
     assert head[:4] == b'RIFF' and head[8:12] == b'WEBP' and head[12:16] == b'VP8X', name
     assert head[20] & 0x10, f'{name}: no alpha channel'
@@ -60,4 +60,4 @@ wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in lumi_outfits]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
     assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')
+print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 5 base/starter alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')

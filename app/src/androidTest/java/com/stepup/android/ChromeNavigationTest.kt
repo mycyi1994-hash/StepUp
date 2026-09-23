@@ -71,6 +71,11 @@ class ChromeNavigationTest {
             val logo = bounds("brand-wordmark")
             val bar = bounds(BOTTOM_NAV_TAG)
             val token = bounds("sup-balance")
+            val tabRoutes = listOf("home", "customize", "community", "profile")
+            assertEquals("icons stay on one baseline $next", 1,
+                tabRoutes.map { bounds("nav-icon-$it").top }.distinct().size)
+            assertEquals("labels stay on one baseline $next", 1,
+                tabRoutes.map { bounds("nav-label-$it").top }.distinct().size)
             capture("${next.width}-${next.font}-${next.mode}-home")
             compose.onNodeWithTag("home-start-run").assertIsDisplayed().assertHasClickAction()
             listOf(R.string.tab_customize, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->

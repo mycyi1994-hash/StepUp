@@ -137,8 +137,9 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-            com.stepup.android.ui.components.AvatarImage(
-                art = render.art,
+            CharacterStage(
+                look = look, pose = AvatarPose.IDLE, skyline = false,
+                characterFraction = 0.95f, animate = false,
                 contentDescription = stringResource(R.string.cd_home_character),
                 modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
                     .quietClickable(onOpenCustomize),

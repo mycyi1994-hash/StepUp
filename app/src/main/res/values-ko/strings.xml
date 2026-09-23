@@ -1492,5 +1492,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="account_delete_failed">지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 계속 안 되면 support@stepupcrew.com 으로 알려 주세요.</string>
     <string name="splash_prepare_failed">앱을 준비하지 못했어요. 다시 시도해 주세요.</string>
     <string name="run_location_disabled">위치 권한 꺼짐</string>
+    <string name="finish_share_activity">StepUp에서 %1$s km를 %2$s 동안 달렸어요.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

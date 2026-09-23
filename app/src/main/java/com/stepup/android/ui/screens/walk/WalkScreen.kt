@@ -1540,12 +1540,12 @@ private fun FinishCard(
         pace = stringResource(R.string.share_card_pace),
         footer = stringResource(R.string.share_card_footer),
     )
-    val shareText = stringResource(
-        R.string.finish_share_text,
-        "%.1f".format(km),
-        formatDuration(session.lastElapsedSec),
-        "%,.0f".format(points),
-    )
+    val shareText = if (!voided && upload == UploadState.SIGNED.name) {
+        stringResource(R.string.finish_share_text, "%.1f".format(km),
+            formatDuration(session.lastElapsedSec), "%,.0f".format(points))
+    } else {
+        stringResource(R.string.finish_share_activity, "%.1f".format(km), formatDuration(session.lastElapsedSec))
+    }
 
     Column(
         modifier = Modifier

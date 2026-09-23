@@ -27,6 +27,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 ## 2026-09-24 — wardrobe and native Back verification
 
+- Revision 80beb62 native run 35900771499 passed ChromeNavigationTest across all four viewport/font/theme scenarios (XML: 1 test, 0 failures), then completed the gallery. Captures downloaded to C:/Users/gana0/StepUp-captures/redesign-80beb62. The gallery note still reports the signed-out My trades variation as inaccessible; this remains unverified despite the green job.
+- Visual inspection found pixelated starter equipment sprites, a floating wardrobe character, and English Community wrapping onto two lines at 1.3 font scale and displacing its icon. Added high-resolution transparent starter RUNO and a new faithful LUMI/base/WND-010 combination, grounded home/wardrobe stages, and a single-line navigation label rule plus icon/label baseline assertions. These follow-up changes need fresh native verification; other equipment art remains to be upgraded.
+- Revision 731899d Build APK 35901343580 and gallery 35901343495 both passed. This verifies compilation/tests for the contextual-permission change, not real-device GPS or every denied-permission flow.
+- Result review found share copy asserting rewards before server confirmation and the completed state discarding the just-finished route. Pending/rejected/void shares now state exercise only; completed state retains its own track for sharing. End-to-end settlement/recovery verification remains outstanding.
+
 - Revision 04dc0a6 Build APK run 35899906910 passed, including the release build. Capture run 35899907027 compiled and launched the emulator but failed at ChromeNavigationTest line 110 after dismissing the home sheet.
 - The test called the activity Back dispatcher directly while a dialog window was open; this finished the activity instead of sending Back to the sheet. Replaced it with a real system Back key. The first viewport's tab/wallet/run assertions reached that line; the remaining viewport scenarios are not yet verified.
 - The capture script now preserves chrome reports/screenshots and runs the full gallery even if a chrome assertion fails, while keeping the job failing on test failure. This prevents a test error from hiding all visual evidence.

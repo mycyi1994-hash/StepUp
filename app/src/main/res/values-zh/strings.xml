@@ -1492,5 +1492,6 @@
     <string name="account_delete_failed">删除失败。请检查网络后重试。若仍失败，请发邮件至 support@stepupcrew.com。</string>
     <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
     <string name="run_location_disabled">位置权限已关闭</string>
+    <string name="finish_share_activity">我在StepUp用%2$s跑了%1$s公里。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

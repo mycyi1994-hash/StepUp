@@ -10,6 +10,7 @@ import com.stepup.android.domain.AvatarArt
 @DrawableRes
 fun avatarArtResOrNull(key: String): Int? = when (key) {
     "female_idle" -> R.drawable.avatar_female_idle
+    "lumi_idle_base_wnd_010" -> R.drawable.avatar_lumi_idle_base_wnd_010
     "lumi_idle_fir_001" -> R.drawable.avatar_lumi_idle_fir_001
     "lumi_idle_fir_002" -> R.drawable.avatar_lumi_idle_fir_002
     "lumi_idle_fir_003" -> R.drawable.avatar_lumi_idle_fir_003
@@ -123,6 +124,7 @@ fun avatarArtResOrNull(key: String): Int? = when (key) {
     "runo_idle_wnd_008" -> R.drawable.avatar_runo_idle_wnd_008
     "runo_idle_wnd_009" -> R.drawable.avatar_runo_idle_wnd_009
     "runo_idle_wnd_010" -> R.drawable.avatar_runo_idle_wnd_010
+    "runo_idle_wnd_010_v2" -> R.drawable.avatar_runo_idle_wnd_010_v2
     "runo_idle_wnd_011" -> R.drawable.avatar_runo_idle_wnd_011
     "runo_idle_wnd_012" -> R.drawable.avatar_runo_idle_wnd_012
     "runo_idle_wnd_013" -> R.drawable.avatar_runo_idle_wnd_013

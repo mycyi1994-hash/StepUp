@@ -728,16 +728,19 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             imageVector = screen.icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(StepUpDesign.NavigationIcon),
+            modifier = Modifier.size(StepUpDesign.NavigationIcon).testTag("nav-icon-${screen.route}"),
         )
         Text(
             text = stringResource(screen.labelRes),
+            modifier = Modifier.testTag("nav-label-${screen.route}"),
             color = tint,
             fontSize = StepUpDesign.NavigationLabel,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.sp,
             textAlign = TextAlign.Center,
-            softWrap = true,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
         Box(
             modifier = Modifier

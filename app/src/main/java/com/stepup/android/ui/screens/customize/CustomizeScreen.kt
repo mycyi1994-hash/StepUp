@@ -145,7 +145,7 @@ fun CustomizeScreen(
     val canEquip = if (tab == 0) true else pickedShoe != null
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-        val previewHeight = maxHeight * 0.48f
+        val previewHeight = maxHeight * 0.52f
         Column(
             Modifier.fillMaxSize()
                 .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
@@ -153,8 +153,9 @@ fun CustomizeScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(Modifier.fillMaxWidth().height(previewHeight)) {
-                AvatarImage(
-                    art = render.art,
+                CharacterStage(
+                    look = preview, pose = AvatarPose.IDLE, skyline = false,
+                    characterFraction = 0.95f, animate = false,
                     contentDescription = stringResource(R.string.cd_customize_preview),
                     modifier = Modifier.fillMaxSize().padding(top = 12.dp, bottom = 6.dp)
                         .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),

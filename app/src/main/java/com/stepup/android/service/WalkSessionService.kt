@@ -420,6 +420,8 @@ class WalkSessionService : Service() {
             // 일꾼이 연결이 돌아올 때까지 기다렸다 보낸다.
             SessionUploadWorker.schedule(this@WalkSessionService)
             _state.value = WalkSessionState(
+                // Keep this session's route available to its result/share card.
+                track = session.track,
                 lastRewardPoints = reward.points,
                 lastRewardedSteps = reward.rewardedSteps,
                 lastSessionSteps = session.steps,

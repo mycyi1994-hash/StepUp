@@ -1,5 +1,17 @@
 # Production scene artwork
 
+## Starter character sprites
+
+Built-in ImageGen. `runo-cloud-runner-v2.png` preserves the male starter outfit and WND-010 shoes; `lumi-cloud-runner.png` adds the previously missing female base-outfit/WND-010 combination. Converted to versioned WebP runtime resources at quality 94; original resources retained. PNG inspection: RGBA, outside-background samples alpha 0; detail/edge validation and final native screenshots still required. Other equipment sprites are not upgraded by this change.
+
+### RUNO prompt
+
+Use case: identity-preserve. Remaster Image 1 (RUNO wearing WND-010 Cloud Runner sneakers) as a crisp high-resolution production character sprite on a genuinely transparent background with clean alpha. Image 2 is ONLY a rendering quality/material reference, NOT identity. Keep Image 1's male character, exact cap/hair/black smooth face/capsule glowing blue eyes, body proportions, standing pose, navy ZIP hoodie with electric-blue trim, navy shorts, and exact white chunky sneakers with teal details. Do not turn him into the ponytail female in Image 2. Reconstruct fine cloth, laces, sole texture and clean smooth outlines; eliminate pixelation, white halo, jagged blue fringe and compression artifacts. Match the polished dimensional 3D collectible quality of Image 2, without changing the outfit or shoe model. Full body entirely visible cap to soles, center with small clean margins, at least 1024x1536. Keep UP marks already on clothing. No other text, background, floor, platform, cast shadow or props. Genuine transparent PNG.
+
+### LUMI prompt
+
+Use case: identity-preserve. Production LUMI full-body character sprite, genuinely transparent PNG, at least1024x1536. Image 1 is the target female LUMI character: preserve her exact identity, proportions, cap, ponytail, smooth black face and glowing capsule eyes, navy pullover hoodie with bright blue trims, navy shorts and socks, exact relaxed standing pose. Change ONLY her sneakers: wear the white chunky WND-010 Cloud Runner shoe with teal details shown on Image 2 (RUNO). Use Image 2 ONLY for the shoe design, not its male identity or low resolution. Preserve Image 1's crisp polished dimensional 3D rendering and materials, with clean anti-aliased alpha and no blue pixel halo. Both shoes must faithfully match the white and teal model. Full body, no cropping, small transparent margin all around. No background, floor, platform, ground shadow, added text or props.
+
 ## Wardrobe terrace
 
 `wardrobe-terrace.png` / `scene_wardrobe_terrace.webp`: built-in ImageGen from `../concepts/06-wardrobe.png`, WebP quality 88. Inspected: clean terrace with no UI or character. Exact prompt:

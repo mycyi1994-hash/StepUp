@@ -1494,5 +1494,6 @@ Start running with StepUp.</string>
     <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
     <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
     <string name="run_location_disabled">Location access off</string>
+    <string name="finish_share_activity">I ran %1$s km in %2$s on StepUp.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
