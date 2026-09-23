@@ -4,6 +4,12 @@
 
 Complete the whole StepUp application and all its screens/states for GASOK submission and real user testing. Full objective remains active until audited against implementation, build, APK, captures and functional evidence.
 
+## 2026-09-24 — bounded capture diagnostics
+
+- Earlier gallery 35912849285 remains authoritatively in progress. Its job-log endpoint returns 404 before completion, so the stall location is not known; no inferred cause or restart is justified. NightCanvas and TerraceStage source have no self-running animation that alone establishes a cause.
+- Future capture runs now bound each instrumentation phase to nine minutes, preserve nonzero exit status, save a failure display/logcat and record phase exit codes. Only after an actual timeout do they stop the instrumentation/app processes to allow the independent gallery phase to run. This reserves artifact-upload time before the existing 30-minute workflow cap; it does not turn missing tests into a pass. Bash syntax check passes; native behavior of the diagnostic path remains pending.
+- fbd387a Build APK 35915223394 remains running. Map/vault/course and diagnostic changes are committed locally pending that result before the next push.
+
 ## 2026-09-24 — vault and course detail structure
 
 - Items/Vault and CourseHub now use DetailPage instead of local title/back rows and gutters. Vault keeps its balance and Dex destination in content, with an explicitly labeled shared Dex button replacing the 42dp custom icon target. Store/market/vault tabs and course selection/recording/community actions remain in place. Source rules cover both screens.
