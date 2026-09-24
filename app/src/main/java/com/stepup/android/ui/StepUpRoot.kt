@@ -327,7 +327,9 @@ internal fun MainScaffold(
     var previousRoute by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
-            if (currentRoute == Screen.Run.route && previousRoute != null && previousRoute != Screen.Run.route) {
+            if (currentRoute == Screen.Run.route && previousRoute in listOf(
+                    Screen.Customize.route, Screen.Community.route, Screen.Profile.route,
+                )) {
                 homeSetting = com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
             }
             previousRoute = currentRoute
