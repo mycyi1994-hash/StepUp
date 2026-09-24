@@ -24,11 +24,21 @@ object WardrobeBackgrounds {
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 }
 
+/** Home scenes share a ground plane with the standing character. Keep the choice
+ * in the navigation shell so recomposition, balance updates and outfit changes
+ * never shuffle the scenery underneath the user. */
+object HomeBackgrounds {
+    val settings = listOf(RunnerSetting.Night, RunnerSetting.Wardrobe, RunnerSetting.Sunset)
+
+    fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
+}
+
 @Composable
 fun RunnerScene(
     modifier: Modifier = Modifier,
     setting: RunnerSetting = RunnerSetting.Night,
     wardrobe: Boolean = false,
+    home: Boolean = false,
 ) {
     Box(modifier) {
         Image(
@@ -46,6 +56,10 @@ fun RunnerScene(
             0f to Night.copy(alpha = 0.86f), 0.12f to Night.copy(alpha = 0.3f),
             0.25f to Color.Transparent, 0.6f to Color.Transparent,
             0.78f to Night, 1f to Night,
+        ) else if (home) arrayOf(
+            0f to Night.copy(alpha = 0.52f), 0.14f to Night.copy(alpha = 0.22f),
+            0.28f to Color.Transparent, 0.70f to Color.Transparent,
+            0.90f to Night.copy(alpha = 0.54f), 1f to Night,
         ) else arrayOf(
             0f to Night, 0.16f to Night.copy(alpha = 0.8f),
             0.33f to Color.Transparent, 0.72f to Color.Transparent,

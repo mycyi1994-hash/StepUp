@@ -321,12 +321,28 @@ internal fun MainScaffold(
     var wardrobeSetting by rememberSaveable {
         mutableStateOf(com.stepup.android.ui.components.RunnerSetting.Wardrobe)
     }
+    var homeSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.settings.random())
+    }
+    var previousRoute by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != null) {
+            if (currentRoute == Screen.Run.route && previousRoute != null && previousRoute != Screen.Run.route) {
+                homeSetting = com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
+            }
+            previousRoute = currentRoute
+        }
+    }
     val wardrobeScene = wardrobeSetting.takeIf {
         it in com.stepup.android.ui.components.WardrobeBackgrounds.settings
     } ?: com.stepup.android.ui.components.RunnerSetting.Wardrobe
 
     Box(Modifier.fillMaxSize()) {
-    if (currentRoute == Screen.Run.route || currentRoute == Routes.EVENTS) {
+    if (currentRoute == Screen.Run.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), homeSetting, home = true,
+        )
+    } else if (currentRoute == Routes.EVENTS) {
         com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
     } else if (currentRoute == Screen.Customize.route) {
         com.stepup.android.ui.components.RunnerScene(

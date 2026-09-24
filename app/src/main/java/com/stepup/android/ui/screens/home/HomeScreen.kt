@@ -139,7 +139,7 @@ fun HomeScreen(
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
             if (savedLook != null) CharacterStage(
                 look = savedLook, pose = AvatarPose.IDLE, skyline = false,
-                characterFraction = 0.95f, animate = false,
+                characterFraction = 0.82f, animate = false,
                 contentDescription = stringResource(R.string.cd_home_character),
                 modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
                     .testTag("home-character-ready")
