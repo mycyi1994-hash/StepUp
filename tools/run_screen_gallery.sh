@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -88,6 +88,10 @@ run_instrumentation() {
 }
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"
+  pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+fi
+if [[ "$suite" == "mystery" ]]; then
+  run_instrumentation mystery "com.stepup.android.MysteryDesignTest"
   pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
 fi
 if [[ "$suite" == "all" || "$suite" == "interaction" ]]; then

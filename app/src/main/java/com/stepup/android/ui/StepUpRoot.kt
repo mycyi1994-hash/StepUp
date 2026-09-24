@@ -353,7 +353,7 @@ internal fun MainScaffold(
     if (currentRoute == Screen.Run.route) {
         Crossfade(homeSetting, animationSpec = tween(motion.duration(420)), label = "homeBackground") { scene ->
             com.stepup.android.ui.components.RunnerScene(
-                Modifier.fillMaxSize(), scene, home = true,
+                Modifier.fillMaxSize().testTag("home-scene-${scene.name}"), scene, home = true,
             )
         }
     } else if (currentRoute == Screen.Customize.route) {
