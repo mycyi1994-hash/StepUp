@@ -684,3 +684,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - The nine new images were produced with built-in ImageGen; source prompts and original alpha geometry remain in the stage2 folder. Older low-resolution clothing, running/seated variants, new shoe colors, new background supply/time rotation, map redesign and other screens remain subsequent work. No main merge or whole-app completion claim.
 
 - Published separate prerelease `redesign-preview-44e2367`: https://github.com/mycyi1994-hash/StepUp/releases/tag/redesign-preview-44e2367 . Asset `StepUp-wardrobe-stage2-44e2367.apk`, 62,748,266 bytes; SHA-256 `0cc6705dd358d1391aee1d3353ff3a09c47fb1680ce5bbc09618709063480f8a`. Remote release target and uploaded asset size were verified. Final screenshot comparison was rendered in the local browser.
+
+## 2026-09-24 — modular design plan correction (documentation only)
+
+- User clarified that independent scenery, controls and reusable design modules must be planned before further screen expansion, across at least 50 remaining screens/states. Replaced the screen-only plan with an asset/layer/component/layout implementation plan.
+- Defined 18 proposed component families and 9 layout families; mapped the existing 77 capture items to layout, modules, asset needs and work stage. These are proposed mappings, not completed implementations. Unlisted overlays/permission/error states remain an explicit expansion list.
+- Next sequence is 3A parts/state board and layer specifications, 3B a one-gender/one-pose/two-outfit/two-shoe compositing pilot plus representative screens, then 3C home/startup. Existing flattened character assets remain available while compatibility is proved. No bulk generation is authorized by this planning update.
+- Current production implementation remains the previously verified 44e2367; this turn changed documentation only. Checked all 77 unique IDs, module/layout references and local document links. No APK build or image generation was run.
