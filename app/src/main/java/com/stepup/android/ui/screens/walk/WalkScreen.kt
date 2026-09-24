@@ -343,8 +343,10 @@ fun RunScreen(
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
                     if (render != null && savedLook != null) {
-                        com.stepup.android.ui.components.AvatarImage(
-                            art = render.art,
+                        com.stepup.android.ui.components.RunningAvatarImage(
+                            look = savedLook,
+                            render = render,
+                            running = running,
                             contentDescription = stringResource(R.string.cd_home_character),
                             modifier = Modifier.fillMaxWidth().height(characterHeight).padding(vertical = 8.dp),
                         )

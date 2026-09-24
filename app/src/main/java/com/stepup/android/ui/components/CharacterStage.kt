@@ -18,6 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +44,11 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.AvatarArt
 import com.stepup.android.domain.AvatarArtCatalog
+import com.stepup.android.domain.AvatarGender
 import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.AvatarRender
+import com.stepup.android.domain.Outfits
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Cyan
@@ -50,6 +57,7 @@ import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import kotlinx.coroutines.delay
 
 /**
  * 러너 캐릭터 — 디자인 패키지의 완성 그림을 **그대로** 띄운다.
@@ -74,6 +82,46 @@ fun AvatarImage(
 ) {
     Image(
         painter = painterResource(art.drawableRes()),
+        contentDescription = contentDescription,
+        contentScale = ContentScale.Fit,
+        alignment = Alignment.BottomCenter,
+        modifier = modifier,
+    )
+}
+
+/**
+ * 실제 러닝 중 기본 착장에 한해서 보폭 프레임을 바꾼다. 다른 장비를 착용한
+ * 캐릭터는 해당 장비가 그려진 기존 이미지를 유지한다.
+ */
+@Composable
+fun RunningAvatarImage(
+    look: AvatarLook,
+    render: AvatarRender,
+    running: Boolean,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+) {
+    val hasMatchingFrames = look.outfit.id == Outfits.BASE_ID && look.shoe == null && render.lookShown
+    if (!running || !hasMatchingFrames) {
+        AvatarImage(render.art, modifier, contentDescription)
+        return
+    }
+
+    val firstRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_a else R.drawable.run_frame_runo_a
+    val secondRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_b else R.drawable.run_frame_runo_b
+    val first = painterResource(firstRes)
+    val second = painterResource(secondRes)
+    val play = LocalMotion.current.decorative
+    var alternate by remember(look.gender) { mutableStateOf(false) }
+    LaunchedEffect(play, look.gender) {
+        alternate = false
+        while (play) {
+            delay(380)
+            alternate = !alternate
+        }
+    }
+    Image(
+        painter = if (alternate) second else first,
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         alignment = Alignment.BottomCenter,

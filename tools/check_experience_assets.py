@@ -6,6 +6,16 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / 'app/src/main/res'
+
+def webp_has_alpha(head: bytes) -> bool:
+    if head[:4] != b'RIFF' or head[8:12] != b'WEBP':
+        return False
+    if head[12:16] == b'VP8X':
+        return bool(head[20] & 0x10)
+    if head[12:16] == b'VP8L':
+        # Lossless WebP stores the alpha flag in bit 28 of its image header.
+        return head[20] == 0x2f and bool(int.from_bytes(head[21:25], 'little') & (1 << 28))
+    return False
 expected = {'tap', 'select', 'success', 'reward', 'start', 'pause', 'lap', 'countdown', 'error'}
 files = {p.stem.removeprefix('cue_'): p for p in (RES / 'raw').glob('cue_*.wav')}
 assert files.keys() == expected
@@ -56,7 +66,7 @@ wanted = [f"avatar_runo_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + 
 wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in outfit_ids]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
-    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+    assert webp_has_alpha(head), f'{name}: no alpha'
 # LUMI 장비 그림 — 신발 52(속성별 추천 의상) · 의상 5 착용 전신과 모자 포함 의상 상품 5
 lumi = json.loads((ROOT / 'design/equipment/lumi/equipment-catalog.json').read_text(encoding='utf-8'))
 assert sorted(x['id'] for x in lumi['shoes']) == sorted(shoe_ids), 'LUMI shoe ids differ from RUNO'
@@ -66,5 +76,5 @@ wanted = [f"avatar_lumi_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + 
 wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in lumi_outfits]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
-    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+    assert webp_has_alpha(head), f'{name}: no alpha'
 print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 5 base/starter alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')

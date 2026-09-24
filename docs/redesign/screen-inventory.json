@@ -621,28 +621,28 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 417,
+      "line": 419,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 454,
+      "line": 456,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 478,
+      "line": 480,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 969,
+      "line": 971,
       "verification": "pending"
     }
   ],

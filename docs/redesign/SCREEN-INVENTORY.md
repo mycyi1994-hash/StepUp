@@ -101,10 +101,10 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ConnectedAccountsScreen | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:66 | pending |
 | CourseHubScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:257 | pending |
 | CourseRankingDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:592 | pending |
-| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:417 | pending |
-| RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:454 | pending |
-| RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:478 | pending |
-| SaveCourseDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:969 | pending |
+| RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:419 | pending |
+| RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:456 | pending |
+| RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:480 | pending |
+| SaveCourseDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:971 | pending |
 
 ## State review
 
