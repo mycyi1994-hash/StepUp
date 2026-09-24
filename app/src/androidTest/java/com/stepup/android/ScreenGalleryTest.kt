@@ -3,6 +3,8 @@ package com.stepup.android
 import android.content.res.Configuration
 import android.os.LocaleList
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
@@ -84,6 +86,72 @@ class ScreenGalleryTest {
     private lateinit var localized: android.content.Context
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "screen-gallery").apply { mkdirs() }
     private val failures = mutableListOf<String>()
+
+    /** Production shell at the device's actual size; no white fixed-size gallery frame. */
+    @Test fun wardrobeDesign() {
+        runBlocking {
+            ServiceLocator.userPrefs.setReducedMotion(true)
+            ServiceLocator.userPrefs.setSounds(false)
+            ServiceLocator.userPrefs.setHaptics(false)
+            ServiceLocator.userPrefs.setGuideSeen()
+            ServiceLocator.sneakerRepository.ensureStarter()
+            ServiceLocator.avatarRepository.setDemoMode(false)
+            ServiceLocator.avatarRepository.equipOutfit(com.stepup.android.domain.Outfits.DEFAULT)
+            ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE)
+        }
+        compose.activityRule.scenario.onActivity {
+            it.enableEdgeToEdge(
+                statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            )
+        }
+        var largeType by mutableStateOf(false)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, if (largeType) 1.3f else 1f)) {
+                StepUpTheme(ThemeMode.DARK) {
+                    ExperienceProvider { MainScaffold(initialTab = com.stepup.android.ui.Screen.Customize) }
+                }
+            }
+        }
+        fun ready(gender: AvatarGender) {
+            compose.waitUntil(10_000) {
+                compose.onNodeWithTag("wardrobe-look-${gender.id}-${com.stepup.android.domain.Outfits.BASE_ID}").isDisplayed()
+            }
+            compose.waitForIdle()
+        }
+        fun shot(name: String) {
+            compose.waitForIdle()
+            captureDisplay(File(directory, "$name.png"))
+        }
+        ready(AvatarGender.FEMALE)
+        shot("wardrobe-01-owned")
+        val initialBounds = compose.onNodeWithTag("wardrobe-look-${AvatarGender.FEMALE.id}-${com.stepup.android.domain.Outfits.BASE_ID}")
+            .fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("wardrobe-background").performClick()
+        compose.onNodeWithTag("wardrobe-scene-Wardrobe").assertDoesNotExist()
+        org.junit.Assert.assertEquals(initialBounds, compose.onNodeWithTag("wardrobe-look-${AvatarGender.FEMALE.id}-${com.stepup.android.domain.Outfits.BASE_ID}")
+            .fetchSemanticsNode().boundsInRoot)
+        shot("wardrobe-02-background")
+        compose.onNodeWithText(compose.activity.getString(R.string.customize_tab_shoes)).performClick().assertIsSelected()
+        shot("wardrobe-03-shoes")
+        compose.onNodeWithText(compose.activity.getString(R.string.customize_tab_outfit)).performClick()
+        runBlocking { ServiceLocator.avatarRepository.setDemoMode(true) }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(compose.activity.getString(R.string.customize_trial_badge)).fetchSemanticsNodes().isNotEmpty() }
+        shot("wardrobe-04-demo-grid")
+        compose.onNodeWithTag("wardrobe-options").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.customize_open_market)).assertIsDisplayed()
+        shot("wardrobe-05-options")
+        InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)
+        compose.waitForIdle()
+        runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.MALE) }
+        ready(AvatarGender.MALE)
+        shot("wardrobe-06-runo")
+        compose.runOnIdle { largeType = true }
+        compose.onNodeWithTag("wardrobe-background").assertIsDisplayed()
+        shot("wardrobe-07-large-type")
+        runBlocking { ServiceLocator.avatarRepository.setDemoMode(false) }
+    }
 
     @Test fun allScreens() {
         runBlocking {

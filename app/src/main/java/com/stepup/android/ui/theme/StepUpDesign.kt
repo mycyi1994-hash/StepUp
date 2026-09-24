@@ -26,6 +26,11 @@ object StepUpDesign {
     val NavigationLabel = 13.sp
     val NavigationIcon = 24.dp
     val NavigationIndicator = 4.dp
+    // Wardrobe reference: a full-body stage above a quiet, image-led inventory.
+    const val WardrobePreviewFraction = 0.56f
+    val WardrobeGridGap = 10.dp
+    val WardrobeCellRadius = 12.dp
+    const val WardrobeCellAspect = 0.94f
 }
 
 /** Only sanctioned logo roles. No per-screen numeric size API. */

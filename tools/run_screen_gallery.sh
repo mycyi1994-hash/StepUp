@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -86,6 +86,10 @@ run_instrumentation() {
     fi
   fi
 }
+if [[ "$suite" == "wardrobe" ]]; then
+  run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"
+  pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+fi
 if [[ "$suite" == "all" || "$suite" == "interaction" ]]; then
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
 run_instrumentation interaction "com.stepup.android.RunSaveRecoveryTest,com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.CourseQueuePersistenceTest,com.stepup.android.RunCheckpointPersistenceTest,com.stepup.android.RunSettlementPersistenceTest,com.stepup.android.DatabaseMigrationTest"

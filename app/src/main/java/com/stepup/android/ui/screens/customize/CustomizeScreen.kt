@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -89,6 +92,9 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.StepUpDesign
+import com.stepup.android.ui.components.SceneToolbar
 
 /**
  * 꾸미기 — 내 러너에 의상과 신발을 입히는 곳.
@@ -103,6 +109,8 @@ import com.stepup.android.ui.theme.Volt
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun CustomizeScreen(
+    onBack: () -> Unit = {},
+    onChangeBackground: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenMarket: () -> Unit = {},
     onOpenVault: () -> Unit = {},
@@ -119,7 +127,6 @@ fun CustomizeScreen(
         }
         return
     }
-    val balance by viewModel.balance.collectAsStateWithLifecycle()
     val shoes by viewModel.shoes.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
@@ -153,39 +160,49 @@ fun CustomizeScreen(
     val canEquip = if (tab == 0) true else pickedShoe != null
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-        val previewHeight = maxHeight * 0.52f
+        val previewHeight = maxHeight * StepUpDesign.WardrobePreviewFraction
         Column(
-            Modifier.fillMaxSize()
-                .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
-                .padding(bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier.fillMaxSize(),
         ) {
             Box(Modifier.fillMaxWidth().height(previewHeight)) {
                 CharacterStage(
                     look = preview, pose = AvatarPose.IDLE, skyline = false,
-                    characterFraction = 0.95f, animate = false,
+                    characterFraction = 0.98f, animate = false,
                     contentDescription = stringResource(R.string.cd_customize_preview),
-                    modifier = Modifier.fillMaxSize().padding(top = 12.dp, bottom = 6.dp)
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)
+                        .padding(top = 20.dp, bottom = 6.dp)
+                        .testTag("wardrobe-look-${look.gender.id}-${look.outfit.id}")
                         .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
                 )
-                com.stepup.android.ui.components.DarkIconButton(
-                    Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
-                    onClick = { showOptions = true },
-                    modifier = Modifier.align(Alignment.TopEnd).testTag("wardrobe-options"),
+                SceneToolbar(
+                    onBack = onBack, onChangeBackground = onChangeBackground,
+                    onMore = { showOptions = true },
+                    modifier = Modifier.align(Alignment.TopCenter)
+                        .padding(horizontal = StepUpDesign.Gutter),
                 )
                 if (preview.trial) {
                     SmallBadge(
                         stringResource(R.string.customize_trial_badge), tone = BadgeTone.Glow,
-                        modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp),
+                        modifier = Modifier.align(Alignment.BottomStart)
+                            .padding(start = StepUpDesign.Gutter, bottom = 16.dp),
                     )
                 }
             }
-            com.stepup.android.ui.components.AvatarLookNote(preview, render)
+            // This surface stays opaque regardless of scenery. Native controls never
+            // move with the image and a bright random background cannot wash them out.
+            Column(
+                Modifier.fillMaxWidth().weight(1f)
+                    .background(Brush.verticalGradient(listOf(Night.copy(alpha = 0.94f), Night)))
+                    .padding(horizontal = StepUpDesign.Gutter)
+                    .padding(top = 6.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(StepUpDesign.WardrobeGridGap),
+            ) {
             TwoWaySwitch(
                 labels = listOf(stringResource(R.string.customize_tab_outfit), stringResource(R.string.customize_tab_shoes)),
                 icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
                 selected = tab, onSelect = { tab = it },
             )
+            com.stepup.android.ui.components.AvatarLookNote(preview, render)
             Column(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -244,6 +261,7 @@ fun CustomizeScreen(
                     modifier = Modifier.testTag("wardrobe-equip"),
                 )
             }
+            }
         }
     }
     if (showOptions) {
@@ -289,9 +307,9 @@ fun CustomizeScreen(
 @Composable
 private fun <T> ItemGrid(items: List<T>, cell: @Composable (T) -> Unit) {
     val cols = if (LocalDensity.current.fontScale > 1.2f) 2 else 3
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(StepUpDesign.WardrobeGridGap)) {
         items.chunked(cols).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(StepUpDesign.WardrobeGridGap)) {
                 row.forEach { Box(Modifier.weight(1f)) { cell(it) } }
                 repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
             }
@@ -340,45 +358,45 @@ private fun GenderCard(
     }
 }
 
-/** 격자 한 칸의 틀 — 그림 · 이름 · 표시 · 선택 테두리 · 착용 체크 */
+/** Image-first inventory. Names remain available to accessibility services. */
 @Composable
 private fun ItemCell(
     picked: Boolean,
     worn: Boolean,
     name: String,
     onClick: () -> Unit,
-    badges: @Composable () -> Unit,
+    trial: Boolean = false,
     art: @Composable () -> Unit,
 ) {
-    val shape = RoundedCornerShape(16.dp)
-    Box {
-        Column(
-            modifier = Modifier
+    val shape = RoundedCornerShape(StepUpDesign.WardrobeCellRadius)
+    val wearingLabel = stringResource(R.string.customize_wearing)
+    val trialLabel = stringResource(R.string.customize_trial_badge)
+    Box(
+        modifier = Modifier
                 .fillMaxWidth()
+                .aspectRatio(StepUpDesign.WardrobeCellAspect)
                 .clip(shape)
-                .background(if (picked) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
-                .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge, shape)
+                .background(if (picked) CarbonHigh else Night, shape)
+                .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge.copy(alpha = 0.7f), shape)
                 .feedbackClickable(role = Role.RadioButton, onClick = onClick)
-                .semantics { selected = picked }
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+                .semantics(mergeDescendants = true) {
+                    selected = picked
+                    contentDescription = listOfNotNull(name, wearingLabel.takeIf { worn }, trialLabel.takeIf { trial }).joinToString(", ")
+                },
+    ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(78.dp),
+                modifier = Modifier.fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 7.dp)
+                    .padding(bottom = if (worn || trial) 18.dp else 0.dp),
                 contentAlignment = Alignment.Center,
             ) { art() }
+        if (worn || trial) {
             Text(
-                text = name,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = 15.sp,
+                text = if (trial) trialLabel else wearingLabel,
+                color = Snow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
+                maxLines = 1,
             )
-            badges()
         }
         if (worn) {
             Box(
@@ -414,13 +432,7 @@ private fun OutfitCard(
         worn = worn,
         name = stringResource(outfitNameRes(outfit)),
         onClick = onClick,
-        badges = {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (outfit.nft) SmallBadge("NFT", tone = BadgeTone.Nft)
-                if (!owned) SmallBadge(stringResource(R.string.customize_trial_badge), tone = BadgeTone.Glow)
-                if (outfit.starter) SmallBadge(stringResource(R.string.customize_basic_badge), tone = BadgeTone.Muted)
-            }
-        },
+        trial = !owned,
         art = { OutfitArt(outfit, look.gender, Modifier.fillMaxSize()) },
     )
 }
@@ -436,10 +448,6 @@ private fun ShoeCard(
         worn = shoe.equipped,
         name = shoe.variantLabel(),
         onClick = onClick,
-        badges = {
-            // 레벨 · 능력치는 신발 상세에서. 꾸미기 칸에는 NFT 표시만 둔다.
-            SmallBadge("NFT", tone = BadgeTone.Nft)
-        },
         art = { SneakerFrame(sneaker = shoe, modifier = Modifier.fillMaxSize()) },
     )
 }

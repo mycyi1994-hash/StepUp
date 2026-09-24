@@ -9,7 +9,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Route | Parent tab | Chrome | Implementation | Verification |
 |---|---|---|---|---|
 | Screen.Run.route | Run | Main | pending | pending |
-| Screen.Customize.route | Customize | Main | pending | pending |
+| Screen.Customize.route | Customize | Main | first wardrobe reference replacement; separated scenery | native checkpoint pending |
 | Routes.RUNNER_MARKET | Customize | Detail | pending | pending |
 | Screen.Community.route | Community | Main | pending | pending |
 | Routes.MAP | Community | Detail | pending | pending |

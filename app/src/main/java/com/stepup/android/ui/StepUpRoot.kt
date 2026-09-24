@@ -318,13 +318,17 @@ internal fun MainScaffold(
     val showBar = chrome?.showBottomBar == true
     val balanceFlow = remember { ServiceLocator.rewardRepository.balance.map<Double, Double?> { it } }
     val balance by balanceFlow.collectAsState(initial = null)
+    var wardrobeSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.RunnerSetting.Wardrobe)
+    }
 
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route || currentRoute == Routes.EVENTS) {
         com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
     } else if (currentRoute == Screen.Customize.route) {
         com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Wardrobe,
+            Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeSetting.name}"),
+            wardrobeSetting, wardrobe = true,
         )
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
@@ -373,6 +377,10 @@ internal fun MainScaffold(
             }
             composable(Screen.Customize.route) {
                 CustomizeScreen(
+                    onBack = { navController.switchTab(Screen.Run) },
+                    onChangeBackground = {
+                        wardrobeSetting = com.stepup.android.ui.components.WardrobeBackgrounds.next(wardrobeSetting)
+                    },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
