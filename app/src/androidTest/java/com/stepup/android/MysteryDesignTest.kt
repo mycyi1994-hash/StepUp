@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -78,6 +79,9 @@ class MysteryDesignTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isNotEmpty() }
         val out = File(compose.activity.getExternalFilesDir(null), "screen-gallery").apply { mkdirs() }
         compose.onNodeWithText(compose.activity.getString(R.string.tab_draw)).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isEmpty()
+        }
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_title)).assertIsDisplayed()
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_shoe)).assertIsNotEnabled()
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertIsNotEnabled()
@@ -88,6 +92,9 @@ class MysteryDesignTest {
         captureDisplay(File(out, "mystery-02-large-type.png"))
 
         compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText(compose.activity.getString(R.string.mystery_title)).fetchSemanticsNodes().isEmpty()
+        }
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isNotEmpty() }
