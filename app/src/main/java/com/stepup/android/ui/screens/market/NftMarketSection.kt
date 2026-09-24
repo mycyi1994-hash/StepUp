@@ -2,11 +2,19 @@ package com.stepup.android.ui.screens.market
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +44,7 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 
 /**
  * 마켓 탭 안의 NFT 마켓.
@@ -174,37 +184,42 @@ private fun LazyListScope.myMarketSection(
     val bids = mine?.bids.orEmpty()
     val trades = mine?.trades.orEmpty()
 
-    item { SectionHeader(title = stringResource(R.string.market_my_listings)) }
     if (listed.isEmpty()) {
-        item {
-            GlowCard(contentPadding = MarketCardPadding) {
-                EmptyNote(stringResource(R.string.market_my_listings_empty))
-            }
-        }
+        item { MarketEmptyState(R.string.market_my_listings, R.string.market_my_listings_empty,
+            Icons.Filled.ReceiptLong) }
     } else {
+        item { SectionHeader(title = stringResource(R.string.market_my_listings)) }
         items(listed.size) { index -> MyListingRow(listed[index], onCancelListing) }
     }
 
-    item { SectionHeader(title = stringResource(R.string.market_my_bids)) }
     if (bids.isEmpty()) {
-        item {
-            GlowCard(contentPadding = MarketCardPadding) {
-                EmptyNote(stringResource(R.string.market_my_bids_empty))
-            }
-        }
+        item { MarketEmptyState(R.string.market_my_bids, R.string.market_my_bids_empty,
+            Icons.Filled.Gavel) }
     } else {
+        item { SectionHeader(title = stringResource(R.string.market_my_bids)) }
         items(bids.size) { index -> MyBidRowCard(bids[index], onCancelBid) }
     }
 
-    item { SectionHeader(title = stringResource(R.string.market_my_trades)) }
     if (trades.isEmpty()) {
-        item {
-            GlowCard(contentPadding = MarketCardPadding) {
-                EmptyNote(stringResource(R.string.market_my_trades_empty))
-            }
-        }
+        item { MarketEmptyState(R.string.market_my_trades, R.string.market_my_trades_empty,
+            Icons.Filled.History) }
     } else {
+        item { SectionHeader(title = stringResource(R.string.market_my_trades)) }
         items(trades.size) { index -> MyTradeRowCard(trades[index]) }
+    }
+}
+
+@Composable
+private fun MarketEmptyState(title: Int, message: Int, icon: ImageVector) {
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold, color = Snow)
+        Box(Modifier.fillMaxWidth().heightIn(min = 84.dp), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = VoltText,
+                modifier = Modifier.size(52.dp))
+        }
+        Text(stringResource(message), style = MaterialTheme.typography.bodyMedium,
+            color = Silver, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
 

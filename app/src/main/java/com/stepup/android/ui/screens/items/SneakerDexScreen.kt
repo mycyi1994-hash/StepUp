@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -102,6 +103,7 @@ fun SneakerDexScreen(
     }
 
     val ownedCount = owned.keys.size
+    val columns = if (LocalDensity.current.fontScale > 1.2f) 2 else 3
 
     DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
         // ── 전체 진행도 ──
@@ -204,9 +206,9 @@ fun SneakerDexScreen(
             }
         }
 
-        // 3칸씩. LazyVerticalGrid 를 쓰지 않는 이유는 이 화면이 이미
+        // 큰 글씨에서는 2칸, 보통 글씨에서는 3칸. LazyVerticalGrid 를 쓰지 않는 이유는 이 화면이 이미
         // LazyColumn 안이기 때문이다 — 스크롤 컨테이너를 겹치면 높이 계산이 깨진다.
-        items(slots.chunked(3)) { row ->
+        items(slots.chunked(columns)) { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -219,8 +221,7 @@ fun SneakerDexScreen(
                         onClick = { owned[slot.key]?.let { onOpenSneaker(it.id) } },
                     )
                 }
-                // 마지막 줄이 3칸을 못 채우면 남는 자리를 비워 둔다.
-                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
+                repeat(columns - row.size) { Box(Modifier.weight(1f)) }
             }
         }
     }

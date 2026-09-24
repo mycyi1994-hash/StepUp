@@ -25,10 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.stepup.android.domain.AvatarArtCatalog
-import com.stepup.android.domain.AvatarPose
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.PageHero
+import androidx.compose.ui.text.font.FontWeight
 import com.stepup.android.ui.components.SecondaryHeader
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,9 +101,6 @@ fun NewsScreen(
         serverNews
     }
     val sources by feedViewModel.sources.collectAsStateWithLifecycle()
-    // 제목 옆 캐릭터 — 내 성별의 그림
-    val look by com.stepup.android.core.ServiceLocator.avatarRepository.look
-        .collectAsStateWithLifecycle(com.stepup.android.domain.AvatarLook())
     val message by feedViewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -139,19 +133,13 @@ fun NewsScreen(
         }
 
         item {
-            PageHero(
-                title = stringResource(R.string.news_title),
-                subtitle = stringResource(R.string.news_hero_sub),
-                setting = if (section == 0) com.stepup.android.ui.components.RunnerSetting.RunSunset
-                    else com.stepup.android.ui.components.RunnerSetting.HomeDawn,
-            ) {
-                AvatarImage(
-                    art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxSize(),
-                )
-            }
+            Text(
+                text = stringResource(R.string.news_title),
+                color = com.stepup.android.ui.theme.Snow,
+                fontSize = 31.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+            )
         }
 
         item {

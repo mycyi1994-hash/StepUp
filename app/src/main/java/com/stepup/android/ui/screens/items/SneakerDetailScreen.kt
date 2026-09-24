@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +31,7 @@ import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.fullLabel
@@ -40,6 +42,7 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.Carbon
 
 @Composable
 fun SneakerDetailScreen(
@@ -257,27 +260,34 @@ fun SneakerDetailScreen(
         val currentBalance = balance
         AlertDialog(
             onDismissRequest = { enhanceOpen = false },
+            containerColor = Carbon,
+            shape = RoundedCornerShape(22.dp),
+            titleContentColor = Snow,
+            textContentColor = Silver,
             title = { Text(stringResource(R.string.sneaker_action_enhance)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(112.dp))
                     Text(stringResource(R.string.level_chip, sneaker.level) + " → " +
-                        stringResource(R.string.level_chip, sneaker.level + 1))
-                    Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)))
+                        stringResource(R.string.level_chip, sneaker.level + 1), color = Snow)
+                    Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
+                        color = Volt)
                     if (currentBalance == null) {
-                        Text(stringResource(R.string.feed_loading))
+                        Text(stringResource(R.string.feed_loading), color = Silver)
                     } else if (currentBalance < cost) {
-                        Text(msgNoBalance)
+                        Text(msgNoBalance, color = Silver)
                     }
                 }
             },
             confirmButton = {
-                TextButton(
+                VoltButton(
+                    text = stringResource(R.string.sneaker_action_enhance),
                     enabled = currentBalance?.let { it >= cost } == true,
                     onClick = {
                         enhanceOpen = false
                         viewModel.upgrade(sneaker.id)
                     },
-                ) { Text(stringResource(R.string.sneaker_action_enhance)) }
+                )
             },
             dismissButton = {
                 TextButton(onClick = { enhanceOpen = false }) {

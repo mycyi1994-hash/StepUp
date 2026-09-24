@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +21,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,7 +119,8 @@ fun RunnerMarketScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val board by marketViewModel.board.collectAsStateWithLifecycle()
 
-    var filter by rememberSaveable { mutableIntStateOf(0) }
+    var filter by rememberSaveable { mutableIntStateOf(1) }
+    if (filter !in 0..1) filter = 1
 
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
@@ -122,7 +128,8 @@ fun RunnerMarketScreen(
         viewModel.consumeMessage()
     }
 
-    val cols = if (LocalDensity.current.fontScale > 1.3f) 1 else 2
+    val cols = if (LocalConfiguration.current.screenWidthDp >= 600 &&
+        LocalDensity.current.fontScale <= 1.2f) 2 else 1
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(cols),
@@ -151,7 +158,6 @@ fun RunnerMarketScreen(
         item(span = { GridItemSpan(cols) }) {
             TwoWaySwitch(
                 labels = listOf(
-                    stringResource(R.string.feed_filter_all),
                     stringResource(R.string.customize_tab_outfit),
                     stringResource(R.string.customize_tab_shoes),
                 ),
@@ -163,8 +169,8 @@ fun RunnerMarketScreen(
             item(span = { GridItemSpan(cols) }) { DemoNote() }
         }
 
-        // 0 = 전체, 1 = 의상, 2 = 신발
-        if (filter != 2) {
+        // 의상은 출시 예정, 신발은 실제 매물이 있는 모델만 보여 준다.
+        if (filter == 0) {
             // ── 의상 — NFT 의상만. 기본 의상은 이미 갖고 있다 ──
             val nft = Outfits.ALL.filter { it.nft }
             items(nft, key = { it.id }) { outfit ->
@@ -179,7 +185,7 @@ fun RunnerMarketScreen(
                 )
             }
         }
-        if (filter != 1) {
+        if (filter == 1) {
             // ── 신발 ──
             when {
                 demo -> items(DEMO_SHOES, key = { "demo-${it.faction}-${it.rarity}-${it.variant}" }) { d ->
@@ -271,7 +277,7 @@ private fun StateCard(title: String, hint: String?, action: (@Composable () -> U
     }
 }
 
-/** 상품 카드 틀 — 그림 · 이름 · 값 · 표시 */
+/** 상품 행. 그림·상태·가격·터치 영역은 각각 독립적인 Compose 요소다. */
 @Composable
 private fun ProductCard(
     onClick: () -> Unit,
@@ -281,7 +287,7 @@ private fun ProductCard(
     price: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(18.dp)
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
@@ -289,27 +295,30 @@ private fun ProductCard(
             .border(1.dp, Edge, shape)
             .feedbackClickable(onClick = onClick)
             .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp),
-                contentAlignment = Alignment.Center,
-            ) { art() }
-            Box(Modifier.align(Alignment.TopEnd)) { badge() }
+        Box(
+            modifier = Modifier.size(width = 112.dp, height = 106.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(com.stepup.android.ui.theme.Night),
+            contentAlignment = Alignment.Center,
+        ) { art() }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            badge()
+            Text(
+                text = name,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.heightIn(min = 20.dp),
+            )
+            price()
         }
-        Text(
-            text = name,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.heightIn(min = 20.dp),
-        )
-        price()
+        Icon(Icons.Filled.ChevronRight, contentDescription = null,
+            tint = Silver, modifier = Modifier.size(20.dp))
     }
 }
 
