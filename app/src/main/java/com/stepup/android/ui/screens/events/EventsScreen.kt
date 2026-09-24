@@ -172,6 +172,15 @@ fun EventsScreen(
     val canClaim = selectedEvent != null && selectedFraction != null && selectedFraction >= 1f &&
         claimed != null && selectedEvent.id !in claimed!!
 
+    Box(Modifier.fillMaxSize()) {
+    com.stepup.android.ui.components.RunnerScene(
+        Modifier.fillMaxSize(),
+        setting = when (selected) {
+            1 -> com.stepup.android.ui.components.RunnerSetting.RunSunset
+            2 -> com.stepup.android.ui.components.RunnerSetting.RunNight
+            else -> com.stepup.android.ui.components.RunnerSetting.HomeBlueNight
+        },
+    )
     Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
         SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet,
             title = stringResource(R.string.challenge_title))
@@ -189,13 +198,24 @@ fun EventsScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            Box(Modifier.fillMaxWidth().height(240.dp).celebrate(celebration.takeIf { it > 0 }), contentAlignment = Alignment.Center) {
-                look?.let {
-                    com.stepup.android.ui.components.CharacterStage(
-                        look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
-                        modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
-                    )
-                } ?: androidx.compose.material3.CircularProgressIndicator()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(when (selected) {
+                        1 -> R.string.event_step_surge
+                        2 -> R.string.event_night_quest
+                        else -> R.string.challenge_daily_title
+                    }),
+                    fontSize = 29.sp, fontWeight = FontWeight.Black, color = Snow,
+                )
+                Box(Modifier.fillMaxWidth().height(230.dp).celebrate(celebration.takeIf { it > 0 }),
+                    contentAlignment = Alignment.Center) {
+                    look?.let {
+                        com.stepup.android.ui.components.CharacterStage(
+                            look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
+                            modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
+                        )
+                    } ?: androidx.compose.material3.CircularProgressIndicator()
+                }
             }
         }
 
@@ -270,6 +290,7 @@ fun EventsScreen(
                 },
                 modifier = Modifier.padding(vertical = 12.dp).testTag("challenge-primary-action"),
             )
+    }
     }
 }
 

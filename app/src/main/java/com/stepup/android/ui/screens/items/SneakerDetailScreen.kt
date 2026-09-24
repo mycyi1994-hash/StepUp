@@ -132,7 +132,7 @@ fun SneakerDetailScreen(
                     sneaker = sneaker,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp),
+                        .height(220.dp),
                     corner = 18.dp,
                     animate = true,
                 )

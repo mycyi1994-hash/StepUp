@@ -142,6 +142,8 @@ fun NewsScreen(
             PageHero(
                 title = stringResource(R.string.news_title),
                 subtitle = stringResource(R.string.news_hero_sub),
+                setting = if (section == 0) com.stepup.android.ui.components.RunnerSetting.RunSunset
+                    else com.stepup.android.ui.components.RunnerSetting.HomeDawn,
             ) {
                 AvatarImage(
                     art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,

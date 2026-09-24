@@ -118,7 +118,7 @@ fun MarketModelScreen(
         item {
             SneakerFrame(
                 sneaker = previewSneaker(faction, rarity, variant),
-                modifier = Modifier.fillMaxWidth().height(160.dp),
+                modifier = Modifier.fillMaxWidth().height(220.dp),
                 corner = 24.dp,
             )
         }

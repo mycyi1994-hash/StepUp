@@ -184,6 +184,7 @@ fun ProfileScreen(
     if (showProfileEdit) {
         ProfileEditDialog(
             nickname = state.nickname,
+            level = state.runner.level,
             selectedAvatar = state.avatarId,
             avatarRev = state.avatarRev,
             onPickAvatar = viewModel::setAvatar,
@@ -958,16 +959,11 @@ private fun GoalDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Carbon,
+        shape = RoundedCornerShape(22.dp),
         titleContentColor = Snow,
         textContentColor = Silver,
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.common_close),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            VoltButton(text = stringResource(R.string.common_close), onClick = onDismiss)
         },
         title = {
             Text(
@@ -1056,6 +1052,7 @@ private fun GoalDialog(
 @Composable
 private fun ProfileEditDialog(
     nickname: String,
+    level: Int,
     selectedAvatar: Int,
     avatarRev: Int,
     onPickAvatar: (Int) -> Unit,
@@ -1068,16 +1065,11 @@ private fun ProfileEditDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Carbon,
+        shape = RoundedCornerShape(22.dp),
         titleContentColor = Snow,
         textContentColor = Silver,
         confirmButton = {
-            TextButton(onClick = { onSave(text) }) {
-                Text(
-                    text = stringResource(R.string.common_confirm),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            VoltButton(text = stringResource(R.string.common_confirm), onClick = { onSave(text) })
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
@@ -1095,6 +1087,12 @@ private fun ProfileEditDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    LevelAvatar(
+                        level = level, size = 72.dp, avatarId = selectedAvatar,
+                        customBitmap = rememberCustomAvatar(avatarRev),
+                    )
+                }
                 // ── 이름 ──
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(

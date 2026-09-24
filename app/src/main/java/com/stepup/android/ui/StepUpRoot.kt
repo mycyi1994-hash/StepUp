@@ -348,8 +348,6 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), homeSetting, home = true,
         )
-    } else if (currentRoute == Routes.EVENTS) {
-        com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
     } else if (currentRoute == Screen.Customize.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
@@ -363,6 +361,11 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
         )
+    } else if (currentRoute in listOf(
+            Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
+            Routes.SNEAKER, Routes.MARKET_MODEL,
+        )) {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     } else if (currentRoute == Routes.COURSES) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,

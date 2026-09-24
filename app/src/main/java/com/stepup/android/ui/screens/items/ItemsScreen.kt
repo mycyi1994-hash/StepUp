@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -155,6 +156,28 @@ fun ItemsScreen(
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
     }
+
+    val filteredGroups = groups.filter { group ->
+        (rarityFilter == null || group.representative.rarity.id == rarityFilter) &&
+            (factionFilter == null || group.representative.faction.id == factionFilter) &&
+            (equipFilter == EquipFilter.ALL ||
+                group.copies.any { it.equipped } == (equipFilter == EquipFilter.ON))
+    }.let { list ->
+        when (itemSort) {
+            ItemSort.RECENT -> list.sortedWith(
+                compareByDescending<SneakerGroup> { it.representative.equipped }
+                    .thenByDescending { it.representative.acquiredAt },
+            )
+            ItemSort.LEVEL -> list.sortedWith(
+                compareByDescending<SneakerGroup> { it.representative.equipped }
+                    .thenByDescending { it.representative.level }
+                    .thenByDescending { it.representative.acquiredAt },
+            )
+            else -> list
+        }
+    }
+    val gridColumns = if (LocalConfiguration.current.screenWidthDp >= 600 &&
+        LocalDensity.current.fontScale <= 1.2f) 3 else 2
 
     DetailPage(title = stringResource(R.string.items_vault_title), onBack = onBack ?: {}) {
         item {
@@ -271,61 +294,34 @@ fun ItemsScreen(
             }
         }
 
-        item {
-            val filtered = groups.filter { g ->
-                (rarityFilter == null || g.representative.rarity.id == rarityFilter) &&
-                    (factionFilter == null || g.representative.faction.id == factionFilter) &&
-                    (
-                        equipFilter == EquipFilter.ALL ||
-                            g.copies.any { it.equipped } == (equipFilter == EquipFilter.ON)
-                        )
-            }
-                // 정렬은 실제 값으로만 한다 — 획득일 · 등급 차례 · 레벨.
-                // 착용 중인 것은 어느 차례에서나 맨 앞에 둔다. 지금 신고
-                // 있는 신발을 찾으러 목록을 뒤지게 하지 않는다.
-                .let { list ->
-                    when (itemSort) {
-                        ItemSort.RECENT -> list.sortedWith(
-                            compareByDescending<SneakerGroup> { it.representative.equipped }
-                                .thenByDescending { it.representative.acquiredAt },
-                        )
-                        ItemSort.LEVEL -> list.sortedWith(
-                            compareByDescending<SneakerGroup> { it.representative.equipped }
-                                .thenByDescending { it.representative.level }
-                                .thenByDescending { it.representative.acquiredAt },
-                        )
-                        // 등급 높은순은 ViewModel 이 이미 매겨 둔 차례다
-                        else -> list
-                    }
-                }
-            if (filtered.isEmpty()) {
+        if (filteredGroups.isEmpty()) {
+            item {
                 GlowCard(contentPadding = PaddingValues(24.dp)) {
-                    Text(
-                        text = stringResource(R.string.common_none),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
-                    )
+                    Text(stringResource(R.string.common_none),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
                 }
-            } else {
-                LazyRow(
-                    modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_COLLECTION),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+            }
+        } else {
+            items(filteredGroups.chunked(gridColumns), key = { it.first().representative.slotKey }) { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (row.first().representative.slotKey == filteredGroups.first().representative.slotKey)
+                            Modifier.guideTarget(GuideTour.Targets.ITEMS_COLLECTION) else Modifier,
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(filtered.size, key = { filtered[it].representative.slotKey }) { index ->
-                        val group = filtered[index]
+                    row.forEach { group ->
                         SneakerCollectionCard(
                             sneaker = group.representative,
                             count = group.count,
-                            modifier = Modifier.width(172.dp),
+                            modifier = Modifier.weight(1f),
                             onClick = {
-                                if (group.count == 1) {
-                                    onOpenSneaker(group.representative.id)
-                                } else {
-                                    copiesFor = group.representative.slotKey
-                                }
+                                if (group.count == 1) onOpenSneaker(group.representative.id)
+                                else copiesFor = group.representative.slotKey
                             },
                         )
                     }
+                    repeat(gridColumns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

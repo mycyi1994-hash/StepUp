@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +34,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -229,41 +232,29 @@ fun PageHero(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    setting: RunnerSetting = RunnerSetting.RunNight,
     art: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = if (art != null && !large) 150.dp else 0.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+    val shape = RoundedCornerShape(22.dp)
+    Box(modifier.fillMaxWidth().clip(shape).border(1.dp, Volt.copy(alpha = 0.32f), shape)) {
+        RunnerScene(Modifier.matchParentSize(), setting = setting, home = true)
+        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(
+            0f to Color(0xF20A1730), 0.58f to Color(0x990A1730), 1f to Color.Transparent,
+        )))
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp)
+                .padding(start = 18.dp, end = 8.dp, top = 14.dp, bottom = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = title,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-1).sp,
-                color = Snow,
-                lineHeight = 40.sp,
-            )
-            Text(text = subtitle, fontSize = 14.sp, color = Silver, lineHeight = 20.sp)
-        }
-        if (art != null && !large) {
-            Box(
-                modifier = Modifier
-                    .size(width = 168.dp, height = 150.dp)
-                    .background(
-                        androidx.compose.ui.graphics.Brush.radialGradient(
-                            0f to Volt.copy(alpha = 0.28f),
-                            1f to androidx.compose.ui.graphics.Color.Transparent,
-                        ),
-                    ),
-                content = art,
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(title, fontSize = 30.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = (-1).sp, color = Snow, lineHeight = 34.sp)
+                Text(subtitle, fontSize = 13.sp, color = Silver, lineHeight = 19.sp)
+            }
+            if (art != null && !large) {
+                Box(modifier = Modifier.size(width = 146.dp, height = 162.dp), content = art)
+            }
         }
     }
 }

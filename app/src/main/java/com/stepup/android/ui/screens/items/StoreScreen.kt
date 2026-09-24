@@ -2,12 +2,15 @@ package com.stepup.android.ui.screens.items
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
@@ -24,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -79,7 +84,20 @@ private val GOODS = listOf(
 fun LazyListScope.storeSection() {
     item { SectionHeader(title = stringResource(R.string.store_goods_title)) }
     item {
-        GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
+        GlowCard(accent = true, contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(156.dp)
+                    .clip(RoundedCornerShape(18.dp)).background(CarbonHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.sneaker_water_01),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
+                )
+                Box(Modifier.align(Alignment.TopEnd).padding(10.dp)) { SoonBadge() }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(11.dp),
@@ -93,7 +111,6 @@ fun LazyListScope.storeSection() {
                         color = Snow,
                     )
                 }
-                SoonBadge()
             }
             Text(
                 text = stringResource(R.string.store_goods_body),
