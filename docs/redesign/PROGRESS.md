@@ -5,6 +5,7 @@
 - Stage 5: the profile/goal dialogs and three challenge states retain their shared scenery, controls, and actual equipped avatar. News now gives the race/health lists and search priority over a large decorative hero. Feed data, links, and save actions are unchanged.
 - Stage 6: the wardrobe, vault, store, collection, sneaker detail, and model detail retain separate scenery and product art. Runner Market now shows full-width image-first product rows on phones and a simpler outfit/shoe switch. Actual listed shoes remain distinct from unavailable outfits. My Trades has distinct empty cards for listings, bids, and history; the collection uses two columns at larger font sizes; the upgrade confirmation uses actual sneaker art and the shared action button.
 - This records source application, not one-by-one device review. The seated character/bench and body-part compositing pilots are not production-compatible with every equipped look and remain out of the app. Stages 7–9 and final visual comparison remain outstanding.
+- App source `53fc4b8` passed Build APK run `35985313612` (strings, design contract, unit tests, debug APK, stable signature, unsigned release/R8). Published prerelease `redesign-preview-53fc4b8` with `app-debug.apk` (72,618,136 bytes; SHA-256 `2f02e965e6c71d685a67e9a5eedc5eed9982c804328c76cc14d28bc9719e177a`). No same-revision device capture was run for this checkpoint, following the user's request to stop lengthy review and apply the design first.
 
 ## Active objective
 
