@@ -1,0 +1,41 @@
+{
+  "source": "44e2367fcbfbc95a983bc0a7a63f337967527e64",
+  "api": 35,
+  "captures": [
+    {
+      "file": "stage2-lumi-pink-background.png",
+      "sha256": "e6f30b3cc81ef1791eb834aa14133076514de767efb0325c29d8b05b393678bd",
+      "bytes": 2112215
+    },
+    {
+      "file": "stage2-lumi-studio-lavender.png",
+      "sha256": "7f33e700b16f6d883cfb8a59b99533720e0807d5d51a85bfefb8e13e8cdce7f1",
+      "bytes": 2111217
+    },
+    {
+      "file": "stage2-lumi-studio-olive.png",
+      "sha256": "40f7b70561a3f8abf27495d7feb4af35631e1686e1bec4212492b1f16dbede90",
+      "bytes": 2104480
+    },
+    {
+      "file": "stage2-lumi-studio-pink.png",
+      "sha256": "05c5d411bb1a2f452a37dde6c0e9ac1e66d6a6a3fa058f080fd30941e9f21bab",
+      "bytes": 2174644
+    },
+    {
+      "file": "stage2-runo-studio-lavender.png",
+      "sha256": "5f95a0e19f37a21c45509344b3806ded2c8db34a290a7da1957ab2bf26efc880",
+      "bytes": 2154790
+    },
+    {
+      "file": "stage2-runo-studio-olive.png",
+      "sha256": "1826af95ebe6c1047c1d97d2a772fc065017ed8ab1a1ef740e0bc9f6c5082bf7",
+      "bytes": 2151401
+    },
+    {
+      "file": "stage2-runo-studio-pink.png",
+      "sha256": "0d6c2a48859ddba19f676a845ba11846b2323f356387a56b11371f9dd295869e",
+      "bytes": 2165321
+    }
+  ]
+}

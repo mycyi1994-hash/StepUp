@@ -9,7 +9,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Route | Parent tab | Chrome | Implementation | Verification |
 |---|---|---|---|---|
 | Screen.Run.route | Run | Main | pending | pending |
-| Screen.Customize.route | Customize | Main | wardrobe layout + second-stage trial assets; separated scenery | stage 2 native checkpoint pending; stage 1 evidence 1bc6e9b |
+| Screen.Customize.route | Customize | Main | wardrobe layout + second-stage trial assets; separated scenery | stage 2 checkpoint: 44e2367, Android 14/15; capture 35945052211; remaining art/states pending |
 | Routes.RUNNER_MARKET | Customize | Detail | pending | pending |
 | Screen.Community.route | Community | Main | pending | pending |
 | Routes.MAP | Community | Detail | pending | pending |
@@ -53,7 +53,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:94 | pending | pending |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:51 | pending | pending |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:77 | pending | pending |
-| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:105 | pending | pending |
+| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:105 | wardrobe stage 2 assets + compatible scenery | 44e2367, Android 14/15 wardrobe checkpoint |
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:94 | pending | pending |
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:105 | pending | pending |
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:84 | pending | pending |

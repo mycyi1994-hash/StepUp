@@ -14,7 +14,7 @@
       "parent": "Customize",
       "chrome": "Main",
       "implementation": "wardrobe layout + second-stage trial assets; separated scenery",
-      "verification": "stage 2 native checkpoint pending; stage 1 evidence 1bc6e9b"
+      "verification": "stage 2 checkpoint: 44e2367, Android 14/15; capture 35945052211; remaining art/states pending"
     },
     {
       "id": "Routes.RUNNER_MARKET",
@@ -288,8 +288,8 @@
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
       "line": 105,
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "wardrobe stage 2 assets + compatible scenery",
+      "verification": "44e2367, Android 14/15 wardrobe checkpoint"
     },
     {
       "id": "RunnerMarketScreen",
