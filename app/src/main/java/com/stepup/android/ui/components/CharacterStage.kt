@@ -301,6 +301,7 @@ fun AvatarLookNote(
             Text(
                 text = stringResource(
                     when {
+                        !render.shoeShown && render.art.shoeCode != null -> R.string.wardrobe_shoes_preview_pending
                         !render.outfitShown && !render.shoeShown -> R.string.avatar_art_base_look
                         !render.shoeShown -> R.string.avatar_art_base_shoes
                         else -> R.string.avatar_art_base_outfit

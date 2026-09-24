@@ -10,8 +10,12 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / 'app/src/main/res/drawable-nodpi'
 OUT = ROOT / 'app/src/main/java/com/stepup/android/ui/components/AvatarArtRes.kt'
-avatars = sorted(p.stem for p in RES.glob('avatar_*.webp'))
-outfits = sorted(p.stem for p in RES.glob('outfit_*clo_*.webp'))
+avatar_files = sorted(p for p in RES.glob('avatar_*') if p.suffix in ('.webp', '.png'))
+avatars = [p.stem for p in avatar_files]
+assert len(avatars) == len(set(avatars)), 'Duplicate Android resource names'
+outfits = sorted(p.stem for p in RES.iterdir()
+                 if p.suffix in ('.webp', '.png') and
+                 (p.stem.startswith('outfit_studio_') or (p.stem.startswith('outfit_') and 'clo_' in p.stem)))
 lines = [
     'package com.stepup.android.ui.components',
     '',
@@ -41,8 +45,9 @@ lines += ['    else -> null', '}', '',
           '/** Source aspect and transparent space below the feet; measured from alpha, never a screen offset. */',
           'data class AvatarArtGeometry(val aspectRatio: Float, val bottomInsetFraction: Float)',
           'fun AvatarArt.geometry(): AvatarArtGeometry = when (key) {']
-for a in avatars:
-    with Image.open(RES / (a + '.webp')) as im:
+for path in avatar_files:
+    a = path.stem
+    with Image.open(path) as im:
         # Ignore faint edge glow when finding the physical silhouette. Read only: art is unchanged.
         bounds = im.getchannel('A').point(lambda alpha: 255 if alpha > 128 else 0).getbbox()
         if bounds is None:

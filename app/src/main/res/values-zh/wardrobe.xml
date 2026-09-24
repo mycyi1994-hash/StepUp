@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="wardrobe_change_background">更换背景</string>
+    <string name="outfit_studio_pink">柔粉套装</string>
+    <string name="outfit_studio_lavender">柔紫套装</string>
+    <string name="outfit_studio_olive">橄榄绿套装</string>
+    <string name="wardrobe_shoes_preview_pending">预览中显示的是另一双鞋。</string>
 </resources>

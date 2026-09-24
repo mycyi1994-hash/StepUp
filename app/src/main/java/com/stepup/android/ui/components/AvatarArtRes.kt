@@ -42,6 +42,9 @@ fun avatarArtResOrNull(key: String): Int? = when (key) {
     "lumi_idle_lum_clo_003" -> R.drawable.avatar_lumi_idle_lum_clo_003
     "lumi_idle_lum_clo_004" -> R.drawable.avatar_lumi_idle_lum_clo_004
     "lumi_idle_lum_clo_005" -> R.drawable.avatar_lumi_idle_lum_clo_005
+    "lumi_idle_studio_lavender" -> R.drawable.avatar_lumi_idle_studio_lavender
+    "lumi_idle_studio_olive" -> R.drawable.avatar_lumi_idle_studio_olive
+    "lumi_idle_studio_pink" -> R.drawable.avatar_lumi_idle_studio_pink
     "lumi_idle_wat_001" -> R.drawable.avatar_lumi_idle_wat_001
     "lumi_idle_wat_002" -> R.drawable.avatar_lumi_idle_wat_002
     "lumi_idle_wat_003" -> R.drawable.avatar_lumi_idle_wat_003
@@ -101,6 +104,9 @@ fun avatarArtResOrNull(key: String): Int? = when (key) {
     "runo_idle_lit_011" -> R.drawable.avatar_runo_idle_lit_011
     "runo_idle_lit_012" -> R.drawable.avatar_runo_idle_lit_012
     "runo_idle_lit_013" -> R.drawable.avatar_runo_idle_lit_013
+    "runo_idle_studio_lavender" -> R.drawable.avatar_runo_idle_studio_lavender
+    "runo_idle_studio_olive" -> R.drawable.avatar_runo_idle_studio_olive
+    "runo_idle_studio_pink" -> R.drawable.avatar_runo_idle_studio_pink
     "runo_idle_wat_001" -> R.drawable.avatar_runo_idle_wat_001
     "runo_idle_wat_002" -> R.drawable.avatar_runo_idle_wat_002
     "runo_idle_wat_003" -> R.drawable.avatar_runo_idle_wat_003
@@ -147,6 +153,9 @@ fun outfitProductRes(outfitId: String): Int? = when (outfitId) {
     "LUM-CLO-003" -> R.drawable.outfit_lum_clo_003
     "LUM-CLO-004" -> R.drawable.outfit_lum_clo_004
     "LUM-CLO-005" -> R.drawable.outfit_lum_clo_005
+    "STUDIO-LAVENDER" -> R.drawable.outfit_studio_lavender
+    "STUDIO-OLIVE" -> R.drawable.outfit_studio_olive
+    "STUDIO-PINK" -> R.drawable.outfit_studio_pink
     else -> null
 }
 
@@ -186,6 +195,9 @@ fun AvatarArt.geometry(): AvatarArtGeometry = when (key) {
     "lumi_idle_lum_clo_003" -> AvatarArtGeometry(0.58171745f, 0.01108033f)
     "lumi_idle_lum_clo_004" -> AvatarArtGeometry(0.57894737f, 0.01108033f)
     "lumi_idle_lum_clo_005" -> AvatarArtGeometry(0.57894737f, 0.01108033f)
+    "lumi_idle_studio_lavender" -> AvatarArtGeometry(0.66666667f, 0.01171875f)
+    "lumi_idle_studio_olive" -> AvatarArtGeometry(0.66666667f, 0.01171875f)
+    "lumi_idle_studio_pink" -> AvatarArtGeometry(0.66666667f, 0.01236979f)
     "lumi_idle_wat_001" -> AvatarArtGeometry(0.62592593f, 0.00000000f)
     "lumi_idle_wat_002" -> AvatarArtGeometry(0.62222222f, 0.00000000f)
     "lumi_idle_wat_003" -> AvatarArtGeometry(0.63333333f, 0.00000000f)
@@ -245,6 +257,9 @@ fun AvatarArt.geometry(): AvatarArtGeometry = when (key) {
     "runo_idle_lit_011" -> AvatarArtGeometry(0.53454545f, 0.02545455f)
     "runo_idle_lit_012" -> AvatarArtGeometry(0.53818182f, 0.02545455f)
     "runo_idle_lit_013" -> AvatarArtGeometry(0.52688172f, 0.02508961f)
+    "runo_idle_studio_lavender" -> AvatarArtGeometry(0.66666667f, 0.03776042f)
+    "runo_idle_studio_olive" -> AvatarArtGeometry(0.66666667f, 0.03710938f)
+    "runo_idle_studio_pink" -> AvatarArtGeometry(0.66666667f, 0.03841146f)
     "runo_idle_wat_001" -> AvatarArtGeometry(0.53623188f, 0.02536232f)
     "runo_idle_wat_002" -> AvatarArtGeometry(0.52517986f, 0.02517986f)
     "runo_idle_wat_003" -> AvatarArtGeometry(0.52517986f, 0.02517986f)

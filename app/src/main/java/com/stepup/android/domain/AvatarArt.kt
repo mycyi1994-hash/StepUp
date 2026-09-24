@@ -81,6 +81,7 @@ fun shoeCode(faction: Faction, rarity: Rarity, variant: Int): String =
  * RUNO 는 "CLO-001", LUMI 는 "LUM-CLO-001", 기본 의상은 둘 다 "OUTFIT-BASE".
  */
 fun Outfit.designIdFor(gender: AvatarGender): String = when {
+    this in Outfits.STUDIO -> id
     !nft -> "OUTFIT-BASE"
     gender == AvatarGender.FEMALE -> "LUM-$id"
     else -> id
@@ -128,6 +129,13 @@ object AvatarArtCatalog {
         // LUMI — 새 의상 5종(모자 포함) + 기본 신발
         Outfits.ALL.filter { it.nft }.forEach { o ->
             add(AvatarArt(lumiKeyOf(o.designIdFor(AvatarGender.FEMALE)), AvatarGender.FEMALE, AvatarPose.IDLE, o.id, null))
+        }
+        Outfits.STUDIO.forEach { outfit ->
+            AvatarGender.entries.forEach { gender ->
+                val prefix = if (gender == AvatarGender.FEMALE) "lumi" else "runo"
+                val key = "${prefix}_idle_${outfit.id.lowercase().replace('-', '_')}"
+                add(AvatarArt(key, gender, AvatarPose.IDLE, outfit.id, "WND-010"))
+            }
         }
     }
 

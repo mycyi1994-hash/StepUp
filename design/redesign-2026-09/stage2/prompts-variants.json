@@ -1,0 +1,32 @@
+[
+  {
+    "id": "lumi_lavender",
+    "src": "avatar_lumi_idle_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching lavender variant. Change ONLY the pink cloth of the cap, pullover hoodie and shorts to soft muted lavender-purple cotton, approximately #B5A0D9, with slightly darker purple seams. Preserve every other aspect exactly: character identity, face and eyes, hair, pose, proportions, white/teal sneakers, socks, skin, blue UP emblems, garment silhouette and framing. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original portrait full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  },
+  {
+    "id": "runo_lavender",
+    "src": "avatar_runo_idle_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching lavender variant. Change ONLY the pink cloth of the cap, pullover hoodie and shorts to soft muted lavender-purple cotton, approximately #B5A0D9, with slightly darker purple seams. Preserve every other aspect exactly: character identity, face and eyes, hair, pose, proportions, white/teal sneakers, socks, skin, blue UP emblems, garment silhouette and framing. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original portrait full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  },
+  {
+    "id": "outfit_lavender",
+    "src": "outfit_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching lavender variant. Change ONLY the pink cloth of the pullover hoodie and shorts to soft muted lavender-purple cotton, approximately #B5A0D9, with slightly darker purple seams. Preserve every other aspect exactly: the garment silhouette, product camera, kangaroo pocket, seams, folds and blue UP marks. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original square full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  },
+  {
+    "id": "lumi_olive",
+    "src": "avatar_lumi_idle_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching olive variant. Change ONLY the pink cloth of the cap, pullover hoodie and shorts to muted soft sage-olive green cotton, approximately #8D9471, with slightly darker olive seams. Preserve every other aspect exactly: character identity, face and eyes, hair, pose, proportions, white/teal sneakers, socks, skin, blue UP emblems, garment silhouette and framing. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original portrait full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  },
+  {
+    "id": "runo_olive",
+    "src": "avatar_runo_idle_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching olive variant. Change ONLY the pink cloth of the cap, pullover hoodie and shorts to muted soft sage-olive green cotton, approximately #8D9471, with slightly darker olive seams. Preserve every other aspect exactly: character identity, face and eyes, hair, pose, proportions, white/teal sneakers, socks, skin, blue UP emblems, garment silhouette and framing. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original portrait full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  },
+  {
+    "id": "outfit_olive",
+    "src": "outfit_studio_pink.png",
+    "prompt": "Use case: precise-object-edit. The attached image is the exact production edit target. Make one matching olive variant. Change ONLY the pink cloth of the pullover hoodie and shorts to muted soft sage-olive green cotton, approximately #8D9471, with slightly darker olive seams. Preserve every other aspect exactly: the garment silhouette, product camera, kangaroo pocket, seams, folds and blue UP marks. Maintain soft studio lighting and a restrained cool rim; no new design patterns, no extra stripes, no additional glow clouds. Keep the original square full-size canvas and subject scale. Export a genuine transparent RGBA PNG with clean alpha, keep the transparent background transparent. No backdrop, floor, shadow, checkerboard, UI or labels. No collage, only this single edited asset."
+  }
+]

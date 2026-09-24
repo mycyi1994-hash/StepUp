@@ -78,7 +78,9 @@ class AvatarArtTest {
     fun `모든 그림은 실제 파일이 있다`() {
         val dir = listOf(File("src/main/res/drawable-nodpi"), File("app/src/main/res/drawable-nodpi")).first { it.exists() }
         AvatarArtCatalog.ALL.forEach { art ->
-            assertTrue("avatar_${art.key}.webp 가 없다", File(dir, "avatar_${art.key}.webp").exists())
+            assertTrue("avatar_${art.key} 가 없다", listOf("webp", "png").any { ext ->
+                File(dir, "avatar_${art.key}.$ext").exists()
+            })
         }
         Outfits.ALL.filter { it.nft }.forEach { o ->
             AvatarGender.entries.forEach { g ->
@@ -105,7 +107,7 @@ class AvatarArtTest {
     @Test
     fun `LUMI 그림은 신발 시트 52 · 스타터 조합 1 · 의상 5 · 기본 1`() {
         val lumi = AvatarArtCatalog.ALL.filter { it.gender == AvatarGender.FEMALE }
-        val sheetShoes = lumi.filter { it.shoeCode != null && it.outfitId != Outfits.BASE_ID }
+        val sheetShoes = lumi.filter { it.shoeCode != null && it.outfitId in Outfits.ALL.filter { o -> o.nft }.map { o -> o.id } }
         assertEquals(52, sheetShoes.size)
         assertEquals(AvatarArtCatalog.SHOE_CODES.toSet(), sheetShoes.map { it.shoeCode }.toSet())
         val starter = lumi.single { it.shoeCode != null && it.outfitId == Outfits.BASE_ID }
@@ -128,6 +130,24 @@ class AvatarArtTest {
     }
 
     // ── 고르기 ──────────────────────────────────────────────────
+
+    @Test
+    fun `스튜디오 샘플은 구매 목록과 분리되고 남녀 착장과 실제 시작 신발이 맞는다`() {
+        val dir = listOf(File("src/main/res/drawable-nodpi"), File("app/src/main/res/drawable-nodpi")).first { it.exists() }
+        Outfits.STUDIO.forEach { outfit ->
+            assertFalse(outfit.starter || outfit.nft)
+            assertFalse(outfit in Outfits.ALL)
+            assertTrue(outfit in Outfits.PREVIEWABLE)
+            assertTrue(File(dir, "outfit_${outfit.id.lowercase().replace('-', '_')}.png").exists())
+            AvatarGender.entries.forEach { gender ->
+                val look = AvatarLook(gender = gender, outfit = outfit, shoe = shoe("WND-010"), trial = true)
+                val exact = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
+                assertEquals(gender, exact.art.gender)
+                assertTrue(exact.lookShown)
+                assertFalse(AvatarArtCatalog.resolve(look.copy(shoe = shoe("FIR-001")), AvatarPose.IDLE).shoeShown)
+            }
+        }
+    }
 
     @Test
     fun `어떤 착장 어떤 자세에도 성별이 바뀌지 않는다`() {

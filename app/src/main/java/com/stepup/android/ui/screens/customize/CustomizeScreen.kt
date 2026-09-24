@@ -133,7 +133,7 @@ fun CustomizeScreen(
 
     // 고를 수 있는 의상 — 가진 것, 그리고 데모 모드에서만 NFT 의상 체험
     val outfits = remember(demo) {
-        viewModel.ownedOutfits() + if (demo) Outfits.ALL.filter { !viewModel.isOwned(it) } else emptyList()
+        viewModel.ownedOutfits() + if (demo) Outfits.PREVIEWABLE.filter { !viewModel.isOwned(it) } else emptyList()
     }
     val pickedOutfit = outfits.firstOrNull { it.id == pickedOutfitId } ?: look.outfit
     val pickedShoe = shoes?.firstOrNull { it.id == pickedShoeId } ?: look.shoe

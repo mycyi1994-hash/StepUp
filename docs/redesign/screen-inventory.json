@@ -13,8 +13,8 @@
       "id": "Screen.Customize.route",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "first wardrobe reference replacement; separated scenery",
-      "verification": "1bc6e9b: Android 14/15 wardrobe checkpoint; first-entry capture timing remains unverified"
+      "implementation": "wardrobe layout + second-stage trial assets; separated scenery",
+      "verification": "stage 2 native checkpoint pending; stage 1 evidence 1bc6e9b"
     },
     {
       "id": "Routes.RUNNER_MARKET",

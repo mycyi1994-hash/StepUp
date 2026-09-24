@@ -666,3 +666,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - First capture 01 still contains the loading frame despite ready semantics; excluded from loaded-state evidence. Captures 02–07 show the actual loaded UI. First-entry frame timing is not established by this test. This is a wardrobe checkpoint, not a full regression pass.
 - Comparison board: wardrobe-review.html. Unedited selected captures and provenance: captures/. Design foundation and actual map constraints: DESIGN-FOUNDATION-KO.md.
 - Pink/pastel reference apparel, remaining screens, additional background families and automatic timed/server-driven background delivery remain subsequent stages.
+
+## 2026-09-24 — second wardrobe asset checkpoint
+
+- Produced nine separate transparent PNGs with built-in ImageGen: pink, lavender and olive; each has LUMI, RUNO and a product thumbnail. Originals were copied without pixel editing. Alpha and dimensions were checked and recorded in design/redesign-2026-09/stage2/manifest.json with the exact prompts alongside it.
+- Added the three design samples only to existing demo/trial selection. The owned/NFT catalog remains unchanged. Exact starter-shoe combinations have both genders; mismatched shoe art has an explicit preview note.
+- First six trial grid cells follow the reference palette order. Character placement continues to use measured source alpha and the shared foot anchor; backgrounds stay separate.
+- Source design/string/asset checks passed. App compilation and native verification are pending for this source revision. Updated wardrobe capture to enter through the real Home tab and exercise all three new outfits for both genders.
+- Pose/background compatibility and subsequent work are documented in STAGE-2-ASSET-GUIDE-KO.md. This checkpoint is not every running/seated pose or whole-app redesign completion.

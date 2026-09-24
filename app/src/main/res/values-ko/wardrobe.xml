@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="wardrobe_change_background">배경 바꾸기</string>
+    <string name="outfit_studio_pink">소프트 핑크 세트</string>
+    <string name="outfit_studio_lavender">소프트 라벤더 세트</string>
+    <string name="outfit_studio_olive">소프트 올리브 세트</string>
+    <string name="wardrobe_shoes_preview_pending">미리보기에는 다른 신발이 표시돼요.</string>
 </resources>

@@ -110,17 +110,20 @@ class ScreenGalleryTest {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, if (largeType) 1.3f else 1f)) {
                 StepUpTheme(ThemeMode.DARK) {
-                    ExperienceProvider { MainScaffold(initialTab = com.stepup.android.ui.Screen.Customize) }
+                    ExperienceProvider { MainScaffold() }
                 }
             }
         }
-        fun ready(gender: AvatarGender) {
+        compose.waitUntil(10_000) { compose.onNodeWithTag("home-character-ready").isDisplayed() }
+        compose.onNodeWithText(compose.activity.getString(R.string.tab_customize)).performClick()
+        fun ready(gender: AvatarGender, outfitId: String = com.stepup.android.domain.Outfits.BASE_ID) {
             compose.waitUntil(10_000) {
-                compose.onNodeWithTag("wardrobe-look-${gender.id}-${com.stepup.android.domain.Outfits.BASE_ID}").isDisplayed()
+                compose.onNodeWithTag("wardrobe-look-${gender.id}-$outfitId").isDisplayed()
             }
             compose.waitForIdle()
         }
         fun shot(name: String) {
+            compose.mainClock.advanceTimeBy(400)
             compose.waitForIdle()
             // Semantics can be ready before SurfaceFlinger presents that frame.
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
@@ -153,6 +156,27 @@ class ScreenGalleryTest {
         compose.runOnIdle { largeType = true }
         compose.onNodeWithTag("wardrobe-background").assertIsDisplayed()
         shot("wardrobe-07-large-type")
+        compose.runOnIdle { largeType = false }
+        runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE) }
+        ready(AvatarGender.FEMALE)
+        for (outfit in com.stepup.android.domain.Outfits.STUDIO) {
+            val label = compose.activity.getString(com.stepup.android.ui.components.outfitNameRes(outfit))
+            compose.onNodeWithContentDescription(label, substring = true).performScrollTo().performClick()
+            compose.onNodeWithTag("wardrobe-equip").performClick()
+            ready(AvatarGender.FEMALE, outfit.id)
+            val baseLabel = compose.activity.getString(R.string.outfit_starter_hoodie)
+            compose.onNodeWithContentDescription(baseLabel, substring = true).performScrollTo()
+            shot("stage2-lumi-${outfit.id.lowercase()}")
+            if (outfit == com.stepup.android.domain.Outfits.SOFT_PINK) {
+                compose.onNodeWithTag("wardrobe-background").performClick()
+                shot("stage2-lumi-pink-background")
+            }
+            runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.MALE) }
+            ready(AvatarGender.MALE, outfit.id)
+            shot("stage2-runo-${outfit.id.lowercase()}")
+            runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE) }
+            ready(AvatarGender.FEMALE, outfit.id)
+        }
         runBlocking { ServiceLocator.avatarRepository.setDemoMode(false) }
     }
 

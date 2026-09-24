@@ -19,6 +19,9 @@ import com.stepup.android.domain.designIdFor
 
 @StringRes
 fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
+    Outfits.SOFT_PINK.id -> R.string.outfit_studio_pink
+    Outfits.SOFT_LAVENDER.id -> R.string.outfit_studio_lavender
+    Outfits.SOFT_OLIVE.id -> R.string.outfit_studio_olive
     Outfits.CORE_ZIP.id -> R.string.outfit_clo_001
     Outfits.EMBER_SHELL.id -> R.string.outfit_clo_002
     Outfits.TIDE_ANORAK.id -> R.string.outfit_clo_003
