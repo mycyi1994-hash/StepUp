@@ -240,6 +240,7 @@ fun PageHero(
     val shape = RoundedCornerShape(22.dp)
     BoxWithConstraints(modifier.fillMaxWidth().clip(shape).border(1.dp, Volt.copy(alpha = 0.32f), shape)) {
         val showArt = art != null && !large && maxWidth >= 280.dp
+        val artWidth = (maxWidth * 0.36f).coerceAtMost(146.dp)
         RunnerScene(Modifier.matchParentSize(), setting = setting, home = true)
         Box(Modifier.matchParentSize().background(Brush.horizontalGradient(
             // Keep the text surface paired with its theme, even when scenery changes.
@@ -257,7 +258,7 @@ fun PageHero(
                 Text(subtitle, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
             }
             if (art != null && showArt) {
-                Box(modifier = Modifier.size(width = (maxWidth * 0.36f).coerceAtMost(146.dp), height = 162.dp), content = art)
+                Box(modifier = Modifier.size(width = artWidth, height = 162.dp), content = art)
             }
         }
     }
