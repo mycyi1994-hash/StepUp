@@ -122,6 +122,9 @@ class ScreenGalleryTest {
         }
         fun shot(name: String) {
             compose.waitForIdle()
+            // Semantics can be ready before SurfaceFlinger presents that frame.
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            Thread.sleep(300)
             captureDisplay(File(directory, "$name.png"))
         }
         ready(AvatarGender.FEMALE)

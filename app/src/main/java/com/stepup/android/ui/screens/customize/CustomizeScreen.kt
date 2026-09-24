@@ -9,14 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,8 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Checkroom
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -42,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -51,8 +45,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,7 +59,6 @@ import com.stepup.android.domain.Outfits
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.components.AvatarImage
 import com.stepup.android.ui.components.CharacterStage
-import com.stepup.android.ui.components.MainHeader
 import com.stepup.android.ui.components.StepUpIcons
 import com.stepup.android.ui.components.OutfitArt
 import com.stepup.android.ui.components.outfitNameRes
@@ -78,9 +69,7 @@ import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.RenewalCardPadding
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.SneakerFrame
-import com.stepup.android.ui.components.SupPill
 import com.stepup.android.ui.components.TwoWaySwitch
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
@@ -89,7 +78,6 @@ import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.Night
@@ -197,70 +185,68 @@ fun CustomizeScreen(
                     .padding(top = 6.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(StepUpDesign.WardrobeGridGap),
             ) {
-            TwoWaySwitch(
-                labels = listOf(stringResource(R.string.customize_tab_outfit), stringResource(R.string.customize_tab_shoes)),
-                icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
-                selected = tab, onSelect = { tab = it },
-            )
-            com.stepup.android.ui.components.AvatarLookNote(preview, render)
-            Column(
-                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-        if (tab == 0) {
-            ItemGrid(outfits) { outfit ->
-                OutfitCard(
-                    outfit = outfit,
-                    look = look,
-                    owned = viewModel.isOwned(outfit),
-                    worn = look.outfit.id == outfit.id,
-                    picked = pickedOutfit.id == outfit.id,
-                    onClick = { pickedOutfitId = outfit.id },
+                TwoWaySwitch(
+                    labels = listOf(stringResource(R.string.customize_tab_outfit), stringResource(R.string.customize_tab_shoes)),
+                    icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
+                    selected = tab, onSelect = { tab = it },
                 )
-            }
-        } else {
-            val list = shoes
-            when {
-                list == null -> Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.CircularProgressIndicator(color = Volt)
+                com.stepup.android.ui.components.AvatarLookNote(preview, render)
+                Column(
+                    Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (tab == 0) {
+                        ItemGrid(outfits) { outfit ->
+                            OutfitCard(
+                                outfit = outfit,
+                                look = look,
+                                owned = viewModel.isOwned(outfit),
+                                worn = look.outfit.id == outfit.id,
+                                picked = pickedOutfit.id == outfit.id,
+                                onClick = { pickedOutfitId = outfit.id },
+                            )
+                        }
+                    } else {
+                        val list = shoes
+                        when {
+                            list == null -> Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                                androidx.compose.material3.CircularProgressIndicator(color = Volt)
+                            }
+                            list.isEmpty() -> GlowCard(contentPadding = RenewalCardPadding, spacing = 6.dp) {
+                                Text(
+                                    text = stringResource(R.string.customize_no_shoes),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Snow,
+                                )
+                                Text(
+                                    text = stringResource(R.string.customize_no_shoes_hint),
+                                    fontSize = 13.sp,
+                                    color = Silver,
+                                    lineHeight = 18.sp,
+                                )
+                            }
+                            else -> ItemGrid(list) { shoe ->
+                                ShoeCard(
+                                    shoe = shoe,
+                                    picked = pickedShoe?.id == shoe.id,
+                                    onClick = { pickedShoeId = shoe.id },
+                                )
+                            }
+                        }
+                    }
                 }
-                list.isEmpty() -> GlowCard(contentPadding = RenewalCardPadding, spacing = 6.dp) {
-                    Text(
-                        text = stringResource(R.string.customize_no_shoes),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(R.string.customize_no_shoes_hint),
-                        fontSize = 13.sp,
-                        color = Silver,
-                        lineHeight = 18.sp,
+                if (!wearing && canEquip) {
+                    PrimaryCta(
+                        text = stringResource(R.string.customize_equip),
+                        icon = Icons.Filled.Checkroom, showArrow = false,
+                        onClick = {
+                            if (tab == 0) viewModel.equipOutfit(pickedOutfit)
+                            else pickedShoe?.let { viewModel.equipShoe(it.id) }
+                        },
+                        modifier = Modifier.testTag("wardrobe-equip"),
                     )
                 }
-                else -> ItemGrid(list) { shoe ->
-                    ShoeCard(
-                        shoe = shoe,
-                        picked = pickedShoe?.id == shoe.id,
-                        onClick = { pickedShoeId = shoe.id },
-                    )
-                }
-            }
-        }
-
-
-            }
-            if (!wearing && canEquip) {
-                PrimaryCta(
-                    text = stringResource(R.string.customize_equip),
-                    icon = Icons.Filled.Checkroom, showArrow = false,
-                    onClick = {
-                        if (tab == 0) viewModel.equipOutfit(pickedOutfit)
-                        else pickedShoe?.let { viewModel.equipShoe(it.id) }
-                    },
-                    modifier = Modifier.testTag("wardrobe-equip"),
-                )
-            }
             }
         }
     }
@@ -373,23 +359,23 @@ private fun ItemCell(
     val trialLabel = stringResource(R.string.customize_trial_badge)
     Box(
         modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(StepUpDesign.WardrobeCellAspect)
-                .clip(shape)
-                .background(if (picked) CarbonHigh else Night, shape)
-                .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge.copy(alpha = 0.7f), shape)
-                .feedbackClickable(role = Role.RadioButton, onClick = onClick)
-                .semantics(mergeDescendants = true) {
-                    selected = picked
-                    contentDescription = listOfNotNull(name, wearingLabel.takeIf { worn }, trialLabel.takeIf { trial }).joinToString(", ")
-                },
+            .fillMaxWidth()
+            .aspectRatio(StepUpDesign.WardrobeCellAspect)
+            .clip(shape)
+            .background(if (picked) CarbonHigh else Night, shape)
+            .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge.copy(alpha = 0.7f), shape)
+            .feedbackClickable(role = Role.RadioButton, onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                selected = picked
+                contentDescription = listOfNotNull(name, wearingLabel.takeIf { worn }, trialLabel.takeIf { trial }).joinToString(", ")
+            },
     ) {
-            Box(
-                modifier = Modifier.fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 7.dp)
-                    .padding(bottom = if (worn || trial) 18.dp else 0.dp),
-                contentAlignment = Alignment.Center,
-            ) { art() }
+        Box(
+            modifier = Modifier.fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 7.dp)
+                .padding(bottom = if (worn || trial) 18.dp else 0.dp),
+            contentAlignment = Alignment.Center,
+        ) { art() }
         if (worn || trial) {
             Text(
                 text = if (trial) trialLabel else wearingLabel,

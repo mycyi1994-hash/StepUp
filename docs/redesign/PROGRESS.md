@@ -653,3 +653,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Local Android SDK/JDK/adb are not on PATH. Existing GitHub Actions build and emulator capture infrastructure is available.
 - No claim yet of real-device GPS/background behavior, signed-in financial flows, GIWA wallet integration, release signing or store readiness.
 - No completion or blocking conclusion is justified: substantial local implementation remains available.
+
+## 2026-09-24 — first wardrobe reference replacement
+
+- b018ca5 implements the large wardrobe stage, image-led inventory, shared scene controls and a separate random background pool. Source design/string/asset checks passed.
+- Native capture run 35941393573 passed on Android 14 and 15. First visual review found the second grid row slightly clipped and the first display capture taken before the ready frame reached the compositor.
+- Follow-up reduces cell height and waits for presentation before capturing. Final native confirmation and APK evidence pending.
+- Background compatibility and actual 2D map limitations are recorded in DESIGN-FOUNDATION-KO.md. Pink reference apparel remains a future asset; owned inventory is not fabricated.

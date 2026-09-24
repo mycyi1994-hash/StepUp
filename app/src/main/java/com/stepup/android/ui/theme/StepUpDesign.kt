@@ -30,7 +30,7 @@ object StepUpDesign {
     const val WardrobePreviewFraction = 0.56f
     val WardrobeGridGap = 10.dp
     val WardrobeCellRadius = 12.dp
-    const val WardrobeCellAspect = 0.94f
+    const val WardrobeCellAspect = 1.04f
 }
 
 /** Only sanctioned logo roles. No per-screen numeric size API. */
