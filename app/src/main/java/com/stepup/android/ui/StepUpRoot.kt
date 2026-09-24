@@ -322,7 +322,7 @@ internal fun MainScaffold(
         mutableStateOf(com.stepup.android.ui.components.RunnerSetting.Wardrobe)
     }
     var homeSetting by rememberSaveable {
-        mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.settings.random())
+        mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.initial.random())
     }
     var previousRoute by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(currentRoute) {
