@@ -152,10 +152,10 @@ fun CharacterStage(
     overlay: @Composable BoxScope.(AvatarRender) -> Unit = {},
 ) {
     val render = AvatarArtCatalog.resolve(look, pose)
-    val running = render.art.pose == AvatarPose.RUN
+    val running = pose == AvatarPose.RUN
     // 모션 줄이기면 멈춘다
     val phase = if (animate && LocalMotion.current.decorative) {
-        ambientPhase(if (running) 760 else 2800, reverse = true)
+        ambientPhase(if (running) 380 else 2800, reverse = true)
     } else {
         null
     }
@@ -194,10 +194,15 @@ fun CharacterStage(
                     if (!running) {
                         rotationZ = (p - 0.5f) * 1.1f
                         scaleY = 0.995f + p * 0.01f
+                    } else {
+                        rotationZ = (p - 0.5f) * 1.4f
                     }
                 },
         ) {
-            AvatarImage(art = render.art, modifier = Modifier.fillMaxSize())
+            RunningAvatarImage(
+                look = look, render = render, running = running,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
         overlay(render)
     }

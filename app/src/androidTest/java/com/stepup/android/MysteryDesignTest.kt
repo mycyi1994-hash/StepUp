@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.components.HomeBackgrounds
@@ -33,7 +34,25 @@ import org.junit.runner.RunWith
 /** A small capture of the new draw entry and the home scenery controls. */
 @RunWith(AndroidJUnit4::class)
 class MysteryDesignTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
+        private var previous = ""
+        override fun before() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val context = instrumentation.targetContext
+            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            previous = com.stepup.android.core.AppLocale.tag
+            instrumentation.runOnMainSync {
+                com.stepup.android.core.AppLocale.change(context, "ko")
+            }
+        }
+        override fun after() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.runOnMainSync {
+                com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous)
+            }
+        }
+    }
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun drawScreenAndBackgroundSwitch() {
         runBlocking {
@@ -69,6 +88,8 @@ class MysteryDesignTest {
         captureDisplay(File(out, "mystery-02-large-type.png"))
 
         compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
+        compose.waitForIdle()
+        captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isNotEmpty() }
         val before = HomeBackgrounds.settings.first { scene ->
             compose.onAllNodesWithTag("home-scene-${scene.name}").fetchSemanticsNodes().isNotEmpty()
