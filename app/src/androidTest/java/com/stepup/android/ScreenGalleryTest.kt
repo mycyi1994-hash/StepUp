@@ -127,7 +127,8 @@ class ScreenGalleryTest {
             compose.waitForIdle()
             // Semantics can be ready before SurfaceFlinger presents that frame.
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            Thread.sleep(300)
+            // Let the native short equip toast finish before recording the inventory.
+            Thread.sleep(2400)
             captureDisplay(File(directory, "$name.png"))
         }
         ready(AvatarGender.FEMALE)

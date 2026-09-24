@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StepUp 옷장 · 2차 자산 보드</title>
+<style>
+@font-face{font-family:Pretendard;src:url('../../../app/src/main/res/font/pretendard_regular.ttf')}
+*{box-sizing:border-box}body{margin:0;background:#040c1b;color:#edf4ff;font:16px/1.65 Pretendard,'Malgun Gothic',sans-serif}main{max-width:1280px;margin:auto;padding:48px 30px}h1{margin:0 0 12px;font-size:32px;letter-spacing:-.03em}h2{font-size:22px;margin:38px 0 14px}p{color:#a8bdd9;max-width:850px}button{font:inherit;min-height:48px;padding:8px 20px;border-radius:24px;background:#0b1d35;color:#edf4ff;border:1px solid #294667;cursor:pointer}button[aria-pressed=true]{background:#1478ff;border-color:#1478ff}button:focus-visible{outline:3px solid #9bd8ff;outline-offset:3px}.controls{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}.group{display:flex;gap:8px;margin-right:20px}.scenes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}figure{margin:0}figcaption{font-size:15px;color:#a8bdd9;margin-top:12px}.scene{position:relative;aspect-ratio:9/17;overflow:hidden;background:#0b1d35;border-radius:16px}.scene .background{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.scene .avatar{position:absolute;left:0;bottom:8%;width:100%;height:88%;object-fit:contain;object-position:50% 100%}.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.product{background:#0b1d35;border-radius:16px;padding:16px}.product img{width:100%;max-height:320px;object-fit:contain}.note{padding-top:20px;border-top:1px solid #213750;font-size:14px}a{color:#8ac2ff}table{border-collapse:collapse;font-size:15px;width:100%}th,td{text-align:left;padding:12px 12px 12px 0;border-bottom:1px solid #213750}th{font-weight:500;color:#a8bdd9}@media(max-width:650px){main{padding:28px 16px}.scenes,.products{gap:10px}h1{font-size:25px}button{padding:8px 14px}figcaption{font-size:13px}}
+</style>
+<main>
+<h1>옷장 · 2차 자산 보드</h1>
+<p>분홍·라벤더·올리브를 같은 캐릭터와 재질로 맞췄습니다. 아래는 배경과 투명 캐릭터 파일을 조합하는 자산 미리보기입니다. 실제 앱 캡처와 구분합니다.</p>
+<div class="controls">
+<div class="group" aria-label="캐릭터 선택"><button data-gender="lumi" aria-pressed="true">LUMI</button><button data-gender="runo" aria-pressed="false">RUNO</button></div>
+<div class="group" aria-label="배경 선택"><button data-scene="wardrobe_terrace" aria-pressed="true">테라스</button><button data-scene="riverside_sunset" aria-pressed="false">노을</button></div>
+</div>
+<div class="scenes" id="scenes"></div>
+<h2>목록에 쓰는 의상 이미지</h2>
+<div class="products" id="products"></div>
+<h2>분리된 파일, 같은 배치 기준</h2>
+<table>
+<tr><th>자산</th><th>이번 결과</th><th>유지하는 기준</th></tr>
+<tr><td>캐릭터</td><td>남녀 × 3색, 투명 PNG 6장</td><td>얼굴·눈·머리 모양·기존 시작 신발 유지</td></tr>
+<tr><td>의상</td><td>상품 PNG 3장</td><td>세트의 색상·소재와 목록 표시의 일치</td></tr>
+<tr><td>배경</td><td>기존 강변 2종 재사용</td><td>캐릭터와 독립된 이미지, 발 위치에 빈 지면 확보</td></tr>
+<tr><td>배치</td><td>원본 알파에서 발 아래 여백 측정</td><td>앱에서는 공통 접지 위치로 보정</td></tr>
+<tr><td>상태</td><td>기존 데모 모드의 체험 의상</td><td>실제 소유권·NFT 상품으로 표시하지 않음</td></tr>
+</table>
+<p class="note">앱 확인 경로: 내 정보 → 설정 → 데모 모드 켜기 → 꾸미기 → 의상 선택 → 장착하기.<br>야경은 발 아래가 물로 보여 옷장 교체 목록에서 제외했습니다. 새 의상의 달리기·앉기 포즈와 신규 배경 공급은 후속 작업입니다.</p>
+<p><a href="../../../docs/redesign/STAGE-2-ASSET-GUIDE-KO.md">자산·배경·지도 기준</a> · <a href="prompts-pink.json">분홍 제작 프롬프트</a> · <a href="prompts-variants.json">색상 확장 프롬프트</a> · <a href="manifest.json">파일 규격</a></p>
+</main>
+<script>
+const resource='../../../app/src/main/res/drawable-nodpi/';
+const colors=[['pink','소프트 핑크'],['lavender','소프트 라벤더'],['olive','소프트 올리브']];
+let gender='lumi',scene='wardrobe_terrace';
+const root=document.getElementById('scenes');
+for(const [key,label] of colors){const figure=document.createElement('figure');figure.innerHTML=`<div class="scene"><img class="background" src="${resource}scene_${scene}.webp" alt=""><img class="avatar" data-color="${key}" src="${resource}avatar_${gender}_idle_studio_${key}.png" alt="${label} 전신 착장"></div><figcaption>${label}</figcaption>`;root.append(figure);const item=document.createElement('figure');item.innerHTML=`<div class="product"><img src="${resource}outfit_studio_${key}.png" alt="${label} 후드와 반바지"></div><figcaption>${label}</figcaption>`;document.getElementById('products').append(item)}
+document.querySelectorAll('[data-gender]').forEach(button=>button.addEventListener('click',()=>{gender=button.dataset.gender;document.querySelectorAll('[data-gender]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));document.querySelectorAll('.avatar').forEach(im=>im.src=`${resource}avatar_${gender}_idle_studio_${im.dataset.color}.png`)}));
+document.querySelectorAll('[data-scene]').forEach(button=>button.addEventListener('click',()=>{scene=button.dataset.scene;document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));document.querySelectorAll('.background').forEach(im=>im.src=`${resource}scene_${scene}.webp`)}));
+</script>
+</html>

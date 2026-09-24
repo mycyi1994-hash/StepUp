@@ -16,9 +16,10 @@ import com.stepup.android.ui.theme.Night
 /** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
 enum class RunnerSetting { Night, Sunset, Wardrobe }
 
-/** Only standing, riverside scenes share this pool. Seated artwork needs its own pool. */
+/** Only scenes with visible ground at the standing foot anchor belong here. */
 object WardrobeBackgrounds {
-    val settings = listOf(RunnerSetting.Wardrobe, RunnerSetting.Night, RunnerSetting.Sunset)
+    // The night skyline has water at the wardrobe foot anchor, so it stays out of this pool.
+    val settings = listOf(RunnerSetting.Wardrobe, RunnerSetting.Sunset)
 
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 }
