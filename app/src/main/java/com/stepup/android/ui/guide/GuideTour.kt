@@ -11,6 +11,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,19 +23,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.North
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,23 +56,16 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Overlay
 import com.stepup.android.ui.theme.Scrim
 import com.stepup.android.ui.theme.ScrimAlpha
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltSoft
-import com.stepup.android.ui.theme.VoltText
 
 /**
  * 스포트라이트 가이드 투어.
@@ -222,15 +210,14 @@ fun GuideOverlay(
 
     // 테두리가 천천히 숨 쉰다. 정지한 사각형은 배경으로 읽히지만, 움직이는
     // 것은 눈이 먼저 찾는다 — "여기를 보세요"를 글로 쓰지 않고 전달하는 방법이다.
-    val pulse by rememberInfiniteTransition(label = "guidePulse").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "guidePulseValue",
-    )
+    val pulse = if (com.stepup.android.ui.experience.LocalMotion.current.decorative) {
+        val animated by rememberInfiniteTransition(label = "guidePulse").animateFloat(
+            initialValue = 0f, targetValue = 1f,
+            animationSpec = infiniteRepeatable(animation = tween(1400, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+            label = "guidePulseValue",
+        )
+        animated
+    } else 0f
 
     fun finish() {
         GuideTour.stop()
@@ -290,154 +277,38 @@ fun GuideOverlay(
         }
 
         val density = androidx.compose.ui.platform.LocalDensity.current
-
-        // 가리키는 것이 화면 맨 아래(하단 탭)면, 아래에 붙은 조작 버튼이
-        // 하필 그 위를 덮는다. 스포트라이트를 켜 놓고 그 자리를 자기 버튼으로
-        // 가리는 셈이라, 그만큼 버튼을 위로 올린다.
-        val controlsLiftDp = if (target != null) {
-            with(density) {
-                val topDp = target.top.toDp().value
-                if (topDp > screenHeightDp - 130f) screenHeightDp - topDp + 12f else 0f
-            }
-        } else {
-            0f
-        }
-
-        // 설명 창 — 대상이 화면 위쪽이면 아래에, 아래쪽이면 위에 띄운다
-        val tooltipOffsetDp = if (target != null) {
-            with(density) {
-                val below = target.bottom.toDp().value + 18f
-                val targetCenterDp = target.center.y.toDp().value
-                if (targetCenterDp < screenHeightDp * 0.45f) {
-                    below
-                } else {
-                    // 버튼을 올린 만큼 설명 창도 같이 올라가야 서로 겹치지 않는다.
-                    (target.top.toDp().value - 178f - controlsLiftDp).coerceAtLeast(52f)
-                }
-            }
-        } else {
-            screenHeightDp * 0.32f
-        }
-
-        // 대상이 설명 창보다 위에 있으면 창 위쪽에, 아래에 있으면 창 아래쪽에
-        // 삼각형을 붙인다. 화면에 구멍이 둘 이상 뚫린 것처럼 보일 때
-        // "이 설명은 저기 것"을 선 하나로 이어 주는 역할이다.
-        val pointsUp = target != null && target.center.y.let { center ->
-            with(density) { center.toDp().value } < tooltipOffsetDp
-        }
-
+        val targetInLowerHalf = target?.let { with(density) { it.center.y.toDp().value } > screenHeightDp * .5f } ?: true
         Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = tooltipOffsetDp.dp)
-                .padding(horizontal = 26.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (target != null && pointsUp) Pointer(up = true, pulse = pulse)
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    // 카드가 아니라 막 위에 뜬 패널이다. 밝은 테마에서는
-                    // 흰 패널, 어두운 테마에서는 막보다 한 단계 들린 남색.
-                    .background(Overlay)
-                    .border(1.dp, VoltSoft.copy(alpha = 0.55f), RoundedCornerShape(20.dp))
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                Text(
-                    text = "${GuideTour.stepIndex + 1} / ${GuideTour.steps.size}",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = VoltText,
-                )
-                Text(
-                    text = stringResource(step.titleRes),
-                    modifier = Modifier.testTag("guide-step-title"),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(step.bodyRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                    lineHeight = 19.sp,
-                )
-            }
-
-            if (target != null && !pointsUp) Pointer(up = false, pulse = pulse)
-        }
-
-        // 하단 컨트롤
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
+            Modifier.align(if (targetInLowerHalf) Alignment.TopCenter else Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(horizontal = 26.dp, vertical = 18.dp)
-                .padding(bottom = controlsLiftDp.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 20.dp, end = 20.dp, top = 56.dp, bottom = 24.dp)
+                .widthIn(max = 560.dp).fillMaxWidth()
+                .heightIn(max = (screenHeightDp * .68f).dp)
+                .clip(RoundedCornerShape(24.dp)).background(Overlay)
+                .border(1.dp, VoltSoft.copy(alpha = .55f), RoundedCornerShape(24.dp))
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (!isLast) {
-                GhostButton(
-                    text = stringResource(R.string.guide_skip),
-                    onClick = { finish() },
-                    // 이 둘은 카드가 아니라 **막 위에** 그대로 서 있다.
-                    // Silver 는 테마를 따라 뒤집혀 막과 같은 밝기가 되곤
-                    // 했고, 그래서 안 보였다. 막이 늘 어두우니 흰색으로 둔다.
-                    accent = OnVolt,
-                )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(step.titleRes), modifier = Modifier.weight(1f).testTag("guide-step-title"),
+                    style = MaterialTheme.typography.titleLarge, color = Snow)
+                Text("${GuideTour.stepIndex + 1} / ${GuideTour.steps.size}",
+                    style = MaterialTheme.typography.labelLarge, color = Silver, modifier = Modifier.padding(start = 12.dp))
             }
-            // 첫 스텝에는 돌아갈 곳이 없다. 눌리지 않는 버튼을 남겨 두는 것은
-            // 자리를 지켜 다음 스텝에서 버튼들이 옆으로 밀리지 않게 하기 위해서다.
-            GhostButton(
-                text = stringResource(R.string.guide_prev),
-                onClick = { GuideTour.back() },
-                enabled = GuideTour.stepIndex > 0,
-                accent = OnVolt,
-            )
+            Text(stringResource(step.bodyRes), style = MaterialTheme.typography.bodyLarge, color = Silver,
+                modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()))
             VoltButton(
                 text = stringResource(if (isLast) R.string.guide_start else R.string.guide_next),
-                onClick = { if (!GuideTour.advance()) onFinished() },
-                modifier = Modifier.weight(1f),
+                onClick = { if (!GuideTour.advance()) onFinished() }, modifier = Modifier.fillMaxWidth(),
             )
-        }
-    }
-}
-
-/**
- * 설명 창에서 대상 쪽으로 뻗는 삼각형.
- *
- * 화면에 밝은 구멍과 설명 창이 따로 떠 있으면, 처음 보는 사람은 둘이
- * 한 쌍인지 알기까지 한 박자를 쓴다. 삼각형이 그 한 박자를 없앤다.
- */
-@Composable
-private fun Pointer(up: Boolean, pulse: Float) {
-    // 숨 쉬는 테두리와 같은 박자로 대상 쪽으로 살짝 다가갔다 돌아온다.
-    val nudge = (if (up) -1f else 1f) * 3f * kotlin.math.sin(pulse * Math.PI).toFloat()
-    Canvas(
-        modifier = Modifier
-            .padding(vertical = 1.dp)
-            .offset(y = nudge.dp)
-            .size(width = 18.dp, height = 9.dp),
-    ) {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            if (up) {
-                moveTo(size.width / 2f, 0f)
-                lineTo(size.width, size.height)
-                lineTo(0f, size.height)
-            } else {
-                moveTo(0f, 0f)
-                lineTo(size.width, 0f)
-                lineTo(size.width / 2f, size.height)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                GhostButton(stringResource(R.string.guide_prev), onClick = { GuideTour.back() },
+                    enabled = GuideTour.stepIndex > 0, modifier = Modifier.weight(1f))
+                if (!isLast) {
+                    GhostButton(stringResource(R.string.guide_skip), onClick = { finish() },
+                        accent = Silver, modifier = Modifier.weight(1f))
+                }
             }
-            close()
         }
-        // 카드 테두리와 같은 파랑. 막 위에서 읽혀야 하므로 밝은 쪽을 쓴다.
-        drawPath(path, color = VoltSoft)
     }
 }

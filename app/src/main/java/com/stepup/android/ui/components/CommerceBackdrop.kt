@@ -10,12 +10,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Volt
 
-/** Shared dark surface for owned items and live market data; product art stays independent. */
+/** Shared surface for utility screens and commerce; artwork and controls remain independent. */
 @Composable
 fun CommerceBackdrop(modifier: Modifier = Modifier) {
-    Box(modifier.background(Brush.verticalGradient(listOf(Color(0xFF0B1B37), Night, Night)))) {
+    Box(modifier.background(Brush.verticalGradient(listOf(CarbonHigh, Night, Night)))) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(

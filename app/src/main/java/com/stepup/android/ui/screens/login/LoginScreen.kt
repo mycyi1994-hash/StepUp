@@ -3,7 +3,6 @@ package com.stepup.android.ui.screens.login
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,11 +18,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,7 +35,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -51,13 +47,9 @@ import com.stepup.android.core.Analytics
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.remote.GoogleIdResult
 import com.stepup.android.data.remote.TokenResult
-import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import kotlinx.coroutines.launch
 
@@ -154,9 +146,9 @@ internal fun LoginContent(signingIn: Boolean, error: Int?, onSignIn: () -> Unit)
             }
             // Scroll only when font expansion needs more room; login and legal links remain reachable.
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                com.stepup.android.ui.components.GlowCard(contentPadding = PaddingValues(20.dp)) {
+                com.stepup.android.ui.components.GlowCard(contentPadding = PaddingValues(24.dp), spacing = 18.dp) {
                     Text(stringResource(R.string.login_headline), color = Snow,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     GoogleSignInButton(signingIn, onSignIn)
                     error?.let {

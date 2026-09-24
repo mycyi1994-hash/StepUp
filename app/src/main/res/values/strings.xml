@@ -1522,5 +1522,7 @@ Start running with StepUp.</string>
     <string name="run_saving">Saving run</string>
     <string name="run_save_retry">Retry saving</string>
     <string name="run_save_failed">Your run could not finish saving. Keep the app open and try again.</string>
+    <string name="course_like_action">Like this course</string>
+    <string name="course_unlike_action">Remove course like</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -39,6 +39,13 @@ object RunBackgrounds {
     val settings = listOf(RunnerSetting.RunNight, RunnerSetting.RunSunset)
 }
 
+/** Grounded scenery compatible with the profile bench; artwork and controls stay separate. */
+object ProfileBackgrounds {
+    val settings = listOf(RunnerSetting.HomeBlueNight, RunnerSetting.HomeDawn)
+
+    fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
+}
+
 @Composable
 fun RunnerScene(
     modifier: Modifier = Modifier,

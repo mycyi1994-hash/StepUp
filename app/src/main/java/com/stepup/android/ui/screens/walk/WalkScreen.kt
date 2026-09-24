@@ -2,6 +2,12 @@ package com.stepup.android.ui.screens.walk
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.stepup.android.ui.components.AdaptiveNumber
+import com.stepup.android.ui.components.DialogPanel
+import com.stepup.android.ui.components.FormField
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.ui.platform.LocalDensity
@@ -26,24 +31,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.GpsFixed
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Terrain
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Route
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -73,7 +66,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -89,15 +81,10 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import com.stepup.android.data.local.UploadState
 import com.stepup.android.ui.components.RunShareCard
-import com.stepup.android.ui.components.VerticalHairline
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.ui.platform.testTag
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.ui.components.CharacterStage
-import com.stepup.android.ui.components.StatCell
-import com.stepup.android.ui.components.SupPill
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.domain.CourseRewards
 import com.stepup.android.domain.GeoPoint
@@ -113,20 +100,15 @@ import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.LiveRouteMap
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.EnergyMeter
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.NeonRing
-import com.stepup.android.ui.components.StartRunButton
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.breathing
 import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.screens.community.LabeledField
 import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
@@ -139,7 +121,6 @@ import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.components.reveal
 import com.stepup.android.ui.components.celebrate
 import kotlin.math.max
-import kotlin.math.sin
 
 /** 랩 스냅샷(누적)을 구간값으로 변환한 것 */
 private data class LapSegment(
@@ -255,164 +236,45 @@ fun RunScreen(
     val segments = lapSegments(laps)
 
 
-    // 러닝 중과 러닝 전에 놓이는 자리만 다른 카드 둘 — 목표 링과 예상 적립
-    val goalRingCard: @Composable () -> Unit = {
-        GlowCard(contentPadding = PaddingValues(vertical = 20.dp, horizontal = 12.dp)) {
-            if (largeText) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true }, Modifier.size(210.dp))
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.stat_distance),
-                        fontSize = 10.sp,
-                        color = Slate,
-                    )
-                    Text(
-                        text = "%.2f".format(distanceKm),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                        maxLines = 1,
-                    )
-                    Text(
-                        text = "km",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                }
-                if (!largeText) RunTimeRing(distanceKm, goalKm, session.elapsedSec, running, { showGoalDialog = true })
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.run_remaining),
-                        fontSize = 10.sp,
-                        color = Slate,
-                    )
-                    Text(
-                        text = "%.2f".format(max(goalKm - distanceKm, 0.0)),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                        maxLines = 1,
-                    )
-                    Text(
-                        text = "km",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = stringResource(R.string.run_eta),
-                        fontSize = 10.sp,
-                        color = Slate,
-                    )
-                    Text(
-                        text = if (distanceKm >= 0.05 && session.elapsedSec > 0) {
-                            formatDuration((session.elapsedSec / distanceKm * goalKm).toLong())
-                        } else {
-                            "—"
-                        },
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                }
-            }
+    val goalCard: @Composable () -> Unit = {
+        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
+            Text(stringResource(R.string.run_goal_dialog_title), style = MaterialTheme.typography.titleMedium, color = Snow)
+            FinishStat(stringResource(R.string.stat_distance), "%.2f".format(distanceKm), "km")
+            BarMeter(fraction = if (goalKm > 0) (distanceKm / goalKm).toFloat().coerceIn(0f, 1f) else 0f, height = 7.dp)
+            FinishStat(stringResource(R.string.run_remaining), "%.2f".format(max(goalKm - distanceKm, 0.0)), "km")
+            Text(
+                text = stringResource(R.string.run_eta) + " · " + if (distanceKm >= 0.05 && session.elapsedSec > 0) {
+                    formatDuration((session.elapsedSec / distanceKm * goalKm).toLong())
+                } else "—",
+                style = MaterialTheme.typography.bodyMedium, color = Silver,
+            )
+            GhostButton(
+                text = stringResource(R.string.run_goal_dialog_title) + " · %.1f km".format(goalKm),
+                onClick = { showGoalDialog = true }, modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
-    // 예상 적립 — 한 줄. "확정이 아니다"는 ⓘ 를 누르면 펼쳐진다.
     var showEstimateNote by rememberSaveable { mutableStateOf(false) }
     val estimateCard: @Composable () -> Unit = {
-        GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp), spacing = 8.dp) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                HexEmblem(size = 26.dp, glow = false)
-                Text(
-                    text = stringResource(R.string.run_estimated_points),
-                    fontSize = 14.sp,
-                    color = Silver,
-                    maxLines = 1,
-                )
-                Icon(
-                    Icons.Filled.Info,
-                    contentDescription = stringResource(R.string.run_estimated_note),
-                    tint = Slate,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .quietClickable { showEstimateNote = !showEstimateNote }
-                        .padding(6.dp),
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "+%,.2f".format(estimate.points),
-                    style = androidx.compose.ui.text.TextStyle(brush = com.stepup.android.ui.theme.VoltInk),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
-                Text(
-                    text = "SUP",
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
-                )
+        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                HexEmblem(size = 28.dp, glow = false)
+                Text(stringResource(R.string.run_estimated_points), style = MaterialTheme.typography.titleMedium, color = Snow, modifier = Modifier.weight(1f))
+                DarkIconButton(Icons.Filled.Info, stringResource(R.string.run_estimated_note), onClick = { showEstimateNote = !showEstimateNote })
             }
-            // 확정 잔액이 아니다 — 러닝을 마치고 판정을 거친 걸음만 적립된다
+            AdaptiveNumber("+%,.2f".format(estimate.points), 32.sp, color = com.stepup.android.ui.theme.VoltText)
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
             if (showEstimateNote) {
-                Text(
-                    text = stringResource(R.string.run_estimated_note),
-                    fontSize = 12.sp,
-                    color = Silver,
-                    lineHeight = 17.sp,
-                )
+                Text(stringResource(R.string.run_estimated_note), style = MaterialTheme.typography.bodyMedium, color = Silver)
             }
-            // 오늘 적립 한도를 다 썼으면 그것만 알린다 — 뛰는 것은 막지 않는다
             if (earnableSteps <= 0) {
-                Text(
-                    text = stringResource(R.string.home_energy_empty),
-                    fontSize = 12.sp,
-                    color = Alert,
-                )
+                Text(stringResource(R.string.home_energy_empty), style = MaterialTheme.typography.bodyMedium, color = Alert)
             }
             if (xpBoosted) {
-                Text(
-                    text = stringResource(R.string.run_boost_active),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
-                )
+                Text(stringResource(R.string.run_boost_active), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
             }
             if (session.partySize > 1) {
-                Text(
-                    text = stringResource(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
-                )
+                Text(stringResource(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
             }
         }
     }
@@ -423,123 +285,132 @@ fun RunScreen(
     val render = savedLook?.let {
         com.stepup.android.domain.AvatarArtCatalog.resolve(it, if (running) AvatarPose.RUN else AvatarPose.IDLE)
     }
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        com.stepup.android.ui.components.FocusHeader(
-            title = stringResource(when {
-                finishing -> R.string.finish_title
-                session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
-                session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
-                session.isPaused -> R.string.run_paused
-                session.isActive -> R.string.run_active
-                else -> R.string.run_ready
-            }),
-            onBack = onBack,
-            action = {
-                DarkIconButton(
-                    Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
-                    onClick = { showDetails = true },
-                )
-            },
-        )
-        if (permissionDenied && !session.isActive) {
-            Text(stringResource(R.string.perm_body), color = Silver,
-                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-            TextButton(onClick = {
-                ExternalIntents.openAppSettings(context)
-            }) { Text(stringResource(R.string.cd_open_settings)) }
-        }
-        if (finishing) {
-            LazyColumn(
-                Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(bottom = 24.dp),
-            ) {
-                item {
-                    FinishCard(
-                        session = session, points = session.lastRewardPoints!!,
-                        upload = lastUpload, look = look, balance = balance,
-                    )
-                }
-            }
-            PrimaryCta(
-                text = stringResource(R.string.finish_done),
-                icon = Icons.Filled.Check,
-                showArrow = false,
-                modifier = Modifier.testTag("run-result-done").padding(vertical = 12.dp),
-                onClick = { viewModel.clearReward(); onBack() },
-            )
-        } else {
-            if (recordingCourse && !readyToSaveCourse) {
-                CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
-            }
-            if (render != null && savedLook != null) {
-                com.stepup.android.ui.components.AvatarImage(
-                    art = render.art,
-                    contentDescription = stringResource(R.string.cd_home_character),
-                    modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
-                )
-                com.stepup.android.ui.components.AvatarLookNote(savedLook, render)
-            } else {
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.feed_loading), color = Silver)
-                }
-            }
-            RunHero(
-                paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
-                elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
-            )
-            if (session.flaggedSegments > 0) {
-                TextButton(onClick = { showDetails = true }) {
-                    Icon(Icons.Filled.Warning, null, tint = Alert, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(
-                        if (session.liveVerdict == RunVerdict.VOID) R.string.run_void_title else R.string.run_flagged_title,
-                    ), color = Alert)
-                }
-            } else {
-                Spacer(Modifier.height(16.dp))
-            }
-            PrimaryCta(
-                text = stringResource(when {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val characterHeight = (maxHeight - 360.dp * LocalDensity.current.fontScale.coerceAtMost(1.5f)).coerceIn(160.dp, 400.dp)
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            com.stepup.android.ui.components.FocusHeader(
+                title = stringResource(when {
+                    finishing -> R.string.finish_title
                     session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
                     session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
-                    !session.isActive -> R.string.home_start_run
-                    session.isPaused -> R.string.cd_resume
-                    else -> R.string.cd_pause
+                    session.isPaused -> R.string.run_paused
+                    session.isActive -> R.string.run_active
+                    else -> R.string.run_ready
                 }),
-                icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
-                    else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                enabled = session.saveStatus != RunSaveStatus.SAVING,
-                onClick = {
-                    when {
-                        session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
-                        running -> WalkSessionService.pause(context)
-                        session.isActive -> WalkSessionService.resume(context)
-                        else -> {
-                            val missing = StepPermissions.missing(context)
-                            if (missing.isEmpty()) WalkSessionService.start(context)
-                            else permissionLauncher.launch(missing)
+                onBack = onBack,
+                action = {
+                    DarkIconButton(
+                        Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
+                        onClick = { showDetails = true },
+                    )
+                },
+            )
+            if (finishing) {
+                LazyColumn(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                ) {
+                    item {
+                        FinishCard(
+                            session = session, points = session.lastRewardPoints!!,
+                            upload = lastUpload, look = look, balance = balance,
+                        )
+                    }
+                }
+                PrimaryCta(
+                    text = stringResource(R.string.finish_done),
+                    icon = Icons.Filled.Check,
+                    showArrow = false,
+                    modifier = Modifier.testTag("run-result-done").padding(vertical = 12.dp),
+                    onClick = { viewModel.clearReward(); onBack() },
+                )
+            } else {
+                Column(
+                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    if (permissionDenied && !session.isActive) {
+                        Text(stringResource(R.string.perm_body), color = Silver,
+                            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                        TextButton(onClick = {
+                            ExternalIntents.openAppSettings(context)
+                        }) { Text(stringResource(R.string.cd_open_settings)) }
+                    }
+                    if (recordingCourse && !readyToSaveCourse) {
+                        CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
+                    }
+                    if (render != null && savedLook != null) {
+                        com.stepup.android.ui.components.AvatarImage(
+                            art = render.art,
+                            contentDescription = stringResource(R.string.cd_home_character),
+                            modifier = Modifier.fillMaxWidth().height(characterHeight).padding(vertical = 8.dp),
+                        )
+                        com.stepup.android.ui.components.AvatarLookNote(savedLook, render)
+                    } else {
+                        Box(Modifier.fillMaxWidth().height(characterHeight), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.feed_loading), color = Silver)
                         }
                     }
-                },
-                modifier = Modifier.testTag("run-primary-action"),
-            )
-            if (session.saveStatus == RunSaveStatus.FAILED) {
-                Text(stringResource(R.string.run_save_failed), color = Alert,
-                    style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 12.dp).testTag("run-save-error"))
-            } else if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
-                TextButton(
-                    onClick = { confirmStop = true },
-                    modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
-                        .testTag("run-finish"),
-                ) { Text(stringResource(R.string.run_finish), color = Silver) }
-            } else {
-                Spacer(Modifier.height(16.dp))
+                    RunHero(
+                        paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
+                        elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
+                    )
+                    if (session.flaggedSegments > 0) {
+                        TextButton(onClick = { showDetails = true }) {
+                            Icon(Icons.Filled.Warning, null, tint = Alert, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(
+                                if (session.liveVerdict == RunVerdict.VOID) R.string.run_void_title else R.string.run_flagged_title,
+                            ), color = Alert)
+                        }
+                    } else {
+                        Spacer(Modifier.height(16.dp))
+                    }
+                }
+                PrimaryCta(
+                    text = stringResource(when {
+                        session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
+                        session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
+                        !session.isActive -> R.string.home_start_run
+                        session.isPaused -> R.string.cd_resume
+                        else -> R.string.cd_pause
+                    }),
+                    icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
+                        else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    enabled = session.saveStatus != RunSaveStatus.SAVING,
+                    onClick = {
+                        when {
+                            session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
+                            running -> WalkSessionService.pause(context)
+                            session.isActive -> WalkSessionService.resume(context)
+                            else -> {
+                                val missing = StepPermissions.missing(context)
+                                if (missing.isEmpty()) WalkSessionService.start(context)
+                                else permissionLauncher.launch(missing)
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("run-primary-action"),
+                )
+                if (session.saveStatus == RunSaveStatus.FAILED) {
+                    Text(stringResource(R.string.run_save_failed), color = Alert,
+                        style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp).testTag("run-save-error"))
+                } else if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
+                    TextButton(
+                        onClick = { confirmStop = true },
+                        modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
+                            .testTag("run-finish"),
+                    ) { Text(stringResource(R.string.run_finish), color = Silver) }
+                } else {
+                    Spacer(Modifier.height(16.dp))
+                }
             }
         }
+
     }
 
     if (showDetails) {
@@ -551,12 +422,11 @@ fun RunScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                item { goalRingCard() }
+                item { goalCard() }
                 item { estimateCard() }
                 item {
                     CourseChallengeCard(
                         course = course, sessionKm = distanceKm, liveTrack = session.geoTrack,
-                        gpsFix = session.gpsFix, goalKm = goalKm,
                         onOpenCourses = { showDetails = false; onOpenCourses() }, running = session.isActive,
                     )
                 }
@@ -581,27 +451,19 @@ fun RunScreen(
     }
 
     if (confirmStop) {
-        AlertDialog(
-            onDismissRequest = { confirmStop = false },
-            containerColor = com.stepup.android.ui.theme.Carbon,
-            titleContentColor = Snow,
-            textContentColor = Silver,
-            title = { Text(stringResource(R.string.run_stop_confirm_title), fontWeight = FontWeight.Black) },
-            text = { Text(stringResource(R.string.run_stop_confirm_body)) },
-            confirmButton = {
-                TextButton(onClick = {
+        DialogPanel(
+            title = stringResource(R.string.run_stop_confirm_title),
+            onDismiss = { confirmStop = false },
+            actions = {
+                VoltButton(stringResource(R.string.run_stop_confirm_yes), onClick = {
                     confirmStop = false
                     WalkSessionService.stop(context)
-                }) {
-                    Text(stringResource(R.string.run_stop_confirm_yes), color = Volt, fontWeight = FontWeight.Bold)
-                }
+                }, modifier = Modifier.fillMaxWidth())
+                GhostButton(stringResource(R.string.run_stop_confirm_no), onClick = { confirmStop = false }, modifier = Modifier.fillMaxWidth())
             },
-            dismissButton = {
-                TextButton(onClick = { confirmStop = false }) {
-                    Text(stringResource(R.string.run_stop_confirm_no), color = Silver)
-                }
-            },
-        )
+        ) {
+            Text(stringResource(R.string.run_stop_confirm_body), style = MaterialTheme.typography.bodyLarge, color = Silver)
+        }
     }
 
     if (readyToSaveCourse) {
@@ -613,48 +475,20 @@ fun RunScreen(
     }
 
     if (showGoalDialog) {
-        AlertDialog(
-            onDismissRequest = { showGoalDialog = false },
-            containerColor = Carbon,
-            titleContentColor = Snow,
-            textContentColor = Silver,
-            confirmButton = {
-                TextButton(onClick = { showGoalDialog = false }) {
-                    Text(
-                        text = stringResource(R.string.common_ok),
-                        color = Volt,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+        DialogPanel(
+            title = stringResource(R.string.run_goal_dialog_title),
+            onDismiss = { showGoalDialog = false },
+            actions = {
+                VoltButton(stringResource(R.string.common_ok), onClick = { showGoalDialog = false }, modifier = Modifier.fillMaxWidth())
             },
-            title = {
-                Text(
-                    text = stringResource(R.string.run_goal_dialog_title),
-                    fontWeight = FontWeight.Black,
-                )
-            },
-            text = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    StepperButton(text = "−") {
-                        viewModel.setGoalKm(if (goalKm > 42.0) 42.0 else goalKm - 0.5)
-                    }
-                    Text(
-                        text = "%.1f km".format(goalKm),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Snow,
-                    )
-                    StepperButton(text = "+") {
-                        viewModel.setGoalKm(if (goalKm >= 42.0) 42.2 else goalKm + 0.5)
-                    }
-                }
-            },
-        )
+        ) {
+            AdaptiveNumber("%.1f".format(goalKm), 44.sp, textAlign = TextAlign.Center)
+            Text("km", style = MaterialTheme.typography.bodyMedium, color = Silver, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StepperButton(text = "−") { viewModel.setGoalKm(if (goalKm > 42.0) 42.0 else goalKm - 0.5) }
+                StepperButton(text = "+") { viewModel.setGoalKm(if (goalKm >= 42.0) 42.2 else goalKm + 0.5) }
+            }
+        }
     }
 }
 
@@ -908,7 +742,7 @@ private fun LapButton(
 private fun StepperButton(text: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(40.dp)
+            .size(56.dp)
             .clip(CircleShape)
             .background(CarbonHigh, CircleShape)
             .border(1.dp, Edge, CircleShape)
@@ -917,7 +751,7 @@ private fun StepperButton(text: String, onClick: () -> Unit) {
     ) {
         Text(
             text = text,
-            fontSize = 18.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Volt,
         )
@@ -967,298 +801,57 @@ private fun formatDuration(totalSec: Long): String {
  *
  * 러닝 중에는 내가 실제로 그리고 있는 GPS 경로를 함께 얹고,
  * 완주 진행도(코스 거리 대비 세션 거리)와 거리 정량 보상을 표시한다.
- * 코스를 고르지 않았으면 아트 지도와 코스 선택 버튼을 보여준다.
+ * 코스를 고르지 않았으면 실제 현재 위치 또는 위치 대기 상태를 보여준다.
  */
 @Composable
 private fun CourseChallengeCard(
     course: RunCourse?,
     sessionKm: Double,
     liveTrack: List<GeoPoint>,
-    gpsFix: Boolean,
-    goalKm: Double,
     onOpenCourses: () -> Unit,
     /** 달리는 중이면 지도와 완주 진행만 — 코스 고르기는 러닝 전에 한다 */
     running: Boolean = false,
 ) {
-    GlowCard(contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-        ) {
-            // 지도에 그릴 좌표 — 달리는 중이면 내 실시간 경로가 우선이다.
-            // 코스를 골랐어도 "내가 지금 어디를 뛰고 있는지"가 더 급한 정보다.
-            val routePoints = when {
-                liveTrack.size >= 2 -> liveTrack
-                course != null && course.hasTrack -> course.points
-                else -> emptyList()
-            }
-
-            // 보여 줄 경로가 없으면 **내가 선 자리**를 보여 준다. 예전에는
-            // 지어낸 아트 지도가 나왔는데, 저 지그재그는 어디에도 없는 길이라
-            // 사용자는 GPS 가 엉뚱한 곳을 잡은 줄 안다. 아직 코스를 안 골랐다는
-            // 사실은 아래 "선택한 코스가 없어요"가 이미 말하고 있다.
-            val here = rememberCurrentLocation(enabled = routePoints.isEmpty())
-            val mapPoints = when {
-                routePoints.isNotEmpty() -> routePoints
-                here != null -> listOf(here)
-                else -> emptyList()
-            }
-            when {
-                mapPoints.isNotEmpty() -> {
-                    val progress = if (course != null && course.distanceKm > 0) {
-                        (sessionKm / course.distanceKm).toFloat().coerceIn(0f, 1f)
-                    } else {
-                        0f
-                    }
-                    // 시드는 세션 내내 고정이어야 한다. 좌표 수로 만들면 8점마다
-                    // 폴백 도로망이 다시 추첨돼 배경이 눈앞에서 뒤바뀐다.
-                    //
-                    // 내 자리를 보여 주는 동안에는 좌표가 몇 초마다 갱신되므로
-                    // 도 단위로 뭉뚱그린 값에 묶는다. 한 도시 안에서는 같은 키다.
-                    val first = mapPoints.firstOrNull()
-                    val fallbackSeed = remember(
-                        course?.id,
-                        first?.lat?.toInt(),
-                        first?.lng?.toInt(),
-                    ) {
-                        course?.id?.toInt() ?: first?.let {
-                            (it.lat * 1e4).toInt() xor (it.lng * 1e4).toInt()
-                        } ?: 0
-                    }
-                    LiveRouteMap(
-                        interactive = true,
-                        points = mapPoints,
-                        seed = fallbackSeed,
-                        progress = progress.takeIf { course != null && sessionKm > 0.005 },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-
-                // 권한이 없거나 위치가 꺼져 있어 내 자리조차 모를 때. 예전에는 아트
-                // 지도(지어낸 경로)가 나왔는데, 그 선은 실제로 달린 길처럼 읽힌다.
-                // 지도 대신 위치를 기다린다고만 적는다.
-                else -> MapWaiting(Modifier.fillMaxSize())
-            }
-
-            // 앱 안 지도는 어디를 뛰었는지까지, 확대·길안내는 구글 지도로
-            if (mapPoints.size >= 2 && !running) {
-                val context = LocalContext.current
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(10.dp)
-                        .background(Night.copy(alpha = 0.82f), RoundedCornerShape(50))
-                        .border(1.dp, Edge, RoundedCornerShape(50))
-                        .quietClickable { ExternalIntents.openRouteInMaps(context, mapPoints) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Map,
-                        contentDescription = null,
-                        tint = Volt,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.map_open_google),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Snow,
-                    )
-                }
-            }
-
-            // 오늘의 챌린지 + GPS 상태 — 달리는 중에는 머리의 GPS 알약이 대신한다
-            if (!running) Row(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(Volt.copy(alpha = 0.14f), RoundedCornerShape(50))
-                        .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(50))
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.course_today),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.6.sp,
-                        color = Volt,
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .background(Night.copy(alpha = 0.60f), RoundedCornerShape(50))
-                        .border(1.dp, Edge, RoundedCornerShape(50))
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.GpsFixed,
-                        contentDescription = null,
-                        tint = if (gpsFix) Volt else Slate,
-                        modifier = Modifier.size(11.dp),
-                    )
-                    Text(
-                        text = "GPS",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = if (gpsFix) Snow else Slate,
-                    )
-                }
-            }
-
-            if (!running) Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
-                    .size(32.dp)
-                    .background(Night.copy(alpha = 0.60f), CircleShape)
-                    .border(1.dp, Edge, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = "N", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Volt)
-            }
-
+    val routePoints = when {
+        liveTrack.size >= 2 -> liveTrack
+        course != null && course.hasTrack -> course.points
+        else -> emptyList()
+    }
+    val here = rememberCurrentLocation(enabled = routePoints.isEmpty())
+    val mapPoints = when {
+        routePoints.isNotEmpty() -> routePoints
+        here != null -> listOf(here)
+        else -> emptyList()
+    }
+    val first = mapPoints.firstOrNull()
+    val seed = remember(course?.id, first?.lat?.toInt(), first?.lng?.toInt()) {
+        course?.id?.toInt() ?: first?.let { (it.lat * 1e4).toInt() xor (it.lng * 1e4).toInt() } ?: 0
+    }
+    val progress = if (course != null && course.distanceKm > 0) (sessionKm / course.distanceKm).toFloat().coerceIn(0f, 1f) else 0f
+    val context = LocalContext.current
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
+        Text(course?.name ?: stringResource(R.string.course_none_title), style = MaterialTheme.typography.titleMedium, color = Snow)
+        Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp))) {
+            if (mapPoints.isNotEmpty()) {
+                LiveRouteMap(
+                    interactive = true, points = mapPoints, seed = seed,
+                    progress = progress.takeIf { course != null && sessionKm > 0.005 },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else MapWaiting(Modifier.fillMaxSize())
         }
-            // 코스 이름 · 거리 · 코스 변경 — 러닝 전에만
-            if (!running) Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = course?.name ?: stringResource(R.string.course_none_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = "%.2f km".format(course?.distanceKm ?: goalKm),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                    Row(
-                        modifier = Modifier.quietClickable(onOpenCourses),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(
-                                if (course != null) R.string.course_change else R.string.course_pick,
-                            ),
-                            fontSize = 11.sp,
-                            color = Silver,
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Silver,
-                            modifier = Modifier.size(14.dp),
-                        )
-                    }
-                }
-            }
-
-
-        // 완주 보상 줄 — 코스가 있을 때만
         if (course != null) {
-            val progress = if (course.distanceKm > 0) {
-                (sessionKm / course.distanceKm).coerceIn(0.0, 1.0).toFloat()
-            } else {
-                0f
-            }
-            val remaining = (course.distanceKm - sessionKm).coerceAtLeast(0.0)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 15.dp, vertical = 13.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.course_to_finish),
-                        fontSize = 11.sp,
-                        color = Silver,
-                    )
-                    Text(
-                        text = "%.2f km".format(remaining),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Snow,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    HexEmblem(size = 15.dp, glow = false)
-                    Text(
-                        text = stringResource(
-                            R.string.course_reward_value,
-                            "%.1f".format(course.reward),
-                        ),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Volt,
-                    )
-                }
-                BarMeter(fraction = progress, height = 7.dp)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    listOf("25%", "50%", "75%").forEachIndexed { index, label ->
-                        Text(
-                            text = label,
-                            fontSize = 8.5.sp,
-                            color = if (progress >= (index + 1) * 0.25f) Volt else Slate,
-                        )
-                    }
-                    Text(
-                        text = stringResource(
-                            R.string.course_per_km,
-                            "%.0f".format(CourseRewards.SUP_PER_KM),
-                            "%.0f".format(CourseRewards.MAX_REWARD),
-                        ),
-                        fontSize = 8.5.sp,
-                        color = Slate,
-                    )
-                }
-            }
+            FinishStat(stringResource(R.string.course_to_finish), "%.2f".format((course.distanceKm - sessionKm).coerceAtLeast(0.0)), "km")
+            BarMeter(fraction = progress, height = 7.dp)
+            Text(stringResource(R.string.course_reward_value, "%.1f".format(course.reward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
+            Text(stringResource(R.string.course_per_km, "%.0f".format(CourseRewards.SUP_PER_KM), "%.0f".format(CourseRewards.MAX_REWARD)), style = MaterialTheme.typography.bodyMedium, color = Silver)
         } else if (!running) {
-            // 코스 미선택 — 고르러 가기
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 15.dp, vertical = 13.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.course_none_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-                VoltButton(
-                    text = stringResource(R.string.course_pick),
-                    onClick = onOpenCourses,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            Text(stringResource(R.string.course_none_body), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        }
+        if (!running) {
+            VoltButton(stringResource(if (course != null) R.string.course_change else R.string.course_pick), onClick = onOpenCourses, modifier = Modifier.fillMaxWidth())
+            if (mapPoints.size >= 2) {
+                GhostButton(stringResource(R.string.map_open_google), onClick = { ExternalIntents.openRouteInMaps(context, mapPoints) }, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -1302,10 +895,10 @@ private fun MapWaiting(modifier: Modifier = Modifier) {
             )
             Text(
                 text = stringResource(R.string.map_waiting_body),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 color = Silver,
                 textAlign = TextAlign.Center,
-                lineHeight = 16.sp,
+                lineHeight = 20.sp,
             )
         }
     }
@@ -1345,21 +938,13 @@ private fun CourseRecordingStrip(running: Boolean, onCancel: () -> Unit) {
                     text = stringResource(
                         if (running) R.string.course_rec_running else R.string.course_rec_ready,
                     ),
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
-                    lineHeight = 16.sp,
+                    lineHeight = 20.sp,
                 )
             }
-            Text(
-                text = stringResource(R.string.common_cancel),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Slate,
-                modifier = Modifier
-                    .quietClickable(onCancel)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-            )
         }
+        GhostButton(stringResource(R.string.common_cancel), onClick = onCancel, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -1381,86 +966,23 @@ private fun SaveCourseDialog(
     var share by rememberSaveable { mutableStateOf(true) }
     val km = remember(track) { track.trackDistanceKm() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        title = {
-            Text(text = stringResource(R.string.course_save_title), fontWeight = FontWeight.Black)
+    DialogPanel(
+        title = stringResource(R.string.course_save_title),
+        onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.course_register), onClick = { onSave(name, area, share) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth())
+            GhostButton(stringResource(R.string.course_save_skip), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Night)
-                        .border(1.dp, Edge, RoundedCornerShape(16.dp)),
-                ) {
-                    LiveRouteMap(
-                        points = track,
-                        seed = track.size,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.course_save_body, "%.2f".format(km)),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Volt,
-                )
-                LabeledField(
-                    label = stringResource(R.string.course_name_hint),
-                    value = name,
-                    onValueChange = { name = it },
-                )
-                LabeledField(
-                    label = stringResource(R.string.course_area_hint),
-                    value = area,
-                    onValueChange = { area = it },
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.course_share_toggle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Snow,
-                    )
-                    Switch(
-                        checked = share,
-                        onCheckedChange = { share = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = OnVolt,
-                            checkedTrackColor = Volt,
-                            uncheckedThumbColor = Silver,
-                            uncheckedTrackColor = CarbonHigh,
-                        ),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(name, area, share) },
-                enabled = name.isNotBlank(),
-            ) {
-                Text(
-                    text = stringResource(R.string.course_register),
-                    color = if (name.isNotBlank()) Volt else Slate,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.course_save_skip), color = Silver)
-            }
-        },
-    )
+    ) {
+        LiveRouteMap(points = track, seed = track.size, modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)))
+        Text(stringResource(R.string.course_save_body, "%.2f".format(km)), style = MaterialTheme.typography.titleMedium, color = Snow)
+        FormField(label = stringResource(R.string.course_name_hint), value = name, onValueChange = { name = it })
+        FormField(label = stringResource(R.string.course_area_hint), value = area, onValueChange = { area = it })
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.course_share_toggle), style = MaterialTheme.typography.bodyLarge, color = Snow, modifier = Modifier.weight(1f))
+            Switch(checked = share, onCheckedChange = { share = it }, colors = SwitchDefaults.colors(checkedThumbColor = OnVolt, checkedTrackColor = Volt, uncheckedThumbColor = Silver, uncheckedTrackColor = CarbonHigh))
+        }
+    }
 }
 
 @Composable
@@ -1591,36 +1113,16 @@ private fun FinishCard(
                 color = if (voided || upload == UploadState.REJECTED.name) Alert else Silver,
                 textAlign = TextAlign.Center,
             )
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = when {
-                        confirmed -> "+%,.0f".format(points)
-                        rejected -> "0"
-                        else -> "—"
-                    },
-                    modifier = Modifier.testTag("run-result-reward"),
-                    style = androidx.compose.ui.text.TextStyle(
-                        brush = com.stepup.android.ui.theme.VoltInk,
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = Volt.copy(alpha = 0.55f),
-                            blurRadius = 28f,
-                        ),
-                    ),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 52.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-1.5).sp,
-                    maxLines = 1,
-                )
-                Text(
-                    text = " SUP",
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = com.stepup.android.ui.theme.VoltText,
-                    modifier = Modifier.padding(bottom = 7.dp),
-                )
-            }
+            AdaptiveNumber(
+                text = when {
+                    confirmed -> "+%,.0f".format(points)
+                    rejected -> "0"
+                    else -> "—"
+                },
+                fontSize = 44.sp, modifier = Modifier.testTag("run-result-reward"),
+                color = com.stepup.android.ui.theme.VoltText, textAlign = TextAlign.Center,
+            )
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
             if (!voided && upload != UploadState.SIGNED.name && upload != UploadState.REJECTED.name) {
                 Text(
                     text = stringResource(R.string.finish_pending_note),
@@ -1633,7 +1135,7 @@ private fun FinishCard(
             if (voided) {
                 Text(
                     text = stringResource(R.string.run_void_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                     textAlign = TextAlign.Center,
                 )
@@ -1653,39 +1155,18 @@ private fun FinishCard(
             animate = false,
         )
 
-        // 거리 · 시간 · 페이스
-        GlowCard(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km", Modifier.weight(1f))
-                VerticalHairline(height = 36.dp)
-                FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "", Modifier.weight(1f))
-                VerticalHairline(height = 36.dp)
-                FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
-            }
+        // Each complete value remains readable on compact screens and with large text.
+        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
+            FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
+            HairlineDivider()
+            FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
+            HairlineDivider()
+            FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
         }
-
-        // 갱신된 보유 포인트
-        GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                HexEmblem(size = 22.dp, glow = false)
-                Text(
-                    text = stringResource(R.string.finish_balance),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 14.sp,
-                    color = Silver,
-                )
-                Text(
-                    text = balance?.let { "%,.0f SUP".format(it) } ?: "— SUP",
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-            }
+        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+            Text(stringResource(R.string.finish_balance), style = MaterialTheme.typography.bodyMedium, color = Silver)
+            AdaptiveNumber(balance?.let { "%,.0f".format(it) } ?: "—", 28.sp)
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
 
         GhostButton(
@@ -1723,8 +1204,7 @@ private fun FinishCard(
 /**
  * 러닝 중 머리 — 상태 · GPS · 큰 시계 · 거리와 평균 페이스.
  *
- * 뛰면서 흘끗 보는 화면이라 시계를 가장 크게 둔다. 시계는 글자 크기 설정과
- * 무관하게 같은 크기다 — 이미 충분히 크고, 더 키우면 한 줄에 들어가지 않는다.
+ * 시계는 시스템 글자 크기를 따르되, 전체 시간이 한 줄에 들어오도록 폭에 맞춘다.
  */
 @Composable
 private fun RunHero(
@@ -1735,46 +1215,20 @@ private fun RunHero(
     distanceKm: Double,
     avgPaceSec: Long?,
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        GpsChip(gpsFix, locationAllowed)
-        Text(
-            text = formatDuration(elapsedSec),
-            fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-            fontSize = if (elapsedSec >= 3600) 44.sp else 64.sp,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-1).sp,
-            color = if (paused) Silver else Snow,
-            maxLines = 1,
-            softWrap = false,
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StatCell(
-                icon = Icons.Filled.LocationOn,
-                value = "%.2f".format(distanceKm),
-                unit = "km",
-                label = stringResource(R.string.stat_distance),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-            )
-            VerticalHairline(height = 44.dp)
-            StatCell(
-                icon = Icons.Filled.Timer,
-                value = avgPaceSec?.let { formatPace(it) } ?: "—",
-                unit = "",
-                label = stringResource(R.string.run_avg_pace),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp),
-            )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            GpsChip(gpsFix, locationAllowed)
+            AdaptiveNumber(formatDuration(elapsedSec), if (elapsedSec >= 3600) 44.sp else 64.sp, color = if (paused) Silver else Snow, textAlign = TextAlign.Center)
+            if (stacked) {
+                FinishStat(stringResource(R.string.stat_distance), "%.2f".format(distanceKm), "km")
+                FinishStat(stringResource(R.string.run_avg_pace), avgPaceSec?.let { formatPace(it) } ?: "—", "")
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(distanceKm), "km", Modifier.weight(1f))
+                    FinishStat(stringResource(R.string.run_avg_pace), avgPaceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -1788,18 +1242,18 @@ private fun GpsChip(fix: Boolean, allowed: Boolean = true) {
             .clip(RoundedCornerShape(50))
             .background(color.copy(alpha = 0.10f))
             .border(1.dp, color.copy(alpha = 0.7f), RoundedCornerShape(50))
-            .padding(horizontal = 12.dp, vertical = 5.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(Icons.Filled.GpsFixed, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Icon(Icons.Filled.GpsFixed, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Text(
             text = stringResource(when {
                 !allowed -> R.string.run_location_disabled
                 fix -> R.string.run_gps_ok
                 else -> R.string.run_gps_search
             }),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = if (fix) Snow else Silver,
         )
@@ -1841,20 +1295,9 @@ private fun RunControlButton(
 
 @Composable
 private fun FinishStat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(text = label, fontSize = 12.sp, color = Silver, maxLines = 1)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = value,
-                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                fontSize = 19.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-                maxLines = 1,
-            )
-            if (unit.isNotEmpty()) {
-                Text(text = " $unit", fontSize = 12.sp, color = Silver, modifier = Modifier.padding(bottom = 2.dp))
-            }
-        }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        AdaptiveNumber(value, 26.sp)
+        if (unit.isNotEmpty()) Text(unit, style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }

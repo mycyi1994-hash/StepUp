@@ -9,17 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
@@ -36,18 +31,13 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.stepup.android.R
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.StepUpDesign
 
@@ -208,9 +198,8 @@ fun FilterSummaryRow(
 /**
  * 아래에서 올라오는 거르기 패널.
  *
- * Dialog 로 띄우는 것은 이 앱의 다른 창과 같은 틀을 쓰기 위해서이고, 그
- * 덕에 뒤 배경이 스크롤되지 않고 뒤로가기·바깥 누르기가 그대로 닫기가
- * 된다. 높이는 화면의 85%까지만 쓰고, 그 안에서 내용만 세로로 구른다.
+ * 공통 DialogPanel을 사용한다. 본문만 스크롤하며 적용·초기화는 아래에 유지된다.
+ * 닫기·뒤로가기는 기존처럼 임시 선택을 버린다.
  */
 @Composable
 fun FilterBottomSheet(
@@ -223,34 +212,14 @@ fun FilterBottomSheet(
     applyLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    SheetFrame(title = title, onDismiss = onDismiss, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-            content = content,
-        )
-        // 바닥 버튼은 구르지 않는다 — 조건을 한참 고르다 적용하려고 다시
-        // 위아래로 찾게 하지 않기 위해서다.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            GhostButton(
-                text = resetLabel ?: stringResource(R.string.filter_reset),
-                onClick = onReset,
-                modifier = Modifier.weight(1f),
-            )
-            VoltButton(
-                text = applyLabel ?: stringResource(R.string.filter_apply),
-                onClick = onApply,
-                modifier = Modifier.weight(1f),
-            )
-        }
+    DialogPanel(
+        title = title, onDismiss = onDismiss,
+        actions = {
+            VoltButton(applyLabel ?: stringResource(R.string.filter_apply), onClick = onApply, modifier = Modifier.fillMaxWidth())
+            GhostButton(resetLabel ?: stringResource(R.string.filter_reset), onClick = onReset, modifier = Modifier.fillMaxWidth())
+        },
+    ) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(20.dp), content = content)
     }
 }
 
@@ -269,84 +238,12 @@ fun <T> SortBottomSheet(
     onPick: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    SheetFrame(title = title, onDismiss = onDismiss) {
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            options.forEach { option ->
-                ChoiceChip(
-                    text = label(option),
-                    selected = option == selected,
-                    onClick = {
-                        onPick(option)
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-        Spacer(Modifier.size(6.dp))
-    }
-}
-
-@Composable
-private fun SheetFrame(
-    title: String,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        // This dialog owns its system insets on API 34 and enforced edge-to-edge API 35.
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    DialogPanel(
+        title = title, onDismiss = onDismiss,
+        actions = { GhostButton(stringResource(R.string.common_close), onClick = onDismiss, modifier = Modifier.fillMaxWidth()) },
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .quietClickable(onDismiss),
-            contentAlignment = Alignment.BottomCenter,
-        ) {
-            val sheetMax = maxHeight * 0.85f
-            val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(max = sheetMax)
-                    // 패널 본체를 누른 것이 배경으로 새어 나가 닫히지 않게 흡수한다
-                    .quietClickable { }
-                    .clip(shape)
-                    .background(Carbon, shape)
-                    .border(1.dp, Edge, shape)
-                    .navigationBarsPadding()
-                    .padding(bottom = 14.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = title,
-                        modifier = Modifier.weight(1f),
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.3).sp,
-                        color = Snow,
-                    )
-                    DarkIconButton(
-                        icon = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.common_close),
-                        onClick = onDismiss,
-                    )
-                }
-                content()
-            }
+        options.forEach { option ->
+            ChoiceChip(label(option), selected = option == selected, onClick = { onPick(option); onDismiss() }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -361,7 +258,7 @@ fun FilterSection(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
             text = title,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Slate,
         )

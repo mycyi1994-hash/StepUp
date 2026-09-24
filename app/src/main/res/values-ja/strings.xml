@@ -1521,5 +1521,7 @@ StepUp と走り出そう。</string>
     <string name="run_saving">ランニングを保存中</string>
     <string name="run_save_retry">保存を再試行</string>
     <string name="run_save_failed">保存を完了できませんでした。アプリを開いたまま再試行してください。</string>
+    <string name="course_like_action">このコースにいいね</string>
+    <string name="course_unlike_action">コースのいいねを取り消す</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

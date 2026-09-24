@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -76,7 +75,7 @@ import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.components.SectionHeader
-import com.stepup.android.ui.components.StatCell
+import com.stepup.android.ui.components.RecordMetric as StatCell
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Night
@@ -231,7 +230,8 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                 Eyebrow(text = stringResource(R.string.analytics_week))
                 Text(
                     text = "%,d".format(weekSteps),
-                    fontSize = 34.sp,
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
                     color = Snow,
@@ -259,7 +259,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(190.dp),
         ) {
             val chartWidth = maxWidth
             val gap = 8.dp
@@ -416,7 +416,7 @@ private fun StatGridCard(
             Spacer(Modifier.width(5.dp))
             Text(
                 text = stringResource(R.string.goal_steps_suffix),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
         }
@@ -427,14 +427,9 @@ private fun StatGridCard(
 @Composable
 private fun RecentRunsCard(sessions: List<WalkSessionEntity>) {
     if (sessions.isEmpty()) {
-        GlowCard(contentPadding = PaddingValues(26.dp)) {
-            Text(
-                text = stringResource(R.string.analytics_no_runs),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodySmall,
-                color = Silver,
-            )
-        }
+        com.stepup.android.ui.components.StatePanel(
+            message = stringResource(R.string.analytics_no_runs), icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+        )
         return
     }
 
@@ -468,7 +463,7 @@ private fun SessionRow(session: WalkSessionEntity) {
             )
             Text(
                 text = duration + " · " + stringResource(R.string.notification_steps, session.steps),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Slate,
             )
         }
@@ -504,8 +499,8 @@ private fun DayCallout(
             .clip(RoundedCornerShape(13.dp))
             .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
-            .padding(horizontal = 11.dp, vertical = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -540,7 +535,7 @@ private fun CalloutRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = label, fontSize = 14.sp, color = Slate)
+        Text(text = label, modifier = Modifier.weight(1f).padding(end = 12.dp), fontSize = 14.sp, color = Silver)
         Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Snow)
     }
 }
@@ -652,7 +647,8 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                 Eyebrow(text = stringResource(R.string.analytics_tab_quarter))
                 Text(
                     text = "%,d".format(total),
-                    fontSize = 34.sp,
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
                     color = Snow,
@@ -669,7 +665,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(190.dp),
         ) {
             val chartWidth = maxWidth
             val gap = 3.dp
@@ -746,6 +742,15 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                 color = Slate,
             )
         }
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(buckets.size) { index ->
+                com.stepup.android.ui.components.PillChip(
+                    text = buckets[index].start.format(monthDayFormatter) + " – " + buckets[index].end.format(monthDayFormatter),
+                    selected = selected == index,
+                    onClick = { selected = if (selected == index) null else index },
+                )
+            }
+        }
         selected?.let { index ->
             buckets.getOrNull(index)?.let { bucket ->
                 WeekCallout(bucket, goal, Modifier.fillMaxWidth().testTag("analytics-week-details"))
@@ -766,8 +771,8 @@ private fun WeekCallout(bucket: WeekBucket, goal: Int, modifier: Modifier = Modi
             .clip(RoundedCornerShape(13.dp))
             .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
-            .padding(horizontal = 11.dp, vertical = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -858,7 +863,7 @@ private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
                 Spacer(Modifier.weight(1f))
                 Text(
                     text = LocalDate.ofEpochDay(best.epochDay).format(calloutDateFormatter),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Snow,
                 )
@@ -880,14 +885,14 @@ private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
         if (byMonth.isEmpty()) {
             Text(
                 text = stringResource(R.string.analytics_no_data),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Slate,
             )
         } else {
             byMonth.forEach { (month, entries) ->
                 val steps = entries.sumOf { it.steps.toLong() }
                 val km = steps * RewardEconomy.STRIDE_METERS / 1000
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -901,7 +906,7 @@ private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
                         )
                         Text(
                             text = "%,d".format(steps) + " · " + "%.0f km".format(km),
-                            fontSize = 11.sp,
+                            fontSize = 14.sp,
                             color = Silver,
                         )
                     }
@@ -1010,7 +1015,7 @@ private fun HistoryMapEntry(onClick: () -> Unit) {
             Text(
                 text = stringResource(R.string.history_map_entry_sub),
                 color = Silver,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
             )
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)

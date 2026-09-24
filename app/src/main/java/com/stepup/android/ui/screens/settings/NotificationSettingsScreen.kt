@@ -6,24 +6,14 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,26 +25,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.IconSquare
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 
 /**
  * 알림 설정 — 네 개의 토글.
@@ -190,7 +168,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     }
 }
 
-/** 아이콘 · 제목 · 설명 + 볼트 스위치 한 줄. */
+/** One shared switch row for every settings page. */
 @Composable
 private fun ToggleRow(
     icon: ImageVector,
@@ -200,45 +178,8 @@ private fun ToggleRow(
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    GlowCard(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
-        spacing = 0.dp,
-        shape = RoundedCornerShape(22.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            IconSquare(icon = icon, size = 38.dp, tint = if (checked) Volt else Slate)
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Snow,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-            }
-            Switch(
-                enabled = enabled,
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = OnVolt,
-                    checkedTrackColor = Volt,
-                    uncheckedThumbColor = Slate,
-                    uncheckedTrackColor = CarbonHigh,
-                    checkedBorderColor = Volt,
-                    uncheckedBorderColor = Edge,
-                ),
-            )
-        }
-    }
+    com.stepup.android.ui.components.PreferenceToggle(
+        title = title, description = description, icon = icon,
+        checked = checked, enabled = enabled, onCheckedChange = onCheckedChange,
+    )
 }

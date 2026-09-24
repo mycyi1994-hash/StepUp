@@ -82,14 +82,13 @@ fun PriceCell(
     modifier: Modifier = Modifier,
     accent: Boolean = false,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(text = label, fontSize = 10.sp, color = Slate, maxLines = 1)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(text = label, fontSize = 14.sp, color = Silver)
         Text(
             text = value?.let { formatSup(it) } ?: "—",
-            fontSize = 15.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = if (value == null) Slate else if (accent) Volt else Snow,
-            maxLines = 1,
         )
     }
 }
@@ -124,10 +123,9 @@ fun Tag(text: String, accent: Boolean = false) {
     ) {
         Text(
             text = text,
-            fontSize = 9.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = if (accent) Volt else Slate,
-            maxLines = 1,
+            color = if (accent) Volt else Silver,
         )
     }
 }
@@ -185,54 +183,18 @@ fun QuoteRowCard(
     lastPrice: Double?,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        SneakerFrame(
-            sneaker = previewSneaker(faction, rarity, variant),
-            modifier = Modifier.size(46.dp),
-            corner = 13.dp,
-        )
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = modelName(faction, rarity, variant),
-                style = MaterialTheme.typography.titleSmall,
-                color = Snow,
-                maxLines = 1,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Tag(Rarity.of(rarity).label(), accent = true)
-                Tag(stringResource(R.string.market_supply, supply))
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CarbonHigh).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            SneakerFrame(previewSneaker(faction, rarity, variant), modifier = Modifier.size(80.dp), corner = 14.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(modelName(faction, rarity, variant), style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(Rarity.of(rarity).label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                Text(stringResource(R.string.market_supply, supply), style = MaterialTheme.typography.bodyMedium, color = Silver)
             }
         }
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            PriceCell(
-                label = stringResource(R.string.market_ask_short),
-                value = ask,
-                accent = true,
-            )
-            Text(
-                text = stringResource(R.string.market_last_short) + " " +
-                    (lastPrice?.let { formatSup(it) } ?: "—") +
-                    " · " + stringResource(R.string.market_bid_short) + " " +
-                    (bid?.let { formatSup(it) } ?: "—"),
-                fontSize = 9.sp,
-                color = Slate,
-                maxLines = 1,
-            )
-        }
+        PriceCell(stringResource(R.string.market_ask_short), ask, accent = true)
+        PriceCell(stringResource(R.string.market_bid_short), bid)
+        PriceCell(stringResource(R.string.market_last_short), lastPrice)
     }
 }
 
@@ -242,9 +204,9 @@ fun EmptyNote(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         modifier = modifier.padding(vertical = 10.dp),
-        fontSize = 11.sp,
-        color = Slate,
-        lineHeight = 17.sp,
+        fontSize = 15.sp,
+        color = Silver,
+        lineHeight = 22.sp,
     )
 }
 

@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -66,7 +64,6 @@ import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.theme.Silver
@@ -179,10 +176,8 @@ fun NotificationsScreen(
 
         if (notifications == null) {
             item {
-                Text(
-                    text = stringResource(R.string.feed_loading),
-                    color = Silver,
-                    fontSize = 14.sp,
+                com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.feed_loading), Icons.Filled.Notifications, loading = true,
                 )
             }
         } else if (notifications.orEmpty().isEmpty()) {
@@ -193,8 +188,8 @@ fun NotificationsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
-                        IconSquare(icon = Icons.Filled.Notifications, size = 42.dp)
-                        Spacer(Modifier.size(4.dp))
+                        IconSquare(icon = Icons.Filled.Notifications, size = 56.dp)
+                        Spacer(Modifier.size(7.dp))
                         Text(
                             text = stringResource(R.string.notif_empty_title),
                             style = MaterialTheme.typography.titleSmall,
@@ -203,7 +198,7 @@ fun NotificationsScreen(
                         )
                         Text(
                             text = stringResource(R.string.notif_empty_body),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = Silver,
                             textAlign = TextAlign.Center,
                         )
@@ -258,7 +253,7 @@ private fun NotificationRow(
         // 알림을 누르면 그 알림이 생긴 자리로 간다. 읽고 나서 직접 찾아
         // 들어가야 한다면, 알림은 "무슨 일이 있었다"까지만 알려 주고 끝난다.
         modifier = if (onOpen != null) Modifier.quietClickable(onOpen) else Modifier,
-        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 13.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
         shape = RoundedCornerShape(18.dp),
         accent = actionable && !entity.actioned,
     ) {
@@ -279,14 +274,14 @@ private fun NotificationRow(
                 )
                 Text(
                     text = relativeTime(timestamp = entity.timestamp, now = now),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }
             if (!entity.read) {
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
+                        .size(7.dp)
                         .background(Volt, CircleShape),
                 )
             }
@@ -308,7 +303,7 @@ private fun NotificationRow(
             if (entity.actioned) {
                 Text(
                     text = stringResource(R.string.notif_done),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = Slate,
                 )

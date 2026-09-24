@@ -1,9 +1,16 @@
 package com.stepup.android.ui.screens.walk
 
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import com.stepup.android.ui.components.DialogPanel
+import com.stepup.android.ui.components.FormField
+import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.HairlineDivider
+import com.stepup.android.ui.components.StatePanel
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,24 +23,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Route
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,12 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,16 +61,12 @@ import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.components.CourseTrackMap
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.LiveRouteMap
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.community.BoardSyncCard
-import com.stepup.android.ui.screens.community.LabeledField
 import com.stepup.android.ui.screens.community.SegmentedTabs
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
@@ -260,64 +254,31 @@ fun CourseHubScreen(
 
         if (pending != null) {
             val clearing = isSelected(pending)
-            AlertDialog(
-                onDismissRequest = { pendingId = -1L },
-                containerColor = Carbon,
-                titleContentColor = Snow,
-                textContentColor = Silver,
-                title = {
-                    Text(
-                        text = stringResource(
-                            if (clearing) R.string.course_clear_title else R.string.course_apply_title,
-                        ),
-                        fontWeight = FontWeight.Black,
-                    )
+            DialogPanel(
+                title = stringResource(if (clearing) R.string.course_clear_title else R.string.course_apply_title),
+                onDismiss = { pendingId = -1L },
+                actions = {
+                    VoltButton(stringResource(R.string.common_yes), onClick = {
+                        viewModel.select(pending.id)
+                        pendingId = -1L
+                    }, modifier = Modifier.fillMaxWidth())
+                    GhostButton(stringResource(R.string.common_no), onClick = { pendingId = -1L }, modifier = Modifier.fillMaxWidth())
                 },
-                text = {
-                    Text(
-                        text = if (clearing) {
-                            stringResource(R.string.course_clear_body, pending.name)
-                        } else {
-                            stringResource(
-                                R.string.course_apply_body,
-                                pending.name,
-                                "%.2f".format(pending.distanceKm),
-                                "%.1f".format(pending.reward),
-                            )
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        lineHeight = 20.sp,
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.select(pending.id)
-                            pendingId = -1L
-                        },
-                    ) {
-                        Text(
-                            text = stringResource(R.string.common_yes),
-                            color = Volt,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { pendingId = -1L }) {
-                        Text(text = stringResource(R.string.common_no), color = Silver)
-                    }
-                },
-            )
+            ) {
+                CourseTrackMap(points = remember(pending.id, pending.points) { pending.normalized() }, seed = pending.id.toInt(), modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)))
+                Text(
+                    text = if (clearing) stringResource(R.string.course_clear_body, pending.name)
+                    else stringResource(R.string.course_apply_body, pending.name, "%.2f".format(pending.distanceKm), "%.1f".format(pending.reward)),
+                    style = MaterialTheme.typography.bodyLarge, color = Silver,
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun EmptyCard(text: String) {
-    GlowCard(contentPadding = PaddingValues(24.dp)) {
-        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = Silver)
-    }
+    StatePanel(message = text, icon = Icons.Filled.Route)
 }
 
 /** 코스 한 장 — 미니 지도 + 이름 · 거리 · 보상 · 선택 */
@@ -335,189 +296,40 @@ private fun CourseCard(
     /** 이 코스의 기록 순위 보기. null 이면 붙이지 않는다. */
     onOpenRanking: (() -> Unit)? = null,
 ) {
-    GlowCard(
-        accent = selected,
-        contentPadding = PaddingValues(14.dp),
-        spacing = 10.dp,
-    ) {
-        // A route preview uses the recorded geometry; opening the map uses live tiles.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(112.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Night)
-                .border(1.dp, if (selected) Volt.copy(alpha = 0.5f) else Edge, RoundedCornerShape(16.dp))
-                .quietClickable(onSelect),
-        ) {
-            CourseTrackMap(
-                points = remember(course.id) { course.normalized() },
-                seed = course.id.toInt(),
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-        Row(
-            modifier = Modifier.quietClickable(onSelect),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (rank > 0) {
-                        Text(
-                            text = "$rank",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            color = if (rank <= 3) Volt else Slate,
-                        )
-                    }
-                    Text(
-                        text = course.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (course.mine && course.shared) {
-                        Badge(stringResource(R.string.course_shared_badge))
-                    }
-                }
-                Text(
-                    text = buildString {
-                        if (course.area.isNotBlank()) append(course.area).append(" · ")
-                        append("%.2f km".format(course.distanceKm))
-                    },
-                    fontSize = 11.sp,
-                    color = Silver,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    HexEmblem(size = 13.dp, glow = false)
-                    Text(
-                        text = stringResource(
-                            R.string.course_reward_value,
-                            "%.1f".format(course.reward),
-                        ),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                    Text(
-                        text = stringResource(R.string.course_runs, course.runCount),
-                        fontSize = 10.sp,
-                        color = Slate,
-                    )
-                    if (onOpenRanking != null) {
-                        Text(
-                            text = stringResource(R.string.course_rank_open),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Volt,
-                            modifier = Modifier.quietClickable(onOpenRanking),
-                        )
-                    }
-                }
-                if (showAuthor && course.author.isNotBlank()) {
-                    Text(
-                        text = stringResource(R.string.course_by, course.author),
-                        fontSize = 10.sp,
-                        color = Slate,
-                    )
-                }
+    GlowCard(accent = selected, contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
+        CourseTrackMap(
+            points = remember(course.id, course.points) { course.normalized() }, seed = course.id.toInt(),
+            modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)).quietClickable(onSelect),
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (rank > 0) Text("$rank", style = MaterialTheme.typography.bodyMedium, color = if (rank <= 3) Volt else Silver)
+                Text(course.name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                if (course.mine && course.shared) Text(stringResource(R.string.course_shared_badge), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
             }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                SelectDot(selected = selected, onClick = onSelect)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    modifier = Modifier.quietClickable(onLike),
-                ) {
-                    Icon(
-                        imageVector = if (course.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (course.liked) Volt else Slate,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Text("${course.likes}", fontSize = 10.sp, color = Silver)
-                }
-            }
+            RadioButton(selected, onClick = onSelect, modifier = Modifier.size(48.dp), colors = RadioButtonDefaults.colors(selectedColor = Volt, unselectedColor = Silver))
         }
-
+        Text(
+            text = buildString {
+                if (course.area.isNotBlank()) append(course.area).append(" · ")
+                append("%.2f km".format(course.distanceKm))
+            }, style = MaterialTheme.typography.bodyMedium, color = Silver,
+        )
+        Text(stringResource(R.string.course_reward_value, "%.1f".format(course.reward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.course_runs, course.runCount), style = MaterialTheme.typography.bodyMedium, color = Silver, modifier = Modifier.weight(1f))
+            IconToggleButton(checked = course.liked, onCheckedChange = { onLike() }, modifier = Modifier.size(48.dp)) {
+                Icon(if (course.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, stringResource(if (course.liked) R.string.course_unlike_action else R.string.course_like_action), tint = if (course.liked) Volt else Silver)
+            }
+            Text("${course.likes}", style = MaterialTheme.typography.bodyMedium, color = Silver)
+        }
+        if (showAuthor && course.author.isNotBlank()) Text(stringResource(R.string.course_by, course.author), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        VoltButton(stringResource(if (selected) R.string.course_selected else R.string.course_pick), onClick = onSelect, modifier = Modifier.fillMaxWidth())
+        if (onOpenRanking != null) GhostButton(stringResource(R.string.course_rank_open), onClick = onOpenRanking, modifier = Modifier.fillMaxWidth())
         if (onShareToggle != null || onDelete != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (onShareToggle != null) {
-                    GhostButton(
-                        text = stringResource(
-                            if (course.shared) R.string.course_unshare else R.string.course_share,
-                        ),
-                        onClick = onShareToggle,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (onDelete != null) {
-                    GhostButton(
-                        text = stringResource(R.string.post_delete),
-                        onClick = onDelete,
-                        accent = Slate,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Badge(text: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Volt.copy(alpha = 0.14f))
-            .padding(horizontal = 7.dp, vertical = 2.dp),
-    ) {
-        Text(text = text, color = Volt, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-/** 선택 라디오 — 체크되면 볼트 원 */
-@Composable
-private fun SelectDot(selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(30.dp)
-            .clip(CircleShape)
-            .background(if (selected) Volt else CarbonHigh)
-            .border(1.dp, if (selected) Volt else Edge, CircleShape)
-            .quietClickable(onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (selected) {
-            Icon(
-                Icons.Filled.Check,
-                contentDescription = stringResource(R.string.course_selected),
-                tint = OnVolt,
-                modifier = Modifier.size(16.dp),
-            )
-        } else {
-            Icon(
-                Icons.Filled.Flag,
-                contentDescription = null,
-                tint = Slate,
-                modifier = Modifier.size(14.dp),
-            )
+            HairlineDivider()
+            if (onShareToggle != null) GhostButton(stringResource(if (course.shared) R.string.course_unshare else R.string.course_share), onClick = onShareToggle, modifier = Modifier.fillMaxWidth())
+            if (onDelete != null) GhostButton(stringResource(R.string.post_delete), onClick = onDelete, accent = Silver, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -533,7 +345,7 @@ private fun CourseMaker(
     var share by rememberSaveable { mutableStateOf(true) }
     val km = remember(lastTrack) { lastTrack.trackDistanceKm() }
 
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -541,9 +353,9 @@ private fun CourseMaker(
             Icon(Icons.Filled.Route, contentDescription = null, tint = Volt, modifier = Modifier.size(20.dp))
             Text(
                 text = stringResource(R.string.course_make_hint),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
-                lineHeight = 18.sp,
+                lineHeight = 22.sp,
             )
         }
 
@@ -573,12 +385,12 @@ private fun CourseMaker(
                 style = MaterialTheme.typography.titleSmall,
                 color = Volt,
             )
-            LabeledField(
+            FormField(
                 label = stringResource(R.string.course_name_hint),
                 value = name,
                 onValueChange = { name = it },
             )
-            LabeledField(
+            FormField(
                 label = stringResource(R.string.course_area_hint),
                 value = area,
                 onValueChange = { area = it },
@@ -590,6 +402,7 @@ private fun CourseMaker(
             ) {
                 Text(
                     text = stringResource(R.string.course_share_toggle),
+                    modifier = Modifier.weight(1f).padding(end = 12.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Snow,
                 )
@@ -619,7 +432,7 @@ private fun CourseMaker(
                 "%.0f".format(CourseRewards.SUP_PER_KM),
                 "%.0f".format(CourseRewards.MAX_REWARD),
             ),
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             color = Slate,
         )
     }
@@ -647,7 +460,7 @@ private fun CourseRecorderCard(
     onStart: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    GlowCard(accent = recording, contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+    GlowCard(accent = recording, contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -676,15 +489,15 @@ private fun CourseRecorderCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "${index + 1}",
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
                         color = Volt,
                     )
                     Text(
                         text = stringResource(res),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Silver,
-                        lineHeight = 17.sp,
+                        lineHeight = 21.sp,
                     )
                 }
             }
@@ -692,7 +505,7 @@ private fun CourseRecorderCard(
         if (recording) {
             Text(
                 text = stringResource(R.string.course_rec_waiting),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -714,49 +527,9 @@ private fun CourseRecorderCard(
 /** 게시판 검색 — 이름 · 동네 · 만든 사람 */
 @Composable
 private fun CourseSearchField(value: String, onValueChange: (String) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(CarbonHigh)
-            .border(1.dp, Edge, RoundedCornerShape(14.dp))
-            .padding(horizontal = 13.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Search,
-            contentDescription = null,
-            tint = Slate,
-            modifier = Modifier.size(16.dp),
-        )
-        Box(Modifier.weight(1f)) {
-            if (value.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.courses_search_hint),
-                    fontSize = 13.sp,
-                    color = Slate,
-                )
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle = TextStyle(color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
-                cursorBrush = SolidColor(Volt),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        if (value.isNotEmpty()) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = stringResource(R.string.common_cancel),
-                tint = Slate,
-                modifier = Modifier
-                    .size(16.dp)
-                    .quietClickable { onValueChange("") },
-            )
-        }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FormField(label = stringResource(R.string.courses_search_hint), value = value, onValueChange = onValueChange, modifier = Modifier.weight(1f))
+        if (value.isNotEmpty()) DarkIconButton(Icons.Filled.Close, stringResource(R.string.common_cancel), onClick = { onValueChange("") })
     }
 }
 
@@ -773,7 +546,7 @@ private fun CourseUploadCard(
     onUpload: (Long) -> Unit,
     onMake: () -> Unit,
 ) {
-    GlowCard(contentPadding = PaddingValues(14.dp), spacing = 10.dp) {
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 10.dp) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -793,9 +566,9 @@ private fun CourseUploadCard(
         if (mine.isEmpty()) {
             Text(
                 text = stringResource(R.string.course_upload_none),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 color = Silver,
-                lineHeight = 17.sp,
+                lineHeight = 21.sp,
             )
             GhostButton(
                 text = stringResource(R.string.course_rec_card_title),
@@ -804,39 +577,10 @@ private fun CourseUploadCard(
             )
         } else {
             mine.forEach { course ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(CarbonHigh)
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = course.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Snow,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "%.2f km".format(course.distanceKm),
-                            fontSize = 10.sp,
-                            color = Slate,
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.course_upload_do),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Volt,
-                        modifier = Modifier
-                            .quietClickable { onUpload(course.id) }
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                    )
-                }
+                HairlineDivider()
+                Text(course.name, style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text("%.2f km".format(course.distanceKm), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                GhostButton(stringResource(R.string.course_upload_do), onClick = { onUpload(course.id) }, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -845,65 +589,31 @@ private fun CourseUploadCard(
 /** 코스 기록 순위 — 사람마다 가장 빠른 기록 하나. 서버가 경로로 확인한 기록만 올라온다. */
 @Composable
 private fun CourseRankingDialog(state: CourseRankingState, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        title = {
-            Column {
-                Text(stringResource(R.string.course_rank_title), fontWeight = FontWeight.Black)
-                Text(
-                    text = state.courseName,
-                    fontSize = 12.sp,
-                    color = Silver,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
-        text = {
-            when (state) {
-                is CourseRankingState.Loading -> Text(stringResource(R.string.course_rank_loading))
-                is CourseRankingState.Failed -> Text(
-                    stringResource(if (state.signIn) R.string.board_sign_in_needed else R.string.course_rank_failed),
-                )
-                is CourseRankingState.Ready -> if (state.rows.isEmpty()) {
-                    Text(stringResource(R.string.course_rank_empty), lineHeight = 20.sp)
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.rows.forEach { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                Text(
-                                    text = "${row.rank}",
-                                    fontWeight = FontWeight.Black,
-                                    color = if (row.rank <= 3) Volt else Slate,
-                                    modifier = Modifier.width(24.dp),
-                                )
-                                Text(
-                                    text = if (row.isMe) stringResource(R.string.course_rank_me, row.displayName) else row.displayName,
-                                    color = if (row.isMe) Volt else Snow,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text(text = formatDuration(row.durationSec), color = Snow, fontWeight = FontWeight.Bold)
-                            }
+    DialogPanel(
+        title = stringResource(R.string.course_rank_title),
+        onDismiss = onDismiss,
+        actions = { VoltButton(stringResource(R.string.common_close), onClick = onDismiss, modifier = Modifier.fillMaxWidth()) },
+    ) {
+        Text(state.courseName, style = MaterialTheme.typography.titleMedium, color = Snow)
+        when (state) {
+            is CourseRankingState.Loading -> Text(stringResource(R.string.course_rank_loading), style = MaterialTheme.typography.bodyLarge, color = Silver)
+            is CourseRankingState.Failed -> Text(stringResource(if (state.signIn) R.string.board_sign_in_needed else R.string.course_rank_failed), style = MaterialTheme.typography.bodyLarge, color = Silver)
+            is CourseRankingState.Ready -> if (state.rows.isEmpty()) {
+                Text(stringResource(R.string.course_rank_empty), style = MaterialTheme.typography.bodyLarge, color = Silver)
+            } else {
+                state.rows.forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("${row.rank}", style = MaterialTheme.typography.titleMedium, color = if (row.rank <= 3) Volt else Silver)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(if (row.isMe) stringResource(R.string.course_rank_me, row.displayName) else row.displayName, style = MaterialTheme.typography.bodyLarge, color = if (row.isMe) Volt else Snow)
+                            Text(formatDuration(row.durationSec), style = MaterialTheme.typography.titleLarge, fontFamily = com.stepup.android.ui.theme.StepUpNumbers, color = Snow)
                         }
                     }
+                    HairlineDivider()
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_close), color = Volt, fontWeight = FontWeight.Bold)
-            }
-        },
-    )
+        }
+    }
 }
 
 /** 초 → "m:ss" 또는 "h:mm:ss" */

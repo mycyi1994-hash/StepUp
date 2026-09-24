@@ -1,6 +1,7 @@
 package com.stepup.android.ui.screens.customize
 
 import android.widget.Toast
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -148,7 +149,8 @@ fun CustomizeScreen(
     val canEquip = if (tab == 0) true else pickedShoe != null
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-        val previewHeight = maxHeight * StepUpDesign.WardrobePreviewFraction
+        val compact = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.2f
+        val previewHeight = maxHeight * (if (compact) 0.38f else StepUpDesign.WardrobePreviewFraction)
         Column(
             Modifier.fillMaxSize(),
         ) {
@@ -190,11 +192,11 @@ fun CustomizeScreen(
                     icons = listOf(StepUpIcons.Shirt, Icons.AutoMirrored.Filled.DirectionsRun),
                     selected = tab, onSelect = { tab = it },
                 )
-                com.stepup.android.ui.components.AvatarLookNote(preview, render)
                 Column(
                     Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    com.stepup.android.ui.components.AvatarLookNote(preview, render)
                     if (tab == 0) {
                         ItemGrid(outfits) { outfit ->
                             OutfitCard(
@@ -221,9 +223,9 @@ fun CustomizeScreen(
                                 )
                                 Text(
                                     text = stringResource(R.string.customize_no_shoes_hint),
-                                    fontSize = 13.sp,
+                                    fontSize = 14.sp,
                                     color = Silver,
-                                    lineHeight = 18.sp,
+                                    lineHeight = 20.sp,
                                 )
                             }
                             else -> ItemGrid(list) { shoe ->
@@ -267,22 +269,25 @@ fun CustomizeScreen(
                     AvatarGender.entries.forEach { gender ->
                         GenderCard(
                             gender, look.gender == gender, onClick = { viewModel.setGender(gender) },
-                            modifier = Modifier.weight(1f).height(144.dp),
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
                 GhostButton(
                     text = stringResource(R.string.customize_open_market),
                     onClick = { showOptions = false; onOpenMarket() },
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 GhostButton(
                     text = stringResource(R.string.customize_open_vault),
                     onClick = { showOptions = false; onOpenVault() },
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 pickedShoe?.let { shoe ->
                     GhostButton(
                         text = stringResource(R.string.customize_shoe_detail),
                         onClick = { showOptions = false; onOpenSneaker(shoe.id) },
+                    modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -331,15 +336,15 @@ private fun GenderCard(
         AvatarImage(
             art = art,
             modifier = Modifier
-                .weight(1f)
+                .height(128.dp)
                 .fillMaxWidth(),
         )
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = if (selected) Snow else Silver,
-            maxLines = 1,
+
         )
     }
 }
@@ -357,11 +362,8 @@ private fun ItemCell(
     val shape = RoundedCornerShape(StepUpDesign.WardrobeCellRadius)
     val wearingLabel = stringResource(R.string.customize_wearing)
     val trialLabel = stringResource(R.string.customize_trial_badge)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(StepUpDesign.WardrobeCellAspect)
-            .clip(shape)
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(shape)
             .background(if (picked) CarbonHigh else Night, shape)
             .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge.copy(alpha = 0.7f), shape)
             .feedbackClickable(role = Role.RadioButton, onClick = onClick)
@@ -369,37 +371,22 @@ private fun ItemCell(
                 selected = picked
                 contentDescription = listOfNotNull(name, wearingLabel.takeIf { worn }, trialLabel.takeIf { trial }).joinToString(", ")
             },
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 7.dp)
-                .padding(bottom = if (worn || trial) 18.dp else 0.dp),
-            contentAlignment = Alignment.Center,
-        ) { art() }
+        Box(Modifier.fillMaxWidth().aspectRatio(StepUpDesign.WardrobeCellAspect), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.Center) { art() }
+            if (worn) Box(
+                Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp).background(Volt, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Check, null, tint = OnVolt, modifier = Modifier.size(16.dp)) }
+        }
         if (worn || trial) {
             Text(
-                text = if (trial) trialLabel else wearingLabel,
-                color = Snow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
-                maxLines = 1,
+                if (trial) trialLabel else wearingLabel,
+                style = MaterialTheme.typography.bodyMedium, color = Snow,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().background(CarbonHigh).padding(horizontal = 6.dp, vertical = 8.dp),
             )
-        }
-        if (worn) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(22.dp)
-                    .background(Volt, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = stringResource(R.string.customize_wearing),
-                    tint = OnVolt,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
         }
     }
 }

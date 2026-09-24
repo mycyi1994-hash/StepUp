@@ -6,6 +6,10 @@ import androidx.compose.ui.unit.sp
 /** Fixed shared chrome. Screens select content/state, never their own geometry. */
 object StepUpDesign {
     val Gutter = 20.dp
+    val PanelRadius = 20.dp
+    val PanelPadding = 18.dp
+    val FieldRadius = 14.dp
+    val DialogRadius = 24.dp
     val HeaderHeight = 64.dp
     val TouchTarget = 48.dp
     val ControlIcon = 24.dp

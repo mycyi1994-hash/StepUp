@@ -34,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
@@ -282,7 +281,7 @@ fun AvatarLookNote(
             .clip(shape)
             .background(Night.copy(alpha = 0.82f), shape)
             .border(1.dp, Edge, shape)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
     ) {
@@ -292,11 +291,9 @@ fun AvatarLookNote(
         Column {
             Text(
                 text = stringResource(R.string.avatar_art_wearing, wearing),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = stringResource(
@@ -307,10 +304,8 @@ fun AvatarLookNote(
                         else -> R.string.avatar_art_base_outfit
                     },
                 ),
-                fontSize = 10.sp,
+                fontSize = 13.sp,
                 color = Silver,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

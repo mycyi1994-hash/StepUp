@@ -35,7 +35,7 @@ package com.stepup.android.domain
  *     화면은 그 사실을 적는다. 다른 아이템의 그림을 보여 주며 "장착 완료"라고
  *     하지 않는다.
  */
-enum class AvatarPose { IDLE, RUN, CHEER }
+enum class AvatarPose { IDLE, RUN, CHEER, SIT }
 
 /**
  * 그림 한 장.
@@ -137,12 +137,23 @@ object AvatarArtCatalog {
                 add(AvatarArt(key, gender, AvatarPose.IDLE, outfit.id, "WND-010"))
             }
         }
+        // Profile-only seated portraits. Scenery and the bench are separate layers.
+        AvatarGender.entries.forEach { gender ->
+            val prefix = if (gender == AvatarGender.FEMALE) "lumi" else "runo"
+            add(AvatarArt("${prefix}_sit_studio_pink_v2", gender, AvatarPose.SIT, Outfits.SOFT_PINK.id, "WND-010"))
+        }
     }
 
     fun resolve(look: AvatarLook, pose: AvatarPose): AvatarRender {
         val shoe = look.shoe?.designCode()
         // 성별마다 그림이 적어도 한 장 있다 — AvatarArtTest 가 지킨다
-        val art = ALL.filter { it.gender == look.gender }.maxBy { a ->
+        val art = ALL.filter { a ->
+            a.gender == look.gender &&
+                // A seated portrait is eligible only for its exact equipped combination.
+                // It must never replace another outfit/shoe or appear on the running screen.
+                (a.pose != AvatarPose.SIT ||
+                    (pose == AvatarPose.SIT && a.outfitId == look.outfit.id && a.shoeCode == shoe))
+        }.maxBy { a ->
             var score = 0
             if (a.outfitId == look.outfit.id) score += 5 // 의상이 화면을 더 많이 차지한다
             if (a.shoeCode == shoe) score += 4

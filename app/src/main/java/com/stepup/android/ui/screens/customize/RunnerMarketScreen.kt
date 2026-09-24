@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.customize
 
+import androidx.compose.material3.MaterialTheme
+import com.stepup.android.ui.components.AdaptiveNumber
+import androidx.compose.foundation.layout.BoxWithConstraints
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -21,9 +22,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,7 +36,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,11 +55,9 @@ import com.stepup.android.ui.components.OutfitArt
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.RenewalCardPadding
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.SneakerFrame
-import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.TwoWaySwitch
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.market.MarketProblemNote
@@ -74,7 +69,6 @@ import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.VoltText
 
 /**
@@ -260,10 +254,11 @@ private fun DemoNote() {
     ) {
         SmallBadge(stringResource(R.string.demo_badge), tone = BadgeTone.Glow)
         Text(
+            modifier = Modifier.weight(1f),
             text = stringResource(R.string.market_demo_note),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = Silver,
-            lineHeight = 18.sp,
+            lineHeight = 21.sp,
         )
     }
 }
@@ -272,7 +267,7 @@ private fun DemoNote() {
 private fun StateCard(title: String, hint: String?, action: (@Composable () -> Unit)? = null) {
     GlowCard(contentPadding = RenewalCardPadding, spacing = 8.dp) {
         Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Snow)
-        if (hint != null) Text(text = hint, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
+        if (hint != null) Text(text = hint, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
         action?.invoke()
     }
 }
@@ -287,38 +282,29 @@ private fun ProductCard(
     price: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(18.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(CarbonHigh, shape)
-            .border(1.dp, Edge, shape)
-            .feedbackClickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(CarbonHigh, shape)
+            .border(1.dp, Edge, shape).feedbackClickable(onClick = onClick).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(
-            modifier = Modifier.size(width = 112.dp, height = 106.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(com.stepup.android.ui.theme.Night),
-            contentAlignment = Alignment.Center,
-        ) { art() }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            badge()
-            Text(
-                text = name,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = 20.dp),
-            )
-            price()
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 300.dp || LocalDensity.current.fontScale > 1.2f) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.fillMaxWidth().height(164.dp), contentAlignment = Alignment.Center) { art() }
+                    badge()
+                    Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) { art() }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        badge()
+                        Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                    }
+                }
+            }
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null,
-            tint = Silver, modifier = Modifier.size(20.dp))
+        price()
     }
 }
 
@@ -347,17 +333,8 @@ private fun ShoeProduct(
         },
         name = modelName(faction, rarity, variant),
         price = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                HexEmblem(size = 18.dp, glow = false)
-                Text(
-                    text = price?.let { "%,.0f".format(it) } ?: "—",
-                    fontFamily = StepUpNumbers,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                Text(text = "SUP", fontSize = 12.sp, color = Silver)
-            }
+            AdaptiveNumber(price?.let { "%,.0f".format(it) } ?: "—", 28.sp)
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
         },
     )
 }

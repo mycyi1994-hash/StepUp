@@ -1,10 +1,11 @@
 package com.stepup.android.ui.screens.community
 
+import androidx.compose.material.icons.filled.Groups
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
@@ -81,7 +82,9 @@ internal fun TogetherTab(
                     }
                 }
             } else if (sync == BoardSyncState.Ready) {
-                item { GlowCard { Text(stringResource(R.string.community_meetups_empty), color = Silver, fontSize = 16.sp) } }
+                item { com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.community_meetups_empty), androidx.compose.material.icons.Icons.Filled.Groups,
+                ) }
             }
         }
         if (featured != null || sync == BoardSyncState.Ready) {

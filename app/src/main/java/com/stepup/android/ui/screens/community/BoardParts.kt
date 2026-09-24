@@ -1,13 +1,16 @@
 package com.stepup.android.ui.screens.community
 
 import android.widget.Toast
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,7 +27,6 @@ import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.ReportReason
 import com.stepup.android.ui.components.GhostButton
-import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
@@ -67,19 +69,16 @@ fun BoardSyncCard(state: BoardSyncState, onRetry: () -> Unit) {
         is BoardSyncState.Failed -> stringResource(R.string.board_load_failed)
         BoardSyncState.Ready -> return
     }
-    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-        Text(message, style = MaterialTheme.typography.bodyMedium, color = Silver)
-        if (state == BoardSyncState.SignInRequired) {
-            com.stepup.android.ui.components.SignInAgainButton()
-        }
-        if (state is BoardSyncState.Failed) {
-            GhostButton(
-                text = stringResource(R.string.crew_retry),
-                onClick = onRetry,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    com.stepup.android.ui.components.StatePanel(
+        message = message,
+        icon = androidx.compose.material.icons.Icons.Filled.CloudOff,
+        loading = state == BoardSyncState.Idle || state == BoardSyncState.Loading,
+        action = if (state == BoardSyncState.SignInRequired) {
+            { com.stepup.android.ui.components.SignInAgainButton() }
+        } else if (state is BoardSyncState.Failed) {
+            { GhostButton(stringResource(R.string.crew_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth()) }
+        } else null,
+    )
 }
 
 /**
@@ -96,16 +95,17 @@ fun ReportDialogHost(viewModel: CommunityViewModel) {
     AlertDialog(
         onDismissRequest = viewModel::dismissReport,
         containerColor = Carbon,
+        shape = RoundedCornerShape(com.stepup.android.ui.theme.StepUpDesign.DialogRadius),
         titleContentColor = Snow,
         textContentColor = Silver,
         title = {
             Text(text = stringResource(R.string.report_title), fontWeight = FontWeight.Black)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = stringResource(R.string.report_hint),
-                    fontSize = 12.sp,
+                    fontSize = 15.sp,
                     color = Silver,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
@@ -117,6 +117,7 @@ fun ReportDialogHost(viewModel: CommunityViewModel) {
                         color = Snow,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .quietClickable { viewModel.submitReport(reason) }
                             .padding(vertical = 10.dp),
                     )
@@ -129,6 +130,7 @@ fun ReportDialogHost(viewModel: CommunityViewModel) {
                         color = Alert,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .quietClickable(viewModel::blockReported)
                             .padding(vertical = 12.dp),
                     )

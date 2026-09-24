@@ -23,7 +23,7 @@ def build():
         for f in functions:
             if f.group(1).endswith('Screen'):
                 screens.append({'id': f.group(1), 'source': rel, 'line': text[:f.start()].count('\n')+1, 'implementation': 'pending', 'verification': 'pending'})
-        for match in re.finditer(r'\b(AlertDialog|Dialog|ModalBottomSheet|DropdownMenu|Popup)\(', text):
+        for match in re.finditer(r'\b(AlertDialog|DialogPanel|Dialog|ModalBottomSheet|DropdownMenu|Popup)\(', text):
             preceding = [f for f in functions if f.start() < match.start()]
             overlays.append({'kind': match.group(1), 'owner': preceding[-1].group(1) if preceding else 'unknown', 'source': rel, 'line': text[:match.start()].count('\n')+1, 'verification': 'pending'})
     data = {

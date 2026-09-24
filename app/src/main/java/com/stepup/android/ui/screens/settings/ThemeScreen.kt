@@ -1,53 +1,17 @@
 package com.stepup.android.ui.screens.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
-import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.IconSquare
-import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.OnVolt
-import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.ThemeMode
-import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,20 +43,9 @@ fun ThemeScreen(onBack: () -> Unit = {}) {
         title = stringResource(R.string.settings_theme), onBack = onBack,
     ) {
         item {
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 11.dp) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    IconSquare(icon = Icons.Filled.DarkMode, size = 38.dp, tint = Volt)
-                    Text(
-                        text = stringResource(R.string.theme_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Silver,
-                        lineHeight = 18.sp,
-                    )
-                }
-            }
+            com.stepup.android.ui.components.InformationNote(
+                text = stringResource(R.string.theme_note), icon = Icons.Filled.DarkMode,
+            )
         }
 
         items(OPTIONS.size) { index ->
@@ -117,53 +70,9 @@ fun ThemeScreen(onBack: () -> Unit = {}) {
 
 @Composable
 private fun ThemeRow(option: ThemeOption, checked: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .border(
-                width = 1.dp,
-                color = if (checked) Volt.copy(alpha = 0.6f) else Edge,
-                shape = RoundedCornerShape(18.dp),
-            )
-            .quietClickable(onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(
-            imageVector = option.icon,
-            contentDescription = null,
-            tint = if (checked) Volt else Slate,
-            modifier = Modifier.size(20.dp),
-        )
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = stringResource(option.labelRes),
-                style = MaterialTheme.typography.titleSmall,
-                color = if (checked) Volt else Snow,
-            )
-            Text(text = stringResource(option.noteRes), fontSize = 11.sp, color = Slate)
-        }
-        if (checked) {
-            Box(
-                modifier = Modifier
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(Volt),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = OnVolt,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-        }
-    }
+    com.stepup.android.ui.components.PreferenceChoice(
+        title = stringResource(option.labelRes),
+        description = stringResource(option.noteRes),
+        icon = option.icon, selected = checked, onClick = onClick,
+    )
 }

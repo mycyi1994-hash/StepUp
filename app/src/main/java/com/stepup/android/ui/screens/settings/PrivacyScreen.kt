@@ -3,15 +3,10 @@ package com.stepup.android.ui.screens.settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Shield
@@ -33,13 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
@@ -47,7 +38,6 @@ import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.launch
 
 /**
@@ -89,7 +79,7 @@ fun PrivacyScreen(onBack: () -> Unit = {}) {
                 }
                 Text(
                     text = stringResource(R.string.privacy_data_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                 )
             }
@@ -140,7 +130,7 @@ fun PrivacyScreen(onBack: () -> Unit = {}) {
                 )
                 Text(
                     text = stringResource(R.string.privacy_reset_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                 )
                 GhostButton(
@@ -175,7 +165,7 @@ private fun PermissionRow(text: String, status: String, allowed: Boolean) {
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(text = text, style = MaterialTheme.typography.bodyMedium, color = Snow)
-            Text(text = status, style = MaterialTheme.typography.bodySmall, color = Silver)
+            Text(text = status, style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
     }
 }

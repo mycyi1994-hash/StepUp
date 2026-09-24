@@ -6,13 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Link
@@ -42,8 +39,6 @@ import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Carbon
 import kotlinx.coroutines.launch
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.theme.CarbonHigh
@@ -69,6 +64,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
 
     if (confirming) {
         AlertDialog(
+            shape = RoundedCornerShape(com.stepup.android.ui.theme.StepUpDesign.DialogRadius),
             onDismissRequest = { if (!deleting) confirming = false },
             containerColor = Carbon,
             titleContentColor = Snow,
@@ -118,15 +114,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
         )
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
-    com.stepup.android.ui.components.SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null,
-        title = stringResource(R.string.settings_connected),
-    )
-    LazyColumn(
-        modifier = Modifier.weight(1f),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_connected), onBack = onBack,
     ) {
         item {
             GlowCard {
@@ -138,7 +127,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                     Text(
                         text = stringResource(R.string.connected_body),
                         modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Silver,
                     )
                 }
@@ -193,7 +182,6 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                 )
             }
         }
-    }
     }
 }
 

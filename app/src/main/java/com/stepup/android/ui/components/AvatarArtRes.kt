@@ -71,6 +71,7 @@ fun avatarArtResOrNull(key: String): Int? = when (key) {
     "lumi_idle_wnd_011" -> R.drawable.avatar_lumi_idle_wnd_011
     "lumi_idle_wnd_012" -> R.drawable.avatar_lumi_idle_wnd_012
     "lumi_idle_wnd_013" -> R.drawable.avatar_lumi_idle_wnd_013
+    "lumi_sit_studio_pink_v2" -> R.drawable.avatar_lumi_sit_studio_pink_v2
     "male_idle" -> R.drawable.avatar_male_idle
     "male_running" -> R.drawable.avatar_male_running
     "runo_idle_clo_001" -> R.drawable.avatar_runo_idle_clo_001
@@ -134,6 +135,7 @@ fun avatarArtResOrNull(key: String): Int? = when (key) {
     "runo_idle_wnd_011" -> R.drawable.avatar_runo_idle_wnd_011
     "runo_idle_wnd_012" -> R.drawable.avatar_runo_idle_wnd_012
     "runo_idle_wnd_013" -> R.drawable.avatar_runo_idle_wnd_013
+    "runo_sit_studio_pink_v2" -> R.drawable.avatar_runo_sit_studio_pink_v2
     else -> null
 }
 
@@ -224,6 +226,7 @@ fun AvatarArt.geometry(): AvatarArtGeometry = when (key) {
     "lumi_idle_wnd_011" -> AvatarArtGeometry(0.53308824f, 0.02205882f)
     "lumi_idle_wnd_012" -> AvatarArtGeometry(0.54945055f, 0.02319902f)
     "lumi_idle_wnd_013" -> AvatarArtGeometry(0.58039216f, 0.00000000f)
+    "lumi_sit_studio_pink_v2" -> AvatarArtGeometry(0.66666667f, 0.05013021f)
     "male_idle" -> AvatarArtGeometry(0.53926702f, 0.01221640f)
     "male_running" -> AvatarArtGeometry(0.71428571f, 0.01549865f)
     "runo_idle_clo_001" -> AvatarArtGeometry(0.53038674f, 0.00000000f)
@@ -287,5 +290,6 @@ fun AvatarArt.geometry(): AvatarArtGeometry = when (key) {
     "runo_idle_wnd_011" -> AvatarArtGeometry(0.48771930f, 0.02456140f)
     "runo_idle_wnd_012" -> AvatarArtGeometry(0.49116608f, 0.02473498f)
     "runo_idle_wnd_013" -> AvatarArtGeometry(0.49650350f, 0.02447552f)
+    "runo_sit_studio_pink_v2" -> AvatarArtGeometry(0.66666667f, 0.02994792f)
     else -> AvatarArtGeometry(1f, 0f)
 }

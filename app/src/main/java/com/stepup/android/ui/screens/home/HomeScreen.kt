@@ -2,6 +2,11 @@ package com.stepup.android.ui.screens.home
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.material3.MaterialTheme
+import com.stepup.android.ui.components.AdaptiveNumber
+import com.stepup.android.ui.components.BarMeter
+import com.stepup.android.ui.components.HairlineDivider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +16,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,8 +31,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,9 +47,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,17 +61,11 @@ import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.MainHeader
-import com.stepup.android.ui.components.GoalBar
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.CharacterStage
 import com.stepup.android.ui.components.AvatarLookNote
 import com.stepup.android.ui.components.ShortcutButton
 import com.stepup.android.ui.components.SmallBadge
-import com.stepup.android.ui.components.StatCell
-import com.stepup.android.ui.components.SupPill
-import com.stepup.android.ui.components.VerticalHairline
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
@@ -80,9 +73,7 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.Volt
-import com.stepup.android.ui.theme.VoltInk
 import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlinx.coroutines.delay
@@ -136,19 +127,22 @@ fun HomeScreen(
             .padding(bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-            if (savedLook != null) CharacterStage(
-                look = savedLook, pose = AvatarPose.IDLE, skyline = false,
-                characterFraction = 0.82f, animate = false,
-                contentDescription = stringResource(R.string.cd_home_character),
-                modifier = Modifier.fillMaxSize().padding(top = 48.dp, bottom = 12.dp)
-                    .testTag("home-character-ready")
-                    .quietClickable(onOpenCustomize),
-            ) else Text(
-                text = stringResource(R.string.feed_loading),
-                color = Silver,
-                modifier = Modifier.align(Alignment.Center),
-            )
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
+            val artHeight = maxHeight.coerceAtLeast(240.dp)
+            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.BottomCenter) {
+                if (savedLook != null) CharacterStage(
+                    look = savedLook, pose = AvatarPose.IDLE, skyline = false,
+                    characterFraction = 0.92f, animate = false,
+                    contentDescription = stringResource(R.string.cd_home_character),
+                    modifier = Modifier.fillMaxWidth().height(artHeight).padding(top = 48.dp, bottom = 12.dp)
+                        .testTag("home-character-ready")
+                        .quietClickable(onOpenCustomize),
+                ) else Text(
+                    text = stringResource(R.string.feed_loading),
+                    color = Silver,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
             com.stepup.android.ui.components.DarkIconButton(
                 icon = Icons.Filled.MoreHoriz,
                 contentDescription = stringResource(R.string.common_more),
@@ -197,86 +191,63 @@ fun HomeScreen(
                     }
                 }
                 TodayEarned(earned)
-        // ── 오늘 거리 · 운동 시간 (≈60dp) ──
-        GlowCard(contentPadding = HomeCardPadding) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                StatCell(
-                    icon = Icons.Filled.LocationOn,
-                    value = "%.1f".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000),
-                    unit = "km",
-                    label = stringResource(R.string.stat_distance),
-                    modifier = Modifier.weight(1f),
-                )
-                VerticalHairline(height = 44.dp)
-                StatCell(
-                    icon = Icons.Filled.Timer,
-                    value = clock(runSec),
-                    unit = "",
-                    label = stringResource(R.string.home_run_time),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp),
-                )
-            }
-        }
-
-        // ── 오늘의 목표 — 걸음 목표. 단위를 바꾸지 않는다 (≈56dp) ──
-        GlowCard(contentPadding = HomeCardPadding) {
-            GoalBar(
-                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
-                title = stringResource(R.string.home_goal),
-                value = "%,d".format(state.todaySteps),
-                suffix = stringResource(R.string.home_goal_suffix, "%,d".format(state.goal)),
-                fraction = if (state.goal > 0) state.todaySteps.toFloat() / state.goal else 0f,
-            )
-        }
-
-        // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_shortcuts_title),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-            )
-            val challenge: @Composable (Modifier) -> Unit = { m ->
-                ShortcutButton(
-                    icon = Icons.Filled.EmojiEvents,
-                    label = stringResource(R.string.home_shortcut_challenges),
-                    subtitle = stringResource(R.string.home_shortcut_challenges_sub),
-                    onClick = { showDetails = false; onOpenChallenges() },
-                    modifier = m,
-                )
-            }
-            val news: @Composable (Modifier) -> Unit = { m ->
-                ShortcutButton(
-                    icon = Icons.AutoMirrored.Filled.Article,
-                    label = stringResource(R.string.home_shortcut_news),
-                    subtitle = stringResource(R.string.home_shortcut_news_sub),
-                    onClick = { showDetails = false; onOpenNews() },
-                    modifier = m,
-                )
-            }
-            // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
-            if (largeText) {
-                challenge(Modifier.fillMaxWidth())
-                news(Modifier.fillMaxWidth())
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    challenge(Modifier.weight(1f))
-                    news(Modifier.weight(1f))
+                GlowCard(contentPadding = HomeCardPadding, spacing = 16.dp) {
+                    Text(stringResource(R.string.stat_distance), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    AdaptiveNumber("%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000), 28.sp)
+                    HairlineDivider()
+                    Text(stringResource(R.string.home_run_time), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    AdaptiveNumber(clock(runSec), 28.sp)
                 }
-            }
-        }
+                GlowCard(contentPadding = HomeCardPadding, spacing = 12.dp) {
+                    Text(stringResource(R.string.home_goal), style = MaterialTheme.typography.titleMedium, color = Snow)
+                    AdaptiveNumber("%,d".format(state.todaySteps), 28.sp)
+                    Text(stringResource(R.string.home_goal_suffix, "%,d".format(state.goal)), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    BarMeter(fraction = if (state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 7.dp)
+                }
 
-        // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
-        EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
+                // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_shortcuts_title),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Snow,
+                    )
+                    val challenge: @Composable (Modifier) -> Unit = { m ->
+                        ShortcutButton(
+                            icon = Icons.Filled.EmojiEvents,
+                            label = stringResource(R.string.home_shortcut_challenges),
+                            subtitle = stringResource(R.string.home_shortcut_challenges_sub),
+                            onClick = { showDetails = false; onOpenChallenges() },
+                            modifier = m,
+                        )
+                    }
+                    val news: @Composable (Modifier) -> Unit = { m ->
+                        ShortcutButton(
+                            icon = Icons.AutoMirrored.Filled.Article,
+                            label = stringResource(R.string.home_shortcut_news),
+                            subtitle = stringResource(R.string.home_shortcut_news_sub),
+                            onClick = { showDetails = false; onOpenNews() },
+                            modifier = m,
+                        )
+                    }
+                    // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
+                    if (largeText) {
+                        challenge(Modifier.fillMaxWidth())
+                        news(Modifier.fillMaxWidth())
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            challenge(Modifier.weight(1f))
+                            news(Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
+                EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
 
 
             }
@@ -284,8 +255,8 @@ fun HomeScreen(
     }
 }
 
-/** 홈의 얇은 카드 — 지표 60dp · 목표 56dp 안팎 */
-private val HomeCardPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+/** Home details share the same spacing as the other record panels. */
+private val HomeCardPadding = PaddingValues(20.dp)
 
 /** 오늘 받은 포인트 — 이 화면에서 가장 큰 숫자 */
 @Composable
@@ -301,30 +272,8 @@ private fun TodayEarned(earned: Double?) {
             fontWeight = FontWeight.Bold,
             color = Silver,
         )
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                // 아직 못 읽었으면 대시. "0"은 정말 못 번 날에만 보인다.
-                text = earned?.let { "+%,.0f".format(it) } ?: "—",
-                // 포인트는 빛 번짐을 쓰는 몇 안 되는 자리다
-                style = TextStyle(
-                    brush = VoltInk,
-                    shadow = Shadow(color = Volt.copy(alpha = 0.55f), blurRadius = 28f),
-                ),
-                fontFamily = StepUpNumbers,
-                fontSize = 56.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-1).sp,
-                maxLines = 1,
-            )
-            Text(
-                text = " SUP",
-                fontFamily = StepUpNumbers,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = VoltText,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-        }
+        AdaptiveNumber(earned?.let { "+%,.0f".format(it) } ?: "—", 44.sp, color = VoltText, textAlign = TextAlign.Center)
+        Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -364,7 +313,7 @@ private fun EnergyLine(earnableSteps: Int, ready: Boolean) {
                     stringResource(R.string.home_recharge_in, countdown)
                 else -> stringResource(R.string.home_energy_can, "%,d".format(earnableSteps))
             },
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = if (empty) Alert else Silver,
             textAlign = TextAlign.Center,
         )

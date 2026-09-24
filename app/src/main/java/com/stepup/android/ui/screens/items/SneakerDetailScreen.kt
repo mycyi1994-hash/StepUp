@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +39,6 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
-import com.stepup.android.ui.theme.Carbon
 
 @Composable
 fun SneakerDetailScreen(
@@ -249,7 +245,7 @@ fun SneakerDetailScreen(
                 )
                 Text(
                     text = stringResource(R.string.sneaker_about_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                 )
             }
@@ -258,43 +254,35 @@ fun SneakerDetailScreen(
     if (enhanceOpen && sneaker != null && sneaker.canUpgrade) {
         val cost = sneaker.upgradeCost
         val currentBalance = balance
-        AlertDialog(
-            onDismissRequest = { enhanceOpen = false },
-            containerColor = Carbon,
-            shape = RoundedCornerShape(22.dp),
-            titleContentColor = Snow,
-            textContentColor = Silver,
-            title = { Text(stringResource(R.string.sneaker_action_enhance)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(112.dp))
-                    Text(stringResource(R.string.level_chip, sneaker.level) + " → " +
-                        stringResource(R.string.level_chip, sneaker.level + 1), color = Snow)
-                    Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
-                        color = Volt)
-                    if (currentBalance == null) {
-                        Text(stringResource(R.string.feed_loading), color = Silver)
-                    } else if (currentBalance < cost) {
-                        Text(msgNoBalance, color = Silver)
-                    }
-                }
-            },
-            confirmButton = {
+        com.stepup.android.ui.components.DialogPanel(
+            title = stringResource(R.string.sneaker_action_enhance),
+            onDismiss = { enhanceOpen = false },
+            actions = {
                 VoltButton(
                     text = stringResource(R.string.sneaker_action_enhance),
                     enabled = currentBalance?.let { it >= cost } == true,
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         enhanceOpen = false
                         viewModel.upgrade(sneaker.id)
                     },
                 )
+                com.stepup.android.ui.components.GhostButton(
+                    stringResource(R.string.common_cancel), { enhanceOpen = false }, Modifier.fillMaxWidth(),
+                )
             },
-            dismissButton = {
-                TextButton(onClick = { enhanceOpen = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
+        ) {
+            SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(144.dp))
+            Text(stringResource(R.string.level_chip, sneaker.level) + " → " +
+                stringResource(R.string.level_chip, sneaker.level + 1),
+                style = MaterialTheme.typography.headlineSmall, color = Snow)
+            Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
+                style = MaterialTheme.typography.bodyLarge, color = com.stepup.android.ui.theme.VoltText)
+            if (currentBalance == null) {
+                Text(stringResource(R.string.feed_loading), color = Silver)
+            } else if (currentBalance < cost) {
+                Text(msgNoBalance, color = Silver)
+            }
+        }
     }
-
 }

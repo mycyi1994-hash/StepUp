@@ -2,18 +2,14 @@ package com.stepup.android.ui.screens.events
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,20 +18,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,12 +32,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,27 +46,16 @@ import com.stepup.android.data.repo.Events
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.ui.components.SectionHeader
-import com.stepup.android.ui.components.SmallBadge
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.PageHero
 import com.stepup.android.ui.components.SecondaryHeader
-import com.stepup.android.domain.AvatarArt
-import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.celebrate
-import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpNumbers
-import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltText
 
 /**
@@ -320,41 +294,19 @@ private fun ChallengeCard(
     rewardNote: String? = null,
     extra: (@Composable () -> Unit)? = null,
 ) {
-    val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
     GlowCard(
         accent = state == ChallengeState.Ready,
-        contentPadding = PaddingValues(16.dp),
-        spacing = 12.dp,
+        contentPadding = PaddingValues(20.dp), spacing = 16.dp,
     ) {
-        // 시안대로 — 아이콘 · 제목과 설명 · 오른쪽 위에 보상(받았으면 "지급 완료").
-        // 보상 표시를 먼저 재고 제목이 남은 폭을 쓴다. 글자가 크면 보상을 위로 올린다.
-        val badge: @Composable () -> Unit = {
-            when (state) {
-                ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
-                ChallengeState.Loading -> Text("—", color = Silver)
-                else -> RewardPill(reward)
-            }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.stepup.android.ui.components.IconSquare(icon, size = 48.dp)
+            Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Snow, modifier = Modifier.weight(1f))
         }
-        if (large) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { badge() }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(CarbonHigh, CircleShape)
-                    .border(1.dp, Edge, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(24.dp))
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
-                Text(text = desc, fontSize = 14.sp, color = Silver, lineHeight = 20.sp)
-            }
-            if (!large) badge()
+        Text(desc, fontSize = 15.sp, lineHeight = 23.sp, color = Silver)
+        when (state) {
+            ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
+            ChallengeState.Loading -> Text("—", color = Silver)
+            else -> RewardPill(reward)
         }
         if (rewardNote != null) {
             Text(text = rewardNote, fontSize = 14.sp, color = Silver)
@@ -396,41 +348,29 @@ private fun ChallengeCard(
 /** 보상 알약 — "보상 ⬡ 30 SUP" */
 @Composable
 private fun RewardPill(reward: Double) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 9.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Text(text = stringResource(R.string.challenge_reward_label), fontSize = 11.sp, color = Silver, maxLines = 1, softWrap = false)
-        HexEmblem(size = 15.dp, glow = false)
-        Text(
-            text = "%,.0f".format(reward),
-            fontFamily = StepUpNumbers,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
-            maxLines = 1,
-            softWrap = false,
-        )
-        Text(text = "SUP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Silver, maxLines = 1, softWrap = false)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.challenge_reward_label), fontSize = 14.sp, color = Silver)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HexEmblem(size = 22.dp, glow = false)
+            Text("%,.0f".format(reward), fontFamily = StepUpNumbers, fontSize = 28.sp,
+                fontWeight = FontWeight.Bold, color = Snow)
+            Text("SUP", fontSize = 14.sp, color = Silver)
+        }
     }
 }
 
 @Composable
 private fun StatusChip(state: ChallengeState) {
-    val (text, tone) = when (state) {
+    val text = when (state) {
         ChallengeState.Loading -> return
-        ChallengeState.InProgress -> stringResource(R.string.challenge_state_progress) to BadgeTone.Muted
-        ChallengeState.Ready -> stringResource(R.string.challenge_state_ready) to BadgeTone.Accent
-        ChallengeState.Settling -> stringResource(R.string.challenge_state_settling) to BadgeTone.Accent
-        ChallengeState.Paid -> stringResource(R.string.challenge_state_paid) to BadgeTone.Glow
-        ChallengeState.Claimed -> stringResource(R.string.events_claimed) to BadgeTone.Glow
-        ChallengeState.Soon -> stringResource(R.string.challenge_soon) to BadgeTone.Muted
+        ChallengeState.InProgress -> stringResource(R.string.challenge_state_progress)
+        ChallengeState.Ready -> stringResource(R.string.challenge_state_ready)
+        ChallengeState.Settling -> stringResource(R.string.challenge_state_settling)
+        ChallengeState.Paid -> stringResource(R.string.challenge_state_paid)
+        ChallengeState.Claimed -> stringResource(R.string.events_claimed)
+        ChallengeState.Soon -> stringResource(R.string.challenge_soon)
     }
-    SmallBadge(text, tone = tone)
+    Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = VoltText)
 }
 
 /**
@@ -452,63 +392,21 @@ private fun InviteDialog(
 ) {
     var text by rememberSaveable(initialText) { mutableStateOf(initialText) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(
-                onClick = { onSend(text.trim()) },
-                enabled = text.isNotBlank(),
-            ) {
-                Text(
-                    text = stringResource(R.string.invite_send),
-                    color = if (text.isNotBlank()) Volt else Slate,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+    com.stepup.android.ui.components.DialogPanel(
+        title = subject, onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.invite_send), { onSend(text.trim()) },
+                Modifier.fillMaxWidth(), enabled = text.isNotBlank())
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel), color = Slate)
-            }
-        },
-        title = { Text(text = subject, fontWeight = FontWeight.Black) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.invite_edit_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(CarbonHigh)
-                        .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 13.dp, vertical = 12.dp),
-                ) {
-                    BasicTextField(
-                        value = text,
-                        onValueChange = { if (it.length <= INVITE_MAX) text = it },
-                        textStyle = TextStyle(color = Snow, fontSize = 14.sp, lineHeight = 20.sp),
-                        cursorBrush = SolidColor(Volt),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 76.dp),
-                    )
-                }
-                Text(
-                    text = "${text.length} / $INVITE_MAX",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                    modifier = Modifier.align(Alignment.End),
-                )
-            }
-        },
-    )
+    ) {
+        com.stepup.android.ui.components.FormField(
+            label = stringResource(R.string.invite_edit_hint), value = text,
+            onValueChange = { if (it.length <= INVITE_MAX) text = it },
+            singleLine = false, minLines = 4,
+        )
+        Text("${text.length} / $INVITE_MAX", fontSize = 14.sp, color = Silver,
+            modifier = Modifier.align(Alignment.End))
+    }
 }
 
 /** 초대 문구 길이 상한. 문자 메시지 한 통에 들어가는 정도. */

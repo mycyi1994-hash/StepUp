@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -32,23 +31,16 @@ import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Upgrade
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,17 +52,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.local.RewardEntity
 import com.stepup.android.data.local.RewardType
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.IconSquare
-import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.VerticalHairline
-import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.components.sheen
 import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -125,22 +111,24 @@ fun WalletScreen(
                 )
                 Text(
                     text = ledger?.let { stringResource(R.string.wallet_records, it.size) } ?: "—",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }
         }
 
         if (ledger == null) {
-            item { Text(stringResource(R.string.feed_loading), color = Silver, fontSize = 14.sp) }
+            item { com.stepup.android.ui.components.StatePanel(stringResource(R.string.feed_loading), Icons.Filled.Receipt, loading = true) }
         } else if (entries.isEmpty()) {
             item {
-                GlowCard(contentPadding = PaddingValues(26.dp), spacing = 6.dp) {
+                GlowCard(contentPadding = PaddingValues(26.dp), spacing = 12.dp) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
+                        IconSquare(icon = Icons.Filled.Receipt, size = 56.dp)
+                        Spacer(Modifier.size(8.dp))
                         Text(
                             text = stringResource(R.string.wallet_empty_title),
                             style = MaterialTheme.typography.titleSmall,
@@ -148,7 +136,7 @@ fun WalletScreen(
                         )
                         Text(
                             text = stringResource(R.string.wallet_empty_body),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = Silver,
                         )
                     }
@@ -173,7 +161,7 @@ private fun BalanceHero(balance: Double?) {
             .fillMaxWidth()
             .clip(shape)
             .background(VoltPlate, shape)
-            .sheen(alpha = 0.20f, durationMillis = 5200),
+            ,
     ) {
         Canvas(Modifier.matchParentSize()) {
             val cx = size.width * 0.85f
@@ -265,8 +253,8 @@ private fun RowScope.SummaryCell(label: String, value: String, tint: Color) {
         verticalArrangement = Arrangement.spacedBy(3.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Silver)
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = tint)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Text(value, fontSize = 24.sp, fontFamily = com.stepup.android.ui.theme.StepUpNumbers, fontWeight = FontWeight.Bold, color = tint)
     }
 }
 
@@ -322,7 +310,7 @@ private fun LedgerRow(entry: RewardEntity) {
                 )
                 Text(
                     text = ledgerTimeFormatter.format(Instant.ofEpochMilli(entry.timestamp)),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }

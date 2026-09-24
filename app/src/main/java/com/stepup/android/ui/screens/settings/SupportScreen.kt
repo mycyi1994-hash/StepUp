@@ -4,16 +4,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Icon
@@ -28,11 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.IconSquare
@@ -94,6 +88,7 @@ private fun FaqCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .quietClickable(onToggle),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -116,11 +111,11 @@ private fun FaqCard(
         androidx.compose.animation.AnimatedVisibility(visible = expanded,
             enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(com.stepup.android.ui.experience.LocalMotion.current.duration(160))),
             exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(com.stepup.android.ui.experience.LocalMotion.current.duration(120)))) {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             HairlineDivider()
             Text(
                 text = stringResource(answerRes),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
             )
             }
@@ -145,7 +140,7 @@ private fun ContactCard() {
         }
         Text(
             text = stringResource(R.string.support_contact_body),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = Silver,
         )
     }

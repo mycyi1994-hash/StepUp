@@ -2,6 +2,9 @@ package com.stepup.android.ui.screens.splash
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,35 +86,30 @@ internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
     Box(Modifier.fillMaxSize().background(Night).testTag("launch-scene")) {
         RunnerScene(Modifier.fillMaxSize().graphicsLayer { alpha = reveal * 0.65f })
         Column(
-            Modifier.align(Alignment.Center).padding(horizontal = StepUpDesign.Gutter),
+            Modifier.fillMaxSize().safeDrawingPadding().padding(StepUpDesign.Gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Wordmark(role = BrandLogoRole.Launch)
-            if (stage == LaunchStage.Loading) {
-                Spacer(Modifier.height(32.dp))
-                CircularProgressIndicator(
-                    Modifier.size(24.dp).testTag("launch-loading"),
-                    color = Volt, strokeWidth = 2.dp,
-                )
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Wordmark(role = BrandLogoRole.Launch)
+                    Spacer(Modifier.height(32.dp))
+                    when (stage) {
+                        LaunchStage.Loading -> {
+                            CircularProgressIndicator(Modifier.size(28.dp).testTag("launch-loading"), color = Volt, strokeWidth = 2.dp)
+                            Spacer(Modifier.height(20.dp))
+                            Text(stringResource(R.string.splash_preparing), style = MaterialTheme.typography.bodyLarge, color = Silver, textAlign = TextAlign.Center)
+                        }
+                        LaunchStage.Error -> Text(stringResource(R.string.splash_prepare_failed), style = MaterialTheme.typography.bodyLarge, color = Silver, textAlign = TextAlign.Center)
+                        LaunchStage.Reveal -> Unit
+                    }
+                }
             }
-        }
-        Column(
-            Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
-                .padding(horizontal = StepUpDesign.Gutter, vertical = 40.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
             if (stage == LaunchStage.Error) {
-                Text(
-                    stringResource(R.string.splash_prepare_failed),
-                    color = Silver, textAlign = TextAlign.Center,
-                )
-                PrimaryCta(text = stringResource(R.string.feed_retry), onClick = onRetry)
-            } else if (stage == LaunchStage.Loading) {
-                Text(
-                    stringResource(R.string.splash_preparing),
-                    color = Silver, textAlign = TextAlign.Center,
-                )
+                PrimaryCta(text = stringResource(R.string.feed_retry), onClick = onRetry, modifier = Modifier.padding(bottom = 16.dp))
             }
         }
     }

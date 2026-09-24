@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,7 +62,6 @@ import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 
 /**
  * NFT 도감 — 52칸 전부를 보여준다.
@@ -103,29 +101,14 @@ fun SneakerDexScreen(
     }
 
     val ownedCount = owned.keys.size
-    val columns = if (LocalDensity.current.fontScale > 1.2f) 2 else 3
+    val columns = if (LocalDensity.current.fontScale > 1.5f) 1 else 2
 
     DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
         // ── 전체 진행도 ──
         item {
             GlowCard(accent = true, contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text = stringResource(R.string.dex_progress),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                    )
-                    Text(
-                        text = "$ownedCount / $TOTAL_COLLECTION",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Volt,
-                    )
-                }
+                Text(stringResource(R.string.dex_progress), style = MaterialTheme.typography.titleMedium, color = Snow)
+                com.stepup.android.ui.components.AdaptiveNumber("$ownedCount / $TOTAL_COLLECTION", 28.sp, color = com.stepup.android.ui.theme.VoltText)
                 BarMeter(
                     fraction = ownedCount.toFloat() / TOTAL_COLLECTION.coerceAtLeast(1),
                     height = 7.dp,
@@ -197,7 +180,7 @@ fun SneakerDexScreen(
                 GlowCard(contentPadding = PaddingValues(26.dp)) {
                     Text(
                         text = stringResource(R.string.dex_empty),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Slate,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
@@ -257,7 +240,7 @@ private fun DexCell(
 ) {
     val hasIt = sneaker != null
     // 없는 칸을 그릴 견본. 스탯은 쓰지 않으므로 기본값으로 둔다.
-    val sample = remember(slot) {
+    val sample = remember(slot, sneaker) {
         sneaker ?: Sneaker(
             id = -1,
             faction = slot.faction,
@@ -282,7 +265,7 @@ private fun DexCell(
                 color = if (hasIt) slot.faction.tint().copy(alpha = 0.55f) else Edge,
                 shape = RoundedCornerShape(16.dp),
             )
-            .quietClickable(onClick)
+            .then(if (hasIt) Modifier.quietClickable(onClick) else Modifier)
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -314,11 +297,9 @@ private fun DexCell(
 
         Text(
             text = variantLabel(slot.faction, slot.rarity, slot.variant),
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = if (hasIt) Snow else Slate,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            color = if (hasIt) Snow else Silver,
         )
         Text(
             text = if (hasIt) {
@@ -326,9 +307,8 @@ private fun DexCell(
             } else {
                 slot.rarity.label()
             },
-            fontSize = 9.sp,
-            color = if (hasIt) slot.faction.tint() else Slate,
-            maxLines = 1,
+            fontSize = 14.sp,
+            color = if (hasIt) slot.faction.tint() else Silver,
         )
     }
 }

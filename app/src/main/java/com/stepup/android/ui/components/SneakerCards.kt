@@ -14,11 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,8 +36,6 @@ import com.stepup.android.domain.SneakerDesigns
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -256,120 +249,19 @@ fun SneakerCollectionCard(
     count: Int = 1,
     onClick: () -> Unit = {},
 ) {
-    val rc = sneaker.rarity.tint()
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
-        modifier = modifier
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(rc.copy(alpha = 0.14f), Carbon),
-                ),
-                shape,
-            )
-            .border(1.dp, if (sneaker.equipped) Volt else rc.copy(alpha = 0.40f), shape)
-            .quietClickable(onClick)
-            .padding(13.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier.clip(shape).background(CarbonHigh).border(1.dp, if (sneaker.equipped) Volt else Edge, shape)
+            .quietClickable(onClick).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            RarityChip(sneaker.rarity, small = true)
-            if (sneaker.equipped) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(Volt)
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.items_equipped),
-                        color = OnVolt,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
-            }
-        }
-
-        Box(modifier = Modifier.fillMaxWidth()) {
-            SneakerFrame(
-                sneaker = sneaker,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(4f / 3f),
-                corner = 14.dp,
-            )
-            if (count > 1) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Night.copy(alpha = 0.82f))
-                        .border(1.dp, Volt.copy(alpha = 0.6f), RoundedCornerShape(50))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                ) {
-                    Text(
-                        text = "×$count",
-                        color = Volt,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
-            }
-        }
-
-        Text(
-            text = sneaker.variantLabel(),
-            style = MaterialTheme.typography.titleSmall,
-            color = Snow,
-            fontSize = 13.sp,
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = sneaker.faction.label(),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = sneaker.faction.tint(),
-            )
-            Text(
-                text = "+%.1f%%".format(sneaker.boostPercent),
-                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                fontSize = 11.sp,
-                color = Silver,
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(CarbonHigh)
-                    .padding(horizontal = 7.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.level_chip, sneaker.level),
-                    color = Volt,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Text(
-                text = stringResource(R.string.sneaker_mint_no, sneaker.mintNumber),
-                fontSize = 9.sp,
-                color = Slate,
-            )
-        }
+        SneakerFrame(sneaker, modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f), corner = 14.dp)
+        Text(sneaker.variantLabel(), style = MaterialTheme.typography.titleMedium, color = Snow)
+        Text(sneaker.rarity.label() + " · " + sneaker.faction.label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        if (sneaker.equipped) Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
+        if (count > 1) Text("×$count", style = MaterialTheme.typography.bodyMedium, color = Snow)
+        Text(stringResource(R.string.level_chip, sneaker.level) + " · +%.1f%%".format(sneaker.boostPercent), style = MaterialTheme.typography.bodyMedium, color = Snow)
+        Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -442,135 +334,23 @@ fun EquippedSneakerCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    GlowCard(
-        modifier = modifier.quietClickable(onClick),
-        accent = true,
-        contentPadding = PaddingValues(16.dp),
-        spacing = 11.dp,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            // 왼쪽 절반 — 이미지 위에 등급·착용 배지를 겹친다
-            Box(modifier = Modifier.weight(0.92f)) {
-                SneakerFrame(
-                    sneaker = sneaker,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f),
-                    animate = true,
-                )
-                RarityChip(
-                    sneaker.rarity,
-                    small = true,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(4.dp),
-                )
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Volt)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.items_equipped),
-                        color = OnVolt,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
-            }
-
-            // 오른쪽 — 이름·레벨·스탯
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Text(
-                        text = sneaker.fullLabel(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Snow,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    FactionChip(sneaker.faction, small = true)
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(CarbonHigh)
-                            .padding(horizontal = 9.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.level_chip, sneaker.level),
-                            color = Snow,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                    Text(
-                        text = "+%.1f%%".format(sneaker.boostPercent),
-                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                        color = Volt,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
-                BarMeter(
-                    fraction = (sneaker.level.toFloat() / sneaker.rarity.maxLevel).coerceIn(0f, 1f),
-                    height = 5.dp,
-                )
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    SneakerStatColumn(
-                        label = stringResource(R.string.stat_boost),
-                        value = "+%.1f%%".format(sneaker.boostPercent),
-                        modifier = Modifier.weight(1f),
-                    )
-                    VerticalHairline(height = 30.dp)
-                    SneakerStatColumn(
-                        label = stringResource(R.string.stat_luck),
-                        value = "%.2f".format(sneaker.luck),
-                        modifier = Modifier.weight(1f),
-                    )
-                    VerticalHairline(height = 30.dp)
-                    SneakerStatColumn(
-                        label = stringResource(R.string.stat_comfort),
-                        value = "%.2f".format(sneaker.comfort),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+    GlowCard(modifier = modifier.quietClickable(onClick), accent = true, contentPadding = PaddingValues(20.dp), spacing = 14.dp) {
+        Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
+        SneakerFrame(sneaker, modifier = Modifier.fillMaxWidth().height(180.dp), animate = false)
+        Text(sneaker.fullLabel(), style = MaterialTheme.typography.titleLarge, color = Snow)
+        Text(sneaker.rarity.label() + " · " + stringResource(R.string.level_chip, sneaker.level), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        BarMeter(fraction = (sneaker.level.toFloat() / sneaker.rarity.maxLevel).coerceIn(0f, 1f), height = 7.dp)
+        listOf(
+            stringResource(R.string.stat_boost) to "+%.1f%%".format(sneaker.boostPercent),
+            stringResource(R.string.stat_luck) to "%.2f".format(sneaker.luck),
+            stringResource(R.string.stat_comfort) to "%.2f".format(sneaker.comfort),
+        ).forEach { (label, value) ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver, modifier = Modifier.weight(1f))
+                Text(value, style = MaterialTheme.typography.titleMedium, color = Snow)
             }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.sneaker_mint_no, sneaker.mintNumber),
-                fontSize = 10.sp,
-                color = Slate,
-            )
-            Icon(
-                Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = Slate,
-                modifier = Modifier.size(16.dp),
-            )
-        }
+        Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 

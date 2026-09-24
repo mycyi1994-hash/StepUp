@@ -10,6 +10,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -28,20 +30,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import com.stepup.android.ui.components.MainHeader
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
@@ -57,13 +54,11 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -81,7 +76,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -95,16 +89,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.BuildConfig
 import com.stepup.android.R
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.VoltText
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.StepUpIcons
 import com.stepup.android.ui.components.ShortcutButton
-import com.stepup.android.ui.components.AvatarBadge
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RewardEconomy
@@ -125,7 +117,6 @@ import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCustomAvatar
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -155,6 +146,7 @@ fun ProfileScreen(
     onOpenItems: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenRanking: () -> Unit = {},
+    onChangeBackground: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -230,8 +222,8 @@ fun ProfileScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     // Reserve room for identity, totals and the three destinations before giving art the rest.
-    val artworkHeight = (maxHeight - 410.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(180.dp, 320.dp)
+    val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(220.dp, 360.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
@@ -281,6 +273,7 @@ fun ProfileScreen(
                 onEditProfile = { showProfileEdit = true },
                 onOpenCustomize = onOpenCustomize,
                 onOpenSettings = { tab = 1 },
+                onChangeBackground = onChangeBackground,
             )
         }
 
@@ -330,31 +323,7 @@ fun ProfileScreen(
 /** 설정 한 줄 — 아이콘 · 이름 · 들어가는 화살표 */
 @Composable
 private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .border(1.dp, Edge, RoundedCornerShape(18.dp))
-            .quietClickable(onClick)
-            .padding(horizontal = 16.dp, vertical = 15.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Volt, modifier = Modifier.size(19.dp))
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Snow,
-        )
-        Icon(
-            imageVector = Icons.Filled.ChevronRight,
-            contentDescription = null,
-            tint = Slate,
-            modifier = Modifier.size(18.dp),
-        )
-    }
+    com.stepup.android.ui.components.ListRow(icon = icon, title = label, onClick = onClick)
 }
 
 /** 설정 필 칩 하나 — 아이콘 + 라벨 + 탭 액션 */
@@ -955,100 +924,43 @@ private fun GoalDialog(
     var sliderValue by remember(goal) { mutableFloatStateOf(goal.toFloat()) }
     val steps = sliderValue.toInt()
     val distanceKm = RewardEconomy.distanceMeters(steps) / 1000
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        shape = RoundedCornerShape(22.dp),
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            VoltButton(text = stringResource(R.string.common_close), onClick = onDismiss)
+    com.stepup.android.ui.components.DialogPanel(
+        title = stringResource(R.string.goal_title),
+        onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.common_close), onDismiss, Modifier.fillMaxWidth())
         },
-        title = {
-            Text(
-                text = stringResource(R.string.goal_title),
-                fontWeight = FontWeight.Black,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "%,d".format(steps),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-1).sp,
-                            color = Snow,
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.goal_steps_suffix),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                            modifier = Modifier.padding(bottom = 5.dp),
-                        )
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.padding(bottom = 5.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.goal_about_km, "%.1f".format(distanceKm)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
-                        // 목표를 올리면 보너스도 오른다는 것을 여기서 보여준다.
-                        // 규칙만 바꾸고 알리지 않으면 아무도 목표를 올리지 않는다.
-                        Text(
-                            text = stringResource(
-                                R.string.goal_bonus_preview,
-                                "%,.1f".format(RewardEconomy.goalBaseBonus(steps)),
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Volt,
-                        )
-                    }
-                }
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    onValueChangeFinished = { onGoalChange(sliderValue.toInt()) },
-                    valueRange = UserPrefs.MIN_GOAL.toFloat()..UserPrefs.MAX_GOAL.toFloat(),
-                    steps = (UserPrefs.MAX_GOAL - UserPrefs.MIN_GOAL) / 500 - 1,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Volt,
-                        activeTrackColor = Volt,
-                        inactiveTrackColor = Snow.copy(alpha = 0.10f),
-                        activeTickColor = Color.Transparent,
-                        inactiveTickColor = Color.Transparent,
-                    ),
-                )
-                Text(
-                    text = stringResource(R.string.goal_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                )
-            }
-        },
-    )
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("%,d".format(steps), fontFamily = StepUpNumbers, fontSize = 44.sp,
+                fontWeight = FontWeight.Bold, color = Snow)
+            Text(stringResource(R.string.goal_steps_suffix), fontSize = 14.sp, color = Silver)
+        }
+        Text(stringResource(R.string.goal_about_km, "%.1f".format(distanceKm)),
+            style = MaterialTheme.typography.bodyLarge, color = Silver)
+        Text(stringResource(R.string.goal_bonus_preview, "%,.1f".format(RewardEconomy.goalBaseBonus(steps))),
+            style = MaterialTheme.typography.bodyMedium, color = VoltText)
+        Slider(
+            value = sliderValue,
+            onValueChange = { sliderValue = it },
+            onValueChangeFinished = { onGoalChange(sliderValue.toInt()) },
+            valueRange = UserPrefs.MIN_GOAL.toFloat()..UserPrefs.MAX_GOAL.toFloat(),
+            steps = (UserPrefs.MAX_GOAL - UserPrefs.MIN_GOAL) / 500 - 1,
+            colors = SliderDefaults.colors(
+                thumbColor = Volt, activeTrackColor = Volt,
+                inactiveTrackColor = Snow.copy(alpha = 0.10f),
+                activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
+            ),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("%,d".format(UserPrefs.MIN_GOAL), color = Silver, fontSize = 14.sp)
+            Text("%,d".format(UserPrefs.MAX_GOAL), color = Silver, fontSize = 14.sp)
+        }
+        Text(stringResource(R.string.goal_hint), style = MaterialTheme.typography.bodyMedium, color = Silver)
+    }
 }
 
-/**
- * 프로필 편집 — 사진과 이름을 한 창에서.
- *
- * 예전에는 "프로필 편집"이 사진만 바꾸고 이름은 옆 칩에 따로 있었다.
- * 이름을 바꾸러 프로필 편집을 누른 사람은 거기서 멈춘다.
- *
- * 사진은 고르는 즉시 저장한다(되돌릴 것이 없다). 이름은 저장을 눌러야
- * 반영한다 — 글자를 지우는 중간 상태가 그대로 저장되면 곤란하다.
- */
+/** Photos keep their existing immediate-save behavior; the nickname saves on confirmation. */
 @Composable
 private fun ProfileEditDialog(
     nickname: String,
@@ -1061,157 +973,61 @@ private fun ProfileEditDialog(
     onDismiss: () -> Unit,
 ) {
     var text by rememberSaveable(nickname) { mutableStateOf(nickname) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        shape = RoundedCornerShape(22.dp),
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            VoltButton(text = stringResource(R.string.common_confirm), onClick = { onSave(text) })
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel), color = Slate)
-            }
-        },
-        title = {
-            Text(
-                text = stringResource(R.string.profile_edit_profile),
-                fontWeight = FontWeight.Black,
+    com.stepup.android.ui.components.DialogPanel(
+        title = stringResource(R.string.profile_edit_profile),
+        onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.common_confirm), { onSave(text) }, Modifier.fillMaxWidth())
+            com.stepup.android.ui.components.GhostButton(
+                stringResource(R.string.common_cancel), onDismiss, Modifier.fillMaxWidth(),
             )
         },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    LevelAvatar(
-                        level = level, size = 72.dp, avatarId = selectedAvatar,
-                        customBitmap = rememberCustomAvatar(avatarRev),
-                    )
-                }
-                // ── 이름 ──
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stringResource(R.string.profile_set_nickname),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = Slate,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CarbonHigh)
-                            .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                            .padding(horizontal = 13.dp, vertical = 12.dp),
-                    ) {
-                        if (text.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.profile_nickname_hint),
-                                fontSize = 13.sp,
-                                color = Slate,
-                            )
+    ) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            LevelAvatar(level = level, size = 72.dp, avatarId = selectedAvatar,
+                customBitmap = rememberCustomAvatar(avatarRev))
+        }
+        com.stepup.android.ui.components.FormField(
+            label = stringResource(R.string.profile_set_nickname), value = text,
+            onValueChange = { if (it.length <= UserPrefs.NICKNAME_MAX) text = it },
+            placeholder = stringResource(R.string.profile_nickname_hint),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.profile_nickname_note), fontSize = 14.sp, color = Silver,
+                modifier = Modifier.weight(1f))
+            Text("${text.length} / ${UserPrefs.NICKNAME_MAX}", fontSize = 14.sp, color = Silver)
+        }
+        HairlineDivider()
+        Text(stringResource(R.string.profile_edit_avatar), style = MaterialTheme.typography.titleMedium, color = Snow)
+        com.stepup.android.ui.components.GhostButton(
+            stringResource(R.string.profile_avatar_gallery), onPickGallery, Modifier.fillMaxWidth(),
+        )
+        if (selectedAvatar == UserPrefs.AVATAR_CUSTOM) {
+            Text(stringResource(R.string.profile_avatar_current), fontSize = 14.sp, color = Silver)
+        }
+        Text(stringResource(R.string.profile_avatar_or_emoji), fontSize = 14.sp, color = Silver)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val columns = if (maxWidth < 232.dp) 3 else 4
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AvatarEmojis.chunked(columns).forEachIndexed { rowIndex, row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEachIndexed { colIndex, emoji ->
+                            val id = rowIndex * columns + colIndex
+                            Box(
+                                Modifier.weight(1f).heightIn(min = 48.dp).aspectRatio(1f)
+                                    .clip(CircleShape).background(CarbonHigh)
+                                    .border(if (selectedAvatar == id) 2.dp else 1.dp,
+                                        if (selectedAvatar == id) Volt else Edge, CircleShape)
+                                    .selectable(selectedAvatar == id, role = Role.RadioButton) { onPickAvatar(id) },
+                                contentAlignment = Alignment.Center,
+                            ) { Text(emoji, fontSize = 26.sp) }
                         }
-                        BasicTextField(
-                            // 길이 제한은 저장할 때가 아니라 입력할 때 건다. 17자를
-                            // 쳐 놓고 저장 뒤에 잘려 있으면 고장으로 읽힌다.
-                            value = text,
-                            onValueChange = { if (it.length <= UserPrefs.NICKNAME_MAX) text = it },
-                            singleLine = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(color = Snow, fontSize = 14.sp),
-                            cursorBrush = SolidColor(Volt),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.profile_nickname_note),
-                            fontSize = 11.sp,
-                            color = Slate,
-                        )
-                        Text(
-                            text = "${text.length} / ${UserPrefs.NICKNAME_MAX}",
-                            fontSize = 11.sp,
-                            color = Slate,
-                        )
-                    }
-                }
-
-                HairlineDivider()
-
-                // ── 사진 ──
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Text(
-                        text = stringResource(R.string.profile_edit_avatar),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = Slate,
-                    )
-                    VoltButton(
-                        text = stringResource(R.string.profile_avatar_gallery),
-                        onClick = onPickGallery,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    // 갤러리 사진을 쓰고 있으면 지금 무엇이 걸려 있는지 보여준다.
-                    if (selectedAvatar == UserPrefs.AVATAR_CUSTOM) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(9.dp),
-                        ) {
-                            LevelAvatar(
-                                level = 1,
-                                size = 42.dp,
-                                avatarId = selectedAvatar,
-                                customBitmap = rememberCustomAvatar(avatarRev),
-                            )
-                            Text(
-                                text = stringResource(R.string.profile_avatar_current),
-                                fontSize = 11.sp,
-                                color = Silver,
-                            )
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.profile_avatar_or_emoji),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Slate,
-                    )
-                    AvatarEmojis.chunked(4).forEachIndexed { rowIndex, row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEachIndexed { colIndex, emoji ->
-                                val id = rowIndex * 4 + colIndex
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1f)
-                                        .clip(CircleShape)
-                                        .background(CarbonHigh)
-                                        .border(
-                                            width = if (selectedAvatar == id) 2.dp else 1.dp,
-                                            color = if (selectedAvatar == id) Volt else Edge,
-                                            shape = CircleShape,
-                                        )
-                                        .quietClickable { onPickAvatar(id) },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(text = emoji, fontSize = 24.sp)
-                                }
-                            }
-                        }
+                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
-        },
-    )
+        }
+    }
 }
 
 // ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
@@ -1230,6 +1046,7 @@ private fun MeHeader(
     onEditProfile: () -> Unit,
     onOpenCustomize: () -> Unit,
     onOpenSettings: () -> Unit,
+    onChangeBackground: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1238,9 +1055,8 @@ private fun MeHeader(
     ) {
         Box(Modifier.fillMaxWidth().height(artworkHeight)) {
             if (look != null) {
-                com.stepup.android.ui.components.CharacterStage(
-                    look = look, pose = com.stepup.android.domain.AvatarPose.IDLE,
-                    skyline = false, animate = false, characterFraction = 0.95f,
+                com.stepup.android.ui.components.ProfileCharacterStage(
+                    look = look,
                     contentDescription = stringResource(R.string.cd_home_character),
                     modifier = Modifier.fillMaxSize()
                         .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
@@ -1250,10 +1066,25 @@ private fun MeHeader(
                 androidx.compose.material3.CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
             DarkIconButton(
+                icon = Icons.Outlined.Image,
+                contentDescription = stringResource(R.string.wardrobe_change_background),
+                onClick = onChangeBackground,
+                modifier = Modifier.align(Alignment.TopStart).testTag("profile-background"),
+            )
+            DarkIconButton(
                 icon = Icons.Filled.Settings,
                 contentDescription = stringResource(R.string.profile_tab_settings),
                 onClick = onOpenSettings,
                 modifier = Modifier.align(Alignment.TopEnd).testTag("profile-settings"),
+            )
+        }
+        if (look != null) {
+            com.stepup.android.ui.components.AvatarLookNote(
+                look = look,
+                render = com.stepup.android.domain.AvatarArtCatalog.resolve(
+                    look, com.stepup.android.domain.AvatarPose.IDLE,
+                ),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Row(
@@ -1451,30 +1282,9 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
 /** 데모 모드 스위치 — 켜면 소식 · 러너 마켓에 "예시"가 뜬다 */
 @Composable
 private fun DemoModeRow(on: Boolean, onChange: (Boolean) -> Unit) {
-    GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), spacing = 4.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_demo),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.settings_demo_note),
-                    fontSize = 12.sp,
-                    color = Silver,
-                    lineHeight = 17.sp,
-                )
-            }
-            androidx.compose.material3.Switch(
-                checked = on,
-                onCheckedChange = onChange,
-                colors = androidx.compose.material3.SwitchDefaults.colors(
-                    checkedThumbColor = com.stepup.android.ui.theme.OnVolt,
-                    checkedTrackColor = Volt,
-                ),
-            )
-        }
-    }
+    com.stepup.android.ui.components.PreferenceToggle(
+        title = stringResource(R.string.settings_demo),
+        description = stringResource(R.string.settings_demo_note),
+        icon = Icons.Filled.Tune, checked = on, onCheckedChange = onChange,
+    )
 }

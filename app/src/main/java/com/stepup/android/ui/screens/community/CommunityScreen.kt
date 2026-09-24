@@ -2,23 +2,18 @@ package com.stepup.android.ui.screens.community
 
 import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,7 +25,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,24 +50,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.ui.components.TwoWaySwitch
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.MainHeader
-import com.stepup.android.ui.components.PageHero
 import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.domain.AvatarArt
-import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
-import com.stepup.android.domain.RankBoard
 import com.stepup.android.ui.components.AvatarStack
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
@@ -217,13 +204,10 @@ private fun BoardTab(
                 item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
             } else if (visible.isEmpty()) {
                 item {
-                    GlowCard(contentPadding = PaddingValues(26.dp)) {
-                        Text(
-                            text = stringResource(if (onlyFlash) R.string.community_meetups_empty else R.string.community_board_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Silver,
-                        )
-                    }
+                    com.stepup.android.ui.components.StatePanel(
+                        message = stringResource(if (onlyFlash) R.string.community_meetups_empty else R.string.community_board_empty),
+                        icon = Icons.Filled.Groups,
+                    )
                 }
             }
 
@@ -413,7 +397,7 @@ private fun RankingTeaser(rank: Int?, balance: Double, onClick: () -> Unit) {
                     } else {
                         stringResource(R.string.ranking_teaser, rank, "%,.0f".format(balance))
                     },
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
@@ -498,13 +482,9 @@ private fun CrewTab(
 
         if (myCrews.isEmpty()) {
             item {
-                GlowCard(contentPadding = PaddingValues(24.dp)) {
-                    Text(
-                        text = stringResource(R.string.community_no_crew_yet),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
-                    )
-                }
+                com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.community_no_crew_yet), Icons.Filled.Groups,
+                )
             }
         }
 
@@ -581,7 +561,7 @@ private fun CreateCrewCard(onClick: () -> Unit) {
                 )
                 Text(
                     text = stringResource(R.string.crew_create_sub),
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
@@ -630,7 +610,7 @@ private fun CrewCard(
                     }
                 }
                 if (crew.tagline.isNotBlank()) {
-                    Text(crew.tagline, fontSize = 11.sp, color = Silver, maxLines = 1)
+                    Text(crew.tagline, fontSize = 14.sp, color = Silver, maxLines = 1)
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -648,13 +628,13 @@ private fun CrewCard(
                         } else {
                             crew.area.ifBlank { stringResource(R.string.crew_area_here) }
                         },
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Slate,
                     )
-                    Text("·", fontSize = 11.sp, color = Slate)
+                    Text("·", fontSize = 14.sp, color = Slate)
                     Text(
                         text = stringResource(R.string.community_members, crew.memberCount),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Silver,
                     )
                 }
@@ -667,7 +647,7 @@ private fun CrewCard(
             Text(
                 text = stringResource(R.string.crew_pending_badge, crew.pendingCount),
                 modifier = Modifier.quietClickable(onOpenBoard),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -729,7 +709,7 @@ private fun SearchField(
             if (query.isEmpty()) {
                 Text(
                     text = stringResource(R.string.community_search_hint),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }
@@ -769,7 +749,7 @@ private fun MapEntryCard(onClick: () -> Unit) {
             Text(
                 text = stringResource(R.string.community_map_sub),
                 color = Silver,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
             )
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)

@@ -38,7 +38,6 @@ import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -79,7 +78,6 @@ import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.NightCanvas
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.guide.GuideOverlay
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
@@ -324,6 +322,9 @@ internal fun MainScaffold(
     var homeSetting by rememberSaveable {
         mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.initial.random())
     }
+    var profileSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.ProfileBackgrounds.settings.random())
+    }
     // The scene belongs to the running journey, not to its timer or live data updates.
     val runSetting = rememberSaveable {
         com.stepup.android.ui.components.RunBackgrounds.settings.random()
@@ -359,7 +360,8 @@ internal fun MainScaffold(
         )
     } else if (currentRoute == Screen.Profile.route) {
         com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
+            Modifier.fillMaxSize().testTag("profile-scene-${profileSetting.name}"),
+            profileSetting, home = true,
         )
     } else if (currentRoute in listOf(
             Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
@@ -374,6 +376,8 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), runSetting,
         )
+    } else {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     }
     Scaffold(
         containerColor = Color.Transparent,
@@ -501,6 +505,9 @@ internal fun MainScaffold(
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
+                    onChangeBackground = {
+                        profileSetting = com.stepup.android.ui.components.ProfileBackgrounds.next(profileSetting)
+                    },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenGuide = {

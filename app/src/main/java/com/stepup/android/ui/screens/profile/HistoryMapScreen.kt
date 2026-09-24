@@ -1,23 +1,18 @@
 package com.stepup.android.ui.screens.profile
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
@@ -28,7 +23,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -46,7 +40,6 @@ import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.StepUpMap
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
@@ -136,27 +129,12 @@ fun HistoryMapScreen(
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
         )
 
-        FlowRow(
+        com.stepup.android.ui.components.TwoWaySwitch(
+            labels = listOf(stringResource(R.string.history_period_week), stringResource(R.string.history_period_month), stringResource(R.string.history_period_all)),
+            selected = HistoryPeriod.entries.indexOf(period),
+            onSelect = { viewModel.period.value = HistoryPeriod.entries[it] },
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PillChip(
-                text = stringResource(R.string.history_period_week),
-                selected = period == HistoryPeriod.WEEK,
-                onClick = { viewModel.period.value = HistoryPeriod.WEEK },
-            )
-            PillChip(
-                text = stringResource(R.string.history_period_month),
-                selected = period == HistoryPeriod.MONTH,
-                onClick = { viewModel.period.value = HistoryPeriod.MONTH },
-            )
-            PillChip(
-                text = stringResource(R.string.history_period_all),
-                selected = period == HistoryPeriod.ALL,
-                onClick = { viewModel.period.value = HistoryPeriod.ALL },
-            )
-        }
+        )
 
         Box(
             modifier = Modifier
@@ -208,7 +186,7 @@ fun HistoryMapScreen(
                     )
                     Text(
                         text = stringResource(R.string.history_map_sub),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Silver,
                     )
                 }

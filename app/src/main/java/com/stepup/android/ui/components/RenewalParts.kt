@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Brush
@@ -47,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Cyan
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -236,10 +238,13 @@ fun PageHero(
 ) {
     val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
     val shape = RoundedCornerShape(22.dp)
-    Box(modifier.fillMaxWidth().clip(shape).border(1.dp, Volt.copy(alpha = 0.32f), shape)) {
+    BoxWithConstraints(modifier.fillMaxWidth().clip(shape).border(1.dp, Volt.copy(alpha = 0.32f), shape)) {
+        val showArt = art != null && !large && maxWidth >= 280.dp
         RunnerScene(Modifier.matchParentSize(), setting = setting, home = true)
         Box(Modifier.matchParentSize().background(Brush.horizontalGradient(
-            0f to Color(0xF20A1730), 0.58f to Color(0x990A1730), 1f to Color.Transparent,
+            // Keep the text surface paired with its theme, even when scenery changes.
+            0f to Carbon, 0.6f to Carbon.copy(alpha = 0.98f),
+            1f to Carbon.copy(alpha = if (showArt) 0.65f else 0.98f),
         )))
         Row(
             modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp)
@@ -249,10 +254,10 @@ fun PageHero(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(title, fontSize = 30.sp, fontWeight = FontWeight.Black,
                     letterSpacing = (-1).sp, color = Snow, lineHeight = 34.sp)
-                Text(subtitle, fontSize = 13.sp, color = Silver, lineHeight = 19.sp)
+                Text(subtitle, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
             }
-            if (art != null && !large) {
-                Box(modifier = Modifier.size(width = 146.dp, height = 162.dp), content = art)
+            if (art != null && showArt) {
+                Box(modifier = Modifier.size(width = (maxWidth * 0.36f).coerceAtMost(146.dp), height = 162.dp), content = art)
             }
         }
     }
@@ -288,7 +293,7 @@ fun PrimaryCta(
             )
             .clip(shape)
             .then(
-                if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.18f)
+                if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.08f)
                 else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
             )
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -372,12 +377,12 @@ fun ShortcutButton(
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier = modifier
-            // 보조 진입점 — 러닝 시작보다 확실히 작게(44dp)
-            .heightIn(min = 44.dp)
+            // 보조 진입점도 공통 터치 높이를 확보한다.
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(CarbonHigh, shape)
             .border(1.dp, Edge, shape)
-            .feedbackClickable(onClick = onClick)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -389,10 +394,9 @@ fun ShortcutButton(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 2,
             )
             if (subtitle != null) {
-                Text(text = subtitle, fontSize = 12.sp, color = Silver, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = subtitle, fontSize = 14.sp, lineHeight = 20.sp, color = Silver)
             }
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(18.dp))
@@ -408,28 +412,25 @@ fun SmallBadge(
 ) {
     val color = when (tone) {
         BadgeTone.Accent -> VoltText
-        BadgeTone.Glow -> Cyan
+        BadgeTone.Glow -> if (StepUpColors.dark) Cyan else Color(0xFF086B83)
         BadgeTone.Muted -> Silver
-        BadgeTone.Nft -> NftPurple
+        BadgeTone.Nft -> if (StepUpColors.dark) Color(0xFFAC90FF) else Color(0xFF5D2ABD)
     }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(50))
             // 신발·옷 그림 위에 얹힐 때가 있다. 반투명만 두면 흰 모자 위에서
             // 글자가 사라진다 — 불투명한 바닥을 먼저 깔고 그 위에 색을 얹는다.
-            .background(CarbonHigh)
-            .background(color.copy(alpha = 0.16f))
+            .background(Carbon)
+            .background(color.copy(alpha = 0.04f))
             .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+        Text(text = text, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
 
 enum class BadgeTone { Accent, Glow, Muted, Nft }
-
-/** NFT 표시 — 보라. 블루(누르는 것)·시안(빛나는 것)과 겹치지 않는 색이라야 "소유물"로 읽힌다. */
-private val NftPurple = androidx.compose.ui.graphics.Color(0xFF9B6BFF)
 
 /** 두 칸짜리 분류 탭 — 의상 / 신발, 피드 / 내 크루, 대회 / 러닝·건강 */
 @Composable
@@ -456,7 +457,7 @@ fun TwoWaySwitch(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = StepUpDesign.TouchTarget)
                     .clip(itemShape)
                     .then(if (on) Modifier.background(VoltPlate, itemShape) else Modifier)
                     .feedbackClickable(role = Role.Tab) { onSelect(index) }
@@ -471,11 +472,11 @@ fun TwoWaySwitch(
                 }
                 Text(
                     text = label,
+                    modifier = Modifier.weight(1f, fill = false),
                     fontSize = 15.sp,
-                    fontWeight = if (on) FontWeight.Black else FontWeight.SemiBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (on) OnVolt else Silver,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
             }
         }

@@ -279,6 +279,36 @@ class AvatarArtTest {
     }
 
     @Test
+    fun `프로필 앉기는 같은 성별 핑크 의상과 클라우드 러너 조합만 사용한다`() {
+        AvatarGender.entries.forEach { gender ->
+            val look = AvatarLook(gender = gender, outfit = Outfits.SOFT_PINK, shoe = shoe("WND-010"))
+            val seated = AvatarArtCatalog.resolve(look, AvatarPose.SIT)
+            assertTrue(seated.exactPose && seated.lookShown)
+            assertEquals(gender, seated.art.gender)
+            listOf(AvatarPose.IDLE, AvatarPose.RUN, AvatarPose.CHEER).forEach { pose ->
+                assertFalse("$pose must not show the seated portrait", AvatarArtCatalog.resolve(look, pose).art.pose == AvatarPose.SIT)
+            }
+        }
+    }
+
+    @Test
+    fun `앉은 그림이 없으면 다른 의상이나 신발의 앉은 그림을 대신 보여 주지 않는다`() {
+        AvatarGender.entries.forEach { gender ->
+            listOf(
+                AvatarLook(gender = gender, outfit = Outfits.SOFT_PINK, shoe = shoe("FIR-001")),
+                AvatarLook(gender = gender, outfit = Outfits.SOFT_PINK, shoe = null),
+                AvatarLook(gender = gender, outfit = Outfits.SOFT_LAVENDER, shoe = shoe("WND-010")),
+                AvatarLook(gender = gender, outfit = Outfits.STARTER_HOODIE, shoe = shoe("WND-010")),
+            ).forEach { look ->
+                val render = AvatarArtCatalog.resolve(look, AvatarPose.SIT)
+                assertFalse(render.exactPose)
+                assertFalse(render.art.pose == AvatarPose.SIT)
+                assertEquals(gender, render.art.gender)
+            }
+        }
+    }
+
+    @Test
     fun `추가로 필요한 자세 목록`() {
         assertEquals(
             setOf(

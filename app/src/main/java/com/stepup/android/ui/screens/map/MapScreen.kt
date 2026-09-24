@@ -1,5 +1,14 @@
 package com.stepup.android.ui.screens.map
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import com.stepup.android.ui.components.GhostButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,7 +42,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -113,83 +120,80 @@ fun MapScreen(
         )
     }
 
-    Column(Modifier.fillMaxSize()) {
-        SecondaryHeader(
-            title = stringResource(R.string.map_title),
-            onBack = onBack, balance = null, onOpenWallet = null,
-            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
-        )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val detailsMaxHeight = maxHeight * 0.42f
+        Column(Modifier.fillMaxSize()) {
+            SecondaryHeader(
+                title = stringResource(R.string.map_title),
+                onBack = onBack, balance = null, onOpenWallet = null,
+                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+            )
 
-        TwoWaySwitch(
-            labels = listOf(stringResource(R.string.map_seg_nearby), stringResource(R.string.map_seg_territory)),
-            selected = if (mode == MapMode.NEARBY) 0 else 1,
-            onSelect = {
-                selected = null
-                selectedCell = null
-                viewModel.select(if (it == 0) MapMode.NEARBY else MapMode.TERRITORY)
-            },
-            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
-        )
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = StepUpDesign.Gutter)
-                .clip(RoundedCornerShape(18.dp))
-                .border(1.dp, Volt.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
-        ) {
-            val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
-            val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }
-            StepUpMap(
-                focus = focus,
-                modifier = Modifier.fillMaxSize(),
-                interactive = true,
-                onViewport = viewModel::onViewport,
-                onTap = { at, plan ->
-                    if (mode == MapMode.NEARBY) {
-                        selected = nearestPin(pins, at, plan, radiusPx = tapRadius)
-                    } else {
-                        val point = plan.fromScreen(at)
-                        val cell = Territory.cellOf(point.lat, point.lng)
-                        selectedCell = cells.firstOrNull { it.cell == cell }?.cell
-                    }
+            TwoWaySwitch(
+                labels = listOf(stringResource(R.string.map_seg_nearby), stringResource(R.string.map_seg_territory)),
+                selected = if (mode == MapMode.NEARBY) 0 else 1,
+                onSelect = {
+                    selected = null
+                    selectedCell = null
+                    viewModel.select(if (it == 0) MapMode.NEARBY else MapMode.TERRITORY)
                 },
-            ) { plan ->
-                if (mode == MapMode.NEARBY) {
-                    drawPins(plan, pins, selected)
-                } else {
-                    drawCells(plan, cells, selectedCell)
+                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = StepUpDesign.Gutter)
+                    .clip(RoundedCornerShape(18.dp))
+                    .border(1.dp, Volt.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
+            ) {
+                val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
+                val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }
+                StepUpMap(
+                    focus = focus,
+                    modifier = Modifier.fillMaxSize(),
+                    interactive = true,
+                    onViewport = viewModel::onViewport,
+                    onTap = { at, plan ->
+                        if (mode == MapMode.NEARBY) {
+                            selected = nearestPin(pins, at, plan, radiusPx = tapRadius)
+                        } else {
+                            val point = plan.fromScreen(at)
+                            val cell = Territory.cellOf(point.lat, point.lng)
+                            selectedCell = cells.firstOrNull { it.cell == cell }?.cell
+                        }
+                    },
+                ) { plan ->
+                    if (mode == MapMode.NEARBY) {
+                        drawPins(plan, pins, selected)
+                    } else {
+                        drawCells(plan, cells, selectedCell)
+                    }
+                    here?.let { drawHere(plan, it) }
                 }
-                here?.let { drawHere(plan, it) }
+
             }
 
-            if (mode == MapMode.TERRITORY) {
-                TerritoryStatus(
-                    state = territory,
-                    onRetry = viewModel::retryTerritory,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(10.dp),
-                )
-            }
-        }
+            Box(Modifier.heightIn(max = detailsMaxHeight).verticalScroll(rememberScrollState()).padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
+                when (mode) {
+                    MapMode.NEARBY -> NearbyCard(
+                        selected = selected,
+                        flashCount = flashes.size,
+                        courseCount = courses.size,
+                        here = here,
+                        onOpenFlash = onOpenFlash,
+                        onOpenCourses = onOpenCourses,
+                    )
 
-        Box(Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
-            when (mode) {
-                MapMode.NEARBY -> NearbyCard(
-                    selected = selected,
-                    flashCount = flashes.size,
-                    courseCount = courses.size,
-                    here = here,
-                    onOpenFlash = onOpenFlash,
-                    onOpenCourses = onOpenCourses,
-                )
-
-                MapMode.TERRITORY -> TerritoryCard(
-                    cell = (territory as? TerritoryState.Ready)?.cells?.firstOrNull { it.cell == selectedCell },
-                    standings = standings,
-                )
+                    MapMode.TERRITORY -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TerritoryStatus(state = territory, onRetry = viewModel::retryTerritory)
+                        val ready = territory as? TerritoryState.Ready
+                        if (ready != null && (ready.cells.isNotEmpty() || standings.isNotEmpty())) {
+                            TerritoryCard(cell = ready.cells.firstOrNull { it.cell == selectedCell }, standings = standings)
+                        }
+                    }
+                }
             }
         }
     }
@@ -249,27 +253,23 @@ private fun DrawScope.drawCells(plan: TilePlan, cells: List<TerritoryCell>, sele
 @Composable
 private fun TerritoryStatus(state: TerritoryState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     val text = when (state) {
-        TerritoryState.Loading -> return
+        TerritoryState.Loading -> stringResource(R.string.feed_loading)
         is TerritoryState.Ready -> if (state.cells.isEmpty()) stringResource(R.string.map_territory_empty) else return
         TerritoryState.SignIn -> stringResource(R.string.map_territory_sign_in)
         TerritoryState.ZoomIn -> stringResource(R.string.map_territory_zoom)
         TerritoryState.Failed -> stringResource(R.string.map_territory_failed)
     }
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Night.copy(alpha = 0.96f))
-            .border(1.dp, Volt.copy(alpha = 0.38f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(if (state == TerritoryState.Failed) Cyan else Volt))
-        Text(text = text, fontSize = 12.sp, color = Snow)
-        if (state == TerritoryState.Failed) {
-            TextButton(onClick = onRetry) {
-                Text(stringResource(R.string.map_retry), color = Volt, fontSize = 12.sp)
+    GlowCard(modifier, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state == TerritoryState.Loading) {
+                CircularProgressIndicator(Modifier.size(22.dp), color = Volt, strokeWidth = 2.dp)
+            } else {
+                Icon(if (state == TerritoryState.Failed) Icons.Filled.Warning else Icons.Filled.Info, null, tint = Silver, modifier = Modifier.size(22.dp))
             }
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = Snow, modifier = Modifier.weight(1f))
+        }
+        if (state == TerritoryState.Failed) {
+            GhostButton(stringResource(R.string.map_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -283,7 +283,7 @@ private fun NearbyCard(
     onOpenFlash: (Long) -> Unit,
     onOpenCourses: () -> Unit,
 ) {
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 10.dp) {
         when (selected) {
             null -> {
                 Text(
@@ -295,7 +295,7 @@ private fun NearbyCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Legend(Volt, stringResource(R.string.post_cat_flash))
                     Legend(Cyan, stringResource(R.string.map_legend_course))
                 }
@@ -303,7 +303,7 @@ private fun NearbyCard(
 
             is Pin.Flash -> {
                 val post = selected.post
-                Text(post.title, color = Snow, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(post.title, color = Snow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 val away = post.awayKmFrom(here)
                 Text(
                     text = listOfNotNull(
@@ -311,7 +311,7 @@ private fun NearbyCard(
                         away?.let { stringResource(R.string.map_away_km, formatKm(it)) },
                         stringResource(R.string.map_flash_people, post.joinedCount, post.capacity),
                     ).joinToString(" · "),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
                 VoltButton(
@@ -323,10 +323,10 @@ private fun NearbyCard(
 
             is Pin.Course -> {
                 val course = selected.course
-                Text(course.name, color = Snow, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(course.name, color = Snow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Text(
                     text = stringResource(R.string.map_course_meta, formatKm(course.distanceKm), course.runCount),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
                 VoltButton(
@@ -348,13 +348,13 @@ private fun Legend(color: Color, label: String) {
                 .clip(CircleShape)
                 .background(color),
         )
-        Text(label, fontSize = 12.sp, color = Silver)
+        Text(label, fontSize = 14.sp, color = Silver)
     }
 }
 
 @Composable
 private fun TerritoryCard(cell: TerritoryCell?, standings: List<TerritoryStanding>) {
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 8.dp) {
+    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 8.dp) {
         if (cell != null) {
             Text(
                 text = stringResource(R.string.map_territory_cell, cell.crewName, cell.score),
@@ -364,7 +364,7 @@ private fun TerritoryCard(cell: TerritoryCell?, standings: List<TerritoryStandin
         } else {
             Text(
                 text = stringResource(R.string.map_territory_hint),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
             )
         }
@@ -380,22 +380,17 @@ private fun TerritoryCard(cell: TerritoryCell?, standings: List<TerritoryStandin
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("${i + 1}", color = Slate, fontSize = 12.sp)
+                    Text("${i + 1}", color = Slate, fontSize = 14.sp)
                     Box(
                         Modifier
                             .size(10.dp)
                             .clip(CircleShape)
                             .background(crewColor(row.crewId)),
                     )
-                    Text(
-                        text = row.crewName,
-                        color = if (row.mine) Volt else Snow,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(stringResource(R.string.map_territory_cells, row.cells), color = Silver, fontSize = 12.sp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(row.crewName, color = if (row.mine) Volt else Snow, fontSize = 16.sp)
+                        Text(stringResource(R.string.map_territory_cells, row.cells), color = Silver, fontSize = 14.sp)
+                    }
                 }
             }
         }

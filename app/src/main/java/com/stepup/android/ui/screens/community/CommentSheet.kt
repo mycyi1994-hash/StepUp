@@ -20,15 +20,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,9 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -201,19 +199,14 @@ fun CommentSheet(
                         color = Snow,
                     )
                     Spacer(Modifier.weight(1f))
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.common_close),
-                        tint = Slate,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .quietClickable(onDismiss),
-                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, stringResource(R.string.common_close), tint = Silver, modifier = Modifier.size(22.dp))
+                    }
                 }
 
                 Text(
                     text = post.title,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Silver,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -229,11 +222,12 @@ fun CommentSheet(
                             .weight(1f),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = stringResource(R.string.comments_empty),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
+                        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            com.stepup.android.ui.components.IconSquare(Icons.Filled.ChatBubbleOutline, size = 56.dp)
+                            Text(stringResource(R.string.comments_empty), style = MaterialTheme.typography.bodyLarge,
+                                color = Silver, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
                     }
                 } else {
                     LazyColumn(
@@ -285,18 +279,13 @@ fun CommentSheet(
                         )
                         Text(
                             text = stringResource(R.string.comments_replying_to, target.author),
-                            fontSize = 11.sp,
+                            fontSize = 14.sp,
                             color = Silver,
                             modifier = Modifier.weight(1f),
                         )
-                        Icon(
-                            Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.common_cancel),
-                            tint = Slate,
-                            modifier = Modifier
-                                .size(14.dp)
-                                .quietClickable { replyTo = null },
-                        )
+                        IconButton(onClick = { replyTo = null }) {
+                            Icon(Icons.Filled.Close, stringResource(R.string.common_cancel), tint = Silver, modifier = Modifier.size(22.dp))
+                        }
                     }
                 }
 
@@ -308,60 +297,23 @@ fun CommentSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(9.dp),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(50))
-                            .background(CarbonHigh)
-                            .border(1.dp, Edge, RoundedCornerShape(50))
-                            .padding(horizontal = 15.dp, vertical = 11.dp),
-                    ) {
-                        if (input.isEmpty()) {
-                            Text(
-                                text = stringResource(
-                                    if (replyTo != null) {
-                                        R.string.comments_reply_hint
-                                    } else {
-                                        R.string.comments_hint
-                                    }
-                                ),
-                                fontSize = 13.sp,
-                                color = Slate,
-                            )
-                        }
-                        BasicTextField(
-                            value = input,
-                            onValueChange = { input = it },
-                            textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp),
-                            cursorBrush = SolidColor(Volt),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                    com.stepup.android.ui.components.FormField(
+                        label = stringResource(if (replyTo != null) R.string.comments_reply_hint else R.string.comments_hint),
+                        value = input, onValueChange = { input = it },
+                        modifier = Modifier.weight(1f), singleLine = false, minLines = 1, maxLines = 4,
+                    )
                     val canSend = input.isNotBlank()
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(if (canSend) Volt else CarbonHigh)
-                            .then(
-                                if (canSend) {
-                                    Modifier.quietClickable {
-                                        onSend(input.trim(), replyTo?.id ?: 0L)
-                                        input = ""
-                                        replyTo = null
-                                    }
-                                } else {
-                                    Modifier
-                                }
-                            ),
-                        contentAlignment = Alignment.Center,
+                    IconButton(
+                        enabled = canSend,
+                        onClick = {
+                            onSend(input.trim(), replyTo?.id ?: 0L)
+                            input = ""
+                            replyTo = null
+                        },
+                        modifier = Modifier.size(48.dp).background(if (canSend) Volt else CarbonHigh, CircleShape),
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = stringResource(R.string.comments_send),
-                            tint = if (canSend) OnVolt else Slate,
-                            modifier = Modifier.size(17.dp),
-                        )
+                        Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.comments_send),
+                            tint = if (canSend) OnVolt else Slate, modifier = Modifier.size(22.dp))
                     }
                 }
             }
@@ -397,7 +349,7 @@ private fun CommentRow(
     ) {
         Box(
             modifier = Modifier
-                .size(if (comment.isReply) 24.dp else 30.dp)
+                .size(if (comment.isReply) 30.dp else 36.dp)
                 .clip(CircleShape)
                 .background(if (comment.mine) Volt.copy(alpha = 0.18f) else CarbonHigh),
             contentAlignment = Alignment.Center,
@@ -405,7 +357,7 @@ private fun CommentRow(
             Text(
                 text = comment.author.take(1).uppercase(),
                 color = if (comment.mine) Volt else Silver,
-                fontSize = if (comment.isReply) 10.sp else 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
             )
         }
@@ -419,49 +371,29 @@ private fun CommentRow(
             ) {
                 Text(
                     text = comment.author,
-                    fontSize = 11.5.sp,
+                    modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (comment.mine) Volt else Snow,
                 )
                 Text(
                     text = relativeTime(comment.createdAt),
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = Slate,
                 )
             }
             Text(
                 text = comment.body,
-                fontSize = 12.5.sp,
+                fontSize = 15.sp,
                 color = Silver,
-                lineHeight = 18.sp,
+                lineHeight = 23.sp,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!comment.isReply) {
-                    Text(
-                        text = stringResource(R.string.comments_reply),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Slate,
-                        modifier = Modifier.quietClickable(onReply),
-                    )
+                    TextButton(onClick = onReply) { Text(stringResource(R.string.comments_reply), color = Silver) }
                 }
-                if (comment.mine) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.post_delete),
-                        tint = Slate,
-                        modifier = Modifier
-                            .size(13.dp)
-                            .quietClickable(onDelete),
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.report_title),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Slate,
-                        modifier = Modifier.quietClickable(onReport),
-                    )
+                TextButton(onClick = if (comment.mine) onDelete else onReport) {
+                    Text(stringResource(if (comment.mine) R.string.post_delete else R.string.report_title), color = Silver)
                 }
             }
         }

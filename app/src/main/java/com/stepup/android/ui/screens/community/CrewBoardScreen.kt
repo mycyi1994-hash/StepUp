@@ -1,24 +1,19 @@
 package com.stepup.android.ui.screens.community
 
+import androidx.compose.material.icons.filled.Groups
+
 import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.Analytics
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.Share
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,11 +37,8 @@ import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
@@ -149,7 +140,7 @@ fun CrewBoardScreen(
                                     R.string.community_members,
                                     crew.memberCount,
                                 ) + crew.area.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(),
-                                fontSize = 11.sp,
+                                fontSize = 14.sp,
                                 color = Silver,
                             )
                         }
@@ -160,7 +151,7 @@ fun CrewBoardScreen(
                             R.string.crew_boost,
                             RewardEconomy.partyBonusPercent(crew.memberCount.coerceAtLeast(1)),
                         ),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
                     )
@@ -196,13 +187,9 @@ fun CrewBoardScreen(
 
             if (sorted.isEmpty()) {
                 item {
-                    GlowCard(contentPadding = PaddingValues(26.dp)) {
-                        Text(
-                            text = stringResource(R.string.crew_board_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Silver,
-                        )
-                    }
+                    com.stepup.android.ui.components.StatePanel(
+                        stringResource(R.string.crew_board_empty), androidx.compose.material.icons.Icons.Filled.Groups,
+                    )
                 }
             }
 

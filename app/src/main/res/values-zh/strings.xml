@@ -1520,5 +1520,7 @@
     <string name="run_saving">正在保存跑步记录</string>
     <string name="run_save_retry">重新保存</string>
     <string name="run_save_failed">跑步记录尚未保存完成。请保持应用打开并重试。</string>
+    <string name="course_like_action">点赞此路线</string>
+    <string name="course_unlike_action">取消路线点赞</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

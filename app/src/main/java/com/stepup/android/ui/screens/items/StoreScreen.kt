@@ -35,11 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -104,7 +102,6 @@ fun LazyListScope.storeSection() {
             ) {
                 StoreIcon(Icons.Filled.Storefront)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Eyebrow(text = stringResource(R.string.store_eyebrow_goods))
                     Text(
                         text = stringResource(R.string.store_goods_head),
                         style = MaterialTheme.typography.titleSmall,
@@ -114,9 +111,9 @@ fun LazyListScope.storeSection() {
             }
             Text(
                 text = stringResource(R.string.store_goods_body),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
-                lineHeight = 19.sp,
+                lineHeight = 22.sp,
             )
         }
     }
@@ -125,9 +122,9 @@ fun LazyListScope.storeSection() {
         Text(
             text = stringResource(R.string.store_note),
             modifier = Modifier.padding(horizontal = 4.dp),
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             color = Slate,
-            lineHeight = 15.sp,
+            lineHeight = 21.sp,
         )
     }
 }
@@ -155,7 +152,7 @@ private fun SoonBadge() {
     ) {
         Text(
             text = stringResource(R.string.store_soon),
-            fontSize = 9.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Black,
             color = Volt,
         )
@@ -165,57 +162,19 @@ private fun SoonBadge() {
 /** 팔 물건 한 줄 — 값은 적혀 있지만 아직 결제되지 않는다 */
 @Composable
 private fun GoodRow(good: StoreGood) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(Volt.copy(alpha = 0.10f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = good.icon,
-                contentDescription = null,
-                tint = Volt,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = stringResource(good.name),
-                style = MaterialTheme.typography.titleSmall,
-                color = Snow,
-            )
-            Text(text = stringResource(good.note), fontSize = 11.sp, color = Silver)
-        }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                text = stringResource(R.string.price_sup, "%,d".format(good.priceSup)),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Edge.copy(alpha = 0.6f))
-                    .padding(horizontal = 9.dp, vertical = 3.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.store_soon),
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate,
-                )
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 14.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.stepup.android.ui.components.IconSquare(good.icon, size = 44.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(good.name), style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(stringResource(good.note), fontSize = 14.sp, color = Silver)
             }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.price_sup, "%,d".format(good.priceSup)),
+                style = MaterialTheme.typography.titleMedium, color = Snow, modifier = Modifier.weight(1f))
+            SoonBadge()
         }
     }
 }
