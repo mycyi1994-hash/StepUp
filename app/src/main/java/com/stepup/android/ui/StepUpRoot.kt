@@ -790,7 +790,12 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                     labelStyle = labelStyle,
                     selected = parent == screen,
                     onClick = {
-                        if (parent == screen) {
+                        if (currentRoute == Routes.MYSTERY_BOX) {
+                            // The draw screen is an action, not a saved tab destination.
+                            // Remove it before switching so restoreState cannot reopen it.
+                            navController.popBackStack()
+                            navController.switchTab(screen)
+                        } else if (parent == screen) {
                             // 같은 탭의 하위 화면에 있으면 그 탭의 첫 화면으로 돌아간다.
                             // 첫 화면이 백스택에 없으면(다른 길로 들어왔으면) 탭 전환으로 간다.
                             if (currentRoute != screen.route &&
@@ -808,7 +813,6 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                         selected = currentRoute == Routes.MYSTERY_BOX,
                         onClick = { navController.navigate(Routes.MYSTERY_BOX) {
                             launchSingleTop = true
-                            restoreState = true
                         } },
                     )
                 }
