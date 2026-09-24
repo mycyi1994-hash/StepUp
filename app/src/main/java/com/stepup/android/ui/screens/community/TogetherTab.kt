@@ -51,13 +51,13 @@ internal fun TogetherTab(
     val featured = featuredMeetup(posts, now)
     val locale = LocalConfiguration.current.locales[0]
     BoxWithConstraints(Modifier.fillMaxSize()) {
-    val artworkHeight = (maxHeight * 0.30f / androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(100.dp, 210.dp)
+    val artworkHeight = (maxHeight * 0.42f / androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(170.dp, 300.dp)
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                com.stepup.android.ui.components.TerraceStage(Modifier.fillMaxWidth().height(artworkHeight)) {
+                Box(Modifier.fillMaxWidth().height(artworkHeight)) {
                 Image(painterResource(R.drawable.community_warmup), contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize())

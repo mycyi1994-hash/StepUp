@@ -7,7 +7,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -15,14 +14,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
-import kotlin.math.abs
 
 /**
- * 네온 코스맵 — 실제 GPS 좌표(0..1로 정규화된)를 어두운 지도 스타일 위에 그린다.
- *
- * 지도 SDK 없이 목업의 느낌을 낸다: 코스마다 고정된 의사 도로망(시드 기반)을
- * 희미하게 깔고, 그 위에 볼트 네온 경로 + 시작점 + 도착 깃발을 얹는다.
- * 같은 코스는 언제나 같은 도로망이 나오므로 지도처럼 "그 장소"로 인식된다.
+ * Recorded route geometry on a schematic surface. It never invents local streets.
+ * The full map screen uses real tiles when available.
  */
 @Composable
 fun CourseTrackMap(
@@ -83,61 +78,19 @@ fun CourseTrackMap(
 }
 
 /**
- * 시드 고정 의사 도로망 — 실제 타일을 못 받았을 때 까는 대체 배경.
- * [LiveRouteMap]도 오프라인일 때 이걸 쓴다.
+ * Abstract coordinate grid behind a route preview or unloaded tiles. This cannot
+ * be mistaken for street data from the real map provider.
  */
+@Suppress("UNUSED_PARAMETER")
 internal fun DrawScope.drawStreets(seed: Int) {
-    var s = seed * 92821 + 137
-    fun rand(): Float {
-        s = s * 1_103_515_245 + 12_345
-        return abs(s % 1000) / 1000f
+    drawRect(Color(0xFF0C1930))
+    val line = Snow.copy(alpha = 0.055f)
+    for (step in 1..5) {
+        val x = size.width * step / 6f
+        val y = size.height * step / 6f
+        drawLine(line, Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
+        drawLine(line, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
     }
-    val faint = Snow.copy(alpha = 0.07f)
-    val fainter = Snow.copy(alpha = 0.04f)
-    // 큰 도로 — 화면을 가로지르는 꺾인 선 몇 개
-    repeat(4) {
-        val y = rand() * size.height
-        val bend = (rand() - 0.5f) * size.height * 0.3f
-        val path = Path().apply {
-            moveTo(0f, y)
-            lineTo(size.width * (0.3f + rand() * 0.2f), y + bend)
-            lineTo(size.width, y + bend * 0.4f)
-        }
-        drawPath(path, faint, style = Stroke(width = 2.dp.toPx()))
-    }
-    repeat(4) {
-        val x = rand() * size.width
-        val bend = (rand() - 0.5f) * size.width * 0.3f
-        val path = Path().apply {
-            moveTo(x, 0f)
-            lineTo(x + bend, size.height * (0.4f + rand() * 0.2f))
-            lineTo(x + bend * 0.5f, size.height)
-        }
-        drawPath(path, faint, style = Stroke(width = 2.dp.toPx()))
-    }
-    // 골목 — 짧은 점선
-    repeat(10) {
-        val x0 = rand() * size.width
-        val y0 = rand() * size.height
-        val horizontal = rand() > 0.5f
-        val len = (0.1f + rand() * 0.2f)
-        drawLine(
-            color = fainter,
-            start = Offset(x0, y0),
-            end = if (horizontal) Offset(x0 + size.width * len, y0) else Offset(x0, y0 + size.height * len),
-            strokeWidth = 1.dp.toPx(),
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 8f)),
-        )
-    }
-    // 강 — 넓고 연한 파란 띠 하나
-    val riverY = size.height * (0.55f + rand() * 0.3f)
-    drawLine(
-        color = Volt.copy(alpha = 0.22f),
-        start = Offset(0f, riverY),
-        end = Offset(size.width, riverY - size.height * 0.12f),
-        strokeWidth = 14.dp.toPx(),
-        cap = StrokeCap.Round,
-    )
 }
 
 /** 폴리라인 전체 길이 기준 f(0..1) 지점의 좌표 */

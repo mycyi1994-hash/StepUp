@@ -1,6 +1,7 @@
 package com.stepup.android.ui.screens.map
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -135,7 +136,8 @@ fun MapScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = StepUpDesign.Gutter)
-                .clip(RoundedCornerShape(18.dp)),
+                .clip(RoundedCornerShape(18.dp))
+                .border(1.dp, Volt.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
         ) {
             val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
             val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }
@@ -255,11 +257,14 @@ private fun TerritoryStatus(state: TerritoryState, onRetry: () -> Unit, modifier
     }
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Night.copy(alpha = 0.9f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(Night.copy(alpha = 0.96f))
+            .border(1.dp, Volt.copy(alpha = 0.38f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Box(Modifier.size(7.dp).clip(CircleShape).background(if (state == TerritoryState.Failed) Cyan else Volt))
         Text(text = text, fontSize = 12.sp, color = Snow)
         if (state == TerritoryState.Failed) {
             TextButton(onClick = onRetry) {

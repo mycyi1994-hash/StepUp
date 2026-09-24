@@ -229,8 +229,8 @@ fun ProfileScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     // Reserve room for identity, totals and the three destinations before giving art the rest.
-    val artworkHeight = (maxHeight - 420.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(120.dp, 280.dp)
+    val artworkHeight = (maxHeight - 410.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(180.dp, 320.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
@@ -1238,7 +1238,7 @@ private fun MeHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        com.stepup.android.ui.components.TerraceStage(Modifier.fillMaxWidth().height(artworkHeight)) {
+        Box(Modifier.fillMaxWidth().height(artworkHeight)) {
             if (look != null) {
                 com.stepup.android.ui.components.CharacterStage(
                     look = look, pose = com.stepup.android.domain.AvatarPose.IDLE,

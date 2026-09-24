@@ -324,6 +324,10 @@ internal fun MainScaffold(
     var homeSetting by rememberSaveable {
         mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.initial.random())
     }
+    // The scene belongs to the running journey, not to its timer or live data updates.
+    val runSetting = rememberSaveable {
+        com.stepup.android.ui.components.RunBackgrounds.settings.random()
+    }
     var previousRoute by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
@@ -351,9 +355,21 @@ internal fun MainScaffold(
             Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
             wardrobeScene, wardrobe = true,
         )
+    } else if (currentRoute == Screen.Community.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+        )
+    } else if (currentRoute == Screen.Profile.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
+        )
+    } else if (currentRoute == Routes.COURSES) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
+        )
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.Sunset,
+            Modifier.fillMaxSize(), runSetting,
         )
     }
     Scaffold(

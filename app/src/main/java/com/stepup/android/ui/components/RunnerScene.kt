@@ -14,7 +14,7 @@ import com.stepup.android.R
 import com.stepup.android.ui.theme.Night
 
 /** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
-enum class RunnerSetting { Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn }
+enum class RunnerSetting { Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn, RunNight, RunSunset }
 
 /** Only scenes with visible ground at the standing foot anchor belong here. */
 object WardrobeBackgrounds {
@@ -34,6 +34,11 @@ object HomeBackgrounds {
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 }
 
+/** A running session keeps one scene from preparation through its result. */
+object RunBackgrounds {
+    val settings = listOf(RunnerSetting.RunNight, RunnerSetting.RunSunset)
+}
+
 @Composable
 fun RunnerScene(
     modifier: Modifier = Modifier,
@@ -49,6 +54,8 @@ fun RunnerScene(
                 RunnerSetting.Wardrobe -> R.drawable.scene_wardrobe_terrace
                 RunnerSetting.HomeBlueNight -> R.drawable.scene_home_blue_night
                 RunnerSetting.HomeDawn -> R.drawable.scene_home_dawn
+                RunnerSetting.RunNight -> R.drawable.scene_run_night
+                RunnerSetting.RunSunset -> R.drawable.scene_run_sunset
             }),
             contentDescription = null,
             contentScale = ContentScale.Crop,

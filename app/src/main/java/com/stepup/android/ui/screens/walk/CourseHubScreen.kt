@@ -340,24 +340,27 @@ private fun CourseCard(
         contentPadding = PaddingValues(14.dp),
         spacing = 10.dp,
     ) {
+        // A route preview uses the recorded geometry; opening the map uses live tiles.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(112.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Night)
+                .border(1.dp, if (selected) Volt.copy(alpha = 0.5f) else Edge, RoundedCornerShape(16.dp))
+                .quietClickable(onSelect),
+        ) {
+            CourseTrackMap(
+                points = remember(course.id) { course.normalized() },
+                seed = course.id.toInt(),
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         Row(
             modifier = Modifier.quietClickable(onSelect),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(86.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Night)
-                    .border(1.dp, Edge, RoundedCornerShape(16.dp)),
-            ) {
-                CourseTrackMap(
-                    points = remember(course.id) { course.normalized() },
-                    seed = course.id.toInt(),
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
