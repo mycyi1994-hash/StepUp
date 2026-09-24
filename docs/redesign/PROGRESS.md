@@ -660,3 +660,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Native capture run 35941393573 passed on Android 14 and 15. First visual review found the second grid row slightly clipped and the first display capture taken before the ready frame reached the compositor.
 - Follow-up reduces cell height and waits for presentation before capturing. Final native confirmation and APK evidence pending.
 - Background compatibility and actual 2D map limitations are recorded in DESIGN-FOUNDATION-KO.md. Pink reference apparel remains a future asset; owned inventory is not fabricated.
+
+- Final app source 1bc6e9b: Build APK run 35941934972 passed (unit tests, debug build/signature check, release compilation). Wardrobe capture run 35941934970 passed on Android 14 and 15; XML reports one test, zero failures/errors/skips per device.
+- Confirmation review: six demo cells fit as two rows at normal font size; shoes, More sheet and 1.3 font scaling remain readable. Background changes preserve character bounds. No source changes after this confirmation.
+- First capture 01 still contains the loading frame despite ready semantics; excluded from loaded-state evidence. Captures 02–07 show the actual loaded UI. First-entry frame timing is not established by this test. This is a wardrobe checkpoint, not a full regression pass.
+- Comparison board: wardrobe-review.html. Unedited selected captures and provenance: captures/. Design foundation and actual map constraints: DESIGN-FOUNDATION-KO.md.
+- Pink/pastel reference apparel, remaining screens, additional background families and automatic timed/server-driven background delivery remain subsequent stages.
