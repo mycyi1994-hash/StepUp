@@ -1524,5 +1524,14 @@ Start running with StepUp.</string>
     <string name="run_save_failed">Your run could not finish saving. Keep the app open and try again.</string>
     <string name="course_like_action">Like this course</string>
     <string name="course_unlike_action">Remove course like</string>
+    <string name="tab_draw">Draw</string>
+    <string name="mystery_title">Mystery Box</string>
+    <string name="mystery_subtitle">Choose what you want to draw.</string>
+    <string name="mystery_box_description">Closed glowing mystery box</string>
+    <string name="mystery_draw_shoe">Draw sneakers</string>
+    <string name="mystery_draw_outfit">Draw a tracksuit</string>
+    <string name="mystery_pending_chain">Drawing opens after the GIWA contract is deployed.</string>
+    <string name="home_previous_background">Previous background</string>
+    <string name="home_next_background">Next background</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

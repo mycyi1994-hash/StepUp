@@ -1523,5 +1523,14 @@ StepUp と走り出そう。</string>
     <string name="run_save_failed">保存を完了できませんでした。アプリを開いたまま再試行してください。</string>
     <string name="course_like_action">このコースにいいね</string>
     <string name="course_unlike_action">コースのいいねを取り消す</string>
+    <string name="tab_draw">抽選</string>
+    <string name="mystery_title">ミステリーボックス</string>
+    <string name="mystery_subtitle">引きたいアイテムを選んでください。</string>
+    <string name="mystery_box_description">青く光る閉じたミステリーボックス</string>
+    <string name="mystery_draw_shoe">シューズを引く</string>
+    <string name="mystery_draw_outfit">トレーニングウェアを引く</string>
+    <string name="mystery_pending_chain">GIWAコントラクトのデプロイ後に抽選できます。</string>
+    <string name="home_previous_background">前の背景</string>
+    <string name="home_next_background">次の背景</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

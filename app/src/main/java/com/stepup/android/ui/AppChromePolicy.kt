@@ -15,6 +15,7 @@ object AppChromePolicy {
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
+        Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
         Destination(Routes.NEWS, Screen.Run, Header.Detail),
         Destination(Routes.EVENTS, Screen.Run, Header.Detail),

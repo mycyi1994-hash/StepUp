@@ -1522,5 +1522,14 @@
     <string name="run_save_failed">跑步记录尚未保存完成。请保持应用打开并重试。</string>
     <string name="course_like_action">点赞此路线</string>
     <string name="course_unlike_action">取消路线点赞</string>
+    <string name="tab_draw">抽取</string>
+    <string name="mystery_title">神秘宝箱</string>
+    <string name="mystery_subtitle">选择要抽取的物品。</string>
+    <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
+    <string name="mystery_draw_shoe">抽取运动鞋</string>
+    <string name="mystery_draw_outfit">抽取运动服</string>
+    <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
+    <string name="home_previous_background">上一张背景</string>
+    <string name="home_next_background">下一张背景</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

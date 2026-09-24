@@ -1522,5 +1522,14 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_save_failed">러닝 저장을 마치지 못했어요. 앱을 닫지 말고 다시 시도해 주세요.</string>
     <string name="course_like_action">이 코스 좋아요</string>
     <string name="course_unlike_action">코스 좋아요 취소</string>
+    <string name="tab_draw">뽑기</string>
+    <string name="mystery_title">미스터리 박스</string>
+    <string name="mystery_subtitle">원하는 아이템을 골라 뽑아보세요.</string>
+    <string name="mystery_box_description">푸른빛이 나는 닫힌 미스터리 박스</string>
+    <string name="mystery_draw_shoe">신발 뽑기</string>
+    <string name="mystery_draw_outfit">트레이닝복 뽑기</string>
+    <string name="mystery_pending_chain">GIWA 컨트랙트 배포 후 뽑기가 열립니다.</string>
+    <string name="home_previous_background">이전 배경</string>
+    <string name="home_next_background">다음 배경</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

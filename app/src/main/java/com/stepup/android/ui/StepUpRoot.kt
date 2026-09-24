@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -74,6 +75,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import com.stepup.android.R
+import com.stepup.android.BuildConfig
 import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.HairlineDivider
@@ -92,6 +94,7 @@ import com.stepup.android.ui.screens.community.RankingScreen
 import com.stepup.android.ui.screens.events.EventsScreen
 import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
+import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
 import com.stepup.android.ui.screens.login.LoginScreen
 import com.stepup.android.ui.screens.market.MarketModelScreen
 import com.stepup.android.ui.screens.items.ItemsScreen
@@ -138,7 +141,8 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 }
 
 /**
- * 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
+ * 하단 목적지 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
+ * 그 사이의 선물 버튼은 독립 뽑기 화면으로 가는 공통 동작이다.
  *
  * 예전의 뉴스 · 마켓 · 이벤트 탭은 없어진 것이 아니라 자리를 옮겼다.
  *
@@ -169,6 +173,7 @@ object Routes {
 
     /** 꾸미기 안의 신발 보관함 · 거래소 · 스토어 */
     const val ITEMS = "items"
+    const val MYSTERY_BOX = "mystery-box"
 
     /** 꾸미기 안의 러너 마켓 — 의상 / 신발 */
     const val RUNNER_MARKET = "runner-market"
@@ -346,9 +351,11 @@ internal fun MainScaffold(
 
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), homeSetting, home = true,
-        )
+        Crossfade(homeSetting, animationSpec = tween(motion.duration(420)), label = "homeBackground") { scene ->
+            com.stepup.android.ui.components.RunnerScene(
+                Modifier.fillMaxSize(), scene, home = true,
+            )
+        }
     } else if (currentRoute == Screen.Customize.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
@@ -417,6 +424,29 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    onPreviousBackground = {
+                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
+                    },
+                    onNextBackground = {
+                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.nextInOrder(homeSetting)
+                    },
+                )
+            }
+            composable(Routes.MYSTERY_BOX) {
+                val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
+                MysteryBoxScreen(
+                    shoeDrawReady = drawReady,
+                    outfitDrawReady = drawReady,
+                    onDrawShoe = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context,
+                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
+                                .appendQueryParameter("category", "shoe").build().toString())
+                    },
+                    onDrawOutfit = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context,
+                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
+                                .appendQueryParameter("category", "outfit").build().toString())
+                    },
                 )
             }
             composable(Screen.Customize.route) {
@@ -726,7 +756,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
-    val labelWidth = with(density) { (maxWidth / bottomTabs.size - 8.dp).roundToPx().coerceAtLeast(1) }
+    val labelWidth = with(density) { (maxWidth / (bottomTabs.size + 1) - 8.dp).roundToPx().coerceAtLeast(1) }
     val labelHeightPx = bottomTabs.map { screen ->
         measurer.measure(
             text = stringResource(screen.labelRes), style = labelStyle,
@@ -752,8 +782,8 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val parent = parentTabOf(currentRoute)
-            bottomTabs.forEach { screen ->
+            val parent = if (currentRoute == Routes.MYSTERY_BOX) null else parentTabOf(currentRoute)
+            bottomTabs.forEachIndexed { index, screen ->
                 NavTab(
                     screen = screen,
                     labelHeight = labelHeight,
@@ -773,9 +803,53 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                         }
                     },
                 )
+                if (index == 1) {
+                    GiftNavAction(
+                        selected = currentRoute == Routes.MYSTERY_BOX,
+                        onClick = { navController.navigate(Routes.MYSTERY_BOX) {
+                            launchSingleTop = true
+                            restoreState = true
+                        } },
+                    )
+                }
             }
         }
     }
+    }
+}
+
+@Composable
+private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
+    val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
+    Column(
+        modifier = Modifier.weight(1f)
+            .semantics { this.selected = selected }
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
+            .heightIn(min = StepUpDesign.NavigationItemHeight)
+            .padding(horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            Modifier.size(39.dp)
+                .background(
+                    Brush.linearGradient(listOf(Volt, com.stepup.android.ui.theme.Cyan)),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.CardGiftcard, contentDescription = null, tint = tint, modifier = Modifier.size(25.dp))
+        }
+        Text(
+            stringResource(R.string.tab_draw),
+            color = tint,
+            style = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
+                fontSize = StepUpDesign.NavigationLabel,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 1,
+        )
     }
 }
 
@@ -800,7 +874,7 @@ private fun RowScope.NavTab(
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
-            // 탭이 넷이라 한 칸이 넉넉하다. 누르는 자리는 최소 48dp 로 잡는다.
+            // 네 목적지와 가운데 뽑기 동작을 같은 줄에 둔다.
             .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

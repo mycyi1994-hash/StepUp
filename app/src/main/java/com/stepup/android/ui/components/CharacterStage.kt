@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -174,7 +175,7 @@ fun CharacterStage(
         Canvas(Modifier.fillMaxSize()) {
             if (skyline) drawSkyline(building, window)
             drawBackGlow(glow, cyan)
-            drawFloor(glow, cyan)
+            drawFloor(glow, cyan, phase?.value ?: 0.5f)
         }
         // 발이 타원 무대의 한가운데에 닿도록 바닥에서 조금 띄운다
         Box(
@@ -188,7 +189,12 @@ fun CharacterStage(
                     // Fit includes transparent pixels below the soles. Anchor the visible feet,
                     // not the source rectangle, to the shared floor on every screen.
                     translationY = (imageHeight * geometry.bottomInsetFraction).toPx() +
-                        (p - 0.5f) * (if (running) 5.dp else 2.dp).toPx()
+                        (p - 0.5f) * (if (running) 5.dp else 1.dp).toPx()
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                    if (!running) {
+                        rotationZ = (p - 0.5f) * 1.1f
+                        scaleY = 0.995f + p * 0.01f
+                    }
                 },
         ) {
             AvatarImage(art = render.art, modifier = Modifier.fillMaxSize())
@@ -270,16 +276,16 @@ private fun DrawScope.drawBackGlow(glow: Color, cyan: Color) {
     )
 }
 
-private fun DrawScope.drawFloor(glow: Color, cyan: Color) {
+private fun DrawScope.drawFloor(glow: Color, cyan: Color, phase: Float) {
     val cy = size.height * FLOOR_Y
     val ringW = size.width * 0.68f
     val ringH = size.height * 0.09f
     // 접지 그림자
-    val shadowW = ringW * 0.78f
-    val shadowH = ringH * 0.7f
+    val shadowW = ringW * (0.56f + (1f - phase) * 0.04f)
+    val shadowH = ringH * 0.48f
     drawOval(
         brush = Brush.radialGradient(
-            0f to Color.Black.copy(alpha = 0.55f),
+            0f to Color.Black.copy(alpha = 0.76f - phase * 0.06f),
             1f to Color.Transparent,
             center = Offset(size.width / 2f, cy),
             radius = shadowW / 2f,

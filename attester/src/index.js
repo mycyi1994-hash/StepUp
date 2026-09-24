@@ -1,6 +1,7 @@
 import { createPublicClient, http, defineChain, isAddress, keccak256, toBytes } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { inspectTrack, verdict, payout, MAX_DAILY_STEPS } from './economy.js'
+import { handleDrawAuth } from './draw.js'
 
 /**
  * StepUp 어테스터 — 러닝 세션을 검사하고 EIP-712로 서명한다.
@@ -103,6 +104,10 @@ export default {
 
     if (request.method === 'OPTIONS') return json({ ok: true })
 
+    if (url.pathname === '/draw/authorization' && request.method === 'POST') {
+      return handleDrawAuth(request, env)
+    }
+
     if (url.pathname === '/health') {
       const configured = Boolean(env.ATTESTER_PRIVATE_KEY && env.DISTRIBUTOR_ADDRESS)
       return json({
@@ -111,6 +116,7 @@ export default {
         chain: GIWA_SEPOLIA.id,
         distributor: env.DISTRIBUTOR_ADDRESS ?? null,
         attester: configured ? privateKeyToAccount(env.ATTESTER_PRIVATE_KEY).address : null,
+        drawConfigured: Boolean(env.DRAW_CONTRACT_ADDRESS && env.DRAW_ROLLER_PRIVATE_KEY && env.DRAW_SEED),
       })
     }
 

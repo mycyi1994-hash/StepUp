@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.graphicsLayer
+import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.R
 import com.stepup.android.ui.theme.Night
 
@@ -32,6 +34,12 @@ object HomeBackgrounds {
     val settings = initial + RunnerSetting.Night
 
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
+
+    fun nextInOrder(current: RunnerSetting): RunnerSetting =
+        settings[(settings.indexOf(current).coerceAtLeast(0) + 1) % settings.size]
+
+    fun previous(current: RunnerSetting): RunnerSetting =
+        settings[(settings.indexOf(current).coerceAtLeast(0) + settings.size - 1) % settings.size]
 }
 
 /** A running session keeps one scene from preparation through its result. */
@@ -53,6 +61,7 @@ fun RunnerScene(
     wardrobe: Boolean = false,
     home: Boolean = false,
 ) {
+    val drift = if (LocalMotion.current.decorative) ambientPhase(16000, reverse = true) else null
     Box(modifier) {
         Image(
             painterResource(when (setting) {
@@ -66,7 +75,13 @@ fun RunnerScene(
             }),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                // Scenery alone moves. Native controls and the character keep their anchors.
+                val progress = drift?.value ?: 0.5f
+                scaleX = 1.035f
+                scaleY = 1.035f
+                translationX = (progress - 0.5f) * 10.dp.toPx()
+            },
         )
         // Protect native header/footer contrast in both themes without tinting the avatar.
         val stops = if (wardrobe) arrayOf(

@@ -2,13 +2,14 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-33 registered navigation routes; 34 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
+34 registered navigation routes; 35 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
 | Route | Parent tab | Chrome | Implementation | Verification |
 |---|---|---|---|---|
 | Screen.Run.route | Run | Main | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
+| Routes.MYSTERY_BOX | Customize | Main | separate box art and native shoe/tracksuit actions; contract deployment gates both buttons | source checks only; Android compile/capture and wallet transaction pending |
 | Screen.Customize.route | Customize | Main | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | Routes.RUNNER_MARKET | Customize | Detail | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | Screen.Community.route | Community | Main | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending; no APK requested |
@@ -57,7 +58,8 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:93 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:79 | detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested |
 | NewsScreen | app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt:76 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
-| HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:84 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
+| MysteryBoxScreen | app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt:42 | source implemented | Android capture pending |
+| HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:85 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:91 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:44 | detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested |
 | SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:77 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
@@ -90,7 +92,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:385 | pending |
 | CustomizeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:256 | pending |
 | InviteDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:395 | pending |
-| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:175 | pending |
+| HomeScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:190 | pending |
 | ItemsScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:402 | pending |
 | CopiesDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:537 | pending |
 | SneakerDetailScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:257 | pending |

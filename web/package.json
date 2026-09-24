@@ -1,0 +1,14 @@
+{
+  "name": "stepup-draw-page",
+  "private": true,
+  "scripts": {
+    "build:draw": "esbuild draw-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/draw.js"
+  },
+  "dependencies": {
+    "@metamask/connect-evm": "^2.1.1",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

@@ -10,6 +10,13 @@
       "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
     },
     {
+      "id": "Routes.MYSTERY_BOX",
+      "parent": "Customize",
+      "chrome": "Main",
+      "implementation": "source implemented; contract deployment gates actions",
+      "verification": "Android compile/capture and wallet transaction pending"
+    },
+    {
       "id": "Screen.Customize.route",
       "parent": "Customize",
       "chrome": "Main",
@@ -326,9 +333,16 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "MysteryBoxScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
+      "line": 42,
+      "implementation": "source implemented",
+      "verification": "Android capture pending"
+    },
+    {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 84,
+      "line": 85,
       "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -544,7 +558,7 @@
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 175,
+      "line": 190,
       "verification": "pending"
     },
     {

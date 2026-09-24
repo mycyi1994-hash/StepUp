@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
@@ -87,6 +88,8 @@ fun HomeScreen(
     onOpenChallenges: () -> Unit = {},
     onOpenNews: () -> Unit = {},
     onOpenCustomize: () -> Unit = {},
+    onPreviousBackground: () -> Unit = {},
+    onNextBackground: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -132,7 +135,7 @@ fun HomeScreen(
             Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.BottomCenter) {
                 if (savedLook != null) CharacterStage(
                     look = savedLook, pose = AvatarPose.IDLE, skyline = false,
-                    characterFraction = 0.92f, animate = false,
+                    characterFraction = 0.92f, animate = true,
                     contentDescription = stringResource(R.string.cd_home_character),
                     modifier = Modifier.fillMaxWidth().height(artHeight).padding(top = 48.dp, bottom = 12.dp)
                         .testTag("home-character-ready")
@@ -143,6 +146,18 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.ChevronLeft,
+                contentDescription = stringResource(R.string.home_previous_background),
+                onClick = onPreviousBackground,
+                modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"),
+            )
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.ChevronRight,
+                contentDescription = stringResource(R.string.home_next_background),
+                onClick = onNextBackground,
+                modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"),
+            )
             com.stepup.android.ui.components.DarkIconButton(
                 icon = Icons.Filled.MoreHoriz,
                 contentDescription = stringResource(R.string.common_more),
