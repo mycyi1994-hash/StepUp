@@ -822,3 +822,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Kept illustrations independent of native labels/buttons/charts, existing reward/deployment gates and main's backend/login upload work. No new generated art, APK, push or deployment.
 - Checks: design contract, four-locale strings, packaged media and diff whitespace pass. Local Java/Android SDK unavailable; Android compilation, native captures and device interaction remain pending. ExperienceUiTest and DesignReferenceTest expectations remain stage 3.
 - Per-screen evidence and scope: CHARACTER-FREE-STAGE2-2026-09-25-KO.md. Inventory marks source implementation only, not visual acceptance.
+
+## 2026-09-25 — stage 3: character-free device-test expectations
+
+- Updated ExperienceUiTest and DesignReferenceTest for native record/shoe/draw layouts, shared chrome, the profile settings action and three-step guide. Replaced gender/trial-outfit reference scenes with 14 current scenes across 4 viewports; 56 captures planned, none produced locally.
+- Added bounded checks for preview-versus-confirmed shoe equipment, draw readiness/callbacks, five navigation destinations and the guide. Updated the dependent MysteryDesignTest to stop waiting for removed character tags/outfit controls.
+- Added the explicit redesign runner/workflow selection, preserving main's existing split regression suites. Kept the optional multilingual matrix separate from the default checkpoint to avoid running hundreds of captures for this change.
+- Source design/string/media, Bash syntax, scene/method mappings and whitespace checks pass. No local Java/Android SDK, so Android compile/instrumentation remains unexecuted and is the next stage. No APK/push/remote run.
+- Evidence and exact limits: CHARACTER-FREE-STAGE3-2026-09-25-KO.md. Legacy full-gallery/wardrobe character fixtures outside these three test classes remain historical coverage, not proof of the new design.
