@@ -142,13 +142,19 @@ class SupabaseAuth(
 }
 
 /**
- * 서버가 만료 시각을 안 줬으면 채워 넣는다.
+ * 만료 시각을 **이 폰의 시계로** 적는다.
  *
  * `expires_in`(남은 초)만 오는 경우가 있는데, 그대로 두면 앱이 언제 갱신해야
  * 하는지 알 수 없다. 받은 시점을 기준으로 절대 시각을 만들어 둔다.
+ *
+ * 서버가 준 `expires_at` 은 서버 시계 기준이라, 폰 시계가 몇 분 늦으면 만료된
+ * 토큰을 계속 보내 모든 요청이 401 로 돌아오고, 한 시간 넘게 빠르면 요청마다
+ * 갱신한다. 남은 초가 있으면 그것으로 폰 시계 기준 시각을 만든다.
  */
 internal fun AuthSession.withExpiryFilled(nowSeconds: Long): AuthSession =
-    if (expiresAt > 0) this else copy(expiresAt = nowSeconds + expiresIn)
+    if (expiresIn > 0) copy(expiresAt = nowSeconds + expiresIn)
+    else if (expiresAt > 0) this
+    else copy(expiresAt = nowSeconds + 3600)
 
 /** JSON 문자열 리터럴로 감싼다 — 토큰에 따옴표나 역슬래시가 들어가도 깨지지 않게. */
 internal fun String.asJsonString(): String =

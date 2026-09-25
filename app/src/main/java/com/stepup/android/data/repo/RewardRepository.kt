@@ -16,9 +16,13 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.SessionReward
 import com.stepup.android.domain.Sneaker
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** SUP 포인트 원장, 에너지, 세션 정산을 관리한다. */
 class RewardRepository(
@@ -32,6 +36,25 @@ class RewardRepository(
     val balance: Flow<Double> = rewardDao.observeBalance()
 
     val sneakerLevel: Flow<Int> = prefs.sneakerLevel
+
+    /**
+     * 에너지 상한. 신은 신발의 레벨로 정하고, 신발이 없으면 옛 레벨 값을 쓴다.
+     * 화면(홈·러닝)이 보여 주는 상한과 같은 식이다 — 둘이 다르면 강화해도
+     * 실제로 벌 수 있는 걸음은 늘지 않는다.
+     */
+    val maxEnergy: Flow<Double> =
+        combine(sneakerDao.observeEquipped(), prefs.sneakerLevel) { equipped, level ->
+            RewardEconomy.maxEnergy(equipped?.level ?: level)
+        }
+
+    /** 오늘 남은 에너지(표시용) */
+    val energy: Flow<Double> = prefs.energy(maxEnergy)
+
+    suspend fun maxEnergyNow(): Double =
+        RewardEconomy.maxEnergy(sneakerDao.equippedNow()?.level ?: prefs.sneakerLevel.first())
+
+    // 잔액 확인과 차감 사이에 다른 차감이 끼면 잔액이 음수가 된다(버튼 두 번 누르기).
+    private val spendLock = Mutex()
 
     fun ledger(limit: Int = 100): Flow<List<RewardEntity>> = rewardDao.observeLedger(limit)
 
@@ -59,7 +82,7 @@ class RewardRepository(
     }
 
     /** 잔액이 부족하면 false. 성공 시 음수 원장을 남긴다. */
-    suspend fun spend(type: String, amount: Double, description: String): Boolean {
+    suspend fun spend(type: String, amount: Double, description: String): Boolean = spendLock.withLock {
         if (amount <= 0) return true
         if (rewardDao.balanceNow() < amount) return false
         rewardDao.insert(
@@ -70,7 +93,7 @@ class RewardRepository(
                 description = description,
             )
         )
-        return true
+        true
     }
 
     suspend fun notify(
@@ -106,6 +129,14 @@ class RewardRepository(
         notify(NotificationType.GOAL_REACHED, argText = streak.toString(), argAmount = amount)
     }
 
+    /** [day](epochDay) 하루 중 스트릭 보호막이 켜져 있던 때가 있었는가 */
+    suspend fun streakShieldCovered(day: Long): Boolean {
+        val zone = ZoneId.systemDefault()
+        val from = LocalDate.ofEpochDay(day).atStartOfDay(zone).toInstant().toEpochMilli()
+        val to = LocalDate.ofEpochDay(day + 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return boostDao.activeDuring(BoostType.STREAK_SHIELD.id, from, to) != null
+    }
+
     // ── 세션 정산 ────────────────────────────────────────────
 
     /**
@@ -127,7 +158,8 @@ class RewardRepository(
 
     suspend fun settleSession(steps: Int, partySize: Int = 1): SessionReward {
         val today = LocalDate.now().toEpochDay()
-        val energyRemaining = prefs.currentEnergy(today)
+        val energyCap = maxEnergyNow()
+        val energyRemaining = prefs.currentEnergy(today, energyCap)
         val equipped = sneakerDao.equippedNow()?.toDomain()
 
         val earningMultiplier = equipped?.earningMultiplier
@@ -157,7 +189,7 @@ class RewardRepository(
             }
         }
         if (reward.energyUsed > 0) {
-            prefs.consumeEnergy(today, reward.energyUsed)
+            prefs.consumeEnergy(today, reward.energyUsed, energyCap)
         }
         return reward
     }
@@ -179,7 +211,8 @@ class RewardRepository(
     suspend fun settleBackground(steps: Int): SessionReward {
         if (steps <= 0) return SessionReward(0, 0.0, 0.0)
         val today = LocalDate.now().toEpochDay()
-        val energyRemaining = prefs.currentEnergy(today)
+        val energyCap = maxEnergyNow()
+        val energyRemaining = prefs.currentEnergy(today, energyCap)
         val equipped = sneakerDao.equippedNow()?.toDomain()
 
         val earningMultiplier = equipped?.earningMultiplier
@@ -202,7 +235,7 @@ class RewardRepository(
             credit(RewardType.EARN_WALK, reward.points, "일상 걸음 적립 (${reward.rewardedSteps}보)")
         }
         if (reward.energyUsed > 0) {
-            prefs.consumeEnergy(today, reward.energyUsed)
+            prefs.consumeEnergy(today, reward.energyUsed, energyCap)
         }
         return reward
     }

@@ -23,6 +23,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
@@ -39,6 +40,30 @@ class GoalReminderWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        try {
+            return remind()
+        } finally {
+            anchorNextRun()
+        }
+    }
+
+    /**
+     * 다음 차례를 내일 저녁 7시로 못 박는다.
+     *
+     * 하루 주기 일은 "지난번이 끝난 때 + 하루"에 돈다. 기기가 잠들어 한 번 22시를 넘겨
+     * 깨면 그다음부터 매일 그 시각 이후에 돌아, 시간 검사에 걸려 영영 울리지 않는다.
+     */
+    private fun anchorNextRun() {
+        runCatching {
+            val request = PeriodicWorkRequestBuilder<GoalReminderWorker>(1, TimeUnit.DAYS)
+                .setId(id)
+                .setNextScheduleTimeOverride(nextRemindAtMillis(LocalDateTime.now()))
+                .build()
+            WorkManager.getInstance(applicationContext).updateWork(request)
+        }
+    }
+
+    private suspend fun remind(): Result {
         ServiceLocator.init(applicationContext)
         val prefs = ServiceLocator.userPrefs
         val notify = prefs.notifyPrefs.first()
@@ -67,6 +92,13 @@ class GoalReminderWorker(
         private const val REMIND_AT_HOUR = 19
         private const val REMIND_FROM_HOUR = 18
         private const val REMIND_UNTIL_HOUR = 22
+
+        /** 다음 알림 시각(저녁 7시). 이미 저녁 시간대면 내일이다. */
+        private fun nextRemindAtMillis(now: LocalDateTime): Long {
+            var next = now.toLocalDate().atTime(REMIND_AT_HOUR, 0)
+            if (now.hour >= REMIND_FROM_HOUR) next = next.plusDays(1)
+            return next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }
 
         /** 매일 저녁 7시쯤 한 번. 이미 예약돼 있으면 그대로 둔다. */
         fun schedule(context: Context) {

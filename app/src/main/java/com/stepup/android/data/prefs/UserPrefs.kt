@@ -10,9 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.stepup.android.domain.Faction
-import com.stepup.android.domain.RewardEconomy
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -45,6 +45,8 @@ class UserPrefs(private val context: Context) {
         val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
         val BASELINE_DAY = longPreferencesKey("baseline_day")
         val BASELINE_STEPS = longPreferencesKey("baseline_steps")
+        /** 기준점을 잡을 때의 기기 부팅 횟수. 바뀌었으면 재부팅이다(-1 = 모름). */
+        val BASELINE_BOOT = intPreferencesKey("baseline_boot")
         val RUNNER_UID = stringPreferencesKey("runner_uid")
         val NICKNAME = stringPreferencesKey("nickname")
 
@@ -93,6 +95,8 @@ class UserPrefs(private val context: Context) {
         val NOTIFY_GOAL = booleanPreferencesKey("notify_goal_reminder")
         val NOTIFY_PARTY = booleanPreferencesKey("notify_party_invite")
         val NOTIFY_EVENT = booleanPreferencesKey("notify_event_news")
+        /** 알림 설정을 바꿨는데 아직 서버에 못 올렸다 */
+        val NOTIFY_PENDING = booleanPreferencesKey("notify_prefs_pending")
         val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
     }
 
@@ -169,6 +173,33 @@ class UserPrefs(private val context: Context) {
             it[Keys.NOTIFY_GOAL] = prefs.goalReminder
             it[Keys.NOTIFY_PARTY] = prefs.partyInvite
             it[Keys.NOTIFY_EVENT] = prefs.eventNews
+            // 서버에 올라가면 PushRegistrar 가 지운다
+            it[Keys.NOTIFY_PENDING] = true
+        }
+    }
+
+    /**
+     * 이 폰에서 바꿨는데 아직 서버에 못 올린 알림 설정. 없으면 null.
+     *
+     * 바꾼 적 없는 기본값(새로 설치한 폰)은 올리지 않는다 — 올리면 다른 폰에서
+     * 꺼 둔 알림이 다시 켜진다.
+     */
+    suspend fun pendingNotifyPrefs(): NotifyPrefs? {
+        val raw = context.dataStore.data.first()
+        if (raw[Keys.NOTIFY_PENDING] != true) return null
+        return notifyPrefs.first()
+    }
+
+    /** [synced] 가 서버에 올라갔다. 그 사이 또 바뀌었으면 표시를 남겨 둔다. */
+    suspend fun markNotifyPrefsSynced(synced: NotifyPrefs) {
+        context.dataStore.edit {
+            val current = NotifyPrefs(
+                push = it[Keys.NOTIFY_PUSH] ?: true,
+                goalReminder = it[Keys.NOTIFY_GOAL] ?: true,
+                partyInvite = it[Keys.NOTIFY_PARTY] ?: true,
+                eventNews = it[Keys.NOTIFY_EVENT] ?: true,
+            )
+            if (current == synced) it[Keys.NOTIFY_PENDING] = false
         }
     }
 
@@ -349,6 +380,10 @@ class UserPrefs(private val context: Context) {
         }
     }
 
+    /** [startedAt] 러닝의 코스 길. 목록에서 지우지 않는다. 없으면 null */
+    suspend fun pendingCourseRun(startedAt: Long): String? =
+        decodePendingRuns(context.dataStore.data.first()[Keys.PENDING_COURSE_RUNS])[startedAt]
+
     /** [startedAt] 러닝의 코스 길을 꺼내고 목록에서 지운다. 없으면 null */
     suspend fun takePendingCourseRun(startedAt: Long): String? {
         var found: String? = null
@@ -468,7 +503,7 @@ class UserPrefs(private val context: Context) {
             val current = decodeFactionKm(prefs[Keys.FACTION_KM]).toMutableMap()
             current[faction] = (current[faction] ?: 0.0) + km
             prefs[Keys.FACTION_KM] = Faction.entries.joinToString(";") {
-                "%.4f".format(current[it] ?: 0.0)
+                String.format(java.util.Locale.ROOT, "%.4f", current[it] ?: 0.0)
             }
         }
     }
@@ -511,13 +546,14 @@ class UserPrefs(private val context: Context) {
     /**
      * 표시용 에너지. 저장된 날짜가 오늘이 아니면 아직 소모가 없는 것이므로
      * 최대치(= 자정 리필 후 값)로 보여준다. 실제 저장값 갱신은 [currentEnergy]가 담당.
+     *
+     * [maxEnergy] 는 지금 신은 신발 레벨로 정한 상한이다. 화면에 보이는 상한과
+     * 실제로 깎고 채우는 상한이 같은 값을 써야 한다.
      */
-    val energy: Flow<Double> = context.dataStore.data.map { prefs ->
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
-        val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        if (day != LocalDate.now().toEpochDay()) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
-    }
+    fun energy(maxEnergy: Flow<Double>): Flow<Double> =
+        combine(context.dataStore.data, maxEnergy) { prefs, max ->
+            energyIn(prefs, LocalDate.now().toEpochDay(), max)
+        }
 
     suspend fun setDailyGoal(goal: Int) {
         context.dataStore.edit { it[Keys.DAILY_GOAL] = goal }
@@ -527,21 +563,22 @@ class UserPrefs(private val context: Context) {
         context.dataStore.edit { it[Keys.SNEAKER_LEVEL] = level }
     }
 
-    /** 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다. */
-    suspend fun currentEnergy(today: Long): Double {
-        val prefs = context.dataStore.data.first()
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
-        val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        return if (day != today) {
-            context.dataStore.edit {
-                it[Keys.ENERGY] = max
-                it[Keys.ENERGY_DAY] = today
+    /**
+     * 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다.
+     *
+     * 리필도 [edit] 안에서 읽고 쓴다. 바깥에서 읽고 안에서 쓰면 자정 직후
+     * 동시에 들어온 소모가 리필에 덮여 사라진다.
+     */
+    suspend fun currentEnergy(today: Long, max: Double): Double {
+        var remaining = max
+        context.dataStore.edit { prefs ->
+            remaining = energyIn(prefs, today, max)
+            if ((prefs[Keys.ENERGY_DAY] ?: -1L) != today) {
+                prefs[Keys.ENERGY] = remaining
+                prefs[Keys.ENERGY_DAY] = today
             }
-            max
-        } else {
-            (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
         }
+        return remaining
     }
 
     /**
@@ -552,30 +589,26 @@ class UserPrefs(private val context: Context) {
      * 에너지를 건드리는 일이 일상이 됐고, 바깥에서 읽고 안에서 쓰면 갱신이
      * 유실되어 상한이 새거나 구매한 에너지 셀이 사라진다.
      */
-    suspend fun consumeEnergy(today: Long, amount: Double) {
+    suspend fun consumeEnergy(today: Long, amount: Double, max: Double) {
         context.dataStore.edit { prefs ->
-            val remaining = energyIn(prefs, today)
+            val remaining = energyIn(prefs, today, max)
             prefs[Keys.ENERGY] = (remaining - amount).coerceAtLeast(0.0)
             prefs[Keys.ENERGY_DAY] = today
         }
     }
 
     /** 에너지 셀 등으로 에너지를 회복한다. 최대치를 넘지 않는다. */
-    suspend fun restoreEnergy(today: Long, amount: Double) {
+    suspend fun restoreEnergy(today: Long, amount: Double, max: Double) {
         context.dataStore.edit { prefs ->
-            val remaining = energyIn(prefs, today)
-            val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-            val max = RewardEconomy.maxEnergy(level)
+            val remaining = energyIn(prefs, today, max)
             prefs[Keys.ENERGY] = (remaining + amount).coerceIn(0.0, max)
             prefs[Keys.ENERGY_DAY] = today
         }
     }
 
     /** 자정 리필을 반영한 현재 에너지. [consumeEnergy]/[restoreEnergy]가 edit 안에서 쓴다. */
-    private fun energyIn(prefs: Preferences, today: Long): Double {
+    private fun energyIn(prefs: Preferences, today: Long, max: Double): Double {
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
         return if (day != today) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
 
@@ -596,10 +629,14 @@ class UserPrefs(private val context: Context) {
         return (prefs[Keys.BASELINE_DAY] ?: -1L) to (prefs[Keys.BASELINE_STEPS] ?: -1L)
     }
 
-    suspend fun setBaseline(day: Long, steps: Long) {
+    /** 기준점을 잡을 때의 부팅 횟수. 모르면 -1 */
+    suspend fun baselineBoot(): Int = context.dataStore.data.first()[Keys.BASELINE_BOOT] ?: -1
+
+    suspend fun setBaseline(day: Long, steps: Long, boot: Int) {
         context.dataStore.edit {
             it[Keys.BASELINE_DAY] = day
             it[Keys.BASELINE_STEPS] = steps
+            it[Keys.BASELINE_BOOT] = boot
         }
     }
 

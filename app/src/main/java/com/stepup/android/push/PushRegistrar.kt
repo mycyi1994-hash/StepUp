@@ -23,6 +23,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 class PushRegistrar(
     private val api: PushApi,
     private val locale: suspend () -> String,
+    /** 바꿨는데 아직 서버에 못 올린 알림 설정. 없으면 null */
+    private val pendingPrefs: suspend () -> NotifyPrefs? = { null },
+    /** 알림 설정이 서버에 올라갔다 */
+    private val prefsSynced: suspend (NotifyPrefs) -> Unit = {},
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -32,17 +36,23 @@ class PushRegistrar(
         scope.launch { runCatching { sync(token) } }
     }
 
-    /** 알림 설정을 서버에 올린다. 로그인 전이면 조용히 넘어간다 — 다음에 켤 때 다시 올린다. */
+    /** 알림 설정을 서버에 올린다. 로그인 전이면 조용히 넘어간다 — 다음에 켤 때 [sync] 가 다시 올린다. */
     fun syncPrefsInBackground(prefs: NotifyPrefs) {
-        scope.launch {
-            runCatching { api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews) }
-        }
+        scope.launch { runCatching { uploadPrefs(prefs) } }
     }
 
     suspend fun sync(token: String? = null): Boolean {
+        // 알림 설정 화면에서 바꾼 값이 오프라인·로그아웃 중이라 못 올라갔으면
+        // 서버는 옛 설정대로 계속 보낸다. 앱을 켤 때·로그인할 때 다시 올린다.
+        runCatching { pendingPrefs() }.getOrNull()?.let { prefs -> runCatching { uploadPrefs(prefs) } }
         val current = token ?: fetchToken() ?: return false
         val lang = runCatching { locale() }.getOrDefault("").ifBlank { Locale.getDefault().language }
         return api.register(current, lang) is ServerResult.Ok
+    }
+
+    private suspend fun uploadPrefs(prefs: NotifyPrefs) {
+        val result = api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews)
+        if (result is ServerResult.Ok) prefsSynced(prefs)
     }
 
     private suspend fun fetchToken(): String? = runCatching {

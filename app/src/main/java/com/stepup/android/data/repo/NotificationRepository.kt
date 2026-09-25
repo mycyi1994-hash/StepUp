@@ -30,7 +30,12 @@ class NotificationRepository(
     /** 크루 초대 수락 — 크루 가입 후 알림을 처리 상태로 바꾼다 */
     suspend fun acceptCrewInvite(entity: NotificationEntity, crewRepository: CrewRepository) {
         if (entity.actioned || entity.type != NotificationType.CREW_INVITE) return
-        if (entity.argExtra.isNotBlank()) crewRepository.join(entity.argExtra)
+        if (entity.argExtra.isNotBlank()) {
+            // 연결·로그인 문제로 안 됐으면 초대를 남겨 둔다 — 지우면 다시 받을 길이 없다.
+            // 서버가 거절했으면(크루가 없어짐·이미 멤버) 다시 눌러도 같으므로 처리로 넘긴다.
+            val result = crewRepository.join(entity.argExtra)
+            if (result is CrewActionResult.Failed && (result.signIn || result.retryable)) return
+        }
         dao.markActioned(entity.id)
     }
 
@@ -45,6 +50,9 @@ class NotificationRepository(
     /** 이벤트 보상 수령 — 실제 SUP 적립 */
     suspend fun claimEventReward(entity: NotificationEntity) {
         if (entity.actioned || entity.type != NotificationType.EVENT_REWARD) return
+        // 화면이 넘겨준 [entity] 는 누른 순간의 사본이다. 두 번 빠르게 누르면 둘 다
+        // "아직 안 받음"으로 보인다. 저장소에서 처리 표시에 성공한 쪽만 적립한다.
+        if (dao.markActionedOnce(entity.id) == 0) return
         if (entity.argAmount > 0) {
             rewardRepository.credit(
                 RewardType.EARN_EVENT,
@@ -52,7 +60,6 @@ class NotificationRepository(
                 "이벤트 보상: ${entity.argText}",
             )
         }
-        dao.markActioned(entity.id)
     }
 
     /**

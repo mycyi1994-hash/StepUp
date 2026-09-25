@@ -11,6 +11,8 @@ import com.stepup.android.domain.TOTAL_COLLECTION
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** 스니커즈 NFT 인벤토리 — 민팅 · 착용 · 강화 */
 class SneakerRepository(
@@ -26,6 +28,10 @@ class SneakerRepository(
 
     val ownedCount: Flow<Int> = sneakerDao.observeCount()
 
+    // 강화·민팅은 "읽고 → SUP 차감 → 쓰기"다. 두 번 누르면 둘 다 같은 레벨을 읽어
+    // 두 번 차감되고 레벨은 한 번만 오르거나, 같은 민팅 번호가 두 개 생긴다.
+    private val writeLock = Mutex()
+
     /** 첫 실행 시 스타터 스니커즈를 지급한다. 이미 있으면 아무것도 하지 않는다. */
     suspend fun ensureStarter() {
         if (sneakerDao.count() > 0) return
@@ -39,7 +45,7 @@ class SneakerRepository(
     }
 
     /** 강화. 잔액 부족이거나 최대 레벨이면 null. */
-    suspend fun upgrade(id: Long): Sneaker? {
+    suspend fun upgrade(id: Long): Sneaker? = writeLock.withLock {
         val entity = sneakerDao.byId(id) ?: return null
         val current = entity.toDomain()
         if (!current.canUpgrade) return null
@@ -62,14 +68,14 @@ class SneakerRepository(
             current.slotKey,
             (entity.level + 1).toDouble(),
         )
-        return upgraded.toDomain()
+        upgraded.toDomain()
     }
 
     /**
      * 새 스니커즈 민팅. 착용 중인 스니커즈의 행운 스탯이 상위 희귀도 확률을 올린다.
      * 잔액 부족이면 null.
      */
-    suspend fun mint(): Sneaker? {
+    suspend fun mint(): Sneaker? = writeLock.withLock {
         val cost = RewardEconomy.MINT_COST
         val luck = sneakerDao.equippedNow()?.luck?.minus(1.0)?.coerceAtLeast(0.0) ?: 0.0
         if (!rewardRepository.spend(RewardType.SPEND_MINT, cost, "스니커즈 민팅")) return null
@@ -86,7 +92,7 @@ class SneakerRepository(
             minted.slotKey,
             minted.rarity.ordinal.toDouble(),
         )
-        return minted.copy(id = newId)
+        minted.copy(id = newId)
     }
 
     /** 도감 진행도 — 보유한 (속성 × 등급 × 변형) 조합 수 */

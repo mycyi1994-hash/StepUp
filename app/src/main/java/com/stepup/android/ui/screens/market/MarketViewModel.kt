@@ -16,9 +16,7 @@ import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.ModelBook
 import com.stepup.android.data.repo.MyMarket
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -135,9 +133,6 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
     val state = MutableStateFlow(MarketModelState())
     val message = MutableStateFlow<MarketMessage?>(null)
 
-    private val inventory: StateFlow<List<SneakerEntity>> = repo.inventory()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     private var model: ModelKey? = null
 
     fun open(key: ModelKey) {
@@ -170,7 +165,9 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
                         book = book.value,
                         quote = quote,
                         tradable = tradable,
-                        mySneakers = inventory.value.filter {
+                        // 구독하는 쪽이 없는 stateIn(WhileSubscribed) 값은 늘 빈 목록이라
+                        // 팔 신발을 못 고른다. 지금 목록을 직접 읽는다.
+                        mySneakers = repo.inventory().first().filter {
                             it.factionId == key.faction &&
                                 it.rarity == key.rarity &&
                                 it.variant == key.variant

@@ -244,7 +244,10 @@ class StepUpServer(
             response.status in 200..299 -> ServerResult.Ok(response.body)
             response.status == 0 -> ServerResult.Retry(response.body)
             // 출입증이 방금 만료됐을 수 있다. 다음 차례에 갱신해서 다시 시도한다.
-            response.status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
+            response.status == 401 -> {
+                sessions.markExpired(token)
+                ServerResult.Retry("인증이 만료되었습니다")
+            }
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")

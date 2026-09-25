@@ -137,13 +137,19 @@ object ServiceLocator {
         )
         server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
         Analytics.init(app)
-        pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
+        pushRegistrar = PushRegistrar(
+            api = PushApi(server),
+            locale = { userPrefs.languageNow() },
+            pendingPrefs = { userPrefs.pendingNotifyPrefs() },
+            prefsSynced = { userPrefs.markNotifyPrefsSynced(it) },
+        )
         territoryApi = TerritoryApi(server)
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
             recorder = ServerSessionRecorder(
                 server = server,
                 courseApi = CourseApi(server),
+                peekCourseRun = { startedAt -> userPrefs.pendingCourseRun(startedAt) },
                 takeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt) },
             ),
         )

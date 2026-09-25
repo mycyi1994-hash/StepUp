@@ -64,7 +64,7 @@ interface WalkSessionDao {
     )
     suspend fun pendingUploads(limit: Int): List<WalkSessionEntity>
 
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != ''")
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != '' AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
     /**
@@ -240,6 +240,10 @@ interface BoostDao {
     @Query("SELECT * FROM boosts WHERE type = :type AND expiresAt > :now LIMIT 1")
     suspend fun activeOf(type: String, now: Long): BoostEntity?
 
+    /** [from]~[to] 사이에 한 번이라도 켜져 있던 [type] 부스트 */
+    @Query("SELECT * FROM boosts WHERE type = :type AND activatedAt < :to AND expiresAt > :from LIMIT 1")
+    suspend fun activeDuring(type: String, from: Long, to: Long): BoostEntity?
+
     @Query("DELETE FROM boosts WHERE expiresAt <= :now")
     suspend fun purgeExpired(now: Long)
 }
@@ -247,7 +251,8 @@ interface BoostDao {
 @Dao
 interface ClaimedEventDao {
 
-    @Insert
+    // 이미 받은 기록이 있으면 그대로 둔다(같은 키로 다시 넣다 충돌해 죽지 않게).
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: ClaimedEventEntity)
 
     @Query("SELECT * FROM claimed_events")
@@ -430,6 +435,10 @@ interface NotificationDao {
 
     @Query("UPDATE notifications SET actioned = 1, read = 1 WHERE id = :id")
     suspend fun markActioned(id: Long)
+
+    /** 아직 처리 전이면 처리로 바꾸고 1, 이미 처리됐으면 0. 보상을 한 번만 주는 근거다. */
+    @Query("UPDATE notifications SET actioned = 1, read = 1 WHERE id = :id AND actioned = 0")
+    suspend fun markActionedOnce(id: Long): Int
 
     @Query("DELETE FROM notifications WHERE id = :id")
     suspend fun delete(id: Long)

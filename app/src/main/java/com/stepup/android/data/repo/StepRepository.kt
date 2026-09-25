@@ -33,7 +33,7 @@ class StepRepository(
     val todaySteps: StateFlow<Int> = tracker.todaySteps
     val dailyGoal: Flow<Int> = prefs.dailyGoal
     val streak: Flow<Int> = prefs.streak
-    val energy: Flow<Double> = prefs.energy
+    val energy: Flow<Double> = rewardRepository.energy
 
     val stepSensorAvailable: Boolean get() = tracker.isAvailable
 
@@ -95,9 +95,13 @@ class StepRepository(
         val goal = prefs.dailyGoal.first()
         stepDao.upsert(DailyStepsEntity(today, steps, goal, System.currentTimeMillis()))
 
-        if (steps >= goal && prefs.lastGoalMetDay() != today) {
-            val metYesterday = prefs.lastGoalMetDay() == today - 1
-            val newStreak = if (metYesterday) prefs.streakValue() + 1 else 1
+        val lastMet = prefs.lastGoalMetDay()
+        if (steps >= goal && lastMet != today) {
+            val metYesterday = lastMet == today - 1
+            // 어제 하루를 놓쳤어도 그날 스트릭 보호막(구매 아이템)이 켜져 있었으면 이어 간다
+            val shielded = !metYesterday && lastMet == today - 2 &&
+                rewardRepository.streakShieldCovered(today - 1)
+            val newStreak = if (metYesterday || shielded) prefs.streakValue() + 1 else 1
             prefs.setGoalMet(today, newStreak)
             rewardRepository.creditGoalBonus(newStreak, goal)
         }
@@ -132,13 +136,19 @@ class StepRepository(
         // 나누면 어떤 값을 넣어도 240 spm을 못 넘어 검사가 죽은 코드가 된다.
         val now = System.currentTimeMillis()
         val since = lastBatchAt
-        lastBatchAt = now
         val batchSec = if (since == 0L) 0L else (now - since) / 1000
-        if (batchSec > 0 && RunIntegrity.cadenceImplausible(pending, batchSec)) {
+        // cadenceImplausible()의 초반 60초 유예는 세션 시작용이다. 여기서 쓰면 500보가
+        // 몇 초 만에 쌓인 구간이 유예에 걸려 그대로 지급된다. 배치에는 케이던스를 바로 본다.
+        val implausible = since != 0L &&
+            (batchSec <= 0L || RunIntegrity.cadenceSpm(pending, batchSec) > RunIntegrity.MAX_CADENCE_SPM)
+        if (implausible) {
             // 폰을 흔든 구간. 기준점을 올리지 않고 흘려보낸다 — 올려버리면 그
             // 구간이 영영 사라져, 오탐 한 번이 정상 걸음까지 먹는다.
+            // 구간 시작 시각도 그대로 둔다. 여기서 옮기면 다음 센서 이벤트(몇 초 뒤)가
+            // "500보를 몇 초에" 로 읽혀 그날 백그라운드 적립이 영영 멈춘다.
             return
         }
+        lastBatchAt = now
 
         // 기준점을 먼저 올리고 지급한다. 반대 순서면 그 사이 프로세스가 죽었을 때
         // 같은 걸음을 두 번 지급한다.

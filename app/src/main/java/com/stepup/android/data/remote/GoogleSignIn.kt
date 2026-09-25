@@ -11,6 +11,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import java.security.MessageDigest
 import java.security.SecureRandom
+import kotlinx.coroutines.CancellationException
 
 /** 구글이 내준 신원 증명 */
 sealed interface GoogleIdResult {
@@ -98,6 +99,9 @@ class GoogleSignIn(
             }
         } catch (e: GetCredentialException) {
             GoogleIdResult.Failed(e.message ?: "구글 로그인에 실패했습니다")
+        } catch (e: CancellationException) {
+            // 화면을 떠나 코루틴이 취소됐다. 실패로 바꾸면 취소가 전파되지 않는다.
+            throw e
         } catch (e: Exception) {
             GoogleIdResult.Failed(e.message ?: "구글 로그인에 실패했습니다")
         }
