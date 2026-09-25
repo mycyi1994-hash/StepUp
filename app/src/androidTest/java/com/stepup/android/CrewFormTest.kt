@@ -100,6 +100,7 @@ class CrewFormTest {
                 // including a missing keyboard; a post-test adb screenshot is too late.
                 capture("$font-keyboard-wait")
             }
+            name.assertIsDisplayed()
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsEnabled()
             val area = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_area))
             area.performScrollTo().performClick().performTextInput("Seoul")

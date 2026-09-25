@@ -8,19 +8,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,7 +36,6 @@ import com.stepup.android.ui.theme.Snow
 /**
  * 모임 만들기 — 당근 그룹처럼 이름·소개·활동 지역과 가입 방식만 받고 바로 개설한다.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CrewCreateScreen(
     onBack: () -> Unit = {},
@@ -49,7 +47,7 @@ fun CrewCreateScreen(
     var area by rememberSaveable { mutableStateOf("") }
     var policy by rememberSaveable { mutableStateOf(CrewJoinPolicy.OPEN) }
     val creating by viewModel.creatingCrew.collectAsStateWithLifecycle()
-    val editing = WindowInsets.isImeVisible
+    var editing by remember { mutableStateOf(false) }
 
     CrewNoticeToast(viewModel)
 
@@ -95,7 +93,10 @@ fun CrewCreateScreen(
         }
 
         item {
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 14.dp) {
+            GlowCard(
+                modifier = Modifier.onFocusChanged { editing = it.hasFocus },
+                contentPadding = PaddingValues(16.dp), spacing = 14.dp,
+            ) {
                 LabeledField(
                     label = stringResource(R.string.crew_field_name),
                     value = name,
