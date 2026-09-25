@@ -346,6 +346,7 @@ comment on table public.market_sneakers is
   '서버 신발 표 — 신발의 정본. 폰 목록은 사본이다. IMPORT 는 폰이 정한 값이라 적립·꺼내기에 쓰지 않는다.';
 
 -- 적립 계산에 쓰는 실효 스탯. 폰이 정한 신발(IMPORT·MINT)은 일반 1레벨로 친다.
+-- 내구도는 모든 신발이 실제 값을 쓴다 — 예전 신발만 닳지 않으면 수리비를 안 내는 신발이 된다.
 create or replace function economy.sneaker_effective(
   p_origin text, p_rarity text, p_level int,
   p_efficiency_bps int, p_comfort_bps int, p_durability numeric,
@@ -358,7 +359,7 @@ create or replace function economy.sneaker_effective(
          else least(p_comfort_bps + economy.comfort_per_level_bps() * greatest(p_level - 1, 0),
                     economy.comfort_cap_bps()) end,
     case when p_origin in ('IMPORT', 'MINT') then 1 else p_level end,
-    case when p_origin in ('IMPORT', 'MINT') then 100 else p_durability end
+    p_durability
 $$;
 
 -- 지금 신고 있는 신발(서버 기준). 없거나 체인에 나가 있으면 null.

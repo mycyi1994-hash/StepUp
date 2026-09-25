@@ -500,12 +500,16 @@ declare
   v_bid record;
   v_id bigint;
 begin
+  -- NaN 은 Postgres 에서 어떤 수보다 커서 아래 비교를 통과한다 — 먼저 막는다
+  if p_price is null or p_price = 'NaN'::numeric then
+    raise exception '값이 올바르지 않습니다' using errcode = '22023';
+  end if;
   if p_price < economy.market_min_price() then
     raise exception '값이 너무 낮습니다' using errcode = '22023';
   end if;
 
   select * into v_s from public.market_sneakers where id = p_sneaker_id for update;
-  if not found or v_s.owner_id <> v_user then
+  if not found or v_s.owner_id is distinct from v_user then
     raise exception '내 스니커즈가 아닙니다' using errcode = '42501';
   end if;
   if v_s.status = 'LISTED' then
@@ -553,7 +557,7 @@ declare
   v_l record;
 begin
   select * into v_l from public.market_listings where id = p_listing_id for update;
-  if not found or v_l.seller_id <> v_user then
+  if not found or v_l.seller_id is distinct from v_user then
     raise exception '내 매물이 아닙니다' using errcode = '42501';
   end if;
   if v_l.status <> 'OPEN' then
@@ -622,6 +626,9 @@ declare
   v_balance numeric;
   v_id bigint;
 begin
+  if p_price is null or p_price = 'NaN'::numeric then
+    raise exception '값이 올바르지 않습니다' using errcode = '22023';
+  end if;
   if p_price < economy.market_min_price() then
     raise exception '값이 너무 낮습니다' using errcode = '22023';
   end if;
@@ -681,7 +688,7 @@ declare
   v_b record;
 begin
   select * into v_b from public.market_bids where id = p_bid_id for update;
-  if not found or v_b.buyer_id <> v_user then
+  if not found or v_b.buyer_id is distinct from v_user then
     raise exception '내 입찰이 아닙니다' using errcode = '42501';
   end if;
   if v_b.status <> 'OPEN' then
@@ -710,7 +717,7 @@ declare
   v_trade bigint;
 begin
   select * into v_s from public.market_sneakers where id = p_sneaker_id for update;
-  if not found or v_s.owner_id <> v_user then
+  if not found or v_s.owner_id is distinct from v_user then
     raise exception '내 스니커즈가 아닙니다' using errcode = '42501';
   end if;
 

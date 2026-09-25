@@ -327,3 +327,7 @@ end $$;
 revoke all on function public.attester_chain_paused() from public, anon, authenticated;
 grant execute on function public.attester_chain_paused() to stepup_attester, authenticated;
 
+-- 11. (2차 점검) 코스는 course_share 로만 만들고 고친다 — 표에 직접 쓰면 거리 검사(0.2~200km) ·
+--     하루 개수 · 경로 길이 검사를 건너뛰고, NaN 거리가 목록을 읽는 모든 앱을 깨뜨린다.
+revoke insert, update on public.courses from authenticated;
+

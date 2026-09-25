@@ -497,15 +497,22 @@ call pg_temp.must_fail(
   $q$ update public.content_reports set status = 'DISMISSED' $q$,
   '신고 처리 상태를 앱이 바꿀 수 없다');
 
--- 코스
+-- 코스 — 앱은 표에 직접 쓰지 못한다(course_share 로만). 검사용 줄은 관리자로 넣는다.
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+call pg_temp.must_fail(
+  $q$ insert into public.courses (owner_id, name, distance_km, track, shared)
+      values ('11111111-1111-1111-1111-111111111111', 'x', 'NaN', '1,1', true) $q$,
+  '코스 표에 직접 넣을 수 없다 (거리 · 개수 검사를 건너뛰지 못하게)');
+reset role;
+insert into public.courses (owner_id, name, area, distance_km, track, shared)
+values ('11111111-1111-1111-1111-111111111111', '한강 5km', '서울 마포', 5.0,
+        '37.5,127.0;37.51,127.0', true);
+insert into public.courses (owner_id, name, area, distance_km, shared)
+values ('11111111-1111-1111-1111-111111111111', '혼자 보는 코스', '서울', 3.0, false);
+set role authenticated;
 call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 begin
-  insert into public.courses (owner_id, name, area, distance_km, track, shared)
-  values ('11111111-1111-1111-1111-111111111111', '한강 5km', '서울 마포', 5.0,
-          '37.5,127.0;37.51,127.0', true);
-  insert into public.courses (owner_id, name, area, distance_km, shared)
-  values ('11111111-1111-1111-1111-111111111111', '혼자 보는 코스', '서울', 3.0, false);
   perform pg_temp.ok((select count(*) from public.course_feed) = 2, '내 코스는 다 보인다');
 end $$;
 
@@ -3188,6 +3195,35 @@ call pg_temp.must_fail(
             '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_c')),
   '지운 계정이 쓰던 지갑을 새 계정에 붙여 보너스를 다시 받을 수 없다');
 reset role;
+
+-- 2차 점검 — 주인이 계정을 지운 신발은 아무도 가져가지 못한다
+insert into fix (k, v)
+  select 'orphan_shoe', id::text from public.market_sneakers
+   where owner_id is null and chain_state = 'APP' order by id limit 1;
+do $$ begin
+  perform pg_temp.ok(pg_temp.fx('orphan_shoe') is not null, '(준비) 주인 없는 앱 신발이 있다');
+end $$;
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin perform public.economy_bootstrap(); end $$;
+call pg_temp.must_fail(format($q$ select public.market_list(%s, 900) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 매물로 걸 수 없다');
+call pg_temp.must_fail(format($q$ select public.sneaker_equip(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 신을 수 없다');
+call pg_temp.must_fail(format($q$ select public.sneaker_upgrade(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 강화할 수 없다');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 지갑으로 꺼낼 수 없다');
+select set_config('request.jwt.claims', '', false);
+call pg_temp.must_fail($q$ select public.market_list(
+    (select id from public.market_sneakers where owner_id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3' limit 1), 'NaN') $q$,
+  'NaN 값으로 매물을 걸 수 없다');
+reset role;
+call pg_temp.must_fail(
+  format($q$ update public.market_sneakers set owner_id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3' where id = %s $q$,
+         pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발의 주인을 바꿀 수 없다(체인에서 넣은 경우 빼고)');
 
 -- 0029 — 상대가 계정을 지운 거래도 "판 것인가"가 거짓/참으로 나온다
 insert into public.market_trades (faction, rarity, variant, level, seller_id, buyer_id, price, fee, kind)
