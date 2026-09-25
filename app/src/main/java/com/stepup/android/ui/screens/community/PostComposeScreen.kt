@@ -2,15 +2,8 @@ package com.stepup.android.ui.screens.community
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.ui.platform.testTag
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,12 +60,25 @@ fun PostComposeScreen(
     // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
     BoardNoticeToast(viewModel)
 
-    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
-    com.stepup.android.ui.components.FocusHeader(stringResource(R.string.post_write), onBack)
-    LazyColumn(
-        modifier = Modifier.weight(1f),
-        contentPadding = PaddingValues(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
+    com.stepup.android.ui.components.FormPage(
+        title = stringResource(R.string.post_write), onBack = onBack,
+        actionLabel = stringResource(if (posting) R.string.feed_loading else R.string.post_submit),
+        actionEnabled = canSubmit, actionTag = "post-submit",
+        onAction = {
+            viewModel.writePost(
+                category = selected,
+                title = title,
+                body = body,
+                crewId = crewId,
+                place = place,
+                distanceKm = if (selected == PostCategory.FLASH) requireNotNull(parsedDistance) else 0.0,
+                meetInMinutes = if (selected == PostCategory.FLASH) requireNotNull(parsedMinutes) else 0,
+                capacity = if (selected == PostCategory.FLASH) requireNotNull(parsedCapacity) else 0,
+                lat = here?.lat,
+                lng = here?.lng,
+                onDone = onBack,
+            )
+        },
     ) {
         if (crewName.isNotBlank()) {
             item { Text(crewName, color = Silver, fontSize = 14.sp) }
@@ -109,7 +114,7 @@ fun PostComposeScreen(
                 onValueChange = { body = it },
                 placeholder = stringResource(R.string.post_field_body_hint),
                 singleLine = false,
-                minHeight = 176,
+                minHeight = 144,
             )
         }
 
@@ -127,29 +132,37 @@ fun PostComposeScreen(
                         onValueChange = { place = it },
                         placeholder = stringResource(R.string.post_field_place_hint),
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        LabeledField(
-                            label = stringResource(R.string.post_field_distance),
-                            value = distance,
-                            onValueChange = { distance = it },
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
-                            placeholder = "1.0",
-                        )
-                        LabeledField(
-                            label = stringResource(R.string.post_field_starts_in),
-                            value = startsIn,
-                            onValueChange = { startsIn = it },
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                            placeholder = "60",
-                        )
-                        LabeledField(
-                            label = stringResource(R.string.post_field_capacity),
-                            value = capacity,
-                            onValueChange = { capacity = it },
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                            placeholder = "6",
-                        )
-                    }
+                }
+            }
+            item {
+                LabeledField(
+                    label = stringResource(R.string.post_field_distance),
+                    value = distance,
+                    onValueChange = { distance = it },
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                    placeholder = "1.0",
+                )
+            }
+            item {
+                LabeledField(
+                    label = stringResource(R.string.post_field_starts_in),
+                    value = startsIn,
+                    onValueChange = { startsIn = it },
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    placeholder = "60",
+                )
+            }
+            item {
+                LabeledField(
+                    label = stringResource(R.string.post_field_capacity),
+                    value = capacity,
+                    onValueChange = { capacity = it },
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    placeholder = "6",
+                )
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (!validNumbers) {
                         Text(stringResource(R.string.post_invalid_numbers),
                             color = com.stepup.android.ui.theme.Alert,
@@ -165,27 +178,5 @@ fun PostComposeScreen(
                 }
             }
         }
-
-    }
-            com.stepup.android.ui.components.PrimaryCta(
-                text = stringResource(if (posting) R.string.feed_loading else R.string.post_submit),
-                enabled = canSubmit,
-                onClick = {
-                    viewModel.writePost(
-                        category = selected,
-                        title = title,
-                        body = body,
-                        crewId = crewId,
-                        place = place,
-                        distanceKm = if (selected == PostCategory.FLASH) requireNotNull(parsedDistance) else 0.0,
-                        meetInMinutes = if (selected == PostCategory.FLASH) requireNotNull(parsedMinutes) else 0,
-                        capacity = if (selected == PostCategory.FLASH) requireNotNull(parsedCapacity) else 0,
-                        lat = here?.lat,
-                        lng = here?.lng,
-                        onDone = onBack,
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("post-submit"),
-            )
     }
 }

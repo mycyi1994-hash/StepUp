@@ -63,6 +63,34 @@ class CrewFormTest {
         // Deliberately do not publish a real meetup from instrumentation.
     }
 
+    @Test fun postBodyAndKeyboardLeaveSubmitReachable() {
+        runBlocking {
+            ServiceLocator.userPrefs.setReducedMotion(true)
+            ServiceLocator.userPrefs.setGuideSeen()
+        }
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) {
+                ExperienceProvider { MainScaffold(initialRoute = Routes.postCompose("")) }
+            }
+        }
+        val title = compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_title))
+        title.performScrollTo().performTextInput("Evening riverside run")
+        val body = compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_body))
+        body.performScrollTo().performClick().performTextInput("Meet at the park entrance.")
+        try {
+            compose.waitUntil(5_000) {
+                androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                    ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+            }
+            body.assertIsDisplayed()
+            compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsEnabled()
+            compose.onNodeWithTag("bottom-nav").assertDoesNotExist()
+        } finally {
+            capture("post-body-keyboard")
+        }
+        // Never submit or create a real post from this design test.
+    }
+
     @Test fun nameInputAndKeyboardLeaveSubmitReachable() = exerciseCrewForm(1f)
 
     @Test fun nameInputAndKeyboardLeaveSubmitReachableAtLargeFont() = exerciseCrewForm(1.3f)

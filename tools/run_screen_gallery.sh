@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -96,11 +96,22 @@ if [[ "$suite" == "redesign" ]]; then
   run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndKeepsCatalogReachable,com.stepup.android.ExperienceUiTest#firstGuideVisitsRunningShoesAndProfile,com.stepup.android.MysteryDesignTest"
   mkdir -p screen-gallery/redesign-interaction-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-interaction-results/ || true
-  run_instrumentation redesign-reference "com.stepup.android.DesignReferenceTest"
+  run_instrumentation redesign-reference "com.stepup.android.DesignReferenceTest#referenceViewports"
   mkdir -p screen-gallery/redesign-reference-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-reference-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
   pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/mystery/ || status=1
+fi
+# Secondary design checkpoint: real writing forms + 10 detail/settings routes at three viewports.
+if [[ "$suite" == "secondary" ]]; then
+  run_instrumentation secondary-forms "com.stepup.android.CrewFormTest"
+  mkdir -p screen-gallery/secondary-forms-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-forms-results/ || true
+  run_instrumentation secondary-reference "com.stepup.android.DesignReferenceTest#secondaryViewports"
+  mkdir -p screen-gallery/secondary-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+  pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

@@ -101,9 +101,15 @@ class DesignReferenceTest {
     private enum class Scene {
         HOME, SHOES, DRAW, RUN_ACTIVE, RUN_FINISH, COMMUNITY, PROFILE, CHALLENGE, LOGIN, FIRST_GUIDE,
         RUN_PAUSED, RUN_NO_GPS, MARKET, NEWS,
+        POST_COMPOSE, CREW_CREATE, FLASH_DETAIL, EXPERIENCE, NOTIFICATIONS, PRIVACY, SUPPORT,
+        CONNECTED, THEME, LANGUAGE,
     }
 
-    @Test fun referenceViewports() {
+    @Test fun referenceViewports() = captureViewports(secondary = false)
+
+    @Test fun secondaryViewports() = captureViewports(secondary = true)
+
+    private fun captureViewports(secondary: Boolean) {
         ServiceLocator.stepRepository.startTracking()
         ServiceLocator.stepRepository.simulateSteps((12840 - ServiceLocator.stepRepository.todaySteps.value).coerceAtLeast(0))
 
@@ -151,12 +157,13 @@ class DesignReferenceTest {
             Triple(390, 844, true),
         )
         val layoutFailures = mutableListOf<String>()
-        for ((w, h, enlarged) in viewports) {
-            for (s in Scene.entries) {
+        val selected = Scene.entries.filter { (it.ordinal > Scene.NEWS.ordinal) == secondary }
+        for ((w, h, enlarged) in viewports.filter { !secondary || it.first != 430 }) {
+            for (s in selected) {
                 prepareScene(s)
                 compose.runOnIdle { width = w; height = h; large = enlarged; scene = s }
                 compose.waitForIdle()
-                val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
+                val name = "${if (secondary) "secondary" else "ref"}-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
                 try {
                     awaitScene(s)
                 } catch (failure: Throwable) {
@@ -171,11 +178,22 @@ class DesignReferenceTest {
                 }
                 audit(name)
                 capture(name)
+                if (s == Scene.POST_COMPOSE) {
+                    compose.onNodeWithText(korean(R.string.post_cat_flash)).performClick()
+                    compose.onNodeWithContentDescription(korean(R.string.post_field_capacity)).performScrollTo().assertIsDisplayed()
+                    compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsNotEnabled()
+                    capture("$name-meetup-fields")
+                }
+                if (s == Scene.FLASH_DETAIL) {
+                    compose.onNodeWithText(korean(R.string.flash_enter_chat)).performScrollTo().assertIsDisplayed()
+                    compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                    capture("$name-chat")
+                }
             }
         }
         val directory = File(compose.activity.getExternalFilesDir(null), "experience-qa").apply { mkdirs() }
-        File(directory, "ref-audit.jsonl").writeText(findings.joinToString("\n") { it.toString() })
-        File(directory, "ref-layout-checks.txt").writeText(
+        File(directory, "${if (secondary) "secondary" else "ref"}-audit.jsonl").writeText(findings.joinToString("\n") { it.toString() })
+        File(directory, "${if (secondary) "secondary" else "ref"}-layout-checks.txt").writeText(
             if (layoutFailures.isEmpty()) "PASS: reviewed layout checks" else layoutFailures.joinToString("\n"),
         )
         assertTrue(layoutFailures.joinToString("\n"), layoutFailures.isEmpty())
@@ -216,6 +234,9 @@ class DesignReferenceTest {
             Scene.CHALLENGE -> "challenge-primary-action"
             Scene.LOGIN -> "login-google"
             Scene.FIRST_GUIDE -> "guide-step-title"
+            Scene.POST_COMPOSE -> "post-submit"
+            Scene.CREW_CREATE -> "crew-create-submit"
+            Scene.FLASH_DETAIL -> "detail-primary-action"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -224,7 +245,7 @@ class DesignReferenceTest {
             compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty() }
         }
         when (s) {
-            Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN ->
+            Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
@@ -290,6 +311,16 @@ class DesignReferenceTest {
             Scene.FIRST_GUIDE -> MainScaffold(startTour = true)
             Scene.MARKET -> MainScaffold(initialRoute = Routes.RUNNER_MARKET)
             Scene.NEWS -> MainScaffold(initialRoute = Routes.NEWS)
+            Scene.POST_COMPOSE -> MainScaffold(initialRoute = Routes.postCompose(""))
+            Scene.CREW_CREATE -> MainScaffold(initialRoute = Routes.CREW_CREATE)
+            Scene.FLASH_DETAIL -> MainScaffold(initialRoute = Routes.flashDetail(101L))
+            Scene.EXPERIENCE -> MainScaffold(initialRoute = Routes.SETTINGS_EXPERIENCE)
+            Scene.NOTIFICATIONS -> MainScaffold(initialRoute = Routes.SETTINGS_NOTIFICATIONS)
+            Scene.PRIVACY -> MainScaffold(initialRoute = Routes.SETTINGS_PRIVACY)
+            Scene.SUPPORT -> MainScaffold(initialRoute = Routes.SETTINGS_SUPPORT)
+            Scene.CONNECTED -> MainScaffold(initialRoute = Routes.SETTINGS_CONNECTED)
+            Scene.THEME -> MainScaffold(initialRoute = Routes.SETTINGS_THEME)
+            Scene.LANGUAGE -> MainScaffold(initialRoute = Routes.SETTINGS_LANGUAGE)
         }
     }
 
