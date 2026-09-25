@@ -64,15 +64,6 @@ data class LeaderboardRow(
     val total: Int,
 )
 
-/** 종족 순위 한 줄 */
-@Serializable
-data class FactionRankRow(
-    val faction: String,
-    val km: Double,
-    @SerialName("my_km") val myKm: Double,
-    val runners: Int,
-)
-
 /** 서버 호출의 결말 */
 sealed interface ServerResult<out T> {
     data class Ok<T>(val value: T) : ServerResult<T>
@@ -122,6 +113,7 @@ class StepUpServer(
         partySize: Int,
         faction: String,
         expectedUserId: String,
+        mockLocation: Boolean = false,
     ): ServerResult<SessionRecorded> {
         val body = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
@@ -132,6 +124,7 @@ class StepUpServer(
             put("p_boost_bps", boostBps)
             put("p_party_size", partySize)
             put("p_faction", faction)
+            put("p_mock_location", mockLocation)
         }
 
         return authed(expectedUserId) { token ->
@@ -168,14 +161,6 @@ class StepUpServer(
         return authed { token ->
             http.post("$restUrl/rpc/leaderboard", body, headers(token))
         }.mapBody { text -> serverJson.decodeFromString<List<LeaderboardRow>>(text) }
-    }
-
-    /** 종족 순위. 아무도 안 뛴 종족도 0으로 온다. */
-    suspend fun factionLeaderboard(period: String = "ALL"): ServerResult<List<FactionRankRow>> {
-        val body = jsonBody { put("p_period", period) }
-        return authed { token ->
-            http.post("$restUrl/rpc/faction_leaderboard", body, headers(token))
-        }.mapBody { text -> serverJson.decodeFromString<List<FactionRankRow>>(text) }
     }
 
     /** 방금 올린 러닝이 어느 크루의 러닝이었는지 적는다(`session_tag_crew`). */

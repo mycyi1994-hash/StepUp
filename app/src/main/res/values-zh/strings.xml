@@ -211,7 +211,19 @@
     <string name="items_collection">图鉴</string>
     <string name="items_collection_progress">%1$d / %2$d 种组合</string>
     <string name="items_mint_title">铸造新球鞋</string>
-    <string name="items_mint_desc">装备球鞋的幸运越高，开出稀有款的概率就越大。</string>
+    <string name="items_mint_desc">抽取由服务器进行。新注册可免费抽取 10 次，之后每次 500 SUP。</string>
+    <string name="items_free_draws">剩余免费抽取 %1$d 次</string>
+    <string name="toast_sign_in_required">登录后即可使用 SUP 和运动鞋。</string>
+    <string name="toast_offline">无法连接服务器，请稍后再试。</string>
+    <string name="toast_no_free_draws">免费抽取已用完。再按一次将用 SUP 抽取。</string>
+    <string name="toast_nothing_to_repair">耐久度已满。</string>
+    <string name="toast_repaired">已修理</string>
+    <string name="sneaker_action_repair">修理 · %1$s SUP</string>
+    <string name="ledger_spend_draw">运动鞋抽取</string>
+    <string name="ledger_spend_repair">运动鞋修理</string>
+    <string name="ledger_earn_course">路线奖励</string>
+    <string name="ledger_chain">钱包转移</string>
+    <string name="ledger_carried_over">之前的记录（合计）</string>
     <string name="items_mint_button">铸造 · %1$s SUP</string>
     <string name="mint_result_title">新球鞋到手！</string>
     <string name="boost_energy_title">能量电池</string>
@@ -409,7 +421,7 @@
     <string name="faq_q_energy">为什么不赚 SUP 了？</string>
     <string name="faq_a_energy">能量用完了。1 点能量对应 600 步，每天午夜会自动回满。</string>
     <string name="faq_q_rarity">稀有度是怎么运作的？</string>
-    <string name="faq_a_rarity">稀有度决定属性上限和最高等级。装备球鞋的幸运越高，铸造时开出好货的概率就越大。</string>
+    <string name="faq_a_rarity">稀有度决定属性范围（效率、舒适度）和最高等级。抽取概率固定：普通 55%、稀有 28%、史诗 13%、传奇 4%。</string>
     <string name="faq_q_withdraw">什么时候能提现？</string>
     <string name="faq_a_withdraw">转到 GIWA 链的链上功能还在开发中。在那之前，你的余额都很安全。</string>
     <string name="support_contact">联系我们</string>
@@ -434,8 +446,11 @@
     <string name="wallet_empty_title">还没有记录</string>
     <string name="wallet_empty_body">跑一次，就能赚到第一笔 SUP。</string>
     <string name="wallet_giwa">GIWA 钱包</string>
-    <string name="wallet_giwa_status">当前版本暂不支持</string>
-    <string name="wallet_giwa_body">此页面显示应用中记录的 SUP。当前版本暂不支持连接 GIWA 钱包和提现。</string>
+    <string name="wallet_giwa_status">测试网 · 网页版</string>
+    <string name="wallet_giwa_body">在 StepUp 钱包页面可以连接钱包、领取奖励抽取，并在应用和钱包之间转移 SUP 和运动鞋。首次使用需要设置两步验证。</string>
+    <string name="wallet_web_open">打开钱包页面</string>
+    <string name="wallet_web_sign_in">请先登录再打开钱包页面。</string>
+    <string name="wallet_web_offline">无法连接，请稍后再试。</string>
     <string name="wallet_withdraw">提现</string>
     <string name="wallet_withdraw_title">提现到 GIWA 链</string>
     <string name="wallet_withdraw_body">链上结算会在主网上线时开放。到那时余额会 1:1 平移过去。</string>
@@ -595,7 +610,6 @@
     <string name="rank_me">我</string>
     <string name="rank_board_speed">极速</string>
     <string name="rank_board_time">耐力</string>
-    <string name="rank_board_faction">族群</string>
     <string name="rank_board_sup">SUP 余额</string>
     <string name="rank_board_crew">跑团</string>
     <string name="rank_period_day">日榜</string>
@@ -613,11 +627,6 @@
     <string name="rank_failed">无法加载排行榜。</string>
     <string name="rank_retry">重试</string>
     <string name="rank_no_record">还没有记录。跑一次就会上榜。</string>
-    <string name="rank_faction_title">族群排行</string>
-    <string name="rank_faction_body">你跑的每一公里都会计入当时所穿鞋子的族群。即使你不是第一，你的族群也可能是。</string>
-    <string name="rank_faction_km">累计 %1$s km</string>
-    <string name="rank_faction_my_km">我的贡献 · %1$s km</string>
-    <string name="rank_faction_mine">我的族群</string>
     <string name="rank_crew_title">跑团排名</string>
     <string name="rank_crew_body">只统计跑团一起跑的距离，团员自己跑的不算 — 否则人多的跑团什么都不做就是第一。</string>
     <string name="rank_crew_runs">跑团活动 %1$d 次</string>
@@ -891,7 +900,7 @@
     <string name="tour7_title">穿戴中的球鞋</string>
     <string name="tour7_body">这双鞋的加成作用于每次跑步。点开可查看属性、强化或更换。</string>
     <string name="tour8_title">铸造</string>
-    <string name="tour8_body">花 SUP 铸造随机球鞋 NFT。穿戴中球鞋的幸运值会提高高稀有度概率。</string>
+    <string name="tour8_body">随机抽取运动鞋。新注册可免费抽取 10 次，之后每次 500 SUP。抽取由服务器进行。</string>
     <string name="tour9_title">收藏</string>
     <string name="tour9_body">左右滑动浏览收藏。重复的以 ×N 叠放，点开可选具体那双。共 44 格图鉴！</string>
     <string name="tour10_title">活动</string>
@@ -1537,7 +1546,7 @@
     <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
     <string name="mystery_draw_shoe">抽取运动鞋</string>
     <string name="mystery_draw_outfit">抽取运动服</string>
-    <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
+    <string name="mystery_pending_chain">登录后即可抽取。新注册可免费抽取 10 次。</string>
     <string name="home_previous_background">上一张背景</string>
     <string name="home_next_background">下一张背景</string>
     <string name="home_record_title">今日记录</string>
@@ -1552,7 +1561,13 @@
     <string name="shoes_market">前往鞋子市场</string>
     <string name="home_banner_message">再迈一步，\n向更好的方向。</string>
     <string name="mystery_guide_title">抽取须知</string>
-    <string name="mystery_guide_body">请在抽取页面确认价格和可获得的鞋子后再继续。</string>
+    <string name="mystery_guide_body">先使用免费抽取。之后每次 500 SUP，抽取前会再次确认。</string>
+    <string name="toast_drawn_refreshing">抽到了！正在加载新运动鞋，请稍后在收藏中查看。</string>
+    <string name="sneaker_enhance_legacy">服务器经济之前在手机上制作的运动鞋无法强化。</string>
+    <string name="sneaker_enhance_listed">出售中的运动鞋无法强化。</string>
+    <string name="mystery_draw_paid_confirm">要用 %1$s SUP 抽取运动鞋吗？</string>
+    <string name="mystery_draw_free">免费抽取（剩余 %1$d 次）</string>
+    <string name="mystery_draw_paid">抽取 · %1$s SUP</string>
     <string name="community_upcoming">即将开始的跑步聚会</string>
     <string name="run_route_unavailable">本次跑步没有记录GPS路线。</string>
 </resources>

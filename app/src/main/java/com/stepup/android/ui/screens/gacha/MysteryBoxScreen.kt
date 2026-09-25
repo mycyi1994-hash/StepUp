@@ -52,6 +52,8 @@ fun MysteryBoxScreen(
     onDrawOutfit: () -> Unit = {},
     onOpenDex: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
+    /** 뽑기 버튼 글자 — 무료 남은 수나 가격. 비우면 "신발 뽑기" */
+    drawLabel: String? = null,
 ) {
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
@@ -108,7 +110,7 @@ fun MysteryBoxScreen(
                 )
             }
         }
-        PrimaryCta(text = stringResource(R.string.mystery_draw_shoe), onClick = onDrawShoe,
+        PrimaryCta(text = drawLabel ?: stringResource(R.string.mystery_draw_shoe), onClick = onDrawShoe,
             enabled = shoeDrawReady, modifier = Modifier.padding(top = 16.dp).testTag("draw-shoe"))
     }
 }

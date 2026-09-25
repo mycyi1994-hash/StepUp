@@ -143,6 +143,14 @@ fun ItemsScreen(
             ItemsMessage.MaxLevel -> msgMaxLevel
             is ItemsMessage.Upgraded -> msgUpgraded
             is ItemsMessage.Equipped -> equippedFmt.format(m.sneaker.fullLabel(context))
+            ItemsMessage.Repaired -> context.getString(R.string.toast_repaired)
+            ItemsMessage.NothingToRepair -> context.getString(R.string.toast_nothing_to_repair)
+            ItemsMessage.NoFreeDraws -> context.getString(R.string.toast_no_free_draws)
+            ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
+            ItemsMessage.Offline -> context.getString(R.string.toast_offline)
+            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
+            ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
+            ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
         }
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
@@ -325,13 +333,16 @@ fun ItemsScreen(
                         )
                     }
                 }
+                val freeDraws by viewModel.freeDrawsLeft.collectAsStateWithLifecycle()
                 VoltButton(
-                    text = stringResource(
-                        R.string.items_mint_button,
-                        "%,.0f".format(RewardEconomy.MINT_COST),
-                    ),
+                    text = if (freeDraws > 0) {
+                        stringResource(R.string.items_free_draws, freeDraws)
+                    } else {
+                        stringResource(R.string.items_mint_button, "%,.0f".format(RewardEconomy.MINT_COST))
+                    },
                     onClick = { viewModel.mint() },
-                    enabled = balance?.let { it >= RewardEconomy.MINT_COST } == true,
+                    // 무료 뽑기가 남았으면 잔고와 상관없이 뽑을 수 있다
+                    enabled = freeDraws > 0 || balance?.let { it >= RewardEconomy.MINT_COST } == true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

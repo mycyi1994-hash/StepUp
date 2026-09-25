@@ -33,6 +33,13 @@ class RewardRepository(
     private val notificationDao: NotificationDao,
     private val prefs: UserPrefs,
     private val recoverRunEnergy: suspend () -> Unit = {},
+    /**
+     * 서버 경제(A안). 켜져 있으면 폰은 적립 · 에너지를 스스로 적지 않는다 — 잔고는 서버 원장의
+     * 사본이다(EconomySync). 서버 주소가 없는 빌드에서만 꺼진다.
+     */
+    private val serverEconomy: Boolean = false,
+    /** 오늘 목표 보너스를 서버에 청구한다(goal_claim). 서버가 확인한 러닝 걸음으로 판정한다 */
+    private val claimGoalOnServer: suspend () -> Unit = {},
 ) {
 
     val balance: Flow<Double> = rewardDao.observeBalance()
@@ -127,6 +134,11 @@ class RewardRepository(
      * @param dailyGoal 그 사람이 정한 목표 — 높게 잡을수록 보너스가 크다
      */
     suspend fun creditGoalBonus(streak: Int, dailyGoal: Int) {
+        if (serverEconomy) {
+            // 서버가 오늘 확인한 러닝 걸음으로 판정한다. 아직 모자라면 거절되고, 러닝이 올라간 뒤 다시 청구된다.
+            claimGoalOnServer()
+            return
+        }
         val amount = RewardEconomy.goalBonus(streak, dailyGoal)
         credit(RewardType.BONUS_GOAL, amount, "일일 목표 달성 보너스 (연속 ${streak}일)")
         notify(NotificationType.GOAL_REACHED, argText = streak.toString(), argAmount = amount)
@@ -192,7 +204,8 @@ class RewardRepository(
      * 알림은 띄우지 않는다. 하루에 열 번 넘게 울리면 그건 알림이 아니라 소음이다.
      */
     suspend fun settleBackground(steps: Int): SessionReward {
-        if (steps <= 0) return SessionReward(0, 0.0, 0.0)
+        // 서버 경제에서는 GPS 러닝으로 확인된 걸음만 적립된다. 평소 걸음은 적립하지 않는다.
+        if (steps <= 0 || serverEconomy) return SessionReward(0, 0.0, 0.0)
         recoverRunEnergy()
         val today = LocalDate.now().toEpochDay()
         syncEnergyCap()
@@ -249,6 +262,19 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
         durability = durability,
         equipped = equipped,
         acquiredAt = acquiredAt,
+        server = if (origin.isBlank()) null else com.stepup.android.domain.ServerStats(
+            origin = origin,
+            efficiencyBps = efficiencyBps,
+            comfortBps = comfortBps,
+            durabilityPts = durabilityPts,
+            maxLevel = maxLevel,
+            status = status,
+            chainState = chainState,
+            canWithdraw = canWithdraw,
+            upgradeCost = serverUpgradeCost,
+            repairCostPerPoint = repairCostPerPoint,
+            genesisNo = genesisNo,
+        ),
     )
 }
 
@@ -266,4 +292,15 @@ fun Sneaker.toEntity(): com.stepup.android.data.local.SneakerEntity =
         durability = durability,
         equipped = equipped,
         acquiredAt = acquiredAt,
+        origin = server?.origin.orEmpty(),
+        efficiencyBps = server?.efficiencyBps ?: 0,
+        comfortBps = server?.comfortBps ?: 0,
+        durabilityPts = server?.durabilityPts ?: 100.0,
+        maxLevel = server?.maxLevel ?: 0,
+        status = server?.status ?: "OWNED",
+        chainState = server?.chainState ?: "APP",
+        canWithdraw = server?.canWithdraw ?: false,
+        serverUpgradeCost = server?.upgradeCost ?: 0.0,
+        repairCostPerPoint = server?.repairCostPerPoint ?: 0.0,
+        genesisNo = server?.genesisNo ?: 0,
     )

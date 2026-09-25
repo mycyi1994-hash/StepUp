@@ -62,6 +62,8 @@ fun CustomizeScreen(
         val text = when (val result = message) {
             is ItemsMessage.Equipped -> context.getString(R.string.toast_equipped, result.sneaker.fullLabel(context))
             ItemsMessage.SaveFailed -> context.getString(R.string.feed_save_failed)
+            ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
+            ItemsMessage.Offline -> context.getString(R.string.toast_offline)
             else -> null
         }
         if (message != null) {

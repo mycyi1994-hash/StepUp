@@ -49,6 +49,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -459,19 +460,65 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.MYSTERY_BOX) {
-                val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
+                // 신발 뽑기는 서버가 굴린다(draw_free · draw_paid). 결과 신발의 상세로 넘어간다.
+                val drawVm: com.stepup.android.ui.screens.items.ItemsViewModel =
+                    androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.items.ItemsViewModel.Factory)
+                val drawn by drawVm.mintResult.collectAsStateWithLifecycle()
+                val drawMessage by drawVm.message.collectAsStateWithLifecycle()
+                LaunchedEffect(drawn) {
+                    val shoe = drawn ?: return@LaunchedEffect
+                    drawVm.dismissMintResult()
+                    navController.navigate(Routes.sneaker(shoe.id))
+                }
+                LaunchedEffect(drawMessage) {
+                    val m = drawMessage ?: return@LaunchedEffect
+                    val text = when (m) {
+                        com.stepup.android.ui.screens.items.ItemsMessage.NotEnoughBalance -> R.string.toast_no_balance
+                        com.stepup.android.ui.screens.items.ItemsMessage.NoFreeDraws -> R.string.toast_no_free_draws
+                        com.stepup.android.ui.screens.items.ItemsMessage.SignInRequired -> R.string.toast_sign_in_required
+                        com.stepup.android.ui.screens.items.ItemsMessage.Offline -> R.string.toast_offline
+                        else -> R.string.feed_save_failed
+                    }
+                    android.widget.Toast.makeText(context, context.getString(text), android.widget.Toast.LENGTH_SHORT).show()
+                    drawVm.consumeMessage()
+                }
+                val freeDraws by drawVm.freeDrawsLeft.collectAsStateWithLifecycle()
+                val syncState by ServiceLocator.economySync.state.collectAsStateWithLifecycle()
+                var confirmPaid by remember { mutableStateOf(false) }
+                val price = "%,.0f".format(com.stepup.android.domain.RewardEconomy.MINT_COST)
                 MysteryBoxScreen(
-                    shoeDrawReady = drawReady,
+                    // 로그인하지 않았으면 뽑을 수 없다 — "로그인하면 뽑을 수 있어요"를 보인다
+                    shoeDrawReady = ServiceLocator.economyApi.isConfigured &&
+                        syncState != com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT,
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onDrawShoe = {
-                        com.stepup.android.core.ExternalIntents.openUrl(context,
-                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
-                                .appendQueryParameter("category", "shoe")
-                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
-                                .build().toString())
+                    drawLabel = if (freeDraws > 0) {
+                        stringResource(R.string.mystery_draw_free, freeDraws)
+                    } else {
+                        stringResource(R.string.mystery_draw_paid, price)
                     },
+                    // 무료는 바로, SUP 가 나가는 뽑기는 한 번 더 묻는다
+                    onDrawShoe = { if (freeDraws > 0) drawVm.mint() else confirmPaid = true },
                 )
+                if (confirmPaid) {
+                    com.stepup.android.ui.components.DialogPanel(
+                        title = stringResource(R.string.mystery_draw_shoe),
+                        onDismiss = { confirmPaid = false },
+                        actions = {
+                            com.stepup.android.ui.components.VoltButton(
+                                text = stringResource(R.string.mystery_draw_paid, price),
+                                onClick = { confirmPaid = false; drawVm.mint() },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            com.stepup.android.ui.components.GhostButton(
+                                stringResource(R.string.common_cancel), { confirmPaid = false }, Modifier.fillMaxWidth(),
+                            )
+                        },
+                    ) {
+                        Text(stringResource(R.string.mystery_draw_paid_confirm, price),
+                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = com.stepup.android.ui.theme.Snow)
+                    }
+                }
             }
             composable(Screen.Customize.route) {
                 CustomizeScreen(

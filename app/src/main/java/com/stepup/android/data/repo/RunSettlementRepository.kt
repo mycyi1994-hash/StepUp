@@ -9,7 +9,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Commits a local run exactly once. Server verification and account partitioning remain separate. */
-class RunSettlementRepository(private val db: AppDatabase, private val prefs: UserPrefs) {
+class RunSettlementRepository(
+    private val db: AppDatabase,
+    private val prefs: UserPrefs,
+    /**
+     * 서버 경제(A안). 켜져 있으면 폰은 적립 줄 · 알림 · 에너지 차감을 적지 않는다 — 금액은 서버가
+     * 러닝을 확인한 뒤 정하고(record_session), 폰은 그 결과를 받아 온다. 계산 값은 화면의 예상치로만 쓴다.
+     */
+    private val serverEconomy: Boolean = false,
+) {
     private val mutex = Mutex()
 
     suspend fun settle(session: WalkSessionEntity, calculate: suspend (Long) -> SessionReward): SessionReward = mutex.withLock {
@@ -22,9 +30,10 @@ class RunSettlementRepository(private val db: AppDatabase, private val prefs: Us
             require(reward.rewardedSteps in 0..session.steps && reward.points.isFinite() && reward.points >= 0 &&
                 reward.energyUsed.isFinite() && reward.energyUsed >= 0)
             val created = RunSettlement(session.recordingOwner, session.startedAt,
-                energyDay, reward.rewardedSteps, reward.points, reward.energyUsed)
-            db.walkSessionDao().insert(session.copy(pointsEarned = reward.points))
-            if (reward.points > 0) {
+                energyDay, reward.rewardedSteps, reward.points, if (serverEconomy) 0.0 else reward.energyUsed)
+            // 서버 경제에서는 적립액을 서버가 확인한 뒤에 적는다(ClaimRepository)
+            db.walkSessionDao().insert(session.copy(pointsEarned = if (serverEconomy) 0.0 else reward.points))
+            if (reward.points > 0 && !serverEconomy) {
                 val party = session.partySize > 1
                 db.rewardDao().insert(RewardEntity(timestamp = session.endedAt,
                     type = if (party) RewardType.EARN_PARTY else RewardType.EARN_WALK,

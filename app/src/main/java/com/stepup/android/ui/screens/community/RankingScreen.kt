@@ -38,11 +38,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
-import com.stepup.android.data.repo.FactionRankingState
 import com.stepup.android.data.repo.RankingProblem
 import com.stepup.android.data.repo.RankingState
 import com.stepup.android.domain.CrewRank
-import com.stepup.android.domain.FactionRank
 import com.stepup.android.domain.RankBoard
 import com.stepup.android.domain.RankEntry
 import com.stepup.android.domain.RankPeriod
@@ -78,14 +76,12 @@ fun RankingScreen(
     var boardIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val personalBoards = RankBoard.entries
-    // 순서: 쾌속 · 지구력 · 적립 · 크루 · 종족. 개인 셋이 먼저이고 그 뒤가 단체다.
+    // 순서: 쾌속 · 지구력 · 적립 · 크루. 개인 셋이 먼저이고 그 뒤가 단체다.
     val crewIndex = personalBoards.size
-    val factionIndex = personalBoards.size + 1
     val board = personalBoards[boardIndex.coerceIn(0, personalBoards.lastIndex)]
     val meLabel = stringResource(R.string.rank_me)
 
     val ranking by viewModel.ranking.collectAsStateWithLifecycle()
-    val factionRanking by viewModel.factionRanking.collectAsStateWithLifecycle()
     val crewRanking by viewModel.crewRanking.collectAsStateWithLifecycle()
     val period by viewModel.period.collectAsStateWithLifecycle()
 
@@ -94,13 +90,12 @@ fun RankingScreen(
     LaunchedEffect(boardIndex, period) {
         when (boardIndex) {
             crewIndex -> viewModel.loadCrewRanking()
-            factionIndex -> viewModel.loadFactionRanking()
             else -> viewModel.loadRanking(board, meLabel)
         }
     }
 
     DetailPage(title = stringResource(R.string.community_ranking), onBack = onBack) {
-        // 부문은 다섯이라 한 줄에 균등 분할로는 글자가 뭉개진다 — 옆으로
+        // 부문은 넷이라 한 줄에 균등 분할로는 글자가 뭉개진다 — 옆으로
         // 밀어서 고른다. 기간은 넷이고 이름이 짧아 한 줄에 들어간다.
         item {
             LazyRow(modifier = Modifier.testTag("ranking-board-tabs"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -109,7 +104,6 @@ fun RankingScreen(
                     R.string.rank_board_time,
                     R.string.rank_board_sup,
                     R.string.rank_board_crew,
-                    R.string.rank_board_faction,
                 )
                 items(labels.size) { index ->
                     PillChip(
@@ -157,35 +151,6 @@ fun RankingScreen(
                 // 것보다 왜 비었는지 말하는 편이 낫다.
                 crews.none { it.runs > 0 } -> item { RankingNotice(R.string.rank_crew_empty) }
                 else -> items(crews, key = { it.crewId }) { row -> CrewRow(row) }
-            }
-            return@DetailPage
-        }
-
-        if (boardIndex == factionIndex) {
-            item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 6.dp) {
-                    Text(
-                        text = stringResource(R.string.rank_faction_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(R.string.rank_faction_body),
-                        fontSize = 14.sp,
-                        color = Silver,
-                        lineHeight = 22.sp,
-                    )
-                }
-            }
-            when (val state = factionRanking) {
-                is FactionRankingState.Loading -> item { RankingNotice(R.string.rank_loading) }
-                is FactionRankingState.Failed -> item {
-                    RankingNotice(state.problem.message(),
-                        signInRequired = state.problem == RankingProblem.SIGN_IN_REQUIRED,
-                    ) { viewModel.loadFactionRanking(force = true) }
-                }
-                is FactionRankingState.Ready ->
-                    items(state.rows, key = { it.faction.id }) { row -> FactionRow(row) }
             }
             return@DetailPage
         }
@@ -358,75 +323,3 @@ private fun CrewRow(row: CrewRank) {
     }
 }
 
-/** 종족 한 줄 — 순위 · 이름 · 누적 거리 · 내 기여 비중 막대 */
-@Composable
-private fun FactionRow(row: FactionRank) {
-    GlowCard(
-        accent = row.isMine,
-        contentPadding = PaddingValues(14.dp),
-        spacing = 9.dp,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp),
-        ) {
-            Box(Modifier.width(24.dp), contentAlignment = Alignment.CenterStart) {
-                Text(
-                    text = "${row.rank}",
-                    color = if (row.rank <= 3) medalColor(row.rank) else Slate,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .background(row.faction.tint().copy(alpha = 0.18f), CircleShape)
-                    .border(1.dp, row.faction.tint(), CircleShape),
-            )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = row.faction.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.rank_faction_km, "%,.1f".format(row.km)),
-                    fontSize = 14.sp,
-                    color = Silver,
-                )
-            }
-            if (row.isMine) {
-                Text(
-                    text = stringResource(R.string.rank_faction_mine),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Volt,
-                )
-            }
-        }
-        // 내 기여 — 종족 누적 대비 얼마나 보탰는지
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(CarbonHigh),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(row.myShare.coerceAtLeast(0.012f))
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(row.faction.tint()),
-                )
-            }
-            Text(
-                text = stringResource(R.string.rank_faction_my_km, "%,.2f".format(row.myKm)),
-                fontSize = 14.sp,
-                color = Slate,
-            )
-        }
-    }
-}

@@ -94,9 +94,24 @@ class CustomizeViewModel(
     fun equipShoe(id: Long) {
         saveLook {
             val shoe = shoes.value?.firstOrNull { it.id == id }
-            if (shoe == null || !sneakers.equip(id)) {
+            if (shoe == null) {
                 message.value = R.string.customize_not_owned
                 return@saveLook
+            }
+            when (sneakers.equipOnServer(id)) {
+                com.stepup.android.data.repo.EconomyOutcome.Ok -> Unit
+                com.stepup.android.data.repo.EconomyOutcome.SignInRequired -> {
+                    message.value = R.string.toast_sign_in_required
+                    return@saveLook
+                }
+                com.stepup.android.data.repo.EconomyOutcome.Offline -> {
+                    message.value = R.string.toast_offline
+                    return@saveLook
+                }
+                else -> {
+                    message.value = R.string.feed_save_failed
+                    return@saveLook
+                }
             }
             val shown = AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).shoeShown
             ExperienceEvents.emit(FeedbackCue.Equip)

@@ -52,6 +52,12 @@ android {
         // draw contract, roller and web config are deployed together.
         buildConfigField("String", "DRAW_DAPP_URL", "\"${secret("DRAW_DAPP_URL", "stepupDrawDappUrl") ?: ""}\"")
         buildConfigField("String", "DRAW_CONTRACT_ADDRESS", "\"${secret("DRAW_CONTRACT_ADDRESS", "stepupDrawContractAddress") ?: ""}\"")
+        // 웹 지갑 페이지 — 지갑 연결 · 보너스 뽑기 · SUP · 신발 꺼내기/넣기 (web/wallet.html)
+        buildConfigField(
+            "String",
+            "WALLET_URL",
+            "\"${secret("WALLET_URL", "stepupWalletUrl") ?: "https://stepupcrew.com/wallet.html"}\"",
+        )
 
         // ── 서버·로그인 설정 ────────────────────────────────────────
         //

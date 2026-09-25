@@ -34,6 +34,7 @@ class ServerSessionRecorder(
             boostBps = session.boostBps,
             partySize = session.partySize,
             faction = session.faction,
+            mockLocation = session.mockLocation,
         )
         // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
         // Retry the idempotent run when a follow-up is temporarily unavailable.

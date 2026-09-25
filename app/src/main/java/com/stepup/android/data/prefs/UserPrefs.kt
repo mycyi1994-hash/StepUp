@@ -20,6 +20,12 @@ import kotlinx.coroutines.flow.map
 // 로그인 세션이 사라진다. ServiceLocator 의 DB 파일명과 같은 이유다.
 private val Context.dataStore by preferencesDataStore(name = "strideup_prefs")
 
+// 로그인 세션만 따로 둔 파일. 백업에서 이 파일만 뺀다(res/xml/backup_rules ·
+// data_extraction_rules) — 백업 파일을 손에 넣은 사람이 로그인까지 가져가지 못하게.
+// 설정 파일(strideup_prefs)은 그대로 백업된다: 통째로 빼면 거래소 커서가 사라져
+// 거래 줄이 다시 들어온다.
+private val Context.authDataStore by preferencesDataStore(name = "stepup_auth")
+
 data class ExperiencePreferences(
     val sounds: Boolean = true,
     val haptics: Boolean = true,
@@ -35,6 +41,13 @@ data class ExperiencePreferences(
 class UserPrefs(
     private val context: Context,
     private val store: androidx.datastore.core.DataStore<Preferences> = context.dataStore,
+    private val authStore: androidx.datastore.core.DataStore<Preferences> = context.authDataStore,
+    /**
+     * 예전 설정 파일의 세션을 이어받아도 되는가. 이 폰에서 **업데이트된** 설치일 때만 그렇다.
+     * 새 폰에 백업을 복원하면 옛 설정 파일(세션 포함)이 같이 오는데, 그때는 새 설치라
+     * 처음 설치 시각과 마지막 업데이트 시각이 같다 — 그 세션은 버리고 다시 로그인하게 한다.
+     */
+    private val legacySessionAdoptable: () -> Boolean = { updatedInPlace(context) },
 ) {
 
     private object Keys {
@@ -81,12 +94,15 @@ class UserPrefs(
         /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
         val COURSE_SEED_VERSION = intPreferencesKey("course_seed_version")
         val TOP_SPEED = doublePreferencesKey("top_speed_kmh")
-        val FACTION_KM = stringPreferencesKey("faction_km")
         val ACCOUNTED_STEPS = longPreferencesKey("accounted_steps")
         val ACCOUNTED_DAY = longPreferencesKey("accounted_day")
         val RUNNER_ADDRESS = stringPreferencesKey("runner_address")
         val AUTH_SESSION = stringPreferencesKey("auth_session")
         val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
+        val SERVER_ENERGY_MAX = doublePreferencesKey("server_energy_max")
+        val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
+        val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
+        val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
         val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
 
         // ── 러너 캐릭터 ──
@@ -287,14 +303,28 @@ class UserPrefs(
     // 서버가 준 출입증을 그대로 담아 둔다. 앱을 껐다 켜도 로그인이 유지되어야
     // 하고, 유지되지 않으면 그 사람의 서버 기록에 다시 닿지 못한다.
 
-    suspend fun authSessionJson(): String =
-        store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+    //
+    // 세션은 백업에서 빠지는 별도 파일(stepup_auth)에 둔다. 예전 버전은 설정 파일에
+    // 두었으므로, 처음 읽을 때 옮기고 설정 파일에서는 지운다.
+
+    suspend fun authSessionJson(): String {
+        val current = authStore.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (current.isNotBlank()) return current
+        val legacy = store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (legacy.isBlank()) return ""
+        val adopt = legacySessionAdoptable()
+        if (adopt) authStore.edit { it[Keys.AUTH_SESSION] = legacy }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
+        return if (adopt) legacy else ""
+    }
 
     suspend fun setAuthSessionJson(json: String) {
-        store.edit { it[Keys.AUTH_SESSION] = json }
+        authStore.edit { it[Keys.AUTH_SESSION] = json }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
     }
 
     suspend fun clearAuthSession() {
+        authStore.edit { it.remove(Keys.AUTH_SESSION) }
         store.edit { it.remove(Keys.AUTH_SESSION) }
     }
 
@@ -473,34 +503,6 @@ class UserPrefs(
         }
     }
 
-    /**
-     * 종족별 누적 러닝 거리(km) — 착용한 신발의 종족에 쌓인다.
-     *
-     * Faction.entries 순서대로 ";"로 이어 붙인 문자열 하나로 보관한다.
-     * 종족이 늘어도 키를 새로 파지 않아도 되고, 짧아진 문자열은 0으로 채운다.
-     */
-    val factionKm: Flow<Map<Faction, Double>> = store.data.map { prefs ->
-        decodeFactionKm(prefs[Keys.FACTION_KM])
-    }
-
-    suspend fun addFactionKm(faction: Faction, km: Double) {
-        if (km <= 0.0) return
-        store.edit { prefs ->
-            val current = decodeFactionKm(prefs[Keys.FACTION_KM]).toMutableMap()
-            current[faction] = (current[faction] ?: 0.0) + km
-            prefs[Keys.FACTION_KM] = Faction.entries.joinToString(";") {
-                String.format(java.util.Locale.ROOT, "%.4f", current[it] ?: 0.0)
-            }
-        }
-    }
-
-    private fun decodeFactionKm(raw: String?): Map<Faction, Double> {
-        val parts = raw?.split(';').orEmpty()
-        return Faction.entries.withIndex().associate { (index, faction) ->
-            faction to (parts.getOrNull(index)?.toDoubleOrNull() ?: 0.0)
-        }
-    }
-
     /** 온보딩 가이드를 끝까지 봤는지 */
     val guideSeen: Flow<Boolean> = store.data.map { (it[Keys.GUIDE_SEEN] ?: 0) == 1 }
 
@@ -536,8 +538,16 @@ class UserPrefs(
     val energy: Flow<Double> = store.data.map { prefs ->
         val max = energyMax(prefs)
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        if (day != LocalDate.now().toEpochDay()) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
+        if (day != energyToday(prefs)) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
+
+    /**
+     * 에너지가 다시 차는 "오늘". 서버 경제에서는 서버의 하루(한국 시간 자정)를 따른다 —
+     * 폰의 자정으로 채우면 해외에서는 서버에 없는 에너지가 가득 찬 것처럼 보인다.
+     */
+    private fun energyToday(prefs: Preferences): Long =
+        if (prefs[Keys.SERVER_ENERGY_MAX] != null) LocalDate.now(SERVER_ZONE).toEpochDay()
+        else LocalDate.now().toEpochDay()
 
     suspend fun setDailyGoal(goal: Int) {
         store.edit { it[Keys.DAILY_GOAL] = goal }
@@ -576,7 +586,51 @@ class UserPrefs(
     }
 
     private fun energyMax(prefs: Preferences): Double =
-        RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+        prefs[Keys.SERVER_ENERGY_MAX]
+            ?: RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+
+    // ── 서버 경제의 사본 (EconomySync 가 적는다) ─────────────────────
+    //
+    // 에너지 · 뽑기 횟수는 서버가 정한다. 폰은 마지막으로 받아 온 값을 보여 줄 뿐이다.
+
+    /** @param today 서버의 오늘(my_economy.game_day, 한국 시간) */
+    suspend fun setServerEconomy(today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int) {
+        store.edit {
+            it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
+            it[Keys.ENERGY_DAY] = today
+            it[Keys.SERVER_ENERGY_MAX] = energyMax
+            it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
+            it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
+        }
+    }
+
+    /** 서버 경제의 사본을 지운다(계정 삭제) — 에너지는 폰 기본값으로 돌아간다 */
+    suspend fun clearServerEconomy() {
+        store.edit {
+            it.remove(Keys.SERVER_ENERGY_MAX)
+            it.remove(Keys.FREE_DRAWS_LEFT)
+            it.remove(Keys.BONUS_DRAWS_LEFT)
+            it.remove(Keys.ENERGY)
+            it.remove(Keys.ENERGY_DAY)
+        }
+    }
+
+    /** 남은 무료 뽑기 (서버 draw_grants FREE) */
+    val freeDrawsLeft: Flow<Int> = store.data.map { it[Keys.FREE_DRAWS_LEFT] ?: 0 }
+
+    /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
+    val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
+
+    /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
+    suspend fun legacyEconomyImported(userId: String): Boolean =
+        store.data.map { userId in (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',') }.first()
+
+    suspend fun setLegacyEconomyImported(userId: String) {
+        store.edit {
+            val done = (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',').filter(String::isNotBlank).toSet()
+            it[Keys.LEGACY_ECONOMY_IMPORTED] = (done + userId).joinToString(",")
+        }
+    }
 
     /**
      * 에너지를 소모한다.
@@ -711,3 +765,12 @@ data class NotifyPrefs(
     val partyInvite: Boolean = true,
     val eventNews: Boolean = true,
 )
+
+/** 이 앱이 이 폰에서 업데이트된 설치인가 (백업 복원으로 막 설치된 것이 아닌가) */
+private fun updatedInPlace(context: Context): Boolean = runCatching {
+    val info = context.packageManager.getPackageInfo(context.packageName, 0)
+    info.lastUpdateTime > info.firstInstallTime
+}.getOrDefault(false)
+
+/** 서버의 하루 기준 (economy.game_day) */
+private val SERVER_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")

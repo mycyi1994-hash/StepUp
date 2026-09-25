@@ -79,8 +79,13 @@ class ProfileViewModel(
     ) {
         /** 러너 레벨 — 누적으로 걸은 거리가 곧 경험치다 */
         val runner: RunnerProgress get() = RunnerLevels.of(lifetimeKm)
-        val multiplier: Double get() = RewardEconomy.sneakerMultiplier(sneakerLevel)
-        val upgradeCost: Double get() = RewardEconomy.upgradeCost(sneakerLevel)
+        /**
+         * 신고 있는 신발의 적립 배수. 적립 계산(RewardRepository)과 같은 값을 쓴다 —
+         * 예전 레벨 공식(1 + 0.15 × (레벨-1))은 5레벨 신발을 ×1.6 으로 부풀렸다.
+         */
+        val multiplier: Double get() = equipped?.earningMultiplier ?: 1.0
+        /** 신고 있는 신발의 다음 강화 비용 — 희귀도에 따라 다르다 */
+        val upgradeCost: Double get() = equipped?.upgradeCost ?: RewardEconomy.upgradeCost(sneakerLevel)
         val lifetimeKm: Double get() = lifetimeSteps * RewardEconomy.STRIDE_METERS / 1000
         val monthKm: Double get() = monthSteps * RewardEconomy.STRIDE_METERS / 1000
         val monthCalories: Double get() = monthSteps * RewardEconomy.KCAL_PER_STEP

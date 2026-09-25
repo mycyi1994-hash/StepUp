@@ -54,6 +54,18 @@ data class RunLap(
     val splitSec: Long,
 )
 
+/**
+ * 이 좌표가 모의 위치(개발자 옵션의 "모의 위치 앱", 가짜 GPS 앱)에서 왔는가.
+ * API 31 부터는 `isMock`, 그 전에는 `isFromMockProvider` 가 같은 표시다.
+ */
+internal fun isMockLocation(location: Location): Boolean =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        location.isMock
+    } else {
+        @Suppress("DEPRECATION")
+        location.isFromMockProvider
+    }
+
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
 enum class RunSaveStatus { IDLE, SAVING, FAILED }
 
@@ -107,13 +119,22 @@ data class WalkSessionState(
      */
     val lastElapsedSec: Long = 0,
     val lastStartedAt: Long = 0,
+    /**
+     * 이번 러닝 중 폰이 모의 위치(가짜 GPS 앱)를 한 번이라도 알려 왔는가.
+     * 그런 러닝은 적립하지 않는다 — 서버도 같은 이유로 무효 처리한다.
+     */
+    val mockLocation: Boolean = false,
 ) {
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
 
     /** 러닝 중 실시간 판정 — 화면에 경고 배지를 띄우는 근거 */
     val liveVerdict: RunVerdict
-        get() = RunIntegrity.verdict(validSegments, flaggedSegments, steps, elapsedSec)
+        get() = if (mockLocation) {
+            RunVerdict.VOID
+        } else {
+            RunIntegrity.verdict(validSegments, flaggedSegments, steps, elapsedSec)
+        }
 }
 
 /**
@@ -134,6 +155,13 @@ class WalkSessionService : Service() {
      */
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
+            if (isMockLocation(location)) {
+                // 가짜 GPS 앱이 넣은 좌표 — 경로에도 거리에도 넣지 않고, 이번 러닝을 표시만 한다
+                _state.update { current ->
+                    if (!current.isActive || current.isPaused) current else current.copy(mockLocation = true)
+                }
+                return
+            }
             val p = GeoPoint(location.latitude, location.longitude)
             val now = System.currentTimeMillis()
             // 속도 판정 기준점은 트랙과 따로 든다. 튄 구간의 점은 트랙에 넣지
@@ -362,12 +390,17 @@ class WalkSessionService : Service() {
             }
             // 러닝으로 볼 수 없는 세션은 여기서 걸러진다 — 걸음 0으로 정산해
             // 적립도, 에너지 소모도, 코스 완주도 일어나지 않게 한다.
-            val verdict = RunIntegrity.verdict(
-                validSegments = session.validSegments,
-                flaggedSegments = session.flaggedSegments,
-                steps = session.steps,
-                elapsedSec = session.elapsedSec,
-            )
+            // 모의 위치가 한 번이라도 보였으면 러닝으로 치지 않는다
+            val verdict = if (session.mockLocation) {
+                RunVerdict.VOID
+            } else {
+                RunIntegrity.verdict(
+                    validSegments = session.validSegments,
+                    flaggedSegments = session.flaggedSegments,
+                    steps = session.steps,
+                    elapsedSec = session.elapsedSec,
+                )
+            }
             val creditedSteps = if (verdict.isRewardable) session.steps else 0
 
             // 기준점을 **먼저** 올린다. 지급하고 나서 올리면 그 사이에 프로세스가
@@ -408,6 +441,7 @@ class WalkSessionService : Service() {
                     partySize = settleSize,
                     faction = equippedFaction?.id.orEmpty(),
                     crewId = partyCrewId,
+                    mockLocation = session.mockLocation,
                 )
             ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
             // These legacy follow-ups are not durable yet. A same-process save retry
@@ -430,18 +464,8 @@ class WalkSessionService : Service() {
                         ServiceLocator.userPrefs.addPendingCourseRun(session.startedAt, finished.encode())
                     }
                 }
-                // 랭킹 재료 — 최고 속도와, 착용 신발의 종족별 누적 거리.
-                // 거리는 GPS 실측이 있으면 그걸 쓰고, 없으면 걸음 환산으로 대체한다.
-                runCatching {
-                    val prefs = ServiceLocator.userPrefs
-                    prefs.recordTopSpeed(session.topSpeedKmh)
-                    val km = if (session.gpsKm > 0.0) {
-                        session.gpsKm
-                    } else {
-                        RewardEconomy.distanceMeters(creditedSteps) / 1000
-                    }
-                    if (km > 0.0 && equippedFaction != null) prefs.addFactionKm(equippedFaction, km)
-                }
+                // 랭킹 재료 — 최고 속도
+                runCatching { ServiceLocator.userPrefs.recordTopSpeed(session.topSpeedKmh) }
             }
             }
             // 방금 달린 트랙을 남겨 "코스 만들기"의 재료로 쓴다

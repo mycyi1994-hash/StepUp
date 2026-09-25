@@ -35,6 +35,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.stepup.android.core.ExternalIntents
+import com.stepup.android.ui.components.VoltButton
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -138,7 +145,25 @@ fun WalletScreen(
                 LedgerRow(entry)
             }
         }
-        item { GiwaCard() }
+        item {
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            var notice by remember { mutableStateOf<Int?>(null) }
+            GiwaCard(
+                canOpen = viewModel.walletPageAvailable,
+                notice = notice,
+                onOpen = {
+                    notice = null
+                    scope.launch {
+                        when (val link = viewModel.walletPageLink()) {
+                            is WalletPageLink.Open -> ExternalIntents.openUrl(context, link.url)
+                            WalletPageLink.SignIn -> notice = R.string.wallet_web_sign_in
+                            WalletPageLink.Offline -> notice = R.string.wallet_web_offline
+                        }
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -250,7 +275,7 @@ private fun RowScope.SummaryCell(label: String, value: String, tint: Color) {
 }
 
 @Composable
-private fun GiwaCard() {
+private fun GiwaCard(canOpen: Boolean, notice: Int?, onOpen: () -> Unit) {
     GlowCard(spacing = 10.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IconSquare(icon = Icons.Filled.AccountBalanceWallet, size = 42.dp)
@@ -260,6 +285,16 @@ private fun GiwaCard() {
             }
         }
         Text(stringResource(R.string.wallet_giwa_body), color = Silver, fontSize = 14.sp)
+        if (canOpen) {
+            VoltButton(
+                text = stringResource(R.string.wallet_web_open),
+                onClick = onOpen,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (notice != null) {
+            Text(stringResource(notice), color = Silver, fontSize = 14.sp)
+        }
     }
 }
 
@@ -278,6 +313,12 @@ private fun LedgerRow(entry: RewardEntity) {
         RewardType.TRADE_FEE -> Icons.Filled.Receipt to R.string.ledger_trade_fee
         RewardType.ESCROW_LOCK -> Icons.Filled.Lock to R.string.ledger_escrow_lock
         RewardType.ESCROW_UNLOCK -> Icons.Filled.LockOpen to R.string.ledger_escrow_unlock
+        // 서버 경제(0022 · 0025)의 줄
+        "SPEND_DRAW" -> Icons.Filled.AutoAwesome to R.string.ledger_spend_draw
+        "SPEND_REPAIR" -> Icons.Filled.Upgrade to R.string.ledger_spend_repair
+        "EARN_COURSE" -> Icons.Filled.Redeem to R.string.ledger_earn_course
+        "CHAIN_WITHDRAW", "CHAIN_REFUND", "CHAIN_DEPOSIT" -> Icons.Filled.SwapHoriz to R.string.ledger_chain
+        com.stepup.android.data.repo.EconomySync.CARRIED_OVER -> Icons.Filled.Receipt to R.string.ledger_carried_over
         else -> Icons.Filled.EmojiEvents to R.string.ledger_other
     }
     GlowCard(

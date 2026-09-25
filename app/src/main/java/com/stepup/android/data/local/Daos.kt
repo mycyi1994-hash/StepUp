@@ -114,6 +114,13 @@ data class RewardTotals(val balance: Double, val earned: Double, val spent: Doub
 @Dao
 interface RewardDao {
 
+    /** 서버 원장으로 통째로 갈아 끼울 때 (EconomySync) */
+    @Query("DELETE FROM rewards")
+    suspend fun deleteAll()
+
+    @Insert
+    suspend fun insertAll(rows: List<RewardEntity>)
+
     @Query("SELECT COALESCE(SUM(amount), 0.0) AS balance, COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent FROM rewards")
     fun observeTotals(): Flow<RewardTotals>
 
@@ -166,6 +173,13 @@ interface RewardDao {
 
 @Dao
 interface SneakerDao {
+
+    /** 서버 신발 목록으로 통째로 갈아 끼울 때 (EconomySync) */
+    @Query("DELETE FROM sneakers")
+    suspend fun deleteAll()
+
+    @Insert
+    suspend fun insertAll(rows: List<SneakerEntity>)
 
     @Insert
     suspend fun insert(sneaker: SneakerEntity): Long
@@ -259,6 +273,13 @@ interface NewsDao {
 
 @Dao
 interface BoostDao {
+
+    /** 서버 부스터 목록으로 통째로 갈아 끼울 때 (EconomySync) */
+    @Query("DELETE FROM boosts")
+    suspend fun deleteAll()
+
+    @Insert
+    suspend fun insertAll(rows: List<BoostEntity>)
 
     @Insert
     suspend fun insert(boost: BoostEntity)

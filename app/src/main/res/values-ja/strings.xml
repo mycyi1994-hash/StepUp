@@ -212,7 +212,19 @@
     <string name="items_collection">コレクション</string>
     <string name="items_collection_progress">%1$d / %2$d 組み合わせ</string>
     <string name="items_mint_title">新しいスニーカーをミント</string>
-    <string name="items_mint_desc">装備中のスニーカーの運が高いほど、レアなスニーカーが出やすくなります。</string>
+    <string name="items_mint_desc">抽選はサーバーが行います。新規登録で無料10回、その後は1回500 SUPです。</string>
+    <string name="items_free_draws">無料抽選 残り%1$d回</string>
+    <string name="toast_sign_in_required">ログインするとSUPとスニーカーを使えます。</string>
+    <string name="toast_offline">サーバーに接続できませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="toast_no_free_draws">無料抽選を使い切りました。もう一度押すとSUPで抽選します。</string>
+    <string name="toast_nothing_to_repair">耐久度はすでに満タンです。</string>
+    <string name="toast_repaired">修理しました</string>
+    <string name="sneaker_action_repair">修理 · %1$s SUP</string>
+    <string name="ledger_spend_draw">スニーカー抽選</string>
+    <string name="ledger_spend_repair">スニーカー修理</string>
+    <string name="ledger_earn_course">コース報酬</string>
+    <string name="ledger_chain">ウォレット移動</string>
+    <string name="ledger_carried_over">以前の記録（合計）</string>
     <string name="items_mint_button">ミント · %1$s SUP</string>
     <string name="mint_result_title">新しいスニーカーをミントしました！</string>
     <string name="boost_energy_title">エナジーセル</string>
@@ -410,7 +422,7 @@
     <string name="faq_q_energy">獲得が止まったのはなぜ？</string>
     <string name="faq_a_energy">エナジー切れです。エナジー1つで600歩ぶん、毎日0時に満タンまで回復します。</string>
     <string name="faq_q_rarity">レアリティのしくみは？</string>
-    <string name="faq_a_rarity">レアリティでステータスの上限と最大レベルが決まります。装備中のスニーカーの運が高いほど、ミントで良いものが出る確率もアップします。</string>
+    <string name="faq_a_rarity">レアリティでステータスの範囲（効率・履き心地）と最大レベルが決まります。抽選確率は固定です：コモン55%、レア28%、エピック13%、レジェンダリー4%。</string>
     <string name="faq_q_withdraw">出金はいつできるの？</string>
     <string name="faq_a_withdraw">GIWA チェーンへのオンチェーン送金はまだ開発中です。それまで残高は安全に保管されます。</string>
     <string name="support_contact">お問い合わせ</string>
@@ -435,8 +447,11 @@
     <string name="wallet_empty_title">まだ履歴がありません</string>
     <string name="wallet_empty_body">1回走るだけで、最初のSUPが手に入ります。</string>
     <string name="wallet_giwa">GIWA ウォレット</string>
-    <string name="wallet_giwa_status">現在のバージョンでは利用できません</string>
-    <string name="wallet_giwa_body">アプリに記録されたSUPを表示しています。現在のバージョンではGIWAウォレット接続と出金に対応していません。</string>
+    <string name="wallet_giwa_status">テストネット · Webで利用</string>
+    <string name="wallet_giwa_body">StepUp ウォレットページで、ウォレットの接続、ボーナス抽選、アプリとウォレット間のSUP・スニーカーの移動ができます。初回は2段階認証を設定します。</string>
+    <string name="wallet_web_open">ウォレットページを開く</string>
+    <string name="wallet_web_sign_in">ログインしてからウォレットページを開けます。</string>
+    <string name="wallet_web_offline">接続できませんでした。しばらくしてからもう一度お試しください。</string>
     <string name="wallet_withdraw">出金する</string>
     <string name="wallet_withdraw_title">GIWA チェーンへ出金</string>
     <string name="wallet_withdraw_body">オンチェーン決済はメインネットのローンチと同時にスタート。そのとき残高は1:1でそのまま引き継がれます。</string>
@@ -596,7 +611,6 @@
     <string name="rank_me">あなた</string>
     <string name="rank_board_speed">スピード</string>
     <string name="rank_board_time">継続時間</string>
-    <string name="rank_board_faction">種族</string>
     <string name="rank_board_sup">SUP 残高</string>
     <string name="rank_board_crew">クルー</string>
     <string name="rank_period_day">日間</string>
@@ -614,11 +628,6 @@
     <string name="rank_failed">ランキングを取得できませんでした。</string>
     <string name="rank_retry">再試行</string>
     <string name="rank_no_record">まだ記録がありません。一度走ればランキングに載ります。</string>
-    <string name="rank_faction_title">種族ランキング</string>
-    <string name="rank_faction_body">走った距離は、その時履いていたシューズの種族に加算されます。あなたが1位でなくても、種族は1位になれます。</string>
-    <string name="rank_faction_km">累計 %1$s km</string>
-    <string name="rank_faction_my_km">あなたの貢献 · %1$s km</string>
-    <string name="rank_faction_mine">自分の種族</string>
     <string name="rank_crew_title">クルー順位</string>
     <string name="rank_crew_body">クルーランで走った距離だけを数えます。メンバーが一人で走った分は入りません — そうしないと人数の多いクルーが何もせずに1位になります。</string>
     <string name="rank_crew_runs">クルーラン %1$d 回</string>
@@ -892,7 +901,7 @@ StepUp と走り出そう。</string>
     <string name="tour7_title">装備中のスニーカー</string>
     <string name="tour7_body">この一足のブーストが毎回のランに反映。タップでステータス確認・強化・履き替え。</string>
     <string name="tour8_title">ミント</string>
-    <string name="tour8_body">SUP でランダムなスニーカー NFT をミント。装備中の運が上位レアリティの確率を上げます。</string>
+    <string name="tour8_body">ランダムなスニーカーを抽選。新規登録で無料10回、その後は1回500 SUP。抽選はサーバーが行います。</string>
     <string name="tour9_title">コレクション</string>
     <string name="tour9_body">横にスワイプして倉庫を閲覧。重複は ×N でまとまり、タップで個体を選べます。図鑑は全44枠！</string>
     <string name="tour10_title">イベント</string>
@@ -1538,7 +1547,7 @@ StepUp と走り出そう。</string>
     <string name="mystery_box_description">青く光る閉じたミステリーボックス</string>
     <string name="mystery_draw_shoe">シューズを引く</string>
     <string name="mystery_draw_outfit">トレーニングウェアを引く</string>
-    <string name="mystery_pending_chain">GIWAコントラクトのデプロイ後に抽選できます。</string>
+    <string name="mystery_pending_chain">ログインすると抽選できます。新規登録で無料10回です。</string>
     <string name="home_previous_background">前の背景</string>
     <string name="home_next_background">次の背景</string>
     <string name="home_record_title">今日の記録</string>
@@ -1553,7 +1562,13 @@ StepUp と走り出そう。</string>
     <string name="shoes_market">シューズマーケットへ</string>
     <string name="home_banner_message">今日も一歩、\nいい方向へ。</string>
     <string name="mystery_guide_title">抽選の前に</string>
-    <string name="mystery_guide_body">抽選画面で価格と獲得できるシューズを確認してから進んでください。</string>
+    <string name="mystery_guide_body">無料抽選から先に使います。その後は1回500 SUPで、抽選前に確認します。</string>
+    <string name="toast_drawn_refreshing">抽選しました！新しいスニーカーを読み込んでいます。少し後にコレクションで確認してください。</string>
+    <string name="sneaker_enhance_legacy">サーバー経済以前にスマホで作ったスニーカーは強化できません。</string>
+    <string name="sneaker_enhance_listed">出品中のスニーカーは強化できません。</string>
+    <string name="mystery_draw_paid_confirm">%1$s SUPでスニーカーを抽選しますか？</string>
+    <string name="mystery_draw_free">無料抽選（残り%1$d回）</string>
+    <string name="mystery_draw_paid">抽選 · %1$s SUP</string>
     <string name="community_upcoming">これからのランニング</string>
     <string name="run_route_unavailable">このランニングのGPSルートは記録されていません。</string>
 </resources>

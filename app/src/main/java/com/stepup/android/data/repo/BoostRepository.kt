@@ -19,6 +19,9 @@ class BoostRepository(
     private val database: AppDatabase,
     private val rewardRepository: RewardRepository,
     private val prefs: UserPrefs,
+    /** 서버 경제. 있으면 구매는 서버(boost_buy)가 하고 폰은 결과를 다시 받아 온다 */
+    private val economy: com.stepup.android.data.remote.EconomyApi? = null,
+    private val sync: EconomySync? = null,
 ) {
     private val boostDao = database.boostDao()
 
@@ -46,9 +49,33 @@ class BoostRepository(
      *
      * @return 실패 사유. null이면 성공.
      */
-    suspend fun purchase(type: BoostType): PurchaseError? =
-        if (type.isInstant) purchaseEnergy()
+    suspend fun purchase(type: BoostType): PurchaseError? {
+        val api = economy
+        if (api != null) {
+            // 지속형은 서버가 끝나는 시각 뒤로 이어 붙여 준다. 그래도 켜져 있는데 또 사는 것은 막는다
+            if (!type.isInstant && boostDao.activeOf(type.id, System.currentTimeMillis()) != null) {
+                return PurchaseError.ALREADY_ACTIVE
+            }
+            return when (val outcome = api.boostBuy(type.id).toEconomyOutcome()) {
+                EconomyOutcome.Ok -> {
+                    sync?.refresh()
+                    rewardRepository.notify(NotificationType.BOOST_ACTIVATED, type.id, type.cost)
+                    null
+                }
+                EconomyOutcome.NotEnoughBalance -> PurchaseError.NOT_ENOUGH_BALANCE
+                EconomyOutcome.EnergyFull -> PurchaseError.ENERGY_CAPACITY
+                EconomyOutcome.SignInRequired -> PurchaseError.SIGN_IN_REQUIRED
+                EconomyOutcome.Offline -> {
+                    // 응답만 잃었을 수 있다 — 잔고를 다시 받아 실제로 샀는지 보이게 한다
+                    sync?.refresh()
+                    PurchaseError.OFFLINE
+                }
+                else -> PurchaseError.FAILED
+            }
+        }
+        return if (type.isInstant) purchaseEnergy()
         else database.withTransaction { purchaseInternal(type) }
+    }
 
     private suspend fun purchaseEnergy(): PurchaseError? {
         val (receipts, error) = database.withTransaction {
@@ -122,4 +149,4 @@ class BoostRepository(
     }
 }
 
-enum class PurchaseError { NOT_ENOUGH_BALANCE, ALREADY_ACTIVE, ENERGY_CAPACITY }
+enum class PurchaseError { NOT_ENOUGH_BALANCE, ALREADY_ACTIVE, ENERGY_CAPACITY, SIGN_IN_REQUIRED, OFFLINE, FAILED }

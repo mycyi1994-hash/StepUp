@@ -85,6 +85,8 @@ class MarketRepository(
     private val sneakerDao: SneakerDao,
     private val rewardDao: RewardDao,
     private val prefs: UserPrefs,
+    /** 서버 경제. 있으면 신발 · 원장을 통째로 서버 값으로 맞춘다(거래 줄만 따로 옮기지 않는다) */
+    private val economySync: EconomySync? = null,
 ) {
 
     // ── 보기 ────────────────────────────────────────────────────────
@@ -201,6 +203,11 @@ class MarketRepository(
      * 그동안 화면이 멈추는 것보다는 낫다.
      */
     suspend fun sync() = syncLock.withLock {
+        val economy = economySync
+        if (economy != null) {
+            economy.refresh()
+            return@withLock
+        }
         reconcileSneakers()
         mirrorLedger()
     }

@@ -1,5 +1,20 @@
 # Redesign progress
 
+## 2026-09-25 — app stage 5 (2): server economy (balance, sneakers, draws)
+
+- The server is the only source of SUP, sneakers, energy and boosts (decision A, server records only). `EconomySync` replaces the phone's `rewards`/`sneakers`/`boosts` tables with the server's (`my_economy`, `my_sneakers`, `sup_ledger`, `draw_grants`, `boosts`) on app start, sign-in, run upload and screen open. Draws, upgrades, repairs, equips and boosts are server functions; the phone never credits or debits.
+- Run result: the SUP amount appears only after the server confirms the run; phone estimates are never shown as earned. Background steps and course completions no longer credit on the phone.
+- Screens: draw tab performs the server draw and opens the new shoe; the draw card shows remaining free draws; server shoes show efficiency/comfort/durability with a repair action; ledger labels for draw/repair/course/wallet rows. Luck copy removed (FAQ, tour).
+- Legacy phone-only shoes are uploaded once per account as IMPORT keepsakes (the default pre-login starter is skipped); phone-only SUP is not carried over.
+- Local evidence: compile, all unit tests (new `EconomyApiTest`), lint, release/test APK assembly, string/design checks. Signed-in states (server draw result, repair, free-draw label, confirmed run amount) need a real account and are not captured by the emulator gallery.
+
+## 2026-09-25 — app stage 5 (1): mock GPS, faction board removal, wallet page entry
+
+- Ranking: the faction (종족) board is removed with the server `faction_leaderboard` function (migration 0028) — four boards remain (speed/time/SUP/crew). The gallery's `ranking-factions` scenario is removed.
+- Wallet: the GIWA card now has one native "open wallet page" action. It opens `web/wallet.html` in a Custom Tab with the login token after `#`; without a session it shows a sign-in notice, without a token refresh an offline notice. New gallery scenario `extra-wallet-page-sign-in` captures the guest state.
+- Not visual: mock-location runs are void and reported to the server; profile multiplier uses the equipped shoe; the login session moved to a backup-excluded file (a restored legacy session is discarded).
+- Local evidence: `compileDebugKotlin`, `compileDebugAndroidTestKotlin`, all `testDebugUnitTest`, string and asset checks. Device captures come from the PR #20 Experience QA run on the same revision; the signed-in page itself, real wallet linking and transactions are not captured here.
+
 ## 2026-09-25 — character-free stage 9, courses/map/ranking
 
 - Reordered course cards around name/distance, schematic route, reward/record and one native selection action. Removed the duplicate radio control; kept existing selection and ownership data. Short course and ranking-period tabs remain on one line in the 1.6× font capture. Nearby map now links directly to the existing course list.

@@ -51,6 +51,8 @@ class ClaimRepository(
     private val recorder: SessionRecorder,
     private val now: () -> Long = System::currentTimeMillis,
     private val uploadOwner: suspend () -> String = { "legacy" },
+    /** 서버가 러닝을 하나라도 확인했으면 한 번 부른다 — 잔고 · 에너지를 다시 받아 온다 */
+    private val onSigned: suspend () -> Unit = {},
 ) {
 
     /** 올릴 것이 몇 개 남았는지 — 화면에 보여주기 위한 값 */
@@ -89,6 +91,8 @@ class ClaimRepository(
                             // 값과 다를 수 있고, 다르면 서버 쪽이 맞다.
                             claimAmount = result.value.pointsAwarded.toString(),
                             claimDay = result.value.sessionId,
+                            // 기록에 보이는 적립액도 서버가 정한 값이다
+                            pointsEarned = result.value.pointsAwarded,
                         ),
                     )
                     signed++
@@ -117,6 +121,8 @@ class ClaimRepository(
                 is ServerResult.SignInRequired -> {
                     // 다시 로그인해야 한다. 여기서 세션을 실패로 찍어 봐야
                     // 시도 횟수만 오른다 — 대기열을 그대로 두고 물러난다.
+                    // 그 전에 확인받은 러닝이 있으면 잔고는 다시 받아 둔다.
+                    if (signed > 0) runCatching { onSigned() }
                     return UploadRun(
                         signed = signed,
                         rejected = rejected,
@@ -127,6 +133,7 @@ class ClaimRepository(
             }
         }
 
+        if (signed > 0) runCatching { onSigned() }
         return UploadRun(
             signed = signed,
             rejected = rejected,

@@ -20,10 +20,12 @@ class RecordingOwnershipTest {
     }
     private class Http : HttpPoster {
         val requests = mutableListOf<Pair<String, String?>>()
+        val bodies = mutableListOf<String>()
         var onRecord: () -> Unit = {}
         var courseResponse = HttpResponse(200, "[]")
         override suspend fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
             requests += url.substringAfterLast('/') to headers["Authorization"]
+            bodies += body
             return when (url.substringAfterLast('/')) {
                 "record_session" -> {
                     onRecord()
@@ -106,5 +108,14 @@ class RecordingOwnershipTest {
         assertTrue(recorder.record(run("account:A", "crew-A")) is ServerResult.Ok)
         assertEquals(listOf("record_session", "session_tag_crew", "course_run_submit"), http.requests.map { it.first })
         assertTrue(http.requests.all { it.second == "Bearer token-A" })
+    }
+
+    @Test fun mockLocationFlagReachesTheServer() = runBlocking {
+        val store = Store(login("A")); val http = Http(); val server = server(holder(store, http), http)
+        val recorder = ServerSessionRecorder(server)
+        recorder.record(run("account:A"))
+        recorder.record(run("account:A").copy(mockLocation = true))
+        assertTrue(http.bodies[0].contains("\"p_mock_location\":false"))
+        assertTrue(http.bodies[1].contains("\"p_mock_location\":true"))
     }
 }

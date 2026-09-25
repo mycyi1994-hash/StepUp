@@ -362,6 +362,8 @@ data class Sneaker(
     val durability: Int,
     val equipped: Boolean,
     val acquiredAt: Long,
+    /** 서버가 준 스탯. 비어 있으면(origin == "") 폰에만 있던 옛 신발이다. */
+    val server: ServerStats? = null,
 ) {
     val silhouette: Silhouette get() = Silhouettes.of(rarity, variant)
 
@@ -387,18 +389,81 @@ data class Sneaker(
     val boostPercent: Double
         get() = design.boostPercent + (level - 1).coerceAtLeast(0) * 0.5
 
-    val earningMultiplier: Double get() = 1.0 + boostPercent / 100.0
+    /**
+     * 적립 배수. 서버 신발이면 서버 계산(0024 record_session)과 같다 —
+     * (1 + 효율) × 내구도 계수. 예상치일 뿐이고 실제 적립은 서버가 정한다.
+     */
+    val earningMultiplier: Double
+        get() = server?.let { (1.0 + it.efficiencyBps / 10_000.0) * it.durabilityFactor }
+            ?: (1.0 + boostPercent / 100.0)
 
-    /** 착화감이 높을수록 에너지를 덜 쓴다 (최대 15% 절감) */
+    /** 에너지를 덜 쓰는 비율. 서버 신발은 착화감(bps)만큼, 옛 신발은 최대 15% */
     val energyEfficiency: Double
-        get() = 1.0 - ((comfort - 1.0) * 0.375).coerceIn(0.0, 0.15)
+        get() = server?.let { 1.0 - it.comfortBps / 10_000.0 }
+            ?: (1.0 - ((comfort - 1.0) * 0.375).coerceIn(0.0, 0.15))
 
-    val upgradeCost: Double get() = RewardEconomy.sneakerUpgradeCost(level, rarity)
+    val upgradeCost: Double
+        get() = server?.upgradeCost?.takeIf { it > 0 } ?: RewardEconomy.sneakerUpgradeCost(level, rarity)
 
-    val canUpgrade: Boolean get() = level < rarity.maxLevel
+    val maxLevel: Int get() = server?.maxLevel?.takeIf { it > 0 } ?: rarity.maxLevel
+
+    /** 강화할 수 없는 까닭. null 이면 강화할 수 있다 — 화면이 까닭마다 다른 말을 한다 */
+    val upgradeBlock: UpgradeBlock?
+        get() = when {
+            level >= maxLevel -> UpgradeBlock.MAX_LEVEL
+            server != null && !server.upgradable -> UpgradeBlock.LEGACY
+            server != null && server.status != "OWNED" -> UpgradeBlock.LISTED
+            else -> null
+        }
+
+    val canUpgrade: Boolean get() = upgradeBlock == null
+
+    /** 가득 채우는 수리 비용. 수리할 곳이 없으면 0 */
+    val repairCost: Double
+        get() = server?.let { ((100.0 - it.durabilityPts).coerceAtLeast(0.0) * it.repairCostPerPoint) } ?: 0.0
 
     /** 도감 슬롯 식별자 */
     val slotKey: String get() = "${faction.id}:${rarity.id}:$variant"
+}
+
+/** 강화할 수 없는 까닭 */
+enum class UpgradeBlock {
+    /** 최대 레벨 */
+    MAX_LEVEL,
+
+    /** 폰에서 만들어 올린 옛 신발 — 서버가 레벨을 믿지 않아 강화를 받지 않는다 */
+    LEGACY,
+
+    /** 판매 중 */
+    LISTED,
+}
+
+/**
+ * 서버 신발의 스탯 (my_sneakers). 등급 · 레벨 · 효율 · 착화감 · 내구도.
+ */
+data class ServerStats(
+    val origin: String,
+    val efficiencyBps: Int,
+    val comfortBps: Int,
+    val durabilityPts: Double,
+    val maxLevel: Int,
+    val status: String,
+    val chainState: String,
+    val canWithdraw: Boolean,
+    val upgradeCost: Double,
+    val repairCostPerPoint: Double,
+    val genesisNo: Int,
+) {
+    /** 내구도 계수 — 50 이상 1, 20 이상 0.7, 그 아래 0 (서버 economy.durability_factor) */
+    val durabilityFactor: Double
+        get() = when {
+            durabilityPts >= 50 -> 1.0
+            durabilityPts >= 20 -> 0.7
+            else -> 0.0
+        }
+
+    /** 폰에서 올린 옛 신발(IMPORT · MINT)은 서버가 강화 · 수리를 받지 않는다 */
+    val upgradable: Boolean get() = origin !in setOf("IMPORT", "MINT")
 }
 
 /** 민팅기 */

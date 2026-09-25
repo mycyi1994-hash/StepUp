@@ -73,6 +73,13 @@ fun SneakerDetailScreen(
             ItemsMessage.MaxLevel -> msgMaxLevel
             is ItemsMessage.Upgraded -> msgUpgraded
             is ItemsMessage.Equipped -> equippedFmt.format(m.sneaker.fullLabel(context))
+            ItemsMessage.Repaired -> context.getString(R.string.toast_repaired)
+            ItemsMessage.NothingToRepair -> context.getString(R.string.toast_nothing_to_repair)
+            ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
+            ItemsMessage.Offline -> context.getString(R.string.toast_offline)
+            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
+            ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
+            ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
             else -> null
         }
         if (text != null) Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -171,52 +178,90 @@ fun SneakerDetailScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = Snow,
                     )
-                    StatBar(
-                        label = stringResource(R.string.sneaker_earning),
-                        value = sneaker.boostPercent,
-                        max = 20.0,
-                        accent = sneaker.faction.tint(),
-                        display = "+%.1f%%".format(sneaker.boostPercent),
-                    )
-                    StatBar(
-                        label = stringResource(R.string.stat_luck),
-                        value = sneaker.luck,
-                        max = 2.5,
-                        accent = sneaker.rarity.tint(),
-                    )
-                    StatBar(
-                        label = stringResource(R.string.stat_comfort),
-                        value = sneaker.comfort,
-                        max = 2.5,
-                        accent = sneaker.rarity.tint(),
-                    )
-                    StatBar(
-                        label = stringResource(R.string.sneaker_energy_saving),
-                        value = (1.0 - sneaker.energyEfficiency) * 100,
-                        max = 15.0,
-                        accent = Volt,
-                        display = "%.0f%%".format((1.0 - sneaker.energyEfficiency) * 100),
-                    )
-                    StatBar(
-                        label = stringResource(R.string.sneaker_durability),
-                        value = sneaker.durability.toDouble(),
-                        max = 100.0,
-                        accent = Volt,
-                        display = "${sneaker.durability}/100",
-                    )
+                    val stats = sneaker.server
+                    if (stats != null) {
+                        // 서버 신발 — 등급 · 레벨 · 효율 · 착화감 · 내구도 (서버가 정한 값)
+                        StatBar(
+                            label = stringResource(R.string.stat_efficiency),
+                            value = stats.efficiencyBps / 100.0,
+                            max = 20.0,
+                            accent = sneaker.rarity.tint(),
+                            display = "+%.1f%%".format(stats.efficiencyBps / 100.0),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.stat_comfort),
+                            value = stats.comfortBps / 100.0,
+                            max = 20.0,
+                            accent = sneaker.rarity.tint(),
+                            display = "%.1f%%".format(stats.comfortBps / 100.0),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.sneaker_durability),
+                            value = stats.durabilityPts,
+                            max = 100.0,
+                            accent = Volt,
+                            display = "%.0f/100".format(stats.durabilityPts),
+                        )
+                    } else {
+                        StatBar(
+                            label = stringResource(R.string.sneaker_earning),
+                            value = sneaker.boostPercent,
+                            max = 20.0,
+                            accent = sneaker.faction.tint(),
+                            display = "+%.1f%%".format(sneaker.boostPercent),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.stat_luck),
+                            value = sneaker.luck,
+                            max = 2.5,
+                            accent = sneaker.rarity.tint(),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.stat_comfort),
+                            value = sneaker.comfort,
+                            max = 2.5,
+                            accent = sneaker.rarity.tint(),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.sneaker_energy_saving),
+                            value = (1.0 - sneaker.energyEfficiency) * 100,
+                            max = 15.0,
+                            accent = Volt,
+                            display = "%.0f%%".format((1.0 - sneaker.energyEfficiency) * 100),
+                        )
+                        StatBar(
+                            label = stringResource(R.string.sneaker_durability),
+                            value = sneaker.durability.toDouble(),
+                            max = 100.0,
+                            accent = Volt,
+                            display = "${sneaker.durability}/100",
+                        )
+                    }
                 }
             }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (!sneaker.canUpgrade) {
-                    Text(stringResource(R.string.sneaker_enhance_max),
-                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                sneaker.upgradeBlock?.let { block ->
+                    Text(stringResource(when (block) {
+                        com.stepup.android.domain.UpgradeBlock.MAX_LEVEL -> R.string.sneaker_enhance_max
+                        com.stepup.android.domain.UpgradeBlock.LEGACY -> R.string.sneaker_enhance_legacy
+                        com.stepup.android.domain.UpgradeBlock.LISTED -> R.string.sneaker_enhance_listed
+                    }), style = MaterialTheme.typography.bodyMedium, color = Silver)
                 }
                 if (!sneaker.equipped && sneaker.canUpgrade) {
                     GhostButton(
                         text = stringResource(R.string.sneaker_action_enhance),
                         onClick = { enhanceOpen = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                // 내구도가 줄었으면 수리 — 치른 SUP 는 소각된다
+                val repairCost = sneaker.repairCost
+                if (sneaker.server?.upgradable == true && repairCost > 0.0) {
+                    GhostButton(
+                        text = stringResource(R.string.sneaker_action_repair, "%,.0f".format(kotlin.math.ceil(repairCost))),
+                        onClick = { viewModel.repair(sneaker.id) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
