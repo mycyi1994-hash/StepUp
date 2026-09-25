@@ -152,7 +152,7 @@ fun EventsScreen(
         setting = when (selected) {
             1 -> com.stepup.android.ui.components.RunnerSetting.RunSunset
             2 -> com.stepup.android.ui.components.RunnerSetting.RunNight
-            else -> com.stepup.android.ui.components.RunnerSetting.HomeBlueNight
+            else -> com.stepup.android.ui.components.RunnerSetting.RunNight
         },
     )
     Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {

@@ -228,10 +228,10 @@ fun ProfileScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    // Keep the standing runner's feet on the terrace in the shared scene.
-    // The identity and destinations below remain in the scrollable column.
-    val artworkHeight = (maxHeight - 280.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(220.dp, 420.dp)
+    // Keep the identity and primary destinations in the first viewport. The
+    // profile background pool supplies a real ground plane under the runner.
+    val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(220.dp, 360.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),

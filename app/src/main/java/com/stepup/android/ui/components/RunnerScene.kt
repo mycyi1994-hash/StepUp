@@ -50,7 +50,9 @@ object RunBackgrounds {
 
 /** Grounded scenery compatible with the profile bench; artwork and controls stay separate. */
 object ProfileBackgrounds {
-    val settings = listOf(RunnerSetting.HomeBlueNight, RunnerSetting.HomeDawn)
+    // The standing avatar's foot anchor lands on the near path in these scenes.
+    // Riverside home scenes place that same anchor in the water.
+    val settings = listOf(RunnerSetting.RunNight, RunnerSetting.RunSunset)
 
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 }

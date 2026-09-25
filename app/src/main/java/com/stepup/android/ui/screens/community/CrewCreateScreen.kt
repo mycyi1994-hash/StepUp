@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +47,7 @@ fun CrewCreateScreen(
     var area by rememberSaveable { mutableStateOf("") }
     var policy by rememberSaveable { mutableStateOf(CrewJoinPolicy.OPEN) }
     val creating by viewModel.creatingCrew.collectAsStateWithLifecycle()
+    val editing = WindowInsets.isImeVisible
 
     CrewNoticeToast(viewModel)
 
@@ -64,24 +67,26 @@ fun CrewCreateScreen(
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
         item {
-            GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(13.dp),
-                ) {
-                    HexBadge(text = monogram, size = 64.dp)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(
-                            text = name.ifBlank { stringResource(R.string.crew_create_preview_name) },
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Snow,
-                        )
-                        Text(
-                            text = tagline.ifBlank { stringResource(R.string.crew_create_preview_tag) },
-                            fontSize = 14.sp,
-                            color = Silver,
-                        )
+            if (!editing) {
+                GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(13.dp),
+                    ) {
+                        HexBadge(text = monogram, size = 64.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(
+                                text = name.ifBlank { stringResource(R.string.crew_create_preview_name) },
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Snow,
+                            )
+                            Text(
+                                text = tagline.ifBlank { stringResource(R.string.crew_create_preview_tag) },
+                                fontSize = 14.sp,
+                                color = Silver,
+                            )
+                        }
                     }
                 }
             }

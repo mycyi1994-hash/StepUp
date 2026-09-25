@@ -62,6 +62,9 @@ class RunSaveRecoveryTest {
             compose.onNodeWithTag("run-primary-action").performClick()
             compose.waitUntil(10_000) { !WalkSessionService.state.value.isActive &&
                 WalkSessionService.state.value.lastStartedAt == startedAt }
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithTag("run-result-done").fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithTag("run-result-done").assertIsDisplayed()
             runBlocking { assertNotNull(db.runSettlementDao().find("guest", startedAt)) }
             db.openHelper.readableDatabase.query(

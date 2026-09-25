@@ -8,7 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -52,7 +54,7 @@ class CrewFormTest {
         fill(R.string.post_field_starts_in, "30")
         fill(R.string.post_field_distance, "1..2")
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_distance))
-            .assertTextEquals("1..2")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("1..2")))
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_distance, "NaN")
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()
