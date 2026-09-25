@@ -18,11 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,7 +57,9 @@ import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
-import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 /**
  * 러너 캐릭터 — 디자인 패키지의 완성 그림을 **그대로** 띄운다.
@@ -99,6 +100,7 @@ fun RunningAvatarImage(
     look: AvatarLook,
     render: AvatarRender,
     running: Boolean,
+    stridePhase: State<Float>?,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
@@ -112,14 +114,9 @@ fun RunningAvatarImage(
     val secondRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_b else R.drawable.run_frame_runo_b
     val first = painterResource(firstRes)
     val second = painterResource(secondRes)
-    val play = LocalMotion.current.decorative
-    var alternate by remember(look.gender) { mutableStateOf(false) }
-    LaunchedEffect(play, look.gender) {
-        alternate = false
-        while (play) {
-            delay(380)
-            alternate = !alternate
-        }
+    // Frame, body lift and ground shadow share one clock.
+    val alternate by remember(stridePhase) {
+        derivedStateOf { (stridePhase?.value ?: 0f) >= 0.5f }
     }
     Image(
         painter = if (alternate) second else first,
@@ -155,7 +152,7 @@ fun CharacterStage(
     val running = pose == AvatarPose.RUN
     // 모션 줄이기면 멈춘다
     val phase = if (animate && LocalMotion.current.decorative) {
-        ambientPhase(if (running) 380 else 2800, reverse = true)
+        ambientPhase(if (running) 760 else 2800, reverse = !running)
     } else {
         null
     }
@@ -175,7 +172,9 @@ fun CharacterStage(
         Canvas(Modifier.fillMaxSize()) {
             if (skyline) drawSkyline(building, window)
             drawBackGlow(glow, cyan)
-            drawFloor(glow, cyan, phase?.value ?: 0.5f)
+            val p = phase?.value ?: 0.5f
+            val lift = if (running && phase != null) abs(sin(p.toDouble() * 2.0 * PI)).toFloat() else p
+            drawFloor(glow, cyan, lift)
         }
         // 발이 타원 무대의 한가운데에 닿도록 바닥에서 조금 띄운다
         Box(
@@ -186,21 +185,23 @@ fun CharacterStage(
                 .height(stageH * characterFraction)
                 .graphicsLayer {
                     val p = phase?.value ?: 0.5f
+                    val stride = if (running && phase != null) sin(p.toDouble() * 2.0 * PI).toFloat() else 0f
                     // Fit includes transparent pixels below the soles. Anchor the visible feet,
                     // not the source rectangle, to the shared floor on every screen.
                     translationY = (imageHeight * geometry.bottomInsetFraction).toPx() +
-                        (p - 0.5f) * (if (running) 5.dp else 1.dp).toPx()
+                        if (running) -abs(stride) * 4.dp.toPx()
+                        else (p - 0.5f) * 1.dp.toPx()
                     transformOrigin = TransformOrigin(0.5f, 1f)
                     if (!running) {
                         rotationZ = (p - 0.5f) * 1.1f
                         scaleY = 0.995f + p * 0.01f
                     } else {
-                        rotationZ = (p - 0.5f) * 1.4f
+                        rotationZ = stride * 0.5f
                     }
                 },
         ) {
             RunningAvatarImage(
-                look = look, render = render, running = running,
+                look = look, render = render, running = running, stridePhase = phase,
                 modifier = Modifier.fillMaxSize(),
             )
         }
