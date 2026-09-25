@@ -35,6 +35,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Unit tests, lint and release compilation
         run: |
+          # 그림 검사(tools/check_experience_assets.py)가 Pillow 로 배너 크기를 읽는다
+          python -m pip install --quiet pillow
           python tools/check_experience_assets.py
           ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
       - name: Device interaction and screenshot coverage
