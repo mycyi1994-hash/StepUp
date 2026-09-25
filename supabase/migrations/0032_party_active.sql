@@ -27,9 +27,12 @@ begin
   update public.party_members
      set lat = p_lat, lng = p_lng, last_seen = now()
    where party_id = p_party and user_id = auth.uid();
-  update public.party_runs
-     set last_ping = now()
-   where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  -- 위치가 있는 보고만 "뛰는 중"으로 친다
+  if p_lat is not null and p_lng is not null then
+    update public.party_runs
+       set last_ping = now()
+     where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  end if;
 end;
 $$;
 

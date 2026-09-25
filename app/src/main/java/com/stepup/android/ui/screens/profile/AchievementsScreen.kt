@@ -110,7 +110,7 @@ class AchievementsViewModel(
     private val activity = combine(
         stepRepository.observeLifetimeSteps(),
         stepRepository.streak,
-        walkSessionDao.observeSessionCount(),
+        stepRepository.observeSessionCount(),
         rewardDao.observeEarnedTotal(),
     ) { steps, streak, sessions, earned ->
         AchievementMetrics(

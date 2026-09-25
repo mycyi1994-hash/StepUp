@@ -117,6 +117,8 @@ export default {
           ok: true,
           service: 'stepup-attester',
           version: 2,
+          // 배포한 커밋 — 자동 배포가 새 코드가 떴는지 이것으로 확인한다
+          commit: env.COMMIT_SHA || null,
           chainId: c.chain.id,
           attester: c.attester.address,
           sneakerSigner: c.sneakerSigner.address,
@@ -173,11 +175,12 @@ export default {
         console.error(`scheduled ${name} error`, e?.message)
         return { error: true }
       })
+    // 안전장치(다시 멈추기 · 대조)를 먼저 — 인덱서 · 만료가 요청 수를 다 써 버려도 매번 돈다
     const run = async () => {
+      const guard = await step('guard', keepPaused)
+      const books = await step('reconcile', reconcile)
       const events = await step('events', indexEvents)
       const expiry = await step('expiry', expireOps)
-      const books = await step('reconcile', reconcile)
-      const guard = await step('guard', keepPaused)
       console.log(JSON.stringify({ events, expiry, books, guard }))
     }
     ctx.waitUntil(run())

@@ -64,8 +64,15 @@ class EventsViewModel(
         .map<Set<String>, Set<String>?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 오늘(한국 시각)의 시작 — 서버의 목표 보너스 하루와 같게 */
     private val startOfToday: Long =
-        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        LocalDate.now(ZoneId.of("Asia/Seoul")).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli()
+
+    /**
+     * 오늘 서버가 확인한 러닝 걸음. 목표 보너스는 이 걸음으로만 나온다 — 폰 만보기 걸음으로 100% 를 보이고
+     * "보너스 적립 중"이라고 하면, 서버는 끝내 주지 않는다. 못 받으면 null(폰 걸음을 보이되 확정으로 치지 않는다).
+     */
+    private val _verifiedToday = MutableStateFlow<Long?>(null)
 
     /**
      * 오늘의 도전 — 하루 걸음 목표.
@@ -78,8 +85,14 @@ class EventsViewModel(
         stepRepository.todaySteps,
         stepRepository.dailyGoal,
         rewardRepository.sumOfTypeSince(RewardType.BONUS_GOAL, startOfToday),
-    ) { steps, goal, paid ->
-        DailyChallenge(steps = steps, goal = goal, paidToday = paid)
+        _verifiedToday,
+    ) { phoneSteps, goal, paid, verified ->
+        if (com.stepup.android.core.ServiceLocator.serverEconomyOn) {
+            // 서버 경제: 서버가 확인한 걸음으로 잰다. 아직 못 받았으면 진행 중으로만 보인다
+            DailyChallenge(steps = verified?.toInt() ?: 0, goal = goal, paidToday = paid)
+        } else {
+            DailyChallenge(steps = phoneSteps, goal = goal, paidToday = paid)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 나이트 러너 — 서버가 잰, 한국 시각 저녁 8시 이후에 시작한 러닝의 거리 합(km). 못 받으면 null(—). */
@@ -97,6 +110,8 @@ class EventsViewModel(
                 .getOrNull()?.let { _weekSteps.value = it.toLong() }
             runCatching { eventRepository.serverProgress(com.stepup.android.data.repo.Events.NIGHT_QUEST) }
                 .getOrNull()?.let { _nightKm.value = it }
+            runCatching { eventRepository.serverDailyGoalSteps() }
+                .getOrNull()?.let { _verifiedToday.value = it.toLong() }
         }
     }
 

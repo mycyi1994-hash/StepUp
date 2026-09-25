@@ -14,6 +14,18 @@ export const DISTRIBUTOR_ABI = parseAbi([
   'function pause()',
   'function claim((address runner, bytes32 sessionHash, uint256 amount, uint64 day, uint256 deadline) c, bytes signature)',
   'event Claimed(address indexed runner, bytes32 indexed sessionHash, uint256 amount, uint64 indexed day, uint256 dayRemaining)',
+  // 되돌아간 이유를 이름으로 읽으려면 오류도 적어 둬야 한다(없으면 0x6882… 같은 번호만 나온다)
+  'error ClaimExpired(uint256 deadline)',
+  'error SessionAlreadyClaimed(bytes32 sessionHash)',
+  'error BadSignature()',
+  'error ZeroAmount()',
+  'error DayInFuture(uint64 day, uint64 currentDay)',
+  'error DayTooOld(uint64 day, uint64 currentDay)',
+  'error DailyBudgetExceeded(uint64 day, uint256 requested, uint256 remaining)',
+  'error PoolExhausted(uint256 requested, uint256 balance)',
+  'error ClaimTooLarge(uint256 amount, uint256 maxClaim)',
+  'error PayoutCapReached(uint64 payoutDay, uint256 requested, uint256 remaining)',
+  'error EnforcedPause()',
 ])
 
 export const SNEAKERS_ABI = parseAbi([
@@ -26,6 +38,20 @@ export const SNEAKERS_ABI = parseAbi([
   'event Released(bytes32 indexed opId, uint256 indexed tokenId, address indexed to, bool minted)',
   'event OpCancelled(bytes32 indexed opId)',
   'event Deposited(uint256 indexed tokenId, address indexed from, bytes32 indexed account)',
+  'error ReleaseExpired(uint64 deadline)',
+  'error OpAlreadyUsed(bytes32 opId)',
+  'error BadSignature()',
+  'error UnknownModel(uint32 model)',
+  'error RarityMismatch(uint32 model, uint8 rarity)',
+  'error BadStats()',
+  'error IdentityChanged(uint256 tokenId)',
+  'error LevelWentDown(uint256 tokenId, uint16 was, uint16 now_)',
+  'error NotInVault(uint256 tokenId)',
+  'error GenesisTaken(uint32 genesisNo)',
+  'error DailyMintCapReached(uint64 day)',
+  'error DailyReleaseCapReached(uint64 day)',
+  'error GenesisOutOfRange(uint32 genesisNo)',
+  'error EnforcedPause()',
 ])
 
 export const VAULT_ABI = parseAbi([

@@ -187,7 +187,6 @@
     <string name="crew_boost_hint" formatted="false">Every crewmate adds +10% earnings, up to +50%.</string>
     <string name="crew_running_together">Running together with %1$d runners</string>
     <string name="crew_result_title">Party run complete! 🎉</string>
-    <string name="crew_result_body">%1$s steps · %2$d%% party boost</string>
     <string name="crew_leave_lobby">Leave lobby</string>
     <string name="crew_join_first">Join the crew to run together</string>
 
@@ -1473,6 +1472,9 @@ Start running with StepUp.</string>
     <string name="map_waiting_body">Once GPS locks on, the route you actually run is drawn here.</string>
     <string name="finish_pending_short">Awaiting server check</string>
     <string name="finish_no_reward">Checked by server · no reward for this run</string>
+    <string name="finish_no_steps">No steps counted · no reward for this run</string>
+    <string name="finish_sign_in_needed">You are signed out, so this run can’t be sent to the server yet. Sign in again within 7 days to keep it.</string>
+    <string name="run_storage_blocked">Can’t start a run: saved run data on this phone could not be read. Restart the app and try again.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">Have a great day.</string>

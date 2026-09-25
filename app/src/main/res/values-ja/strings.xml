@@ -186,7 +186,6 @@
     <string name="crew_boost_hint" formatted="false">クルーメイト1人につき獲得量が+10%、最大+50%までアップします。</string>
     <string name="crew_running_together">%1$d人のランナーと一緒に走行中</string>
     <string name="crew_result_title">パーティーラン完了！ 🎉</string>
-    <string name="crew_result_body">%1$s歩 · パーティーブースト%2$d%%</string>
     <string name="crew_leave_lobby">ロビーを出る</string>
     <string name="crew_join_first">一緒に走るにはクルーに参加してね</string>
 
@@ -1472,6 +1471,9 @@ StepUp と走り出そう。</string>
     <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
     <string name="finish_pending_short">サーバー確認中</string>
     <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
+    <string name="finish_no_steps">歩数が記録されず、今回のランは付与なし</string>
+    <string name="finish_sign_in_needed">ログインが切れているため、このランをまだサーバーに送れていません。7日以内に再ログインすると送信されます。</string>
+    <string name="run_storage_blocked">端末に残ったラン記録を読み込めないため、新しいランを開始できませんでした。アプリを開き直してお試しください。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">今日もいい一日を。</string>

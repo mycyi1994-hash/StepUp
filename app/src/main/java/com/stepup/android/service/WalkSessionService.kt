@@ -198,8 +198,11 @@ class WalkSessionService : Service() {
                     haversineMeters(track.last().toGeoPoint(), p) >= 8.0
                 val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS &&
                     seconds >= RunIntegrity.MIN_SEGMENT_SEC
+                // 폰 시계를 뒤로 돌려도 점의 시각이 거꾸로 가지 않게 — 저장본 검사가 시작 전 · 거꾸로 간
+                // 시각을 거절해 그 뒤 저장이 모두 막힌다
+                val at = maxOf(now, current.startedAt, track.lastOrNull()?.at ?: 0L)
                 current.copy(
-                    track = if (moved) track + TrackPoint(p.lat, p.lng, now) else track,
+                    track = if (moved) track + TrackPoint(p.lat, p.lng, at) else track,
                     gpsFix = true,
                     gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                     validSegments = if (counted) current.validSegments + 1 else current.validSegments,
@@ -211,7 +214,16 @@ class WalkSessionService : Service() {
         // API 29 이하에서는 아래 셋이 추상 메서드라 반드시 구현해야 한다
         @Deprecated("Deprecated in Java")
         override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
-        override fun onProviderEnabled(provider: String) = Unit
+        override fun onProviderEnabled(provider: String) {
+            // 러닝 중에 GPS 를 켰다 — 대신 쓰던 기지국 위치는 그만 받는다(둘을 섞으면 점이 튄다)
+            if (provider == LocationManager.GPS_PROVIDER && locationManager != null) {
+                stopLocation()
+                // 기지국 위치의 마지막 점과 첫 GPS 점을 한 구간으로 재지 않는다(튄 구간 · 거저 생긴 거리)
+                speedAnchor = null
+                speedAnchorAt = 0L
+                startLocation()
+            }
+        }
         override fun onProviderDisabled(provider: String) = Unit
     }
 
@@ -225,18 +237,23 @@ class WalkSessionService : Service() {
         if (!hasLocationPermission()) return
         val lm = getSystemService(LOCATION_SERVICE) as LocationManager
         locationManager = lm
-        try {
-            if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                lm.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, 2_500L, 6f, locationListener, mainLooper,
-                )
-            } else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                lm.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper,
-                )
+        // 둘을 따로 등록한다 — 대략 위치 권한만 있으면(API 30 이하) GPS 등록이 거절되는데, 그 때문에
+        // 기지국 위치까지 못 받으면 안 된다. 권한이 그 사이 회수됐다면 위치 없이 진행한다.
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        var gps = false
+        // GPS 는 꺼져 있어도 등록해 둔다 — 러닝 중에 위치를 켜면 그때부터 점이 들어온다
+        // (예전엔 시작할 때 꺼져 있으면 러닝 내내 경로가 비었다)
+        if (fine && LocationManager.GPS_PROVIDER in lm.allProviders) {
+            gps = runCatching {
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2_500L, 6f, locationListener, mainLooper)
+            }.isSuccess
+        }
+        val gpsOn = gps && runCatching { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false)
+        if (!gpsOn && runCatching { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false)) {
+            runCatching {
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper)
             }
-        } catch (_: SecurityException) {
-            // 권한이 그 사이 회수됐다면 GPS 없이 진행한다
         }
     }
 
@@ -254,6 +271,9 @@ class WalkSessionService : Service() {
     @Volatile private var settling = false
     private var startJob: Job? = null
     private var followupsAttempted = false
+
+    /** 앞선 실행이 저장하다 멈춘(SETTLING) 러닝을 되살려 끝내는 중인가 */
+    private var resumedSettling = false
     private var checkpointJob: Job? = null
 
     /**
@@ -281,11 +301,24 @@ class WalkSessionService : Service() {
         startJob = scope.launch(Dispatchers.Main.immediate) {
             // 끝나지 않은 러닝(앱이 죽어 남은 저장본)이 있으면 새 러닝을 시작하지 않고 먼저 묻는다.
             // 그대로 시작하면 새 러닝은 저장본을 남기지 못해(다른 러닝의 저장본이 자리를 차지) 보호받지 못한다.
-            val pending = runCatching { ServiceLocator.runCheckpoints.read() }
+            val store = ServiceLocator.runCheckpoints
+            val pending = runCatching { store.read() }
                 .getOrElse {
-                    // 읽을 수 없는 저장본은 지우지 않고 옆으로 치워 둔다 — 새 러닝의 저장을 막지 않게
-                    runCatching { ServiceLocator.runCheckpoints.setAsideUnreadable() }
-                    null
+                    // 읽을 수 없는 저장본은 지우지 않고 옆으로 치워 둔다 — 새 러닝의 저장을 막지 않게.
+                    // 잠깐 못 읽었을 뿐이면(치울 것이 없다) 다시 읽어 그 러닝부터 묻는다. 치우지도 다시
+                    // 읽지도 못하면 새 러닝을 시작하지 않는다 — 시작해도 저장본을 남기지 못해 끝낼 때 막힌다.
+                    val setAside = runCatching { store.setAsideUnreadable() }.getOrDefault(false)
+                    if (setAside) null else runCatching { store.read() }.getOrElse {
+                        // 눌러도 아무 일이 없는 것처럼 보이지 않게 이유를 알린다
+                        runCatching {
+                            android.widget.Toast.makeText(
+                                this@WalkSessionService, R.string.run_storage_blocked, android.widget.Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                        ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                        stopSelf()
+                        return@launch
+                    }
                 }
             if (pending != null) {
                 recovery.value = pending
@@ -318,7 +351,10 @@ class WalkSessionService : Service() {
                 return@launch
             }
             goalKm.value = checkpoint.goalKm
+            lastCheckpointAt = maxOf(lastCheckpointAt, checkpoint.savedAt)
             if (checkpoint.phase == RunCheckpointPhase.SETTLING) {
+                resumedSettling = true
+                followupsAttempted = false
                 _state.value = checkpoint.state.copy(isPaused = true, saveStatus = RunSaveStatus.IDLE)
                 activeMs = checkpoint.state.elapsedSec * 1000
                 stopSession()
@@ -354,6 +390,7 @@ class WalkSessionService : Service() {
 
     private fun beginTracking(partySize: Int, owner: String, restored: WalkSessionState? = null) {
         followupsAttempted = false
+        resumedSettling = false
         _state.value = restored ?: WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
@@ -378,7 +415,9 @@ class WalkSessionService : Service() {
                 val last = lastTodaySteps
                 lastTodaySteps = today
                 if (last == null) return@collect
-                val delta = (today - last).coerceAtLeast(0)
+                // 자정이 지나면 오늘 걸음이 "마지막 측정 이후 걸음"으로 새로 시작한다 — 그 몫도 이 러닝 걸음이다
+                // (예전엔 음수라 0 으로 버려, 화면이 꺼진 채 모인 몇 분치 걸음이 사라졌다)
+                val delta = if (today < last) today else today - last
                 var stepsAfter = -1
                 _state.update { current ->
                     if (!current.isActive || current.isPaused || delta <= 0) return@update current
@@ -427,18 +466,22 @@ class WalkSessionService : Service() {
         }
     }
 
+    /** 마지막으로 저장한 시각 — 폰 시계가 뒤로 가도 저장 시각은 거꾸로 가지 않게 */
+    @Volatile private var lastCheckpointAt = 0L
+
     private suspend fun saveCheckpoint(state: WalkSessionState, phase: RunCheckpointPhase): Boolean =
         runCatching {
             val goal = goalKm.value.takeIf { it.isFinite() && it > 0 } ?: 5.0
-            ServiceLocator.runCheckpoints.save(
-                RunCheckpoint(state, goal, maxOf(System.currentTimeMillis(), state.startedAt), phase),
-            )
+            val savedAt = maxOf(System.currentTimeMillis(), state.startedAt, lastCheckpointAt)
+            ServiceLocator.runCheckpoints.save(RunCheckpoint(state, goal, savedAt, phase))
+            lastCheckpointAt = savedAt
         }.isSuccess
 
     private fun setPaused(paused: Boolean) {
-        val current = _state.value
-        if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) {
-            _state.value = current.copy(isPaused = paused)
+        // 원자적으로 — 걸음 · 타이머 수집기가 그 사이에 올린 값을 덮어 잃지 않게. 잃으면 저장본보다
+        // 작아져 "진행이 거꾸로 갔다"로 이후 저장이 모두 거절된다
+        _state.update { current ->
+            if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) current.copy(isPaused = paused) else current
         }
     }
 
@@ -518,11 +561,18 @@ class WalkSessionService : Service() {
             // 이 거리가 어느 편에 쌓일지를 정한다.
             val equippedFaction = if (foreignOwner) null else ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
+            // 앞선 실행이 이미 정산했다(정산 뒤 저장본을 지우기 전에 앱이 죽어 되살린 러닝) — 코스 완주 ·
+            // 기록 같은 뒤따르는 일을 다시 하지 않는다(코스 완주가 두 번 세어졌다). 이 실행 안에서 저장을
+            // 다시 시도하는 경우는 followupsAttempted 가 맡는다 — 여기서 영수증을 보면 앞 시도가 정산만
+            // 하고 뒤따르는 일을 못 한 경우까지 건너뛴다.
+            val alreadySettled = resumedSettling && ServiceLocator.database.runSettlementDao()
+                .find(session.recordingOwner, session.startedAt) != null
             val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
                     recordingOwner = session.recordingOwner,
-                    endedAt = System.currentTimeMillis(),
+                    // 폰 시계를 뒤로 돌렸어도 끝난 시각이 시작보다 앞서지 않게(서버가 영영 거절한다)
+                    endedAt = maxOf(System.currentTimeMillis(), session.startedAt + session.elapsedSec * 1000),
                     // 가짜 위치로 무효가 된 러닝은 실제 걸음 · 시간으로 적어 서버에 올린다. 서버도 가짜 위치
                     // 표시(mockLocation)로 무효 처리하고 "최근 무효가 잦으면 적립 보류" 에 센다(예전엔 걸음 0 이라
                     // 올라가지 않았다). 속도 · 케이던스로 폰이 무효로 본 러닝은 튄 점을 경로에서 뺐으므로
@@ -546,7 +596,7 @@ class WalkSessionService : Service() {
             ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
             // These legacy follow-ups are not durable yet. A same-process save retry
             // must not issue them again after a scheduling failure.
-            if (!followupsAttempted) {
+            if (!followupsAttempted && !alreadySettled) {
                 followupsAttempted = true
             if (creditedSteps > 0) {
                 val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000

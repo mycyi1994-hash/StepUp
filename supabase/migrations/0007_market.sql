@@ -452,16 +452,18 @@ declare
   v_owner uuid;
   v_count int;
 begin
+  -- 두 요청이 동시에 세고 넣으면 상한을 넘는다 — 같은 사람의 요청은 한 줄로
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
   select sneaker_id into v_id from public.market_imports
    where user_id = v_user and local_id = p_local_id;
 
   if v_id is not null then
     select owner_id into v_owner from public.market_sneakers where id = v_id;
-    -- 이미 판 신발이면 손대지 않는다. 지금 주인의 것이다.
+    -- 이미 판 신발이면 손대지 않는다. 지금 주인의 것이다. 레벨만 기념으로 따라간다 — 적립에는 1레벨로
+    -- 친다(0022). 내구도는 서버가 정한다(폰 값으로 새것처럼 되돌리지 않는다).
     if v_owner = v_user then
       update public.market_sneakers
-         set level = greatest(level, p_level),
-             durability = p_durability
+         set level = greatest(level, p_level)
        where id = v_id;
     end if;
     return v_id;

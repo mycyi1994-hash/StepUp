@@ -1625,7 +1625,8 @@ as $$
       select
         s.user_id,
         max(s.top_speed_kmh) as top_speed_kmh,
-        sum(s.duration_sec) as active_sec
+        -- 걸음 하나에 1초까지만 — 걸음 없이 며칠짜리 러닝을 올려 "가장 오래"를 차지하지 못하게
+        sum(least(s.duration_sec, s.steps)) as active_sec
       from public.walk_sessions s
       -- 판정에서 떨어진 세션은 순위에 쓰지 않는다. 적립은 막아 놓고 순위는
       -- 올려 주면, 순위표는 막지 않은 쪽으로 뚫린다.
@@ -1639,7 +1640,7 @@ as $$
       -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
       -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
       select user_id, sum(amount) filter (
-               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL')
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE')
              ) as earned
         from public.sup_ledger
        where occurred_at >= (select since from win)
@@ -2182,16 +2183,18 @@ declare
   v_owner uuid;
   v_count int;
 begin
+  -- 두 요청이 동시에 세고 넣으면 상한을 넘는다 — 같은 사람의 요청은 한 줄로
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
   select sneaker_id into v_id from public.market_imports
    where user_id = v_user and local_id = p_local_id;
 
   if v_id is not null then
     select owner_id into v_owner from public.market_sneakers where id = v_id;
-    -- 이미 판 신발이면 손대지 않는다. 지금 주인의 것이다.
+    -- 이미 판 신발이면 손대지 않는다. 지금 주인의 것이다. 레벨만 기념으로 따라간다 — 적립에는 1레벨로
+    -- 친다(0022). 내구도는 서버가 정한다(폰 값으로 새것처럼 되돌리지 않는다).
     if v_owner = v_user then
       update public.market_sneakers
-         set level = greatest(level, p_level),
-             durability = p_durability
+         set level = greatest(level, p_level)
        where id = v_id;
     end if;
     return v_id;
@@ -7826,6 +7829,8 @@ declare
   v_energy_used numeric := 0;
   v_xp numeric := 1;
   v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
   v_new_account boolean;
 begin
   if v_user is null then
@@ -7947,12 +7952,14 @@ begin
   end if;
 
   -- ── 무효가 잦으면 보류 ──
-  if v_rewardable > 0 then
+  -- 적립할 걸음이 없는 러닝도 본다 — 걸음 0 인 경로 러닝이 보류 중에도 잠금 거리 · 꺼내기 조건 거리를 받았다
+  if v_verdict <> 'VOID' then
     select count(*) into v_recent_void from public.walk_sessions s
      where s.user_id = v_user and s.verdict = 'VOID'
        and s.started_at > now() - interval '7 days';
     if v_recent_void >= 5 then
       v_rewardable := 0;
+      v_held := true;
       v_verdict := 'FLAGGED';
       v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
     end if;
@@ -7960,7 +7967,19 @@ begin
 
   -- ── 신발 · 에너지 ──
   select * into v_shoe from economy.equipped_sneaker(v_user);
-  if found then
+  if not found then
+    -- 신은 신발이 없으면(꺼내기로 벗었다) 첫 신발을 신긴다. 신발 없이 달리면 내구도 100 · 닳지 않음으로
+    -- 쳐서, 닳은 신발을 신고 수리비를 내는 것보다 나았다. 첫 신발을 아직 안 받은 계정(앱은 로그인하자마자
+    -- 받는다)은 예전처럼 신발 없이 계산한다 — 앱이 받기 전에 러닝이 먼저 올라가도 적립을 잃지 않게.
+    update public.market_sneakers set equipped = true, updated_at = now()
+     where id = (select m.id from public.market_sneakers m
+                  where m.owner_id = v_user and m.origin = 'STARTER'
+                    and m.chain_state = 'APP' and m.status = 'OWNED'
+                  limit 1)
+       and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is not null then
     select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
       from economy.sneaker_effective(v_shoe.origin, v_shoe.rarity, v_shoe.level,
              v_shoe.efficiency_bps, v_shoe.comfort_bps, v_shoe.durability_pts) e;
@@ -8041,13 +8060,15 @@ begin
   end if;
 
   v_distance_m := case
-    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3 + 100)
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
     else v_step_m
   end;
   if v_verdict = 'VOID' then v_distance_m := 0; end if;
 
   -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
-  if v_gps_backed then
+  if v_gps_backed and not v_held then
     select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
       into v_cap_left
       from public.walk_sessions s
@@ -8070,7 +8091,7 @@ begin
     '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable,
     coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
-    v_gps_backed, case when v_gps_backed then v_verified else 0 end, v_credit_m, v_party_id
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id
   )
   returning id into v_session_id;
 
@@ -8199,7 +8220,10 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
 
-  if p_event = 'step_surge' then
+  if p_event = 'daily_goal' then
+    -- 오늘의 도전(하루 목표) — 목표 보너스(goal_claim)가 세는 것과 같은 걸음(서버가 확인한 러닝 걸음)
+    return economy.verified_steps_on(v_user, v_today);
+  elsif p_event = 'step_surge' then
     -- 예전에는 폰이 올린 하루 걸음(daily_steps)을 더했다. 그 값은 폰이 마음대로
     -- 적을 수 있어 250 SUP 가 거저 나갔다. 경로가 받쳐 준 러닝 걸음만, 하루 상한까지 센다.
     -- 받는 단위(이번 ISO 주)와 같은 기간만 센다 — 최근 7일로 세면 지난주 걸음으로 이번 주를 또 받는다.
@@ -8209,9 +8233,12 @@ begin
     ), 0);
   elsif p_event = 'night_quest' then
     return coalesce((
+      -- 경로가 받쳐 준 러닝만 — 걸음만 있는 러닝의 거리(걸음 × 0.762)는 폰이 지어낼 수 있다
       select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
        where s.user_id = v_user
          and s.verdict not in ('FLAGGED', 'VOID')
+         -- 0024 전 기록은 gps_backed 가 없다 — 서버가 경로로 잰 거리(0018)로 본다
+         and (s.gps_backed or s.gps_distance_m >= economy.gps_check_min_m())
          and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
     ), 0);
   end if;
@@ -8748,6 +8775,12 @@ begin
   update public.market_sneakers
      set chain_state = 'WITHDRAWING', equipped = false, updated_at = now()
    where id = p_sneaker_id;
+  -- 신고 있던 신발을 꺼내면 첫 신발로 갈아 신긴다(신발 없이 달리는 틈이 없게)
+  update public.market_sneakers set equipped = true, updated_at = now()
+   where id = (select m.id from public.market_sneakers m
+                where m.owner_id = v_user and m.origin = 'STARTER'
+                  and m.chain_state = 'APP' and m.status = 'OWNED' limit 1)
+     and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
 
   insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
   values (v_op, v_user, 'SNEAKER_WITHDRAW', v_wallet, p_sneaker_id, economy.op_deadline());
@@ -8934,6 +8967,16 @@ begin
       exception when others then
         null;  -- 잔고가 모자라 못 거뒀다. 체인이 멈춰 있으니 사람이 정리한다.
       end;
+    end if;
+    -- 되돌려 앱에 돌아온 신발이 체인에도 생겼다 — 앱 쪽을 체인에 있는 것으로 돌리고 매물은 내린다.
+    -- 그대로 두면 같은 신발이 앱(팔기 · 신기)과 체인에 둘 다 있다.
+    if v.kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT') and v.sneaker_id is not null then
+      update public.market_listings set status = 'CANCELLED', closed_at = now()
+       where sneaker_id = v.sneaker_id and status = 'OPEN';
+      update public.market_sneakers
+         set chain_state = 'ON_CHAIN', equipped = false, status = 'OWNED',
+             token_id = coalesce(p_token, token_id), updated_at = now()
+       where id = v.sneaker_id;
     end if;
     perform public.admin_log('chain_late_confirm', v.id::text, jsonb_build_object('tx', p_tx));
   end if;
@@ -9715,9 +9758,12 @@ begin
   update public.party_members
      set lat = p_lat, lng = p_lng, last_seen = now()
    where party_id = p_party and user_id = auth.uid();
-  update public.party_runs
-     set last_ping = now()
-   where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  -- 위치가 있는 보고만 "뛰는 중"으로 친다
+  if p_lat is not null and p_lng is not null then
+    update public.party_runs
+       set last_ping = now()
+     where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  end if;
 end;
 $$;
 
@@ -9889,6 +9935,79 @@ begin
          else v_glitches::double precision / v_windows end;
 end;
 $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0034_recent_mfa.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0034 — 꺼내기 · 지갑 연결의 2단계 인증은 "방금" 한 것만 인정한다 (2026-09-25 점검)
+--
+--  지갑 페이지는 앱의 로그인 토큰으로 2단계 인증(TOTP)을 한다. Supabase 는 인증을 마친 로그인
+--  자체를 aal2 로 올려, 그 뒤 앱이 새로 받는 토큰도 모두 aal2 다. 그래서 한 번 6자리를 넣은 뒤로는
+--  앱 로그인(몇 달 가는 refresh 토큰)만 있으면 6자리 없이 꺼낼 수 있었다.
+--  토큰의 amr 에 적힌 TOTP 시각이 15분 안일 때만 인정한다.
+-- ════════════════════════════════════════════════════════════════════
+
+create or replace function economy.mfa_ok() returns boolean
+  language sql stable as $$
+  select coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
+     and exists (
+       select 1
+         from jsonb_array_elements(
+                case when jsonb_typeof(auth.jwt() -> 'amr') = 'array' then auth.jwt() -> 'amr' else '[]'::jsonb end) a
+        where a ->> 'method' = 'totp'
+          and (a ->> 'timestamp') ~ '^[0-9]+$'
+          and (a ->> 'timestamp')::bigint >= extract(epoch from now())::bigint - 900)
+$$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0035_direct_write_limits.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0035 — 앱 권한으로 표에 직접 쓰는 길을 좁힌다 (2026-09-25 점검)
+--
+--  앱은 가입 · 댓글 · 글을 모두 서버 함수(crew_join · comment_create · post_create)로 쓴다.
+--  그런데 표 자체에도 쓰기 권한이 열려 있어, 함수가 하는 검사를 건너뛸 수 있었다.
+--    · crew_members: 가입 시각(joined_at)을 과거로 적어, 방장이 나가면 먼저 들어온 사람 대신
+--      방장이 된다. 숨긴(신고 누적) 크루에도 들어간다.
+--    · comments: 작성 시각을 적고, 다른 글의 댓글에 답글을 달고, 시간당 개수 제한을 건너뛴다 → 직접 쓰기 막음.
+--    · posts: 글쓴이가 아무 칸이나 고친다(작성 시각 · 분류 · 번개 모임 시각 · 정원).
+--  가입 시각은 쓰지 못하게(기본값 now()), 댓글은 함수로만, 글 고치기는 막는다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- 크루 가입 — 가입 시각은 서버가 적는다
+revoke insert on public.crew_members from anon, authenticated;
+grant insert (crew_id, user_id, role) on public.crew_members to authenticated;
+
+drop policy if exists crew_members_join_self on public.crew_members;
+create policy crew_members_join_self on public.crew_members for insert
+  with check (
+    (select auth.uid()) = user_id
+    and role = 'MEMBER'
+    and exists (
+      select 1 from public.crews c
+       where c.id = crew_id and c.join_policy = 'OPEN'
+    )
+    and not public.is_hidden('CREW', crew_id::text)
+  );
+
+-- 댓글 — comment_create 로만 쓴다(시간당 개수 제한 · 답글 검사가 거기 있다). 아래 정책은 혹시 권한이
+-- 다시 열려도 답글이 다른 글로 가지 않게 남겨 둔다.
+revoke insert on public.comments from anon, authenticated;
+
+drop policy if exists comments_insert_own on public.comments;
+create policy comments_insert_own on public.comments for insert
+  with check (
+    (select auth.uid()) = author_id
+    and public.can_see_post(post_id)
+    and (parent_id is null or exists (
+      select 1 from public.comments p where p.id = comments.parent_id and p.post_id = comments.post_id))
+  );
+
+-- 글 고치기 — 앱에는 고치는 기능이 없다(지우고 다시 쓴다)
+revoke update on public.posts from anon, authenticated;
 
 commit;
 

@@ -21,7 +21,10 @@ export async function getUser(env, request, fetchImpl = fetch) {
   const res = await fetchImpl(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
   })
-  if (!res.ok) throw new HttpError(401, '로그인이 만료되었습니다')
+  // 로그인 서버가 잠깐 바쁘거나(429 · 5xx) 끊긴 것을 "로그인 만료"로 보내면 페이지가 토큰을 버리고
+  // 다시 로그인 · 2단계 인증을 시킨다 — 토큰을 거절한 경우(401 · 403)만 만료다
+  if (res.status === 401 || res.status === 403) throw new HttpError(401, '로그인이 만료되었습니다')
+  if (!res.ok) throw new HttpError(503, '잠시 뒤에 다시 해 주세요')
   const user = await res.json()
   if (!user?.id) throw new HttpError(401, '로그인이 만료되었습니다')
   return user

@@ -190,7 +190,10 @@ class ItemsViewModel(
 
     /** 뽑기 — 무료가 남았으면 무료로, 아니면 SUP 로. 결과는 서버가 굴린 신발이다 */
     fun mint() {
-        savePurchase {
+        // 두 번 눌러 무료 뽑기를 두 번 쓰지 않게 — 남은 횟수는 서버와 다시 맞춘 뒤에야 줄어든다
+        if (drawing) return
+        drawing = true
+        savePurchase(onDone = { drawing = false }) {
             val (outcome, minted) = sneakerRepository.drawOnServer()
             if (minted == null && outcome == com.stepup.android.data.repo.EconomyOutcome.Ok) {
                 ExperienceEvents.emit(FeedbackCue.Success)
@@ -225,6 +228,7 @@ class ItemsViewModel(
 
     /** 구매 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번 사지 않게 */
     private var buyingBoost = false
+    private var drawing = false
 
     fun buyBoost(type: BoostType) {
         if (buyingBoost) return

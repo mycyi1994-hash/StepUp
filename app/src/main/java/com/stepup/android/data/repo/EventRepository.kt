@@ -74,6 +74,10 @@ class EventRepository(
     suspend fun serverProgress(def: EventDef): Double? =
         (api.progress(def.id) as? ServerResult.Ok)?.value
 
+    /** 오늘(한국 시각) 서버가 확인한 러닝 걸음 — 하루 목표 보너스가 세는 걸음. 못 받으면 null */
+    suspend fun serverDailyGoalSteps(): Double? =
+        (api.progress(DAILY_GOAL_ID) as? ServerResult.Ok)?.value
+
 
     /** 이번 기간에 받은 도전의 id(`step_surge` · `night_quest`) */
     val claimedIds: Flow<Set<String>> =
@@ -107,8 +111,11 @@ class EventRepository(
                     // Do not invent credit. Cross-device/server receipt recovery remains separate work.
                     dao.insert(ClaimedEventEntity(key, System.currentTimeMillis(), 0.0))
                     EventClaimResult.AlreadyClaimed
-                } else {
+                } else if (result.reason.contains(NOT_FINISHED)) {
                     EventClaimResult.NotFinished
+                } else {
+                    // 그 밖의 거절(없는 도전 등)을 "아직 목표 전"으로 보이지 않는다
+                    EventClaimResult.Failed
                 }
             is ServerResult.SignInRequired -> EventClaimResult.SignInRequired
             is ServerResult.Retry -> EventClaimResult.Failed
@@ -129,6 +136,10 @@ class EventRepository(
     private companion object {
         /** 서버가 "이미 받음"을 알리는 문구(0014_events.sql) */
         const val ALREADY_CLAIMED = "이미 받은"
+        /** 서버 event_progress 의 하루 목표 진행값 (0024) */
+        const val DAILY_GOAL_ID = "daily_goal"
+        /** 서버 event_claim 이 목표 전에 돌려보내는 문구 (0014_events.sql) */
+        const val NOT_FINISHED = "아직 목표"
     }
 }
 

@@ -25,6 +25,10 @@ fun SignInAgainButton(modifier: Modifier = Modifier.fillMaxWidth()) {
             busy = true
             scope.launch {
                 try {
+                    // 달리는 중이면 먼저 끝내 저장한다 — 로그인 화면으로 바뀌면 러닝을 멈출 곳이 없어 GPS 가 계속 돈다
+                    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                        com.stepup.android.service.WalkSessionService.stop(context)
+                    }
                     ServiceLocator.userPrefs.setLoginMethod("")
                 } catch (cancelled: CancellationException) {
                     throw cancelled

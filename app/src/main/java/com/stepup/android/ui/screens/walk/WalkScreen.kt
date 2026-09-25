@@ -1071,7 +1071,10 @@ private fun FinishCard(
     // 서버가 확인했고 그 금액까지 읽었을 때만 확정으로 보인다 — 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게
     // 금액이 0 이면(서버가 무효 · 상한 처리) 확인은 됐어도 "적립 완료"가 아니다 — 축하도 하지 않는다
     val confirmed = !voided && upload == UploadState.SIGNED.name && points != null && points > 0.0
-    val noReward = !voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0
+    // 걸음이 0 인 러닝은 서버에 올리지 않는다(올릴 것이 없다) — "서버 확인 중"으로 영영 두지 않고 적립 없음으로
+    val nothingToUpload = !voided && session.lastSessionSteps <= 0
+    val noReward = nothingToUpload ||
+        (!voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0)
     val rejected = voided || upload == UploadState.REJECTED.name || noReward
     val km = if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
     val paceSec: Long? = if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
@@ -1079,6 +1082,7 @@ private fun FinishCard(
     val headline = when {
         voided -> R.string.run_void_title
         confirmed -> R.string.finish_confirmed
+        nothingToUpload -> R.string.finish_no_steps
         noReward -> R.string.finish_no_reward
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
@@ -1165,6 +1169,18 @@ private fun FinishCard(
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp,
                 )
+                // 로그인이 풀렸으면 올리기가 조용히 멈춘다 — 서버는 7일 지난 러닝을 받지 않으므로 여기서 알린다
+                val sync by com.stepup.android.core.ServiceLocator.economySync.state.collectAsStateWithLifecycle()
+                if (!nothingToUpload && sync == com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT) {
+                    Text(
+                        text = stringResource(R.string.finish_sign_in_needed),
+                        fontSize = 14.sp,
+                        color = Silver,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp,
+                    )
+                    com.stepup.android.ui.components.SignInAgainButton()
+                }
             }
             if (voided) {
                 Text(
@@ -1179,7 +1195,7 @@ private fun FinishCard(
         }
         GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
             Text(stringResource(R.string.finish_balance), style = MaterialTheme.typography.bodyMedium, color = Silver)
-            AdaptiveNumber(balance?.let { "%,.0f".format(it) } ?: "—", 28.sp)
+            AdaptiveNumber(balance?.let { com.stepup.android.ui.components.formatSupDown(it) } ?: "—", 28.sp)
             Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
 

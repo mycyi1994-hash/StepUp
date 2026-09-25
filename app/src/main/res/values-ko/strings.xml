@@ -185,7 +185,6 @@
     <string name="crew_boost_hint" formatted="false">크루원 1명당 적립 +10%, 최대 +50%까지 붙어요.</string>
     <string name="crew_running_together">%1$d명이 함께 달리는 중</string>
     <string name="crew_result_title">파티런 완료! 🎉</string>
-    <string name="crew_result_body">%1$s걸음 · 파티 부스트 %2$d%%</string>
     <string name="crew_leave_lobby">로비 나가기</string>
     <string name="crew_join_first">같이 달리려면 먼저 크루에 가입하세요</string>
 
@@ -1471,6 +1470,9 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_waiting_body">GPS가 잡히면 실제로 달린 경로가 여기에 그려져요.</string>
     <string name="finish_pending_short">서버 확인 중</string>
     <string name="finish_no_reward">서버 확인 · 이번 러닝은 적립 없음</string>
+    <string name="finish_no_steps">걸음이 잡히지 않아 이번 러닝은 적립 없음</string>
+    <string name="finish_sign_in_needed">로그인이 풀려 이 러닝을 아직 서버에 올리지 못했어요. 7일 안에 다시 로그인하면 올라갑니다.</string>
+    <string name="run_storage_blocked">이 폰에 남은 러닝 저장본을 읽을 수 없어 새 러닝을 시작하지 못했습니다. 앱을 다시 열고 시도해 주세요.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">오늘도 좋은 하루예요.</string>

@@ -394,9 +394,9 @@ private fun RankingTeaser(rank: Int?, balance: Double, onClick: () -> Unit) {
                 )
                 Text(
                     text = if (rank == null) {
-                        stringResource(R.string.ranking_teaser_unknown, "%,.0f".format(balance))
+                        stringResource(R.string.ranking_teaser_unknown, com.stepup.android.ui.components.formatSupDown(balance))
                     } else {
-                        stringResource(R.string.ranking_teaser, rank, "%,.0f".format(balance))
+                        stringResource(R.string.ranking_teaser, rank, com.stepup.android.ui.components.formatSupDown(balance))
                     },
                     fontSize = 14.sp,
                     color = Silver,

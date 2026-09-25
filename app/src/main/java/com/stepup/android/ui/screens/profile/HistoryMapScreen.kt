@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
@@ -76,7 +77,12 @@ class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
 
     val period = MutableStateFlow(HistoryPeriod.MONTH)
 
-    val map: StateFlow<HistoryMap> = combine(dao.observeRecent(MAX_SESSIONS), period) { sessions, p ->
+    // 지금 계정의 러닝 경로만 — 다른 계정으로 다시 로그인하면 앞 계정의 경로(집 근처 등)가 보이지 않게
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val sessions = com.stepup.android.core.ServiceLocator.recordingOwnerFlow()
+        .flatMapLatest { dao.observeRecentFor(it, MAX_SESSIONS) }
+
+    val map: StateFlow<HistoryMap> = combine(sessions, period) { sessions, p ->
         val since = periodStart(p)
         val routes = sessions
             .filter { it.startedAt >= since && it.track.isNotBlank() }

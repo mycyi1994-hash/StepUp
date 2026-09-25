@@ -61,6 +61,7 @@ import com.stepup.android.data.local.RewardEntity
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
+import com.stepup.android.ui.components.formatSupDown
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.components.VerticalHairline
 import com.stepup.android.ui.theme.Alert
@@ -218,7 +219,10 @@ private fun BalanceHero(balance: Double?) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = balance?.let { "%,.2f".format(it) } ?: "—",
+                    // 내림 — 올려 보이면 가진 것보다 많아 보인다
+                    text = balance?.let {
+                        formatSupDown(it, 2)
+                    } ?: "—",
                     modifier = Modifier.alignByBaseline(),
                     fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontSize = 42.sp,

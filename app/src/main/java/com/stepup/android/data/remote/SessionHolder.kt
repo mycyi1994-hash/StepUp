@@ -38,11 +38,15 @@ class SessionHolder(
     private val mutex = Mutex()
 
     /** 쓸 수 있는 출입증. 만료가 가까우면 갱신한다. */
-    suspend fun accessToken(): TokenResult = mutex.withLock {
+    /**
+     * @param minValiditySeconds 토큰이 적어도 이만큼은 살아 있어야 한다. 웹 지갑처럼 토큰을 넘겨
+     *   한동안 쓰게 하는 곳은 넉넉히 준다(기본 2분이면 페이지에서 꺼내는 도중에 만료된다).
+     */
+    suspend fun accessToken(minValiditySeconds: Long = 120): TokenResult = mutex.withLock {
         val current = store.load()
             ?: return@withLock TokenResult.SignInRequired("로그인이 필요합니다")
 
-        if (!current.needsRefresh(now())) {
+        if (!current.needsRefresh(now(), minValiditySeconds)) {
             return@withLock TokenResult.Ok(current.accessToken, current.user?.id)
         }
 

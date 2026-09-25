@@ -1,5 +1,7 @@
 package com.stepup.android.core
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 import android.content.Context
 import androidx.room.Room
@@ -119,6 +121,15 @@ object ServiceLocator {
     )
 
     /** 서버 경제를 뒤에서 한 번 맞춘다 — 앱 시작 · 로그인 · 러닝 업로드 뒤 */
+    /**
+     * 지금 로그인한 계정의 기록 주인(account:… / guest / legacy). 로그인 방법이 바뀔 때(다시 로그인 · 계정
+     * 삭제 · 새 로그인) 다시 읽는다 — 화면의 러닝 기록 · 경로 · 누적이 그 계정 것만 보이게.
+     */
+    fun recordingOwnerFlow(): kotlinx.coroutines.flow.Flow<String> =
+        userPrefs.loginMethod
+            .map { sessionHolder.recordingOwner() }
+            .distinctUntilChanged()
+
     fun refreshEconomyInBackground() {
         economyScope.launch { runCatching { economySync.refresh() } }
     }
@@ -224,6 +235,7 @@ object ServiceLocator {
             tracker = stepTracker,
             rewardRepository = rewardRepository,
             pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
+            owner = recordingOwnerFlow(),
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,

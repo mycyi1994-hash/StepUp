@@ -56,6 +56,7 @@ import com.stepup.android.ui.theme.Volt
 @Composable
 fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) { signedIn = ServiceLocator.sessionHolder.isSignedIn() }
     var confirming by remember { mutableStateOf(false) }
@@ -86,6 +87,10 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                             try {
                             val result = ServiceLocator.server.deleteAccount()
                             if (result is ServerResult.Ok) {
+                                // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
+                                if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                                    com.stepup.android.service.WalkSessionService.stop(context)
+                                }
                                 // 서버 계정이 사라졌다. 이 폰의 로그인도 지우면 첫 화면(로그인)으로 돌아간다.
                                 ServiceLocator.sessionHolder.signOut()
                                 ServiceLocator.userPrefs.setLoginMethod("")

@@ -117,6 +117,24 @@ export async function executeOp(request, env, deps, opId) {
 /** 이미 체인에서 쓰인 작업 번호 — 앞선 요청의 거래가 나갔다. 다시 보낼 것이 없다. */
 const ALREADY_SENT = new Set(['SessionAlreadyClaimed', 'OpAlreadyUsed'])
 
+/** 사용자에게 보일 거절 이유. 목록에 없는 것은 오류 이름 그대로. */
+const REVERT_TEXT = {
+  PayoutCapReached: '오늘 체인에서 내보낼 수 있는 양이 찼습니다. 내일 다시 해 주세요',
+  DailyBudgetExceeded: '오늘 체인에서 내보낼 수 있는 양이 찼습니다. 내일 다시 해 주세요',
+  DailyMintCapReached: '오늘 체인에서 만들 수 있는 신발 수가 찼습니다. 내일 다시 해 주세요',
+  DailyReleaseCapReached: '오늘 체인으로 보낼 수 있는 신발 수가 찼습니다. 내일 다시 해 주세요',
+  ClaimExpired: '서명 시간이 지났습니다. 처음부터 다시 해 주세요',
+  ReleaseExpired: '서명 시간이 지났습니다. 처음부터 다시 해 주세요',
+  EnforcedPause: '체인 작업이 잠시 멈춰 있습니다',
+  PoolExhausted: '보상 풀이 부족합니다. 잠시 뒤에 다시 해 주세요',
+}
+
+/** viem 오류에서 컨트랙트가 되돌린 오류 이름을 찾는다 */
+function revertName(e) {
+  const found = typeof e?.walk === 'function' ? e.walk((x) => x?.data?.errorName) : null
+  return found?.data?.errorName ?? e?.cause?.data?.errorName ?? null
+}
+
 /** 먼저 시뮬레이션해서 되돌아갈 거래는 보내지 않는다(가스 낭비 · 이유를 사용자에게). */
 async function submit(c, address, abi, functionName, args) {
   let request
@@ -129,11 +147,12 @@ async function submit(c, address, abi, functionName, args) {
       args,
     }))
   } catch (e) {
-    const reason = e?.cause?.data?.errorName ?? e?.shortMessage ?? '체인이 거절했습니다'
-    if (ALREADY_SENT.has(reason)) {
+    const name = revertName(e)
+    if (ALREADY_SENT.has(name)) {
       throw new HttpError(409, '이미 체인에 보낸 작업입니다. 확정되면 결과가 보입니다')
     }
-    throw new HttpError(409, `체인이 거절했습니다: ${reason}`)
+    if (name && REVERT_TEXT[name]) throw new HttpError(409, REVERT_TEXT[name])
+    throw new HttpError(409, `체인이 거절했습니다: ${name ?? e?.shortMessage ?? '알 수 없는 이유'}`)
   }
   // 다른 요청과 같은 번호(nonce)를 잡았으면 한 번만 새 번호로 다시 보낸다
   for (let attempt = 0; ; attempt++) {

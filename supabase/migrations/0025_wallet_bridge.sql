@@ -406,6 +406,12 @@ begin
   update public.market_sneakers
      set chain_state = 'WITHDRAWING', equipped = false, updated_at = now()
    where id = p_sneaker_id;
+  -- 신고 있던 신발을 꺼내면 첫 신발로 갈아 신긴다(신발 없이 달리는 틈이 없게)
+  update public.market_sneakers set equipped = true, updated_at = now()
+   where id = (select m.id from public.market_sneakers m
+                where m.owner_id = v_user and m.origin = 'STARTER'
+                  and m.chain_state = 'APP' and m.status = 'OWNED' limit 1)
+     and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
 
   insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
   values (v_op, v_user, 'SNEAKER_WITHDRAW', v_wallet, p_sneaker_id, economy.op_deadline());
@@ -592,6 +598,16 @@ begin
       exception when others then
         null;  -- 잔고가 모자라 못 거뒀다. 체인이 멈춰 있으니 사람이 정리한다.
       end;
+    end if;
+    -- 되돌려 앱에 돌아온 신발이 체인에도 생겼다 — 앱 쪽을 체인에 있는 것으로 돌리고 매물은 내린다.
+    -- 그대로 두면 같은 신발이 앱(팔기 · 신기)과 체인에 둘 다 있다.
+    if v.kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT') and v.sneaker_id is not null then
+      update public.market_listings set status = 'CANCELLED', closed_at = now()
+       where sneaker_id = v.sneaker_id and status = 'OPEN';
+      update public.market_sneakers
+         set chain_state = 'ON_CHAIN', equipped = false, status = 'OWNED',
+             token_id = coalesce(p_token, token_id), updated_at = now()
+       where id = v.sneaker_id;
     end if;
     perform public.admin_log('chain_late_confirm', v.id::text, jsonb_build_object('tx', p_tx));
   end if;

@@ -896,3 +896,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - App source be6d0ef passed unit/debug/signature/release checks (36105578228). Test-only correction 7f2df93 passed Android 14/15: 4 form tests + 1 gallery test per OS, 36 gallery images each (36106239083). Final artifacts and XML/hash evidence under stage7 output/verified-api34 and verified-api35.
 - Claude reviewed 8 intermediate images, requested floating-label polish, then confirmed both label and empty-banner corrections from 4 final app images. Original review and recheck preserved. Optional wording/alignment and keyboard-header spacing notes remain separate.
 - Earlier failed/cancelled attempts remain documented, not counted as passes. No public APK, main merge, account/storage identity change, server mutation, or full release-completion claim. See CHARACTER-FREE-STAGE7-2026-09-25-KO.md.
+
+## 2026-09-25 — bug sweep (PR #25): run finish states and SUP amounts
+
+- Run finish card: a run with no counted steps is never uploaded, so it now shows `finish_no_steps` ("걸음이 잡히지 않아 이번 러닝은 적립 없음") instead of staying on "서버 확인 중" forever. Party result hides the phone-estimated steps/boost line until the server-confirmed amount arrives. No layout change; existing headline slot and styles reused.
+- SUP balance text (SupPill, wallet card, rewards header, finish balance, profile, ranking teaser) now rounds down via `formatSupDown` — 499.6 is no longer shown as 500 next to a 500 SUP price. Same fonts, sizes and positions.
+- Checks: `python3 scripts/check-strings.py` (new string in values/ko/ja/zh), `./gradlew compileDebugKotlin testDebugUnitTest lintDebug compileDebugAndroidTestKotlin`, and the Experience QA device suite on the PR. No new captures were taken for these two states; they reuse existing finish-card and header layouts.

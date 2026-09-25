@@ -79,7 +79,8 @@ import com.stepup.android.ui.theme.VoltText
 @Composable
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
-    val amount = balance?.let { "%,.0f".format(it) } ?: "—"
+    // 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리)
+    val amount = balance?.let { formatSupDown(it) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
     Row(
         modifier = modifier
