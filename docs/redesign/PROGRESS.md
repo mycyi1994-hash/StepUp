@@ -853,3 +853,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - First run exposed Android 15 map/control clearance; Android 14 captures also exposed a displaced draw action. Corrected both. Final source `29bb16b` passed build run `36102357282` and device run `36102357154`: five interaction tests plus 56 captures on each of Android 14/15, all layout checks PASS.
 - Claude read-only recheck of seven final originals judged all four original groups resolved with no remaining blockers within that scope. Preserved original response, before/after board, 112 original captures and execution evidence. See CHARACTER-FREE-STAGE6-2026-09-25-KO.md and CLAUDE-VISUAL-RECHECK-2026-09-25.md.
 - Source design/string/asset checks pass. No new image assets, backend/data changes, main merge or public release. Selected map captures show the tile-loading grid; real tile loading, outdoor GPS, auth/transactions, secondary screens, all locales/themes and optional banner polish remain separate coverage.
+
+
+## 2026-09-25 — character-free stage 7: secondary forms and settings
+
+- Covered 10 routes: post/crew creation, meetup detail, and 7 settings destinations. Shared FormPage; native labels above community form fields; full-width preference descriptions; independent meetup scenery banner and responsive detail information.
+- App source be6d0ef passed unit/debug/signature/release checks (36105578228). Test-only correction 7f2df93 passed Android 14/15: 4 form tests + 1 gallery test per OS, 36 gallery images each (36106239083). Final artifacts and XML/hash evidence under stage7 output/verified-api34 and verified-api35.
+- Claude reviewed 8 intermediate images, requested floating-label polish, then confirmed both label and empty-banner corrections from 4 final app images. Original review and recheck preserved. Optional wording/alignment and keyboard-header spacing notes remain separate.
+- Earlier failed/cancelled attempts remain documented, not counted as passes. No public APK, main merge, account/storage identity change, server mutation, or full release-completion claim. See CHARACTER-FREE-STAGE7-2026-09-25-KO.md.
