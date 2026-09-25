@@ -2,6 +2,7 @@ import { clients } from './chain.js'
 import { getUser, rpc, HttpError } from './supabase.js'
 import { linkWallet, executeOp } from './handlers.js'
 import { indexEvents, expireOps, reconcile } from './indexer.js'
+import { sneakerMetadata } from './meta.js'
 
 /**
  * StepUp 어테스터 v2 — 서버가 허락한 체인 작업만 서명하고, 가스비를 대신 내 보낸다.
@@ -57,8 +58,41 @@ async function rateLimited(request, env) {
   return !success
 }
 
+async function metadataResponse(request, env, ctx, url, id) {
+  const cache = globalThis.caches?.default
+  const key = new Request(url.toString(), { method: 'GET' })
+  if (cache) {
+    const hit = await cache.match(key)
+    if (hit) return hit
+  }
+  if (await rateLimited(request, env)) {
+    return json(request, env, { ok: false, error: '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요' }, 429)
+  }
+  let body
+  let status = 200
+  let maxAge = 300
+  try {
+    body = await sneakerMetadata(env, deps, id)
+  } catch (e) {
+    if (!(e instanceof HttpError) || e.status >= 500) throw e
+    body = { ok: false, error: e.message }
+    status = e.status
+    maxAge = 60
+  }
+  const res = new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': `public, max-age=${maxAge}`,
+      'access-control-allow-origin': '*',
+    },
+  })
+  if (cache) ctx.waitUntil(cache.put(key, res.clone()))
+  return res
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url)
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(request, env) })
 
@@ -76,6 +110,14 @@ export default {
           guardian: c.guardian?.account.address ?? null,
           contracts: c.addresses,
         })
+      }
+
+      // 신발 메타데이터 — 마켓 · 지갑이 읽는다. 누구나 부를 수 있으므로 워커 캐시를 먼저 보고,
+      // 캐시에 없을 때만 요청 수 제한을 거쳐 체인을 읽는다. 없는 번호도 잠깐 캐시한다 —
+      // 번호를 바꿔 가며 두드려 인덱서와 같이 쓰는 RPC 를 막지 못하게.
+      const meta = url.pathname.match(/^\/v2\/meta\/([^/]+)$/)
+      if (meta && request.method === 'GET') {
+        return metadataResponse(request, env, ctx, url, meta[1])
       }
 
       if (request.method === 'POST' && (await rateLimited(request, env))) {

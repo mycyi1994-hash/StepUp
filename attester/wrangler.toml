@@ -23,6 +23,8 @@ CONFIRMATIONS = "30"
 SUPABASE_URL = "https://pupjzcmybuoyhzfwrsdf.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
 ALLOWED_ORIGINS = "https://stepupcrew.com,https://www.stepupcrew.com"
+# 신발 그림 — 웹사이트(web/assets/sneakers)
+IMAGE_BASE = "https://stepupcrew.com/assets/sneakers/"
 # 새로 붙인 지갑에 보내는 테스트 가스 (0.0002 ETH). 메인넷에서는 0 으로.
 DRIP_WEI = "200000000000000"
 

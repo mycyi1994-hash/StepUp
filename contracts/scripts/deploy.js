@@ -76,8 +76,10 @@ async function main() {
         throw new Error(`${name} 가 서버에 두는 키(서명 · 정지 · 기록)와 같습니다. 따로 두어야 합니다.`);
       }
     }
-    if (baseURI.includes("REPLACE_WITH_CID")) {
-      throw new Error("SNEAKER_BASE_URI 에 IPFS 주소를 넣어 주세요 (끝에 / 포함).");
+    // 신발 스탯은 달라지므로 메타데이터는 워커가 체인을 읽어 만든다. 예전 .env 의 IPFS 주소
+    // (ipfs://…/)가 남아 있으면 스탯이 굳은 메타데이터로 배포되므로 워커 주소 형식만 받는다.
+    if (!/^https:\/\/[^/]+\/v2\/meta\/$/.test(baseURI)) {
+      throw new Error("SNEAKER_BASE_URI 에 어테스터 메타데이터 주소를 넣어 주세요 — https://<워커 주소>/v2/meta/ (끝에 / 포함).");
     }
   }
 
