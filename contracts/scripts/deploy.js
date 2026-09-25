@@ -66,9 +66,11 @@ async function main() {
         throw new Error(`${name} 가 배포 키와 같습니다. 배포 키는 배포 뒤 버리므로 역할을 맡길 수 없습니다.`);
       }
     }
-    const signers = [attester, sneakerSigner, guardian, recorder];
+    // 가스비를 내는 relayer 도 워커에 둔다. 적어 주면 다른 키와 겹치는지 본다(코스 기록 키를 겸하지 않게).
+    const relayer = process.env.RELAYER_ADDRESS ? hre.ethers.getAddress(process.env.RELAYER_ADDRESS) : null;
+    const signers = [attester, sneakerSigner, guardian, recorder, ...(relayer ? [relayer] : [])];
     if (new Set(signers).size !== signers.length) {
-      throw new Error("서명 키(ATTESTER · SNEAKER_SIGNER · GUARDIAN · RECORDER)는 서로 달라야 합니다.");
+      throw new Error("서명 키(ATTESTER · SNEAKER_SIGNER · GUARDIAN · RECORDER · RELAYER)는 서로 달라야 합니다.");
     }
     // 관리자 · 금고는 사람이 드는 지갑이다. Cloudflare 에 두는 키와 겹치면 안 된다.
     for (const [name, addr] of Object.entries({ owner, treasury })) {

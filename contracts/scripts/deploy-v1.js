@@ -22,6 +22,11 @@ const INITIAL_POOL = hre.ethers.parseEther("50000000");
 const DEFAULT_BASE_URI = "ipfs://REPLACE_WITH_CID/";
 
 async function main() {
+  // 기록용으로만 남긴 스크립트다. 모든 역할이 배포 키로, 한도가 0(무제한)으로 올라가므로 실제 네트워크에는
+  // 쓰지 않는다 — 실수로 돌려 deployments/<네트워크>.json 을 덮어쓰거나 무제한 배포기를 올리지 않게 막는다.
+  if (hre.network.name !== "hardhat") {
+    throw new Error("deploy-v1.js 는 기록용입니다. 실제 배포는 scripts/deploy.js (v2) 를 쓰세요.");
+  }
   const [deployer] = await hre.ethers.getSigners();
   const net = hre.network.name;
   const chainId = (await hre.ethers.provider.getNetwork()).chainId;

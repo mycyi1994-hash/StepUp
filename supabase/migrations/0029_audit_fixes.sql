@@ -218,8 +218,10 @@ begin
   return query
   select
     coalesce((select sum(amount) from public.chain_ops where kind = 'SUP_WITHDRAW' and status = 'CONFIRMED'), 0),
+    -- 서명한 작업만 체인에서 받을 수 있다 — 예약만 된(RESERVED) 작업까지 허용 범위에 넣으면
+    -- 샌 서명 키로 그만큼을 더 빼 가도 대조가 모른다
     coalesce((select sum(amount) from public.chain_ops
-               where kind = 'SUP_WITHDRAW' and status in ('RESERVED', 'SIGNED', 'SUBMITTED')), 0),
+               where kind = 'SUP_WITHDRAW' and status in ('SIGNED', 'SUBMITTED')), 0),
     -- 원장이 아니라 체인 이벤트로 센다. 계정을 지우면 원장 줄은 사라진다.
     coalesce((select sum(trunc((data ->> 'amount')::numeric, 4)) from public.chain_events
                where kind = 'SUP_DEPOSITED'), 0),

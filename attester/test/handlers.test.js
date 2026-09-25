@@ -271,3 +271,29 @@ test('정지: 한 컨트랙트가 실패해도 나머지는 멈추고, 문제가
   assert.equal(out.paused, true)
   assert.deepEqual(out.failed, ['sneakers'])
 })
+
+test('서버 호출: 로그인 토큰이 만료됐으면 한 번 새로 받고, 내부 오류 문구는 사용자에게 보이지 않는다', async () => {
+  const { rpc } = await import('../src/supabase.js')
+  const env = { SUPABASE_URL: 'https://s.test', SUPABASE_ANON_KEY: 'anon', ATTESTER_EMAIL: 'a@b', ATTESTER_PASSWORD: 'p' }
+  let logins = 0
+  let calls = 0
+  const fetchImpl = async (url) => {
+    if (url.includes('/auth/v1/token')) {
+      logins += 1
+      return new Response(JSON.stringify({ access_token: `t${logins}`, expires_in: 3600 }))
+    }
+    calls += 1
+    if (calls === 1) return new Response('{"message":"JWT expired"}', { status: 401 })
+    if (calls === 2) return new Response('"ok"')
+    return new Response('{"code":"PGRST202","message":"Could not find the function public.attester_x"}', { status: 404 })
+  }
+  assert.equal(await rpc(env, 'attester_cursor_get', {}, fetchImpl), 'ok')
+  assert.equal(logins, 2)
+  await assert.rejects(rpc(env, 'attester_cursor_get', {}, fetchImpl), (e) => e.status === 502 && !e.message.includes('attester_x'))
+})
+
+test('작업 실행: 로그인한 사용자별로도 요청 수를 센다', async () => {
+  const deps = fakeDeps()
+  deps.limitUser = async (_env, id) => id === USER.id
+  await assert.rejects(executeOp(req({}), env, deps, OP), (e) => e.status === 429)
+})

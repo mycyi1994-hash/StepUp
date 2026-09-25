@@ -28,6 +28,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function linkWallet(request, env, deps) {
   const user = await deps.getUser(env, request)
+  if (await deps.limitUser?.(env, user.id)) throw new HttpError(429, '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요')
   const body = await request.json().catch(() => null)
   const address = String(body?.address ?? '')
   const nonce = String(body?.nonce ?? '')
@@ -68,6 +69,7 @@ export async function linkWallet(request, env, deps) {
 export async function executeOp(request, env, deps, opId) {
   if (!UUID.test(opId)) throw new HttpError(400, '작업 번호가 올바르지 않습니다')
   const user = await deps.getUser(env, request)
+  if (await deps.limitUser?.(env, user.id)) throw new HttpError(429, '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요')
 
   // 서버가 주인 확인 · 상태 · 유효 시간 · 정지 스위치를 모두 본다
   const rows = await deps.rpc(env, 'attester_op_payload', { p_op: opId, p_user: user.id })

@@ -96,6 +96,11 @@ class EconomySync(
             after = page.last().id
         }
 
+        // 받아 오는 사이에 다른 계정으로 바뀌었으면 쓰지 않는다 — 두 계정의 잔고 · 신발이 섞이지 않게.
+        // 새 계정은 로그인하면서 다시 맞춘다.
+        val stillSame = (sessions.accessToken() as? TokenResult.Ok)?.userId == userId
+        if (!stillSame) return ServerResult.Retry("계정이 바뀌어 다시 맞춥니다")
+
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
         db.withTransaction {
             db.sneakerDao().deleteAll()
