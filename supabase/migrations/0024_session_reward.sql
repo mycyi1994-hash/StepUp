@@ -20,7 +20,25 @@ alter table public.walk_sessions
   -- 검사를 통과한 걸음(에너지 · 금액 상한을 걸기 전). 목표 달성과 도전에 쓴다.
   add column if not exists verified_steps int,
   add column if not exists energy_used numeric(10, 4) not null default 0,
-  add column if not exists sneaker_id bigint;
+  add column if not exists sneaker_id bigint,
+  -- 경로가 받쳐 준 러닝인가(경로 300m 이상). 걸음만 있는 러닝은 폰이 걸음을 지어낼 수 있다.
+  add column if not exists gps_backed boolean not null default false,
+  -- 경로가 받쳐 준 걸음. 목표 달성 · 주간 도전은 이것만 센다.
+  add column if not exists backed_steps int not null default 0,
+  -- 신발 잠금 거리 · 꺼내기 조건에 쳐 주는 거리(m). 경로로 잰 거리만, 하루 상한 안에서.
+  add column if not exists gps_credit_m double precision not null default 0,
+  -- 파티 보너스를 받은 파티. 한 파티에서 한 러닝만 받는다.
+  add column if not exists party_id bigint;
+
+-- 꺼내기 조건(누적 거리)은 경로로 잰 거리만 센다. lifetime_km 는 순위용이라 걸음 거리도 들어간다.
+alter table public.profiles add column if not exists gps_km double precision not null default 0;
+
+-- 운영 값 — 걸음만 있는 러닝의 하루 적립 상한, 올린 날 기준 하루 적립 상한, 하루에 쳐 주는 경로 거리
+insert into public.economy_settings (key, value) values
+  ('no_gps_daily_cap',  '60'::jsonb),
+  ('upload_daily_cap',  '1200'::jsonb),
+  ('gps_km_daily_cap',  '50'::jsonb)
+on conflict (key) do nothing;
 
 -- 효율성은 레전더리 30레벨에서 +27.5% 까지 오른다. 예전 상한(20%)으로는 못 담는다.
 alter table public.walk_sessions drop constraint if exists walk_sessions_boost_bps_check;
@@ -77,22 +95,23 @@ begin
 end;
 $$;
 
--- 이 러닝의 파티 인원. 출발 시각이 러닝 시작과 10분 안쪽인 파티 명단에서 센다.
-create or replace function economy.party_size_for(p_user uuid, p_started_at timestamptz)
-returns int
+-- 이 러닝의 파티. 출발 시각이 러닝 시작과 10분 안쪽인 파티 명단에서 찾는다.
+-- 인원은 그 명단의 사람 수다.
+drop function if exists economy.party_size_for(uuid, timestamptz);
+create or replace function economy.party_for(p_user uuid, p_started_at timestamptz,
+                                             out party_id bigint, out size int)
 language sql stable security definer set search_path = public as $$
-  select coalesce((
-    select count(*)::int from public.party_runs r2
-     where r2.party_id = (
-       select r.party_id from public.party_runs r
-        where r.user_id = p_user
-          and r.starts_at between p_started_at - interval '10 minutes'
-                              and p_started_at + interval '10 minutes'
-        order by abs(extract(epoch from (r.starts_at - p_started_at)))
-        limit 1)
-  ), 1)
+  with p as (
+    select r.party_id from public.party_runs r
+     where r.user_id = p_user
+       and r.starts_at between p_started_at - interval '10 minutes'
+                           and p_started_at + interval '10 minutes'
+     order by abs(extract(epoch from (r.starts_at - p_started_at)))
+     limit 1)
+  select p.party_id, (select count(*)::int from public.party_runs r2 where r2.party_id = p.party_id)
+    from p
 $$;
-revoke all on function economy.party_size_for(uuid, timestamptz) from public;
+revoke all on function economy.party_for(uuid, timestamptz) from public;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 적립 (0018 을 대신한다)
@@ -147,7 +166,11 @@ declare
   v_step_m double precision;
   v_distance_m double precision;
   v_track text := coalesce(p_track, '');
-  v_party int;
+  v_party int := 1;
+  v_party_id bigint;
+  v_gps_backed boolean;
+  v_credit_m double precision := 0;
+  v_cap_left numeric;
   v_shoe public.market_sneakers;
   v_eff int := 0;
   v_comfort int := 0;
@@ -231,6 +254,15 @@ begin
     v_verdict := 'VOID';
     v_reason := '이미 올린 경로입니다';
 
+  -- 같은 사람의 러닝은 시간이 겹칠 수 없다. 겹치게 여러 개를 올리면 같은 시간을
+  -- 여러 번 받는다.
+  elsif exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.verdict <> 'VOID'
+           and s.started_at < p_ended_at and s.ended_at > p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '다른 러닝과 시간이 겹칩니다';
+
   elsif v_gps_m >= 1000 and v_step_m < v_gps_m * 0.2 then
     v_verdict := 'VOID';
     v_reason := '걸음 없이 이동한 거리입니다';
@@ -294,7 +326,13 @@ begin
     v_energy_used := round(v_rewardable * v_energy_per_step, 4);
   end if;
 
-  v_party := economy.party_size_for(v_user, p_started_at);
+  -- 파티 보너스는 한 파티에서 한 러닝만
+  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at) pf;
+  if v_party_id is null or exists (select 1 from public.walk_sessions s
+                                    where s.user_id = v_user and s.party_id = v_party_id) then
+    v_party_id := null;
+    v_party := 1;
+  end if;
   if economy.boost_active(v_user, 'XP_BOOSTER', p_started_at) then
     v_xp := 2;
   end if;
@@ -326,11 +364,46 @@ begin
     end if;
   end if;
 
+  -- ── 걸음만 있는 러닝 · 한꺼번에 올린 러닝 ──
+  --
+  -- 경로가 없으면 걸음은 폰이 지어낼 수 있다. 그런 러닝은 하루 적은 몫만 준다.
+  -- 7일치를 모아 한 번에 올리면 날마다 상한이 새로 열리므로, 올린 날 기준 상한도 둔다.
+  v_gps_backed := v_verdict <> 'VOID' and v_gps_m >= economy.gps_check_min_m();
+  if v_points > 0 and not v_gps_backed then
+    select economy.setting_num('no_gps_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and not s.gps_backed and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '경로 없는 러닝의 하루 상한에 걸렸습니다');
+    end if;
+  end if;
+  if v_points > 0 then
+    select economy.setting_num('upload_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.created_at) = economy.game_day(now());
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루에 올릴 수 있는 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
   v_distance_m := case
     when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3 + 100)
     else v_step_m
   end;
   if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
+  -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
+  if v_gps_backed then
+    select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
+      into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.started_at) = v_gday;
+    v_credit_m := least(v_distance_m, v_cap_left);
+  end if;
 
   -- ── 기록 ──
   insert into public.walk_sessions (
@@ -338,14 +411,16 @@ begin
     distance_meters, calories, track, boost_bps, party_size,
     faction, top_speed_kmh, gps_distance_m,
     verdict, verdict_reason, points_awarded, rewarded_steps,
-    mock_location, verified_steps, energy_used, sneaker_id
+    mock_location, verified_steps, energy_used, sneaker_id,
+    gps_backed, backed_steps, gps_credit_m, party_id
   )
   values (
     v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
     v_distance_m, p_steps * 0.04, v_track, least(v_eff, 5000), least(greatest(v_party, 1), 20),
     '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable,
-    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id
+    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
+    v_gps_backed, case when v_gps_backed then v_verified else 0 end, v_credit_m, v_party_id
   )
   returning id into v_session_id;
 
@@ -364,7 +439,7 @@ begin
   -- 신발이 닳는다. 폰에서 올린 예전 신발은 서버가 값을 믿지 않으므로 거리만 센다.
   if v_shoe.id is not null and v_verdict <> 'VOID' and v_distance_m > 0 then
     update public.market_sneakers s
-       set km_run = s.km_run + round((v_distance_m / 1000)::numeric, 3),
+       set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
            durability_pts = case when s.origin in ('IMPORT', 'MINT') then s.durability_pts
              else greatest(s.durability_pts
                - round((v_distance_m / 1000)::numeric * economy.durability_loss_per_km(s.rarity), 2), 0) end,
@@ -377,6 +452,7 @@ begin
   if v_verdict <> 'VOID' then
     update public.profiles
        set lifetime_km = lifetime_km + (v_distance_m / 1000),
+           gps_km = gps_km + (v_credit_m / 1000),
            top_speed_kmh = greatest(top_speed_kmh, v_top_speed)
      where id = v_user;
   end if;
@@ -402,7 +478,7 @@ grant execute on function public.record_session(timestamptz, timestamptz, int, i
 -- 걸음(verified_steps)만 센다 — 폰이 올린 하루 걸음(daily_steps)은 누구나 적어 넣을 수 있다.
 create or replace function economy.verified_steps_on(p_user uuid, p_day date) returns int
 language sql stable security definer set search_path = public, economy as $$
-  select coalesce(sum(coalesce(s.verified_steps, s.rewarded_steps)), 0)::int
+  select least(coalesce(sum(s.backed_steps), 0), economy.max_daily_steps())::int
     from public.walk_sessions s
    where s.user_id = p_user and s.verdict in ('CLEAN', 'FLAGGED')
      and economy.game_day(s.started_at) = p_day
@@ -477,11 +553,10 @@ begin
 
   if p_event = 'step_surge' then
     -- 예전에는 폰이 올린 하루 걸음(daily_steps)을 더했다. 그 값은 폰이 마음대로
-    -- 적을 수 있어 250 SUP 가 거저 나갔다. 검사를 통과한 러닝 걸음만 센다.
+    -- 적을 수 있어 250 SUP 가 거저 나갔다. 경로가 받쳐 준 러닝 걸음만, 하루 상한까지 센다.
     return coalesce((
-      select sum(coalesce(s.verified_steps, s.rewarded_steps)) from public.walk_sessions s
-       where s.user_id = v_user and s.verdict in ('CLEAN', 'FLAGGED')
-         and economy.game_day(s.started_at) between economy.game_day(now()) - 6 and economy.game_day(now())
+      select sum(economy.verified_steps_on(v_user, d::date))
+        from generate_series(economy.game_day(now()) - 6, economy.game_day(now()), interval '1 day') d
     ), 0);
   elsif p_event = 'night_quest' then
     return coalesce((
@@ -552,13 +627,15 @@ begin
   if v_inserted is not null then
     update public.courses set run_count = run_count + 1 where id = v_course;
 
-    v_reward := least(floor(least(coalesce(v_course_km, 0), v_session.distance_meters / 1000.0)), 42);
-    if v_reward >= 1 then
+    -- 남이 만든 코스만, 경로로 잰 거리로, 하루 한 번. 자기 코스를 여러 개 만들어
+    -- 러닝 하나로 보상을 여러 번 받지 못하게 한다.
+    v_reward := least(floor(least(coalesce(v_course_km, 0), v_session.gps_credit_m / 1000.0)), 42);
+    if v_reward >= 1 and (select c.owner_id from public.courses c where c.id = v_course) <> v_user then
       begin
         perform economy.ledger_apply(v_user, 'EARN_COURSE', v_reward, '코스 완주 보상',
-          format('course:%s:%s', v_course, economy.game_day(v_session.started_at)));
+          'course:' || economy.game_day(v_session.started_at));
       exception when unique_violation then
-        null;  -- 오늘 이 코스 보상은 이미 받았다. 기록은 남기고 보상만 건너뛴다.
+        null;  -- 이 날의 코스 보상은 이미 받았다. 기록은 남기고 보상만 건너뛴다.
       end;
     end if;
   end if;

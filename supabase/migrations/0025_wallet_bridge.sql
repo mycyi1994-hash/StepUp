@@ -78,9 +78,11 @@ create table if not exists public.wallet_links (
 
 -- 한 번 붙은 지갑은 영원히 그 계정 것. 계정을 여러 개 만들어 한 지갑으로 몰아
 -- 보너스를 받거나 상한을 나눠 쓰지 못하게 한다.
+-- 계정을 지워도 줄은 남는다(주인만 비운다). 지우고 새 계정으로 같은 지갑을 붙여
+-- 보너스를 다시 받는 것을 막는다.
 create table if not exists public.wallet_history (
   address text primary key,
-  user_id uuid not null references auth.users on delete cascade,
+  user_id uuid references auth.users on delete set null,
   first_linked_at timestamptz not null default now()
 );
 
@@ -109,6 +111,11 @@ declare
 begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  -- 지갑을 붙이는 것부터 2단계 인증이 필요하다. 로그인만 뺏은 사람이 자기 지갑을
+  -- 붙여 보너스 NFT 를 가져가거나 72시간 뒤 꺼내기를 노리지 못하게.
+  if not economy.mfa_ok() then
+    raise exception '2단계 인증이 필요합니다' using errcode = '42501';
   end if;
   insert into public.wallet_link_nonces (user_id, nonce) values (v_user, v_nonce)
   on conflict (user_id) do update set nonce = excluded.nonce, created_at = now();
@@ -157,11 +164,13 @@ begin
 
   perform pg_advisory_xact_lock(hashtext('ledger:' || p_user::text));
 
-  if exists (select 1 from public.wallet_history where address = v_addr and user_id <> p_user) then
+  if exists (select 1 from public.wallet_history
+              where address = v_addr and user_id is distinct from p_user) then
     raise exception '다른 계정에 연결된 적 있는 지갑입니다' using errcode = '23505';
   end if;
 
-  v_first := not exists (select 1 from public.wallet_history where user_id = p_user);
+  v_first := not exists (select 1 from public.wallet_history where user_id = p_user)
+             and not exists (select 1 from public.wallet_history where address = v_addr);
 
   insert into public.wallet_history (address, user_id) values (v_addr, p_user)
   on conflict (address) do nothing;
@@ -185,9 +194,11 @@ end $$;
 -- ══════════════════════════════════════════════════════════════════
 -- 체인 작업
 -- ══════════════════════════════════════════════════════════════════
+-- 계정을 지워도 작업 기록은 남긴다(주인만 비운다). 정산 대조와 체인 이벤트 처리가
+-- 이 기록에 기댄다.
 create table if not exists public.chain_ops (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users on delete cascade,
+  user_id uuid references auth.users on delete set null,
   kind text not null check (kind in ('SUP_WITHDRAW', 'SNEAKER_WITHDRAW', 'BONUS_MINT')),
   status text not null default 'RESERVED'
     check (status in ('RESERVED', 'SIGNED', 'SUBMITTED', 'CONFIRMED', 'EXPIRED')),
@@ -199,8 +210,7 @@ create table if not exists public.chain_ops (
   block_number bigint,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check ((kind = 'SUP_WITHDRAW') = (amount is not null)),
-  check ((kind <> 'SUP_WITHDRAW') = (sneaker_id is not null))
+  check ((kind = 'SUP_WITHDRAW') = (amount is not null))
 );
 
 create index if not exists chain_ops_user_recent on public.chain_ops (user_id, created_at desc);
@@ -258,7 +268,7 @@ begin
       raise exception '가입 %일이 지나야 꺼낼 수 있습니다',
         economy.setting_num('withdraw_min_account_days') using errcode = '23514';
     end if;
-    if v_profile.lifetime_km < economy.setting_num('withdraw_min_km') then
+    if v_profile.gps_km < economy.setting_num('withdraw_min_km') then
       raise exception '누적 %km 를 달려야 꺼낼 수 있습니다',
         economy.setting_num('withdraw_min_km') using errcode = '23514';
     end if;
@@ -281,13 +291,18 @@ language sql stable security definer set search_path = public, economy as $$
 $$;
 revoke all on function economy.withdrawn_today(uuid) from public;
 
-create or replace function economy.mints_today() returns int
+-- 오늘 발행 수. 보너스 발행과 꺼내기 발행은 한도를 따로 센다 — 계정을 많이 만들어
+-- 보너스로 하루 한도를 채워 정직한 사람의 꺼내기를 막지 못하게.
+create or replace function economy.mints_today(p_kind text) returns int
 language sql stable security definer set search_path = public, economy as $$
   select count(*)::int from public.chain_ops o
-   where o.kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT') and o.status <> 'EXPIRED'
+   where o.kind = p_kind and o.status <> 'EXPIRED'
      and o.created_at >= economy.today_start()
 $$;
-revoke all on function economy.mints_today() from public;
+revoke all on function economy.mints_today(text) from public;
+
+insert into public.economy_settings (key, value) values ('bonus_mint_global_daily', '2000'::jsonb)
+on conflict (key) do nothing;
 
 create or replace function economy.op_deadline() returns timestamptz
   language sql stable as $$
@@ -357,7 +372,7 @@ begin
     raise exception '이 신발로 %km 를 더 달려야 꺼낼 수 있습니다', round(v.lock_km - v.km_run, 1)
       using errcode = '23514';
   end if;
-  if v.token_id is null and economy.mints_today() >= economy.setting_num('mint_global_daily') then
+  if v.token_id is null and economy.mints_today('SNEAKER_WITHDRAW') >= economy.setting_num('mint_global_daily') then
     raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
   end if;
 
@@ -391,7 +406,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
   v_wallet := economy.withdraw_gate(v_user, false);
 
-  if economy.mints_today() >= economy.setting_num('mint_global_daily') then
+  if economy.mints_today('BONUS_MINT') >= economy.setting_num('bonus_mint_global_daily') then
     raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
   end if;
 
@@ -539,12 +554,14 @@ begin
   if v.status = 'EXPIRED' then
     -- 되돌린 뒤에 체인에서 성공했다 — 일어나면 안 되는 일(만료 마진 · 체인 확인이
     -- 막는다). 두 번 받는 것을 막기 위해 되돌린 것을 다시 거두고 경보를 남긴다.
-    if v.kind = 'SUP_WITHDRAW' then
+    -- 체인 작업을 모두 멈추고 사람이 본다. 되돌린 금액은 거둘 수 있으면 거둔다.
+    update public.economy_settings set value = 'true'::jsonb, updated_at = now() where key = 'chain_paused';
+    if v.kind = 'SUP_WITHDRAW' and v.user_id is not null then
       begin
         perform economy.ledger_apply(v.user_id, 'CHAIN_WITHDRAW', -v.amount,
           '만료 뒤 체인 확정 — 되돌린 금액 회수', 'reclaim:' || v.id);
       exception when others then
-        null;  -- 잔고가 모자라면 여기서는 못 거둔다. 아래 경보로 사람이 본다.
+        null;  -- 잔고가 모자라 못 거뒀다. 체인이 멈춰 있으니 사람이 정리한다.
       end;
     end if;
     perform public.admin_log('chain_late_confirm', v.id::text, jsonb_build_object('tx', p_tx));
@@ -560,7 +577,7 @@ begin
     update public.market_sneakers
        set chain_state = 'ON_CHAIN', equipped = false,
            token_id = coalesce(p_token, token_id), updated_at = now()
-     where id = v.sneaker_id and chain_state in ('WITHDRAWING', 'APP');
+     where id = v.sneaker_id and chain_state = 'WITHDRAWING';
   end if;
 end $$;
 revoke all on function economy.op_confirm(uuid, text, bigint, numeric) from public;
@@ -595,7 +612,11 @@ begin
   if p_kind in ('SUP_CLAIMED', 'SNEAKER_RELEASED') then
     v_op := economy.account_from_ref(p_data ->> 'op');
     v_token := nullif(p_data ->> 'tokenId', '')::numeric;
-    if v_op is null or not exists (select 1 from public.chain_ops where id = v_op) then
+    if v_op is null or not exists (
+         select 1 from public.chain_ops o
+          where o.id = v_op
+            and o.kind = any (case p_kind when 'SUP_CLAIMED' then array['SUP_WITHDRAW']
+                                          else array['SNEAKER_WITHDRAW', 'BONUS_MINT'] end)) then
       perform public.admin_log('chain_unknown_op', v_tx, p_data);
       return 'UNKNOWN_OP';
     end if;
@@ -618,14 +639,17 @@ begin
     v_user := economy.account_from_ref(p_data ->> 'account');
     v_token := (p_data ->> 'tokenId')::numeric;
     if v_user is null or not exists (select 1 from auth.users where id = v_user)
-       or not exists (select 1 from public.market_sneakers where token_id = v_token) then
+       or not exists (select 1 from public.market_sneakers where token_id = v_token and chain_state = 'ON_CHAIN') then
       perform public.admin_log('chain_orphan_deposit', v_tx, p_data);
       return 'ORPHAN';
     end if;
     -- 넣은 사람이 새 주인이다(체인에서 샀을 수 있다). 스탯은 꺼낼 때 서버가 적은 값 그대로다.
+    -- 주인 바꾸기 트리거는 이 표시가 있을 때만 체인 → 앱 이전을 허락한다.
+    perform set_config('stepup.chain_deposit', 'on', true);
     update public.market_sneakers
        set owner_id = v_user, chain_state = 'APP', status = 'OWNED', equipped = false, updated_at = now()
-     where token_id = v_token;
+     where token_id = v_token and chain_state = 'ON_CHAIN';
+    perform set_config('stepup.chain_deposit', 'off', true);
     return 'CREDITED';
   end if;
 
@@ -713,7 +737,8 @@ language sql stable security definer set search_path = public as $$
     coalesce((select sum(amount) from public.chain_ops where kind = 'SUP_WITHDRAW' and status = 'CONFIRMED'), 0),
     coalesce((select sum(amount) from public.chain_ops
                where kind = 'SUP_WITHDRAW' and status in ('RESERVED', 'SIGNED', 'SUBMITTED')), 0),
-    coalesce((select sum(amount) from public.sup_ledger where kind = 'CHAIN_DEPOSIT'), 0),
+    -- 원장이 아니라 체인 이벤트로 센다. 계정을 지우면 원장 줄은 사라진다.
+    coalesce((select sum((data ->> 'amount')::numeric) from public.chain_events where kind = 'SUP_DEPOSITED'), 0),
     (select count(*) from public.market_sneakers where chain_state = 'ON_CHAIN'),
     (select count(*) from public.market_sneakers where chain_state in ('WITHDRAWING', 'DEPOSITING'))
 $$;

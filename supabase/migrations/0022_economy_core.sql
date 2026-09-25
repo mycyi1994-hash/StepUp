@@ -324,6 +324,13 @@ alter table public.market_sneakers add constraint market_sneakers_stats_check ch
   and km_run >= 0 and lock_km >= 0
 );
 
+-- 계정을 지워도 체인에 나가 있는 신발의 기록은 남아야 한다. 나중에 산 사람이 넣을
+-- 때 그 신발을 찾아야 하기 때문이다. 주인만 비운다.
+alter table public.market_sneakers alter column owner_id drop not null;
+alter table public.market_sneakers drop constraint if exists market_sneakers_owner_id_fkey;
+alter table public.market_sneakers add constraint market_sneakers_owner_id_fkey
+  foreign key (owner_id) references auth.users (id) on delete set null;
+
 create unique index if not exists market_sneakers_token_once
   on public.market_sneakers (token_id) where token_id is not null;
 create unique index if not exists market_sneakers_genesis_once

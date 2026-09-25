@@ -120,6 +120,7 @@ insert into fix (k, v)
 -- 가리지 않게 에너지를 넉넉히 주고 신규 계정 절반 상한을 끈다.
 -- 새 규칙 자체는 뒤의 '서버 경제' 에서 따로 검사한다.
 update public.economy_settings set value = '0' where key = 'new_account_days';
+update public.economy_settings set value = '100000' where key in ('no_gps_daily_cap', 'upload_daily_cap');
 insert into public.energy_days (user_id, day, bonus)
 select u.id, d::date, 1000
   from auth.users u, generate_series(current_date - 8, current_date + 1, interval '1 day') d
@@ -605,6 +606,13 @@ $$;
 create or replace function pg_temp.cap() returns int
 language sql security definer as $$ select economy.market_import_cap() $$;
 
+-- 거래는 서버가 만든 신발만 된다(0023 — 폰이 정한 등급·레벨로 SUP 를 받아 가지 못하게).
+-- 여기서는 폰에서 올린 신발을 서버 신발로 바꿔 거래 규칙을 검사한다.
+create or replace function pg_temp.server_shoe(p_id bigint) returns bigint
+language sql security definer as $$
+  update public.market_sneakers set origin = 'PAID_DRAW' where id = p_id returning id
+$$;
+
 -- 살 돈을 쥐여 준다. 실제로는 뛰어야 생기지만 여기서는 원장에 바로 적는다.
 insert into public.sup_ledger (user_id, kind, amount, description) values
   ('22222222-2222-2222-2222-222222222222', 'EARN_WALK', 10000, '검사용'),
@@ -639,6 +647,11 @@ begin
 
   insert into fix values ('sn1', v_a::text);
 end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.market_list(%s, 100) $q$, pg_temp.fx('sn1')),
+  '폰에서 올린 예전 신발은 팔 수 없다 (등급·레벨을 폰이 정했다)');
+do $$ begin perform pg_temp.server_shoe(pg_temp.fx('sn1')::bigint); end $$;
 
 call pg_temp.must_fail(
   $q$ insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability)
@@ -750,7 +763,7 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 declare v_low bigint;
 begin
-  v_low := public.market_import(2, 'FIRE', 'RARE', 0, 3, 1, 1, 100);
+  v_low := pg_temp.server_shoe(public.market_import(2, 'FIRE', 'RARE', 0, 3, 1, 1, 100));
   insert into fix values ('sn_low', v_low::text);
 end $$;
 
@@ -836,7 +849,7 @@ call pg_temp.login('33333333-3333-3333-3333-333333333333');
 do $$
 declare v_sn bigint; v_listing bigint;
 begin
-  v_sn := public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100);
+  v_sn := pg_temp.server_shoe(public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100));
   v_listing := public.market_list(v_sn, 700);
   perform pg_temp.ok(v_listing is not null, '매물이 먼저 선다');
   insert into fix values ('sn_wind', v_sn::text);
@@ -1796,11 +1809,14 @@ begin
 end $$;
 
 reset role;
--- 검사를 통과한 러닝 걸음 80,000보 (이번 주 안, 한국 시간 오늘)
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps, rewarded_steps, verdict)
-values ('44444444-4444-4444-4444-444444444444',
-        economy.game_day_start(economy.game_day(now())) + interval '1 minute',
-        economy.game_day_start(economy.game_day(now())) + interval '2 minutes', 60, 80000, 80000, 0, 'CLEAN');
+-- 경로가 받쳐 준 러닝 걸음 80,000보 — 하루 상한(48,000) 안으로 이틀에 나눠 (한국 시간 오늘 · 어제)
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
+                                  backed_steps, gps_backed, rewarded_steps, verdict)
+select '44444444-4444-4444-4444-444444444444',
+       economy.game_day_start(economy.game_day(now()) - d) + interval '1 minute',
+       economy.game_day_start(economy.game_day(now()) - d) + interval '2 minutes', 60, 40000, 40000,
+       40000, true, 0, 'CLEAN'
+  from generate_series(0, 1) d;
 set role authenticated;
 
 do $$
@@ -2689,6 +2705,8 @@ update public.economy_settings set value = '600' where key = 'daily_earn_cap';
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑이 없으면 꺼낼 수 없다');
+call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '2단계 인증 없이는 지갑을 붙일 수 없다');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
 do $$
 declare v_msg text;
 begin
@@ -2737,6 +2755,7 @@ reset role;
 
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+select set_config('request.jwt.claims', '', false);
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '2단계 인증 없이는 꺼낼 수 없다');
 select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑을 붙이고 72시간은 꺼낼 수 없다');
@@ -2746,7 +2765,7 @@ update public.wallet_links set changed_at = now() - interval '73 hours'
 set role authenticated;
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '가입 7일 전에는 꺼낼 수 없다');
 reset role;
-update public.profiles set created_at = now() - interval '8 days', lifetime_km = 25
+update public.profiles set created_at = now() - interval '8 days', gps_km = 25
  where id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
 set role authenticated;
 
@@ -2890,6 +2909,111 @@ call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '정지 �
 select set_config('request.jwt.claims', '', false);
 reset role;
 update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- ── 보안 검토에서 찾은 구멍 — 막혔는지 ──
+\echo ''
+\echo '── 서버 경제 보안 회귀 ──────────────────────────────────────────'
+
+-- (1) 즉시 판매(market_sell_now)로 체인에 나간 신발 · 첫 신발을 팔 수 없다
+reset role;
+update public.market_sneakers set chain_state = 'ON_CHAIN' where id = pg_temp.fx('paid_shoe')::bigint;
+insert into fix (k, v)
+  select 'f2_starter', id::text from public.market_sneakers
+   where owner_id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2' and origin = 'STARTER';
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$
+declare v_s record;
+begin
+  select faction, rarity, variant into v_s from public.market_sneakers where id = pg_temp.fx('paid_shoe')::bigint;
+  insert into fix (k, v) values ('bid_chain', public.market_bid(v_s.faction, v_s.rarity, v_s.variant, 1, 300)::text);
+  insert into fix (k, v) values ('bid_starter', public.market_bid('WIND', 'COMMON', 0, 1, 50)::text);
+end $$;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+call pg_temp.must_fail(
+  format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('paid_shoe'), pg_temp.fx('bid_chain')),
+  '체인에 나간 신발은 즉시 판매로도 팔 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('f2_starter'), pg_temp.fx('bid_starter')),
+  '첫 신발은 즉시 판매로도 팔 수 없다');
+reset role;
+update public.market_sneakers set chain_state = 'APP' where id = pg_temp.fx('paid_shoe')::bigint;
+
+-- (3) 경로 없는 러닝: 적립은 하루 조금만, 신발 잠금 거리 · 꺼내기 거리는 쌓이지 않는다.
+--     시간이 겹치는 러닝은 무효.
+update public.economy_settings set value = '60' where key = 'no_gps_daily_cap';
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$
+declare
+  r record;
+  v_start timestamptz := now() - interval '6 days';
+  v_km numeric := (select km_run from public.my_sneakers() where origin = 'STARTER');
+begin
+  select * into r from public.record_session(v_start, v_start + interval '17000 seconds', 60000, 17000,
+    '', 0, 1, '', false);
+  perform pg_temp.ok(r.points_awarded <= 60, format('경로 없는 러닝은 하루 60 SUP 까지 (%s)', r.points_awarded));
+  perform pg_temp.ok((select km_run from public.my_sneakers() where origin = 'STARTER') = v_km,
+    '경로 없는 러닝은 신발 잠금 거리에 쌓이지 않는다');
+  perform pg_temp.ok((select gps_km from public.profiles where id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2') = 0,
+    '경로 없는 러닝은 꺼내기 조건 거리에 쌓이지 않는다');
+
+  select * into r from public.record_session(v_start + interval '10 minutes', v_start + interval '20 minutes',
+    1000, 600, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'VOID', '시간이 겹치는 러닝은 무효');
+end $$;
+
+-- (2) 자기가 만든 코스로는 코스 보상을 받지 못한다
+do $$
+declare v_start timestamptz := now() - interval '5 days'; v_track text; r record; v_before numeric;
+begin
+  v_track := pg_temp.track(v_start, 1200, 0.00002);
+  perform public.course_share('내 코스', '서울', 42, 0, v_track);
+  perform public.record_session(v_start, v_start + interval '1201 seconds', 2600, 1201, v_track, 0, 1, '', false);
+  v_before := (select balance from public.my_economy());
+  perform public.course_run_submit(v_track, v_start);
+  perform pg_temp.ok((select balance from public.my_economy()) = v_before, '내가 만든 코스는 보상이 없다');
+end $$;
+reset role;
+
+-- (5)(6) 계정을 지워도 지갑은 다시 못 쓰고, 체인 작업 기록은 남는다
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_ops
+                       where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') > 0, '지우기 전 작업 기록');
+end $$;
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$ begin perform public.account_delete(); end $$;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$ begin perform public.account_delete(); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_ops where user_id is null) > 0,
+    '계정을 지워도 체인 작업 기록은 남는다 (신발을 다른 사람이 가져간 경우 포함)');
+  perform pg_temp.ok(exists (select 1 from public.market_sneakers where token_id = 7),
+    '체인에 나간 적 있는 신발 기록은 남는다');
+  perform pg_temp.ok(exists (select 1 from public.wallet_history
+                              where address = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' and user_id is null),
+    '지운 계정의 지갑 기록이 남는다');
+end $$;
+insert into auth.users (id, email) values ('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3', 'fc@test');
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+do $$
+declare v_msg text;
+begin
+  v_msg := public.wallet_link_challenge();
+  insert into fix (k, v) values ('nonce_c', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
+end $$;
+select set_config('request.jwt.claims', '', false);
+reset role;
+set role stepup_attester;
+call pg_temp.must_fail(
+  format($q$ select public.attester_wallet_link('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3',
+            '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_c')),
+  '지운 계정이 쓰던 지갑을 새 계정에 붙여 보너스를 다시 받을 수 없다');
+reset role;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

@@ -482,9 +482,61 @@ begin
   if v.origin = 'STARTER' then
     raise exception '첫 신발은 팔 수 없습니다' using errcode = '22023';
   end if;
+  if v.origin in ('IMPORT', 'MINT') then
+    raise exception '예전 신발은 팔 수 없습니다' using errcode = '22023';
+  end if;
   if v.km_run < v.lock_km then
     raise exception '이 신발로 %km 를 더 달려야 팔 수 있습니다', round(v.lock_km - v.km_run, 1)
       using errcode = '22023';
   end if;
   return new;
 end $$;
+
+/*
+ * 주인이 바뀌는 모든 길을 한곳에서 막는다.
+ *
+ * 매물 표 트리거(guard_listing)만으로는 부족하다. 즉시 판매(market_sell_now)와
+ * 매물을 거는 순간 맞는 입찰이 있을 때의 체결은 매물 줄을 만들지 않고 바로
+ * market_settle 로 주인을 바꾼다. 그래서 신발 표 자체에서 본다.
+ *
+ * 주인이 바뀌어도 되는 경우:
+ *   - 앱 안에 있고(APP), 신고 있지 않고, 첫 신발 · 예전(폰) 신발이 아니고, 잠금 거리를 채운 신발
+ *   - 체인에서 넣은 신발(ON_CHAIN → APP) — 어테스터의 넣기 처리만 이 길을 연다
+ *   - 계정 삭제로 주인이 비워질 때
+ */
+create or replace function economy.guard_owner_change() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.owner_id is not distinct from old.owner_id then
+    return new;
+  end if;
+  if new.owner_id is null then
+    new.equipped := false;
+    return new;
+  end if;
+  if old.chain_state = 'ON_CHAIN' and new.chain_state = 'APP'
+     and current_setting('stepup.chain_deposit', true) = 'on' then
+    new.equipped := false;
+    return new;
+  end if;
+
+  if old.chain_state <> 'APP' or new.chain_state <> 'APP' then
+    raise exception '체인에 있는 신발은 앱에서 넘길 수 없습니다' using errcode = '22023';
+  end if;
+  if old.equipped then
+    raise exception '신고 있는 신발은 넘길 수 없습니다' using errcode = '22023';
+  end if;
+  if old.origin in ('STARTER', 'IMPORT', 'MINT') then
+    raise exception '넘길 수 없는 신발입니다' using errcode = '22023';
+  end if;
+  if old.km_run < old.lock_km then
+    raise exception '이 신발로 %km 를 더 달려야 넘길 수 있습니다', round(old.lock_km - old.km_run, 1)
+      using errcode = '22023';
+  end if;
+  new.equipped := false;
+  return new;
+end $$;
+
+drop trigger if exists market_sneakers_owner_guard on public.market_sneakers;
+create trigger market_sneakers_owner_guard before update of owner_id on public.market_sneakers
+  for each row execute function economy.guard_owner_change();
