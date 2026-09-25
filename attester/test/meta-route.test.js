@@ -25,3 +25,17 @@ test('메타데이터: 캐시에 있으면 그대로, 없으면 요청 수 제�
   assert.equal(limited.status, 429)
   delete globalThis.caches
 })
+
+// 컨트랙트 배포 전에는 워커만 먼저 올려 둔다 — 요청은 받지 않고, 1분 작업도 하지 않는다.
+test('컨트랙트 주소가 비어 있으면 POST 는 준비 중, 1분 작업은 건너뛴다', async () => {
+  const env = { DISTRIBUTOR_ADDRESS: '', SNEAKERS_ADDRESS: '', VAULT_ADDRESS: '' }
+  const res = await worker.fetch(
+    new Request('https://attester.test/v2/wallet/link', { method: 'POST', body: '{}' }),
+    env,
+    { waitUntil() {} },
+  )
+  assert.equal(res.status, 503)
+  const waits = []
+  await worker.scheduled({}, env, { waitUntil: (p) => waits.push(p) })
+  assert.equal(waits.length, 0)
+})

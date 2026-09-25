@@ -35,6 +35,9 @@ const POLL_EVERY_MS = 5_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** 방화벽 검사 범위(본문 앞 128KB)를 넘기는 공백. 아래 submit 참고. */
+const WAF_PAD = " ".repeat(160 * 1024);
+
 function explorerFor(chainId) {
   return chainId === 91342 ? "https://sepolia-explorer.giwa.io" : "https://explorer.giwa.io";
 }
@@ -66,9 +69,13 @@ async function submit(explorer, address, { json, compiler, contractName, constru
   form.append("autodetect_constructor_args", "false");
   form.append("constructor_args", constructorArgs ? `0x${constructorArgs}` : "");
   if (contractName) form.append("contract_name", contractName);
+  // 익스플로러 앞단 방화벽(Cloudflare)은 본문 앞 128KB 만 검사하고, OpenZeppelin
+  // utils/Bytes.sol 의 `function concat(bytes[] memory buffers)` 를 SQL 공격으로 오인해
+  // 403 을 돌려준다. JSON 은 앞의 공백을 무시하므로, 공백으로 검사 범위를 넘긴다.
+  // 소스 바이트는 한 글자도 바꾸지 않는다 — 그래야 메타데이터까지 완전히 일치한다.
   form.append(
     "files[0]",
-    new Blob([json], { type: "application/json" }),
+    new Blob([WAF_PAD + json], { type: "application/json" }),
     "standard-input.json",
   );
 

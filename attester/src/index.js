@@ -29,6 +29,9 @@ import { sneakerMetadata } from './meta.js'
 
 const deps = { getUser, rpc, clients }
 
+/** 컨트랙트 주소가 다 채워졌는가 — 배포 전에는 워커만 먼저 올려 주소(URL)를 정할 수 있다 */
+const configured = (env) => Boolean(env.DISTRIBUTOR_ADDRESS && env.SNEAKERS_ADDRESS && env.VAULT_ADDRESS)
+
 function corsHeaders(request, env) {
   const origin = request.headers.get('origin') ?? ''
   const allowed = String(env.ALLOWED_ORIGINS ?? '')
@@ -120,6 +123,10 @@ export default {
         return metadataResponse(request, env, ctx, url, meta[1])
       }
 
+      if (request.method === 'POST' && !configured(env)) {
+        return json(request, env, { ok: false, error: '아직 준비 중입니다' }, 503)
+      }
+
       if (request.method === 'POST' && (await rateLimited(request, env))) {
         return json(request, env, { ok: false, error: '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요' }, 429)
       }
@@ -142,6 +149,11 @@ export default {
   },
 
   async scheduled(_event, env, ctx) {
+    // 컨트랙트 배포 전(주소가 비어 있을 때)에는 워커만 먼저 올려 둘 수 있게 아무것도 하지 않는다
+    if (!configured(env)) {
+      console.log('contracts not configured — skipping')
+      return
+    }
     const run = async () => {
       const events = await indexEvents(env, deps)
       const expiry = await expireOps(env, deps)

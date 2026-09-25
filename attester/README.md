@@ -27,9 +27,11 @@
 | `GUARDIAN_PRIVATE_KEY` | 긴급 정지 (재개 불가) | 세 컨트랙트의 `guardian` |
 | `ATTESTER_EMAIL` · `ATTESTER_PASSWORD` | Supabase 어테스터 전용 계정 | `economy_settings.attester_user_id` |
 
-키 만들기 — 주소만 화면에 나오고 개인키는 바로 Cloudflare 로 간다:
+키 만들기 — 주소만 화면에 나오고 개인키는 바로 Cloudflare 로 간다(윈도우 PowerShell 도 같다):
 
 ```bash
+git pull                 # main 최신 — new-key 가 없다고 나오면 이게 빠진 것
+npm install
 npx wrangler login
 npm run new-key -- ATTESTER_PRIVATE_KEY
 npm run new-key -- SNEAKER_SIGNER_KEY
@@ -37,13 +39,14 @@ npm run new-key -- RELAYER_PRIVATE_KEY     # 이 주소에 테스트 ETH 를 넣
 npm run new-key -- GUARDIAN_PRIVATE_KEY
 ```
 
-어테스터 계정: Supabase 대시보드 → Authentication 에서 사용자 하나를 만들고(긴 비밀번호),
-SQL Editor 에서
-`update public.economy_settings set value = to_jsonb('<그 사용자 id>'::text) where key = 'attester_user_id';`
+어테스터 계정: Supabase 대시보드 → Authentication 에서 이 용도로만 쓸 사용자 하나를 만들고(긴 비밀번호),
+그 id 를 `supabase/migrations/0027_attester_account.sql` 에 적는다(main 에 합치면 서버에 올라간다).
 그 다음 `npx wrangler secret put ATTESTER_EMAIL` · `npx wrangler secret put ATTESTER_PASSWORD`.
 
 ## 배포
 
+0. (처음 한 번) 컨트랙트보다 워커를 먼저 `npx wrangler deploy` — 주소(`https://stepup-attester.<계정>.workers.dev`)가
+   정해져야 컨트랙트의 `SNEAKER_BASE_URI` 를 넣을 수 있다. 주소가 비어 있는 동안 워커는 요청을 받지 않고(503) 1분 작업도 쉰다
 1. 컨트랙트 v2 배포 뒤 `wrangler.toml` 의 `DISTRIBUTOR_ADDRESS` · `SNEAKERS_ADDRESS` · `VAULT_ADDRESS` · `START_BLOCK` 을 채운다
 2. 위 키 · 계정을 넣는다
 3. `npx wrangler deploy`
