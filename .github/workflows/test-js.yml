@@ -59,3 +59,13 @@ jobs:
       - name: Test
         working-directory: ${{ matrix.dir }}
         run: npm test
+
+      # Cloudflare Pages 는 web/ 을 그대로 올린다(빌드 단계 없음). 올라간 번들이 지금
+      # 소스로 만든 것과 같은지 확인한다 — 소스만 고치고 번들을 안 만들면 고친 것이 안 나간다.
+      - name: Bundles match source
+        if: matrix.name == 'web'
+        working-directory: web
+        run: |
+          npm run build:wallet
+          npm run build:draw
+          git diff --exit-code -- assets/wallet.js assets/draw.js
