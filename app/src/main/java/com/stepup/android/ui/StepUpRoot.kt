@@ -354,7 +354,7 @@ internal fun MainScaffold(
         val setting = when (currentRoute) {
             Screen.Run.route -> homeSetting
             Screen.Customize.route -> wardrobeScene
-            Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.HomeDawn
+            Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.RunSunset
             Screen.Profile.route -> profileSetting
             Routes.RUN_ROUTE -> runSetting
             else -> null
@@ -386,7 +386,7 @@ internal fun MainScaffold(
         )
     } else if (currentRoute == Screen.Community.route) {
         com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
         )
     } else if (currentRoute == Screen.Profile.route) {
         com.stepup.android.ui.components.RunnerScene(
