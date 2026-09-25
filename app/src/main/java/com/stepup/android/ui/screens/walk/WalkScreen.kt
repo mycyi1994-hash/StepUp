@@ -1169,6 +1169,18 @@ private fun FinishCard(
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp,
                 )
+                // 로그인이 풀렸으면 올리기가 조용히 멈춘다 — 서버는 7일 지난 러닝을 받지 않으므로 여기서 알린다
+                val sync by com.stepup.android.core.ServiceLocator.economySync.state.collectAsStateWithLifecycle()
+                if (!nothingToUpload && sync == com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT) {
+                    Text(
+                        text = stringResource(R.string.finish_sign_in_needed),
+                        fontSize = 14.sp,
+                        color = Silver,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp,
+                    )
+                    com.stepup.android.ui.components.SignInAgainButton()
+                }
             }
             if (voided) {
                 Text(

@@ -1472,6 +1472,7 @@ StepUp と走り出そう。</string>
     <string name="finish_pending_short">サーバー確認中</string>
     <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
     <string name="finish_no_steps">歩数が記録されず、今回のランは付与なし</string>
+    <string name="finish_sign_in_needed">ログインが切れているため、このランをまだサーバーに送れていません。7日以内に再ログインすると送信されます。</string>
     <string name="run_storage_blocked">端末に残ったラン記録を読み込めないため、新しいランを開始できませんでした。アプリを開き直してお試しください。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->

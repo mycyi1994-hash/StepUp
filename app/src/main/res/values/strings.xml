@@ -1473,6 +1473,7 @@ Start running with StepUp.</string>
     <string name="finish_pending_short">Awaiting server check</string>
     <string name="finish_no_reward">Checked by server · no reward for this run</string>
     <string name="finish_no_steps">No steps counted · no reward for this run</string>
+    <string name="finish_sign_in_needed">You are signed out, so this run can’t be sent to the server yet. Sign in again within 7 days to keep it.</string>
     <string name="run_storage_blocked">Can’t start a run: saved run data on this phone could not be read. Restart the app and try again.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->

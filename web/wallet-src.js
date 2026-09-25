@@ -220,7 +220,10 @@ async function renderWallet(userId) {
 
   if (!wallet?.address) {
     sections.push(card('지갑 연결',
-      el('p', {}, '지갑을 연결하면 보너스 뽑기 10회(첫 번째는 Genesis 확정)를 드립니다. 한 지갑은 한 계정에만 연결됩니다.'),
+      // 어느 계정에 연결되는지 서명 전에 보여 준다 — 남이 보낸 링크로 열렸으면 여기서 알아채야 한다
+      // (한 번 연결한 지갑은 그 계정에 묶인다)
+      el('p', {}, `연결할 STEPUP 계정: ${me?.email || '(이메일 없음)'}`),
+      el('p', {}, '지갑을 연결하면 보너스 뽑기 10회(첫 번째는 Genesis 확정)를 드립니다. 한 지갑은 한 계정에만 연결됩니다. 내 계정이 아니면 연결하지 마세요.'),
       el('button', {
         class: 'primary',
         onclick: (e) => guard(e.target, async () => {

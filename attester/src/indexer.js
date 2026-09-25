@@ -87,9 +87,13 @@ async function alarm(env, deps, source, ev, result) {
  */
 const EVENTS_PER_RUN = 20
 
-/** 커서 위치 = 블록 × 100000 + 로그 번호. "다음에 넘길 이벤트"를 가리킨다. 늘기만 한다. */
+/**
+ * 커서 위치 = 블록 × 100000 + 로그 번호. "다음에 넘길 이벤트"를 가리킨다. 늘기만 한다.
+ * 이름에 체인 번호와 컨트랙트 주소를 넣는다 — 다시 배포하거나 메인넷으로 옮기면 새 컨트랙트는 새 커서로
+ * START_BLOCK 부터 읽는다(예전 커서가 이기면 새 체인의 이벤트를 건너뛰거나 영영 못 읽었다).
+ */
 const LOG_SLOTS = 100000n
-const posName = (source) => `${source}@pos`
+const posName = (source, env, address) => `${source}@${env.CHAIN_ID ?? ''}:${String(address).toLowerCase()}`
 const posOf = (block, logIndex) => block * LOG_SLOTS + BigInt(logIndex)
 
 export async function indexEvents(env, deps) {
@@ -115,14 +119,9 @@ export async function indexEvents(env, deps) {
     let start = null // 이번 실행을 시작한 위치
     let next = null // 다음에 넘길 이벤트의 위치
     try {
-      const saved = await deps.rpc(env, 'attester_cursor_get', { p_name: posName(source) })
-      if (saved != null) {
-        start = BigInt(saved)
-      } else {
-        // 예전 커서(마지막으로 끝낸 블록)에서 이어 간다
-        const cursor = await deps.rpc(env, 'attester_cursor_get', { p_name: source })
-        start = posOf(cursor == null ? BigInt(env.START_BLOCK ?? '0') : BigInt(cursor) + 1n, 0)
-      }
+      const saved = await deps.rpc(env, 'attester_cursor_get', { p_name: posName(source, env, address) })
+      // 처음이면 배포 블록부터 — 이미 받은 이벤트는 서버가 (거래, 로그 번호)로 걸러 한 번만 처리한다
+      start = saved != null ? BigInt(saved) : posOf(BigInt(env.START_BLOCK ?? '0'), 0)
       const from = start / LOG_SLOTS
       if (from > safe) continue
       const to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
@@ -160,14 +159,14 @@ export async function indexEvents(env, deps) {
         if (result === 'UNKNOWN_OP' || result === 'MISMATCH') await alarm(env, deps, source, ev, result)
       }
       const end = stopped ? next : posOf(to + 1n, 0)
-      await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source), p_block: Number(end) })
+      await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source, env, address), p_block: Number(end) })
       report[source] = { from: Number(from), to: Number(stopped ? next / LOG_SLOTS : to), events: handled }
     } catch (e) {
       console.error(`index ${source} failed`, e?.message)
       // 앞의 이벤트는 넘겼다 — 실패한 이벤트 앞까지는 커서를 옮겨, 다음 실행이 같은 이벤트를 다시
       // 보내며 요청 수를 다 써 버리지 않게 한다(서버는 같은 이벤트를 한 번만 처리한다)
       if (next != null && start != null && next > start) {
-        await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source), p_block: Number(next) }).catch(() => {})
+        await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source, env, address), p_block: Number(next) }).catch(() => {})
       }
       report[source] = { error: true }
     }

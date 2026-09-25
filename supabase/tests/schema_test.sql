@@ -2944,6 +2944,8 @@ begin
   v_op := public.sneaker_withdraw_request(v_shoe);
   perform pg_temp.ok((select chain_state from public.my_sneakers() where id = v_shoe) = 'WITHDRAWING',
     '꺼내는 중 상태가 된다');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where equipped) = 1,
+    '신발을 꺼내도 신은 신발이 남는다(첫 신발로 갈아 신긴다)');
   insert into fix (k, v) values ('op_shoe', v_op::text);
 end $$;
 call pg_temp.must_fail(format($q$ select public.sneaker_equip(%s) $q$, pg_temp.fx('paid_shoe')),
@@ -3349,6 +3351,12 @@ begin
   perform pg_temp.ok(
     (select backed_steps = 0 and gps_credit_m = 0 and verdict = 'FLAGGED' from public.walk_sessions where id = r.session_id),
     '무효가 잦아 보류된 러닝은 목표 · 도전 · 코스 · 잠금 거리에 세지 않는다');
+  -- 걸음 0 인 경로 러닝도 보류 중에는 거리를 받지 않는다
+  select * into r from public.record_session(v_start + interval '1 hour', v_start + interval '1 hour 600 seconds', 0, 600,
+    pg_temp.track(v_start + interval '1 hour', 600, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(
+    (select gps_credit_m = 0 and distance_meters = 0 from public.walk_sessions where id = r.session_id),
+    '걸음 없는 경로 러닝은 보류 중에 거리를 받지 않는다');
 end $$;
 reset role;
 

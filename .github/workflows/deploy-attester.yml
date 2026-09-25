@@ -79,13 +79,19 @@ jobs:
         if: steps.keys.outputs.ready == 'yes'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npx wrangler deploy
+        # 커밋을 워커 변수로 넣어 /health 에서 새 코드가 떴는지 확인한다(비밀이 아니다)
+        run: npx wrangler deploy --var "COMMIT_SHA:${GITHUB_SHA}"
 
       # 새 코드가 떴는지 — /health 가 응답하고 긴급 정지 키가 있는지
       - name: 확인
         if: steps.keys.outputs.ready == 'yes'
         run: |
-          sleep 5
-          body=$(curl -fsS https://stepup-attester.gana003.workers.dev/health)
+          # 새 버전이 퍼지는 데 잠깐 걸린다 — 몇 번 다시 본다
+          for i in 1 2 3 4 5 6; do
+            sleep 10
+            body=$(curl -fsS https://stepup-attester.gana003.workers.dev/health || true)
+            echo "$body" | grep -q "\"commit\":\"${GITHUB_SHA}\"" && break
+          done
           echo "$body"
-          echo "$body" | grep -q '"canPause":true' || { echo "::error::긴급 정지 키(GUARDIAN_PRIVATE_KEY)가 없거나 새 버전이 아닙니다"; exit 1; }
+          echo "$body" | grep -q "\"commit\":\"${GITHUB_SHA}\"" || { echo "::error::새 버전(${GITHUB_SHA})이 아직 뜨지 않았습니다"; exit 1; }
+          echo "$body" | grep -q '"canPause":true' || { echo "::error::긴급 정지 키(GUARDIAN_PRIVATE_KEY)가 없습니다"; exit 1; }

@@ -303,7 +303,8 @@ begin
   end if;
 
   -- ── 무효가 잦으면 보류 ──
-  if v_rewardable > 0 then
+  -- 적립할 걸음이 없는 러닝도 본다 — 걸음 0 인 경로 러닝이 보류 중에도 잠금 거리 · 꺼내기 조건 거리를 받았다
+  if v_verdict <> 'VOID' then
     select count(*) into v_recent_void from public.walk_sessions s
      where s.user_id = v_user and s.verdict = 'VOID'
        and s.started_at > now() - interval '7 days';
@@ -317,7 +318,19 @@ begin
 
   -- ── 신발 · 에너지 ──
   select * into v_shoe from economy.equipped_sneaker(v_user);
-  if found then
+  if not found then
+    -- 신은 신발이 없으면(꺼내기로 벗었다) 첫 신발을 신긴다. 신발 없이 달리면 내구도 100 · 닳지 않음으로
+    -- 쳐서, 닳은 신발을 신고 수리비를 내는 것보다 나았다. 첫 신발을 아직 안 받은 계정(앱은 로그인하자마자
+    -- 받는다)은 예전처럼 신발 없이 계산한다 — 앱이 받기 전에 러닝이 먼저 올라가도 적립을 잃지 않게.
+    update public.market_sneakers set equipped = true, updated_at = now()
+     where id = (select m.id from public.market_sneakers m
+                  where m.owner_id = v_user and m.origin = 'STARTER'
+                    and m.chain_state = 'APP' and m.status = 'OWNED'
+                  limit 1)
+       and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is not null then
     select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
       from economy.sneaker_effective(v_shoe.origin, v_shoe.rarity, v_shoe.level,
              v_shoe.efficiency_bps, v_shoe.comfort_bps, v_shoe.durability_pts) e;
@@ -398,7 +411,9 @@ begin
   end if;
 
   v_distance_m := case
-    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3 + 100)
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
     else v_step_m
   end;
   if v_verdict = 'VOID' then v_distance_m := 0; end if;
@@ -556,7 +571,10 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
 
-  if p_event = 'step_surge' then
+  if p_event = 'daily_goal' then
+    -- 오늘의 도전(하루 목표) — 목표 보너스(goal_claim)가 세는 것과 같은 걸음(서버가 확인한 러닝 걸음)
+    return economy.verified_steps_on(v_user, v_today);
+  elsif p_event = 'step_surge' then
     -- 예전에는 폰이 올린 하루 걸음(daily_steps)을 더했다. 그 값은 폰이 마음대로
     -- 적을 수 있어 250 SUP 가 거저 나갔다. 경로가 받쳐 준 러닝 걸음만, 하루 상한까지 센다.
     -- 받는 단위(이번 ISO 주)와 같은 기간만 센다 — 최근 7일로 세면 지난주 걸음으로 이번 주를 또 받는다.

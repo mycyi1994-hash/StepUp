@@ -16,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 /** 걸음 수 추적, 일별 기록 저장, 목표 달성 판정을 담당한다. */
@@ -27,6 +28,8 @@ class StepRepository(
     private val rewardRepository: RewardRepository,
     /** 목표를 서버에도 적는다(목표 보너스를 서버가 이 값으로 판정). 서버가 없으면 null. */
     private val pushGoal: (suspend (Int) -> Unit)? = null,
+    /** 지금 계정의 기록 주인 — 화면에 보일 러닝을 그 계정 것(+ 옛 기록)으로 좁힌다 */
+    private val owner: Flow<String> = kotlinx.coroutines.flow.flowOf(com.stepup.android.domain.RecordingOwner.LEGACY),
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -39,18 +42,27 @@ class StepRepository(
 
     val stepSensorAvailable: Boolean get() = tracker.isAvailable
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun recentSessions(limit: Int = 20): Flow<List<WalkSessionEntity>> =
-        walkSessionDao.observeRecent(limit)
+        owner.flatMapLatest { walkSessionDao.observeRecentFor(it, limit) }
 
-    fun observeRunTotals(): Flow<com.stepup.android.data.local.RunTotals> = walkSessionDao.observeRunTotals()
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeRunTotals(): Flow<com.stepup.android.data.local.RunTotals> =
+        owner.flatMapLatest { walkSessionDao.observeRunTotalsFor(it) }
 
     fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>> = walkSessionDao.observeVerifiedSessions()
 
     /** 세션 누적 운동 시간(초) — 프로필 '총 운동 시간' 표기용 */
-    fun observeTotalDurationSec(): Flow<Long> = walkSessionDao.observeDurationSince(0L)
+    fun observeTotalDurationSec(): Flow<Long> = observeDurationSince(0L)
 
     /** [fromMillis] 이후에 시작한 러닝 세션의 운동 시간 합(초) */
-    fun observeDurationSince(fromMillis: Long): Flow<Long> = walkSessionDao.observeDurationSince(fromMillis)
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeDurationSince(fromMillis: Long): Flow<Long> =
+        owner.flatMapLatest { walkSessionDao.observeDurationSinceFor(it, fromMillis) }
+
+    /** 지금 계정의 러닝 수 */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeSessionCount(): Flow<Int> = owner.flatMapLatest { walkSessionDao.observeSessionCountFor(it) }
 
     /** ACTIVITY_RECOGNITION 권한 허용 후 호출. 중복 호출해도 안전하다. */
     fun startTracking() {

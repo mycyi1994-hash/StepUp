@@ -50,6 +50,21 @@ interface WalkSessionDao {
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis")
     fun observeDurationSince(fromMillis: Long): Flow<Long>
 
+    // ── 화면용: 지금 계정의 러닝만(+ 계정을 나누기 전의 옛 기록) ──
+    // 다른 계정으로 다시 로그인하면 앞 계정의 러닝 · GPS 경로 · 누적 기록이 보이지 않게.
+
+    @Query("SELECT * FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') ORDER BY startedAt DESC LIMIT :limit")
+    fun observeRecentFor(owner: String, limit: Int): Flow<List<WalkSessionEntity>>
+
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
+    fun observeSessionCountFor(owner: String): Flow<Int>
+
+    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
+    fun observeRunTotalsFor(owner: String): Flow<RunTotals>
+
+    @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis AND recordingOwner IN (:owner, 'legacy')")
+    fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long>
+
     /**
      * 아직 서버에 올리지 못한 세션을 오래된 것부터 준다.
      *

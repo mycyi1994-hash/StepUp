@@ -226,7 +226,7 @@ test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', as
     }),
     rpc: async (_env, fn, args) => {
       calls.push([fn, args])
-      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 899
+      if (fn === 'attester_cursor_get') return args.p_name.includes('@') ? null : 899
       if (fn === 'attester_chain_event') return 'UNKNOWN_OP'
       return null
     },
@@ -320,7 +320,7 @@ test('이벤트: 한 번에 넘기는 수를 넘으면 넘긴 이벤트 바로 �
       },
     }),
     rpc: async (_env, fn, args) => {
-      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 100
+      if (fn === 'attester_cursor_get') return args.p_name.includes('@') ? null : 100
       if (fn === 'attester_cursor_set') cursors.push([args.p_name, args.p_block])
       if (fn === 'attester_chain_event') { sent += 1; return 'OK' }
       return null
@@ -329,7 +329,7 @@ test('이벤트: 한 번에 넘기는 수를 넘으면 넘긴 이벤트 바로 �
   await indexEvents({ INDEX_EVENTS_PER_RUN: '25' }, deps)
   assert.equal(sent, 25)
   // 26번째 이벤트(블록 126, 로그 0)부터 다음 실행에
-  assert.deepEqual(cursors, [['distributor@pos', 126 * 100000]])
+  assert.deepEqual(cursors, [['distributor@:0x' + '1'.repeat(40), 126 * 100000]])
 })
 
 test('이벤트: 한 블록에 이벤트가 몰려 있어도 블록 안에서 이어 간다', async () => {
@@ -348,7 +348,7 @@ test('이벤트: 한 블록에 이벤트가 몰려 있어도 블록 안에서 �
       },
     }),
     rpc: async (_env, fn, args) => {
-      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? pos : 299
+      if (fn === 'attester_cursor_get') return args.p_name.includes('@') ? pos : 299
       if (fn === 'attester_cursor_set') pos = args.p_block
       if (fn === 'attester_chain_event') { seen.push(args.p_tx); return 'OK' }
       return null
@@ -376,7 +376,7 @@ test('이벤트: 중간에 실패하면 실패한 이벤트 앞까지는 커서�
       },
     }),
     rpc: async (_env, fn, args) => {
-      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 200
+      if (fn === 'attester_cursor_get') return args.p_name.includes('@') ? null : 200
       if (fn === 'attester_cursor_set') cursors.push(args.p_block)
       if (fn === 'attester_chain_event' && args.p_tx === '0xt2') throw new Error('too many subrequests')
       return 'OK'

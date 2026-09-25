@@ -135,6 +135,8 @@ class EconomySync(
     /** 계정을 지웠을 때 — 그 계정의 사본(신발 · 원장 · 부스터 · 에너지 · 뽑기 횟수)을 폰에서 지운다 */
     suspend fun clearLocal() = lock.withLock {
         clearCopy()
+        // 알림에도 그 계정의 적립 · 구매 금액이 남는다 — 다음에 로그인하는 계정에 보이지 않게
+        db.notificationDao().clear()
         prefs.setEconomyOwner(null)
         _state.value = EconomySyncState.SIGNED_OUT
     }

@@ -117,6 +117,8 @@ export default {
           ok: true,
           service: 'stepup-attester',
           version: 2,
+          // 배포한 커밋 — 자동 배포가 새 코드가 떴는지 이것으로 확인한다
+          commit: env.COMMIT_SHA || null,
           chainId: c.chain.id,
           attester: c.attester.address,
           sneakerSigner: c.sneakerSigner.address,
