@@ -615,6 +615,10 @@ reset role;
 
 -- 남의 잔고도 봐야 한다 (원장은 제 것만 보이게 막혀 있다).
 -- 검사 안에서만 쓰는 뒷문이고, Supabase 에는 올라가지 않는다.
+-- 신발의 주인 — 앱 권한으로는 주인 칸을 못 읽으므로(0031) 검사용으로 관리자 권한에서 읽는다
+create or replace function pg_temp.owner_of(p_id bigint) returns uuid
+language sql stable security definer as $$ select owner_id from public.market_sneakers where id = p_id $$;
+
 create or replace function pg_temp.bal(p_user uuid) returns numeric
 language sql security definer as $$
   select coalesce(sum(amount), 0)::numeric(20,4) from public.sup_ledger where user_id = p_user
@@ -729,8 +733,8 @@ begin
   v_trade := public.market_buy_now(pg_temp.fx('listing1')::bigint);
   perform pg_temp.ok(v_trade is not null, '매물을 산다');
   perform pg_temp.ok(
-    (select owner_id from public.market_sneakers where id = v_sn) = v_buyer,
-    '신발의 주인이 바뀐다');
+    exists (select 1 from public.my_sneakers() where id = v_sn),
+    '신발의 주인이 바뀐다 (산 사람의 내 신발에 들어온다)');
   perform pg_temp.ok(
     (select status from public.market_sneakers where id = v_sn) = 'OWNED',
     '팔린 신발은 판매 중에서 풀린다');
@@ -800,7 +804,7 @@ declare
 begin
   perform public.market_sell_now(v_sn, pg_temp.fx('bid1')::bigint);
   perform pg_temp.ok(
-    (select owner_id from public.market_sneakers where id = v_sn) = v_buyer,
+    pg_temp.owner_of(v_sn) = v_buyer,
     '즉시 판매로 주인이 바뀐다');
   -- 300 - 2.5% = 292.5
   perform pg_temp.ok(pg_temp.bal(v_seller) = v_before_seller + 292.5,
@@ -854,7 +858,7 @@ begin
   perform pg_temp.ok(pg_temp.bal(v_me) = v_before + 390,
     '체결가는 먼저 걸려 있던 입찰의 값이다 (400 - 수수료 10)');
   perform pg_temp.ok(
-    (select owner_id from public.market_sneakers where id = v_sn)
+    pg_temp.owner_of(v_sn)
       = '33333333-3333-3333-3333-333333333333',
     '교차 체결로도 주인이 바뀐다');
   perform pg_temp.ok(
@@ -885,7 +889,7 @@ begin
   perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 700,
     '부른 값(900)이 아니라 매물 값(700)을 낸다');
   perform pg_temp.ok(
-    (select owner_id from public.market_sneakers where id = pg_temp.fx('sn_wind')::bigint) = v_me,
+    pg_temp.owner_of(pg_temp.fx('sn_wind')::bigint) = v_me,
     '교차 체결로 신발을 받는다');
 end $$;
 
@@ -1839,12 +1843,19 @@ set role authenticated;
 
 do $$
 begin
-  perform pg_temp.ok(
-    public.event_progress('step_surge', 'Asia/Seoul') = 80000,
-    '주간 도전은 서버가 확인한 러닝 걸음으로 센다');
-  perform pg_temp.ok(
-    public.event_claim('step_surge', 'Asia/Seoul') = 250,
-    '목표를 채우면 주간 도전 보상이 나온다');
+  -- 주간 도전은 이번 ISO 주(한국 시각)만 센다. 한국 시각 월요일이면 어제(일요일)는 지난주다.
+  if extract(isodow from (now() at time zone 'Asia/Seoul')::date) = 1 then
+    perform pg_temp.ok(
+      public.event_progress('step_surge', 'Asia/Seoul') = 40000,
+      '주간 도전은 이번 주 걸음만 센다 (월요일 — 어제는 지난주)');
+  else
+    perform pg_temp.ok(
+      public.event_progress('step_surge', 'Asia/Seoul') = 80000,
+      '주간 도전은 서버가 확인한 러닝 걸음으로 센다');
+    perform pg_temp.ok(
+      public.event_claim('step_surge', 'Asia/Seoul') = 250,
+      '목표를 채우면 주간 도전 보상이 나온다');
+  end if;
 end $$;
 
 call pg_temp.must_fail(
@@ -2662,6 +2673,17 @@ call pg_temp.must_fail(format($q$ select public.sneaker_repair(%s) $q$, pg_temp.
 
 -- 목표 보너스는 서버가 확인한 걸음으로, 하루 한 번
 update public.profiles set daily_goal = 1000 where id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
+-- 위 러닝(3시간 전)은 한국 시각 00~03시에 돌면 어제로 잡힌다. 그때만 오늘 러닝 하나를 더 둔다 —
+-- 검사가 도는 시각에 따라 결과가 달라지지 않게 (다른 시각에는 아무것도 바꾸지 않는다).
+reset role;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
+                                  backed_steps, gps_backed, rewarded_steps, verdict)
+select 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
+       economy.game_day_start(economy.game_day(now())) + interval '3 seconds',
+       economy.game_day_start(economy.game_day(now())) + interval '4 seconds', 1, 1000, 1000, 1000, true, 0, 'CLEAN'
+ where economy.verified_steps_on('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', economy.game_day(now())) < 1000;
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 do $$
 begin
   perform pg_temp.ok(public.goal_claim() = 2.5, '목표 1,000보 달성 보너스 2.5 SUP');
@@ -3217,7 +3239,7 @@ call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$
   '주인 없는 신발을 지갑으로 꺼낼 수 없다');
 select set_config('request.jwt.claims', '', false);
 call pg_temp.must_fail($q$ select public.market_list(
-    (select id from public.market_sneakers where owner_id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3' limit 1), 'NaN') $q$,
+    (select id from public.my_sneakers() limit 1), 'NaN') $q$,
   'NaN 값으로 매물을 걸 수 없다');
 reset role;
 call pg_temp.must_fail(
@@ -3250,6 +3272,17 @@ do $$ begin
 end $$;
 set role anon;
 call pg_temp.must_fail($q$ select public.profile_set_daily_goal(5000) $q$, '로그인 없이는 못 바꾼다');
+reset role;
+
+-- 0031 — 신발 표의 주인 칸은 아무도 직접 읽지 못한다 (계정 ↔ 지갑 연결이 드러나지 않게)
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+call pg_temp.must_fail($q$ select owner_id from public.market_sneakers limit 1 $q$, '신발 표의 주인 칸은 읽을 수 없다');
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.market_quotes) >= 0, '호가 뷰는 그대로 읽힌다');
+  perform pg_temp.ok((select count(*) from public.market_asks) >= 0, '매물 뷰는 그대로 읽힌다');
+  perform pg_temp.ok((select count(*) from public.my_sneakers()) >= 0, '내 신발은 그대로 읽힌다');
+end $$;
 reset role;
 
 \echo ''

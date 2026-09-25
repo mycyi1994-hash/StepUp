@@ -523,8 +523,11 @@ class WalkSessionService : Service() {
                     startedAt = session.startedAt,
                     recordingOwner = session.recordingOwner,
                     endedAt = System.currentTimeMillis(),
-                    steps = creditedSteps,
-                    durationSec = if (verdict.isRewardable) session.elapsedSec else 0,
+                    // 폰이 무효로 본 러닝도 실제 걸음 · 시간으로 적어 서버에 올린다. 서버가 다시 판정하고,
+                    // 가짜 위치 러닝은 "최근 무효가 잦으면 적립 보류" 에 세어진다(예전엔 걸음 0 이라 올라가지 않았다).
+                    // 적립은 아래 정산이 creditedSteps(무효면 0)로만 계산하므로 달라지지 않는다.
+                    steps = session.steps,
+                    durationSec = session.elapsedSec,
                     distanceMeters = RewardEconomy.distanceMeters(creditedSteps),
                     calories = RewardEconomy.calories(creditedSteps),
                     pointsEarned = 0.0, // Replaced by the committed settlement calculation.

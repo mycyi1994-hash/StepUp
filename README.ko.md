@@ -234,20 +234,22 @@ APK를 다시 빌드해 [`apk-dist`](../../tree/apk-dist) 브랜치에 강제 �
 
 ## ⛓️ 컨트랙트
 
-Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat · **테스트 43개 통과** ·
-2026-07-31 **GIWA Sepolia (91342) 배포 완료**
+Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat · 2026-09-25 **v2 GIWA Sepolia (91342) 배포**,
+Blockscout 소스 검증 완료.
 
-| 배포된 컨트랙트 | 주소 |
+| 배포된 컨트랙트 (v2) | 주소 |
 |---|---|
-| `SUPToken` | [`0xb052A8f6…9006c1B`](https://sepolia-explorer.giwa.io/address/0xb052A8f6A5034747902b6d6787bbfF31A9006c1B) |
-| `SneakerNFT` | [`0x8174f905…BabEFc960`](https://sepolia-explorer.giwa.io/address/0x8174f905d86438ac8922c85d3A48604BabEFc960) |
-| `RewardDistributor` | [`0x9f9E87bD…aCFE36E1`](https://sepolia-explorer.giwa.io/address/0x9f9E87bD825144A8315d30979E3004FbaCFE36E1) |
-| `CourseRegistry` | [`0x6c815DF0…C588542`](https://sepolia-explorer.giwa.io/address/0x6c815DF0d8a5CA7CA0487D1AC2f96c0fEC588542) |
+| `SUPToken` | [`0x55B48827…38Dbb1F6`](https://sepolia-explorer.giwa.io/address/0x55B4882797a365FEAa29F3267437b17F38Dbb1F6) |
+| `RewardDistributor` | [`0x3b99358c…69ac3FE0`](https://sepolia-explorer.giwa.io/address/0x3b99358cE05Ee74e6EaD5c5C799B462f69ac3FE0) |
+| `StepUpSneakers` | [`0x3Da82CF9…c6080019`](https://sepolia-explorer.giwa.io/address/0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019) |
+| `SupVault` | [`0x76fDAc77…3FBBbd5c`](https://sepolia-explorer.giwa.io/address/0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c) |
+| `CourseRegistry` | [`0xd0FC89bA…582fF3Ab`](https://sepolia-explorer.giwa.io/address/0xd0FC89bA5067b75670D9672f6AF66853582fF3Ab) |
 
-리워드 풀에 5천만 SUP(전체 공급의 5%)가 들어가 있습니다. 전체 기록은
-[`contracts/deployments/giwaSepolia.json`](contracts/deployments/giwaSepolia.json).
-**앱은 아직 로컬에서 정산합니다.** 클라이언트를 이 컨트랙트에 붙이는 것이 다음
-단계이고, 끝나기 전까지 이 README는 그 사실을 그대로 적어 둡니다.
+리워드 풀에 5천만 SUP 가 들어가 있습니다. 전체 기록은
+[`contracts/deployments/giwaSepolia-v2.json`](contracts/deployments/giwaSepolia-v2.json).
+SUP 와 신발의 정본은 서버이고, 어테스터 워커는 서버가 예약한 작업(SUP 꺼내기 · 신발 꺼내기 · 보너스 발행)만
+서명하며 넣기를 서버에 다시 반영합니다. v1 컨트랙트(2026-07-31,
+[`giwaSepolia.json`](contracts/deployments/giwaSepolia.json))는 키로 관리할 수 없어 은퇴했고 기록으로만 남깁니다.
 
 | 컨트랙트 | 표준 | 보장하는 것 |
 |---|---|---|

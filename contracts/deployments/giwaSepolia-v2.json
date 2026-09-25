@@ -1,0 +1,60 @@
+{
+  "_note": "v2 — 역할 분리 배포. 배포 키가 남긴 파일이 저장소에 없어, 체인 · 익스플로러에서 읽은 값으로 다시 적었다 (2026-09-25). 소유권은 관리자 지갑이 acceptOwnership 4번으로 받았다.",
+  "network": "giwaSepolia",
+  "chainId": 91342,
+  "deployedAt": "2026-09-25T08:28:52.000Z",
+  "deployBlock": 36979816,
+  "deployer": "0xA7ae9ff4353900a80D960eB5474C5e45aCe2012a",
+  "roles": {
+    "owner": "0xe773BDc4A42c81291045b11592086C518f96CBBa",
+    "treasury": "0x51145996b49f00a65a7FA8368Cb64B16D46101e6",
+    "attester": "0xA83643365d66967810a50370B44c697838D6DBA9",
+    "sneakerSigner": "0x50F687496DC7F2E00CB6e3400DDaE4443a1b7274",
+    "guardian": "0xF573532513dd2aB201ef1Cdfe65F04AdB48c318C",
+    "recorder": "0x307FD2D78cDD62eaAA61FbC3fB5FF3677F868DC8",
+    "relayer": "0x307FD2D78cDD62eaAA61FbC3fB5FF3677F868DC8"
+  },
+  "baseURI": "https://stepup-attester.gana003.workers.dev/v2/meta/",
+  "limits": {
+    "dailyCap": "50000.0",
+    "maxClaim": "1000.0",
+    "maxMintsPerDay": 2500,
+    "maxReleasesPerDay": 500,
+    "maxGenesisNo": 100000
+  },
+  "rewardPoolFunded": "50000000.0",
+  "contracts": {
+    "SUPToken": {
+      "address": "0x55B4882797a365FEAa29F3267437b17F38Dbb1F6",
+      "args": ["0x51145996b49f00a65a7FA8368Cb64B16D46101e6"]
+    },
+    "RewardDistributor": {
+      "address": "0x3b99358cE05Ee74e6EaD5c5C799B462f69ac3FE0",
+      "args": ["0x55B4882797a365FEAa29F3267437b17F38Dbb1F6", "0xA83643365d66967810a50370B44c697838D6DBA9"]
+    },
+    "StepUpSneakers": {
+      "address": "0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019",
+      "args": [
+        "0x50F687496DC7F2E00CB6e3400DDaE4443a1b7274",
+        "0xF573532513dd2aB201ef1Cdfe65F04AdB48c318C",
+        "0x51145996b49f00a65a7FA8368Cb64B16D46101e6",
+        "2500",
+        "500",
+        100000,
+        "https://stepup-attester.gana003.workers.dev/v2/meta/"
+      ]
+    },
+    "SupVault": {
+      "address": "0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c",
+      "args": [
+        "0x55B4882797a365FEAa29F3267437b17F38Dbb1F6",
+        "0x3b99358cE05Ee74e6EaD5c5C799B462f69ac3FE0",
+        "0xF573532513dd2aB201ef1Cdfe65F04AdB48c318C"
+      ]
+    },
+    "CourseRegistry": {
+      "address": "0xd0FC89bA5067b75670D9672f6AF66853582fF3Ab",
+      "args": ["0x307FD2D78cDD62eaAA61FbC3fB5FF3677F868DC8"]
+    }
+  }
+}
