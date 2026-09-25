@@ -7,7 +7,7 @@ on:
       scope:
         description: Capture wardrobe checkpoint or the full regression gallery
         type: choice
-        options: [wardrobe, mystery, gallery, all]
+        options: [wardrobe, mystery, gallery, interaction, all]
         default: wardrobe
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         api-level: [34, 35]
-        suite: ${{ fromJSON(github.event.inputs.scope == 'all' && '["interaction", "gallery", "large-font", "permissions"]' || github.event.inputs.scope == 'gallery' && '["gallery"]' || github.event.inputs.scope == 'mystery' && '["mystery"]' || '["wardrobe"]') }}
+        suite: ${{ fromJSON(github.event.inputs.scope == 'all' && '["interaction", "gallery", "large-font", "permissions"]' || github.event.inputs.scope == 'interaction' && '["interaction"]' || github.event.inputs.scope == 'gallery' && '["gallery"]' || github.event.inputs.scope == 'mystery' && '["mystery"]' || '["wardrobe"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
