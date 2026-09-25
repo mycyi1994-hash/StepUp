@@ -186,7 +186,8 @@ class DesignReferenceTest {
                     capture("$name-meetup-fields")
                 }
                 if (s == Scene.FLASH_DETAIL) {
-                    compose.onNodeWithText(korean(R.string.flash_enter_chat)).performScrollTo().assertIsDisplayed()
+                    compose.onNode(hasScrollAction()).performScrollToNode(hasText(korean(R.string.flash_enter_chat)))
+                    compose.onNodeWithText(korean(R.string.flash_enter_chat)).assertIsDisplayed()
                     compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
                     capture("$name-chat")
                 }
