@@ -89,12 +89,23 @@ fun CustomizeScreen(
                     GlowCard(Modifier.testTag("shoe-preview").guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW), spacing = 8.dp) {
                         Text(stringResource(if (selected.equipped) R.string.items_equipped else R.string.shoes_preview),
                             style = MaterialTheme.typography.labelLarge, color = VoltText)
-                        SneakerFrame(selected, Modifier.fillMaxWidth().height(190.dp))
+                        val details: @Composable () -> Unit = {
                         Text(selected.variantLabel(), style = MaterialTheme.typography.headlineSmall, color = Snow)
                         Text(selected.rarity.label() + " · " + stringResource(R.string.level_chip, selected.level),
                             style = MaterialTheme.typography.bodyMedium, color = Silver)
                         TextButton(onClick = { onOpenSneaker(selected.id) }, modifier = Modifier.testTag("shoe-detail")) {
                             Text(stringResource(R.string.shoes_details))
+                        }
+                        }
+                        if (columns == 1) {
+                            SneakerFrame(selected, Modifier.fillMaxWidth().height(140.dp))
+                            details()
+                        } else {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SneakerFrame(selected, Modifier.weight(1f).height(124.dp))
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) { details() }
+                            }
                         }
                     }
                 }

@@ -128,7 +128,8 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.home_record_title), style = MaterialTheme.typography.titleLarge,
                     color = Silver, modifier = Modifier.weight(1f))
@@ -138,16 +139,21 @@ fun HomeScreen(
                     modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
                 )
             }
-            AdaptiveNumber(if (state.loaded) "%,d".format(state.todaySteps) else "—", 64.sp)
-            Text(stringResource(R.string.stat_steps), color = Silver)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.weight(1f, fill = false)) {
+                    AdaptiveNumber(if (state.loaded) "%,d".format(state.todaySteps) else "—", 56.sp)
+                }
+                Text(stringResource(R.string.stat_steps), color = Silver)
+            }
             BarMeter(fraction = if (state.loaded && state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 9.dp)
             Text(stringResource(R.string.home_daily_goal, "%,d".format(state.goal)), color = Silver)
-            Box(Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(16.dp))) {
+            }
+            Box(Modifier.fillMaxWidth().height(if (largeText) 190.dp else 132.dp).clip(RoundedCornerShape(16.dp))) {
                 com.stepup.android.ui.components.RunnerBanner(Modifier.fillMaxSize(), backgroundSetting)
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
                     listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f)))))
                 Text(stringResource(R.string.home_banner_message), color = androidx.compose.ui.graphics.Color.White,
-                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp, vertical = 16.dp))
                 com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronLeft,
                     stringResource(R.string.home_previous_background), onClick = onPreviousBackground,
@@ -364,15 +370,16 @@ private fun RecordWeek(week: List<com.stepup.android.data.local.DailyStepsEntity
     val values = days.map { if (it == today) todaySteps else recorded[it.toEpochDay()]?.steps ?: 0 }
     val maximum = (values.maxOrNull() ?: 0).coerceAtLeast(1)
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     Text(stringResource(R.string.home_recent_week), style = MaterialTheme.typography.titleMedium, color = Snow)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         days.forEachIndexed { index, day ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 AdaptiveNumber(if (loaded) "%,d".format(values[index]) else "—", 12.sp,
                     color = if (day == today) VoltText else Silver, textAlign = TextAlign.Center)
-                Box(Modifier.fillMaxWidth().height(88.dp), contentAlignment = Alignment.BottomCenter) {
+                Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.BottomCenter) {
                     Box(Modifier.fillMaxWidth(0.72f)
-                        .height(if (loaded) (80f * values[index].toFloat() / maximum).coerceAtLeast(2f).dp else 2.dp)
+                        .height(if (loaded) (40f * values[index].toFloat() / maximum).coerceAtLeast(2f).dp else 2.dp)
                         .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                         .background(if (day == today) Volt else Volt.copy(alpha = 0.4f)))
                 }
@@ -380,5 +387,6 @@ private fun RecordWeek(week: List<com.stepup.android.data.local.DailyStepsEntity
                     style = MaterialTheme.typography.labelSmall, color = Silver)
             }
         }
+    }
     }
 }

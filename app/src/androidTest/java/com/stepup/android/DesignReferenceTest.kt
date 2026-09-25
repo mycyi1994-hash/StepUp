@@ -155,8 +155,13 @@ class DesignReferenceTest {
                 prepareScene(s)
                 compose.runOnIdle { width = w; height = h; large = enlarged; scene = s }
                 compose.waitForIdle()
-                awaitScene(s)
                 val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
+                try {
+                    awaitScene(s)
+                } catch (failure: Throwable) {
+                    capture("$name-failed")
+                    throw failure
+                }
                 audit(name)
                 capture(name)
             }
@@ -202,7 +207,8 @@ class DesignReferenceTest {
             Scene.FIRST_GUIDE -> "guide-step-title"
             else -> "bottom-nav"
         }
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag(readyTag).fetchSemanticsNodes().isNotEmpty() }
+        // Clickable cards merge child text for accessibility; readiness may target that child.
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag(readyTag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         if (s == Scene.HOME) {
             compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty() }
         }
