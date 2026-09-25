@@ -120,6 +120,7 @@ class EconomySync(
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()
             db.boostDao().deleteAll()
+            db.claimedEventDao().deleteAll()
         }
         prefs.clearServerEconomy()
         bootstrapped = null

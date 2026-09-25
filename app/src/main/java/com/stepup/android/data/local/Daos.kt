@@ -311,6 +311,10 @@ interface ClaimedEventDao {
     @Query("SELECT * FROM claimed_events WHERE eventId = :id")
     suspend fun byId(id: String): ClaimedEventEntity?
 
+    /** 계정을 지웠을 때 — 이 폰의 다음 계정이 이미 받은 것으로 막히지 않게 */
+    @Query("DELETE FROM claimed_events")
+    suspend fun deleteAll()
+
     @Insert
     suspend fun insertReward(reward: RewardEntity)
 
