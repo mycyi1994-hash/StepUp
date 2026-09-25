@@ -97,11 +97,20 @@ export async function indexEvents(env, deps) {
   const safe = await safeBlock(env, c)
   if (safe == null) return { skipped: 'safe block unavailable' }
   const report = {}
-  const budget = Number(env.INDEX_EVENTS_PER_RUN ?? EVENTS_PER_RUN)
+  // 세 컨트랙트가 나눠 쓰는 한 몫이다 — 컨트랙트마다 따로 주면 한 번에 60개까지 보내 요청 수 제한을 넘는다
+  let budget = Number(env.INDEX_EVENTS_PER_RUN ?? EVENTS_PER_RUN)
 
-  for (const [source, abi] of SOURCES) {
+  // 시작하는 컨트랙트를 매분 돌린다 — 한 컨트랙트에 이벤트가 계속 밀려도 다른 컨트랙트가 굶지 않게
+  const shift = Math.floor(Date.now() / 60000) % SOURCES.length
+  const order = [...SOURCES.slice(shift), ...SOURCES.slice(0, shift)]
+  for (const [source, abi] of order) {
     const address = c.addresses[source]
     if (!address) continue
+    // 몫을 다 썼으면 남은 컨트랙트는 다음 실행에(읽기 요청도 아낀다)
+    if (budget <= 0) {
+      report[source] = { skipped: 'budget' }
+      continue
+    }
     // 한 컨트랙트를 못 읽어도 다른 컨트랙트는 읽는다
     let start = null // 이번 실행을 시작한 위치
     let next = null // 다음에 넘길 이벤트의 위치
@@ -136,7 +145,7 @@ export async function indexEvents(env, deps) {
         if (at < start) continue // 앞 실행이 이미 넘겼다
         next = at
         // 이번 실행 몫을 다 썼다 — 여기서부터는 다음 실행에
-        if (handled >= budget) {
+        if (budget <= 0) {
           stopped = true
           break
         }
@@ -145,6 +154,7 @@ export async function indexEvents(env, deps) {
         // 실패하면 여기서 멈추고, 이 이벤트 앞까지만 커서를 옮긴다(아래 catch)
         const result = await deps.rpc(env, 'attester_chain_event', ev)
         handled += 1
+        budget -= 1
         // 서버가 허락하지 않은 지급 · 발행이다(서명 키가 샜다). 서버는 이미 멈췄고, 컨트랙트도 멈춘다.
         // 컨트랙트 정지가 실패해도 다음 실행의 keepPaused 가 다시 멈춘다.
         if (result === 'UNKNOWN_OP' || result === 'MISMATCH') await alarm(env, deps, source, ev, result)
@@ -176,7 +186,7 @@ export async function expireOps(env, deps) {
   const due = all
     .map((op) => [Math.random(), op])
     .sort((a, b) => a[0] - b[0])
-    .slice(0, Number(env.EXPIRE_OPS_PER_RUN ?? 10))
+    .slice(0, Number(env.EXPIRE_OPS_PER_RUN ?? 8))
     .map(([, op]) => op)
   const out = { expired: 0, pendingOnChain: 0 }
   let safe = null
@@ -194,8 +204,9 @@ export async function expireOps(env, deps) {
       if (used) {
         out.pendingOnChain += 1 // 이벤트가 곧 들어온다(취소도 이벤트로 들어온다). 되돌리지 않는다.
         if (op.tx_hash && Date.parse(op.deadline) + RECOVER_AFTER_MS < Date.now()) {
-          safe ??= await safeBlock(env, c)
-          if (safe != null && await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
+          // 못 받으면 false 로 적어 이번 실행에서는 다시 묻지 않는다
+          if (safe === null) safe = (await safeBlock(env, c)) ?? false
+          if (safe !== false && await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
         }
         continue
       }

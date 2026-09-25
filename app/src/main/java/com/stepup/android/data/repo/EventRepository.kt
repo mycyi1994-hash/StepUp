@@ -132,7 +132,7 @@ class EventRepository(
     private companion object {
         /** 서버가 "이미 받음"을 알리는 문구(0014_events.sql) */
         const val ALREADY_CLAIMED = "이미 받은"
-        /** 서버 event_claim 이 목표 전에 돌려보내는 문구 (0024) */
+        /** 서버 event_claim 이 목표 전에 돌려보내는 문구 (0014_events.sql) */
         const val NOT_FINISHED = "아직 목표"
     }
 }

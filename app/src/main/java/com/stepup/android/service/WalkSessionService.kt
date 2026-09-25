@@ -218,6 +218,9 @@ class WalkSessionService : Service() {
             // 러닝 중에 GPS 를 켰다 — 대신 쓰던 기지국 위치는 그만 받는다(둘을 섞으면 점이 튄다)
             if (provider == LocationManager.GPS_PROVIDER && locationManager != null) {
                 stopLocation()
+                // 기지국 위치의 마지막 점과 첫 GPS 점을 한 구간으로 재지 않는다(튄 구간 · 거저 생긴 거리)
+                speedAnchor = null
+                speedAnchorAt = 0L
                 startLocation()
             }
         }
@@ -234,22 +237,23 @@ class WalkSessionService : Service() {
         if (!hasLocationPermission()) return
         val lm = getSystemService(LOCATION_SERVICE) as LocationManager
         locationManager = lm
-        try {
-            // GPS 는 꺼져 있어도 등록해 둔다 — 러닝 중에 위치를 켜면 그때부터 점이 들어온다
-            // (예전엔 시작할 때 꺼져 있으면 러닝 내내 경로가 비었다)
-            if (LocationManager.GPS_PROVIDER in lm.allProviders) {
-                lm.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, 2_500L, 6f, locationListener, mainLooper,
-                )
+        // 둘을 따로 등록한다 — 대략 위치 권한만 있으면(API 30 이하) GPS 등록이 거절되는데, 그 때문에
+        // 기지국 위치까지 못 받으면 안 된다. 권한이 그 사이 회수됐다면 위치 없이 진행한다.
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        var gps = false
+        // GPS 는 꺼져 있어도 등록해 둔다 — 러닝 중에 위치를 켜면 그때부터 점이 들어온다
+        // (예전엔 시작할 때 꺼져 있으면 러닝 내내 경로가 비었다)
+        if (fine && LocationManager.GPS_PROVIDER in lm.allProviders) {
+            gps = runCatching {
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2_500L, 6f, locationListener, mainLooper)
+            }.isSuccess
+        }
+        val gpsOn = gps && runCatching { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false)
+        if (!gpsOn && runCatching { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false)) {
+            runCatching {
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper)
             }
-            if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) &&
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                lm.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper,
-                )
-            }
-        } catch (_: SecurityException) {
-            // 권한이 그 사이 회수됐다면 GPS 없이 진행한다
         }
     }
 
@@ -267,6 +271,9 @@ class WalkSessionService : Service() {
     @Volatile private var settling = false
     private var startJob: Job? = null
     private var followupsAttempted = false
+
+    /** 앞선 실행이 저장하다 멈춘(SETTLING) 러닝을 되살려 끝내는 중인가 */
+    private var resumedSettling = false
     private var checkpointJob: Job? = null
 
     /**
@@ -302,6 +309,12 @@ class WalkSessionService : Service() {
                     // 읽지도 못하면 새 러닝을 시작하지 않는다 — 시작해도 저장본을 남기지 못해 끝낼 때 막힌다.
                     val setAside = runCatching { store.setAsideUnreadable() }.getOrDefault(false)
                     if (setAside) null else runCatching { store.read() }.getOrElse {
+                        // 눌러도 아무 일이 없는 것처럼 보이지 않게 이유를 알린다
+                        runCatching {
+                            android.widget.Toast.makeText(
+                                this@WalkSessionService, R.string.run_storage_blocked, android.widget.Toast.LENGTH_LONG,
+                            ).show()
+                        }
                         ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                         stopSelf()
                         return@launch
@@ -340,6 +353,8 @@ class WalkSessionService : Service() {
             goalKm.value = checkpoint.goalKm
             lastCheckpointAt = maxOf(lastCheckpointAt, checkpoint.savedAt)
             if (checkpoint.phase == RunCheckpointPhase.SETTLING) {
+                resumedSettling = true
+                followupsAttempted = false
                 _state.value = checkpoint.state.copy(isPaused = true, saveStatus = RunSaveStatus.IDLE)
                 activeMs = checkpoint.state.elapsedSec * 1000
                 stopSession()
@@ -375,6 +390,7 @@ class WalkSessionService : Service() {
 
     private fun beginTracking(partySize: Int, owner: String, restored: WalkSessionState? = null) {
         followupsAttempted = false
+        resumedSettling = false
         _state.value = restored ?: WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
@@ -546,8 +562,10 @@ class WalkSessionService : Service() {
             val equippedFaction = if (foreignOwner) null else ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
             // 앞선 실행이 이미 정산했다(정산 뒤 저장본을 지우기 전에 앱이 죽어 되살린 러닝) — 코스 완주 ·
-            // 기록 같은 뒤따르는 일을 다시 하지 않는다(코스 완주가 두 번 세어졌다)
-            val alreadySettled = ServiceLocator.database.runSettlementDao()
+            // 기록 같은 뒤따르는 일을 다시 하지 않는다(코스 완주가 두 번 세어졌다). 이 실행 안에서 저장을
+            // 다시 시도하는 경우는 followupsAttempted 가 맡는다 — 여기서 영수증을 보면 앞 시도가 정산만
+            // 하고 뒤따르는 일을 못 한 경우까지 건너뛴다.
+            val alreadySettled = resumedSettling && ServiceLocator.database.runSettlementDao()
                 .find(session.recordingOwner, session.startedAt) != null
             val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(

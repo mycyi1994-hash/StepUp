@@ -623,13 +623,14 @@ class UserPrefs(
     /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
     val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
 
-    /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
+    /** 폰의 서버 경제 사본이 어느 계정 것인가 — 다른 계정으로 로그인하면 사본을 먼저 지운다 */
     suspend fun economyOwner(): String? = store.data.map { it[Keys.ECONOMY_OWNER] }.first()
 
     suspend fun setEconomyOwner(userId: String?) {
         store.edit { if (userId == null) it.remove(Keys.ECONOMY_OWNER) else it[Keys.ECONOMY_OWNER] = userId }
     }
 
+    /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
     suspend fun legacyEconomyImported(userId: String): Boolean =
         store.data.map { userId in (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',') }.first()
 

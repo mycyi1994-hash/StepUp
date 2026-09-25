@@ -75,4 +75,8 @@ test('2단계 인증은 방금 한 것만 인정한다', async () => {
   assert.equal(recentTotp({ aal: 'aal2', amr: [{ method: 'oauth', timestamp: now }] }, now), false)
   assert.equal(recentTotp({ aal: 'aal1', amr: [{ method: 'totp', timestamp: now }] }, now), false)
   assert.equal(recentTotp({ aal: 'aal2' }, now), false)
+  // 시계가 30분 빨라도, 방금 발급된 토큰의 방금 한 인증은 인정한다
+  assert.equal(recentTotp({ aal: 'aal2', iat: now, amr: [{ method: 'totp', timestamp: now - 5 }] }, now + 1800), true)
+  // 앱이 새로 받은 토큰(iat 는 지금)에 남은 옛 인증은 여전히 오래된 것이다
+  assert.equal(recentTotp({ aal: 'aal2', iat: now, amr: [{ method: 'totp', timestamp: now - 3600 }] }, now), false)
 })

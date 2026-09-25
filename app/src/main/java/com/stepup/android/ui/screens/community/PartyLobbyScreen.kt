@@ -330,16 +330,8 @@ fun PartyLobbyScreen(
                                         modifier = Modifier.testTag("party-result-pending"),
                                     )
                                 }
-                                // 걸음 · 파티 부스트는 폰의 예상치다 — 서버가 인원 · 에너지를 다시 따진 뒤(금액 확인)에만 보인다
-                                if (confirmed != null) Text(
-                                    text = stringResource(
-                                        R.string.crew_result_body,
-                                        "%,d".format(party.resultSteps),
-                                        boostPercent,
-                                    ),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Silver,
-                                )
+                                // 걸음 · 파티 부스트 줄은 뺐다 — 둘 다 폰의 예상치라, 서버가 인원 · 에너지를 다시 따진
+                                // 금액 옆에 두면 서로 맞지 않을 수 있다. 확정 금액만 보인다.
                             }
                             GhostButton(
                                 text = stringResource(R.string.common_ok),

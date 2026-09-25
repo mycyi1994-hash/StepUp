@@ -185,7 +185,6 @@
     <string name="crew_boost_hint" formatted="false">每多一位队友，收益 +10%，最高叠到 +50%。</string>
     <string name="crew_running_together">正和 %1$d 位跑者一起跑</string>
     <string name="crew_result_title">组队跑完成！🎉</string>
-    <string name="crew_result_body">%1$s 步 · 组队加成 %2$d%%</string>
     <string name="crew_leave_lobby">离开大厅</string>
     <string name="crew_join_first">先加入跑团才能一起跑</string>
 
@@ -1472,6 +1471,7 @@
     <string name="finish_pending_short">等待服务器确认</string>
     <string name="finish_no_reward">服务器已确认 · 本次跑步无奖励</string>
     <string name="finish_no_steps">未记录到步数 · 本次跑步无奖励</string>
+    <string name="run_storage_blocked">无法读取手机上保存的跑步数据，暂时无法开始新的跑步。请重新打开应用后再试。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">今天也是美好的一天。</string>

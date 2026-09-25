@@ -28,6 +28,9 @@ export function jwtClaims(token) {
  */
 export function recentTotp(claims, nowSec = Date.now() / 1000, maxAgeSec = 600) {
   if (claims?.aal !== 'aal2' || !Array.isArray(claims.amr)) return false
+  // 폰 · PC 시계가 빠르면 방금 한 인증도 오래된 것으로 보여 인증을 끝없이 다시 묻는다 — 토큰이 발급된
+  // 시각(서버 시계)보다 늦게 보지 않는다
+  if (Number.isFinite(Number(claims.iat))) nowSec = Math.min(nowSec, Number(claims.iat))
   return claims.amr.some((a) => a?.method === 'totp' && Number(a.timestamp) >= nowSec - maxAgeSec)
 }
 

@@ -8217,7 +8217,8 @@ begin
       select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
        where s.user_id = v_user
          and s.verdict not in ('FLAGGED', 'VOID')
-         and s.gps_backed
+         -- 0024 전 기록은 gps_backed 가 없다 — 서버가 경로로 잰 거리(0018)로 본다
+         and (s.gps_backed or s.gps_distance_m >= economy.gps_check_min_m())
          and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
     ), 0);
   end if;
@@ -9966,7 +9967,7 @@ create policy comments_insert_own on public.comments for insert
     (select auth.uid()) = author_id
     and public.can_see_post(post_id)
     and (parent_id is null or exists (
-      select 1 from public.comments p where p.id = parent_id and p.post_id = comments.post_id))
+      select 1 from public.comments p where p.id = comments.parent_id and p.post_id = comments.post_id))
   );
 
 -- 글 고치기 — 앱에는 고치는 기능이 없다(지우고 다시 쓴다)

@@ -36,7 +36,7 @@ create policy comments_insert_own on public.comments for insert
     (select auth.uid()) = author_id
     and public.can_see_post(post_id)
     and (parent_id is null or exists (
-      select 1 from public.comments p where p.id = parent_id and p.post_id = comments.post_id))
+      select 1 from public.comments p where p.id = comments.parent_id and p.post_id = comments.post_id))
   );
 
 -- 글 고치기 — 앱에는 고치는 기능이 없다(지우고 다시 쓴다)

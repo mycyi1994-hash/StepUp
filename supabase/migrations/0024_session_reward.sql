@@ -570,7 +570,8 @@ begin
       select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
        where s.user_id = v_user
          and s.verdict not in ('FLAGGED', 'VOID')
-         and s.gps_backed
+         -- 0024 전 기록은 gps_backed 가 없다 — 서버가 경로로 잰 거리(0018)로 본다
+         and (s.gps_backed or s.gps_distance_m >= economy.gps_check_min_m())
          and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
     ), 0);
   end if;
