@@ -187,6 +187,9 @@ class ScreenGalleryTest {
     }
 
     @Test fun allScreens() {
+        // The full gallery decodes many large scenes. CI runs it in independent
+        // parts so the emulator can release image memory between processes.
+        val galleryPart = InstrumentationRegistry.getArguments().getString("galleryPart") ?: "all"
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setSounds(false)
@@ -244,7 +247,14 @@ class ScreenGalleryTest {
             compose.waitForIdle()
             Thread.sleep(650)
         }
-        for (index in 0..36) {
+        val screenIndices = when (galleryPart) {
+            "a" -> (0..12).toList()
+            "b" -> (13..24).toList()
+            "c" -> (25..36).toList()
+            "d", "e", "f" -> emptyList()
+            else -> (0..36).toList()
+        }
+        for (index in screenIndices) {
             reset(index)
             if (index == 22) {
                 // Joining must be reachable without scrolling through the roster/chat.
@@ -328,7 +338,13 @@ class ScreenGalleryTest {
             Triple(31, "history-month", listOf(R.string.history_period_month)),
             Triple(31, "history-all", listOf(R.string.history_period_all)),
         )
-        for ((index, name, actions) in variations) {
+        val selectedVariations = when (galleryPart) {
+            "d" -> variations.take(16)
+            "e" -> variations.drop(16)
+            "a", "b", "c", "f" -> emptyList()
+            else -> variations
+        }
+        for ((index, name, actions) in selectedVariations) {
             try {
                 reset(index)
                 actions.forEach { tap(it) }
@@ -339,38 +355,40 @@ class ScreenGalleryTest {
                 File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
             }
         }
-        reset(28)
-        runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE) }
-        Thread.sleep(650)
-        capture("extra-customize-female")
-        reset(37)
-        capture("navigation-home")
-        for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_community to "community", R.string.tab_me to "profile")) {
-            try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
-        }
-        reset(39)
-        capture("launch-logo-reveal")
-        reset(40)
-        capture("launch-preparation-error")
-        reset(38)
-        // The launch delay uses Compose's test clock; wall-clock sleep alone does not advance it.
-        compose.mainClock.advanceTimeBy(500)
-        compose.waitForIdle()
-        compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
-        for (index in GuideTour.steps.indices) {
-            try {
-                compose.onNodeWithTag("guide-step-title")
-                    .assertTextEquals(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
-                compose.mainClock.advanceTimeByFrame()
-                capture("guide-${index.toString().padStart(2, '0')}")
-                if (index < GuideTour.steps.lastIndex) tap(R.string.guide_next)
-            } catch (error: Throwable) { failures.add("guide-$index: ${error.message}"); break }
-        }
-        if (GuideTour.stepIndex == GuideTour.steps.lastIndex) {
-            tap(R.string.guide_start)
-            compose.onNodeWithTag("home-start-run").assertIsDisplayed()
-            org.junit.Assert.assertFalse("Guide completion returns to usable home", GuideTour.active)
-            capture("guide-finished-home")
+        if (galleryPart == "f" || galleryPart == "all") {
+            reset(28)
+            runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE) }
+            Thread.sleep(650)
+            capture("extra-customize-female")
+            reset(37)
+            capture("navigation-home")
+            for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_community to "community", R.string.tab_me to "profile")) {
+                try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
+            }
+            reset(39)
+            capture("launch-logo-reveal")
+            reset(40)
+            capture("launch-preparation-error")
+            reset(38)
+            // The launch delay uses Compose's test clock; wall-clock sleep alone does not advance it.
+            compose.mainClock.advanceTimeBy(500)
+            compose.waitForIdle()
+            compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
+            for (index in GuideTour.steps.indices) {
+                try {
+                    compose.onNodeWithTag("guide-step-title")
+                        .assertTextEquals(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
+                    compose.mainClock.advanceTimeByFrame()
+                    capture("guide-${index.toString().padStart(2, '0')}")
+                    if (index < GuideTour.steps.lastIndex) tap(R.string.guide_next)
+                } catch (error: Throwable) { failures.add("guide-$index: ${error.message}"); break }
+            }
+            if (GuideTour.stepIndex == GuideTour.steps.lastIndex) {
+                tap(R.string.guide_start)
+                compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+                org.junit.Assert.assertFalse("Guide completion returns to usable home", GuideTour.active)
+                capture("guide-finished-home")
+            }
         }
         File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
         org.junit.Assert.assertTrue("Missing gallery states:\n${failures.joinToString("\n")}", failures.isEmpty())

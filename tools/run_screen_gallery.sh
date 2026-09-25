@@ -68,9 +68,13 @@ pull_captures() {
 }
 # Leave time for partial screenshots/reports to upload before the workflow's 30-minute cap.
 run_instrumentation() {
-  local phase="$1" classes="$2" result=0
+  local phase="$1" classes="$2" gallery_part="${3:-}" result=0
+  local -a runner_args=("-Pandroid.testInstrumentationRunnerArguments.class=$classes")
+  if [[ -n "$gallery_part" ]]; then
+    runner_args+=("-Pandroid.testInstrumentationRunnerArguments.galleryPart=$gallery_part")
+  fi
   timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
-    "-Pandroid.testInstrumentationRunnerArguments.class=$classes" \
+    "${runner_args[@]}" \
     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
   printf '%s exit=%s\n' "$phase" "$result" >> screen-gallery/phase-results.txt
   if (( result != 0 )); then
@@ -110,10 +114,12 @@ run_instrumentation gallery-edge "com.stepup.android.ScreenGalleryTest#edgeState
 mkdir -p screen-gallery/gallery-edge-results
 cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-edge-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
-run_instrumentation gallery-base "com.stepup.android.ScreenGalleryTest#allScreens"
-mkdir -p screen-gallery/gallery-base-results
-cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-base-results/ || true
-pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+for part in a b c d e f; do
+  run_instrumentation "gallery-base-$part" "com.stepup.android.ScreenGalleryTest#allScreens" "$part"
+  mkdir -p "screen-gallery/gallery-base-$part-results"
+  cp -R app/build/outputs/androidTest-results/. "screen-gallery/gallery-base-$part-results/" || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+done
 fi
 # Real system font enlargement reaches separate Dialog windows, unlike a
 # CompositionLocal override on only the parent screen. Preserve its own reports.
