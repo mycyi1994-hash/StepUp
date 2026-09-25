@@ -11,12 +11,12 @@ crons = ["* * * * *"]
 [vars]
 CHAIN_ID = "91342"
 RPC_URL = "https://sepolia-rpc.giwa.io"
-# v2 배포 뒤 contracts/deployments/giwaSepolia-v2.json 의 주소로 채운다
-DISTRIBUTOR_ADDRESS = ""
-SNEAKERS_ADDRESS = ""
-VAULT_ADDRESS = ""
+# v2 배포 (2026-09-25) — contracts/deployments/giwaSepolia-v2.json
+DISTRIBUTOR_ADDRESS = "0x3b99358cE05Ee74e6EaD5c5C799B462f69ac3FE0"
+SNEAKERS_ADDRESS = "0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019"
+VAULT_ADDRESS = "0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c"
 # 배포한 블록 번호. 이 블록부터 이벤트를 읽는다.
-START_BLOCK = "0"
+START_BLOCK = "36979816"
 # 이만큼 뒤의 블록까지만 반영한다 (뒤집힐 수 있는 블록의 넣기를 믿지 않게)
 CONFIRMATIONS = "30"
 # 앱과 같은 Supabase. 이 키는 앱에 들어가는 공개 키다.
