@@ -1561,7 +1561,13 @@
     <string name="shoes_market">前往鞋子市场</string>
     <string name="home_banner_message">再迈一步，\n向更好的方向。</string>
     <string name="mystery_guide_title">抽取须知</string>
-    <string name="mystery_guide_body">请在抽取页面确认价格和可获得的鞋子后再继续。</string>
+    <string name="mystery_guide_body">先使用免费抽取。之后每次 500 SUP，抽取前会再次确认。</string>
+    <string name="toast_drawn_refreshing">抽到了！正在加载新运动鞋，请稍后在收藏中查看。</string>
+    <string name="sneaker_enhance_legacy">服务器经济之前在手机上制作的运动鞋无法强化。</string>
+    <string name="sneaker_enhance_listed">出售中的运动鞋无法强化。</string>
+    <string name="mystery_draw_paid_confirm">要用 %1$s SUP 抽取运动鞋吗？</string>
+    <string name="mystery_draw_free">免费抽取（剩余 %1$d 次）</string>
+    <string name="mystery_draw_paid">抽取 · %1$s SUP</string>
     <string name="community_upcoming">即将开始的跑步聚会</string>
     <string name="run_route_unavailable">本次跑步没有记录GPS路线。</string>
 </resources>

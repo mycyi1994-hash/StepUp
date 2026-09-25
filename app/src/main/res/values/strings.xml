@@ -1563,7 +1563,13 @@ Start running with StepUp.</string>
     <string name="shoes_market">Browse the shoe market</string>
     <string name="home_banner_message">One more step.\nIn a good direction.</string>
     <string name="mystery_guide_title">Before you draw</string>
-    <string name="mystery_guide_body">Check the price and available shoes on the draw page before confirming.</string>
+    <string name="mystery_guide_body">Free draws are used first. After that each draw costs 500 SUP and asks you to confirm.</string>
+    <string name="toast_drawn_refreshing">Drawn! Loading your new sneaker — check your collection in a moment.</string>
+    <string name="sneaker_enhance_legacy">Sneakers made on the phone before the server economy can\'t be enhanced.</string>
+    <string name="sneaker_enhance_listed">Sneakers listed for sale can\'t be enhanced.</string>
+    <string name="mystery_draw_paid_confirm">Draw a sneaker for %1$s SUP?</string>
+    <string name="mystery_draw_free">Free draw (%1$d left)</string>
+    <string name="mystery_draw_paid">Draw · %1$s SUP</string>
     <string name="community_upcoming">Upcoming meetups</string>
     <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
 </resources>

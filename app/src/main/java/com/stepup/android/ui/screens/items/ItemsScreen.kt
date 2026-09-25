@@ -148,6 +148,9 @@ fun ItemsScreen(
             ItemsMessage.NoFreeDraws -> context.getString(R.string.toast_no_free_draws)
             ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
             ItemsMessage.Offline -> context.getString(R.string.toast_offline)
+            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
+            ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
+            ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
         }
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()

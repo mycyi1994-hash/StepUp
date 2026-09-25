@@ -81,10 +81,14 @@ class EconomySync(
         }
         val ledger = mutableListOf<LedgerEntryRow>()
         var after = 0L
+        var complete = false
         for (pageNo in 0 until MAX_LEDGER_PAGES) {
             val page = when (val r = api.ledgerPage(after, LEDGER_PAGE)) { is ServerResult.Ok -> r.value; else -> return r.cast() }
             ledger += page
-            if (page.size < LEDGER_PAGE) break
+            if (page.size < LEDGER_PAGE) {
+                complete = true
+                break
+            }
             after = page.last().id
         }
 
@@ -93,7 +97,7 @@ class EconomySync(
             db.sneakerDao().deleteAll()
             db.sneakerDao().insertAll(sneakers.map { it.toEntity(previous[it.id]?.acquiredAt ?: now()) })
             db.rewardDao().deleteAll()
-            db.rewardDao().insertAll(ledgerRows(ledger, economy.balance))
+            db.rewardDao().insertAll(ledgerRows(ledger, economy.balance, complete))
             db.boostDao().deleteAll()
             db.boostDao().insertAll(boosts.map {
                 BoostEntity(type = it.kind, activatedAt = it.startsAt.toMillis(), expiresAt = it.endsAt.toMillis())
@@ -101,7 +105,7 @@ class EconomySync(
         }
         val left = { kind: String -> grants.filter { it.kind == kind }.sumOf { (it.granted - it.used).coerceAtLeast(0) } }
         prefs.setServerEconomy(
-            today = LocalDate.now().toEpochDay(),
+            today = runCatching { LocalDate.parse(economy.gameDay) }.getOrElse { LocalDate.now(java.time.ZoneId.of("Asia/Seoul")) }.toEpochDay(),
             energyLeft = economy.energyLeft,
             energyMax = economy.energyMax,
             freeDraws = left("FREE"),
@@ -117,7 +121,7 @@ class EconomySync(
             db.rewardDao().deleteAll()
             db.boostDao().deleteAll()
         }
-        prefs.setServerEconomy(LocalDate.now().toEpochDay(), 0.0, 0.0, 0, 0)
+        prefs.clearServerEconomy()
         bootstrapped = null
         _state.value = EconomySyncState.SIGNED_OUT
     }
@@ -147,13 +151,14 @@ class EconomySync(
     }
 
     /**
-     * 서버 원장 줄을 폰 원장으로. 줄의 합이 서버 잔고와 다르면(너무 오래돼 다 못 받았을 때)
-     * 맨 앞에 차이만큼 한 줄을 둔다 — 화면의 잔고는 언제나 서버 잔고와 같아야 한다.
+     * 서버 원장 줄을 폰 원장으로. 원장을 끝까지 받았으면 줄의 합이 곧 잔고다 — 그 사이에 새 줄이
+     * 생겼어도 받아 온 줄이 더 최신이다. 너무 길어 다 못 받았을 때만 맨 앞에 나머지 합을 한 줄로 둔다.
      */
-    private fun ledgerRows(rows: List<LedgerEntryRow>, balance: Double): List<RewardEntity> {
+    private fun ledgerRows(rows: List<LedgerEntryRow>, balance: Double, complete: Boolean): List<RewardEntity> {
         val mirrored = rows.map {
             RewardEntity(timestamp = it.occurredAt.toMillis(), type = it.kind, amount = it.amount, description = it.description)
         }
+        if (complete) return mirrored
         val gap = balance - mirrored.sumOf { it.amount }
         if (kotlin.math.abs(gap) < 0.00005) return mirrored
         val first = mirrored.minOfOrNull { it.timestamp } ?: now()

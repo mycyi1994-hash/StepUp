@@ -121,6 +121,8 @@ class ClaimRepository(
                 is ServerResult.SignInRequired -> {
                     // 다시 로그인해야 한다. 여기서 세션을 실패로 찍어 봐야
                     // 시도 횟수만 오른다 — 대기열을 그대로 두고 물러난다.
+                    // 그 전에 확인받은 러닝이 있으면 잔고는 다시 받아 둔다.
+                    if (signed > 0) runCatching { onSigned() }
                     return UploadRun(
                         signed = signed,
                         rejected = rejected,

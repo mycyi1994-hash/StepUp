@@ -77,6 +77,9 @@ fun SneakerDetailScreen(
             ItemsMessage.NothingToRepair -> context.getString(R.string.toast_nothing_to_repair)
             ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
             ItemsMessage.Offline -> context.getString(R.string.toast_offline)
+            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
+            ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
+            ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
             else -> null
         }
         if (text != null) Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -239,9 +242,12 @@ fun SneakerDetailScreen(
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (!sneaker.canUpgrade) {
-                    Text(stringResource(R.string.sneaker_enhance_max),
-                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                sneaker.upgradeBlock?.let { block ->
+                    Text(stringResource(when (block) {
+                        com.stepup.android.domain.UpgradeBlock.MAX_LEVEL -> R.string.sneaker_enhance_max
+                        com.stepup.android.domain.UpgradeBlock.LEGACY -> R.string.sneaker_enhance_legacy
+                        com.stepup.android.domain.UpgradeBlock.LISTED -> R.string.sneaker_enhance_listed
+                    }), style = MaterialTheme.typography.bodyMedium, color = Silver)
                 }
                 if (!sneaker.equipped && sneaker.canUpgrade) {
                     GhostButton(

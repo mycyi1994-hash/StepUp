@@ -1562,7 +1562,13 @@ StepUp と走り出そう。</string>
     <string name="shoes_market">シューズマーケットへ</string>
     <string name="home_banner_message">今日も一歩、\nいい方向へ。</string>
     <string name="mystery_guide_title">抽選の前に</string>
-    <string name="mystery_guide_body">抽選画面で価格と獲得できるシューズを確認してから進んでください。</string>
+    <string name="mystery_guide_body">無料抽選から先に使います。その後は1回500 SUPで、抽選前に確認します。</string>
+    <string name="toast_drawn_refreshing">抽選しました！新しいスニーカーを読み込んでいます。少し後にコレクションで確認してください。</string>
+    <string name="sneaker_enhance_legacy">サーバー経済以前にスマホで作ったスニーカーは強化できません。</string>
+    <string name="sneaker_enhance_listed">出品中のスニーカーは強化できません。</string>
+    <string name="mystery_draw_paid_confirm">%1$s SUPでスニーカーを抽選しますか？</string>
+    <string name="mystery_draw_free">無料抽選（残り%1$d回）</string>
+    <string name="mystery_draw_paid">抽選 · %1$s SUP</string>
     <string name="community_upcoming">これからのランニング</string>
     <string name="run_route_unavailable">このランニングのGPSルートは記録されていません。</string>
 </resources>

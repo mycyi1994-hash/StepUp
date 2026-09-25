@@ -65,7 +65,11 @@ class BoostRepository(
                 EconomyOutcome.NotEnoughBalance -> PurchaseError.NOT_ENOUGH_BALANCE
                 EconomyOutcome.EnergyFull -> PurchaseError.ENERGY_CAPACITY
                 EconomyOutcome.SignInRequired -> PurchaseError.SIGN_IN_REQUIRED
-                EconomyOutcome.Offline -> PurchaseError.OFFLINE
+                EconomyOutcome.Offline -> {
+                    // 응답만 잃었을 수 있다 — 잔고를 다시 받아 실제로 샀는지 보이게 한다
+                    sync?.refresh()
+                    PurchaseError.OFFLINE
+                }
                 else -> PurchaseError.FAILED
             }
         }

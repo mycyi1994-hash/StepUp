@@ -407,9 +407,16 @@ data class Sneaker(
 
     val maxLevel: Int get() = server?.maxLevel?.takeIf { it > 0 } ?: rarity.maxLevel
 
-    /** 서버가 강화를 받아 주는가 — 폰에서 올린 옛 신발(IMPORT · MINT)과 판매 중인 신발은 아니다 */
-    val canUpgrade: Boolean
-        get() = level < maxLevel && (server == null || (server.upgradable && server.status == "OWNED"))
+    /** 강화할 수 없는 까닭. null 이면 강화할 수 있다 — 화면이 까닭마다 다른 말을 한다 */
+    val upgradeBlock: UpgradeBlock?
+        get() = when {
+            level >= maxLevel -> UpgradeBlock.MAX_LEVEL
+            server != null && !server.upgradable -> UpgradeBlock.LEGACY
+            server != null && server.status != "OWNED" -> UpgradeBlock.LISTED
+            else -> null
+        }
+
+    val canUpgrade: Boolean get() = upgradeBlock == null
 
     /** 가득 채우는 수리 비용. 수리할 곳이 없으면 0 */
     val repairCost: Double
@@ -417,6 +424,18 @@ data class Sneaker(
 
     /** 도감 슬롯 식별자 */
     val slotKey: String get() = "${faction.id}:${rarity.id}:$variant"
+}
+
+/** 강화할 수 없는 까닭 */
+enum class UpgradeBlock {
+    /** 최대 레벨 */
+    MAX_LEVEL,
+
+    /** 폰에서 만들어 올린 옛 신발 — 서버가 레벨을 믿지 않아 강화를 받지 않는다 */
+    LEGACY,
+
+    /** 판매 중 */
+    LISTED,
 }
 
 /**

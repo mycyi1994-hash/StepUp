@@ -538,8 +538,16 @@ class UserPrefs(
     val energy: Flow<Double> = store.data.map { prefs ->
         val max = energyMax(prefs)
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        if (day != LocalDate.now().toEpochDay()) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
+        if (day != energyToday(prefs)) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
+
+    /**
+     * 에너지가 다시 차는 "오늘". 서버 경제에서는 서버의 하루(한국 시간 자정)를 따른다 —
+     * 폰의 자정으로 채우면 해외에서는 서버에 없는 에너지가 가득 찬 것처럼 보인다.
+     */
+    private fun energyToday(prefs: Preferences): Long =
+        if (prefs[Keys.SERVER_ENERGY_MAX] != null) LocalDate.now(SERVER_ZONE).toEpochDay()
+        else LocalDate.now().toEpochDay()
 
     suspend fun setDailyGoal(goal: Int) {
         store.edit { it[Keys.DAILY_GOAL] = goal }
@@ -585,6 +593,7 @@ class UserPrefs(
     //
     // 에너지 · 뽑기 횟수는 서버가 정한다. 폰은 마지막으로 받아 온 값을 보여 줄 뿐이다.
 
+    /** @param today 서버의 오늘(my_economy.game_day, 한국 시간) */
     suspend fun setServerEconomy(today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int) {
         store.edit {
             it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
@@ -592,6 +601,17 @@ class UserPrefs(
             it[Keys.SERVER_ENERGY_MAX] = energyMax
             it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
             it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
+        }
+    }
+
+    /** 서버 경제의 사본을 지운다(계정 삭제) — 에너지는 폰 기본값으로 돌아간다 */
+    suspend fun clearServerEconomy() {
+        store.edit {
+            it.remove(Keys.SERVER_ENERGY_MAX)
+            it.remove(Keys.FREE_DRAWS_LEFT)
+            it.remove(Keys.BONUS_DRAWS_LEFT)
+            it.remove(Keys.ENERGY)
+            it.remove(Keys.ENERGY_DAY)
         }
     }
 
@@ -751,3 +771,6 @@ private fun updatedInPlace(context: Context): Boolean = runCatching {
     val info = context.packageManager.getPackageInfo(context.packageName, 0)
     info.lastUpdateTime > info.firstInstallTime
 }.getOrDefault(false)
+
+/** 서버의 하루 기준 (economy.game_day) */
+private val SERVER_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")

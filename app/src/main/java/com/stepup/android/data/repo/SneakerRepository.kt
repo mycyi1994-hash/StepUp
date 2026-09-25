@@ -42,6 +42,15 @@ class SneakerRepository(
         sync?.refresh()
     }
 
+    /**
+     * 요청 결과가 성공이거나, 응답을 못 받았을 때(보냈는지 모름)는 서버 값을 다시 받는다 —
+     * 응답만 잃고 서버에서는 이미 처리됐으면 잔고 · 신발이 그걸 보여 줘야 다시 누르지 않는다.
+     */
+    private suspend fun afterWrite(outcome: EconomyOutcome): EconomyOutcome {
+        if (outcome == EconomyOutcome.Ok || outcome == EconomyOutcome.Offline) resync()
+        return outcome
+    }
+
     /** 착용. 서버 신발이면 서버에서, 폰에만 있던 옛 신발(로그인 전)이면 폰에서. */
     suspend fun equipOnServer(id: Long): EconomyOutcome {
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
@@ -49,9 +58,7 @@ class SneakerRepository(
         if (!serverEconomy || api == null || local.origin.isBlank()) {
             return if (sneakerDao.equipExclusively(id) > 0) EconomyOutcome.Ok else EconomyOutcome.Rejected("")
         }
-        val outcome = api.equip(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome()
-        if (outcome == EconomyOutcome.Ok) resync()
-        return outcome
+        return afterWrite(api.equip(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome())
     }
 
     /** 강화 (서버). 새 레벨이 적용된 신발을 함께 돌려준다. */
@@ -59,9 +66,8 @@ class SneakerRepository(
         val api = economy ?: return upgrade(id).let { (if (it != null) EconomyOutcome.Ok else EconomyOutcome.NotEnoughBalance) to it }
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다") to null
         if (local.origin.isBlank()) return EconomyOutcome.SignInRequired to null
-        val outcome = api.upgrade(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome()
+        val outcome = afterWrite(api.upgrade(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome())
         if (outcome != EconomyOutcome.Ok) return outcome to null
-        resync()
         return outcome to sneakerDao.byId(id)?.toDomain()
     }
 
@@ -70,14 +76,13 @@ class SneakerRepository(
         val api = economy ?: return EconomyOutcome.SignInRequired
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
         if (local.origin.isBlank()) return EconomyOutcome.SignInRequired
-        val outcome = api.repair(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome()
-        if (outcome == EconomyOutcome.Ok) resync()
-        return outcome
+        return afterWrite(api.repair(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome())
     }
 
     /**
      * 뽑기 (서버). 무료 뽑기가 남았으면 그것부터 쓰고, 없으면 SUP 로 뽑는다.
-     * 결과 신발은 서버가 정한 것을 다시 받아 와 돌려준다.
+     * 결과 신발은 서버가 정한 것을 다시 받아 와 돌려준다. 뽑기는 됐는데 목록을 아직 못 받았으면
+     * (Ok, null) — 실패가 아니다. 화면은 "뽑았어요, 불러오는 중"이라고 해야 다시 누르지 않는다.
      */
     suspend fun drawOnServer(): Pair<EconomyOutcome, Sneaker?> {
         val api = economy ?: return mint().let { (if (it != null) EconomyOutcome.Ok else EconomyOutcome.NotEnoughBalance) to it }
@@ -87,8 +92,9 @@ class SneakerRepository(
         val newId = when (result) {
             is com.stepup.android.data.remote.ServerResult.Ok -> result.value
             else -> {
-                if (result.toEconomyOutcome() == EconomyOutcome.NoFreeDraws) resync()
-                return result.toEconomyOutcome() to null
+                val outcome = result.toEconomyOutcome()
+                if (outcome == EconomyOutcome.NoFreeDraws || outcome == EconomyOutcome.Offline) resync()
+                return outcome to null
             }
         }
         resync()

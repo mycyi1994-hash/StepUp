@@ -311,8 +311,8 @@ fun RunScreen(
                 ) {
                     item {
                         FinishCard(
-                            // 금액은 서버가 확인한 값만 — 확인 전에는 FinishCard 가 "—" 를 보인다
-                            session = session, points = lastServerPoints ?: 0.0,
+                            // 금액은 서버가 확인한 값만 — 확인 전(또는 금액을 아직 못 읽었으면) "—"
+                            session = session, points = lastServerPoints,
                             upload = lastUpload, look = look, balance = balance,
                         )
                     }
@@ -1055,21 +1055,23 @@ private fun RunTimeRing(
 @Composable
 private fun FinishCard(
     session: WalkSessionState,
-    points: Double,
+    /** 서버가 확인한 적립액. null 이면 아직 확인되지 않았다 */
+    points: Double?,
     upload: String?,
     look: com.stepup.android.domain.AvatarLook?,
     balance: Double?,
 ) {
     val context = LocalContext.current
     val voided = session.lastVerdict == RunVerdict.VOID
-    val confirmed = !voided && upload == UploadState.SIGNED.name
+    // 서버가 확인했고 그 금액까지 읽었을 때만 확정으로 보인다 — 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게
+    val confirmed = !voided && upload == UploadState.SIGNED.name && points != null
     val rejected = voided || upload == UploadState.REJECTED.name
     val km = if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
     val paceSec: Long? = if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
     // 서버가 확인한 뒤에만 "적립 완료". 그 전에는 확인 중이라고 적는다.
     val headline = when {
         voided -> R.string.run_void_title
-        upload == UploadState.SIGNED.name -> R.string.finish_confirmed
+        confirmed -> R.string.finish_confirmed
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
     }
@@ -1079,7 +1081,7 @@ private fun FinishCard(
         pace = stringResource(R.string.share_card_pace),
         footer = stringResource(R.string.share_card_footer),
     )
-    val shareText = if (!voided && upload == UploadState.SIGNED.name) {
+    val shareText = if (confirmed && points != null) {
         stringResource(R.string.finish_share_text, "%.1f".format(km),
             formatDuration(session.lastElapsedSec), "%,.0f".format(points))
     } else {
@@ -1139,7 +1141,7 @@ private fun FinishCard(
             )
             AdaptiveNumber(
                 text = when {
-                    confirmed -> "+%,.0f".format(points)
+                    confirmed && points != null -> "+%,.0f".format(points)
                     rejected -> "0"
                     else -> "—"
                 },
@@ -1147,7 +1149,7 @@ private fun FinishCard(
                 color = com.stepup.android.ui.theme.VoltText, textAlign = TextAlign.Center,
             )
             Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
-            if (!voided && upload != UploadState.SIGNED.name && upload != UploadState.REJECTED.name) {
+            if (!voided && !confirmed && upload != UploadState.REJECTED.name) {
                 Text(
                     text = stringResource(R.string.finish_pending_note),
                     fontSize = 14.sp,

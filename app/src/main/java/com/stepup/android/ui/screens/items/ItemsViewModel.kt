@@ -38,6 +38,10 @@ sealed interface ItemsMessage {
     data object NoFreeDraws : ItemsMessage
     data object SignInRequired : ItemsMessage
     data object Offline : ItemsMessage
+    /** 뽑기는 됐는데 새 신발을 아직 못 받아 왔다 — 실패가 아니다, 다시 누르면 또 뽑힌다 */
+    data object DrawnRefreshing : ItemsMessage
+    data object UpgradeLegacy : ItemsMessage
+    data object UpgradeListed : ItemsMessage
 }
 
 /** 서버 경제의 결말 → 화면 문구. 성공은 부르는 쪽이 따로 정한다. */
@@ -158,9 +162,14 @@ class ItemsViewModel(
     fun upgrade(id: Long) {
         savePurchase {
             val target = inventory.value.firstOrNull { it.id == id }
-            if (target != null && !target.canUpgrade) {
+            val block = target?.upgradeBlock
+            if (block != null) {
                 ExperienceEvents.emit(FeedbackCue.Error)
-                message.value = ItemsMessage.MaxLevel
+                message.value = when (block) {
+                    com.stepup.android.domain.UpgradeBlock.MAX_LEVEL -> ItemsMessage.MaxLevel
+                    com.stepup.android.domain.UpgradeBlock.LEGACY -> ItemsMessage.UpgradeLegacy
+                    com.stepup.android.domain.UpgradeBlock.LISTED -> ItemsMessage.UpgradeListed
+                }
                 return@savePurchase
             }
             val (outcome, result) = sneakerRepository.upgradeOnServer(id)
@@ -183,7 +192,10 @@ class ItemsViewModel(
     fun mint() {
         savePurchase {
             val (outcome, minted) = sneakerRepository.drawOnServer()
-            if (minted == null) {
+            if (minted == null && outcome == com.stepup.android.data.repo.EconomyOutcome.Ok) {
+                ExperienceEvents.emit(FeedbackCue.Success)
+                message.value = ItemsMessage.DrawnRefreshing
+            } else if (minted == null) {
                 ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = outcome.toMessage()
             } else {
