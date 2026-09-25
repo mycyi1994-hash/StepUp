@@ -658,7 +658,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
             Text(
                 text = stringResource(R.string.analytics_tap_hint_week),
                 fontSize = 14.sp,
-                color = Volt.copy(alpha = 0.75f),
+                color = Slate,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
         }
@@ -710,20 +710,6 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                     }
                 }
             }
-
-            // 주 평균 목표선 — 하루 목표 × 7
-            Canvas(Modifier.matchParentSize()) {
-                val weekGoal = (goal.toLong() * 7).toFloat()
-                val y = size.height * (1f - (weekGoal / maxValue).coerceIn(0f, 1f))
-                drawLine(
-                    color = VoltDeep.copy(alpha = 0.85f),
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f),
-                )
-            }
-
 
         }
 
@@ -825,7 +811,7 @@ private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
             StatCell(
                 icon = Icons.Filled.LocationOn,
                 label = stringResource(R.string.stat_distance),
-                value = "%.0f km".format(steps * RewardEconomy.STRIDE_METERS / 1000),
+                value = "%.1f km".format(steps * RewardEconomy.STRIDE_METERS / 1000),
             )
         }
         Row(modifier = Modifier.fillMaxWidth()) {

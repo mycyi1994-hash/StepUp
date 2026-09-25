@@ -228,8 +228,8 @@ private fun SummaryRow(earned: Double?, spent: Double?) {
             VerticalHairline(height = 38.dp)
             SummaryCell(
                 label = stringResource(R.string.wallet_spent),
-                value = spent?.let { "-%,.2f".format(it) } ?: "—",
-                tint = Alert,
+                value = spent?.let { if (it == 0.0) "0.00" else "-%,.2f".format(it) } ?: "—",
+                tint = if (spent != null && spent > 0.0) Alert else Silver,
             )
         }
     }

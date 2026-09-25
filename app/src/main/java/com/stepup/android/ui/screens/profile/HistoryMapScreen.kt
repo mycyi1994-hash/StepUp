@@ -146,7 +146,7 @@ fun HistoryMapScreen(
             StepUpMap(
                 focus = focus,
                 modifier = Modifier.fillMaxSize(),
-                interactive = true,
+                interactive = focus.isNotEmpty(),
             ) { plan ->
                 for (route in map.routes) {
                     val screen = route.map { plan.toScreen(it) }
