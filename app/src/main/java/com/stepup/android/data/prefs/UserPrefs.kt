@@ -42,6 +42,12 @@ class UserPrefs(
     private val context: Context,
     private val store: androidx.datastore.core.DataStore<Preferences> = context.dataStore,
     private val authStore: androidx.datastore.core.DataStore<Preferences> = context.authDataStore,
+    /**
+     * 예전 설정 파일의 세션을 이어받아도 되는가. 이 폰에서 **업데이트된** 설치일 때만 그렇다.
+     * 새 폰에 백업을 복원하면 옛 설정 파일(세션 포함)이 같이 오는데, 그때는 새 설치라
+     * 처음 설치 시각과 마지막 업데이트 시각이 같다 — 그 세션은 버리고 다시 로그인하게 한다.
+     */
+    private val legacySessionAdoptable: () -> Boolean = { updatedInPlace(context) },
 ) {
 
     private object Keys {
@@ -301,11 +307,11 @@ class UserPrefs(
         val current = authStore.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
         if (current.isNotBlank()) return current
         val legacy = store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
-        if (legacy.isNotBlank()) {
-            authStore.edit { it[Keys.AUTH_SESSION] = legacy }
-            store.edit { it.remove(Keys.AUTH_SESSION) }
-        }
-        return legacy
+        if (legacy.isBlank()) return ""
+        val adopt = legacySessionAdoptable()
+        if (adopt) authStore.edit { it[Keys.AUTH_SESSION] = legacy }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
+        return if (adopt) legacy else ""
     }
 
     suspend fun setAuthSessionJson(json: String) {
@@ -703,3 +709,9 @@ data class NotifyPrefs(
     val partyInvite: Boolean = true,
     val eventNews: Boolean = true,
 )
+
+/** 이 앱이 이 폰에서 업데이트된 설치인가 (백업 복원으로 막 설치된 것이 아닌가) */
+private fun updatedInPlace(context: Context): Boolean = runCatching {
+    val info = context.packageManager.getPackageInfo(context.packageName, 0)
+    info.lastUpdateTime > info.firstInstallTime
+}.getOrDefault(false)

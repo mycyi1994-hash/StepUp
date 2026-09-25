@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-09-25 — app stage 5 (1): mock GPS, faction board removal, wallet page entry
+
+- Ranking: the faction (종족) board is removed with the server `faction_leaderboard` function (migration 0028) — four boards remain (speed/time/SUP/crew). The gallery's `ranking-factions` scenario is removed.
+- Wallet: the GIWA card now has one native "open wallet page" action. It opens `web/wallet.html` in a Custom Tab with the login token after `#`; without a session it shows a sign-in notice, without a token refresh an offline notice. New gallery scenario `extra-wallet-page-sign-in` captures the guest state.
+- Not visual: mock-location runs are void and reported to the server; profile multiplier uses the equipped shoe; the login session moved to a backup-excluded file (a restored legacy session is discarded).
+- Local evidence: `compileDebugKotlin`, `compileDebugAndroidTestKotlin`, all `testDebugUnitTest`, string and asset checks. Device captures come from the PR #20 Experience QA run on the same revision; the signed-in page itself, real wallet linking and transactions are not captured here.
+
 ## 2026-09-25 — character-free stage 9, courses/map/ranking
 
 - Reordered course cards around name/distance, schematic route, reward/record and one native selection action. Removed the duplicate radio control; kept existing selection and ownership data. Short course and ranking-period tabs remain on one line in the 1.6× font capture. Nearby map now links directly to the existing course list.
