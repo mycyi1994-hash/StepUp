@@ -25,6 +25,8 @@ class StepRepository(
     private val prefs: UserPrefs,
     private val tracker: StepTracker,
     private val rewardRepository: RewardRepository,
+    /** 목표를 서버에도 적는다(목표 보너스를 서버가 이 값으로 판정). 서버가 없으면 null. */
+    private val pushGoal: (suspend (Int) -> Unit)? = null,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -60,7 +62,10 @@ class StepRepository(
     }
 
     suspend fun setDailyGoal(goal: Int) {
-        prefs.setDailyGoal(goal.coerceIn(UserPrefs.MIN_GOAL, UserPrefs.MAX_GOAL))
+        val clamped = goal.coerceIn(UserPrefs.MIN_GOAL, UserPrefs.MAX_GOAL)
+        prefs.setDailyGoal(clamped)
+        // 연결이 없으면 다음에 서버와 맞출 때(EconomySync) 보낸다
+        runCatching { pushGoal?.invoke(clamped) }
     }
 
     /** 지난 7일(오늘 포함) 기록 */

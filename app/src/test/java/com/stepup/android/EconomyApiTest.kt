@@ -106,4 +106,10 @@ class EconomyApiTest {
         assertEquals(EconomyOutcome.SignInRequired, api(http, signedIn = false).drawPaid().toEconomyOutcome())
         assertTrue(http.calls.isEmpty())
     }
+
+    @Test fun dailyGoalGoesToTheServerSoTheGoalBonusUsesIt() = runBlocking {
+        val http = Http { HttpResponse(200, "3000") }
+        assertEquals(ServerResult.Ok(3000), api(http).setDailyGoal(3000))
+        assertTrue(http.calls.any { it.first.endsWith("/rpc/profile_set_daily_goal") && it.second == """{"p_goal":3000}""" })
+    }
 }

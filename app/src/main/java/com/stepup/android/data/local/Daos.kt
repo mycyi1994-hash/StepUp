@@ -121,7 +121,17 @@ interface RewardDao {
     @Insert
     suspend fun insertAll(rows: List<RewardEntity>)
 
-    @Query("SELECT COALESCE(SUM(amount), 0.0) AS balance, COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent FROM rewards")
+    /**
+     * 잔고 · 번 것 · 쓴 것. 번 것은 러닝 · 목표 · 이벤트 · 파티 · 코스 보상만, 쓴 것은 뽑기 · 강화 ·
+     * 부스터 · 수리 · 거래소 구매 · 수수료만 센다. 사기 주문을 걸었다 거두면(ESCROW) 같은 금액이
+     * 번 것 · 쓴 것 양쪽에 붙고, 판매 대금 · 체인 넣기/꺼내기는 번 것 · 쓴 것이 아니다.
+     */
+    @Query(
+        "SELECT COALESCE(SUM(amount), 0.0) AS balance, " +
+            "COALESCE(SUM(CASE WHEN type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE') AND amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, " +
+            "COALESCE(SUM(CASE WHEN type IN ('SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR', 'TRADE_BUY', 'TRADE_FEE') AND amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent " +
+            "FROM rewards",
+    )
     fun observeTotals(): Flow<RewardTotals>
 
     @Insert
@@ -150,7 +160,11 @@ interface RewardDao {
     @Query("SELECT COUNT(*) FROM rewards WHERE type = :type")
     fun observeCountByType(type: String): Flow<Int>
 
-    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0")
+    @Query("SELECT COUNT(*) FROM rewards WHERE type IN (:types)")
+    fun observeCountByTypes(types: List<String>): Flow<Int>
+
+    /** 지금까지 번 SUP — [observeTotals] 의 earned 와 같은 종류만 */
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0 AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')")
     fun observeEarnedTotal(): Flow<Double>
 
     /**
@@ -162,7 +176,7 @@ interface RewardDao {
     @Query(
         "SELECT COALESCE(SUM(amount), 0.0) FROM rewards " +
             "WHERE amount > 0 AND timestamp >= :fromMillis " +
-            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY')",
+            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')",
     )
     fun observeEarnedSince(fromMillis: Long): Flow<Double>
 

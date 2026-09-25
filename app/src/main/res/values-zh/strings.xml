@@ -296,12 +296,15 @@
     <string name="notif_empty_title">这里还空着</string>
     <string name="notif_empty_body">奖励、跑团邀请和活动更新都会出现在这里。</string>
     <string name="notif_reward_earned">%1$s 步赚到 %2$s SUP</string>
+    <string name="notif_reward_earned_plain">%1$s 步跑步记录</string>
     <string name="notif_goal_reached">每日目标达成！连续 %1$s 天 · +%2$s SUP</string>
+    <string name="notif_goal_reached_plain">达成每日目标！连续 %1$s 天</string>
     <string name="notif_sneaker_minted">已铸造 %1$s</string>
     <string name="notif_sneaker_upgraded">%1$s 升到新等级了</string>
     <string name="notif_boost_activated">加成已激活</string>
     <string name="notif_crew_joined">你加入了 %1$s</string>
     <string name="notif_party_finished">和 %1$s 位跑者组队跑 · +%2$s SUP</string>
+    <string name="notif_party_finished_plain">与 %1$s 人组队跑</string>
     <string name="notif_event_claimed">活动奖励已领取 · +%2$s SUP</string>
 
     <!-- Profile -->
@@ -1035,7 +1038,10 @@
     <string name="course_selected">已选择</string>
     <string name="course_today">今日挑战</string>
     <string name="course_reward_value">+%1$s SUP</string>
-    <string name="course_per_km">每公里 %1$s SUP · 上限 %2$s</string>
+    <string name="course_reward_upto">最多 +%1$s SUP</string>
+    <string name="course_reward_none">此路线没有完成奖励（体验或自己的路线）</string>
+    <string name="course_apply_body_no_reward">%1$s · %2$s km\n此路线没有完成奖励（体验或自己的路线）。成绩仍会记录。</string>
+    <string name="course_per_km">每公里 %1$s SUP · 上限 %2$s · 每天一次，服务器确认后</string>
     <string name="course_to_finish">距完成</string>
     <string name="course_none_title">尚未选择路线</string>
     <string name="course_none_body">选择路线即可解锁实时地图和按距离发放的完赛奖励。</string>
@@ -1075,10 +1081,11 @@
     <string name="map_open_google">在谷歌地图中打开</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">要应用该路线吗？</string>
-    <string name="course_apply_body">%1$s · %2$s km\n完成后可获得 %3$s SUP。</string>
+    <string name="course_apply_body">%1$s · %2$s km\n完成并经服务器确认后最多可获得 %3$s SUP（每天一次）。</string>
     <string name="course_clear_title">要取消应用该路线吗？</string>
     <string name="course_clear_body">%1$s 将不再是当前路线。</string>
     <string name="notif_course_complete">完成路线 %1$s！获得 +%2$s SUP</string>
+    <string name="notif_course_complete_plain">完成 %1$s！</string>
     <string name="news_refresh">刷新</string>
     <string name="news_loading">正在获取跑步资讯…</string>
     <string name="news_empty">还没有收到资讯。每天韩国时间早上 9 点汇总一次。</string>

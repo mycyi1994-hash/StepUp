@@ -53,10 +53,12 @@ class EventsViewModel(
         .map<Double, Double?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** 주간 챌린지(Step Surge) 진행도 — 실제 최근 7일 걸음 합계 */
-    val weekSteps: StateFlow<Long?> = stepRepository.observeWeek()
-        .map<List<com.stepup.android.data.local.DailyStepsEntity>, Long?> { week -> week.sumOf { it.steps.toLong() } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    /**
+     * 주간 챌린지(Step Surge) 진행도 — 서버가 확인한 이번 주(한국 시각) 러닝 걸음.
+     * 폰 만보기 걸음을 보이면 100% 인데도 서버가 "아직"이라며 거절한다. 못 받으면 null(—).
+     */
+    private val _weekSteps = MutableStateFlow<Long?>(null)
+    val weekSteps: StateFlow<Long?> = _weekSteps
 
     val claimedIds: StateFlow<Set<String>?> = eventRepository.claimedIds
         .map<Set<String>, Set<String>?> { it }
@@ -80,19 +82,23 @@ class EventsViewModel(
         DailyChallenge(steps = steps, goal = goal, paidToday = paid)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /**
-     * 나이트 러너 — 저녁 8시 이후에 시작한 러닝의 거리 합(km).
-     *
-     * 예전에는 12.4km 로 고정된 숫자를 보여 줬다. 진짜 기록에서 계산한다.
-     */
-    val nightKm: StateFlow<Double?> = stepRepository.observeVerifiedSessions()
-        .map<List<com.stepup.android.data.local.WalkSessionEntity>, Double?> { sessions ->
-            sessions.filter { s ->
-                val hour = Instant.ofEpochMilli(s.startedAt).atZone(ZoneId.systemDefault()).hour
-                hour >= NIGHT_FROM_HOUR
-            }.sumOf { it.distanceMeters } / 1000.0
+    /** 나이트 러너 — 서버가 잰, 한국 시각 저녁 8시 이후에 시작한 러닝의 거리 합(km). 못 받으면 null(—). */
+    private val _nightKm = MutableStateFlow<Double?>(null)
+    val nightKm: StateFlow<Double?> = _nightKm
+
+    init {
+        refreshProgress()
+    }
+
+    /** 서버의 도전 진행값을 다시 받는다 — 화면을 열 때와 받기를 누른 뒤 */
+    fun refreshProgress() {
+        viewModelScope.launch {
+            runCatching { eventRepository.serverProgress(com.stepup.android.data.repo.Events.STEP_SURGE) }
+                .getOrNull()?.let { _weekSteps.value = it.toLong() }
+            runCatching { eventRepository.serverProgress(com.stepup.android.data.repo.Events.NIGHT_QUEST) }
+                .getOrNull()?.let { _nightKm.value = it }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }
 
     val claimResult = MutableStateFlow<ClaimResult?>(null)
 
@@ -117,6 +123,7 @@ class EventsViewModel(
               claimResult.value = ClaimResult.Failed
           } finally {
               claimingId.value = null
+              refreshProgress()
           }
         }
     }

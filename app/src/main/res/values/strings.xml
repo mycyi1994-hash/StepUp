@@ -298,12 +298,15 @@
     <string name="notif_empty_title">Nothing here yet</string>
     <string name="notif_empty_body">Rewards, crew invites and event updates will show up here.</string>
     <string name="notif_reward_earned">Earned %2$s SUP from %1$s steps</string>
+    <string name="notif_reward_earned_plain">Run recorded: %1$s steps</string>
     <string name="notif_goal_reached">Daily goal hit! %1$s day streak · +%2$s SUP</string>
+    <string name="notif_goal_reached_plain">Daily goal hit! %1$s day streak</string>
     <string name="notif_sneaker_minted">Minted %1$s</string>
     <string name="notif_sneaker_upgraded">%1$s reached a new level</string>
     <string name="notif_boost_activated">Boost activated</string>
     <string name="notif_crew_joined">You joined %1$s</string>
     <string name="notif_party_finished">Party run with %1$s runners · +%2$s SUP</string>
+    <string name="notif_party_finished_plain">Party run with %1$s runners</string>
     <string name="notif_event_claimed">Event reward claimed · +%2$s SUP</string>
 
     <!-- Profile -->
@@ -1037,7 +1040,10 @@ Start running with StepUp.</string>
     <string name="course_selected">Selected</string>
     <string name="course_today">TODAY\'S CHALLENGE</string>
     <string name="course_reward_value">+%1$s SUP</string>
-    <string name="course_per_km">%1$s SUP per km · up to %2$s</string>
+    <string name="course_reward_upto">Up to +%1$s SUP</string>
+    <string name="course_reward_none">No finish reward on this course (sample or your own)</string>
+    <string name="course_apply_body_no_reward">%1$s · %2$s km\nNo finish reward on this course (sample or your own). Your time is still recorded.</string>
+    <string name="course_per_km">%1$s SUP per km · up to %2$s · once a day, after server check</string>
     <string name="course_to_finish">To finish</string>
     <string name="course_none_title">No course selected</string>
     <string name="course_none_body">Pick a course to unlock the live map and a distance-based finish reward.</string>
@@ -1077,10 +1083,11 @@ Start running with StepUp.</string>
     <string name="map_open_google">Open in Google Maps</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">Apply this course?</string>
-    <string name="course_apply_body">%1$s · %2$s km\nFinish it and you earn %3$s SUP.</string>
+    <string name="course_apply_body">%1$s · %2$s km\nFinish it for up to %3$s SUP after the server checks it (once a day).</string>
     <string name="course_clear_title">Clear this course?</string>
     <string name="course_clear_body">%1$s will no longer be your active course.</string>
     <string name="notif_course_complete">Course complete: %1$s! +%2$s SUP</string>
+    <string name="notif_course_complete_plain">Course complete: %1$s!</string>
     <string name="news_refresh">Refresh</string>
     <string name="news_loading">Fetching the latest running news…</string>
     <string name="news_empty">No news has arrived yet. It is gathered once a day at 09:00 KST.</string>
