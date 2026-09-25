@@ -2073,6 +2073,20 @@ begin
   perform pg_temp.ok(v.gps_m < 1000, '튄 구간(시속 60km 초과)은 거리에 넣지 않는다');
 end $$;
 
+-- 일시정지 (0033) — 5분 달리고, 멈춘 채 버스로 약 3km 가서, 다시 5분 달렸다
+do $$
+declare v record; s record; v_t0 timestamptz := now() - interval '3 hours'; v_track text;
+begin
+  v_track := pg_temp.track(v_t0, 300, 0.00003) || ';'
+          || pg_temp.track_at(v_t0 + interval '900 seconds', 300, 0.00003, 127.03);
+  select * into v from economy.track_summary(v_track);
+  perform pg_temp.ok(v.gps_m between 1900 and 2100,
+    format('멈춘 동안 이동한 거리는 경로 거리에 넣지 않는다 (%s m)', round(v.gps_m::numeric)));
+  select * into s from economy.track_speed_stats(v_track);
+  perform pg_temp.ok(s.top_speed_kmh < 13,
+    format('멈춘 동안의 속도는 최고 속도가 되지 않는다 (%s km/h)', round(s.top_speed_kmh::numeric, 1)));
+end $$;
+
 set role authenticated;
 call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 
@@ -2698,9 +2712,11 @@ begin
   insert into public.parties (flash_post_id, host_id, status, starts_at)
   values (pg_temp.fx('post_flash')::bigint, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', 'FINISHED', v_at)
   returning id into v_party;
-  insert into public.party_runs (party_id, user_id, starts_at) values
-    (v_party, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', v_at),
-    (v_party, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', v_at);
+  -- f2 는 달리는 동안 위치를 보냈고, 3333 은 출발 직후 한 번 보내고 사라졌다
+  insert into public.party_runs (party_id, user_id, starts_at, last_ping) values
+    (v_party, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', v_at, null),
+    (v_party, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', v_at, v_at + interval '5 minutes'),
+    (v_party, '33333333-3333-3333-3333-333333333333', v_at, v_at + interval '10 seconds');
   insert into fix (k, v) values ('party_at', v_at::text);
 end $$;
 set role authenticated;
@@ -2711,7 +2727,19 @@ begin
   select * into r from public.record_session(v_at + interval '5 seconds', v_at + interval '605 seconds', 600, 600,
     '', 0, 9, '', false);
   perform pg_temp.ok((select party_size from public.walk_sessions where id = r.session_id) = 2,
-    '폰이 9명이라고 해도 출발 명단의 2명으로 센다 (X2)');
+    '폰이 9명이라고 해도 출발 명단에서 실제로 뛴 2명으로 센다 (X2)');
+end $$;
+-- 출발 명단에 있어도 뛰지 않은 사람은 세지 않는다 (0032)
+reset role;
+do $$
+declare v_at timestamptz := pg_temp.fx('party_at')::timestamptz; v_size int;
+begin
+  select size into v_size from economy.party_for('33333333-3333-3333-3333-333333333333', v_at);
+  perform pg_temp.ok(v_size = 3, '본인 · 위치를 계속 보낸 사람 · 기록을 올린 사람을 센다');
+  update public.party_runs set last_ping = null
+   where user_id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2' and starts_at = v_at;
+  select size into v_size from economy.party_for('33333333-3333-3333-3333-333333333333', v_at);
+  perform pg_temp.ok(v_size = 2, '위치를 안 보내고 기록도 없는 사람은 빠진다');
 end $$;
 
 -- 하루 금액 상한 — 가입 7일 안은 절반
