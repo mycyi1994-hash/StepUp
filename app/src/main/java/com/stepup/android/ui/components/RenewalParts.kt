@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.widthIn
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -30,7 +28,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +35,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -476,58 +472,44 @@ fun TwoWaySwitch(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    scrollWhenLarge: Boolean = false,
 ) {
     val shape = RoundedCornerShape(16.dp)
-    val density = LocalDensity.current
-    val scroll = scrollWhenLarge && density.fontScale > 1.3f
-    val scrollState = rememberScrollState()
-    LaunchedEffect(scroll, selected, scrollState.maxValue) {
-        if (scroll) {
-            val itemWidth = with(density) { 124.dp.roundToPx() }
-            scrollState.scrollTo((selected * itemWidth).coerceAtMost(scrollState.maxValue))
-        }
-    }
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .background(CarbonHigh, shape)
-            .border(1.dp, Edge, shape),
+            .border(1.dp, Edge, shape)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(
-            modifier = (if (scroll) Modifier.horizontalScroll(scrollState) else Modifier.fillMaxWidth())
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            labels.forEachIndexed { index, label ->
-                val on = index == selected
-                val itemShape = RoundedCornerShape(12.dp)
-                Row(
-                    modifier = (if (scroll) Modifier.widthIn(min = 112.dp) else Modifier.weight(1f))
-                        .heightIn(min = StepUpDesign.TouchTarget)
-                        .clip(itemShape)
-                        .then(if (on) Modifier.background(VoltPlate, itemShape) else Modifier)
-                        .feedbackClickable(role = Role.Tab) { onSelect(index) }
-                        .semantics { this.selected = on }
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    icons.getOrNull(index)?.let {
-                        Icon(it, contentDescription = null, tint = if (on) OnVolt else Silver, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                    }
-                    Text(
-                        text = label,
-                        modifier = if (scroll) Modifier else Modifier.weight(1f, fill = false),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (on) OnVolt else Silver,
-                        textAlign = TextAlign.Center,
-                        maxLines = if (scroll) 1 else Int.MAX_VALUE,
-                    )
+        labels.forEachIndexed { index, label ->
+            val on = index == selected
+            val itemShape = RoundedCornerShape(12.dp)
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = StepUpDesign.TouchTarget)
+                    .clip(itemShape)
+                    .then(if (on) Modifier.background(VoltPlate, itemShape) else Modifier)
+                    .feedbackClickable(role = Role.Tab) { onSelect(index) }
+                    .semantics { this.selected = on }
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                icons.getOrNull(index)?.let {
+                    Icon(it, contentDescription = null, tint = if (on) OnVolt else Silver, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
                 }
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f, fill = false),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (on) OnVolt else Silver,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
             }
         }
     }

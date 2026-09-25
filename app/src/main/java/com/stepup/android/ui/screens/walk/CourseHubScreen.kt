@@ -130,13 +130,12 @@ fun CourseHubScreen(
             item {
                 SegmentedTabs(
                     labels = listOf(
-                        stringResource(R.string.courses_select),
-                        stringResource(R.string.courses_make),
-                        stringResource(R.string.courses_board),
+                        stringResource(R.string.courses_tab_select),
+                        stringResource(R.string.courses_tab_make),
+                        stringResource(R.string.courses_tab_board),
                     ),
                     selected = tab,
                     onSelect = { tab = it },
-                    scrollWhenLarge = true,
                 )
             }
 

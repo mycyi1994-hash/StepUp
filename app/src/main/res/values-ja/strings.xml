@@ -603,6 +603,7 @@
     <string name="rank_period_week">週間</string>
     <string name="rank_period_month">月間</string>
     <string name="rank_period_all">全期間</string>
+    <string name="rank_period_all_short">全体</string>
     <string name="rank_my_position">自分の順位</string>
     <string name="rank_total_runners">ランナー %1$d 人中</string>
     <string name="ranking_teaser">%1$d 位 · %2$s SUP</string>
@@ -1018,6 +1019,9 @@ StepUp と走り出そう。</string>
     <string name="courses_select">コース選択</string>
     <string name="courses_make">コース作成</string>
     <string name="courses_board">コース掲示板</string>
+    <string name="courses_tab_select">選択</string>
+    <string name="courses_tab_make">作成</string>
+    <string name="courses_tab_board">掲示板</string>
     <string name="courses_empty">まだコースがありません。走って作るか、掲示板をのぞいてみましょう。</string>
     <string name="courses_board_empty">まだ共有コースがありません。最初のコースを共有しましょう！</string>
     <string name="course_selected">選択中</string>

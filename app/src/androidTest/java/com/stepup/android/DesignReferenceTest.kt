@@ -222,9 +222,9 @@ class DesignReferenceTest {
                     capture("$name-all")
                 }
                 if (s == Scene.COURSES) {
-                    compose.onNodeWithText(korean(R.string.courses_make)).performClick()
+                    compose.onNodeWithText(korean(R.string.courses_tab_make)).performClick()
                     capture("$name-make")
-                    compose.onNodeWithText(korean(R.string.courses_board)).performClick()
+                    compose.onNodeWithText(korean(R.string.courses_tab_board)).performClick()
                     capture("$name-board")
                 }
                 if (s == Scene.EXPLORE_MAP) {

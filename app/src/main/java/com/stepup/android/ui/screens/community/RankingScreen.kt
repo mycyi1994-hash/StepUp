@@ -127,11 +127,10 @@ fun RankingScreen(
                     stringResource(R.string.rank_period_day),
                     stringResource(R.string.rank_period_week),
                     stringResource(R.string.rank_period_month),
-                    stringResource(R.string.rank_period_all),
+                    stringResource(R.string.rank_period_all_short),
                 ),
                 selected = RankPeriod.entries.indexOf(period),
                 onSelect = { viewModel.selectPeriod(RankPeriod.entries[it]) },
-                scrollWhenLarge = true,
             )
         }
 
