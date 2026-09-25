@@ -1,5 +1,13 @@
 package com.stepup.android.ui.screens.gacha
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.testTag
+import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.PrimaryCta
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,8 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.stepup.android.R
-import com.stepup.android.ui.components.GhostButton
-import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.ambientPhase
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.LocalFeedback
@@ -45,6 +50,8 @@ fun MysteryBoxScreen(
     outfitDrawReady: Boolean = false,
     onDrawShoe: () -> Unit = {},
     onDrawOutfit: () -> Unit = {},
+    onOpenDex: () -> Unit = {},
+    onOpenWallet: () -> Unit = {},
 ) {
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
@@ -55,55 +62,53 @@ fun MysteryBoxScreen(
             .padding(top = 24.dp, bottom = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.mystery_title),
-            color = Snow,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.mystery_subtitle),
-            color = Silver,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        Box(
-            modifier = Modifier.fillMaxWidth().weight(1f).heightIn(min = 180.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier.size(245.dp).graphicsLayer {
-                    val p = pulse?.value ?: 0.5f
-                    scaleX = 0.96f + p * 0.08f
-                    scaleY = scaleX
-                    alpha = 0.28f + p * 0.23f
-                }.background(Brush.radialGradient(listOf(Volt, Cyan.copy(alpha = 0.55f), androidx.compose.ui.graphics.Color.Transparent)), CircleShape),
-            )
-            Image(
-                painter = painterResource(R.drawable.mystery_box_closed),
-                contentDescription = stringResource(R.string.mystery_box_description),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth().size(320.dp),
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            VoltButton(
-                text = stringResource(R.string.mystery_draw_shoe),
-                onClick = onDrawShoe,
-                enabled = shoeDrawReady,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        if (!shoeDrawReady) {
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = stringResource(R.string.mystery_pending_chain),
-                color = Silver,
-                style = MaterialTheme.typography.bodySmall,
+                text = stringResource(R.string.mystery_subtitle),
+                color = Snow,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp),
             )
+            Box(
+                modifier = Modifier.fillMaxWidth().height(260.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier.size(245.dp).graphicsLayer {
+                        val p = pulse?.value ?: 0.5f
+                        scaleX = 0.96f + p * 0.08f
+                        scaleY = scaleX
+                        alpha = 0.28f + p * 0.23f
+                    }.background(Brush.radialGradient(listOf(Volt, Cyan.copy(alpha = 0.55f), androidx.compose.ui.graphics.Color.Transparent)), CircleShape),
+                )
+                Image(
+                    painter = painterResource(R.drawable.mystery_box_closed),
+                    contentDescription = stringResource(R.string.mystery_box_description),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().size(320.dp),
+                )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                TextButton(onClick = onOpenDex, modifier = Modifier.testTag("draw-dex")) { Text(stringResource(R.string.dex_title)) }
+                TextButton(onClick = onOpenWallet, modifier = Modifier.testTag("draw-wallet")) { Text(stringResource(R.string.settings_wallet)) }
+            }
+            GlowCard(spacing = 8.dp) {
+                Text(stringResource(R.string.mystery_guide_title), color = Snow, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.mystery_guide_body), color = Silver, style = MaterialTheme.typography.bodyMedium)
+            }
+            if (!shoeDrawReady) {
+                Text(
+                    text = stringResource(R.string.mystery_pending_chain),
+                    color = Silver,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
         }
+        PrimaryCta(text = stringResource(R.string.mystery_draw_shoe), onClick = onDrawShoe,
+            enabled = shoeDrawReady, modifier = Modifier.padding(top = 16.dp).testTag("draw-shoe"))
     }
 }

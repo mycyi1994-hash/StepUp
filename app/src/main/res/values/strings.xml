@@ -1540,5 +1540,18 @@ Start running with StepUp.</string>
     <string name="home_next_background">Next background</string>
     <string name="home_record_title">Today’s activity</string>
     <string name="home_recent_week">Last 7 days</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">My shoes</string>
+    <string name="shoes_preview">Selected pair</string>
+    <string name="shoes_details">Shoe details</string>
+    <string name="shoes_owned">Owned shoes · %1$d</string>
+    <string name="shoes_select">Use these shoes</string>
+    <string name="shoes_market">Browse the shoe market</string>
+    <string name="home_banner_message">One more step.\nIn a good direction.</string>
+    <string name="mystery_guide_title">Before you draw</string>
+    <string name="mystery_guide_body">Check the price and available shoes on the draw page before confirming.</string>
+    <string name="community_upcoming">Upcoming meetups</string>
+    <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

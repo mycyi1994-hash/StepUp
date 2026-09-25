@@ -296,7 +296,13 @@ fun GuideOverlay(
             }
             Text(stringResource(step.bodyRes), style = MaterialTheme.typography.bodyLarge, color = Silver,
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()))
-            VoltButton(
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                GuideTour.steps.forEachIndexed { index, _ ->
+                    Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp))
+                        .background(if (index <= GuideTour.stepIndex) com.stepup.android.ui.theme.Volt else Silver.copy(alpha = 0.25f)))
+                }
+            }
+            com.stepup.android.ui.components.PrimaryCta(
                 text = stringResource(if (isLast) R.string.guide_start else R.string.guide_next),
                 onClick = { if (!GuideTour.advance()) onFinished() }, modifier = Modifier.fillMaxWidth(),
             )

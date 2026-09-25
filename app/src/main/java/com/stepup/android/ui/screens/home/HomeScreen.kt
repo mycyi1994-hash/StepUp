@@ -79,7 +79,7 @@ import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
-/** Home prioritizes the equipped character and one pinned run action. Details stay reachable in a sheet. */
+/** Native records and one pinned run action; scenic artwork is an independent layer. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -144,6 +144,11 @@ fun HomeScreen(
             Text(stringResource(R.string.home_daily_goal, "%,d".format(state.goal)), color = Silver)
             Box(Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(16.dp))) {
                 com.stepup.android.ui.components.RunnerBanner(Modifier.fillMaxSize(), backgroundSetting)
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f)))))
+                Text(stringResource(R.string.home_banner_message), color = androidx.compose.ui.graphics.Color.White,
+                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp, vertical = 16.dp))
                 com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronLeft,
                     stringResource(R.string.home_previous_background), onClick = onPreviousBackground,
                     modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"))
@@ -151,6 +156,7 @@ fun HomeScreen(
                     stringResource(R.string.home_next_background), onClick = onNextBackground,
                     modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"))
             }
+            if (!hasPermission) PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
             RecordWeek(state.week, state.todaySteps, state.loaded)
             HairlineDivider()
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -362,9 +368,11 @@ private fun RecordWeek(week: List<com.stepup.android.data.local.DailyStepsEntity
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         days.forEachIndexed { index, day ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.fillMaxWidth().height(110.dp), contentAlignment = Alignment.BottomCenter) {
+                AdaptiveNumber(if (loaded) "%,d".format(values[index]) else "—", 12.sp,
+                    color = if (day == today) VoltText else Silver, textAlign = TextAlign.Center)
+                Box(Modifier.fillMaxWidth().height(88.dp), contentAlignment = Alignment.BottomCenter) {
                     Box(Modifier.fillMaxWidth(0.72f)
-                        .height(if (loaded) (100f * values[index].toFloat() / maximum).coerceAtLeast(2f).dp else 2.dp)
+                        .height(if (loaded) (80f * values[index].toFloat() / maximum).coerceAtLeast(2f).dp else 2.dp)
                         .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                         .background(if (day == today) Volt else Volt.copy(alpha = 0.4f)))
                 }

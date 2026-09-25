@@ -1538,5 +1538,18 @@ StepUp과 함께 달려보세요.</string>
     <string name="home_next_background">다음 배경</string>
     <string name="home_record_title">오늘의 기록</string>
     <string name="home_recent_week">최근 7일</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">내 신발</string>
+    <string name="shoes_preview">선택한 신발</string>
+    <string name="shoes_details">신발 상세 보기</string>
+    <string name="shoes_owned">보유 신발 · %1$d</string>
+    <string name="shoes_select">이 신발 사용하기</string>
+    <string name="shoes_market">신발 마켓 바로가기</string>
+    <string name="home_banner_message">오늘도 한 걸음 더,\n좋은 방향으로.</string>
+    <string name="mystery_guide_title">뽑기 이용 안내</string>
+    <string name="mystery_guide_body">뽑기 화면에서 가격과 획득 가능한 신발을 확인한 뒤 진행하세요.</string>
+    <string name="community_upcoming">다가오는 러닝 모임</string>
+    <string name="run_route_unavailable">이 러닝에는 기록된 GPS 경로가 없어요.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

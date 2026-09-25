@@ -52,6 +52,13 @@ class ItemsViewModel(
     val inventory: StateFlow<List<Sneaker>> = sneakerRepository.inventory
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Null is loading; an empty list is an actual empty shoe vault. */
+    val selectionInventory: StateFlow<List<Sneaker>?> = sneakerRepository.inventory
+        .map<List<Sneaker>, List<Sneaker>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val equipping = MutableStateFlow(false)
+
     /**
      * 도감 슬롯별 그룹. 대표는 착용 중인 사본, 없으면 최고 레벨 사본.
      * 착용 중인 그룹이 맨 위, 그다음 등급 → 획득 순.
@@ -101,13 +108,15 @@ class ItemsViewModel(
     val message = MutableStateFlow<ItemsMessage?>(null)
 
     fun equip(id: Long) {
+        if (equipping.value) return
+        equipping.value = true
         viewModelScope.launch {
             try {
                 if (!sneakerRepository.equip(id)) {
                     message.value = ItemsMessage.SaveFailed
                     return@launch
                 }
-                val target = inventory.value.firstOrNull { it.id == id }
+                val target = (selectionInventory.value ?: inventory.value).firstOrNull { it.id == id }
                 if (target != null) {
                     message.value = ItemsMessage.Equipped(target)
                     ExperienceEvents.emit(FeedbackCue.Equip)
@@ -116,6 +125,8 @@ class ItemsViewModel(
                 throw cancelled
             } catch (_: Exception) {
                 message.value = ItemsMessage.SaveFailed
+            } finally {
+                equipping.value = false
             }
         }
     }

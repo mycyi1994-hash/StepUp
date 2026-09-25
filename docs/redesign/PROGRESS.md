@@ -813,3 +813,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Checks passed: no unresolved entries, design contract, localized strings, packaged media, staged diff whitespace, and original untracked-file preservation. Android compile/device tests were not run during this merge-only step.
 - `ExperienceUiTest` / `DesignReferenceTest` redesign updates remain the separately planned test stage. No push, APK, deployment or next-stage UI work was performed.
 - Backup: `C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-main-sync-20260925-134513`.
+
+## 2026-09-25 — stage 2: character-free native screen layouts
+
+- Implemented the ten mockup destinations as native presentation changes: record home, dedicated shoe selection, draw, active run, run result, community, profile, challenges, login and three-step guide.
+- Replaced the wardrobe's temporary ItemsScreen wrapper with a real inventory-backed shoe preview/selection UI. Loading, empty, equipped and save-in-flight states are separate; detail, collection, vault and market stay reachable.
+- Restored real GPS maps on active/result screens, moved activity results before settlement information, restored actual profile photos and recent activity, and replaced the single meetup card with upcoming real meetups and joined crews.
+- Kept illustrations independent of native labels/buttons/charts, existing reward/deployment gates and main's backend/login upload work. No new generated art, APK, push or deployment.
+- Checks: design contract, four-locale strings, packaged media and diff whitespace pass. Local Java/Android SDK unavailable; Android compilation, native captures and device interaction remain pending. ExperienceUiTest and DesignReferenceTest expectations remain stage 3.
+- Per-screen evidence and scope: CHARACTER-FREE-STAGE2-2026-09-25-KO.md. Inventory marks source implementation only, not visual acceptance.

@@ -146,6 +146,7 @@ fun CommunityScreen(
             CommunityTab.BOARD -> if (!stories && !allMeetups) TogetherTab(
                 viewModel = viewModel, onOpenFlash = onOpenFlash,
                 onWritePost = { onWritePost("") }, onAllMeetups = { allMeetups = true },
+                onOpenCrews = { viewModel.selectTab(CommunityTab.CREW) },
             ) else BoardTab(
                 viewModel = viewModel,
                 onlyFlash = !stories,

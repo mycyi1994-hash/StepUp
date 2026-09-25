@@ -149,8 +149,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val look by viewModel.look.collectAsStateWithLifecycle()
     val totals by viewModel.runTotals.collectAsStateWithLifecycle()
+    val recentRuns by viewModel.recentRuns.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
@@ -228,10 +228,6 @@ fun ProfileScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    // Keep the identity and primary destinations in the first viewport. The
-    // profile background pool supplies a real ground plane under the runner.
-    val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(220.dp, 360.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
@@ -278,37 +274,36 @@ fun ProfileScreen(
 
         // ── 머리글 — 로고 · 보유 SUP ──
 
-        // ── 작은 캐릭터 · 닉네임 · 인사 ──
+        // ── 실제 프로필 사진 · 닉네임 · 인사 ──
         item {
             MeHeader(
                 state = state,
-                look = look,
-                artworkHeight = artworkHeight,
                 onEditProfile = { showProfileEdit = true },
-                onOpenCustomize = onOpenCustomize,
                 onOpenSettings = { tab = 1 },
-                onChangeBackground = onChangeBackground,
             )
         }
 
         item {
-            Column {
-                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            GlowCard(spacing = 16.dp) {
+                Text(stringResource(R.string.profile_total_distance), color = Silver,
+                    style = MaterialTheme.typography.bodyMedium)
+                com.stepup.android.ui.components.AdaptiveNumber(totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—", 42.sp)
+                HairlineDivider()
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.me_total_runs), color = Silver, style = MaterialTheme.typography.bodyMedium)
                         Text(totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—",
-                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.me_total_runs), color = Silver, fontSize = 14.sp)
+                            color = Snow, style = MaterialTheme.typography.titleLarge)
                     }
-                    VerticalHairline()
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—",
-                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.profile_total_distance), color = Silver, fontSize = 14.sp)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.home_run_time), color = Silver, style = MaterialTheme.typography.bodyMedium)
+                        Text(if (totals != null) formatDuration(state.totalDurationSec) else "—",
+                            color = Snow, style = MaterialTheme.typography.titleLarge)
                     }
                 }
-                HairlineDivider()
             }
         }
+        item { RecentRunsCard(recentRuns, onOpenAll = onOpenAnalytics) }
         item {
             Column(Modifier.fillMaxWidth()) {
                 QuietListRow(
@@ -1043,21 +1038,12 @@ private fun ProfileEditDialog(
 
 // ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
 
-/**
- * 머리 — 작은 캐릭터 · 닉네임 · 레벨.
- *
- * 캐릭터를 누르면 꾸미기로 간다. 여기서 크게 보여 줄 것은 "나"이지 잔액이
- * 아니다 — 잔액은 아래 카드 한 군데에만 있다.
- */
+/** Profile identity stays editable independently of the removed runner character. */
 @Composable
 private fun MeHeader(
     state: ProfileViewModel.UiState,
-    look: com.stepup.android.domain.AvatarLook?,
-    artworkHeight: androidx.compose.ui.unit.Dp,
     onEditProfile: () -> Unit,
-    onOpenCustomize: () -> Unit,
     onOpenSettings: () -> Unit,
-    onChangeBackground: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1072,6 +1058,10 @@ private fun MeHeader(
                 modifier = Modifier.testTag("profile-settings"),
             )
         }
+        LevelAvatar(level = state.runner.level, size = 76.dp,
+            contentDescription = stringResource(R.string.profile_edit_profile), avatarId = state.avatarId,
+            customBitmap = rememberCustomAvatar(state.avatarRev),
+            modifier = Modifier.feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1198,6 +1188,7 @@ private fun WeekCard(week: List<DailyStepsEntity>, onOpen: () -> Unit) {
 /** 최근 러닝 — 거리 · 날짜 · 그 러닝으로 번 SUP */
 @Composable
 private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1211,14 +1202,14 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
                 text = stringResource(R.string.me_see_all),
                 modifier = Modifier
                     .feedbackClickable(onClick = onOpenAll)
-                    .padding(6.dp),
+                    .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget).padding(12.dp),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = VoltText,
             )
         }
         when {
-            runs == null -> Unit
+            runs == null -> Text(stringResource(R.string.feed_loading), color = Silver)
             runs.isEmpty() -> Text(
                 text = stringResource(R.string.me_no_runs),
                 fontSize = 13.sp,
@@ -1246,13 +1237,13 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
                             color = Snow,
                         )
                         Text(
-                            text = date.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)),
+                            text = date.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale)),
                             fontSize = 12.sp,
                             color = Silver,
                         )
                     }
                     Text(
-                        text = "+%,.0f SUP".format(run.pointsEarned),
+                        text = formatDuration(run.durationSec),
                         fontFamily = StepUpNumbers,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,

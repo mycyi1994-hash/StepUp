@@ -1538,5 +1538,18 @@
     <string name="home_next_background">下一张背景</string>
     <string name="home_record_title">今日记录</string>
     <string name="home_recent_week">最近7天</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">我的鞋子</string>
+    <string name="shoes_preview">选中的鞋子</string>
+    <string name="shoes_details">鞋子详情</string>
+    <string name="shoes_owned">已拥有 · %1$d</string>
+    <string name="shoes_select">使用这双鞋</string>
+    <string name="shoes_market">前往鞋子市场</string>
+    <string name="home_banner_message">再迈一步，\n向更好的方向。</string>
+    <string name="mystery_guide_title">抽取须知</string>
+    <string name="mystery_guide_body">请在抽取页面确认价格和可获得的鞋子后再继续。</string>
+    <string name="community_upcoming">即将开始的跑步聚会</string>
+    <string name="run_route_unavailable">本次跑步没有记录GPS路线。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

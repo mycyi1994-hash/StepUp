@@ -135,24 +135,25 @@ internal fun LoginContent(signingIn: Boolean, error: Int?, onSignIn: () -> Unit)
         Column(
             Modifier.fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 16.dp),
+                .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.login_headline), color = Snow,
+                style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 16.dp))
+            Box(Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 240.dp), contentAlignment = Alignment.Center) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(R.drawable.home_banner_blue_night),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 )
             }
-            // Scroll only when font expansion needs more room; login and legal links remain reachable.
-            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+            // One scrolling surface keeps sign-in and legal links reachable at large text sizes.
+            Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
                 com.stepup.android.ui.components.GlowCard(contentPadding = PaddingValues(24.dp), spacing = 18.dp) {
-                    Text(stringResource(R.string.login_headline), color = Snow,
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     GoogleSignInButton(signingIn, onSignIn)
                     error?.let {
                         Text(stringResource(it), color = Alert, fontSize = 14.sp,

@@ -1539,5 +1539,18 @@ StepUp と走り出そう。</string>
     <string name="home_next_background">次の背景</string>
     <string name="home_record_title">今日の記録</string>
     <string name="home_recent_week">直近7日間</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">マイシューズ</string>
+    <string name="shoes_preview">選択中のシューズ</string>
+    <string name="shoes_details">シューズの詳細</string>
+    <string name="shoes_owned">所有シューズ · %1$d</string>
+    <string name="shoes_select">このシューズを使う</string>
+    <string name="shoes_market">シューズマーケットへ</string>
+    <string name="home_banner_message">今日も一歩、\nいい方向へ。</string>
+    <string name="mystery_guide_title">抽選の前に</string>
+    <string name="mystery_guide_body">抽選画面で価格と獲得できるシューズを確認してから進んでください。</string>
+    <string name="community_upcoming">これからのランニング</string>
+    <string name="run_route_unavailable">このランニングのGPSルートは記録されていません。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

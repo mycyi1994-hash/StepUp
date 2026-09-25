@@ -462,6 +462,8 @@ internal fun MainScaffold(
                 val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
                 MysteryBoxScreen(
                     shoeDrawReady = drawReady,
+                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onDrawShoe = {
                         com.stepup.android.core.ExternalIntents.openUrl(context,
                             android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
