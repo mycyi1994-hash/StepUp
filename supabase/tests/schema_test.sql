@@ -588,6 +588,14 @@ begin
     '한 줄만 받아도 전체 인원은 2명으로 나온다');
 end $$;
 
+-- 속성(종족)별 순위표는 없앴다 (0028)
+do $$ begin
+  perform pg_temp.ok(
+    not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                 where n.nspname = 'public' and p.proname = 'faction_leaderboard'),
+    '속성별 순위 함수가 남아 있지 않다');
+end $$;
+
 
 -- ════════════════════════════════════════════════════════════════
 --  NFT 마켓

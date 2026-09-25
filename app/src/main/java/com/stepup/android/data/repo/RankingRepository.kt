@@ -1,11 +1,8 @@
 package com.stepup.android.data.repo
 
-import com.stepup.android.data.remote.FactionRankRow
 import com.stepup.android.data.remote.LeaderboardRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.StepUpServer
-import com.stepup.android.domain.Faction
-import com.stepup.android.domain.FactionRank
 import com.stepup.android.domain.RankBoard
 import com.stepup.android.domain.RankEntry
 import com.stepup.android.domain.RankPeriod
@@ -34,14 +31,6 @@ sealed interface RankingState {
     data class Ready(val entries: List<RankEntry>, val totalRunners: Int) : RankingState {
         val me: RankEntry? get() = entries.firstOrNull { it.isMe }
     }
-}
-
-sealed interface FactionRankingState {
-    data object Loading : FactionRankingState
-
-    data class Failed(val problem: RankingProblem) : FactionRankingState
-
-    data class Ready(val rows: List<FactionRank>) : FactionRankingState
 }
 
 /**
@@ -78,18 +67,6 @@ class RankingRepository(private val server: StepUpServer) {
             is ServerResult.SignInRequired -> RankingState.Failed(RankingProblem.SIGN_IN_REQUIRED)
             is ServerResult.Rejected -> RankingState.Failed(RankingProblem.REJECTED)
         }
-
-    /** @param myFaction 지금 신고 있는 신발의 종족. "우리 편"을 표시하는 데 쓴다. */
-    suspend fun factions(myFaction: Faction?, period: RankPeriod): FactionRankingState =
-        when (val result = server.factionLeaderboard(period.name)) {
-            is ServerResult.Ok -> FactionRankingState.Ready(
-                result.value.toRanks(myFaction),
-            )
-            is ServerResult.Retry -> FactionRankingState.Failed(RankingProblem.OFFLINE)
-            is ServerResult.SignInRequired ->
-                FactionRankingState.Failed(RankingProblem.SIGN_IN_REQUIRED)
-            is ServerResult.Rejected -> FactionRankingState.Failed(RankingProblem.REJECTED)
-        }
 }
 
 private fun LeaderboardRow.toEntry(meLabel: String): RankEntry = RankEntry(
@@ -101,28 +78,3 @@ private fun LeaderboardRow.toEntry(meLabel: String): RankEntry = RankEntry(
     sup = sup,
     isMe = isMe,
 )
-
-/**
- * 서버가 보낸 종족 줄을 화면이 쓰는 모양으로.
- *
- * 서버는 거리순으로 보내지만 순위 번호는 붙이지 않는다. 같은 거리가 둘이면
- * 번호를 어떻게 매길지는 화면의 문제이지 서버의 문제가 아니다.
- */
-private fun List<FactionRankRow>.toRanks(myFaction: Faction?): List<FactionRank> =
-    // 모르는 종족을 **먼저** 걸러 낸다. 번호를 매긴 뒤에 걸러 내면 1등이
-    // 사라진 자리에 2등이 남아, 화면에 2·3·4 등만 늘어선다. 서버에 새 종족이
-    // 먼저 생기고 앱이 나중에 따라가는 일은 실제로 일어난다.
-    mapNotNull { row ->
-        val faction = Faction.entries.firstOrNull { it.id == row.faction }
-        if (faction == null) null else faction to row
-    }
-        .sortedByDescending { (_, row) -> row.km }
-        .mapIndexed { index, (faction, row) ->
-            FactionRank(
-                rank = index + 1,
-                faction = faction,
-                km = row.km,
-                myKm = row.myKm,
-                isMine = faction == myFaction,
-            )
-        }

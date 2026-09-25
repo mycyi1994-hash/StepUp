@@ -20,7 +20,6 @@ import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.data.repo.CrewJoinRequest
 import com.stepup.android.data.repo.CrewRepository
 import com.stepup.android.data.repo.CrewSyncState
-import com.stepup.android.data.repo.FactionRankingState
 import com.stepup.android.data.repo.RankingRepository
 import com.stepup.android.data.repo.RankingState
 import com.stepup.android.data.repo.RewardRepository
@@ -193,18 +192,6 @@ class CommunityViewModel(
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RankingState.Loading)
 
-    private val factionBoards = MutableStateFlow<Map<RankPeriod, FactionRankingState>>(emptyMap())
-
-    val factionRanking: StateFlow<FactionRankingState> =
-        combine(_period, factionBoards) { period, cache ->
-            cache[period] ?: FactionRankingState.Loading
-        }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(5_000),
-                FactionRankingState.Loading,
-            )
-
     // ── 크루 순위 ──────────────────────────────────────────────────
     //
     // 이것만 기기 안에서 계산한다. 크루와 크루 러닝이 아직 이 기기에만
@@ -252,17 +239,6 @@ class CommunityViewModel(
             boards.value = boards.value + (key to RankingState.Loading)
             boards.value = boards.value +
                 (key to rankingRepository.personal(key.board, key.period, meLabel))
-        }
-    }
-
-    fun loadFactionRanking(force: Boolean = false) {
-        val period = _period.value
-        if (!force && factionBoards.value[period] is FactionRankingState.Ready) return
-        viewModelScope.launch {
-            factionBoards.value = factionBoards.value + (period to FactionRankingState.Loading)
-            val myFaction = sneakerRepository.equipped.first()?.faction
-            val next = rankingRepository.factions(myFaction, period)
-            factionBoards.value = factionBoards.value + (period to next)
         }
     }
 

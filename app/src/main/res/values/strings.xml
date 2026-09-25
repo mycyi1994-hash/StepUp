@@ -597,7 +597,6 @@
     <string name="rank_me">You</string>
     <string name="rank_board_speed">Top speed</string>
     <string name="rank_board_time">Time run</string>
-    <string name="rank_board_faction">Factions</string>
     <string name="rank_board_sup">SUP balance</string>
     <string name="rank_board_crew">Crews</string>
     <string name="rank_period_day">Today</string>
@@ -615,11 +614,6 @@
     <string name="rank_failed">Couldn\'t load the leaderboard.</string>
     <string name="rank_retry">Try again</string>
     <string name="rank_no_record">No runs yet. One run puts you on the board.</string>
-    <string name="rank_faction_title">Faction standings</string>
-    <string name="rank_faction_body">Every kilometre you run counts for the faction of the sneaker you had on. You may not be #1 — your faction still can be.</string>
-    <string name="rank_faction_km">%1$s km total</string>
-    <string name="rank_faction_my_km">Your contribution · %1$s km</string>
-    <string name="rank_faction_mine">YOURS</string>
     <string name="rank_crew_title">Crew standings</string>
     <string name="rank_crew_body">Only crew runs count here — kilometres a member ran alone don\'t. Otherwise the biggest crew wins by existing.</string>
     <string name="rank_crew_runs">%1$d crew runs</string>

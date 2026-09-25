@@ -8,11 +8,9 @@ import com.stepup.android.data.remote.HttpResponse
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
-import com.stepup.android.data.repo.FactionRankingState
 import com.stepup.android.data.repo.RankingProblem
 import com.stepup.android.data.repo.RankingRepository
 import com.stepup.android.data.repo.RankingState
-import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RankBoard
 import com.stepup.android.domain.RankPeriod
 import kotlinx.coroutines.runBlocking
@@ -147,15 +145,6 @@ class RankingRepositoryTest {
     }
 
     @Test
-    fun `종족 순위에도 기간이 함께 나간다`() = runBlocking {
-        val http = FakeHttp(HttpResponse(200, "[]"))
-        repo(http).factions(null, RankPeriod.MONTH)
-
-        assertTrue(http.lastUrl.endsWith("/rpc/faction_leaderboard"))
-        assertTrue(http.lastBody, http.lastBody.contains(""""p_period":"MONTH""""))
-    }
-
-    @Test
     fun `연결이 없으면 지어내지 않고 못 가져왔다고 한다`() = runBlocking {
         // status 0 은 요청이 나가지도 못한 경우다.
         val state = repo(FakeHttp(HttpResponse(0, "연결 없음")))
@@ -170,51 +159,5 @@ class RankingRepositoryTest {
             .personal(RankBoard.TOP_SPEED, RankPeriod.ALL, meLabel = "나")
 
         assertEquals(RankingState.Failed(RankingProblem.OFFLINE), state)
-    }
-
-    // ── 종족 ────────────────────────────────────────────────────────────
-
-    @Test
-    fun `종족 순위는 거리순으로 번호를 매긴다`() = runBlocking {
-        val rows = """
-            [
-              {"faction":"FIRE","km":120.5,"my_km":12.0,"runners":8},
-              {"faction":"LIGHTNING","km":340.25,"my_km":0,"runners":11},
-              {"faction":"WATER","km":0,"my_km":0,"runners":0},
-              {"faction":"WIND","km":88.0,"my_km":0,"runners":3}
-            ]
-        """.trimIndent()
-
-        val ready = repo(FakeHttp(HttpResponse(200, rows)))
-            .factions(Faction.FIRE, RankPeriod.ALL) as FactionRankingState.Ready
-
-        assertEquals(
-            listOf(Faction.LIGHTNING, Faction.FIRE, Faction.WIND, Faction.WATER),
-            ready.rows.map { it.faction },
-        )
-        assertEquals(listOf(1, 2, 3, 4), ready.rows.map { it.rank })
-
-        val fire = ready.rows.first { it.faction == Faction.FIRE }
-        assertEquals(120.5, fire.km, 0.001)
-        assertEquals(12.0, fire.myKm, 0.001)
-        // 지금 신고 있는 신발의 종족이 "우리 편"이다.
-        assertTrue(fire.isMine)
-        assertTrue(ready.rows.count { it.isMine } == 1)
-    }
-
-    @Test
-    fun `모르는 종족이 와도 죽지 않는다`() = runBlocking {
-        // 서버에 새 종족이 먼저 생기고 앱이 나중에 따라가는 경우가 있다.
-        val rows = """
-            [{"faction":"PLASMA","km":10,"my_km":0,"runners":1},
-             {"faction":"FIRE","km":5,"my_km":5,"runners":1}]
-        """.trimIndent()
-
-        val ready = repo(FakeHttp(HttpResponse(200, rows)))
-            .factions(null, RankPeriod.ALL) as FactionRankingState.Ready
-
-        assertEquals(listOf(Faction.FIRE), ready.rows.map { it.faction })
-        // 모르는 종족을 걸러 낸 자리가 비어 1등이 사라지면 안 된다.
-        assertEquals(listOf(1), ready.rows.map { it.rank })
     }
 }

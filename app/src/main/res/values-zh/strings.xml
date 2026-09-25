@@ -595,7 +595,6 @@
     <string name="rank_me">我</string>
     <string name="rank_board_speed">极速</string>
     <string name="rank_board_time">耐力</string>
-    <string name="rank_board_faction">族群</string>
     <string name="rank_board_sup">SUP 余额</string>
     <string name="rank_board_crew">跑团</string>
     <string name="rank_period_day">日榜</string>
@@ -613,11 +612,6 @@
     <string name="rank_failed">无法加载排行榜。</string>
     <string name="rank_retry">重试</string>
     <string name="rank_no_record">还没有记录。跑一次就会上榜。</string>
-    <string name="rank_faction_title">族群排行</string>
-    <string name="rank_faction_body">你跑的每一公里都会计入当时所穿鞋子的族群。即使你不是第一，你的族群也可能是。</string>
-    <string name="rank_faction_km">累计 %1$s km</string>
-    <string name="rank_faction_my_km">我的贡献 · %1$s km</string>
-    <string name="rank_faction_mine">我的族群</string>
     <string name="rank_crew_title">跑团排名</string>
     <string name="rank_crew_body">只统计跑团一起跑的距离，团员自己跑的不算 — 否则人多的跑团什么都不做就是第一。</string>
     <string name="rank_crew_runs">跑团活动 %1$d 次</string>

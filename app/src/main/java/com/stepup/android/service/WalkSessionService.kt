@@ -464,18 +464,8 @@ class WalkSessionService : Service() {
                         ServiceLocator.userPrefs.addPendingCourseRun(session.startedAt, finished.encode())
                     }
                 }
-                // 랭킹 재료 — 최고 속도와, 착용 신발의 종족별 누적 거리.
-                // 거리는 GPS 실측이 있으면 그걸 쓰고, 없으면 걸음 환산으로 대체한다.
-                runCatching {
-                    val prefs = ServiceLocator.userPrefs
-                    prefs.recordTopSpeed(session.topSpeedKmh)
-                    val km = if (session.gpsKm > 0.0) {
-                        session.gpsKm
-                    } else {
-                        RewardEconomy.distanceMeters(creditedSteps) / 1000
-                    }
-                    if (km > 0.0 && equippedFaction != null) prefs.addFactionKm(equippedFaction, km)
-                }
+                // 랭킹 재료 — 최고 속도
+                runCatching { ServiceLocator.userPrefs.recordTopSpeed(session.topSpeedKmh) }
             }
             }
             // 방금 달린 트랙을 남겨 "코스 만들기"의 재료로 쓴다

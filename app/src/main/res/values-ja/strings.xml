@@ -596,7 +596,6 @@
     <string name="rank_me">あなた</string>
     <string name="rank_board_speed">スピード</string>
     <string name="rank_board_time">継続時間</string>
-    <string name="rank_board_faction">種族</string>
     <string name="rank_board_sup">SUP 残高</string>
     <string name="rank_board_crew">クルー</string>
     <string name="rank_period_day">日間</string>
@@ -614,11 +613,6 @@
     <string name="rank_failed">ランキングを取得できませんでした。</string>
     <string name="rank_retry">再試行</string>
     <string name="rank_no_record">まだ記録がありません。一度走ればランキングに載ります。</string>
-    <string name="rank_faction_title">種族ランキング</string>
-    <string name="rank_faction_body">走った距離は、その時履いていたシューズの種族に加算されます。あなたが1位でなくても、種族は1位になれます。</string>
-    <string name="rank_faction_km">累計 %1$s km</string>
-    <string name="rank_faction_my_km">あなたの貢献 · %1$s km</string>
-    <string name="rank_faction_mine">自分の種族</string>
     <string name="rank_crew_title">クルー順位</string>
     <string name="rank_crew_body">クルーランで走った距離だけを数えます。メンバーが一人で走った分は入りません — そうしないと人数の多いクルーが何もせずに1位になります。</string>
     <string name="rank_crew_runs">クルーラン %1$d 回</string>

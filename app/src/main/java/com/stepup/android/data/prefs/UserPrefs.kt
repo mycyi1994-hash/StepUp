@@ -81,7 +81,6 @@ class UserPrefs(
         /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
         val COURSE_SEED_VERSION = intPreferencesKey("course_seed_version")
         val TOP_SPEED = doublePreferencesKey("top_speed_kmh")
-        val FACTION_KM = stringPreferencesKey("faction_km")
         val ACCOUNTED_STEPS = longPreferencesKey("accounted_steps")
         val ACCOUNTED_DAY = longPreferencesKey("accounted_day")
         val RUNNER_ADDRESS = stringPreferencesKey("runner_address")
@@ -470,34 +469,6 @@ class UserPrefs(
         store.edit { prefs ->
             val best = prefs[Keys.TOP_SPEED] ?: 0.0
             if (kmh > best) prefs[Keys.TOP_SPEED] = kmh
-        }
-    }
-
-    /**
-     * 종족별 누적 러닝 거리(km) — 착용한 신발의 종족에 쌓인다.
-     *
-     * Faction.entries 순서대로 ";"로 이어 붙인 문자열 하나로 보관한다.
-     * 종족이 늘어도 키를 새로 파지 않아도 되고, 짧아진 문자열은 0으로 채운다.
-     */
-    val factionKm: Flow<Map<Faction, Double>> = store.data.map { prefs ->
-        decodeFactionKm(prefs[Keys.FACTION_KM])
-    }
-
-    suspend fun addFactionKm(faction: Faction, km: Double) {
-        if (km <= 0.0) return
-        store.edit { prefs ->
-            val current = decodeFactionKm(prefs[Keys.FACTION_KM]).toMutableMap()
-            current[faction] = (current[faction] ?: 0.0) + km
-            prefs[Keys.FACTION_KM] = Faction.entries.joinToString(";") {
-                String.format(java.util.Locale.ROOT, "%.4f", current[it] ?: 0.0)
-            }
-        }
-    }
-
-    private fun decodeFactionKm(raw: String?): Map<Faction, Double> {
-        val parts = raw?.split(';').orEmpty()
-        return Faction.entries.withIndex().associate { (index, faction) ->
-            faction to (parts.getOrNull(index)?.toDoubleOrNull() ?: 0.0)
         }
     }
 
