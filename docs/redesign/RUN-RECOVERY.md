@@ -1,4 +1,16 @@
-# Interrupted-run recovery — implementation in progress
+# Interrupted-run recovery
+
+## Connected (2026-09-25, PR #22)
+
+Items 3 and 4 of the requirements below are now implemented in the service and root UI: periodic
+RECORDING writes, the SETTLING boundary before settlement (required — settlement stops if it cannot
+be written), a start gate while an unresolved checkpoint exists, Resume/Finish on reopen, automatic
+re-save of an interrupted settlement, other-account runs saved only under their original owner, and
+clearing the matching checkpoint after completion. The checkpoint (format 2) also keeps the
+fake-location flag and the party crew. Native tests: RunCrashRecoveryTest and
+RunCheckpointPersistenceTest in the CI interaction suite. Still not run: physical process
+termination at every write boundary, reboot, and background GPS behavior on a device.
+
 
 ## Original production behavior (before Room 14)
 

@@ -80,6 +80,11 @@ data class WalkSessionState(
     val recordingOwner: String = com.stepup.android.domain.RecordingOwner.LEGACY,
     /** 파티런 인원 (본인 포함). 1이면 개인 러닝. */
     val partySize: Int = 1,
+    /**
+     * 파티런이었다면 어느 크루였는지 — 출발할 때 적어 둔다. 앱이 죽었다 되살아나면 파티 로비
+     * 상태가 비어 있으므로, 되살린 러닝은 이 값으로 크루 순위에 들어간다.
+     */
+    val partyCrewId: String = "",
     /** 마지막 세션 정산 결과 (종료 직후 화면 표시용) */
     val lastRewardPoints: Double? = null,
     val lastRewardedSteps: Int = 0,
@@ -274,6 +279,20 @@ class WalkSessionService : Service() {
         if (_state.value.isActive || startJob?.isActive == true) return
         enterForeground()
         startJob = scope.launch(Dispatchers.Main.immediate) {
+            // 끝나지 않은 러닝(앱이 죽어 남은 저장본)이 있으면 새 러닝을 시작하지 않고 먼저 묻는다.
+            // 그대로 시작하면 새 러닝은 저장본을 남기지 못해(다른 러닝의 저장본이 자리를 차지) 보호받지 못한다.
+            val pending = runCatching { ServiceLocator.runCheckpoints.read() }
+                .getOrElse {
+                    // 읽을 수 없는 저장본은 지우지 않고 옆으로 치워 둔다 — 새 러닝의 저장을 막지 않게
+                    runCatching { ServiceLocator.runCheckpoints.setAsideUnreadable() }
+                    null
+                }
+            if (pending != null) {
+                recovery.value = pending
+                ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return@launch
+            }
             // Begin tracking only after the recording account has been captured.
             // Finishing later must never read the replacement login account.
             val owner = ServiceLocator.sessionHolder.recordingOwner()
@@ -305,8 +324,10 @@ class WalkSessionService : Service() {
                 stopSession()
                 return@launch
             }
+            // 다른 계정(또는 로그인 전)에서 멈춘 러닝은 이어 달리지 않고 원래 주인 이름으로 저장만 한다
+            val sameOwner = checkpoint.state.recordingOwner == ServiceLocator.sessionHolder.recordingOwner()
             beginTracking(checkpoint.state.partySize, checkpoint.state.recordingOwner, checkpoint.pausedForRecovery())
-            if (finish) stopSession()
+            if (finish || !sameOwner) stopSession()
         }
     }
 
@@ -338,6 +359,7 @@ class WalkSessionService : Service() {
             startedAt = System.currentTimeMillis(),
             recordingOwner = owner,
             partySize = partySize,
+            partyCrewId = if (partySize > 1) ServiceLocator.crewRepository.currentPartyCrewId() else "",
         )
         activeMs = (restored?.elapsedSec ?: 0L) * 1000
 
@@ -405,14 +427,13 @@ class WalkSessionService : Service() {
         }
     }
 
-    private suspend fun saveCheckpoint(state: WalkSessionState, phase: RunCheckpointPhase) {
+    private suspend fun saveCheckpoint(state: WalkSessionState, phase: RunCheckpointPhase): Boolean =
         runCatching {
             val goal = goalKm.value.takeIf { it.isFinite() && it > 0 } ?: 5.0
             ServiceLocator.runCheckpoints.save(
                 RunCheckpoint(state, goal, maxOf(System.currentTimeMillis(), state.startedAt), phase),
             )
-        }
-    }
+        }.isSuccess
 
     private fun setPaused(paused: Boolean) {
         val current = _state.value
@@ -439,10 +460,17 @@ class WalkSessionService : Service() {
         stopLocation()
         scope.launch {
           try {
-            // 저장을 시작한다는 표시를 먼저 남긴다 — 저장 도중 죽으면 다음에 같은 러닝을 다시 저장한다
-            saveCheckpoint(session, RunCheckpointPhase.SETTLING)
+            // 저장을 시작한다는 표시를 먼저 남긴다 — 저장 도중 죽으면 다음에 같은 러닝을 다시 저장한다.
+            // 표시를 못 남겼으면 저장하지 않는다: 저장 뒤에 죽으면 다음 실행이 이미 저장된 러닝을
+            // "이어 달리기"로 되살려 버린다. 저장 실패로 두고 다시 시도하게 한다.
+            check(saveCheckpoint(session, RunCheckpointPhase.SETTLING)) { "run checkpoint boundary not saved" }
+            // 이 러닝을 시작한 계정이 지금 로그인한 계정과 다르면(되살린 옛 러닝) 지금 계정의 신발 ·
+            // 코스 · 크루를 이 러닝에 섞지 않는다
+            val foreignOwner = session.recordingOwner != ServiceLocator.sessionHolder.recordingOwner()
             // 파티런이면 정산 시점의 실제 인원을 쓴다 — 러닝 중 거리 이탈로 빠진 인원 반영.
-            val settleSize = if (session.partySize > 1) {
+            // 되살린 파티런은 로비 상태가 비어 있다 — 출발할 때 적어 둔 인원 · 크루로 정산한다
+            val partyLive = ServiceLocator.crewRepository.party.value.isActive
+            val settleSize = if (session.partySize > 1 && partyLive) {
                 ServiceLocator.crewRepository.currentPartySize()
             } else {
                 session.partySize
@@ -450,10 +478,10 @@ class WalkSessionService : Service() {
             // 크루 러닝이었다면 어느 크루였는지. 크루 순위가 세는 것이 이 값이다.
             // 파티 상태는 아래 finishParty() 에서 결과 화면으로 넘어가므로
             // 지금 읽어 둔다.
-            val partyCrewId = if (session.partySize > 1) {
-                ServiceLocator.crewRepository.currentPartyCrewId()
-            } else {
-                ""
+            val partyCrewId = when {
+                session.partySize <= 1 || foreignOwner -> ""
+                partyLive -> ServiceLocator.crewRepository.currentPartyCrewId()
+                else -> session.partyCrewId
             }
             // 러닝으로 볼 수 없는 세션은 여기서 걸러진다 — 걸음 0으로 정산해
             // 적립도, 에너지 소모도, 코스 완주도 일어나지 않게 한다.
@@ -485,10 +513,10 @@ class WalkSessionService : Service() {
 
             // 부스트는 정산 **전에** 읽는다. 정산이 신발이나 크루 상태를 건드릴
             // 수 있으므로, 청구서에 적힐 값은 적립을 계산할 때 쓴 값이어야 한다.
-            val boostBps = ServiceLocator.rewardRepository.equippedBoostBps()
+            val boostBps = if (foreignOwner) 0 else ServiceLocator.rewardRepository.equippedBoostBps()
             // 종족도 같은 이유로 정산 전에 읽는다. 이 값이 종족 랭킹에서
             // 이 거리가 어느 편에 쌓일지를 정한다.
-            val equippedFaction = ServiceLocator.database.sneakerDao().equippedNow()
+            val equippedFaction = if (foreignOwner) null else ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
             val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(
@@ -519,7 +547,7 @@ class WalkSessionService : Service() {
                 val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
                 runCatching { Analytics.runFinished(km, settleSize) }
             }
-            if (verdict.isRewardable) {
+            if (verdict.isRewardable && !foreignOwner) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {
                     // 보폭이 0.762m 보다 긴 사람은 걸음 거리로는 완주에 못 미친다 — GPS 거리와 큰 쪽.

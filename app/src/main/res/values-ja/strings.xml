@@ -1582,6 +1582,7 @@ StepUp と走り出そう。</string>
     <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
     <string name="run_recover_title">中断したランがあります</string>
     <string name="run_recover_body">%1$s に始めたランがアプリの終了で止まりました。ここまで %2$s歩 · %3$d分。終了していた間の時間と歩数は加えません。</string>
+    <string name="run_recover_other_account">別のアカウント（またはログイン前）で中断したランがあります。続けて走らず、始めたアカウントの記録として保存だけします。</string>
     <string name="run_recover_resume">続けて走る</string>
     <string name="run_recover_finish">ここで終えて保存</string>
 </resources>

@@ -313,7 +313,12 @@ internal fun MainScaffold(
     // 걸음 권한이 없으면 러닝 서비스를 띄울 수 없으므로(안드로이드 14 건강 서비스) 권한이 있을 때만.
     LaunchedEffect(Unit) { com.stepup.android.service.WalkSessionService.checkRecovery() }
     val pendingRun by com.stepup.android.service.WalkSessionService.recovery.collectAsState()
-    pendingRun?.let { checkpoint ->
+    // 지금 로그인한 계정 — 다른 계정(또는 로그인 전)에서 멈춘 러닝은 이어 달리지 않고 저장만 한다
+    var currentOwner by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(pendingRun) {
+        currentOwner = runCatching { ServiceLocator.sessionHolder.recordingOwner() }.getOrNull()
+    }
+    pendingRun?.takeIf { currentOwner != null }?.let { checkpoint ->
         if (StepPermissions.hasActivityRecognition(context)) {
             if (checkpoint.phase == com.stepup.android.service.RunCheckpointPhase.SETTLING) {
                 LaunchedEffect(checkpoint.state.startedAt) {
@@ -322,6 +327,7 @@ internal fun MainScaffold(
             } else {
                 RunRecoveryDialog(
                     checkpoint = checkpoint,
+                    sameAccount = checkpoint.state.recordingOwner == currentOwner,
                     onResume = {
                         com.stepup.android.service.WalkSessionService.recover(context, finish = false)
                         navController.navigate(Routes.RUN)
@@ -1037,6 +1043,8 @@ private fun RowScope.NavTab(
 @Composable
 private fun RunRecoveryDialog(
     checkpoint: com.stepup.android.service.RunCheckpoint,
+    /** 다른 계정의 러닝이면 자세한 기록을 보이지 않고, 이어 달리기 없이 원래 계정 이름으로 저장만 한다 */
+    sameAccount: Boolean,
     onResume: () -> Unit,
     onFinish: () -> Unit,
 ) {
@@ -1048,18 +1056,29 @@ private fun RunRecoveryDialog(
         title = androidx.compose.ui.res.stringResource(R.string.run_recover_title),
         onDismiss = {},
         actions = {
-            com.stepup.android.ui.components.VoltButton(
-                androidx.compose.ui.res.stringResource(R.string.run_recover_resume), onResume,
-                Modifier.fillMaxWidth().testTag("run-recover-resume"),
-            )
-            com.stepup.android.ui.components.GhostButton(
-                androidx.compose.ui.res.stringResource(R.string.run_recover_finish), onFinish,
-                Modifier.fillMaxWidth().testTag("run-recover-finish"),
-            )
+            if (sameAccount) {
+                com.stepup.android.ui.components.VoltButton(
+                    androidx.compose.ui.res.stringResource(R.string.run_recover_resume), onResume,
+                    Modifier.fillMaxWidth().testTag("run-recover-resume"),
+                )
+                com.stepup.android.ui.components.GhostButton(
+                    androidx.compose.ui.res.stringResource(R.string.run_recover_finish), onFinish,
+                    Modifier.fillMaxWidth().testTag("run-recover-finish"),
+                )
+            } else {
+                com.stepup.android.ui.components.VoltButton(
+                    androidx.compose.ui.res.stringResource(R.string.run_recover_finish), onFinish,
+                    Modifier.fillMaxWidth().testTag("run-recover-finish"),
+                )
+            }
         },
     ) {
         androidx.compose.material3.Text(
-            androidx.compose.ui.res.stringResource(R.string.run_recover_body, started, "%,d".format(state.steps), minutes),
+            if (sameAccount) {
+                androidx.compose.ui.res.stringResource(R.string.run_recover_body, started, "%,d".format(state.steps), minutes)
+            } else {
+                androidx.compose.ui.res.stringResource(R.string.run_recover_other_account)
+            },
             style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
             color = com.stepup.android.ui.theme.Silver,
         )
