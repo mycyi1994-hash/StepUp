@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,6 +37,7 @@ import com.stepup.android.ui.theme.Snow
 /**
  * 모임 만들기 — 당근 그룹처럼 이름·소개·활동 지역과 가입 방식만 받고 바로 개설한다.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CrewCreateScreen(
     onBack: () -> Unit = {},
