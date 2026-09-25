@@ -186,7 +186,7 @@
     <string name="crew_boost_hint" formatted="false">クルーメイト1人につき獲得量が+10%、最大+50%までアップします。</string>
     <string name="crew_running_together">%1$d人のランナーと一緒に走行中</string>
     <string name="crew_result_title">パーティーラン完了！ 🎉</string>
-    <string name="crew_result_body">%1$s歩ぶんをパーティーブースト%2$d%%で獲得しました</string>
+    <string name="crew_result_body">%1$s歩 · パーティーブースト%2$d%%</string>
     <string name="crew_leave_lobby">ロビーを出る</string>
     <string name="crew_join_first">一緒に走るにはクルーに参加してね</string>
 

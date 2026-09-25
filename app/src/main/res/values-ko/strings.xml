@@ -185,7 +185,7 @@
     <string name="crew_boost_hint" formatted="false">크루원 1명당 적립 +10%, 최대 +50%까지 붙어요.</string>
     <string name="crew_running_together">%1$d명이 함께 달리는 중</string>
     <string name="crew_result_title">파티런 완료! 🎉</string>
-    <string name="crew_result_body">%1$s걸음 적립 · 파티 부스트 %2$d%% 적용</string>
+    <string name="crew_result_body">%1$s걸음 · 파티 부스트 %2$d%%</string>
     <string name="crew_leave_lobby">로비 나가기</string>
     <string name="crew_join_first">같이 달리려면 먼저 크루에 가입하세요</string>
 

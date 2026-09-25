@@ -56,13 +56,13 @@ interface WalkSessionDao {
      * 오래된 순인 것은 `RewardDistributor` 의 청구 창이 7일이기 때문이다.
      * 최신 것부터 처리하면 창을 넘긴 세션이 영영 청구되지 않는다.
      *
-     * 경로가 없는 세션은 거른다 — 서버가 판정할 수 없어 반드시 거절당한다.
+     * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
+     * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
      */
     @Query(
         """
         SELECT * FROM walk_sessions
          WHERE uploadState IN ('PENDING', 'FAILED')
-           AND track != ''
            AND steps > 0
            AND recordingOwner = :owner
          ORDER BY startedAt ASC
@@ -71,7 +71,7 @@ interface WalkSessionDao {
     )
     suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != '' AND steps > 0")
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
     /**

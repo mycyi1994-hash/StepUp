@@ -493,7 +493,7 @@ class WalkSessionService : Service() {
             // 방에서 출발했어도(인원 1) 방은 닫아야 한다 — 안 그러면 로비가 계속
             // 뛰는 중으로 남아 위치를 보낸다.
             if (ServiceLocator.crewRepository.party.value.isActive) {
-                ServiceLocator.crewRepository.finishParty(reward.points, reward.rewardedSteps)
+                ServiceLocator.crewRepository.finishParty(session.startedAt, reward.rewardedSteps)
             }
             settling = false
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)

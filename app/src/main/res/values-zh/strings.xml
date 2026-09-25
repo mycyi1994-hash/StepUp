@@ -185,7 +185,7 @@
     <string name="crew_boost_hint" formatted="false">每多一位队友，收益 +10%，最高叠到 +50%。</string>
     <string name="crew_running_together">正和 %1$d 位跑者一起跑</string>
     <string name="crew_result_title">组队跑完成！🎉</string>
-    <string name="crew_result_body">%1$s 步已结算 · 组队加成 %2$d%%</string>
+    <string name="crew_result_body">%1$s 步 · 组队加成 %2$d%%</string>
     <string name="crew_leave_lobby">离开大厅</string>
     <string name="crew_join_first">先加入跑团才能一起跑</string>
 
