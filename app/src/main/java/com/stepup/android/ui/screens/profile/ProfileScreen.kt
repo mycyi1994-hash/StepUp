@@ -1064,39 +1064,12 @@ private fun MeHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(artworkHeight)) {
-            if (look != null) {
-                com.stepup.android.ui.components.ProfileCharacterStage(
-                    look = look,
-                    contentDescription = stringResource(R.string.cd_home_character),
-                    modifier = Modifier.fillMaxSize()
-                        .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
-                        .feedbackClickable(onClick = onOpenCustomize),
-                )
-            } else {
-                androidx.compose.material3.CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
-            DarkIconButton(
-                icon = Icons.Outlined.Image,
-                contentDescription = stringResource(R.string.wardrobe_change_background),
-                onClick = onChangeBackground,
-                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
-                modifier = Modifier.align(Alignment.TopStart).testTag("profile-background"),
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             DarkIconButton(
                 icon = Icons.Filled.Settings,
                 contentDescription = stringResource(R.string.profile_tab_settings),
                 onClick = onOpenSettings,
-                modifier = Modifier.align(Alignment.TopEnd).testTag("profile-settings"),
-            )
-        }
-        if (look != null) {
-            com.stepup.android.ui.components.AvatarLookNote(
-                look = look,
-                render = com.stepup.android.domain.AvatarArtCatalog.resolve(
-                    look, com.stepup.android.domain.AvatarPose.IDLE,
-                ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.testTag("profile-settings"),
             )
         }
         Row(

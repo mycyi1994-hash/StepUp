@@ -794,3 +794,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Added home background arrows with a crossfade, slow scenery-only drift, and subtle grounded character breathing. Reduced-motion settings stop decorative loops. These changes need native capture for foot contact, compact layouts and perceived motion.
 - Prepared `MysteryDrawNFT` for the 52-shoe/5-tracksuit catalog, a deterministic signed authorization endpoint, and a wallet transaction page. No contract, Worker or website was deployed. The existing GIWA Sepolia demo contract is not usable for this new draw because its roller key was not retained. SUP cost values are constructor parameters; final pricing remains a deployment decision.
 - Local checks: new Solidity contract compiled; 2 focused contract checks and 2 roller checks passed; draw web bundle built; source design/string/asset checks passed. Android compilation, native screenshot review and a real GIWA wallet transaction remain unverified.
+
+
+## 2026-09-25 — character-free asset replacement
+
+- User selected record-first home and retained shoes/draw. Produced 10 screen mockups, 2 independent landscape PNGs and 1 shoe SVG; review pending with Claude.
+- Archived and removed exactly 156 packaged character/clothing/old scene images; preserved 58 existing shoe/brand/box images by hash. New banners and shoe vector are installed as separate resources.
+- Removed dead drawable references, character stages and outfit draw entrances; routed the former wardrobe through the existing shoe inventory. Reused existing functional screens; native visual matching is not claimed.
+- Static design/string/media/resource checks and web draw bundle build pass. No local Android SDK/JDK: Android compile/device validation and visual regression expectations remain pending. No APK/push/deployment.
+- See CHARACTER-FREE-ASSETS-2026-09-25.md for deliverables, exact deletion archive and application limits.

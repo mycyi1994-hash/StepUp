@@ -57,13 +57,6 @@ internal fun TogetherTab(
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item {
-                Box(Modifier.fillMaxWidth().height(artworkHeight)) {
-                Image(painterResource(R.drawable.community_warmup), contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize())
-                }
-            }
             if (sync != BoardSyncState.Ready) {
                 item { BoardSyncCard(sync, onRetry = viewModel::refreshBoard) }
             }

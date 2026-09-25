@@ -133,7 +133,7 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
     data object Run : Screen("home", R.string.tab_run, Icons.AutoMirrored.Filled.DirectionsRun)
 
     /** 꾸미기 — 캐릭터에 의상과 신발을 입히는 곳. 러너 마켓은 이 안에 있다. */
-    data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shirt)
+    data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shoe)
 
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
@@ -353,7 +353,7 @@ internal fun MainScaffold(
     LaunchedEffect(currentRoute, homeSetting, profileSetting, wardrobeScene, runSetting, feedback) {
         val setting = when (currentRoute) {
             Screen.Run.route -> homeSetting
-            Screen.Customize.route -> wardrobeScene
+            Screen.Customize.route -> null
             Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.RunSunset
             Screen.Profile.route -> profileSetting
             Routes.RUN_ROUTE -> runSetting
@@ -449,6 +449,7 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    backgroundSetting = homeSetting,
                     onPreviousBackground = {
                         homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
                     },
@@ -461,18 +462,10 @@ internal fun MainScaffold(
                 val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
                 MysteryBoxScreen(
                     shoeDrawReady = drawReady,
-                    outfitDrawReady = drawReady,
                     onDrawShoe = {
                         com.stepup.android.core.ExternalIntents.openUrl(context,
                             android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
                                 .appendQueryParameter("category", "shoe")
-                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
-                                .build().toString())
-                    },
-                    onDrawOutfit = {
-                        com.stepup.android.core.ExternalIntents.openUrl(context,
-                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
-                                .appendQueryParameter("category", "outfit")
                                 .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
                                 .build().toString())
                     },
@@ -487,6 +480,8 @@ internal fun MainScaffold(
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
+                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                 )
             }

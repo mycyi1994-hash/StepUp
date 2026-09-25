@@ -832,7 +832,7 @@
     <string name="journey_withdraw_desc">在钱包内提现 · 最低 1,000 SUP</string>
     <string name="journey_soon">准备中</string>
     <string name="tour_tab_home_title">① 跑步标签</string>
-    <string name="tour_tab_home_body">最下方第一个按钮。今日积分、我的角色和开始跑步都在这里。</string>
+    <string name="tour_tab_home_body">查看今日记录和目标，并开始跑步。</string>
     <string name="tour_tab_news_title">② 资讯标签</string>
     <string name="tour_tab_news_body">底部第二个按钮。跑步活动消息、特价公告和健康资讯都在这里。</string>
     <string name="tour_tab_community_title">③ 社区标签</string>
@@ -1300,14 +1300,14 @@
 
     <!-- 하단 탭 넷 · 가이드 -->
     <string name="tab_run">跑步</string>
-    <string name="tab_customize">装扮</string>
+    <string name="tab_customize">跑鞋</string>
     <string name="tab_me">我的</string>
     <string name="tour_shortcuts_title">挑战 · 资讯</string>
     <string name="tour_shortcuts_body">带额外奖励的目标、赛事日程和健康资讯，都能从这里一键打开。</string>
-    <string name="tour_tab_customize_title">② 装扮标签</string>
-    <string name="tour_tab_customize_body">给角色穿衣服和鞋子的地方。跑者市场也在这里面。</string>
-    <string name="tour_customize_title">我的角色</string>
-    <string name="tour_customize_body">在装扮中选择衣服和跑鞋。装备后的形象也会显示在跑步和个人页面中。</string>
+    <string name="tour_tab_customize_title">② 跑鞋</string>
+    <string name="tour_tab_customize_body">选择跑鞋，查看收藏、图鉴和市场。</string>
+    <string name="tour_customize_title">我的跑鞋</string>
+    <string name="tour_customize_body">选择跑鞋，查看收藏、图鉴和市场。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">试穿中</string>
@@ -1529,12 +1529,14 @@
     <string name="course_unlike_action">取消路线点赞</string>
     <string name="tab_draw">抽取</string>
     <string name="mystery_title">神秘宝箱</string>
-    <string name="mystery_subtitle">选择要抽取的物品。</string>
+    <string name="mystery_subtitle">发现你的下一双跑鞋。</string>
     <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
     <string name="mystery_draw_shoe">抽取运动鞋</string>
     <string name="mystery_draw_outfit">抽取运动服</string>
     <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
     <string name="home_previous_background">上一张背景</string>
     <string name="home_next_background">下一张背景</string>
+    <string name="home_record_title">今日记录</string>
+    <string name="home_recent_week">最近7天</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -138,10 +138,10 @@ internal fun LoginContent(signingIn: Boolean, error: Int?, onSignIn: () -> Unit)
             Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(R.drawable.community_warmup),
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.home_banner_blue_night),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 )
             }
             // Scroll only when font expansion needs more room; login and legal links remain reachable.

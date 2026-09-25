@@ -33,7 +33,7 @@ for a in avatars:
     lines.append(f'    "{a[len("avatar_"):]}" -> R.drawable.{a}')
 lines += ['    else -> null', '}', '',
           '@DrawableRes',
-          'fun AvatarArt.drawableRes(): Int = avatarArtResOrNull(key) ?: R.drawable.avatar_male_idle',
+          'fun AvatarArt.drawableRes(): Int? = avatarArtResOrNull(key)',
           '',
           '/** 의상 상품 그림 — 캐릭터별 디자인 번호로 찾는다. 기본 의상은 없다 */',
           '@DrawableRes',

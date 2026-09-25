@@ -833,7 +833,7 @@ StepUp と走り出そう。</string>
     <string name="journey_withdraw_desc">ウォレット内の出金・最低 1,000 SUP</string>
     <string name="journey_soon">準備中</string>
     <string name="tour_tab_home_title">① ランタブ</string>
-    <string name="tour_tab_home_body">いちばん下の最初のボタンです。今日のポイント、キャラクター、ラン開始がここにあります。</string>
+    <string name="tour_tab_home_body">今日の記録と目標を確認し、ランニングを始めましょう。</string>
     <string name="tour_tab_news_title">② ニュースタブ</string>
     <string name="tour_tab_news_body">下の左から2番目です。ランイベントの知らせ・セール告知・健康ニュースはここに。</string>
     <string name="tour_tab_community_title">③ コミュニティタブ</string>
@@ -1301,14 +1301,14 @@ StepUp と走り出そう。</string>
 
     <!-- 하단 탭 넷 · 가이드 -->
     <string name="tab_run">ラン</string>
-    <string name="tab_customize">着せ替え</string>
+    <string name="tab_customize">シューズ</string>
     <string name="tab_me">マイ</string>
     <string name="tour_shortcuts_title">チャレンジ · ニュース</string>
     <string name="tour_shortcuts_body">追加報酬のある目標や、大会日程・健康ニュースはここから開けます。</string>
-    <string name="tour_tab_customize_title">② 着せ替えタブ</string>
-    <string name="tour_tab_customize_body">キャラクターに服と靴を着せる場所です。ランナーマーケットもここにあります。</string>
-    <string name="tour_customize_title">マイキャラクター</string>
-    <string name="tour_customize_body">着せ替えで服やシューズを選びましょう。装備した姿はラン中やプロフィールにも表示されます。</string>
+    <string name="tour_tab_customize_title">② シューズ</string>
+    <string name="tour_tab_customize_body">ランニングシューズを選び、コレクションとマーケットを見てみましょう。</string>
+    <string name="tour_customize_title">自分のシューズ</string>
+    <string name="tour_customize_body">シューズを選び、コレクションとマーケットを見てみましょう。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">試着中</string>
@@ -1530,12 +1530,14 @@ StepUp と走り出そう。</string>
     <string name="course_unlike_action">コースのいいねを取り消す</string>
     <string name="tab_draw">抽選</string>
     <string name="mystery_title">ミステリーボックス</string>
-    <string name="mystery_subtitle">引きたいアイテムを選んでください。</string>
+    <string name="mystery_subtitle">新しいシューズに出会いましょう。</string>
     <string name="mystery_box_description">青く光る閉じたミステリーボックス</string>
     <string name="mystery_draw_shoe">シューズを引く</string>
     <string name="mystery_draw_outfit">トレーニングウェアを引く</string>
     <string name="mystery_pending_chain">GIWAコントラクトのデプロイ後に抽選できます。</string>
     <string name="home_previous_background">前の背景</string>
     <string name="home_next_background">次の背景</string>
+    <string name="home_record_title">今日の記録</string>
+    <string name="home_recent_week">直近7日間</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

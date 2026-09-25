@@ -181,15 +181,7 @@ fun EventsScreen(
                     }),
                     fontSize = 29.sp, fontWeight = FontWeight.Black, color = Snow,
                 )
-                Box(Modifier.fillMaxWidth().height(230.dp).celebrate(celebration.takeIf { it > 0 }),
-                    contentAlignment = Alignment.Center) {
-                    look?.let {
-                        com.stepup.android.ui.components.CharacterStage(
-                            look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
-                            modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
-                        )
-                    } ?: androidx.compose.material3.CircularProgressIndicator()
-                }
+
             }
         }
 

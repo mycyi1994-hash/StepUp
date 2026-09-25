@@ -95,14 +95,8 @@ fun MysteryBoxScreen(
                 enabled = shoeDrawReady,
                 modifier = Modifier.fillMaxWidth(),
             )
-            GhostButton(
-                text = stringResource(R.string.mystery_draw_outfit),
-                onClick = onDrawOutfit,
-                enabled = outfitDrawReady,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
-        if (!shoeDrawReady || !outfitDrawReady) {
+        if (!shoeDrawReady) {
             Text(
                 text = stringResource(R.string.mystery_pending_chain),
                 color = Silver,

@@ -82,8 +82,9 @@ fun AvatarImage(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
+    val res = art.drawableRes() ?: return
     Image(
-        painter = painterResource(art.drawableRes()),
+        painter = painterResource(res),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         alignment = Alignment.BottomCenter,
@@ -104,27 +105,7 @@ fun RunningAvatarImage(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
-    val hasMatchingFrames = look.outfit.id == Outfits.BASE_ID && look.shoe == null && render.lookShown
-    if (!running || !hasMatchingFrames) {
-        AvatarImage(render.art, modifier, contentDescription)
-        return
-    }
-
-    val firstRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_a else R.drawable.run_frame_runo_a
-    val secondRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_b else R.drawable.run_frame_runo_b
-    val first = painterResource(firstRes)
-    val second = painterResource(secondRes)
-    // Frame, body lift and ground shadow share one clock.
-    val alternate by remember(stridePhase) {
-        derivedStateOf { (stridePhase?.value ?: 0f) >= 0.5f }
-    }
-    Image(
-        painter = if (alternate) second else first,
-        contentDescription = contentDescription,
-        contentScale = ContentScale.Fit,
-        alignment = Alignment.BottomCenter,
-        modifier = modifier,
-    )
+    AvatarImage(render.art, modifier, contentDescription)
 }
 
 /**
@@ -149,6 +130,7 @@ fun CharacterStage(
     overlay: @Composable BoxScope.(AvatarRender) -> Unit = {},
 ) {
     val render = AvatarArtCatalog.resolve(look, pose)
+    if (avatarArtResOrNull(render.art.key) == null) return
     val running = pose == AvatarPose.RUN
     // 모션 줄이기면 멈춘다
     val phase = if (animate && LocalMotion.current.decorative) {
@@ -326,7 +308,7 @@ fun AvatarLookNote(
     render: AvatarRender,
     modifier: Modifier = Modifier,
 ) {
-    if (render.lookShown) return
+    if (avatarArtResOrNull(render.art.key) == null || render.lookShown) return
     val shape = RoundedCornerShape(12.dp)
     val outfitName = stringResource(outfitNameRes(look.outfit))
     val shoe = look.shoe

@@ -126,12 +126,11 @@ object GuideTour {
         fun tab(route: String) = "tab_$route"
     }
 
-    /** Four everyday actions; no unsupported payout promises. */
+    /** Three entry points for the character-free version. */
     val steps: List<GuideStep> = listOf(
         // One useful action per main destination; advanced features remain in the app.
         GuideStep(Targets.HOME_START_RUN, "home", R.string.tour3_title, R.string.tour3_body),
-        GuideStep(Targets.CUSTOMIZE_PREVIEW, "customize", R.string.tour_customize_title, R.string.tour_customize_body),
-        GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour6_title, R.string.tour6_body),
+        GuideStep(Targets.tab("customize"), "customize", R.string.tour_customize_title, R.string.tour_customize_body),
         GuideStep(Targets.tab("profile"), "profile", R.string.tour11_title, R.string.tour11_body),
     )
 

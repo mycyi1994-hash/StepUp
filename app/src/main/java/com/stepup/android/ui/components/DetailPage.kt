@@ -17,10 +17,11 @@ fun DetailPage(
     primaryActionLabel: String? = null,
     onPrimaryAction: (() -> Unit)? = null,
     primaryActionEnabled: Boolean = true,
+    showHeader: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
-        SecondaryHeader(onBack = onBack, balance = null, onOpenWallet = null, title = title)
+        if (showHeader) SecondaryHeader(onBack = onBack, balance = null, onOpenWallet = null, title = title)
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),

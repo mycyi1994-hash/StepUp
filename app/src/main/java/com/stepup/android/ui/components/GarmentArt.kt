@@ -37,9 +37,7 @@ fun outfitNameRes(outfit: Outfit): Int = when (outfit.id) {
  */
 @Composable
 fun OutfitArt(outfit: Outfit, gender: AvatarGender, modifier: Modifier = Modifier) {
-    val res = if (outfit.id == Outfits.BASE_ID) {
-        if (gender == AvatarGender.FEMALE) R.drawable.outfit_lumi_base else R.drawable.outfit_runo_base
-    } else outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id)
+    val res = outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id) ?: return
     if (res != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(res),
@@ -47,8 +45,6 @@ fun OutfitArt(outfit: Outfit, gender: AvatarGender, modifier: Modifier = Modifie
             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             modifier = modifier,
         )
-    } else {
-        GarmentArt(outfit, modifier)
     }
 }
 

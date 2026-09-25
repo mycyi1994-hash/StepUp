@@ -342,21 +342,6 @@ fun RunScreen(
                     if (recordingCourse && !readyToSaveCourse) {
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
-                    if (render != null && savedLook != null) {
-                        CharacterStage(
-                            look = savedLook,
-                            pose = if (running) AvatarPose.RUN else AvatarPose.IDLE,
-                            skyline = false,
-                            characterFraction = 0.9f,
-                            contentDescription = stringResource(R.string.cd_home_character),
-                            modifier = Modifier.fillMaxWidth().height(characterHeight).padding(vertical = 8.dp),
-                        )
-                        com.stepup.android.ui.components.AvatarLookNote(savedLook, render)
-                    } else {
-                        Box(Modifier.fillMaxWidth().height(characterHeight), contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.feed_loading), color = Silver)
-                        }
-                    }
                     RunHero(
                         paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
@@ -1146,18 +1131,6 @@ private fun FinishCard(
         }
 
         }
-        // 내 캐릭터 — 축하 자세 그림이 아직 없어 같은 성별의 그림을 쓴다
-        if (look != null) CharacterStage(
-            look = look,
-            pose = if (voided) AvatarPose.IDLE else AvatarPose.CHEER,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 170.dp else 200.dp),
-            characterFraction = 0.9f,
-            skyline = false,
-            animate = false,
-        )
-
         // Keep the three activity results together in the first viewport. Stack
         // only when a narrow screen or enlarged type needs the full line width.
         BoxWithConstraints(Modifier.fillMaxWidth()) {

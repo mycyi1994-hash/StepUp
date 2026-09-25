@@ -834,7 +834,7 @@ Start running with StepUp.</string>
     <string name="journey_withdraw_desc">Inside the wallet · 1,000 SUP minimum</string>
     <string name="journey_soon">Coming soon</string>
     <string name="tour_tab_home_title">① Run tab</string>
-    <string name="tour_tab_home_body">The first button at the bottom. Today\'s points, your runner and Start Run are all here.</string>
+    <string name="tour_tab_home_body">Find today’s activity, your goal and Start run here.</string>
     <string name="tour_tab_news_title">2. News tab</string>
     <string name="tour_tab_news_body">Second button along the bottom. Running events, deal notices and health reads sit inside.</string>
     <string name="tour_tab_community_title">③ Community tab</string>
@@ -1302,14 +1302,14 @@ Start running with StepUp.</string>
 
     <!-- 하단 탭 넷 · 가이드 -->
     <string name="tab_run">Run</string>
-    <string name="tab_customize">Style</string>
+    <string name="tab_customize">Shoes</string>
     <string name="tab_me">Me</string>
     <string name="tour_shortcuts_title">Challenges · News</string>
     <string name="tour_shortcuts_body">Goals with bonus rewards, and race dates and health news, are one tap away here.</string>
-    <string name="tour_tab_customize_title">② Style tab</string>
-    <string name="tour_tab_customize_body">Dress your runner with outfits and shoes. The Runner Market is inside.</string>
-    <string name="tour_customize_title">Your runner</string>
-    <string name="tour_customize_body">Choose clothes and shoes in Customize. Your equipped look also appears during runs and in your profile.</string>
+    <string name="tour_tab_customize_title">② Shoes tab</string>
+    <string name="tour_tab_customize_body">Choose your running shoes and explore your collection and the market.</string>
+    <string name="tour_customize_title">Your shoes</string>
+    <string name="tour_customize_body">Choose running shoes and explore your collection and the market.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">Trying on</string>
@@ -1531,12 +1531,14 @@ Start running with StepUp.</string>
     <string name="course_unlike_action">Remove course like</string>
     <string name="tab_draw">Draw</string>
     <string name="mystery_title">Mystery Box</string>
-    <string name="mystery_subtitle">Choose what you want to draw.</string>
+    <string name="mystery_subtitle">Discover your next running shoes.</string>
     <string name="mystery_box_description">Closed glowing mystery box</string>
     <string name="mystery_draw_shoe">Draw sneakers</string>
     <string name="mystery_draw_outfit">Draw a tracksuit</string>
     <string name="mystery_pending_chain">Drawing opens after the GIWA contract is deployed.</string>
     <string name="home_previous_background">Previous background</string>
     <string name="home_next_background">Next background</string>
+    <string name="home_record_title">Today’s activity</string>
+    <string name="home_recent_week">Last 7 days</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

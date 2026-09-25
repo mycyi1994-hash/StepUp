@@ -90,6 +90,9 @@ import com.stepup.android.ui.components.celebrate
 @Composable
 fun ItemsScreen(
     onBack: (() -> Unit)? = null,
+    showHeader: Boolean = true,
+    initialTab: Int = 2,
+    marketOnly: Boolean = false,
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDex: () -> Unit = {},
     onOpenMarketModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
@@ -101,7 +104,7 @@ fun ItemsScreen(
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     // 0 = 스토어, 1 = NFT 마켓, 2 = 아이템(보관함).
     // 보관함이 이 탭의 본디 자리이고 가이드 투어도 거기를 가리키므로 기본은 2다.
-    var tab by rememberSaveable { mutableIntStateOf(2) }
+    var tab by rememberSaveable { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
     // 추가 조건. 속성 카드와는 함께(AND) 걸린다.
@@ -170,8 +173,8 @@ fun ItemsScreen(
         else -> 2
     }
 
-    DetailPage(title = stringResource(R.string.items_vault_title), onBack = onBack ?: {}) {
-        item {
+    DetailPage(title = stringResource(R.string.items_vault_title), onBack = onBack ?: {}, showHeader = showHeader) {
+        if (!marketOnly) item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 GhostButton(
@@ -179,7 +182,7 @@ fun ItemsScreen(
                     onClick = onOpenDex,
                     modifier = Modifier.weight(1f),
                 )
-                SupPill(balance = balance, onClick = null)
+                if (showHeader) SupPill(balance = balance, onClick = null)
             }
         }
 
@@ -187,7 +190,7 @@ fun ItemsScreen(
         //
         // 도감 입구와 토큰은 탭 위에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
         // 뜻이 같아서, 탭마다 옮기면 찾는 자리가 두 곳이 된다.
-        item {
+        if (!marketOnly) item {
             SegmentedTabs(
                 labels = listOf(
                     stringResource(R.string.market_tab_store),

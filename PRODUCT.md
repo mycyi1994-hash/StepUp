@@ -1,5 +1,8 @@
 # StepUp
 
+> Current user decision, 2026-09-25: ship the character-free, record-first direction from selected 05-record.png. Remove mascot/clothing/wardrobe presentation, keep shoe collection/market/draw and existing user data. Navigation is Running / Shoes / Draw / Community / Profile. Scenery is an independent horizontal banner. Older character-related requirements below describe history, not current release requirements. See docs/redesign/CHARACTER-FREE-ASSETS-2026-09-25.md.
+
+
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
