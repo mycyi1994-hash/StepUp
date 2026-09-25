@@ -12,6 +12,8 @@ import com.stepup.android.data.remote.CrewApi
 import com.stepup.android.data.remote.EventApi
 import com.stepup.android.data.remote.GoogleSignIn
 import com.stepup.android.data.remote.MarketApi
+import com.stepup.android.data.remote.ServerResult
+import kotlinx.coroutines.launch
 import com.stepup.android.data.remote.PartyApi
 import com.stepup.android.data.remote.PushApi
 import com.stepup.android.data.remote.RunningFeedApi
@@ -101,6 +103,19 @@ object ServiceLocator {
     lateinit var sessionHolder: SessionHolder
         private set
 
+    /** 서버 경제(A안) — 잔고 · 신발 · 에너지의 정본은 서버다 */
+    lateinit var economyApi: com.stepup.android.data.remote.EconomyApi
+    lateinit var economySync: com.stepup.android.data.repo.EconomySync
+
+    private val economyScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+    )
+
+    /** 서버 경제를 뒤에서 한 번 맞춘다 — 앱 시작 · 로그인 · 러닝 업로드 뒤 */
+    fun refreshEconomyInBackground() {
+        economyScope.launch { runCatching { economySync.refresh() } }
+    }
+
     /** 구글 계정을 받아 오는 쪽. 로그인 화면이 쓴다. */
     lateinit var googleSignIn: GoogleSignIn
         private set
@@ -146,9 +161,26 @@ object ServiceLocator {
             preferences = { userPrefs.notifyPrefs.first() },
         )
         territoryApi = TerritoryApi(server)
+        economyApi = com.stepup.android.data.remote.EconomyApi(server)
+        economySync = com.stepup.android.data.repo.EconomySync(
+            api = economyApi,
+            market = MarketApi(server),
+            db = database,
+            prefs = userPrefs,
+            sessions = sessionHolder,
+        )
+        // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
+        val serverEconomy = economyApi.isConfigured
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
             uploadOwner = { sessionHolder.recordingOwner() },
+            // 서버가 러닝을 확인했으면 목표 보너스를 청구해 보고 잔고 · 에너지를 다시 받는다
+            onSigned = {
+                if (serverEconomy) {
+                    economyApi.goalClaim()
+                    economySync.refresh()
+                }
+            },
             recorder = ServerSessionRecorder(
                 server = server,
                 courseApi = CourseApi(server),
@@ -167,8 +199,12 @@ object ServiceLocator {
             notificationDao = database.notificationDao(),
             prefs = userPrefs,
             recoverRunEnergy = { runSettlementRepository.recoverEnergy() },
+            serverEconomy = serverEconomy,
+            claimGoalOnServer = {
+                if (economyApi.goalClaim() is ServerResult.Ok) economySync.refresh()
+            },
         )
-        runSettlementRepository = com.stepup.android.data.repo.RunSettlementRepository(database, userPrefs)
+        runSettlementRepository = com.stepup.android.data.repo.RunSettlementRepository(database, userPrefs, serverEconomy)
         // 신발을 갈아 신거나 강화하면 에너지 상한(화면·소모·리필)도 따라가게 한다
         rewardRepository.keepEnergyCapInSync(
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO),
@@ -180,9 +216,18 @@ object ServiceLocator {
             tracker = stepTracker,
             rewardRepository = rewardRepository,
         )
-        sneakerRepository = SneakerRepository(database, rewardRepository)
+        sneakerRepository = SneakerRepository(
+            database, rewardRepository,
+            economy = economyApi.takeIf { serverEconomy },
+            sync = economySync.takeIf { serverEconomy },
+            prefs = userPrefs,
+        )
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
-        boostRepository = BoostRepository(database, rewardRepository, userPrefs)
+        boostRepository = BoostRepository(
+            database, rewardRepository, userPrefs,
+            economy = economyApi.takeIf { serverEconomy },
+            sync = economySync.takeIf { serverEconomy },
+        )
         crewRepository = CrewRepository(
             api = CrewApi(server),
             crewDao = database.crewDao(),
@@ -205,6 +250,7 @@ object ServiceLocator {
             prefs = userPrefs,
             rewardRepository = rewardRepository,
             api = CourseApi(server),
+            serverEconomy = serverEconomy,
         )
         eventRepository = EventRepository(
             dao = database.claimedEventDao(),
@@ -218,6 +264,7 @@ object ServiceLocator {
             sneakerDao = database.sneakerDao(),
             rewardDao = database.rewardDao(),
             prefs = userPrefs,
+            economySync = economySync.takeIf { serverEconomy },
         )
         runningFeedRepository = RunningFeedRepository(RunningFeedApi(server))
         newsRepository = NewsRepository(

@@ -89,6 +89,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                                 // 서버 계정이 사라졌다. 이 폰의 로그인도 지우면 첫 화면(로그인)으로 돌아간다.
                                 ServiceLocator.sessionHolder.signOut()
                                 ServiceLocator.userPrefs.setLoginMethod("")
+                                // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
+                                ServiceLocator.economySync.clearLocal()
                                 confirming = false
                             } else {
                                 failed = true

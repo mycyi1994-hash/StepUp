@@ -29,6 +29,8 @@ class StepUpApp : Application() {
         // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
         PushService.createChannel(this)
         ServiceLocator.pushRegistrar.syncInBackground()
+        // 잔고 · 신발 · 에너지는 서버가 정본이다 — 켤 때마다 한 번 맞춘다
+        ServiceLocator.refreshEconomyInBackground()
         // 목표 알림 — 매일 저녁 한 번. 켜고 끄는 것은 일꾼이 알림 설정을 읽어 정한다.
         GoalReminderWorker.createChannel(this)
         runCatching { GoalReminderWorker.schedule(this) }

@@ -213,7 +213,19 @@
     <string name="items_collection">Collection</string>
     <string name="items_collection_progress">%1$d / %2$d combinations</string>
     <string name="items_mint_title">Mint a new pair</string>
-    <string name="items_mint_desc">Luck on your equipped sneaker raises the odds of a rare drop.</string>
+    <string name="items_mint_desc">The server rolls every draw. New accounts get 10 free draws; after that each draw costs 500 SUP.</string>
+    <string name="items_free_draws">%1$d free draws left</string>
+    <string name="toast_sign_in_required">Sign in to use SUP and sneakers.</string>
+    <string name="toast_offline">Couldn\'t reach the server. Try again in a moment.</string>
+    <string name="toast_no_free_draws">No free draws left. Tap again to draw with SUP.</string>
+    <string name="toast_nothing_to_repair">Durability is already full.</string>
+    <string name="toast_repaired">Repaired</string>
+    <string name="sneaker_action_repair">Repair · %1$s SUP</string>
+    <string name="ledger_spend_draw">Sneaker draw</string>
+    <string name="ledger_spend_repair">Sneaker repair</string>
+    <string name="ledger_earn_course">Course reward</string>
+    <string name="ledger_chain">Wallet transfer</string>
+    <string name="ledger_carried_over">Earlier records (total)</string>
     <string name="items_mint_button">MINT · %1$s SUP</string>
     <string name="mint_result_title">New sneaker minted!</string>
     <string name="boost_energy_title">Energy Cell</string>
@@ -411,7 +423,7 @@
     <string name="faq_q_energy">Why did earning stop?</string>
     <string name="faq_a_energy">Energy ran out. One energy covers 600 steps and it refills to full every midnight.</string>
     <string name="faq_q_rarity">How does rarity work?</string>
-    <string name="faq_a_rarity">Rarity sets the stat ceiling and max level. Higher Luck on your equipped pair improves your odds when minting.</string>
+    <string name="faq_a_rarity">Rarity sets the stat ranges (efficiency, comfort) and the max level. Draw odds are fixed: Common 55%, Rare 28%, Epic 13%, Legendary 4%.</string>
     <string name="faq_q_withdraw">When can I withdraw?</string>
     <string name="faq_a_withdraw">On-chain transfer to GIWA Chain is still in development. Your balance is safe until then.</string>
     <string name="support_contact">Contact</string>
@@ -890,7 +902,7 @@ Start running with StepUp.</string>
     <string name="tour7_title">Equipped sneaker</string>
     <string name="tour7_body">This pair\'s boost applies to every run. Tap it to see stats, upgrade, or swap pairs.</string>
     <string name="tour8_title">Minting</string>
-    <string name="tour8_body">Spend SUP to mint a random sneaker NFT. Your equipped pair\'s luck raises the odds of higher rarities.</string>
+    <string name="tour8_body">Draw a random sneaker — 10 free draws for new accounts, then 500 SUP each. The server rolls every draw.</string>
     <string name="tour9_title">Collection</string>
     <string name="tour9_body">Swipe sideways to browse your vault. Duplicates stack with ×N — tap to pick a specific copy. 44 slots to complete!</string>
     <string name="tour10_title">Events</string>
@@ -1536,7 +1548,7 @@ Start running with StepUp.</string>
     <string name="mystery_box_description">Closed glowing mystery box</string>
     <string name="mystery_draw_shoe">Draw sneakers</string>
     <string name="mystery_draw_outfit">Draw a tracksuit</string>
-    <string name="mystery_pending_chain">Drawing opens after the GIWA contract is deployed.</string>
+    <string name="mystery_pending_chain">Sign in to draw. New accounts get 10 free draws.</string>
     <string name="home_previous_background">Previous background</string>
     <string name="home_next_background">Next background</string>
     <string name="home_record_title">Today’s activity</string>

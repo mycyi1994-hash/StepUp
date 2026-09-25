@@ -33,6 +33,24 @@ sealed interface ItemsMessage {
     data object MaxLevel : ItemsMessage
     data class Upgraded(val sneaker: Sneaker) : ItemsMessage
     data class Equipped(val sneaker: Sneaker) : ItemsMessage
+    data object Repaired : ItemsMessage
+    data object NothingToRepair : ItemsMessage
+    data object NoFreeDraws : ItemsMessage
+    data object SignInRequired : ItemsMessage
+    data object Offline : ItemsMessage
+}
+
+/** 서버 경제의 결말 → 화면 문구. 성공은 부르는 쪽이 따로 정한다. */
+private fun com.stepup.android.data.repo.EconomyOutcome.toMessage(): ItemsMessage = when (this) {
+    com.stepup.android.data.repo.EconomyOutcome.NotEnoughBalance -> ItemsMessage.NotEnoughBalance
+    com.stepup.android.data.repo.EconomyOutcome.MaxLevel -> ItemsMessage.MaxLevel
+    com.stepup.android.data.repo.EconomyOutcome.EnergyFull -> ItemsMessage.EnergyCapacity
+    com.stepup.android.data.repo.EconomyOutcome.NoFreeDraws -> ItemsMessage.NoFreeDraws
+    com.stepup.android.data.repo.EconomyOutcome.NothingToRepair -> ItemsMessage.NothingToRepair
+    com.stepup.android.data.repo.EconomyOutcome.SignInRequired -> ItemsMessage.SignInRequired
+    com.stepup.android.data.repo.EconomyOutcome.Offline -> ItemsMessage.Offline
+    com.stepup.android.data.repo.EconomyOutcome.Ok,
+    is com.stepup.android.data.repo.EconomyOutcome.Rejected -> ItemsMessage.SaveFailed
 }
 
 /** 같은 (속성 × 등급 × 변형) 사본 묶음 — 그리드에 ×N 으로 표시한다 */
@@ -102,6 +120,11 @@ class ItemsViewModel(
     val factionProgress: StateFlow<Map<Faction, Int>> = sneakerRepository.factionProgress
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
+    init {
+        // 화면을 열 때 서버 값으로 한 번 맞춘다 — 다른 폰이나 지갑 페이지에서 바뀐 것까지
+        ServiceLocator.refreshEconomyInBackground()
+    }
+
     /** 민팅 성공 시 결과 다이얼로그용 */
     val mintResult = MutableStateFlow<Sneaker?>(null)
 
@@ -112,8 +135,9 @@ class ItemsViewModel(
         equipping.value = true
         viewModelScope.launch {
             try {
-                if (!sneakerRepository.equip(id)) {
-                    message.value = ItemsMessage.SaveFailed
+                val outcome = sneakerRepository.equipOnServer(id)
+                if (outcome != com.stepup.android.data.repo.EconomyOutcome.Ok) {
+                    message.value = outcome.toMessage()
                     return@launch
                 }
                 val target = (selectionInventory.value ?: inventory.value).firstOrNull { it.id == id }
@@ -139,28 +163,39 @@ class ItemsViewModel(
                 message.value = ItemsMessage.MaxLevel
                 return@savePurchase
             }
-            val result = sneakerRepository.upgrade(id)
+            val (outcome, result) = sneakerRepository.upgradeOnServer(id)
             ExperienceEvents.emit(if (result != null) FeedbackCue.Success else FeedbackCue.Error)
-            message.value = if (result != null) {
-                ItemsMessage.Upgraded(result)
-            } else {
-                ItemsMessage.NotEnoughBalance
-            }
+            message.value = if (result != null) ItemsMessage.Upgraded(result) else outcome.toMessage()
         }
     }
 
+    /** 수리 — 내구도를 가득 채운다 */
+    fun repair(id: Long) {
+        savePurchase {
+            val outcome = sneakerRepository.repairOnServer(id)
+            val ok = outcome == com.stepup.android.data.repo.EconomyOutcome.Ok
+            ExperienceEvents.emit(if (ok) FeedbackCue.Success else FeedbackCue.Error)
+            message.value = if (ok) ItemsMessage.Repaired else outcome.toMessage()
+        }
+    }
+
+    /** 뽑기 — 무료가 남았으면 무료로, 아니면 SUP 로. 결과는 서버가 굴린 신발이다 */
     fun mint() {
         savePurchase {
-            val minted = sneakerRepository.mint()
+            val (outcome, minted) = sneakerRepository.drawOnServer()
             if (minted == null) {
                 ExperienceEvents.emit(FeedbackCue.Error)
-                message.value = ItemsMessage.NotEnoughBalance
+                message.value = outcome.toMessage()
             } else {
                 mintResult.value = minted
                 ExperienceEvents.emit(FeedbackCue.Success)
             }
         }
     }
+
+    /** 남은 무료 뽑기 */
+    val freeDrawsLeft: StateFlow<Int> = sneakerRepository.freeDrawsLeft
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     private fun savePurchase(action: suspend () -> Unit) {
         viewModelScope.launch {
@@ -181,6 +216,9 @@ class ItemsViewModel(
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance
                 PurchaseError.ALREADY_ACTIVE -> ItemsMessage.BoostAlreadyActive
                 PurchaseError.ENERGY_CAPACITY -> ItemsMessage.EnergyCapacity
+                PurchaseError.SIGN_IN_REQUIRED -> ItemsMessage.SignInRequired
+                PurchaseError.OFFLINE -> ItemsMessage.Offline
+                PurchaseError.FAILED -> ItemsMessage.SaveFailed
             }
             ExperienceEvents.emit(if (message.value == ItemsMessage.BoostBought) FeedbackCue.Success else FeedbackCue.Error)
         }

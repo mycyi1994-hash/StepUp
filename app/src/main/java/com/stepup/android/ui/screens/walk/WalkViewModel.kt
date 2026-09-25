@@ -133,6 +133,23 @@ class WalkViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /**
+     * 서버가 확인한 이번 러닝의 적립액. 확인 전이면 null — 완료 화면은 확인된 뒤에만 금액을 보인다.
+     * 폰이 계산한 값은 예상치일 뿐이라 여기 쓰지 않는다.
+     */
+    val lastServerPoints: StateFlow<Double?> = combine(
+        WalkSessionService.state,
+        stepRepository.recentSessions(5),
+    ) { state, rows ->
+        if (state.lastStartedAt == 0L) {
+            null
+        } else {
+            rows.firstOrNull { it.startedAt == state.lastStartedAt }
+                ?.takeIf { it.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name }
+                ?.claimAmount?.toDoubleOrNull()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** 완료 화면의 캐릭터 — 홈 · 꾸미기와 같은 모습 */
     val look: StateFlow<AvatarLook?> = ServiceLocator.avatarRepository.look
         .map<AvatarLook, AvatarLook?> { it }

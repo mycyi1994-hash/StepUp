@@ -99,6 +99,10 @@ class UserPrefs(
         val RUNNER_ADDRESS = stringPreferencesKey("runner_address")
         val AUTH_SESSION = stringPreferencesKey("auth_session")
         val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
+        val SERVER_ENERGY_MAX = doublePreferencesKey("server_energy_max")
+        val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
+        val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
+        val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
         val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
 
         // ── 러너 캐릭터 ──
@@ -574,7 +578,39 @@ class UserPrefs(
     }
 
     private fun energyMax(prefs: Preferences): Double =
-        RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+        prefs[Keys.SERVER_ENERGY_MAX]
+            ?: RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+
+    // ── 서버 경제의 사본 (EconomySync 가 적는다) ─────────────────────
+    //
+    // 에너지 · 뽑기 횟수는 서버가 정한다. 폰은 마지막으로 받아 온 값을 보여 줄 뿐이다.
+
+    suspend fun setServerEconomy(today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int) {
+        store.edit {
+            it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
+            it[Keys.ENERGY_DAY] = today
+            it[Keys.SERVER_ENERGY_MAX] = energyMax
+            it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
+            it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
+        }
+    }
+
+    /** 남은 무료 뽑기 (서버 draw_grants FREE) */
+    val freeDrawsLeft: Flow<Int> = store.data.map { it[Keys.FREE_DRAWS_LEFT] ?: 0 }
+
+    /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
+    val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
+
+    /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
+    suspend fun legacyEconomyImported(userId: String): Boolean =
+        store.data.map { userId in (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',') }.first()
+
+    suspend fun setLegacyEconomyImported(userId: String) {
+        store.edit {
+            val done = (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',').filter(String::isNotBlank).toSet()
+            it[Keys.LEGACY_ECONOMY_IMPORTED] = (done + userId).joinToString(",")
+        }
+    }
 
     /**
      * 에너지를 소모한다.

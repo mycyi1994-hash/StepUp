@@ -1,5 +1,13 @@
 # Redesign progress
 
+## 2026-09-25 — app stage 5 (2): server economy (balance, sneakers, draws)
+
+- The server is the only source of SUP, sneakers, energy and boosts (decision A, server records only). `EconomySync` replaces the phone's `rewards`/`sneakers`/`boosts` tables with the server's (`my_economy`, `my_sneakers`, `sup_ledger`, `draw_grants`, `boosts`) on app start, sign-in, run upload and screen open. Draws, upgrades, repairs, equips and boosts are server functions; the phone never credits or debits.
+- Run result: the SUP amount appears only after the server confirms the run; phone estimates are never shown as earned. Background steps and course completions no longer credit on the phone.
+- Screens: draw tab performs the server draw and opens the new shoe; the draw card shows remaining free draws; server shoes show efficiency/comfort/durability with a repair action; ledger labels for draw/repair/course/wallet rows. Luck copy removed (FAQ, tour).
+- Legacy phone-only shoes are uploaded once per account as IMPORT keepsakes (the default pre-login starter is skipped); phone-only SUP is not carried over.
+- Local evidence: compile, all unit tests (new `EconomyApiTest`), lint, release/test APK assembly, string/design checks. Signed-in states (server draw result, repair, free-draw label, confirmed run amount) need a real account and are not captured by the emulator gallery.
+
 ## 2026-09-25 — app stage 5 (1): mock GPS, faction board removal, wallet page entry
 
 - Ranking: the faction (종족) board is removed with the server `faction_leaderboard` function (migration 0028) — four boards remain (speed/time/SUP/crew). The gallery's `ranking-factions` scenario is removed.

@@ -148,6 +148,7 @@ fun RunScreen(
     val laps by viewModel.laps.collectAsStateWithLifecycle()
     val course by viewModel.selectedCourse.collectAsStateWithLifecycle()
     val lastUpload by viewModel.lastUpload.collectAsStateWithLifecycle()
+    val lastServerPoints by viewModel.lastServerPoints.collectAsStateWithLifecycle()
     val look by viewModel.look.collectAsStateWithLifecycle()
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
@@ -310,7 +311,8 @@ fun RunScreen(
                 ) {
                     item {
                         FinishCard(
-                            session = session, points = session.lastRewardPoints!!,
+                            // 금액은 서버가 확인한 값만 — 확인 전에는 FinishCard 가 "—" 를 보인다
+                            session = session, points = lastServerPoints ?: 0.0,
                             upload = lastUpload, look = look, balance = balance,
                         )
                     }

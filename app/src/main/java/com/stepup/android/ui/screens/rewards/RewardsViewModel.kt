@@ -25,6 +25,10 @@ class RewardsViewModel(rewardRepository: RewardRepository) : ViewModel() {
         .map<List<RewardEntity>, List<RewardEntity>?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    init {
+        ServiceLocator.refreshEconomyInBackground()
+    }
+
     /** 멤버십 카드의 등급 표기에 사용한다. */
     val sneakerLevel: StateFlow<Int> = rewardRepository.sneakerLevel
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1)

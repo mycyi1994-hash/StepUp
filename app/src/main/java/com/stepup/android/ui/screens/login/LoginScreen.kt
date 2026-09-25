@@ -93,6 +93,8 @@ fun LoginScreen(onDone: () -> Unit) {
                                 Analytics.login()
                                 // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
                                 ServiceLocator.pushRegistrar.syncInBackground()
+                                // 이 계정의 서버 잔고 · 신발을 받아 온다 (첫 신발 · 무료 뽑기 10회 포함)
+                                ServiceLocator.refreshEconomyInBackground()
                                 // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
                                 runCatching { SessionUploadWorker.schedule(activity) }
                                 onDone()

@@ -51,6 +51,8 @@ class ClaimRepository(
     private val recorder: SessionRecorder,
     private val now: () -> Long = System::currentTimeMillis,
     private val uploadOwner: suspend () -> String = { "legacy" },
+    /** 서버가 러닝을 하나라도 확인했으면 한 번 부른다 — 잔고 · 에너지를 다시 받아 온다 */
+    private val onSigned: suspend () -> Unit = {},
 ) {
 
     /** 올릴 것이 몇 개 남았는지 — 화면에 보여주기 위한 값 */
@@ -89,6 +91,8 @@ class ClaimRepository(
                             // 값과 다를 수 있고, 다르면 서버 쪽이 맞다.
                             claimAmount = result.value.pointsAwarded.toString(),
                             claimDay = result.value.sessionId,
+                            // 기록에 보이는 적립액도 서버가 정한 값이다
+                            pointsEarned = result.value.pointsAwarded,
                         ),
                     )
                     signed++
@@ -127,6 +131,7 @@ class ClaimRepository(
             }
         }
 
+        if (signed > 0) runCatching { onSigned() }
         return UploadRun(
             signed = signed,
             rejected = rejected,

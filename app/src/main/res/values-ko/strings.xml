@@ -211,7 +211,19 @@
     <string name="items_collection">도감</string>
     <string name="items_collection_progress">%1$d / %2$d 조합</string>
     <string name="items_mint_title">새 스니커즈 민팅</string>
-    <string name="items_mint_desc">착용 중인 스니커즈의 행운이 높을수록 희귀한 신발이 나올 확률이 올라가요.</string>
+    <string name="items_mint_desc">뽑기는 서버가 굴려요. 새로 가입하면 무료 10회, 그 뒤로는 한 번에 500 SUP예요.</string>
+    <string name="items_free_draws">무료 뽑기 %1$d회 남음</string>
+    <string name="toast_sign_in_required">로그인하면 SUP와 신발을 쓸 수 있어요.</string>
+    <string name="toast_offline">서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.</string>
+    <string name="toast_no_free_draws">무료 뽑기를 다 썼어요. 한 번 더 누르면 SUP로 뽑아요.</string>
+    <string name="toast_nothing_to_repair">내구도가 이미 가득해요.</string>
+    <string name="toast_repaired">수리했어요</string>
+    <string name="sneaker_action_repair">수리 · %1$s SUP</string>
+    <string name="ledger_spend_draw">신발 뽑기</string>
+    <string name="ledger_spend_repair">신발 수리</string>
+    <string name="ledger_earn_course">코스 보상</string>
+    <string name="ledger_chain">지갑 옮기기</string>
+    <string name="ledger_carried_over">이전 기록 합계</string>
     <string name="items_mint_button">민팅 · %1$s SUP</string>
     <string name="mint_result_title">새 스니커즈 획득!</string>
     <string name="boost_energy_title">에너지 셀</string>
@@ -409,7 +421,7 @@
     <string name="faq_q_energy">적립이 왜 멈췄나요?</string>
     <string name="faq_a_energy">에너지가 떨어졌어요. 에너지 1칸이 600걸음이고 매일 자정에 최대치로 다시 채워져요.</string>
     <string name="faq_q_rarity">희귀도는 어떻게 정해지나요?</string>
-    <string name="faq_a_rarity">희귀도가 스탯 상한과 최대 레벨을 정해요. 착용 중인 스니커즈의 행운이 높으면 민팅에서 더 좋은 등급이 나올 확률이 올라가요.</string>
+    <string name="faq_a_rarity">등급이 스탯 범위(효율 · 착화감)와 최대 레벨을 정해요. 뽑기 확률은 고정이에요: 일반 55%, 레어 28%, 에픽 13%, 레전더리 4%.</string>
     <string name="faq_q_withdraw">출금은 언제 되나요?</string>
     <string name="faq_a_withdraw">GIWA 체인 온체인 전환은 아직 개발 중이에요. 그때까지 잔액은 안전하게 보관돼요.</string>
     <string name="support_contact">문의</string>
@@ -888,7 +900,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour7_title">착용 중인 스니커즈</string>
     <string name="tour7_body">이 신발의 부스트가 모든 러닝에 적용돼요. 눌러서 스탯 확인·강화·교체를 할 수 있어요.</string>
     <string name="tour8_title">민팅</string>
-    <string name="tour8_body">SUP로 랜덤 스니커즈 NFT를 민팅해요. 착용 중인 신발의 행운이 상위 등급 확률을 올려줘요.</string>
+    <string name="tour8_body">랜덤 신발을 뽑아요. 새로 가입하면 무료 10회, 그 뒤로는 한 번에 500 SUP. 뽑기는 서버가 굴려요.</string>
     <string name="tour9_title">컬렉션</string>
     <string name="tour9_body">옆으로 밀어 보관함을 넘겨보세요. 중복은 ×N으로 묶이고, 눌러서 원하는 사본을 고를 수 있어요. 도감은 총 44칸!</string>
     <string name="tour10_title">이벤트</string>
@@ -1534,7 +1546,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="mystery_box_description">푸른빛이 나는 닫힌 미스터리 박스</string>
     <string name="mystery_draw_shoe">신발 뽑기</string>
     <string name="mystery_draw_outfit">트레이닝복 뽑기</string>
-    <string name="mystery_pending_chain">GIWA 컨트랙트 배포 후 뽑기가 열립니다.</string>
+    <string name="mystery_pending_chain">로그인하면 뽑을 수 있어요. 새로 가입하면 무료 10회예요.</string>
     <string name="home_previous_background">이전 배경</string>
     <string name="home_next_background">다음 배경</string>
     <string name="home_record_title">오늘의 기록</string>

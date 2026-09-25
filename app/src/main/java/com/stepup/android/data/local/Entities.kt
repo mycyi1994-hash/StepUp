@@ -174,6 +174,26 @@ data class SneakerEntity(
      * 소유권이 오간다.
      */
     val serverId: Long = 0,
+    // ── 서버 신발(my_sneakers)의 값 — 정본은 서버다. 폰에서 만든 옛 신발은 비어 있다. ──
+    /** 어디서 온 신발인가 (STARTER · FREE_DRAW · PAID_DRAW · BONUS_DRAW · IMPORT · MINT · DEPOSIT). 비었으면 폰에만 있던 옛 신발 */
+    @ColumnInfo(defaultValue = "''") val origin: String = "",
+    /** 효율 — 적립 보너스 (bps, 1000 = +10%) */
+    @ColumnInfo(defaultValue = "0") val efficiencyBps: Int = 0,
+    /** 착화감 — 에너지 절감 (bps, 1000 = 10% 덜 씀) */
+    @ColumnInfo(defaultValue = "0") val comfortBps: Int = 0,
+    /** 내구도 0~100. 50 아래로 내려가면 적립이 줄고 20 아래면 적립이 없다 */
+    @ColumnInfo(defaultValue = "100") val durabilityPts: Double = 100.0,
+    @ColumnInfo(defaultValue = "0") val maxLevel: Int = 0,
+    /** OWNED · LISTED … 판매 중이면 착용 · 강화를 막는다 */
+    @ColumnInfo(defaultValue = "'OWNED'") val status: String = "OWNED",
+    /** APP · WITHDRAWING · ON_CHAIN */
+    @ColumnInfo(defaultValue = "'APP'") val chainState: String = "APP",
+    @ColumnInfo(defaultValue = "0") val canWithdraw: Boolean = false,
+    /** 서버가 정한 다음 강화 비용 */
+    @ColumnInfo(defaultValue = "0") val serverUpgradeCost: Double = 0.0,
+    /** 내구도 1점 수리 비용 */
+    @ColumnInfo(defaultValue = "0") val repairCostPerPoint: Double = 0.0,
+    @ColumnInfo(defaultValue = "0") val genesisNo: Int = 0,
 )
 
 /**

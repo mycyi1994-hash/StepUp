@@ -40,6 +40,8 @@ class CourseRepository(
     private val prefs: UserPrefs,
     private val rewardRepository: RewardRepository,
     private val api: CourseApi,
+    /** 서버 경제에서는 완주 보상을 서버가 정한다(course_run_submit) — 폰은 적지 않는다 */
+    private val serverEconomy: Boolean = false,
 ) {
 
     val courses: Flow<List<RunCourse>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
@@ -263,6 +265,12 @@ class CourseRepository(
     suspend fun grantCompletionIfFinished(sessionKm: Double): RunCourse? {
         val course = selectedCourseNow() ?: return null
         if (sessionKm < course.distanceKm * 0.98) return null
+        if (!serverEconomy) grantLocally(course)
+        dao.byId(course.id)?.let { dao.update(it.copy(runCount = it.runCount + 1)) }
+        return course
+    }
+
+    private suspend fun grantLocally(course: RunCourse) {
         rewardRepository.credit(
             RewardType.EARN_EVENT,
             course.reward,
@@ -273,8 +281,6 @@ class CourseRepository(
             argText = course.name,
             argAmount = course.reward,
         )
-        dao.byId(course.id)?.let { dao.update(it.copy(runCount = it.runCount + 1)) }
-        return course
     }
 
     /**

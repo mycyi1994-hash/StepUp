@@ -211,7 +211,19 @@
     <string name="items_collection">图鉴</string>
     <string name="items_collection_progress">%1$d / %2$d 种组合</string>
     <string name="items_mint_title">铸造新球鞋</string>
-    <string name="items_mint_desc">装备球鞋的幸运越高，开出稀有款的概率就越大。</string>
+    <string name="items_mint_desc">抽取由服务器进行。新注册可免费抽取 10 次，之后每次 500 SUP。</string>
+    <string name="items_free_draws">剩余免费抽取 %1$d 次</string>
+    <string name="toast_sign_in_required">登录后即可使用 SUP 和运动鞋。</string>
+    <string name="toast_offline">无法连接服务器，请稍后再试。</string>
+    <string name="toast_no_free_draws">免费抽取已用完。再按一次将用 SUP 抽取。</string>
+    <string name="toast_nothing_to_repair">耐久度已满。</string>
+    <string name="toast_repaired">已修理</string>
+    <string name="sneaker_action_repair">修理 · %1$s SUP</string>
+    <string name="ledger_spend_draw">运动鞋抽取</string>
+    <string name="ledger_spend_repair">运动鞋修理</string>
+    <string name="ledger_earn_course">路线奖励</string>
+    <string name="ledger_chain">钱包转移</string>
+    <string name="ledger_carried_over">之前的记录（合计）</string>
     <string name="items_mint_button">铸造 · %1$s SUP</string>
     <string name="mint_result_title">新球鞋到手！</string>
     <string name="boost_energy_title">能量电池</string>
@@ -409,7 +421,7 @@
     <string name="faq_q_energy">为什么不赚 SUP 了？</string>
     <string name="faq_a_energy">能量用完了。1 点能量对应 600 步，每天午夜会自动回满。</string>
     <string name="faq_q_rarity">稀有度是怎么运作的？</string>
-    <string name="faq_a_rarity">稀有度决定属性上限和最高等级。装备球鞋的幸运越高，铸造时开出好货的概率就越大。</string>
+    <string name="faq_a_rarity">稀有度决定属性范围（效率、舒适度）和最高等级。抽取概率固定：普通 55%、稀有 28%、史诗 13%、传奇 4%。</string>
     <string name="faq_q_withdraw">什么时候能提现？</string>
     <string name="faq_a_withdraw">转到 GIWA 链的链上功能还在开发中。在那之前，你的余额都很安全。</string>
     <string name="support_contact">联系我们</string>
@@ -888,7 +900,7 @@
     <string name="tour7_title">穿戴中的球鞋</string>
     <string name="tour7_body">这双鞋的加成作用于每次跑步。点开可查看属性、强化或更换。</string>
     <string name="tour8_title">铸造</string>
-    <string name="tour8_body">花 SUP 铸造随机球鞋 NFT。穿戴中球鞋的幸运值会提高高稀有度概率。</string>
+    <string name="tour8_body">随机抽取运动鞋。新注册可免费抽取 10 次，之后每次 500 SUP。抽取由服务器进行。</string>
     <string name="tour9_title">收藏</string>
     <string name="tour9_body">左右滑动浏览收藏。重复的以 ×N 叠放，点开可选具体那双。共 44 格图鉴！</string>
     <string name="tour10_title">活动</string>
@@ -1534,7 +1546,7 @@
     <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
     <string name="mystery_draw_shoe">抽取运动鞋</string>
     <string name="mystery_draw_outfit">抽取运动服</string>
-    <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
+    <string name="mystery_pending_chain">登录后即可抽取。新注册可免费抽取 10 次。</string>
     <string name="home_previous_background">上一张背景</string>
     <string name="home_next_background">下一张背景</string>
     <string name="home_record_title">今日记录</string>
