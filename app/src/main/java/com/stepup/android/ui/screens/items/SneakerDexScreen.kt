@@ -31,11 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -280,8 +275,9 @@ private fun DexCell(
             // 형태는 남으므로 "이 자리에 무엇이 오는가"는 그대로 읽힌다.
             SneakerFrame(
                 sneaker = sample,
-                modifier = if (hasIt) Modifier.fillMaxSize() else Modifier.fillMaxSize().grayedOut(),
+                modifier = Modifier.fillMaxSize().alpha(if (hasIt) 1f else 0.48f),
                 corner = 12.dp,
+                muted = !hasIt,
             )
             if (!hasIt) {
                 Icon(
@@ -312,21 +308,3 @@ private fun DexCell(
         )
     }
 }
-
-/**
- * 아직 없는 칸을 회색으로.
- *
- * 그린 결과 위에 **채도 0인 회색을 Saturation 블렌드로** 덮는다. 색만 빠지고
- * 형태와 명암은 그대로 남아, 무엇이 오는 자리인지는 계속 읽힌다.
- *
- * 신발은 이미지일 때도 있고 Canvas 로 그린 그림일 때도 있어서, 컴포저블마다
- * 색을 바꾸는 방법이 다르다. 이렇게 그려진 결과에 거는 방식이면 둘 다 한 번에
- * 먹는다. 블렌드는 별도 레이어에서 합성해야 해서 Offscreen 을 지정한다.
- */
-private fun Modifier.grayedOut(): Modifier = this
-    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-    .drawWithContent {
-        drawContent()
-        drawRect(Color(0xFF8A9199), blendMode = BlendMode.Saturation)
-    }
-    .alpha(0.5f)
