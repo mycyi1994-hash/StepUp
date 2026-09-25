@@ -22,6 +22,9 @@ create table if not exists public.push_outbox (
 
 create index if not exists push_outbox_pending on public.push_outbox (created_at) where sent_at is null;
 
+-- 보내는 쪽이 가져간 시각. 가져간 줄은 잠시 다른 호출에 다시 주지 않는다(아래 push_claim_batch).
+alter table public.push_outbox add column if not exists claimed_at timestamptz;
+
 comment on table public.push_outbox is
   '보낼 푸시. 트리거가 채우고 push-send 함수가 보낸 뒤 sent_at 을 적는다. 앱은 볼 수 없다.';
 
@@ -206,6 +209,10 @@ revoke execute on function public.push_display_name(uuid) from public, anon, aut
 
 -- 보낼 것을 한 묶음 가져간다. 함수가 동시에 두 번 깨어나도 같은 줄을 두 번
 -- 보내지 않게 잠근 줄은 건너뛴다. 다섯 번 실패한 줄은 더 시도하지 않는다.
+-- 행 잠금은 이 호출이 끝나면 풀린다. 보내고 push_mark 로 적기 전까지 다음 호출이
+-- 같은 줄을 또 가져가 두 번 울리지 않게, 가져간 시각을 적고 2분은 건너뛴다.
+-- 실패한 줄도 2분 뒤에 다시 가져간다 — 곧바로 다시 가져가면 FCM 이 잠깐 아플 때
+-- 다섯 번을 몇 초 만에 다 써 버리고 영영 못 보낸다.
 create or replace function public.push_claim_batch(p_limit int default 100)
 returns table (
   id bigint,
@@ -222,12 +229,14 @@ as $$
   with picked as (
     select o.id from public.push_outbox o
      where o.sent_at is null and o.attempts < 5
+       and (o.claimed_at is null or o.claimed_at < now() - interval '2 minutes')
      order by o.id
      limit least(greatest(coalesce(p_limit, 100), 1), 500)
      for update skip locked
   ), bumped as (
     update public.push_outbox o
-       set attempts = o.attempts + 1
+       set attempts = o.attempts + 1,
+           claimed_at = now()
       from picked
      where o.id = picked.id
     returning o.id, o.user_id, o.kind, o.args, o.link

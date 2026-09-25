@@ -78,8 +78,10 @@ class MainActivity : ComponentActivity() {
         )
         window.setBackgroundDrawable(ColorDrawable(if (startDark) WINDOW_DARK else WINDOW_LIGHT))
 
-        // 초대 링크나 크루 알림으로 들어왔으면 그 크루를 연다(로그인 뒤에)
-        InviteLinks.handle(intent)
+        // 초대 링크나 크루 알림으로 들어왔으면 그 크루를 연다(로그인 뒤에).
+        // 화면 회전·언어·테마 변경으로 다시 만들어질 때는 같은 intent 가 또 오므로
+        // 처음 만들 때만 읽는다 — 안 그러면 이미 본 크루로 매번 다시 끌려간다.
+        if (savedInstanceState == null) InviteLinks.handle(intent)
 
         // 이미 권한이 있으면 바로 추적 시작 (첫 요청은 StepUpRoot에서 처리)
         if (StepPermissions.hasActivityRecognition(this)) {

@@ -16,6 +16,7 @@ import com.stepup.android.data.repo.RunningFeedRepository
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /** 못 가져왔을 때 화면이 할 말. 다음에 할 일이 저마다 다르다. */
@@ -68,6 +69,11 @@ class RunningFeedViewModel(private val repo: RunningFeedRepository) : ViewModel(
     /** 한 번 보여 주고 사라지는 말 */
     val message = MutableStateFlow<Int?>(null)
 
+    // 검색어를 한 글자씩 칠 때마다 새로 읽는다. 앞의 요청이 늦게 끝나 뒤의 결과를
+    // 덮으면 목록이 검색창과 달라진다. 새로 읽을 때 앞의 것은 버린다.
+    private var eventsJob: Job? = null
+    private var newsJob: Job? = null
+
     init {
         loadEvents()
         loadNews()
@@ -77,7 +83,8 @@ class RunningFeedViewModel(private val repo: RunningFeedRepository) : ViewModel(
     // ── 대회 ────────────────────────────────────────────────────────
 
     fun loadEvents(force: Boolean = false) {
-        viewModelScope.launch {
+        eventsJob?.cancel()
+        eventsJob = viewModelScope.launch {
             events.value = events.value.copy(loading = true, problem = null)
             when (val r = repo.events(events.value.filter, force = force)) {
                 is ServerResult.Ok -> events.value = events.value.copy(
@@ -128,7 +135,8 @@ class RunningFeedViewModel(private val repo: RunningFeedRepository) : ViewModel(
     // ── 뉴스 ────────────────────────────────────────────────────────
 
     fun loadNews(force: Boolean = false) {
-        viewModelScope.launch {
+        newsJob?.cancel()
+        newsJob = viewModelScope.launch {
             news.value = news.value.copy(loading = true, problem = null)
             when (val r = repo.news(news.value.filter, force = force)) {
                 is ServerResult.Ok -> {

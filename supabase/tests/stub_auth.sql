@@ -38,3 +38,6 @@ grant select on auth.users to authenticated;
 -- 실제 Supabase 와 같은 기본 권한. 새로 만드는 표에 자동으로 붙는다.
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on sequences to anon, authenticated;
+-- 함수에도 같은 기본 권한을 붙인다. 이것이 없으면 "public 에서만 거둔" 함수가
+-- 여기서는 막혀 보이고 실제 Supabase 에서는 누구나 부를 수 있다.
+alter default privileges in schema public grant all on functions to anon, authenticated;

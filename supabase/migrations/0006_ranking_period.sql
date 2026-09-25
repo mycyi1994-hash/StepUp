@@ -99,7 +99,11 @@ as $$
     left join (
       -- 누적 "적립"이다. 잔고가 아니다 — 쓴 사람이 순위에서 밀리면
       -- 상점은 아무도 안 쓰는 방이 된다.
-      select user_id, sum(amount) filter (where amount > 0) as earned
+      -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
+      -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
+      select user_id, sum(amount) filter (
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL')
+             ) as earned
         from public.sup_ledger
        where occurred_at >= (select since from win)
        group by user_id

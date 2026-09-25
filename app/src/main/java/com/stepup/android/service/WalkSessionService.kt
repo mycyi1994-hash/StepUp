@@ -144,7 +144,9 @@ class WalkSessionService : Service() {
             speedAnchorAt = now
 
             val meters = if (prev == null) 0.0 else haversineMeters(prev, p)
-            val seconds = if (prevAt == 0L) 0L else (now - prevAt) / 1000
+            // 어테스터(economy.js)와 같이 반올림한다. 버리면 2.5초 간격이 2초가 되어
+            // 서버보다 25% 엄격하게 튄 구간으로 잡힌다.
+            val seconds = if (prevAt == 0L) 0L else (now - prevAt + 500) / 1000
             val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
 
             // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
@@ -160,7 +162,8 @@ class WalkSessionService : Service() {
                 val track = current.track
                 val moved = track.isEmpty() ||
                     haversineMeters(track.last().toGeoPoint(), p) >= 8.0
-                val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS
+                val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS &&
+                    seconds >= RunIntegrity.MIN_SEGMENT_SEC
                 current.copy(
                     track = if (moved) track + TrackPoint(p.lat, p.lng, now) else track,
                     gpsFix = true,
@@ -237,7 +240,9 @@ class WalkSessionService : Service() {
         createChannel()
         // 위치 권한이 있을 때만 location 타입을 함께 선언한다 —
         // 권한 없이 선언하면 API 34+에서 시작 자체가 거부된다.
-        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && hasLocationPermission()) {
+        // location 타입은 API 29(Q)부터 있다. 29~33 에서 빼 두면 화면을 끄거나 앱을
+        // 벗어나는 순간 GPS 가 멈춰, 멀쩡한 러닝이 "GPS 거리 부족"으로 깎인다.
+        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && hasLocationPermission()) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
         } else {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.Analytics
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.sync.SessionUploadWorker
 import com.stepup.android.data.remote.GoogleIdResult
 import com.stepup.android.data.remote.TokenResult
 import com.stepup.android.ui.components.Wordmark
@@ -92,6 +93,8 @@ fun LoginScreen(onDone: () -> Unit) {
                                 Analytics.login()
                                 // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
                                 ServiceLocator.pushRegistrar.syncInBackground()
+                                // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
+                                runCatching { SessionUploadWorker.schedule(activity) }
                                 onDone()
                             }
                             // 서버가 토큰을 거절했다. 대개 설정 문제다 —

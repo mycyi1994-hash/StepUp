@@ -78,6 +78,22 @@ class SessionHolder(
         }
     }
 
+    /**
+     * 서버가 [accessToken] 을 401 로 돌려보냈다. 다음 요청에서 갱신하게 만료로 표시한다.
+     *
+     * 폰 시계로는 아직 살아 있어도 서버가 거절했으면(시계 차이·세션 폐기) 그 판단이
+     * 맞다. 표시하지 않으면 만료 시각이 지날 때까지 같은 토큰으로 401 만 받는다.
+     * 그 사이 다른 요청이 이미 갱신했으면 새 토큰은 건드리지 않는다.
+     */
+    suspend fun markExpired(accessToken: String) {
+        mutex.withLock {
+            val current = store.load()
+            if (current != null && current.accessToken == accessToken) {
+                store.save(current.copy(expiresAt = 0))
+            }
+        }
+    }
+
     suspend fun currentUserId(): String? = store.load()?.user?.id
 
     /** A local snapshot, including offline sessions; no refresh or account creation. */

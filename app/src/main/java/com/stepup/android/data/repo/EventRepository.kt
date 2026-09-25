@@ -12,6 +12,8 @@ import java.time.temporal.IsoFields
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 enum class EventKind { CHALLENGE, CAMPAIGN, MISSION }
 
@@ -77,7 +79,7 @@ class EventRepository(
      *
      * @param progress 폰이 잰 진행도(0..1). 목표 전이면 서버에 묻지도 않는다.
      */
-    suspend fun claim(def: EventDef, progress: Float): EventClaimResult {
+    suspend fun claim(def: EventDef, progress: Float): EventClaimResult = claimLock.withLock {
         val key = periodKey(def)
         if (dao.byId(key) != null) return EventClaimResult.AlreadyClaimed
         if (!def.claimableWithoutTarget && progress < 1f) return EventClaimResult.NotFinished
@@ -115,6 +117,10 @@ class EventRepository(
             is ServerResult.Retry -> EventClaimResult.Failed
         }
     }
+
+    // 두 번 누르면 둘 다 "아직 안 받음"을 보고 서버에 간다. 두 번째가 같은 키로
+    // 기록을 넣다 충돌해 앱이 죽는다. 한 번에 하나씩 받는다.
+    private val claimLock = Mutex()
 
     /**
      * 한 번씩 받는 단위의 이름. 주간 도전은 ISO 주마다(`step_surge:2026-W39`),

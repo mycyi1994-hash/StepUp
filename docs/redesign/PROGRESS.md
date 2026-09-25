@@ -803,3 +803,13 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Removed dead drawable references, character stages and outfit draw entrances; routed the former wardrobe through the existing shoe inventory. Reused existing functional screens; native visual matching is not claimed.
 - Static design/string/media/resource checks and web draw bundle build pass. No local Android SDK/JDK: Android compile/device validation and visual regression expectations remain pending. No APK/push/deployment.
 - See CHARACTER-FREE-ASSETS-2026-09-25.md for deliverables, exact deletion archive and application limits.
+
+## 2026-09-25 — stage 1: preserve redesign and merge current main
+
+- Saved the character-free source/resource work as checkpoint `30bdce4` before merging `origin/main` (`488ee5d`). This is a local integration checkpoint, not a release.
+- Backed up all 118 previously untracked files and verified their post-merge hashes. Pre-existing screenshot/review work remains untouched and untracked; the new runtime assets and asset report are in the checkpoint commit.
+- Resolved 115 character-image modify/delete conflicts by preserving the explicitly approved removals. Also copied main's updated image versions into the external sync backup before removing them from runtime resources. Regenerated the sole conflicting source file, `AvatarArtRes.kt`, from the current character-free resource inventory.
+- Login contains both main's pending-run upload scheduling fix and the new independent landscape. Main backend, database/server changes and QA workflow/script files match `origin/main` exactly in the merged index.
+- Checks passed: no unresolved entries, design contract, localized strings, packaged media, staged diff whitespace, and original untracked-file preservation. Android compile/device tests were not run during this merge-only step.
+- `ExperienceUiTest` / `DesignReferenceTest` redesign updates remain the separately planned test stage. No push, APK, deployment or next-stage UI work was performed.
+- Backup: `C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-main-sync-20260925-134513`.

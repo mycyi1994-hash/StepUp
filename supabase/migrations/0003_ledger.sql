@@ -415,10 +415,12 @@ begin
     raise exception '금액이 올바르지 않습니다' using errcode = '22023';
   end if;
 
-  -- 잔고를 세는 동안 다른 요청이 끼어들지 못하게 이 사용자의 원장 행을 잠근다.
+  -- 잔고를 세는 동안 다른 요청이 끼어들지 못하게 이 사용자의 원장 쓰기를 잠근다.
   -- 잠그지 않으면 두 요청이 동시에 "잔고 충분"을 보고 둘 다 통과해 잔고가
   -- 음수가 된다 — 지갑이 없어도 이중지불은 일어난다.
-  perform 1 from public.sup_ledger where user_id = v_user for update;
+  -- 원장 행 잠금(for update)으로는 부족하다. **새로 들어오는** 행(다른 요청의 입찰·구매)은
+  -- 막지 못한다. 원장을 건드리는 함수가 모두 같은 사용자 잠금을 가장 먼저 잡아 한 줄로 선다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
 
   select coalesce(sum(amount), 0) into v_balance
     from public.sup_ledger where user_id = v_user;

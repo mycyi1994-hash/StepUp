@@ -169,6 +169,10 @@ object ServiceLocator {
             recoverRunEnergy = { runSettlementRepository.recoverEnergy() },
         )
         runSettlementRepository = com.stepup.android.data.repo.RunSettlementRepository(database, userPrefs)
+        // 신발을 갈아 신거나 강화하면 에너지 상한(화면·소모·리필)도 따라가게 한다
+        rewardRepository.keepEnergyCapInSync(
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO),
+        )
         stepRepository = StepRepository(
             stepDao = database.stepDao(),
             walkSessionDao = database.walkSessionDao(),

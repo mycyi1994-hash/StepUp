@@ -146,7 +146,7 @@ begin
     from public.walk_sessions s
    where s.user_id = v_user and s.started_at = p_started_at;
   if not found then
-    raise exception '러닝 기록이 서버에 없습니다' using errcode = 'P0002';
+    raise exception '러닝 기록이 서버에 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if v_session.verdict = 'VOID' or v_session.duration_sec <= 0 then
     raise exception '인정되지 않은 러닝입니다' using errcode = '23514';

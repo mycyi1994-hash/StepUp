@@ -325,7 +325,7 @@ begin
      for share;
 
   if not found then
-    raise exception '크루를 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '크루를 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   if exists (
@@ -439,7 +439,7 @@ begin
 
   delete from public.crew_join_requests where crew_id = p_crew and user_id = p_user;
   if not found then
-    raise exception '가입 신청을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '가입 신청을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   if p_approve then

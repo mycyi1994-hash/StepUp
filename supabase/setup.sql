@@ -119,6 +119,11 @@ create policy profiles_update_own
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
+-- 본인이 고칠 수 있는 것은 보이는 정보뿐이다. 최고 속도·누적 거리·스트릭은
+-- 서버 함수(record_session)만 쓴다 — 열어 두면 PATCH 한 번으로 순위 1등이 된다.
+revoke update on public.profiles from anon, authenticated;
+grant update (display_name, avatar_id, daily_goal, language) on public.profiles to authenticated;
+
 -- INSERT 정책을 두지 않는다. 프로필은 위 트리거만 만든다.
 -- DELETE 정책도 두지 않는다. 계정을 지우면 따라 지워진다.
 
@@ -237,12 +242,13 @@ comment on column public.walk_sessions.top_speed_kmh is
 alter table public.daily_steps enable row level security;
 alter table public.walk_sessions enable row level security;
 
--- 걸음은 본인 것만 읽고 쓴다.
+-- 걸음은 본인 것만 읽는다. 쓰기는 steps_sync()(하루 상한·줄지 않음 규칙)만 한다 —
+-- 표에 바로 쓰게 두면 999만 보를 적어 주간 걸음 이벤트 보상을 받는다.
 drop policy if exists daily_steps_own on public.daily_steps;
 create policy daily_steps_own
-  on public.daily_steps for all
-  using ((select auth.uid()) = user_id)
-  with check ((select auth.uid()) = user_id);
+  on public.daily_steps for select
+  using ((select auth.uid()) = user_id);
+revoke insert, update, delete on public.daily_steps from anon, authenticated;
 
 -- 세션은 본인 것만 읽는다.
 drop policy if exists walk_sessions_select_own on public.walk_sessions;
@@ -677,10 +683,12 @@ begin
     raise exception '금액이 올바르지 않습니다' using errcode = '22023';
   end if;
 
-  -- 잔고를 세는 동안 다른 요청이 끼어들지 못하게 이 사용자의 원장 행을 잠근다.
+  -- 잔고를 세는 동안 다른 요청이 끼어들지 못하게 이 사용자의 원장 쓰기를 잠근다.
   -- 잠그지 않으면 두 요청이 동시에 "잔고 충분"을 보고 둘 다 통과해 잔고가
   -- 음수가 된다 — 지갑이 없어도 이중지불은 일어난다.
-  perform 1 from public.sup_ledger where user_id = v_user for update;
+  -- 원장 행 잠금(for update)으로는 부족하다. **새로 들어오는** 행(다른 요청의 입찰·구매)은
+  -- 막지 못한다. 원장을 건드리는 함수가 모두 같은 사용자 잠금을 가장 먼저 잡아 한 줄로 선다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
 
   select coalesce(sum(amount), 0) into v_balance
     from public.sup_ledger where user_id = v_user;
@@ -1104,6 +1112,11 @@ drop policy if exists courses_update_own on public.courses;
 create policy courses_update_own on public.courses for update
   using ((select auth.uid()) = owner_id)
   with check ((select auth.uid()) = owner_id);
+-- 달린 횟수(run_count)는 서버가 센다(course_run_submit). 주인이라도 새로 넣거나 고치며
+-- 적지 못한다. 경로(track)는 코스를 알아보는 열쇠(md5)라 올린 뒤에는 바꾸지 못한다.
+revoke insert, update on public.courses from anon, authenticated;
+grant insert (owner_id, name, area, distance_km, elevation_m, track, shared) on public.courses to authenticated;
+grant update (name, area, distance_km, elevation_m, shared) on public.courses to authenticated;
 
 drop policy if exists courses_delete_own on public.courses;
 create policy courses_delete_own on public.courses for delete
@@ -1151,7 +1164,7 @@ begin
      for update;
 
   if not found then
-    raise exception '번개러닝 글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '번개러닝 글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if not public.is_crew_member(v_crew) then
     raise exception '이 크루의 멤버가 아닙니다' using errcode = '42501';
@@ -1623,7 +1636,11 @@ as $$
     left join (
       -- 누적 "적립"이다. 잔고가 아니다 — 쓴 사람이 순위에서 밀리면
       -- 상점은 아무도 안 쓰는 방이 된다.
-      select user_id, sum(amount) filter (where amount > 0) as earned
+      -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
+      -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
+      select user_id, sum(amount) filter (
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL')
+             ) as earned
         from public.sup_ledger
        where occurred_at >= (select since from win)
        group by user_id
@@ -2134,7 +2151,9 @@ begin
 end $$;
 
 -- 함수만 부를 수 있어야 한다. 아무나 체결을 지어내면 안 된다.
-revoke all on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) from public;
+-- Supabase 는 public 스키마의 새 함수에 anon · authenticated 실행 권한을 따로 붙인다.
+-- public 에서만 거두면 그 권한이 남아, 누구나 이 함수로 SUP 를 만들고 남의 신발을 가져간다.
+revoke all on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) from public, anon, authenticated;
 
 comment on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) is
   '체결 한 번 — 소유자 이전, 원장 기록, 체결 내역. 다른 함수 안에서만 불린다.';
@@ -2285,6 +2304,11 @@ declare
   v_l record;
   v_balance numeric;
 begin
+  -- 잔고를 세고 쓰는 사이에 같은 사람의 다른 결제가 끼면 둘 다 "잔고 충분"을 보고
+  -- 잔고가 음수가 된다. 이 사람의 원장 쓰기를 한 줄로 세운다(spend_sup 과 같은 잠금).
+  -- 매물 잠금보다 먼저 잡아, 입찰과 이 잠금을 서로 반대 순서로 잡지 않게 한다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
   select * into v_l from public.market_listings where id = p_listing_id for update;
   if not found or v_l.status <> 'OPEN' then
     raise exception '이미 끝난 매물입니다' using errcode = '22023';
@@ -2328,6 +2352,9 @@ begin
   if p_price < economy.market_min_price() then
     raise exception '값이 너무 낮습니다' using errcode = '22023';
   end if;
+
+  -- 잔고 확인과 묶기 사이에 같은 사람의 다른 결제가 끼지 못하게(spend_sup 과 같은 잠금)
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
 
   select coalesce(sum(amount), 0) into v_balance
     from public.sup_ledger where user_id = v_user;
@@ -2963,8 +2990,11 @@ exception when duplicate_object then null; end $$;
 -- 앱이 읽는 자리
 -- ══════════════════════════════════════════════════════════════════
 
+-- 뷰는 만든 쪽 권한으로 읽는다(security_invoker = false). 호출자 권한으로 읽으면
+-- 호출자에게 원본 표 읽기를 열어 줘야 하고, 그러면 /content_sources 로 endpoint 와
+-- 오류 원문을 그대로 읽을 수 있다. 원본 표는 아래에서 닫는다.
 create or replace view public.running_sources_public
-with (security_invoker = true) as
+with (security_invoker = false) as
   select id, name, homepage_url, provider_type, enabled,
          can_discover, can_show_title, can_show_description,
          can_fetch_body, can_summarize, can_use_image,
@@ -2976,6 +3006,12 @@ with (security_invoker = true) as
 
 comment on view public.running_sources_public is
   '앱·운영 화면이 보는 출처 목록. endpoint 와 오류 원문은 빼고 보낸다.';
+
+revoke select on public.content_sources from anon, authenticated;
+-- 이 뷰는 표 하나를 그대로 비추므로 Postgres 가 쓰기도 받아 준다. 만든 쪽 권한으로
+-- 쓰이면 RLS 를 건너뛰므로, Supabase 가 기본으로 붙이는 쓰기 권한을 거두고 읽기만 준다.
+revoke all on public.running_sources_public from anon, authenticated;
+grant select on public.running_sources_public to anon, authenticated;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 대회 목록
@@ -3305,7 +3341,8 @@ language sql security definer set search_path = public as $$
   values (auth.uid(), p_action, p_target, coalesce(p_detail, '{}'::jsonb))
 $$;
 
-revoke all on function public.admin_log(text, text, jsonb) from public;
+-- public 에서만 거두면 Supabase 가 따로 붙인 anon · authenticated 권한이 남는다(가짜 감사 기록).
+revoke all on function public.admin_log(text, text, jsonb) from public, anon, authenticated;
 
 /**
  * 대회 한 건을 넣거나 고친다.
@@ -3873,7 +3910,7 @@ begin
      for share;
 
   if not found then
-    raise exception '크루를 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '크루를 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   if exists (
@@ -3987,7 +4024,7 @@ begin
 
   delete from public.crew_join_requests where crew_id = p_crew and user_id = p_user;
   if not found then
-    raise exception '가입 신청을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '가입 신청을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   if p_approve then
@@ -4210,7 +4247,7 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
   if not public.can_see_post(p_post) then
-    raise exception '글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   delete from public.post_likes where post_id = p_post and user_id = v_user;
@@ -4242,13 +4279,13 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
   if not public.can_see_post(p_post) then
-    raise exception '글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   -- 다른 글의 댓글에 답글을 달면 그 답글은 어느 글에도 보이지 않는다.
   if v_parent is not null and not exists (
     select 1 from public.comments c where c.id = v_parent and c.post_id = p_post
   ) then
-    raise exception '답글을 달 댓글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '답글을 달 댓글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if (select count(*) from public.comments c
        where c.author_id = v_user and c.created_at > now() - interval '1 hour') >= 60 then
@@ -4421,7 +4458,10 @@ begin
   if auth.uid() is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
-  delete from public.courses
+  -- 지우지 않고 내리기만 한다. 지우면 다른 러너의 코스 기록·좋아요가 함께 사라지고,
+  -- 다시 올리면 새 코스가 되어 이미 받아 간 사람들의 기록이 이어지지 않는다.
+  -- (다시 올리면 course_share 의 on conflict 가 shared 를 되돌린다.)
+  update public.courses set shared = false
    where owner_id = auth.uid() and md5(track) = md5(coalesce(p_track, ''));
 end;
 $$;
@@ -4443,7 +4483,7 @@ begin
     select 1 from public.courses c
      where c.id = p_course and (c.shared or c.owner_id = v_user)
   ) then
-    raise exception '코스를 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '코스를 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   delete from public.course_likes where course_id = p_course and user_id = v_user;
@@ -5265,6 +5305,9 @@ create table if not exists public.push_outbox (
 
 create index if not exists push_outbox_pending on public.push_outbox (created_at) where sent_at is null;
 
+-- 보내는 쪽이 가져간 시각. 가져간 줄은 잠시 다른 호출에 다시 주지 않는다(아래 push_claim_batch).
+alter table public.push_outbox add column if not exists claimed_at timestamptz;
+
 comment on table public.push_outbox is
   '보낼 푸시. 트리거가 채우고 push-send 함수가 보낸 뒤 sent_at 을 적는다. 앱은 볼 수 없다.';
 
@@ -5449,6 +5492,10 @@ revoke execute on function public.push_display_name(uuid) from public, anon, aut
 
 -- 보낼 것을 한 묶음 가져간다. 함수가 동시에 두 번 깨어나도 같은 줄을 두 번
 -- 보내지 않게 잠근 줄은 건너뛴다. 다섯 번 실패한 줄은 더 시도하지 않는다.
+-- 행 잠금은 이 호출이 끝나면 풀린다. 보내고 push_mark 로 적기 전까지 다음 호출이
+-- 같은 줄을 또 가져가 두 번 울리지 않게, 가져간 시각을 적고 2분은 건너뛴다.
+-- 실패한 줄도 2분 뒤에 다시 가져간다 — 곧바로 다시 가져가면 FCM 이 잠깐 아플 때
+-- 다섯 번을 몇 초 만에 다 써 버리고 영영 못 보낸다.
 create or replace function public.push_claim_batch(p_limit int default 100)
 returns table (
   id bigint,
@@ -5465,12 +5512,14 @@ as $$
   with picked as (
     select o.id from public.push_outbox o
      where o.sent_at is null and o.attempts < 5
+       and (o.claimed_at is null or o.claimed_at < now() - interval '2 minutes')
      order by o.id
      limit least(greatest(coalesce(p_limit, 100), 1), 500)
      for update skip locked
   ), bumped as (
     update public.push_outbox o
-       set attempts = o.attempts + 1
+       set attempts = o.attempts + 1,
+           claimed_at = now()
       from picked
      where o.id = picked.id
     returning o.id, o.user_id, o.kind, o.args, o.link
@@ -5684,8 +5733,26 @@ begin
   if p_ended_at > now() + interval '5 minutes' then
     raise exception '종료 시각이 미래입니다' using errcode = '22023';
   end if;
+  -- 오래된 날짜로 세션을 지어 올리면 날마다 하루 상한이 새로 열린다. 온체인 청구
+  -- 창(RewardDistributor.CLAIM_WINDOW_DAYS)과 같은 7일까지만 받는다.
+  -- 이미 올린 러닝의 재시도는 날짜와 상관없이 원래 결과를 돌려준다(아래 on conflict).
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
 
-  v_elapsed := greatest(coalesce(p_duration_sec, 0), 0);
+  -- 같은 사람의 적립이 동시에 들어오면(재시도 겹침) 둘 다 오늘 합계를 같게 읽어
+  -- 하루 상한을 두 번 받는다. 이 사람의 원장 쓰기를 한 줄로 세운다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 운동 시간은 앱이 보낸 값을 믿지 않는다. 일시정지를 빼므로 시작~종료보다
+  -- 길 수는 없다. 크게 적어 시간 순위에 오르거나 0 으로 적어 케이던스 검사를
+  -- 피하지 못하게 한다.
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
   v_day := floor(extract(epoch from p_started_at) / 86400)::bigint;
   v_faction := case when coalesce(p_faction, '') in ('FIRE', 'WATER', 'LIGHTNING', 'WIND')
                     then p_faction else '' end;
@@ -5700,7 +5767,9 @@ begin
     from economy.track_summary(v_track) t;
 
   -- ── 판정 ──
-  if v_elapsed >= 60 and p_steps::numeric * 60 / v_elapsed > 240 then
+  -- 1분이 안 되는 러닝도 본다. 1분으로 쳐서 240보를 넘으면 사람 걸음이 아니다
+  -- (0초에 4만 보를 적어 검사를 건너뛰지 못하게).
+  if p_steps::numeric * 60 / greatest(v_elapsed, 60) > 240 then
     v_verdict := 'VOID';
     v_reason := '케이던스가 사람 범위를 벗어납니다';
 
@@ -5786,7 +5855,11 @@ begin
   )
   values (
     v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
-    v_distance_m, p_steps * 0.04, v_track, p_boost_bps, p_party_size,
+    -- 계산에 쓴 것과 같은 범위로 적는다. 날것을 적으면 표의 범위 검사에 걸려
+    -- 세션이 통째로 거절되고, 재시도해도 같은 이유로 영영 올라가지 않는다.
+    v_distance_m, p_steps * 0.04, v_track,
+    least(greatest(coalesce(p_boost_bps, 0), 0), 2000),
+    least(greatest(coalesce(p_party_size, 1), 1), 20),
     v_faction, case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable
   )
@@ -5983,7 +6056,7 @@ begin
     from public.walk_sessions s
    where s.user_id = v_user and s.started_at = p_started_at;
   if not found then
-    raise exception '러닝 기록이 서버에 없습니다' using errcode = 'P0002';
+    raise exception '러닝 기록이 서버에 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if v_session.verdict = 'VOID' or v_session.duration_sec <= 0 then
     raise exception '인정되지 않은 러닝입니다' using errcode = '23514';

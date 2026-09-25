@@ -198,7 +198,7 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
   if not public.can_see_post(p_post) then
-    raise exception '글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   delete from public.post_likes where post_id = p_post and user_id = v_user;
@@ -230,13 +230,13 @@ begin
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
   if not public.can_see_post(p_post) then
-    raise exception '글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   -- 다른 글의 댓글에 답글을 달면 그 답글은 어느 글에도 보이지 않는다.
   if v_parent is not null and not exists (
     select 1 from public.comments c where c.id = v_parent and c.post_id = p_post
   ) then
-    raise exception '답글을 달 댓글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '답글을 달 댓글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if (select count(*) from public.comments c
        where c.author_id = v_user and c.created_at > now() - interval '1 hour') >= 60 then

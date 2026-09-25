@@ -52,6 +52,10 @@ class UserPrefs(
         val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
         val BASELINE_DAY = longPreferencesKey("baseline_day")
         val BASELINE_STEPS = longPreferencesKey("baseline_steps")
+        /** 기준점을 잡을 때의 기기 부팅 횟수. 바뀌었으면 재부팅이다(-1 = 모름). */
+        val BASELINE_BOOT = intPreferencesKey("baseline_boot")
+        /** 에너지 상한을 정하는 레벨 — 지금 신은 신발의 레벨. 없으면 옛 SNEAKER_LEVEL */
+        val ENERGY_CAP_LEVEL = intPreferencesKey("energy_cap_level")
         val RUNNER_UID = stringPreferencesKey("runner_uid")
         val NICKNAME = stringPreferencesKey("nickname")
 
@@ -485,7 +489,7 @@ class UserPrefs(
             val current = decodeFactionKm(prefs[Keys.FACTION_KM]).toMutableMap()
             current[faction] = (current[faction] ?: 0.0) + km
             prefs[Keys.FACTION_KM] = Faction.entries.joinToString(";") {
-                "%.4f".format(current[it] ?: 0.0)
+                String.format(java.util.Locale.ROOT, "%.4f", current[it] ?: 0.0)
             }
         }
     }
@@ -530,8 +534,7 @@ class UserPrefs(
      * 최대치(= 자정 리필 후 값)로 보여준다. 실제 저장값 갱신은 [currentEnergy]가 담당.
      */
     val energy: Flow<Double> = store.data.map { prefs ->
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
+        val max = energyMax(prefs)
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
         if (day != LocalDate.now().toEpochDay()) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
@@ -544,22 +547,36 @@ class UserPrefs(
         store.edit { it[Keys.SNEAKER_LEVEL] = level }
     }
 
-    /** 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다. */
+    /**
+     * 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다.
+     *
+     * 리필도 edit 안에서 읽고 쓴다. 바깥에서 읽고 안에서 쓰면 자정 직후
+     * 동시에 들어온 소모가 리필에 덮여 사라진다.
+     */
     suspend fun currentEnergy(today: Long): Double {
-        val prefs = store.data.first()
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
-        val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        return if (day != today) {
-            store.edit {
-                it[Keys.ENERGY] = max
-                it[Keys.ENERGY_DAY] = today
+        var remaining = 0.0
+        store.edit { prefs ->
+            remaining = energyIn(prefs, today)
+            if ((prefs[Keys.ENERGY_DAY] ?: -1L) != today) {
+                prefs[Keys.ENERGY] = remaining
+                prefs[Keys.ENERGY_DAY] = today
             }
-            max
-        } else {
-            (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
         }
+        return remaining
     }
+
+    /**
+     * 에너지 상한을 정하는 레벨을 적는다 — 착용 신발이 바뀌거나 강화될 때.
+     *
+     * 화면(홈·러닝)은 착용 신발 레벨로 상한을 보여 주는데, 소모·리필이 옛 레벨 값(기본 1)을
+     * 쓰면 강화해도 실제로 벌 수 있는 걸음이 늘지 않는다. 신발이 없으면 null.
+     */
+    suspend fun setEnergyCapLevel(level: Int?) {
+        store.edit { if (level == null) it.remove(Keys.ENERGY_CAP_LEVEL) else it[Keys.ENERGY_CAP_LEVEL] = level }
+    }
+
+    private fun energyMax(prefs: Preferences): Double =
+        RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
 
     /**
      * 에너지를 소모한다.
@@ -598,8 +615,7 @@ class UserPrefs(
     suspend fun restoreEnergy(today: Long, amount: Double) {
         store.edit { prefs ->
             val remaining = energyIn(prefs, today)
-            val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-            val max = RewardEconomy.maxEnergy(level)
+            val max = energyMax(prefs)
             prefs[Keys.ENERGY] = (remaining + amount).coerceIn(0.0, max)
             prefs[Keys.ENERGY_DAY] = today
         }
@@ -609,7 +625,7 @@ class UserPrefs(
     suspend fun hasEnergyCapacity(today: Long, amount: Double): Boolean {
         require(amount.isFinite() && amount > 0)
         val prefs = store.data.first()
-        return RewardEconomy.maxEnergy(prefs[Keys.SNEAKER_LEVEL] ?: 1) - energyIn(prefs, today) >= amount
+        return energyMax(prefs) - energyIn(prefs, today) >= amount
     }
 
     suspend fun restorePurchasedEnergy(receiptId: String, today: Long, amount: Double): Boolean {
@@ -620,7 +636,7 @@ class UserPrefs(
             if (receiptId in receipts) {
                 applied = true
             } else {
-                val max = RewardEconomy.maxEnergy(prefs[Keys.SNEAKER_LEVEL] ?: 1)
+                val max = energyMax(prefs)
                 val remaining = energyIn(prefs, today)
                 if (max - remaining >= amount) {
                     prefs[Keys.ENERGY] = remaining + amount
@@ -636,8 +652,7 @@ class UserPrefs(
     /** 자정 리필을 반영한 현재 에너지. [consumeEnergy]/[restoreEnergy]가 edit 안에서 쓴다. */
     private fun energyIn(prefs: Preferences, today: Long): Double {
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
-        val level = prefs[Keys.SNEAKER_LEVEL] ?: 1
-        val max = RewardEconomy.maxEnergy(level)
+        val max = energyMax(prefs)
         return if (day != today) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
 
@@ -658,10 +673,14 @@ class UserPrefs(
         return (prefs[Keys.BASELINE_DAY] ?: -1L) to (prefs[Keys.BASELINE_STEPS] ?: -1L)
     }
 
-    suspend fun setBaseline(day: Long, steps: Long) {
+    /** 기준점을 잡을 때의 부팅 횟수. 모르면 -1 */
+    suspend fun baselineBoot(): Int = store.data.first()[Keys.BASELINE_BOOT] ?: -1
+
+    suspend fun setBaseline(day: Long, steps: Long, boot: Int) {
         store.edit {
             it[Keys.BASELINE_DAY] = day
             it[Keys.BASELINE_STEPS] = steps
+            it[Keys.BASELINE_BOOT] = boot
         }
     }
 

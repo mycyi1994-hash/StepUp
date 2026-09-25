@@ -160,8 +160,26 @@ begin
   if p_ended_at > now() + interval '5 minutes' then
     raise exception '종료 시각이 미래입니다' using errcode = '22023';
   end if;
+  -- 오래된 날짜로 세션을 지어 올리면 날마다 하루 상한이 새로 열린다. 온체인 청구
+  -- 창(RewardDistributor.CLAIM_WINDOW_DAYS)과 같은 7일까지만 받는다.
+  -- 이미 올린 러닝의 재시도는 날짜와 상관없이 원래 결과를 돌려준다(아래 on conflict).
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
 
-  v_elapsed := greatest(coalesce(p_duration_sec, 0), 0);
+  -- 같은 사람의 적립이 동시에 들어오면(재시도 겹침) 둘 다 오늘 합계를 같게 읽어
+  -- 하루 상한을 두 번 받는다. 이 사람의 원장 쓰기를 한 줄로 세운다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 운동 시간은 앱이 보낸 값을 믿지 않는다. 일시정지를 빼므로 시작~종료보다
+  -- 길 수는 없다. 크게 적어 시간 순위에 오르거나 0 으로 적어 케이던스 검사를
+  -- 피하지 못하게 한다.
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
   v_day := floor(extract(epoch from p_started_at) / 86400)::bigint;
   v_faction := case when coalesce(p_faction, '') in ('FIRE', 'WATER', 'LIGHTNING', 'WIND')
                     then p_faction else '' end;
@@ -176,7 +194,9 @@ begin
     from economy.track_summary(v_track) t;
 
   -- ── 판정 ──
-  if v_elapsed >= 60 and p_steps::numeric * 60 / v_elapsed > 240 then
+  -- 1분이 안 되는 러닝도 본다. 1분으로 쳐서 240보를 넘으면 사람 걸음이 아니다
+  -- (0초에 4만 보를 적어 검사를 건너뛰지 못하게).
+  if p_steps::numeric * 60 / greatest(v_elapsed, 60) > 240 then
     v_verdict := 'VOID';
     v_reason := '케이던스가 사람 범위를 벗어납니다';
 
@@ -262,7 +282,11 @@ begin
   )
   values (
     v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
-    v_distance_m, p_steps * 0.04, v_track, p_boost_bps, p_party_size,
+    -- 계산에 쓴 것과 같은 범위로 적는다. 날것을 적으면 표의 범위 검사에 걸려
+    -- 세션이 통째로 거절되고, 재시도해도 같은 이유로 영영 올라가지 않는다.
+    v_distance_m, p_steps * 0.04, v_track,
+    least(greatest(coalesce(p_boost_bps, 0), 0), 2000),
+    least(greatest(coalesce(p_party_size, 1), 1), 20),
     v_faction, case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable
   )

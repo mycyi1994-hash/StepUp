@@ -18,7 +18,7 @@ concurrency:
 jobs:
   android-experience:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -44,8 +44,11 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          disable-animations: false
-          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          # Screen Gallery Capture 와 같은 에뮬레이터 설정 — 리디자인 테스트가 이 설정에서 검증됐다
+          ram-size: 4096M
+          heap-size: 512M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: bash tools/run_device_qa.sh
       # 검토용 화면 캡처 — 브랜치 푸시와 수동 실행에서만. 풀 리퀘스트에서는 올리지 않는다.
       #
@@ -88,6 +91,7 @@ jobs:
           name: StepUp-experience-qa
           path: |
             qa-captures/
+            screen-gallery/
             app/build/reports/
             app/build/outputs/androidTest-results/
             app/build/outputs/apk/debug/app-debug.apk

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -123,6 +124,13 @@ fun PartyLobbyScreen(
                 permissionLauncher.launch(missing)
             }
         }
+    }
+
+    // 시스템 뒤로 가기도 화살표와 같이 방에서 나간다. 그냥 화면만 닫으면 앱 전체
+    // 수명의 폴링이 계속 돌아, 서버에는 떠난 사람이 방에 남는다(방장이면 아무도 출발 못 한다).
+    BackHandler(enabled = party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.COUNTDOWN) {
+        viewModel.leaveLobby()
+        onBack()
     }
 
     val boostPercent = RewardEconomy.partyBonusPercent(party.partySize)

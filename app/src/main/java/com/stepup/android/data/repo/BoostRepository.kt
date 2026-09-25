@@ -54,6 +54,7 @@ class BoostRepository(
         val (receipts, error) = database.withTransaction {
             val pending = database.energyPurchaseDao().pending()
             if (pending.isNotEmpty()) return@withTransaction pending to null // Retry delivery, never charge again.
+            rewardRepository.syncEnergyCap()
             if (!prefs.hasEnergyCapacity(LocalDate.now().toEpochDay(), 2.0)) {
                 return@withTransaction emptyList<com.stepup.android.data.local.EnergyPurchase>() to PurchaseError.ENERGY_CAPACITY
             }
@@ -108,8 +109,16 @@ class BoostRepository(
         return null
     }
 
+    /**
+     * 끝난 부스트를 지운다. 이틀은 남겨 둔다 — 스트릭 보호막은 끝난 뒤에도
+     * "놓친 어제를 덮었는가"를 다음 날 목표 달성 때 확인해야 한다.
+     */
     suspend fun purgeExpired() {
-        boostDao.purgeExpired(System.currentTimeMillis())
+        boostDao.purgeExpired(System.currentTimeMillis() - KEEP_EXPIRED_MILLIS)
+    }
+
+    private companion object {
+        const val KEEP_EXPIRED_MILLIS = 2 * 24 * 60 * 60 * 1000L
     }
 }
 

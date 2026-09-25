@@ -147,6 +147,9 @@ export default {
     if (!Number.isInteger(steps) || steps <= 0 || steps > MAX_DAILY_STEPS) {
       return badRequest('steps 범위를 벗어났습니다')
     }
+    // 정수가 아니면 지급액 계산의 BigInt() 가 던져, CORS 헤더 없는 500 으로 끝난다
+    if (!Number.isInteger(boostBps) || boostBps < 0) return badRequest('boostBps 가 올바르지 않습니다')
+    if (!Number.isInteger(partySize) || partySize < 1) return badRequest('partySize 가 올바르지 않습니다')
     if (!Array.isArray(track) || track.length < 2) {
       return badRequest('GPS 경로가 필요합니다 (최소 2점)')
     }

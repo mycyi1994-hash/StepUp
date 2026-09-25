@@ -6,6 +6,7 @@ import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.push.GoalReminderWorker
 import com.stepup.android.push.PushService
+import com.stepup.android.sync.SessionUploadWorker
 import kotlinx.coroutines.runBlocking
 
 class StepUpApp : Application() {
@@ -31,5 +32,8 @@ class StepUpApp : Application() {
         // 목표 알림 — 매일 저녁 한 번. 켜고 끄는 것은 일꾼이 알림 설정을 읽어 정한다.
         GoalReminderWorker.createChannel(this)
         runCatching { GoalReminderWorker.schedule(this) }
+        // 올리지 못한 러닝이 남아 있으면 다시 올린다. 로그아웃 중이었거나 끝난 직후
+        // 앱이 죽었으면, 다음 러닝을 끝낼 때까지 아무도 이 일을 예약하지 않는다.
+        runCatching { SessionUploadWorker.schedule(this) }
     }
 }

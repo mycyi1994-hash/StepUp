@@ -71,7 +71,7 @@ interface WalkSessionDao {
     )
     suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != ''")
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != '' AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
     /**
@@ -125,6 +125,17 @@ interface RewardDao {
 
     @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards")
     suspend fun balanceNow(): Double
+
+    /**
+     * 잔액이 [entry] 의 차감액 이상일 때만 기록한다. 확인과 기록이 한 트랜잭션이라
+     * 두 번 누르기처럼 동시에 들어온 차감이 둘 다 "잔액 충분"을 보고 통과하지 못한다.
+     */
+    @Transaction
+    suspend fun spendIfEnough(entry: RewardEntity): Boolean {
+        if (balanceNow() < -entry.amount) return false
+        insert(entry)
+        return true
+    }
 
     @Query("SELECT * FROM rewards ORDER BY timestamp DESC, id DESC LIMIT :limit")
     fun observeLedger(limit: Int): Flow<List<RewardEntity>>
@@ -258,6 +269,10 @@ interface BoostDao {
     @Query("SELECT * FROM boosts WHERE type = :type AND expiresAt > :now LIMIT 1")
     suspend fun activeOf(type: String, now: Long): BoostEntity?
 
+    /** [from]~[to] 사이에 한 번이라도 켜져 있던 [type] 부스트 */
+    @Query("SELECT * FROM boosts WHERE type = :type AND activatedAt < :to AND expiresAt > :from LIMIT 1")
+    suspend fun activeDuring(type: String, from: Long, to: Long): BoostEntity?
+
     @Query("DELETE FROM boosts WHERE expiresAt <= :now")
     suspend fun purgeExpired(now: Long)
 }
@@ -265,7 +280,8 @@ interface BoostDao {
 @Dao
 interface ClaimedEventDao {
 
-    @Insert
+    // 이미 받은 기록이 있으면 그대로 둔다(같은 키로 다시 넣다 충돌해 죽지 않게).
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: ClaimedEventEntity)
 
     @Query("SELECT * FROM claimed_events")
