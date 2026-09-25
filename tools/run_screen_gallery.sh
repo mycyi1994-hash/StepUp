@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -112,6 +112,12 @@ if [[ "$suite" == "secondary" ]]; then
   cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-reference-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
   pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
+fi
+if [[ "$suite" == "records" ]]; then
+  run_instrumentation records-reference "com.stepup.android.DesignReferenceTest#recordViewports"
+  mkdir -p screen-gallery/records-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/records-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

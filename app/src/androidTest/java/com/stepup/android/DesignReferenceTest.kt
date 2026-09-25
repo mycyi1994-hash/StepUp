@@ -103,13 +103,18 @@ class DesignReferenceTest {
         RUN_PAUSED, RUN_NO_GPS, MARKET, NEWS,
         POST_COMPOSE, CREW_CREATE, FLASH_DETAIL, EXPERIENCE, NOTIFICATIONS, PRIVACY, SUPPORT,
         CONNECTED, THEME, LANGUAGE,
+        ANALYTICS, HISTORY_MAP, WALLET, ACHIEVEMENTS, INBOX,
     }
 
-    @Test fun referenceViewports() = captureViewports(secondary = false)
+    private enum class Group { PRIMARY, SECONDARY, RECORDS }
 
-    @Test fun secondaryViewports() = captureViewports(secondary = true)
+    @Test fun referenceViewports() = captureViewports(Group.PRIMARY)
 
-    private fun captureViewports(secondary: Boolean) {
+    @Test fun secondaryViewports() = captureViewports(Group.SECONDARY)
+
+    @Test fun recordViewports() = captureViewports(Group.RECORDS)
+
+    private fun captureViewports(group: Group) {
         ServiceLocator.stepRepository.startTracking()
         ServiceLocator.stepRepository.simulateSteps((12840 - ServiceLocator.stepRepository.todaySteps.value).coerceAtLeast(0))
 
@@ -157,13 +162,24 @@ class DesignReferenceTest {
             Triple(390, 844, true),
         )
         val layoutFailures = mutableListOf<String>()
-        val selected = Scene.entries.filter { (it.ordinal > Scene.NEWS.ordinal) == secondary }
-        for ((w, h, enlarged) in viewports.filter { !secondary || it.first != 430 }) {
+        val selected = Scene.entries.filter {
+            when (group) {
+                Group.PRIMARY -> it.ordinal <= Scene.NEWS.ordinal
+                Group.SECONDARY -> it.ordinal in Scene.POST_COMPOSE.ordinal..Scene.LANGUAGE.ordinal
+                Group.RECORDS -> it.ordinal >= Scene.ANALYTICS.ordinal
+            }
+        }
+        val prefix = when (group) {
+            Group.PRIMARY -> "ref"
+            Group.SECONDARY -> "secondary"
+            Group.RECORDS -> "record"
+        }
+        for ((w, h, enlarged) in viewports.filter { group == Group.PRIMARY || it.first != 430 }) {
             for (s in selected) {
                 prepareScene(s)
                 compose.runOnIdle { width = w; height = h; large = enlarged; scene = s }
                 compose.waitForIdle()
-                val name = "${if (secondary) "secondary" else "ref"}-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
+                val name = "$prefix-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
                 try {
                     awaitScene(s)
                 } catch (failure: Throwable) {
@@ -191,11 +207,20 @@ class DesignReferenceTest {
                     compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
                     capture("$name-chat")
                 }
+                if (s == Scene.ANALYTICS) {
+                    compose.onNodeWithText(korean(R.string.analytics_tab_quarter)).performClick()
+                    compose.onNodeWithText(korean(R.string.analytics_tab_quarter)).assertExists()
+                    capture("$name-quarter")
+                }
+                if (s == Scene.HISTORY_MAP) {
+                    compose.onNodeWithText(korean(R.string.history_period_all)).performClick()
+                    capture("$name-all")
+                }
             }
         }
         val directory = File(compose.activity.getExternalFilesDir(null), "experience-qa").apply { mkdirs() }
-        File(directory, "${if (secondary) "secondary" else "ref"}-audit.jsonl").writeText(findings.joinToString("\n") { it.toString() })
-        File(directory, "${if (secondary) "secondary" else "ref"}-layout-checks.txt").writeText(
+        File(directory, "$prefix-audit.jsonl").writeText(findings.joinToString("\n") { it.toString() })
+        File(directory, "$prefix-layout-checks.txt").writeText(
             if (layoutFailures.isEmpty()) "PASS: reviewed layout checks" else layoutFailures.joinToString("\n"),
         )
         assertTrue(layoutFailures.joinToString("\n"), layoutFailures.isEmpty())
@@ -239,6 +264,11 @@ class DesignReferenceTest {
             Scene.POST_COMPOSE -> "post-submit"
             Scene.CREW_CREATE -> "crew-create-submit"
             Scene.FLASH_DETAIL -> "detail-primary-action"
+            Scene.ANALYTICS -> "bottom-nav"
+            Scene.HISTORY_MAP -> "bottom-nav"
+            Scene.WALLET -> "bottom-nav"
+            Scene.ACHIEVEMENTS -> "bottom-nav"
+            Scene.INBOX -> "bottom-nav"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -323,6 +353,11 @@ class DesignReferenceTest {
             Scene.CONNECTED -> MainScaffold(initialRoute = Routes.SETTINGS_CONNECTED)
             Scene.THEME -> MainScaffold(initialRoute = Routes.SETTINGS_THEME)
             Scene.LANGUAGE -> MainScaffold(initialRoute = Routes.SETTINGS_LANGUAGE)
+            Scene.ANALYTICS -> MainScaffold(initialRoute = Routes.ANALYTICS)
+            Scene.HISTORY_MAP -> MainScaffold(initialRoute = Routes.HISTORY_MAP)
+            Scene.WALLET -> MainScaffold(initialRoute = Routes.WALLET)
+            Scene.ACHIEVEMENTS -> MainScaffold(initialRoute = Routes.ACHIEVEMENTS)
+            Scene.INBOX -> MainScaffold(initialRoute = Routes.NOTIFICATIONS)
         }
     }
 

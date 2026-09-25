@@ -154,9 +154,6 @@ fun AnalyticsScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
     DetailPage(title = stringResource(R.string.analytics_title), onBack = onBack) {
-        // 기록 지도 — 달린 길을 모두 겹쳐 본다
-        item { HistoryMapEntry(onClick = onOpenHistoryMap) }
-
         item {
             SegmentedTabs(
                 labels = listOf(
@@ -172,6 +169,8 @@ fun AnalyticsScreen(
             item { WeekChartCard(week = week, goal = goal) }
 
             item { WeekSummaryCard(week = week, goal = goal) }
+
+            item { HistoryMapEntry(onClick = onOpenHistoryMap) }
 
             item {
                 StatGridCard(
@@ -189,6 +188,8 @@ fun AnalyticsScreen(
             item { QuarterChartCard(days = quarter, goal = goal) }
 
             item { QuarterSummaryCard(days = quarter, goal = goal) }
+
+            item { HistoryMapEntry(onClick = onOpenHistoryMap) }
 
             item { SectionHeader(title = stringResource(R.string.analytics_months)) }
 

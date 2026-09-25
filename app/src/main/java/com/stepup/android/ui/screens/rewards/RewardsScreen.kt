@@ -80,21 +80,12 @@ fun WalletScreen(
 
     val entries = ledger.orEmpty()
 
-    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
-    com.stepup.android.ui.components.SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null,
-        title = stringResource(R.string.settings_wallet),
-    )
-    LazyColumn(
-        modifier = Modifier.weight(1f),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_wallet), onBack = onBack,
     ) {
         item { BalanceHero(totals?.balance) }
 
         item { SummaryRow(earned = totals?.earned, spent = totals?.spent) }
-
-        item { GiwaCard() }
 
         item {
             Row(
@@ -147,7 +138,7 @@ fun WalletScreen(
                 LedgerRow(entry)
             }
         }
-    }
+        item { GiwaCard() }
     }
 }
 
