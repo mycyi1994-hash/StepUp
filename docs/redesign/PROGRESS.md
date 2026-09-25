@@ -830,3 +830,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Added the explicit redesign runner/workflow selection, preserving main's existing split regression suites. Kept the optional multilingual matrix separate from the default checkpoint to avoid running hundreds of captures for this change.
 - Source design/string/media, Bash syntax, scene/method mappings and whitespace checks pass. No local Java/Android SDK, so Android compile/instrumentation remains unexecuted and is the next stage. No APK/push/remote run.
 - Evidence and exact limits: CHARACTER-FREE-STAGE3-2026-09-25-KO.md. Legacy full-gallery/wardrobe character fixtures outside these three test classes remain historical coverage, not proof of the new design.
+
+## 2026-09-25 — stage 4: native build and device evidence
+
+- Verified runtime/test source `6e327f6` on the redesign branch. Build run `36099618225` passed unit tests, debug/signature validation and unsigned release R8 build. Gallery run `36099618150` passed on Android 14 and 15: five interaction tests and one 56-capture reference test per OS.
+- Fixed stale character-asset expectations and instrumentation compilation errors exposed by the first CI attempt. Fixed community capture lookup through merged accessibility nodes without changing production repositories.
+- Actual compact captures exposed oversized home/shoe previews and banner controls overlapping copy. Compacted record/goal spacing, used a horizontal shoe preview for normal text, sized the banner to available height, and moved scenery arrows above the copy. Large text remains scrollable.
+- Collected 112 reference PNGs (56 viewport/state combinations on each OS), original result XML, raw text-overflow signals and logs. Prepared a local original-image gallery plus normal/large-text contact sheets. Evidence and known limitations: CHARACTER-FREE-STAGE4-2026-09-25-KO.md.
+- Source design/string/media checks pass. This is primary-scene/device evidence, not approval of every secondary screen, every raw text-overflow signal, all locales/themes, real outdoor GPS or wallet/backend transactions. Claude visual review is next. No main merge, public release upload or deployment.
