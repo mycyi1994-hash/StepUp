@@ -226,7 +226,7 @@ fun ProfileScreen(
         )),
     )
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize()) {
     if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

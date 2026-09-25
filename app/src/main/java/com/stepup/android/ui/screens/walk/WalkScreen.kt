@@ -281,7 +281,7 @@ fun RunScreen(
     val finishing = !session.isActive && session.lastRewardPoints != null
 
     var showDetails by rememberSaveable { mutableStateOf(false) }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
