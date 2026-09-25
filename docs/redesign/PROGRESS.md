@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-09-25 — character-free stage 9, courses/map/ranking
+
+- Reordered course cards around name/distance, schematic route, reward/record and one native selection action. Removed the duplicate radio control; kept existing selection and ownership data. Short course and ranking-period tabs remain on one line in the 1.6× font capture. Nearby map now links directly to the existing course list.
+- Android 14/15 `explore` galleries cover the three routes, three viewport/font combinations and course/territory/ranking inner states. The first final-source pass at `236a084` passed the build and 48 captures; visual review found the map summary claimed off-screen courses were on the visible map. Source `597a639` now separates total registered count from visible pins and distinguishes the current-location marker. Final build/capture links and outcome: [stage 9 report](CHARACTER-FREE-STAGE9-2026-09-25-KO.md).
+- The map tile/GPS environment, pin selection, server rankings/territory, other themes/locales, whole-app release, main merge and public APK remain outside this visual checkpoint.
+
 ## 2026-09-25 — character-free stage 8, record and wallet routes
 
 - Analytics now shows the chart and summary before its history-map entry; the wallet shows balance, totals and real ledger before the connected-wallet notice. History map, achievements and notifications retain their existing data and empty states.
