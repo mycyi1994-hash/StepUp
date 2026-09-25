@@ -143,12 +143,14 @@ fun FormField(
     maxLines: Int = Int.MAX_VALUE,
     minHeight: Dp = 56.dp,
     keyboardType: KeyboardType = KeyboardType.Text,
+    labelAbove: Boolean = false,
 ) {
+    val field: @Composable (Modifier) -> Unit = { fieldModifier ->
     OutlinedTextField(
         value = value, onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth().heightIn(min = minHeight)
+        modifier = fieldModifier.fillMaxWidth().heightIn(min = minHeight)
             .semantics { contentDescription = label },
-        label = { Text(label) }, placeholder = { Text(placeholder) },
+        label = if (labelAbove) null else ({ Text(label) }), placeholder = { Text(placeholder) },
         singleLine = singleLine, minLines = minLines, maxLines = maxLines,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         textStyle = MaterialTheme.typography.bodyLarge,
@@ -162,4 +164,13 @@ fun FormField(
             cursorColor = Volt,
         ),
     )
+    }
+    if (labelAbove) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
+            field(Modifier)
+        }
+    } else {
+        field(modifier)
+    }
 }
