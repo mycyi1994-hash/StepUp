@@ -1,0 +1,82 @@
+# 어테스터 워커 자동 배포.
+#
+# 지금까지는 attester/ 를 고친 PR 을 합친 뒤 사람이 `npx wrangler deploy` 를 돌려야 했다.
+# main 에 합쳐지면 여기서 대신 올린다. 워커의 키(서명 키 · 어테스터 계정)는 이미 Cloudflare 에
+# Secret 으로 들어 있어 배포에는 필요 없다 — 여기서 쓰는 것은 배포 권한 토큰뿐이다.
+#
+# 필요한 것 (처음 한 번): 저장소 Settings → Secrets and variables → Actions 에
+#   CLOUDFLARE_API_TOKEN   Cloudflare › My Profile › API Tokens › "Edit Cloudflare Workers" 템플릿
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare 대시보드 › Workers & Pages 오른쪽의 Account ID
+# 비밀이 없으면 건너뛰기만 하고 실패하지 않는다.
+name: Deploy attester
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "attester/**"
+      - ".github/workflows/deploy-attester.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-attester
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # 손으로 돌려도 main 의 것만 올린다
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: attester
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: attester/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # 올리기 전에 한 번 더 — 서명 재료 · 요청 처리 검사가 깨졌으면 올리지 않는다
+      - name: Test
+        run: npm test
+
+      - name: 배포 토큰이 있는지
+        id: keys
+        env:
+          HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          if [ "$HAS_TOKEN" = "true" ] && [ "$HAS_ACCOUNT" = "true" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID 가 없어 배포를 건너뜁니다. attester 에서 npx wrangler deploy 를 직접 돌리세요."
+          fi
+
+      - name: Cloudflare 에 배포
+        if: steps.keys.outputs.ready == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+
+      # 새 코드가 떴는지 — /health 가 응답하고 긴급 정지 키가 있는지
+      - name: 확인
+        if: steps.keys.outputs.ready == 'yes'
+        run: |
+          sleep 5
+          body=$(curl -fsS https://stepup-attester.gana003.workers.dev/health)
+          echo "$body"
+          echo "$body" | grep -q '"canPause":true' || { echo "::error::긴급 정지 키(GUARDIAN_PRIVATE_KEY)가 없거나 새 버전이 아닙니다"; exit 1; }
