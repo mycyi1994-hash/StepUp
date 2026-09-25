@@ -69,7 +69,7 @@ class ChromeNavigationTest {
             compose.runOnIdle { viewport = next }
             compose.waitForIdle()
             compose.waitUntil(timeoutMillis = 5_000) {
-                compose.onNodeWithTag("home-character-ready").isDisplayed()
+                compose.onNodeWithTag("home-start-run").isDisplayed()
             }
             val header = bounds("main-header")
             val logo = bounds("brand-wordmark")

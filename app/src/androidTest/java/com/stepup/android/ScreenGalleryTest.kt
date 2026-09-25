@@ -119,7 +119,7 @@ class ScreenGalleryTest {
                 }
             }
         }
-        compose.waitUntil(10_000) { compose.onNodeWithTag("home-character-ready").isDisplayed() }
+        compose.waitUntil(10_000) { compose.onNodeWithTag("home-start-run").isDisplayed() }
         compose.onNodeWithText(compose.activity.getString(R.string.tab_customize)).performClick()
         fun ready(gender: AvatarGender, outfitId: String = com.stepup.android.domain.Outfits.BASE_ID) {
             compose.waitUntil(10_000) {
