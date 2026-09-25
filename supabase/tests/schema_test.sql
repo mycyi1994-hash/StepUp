@@ -28,6 +28,9 @@ create or replace procedure pg_temp.login(p_user uuid)
 language plpgsql as $$
 begin
   perform set_config('request.jwt.claim.sub', coalesce(p_user::text, ''), false);
+  -- 사용자로 로그인하면 어테스터 역할 표시만 지운다 (2단계 인증 aal 은 그대로 둔다)
+  perform set_config('request.jwt.claims',
+    coalesce((nullif(current_setting('request.jwt.claims', true), '')::jsonb - 'role')::text, ''), false);
 end $$;
 
 -- 실패해야 하는 일. 성공해 버리면 그게 사고다.
@@ -2716,6 +2719,8 @@ end $$;
 reset role;
 
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 call pg_temp.must_fail(
   $q$ select public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'wrong') $q$,
   '확인 번호가 틀리면 지갑을 붙이지 않는다');
@@ -2738,6 +2743,7 @@ end $$;
 -- 같은 지갑을 다른 계정에 붙일 수 없다
 set role authenticated;
 call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
 do $$
 declare v_msg text;
 begin
@@ -2747,6 +2753,8 @@ begin
 end $$;
 reset role;
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 call pg_temp.must_fail(
   format($q$ select public.attester_wallet_link('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2',
             '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_b')),
@@ -2783,10 +2791,18 @@ call pg_temp.must_fail($q$ select public.sup_withdraw_request(950) $q$, '사람�
 reset role;
 
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$
 declare r record; v_op uuid := pg_temp.fx('op_sup')::uuid;
 begin
-  select * into r from public.attester_op_payload(v_op);
+  begin
+    perform public.attester_op_payload(v_op, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+    raise exception 'FAIL  남의 작업 번호로 서명 재료를 받았다';
+  exception when sqlstate '22023' then
+    raise notice '  OK   남의 작업 번호로는 서명 재료를 받지 못한다';
+  end;
+  select * into r from public.attester_op_payload(v_op, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
   perform pg_temp.ok(r.amount = 100 and r.wallet = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
                      and r.op_ref = '0x' || lpad(replace(v_op::text, '-', ''), 64, '0'), '서명 재료가 예약 그대로다');
   perform public.attester_op_submitted(v_op, '0x' || repeat('ab', 32));
@@ -2806,8 +2822,10 @@ do $$ declare v_op uuid; begin
 end $$;
 reset role;
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$ declare r record; begin
-  select * into r from public.attester_op_payload(pg_temp.fx('op_exp')::uuid);
+  select * into r from public.attester_op_payload(pg_temp.fx('op_exp')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 end $$;
 call pg_temp.must_fail(format($q$ select public.attester_op_expire('%s', false) $q$, pg_temp.fx('op_exp')),
   '서명한 작업은 만료 마진이 지나기 전에 되돌리지 않는다');
@@ -2815,6 +2833,8 @@ reset role;
 update public.chain_ops set deadline = now() - interval '2 hours' where id = pg_temp.fx('op_exp')::uuid;
 insert into fix (k, v) values ('bal_before_exp', economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1')::text);
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$
 begin
   perform pg_temp.ok((select count(*) from public.attester_due_ops() where op_id = pg_temp.fx('op_exp')::uuid) = 1,
@@ -2853,10 +2873,12 @@ call pg_temp.must_fail(format($q$ select public.sneaker_upgrade(%s) $q$, pg_temp
 reset role;
 
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$
 declare r record; v_op uuid := pg_temp.fx('op_shoe')::uuid;
 begin
-  select * into r from public.attester_op_payload(v_op);
+  select * into r from public.attester_op_payload(v_op, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
   perform pg_temp.ok(r.level = 2 and not r.transfer_locked, '서명 재료에 서버 스탯이 담긴다');
   perform public.attester_chain_event('0x' || repeat('cd', 32), 1, 101, 'SNEAKER_RELEASED',
     jsonb_build_object('op', r.op_ref, 'tokenId', '7'));
@@ -2898,8 +2920,26 @@ end $$;
 call pg_temp.must_fail($q$ select public.bonus_draw_request() $q$, '보너스 뽑기는 10회까지');
 reset role;
 
+-- 어테스터 전용 로그인 계정 — 정해 둔 계정만 어테스터 함수를 부른다
+reset role;
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = to_jsonb('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2'::text)
+ where key = 'attester_user_id';
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$ begin
+  perform pg_temp.ok(public.attester_cursor_get('nothing') is null, '어테스터로 정한 계정은 어테스터 함수를 부른다');
+end $$;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+call pg_temp.must_fail($q$ select public.attester_cursor_get('nothing') $q$,
+  '다른 사용자는 어테스터 함수를 부를 수 없다');
+reset role;
+update public.economy_settings set value = 'null'::jsonb where key = 'attester_user_id';
+
 -- 정지 스위치
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$ begin perform public.attester_pause('검사'); end $$;
 reset role;
 set role authenticated;
@@ -2983,10 +3023,12 @@ insert into fix (k, v)
   select 'op_bonus', id::text from public.chain_ops
    where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and kind = 'BONUS_MINT' order by created_at limit 1;
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$
 declare r record;
 begin
-  select * into r from public.attester_op_payload(pg_temp.fx('op_bonus')::uuid);
+  select * into r from public.attester_op_payload(pg_temp.fx('op_bonus')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
   perform pg_temp.ok(r.transfer_locked, '보너스 신발은 잠긴 채로 발행된다');
   perform public.attester_chain_event('0x' || repeat('e1', 32), 0, 200, 'SNEAKER_RELEASED',
     jsonb_build_object('op', r.op_ref, 'tokenId', '900'));
@@ -2998,6 +3040,17 @@ begin
     jsonb_build_object('account', '0x' || lpad('f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1', 64, '0'), 'tokenId', '900',
                        'from', '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')) = 'CREDITED',
     '잠긴 신발은 그 계정의 지갑에서 넣으면 받는다');
+end $$;
+reset role;
+
+-- 체인 커서는 앞으로만 간다
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform public.attester_cursor_set('sneakers', 100);
+  perform public.attester_cursor_set('sneakers', 50);
+  perform pg_temp.ok(public.attester_cursor_get('sneakers') = 100, '체인 커서는 뒤로 가지 않는다');
 end $$;
 reset role;
 
@@ -3034,6 +3087,8 @@ end $$;
 select set_config('request.jwt.claims', '', false);
 reset role;
 set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 call pg_temp.must_fail(
   format($q$ select public.attester_wallet_link('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3',
             '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_c')),

@@ -3,11 +3,41 @@ main = "src/index.js"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# GIWA Sepolia (91342) 에 배포된 RewardDistributor
-# https://sepolia-explorer.giwa.io/address/0x9f9E87bD825144A8315d30979E3004FbaCFE36E1
-[vars]
-DISTRIBUTOR_ADDRESS = "0x9f9E87bD825144A8315d30979E3004FbaCFE36E1"
+# 1분마다 — 체인 이벤트를 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
+[triggers]
+crons = ["* * * * *"]
 
-# 서명 키는 vars 가 아니라 Secret 으로 넣는다:
-#   npx wrangler secret put ATTESTER_PRIVATE_KEY
-# Secret 은 대시보드에서도 다시 볼 수 없고, 저장소에도 남지 않는다.
+# 공개해도 되는 설정만 여기에. 키는 전부 Secret (아래 목록).
+[vars]
+CHAIN_ID = "91342"
+RPC_URL = "https://sepolia-rpc.giwa.io"
+# v2 배포 뒤 contracts/deployments/giwaSepolia-v2.json 의 주소로 채운다
+DISTRIBUTOR_ADDRESS = ""
+SNEAKERS_ADDRESS = ""
+VAULT_ADDRESS = ""
+# 배포한 블록 번호. 이 블록부터 이벤트를 읽는다.
+START_BLOCK = "0"
+# 이만큼 뒤의 블록까지만 반영한다 (뒤집힐 수 있는 블록의 넣기를 믿지 않게)
+CONFIRMATIONS = "30"
+# 앱과 같은 Supabase. 이 키는 앱에 들어가는 공개 키다.
+SUPABASE_URL = "https://pupjzcmybuoyhzfwrsdf.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
+ALLOWED_ORIGINS = "https://stepupcrew.com,https://www.stepupcrew.com"
+# 새로 붙인 지갑에 보내는 테스트 가스 (0.0002 ETH). 메인넷에서는 0 으로.
+DRIP_WEI = "200000000000000"
+
+# 요청 수 제한 — IP 당 1분에 20번
+[[unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+# Secret (npx wrangler secret put 이름) — 저장소에 절대 넣지 않는다
+#   ATTESTER_PRIVATE_KEY   SUP 꺼내기 서명
+#   SNEAKER_SIGNER_KEY     신발 발행 · 반환 서명
+#   RELAYER_PRIVATE_KEY    가스비 대납 (ETH 만 든다)
+#   GUARDIAN_PRIVATE_KEY   긴급 정지
+#   ATTESTER_EMAIL / ATTESTER_PASSWORD   Supabase 어테스터 전용 계정
+#   (또는 ATTESTER_DB_JWT  stepup_attester 역할 토큰)
+# 키 만들기: node scripts/new-key.mjs 이름 — 주소만 화면에 나오고 키는 바로 Cloudflare 로 간다.
