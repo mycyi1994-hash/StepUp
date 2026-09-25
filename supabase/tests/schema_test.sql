@@ -97,8 +97,10 @@ end $$;
 -- now() 에 매달면 자정 무렵에 돌릴 때 세션이 이틀에 걸쳐, 하루 상한 검사가
 -- 이유 없이 무너진다. 테스트가 시계에 따라 결과가 달라지면 그 테스트는
 -- 못 믿는다.
+-- 게임의 하루는 한국 시간이다(0022). 어제 한국 09시에서 시작하면 +8시간까지 같은 하루에 든다.
 insert into fix (k, v) values
-  ('base', (date_trunc('day', now() - interval '1 day') + interval '10 hours')::text);
+  ('base', (((now() at time zone 'Asia/Seoul')::date - 1)::timestamp at time zone 'Asia/Seoul'
+            + interval '9 hours')::text);
 
 insert into fix (k, v)
   select 'run_start', (pg_temp.fx('base')::timestamptz)::text;
@@ -113,6 +115,16 @@ insert into fix (k, v)
 
 insert into fix (k, v)
   select 'track_ok', pg_temp.track(pg_temp.fx('run_start')::timestamptz, 600, 0.00003);
+
+-- 새 경제 규칙(0022~0024)의 에너지·신규 계정 상한이 아래 옛 검사(걸음 상한 등)를
+-- 가리지 않게 에너지를 넉넉히 주고 신규 계정 절반 상한을 끈다.
+-- 새 규칙 자체는 뒤의 '서버 경제' 에서 따로 검사한다.
+update public.economy_settings set value = '0' where key = 'new_account_days';
+update public.economy_settings set value = '100000' where key in ('no_gps_daily_cap', 'upload_daily_cap');
+insert into public.energy_days (user_id, day, bonus)
+select u.id, d::date, 1000
+  from auth.users u, generate_series(current_date - 8, current_date + 1, interval '1 day') d
+on conflict do nothing;
 insert into fix (k, v)
   select 'track_car', pg_temp.track(pg_temp.fx('car_start')::timestamptz, 600, 0.002);
 
@@ -156,15 +168,16 @@ begin
     v_start, v_start + interval '601 seconds', 2000, 601,
     pg_temp.fx('track_ok'), 1200, 2, 'FIRE');
 
-  -- 2000보 × 0.01 × 파티2(1.1) × 부스트1200bps(1.12) = 24.64
+  -- 폰이 보낸 부스트(1200bps)와 파티 인원(2)은 믿지 않는다. 신은 신발도 파티
+  -- 명단도 없으므로 2000보 × 0.01 = 20.
   perform pg_temp.ok(r.verdict = 'CLEAN', '정상 세션은 CLEAN');
-  perform pg_temp.ok(r.points_awarded = 24.64,
-    format('적립액을 서버가 계산한다 (%s SUP)', r.points_awarded));
-  perform pg_temp.ok(r.balance = 24.64, '잔고가 적립만큼 늘었다');
+  perform pg_temp.ok(r.points_awarded = 20,
+    format('적립액을 서버가 계산한다 — 폰이 보낸 부스트·파티는 무시 (%s SUP)', r.points_awarded));
+  perform pg_temp.ok(r.balance = 20, '잔고가 적립만큼 늘었다');
 
   perform pg_temp.ok(
-    (select faction from public.walk_sessions where id = r.session_id) = 'FIRE',
-    '정산 시점 종족이 함께 남는다');
+    (select party_size from public.walk_sessions where id = r.session_id) = 1,
+    '파티 인원은 서버 명단으로 센다 (명단이 없으면 1)');
   perform pg_temp.ok(
     (select top_speed_kmh from public.walk_sessions where id = r.session_id) between 11.5 and 12.5,
     '세션의 최고 속도는 경로에서 나온 값이다');
@@ -181,9 +194,9 @@ begin
   select * into r from public.record_session(
     v_start, v_start + interval '601 seconds', 2000, 601,
     pg_temp.fx('track_ok'), 1200, 2, 'FIRE');
-  perform pg_temp.ok(r.points_awarded = 24.64, '같은 세션을 다시 보내도 결과가 같다');
+  perform pg_temp.ok(r.points_awarded = 20, '같은 세션을 다시 보내도 결과가 같다');
   perform pg_temp.ok(
-    (select coalesce(sum(amount), 0) from public.sup_ledger) = 24.64,
+    (select coalesce(sum(amount), 0) from public.sup_ledger) = 20,
     '다시 보내도 원장에 두 번 쌓이지 않는다');
 end $$;
 
@@ -244,7 +257,7 @@ do $$
 declare v_left numeric;
 begin
   select public.spend_sup('SPEND_BOOST', 10, '부스트') into v_left;
-  perform pg_temp.ok(v_left = (24.64 + 460.00) - 10, format('차감 뒤 잔고 %s', v_left));
+  perform pg_temp.ok(v_left = (20 + 460.00) - 10, format('차감 뒤 잔고 %s', v_left));
 end $$;
 
 call pg_temp.must_fail(
@@ -305,9 +318,8 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 declare v_crew uuid;
 begin
-  insert into public.crews (owner_id, name, monogram, tagline, area)
-  values ('11111111-1111-1111-1111-111111111111', '한강 러너스', 'HR', '매주 토요일', '서울 마포')
-  returning id into v_crew;
+  -- 표에 직접 쓰기는 막혀 있다(0022). 앱과 같은 함수로 만든다.
+  v_crew := public.crew_create('한강 러너스', 'HR', '매주 토요일', '서울 마포', 'OPEN');
   insert into fix (k, v) values ('crew', v_crew::text);
 
   perform pg_temp.ok(
@@ -337,20 +349,14 @@ end $$;
 do $$
 declare v_post bigint; v_crew uuid := pg_temp.fx('crew')::uuid;
 begin
-  insert into public.posts (author_id, category, title, body)
-  values ('11111111-1111-1111-1111-111111111111', 'FREE', '오늘 날씨 좋네요', '한강 추천')
-  returning id into v_post;
+  v_post := public.post_create('FREE', null, '오늘 날씨 좋네요', '한강 추천', null, null, null, null, null, null);
   insert into fix (k, v) values ('post_open', v_post::text);
 
-  insert into public.posts (author_id, category, crew_id, title, body)
-  values ('11111111-1111-1111-1111-111111111111', 'TIP', v_crew, '크루만 보는 글', '내일 6시')
-  returning id into v_post;
+  v_post := public.post_create('TIP', v_crew, '크루만 보는 글', '내일 6시', null, null, null, null, null, null);
   insert into fix (k, v) values ('post_crew', v_post::text);
 
-  insert into public.posts (author_id, category, title, place, distance_km, meet_at, capacity)
-  values ('11111111-1111-1111-1111-111111111111', 'FLASH', '오늘 저녁 7시 번개',
-          '여의도 한강공원', 5, now() + interval '3 hours', 2)
-  returning id into v_post;
+  v_post := public.post_create('FLASH', null, '오늘 저녁 7시 번개', '', '여의도 한강공원', 5,
+                               now() + interval '3 hours', 2, null, null);
   insert into fix (k, v) values ('post_flash', v_post::text);
 end $$;
 
@@ -428,10 +434,11 @@ end $$;
 do $$
 declare v_post bigint := pg_temp.fx('post_flash')::bigint; v_n int;
 begin
+  -- 번개를 연 사람(1111)은 post_create 가 첫 참가자로 넣는다. 2222 가 둘째다.
   select public.join_flash(v_post) into v_n;
-  perform pg_temp.ok(v_n = 1, '번개에 참가하면 인원이 센다');
+  perform pg_temp.ok(v_n = 2, '번개에 참가하면 인원이 센다');
   select public.join_flash(v_post) into v_n;
-  perform pg_temp.ok(v_n = 1, '두 번 눌러도 한 명이다');
+  perform pg_temp.ok(v_n = 2, '두 번 눌러도 한 명이다');
 end $$;
 
 call pg_temp.must_fail(
@@ -441,14 +448,6 @@ call pg_temp.must_fail(
   '참가자 표에 직접 넣을 수 없다');
 
 call pg_temp.login('33333333-3333-3333-3333-333333333333');
-do $$
-declare v_n int;
-begin
-  select public.join_flash(pg_temp.fx('post_flash')::bigint) into v_n;
-  perform pg_temp.ok(v_n = 2, '정원 2명 중 둘째가 들어간다');
-end $$;
-
-call pg_temp.login('11111111-1111-1111-1111-111111111111');
 call pg_temp.must_fail(
   format($q$ select public.join_flash(%s) $q$, pg_temp.fx('post_flash')),
   '정원이 차면 더 들어갈 수 없다');
@@ -533,8 +532,8 @@ begin
   perform pg_temp.ok(r.top_speed_kmh between 11.5 and 12.5, '순위표의 속도는 경로에서 나온 값이다');
 
   select * into r from public.leaderboard('TOTAL_SUP', 20) where is_me;
-  -- 적립은 24.64 + 460.00, 쓴 10 은 순위에서 빼지 않는다
-  perform pg_temp.ok(r.sup = 484.64,
+  -- 적립은 20 + 460.00, 쓴 10 은 순위에서 빼지 않는다
+  perform pg_temp.ok(r.sup = 480,
     format('누적 적립으로 줄을 세운다 (쓴 돈은 빼지 않는다, %s)', r.sup));
 
   perform pg_temp.ok(
@@ -543,20 +542,6 @@ begin
 
   select * into r from public.leaderboard('TOP_SPEED', 20) where is_me;
   perform pg_temp.ok(r.total = 1, '전체 인원이 함께 온다 ("N명 중 몇 등"의 N)');
-end $$;
-
-do $$
-declare r record;
-begin
-  select * into r from public.faction_leaderboard() where faction = 'FIRE';
-  perform pg_temp.ok(r.km > 0, '종족에 거리가 쌓인다');
-  perform pg_temp.ok(r.my_km = r.km, '내 몫이 따로 나온다');
-
-  select * into r from public.faction_leaderboard() where faction = 'WIND';
-  perform pg_temp.ok(r.km = 0, 'VOID 세션은 종족에도 쌓이지 않는다');
-
-  perform pg_temp.ok((select count(*) from public.faction_leaderboard()) = 4,
-    '아무도 안 뛴 종족도 줄은 나온다');
 end $$;
 
 -- ── 기간 ──
@@ -584,11 +569,6 @@ begin
 
   select * into r from public.leaderboard('TOTAL_SUP', 20, 'MONTH') where is_me;
   perform pg_temp.ok(r.sup > 0, '월간 적립 순위에도 내 줄이 있다');
-
-  select * into r from public.faction_leaderboard('MONTH') where faction = 'FIRE';
-  perform pg_temp.ok(r.km > 0, '종족 순위도 기간을 받는다');
-  perform pg_temp.ok((select count(*) from public.faction_leaderboard('MONTH')) = 4,
-    '기간을 좁혀도 종족 네 줄은 그대로 나온다');
 end $$;
 
 -- 300등도 자기 줄이 보여야 한다
@@ -626,6 +606,13 @@ $$;
 create or replace function pg_temp.cap() returns int
 language sql security definer as $$ select economy.market_import_cap() $$;
 
+-- 거래는 서버가 만든 신발만 된다(0023 — 폰이 정한 등급·레벨로 SUP 를 받아 가지 못하게).
+-- 여기서는 폰에서 올린 신발을 서버 신발로 바꿔 거래 규칙을 검사한다.
+create or replace function pg_temp.server_shoe(p_id bigint) returns bigint
+language sql security definer as $$
+  update public.market_sneakers set origin = 'PAID_DRAW' where id = p_id returning id
+$$;
+
 -- 살 돈을 쥐여 준다. 실제로는 뛰어야 생기지만 여기서는 원장에 바로 적는다.
 insert into public.sup_ledger (user_id, kind, amount, description) values
   ('22222222-2222-2222-2222-222222222222', 'EARN_WALK', 10000, '검사용'),
@@ -660,6 +647,11 @@ begin
 
   insert into fix values ('sn1', v_a::text);
 end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.market_list(%s, 100) $q$, pg_temp.fx('sn1')),
+  '폰에서 올린 예전 신발은 팔 수 없다 (등급·레벨을 폰이 정했다)');
+do $$ begin perform pg_temp.server_shoe(pg_temp.fx('sn1')::bigint); end $$;
 
 call pg_temp.must_fail(
   $q$ insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability)
@@ -771,7 +763,7 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 declare v_low bigint;
 begin
-  v_low := public.market_import(2, 'FIRE', 'RARE', 0, 3, 1, 1, 100);
+  v_low := pg_temp.server_shoe(public.market_import(2, 'FIRE', 'RARE', 0, 3, 1, 1, 100));
   insert into fix values ('sn_low', v_low::text);
 end $$;
 
@@ -857,7 +849,7 @@ call pg_temp.login('33333333-3333-3333-3333-333333333333');
 do $$
 declare v_sn bigint; v_listing bigint;
 begin
-  v_sn := public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100);
+  v_sn := pg_temp.server_shoe(public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100));
   v_listing := public.market_list(v_sn, 700);
   perform pg_temp.ok(v_listing is not null, '매물이 먼저 선다');
   insert into fix values ('sn_wind', v_sn::text);
@@ -1384,9 +1376,7 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 declare v_post bigint;
 begin
-  insert into public.posts (author_id, category, title, body)
-  values ('11111111-1111-1111-1111-111111111111', 'FREE', '신고받을 글', '...')
-  returning id into v_post;
+  v_post := public.post_create('FREE', null, '신고받을 글', '...', null, null, null, null, null, null);
   insert into fix (k, v) values ('post_reported', v_post::text);
 end $$;
 
@@ -1808,25 +1798,32 @@ call pg_temp.must_fail(
 do $$
 declare v_today bigint := (now() at time zone 'Asia/Seoul')::date - date '1970-01-01';
 begin
-  -- 사흘치 걸음. 하루 상한(48,000)을 넘긴 날은 상한까지만 들어간다.
+  -- 폰이 올린 하루 걸음은 누구나 적을 수 있다. 주간 도전에 세지 않는다.
   perform public.steps_sync(json_build_array(
-    json_build_object('epoch_day', v_today, 'steps', 30000, 'goal', 8000),
-    json_build_object('epoch_day', v_today - 1, 'steps', 99999, 'goal', 8000),
-    json_build_object('epoch_day', v_today - 40, 'steps', 40000, 'goal', 8000)
+    json_build_object('epoch_day', v_today, 'steps', 48000, 'goal', 8000),
+    json_build_object('epoch_day', v_today - 1, 'steps', 48000, 'goal', 8000)
   ));
   perform pg_temp.ok(
-    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
-    '올린 걸음은 하루 상한까지, 30일보다 오래된 날은 버린다');
+    public.event_progress('step_surge', 'Asia/Seoul') = 0,
+    '폰이 올린 하루 걸음은 주간 도전에 세지 않는다');
+end $$;
 
-  -- 걸음은 줄지 않는다
-  perform public.steps_sync(json_build_array(
-    json_build_object('epoch_day', v_today, 'steps', 100, 'goal', 8000)));
+reset role;
+-- 경로가 받쳐 준 러닝 걸음 80,000보 — 하루 상한(48,000) 안으로 이틀에 나눠 (한국 시간 오늘 · 어제)
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
+                                  backed_steps, gps_backed, rewarded_steps, verdict)
+select '44444444-4444-4444-4444-444444444444',
+       economy.game_day_start(economy.game_day(now()) - d) + interval '1 minute',
+       economy.game_day_start(economy.game_day(now()) - d) + interval '2 minutes', 60, 40000, 40000,
+       40000, true, 0, 'CLEAN'
+  from generate_series(0, 1) d;
+set role authenticated;
+
+do $$
+begin
   perform pg_temp.ok(
-    public.event_progress('step_surge', 'Asia/Seoul') = 78000,
-    '같은 날 더 적은 걸음을 올려도 줄지 않는다');
-
-  perform public.steps_sync(json_build_array(
-    json_build_object('epoch_day', v_today, 'steps', 32000, 'goal', 8000)));
+    public.event_progress('step_surge', 'Asia/Seoul') = 80000,
+    '주간 도전은 서버가 확인한 러닝 걸음으로 센다');
   perform pg_temp.ok(
     public.event_claim('step_surge', 'Asia/Seoul') = 250,
     '목표를 채우면 주간 도전 보상이 나온다');
@@ -2098,9 +2095,9 @@ begin
     pg_temp.track_at(v_start + interval '1 hour', 1800, 0.00001, 127.2), 0, 1, '');
   perform pg_temp.ok(r.verdict = 'FLAGGED', '걸음이 경로의 2배를 넘으면 FLAGGED');
   perform pg_temp.ok(
-    (select rewarded_steps from public.walk_sessions where id = r.session_id) between 5100 and 5400,
-    format('경로가 받쳐 주는 만큼만 적립된다 (%s보)',
-      (select rewarded_steps from public.walk_sessions where id = r.session_id)));
+    (select verified_steps from public.walk_sessions where id = r.session_id) between 5100 and 5400,
+    format('경로가 받쳐 주는 만큼만 인정된다 (%s보)',
+      (select verified_steps from public.walk_sessions where id = r.session_id)));
   perform pg_temp.ok(
     (select distance_meters from public.walk_sessions where id = r.session_id) between 1950 and 2050,
     '거리도 경로만큼이다');
@@ -2413,8 +2410,8 @@ begin
   select * into r from public.record_session(v_start, v_start + interval '10 minutes',
     1200, 600, '', 3000, 1, '');
   perform pg_temp.ok(r.session_id is not null
-    and (select boost_bps from public.walk_sessions where id = r.session_id) = 2000,
-    '부스트가 범위를 넘어도 세션은 기록되고 범위 안 값으로 적힌다');
+    and (select boost_bps from public.walk_sessions where id = r.session_id) = 0,
+    '폰이 보낸 부스트는 무시하고 서버 신발 값(신발 없음 = 0)을 적는다');
 end $$;
 reset role;
 
@@ -2458,6 +2455,565 @@ begin
    where user_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
   perform pg_temp.ok(v_first = 1 and v_again = 0, '같은 푸시를 두 번 가져가지 않는다');
 end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 서버 경제 (0022~0025) ────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+--
+-- 체인으로 나갈 수 있는 가치는 모두 서버가 정한다. 폰이 정하던 것이 하나라도
+-- 남아 있으면 그 틈으로 진짜 토큰이 나간다. 한 줄씩 두드린다.
+
+reset role;
+-- 어테스터 역할로 바꿔 검사하는 동안에도 준비물은 읽어야 한다(그 밖의 표는 못 읽는다).
+grant all on fix to stepup_attester;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'fa@test', '{"full_name":"Fa One"}'),
+  ('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', 'fb@test', '{"full_name":"Fb Two"}');
+update public.economy_settings set value = '7' where key = 'new_account_days';
+
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+
+do $$
+begin
+  perform public.economy_bootstrap();
+  perform public.economy_bootstrap();
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'STARTER') = 1,
+    '첫 신발은 여러 번 불러도 하나다');
+  perform pg_temp.ok((select equipped from public.my_sneakers() where origin = 'STARTER'),
+    '첫 신발을 바로 신긴다');
+  perform pg_temp.ok((select granted from public.draw_grants where kind = 'FREE') = 10,
+    '신규 가입자는 무료 뽑기 10회');
+  perform pg_temp.ok((select energy_max from public.my_economy()) = 10, '에너지 최대는 신발 1레벨 = 10칸');
+end $$;
+
+-- 무료 뽑기 10회, 11번째는 거절
+do $$
+declare i int; v_id bigint;
+begin
+  for i in 1..10 loop
+    v_id := public.draw_free();
+  end loop;
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'FREE_DRAW') = 10,
+    '무료 뽑기 10켤레');
+  perform pg_temp.ok((select bool_and(lock_km = 50 and not can_withdraw)
+                        from public.my_sneakers() where origin = 'FREE_DRAW'),
+    '무료 신발은 50km 전에는 꺼낼 수 없다');
+  insert into fix (k, v) select 'free_shoe', min(id)::text from public.my_sneakers() where origin = 'FREE_DRAW';
+  insert into fix (k, v) select 'starter_shoe', min(id)::text from public.my_sneakers() where origin = 'STARTER';
+end $$;
+call pg_temp.must_fail($q$ select public.draw_free() $q$, '무료 뽑기는 10회까지');
+reset role;
+do $$ begin
+  perform pg_temp.ok(not exists (
+      select 1 from public.market_sneakers s,
+             lateral economy.efficiency_range(s.rarity) er,
+             lateral economy.comfort_range(s.rarity) cr
+       where s.owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and s.origin = 'FREE_DRAW'
+         and (s.efficiency_bps not between er.lo and er.hi or s.comfort_bps not between cr.lo and cr.hi
+              or s.level <> 1 or s.durability_pts <> 100)),
+    '뽑은 스탯은 모두 등급 범위 안이다');
+end $$;
+set role authenticated;
+call pg_temp.must_fail($q$ select public.draw_paid() $q$, 'SUP 가 없으면 유료 뽑기를 못 한다');
+
+-- 공정성: 씨앗을 공개하면 지난 뽑기를 누구나 다시 계산할 수 있다
+do $$
+declare v_hash text; r record;
+begin
+  select seed_hash into v_hash from public.draw_fairness();
+  select * into r from public.draw_rotate_seed();
+  perform pg_temp.ok(r.seed_hash = v_hash and encode(sha256(decode(r.seed_hex, 'hex')), 'hex') = v_hash,
+    '공개된 씨앗의 해시가 미리 알려 준 해시와 같다');
+  perform pg_temp.ok((select seed_hash from public.draw_fairness()) <> v_hash, '새 씨앗으로 바뀐다');
+  insert into fix (k, v) values ('seed_hex', r.seed_hex);
+end $$;
+reset role;
+do $$
+declare v_bad int;
+begin
+  select count(*) into v_bad from public.market_sneakers s
+   where s.owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and s.origin = 'FREE_DRAW'
+     and s.rarity <> economy.roll_rarity(economy.bytes_int(
+           sha256(decode(pg_temp.fx('seed_hex'), 'hex') || convert_to(':' || s.draw_nonce::text, 'UTF8')), 0, 4));
+  perform pg_temp.ok(v_bad = 0, '공개된 씨앗으로 다시 계산한 등급이 모두 맞는다');
+end $$;
+set role authenticated;
+
+-- 직접 고치기는 막혀 있다
+call pg_temp.must_fail(
+  $q$ update public.market_sneakers set level = 30 where owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' $q$,
+  '신발 레벨을 직접 고칠 수 없다');
+call pg_temp.must_fail($q$ select * from public.economy_settings $q$, '운영 값은 앱이 읽을 수 없다');
+call pg_temp.must_fail($q$ select * from public.chain_events $q$, '체인 이벤트 표는 앱이 읽을 수 없다');
+call pg_temp.must_fail($q$ select public.attester_pause('앱이 멈추기') $q$, '앱은 어테스터 함수를 부를 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', '0x1111111111111111111111111111111111111111', 'x') $q$,
+  '앱은 지갑을 서명 검증 없이 붙일 수 없다');
+call pg_temp.must_fail(
+  $q$ select economy.ledger_apply('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'EARN_WALK', 1000, 'x') $q$,
+  '앱은 잔고 함수를 직접 부를 수 없다');
+
+-- 에너지 셀: 가득이면 팔지 않는다
+reset role;
+insert into public.sup_ledger (user_id, kind, amount, description)
+values ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'EARN_EVENT', 5000, '검사용 잔고');
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+call pg_temp.must_fail($q$ select public.boost_buy('ENERGY_CELL') $q$, '에너지가 가득이면 에너지 셀을 팔지 않는다 (X9)');
+
+-- 유료 뽑기 · 강화 · 착용
+do $$
+declare v_id bigint; v_before numeric; v_lv int;
+begin
+  v_before := (select balance from public.my_economy());
+  v_id := public.draw_paid();
+  perform pg_temp.ok((select balance from public.my_economy()) = v_before - 500, '유료 뽑기는 500 SUP');
+  perform pg_temp.ok((select origin from public.my_sneakers() where id = v_id) = 'PAID_DRAW', '유료 뽑기 신발');
+  insert into fix (k, v) values ('paid_shoe', v_id::text);
+
+  v_before := (select balance - (select upgrade_cost from public.my_sneakers() where id = v_id)
+                 from public.my_economy());
+  v_lv := public.sneaker_upgrade(v_id);
+  perform pg_temp.ok(v_lv = 2, '강화하면 레벨이 오른다');
+  perform pg_temp.ok((select balance from public.my_economy()) = v_before, '강화 값만큼 잔고가 준다');
+
+  perform public.sneaker_equip(v_id);
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where equipped) = 1, '신는 신발은 하나');
+  perform pg_temp.ok((select energy_max from public.my_economy()) = 12, '2레벨 신발을 신으면 에너지 12칸');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ insert into public.market_listings (sneaker_id, seller_id, price)
+      values (%s, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 100) $q$, pg_temp.fx('starter_shoe')),
+  '매물 표에 직접 쓸 수 없다 (권한 없음)');
+call pg_temp.must_fail(
+  format($q$ select public.market_list(%s, 100) $q$, pg_temp.fx('free_shoe')),
+  '무료 신발은 50km 전에는 팔 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.market_list(%s, 100) $q$, pg_temp.fx('paid_shoe')),
+  '신고 있는 신발은 팔 수 없다');
+
+-- 러닝 보상 — 신발 효율성 · 에너지 · 내구도
+do $$
+declare
+  r record;
+  v_start timestamptz := now() - interval '3 hours';
+  v_eff int := (select efficiency_bps from public.my_sneakers() where id = pg_temp.fx('paid_shoe')::bigint);
+  v_rarity text := (select rarity from public.my_sneakers() where id = pg_temp.fx('paid_shoe')::bigint);
+  v_comfort int := (select comfort_bps from public.my_sneakers() where id = pg_temp.fx('paid_shoe')::bigint);
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 5, '', false);
+  perform pg_temp.ok(r.verdict = 'CLEAN', '정상 러닝');
+  perform pg_temp.ok(r.points_awarded = round(2000 * 0.01 * (1 + v_eff / 10000.0), 4),
+    format('적립 = 걸음 × 0.01 × (1 + 신발 효율성 %s bps) = %s', v_eff, r.points_awarded));
+  perform pg_temp.ok(
+    (select energy_used from public.walk_sessions where id = r.session_id)
+      = round(2000 * (1 - v_comfort / 10000.0) / 600, 4),
+    '착화감만큼 에너지를 덜 쓴다');
+  perform pg_temp.ok(
+    (select durability from public.my_sneakers() where id = pg_temp.fx('paid_shoe')::bigint)
+      < 100,
+    '달린 만큼 내구도가 준다');
+  perform pg_temp.ok(
+    (select km_run from public.my_sneakers() where id = pg_temp.fx('paid_shoe')::bigint) > 1,
+    '신발에 달린 거리가 쌓인다');
+end $$;
+
+do $$
+declare r record; v_start timestamptz := now() - interval '5 hours';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '600 seconds', 1000, 600,
+    '', 0, 1, '', true);
+  perform pg_temp.ok(r.verdict = 'VOID' and r.points_awarded = 0, '가짜 위치가 감지되면 보상이 없다');
+end $$;
+
+-- 수리: 태운 SUP 만큼 잔고가 줄고 내구도가 100 으로
+do $$
+declare v_before numeric; v_dur numeric;
+begin
+  v_before := (select balance from public.my_economy());
+  v_dur := public.sneaker_repair(pg_temp.fx('paid_shoe')::bigint);
+  perform pg_temp.ok(v_dur = 100, '수리하면 내구도가 가득 찬다');
+  perform pg_temp.ok((select balance from public.my_economy()) < v_before, '수리 값이 빠진다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.sneaker_repair(%s) $q$, pg_temp.fx('paid_shoe')),
+  '고칠 곳이 없으면 값을 받지 않는다');
+
+-- 목표 보너스는 서버가 확인한 걸음으로, 하루 한 번
+update public.profiles set daily_goal = 1000 where id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
+do $$
+begin
+  perform pg_temp.ok(public.goal_claim() = 2.5, '목표 1,000보 달성 보너스 2.5 SUP');
+end $$;
+call pg_temp.must_fail($q$ select public.goal_claim() $q$, '목표 보너스는 하루 한 번');
+
+-- 파티 인원은 출발 명단으로 센다
+reset role;
+do $$
+declare v_party bigint; v_at timestamptz := now() - interval '7 hours';
+begin
+  insert into public.parties (flash_post_id, host_id, status, starts_at)
+  values (pg_temp.fx('post_flash')::bigint, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', 'FINISHED', v_at)
+  returning id into v_party;
+  insert into public.party_runs (party_id, user_id, starts_at) values
+    (v_party, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', v_at),
+    (v_party, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', v_at);
+  insert into fix (k, v) values ('party_at', v_at::text);
+end $$;
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$
+declare r record; v_at timestamptz := pg_temp.fx('party_at')::timestamptz;
+begin
+  select * into r from public.record_session(v_at + interval '5 seconds', v_at + interval '605 seconds', 600, 600,
+    '', 0, 9, '', false);
+  perform pg_temp.ok((select party_size from public.walk_sessions where id = r.session_id) = 2,
+    '폰이 9명이라고 해도 출발 명단의 2명으로 센다 (X2)');
+end $$;
+
+-- 하루 금액 상한 — 가입 7일 안은 절반
+reset role;
+update public.economy_settings set value = '40' where key = 'daily_earn_cap';
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$
+declare r record; v_start timestamptz := now() - interval '9 hours';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1800 seconds', 3000, 1800,
+    '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'FLAGGED', '하루 금액 상한에 걸리면 FLAGGED');
+  insert into fix (k, v) values ('cap_start', v_start::text) on conflict (k) do update set v = excluded.v;
+end $$;
+reset role;
+do $$
+declare v_before numeric; v_this numeric; v_at timestamptz := pg_temp.fx('cap_start')::timestamptz;
+begin
+  select coalesce(sum(points_awarded), 0) into v_before from public.walk_sessions
+   where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and started_at <> v_at
+     and economy.game_day(started_at) = economy.game_day(v_at);
+  select points_awarded into v_this from public.walk_sessions
+   where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and started_at = v_at;
+  perform pg_temp.ok(v_this = greatest(20 - v_before, 0),
+    format('신규 계정은 하루 적립 상한이 절반(20)이다 (앞서 %s, 이번 %s)', v_before, v_this));
+end $$;
+update public.economy_settings set value = '600' where key = 'daily_earn_cap';
+
+-- ── 지갑 · 꺼내기 ──
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑이 없으면 꺼낼 수 없다');
+call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '2단계 인증 없이는 지갑을 붙일 수 없다');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+do $$
+declare v_msg text;
+begin
+  v_msg := public.wallet_link_challenge();
+  insert into fix (k, v) values ('nonce_a', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
+end $$;
+reset role;
+
+set role stepup_attester;
+call pg_temp.must_fail(
+  $q$ select public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'wrong') $q$,
+  '확인 번호가 틀리면 지갑을 붙이지 않는다');
+do $$ begin
+  perform public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
+    '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', pg_temp.fx('nonce_a'));
+end $$;
+call pg_temp.must_fail($q$ select * from public.wallet_links $q$, '어테스터도 표를 직접 읽지 못한다');
+reset role;
+
+do $$ begin
+  perform pg_temp.ok((select address from public.wallet_links
+                       where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    '지갑이 소문자로 붙는다');
+  perform pg_temp.ok((select granted = 10 and genesis_granted = 1 from public.draw_grants
+                       where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and kind = 'BONUS'),
+    '처음 붙인 지갑이면 보너스 뽑기 10회(Genesis 1)');
+end $$;
+
+-- 같은 지갑을 다른 계정에 붙일 수 없다
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$
+declare v_msg text;
+begin
+  perform public.economy_bootstrap();
+  v_msg := public.wallet_link_challenge();
+  insert into fix (k, v) values ('nonce_b', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
+end $$;
+reset role;
+set role stepup_attester;
+call pg_temp.must_fail(
+  format($q$ select public.attester_wallet_link('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2',
+            '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_b')),
+  '다른 계정에 붙은 지갑은 붙일 수 없다');
+reset role;
+
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+select set_config('request.jwt.claims', '', false);
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '2단계 인증 없이는 꺼낼 수 없다');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑을 붙이고 72시간은 꺼낼 수 없다');
+reset role;
+update public.wallet_links set changed_at = now() - interval '73 hours'
+ where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
+set role authenticated;
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '가입 7일 전에는 꺼낼 수 없다');
+reset role;
+update public.profiles set created_at = now() - interval '8 days', gps_km = 25
+ where id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
+set role authenticated;
+
+do $$
+declare v_before numeric; v_op uuid;
+begin
+  v_before := (select balance from public.my_economy());
+  v_op := public.sup_withdraw_request(100);
+  perform pg_temp.ok((select balance from public.my_economy()) = v_before - 100,
+    '예약하는 순간 잔고에서 빠진다');
+  perform pg_temp.ok((select status from public.chain_ops where id = v_op) = 'RESERVED', '작업이 예약된다');
+  insert into fix (k, v) values ('op_sup', v_op::text);
+end $$;
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(950) $q$, '사람별 하루 꺼내기 상한(1,000)');
+reset role;
+
+set role stepup_attester;
+do $$
+declare r record; v_op uuid := pg_temp.fx('op_sup')::uuid;
+begin
+  select * into r from public.attester_op_payload(v_op);
+  perform pg_temp.ok(r.amount = 100 and r.wallet = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                     and r.op_ref = '0x' || lpad(replace(v_op::text, '-', ''), 64, '0'), '서명 재료가 예약 그대로다');
+  perform public.attester_op_submitted(v_op, '0x' || repeat('ab', 32));
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('ab', 32), 0, 100, 'SUP_CLAIMED',
+                       jsonb_build_object('op', r.op_ref)) = 'CONFIRMED', '체인 이벤트로 확정된다');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('ab', 32), 0, 100, 'SUP_CLAIMED',
+                       jsonb_build_object('op', r.op_ref)) = 'DUPLICATE', '같은 이벤트는 한 번만 처리한다');
+  perform pg_temp.ok(public.attester_op_expire(v_op, false) = 'CONFIRMED', '확정된 작업은 되돌리지 않는다');
+end $$;
+reset role;
+
+-- 만료: 마진 전에는 못 되돌리고, 지나면 환불
+set role authenticated;
+do $$ declare v_op uuid; begin
+  v_op := public.sup_withdraw_request(50);
+  insert into fix (k, v) values ('op_exp', v_op::text);
+end $$;
+reset role;
+set role stepup_attester;
+do $$ declare r record; begin
+  select * into r from public.attester_op_payload(pg_temp.fx('op_exp')::uuid);
+end $$;
+call pg_temp.must_fail(format($q$ select public.attester_op_expire('%s', false) $q$, pg_temp.fx('op_exp')),
+  '서명한 작업은 만료 마진이 지나기 전에 되돌리지 않는다');
+reset role;
+update public.chain_ops set deadline = now() - interval '2 hours' where id = pg_temp.fx('op_exp')::uuid;
+insert into fix (k, v) values ('bal_before_exp', economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1')::text);
+set role stepup_attester;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.attester_due_ops() where op_id = pg_temp.fx('op_exp')::uuid) = 1,
+    '만료 대상 목록에 나온다');
+  perform pg_temp.ok(public.attester_op_expire(pg_temp.fx('op_exp')::uuid, false) = 'EXPIRED', '체인에 없으면 만료');
+  perform pg_temp.ok(public.attester_op_expire(pg_temp.fx('op_exp')::uuid, false) = 'EXPIRED', '두 번 불러도 결과가 같다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') = pg_temp.fx('bal_before_exp')::numeric + 50,
+    '환불은 한 번만 된다');
+end $$;
+
+-- 신발 꺼내기 · 넣기
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+call pg_temp.must_fail(
+  format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('starter_shoe')),
+  '첫 신발은 꺼낼 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('free_shoe')),
+  '무료 신발은 50km 전에는 꺼낼 수 없다');
+do $$
+declare v_op uuid; v_shoe bigint := pg_temp.fx('paid_shoe')::bigint;
+begin
+  v_op := public.sneaker_withdraw_request(v_shoe);
+  perform pg_temp.ok((select chain_state from public.my_sneakers() where id = v_shoe) = 'WITHDRAWING',
+    '꺼내는 중 상태가 된다');
+  insert into fix (k, v) values ('op_shoe', v_op::text);
+end $$;
+call pg_temp.must_fail(format($q$ select public.sneaker_equip(%s) $q$, pg_temp.fx('paid_shoe')),
+  '꺼내는 중인 신발은 신을 수 없다');
+call pg_temp.must_fail(format($q$ select public.sneaker_upgrade(%s) $q$, pg_temp.fx('paid_shoe')),
+  '꺼내는 중인 신발은 강화할 수 없다');
+reset role;
+
+set role stepup_attester;
+do $$
+declare r record; v_op uuid := pg_temp.fx('op_shoe')::uuid;
+begin
+  select * into r from public.attester_op_payload(v_op);
+  perform pg_temp.ok(r.level = 2 and not r.transfer_locked, '서명 재료에 서버 스탯이 담긴다');
+  perform public.attester_chain_event('0x' || repeat('cd', 32), 1, 101, 'SNEAKER_RELEASED',
+    jsonb_build_object('op', r.op_ref, 'tokenId', '7'));
+  -- 체인에서 산 사람(f2)이 넣는다
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('ce', 32), 0, 102, 'SNEAKER_DEPOSITED',
+    jsonb_build_object('account', '0x' || lpad('f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2', 64, '0'), 'tokenId', '7'))
+    = 'CREDITED', '넣은 신발이 넣은 사람 것이 된다');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('cf', 32), 0, 103, 'SUP_DEPOSITED',
+    jsonb_build_object('account', '0x' || lpad('f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2', 64, '0'), 'amount', '12.5'))
+    = 'CREDITED', 'SUP 넣기가 잔고에 들어간다');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('d0', 32), 0, 104, 'SUP_DEPOSITED',
+    jsonb_build_object('account', '0xdead', 'amount', '5')) = 'ORPHAN', '받을 계정이 없는 입금은 사람에게 넘긴다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select owner_id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2' and chain_state = 'APP' and token_id = 7
+                        from public.market_sneakers where id = pg_temp.fx('paid_shoe')::bigint),
+    '넣은 신발은 앱으로 돌아와 새 주인 것이 된다');
+  perform pg_temp.ok(economy.balance_of('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2') = 12.5, '넣은 SUP 가 잔고다');
+end $$;
+
+-- 지갑 보너스 — 첫 번째가 Genesis(희귀 이상)
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$
+declare v_op uuid; i int; v_first bigint;
+begin
+  v_op := public.bonus_draw_request();
+  v_first := (select sneaker_id from public.chain_ops where id = v_op);
+  perform pg_temp.ok((select genesis_no is not null and rarity in ('EPIC', 'LEGENDARY')
+                        from public.my_sneakers() where id = v_first),
+    'Genesis 는 희귀 이상 확정이고 번호가 붙는다');
+  for i in 2..10 loop
+    v_op := public.bonus_draw_request();
+  end loop;
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW' and genesis_no is not null) = 1,
+    'Genesis 는 한 켤레뿐');
+end $$;
+call pg_temp.must_fail($q$ select public.bonus_draw_request() $q$, '보너스 뽑기는 10회까지');
+reset role;
+
+-- 정지 스위치
+set role stepup_attester;
+do $$ begin perform public.attester_pause('검사'); end $$;
+reset role;
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '정지 스위치가 켜지면 꺼내기를 멈춘다');
+select set_config('request.jwt.claims', '', false);
+reset role;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- ── 보안 검토에서 찾은 구멍 — 막혔는지 ──
+\echo ''
+\echo '── 서버 경제 보안 회귀 ──────────────────────────────────────────'
+
+-- (1) 즉시 판매(market_sell_now)로 체인에 나간 신발 · 첫 신발을 팔 수 없다
+reset role;
+update public.market_sneakers set chain_state = 'ON_CHAIN' where id = pg_temp.fx('paid_shoe')::bigint;
+insert into fix (k, v)
+  select 'f2_starter', id::text from public.market_sneakers
+   where owner_id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2' and origin = 'STARTER';
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$
+declare v_s record;
+begin
+  select faction, rarity, variant into v_s from public.market_sneakers where id = pg_temp.fx('paid_shoe')::bigint;
+  insert into fix (k, v) values ('bid_chain', public.market_bid(v_s.faction, v_s.rarity, v_s.variant, 1, 300)::text);
+  insert into fix (k, v) values ('bid_starter', public.market_bid('WIND', 'COMMON', 0, 1, 50)::text);
+end $$;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+call pg_temp.must_fail(
+  format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('paid_shoe'), pg_temp.fx('bid_chain')),
+  '체인에 나간 신발은 즉시 판매로도 팔 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('f2_starter'), pg_temp.fx('bid_starter')),
+  '첫 신발은 즉시 판매로도 팔 수 없다');
+reset role;
+update public.market_sneakers set chain_state = 'APP' where id = pg_temp.fx('paid_shoe')::bigint;
+
+-- (3) 경로 없는 러닝: 적립은 하루 조금만, 신발 잠금 거리 · 꺼내기 거리는 쌓이지 않는다.
+--     시간이 겹치는 러닝은 무효.
+update public.economy_settings set value = '60' where key = 'no_gps_daily_cap';
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$
+declare
+  r record;
+  v_start timestamptz := now() - interval '6 days';
+  v_km numeric := (select km_run from public.my_sneakers() where origin = 'STARTER');
+begin
+  select * into r from public.record_session(v_start, v_start + interval '17000 seconds', 60000, 17000,
+    '', 0, 1, '', false);
+  perform pg_temp.ok(r.points_awarded <= 60, format('경로 없는 러닝은 하루 60 SUP 까지 (%s)', r.points_awarded));
+  perform pg_temp.ok((select km_run from public.my_sneakers() where origin = 'STARTER') = v_km,
+    '경로 없는 러닝은 신발 잠금 거리에 쌓이지 않는다');
+  perform pg_temp.ok((select gps_km from public.profiles where id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2') = 0,
+    '경로 없는 러닝은 꺼내기 조건 거리에 쌓이지 않는다');
+
+  select * into r from public.record_session(v_start + interval '10 minutes', v_start + interval '20 minutes',
+    1000, 600, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'VOID', '시간이 겹치는 러닝은 무효');
+end $$;
+
+-- (2) 자기가 만든 코스로는 코스 보상을 받지 못한다
+do $$
+declare v_start timestamptz := now() - interval '5 days'; v_track text; r record; v_before numeric;
+begin
+  v_track := pg_temp.track(v_start, 1200, 0.00002);
+  perform public.course_share('내 코스', '서울', 42, 0, v_track);
+  perform public.record_session(v_start, v_start + interval '1201 seconds', 2600, 1201, v_track, 0, 1, '', false);
+  v_before := (select balance from public.my_economy());
+  perform public.course_run_submit(v_track, v_start);
+  perform pg_temp.ok((select balance from public.my_economy()) = v_before, '내가 만든 코스는 보상이 없다');
+end $$;
+reset role;
+
+-- (5)(6) 계정을 지워도 지갑은 다시 못 쓰고, 체인 작업 기록은 남는다
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_ops
+                       where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') > 0, '지우기 전 작업 기록');
+end $$;
+set role authenticated;
+call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
+do $$ begin perform public.account_delete(); end $$;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+do $$ begin perform public.account_delete(); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_ops where user_id is null) > 0,
+    '계정을 지워도 체인 작업 기록은 남는다 (신발을 다른 사람이 가져간 경우 포함)');
+  perform pg_temp.ok(exists (select 1 from public.market_sneakers where token_id = 7),
+    '체인에 나간 적 있는 신발 기록은 남는다');
+  perform pg_temp.ok(exists (select 1 from public.wallet_history
+                              where address = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' and user_id is null),
+    '지운 계정의 지갑 기록이 남는다');
+end $$;
+insert into auth.users (id, email) values ('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3', 'fc@test');
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+do $$
+declare v_msg text;
+begin
+  v_msg := public.wallet_link_challenge();
+  insert into fix (k, v) values ('nonce_c', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
+end $$;
+select set_config('request.jwt.claims', '', false);
+reset role;
+set role stepup_attester;
+call pg_temp.must_fail(
+  format($q$ select public.attester_wallet_link('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3',
+            '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_c')),
+  '지운 계정이 쓰던 지갑을 새 계정에 붙여 보너스를 다시 받을 수 없다');
+reset role;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

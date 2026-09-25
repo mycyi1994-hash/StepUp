@@ -56,3 +56,6 @@ echo "── setup.sql 재적용 (다시 붙여넣어도 안전한가) ───
 run -f "$RUNDIR/setup.sql" >/dev/null
 echo "OK"
 run -f "$RUNDIR/schema_test.sql"
+echo "── setup.sql 재적용 (기록이 쌓인 데이터베이스에서도 배포가 멈추지 않는가) ──"
+run -f "$RUNDIR/setup.sql" >/dev/null
+echo "OK"

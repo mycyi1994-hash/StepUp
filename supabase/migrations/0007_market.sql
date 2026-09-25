@@ -77,11 +77,14 @@ create or replace function economy.market_min_price() returns numeric
 -- 잠금을 따로 두지 않고 원장의 음수로 적는 이유는, 잔고가 곧 원장의 합이기
 -- 때문이다. 잠근 만큼 잔고가 줄어 있으므로 잠긴 돈을 두 번 쓸 수 없다.
 alter table public.sup_ledger drop constraint if exists sup_ledger_kind_check;
+-- not valid: 이 파일은 배포 때마다 다시 돈다. 뒤 파일(0022)이 종류를 더 늘린 뒤에
+-- 여기서 옛 목록으로 기존 줄을 검사하면 배포가 통째로 멈춘다. 새 줄만 검사하고,
+-- 전체 검사는 최종 목록을 거는 0022 가 한다.
 alter table public.sup_ledger add constraint sup_ledger_kind_check check (kind in (
   'EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL',
   'SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST',
   'ESCROW_LOCK', 'ESCROW_UNLOCK', 'TRADE_BUY', 'TRADE_SELL', 'TRADE_FEE'
-));
+)) not valid;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 등록부 — 거래소가 아는 스니커즈
