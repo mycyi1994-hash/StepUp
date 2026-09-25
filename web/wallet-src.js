@@ -186,7 +186,7 @@ async function renderWallet(userId) {
     api.rpc('my_economy'),
     api.rpc('my_wallet'),
     api.rpc('my_sneakers'),
-    api.select('chain_ops?select=id,kind,status,amount,tx_hash,created_at&order=created_at.desc&limit=8'),
+    api.select('chain_ops?select=id,kind,status,amount,tx_hash,deadline,created_at&order=created_at.desc&limit=8'),
   ])
   const sections = []
 
@@ -246,7 +246,7 @@ async function renderWallet(userId) {
     }, 'SUP 꺼내기')),
     withdrawable.length
       ? el('ul', { class: 'list' }, withdrawable.map((s) => el('li', {},
-          el('span', {}, `${RARITY_KO[s.rarity] ?? s.rarity} Lv${s.level} · 효율성 +${(s.efficiency_bps / 100).toFixed(1)}% · 내구도 ${Math.round(s.durability)}${s.genesis_no ? ` · Genesis #${s.genesis_no}` : ''}`),
+          el('span', {}, `${RARITY_KO[s.rarity] ?? s.rarity} Lv${s.level}${Number.isFinite(s.efficiency_bps) ? ` · 효율성 +${(s.efficiency_bps / 100).toFixed(1)}%` : ''} · 내구도 ${Math.round(s.durability)}${s.genesis_no ? ` · Genesis #${s.genesis_no}` : ''}`),
           el('button', {
             class: 'secondary small',
             onclick: (e) => guard(e.target, async () => runOp(await api.rpc('sneaker_withdraw_request', { p_sneaker_id: s.id }), '신발 꺼내기')),
@@ -326,9 +326,19 @@ async function renderWallet(userId) {
   ))
 
   if (ops?.length) {
-    sections.push(card('최근 작업', el('ul', { class: 'list' }, ops.map((o) => el('li', {},
-      el('span', {}, `${{ SUP_WITHDRAW: 'SUP 꺼내기', SNEAKER_WITHDRAW: '신발 꺼내기', BONUS_MINT: '보너스 뽑기' }[o.kind] ?? o.kind}${o.amount ? ` ${formatSup(o.amount)} SUP` : ''} — ${opStatusLabel(o.status)}`),
-      o.tx_hash ? explorerTx(o.tx_hash) : null)))))
+    const KIND = { SUP_WITHDRAW: 'SUP 꺼내기', SNEAKER_WITHDRAW: '신발 꺼내기', BONUS_MINT: '보너스 뽑기' }
+    sections.push(card('최근 작업', el('ul', { class: 'list' }, ops.map((o) => {
+      const label = KIND[o.kind] ?? o.kind
+      // 예약만 되고 체인에 못 보낸 작업(연결이 끊겼을 때)은 유효 시간 안이면 다시 보낼 수 있다.
+      // 같은 작업 번호라 체인은 한 번만 받는다.
+      const resumable = (o.status === 'RESERVED' || o.status === 'SIGNED') && !o.tx_hash && new Date(o.deadline) > new Date()
+      return el('li', {},
+        el('span', {}, `${label}${o.amount ? ` ${formatSup(o.amount)} SUP` : ''} — ${opStatusLabel(o.status)}`),
+        o.tx_hash ? explorerTx(o.tx_hash) : null,
+        resumable
+          ? el('button', { class: 'secondary small', onclick: (e) => guard(e.target, () => runOp(o.id, label)) }, '다시 보내기')
+          : null)
+    }))))
   }
 
   app.replaceChildren(...sections)
