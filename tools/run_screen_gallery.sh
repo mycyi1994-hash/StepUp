@@ -106,9 +106,13 @@ mkdir -p screen-gallery/forms
 pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
 fi
 if [[ "$suite" == "all" || "$suite" == "gallery" ]]; then
-run_instrumentation gallery "com.stepup.android.ScreenGalleryTest"
-mkdir -p screen-gallery/gallery-results
-cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-results/ || true
+run_instrumentation gallery-edge "com.stepup.android.ScreenGalleryTest#edgeStates"
+mkdir -p screen-gallery/gallery-edge-results
+cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-edge-results/ || true
+pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
+run_instrumentation gallery-base "com.stepup.android.ScreenGalleryTest#allScreens"
+mkdir -p screen-gallery/gallery-base-results
+cp -R app/build/outputs/androidTest-results/. screen-gallery/gallery-base-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
 fi
 # Real system font enlargement reaches separate Dialog windows, unlike a

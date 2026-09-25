@@ -149,8 +149,13 @@ fun CustomizeScreen(
     val canEquip = if (tab == 0) true else pickedShoe != null
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-        val compact = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.2f
-        val previewHeight = maxHeight * (if (compact) 0.38f else StepUpDesign.WardrobePreviewFraction)
+        // Keep the feet on the dry terrace when text grows. The product grid can
+        // scroll, but collapsing this stage to 38% places the character over water.
+        val previewHeight = maxHeight * when {
+            maxHeight < 520.dp -> 0.38f
+            LocalDensity.current.fontScale > 1.2f -> 0.50f
+            else -> StepUpDesign.WardrobePreviewFraction
+        }
         Column(
             Modifier.fillMaxSize(),
         ) {

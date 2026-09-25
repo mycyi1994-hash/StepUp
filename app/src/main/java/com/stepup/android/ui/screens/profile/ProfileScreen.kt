@@ -228,9 +228,10 @@ fun ProfileScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    // Reserve room for identity, totals and the three destinations before giving art the rest.
-    val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
-        .coerceIn(220.dp, 360.dp)
+    // Keep the standing runner's feet on the terrace in the shared scene.
+    // The identity and destinations below remain in the scrollable column.
+    val artworkHeight = (maxHeight - 280.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(220.dp, 420.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),

@@ -47,7 +47,7 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
-            if [ "${{ matrix.suite }}" = "wardrobe" ]; then adb shell wm size 1080x2400; fi
+            if [ "${{ matrix.suite }}" = "wardrobe" ] || [ "${{ matrix.suite }}" = "gallery" ]; then adb shell wm size 1080x2400; fi
             bash tools/run_screen_gallery.sh ${{ matrix.suite }}
       - uses: actions/upload-artifact@v4
         if: always()

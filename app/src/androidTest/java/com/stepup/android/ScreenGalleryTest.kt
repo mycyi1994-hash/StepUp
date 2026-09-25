@@ -9,7 +9,7 @@ import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -24,6 +24,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.AvatarGender
+import com.stepup.android.domain.Comment
+import com.stepup.android.domain.CommentThread
+import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.MainScaffold
@@ -42,6 +45,8 @@ import com.stepup.android.ui.screens.settings.*
 import com.stepup.android.ui.screens.login.LoginScreen
 import com.stepup.android.ui.screens.splash.SplashScreen
 import com.stepup.android.ui.screens.map.MapScreen
+import com.stepup.android.ui.screens.map.MapViewModel
+import com.stepup.android.ui.screens.map.TerritoryState
 import com.stepup.android.ui.screens.market.MarketModelScreen
 import com.stepup.android.ui.screens.customize.*
 import com.stepup.android.ui.theme.*
@@ -213,11 +218,11 @@ class ScreenGalleryTest {
                 LocalActivityResultRegistryOwner provides compose.activity,
                 LocalOnBackPressedDispatcherOwner provides compose.activity,
                 LocalContext provides localized, LocalConfiguration provides config,
-                LocalDensity provides Density(1.8f, 1f),
+                LocalDensity provides Density(LocalDensity.current.density, 1f),
             ) {
                 StepUpTheme(ThemeMode.DARK) {
                     ExperienceProvider {
-                        Box(Modifier.requiredSize(390.dp, 844.dp).background(Night).testTag("gallery")) {
+                        Box(Modifier.fillMaxSize().background(Night).testTag("gallery")) {
                             key(screen, revision) { Scene(screen) }
                         }
                     }
@@ -369,6 +374,86 @@ class ScreenGalleryTest {
         }
         File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
         org.junit.Assert.assertTrue("Missing gallery states:\n${failures.joinToString("\n")}", failures.isEmpty())
+    }
+
+    /** Nine previously unrecorded comment, report, board and territory states. */
+    @Test fun edgeStates() {
+        runBlocking {
+            ServiceLocator.userPrefs.setReducedMotion(true)
+            ServiceLocator.userPrefs.setSounds(false)
+            ServiceLocator.userPrefs.setHaptics(false)
+            ServiceLocator.userPrefs.setLoginMethod("guest")
+            ServiceLocator.userPrefs.setGuideSeen()
+            TestData.seedCommunity()
+        }
+        val post = ServiceLocator.communityRepository.posts.value.first { it.id == 102L }
+        val parent = Comment(2001L, post.id, 0L, "Ara Kim", "u-ara", "오늘 코스 정말 좋았어요.", System.currentTimeMillis(), false)
+        val reply = Comment(2002L, post.id, parent.id, "Bo Lee", "u-bo", "저도 다음에 함께 달릴게요!", System.currentTimeMillis(), false)
+        val mapViewModel = MapViewModel(
+            ServiceLocator.communityRepository,
+            ServiceLocator.courseRepository,
+            ServiceLocator.territoryApi,
+        )
+        var edge by mutableStateOf("comments-empty")
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) {
+                ExperienceProvider {
+                    Box(Modifier.fillMaxSize().background(Night)) {
+                        when (edge) {
+                            "comments-empty", "comments-replies" -> {
+                                MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
+                                CommentSheet(
+                                    post = post,
+                                    threads = if (edge == "comments-empty") emptyList() else listOf(CommentThread(parent, listOf(reply))),
+                                    focusCommentId = if (edge == "comments-replies") reply.id else 0L,
+                                    onSend = { _, _ -> }, onDeleteComment = {}, onDismiss = {},
+                                )
+                            }
+                            "report" -> {
+                                MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
+                                ReportDialog(
+                                    authorName = post.author, canBlock = true,
+                                    onDismiss = {}, onReason = {}, onBlock = {},
+                                )
+                            }
+                            "board" -> MainScaffold(initialTab = com.stepup.android.ui.Screen.Community)
+                            "map" -> MapScreen(viewModel = mapViewModel)
+                        }
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.comments_empty)).assertIsDisplayed()
+        capture("extra-community-comments-empty")
+        compose.runOnIdle { edge = "comments-replies" }
+        compose.onNodeWithText(reply.body).assertIsDisplayed()
+        capture("extra-community-comments-replies")
+        compose.runOnIdle { edge = "report" }
+        compose.onNodeWithText(compose.activity.getString(R.string.report_title)).assertIsDisplayed()
+        capture("extra-community-report-dialog")
+
+        compose.runOnIdle { edge = "board" }
+        compose.onNodeWithText(compose.activity.getString(R.string.community_stories)).performClick()
+        ServiceLocator.communityRepository.showBoardStateForTest(BoardSyncState.Failed("gallery"))
+        compose.onNodeWithText(compose.activity.getString(R.string.board_load_failed)).assertIsDisplayed()
+        capture("extra-community-board-load-failed")
+        ServiceLocator.communityRepository.showBoardStateForTest(BoardSyncState.SignInRequired)
+        compose.onNodeWithText(compose.activity.getString(R.string.board_sign_in_needed)).assertIsDisplayed()
+        capture("extra-community-board-sign-in")
+
+        compose.runOnIdle { edge = "map" }
+        mapViewModel.select(com.stepup.android.ui.screens.map.MapMode.TERRITORY)
+        compose.waitForIdle()
+        for ((name, state, message) in listOf(
+            Triple("sign-in", TerritoryState.SignIn, R.string.map_territory_sign_in),
+            Triple("zoom-in", TerritoryState.ZoomIn, R.string.map_territory_zoom),
+            Triple("empty", TerritoryState.Ready(emptyList()), R.string.map_territory_empty),
+            Triple("load-failed", TerritoryState.Failed, R.string.map_territory_failed),
+        )) {
+            mapViewModel.showTerritoryForTest(state)
+            compose.onNodeWithText(compose.activity.getString(message)).assertIsDisplayed()
+            capture("extra-map-territory-$name")
+        }
     }
 
     private fun tap(resource: Int) {

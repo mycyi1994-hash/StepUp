@@ -207,7 +207,7 @@ class ChromeNavigationTest {
             )
             compose.waitForIdle()
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().assertHasClickAction()
-            compose.onNodeWithTag("run-result-reward").assertTextEquals("—")
+            compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("—")
             capture("${next.width}-${next.font}-${next.mode}-result-pending")
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
@@ -216,7 +216,7 @@ class ChromeNavigationTest {
                 ),
             )
             compose.waitForIdle()
-            compose.onNodeWithTag("run-result-reward").assertTextEquals("0")
+            compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("0")
             capture("${next.width}-${next.font}-${next.mode}-result-void")
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().performClick()
             compose.waitForIdle()

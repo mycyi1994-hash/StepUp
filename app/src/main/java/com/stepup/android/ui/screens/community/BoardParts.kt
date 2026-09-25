@@ -92,8 +92,26 @@ fun ReportDialogHost(viewModel: CommunityViewModel) {
     val target by viewModel.reportTarget.collectAsStateWithLifecycle()
     val current = target ?: return
 
+    ReportDialog(
+        authorName = current.authorName,
+        canBlock = current.authorId.isNotBlank(),
+        onDismiss = viewModel::dismissReport,
+        onReason = viewModel::submitReport,
+        onBlock = viewModel::blockReported,
+    )
+}
+
+/** Shared report content; keeping it independent also lets the gallery inspect this state. */
+@Composable
+fun ReportDialog(
+    authorName: String,
+    canBlock: Boolean,
+    onDismiss: () -> Unit,
+    onReason: (ReportReason) -> Unit,
+    onBlock: () -> Unit,
+) {
     AlertDialog(
-        onDismissRequest = viewModel::dismissReport,
+        onDismissRequest = onDismiss,
         containerColor = Carbon,
         shape = RoundedCornerShape(com.stepup.android.ui.theme.StepUpDesign.DialogRadius),
         titleContentColor = Snow,
@@ -118,27 +136,27 @@ fun ReportDialogHost(viewModel: CommunityViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 48.dp)
-                            .quietClickable { viewModel.submitReport(reason) }
+                            .quietClickable { onReason(reason) }
                             .padding(vertical = 10.dp),
                     )
                 }
-                if (current.authorId.isNotBlank()) {
+                if (canBlock) {
                     Text(
-                        text = stringResource(R.string.report_block, current.authorName),
+                        text = stringResource(R.string.report_block, authorName),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Alert,
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 48.dp)
-                            .quietClickable(viewModel::blockReported)
+                            .quietClickable(onBlock)
                             .padding(vertical = 12.dp),
                     )
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = viewModel::dismissReport) {
+            TextButton(onClick = onDismiss) {
                 Text(
                     text = stringResource(R.string.common_cancel),
                     color = Volt,

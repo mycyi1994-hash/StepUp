@@ -1103,7 +1103,7 @@ private fun FinishCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        GlowCard(contentPadding = PaddingValues(16.dp)) {
+        GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
           Column(
               modifier = Modifier.fillMaxWidth(),
               horizontalAlignment = Alignment.CenterHorizontally,
@@ -1122,7 +1122,7 @@ private fun FinishCard(
                     rejected -> "0"
                     else -> "—"
                 },
-                fontSize = 44.sp, modifier = Modifier.testTag("run-result-reward"),
+                fontSize = 32.sp, modifier = Modifier.testTag("run-result-reward"),
                 color = com.stepup.android.ui.theme.VoltText, textAlign = TextAlign.Center,
             )
             Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
@@ -1152,19 +1152,31 @@ private fun FinishCard(
             pose = if (voided) AvatarPose.IDLE else AvatarPose.CHEER,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 200.dp else 240.dp),
+                .height(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 170.dp else 200.dp),
             characterFraction = 0.9f,
             skyline = false,
             animate = false,
         )
 
-        // Each complete value remains readable on compact screens and with large text.
-        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
-            FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
-            HairlineDivider()
-            FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
-            HairlineDivider()
-            FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
+        // Keep the three activity results together in the first viewport. Stack
+        // only when a narrow screen or enlarged type needs the full line width.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
+            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+                if (stacked) {
+                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
+                    HairlineDivider()
+                    FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
+                    HairlineDivider()
+                    FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km", Modifier.weight(1f))
+                        FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "", Modifier.weight(1f))
+                        FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
+                    }
+                }
+            }
         }
         GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
             Text(stringResource(R.string.finish_balance), style = MaterialTheme.typography.bodyMedium, color = Silver)
