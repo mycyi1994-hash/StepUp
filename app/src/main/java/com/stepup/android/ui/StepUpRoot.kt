@@ -791,11 +791,22 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     }
     val equalWidth = maxWidth.value / labels.size
     val minimumWidth = StepUpDesign.TouchTarget.value
-    val extra = (maxWidth.value - minimumWidth * labels.size).coerceAtLeast(0f)
-    val needs = preferredWidths.map { (it - minimumWidth).coerceAtLeast(0f) }
-    val totalNeed = needs.sum().coerceAtLeast(1f)
-    val widths = if (preferredWidths.all { it <= equalWidth }) labels.map { equalWidth } else
-        needs.map { minimumWidth + extra * it / totalNeed }
+    val widths = if (preferredWidths.all { it <= equalWidth }) labels.map { equalWidth } else {
+        val giftWidth = preferredWidths.last().coerceIn(minimumWidth,
+            (maxWidth.value - minimumWidth * bottomTabs.size).coerceAtLeast(minimumWidth))
+        val sideWidth = (maxWidth.value - giftWidth) / 2f
+        fun pairWidths(start: Int): List<Float> {
+            val preferred = preferredWidths.subList(start, start + 2)
+            val spare = sideWidth - preferred.sum()
+            if (spare >= 0f) return preferred.map { it + spare / 2f }
+            val needs = preferred.map { (it - minimumWidth).coerceAtLeast(0f) }
+            val available = (sideWidth - minimumWidth * 2f).coerceAtLeast(0f)
+            val totalNeed = needs.sum().coerceAtLeast(1f)
+            return needs.map { minimumWidth + available * it / totalNeed }
+        }
+        // Both sides occupy equal width, so the draw action stays at screen center.
+        pairWidths(0) + pairWidths(2) + giftWidth
+    }
     val labelHeightPx = bottomTabs.mapIndexed { index, screen ->
         val labelWidth = with(density) { (widths[index].dp - 8.dp).roundToPx().coerceAtLeast(1) }
         measurer.measure(
@@ -868,7 +879,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit, slotWeight: Float) {
     val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
     Column(
-        modifier = Modifier.weight(slotWeight)
+        modifier = Modifier.weight(slotWeight).testTag("nav-draw-action")
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
             .heightIn(min = StepUpDesign.NavigationItemHeight)

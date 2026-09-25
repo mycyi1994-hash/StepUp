@@ -245,6 +245,10 @@ class DesignReferenceTest {
     /** Guard the visible regressions from the independent visual review. */
     private fun assertReviewedLayout(scene: Scene, enlarged: Boolean) {
         if (scene == Scene.HOME) {
+            val nav = compose.onNodeWithTag(BOTTOM_NAV_TAG).getUnclippedBoundsInRoot()
+            val draw = compose.onNodeWithTag("nav-draw-action").getUnclippedBoundsInRoot()
+            assertTrue("Draw action must stay centered at every font size",
+                kotlin.math.abs((draw.left + draw.right - nav.left - nav.right).value) <= 2f)
             val nodes = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile).map {
                 compose.onNodeWithTag("nav-label-${it.route}", useUnmergedTree = true).fetchSemanticsNode()
             }
