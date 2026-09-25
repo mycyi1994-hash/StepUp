@@ -122,6 +122,7 @@ class StepUpServer(
         partySize: Int,
         faction: String,
         expectedUserId: String,
+        mockLocation: Boolean = false,
     ): ServerResult<SessionRecorded> {
         val body = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
@@ -132,6 +133,7 @@ class StepUpServer(
             put("p_boost_bps", boostBps)
             put("p_party_size", partySize)
             put("p_faction", faction)
+            put("p_mock_location", mockLocation)
         }
 
         return authed(expectedUserId) { token ->

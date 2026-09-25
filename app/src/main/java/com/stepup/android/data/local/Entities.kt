@@ -90,6 +90,14 @@ data class WalkSessionEntity(
     val claimDay: Long = 0,
     /** 이 서명이 유효한 마지막 시각 (epoch 초) */
     val claimDeadline: Long = 0,
+    /**
+     * 러닝 중 폰이 모의 위치(가짜 GPS 앱)를 알려 왔는가.
+     *
+     * 폰은 좌표마다 "이건 모의 위치다"라는 표시를 붙여 준다. 한 번이라도 보였다면
+     * 이 러닝은 적립하지 않고, 서버에도 그대로 알린다(record_session p_mock_location).
+     */
+    @ColumnInfo(defaultValue = "0")
+    val mockLocation: Boolean = false,
 )
 
 /**
