@@ -489,12 +489,9 @@ describe("RewardDistributor — claiming", () => {
       .withArgs(eth(120), 0n);
   });
 
-  it("can be paused, and only by the owner", async () => {
+  it("can be paused, and only by the owner or guardian", async () => {
     const { distributor, attester, runner, other } = await funded();
-    await expect(distributor.connect(other).pause()).to.be.revertedWithCustomError(
-      distributor,
-      "OwnableUnauthorizedAccount",
-    );
+    await expect(distributor.connect(other).pause()).to.be.revertedWithCustomError(distributor, "NotGuardian");
     await distributor.pause();
     const c = await claimFor(runner);
     const sig = await signClaim(attester, await distributor.getAddress(), c);

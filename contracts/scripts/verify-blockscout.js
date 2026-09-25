@@ -270,7 +270,7 @@ async function main() {
   }
 
   const net = hre.network.name;
-  const file = path.join(__dirname, "..", "deployments", `${net}.json`);
+  const file = path.join(__dirname, "..", "deployments", `${process.env.DEPLOYMENT || net}.json`);
   if (!fs.existsSync(file)) {
     throw new Error(`배포 기록이 없습니다: ${path.relative(process.cwd(), file)}`);
   }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /**
  * @title CourseRegistry
@@ -27,7 +28,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * completion is only meaningful if the same GPS plausibility checks that gate a
  * reward also gate the counter. Authorship is not: anyone may create a course.
  */
-contract CourseRegistry is Ownable {
+contract CourseRegistry is Ownable2Step {
     /// @notice SUP paid per kilometre completed.
     uint256 public constant SUP_PER_KM = 1 ether;
 

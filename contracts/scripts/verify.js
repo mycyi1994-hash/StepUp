@@ -121,7 +121,7 @@ async function verifyOne(name, contract, explorer) {
 
 async function main() {
   const net = hre.network.name;
-  const file = path.join(__dirname, "..", "deployments", `${net}.json`);
+  const file = path.join(__dirname, "..", "deployments", `${process.env.DEPLOYMENT || net}.json`);
 
   if (!fs.existsSync(file)) {
     throw new Error(
