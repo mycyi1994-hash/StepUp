@@ -838,3 +838,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Actual compact captures exposed oversized home/shoe previews and banner controls overlapping copy. Compacted record/goal spacing, used a horizontal shoe preview for normal text, sized the banner to available height, and moved scenery arrows above the copy. Large text remains scrollable.
 - Collected 112 reference PNGs (56 viewport/state combinations on each OS), original result XML, raw text-overflow signals and logs. Prepared a local original-image gallery plus normal/large-text contact sheets. Evidence and known limitations: CHARACTER-FREE-STAGE4-2026-09-25-KO.md.
 - Source design/string/media checks pass. This is primary-scene/device evidence, not approval of every secondary screen, every raw text-overflow signal, all locales/themes, real outdoor GPS or wallet/backend transactions. Claude visual review is next. No main merge, public release upload or deployment.
+
+## 2026-09-25 — stage 5: Claude visual review returned
+
+- Prepared a portable reference/capture comparison package: 10 mockups, 112 native captures, eight source snapshots, evidence and mappings. Executed Claude Code with read/search tools only in the package directory and received an actual review; this is not a simulated Claude verdict.
+- Verdict: changes requested. Six findings consolidate into four required layout groups (large-text navigation, compact running, profile density/duplicate entry, community sign-in notice) and one optional banner-spacing polish. No app-source changes in this stage; verified `app/src` still matches `6e327f6`.
+- Preserved Claude's original report and separately corrected its five-versus-six-slot calculation and accessibility/regression risks in the proposed remedies. Do not blindly shrink navigation text to 11sp or restore centered banner arrows.
+- See CHARACTER-FREE-STAGE5-2026-09-25-KO.md and CLAUDE-VISUAL-REVIEW-2026-09-25.md. The review is bounded primary-screen coverage, not a whole-app release approval. Next: apply the four required layout groups and recapture the affected screens. No new CI/APK, main merge or public release.
