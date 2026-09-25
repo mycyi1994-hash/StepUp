@@ -1473,6 +1473,7 @@ Start running with StepUp.</string>
     <string name="map_waiting_body">Once GPS locks on, the route you actually run is drawn here.</string>
     <string name="finish_pending_short">Awaiting server check</string>
     <string name="finish_no_reward">Checked by server · no reward for this run</string>
+    <string name="finish_no_steps">No steps counted · no reward for this run</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">Have a great day.</string>

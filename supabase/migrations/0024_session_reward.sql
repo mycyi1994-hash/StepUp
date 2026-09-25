@@ -180,6 +180,8 @@ declare
   v_energy_used numeric := 0;
   v_xp numeric := 1;
   v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
   v_new_account boolean;
 begin
   if v_user is null then
@@ -307,6 +309,7 @@ begin
        and s.started_at > now() - interval '7 days';
     if v_recent_void >= 5 then
       v_rewardable := 0;
+      v_held := true;
       v_verdict := 'FLAGGED';
       v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
     end if;
@@ -401,7 +404,7 @@ begin
   if v_verdict = 'VOID' then v_distance_m := 0; end if;
 
   -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
-  if v_gps_backed then
+  if v_gps_backed and not v_held then
     select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
       into v_cap_left
       from public.walk_sessions s
@@ -424,7 +427,7 @@ begin
     '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable,
     coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
-    v_gps_backed, case when v_gps_backed then v_verified else 0 end, v_credit_m, v_party_id
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id
   )
   returning id into v_session_id;
 
@@ -563,9 +566,11 @@ begin
     ), 0);
   elsif p_event = 'night_quest' then
     return coalesce((
+      -- 경로가 받쳐 준 러닝만 — 걸음만 있는 러닝의 거리(걸음 × 0.762)는 폰이 지어낼 수 있다
       select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
        where s.user_id = v_user
          and s.verdict not in ('FLAGGED', 'VOID')
+         and s.gps_backed
          and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
     ), 0);
   end if;

@@ -438,9 +438,13 @@ class CrewRepository(
         while (true) {
             val before = _party.value
             if (before.partyId != partyId) return
-            if (before.phase == PartyPhase.RUNNING) {
+            // 이 폰이 실제로 뛰는 중일 때만 위치를 보낸다 — 서버는 출발 2분 뒤에도 위치를 보낸 사람을
+            // 파티 인원으로 센다(0032). 준비만 누르고 뛰지 않는 폰이 방에 남아 보내면 남의 보너스가 된다.
+            val running = com.stepup.android.service.WalkSessionService.state.value
+                .let { it.isActive && !it.isPaused }
+            if (before.phase == PartyPhase.RUNNING && running) {
                 val here = currentLocation()
-                partyApi.ping(partyId, here?.lat, here?.lng)
+                if (here != null) partyApi.ping(partyId, here.lat, here.lng)
             }
             when (val result = partyApi.state(partyId)) {
                 is ServerResult.Ok -> applyRoom(result.value)

@@ -1878,14 +1878,18 @@ call pg_temp.must_fail(
 reset role;
 
 -- 밤 9시(서울)에 21km 뛴 기록 하나와, 판정에서 걸린 30km 기록 하나
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_backed)
 values
   ('44444444-4444-4444-4444-444444444444',
    (date '2026-09-01' + time '21:00') at time zone 'Asia/Seoul',
-   (date '2026-09-01' + time '23:00') at time zone 'Asia/Seoul', 7200, 25000, 21000, 'CLEAN'),
+   (date '2026-09-01' + time '23:00') at time zone 'Asia/Seoul', 7200, 25000, 21000, 'CLEAN', true),
   ('44444444-4444-4444-4444-444444444444',
    (date '2026-09-02' + time '21:00') at time zone 'Asia/Seoul',
-   (date '2026-09-02' + time '23:00') at time zone 'Asia/Seoul', 7200, 30000, 30000, 'FLAGGED');
+   (date '2026-09-02' + time '23:00') at time zone 'Asia/Seoul', 7200, 30000, 30000, 'FLAGGED', true),
+  -- 경로 없이 걸음만 있는 밤 러닝 — 거리를 폰이 지어낼 수 있어 세지 않는다
+  ('44444444-4444-4444-4444-444444444444',
+   (date '2026-09-03' + time '21:00') at time zone 'Asia/Seoul',
+   (date '2026-09-03' + time '23:00') at time zone 'Asia/Seoul', 7200, 30000, 22860, 'CLEAN', false);
 
 set role authenticated;
 call pg_temp.login('44444444-4444-4444-4444-444444444444');
@@ -1893,7 +1897,7 @@ do $$
 begin
   perform pg_temp.ok(
     round(public.event_progress('night_quest', 'Asia/Seoul')::numeric, 1) = 21.0,
-    '나이트 러너는 판정에서 걸린 세션을 빼고 센다');
+    '나이트 러너는 판정에서 걸린 세션 · 경로 없는 세션을 빼고 센다');
   perform pg_temp.ok(
     public.event_claim('night_quest', 'Asia/Seoul') = 300,
     '밤 20km 를 채우면 나이트 러너 보상이 나온다');
@@ -3325,6 +3329,69 @@ do $$ begin
   perform pg_temp.ok((select count(*) from public.market_quotes) >= 0, '호가 뷰는 그대로 읽힌다');
   perform pg_temp.ok((select count(*) from public.market_asks) >= 0, '매물 뷰는 그대로 읽힌다');
   perform pg_temp.ok((select count(*) from public.my_sneakers()) >= 0, '내 신발은 그대로 읽힌다');
+end $$;
+reset role;
+
+-- ── 2026-09-25 점검 (1차) ──
+-- 무효가 잦아 보류된 러닝은 목표 · 주간 도전 · 코스 보상에도 세지 않는다
+reset role;
+insert into auth.users (id, email) values ('e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5', 'hold@test') on conflict do nothing;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+select 'e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5', now() - make_interval(hours => 30 + i), now() - make_interval(hours => 30 + i) + interval '10 minutes',
+       600, 1000, 'VOID'
+  from generate_series(1, 5) i;
+set role authenticated;
+call pg_temp.login('e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5');
+do $$
+declare r record; v_start timestamptz := now() - interval '5 hours';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '600 seconds', 1200, 600,
+    pg_temp.track(v_start, 600, 0.00003), 0, 1, '', false);
+  perform pg_temp.ok(
+    (select backed_steps = 0 and gps_credit_m = 0 and verdict = 'FLAGGED' from public.walk_sessions where id = r.session_id),
+    '무효가 잦아 보류된 러닝은 목표 · 도전 · 코스 · 잠금 거리에 세지 않는다');
+end $$;
+reset role;
+
+-- 크루 가입 · 댓글 · 글 — 표에 직접 쓰면 시각을 적거나 함수의 검사를 건너뛸 수 있었다 (0035)
+insert into fix (k, v)
+select 'other_post', (select p.id from public.posts p where p.category = 'FREE' and p.crew_id is null
+                        and p.id <> c.post_id order by p.id limit 1)::text
+  from public.comments c where c.post_id = pg_temp.fx('post_open')::bigint order by c.id limit 1
+on conflict (k) do update set v = excluded.v;
+insert into fix (k, v)
+select 'open_comment', min(id)::text from public.comments where post_id = pg_temp.fx('post_open')::bigint
+on conflict (k) do update set v = excluded.v;
+set role authenticated;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+call pg_temp.must_fail(
+  format($q$ insert into public.crew_members (crew_id, user_id, joined_at)
+             values ('%s', '33333333-3333-3333-3333-333333333333', '2000-01-01') $q$, pg_temp.fx('crew')),
+  '가입 시각을 직접 적어 방장 순번을 앞당길 수 없다');
+call pg_temp.must_fail(
+  format($q$ insert into public.comments (post_id, author_id, body, created_at)
+             values (%s, '33333333-3333-3333-3333-333333333333', '옛날 댓글', '2000-01-01') $q$, pg_temp.fx('post_open')),
+  '댓글 작성 시각을 직접 적을 수 없다');
+call pg_temp.must_fail(
+  format($q$ insert into public.comments (post_id, parent_id, author_id, body)
+             values (%s, %s, '33333333-3333-3333-3333-333333333333', '다른 글의 댓글에 답글') $q$,
+         pg_temp.fx('other_post'), pg_temp.fx('open_comment')),
+  '다른 글의 댓글에는 답글을 달 수 없다');
+call pg_temp.must_fail(
+  $q$ update public.posts set created_at = now() + interval '1 year' where author_id = auth.uid() $q$,
+  '글쓴이도 표를 직접 고칠 수 없다(작성 시각 · 분류 · 모임 시각)');
+reset role;
+
+-- 가장 오래 달린 순위는 걸음 하나에 1초까지만 센다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5', now() - interval '6 days', now() - interval '1 day', 432000, 0, 'CLEAN');
+set role authenticated;
+call pg_temp.login('e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5');
+do $$
+begin
+  perform pg_temp.ok(
+    coalesce((select active_sec from public.leaderboard('LONGEST_TIME', 1000, 'WEEK') where is_me limit 1), 0) < 3600,
+    '걸음 없는 며칠짜리 러닝으로 가장 오래 달린 순위를 차지할 수 없다');
 end $$;
 reset role;
 

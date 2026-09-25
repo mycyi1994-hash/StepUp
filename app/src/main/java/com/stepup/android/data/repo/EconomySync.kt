@@ -67,6 +67,15 @@ class EconomySync(
             is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
         }
 
+        // 다른 계정으로 다시 로그인했다 — 앞 계정의 사본(잔고 · 신발 · 부스터 · 받은 도전 · 알림)을 먼저 지운다.
+        // 안 지우면 새 계정이 앞 계정의 잔고를 보고, 앞 계정이 받은 도전을 "이미 받음"으로 못 받는다.
+        val owner = prefs.economyOwner()
+        if (owner != null && owner != userId) {
+            clearCopy()
+            db.notificationDao().clear()
+        }
+        if (owner != userId) prefs.setEconomyOwner(userId)
+
         if (bootstrapped != userId) {
             api.bootstrap().failure()?.let { return it }
             // 폰의 하루 목표를 서버에 맞춘다 — 목표 보너스를 서버가 이 값으로 판정한다(0030).
@@ -125,6 +134,12 @@ class EconomySync(
 
     /** 계정을 지웠을 때 — 그 계정의 사본(신발 · 원장 · 부스터 · 에너지 · 뽑기 횟수)을 폰에서 지운다 */
     suspend fun clearLocal() = lock.withLock {
+        clearCopy()
+        prefs.setEconomyOwner(null)
+        _state.value = EconomySyncState.SIGNED_OUT
+    }
+
+    private suspend fun clearCopy() {
         db.withTransaction {
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()
@@ -133,7 +148,6 @@ class EconomySync(
         }
         prefs.clearServerEconomy()
         bootstrapped = null
-        _state.value = EconomySyncState.SIGNED_OUT
     }
 
     /**

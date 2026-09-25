@@ -103,6 +103,8 @@ class UserPrefs(
         val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
         val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
         val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
+        /** 폰의 서버 경제 사본(잔고 · 신발 · 부스터 · 받은 도전)이 어느 계정 것인가 */
+        val ECONOMY_OWNER = stringPreferencesKey("economy_owner")
         val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
 
         // ── 러너 캐릭터 ──
@@ -622,6 +624,12 @@ class UserPrefs(
     val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
 
     /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
+    suspend fun economyOwner(): String? = store.data.map { it[Keys.ECONOMY_OWNER] }.first()
+
+    suspend fun setEconomyOwner(userId: String?) {
+        store.edit { if (userId == null) it.remove(Keys.ECONOMY_OWNER) else it[Keys.ECONOMY_OWNER] = userId }
+    }
+
     suspend fun legacyEconomyImported(userId: String): Boolean =
         store.data.map { userId in (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',') }.first()
 
@@ -651,7 +659,8 @@ class UserPrefs(
     /** Receipt and debit are one durable preference edit, safe to replay after a Room-ack failure. */
     suspend fun consumeRunEnergy(receiptId: String, energyDay: Long, amount: Double, today: Long = LocalDate.now().toEpochDay()) {
         require(receiptId.isNotBlank() && amount.isFinite() && amount >= 0)
-        require(energyDay <= today) { "Cannot apply a future energy receipt" }
+        // 영수증 날짜가 오늘보다 뒤(폰 날짜를 되돌림 · 서쪽으로 이동)면 오늘 에너지에서 빼지 않고 받은 것으로만
+        // 적는다 — 거절하면 이 영수증이 남아 그 뒤 모든 러닝의 저장이 날짜가 따라잡을 때까지 막힌다
         store.edit { prefs ->
             val receipts = prefs[Keys.RUN_ENERGY_RECEIPTS].orEmpty()
             if (receiptId !in receipts) {

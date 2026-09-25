@@ -114,10 +114,9 @@ class RunCheckpointStore(file: File) {
             val readable = runCatching { readLocked() }.isSuccess
             if (readable) return@withLock false
             val stamp = System.currentTimeMillis()
-            listOf(storage.baseFile, File(storage.baseFile.path + ".bak")).filter { it.exists() }.forEach {
-                it.renameTo(File(it.path + ".unreadable-$stamp"))
-            }
-            true
+            // 옮기지 못했으면 치운 것이 아니다 — 그대로 두면 새 러닝의 저장이 모두 이 파일에 막힌다
+            listOf(storage.baseFile, File(storage.baseFile.path + ".bak")).filter { it.exists() }
+                .all { it.renameTo(File(it.path + ".unreadable-$stamp")) }
         }
     }
 

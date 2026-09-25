@@ -88,7 +88,8 @@ as $$
       select
         s.user_id,
         max(s.top_speed_kmh) as top_speed_kmh,
-        sum(s.duration_sec) as active_sec
+        -- 걸음 하나에 1초까지만 — 걸음 없이 며칠짜리 러닝을 올려 "가장 오래"를 차지하지 못하게
+        sum(least(s.duration_sec, s.steps)) as active_sec
       from public.walk_sessions s
       -- 판정에서 떨어진 세션은 순위에 쓰지 않는다. 적립은 막아 놓고 순위는
       -- 올려 주면, 순위표는 막지 않은 쪽으로 뚫린다.
@@ -102,7 +103,7 @@ as $$
       -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
       -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
       select user_id, sum(amount) filter (
-               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL')
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE')
              ) as earned
         from public.sup_ledger
        where occurred_at >= (select since from win)

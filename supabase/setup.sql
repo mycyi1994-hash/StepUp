@@ -1625,7 +1625,8 @@ as $$
       select
         s.user_id,
         max(s.top_speed_kmh) as top_speed_kmh,
-        sum(s.duration_sec) as active_sec
+        -- 걸음 하나에 1초까지만 — 걸음 없이 며칠짜리 러닝을 올려 "가장 오래"를 차지하지 못하게
+        sum(least(s.duration_sec, s.steps)) as active_sec
       from public.walk_sessions s
       -- 판정에서 떨어진 세션은 순위에 쓰지 않는다. 적립은 막아 놓고 순위는
       -- 올려 주면, 순위표는 막지 않은 쪽으로 뚫린다.
@@ -1639,7 +1640,7 @@ as $$
       -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
       -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
       select user_id, sum(amount) filter (
-               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL')
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE')
              ) as earned
         from public.sup_ledger
        where occurred_at >= (select since from win)
@@ -7826,6 +7827,8 @@ declare
   v_energy_used numeric := 0;
   v_xp numeric := 1;
   v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
   v_new_account boolean;
 begin
   if v_user is null then
@@ -7953,6 +7956,7 @@ begin
        and s.started_at > now() - interval '7 days';
     if v_recent_void >= 5 then
       v_rewardable := 0;
+      v_held := true;
       v_verdict := 'FLAGGED';
       v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
     end if;
@@ -8047,7 +8051,7 @@ begin
   if v_verdict = 'VOID' then v_distance_m := 0; end if;
 
   -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
-  if v_gps_backed then
+  if v_gps_backed and not v_held then
     select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
       into v_cap_left
       from public.walk_sessions s
@@ -8070,7 +8074,7 @@ begin
     '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
     v_verdict, v_reason, v_points, v_rewardable,
     coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
-    v_gps_backed, case when v_gps_backed then v_verified else 0 end, v_credit_m, v_party_id
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id
   )
   returning id into v_session_id;
 
@@ -8209,9 +8213,11 @@ begin
     ), 0);
   elsif p_event = 'night_quest' then
     return coalesce((
+      -- 경로가 받쳐 준 러닝만 — 걸음만 있는 러닝의 거리(걸음 × 0.762)는 폰이 지어낼 수 있다
       select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
        where s.user_id = v_user
          and s.verdict not in ('FLAGGED', 'VOID')
+         and s.gps_backed
          and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
     ), 0);
   end if;
@@ -9715,9 +9721,12 @@ begin
   update public.party_members
      set lat = p_lat, lng = p_lng, last_seen = now()
    where party_id = p_party and user_id = auth.uid();
-  update public.party_runs
-     set last_ping = now()
-   where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  -- 위치가 있는 보고만 "뛰는 중"으로 친다
+  if p_lat is not null and p_lng is not null then
+    update public.party_runs
+       set last_ping = now()
+     where party_id = p_party and user_id = auth.uid() and starts_at <= now();
+  end if;
 end;
 $$;
 
@@ -9914,6 +9923,54 @@ create or replace function economy.mfa_ok() returns boolean
           and (a ->> 'timestamp') ~ '^[0-9]+$'
           and (a ->> 'timestamp')::bigint >= extract(epoch from now())::bigint - 900)
 $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0035_direct_write_limits.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0035 — 앱 권한으로 표에 직접 쓰는 길을 좁힌다 (2026-09-25 점검)
+--
+--  앱은 가입 · 댓글 · 글을 모두 서버 함수(crew_join · comment_create · post_create)로 쓴다.
+--  그런데 표 자체에도 쓰기 권한이 열려 있어, 함수가 하는 검사를 건너뛸 수 있었다.
+--    · crew_members: 가입 시각(joined_at)을 과거로 적어, 방장이 나가면 먼저 들어온 사람 대신
+--      방장이 된다. 숨긴(신고 누적) 크루에도 들어간다.
+--    · comments: 작성 시각을 적고, 다른 글의 댓글에 답글을 달고, 시간당 개수 제한을 건너뛴다.
+--    · posts: 글쓴이가 아무 칸이나 고친다(작성 시각 · 분류 · 번개 모임 시각 · 정원).
+--  시각 칸은 쓰지 못하게(기본값 now()), 답글은 같은 글의 댓글에만, 글 고치기는 막는다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- 크루 가입 — 가입 시각은 서버가 적는다
+revoke insert on public.crew_members from anon, authenticated;
+grant insert (crew_id, user_id, role) on public.crew_members to authenticated;
+
+drop policy if exists crew_members_join_self on public.crew_members;
+create policy crew_members_join_self on public.crew_members for insert
+  with check (
+    (select auth.uid()) = user_id
+    and role = 'MEMBER'
+    and exists (
+      select 1 from public.crews c
+       where c.id = crew_id and c.join_policy = 'OPEN'
+    )
+    and not public.is_hidden('CREW', crew_id::text)
+  );
+
+-- 댓글 — 작성 시각은 서버가, 답글은 같은 글의 댓글에만
+revoke insert on public.comments from anon, authenticated;
+grant insert (post_id, parent_id, author_id, body) on public.comments to authenticated;
+
+drop policy if exists comments_insert_own on public.comments;
+create policy comments_insert_own on public.comments for insert
+  with check (
+    (select auth.uid()) = author_id
+    and public.can_see_post(post_id)
+    and (parent_id is null or exists (
+      select 1 from public.comments p where p.id = parent_id and p.post_id = comments.post_id))
+  );
+
+-- 글 고치기 — 앱에는 고치는 기능이 없다(지우고 다시 쓴다)
+revoke update on public.posts from anon, authenticated;
 
 commit;
 

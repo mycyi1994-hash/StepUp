@@ -1472,6 +1472,7 @@ StepUp と走り出そう。</string>
     <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
     <string name="finish_pending_short">サーバー確認中</string>
     <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
+    <string name="finish_no_steps">歩数が記録されず、今回のランは付与なし</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">今日もいい一日を。</string>

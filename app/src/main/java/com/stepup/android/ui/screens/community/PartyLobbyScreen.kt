@@ -330,7 +330,8 @@ fun PartyLobbyScreen(
                                         modifier = Modifier.testTag("party-result-pending"),
                                     )
                                 }
-                                Text(
+                                // 걸음 · 파티 부스트는 폰의 예상치다 — 서버가 인원 · 에너지를 다시 따진 뒤(금액 확인)에만 보인다
+                                if (confirmed != null) Text(
                                     text = stringResource(
                                         R.string.crew_result_body,
                                         "%,d".format(party.resultSteps),

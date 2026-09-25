@@ -121,10 +121,19 @@ class MarketViewModel(private val repo: MarketRepository) : ViewModel() {
 
     fun cancelBid(bidId: Long) = act { repo.cancelBid(bidId) }
 
+    /** 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번째 거절이 첫 결과를 덮지 않게 */
+    private var acting = false
+
     private fun act(block: suspend () -> MarketOutcome) {
+        if (acting) return
+        acting = true
         viewModelScope.launch {
-            message.value = block().say()
-            refresh()
+            try {
+                message.value = block().say()
+                refresh()
+            } finally {
+                acting = false
+            }
         }
     }
 
@@ -228,10 +237,19 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
         act { repo.placeBid(key, minLevel, price) }
     }
 
+    /** 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번 사고, 두 번째 거절이 첫 성공을 덮지 않게 */
+    private var acting = false
+
     private fun act(block: suspend () -> MarketOutcome) {
+        if (acting) return
+        acting = true
         viewModelScope.launch {
-            message.value = block().say()
-            load()
+            try {
+                message.value = block().say()
+                load()
+            } finally {
+                acting = false
+            }
         }
     }
 

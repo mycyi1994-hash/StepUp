@@ -991,7 +991,7 @@ fun TokenCard(
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text("StepUp Token", color = Silver, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             Text(
-                text = "%,.2f".format(balance),
+                text = formatSupDown(balance, 2),
                 fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                 color = Snow,
                 fontSize = 19.sp,

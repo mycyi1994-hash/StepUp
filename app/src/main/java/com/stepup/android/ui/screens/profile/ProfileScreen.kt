@@ -1100,7 +1100,7 @@ private fun PointsCard(balance: Double, onOpen: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HexEmblem(size = 30.dp)
             Text(
-                text = "%,.0f".format(balance),
+                text = com.stepup.android.ui.components.formatSupDown(balance),
                 fontFamily = StepUpNumbers,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
