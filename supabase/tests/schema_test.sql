@@ -1897,8 +1897,10 @@ begin
   perform pg_temp.ok(
     public.event_claim('night_quest', 'Asia/Seoul') = 300,
     '밤 20km 를 채우면 나이트 러너 보상이 나온다');
+  -- 한국 시각 월요일에는 주간 도전을 받지 못했다(위) — 나이트 러너 하나만 있다
   perform pg_temp.ok(
-    (select count(*) from public.event_claims) = 2,
+    (select count(*) from public.event_claims)
+      = case when extract(isodow from (now() at time zone 'Asia/Seoul')::date) = 1 then 1 else 2 end,
     '받은 기록은 본인이 읽을 수 있다');
 end $$;
 reset role;
@@ -1907,8 +1909,9 @@ do $$
 begin
   perform pg_temp.ok(
     (select sum(amount) from public.sup_ledger
-      where user_id = '44444444-4444-4444-4444-444444444444' and kind = 'EARN_EVENT') = 550,
-    '두 보상이 서버 원장에 EARN_EVENT 로 적힌다');
+      where user_id = '44444444-4444-4444-4444-444444444444' and kind = 'EARN_EVENT')
+      = case when extract(isodow from (now() at time zone 'Asia/Seoul')::date) = 1 then 300 else 550 end,
+    '받은 보상이 서버 원장에 EARN_EVENT 로 적힌다');
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
@@ -3306,6 +3309,7 @@ reset role;
 set role authenticated;
 call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
 call pg_temp.must_fail($q$ select owner_id from public.market_sneakers limit 1 $q$, '신발 표의 주인 칸은 읽을 수 없다');
+call pg_temp.must_fail($q$ select token_id from public.market_sneakers limit 1 $q$, '체인 토큰 번호도 읽을 수 없다 (거래 기록과 이으면 지갑이 드러난다)');
 do $$ begin
   perform pg_temp.ok((select count(*) from public.market_quotes) >= 0, '호가 뷰는 그대로 읽힌다');
   perform pg_temp.ok((select count(*) from public.market_asks) >= 0, '매물 뷰는 그대로 읽힌다');
