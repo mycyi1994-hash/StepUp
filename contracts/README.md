@@ -30,8 +30,9 @@
 1. MetaMask 등에서 계정 7개를 만든다: 배포 · 관리자 · 금고 · SUP 서명 · 신발 서명 · 긴급 정지 · 코스 기록.
    복구 문구는 종이에. **주소만** 공유한다.
 2. 배포 계정에 테스트 ETH (https://faucet.giwa.io).
-3. 신발 그림 메타데이터를 IPFS 에 올리고 CID 를 받는다.
-4. `cp .env.example .env` → 배포 개인키 1개와 역할 주소 6개, `SNEAKER_BASE_URI` 를 채운다.
+3. 어테스터 워커 주소를 정한다 (`https://stepup-attester.<계정>.workers.dev`). 신발 메타데이터는
+   워커의 `/v2/meta/<번호>` 가 체인 스탯을 읽어 만든다 — IPFS 는 쓰지 않는다.
+4. `cp .env.example .env` → 배포 개인키 1개와 역할 주소 6개, `SNEAKER_BASE_URI=<워커 주소>/v2/meta/` 를 채운다.
 5. 드라이런: `npm run deploy:dry` (로컬 체인, 가스 없음)
 6. 요약 확인: `npm run deploy:giwa` — 요약만 찍고 멈춘다
 7. 배포: `CONFIRM_DEPLOY=yes npm run deploy:giwa` → `deployments/giwaSepolia-v2.json`

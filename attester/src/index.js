@@ -2,6 +2,7 @@ import { clients } from './chain.js'
 import { getUser, rpc, HttpError } from './supabase.js'
 import { linkWallet, executeOp } from './handlers.js'
 import { indexEvents, expireOps, reconcile } from './indexer.js'
+import { sneakerMetadata } from './meta.js'
 
 /**
  * StepUp 어테스터 v2 — 서버가 허락한 체인 작업만 서명하고, 가스비를 대신 내 보낸다.
@@ -75,6 +76,19 @@ export default {
           relayer: c.relayer.account.address,
           guardian: c.guardian?.account.address ?? null,
           contracts: c.addresses,
+        })
+      }
+
+      // 신발 메타데이터 — 마켓 · 지갑이 읽는다. 누구나, 캐시해도 된다.
+      const meta = url.pathname.match(/^\/v2\/meta\/([^/]+)$/)
+      if (meta && request.method === 'GET') {
+        const body = await sneakerMetadata(env, deps, meta[1])
+        return new Response(JSON.stringify(body), {
+          headers: {
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'public, max-age=300',
+            'access-control-allow-origin': '*',
+          },
         })
       }
 

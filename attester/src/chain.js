@@ -18,6 +18,8 @@ export const DISTRIBUTOR_ABI = parseAbi([
 
 export const SNEAKERS_ABI = parseAbi([
   'function opUsed(bytes32) view returns (bool)',
+  'function statsOf(uint256) view returns ((uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo))',
+  'function transferLocked(uint256) view returns (bool)',
   'function paused() view returns (bool)',
   'function pause()',
   'function release((bytes32 opId, address to, uint256 tokenId, uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo, bool locked, uint64 deadline) r, bytes signature)',

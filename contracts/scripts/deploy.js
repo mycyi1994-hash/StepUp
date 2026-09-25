@@ -76,8 +76,8 @@ async function main() {
         throw new Error(`${name} 가 서버에 두는 키(서명 · 정지 · 기록)와 같습니다. 따로 두어야 합니다.`);
       }
     }
-    if (baseURI.includes("REPLACE_WITH_CID")) {
-      throw new Error("SNEAKER_BASE_URI 에 IPFS 주소를 넣어 주세요 (끝에 / 포함).");
+    if (baseURI.includes("REPLACE_WITH_CID") || !baseURI.endsWith("/")) {
+      throw new Error("SNEAKER_BASE_URI 에 어테스터 메타데이터 주소를 넣어 주세요 — https://<워커 주소>/v2/meta/ (끝에 / 포함).");
     }
   }
 
