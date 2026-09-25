@@ -231,7 +231,7 @@ test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', as
       return null
     },
   }
-  await indexEvents({ CONFIRMATIONS: '30' }, deps)
+  await indexEvents({}, deps)
   assert.ok(calls.some(([fn]) => fn === 'attester_pause'))
   assert.deepEqual(paused, ['0x' + '1'.repeat(40)])
   // 멈춘 뒤에도 커서는 옮긴다 — 같은 이벤트로 매분 다시 멈추지 않게
@@ -302,4 +302,87 @@ test('작업 실행: 로그인한 사용자별로도 요청 수를 센다', asyn
   const deps = fakeDeps()
   deps.limitUser = async (_env, id) => id === USER.id
   await assert.rejects(executeOp(req({}), env, deps, OP), (e) => e.status === 429)
+})
+
+test('이벤트: 한 번에 넘기는 수를 넘으면 끝까지 넘긴 블록까지만 커서를 옮긴다', async () => {
+  const events = Array.from({ length: 60 }, (_, i) => ({
+    eventName: 'Claimed', args: { sessionHash: `0x${i}`, runner: '0xA', amount: 1n },
+    transactionHash: `0xt${i}`, logIndex: 0, blockNumber: 101n + BigInt(i),
+  }))
+  const cursors = []
+  let sent = 0
+  const deps = {
+    clients: () => ({
+      addresses: { distributor: '0x' + '1'.repeat(40) },
+      publicClient: {
+        getBlock: async ({ blockTag, blockNumber }) => ({ number: blockTag === 'safe' ? 500n : blockNumber }),
+        getContractEvents: async () => events,
+      },
+    }),
+    rpc: async (_env, fn, args) => {
+      if (fn === 'attester_cursor_get') return 100
+      if (fn === 'attester_cursor_set') cursors.push(args.p_block)
+      if (fn === 'attester_chain_event') { sent += 1; return 'OK' }
+      return null
+    },
+  }
+  const out = await indexEvents({ INDEX_EVENTS_PER_RUN: '25' }, deps)
+  assert.equal(sent, 25)
+  // 25번째 이벤트가 있던 블록(125)까지 — 다음 실행은 126 부터
+  assert.deepEqual(cursors, [125])
+  assert.equal(out.distributor.to, 125)
+})
+
+test('이벤트: 중간에 실패하면 앞의 끝난 블록까지는 커서를 옮긴다', async () => {
+  const events = [0, 1, 2].map((i) => ({
+    eventName: 'Claimed', args: { sessionHash: `0x${i}`, runner: '0xA', amount: 1n },
+    transactionHash: `0xt${i}`, logIndex: 0, blockNumber: 201n + BigInt(i),
+  }))
+  const cursors = []
+  const deps = {
+    clients: () => ({
+      addresses: { distributor: '0x' + '1'.repeat(40) },
+      publicClient: {
+        getBlock: async ({ blockTag, blockNumber }) => ({ number: blockTag === 'safe' ? 500n : blockNumber }),
+        getContractEvents: async () => events,
+      },
+    }),
+    rpc: async (_env, fn, args) => {
+      if (fn === 'attester_cursor_get') return 200
+      if (fn === 'attester_cursor_set') cursors.push(args.p_block)
+      if (fn === 'attester_chain_event' && args.p_tx === '0xt2') throw new Error('too many subrequests')
+      return 'OK'
+    },
+  }
+  const out = await indexEvents({}, deps)
+  assert.equal(out.distributor.error, true)
+  assert.deepEqual(cursors, [202])
+})
+
+test('이벤트: safe · finalized 블록을 못 받으면 이번에는 읽지 않는다', async () => {
+  const calls = []
+  const deps = {
+    clients: () => ({
+      addresses: { distributor: '0x' + '1'.repeat(40) },
+      publicClient: {
+        getBlock: async () => { throw new Error('rpc down') },
+        getBlockNumber: async () => 1000n,
+      },
+    }),
+    rpc: async (_env, fn) => { calls.push(fn); return null },
+  }
+  const out = await indexEvents({}, deps)
+  assert.ok(out.skipped)
+  assert.deepEqual(calls, [])
+})
+
+test('체인 오류: 컨트랙트 오류를 이름으로 읽는다', async () => {
+  const { decodeErrorResult } = await import('viem')
+  const { DISTRIBUTOR_ABI, SNEAKERS_ABI } = await import('../src/chain.js')
+  // SessionAlreadyClaimed(bytes32) 의 선택자 0x68825535
+  const data = '0x68825535' + '00'.repeat(32)
+  assert.equal(decodeErrorResult({ abi: DISTRIBUTOR_ABI, data }).errorName, 'SessionAlreadyClaimed')
+  for (const name of ['OpAlreadyUsed', 'DailyMintCapReached', 'EnforcedPause']) {
+    assert.ok(SNEAKERS_ABI.some((x) => x.type === 'error' && x.name === name), name)
+  }
 })

@@ -2777,7 +2777,12 @@ set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑이 없으면 꺼낼 수 없다');
 call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '2단계 인증 없이는 지갑을 붙일 수 없다');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+-- 0034 — 예전에 한 2단계 인증(로그인이 aal2 로 남아 있을 뿐)은 인정하지 않는다
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '1 hour')::bigint)))::text, false);
+call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '1시간 전에 한 2단계 인증으로는 지갑을 붙일 수 없다');
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 do $$
 declare v_msg text;
 begin
@@ -2812,7 +2817,8 @@ end $$;
 -- 같은 지갑을 다른 계정에 붙일 수 없다
 set role authenticated;
 call pg_temp.login('f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 do $$
 declare v_msg text;
 begin
@@ -2834,7 +2840,8 @@ set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 select set_config('request.jwt.claims', '', false);
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '2단계 인증 없이는 꺼낼 수 없다');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑을 붙이고 72시간은 꺼낼 수 없다');
 reset role;
 update public.wallet_links set changed_at = now() - interval '73 hours'
@@ -2920,7 +2927,8 @@ end $$;
 -- 신발 꺼내기 · 넣기
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 call pg_temp.must_fail(
   format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('starter_shoe')),
   '첫 신발은 꺼낼 수 없다');
@@ -3013,7 +3021,8 @@ do $$ begin perform public.attester_pause('검사'); end $$;
 reset role;
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '정지 스위치가 켜지면 꺼내기를 멈춘다');
 select set_config('request.jwt.claims', '', false);
 reset role;
@@ -3231,7 +3240,8 @@ end $$;
 insert into auth.users (id, email) values ('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3', 'fc@test');
 set role authenticated;
 call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 do $$
 declare v_msg text;
 begin
@@ -3265,7 +3275,8 @@ call pg_temp.must_fail(format($q$ select public.sneaker_equip(%s) $q$, pg_temp.f
   '주인 없는 신발을 신을 수 없다');
 call pg_temp.must_fail(format($q$ select public.sneaker_upgrade(%s) $q$, pg_temp.fx('orphan_shoe')),
   '주인 없는 신발을 강화할 수 없다');
-select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
 call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('orphan_shoe')),
   '주인 없는 신발을 지갑으로 꺼낼 수 없다');
 select set_config('request.jwt.claims', '', false);

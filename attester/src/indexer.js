@@ -5,9 +5,9 @@ import { weiToSup } from './typed.js'
 /**
  * 1분마다 도는 일 — 체인을 읽어 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
  *
- * 1. 이벤트: 확정 블록(최신 - CONFIRMATIONS)까지만 읽는다. 뒤집힐 수 있는 블록의
+ * 1. 이벤트: 체인이 알려 주는 safe 블록까지만 읽는다. 뒤집힐 수 있는 블록의
  *    넣기를 반영하면 체인에는 없는 잔고가 앱에 생긴다. 컨트랙트마다 블록 · 로그 순서로
- *    서버에 넘기고, 모두 받아들여졌을 때만 커서를 옮긴다. 같은 이벤트를 두 번 넘겨도
+ *    서버에 넘기고, 끝까지 받아들여진 블록까지만 커서를 옮긴다(한 번에 EVENTS_PER_RUN 개). 같은 이벤트를 두 번 넘겨도
  *    서버가 (거래, 로그 번호)로 한 번만 처리한다.
  * 2. 만료: 서명 유효 시간 + 안전 마진이 지난 작업. 체인에서 그 작업 번호가 안 쓰였을
  *    때만 되돌린다. 쓰였으면 이벤트를 놓친 것이므로 되돌리지 않고 다음 읽기에 맡긴다.
@@ -58,18 +58,28 @@ const SOURCES = [
 ]
 
 /**
- * 확정으로 볼 블록. 이 체인(OP 스택)은 1초마다 블록이 나와 "최신 - 30" 은 30초뿐이다 —
- * 뒤집힐 수 있다. 체인이 알려 주는 safe 블록까지만 읽는다(못 받으면 옛 방식으로).
+ * 확정으로 볼 블록. 이 체인(OP 스택)은 1초마다 블록이 나와 "최신 - N" 은 몇십 초뿐이라 뒤집힐 수 있다.
+ * 체인이 알려 주는 safe(없으면 finalized) 블록까지만 읽는다. 둘 다 못 받으면 null — 이번 실행은
+ * 읽지 않고 넘어간다(예전엔 최신 - 30 으로 읽어, 뒤집힌 입금이 서버에 남을 수 있었다).
  */
-async function safeBlock(env, c) {
-  try {
-    const b = await c.publicClient.getBlock({ blockTag: 'safe' })
-    if (b?.number != null) return b.number
-  } catch (e) {
-    console.error('safe block unavailable', e?.message)
+async function safeBlock(_env, c) {
+  for (const blockTag of ['safe', 'finalized']) {
+    try {
+      const b = await c.publicClient.getBlock({ blockTag })
+      if (b?.number != null) return b.number
+    } catch (e) {
+      console.error(`${blockTag} block unavailable`, e?.message)
+    }
   }
-  return (await c.publicClient.getBlockNumber()) - BigInt(env.CONFIRMATIONS ?? '30')
+  return null
 }
+
+/**
+ * 한 번에 서버로 넘기는 이벤트 수. 워커는 실행 한 번에 보낼 수 있는 요청 수가 정해져 있어
+ * (무료 50 · 유료 1000), 한 구간의 이벤트가 그보다 많으면 매번 같은 곳에서 실패하고 커서가
+ * 영영 멈췄다. 이만큼만 넘기고, 끝까지 처리한 블록까지만 커서를 옮긴다.
+ */
+const EVENTS_PER_RUN = 25
 
 /** 서버가 허락하지 않은 지급 · 발행을 봤을 때 — 서버와 컨트랙트를 멈춘다(그 컨트랙트 먼저) */
 async function alarm(env, deps, source, ev, result) {
@@ -79,17 +89,21 @@ async function alarm(env, deps, source, ev, result) {
 export async function indexEvents(env, deps) {
   const c = deps.clients(env)
   const safe = await safeBlock(env, c)
+  if (safe == null) return { skipped: 'safe block unavailable' }
   const report = {}
+  const budget = Number(env.INDEX_EVENTS_PER_RUN ?? EVENTS_PER_RUN)
 
   for (const [source, abi] of SOURCES) {
     const address = c.addresses[source]
     if (!address) continue
     // 한 컨트랙트를 못 읽어도 다른 컨트랙트는 읽는다
+    let from
+    let done = null // 이벤트를 끝까지 처리한 마지막 블록
     try {
       const cursor = await deps.rpc(env, 'attester_cursor_get', { p_name: source })
-      const from = cursor == null ? BigInt(env.START_BLOCK ?? '0') : BigInt(cursor) + 1n
+      from = cursor == null ? BigInt(env.START_BLOCK ?? '0') : BigInt(cursor) + 1n
       if (from > safe) continue
-      const to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
+      let to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
 
       const logs = await c.publicClient.getContractEvents({ address, abi, fromBlock: from, toBlock: to })
       // RPC 뒤의 노드가 아직 그 블록을 모르면 오류 없이 빈 목록을 준다. 끝 블록이 실제로
@@ -103,10 +117,21 @@ export async function indexEvents(env, deps) {
         x.blockNumber === y.blockNumber ? Number(x.logIndex) - Number(y.logIndex) : Number(x.blockNumber - y.blockNumber),
       )
       let handled = 0
+      let block = null
+      done = from - 1n
       for (const log of logs) {
+        if (log.blockNumber !== block) {
+          if (block != null) done = block
+          // 이번 실행 몫을 다 썼다 — 앞 블록까지만 처리한 것으로 하고 나머지는 다음 실행에
+          if (handled >= budget) {
+            to = done
+            break
+          }
+          block = log.blockNumber
+        }
         const ev = toServerEvent(source, log)
         if (!ev) continue
-        // 실패하면 여기서 멈추고 커서를 옮기지 않는다
+        // 실패하면 여기서 멈추고, 끝까지 처리한 블록까지만 커서를 옮긴다(아래 catch)
         const result = await deps.rpc(env, 'attester_chain_event', ev)
         handled += 1
         // 서버가 허락하지 않은 지급 · 발행이다(서명 키가 샜다). 서버는 이미 멈췄고, 컨트랙트도 멈춘다.
@@ -117,6 +142,11 @@ export async function indexEvents(env, deps) {
       report[source] = { from: Number(from), to: Number(to), events: handled }
     } catch (e) {
       console.error(`index ${source} failed`, e?.message)
+      // 앞 블록들은 끝까지 넘겼다 — 거기까지는 커서를 옮겨 다음 실행이 같은 이벤트를 다시 보내며
+      // 요청 수를 다 써 버리지 않게 한다(서버는 같은 이벤트를 한 번만 처리한다)
+      if (done != null && from != null && done >= from) {
+        await deps.rpc(env, 'attester_cursor_set', { p_name: source, p_block: Number(done) }).catch(() => {})
+      }
       report[source] = { error: true }
     }
   }
@@ -128,7 +158,14 @@ const RECOVER_AFTER_MS = 60 * 60 * 1000
 
 export async function expireOps(env, deps) {
   const c = deps.clients(env)
-  const due = (await deps.rpc(env, 'attester_due_ops', {})) ?? []
+  // 한 번에 다 보면 요청 수 제한을 넘는다. 섞어서 일부만 — 체인에서 쓰였는데 이벤트를 기다리는
+  // 작업(되돌리지 않고 남는다)이 앞자리를 차지해 뒤의 작업이 영영 차례를 못 받는 일이 없게.
+  const all = (await deps.rpc(env, 'attester_due_ops', {})) ?? []
+  const due = all
+    .map((op) => [Math.random(), op])
+    .sort((a, b) => a[0] - b[0])
+    .slice(0, Number(env.EXPIRE_OPS_PER_RUN ?? 10))
+    .map(([, op]) => op)
   const out = { expired: 0, pendingOnChain: 0 }
   let safe = null
   for (const op of due) {
@@ -146,7 +183,7 @@ export async function expireOps(env, deps) {
         out.pendingOnChain += 1 // 이벤트가 곧 들어온다(취소도 이벤트로 들어온다). 되돌리지 않는다.
         if (op.tx_hash && Date.parse(op.deadline) + RECOVER_AFTER_MS < Date.now()) {
           safe ??= await safeBlock(env, c)
-          if (await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
+          if (safe != null && await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
         }
         continue
       }
@@ -184,14 +221,14 @@ async function recoverFromReceipt(env, deps, c, op, source, safe) {
 /** 허용 오차 — 확정 전 구간의 금액 차이. 이보다 크게 어긋나면 멈춘다. */
 export async function reconcile(env, deps) {
   const c = deps.clients(env)
+  // 읽는 순서가 중요하다. 둘 다 늘기만 하므로 — 체인 지급은 서버 장부보다 먼저 읽고(그 사이 서명 · 채굴된
+  // 작업이 "서버가 모르는 지급"으로 보이지 않게), 금고 입금은 서버 장부보다 나중에 읽는다.
+  const paid = await c.publicClient.readContract({ address: c.addresses.distributor, abi: DISTRIBUTOR_ABI, functionName: 'totalDistributed' })
   const rows = await deps.rpc(env, 'attester_ledger_totals', {})
   const t = Array.isArray(rows) ? rows[0] : rows
-  const [paid, deposited] = await Promise.all([
-    c.publicClient.readContract({ address: c.addresses.distributor, abi: DISTRIBUTOR_ABI, functionName: 'totalDistributed' }),
-    c.addresses.vault
-      ? c.publicClient.readContract({ address: c.addresses.vault, abi: VAULT_ABI, functionName: 'totalDeposited' })
-      : 0n,
-  ])
+  const deposited = c.addresses.vault
+    ? await c.publicClient.readContract({ address: c.addresses.vault, abi: VAULT_ABI, functionName: 'totalDeposited' })
+    : 0n
   const toWei = (v) => BigInt(Math.round(Number(v ?? 0) * 1e4)) * 10n ** 14n
   const allowedPaid = toWei(t.sup_withdrawn_confirmed) + toWei(t.sup_withdraw_pending)
   const problems = []

@@ -22,6 +22,15 @@ export function jwtClaims(token) {
   }
 }
 
+/**
+ * 방금(maxAgeSec 안에) 2단계 인증을 했는가. 서버(economy.mfa_ok)는 15분까지 인정한다 — 페이지는
+ * 그보다 조금 일찍 다시 묻는다. 로그인 자체가 aal2 로 남아 있어도 인증 시각이 오래됐으면 다시 묻는다.
+ */
+export function recentTotp(claims, nowSec = Date.now() / 1000, maxAgeSec = 600) {
+  if (claims?.aal !== 'aal2' || !Array.isArray(claims.amr)) return false
+  return claims.amr.some((a) => a?.method === 'totp' && Number(a.timestamp) >= nowSec - maxAgeSec)
+}
+
 /** 로그인 토큰 — 주소 뒤 # 에서 받아(서버로 가지 않는다) 바로 주소창에서 지운다. */
 export function tokenFromHash(hash) {
   const params = new URLSearchParams(String(hash || '').replace(/^#/, ''))
@@ -103,6 +112,10 @@ export function createApi(config, getToken, fetchImpl = (...a) => fetch(...a)) {
       fetchImpl(`${base}/auth/v1/factors`, {
         method: 'POST', headers: headers(), body: JSON.stringify({ factor_type: 'totp', friendly_name: `StepUp ${Date.now()}` }),
       }).then(read),
+    // 끝내지 못한 등록을 치운다 — 열 때마다 새 QR 을 만들면 앞서 찍은 인증 앱의 번호가 맞지 않고,
+    // 등록 수 한도(10)에 걸린다
+    unenroll: (factorId) =>
+      fetchImpl(`${base}/auth/v1/factors/${factorId}`, { method: 'DELETE', headers: headers() }).then(read),
     challenge: (factorId) =>
       fetchImpl(`${base}/auth/v1/factors/${factorId}/challenge`, { method: 'POST', headers: headers(), body: '{}' }).then(read),
     verify: (factorId, challengeId, code) =>

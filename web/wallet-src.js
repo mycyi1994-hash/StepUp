@@ -4,7 +4,7 @@ import {
 } from 'viem'
 import { createEVMClient } from '@metamask/connect-evm'
 import {
-  accountRef, blockRanges, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, sameWallet, tokenFromHash,
+  accountRef, blockRanges, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, recentTotp, sameWallet, tokenFromHash,
 } from './wallet-core.js'
 
 // STEPUP 지갑 페이지 — 지갑 연결 · 보너스 뽑기 · 꺼내기 · 넣기.
@@ -77,7 +77,17 @@ async function guard(button, work) {
   try {
     await work()
   } catch (e) {
-    say(e?.shortMessage || e?.message || '잠시 뒤에 다시 해 주세요')
+    // 로그인이 만료됐거나 2단계 인증이 오래됐으면 그 단계로 돌아간다(오류 문구만 남기지 않는다)
+    if (e?.status === 401) {
+      setToken(null)
+      renderLogin()
+      say('로그인이 만료되었습니다. 다시 로그인해 주세요.')
+    } else if (/2단계 인증이 필요/.test(e?.message ?? '')) {
+      await renderMfa().catch(() => {})
+      say('안전을 위해 2단계 인증을 다시 해 주세요.')
+    } else {
+      say(e?.shortMessage || e?.message || '잠시 뒤에 다시 해 주세요')
+    }
   } finally {
     buttons.forEach((b) => { b.disabled = false })
   }
@@ -138,6 +148,9 @@ async function renderMfa() {
   let factorId = factor?.id
   const children = []
   if (!factor) {
+    for (const f of user.factors || []) {
+      if (f.factor_type === 'totp' && f.status !== 'verified') await api.unenroll(f.id).catch(() => {})
+    }
     const enrolled = await api.enrollTotp()
     factorId = enrolled.id
     children.push(
@@ -169,7 +182,14 @@ async function runOp(opId, label) {
   const deadline = Date.now() + 5 * 60 * 1000
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 4000))
-    const [op] = await api.select(`chain_ops?id=eq.${opId}&select=status,tx_hash`)
+    // 잠깐 연결이 끊겨도 따라가기를 멈추지 않는다(로그인 만료는 guard 가 처리한다)
+    let op
+    try {
+      ;[op] = await api.select(`chain_ops?id=eq.${opId}&select=status,tx_hash`)
+    } catch (e) {
+      if (e?.status === 401) throw e
+      continue
+    }
     if (op?.status === 'CONFIRMED') {
       say(`${label}: 완료 (체인에서 확정)`)
       return main()
@@ -376,7 +396,8 @@ async function main() {
     return
   }
   try {
-    if (claims.aal !== 'aal2') {
+    // 로그인이 aal2 여도 인증을 한 지 오래됐으면 다시 묻는다(서버도 15분 안의 인증만 인정한다)
+    if (!recentTotp(claims)) {
       await renderMfa()
       return
     }

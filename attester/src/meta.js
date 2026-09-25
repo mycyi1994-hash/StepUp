@@ -81,8 +81,12 @@ export async function sneakerMetadata(env, deps, id) {
       c.publicClient.readContract({ address: c.addresses.sneakers, abi: SNEAKERS_ABI, functionName: 'statsOf', args: [tokenId] }),
       c.publicClient.readContract({ address: c.addresses.sneakers, abi: SNEAKERS_ABI, functionName: 'transferLocked', args: [tokenId] }),
     ])
-  } catch {
-    throw new HttpError(404, '없는 신발입니다')
+  } catch (e) {
+    // 컨트랙트가 되돌렸을 때만 "없는 신발"이다. RPC 오류(시간 초과 · 요청 제한)를 404 로 두면
+    // 그 답이 캐시되어, 막 만든 신발이 한동안 없는 것으로 보인다.
+    const reverted = typeof e?.walk === 'function' && e.walk((x) => x?.name === 'ContractFunctionRevertedError')
+    if (reverted) throw new HttpError(404, '없는 신발입니다')
+    throw new HttpError(503, '잠시 뒤에 다시 해 주세요')
   }
   return metadataOf(id, stats, locked, env.IMAGE_BASE ?? 'https://stepupcrew.com/assets/sneakers/')
 }

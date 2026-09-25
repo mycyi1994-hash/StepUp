@@ -65,3 +65,14 @@ test('블록 구간은 RPC 한도 안으로 나눈다', () => {
   for (const [a, b] of r) assert.ok(b - a < 10000n)
   for (let i = 1; i < r.length; i++) assert.equal(r[i][0], r[i - 1][1] + 1n)
 })
+
+test('2단계 인증은 방금 한 것만 인정한다', async () => {
+  const { recentTotp } = await import('../wallet-core.js')
+  const now = 1_800_000_000
+  assert.equal(recentTotp({ aal: 'aal2', amr: [{ method: 'totp', timestamp: now - 60 }] }, now), true)
+  // 로그인이 aal2 로 남아 있어도 인증 시각이 오래됐으면 다시 묻는다
+  assert.equal(recentTotp({ aal: 'aal2', amr: [{ method: 'totp', timestamp: now - 3600 }] }, now), false)
+  assert.equal(recentTotp({ aal: 'aal2', amr: [{ method: 'oauth', timestamp: now }] }, now), false)
+  assert.equal(recentTotp({ aal: 'aal1', amr: [{ method: 'totp', timestamp: now }] }, now), false)
+  assert.equal(recentTotp({ aal: 'aal2' }, now), false)
+})

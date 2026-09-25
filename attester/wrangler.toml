@@ -19,8 +19,6 @@ SNEAKERS_ADDRESS = "0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019"
 VAULT_ADDRESS = "0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c"
 # 배포한 블록 번호. 이 블록부터 이벤트를 읽는다.
 START_BLOCK = "36979816"
-# 이만큼 뒤의 블록까지만 반영한다 (뒤집힐 수 있는 블록의 넣기를 믿지 않게)
-CONFIRMATIONS = "30"
 # 앱과 같은 Supabase. 이 키는 앱에 들어가는 공개 키다.
 SUPABASE_URL = "https://pupjzcmybuoyhzfwrsdf.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
