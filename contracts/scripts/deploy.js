@@ -59,15 +59,16 @@ async function main() {
   const maxReleasesPerDay = BigInt(process.env.MAX_RELEASES_PER_DAY || "500");
   const maxGenesisNo = Number(process.env.MAX_GENESIS_NO || "100000");
 
+  // 가스비를 내는 relayer 도 워커에 둔다. 적어 주면 배포 키 · 다른 키와 겹치는지 본다.
+  const relayer = process.env.RELAYER_ADDRESS ? hre.ethers.getAddress(process.env.RELAYER_ADDRESS) : null;
+
   if (live) {
-    const roles = { owner, treasury, attester, sneakerSigner, guardian, recorder };
+    const roles = { owner, treasury, attester, sneakerSigner, guardian, recorder, ...(relayer ? { relayer } : {}) };
     for (const [name, addr] of Object.entries(roles)) {
       if (addr === deployer.address) {
         throw new Error(`${name} 가 배포 키와 같습니다. 배포 키는 배포 뒤 버리므로 역할을 맡길 수 없습니다.`);
       }
     }
-    // 가스비를 내는 relayer 도 워커에 둔다. 적어 주면 다른 키와 겹치는지 본다(코스 기록 키를 겸하지 않게).
-    const relayer = process.env.RELAYER_ADDRESS ? hre.ethers.getAddress(process.env.RELAYER_ADDRESS) : null;
     const signers = [attester, sneakerSigner, guardian, recorder, ...(relayer ? [relayer] : [])];
     if (new Set(signers).size !== signers.length) {
       throw new Error("서명 키(ATTESTER · SNEAKER_SIGNER · GUARDIAN · RECORDER · RELAYER)는 서로 달라야 합니다.");

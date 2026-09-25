@@ -290,6 +290,12 @@ test('서버 호출: 로그인 토큰이 만료됐으면 한 번 새로 받고, 
   assert.equal(await rpc(env, 'attester_cursor_get', {}, fetchImpl), 'ok')
   assert.equal(logins, 2)
   await assert.rejects(rpc(env, 'attester_cursor_get', {}, fetchImpl), (e) => e.status === 502 && !e.message.includes('attester_x'))
+  // 성공 응답인데 본문이 깨졌으면 성공으로 치지 않는다(인덱서가 이벤트를 건너뛰지 않게)
+  const broken = async (url) =>
+    url.includes('/auth/v1/token')
+      ? new Response(JSON.stringify({ access_token: 't', expires_in: 3600 }))
+      : new Response('<html>gateway</html>', { status: 200 })
+  await assert.rejects(rpc(env, 'attester_chain_event', {}, broken), (e) => e.status === 502)
 })
 
 test('작업 실행: 로그인한 사용자별로도 요청 수를 센다', async () => {

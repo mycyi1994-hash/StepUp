@@ -74,12 +74,21 @@ export async function rpc(env, fn, args, fetchImpl = fetch) {
     })
     const text = await res.text()
     let body = null
+    let parsed = true
     try {
       body = text ? JSON.parse(text) : null
     } catch {
-      body = null
+      parsed = false
     }
-    if (res.ok) return body
+    if (res.ok) {
+      // 성공인데 본문이 깨졌으면 성공으로 치지 않는다 — 인덱서가 이벤트를 처리한 것으로 보고
+      // 커서를 옮기면 그 입금 · 지급을 영영 건너뛴다
+      if (!parsed) {
+        console.error('rpc malformed success body', fn, res.status)
+        throw new HttpError(502, '서버가 응답하지 않습니다. 잠시 뒤에 다시 해 주세요')
+      }
+      return body
+    }
     if (res.status === 401 && attempt === 0 && !env.ATTESTER_DB_JWT) {
       cached = { token: null, until: 0 }
       continue
