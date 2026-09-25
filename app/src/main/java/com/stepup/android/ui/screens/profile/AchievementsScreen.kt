@@ -123,7 +123,8 @@ class AchievementsViewModel(
     }
 
     private val economy = combine(
-        rewardDao.observeCountByType(RewardType.SPEND_MINT),
+        // 서버 경제의 유료 뽑기는 SPEND_DRAW 로 적힌다(예전 폰 경제는 SPEND_MINT)
+        rewardDao.observeCountByTypes(listOf(RewardType.SPEND_MINT, "SPEND_DRAW")),
         rewardDao.observeCountByType(RewardType.SPEND_UPGRADE),
         rewardDao.observeCountByType(RewardType.EARN_PARTY),
         rewardDao.observeCountByType(RewardType.EARN_EVENT),

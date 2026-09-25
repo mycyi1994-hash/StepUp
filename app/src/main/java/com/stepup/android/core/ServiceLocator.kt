@@ -107,6 +107,10 @@ object ServiceLocator {
     lateinit var economyApi: com.stepup.android.data.remote.EconomyApi
     lateinit var economySync: com.stepup.android.data.repo.EconomySync
 
+    /** 서버가 잔고를 정하는 빌드인가 — 화면이 폰이 계산한 옛 금액을 가릴지 정할 때 쓴다 */
+    val serverEconomyOn: Boolean
+        get() = ::economyApi.isInitialized && economyApi.isConfigured
+
     private val economyScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
     )
@@ -215,6 +219,7 @@ object ServiceLocator {
             prefs = userPrefs,
             tracker = stepTracker,
             rewardRepository = rewardRepository,
+            pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,

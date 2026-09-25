@@ -72,6 +72,10 @@ class EconomyApi(private val server: StepUpServer) {
     suspend fun boostBuy(kind: String): ServerResult<Double> =
         rpc("boost_buy", jsonBody { put("p_kind", kind) }) { it.trim().toDoubleOrNull() }
 
+    /** 하루 목표를 서버에 적는다 — 목표 달성 보너스를 서버가 이 값으로 판정한다. 적힌 값을 돌려준다. */
+    suspend fun setDailyGoal(goal: Int): ServerResult<Int> =
+        rpc("profile_set_daily_goal", jsonBody { put("p_goal", goal) }) { it.trim().toIntOrNull() }
+
     /** 오늘 목표 달성 보너스. 서버가 확인한 러닝 걸음으로 판정한다. */
     suspend fun goalClaim(): ServerResult<Double> =
         rpc("goal_claim", "{}") { it.trim().toDoubleOrNull() }

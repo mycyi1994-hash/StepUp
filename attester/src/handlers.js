@@ -39,17 +39,27 @@ export async function linkWallet(request, env, deps) {
   const ok = await verifyMessage({ address, message: walletLinkMessage(user.id, nonce), signature })
   if (!ok) throw new HttpError(400, '지갑 서명이 맞지 않습니다')
 
-  await deps.rpc(env, 'attester_wallet_link', { p_user: user.id, p_address: address, p_nonce: nonce })
+  const first = await deps.rpc(env, 'attester_wallet_link', { p_user: user.id, p_address: address, p_nonce: nonce })
 
   // 새 지갑에 가스 조금 — 앱으로 넣기(deposit)는 사용자가 직접 보내는 거래라서.
-  // 이미 가스가 있는 지갑에는 보내지 않는다. 테스트넷에서만 켠다(DRIP_WEI).
+  // 계정의 첫 지갑에만, 이미 가스가 있는 지갑에는 보내지 않는다(주소를 바꿔 가며 빼 가지
+  // 못하게). 테스트넷에서만 켠다(DRIP_WEI).
+  // 가스비 보내기가 실패해도 지갑 연결은 이미 끝났다 — 오류로 돌려주지 않는다.
+  // 꺼내기 가스비를 낼 몫(DRIP_WEI × 20)은 남겨 둔다 — 새 계정을 많이 만들어 비우지 못하게.
   let drip = null
   const dripWei = BigInt(env.DRIP_WEI ?? '0')
-  if (dripWei > 0n) {
-    const c = deps.clients(env)
-    const balance = await c.publicClient.getBalance({ address })
-    if (balance < dripWei) {
-      drip = await c.relayer.sendTransaction({ to: address, value: dripWei })
+  if (dripWei > 0n && first === true) {
+    try {
+      const c = deps.clients(env)
+      const [balance, reserve] = await Promise.all([
+        c.publicClient.getBalance({ address }),
+        c.publicClient.getBalance({ address: c.relayer.account.address }),
+      ])
+      if (balance < dripWei && reserve > dripWei * 20n) {
+        drip = await c.relayer.sendTransaction({ to: address, value: dripWei })
+      }
+    } catch (e) {
+      console.error('drip failed', e?.message)
     }
   }
   return { ok: true, address: address.toLowerCase(), drip }
@@ -91,24 +101,49 @@ export async function executeOp(request, env, deps, opId) {
     tx = await submit(c, c.addresses.sneakers, SNEAKERS_ABI, 'release', [message, signature])
   }
 
-  await deps.rpc(env, 'attester_op_submitted', { p_op: opId, p_tx: tx })
+  // 거래는 이미 나갔다. 서버에 적기가 실패해도 성공으로 돌려준다 — 이벤트가 들어오면
+  // 서버가 확정하고, 다시 보내기를 눌러도 체인이 두 번 받지 않는다(아래 submit 참고).
+  try {
+    await deps.rpc(env, 'attester_op_submitted', { p_op: opId, p_tx: tx })
+  } catch (e) {
+    console.error('op_submitted failed', opId, e?.message)
+  }
   // 아직 "완료"가 아니다. 확정 블록이 지나고 이벤트를 서버가 받아야 완료다.
   return { ok: true, status: 'SUBMITTED', tx }
 }
 
+/** 이미 체인에서 쓰인 작업 번호 — 앞선 요청의 거래가 나갔다. 다시 보낼 것이 없다. */
+const ALREADY_SENT = new Set(['SessionAlreadyClaimed', 'OpAlreadyUsed'])
+
 /** 먼저 시뮬레이션해서 되돌아갈 거래는 보내지 않는다(가스 낭비 · 이유를 사용자에게). */
 async function submit(c, address, abi, functionName, args) {
+  let request
   try {
-    const { request } = await c.publicClient.simulateContract({
+    ;({ request } = await c.publicClient.simulateContract({
       account: c.relayer.account,
       address,
       abi,
       functionName,
       args,
-    })
-    return await c.relayer.writeContract(request)
+    }))
   } catch (e) {
     const reason = e?.cause?.data?.errorName ?? e?.shortMessage ?? '체인이 거절했습니다'
+    if (ALREADY_SENT.has(reason)) {
+      throw new HttpError(409, '이미 체인에 보낸 작업입니다. 확정되면 결과가 보입니다')
+    }
     throw new HttpError(409, `체인이 거절했습니다: ${reason}`)
+  }
+  // 다른 요청과 같은 번호(nonce)를 잡았으면 한 번만 새 번호로 다시 보낸다
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await c.relayer.writeContract(request)
+    } catch (e) {
+      const msg = String(e?.details ?? e?.shortMessage ?? e?.message ?? '')
+      if (attempt === 0 && /nonce|replacement transaction underpriced/i.test(msg)) {
+        await new Promise((r) => setTimeout(r, 1500))
+        continue
+      }
+      throw new HttpError(409, `체인이 거절했습니다: ${e?.shortMessage ?? '잠시 뒤에 다시 해 주세요'}`)
+    }
   }
 }

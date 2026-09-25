@@ -165,7 +165,11 @@ data class PartyState(
     val crewName: String = "",
     val members: List<PartyMember> = emptyList(),
     val countdown: Int = 0,
-    val resultPoints: Double = 0.0,
+    /**
+     * 끝난 러닝의 시작 시각 — 결과 화면이 이 러닝의 서버 확인 금액을 찾는 열쇠.
+     * 폰이 계산한 예상 금액은 두지 않는다(서버가 무효 · 상한 처리할 수 있다).
+     */
+    val resultStartedAt: Long = 0L,
     val resultSteps: Int = 0,
     /** 모두 같이 출발하는 시각 — 이 폰의 시계로 고친 값 */
     val startsAtLocal: Long = 0L,
@@ -626,7 +630,7 @@ class CrewRepository(
     }
 
     /** 세션 정산 후 결과 화면으로 전환. 방장이면 방을 닫고, 아니면 방에서 나온다. */
-    fun finishParty(points: Double, steps: Int) {
+    fun finishParty(startedAt: Long, steps: Int) {
         val state = _party.value
         if (state.phase != PartyPhase.RUNNING) return
         pollJob?.cancel()
@@ -635,7 +639,7 @@ class CrewRepository(
         }
         _party.value = state.copy(
             phase = PartyPhase.FINISHED,
-            resultPoints = points,
+            resultStartedAt = startedAt,
             resultSteps = steps,
         )
     }

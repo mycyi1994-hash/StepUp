@@ -56,13 +56,13 @@ interface WalkSessionDao {
      * 오래된 순인 것은 `RewardDistributor` 의 청구 창이 7일이기 때문이다.
      * 최신 것부터 처리하면 창을 넘긴 세션이 영영 청구되지 않는다.
      *
-     * 경로가 없는 세션은 거른다 — 서버가 판정할 수 없어 반드시 거절당한다.
+     * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
+     * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
      */
     @Query(
         """
         SELECT * FROM walk_sessions
          WHERE uploadState IN ('PENDING', 'FAILED')
-           AND track != ''
            AND steps > 0
            AND recordingOwner = :owner
          ORDER BY startedAt ASC
@@ -71,7 +71,7 @@ interface WalkSessionDao {
     )
     suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != '' AND steps > 0")
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
     /**
@@ -121,7 +121,17 @@ interface RewardDao {
     @Insert
     suspend fun insertAll(rows: List<RewardEntity>)
 
-    @Query("SELECT COALESCE(SUM(amount), 0.0) AS balance, COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent FROM rewards")
+    /**
+     * 잔고 · 번 것 · 쓴 것. 번 것은 러닝 · 목표 · 이벤트 · 파티 · 코스 보상만, 쓴 것은 뽑기 · 강화 ·
+     * 부스터 · 수리 · 거래소 구매 · 수수료만 센다. 사기 주문을 걸었다 거두면(ESCROW) 같은 금액이
+     * 번 것 · 쓴 것 양쪽에 붙고, 판매 대금 · 체인 넣기/꺼내기는 번 것 · 쓴 것이 아니다.
+     */
+    @Query(
+        "SELECT COALESCE(SUM(amount), 0.0) AS balance, " +
+            "COALESCE(SUM(CASE WHEN type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE') AND amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, " +
+            "COALESCE(SUM(CASE WHEN type IN ('SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR', 'TRADE_BUY', 'TRADE_FEE') AND amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent " +
+            "FROM rewards",
+    )
     fun observeTotals(): Flow<RewardTotals>
 
     @Insert
@@ -150,7 +160,11 @@ interface RewardDao {
     @Query("SELECT COUNT(*) FROM rewards WHERE type = :type")
     fun observeCountByType(type: String): Flow<Int>
 
-    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0")
+    @Query("SELECT COUNT(*) FROM rewards WHERE type IN (:types)")
+    fun observeCountByTypes(types: List<String>): Flow<Int>
+
+    /** 지금까지 번 SUP — [observeTotals] 의 earned 와 같은 종류만 */
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0 AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')")
     fun observeEarnedTotal(): Flow<Double>
 
     /**
@@ -162,7 +176,7 @@ interface RewardDao {
     @Query(
         "SELECT COALESCE(SUM(amount), 0.0) FROM rewards " +
             "WHERE amount > 0 AND timestamp >= :fromMillis " +
-            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY')",
+            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')",
     )
     fun observeEarnedSince(fromMillis: Long): Flow<Double>
 
@@ -310,6 +324,10 @@ interface ClaimedEventDao {
 
     @Query("SELECT * FROM claimed_events WHERE eventId = :id")
     suspend fun byId(id: String): ClaimedEventEntity?
+
+    /** 계정을 지웠을 때 — 이 폰의 다음 계정이 이미 받은 것으로 막히지 않게 */
+    @Query("DELETE FROM claimed_events")
+    suspend fun deleteAll()
 
     @Insert
     suspend fun insertReward(reward: RewardEntity)

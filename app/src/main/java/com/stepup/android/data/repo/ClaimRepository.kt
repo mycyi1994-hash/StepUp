@@ -98,7 +98,18 @@ class ClaimRepository(
                     signed++
                 }
 
-                is ServerResult.Rejected -> {
+                // 폰 시계가 앞서 있어 "종료 시각이 미래" 로 거절됐으면 시간이 지나면 받아진다 — 다시 시도할 목록에 둔다
+                is ServerResult.Rejected -> if ("종료 시각이 미래" in result.reason) {
+                    sessionDao.update(
+                        session.copy(
+                            uploadState = UploadState.FAILED.name,
+                            uploadAttemptedAt = now(),
+                            uploadAttempts = session.uploadAttempts + 1,
+                            uploadError = result.reason,
+                        ),
+                    )
+                    failed++
+                } else {
                     sessionDao.update(session.rejected(result.reason))
                     rejected++
                 }

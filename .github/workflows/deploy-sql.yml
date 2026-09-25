@@ -31,6 +31,8 @@ concurrency:
 
 jobs:
   apply:
+    # 손으로 돌려도 main 의 것만 올린다 — 작업 브랜치의 검토 전 스키마가 운영 DB 로 가지 않게
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

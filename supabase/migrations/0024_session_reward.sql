@@ -227,13 +227,17 @@ begin
   select t.gps_m, t.points, t.first_at, t.last_at
     into v_gps_m, v_points_n, v_first_at, v_last_at
     from economy.track_summary(v_track) t;
+  -- 경로 거리는 러닝 시간 안에 달릴 수 있는 만큼만(시속 25km). 경로 시각은 앞뒤로 여유를
+  -- 두므로, 아주 짧은 러닝 여러 개에 같은 몇 분짜리 경로를 붙여 거리를 여러 번 받지 못하게.
+  v_gps_m := least(coalesce(v_gps_m, 0), greatest(v_elapsed, 1) * 7.0);
 
   -- ── 판정 ──
   if coalesce(p_mock_location, false) then
     v_verdict := 'VOID';
     v_reason := '가짜 위치가 감지되었습니다';
 
-  elsif p_steps::numeric * 60 / greatest(v_elapsed, 60) > 240 then
+  -- 짧은 러닝도 실제 시간으로 잰다(예전엔 60초로 쳐서 1ms 러닝에 240걸음을 줬다)
+  elsif p_steps::numeric * 60 / greatest(v_elapsed, 1) > 240 then
     v_verdict := 'VOID';
     v_reason := '케이던스가 사람 범위를 벗어납니다';
 
@@ -436,17 +440,16 @@ begin
     on conflict (user_id, day) do update set used = public.energy_days.used + excluded.used;
   end if;
 
-  -- 신발이 닳는다. 폰에서 올린 예전 신발은 서버가 값을 믿지 않으므로 거리만 센다.
+  -- 신발이 닳는다. 예전 신발(IMPORT·MINT)도 똑같이 닳는다 — 안 닳으면 수리비를 안 내는 신발이 된다.
   if v_shoe.id is not null and v_verdict <> 'VOID' and v_distance_m > 0 then
     update public.market_sneakers s
        set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
-           durability_pts = case when s.origin in ('IMPORT', 'MINT') then s.durability_pts
-             else greatest(s.durability_pts
-               - round((v_distance_m / 1000)::numeric * economy.durability_loss_per_km(s.rarity), 2), 0) end,
+           durability_pts = greatest(s.durability_pts
+             - round((v_distance_m / 1000)::numeric * economy.durability_loss_per_km(s.rarity), 2), 0),
            updated_at = now()
      where s.id = v_shoe.id;
     update public.market_sneakers s set durability = floor(s.durability_pts)::int
-     where s.id = v_shoe.id and s.origin not in ('IMPORT', 'MINT');
+     where s.id = v_shoe.id;
   end if;
 
   if v_verdict <> 'VOID' then
@@ -542,21 +545,21 @@ set search_path = public, economy
 as $$
 declare
   v_user uuid := auth.uid();
-  v_tz text := coalesce(nullif(p_tz, ''), 'Asia/Seoul');
+  -- 게임의 하루 · 주는 한국 시각이다. 폰이 보낸 시간대는 쓰지 않는다(바꿔 가며 두 번 받지 못하게).
+  v_tz text := 'Asia/Seoul';
+  v_today date := economy.game_day(now());
 begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
-  end if;
-  if not exists (select 1 from pg_timezone_names where name = v_tz) then
-    v_tz := 'Asia/Seoul';
   end if;
 
   if p_event = 'step_surge' then
     -- 예전에는 폰이 올린 하루 걸음(daily_steps)을 더했다. 그 값은 폰이 마음대로
     -- 적을 수 있어 250 SUP 가 거저 나갔다. 경로가 받쳐 준 러닝 걸음만, 하루 상한까지 센다.
+    -- 받는 단위(이번 ISO 주)와 같은 기간만 센다 — 최근 7일로 세면 지난주 걸음으로 이번 주를 또 받는다.
     return coalesce((
       select sum(economy.verified_steps_on(v_user, d::date))
-        from generate_series(economy.game_day(now()) - 6, economy.game_day(now()), interval '1 day') d
+        from generate_series(v_today - (extract(isodow from v_today)::int - 1), v_today, interval '1 day') d
     ), 0);
   elsif p_event = 'night_quest' then
     return coalesce((
@@ -569,6 +572,35 @@ begin
   raise exception '없는 도전입니다' using errcode = '22023';
 end;
 $$;
+
+-- 코스 경로의 실제 길이(m). 경로는 "위도,경도[,…];…" — 시각이 없어도 된다. 점이 5개보다 적으면 0.
+create or replace function economy.course_length_m(p_track text) returns double precision
+language plpgsql immutable as $$
+declare
+  v_num constant text := '^-?[0-9]+(\.[0-9]+)?$';
+  v_chunk text;
+  v_parts text[];
+  v_lat double precision;
+  v_lng double precision;
+  v_plat double precision;
+  v_plng double precision;
+  v_total double precision := 0;
+  v_n int := 0;
+begin
+  foreach v_chunk in array string_to_array(coalesce(p_track, ''), ';') loop
+    v_parts := string_to_array(v_chunk, ',');
+    continue when v_parts is null or array_length(v_parts, 1) < 2;
+    continue when v_parts[1] !~ v_num or v_parts[2] !~ v_num;
+    v_lat := v_parts[1]::double precision;
+    v_lng := v_parts[2]::double precision;
+    continue when v_lat not between -90 and 90 or v_lng not between -180 and 180;
+    if v_n > 0 then
+      v_total := v_total + economy.haversine_m(v_plat, v_plng, v_lat, v_lng);
+    end if;
+    v_plat := v_lat; v_plng := v_lng; v_n := v_n + 1;
+  end loop;
+  return case when v_n < 5 then 0 else v_total end;
+end $$;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 코스 완주 보상 — 서버가 확인한 완주에만
@@ -629,7 +661,10 @@ begin
 
     -- 남이 만든 코스만, 경로로 잰 거리로, 하루 한 번. 자기 코스를 여러 개 만들어
     -- 러닝 하나로 보상을 여러 번 받지 못하게 한다.
-    v_reward := least(floor(least(coalesce(v_course_km, 0), v_session.gps_credit_m / 1000.0)), 42);
+    -- 코스 거리도 만든 사람이 적은 값 대신 경로로 잰 길이까지만 — 점 하나짜리 코스에 42km 를
+    -- 적어 두고 아무 러닝에나 보상을 받지 못하게.
+    v_reward := least(floor(least(coalesce(v_course_km, 0), economy.course_length_m(v_course_track) / 1000.0,
+                                  v_session.gps_credit_m / 1000.0)), 42);
     if v_reward >= 1 and (select c.owner_id from public.courses c where c.id = v_course) <> v_user then
       begin
         perform economy.ledger_apply(v_user, 'EARN_COURSE', v_reward, '코스 완주 보상',

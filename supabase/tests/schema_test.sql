@@ -497,15 +497,22 @@ call pg_temp.must_fail(
   $q$ update public.content_reports set status = 'DISMISSED' $q$,
   '신고 처리 상태를 앱이 바꿀 수 없다');
 
--- 코스
+-- 코스 — 앱은 표에 직접 쓰지 못한다(course_share 로만). 검사용 줄은 관리자로 넣는다.
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+call pg_temp.must_fail(
+  $q$ insert into public.courses (owner_id, name, distance_km, track, shared)
+      values ('11111111-1111-1111-1111-111111111111', 'x', 'NaN', '1,1', true) $q$,
+  '코스 표에 직접 넣을 수 없다 (거리 · 개수 검사를 건너뛰지 못하게)');
+reset role;
+insert into public.courses (owner_id, name, area, distance_km, track, shared)
+values ('11111111-1111-1111-1111-111111111111', '한강 5km', '서울 마포', 5.0,
+        '37.5,127.0;37.51,127.0', true);
+insert into public.courses (owner_id, name, area, distance_km, shared)
+values ('11111111-1111-1111-1111-111111111111', '혼자 보는 코스', '서울', 3.0, false);
+set role authenticated;
 call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 begin
-  insert into public.courses (owner_id, name, area, distance_km, track, shared)
-  values ('11111111-1111-1111-1111-111111111111', '한강 5km', '서울 마포', 5.0,
-          '37.5,127.0;37.51,127.0', true);
-  insert into public.courses (owner_id, name, area, distance_km, shared)
-  values ('11111111-1111-1111-1111-111111111111', '혼자 보는 코스', '서울', 3.0, false);
   perform pg_temp.ok((select count(*) from public.course_feed) = 2, '내 코스는 다 보인다');
 end $$;
 
@@ -2733,8 +2740,9 @@ call pg_temp.must_fail(
   $q$ select public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'wrong') $q$,
   '확인 번호가 틀리면 지갑을 붙이지 않는다');
 do $$ begin
-  perform public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
-    '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', pg_temp.fx('nonce_a'));
+  perform pg_temp.ok(public.attester_wallet_link('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
+    '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', pg_temp.fx('nonce_a')),
+    '계정의 첫 지갑이면 true (어테스터가 이때만 가스비를 보낸다)');
 end $$;
 call pg_temp.must_fail($q$ select * from public.wallet_links $q$, '어테스터도 표를 직접 읽지 못한다');
 reset role;
@@ -3051,6 +3059,91 @@ begin
 end $$;
 reset role;
 
+-- 0029 점검 반영 — 모르는 작업 · 어긋난 작업은 멈추고, 취소는 신발을 돌려놓고, 넣기는 버림
+insert into fix (k, v)
+  select 'op_bonus' || row_number() over (order by created_at), id::text from public.chain_ops
+   where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and kind = 'BONUS_MINT' and status <> 'CONFIRMED';
+insert into fix (k, v) values ('bal_0029', economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1')::text);
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$
+declare r record; r3 record;
+begin
+  -- 서명 재료는 멈추기 전에 받아 둔다(멈추면 서명 재료를 주지 않는다)
+  select * into r from public.attester_op_payload(pg_temp.fx('op_bonus2')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  select * into r3 from public.attester_op_payload(pg_temp.fx('op_bonus3')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('f1', 32), 0, 300, 'SUP_CLAIMED',
+      jsonb_build_object('op', '0x' || lpad('12345678123456781234567812345678', 64, '0'),
+                         'runner', '0xcccccccccccccccccccccccccccccccccccccccc', 'amount', '1000'))
+    = 'UNKNOWN_OP', '서버가 모르는 작업 번호로 나간 SUP 는 멈춤 신호');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('f2', 32), 0, 301, 'SNEAKER_RELEASED',
+      jsonb_build_object('op', r.op_ref, 'tokenId', '901', 'to', '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'))
+    = 'MISMATCH', '작업 번호가 맞아도 받는 지갑이 다르면 멈춤 신호');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('f3', 32), 0, 302, 'SNEAKER_RELEASED',
+      jsonb_build_object('op', r.op_ref, 'tokenId', '900', 'to', '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))
+    = 'MISMATCH', '다른 신발의 토큰 번호로 풀리면 멈춤 신호');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('f4', 32), 0, 303, 'OP_CANCELLED',
+      jsonb_build_object('op', r3.op_ref)) = 'CANCELLED', '체인에서 취소한 작업');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('f5', 32), 0, 304, 'SUP_DEPOSITED',
+      jsonb_build_object('account', '0x' || lpad('f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1', 64, '0'), 'amount', '1.00009'))
+    = 'CREDITED', '잘게 넣은 SUP');
+  perform pg_temp.ok((select sup_deposited = 18.5 from public.attester_ledger_totals()),
+    '대조용 넣기 합도 버림 (12.5 + 5 + 1.00009 → 18.5)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select value = 'true'::jsonb from public.economy_settings where key = 'chain_paused'),
+    '모르는 작업 · 어긋난 작업이 보이면 서버가 체인 작업을 멈춘다');
+  perform pg_temp.ok((select status <> 'CONFIRMED' from public.chain_ops where id = pg_temp.fx('op_bonus2')::uuid),
+    '어긋난 이벤트로는 작업을 확정하지 않는다');
+  perform pg_temp.ok((select o.status = 'EXPIRED' and s.chain_state = 'APP'
+                        from public.chain_ops o join public.market_sneakers s on s.id = o.sneaker_id
+                       where o.id = pg_temp.fx('op_bonus3')::uuid),
+    '취소한 작업의 신발은 앱으로 돌아온다');
+  perform pg_temp.ok(economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') = pg_temp.fx('bal_0029')::numeric + 1,
+    '4자리 아래는 버린다 — 넣은 것보다 더 주지 않는다');
+end $$;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- 2차 점검 — 같은 작업을 곧바로 다시 서명하지 않는다 · 멈춤 상태를 어테스터가 읽는다
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform public.attester_op_payload(pg_temp.fx('op_bonus4')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  perform pg_temp.ok(public.attester_chain_paused() = false, '멈추지 않았을 때 false');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select * from public.attester_op_payload('%s', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') $q$, pg_temp.fx('op_bonus4')),
+  '방금 서명한 작업은 다른 요청이 곧바로 다시 서명하지 못한다');
+reset role;
+update public.chain_ops set updated_at = now() - interval '1 minute' where id = pg_temp.fx('op_bonus4')::uuid;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform public.attester_op_payload(pg_temp.fx('op_bonus4')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  perform pg_temp.ok(true, '잠시 뒤에는 다시 서명할 수 있다(보내기가 실패했을 때)');
+  perform public.attester_pause('검사');
+  perform pg_temp.ok(public.attester_chain_paused(), '멈추면 true');
+end $$;
+reset role;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- 계정을 지운 사람의 꺼내기가 만료돼도 오류 없이 만료된다(어테스터 만료가 멈추지 않게)
+insert into public.chain_ops (id, user_id, kind, status, wallet, amount, deadline)
+values ('0d0d0d0d-0d0d-0d0d-0d0d-0d0d0d0d0d0d', null, 'SUP_WITHDRAW', 'SIGNED',
+        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 5, now() - interval '2 hours');
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform pg_temp.ok(public.attester_op_expire('0d0d0d0d-0d0d-0d0d-0d0d-0d0d0d0d0d0d', false) = 'EXPIRED',
+    '주인이 없는 꺼내기도 만료된다');
+end $$;
+reset role;
+
 -- 체인 커서는 앞으로만 간다
 set role stepup_attester;
 select set_config('request.jwt.claims',
@@ -3101,6 +3194,62 @@ call pg_temp.must_fail(
   format($q$ select public.attester_wallet_link('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3',
             '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '%s') $q$, pg_temp.fx('nonce_c')),
   '지운 계정이 쓰던 지갑을 새 계정에 붙여 보너스를 다시 받을 수 없다');
+reset role;
+
+-- 2차 점검 — 주인이 계정을 지운 신발은 아무도 가져가지 못한다
+insert into fix (k, v)
+  select 'orphan_shoe', id::text from public.market_sneakers
+   where owner_id is null and chain_state = 'APP' order by id limit 1;
+do $$ begin
+  perform pg_temp.ok(pg_temp.fx('orphan_shoe') is not null, '(준비) 주인 없는 앱 신발이 있다');
+end $$;
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin perform public.economy_bootstrap(); end $$;
+call pg_temp.must_fail(format($q$ select public.market_list(%s, 900) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 매물로 걸 수 없다');
+call pg_temp.must_fail(format($q$ select public.sneaker_equip(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 신을 수 없다');
+call pg_temp.must_fail(format($q$ select public.sneaker_upgrade(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 강화할 수 없다');
+select set_config('request.jwt.claims', '{"aal":"aal2"}', false);
+call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발을 지갑으로 꺼낼 수 없다');
+select set_config('request.jwt.claims', '', false);
+call pg_temp.must_fail($q$ select public.market_list(
+    (select id from public.market_sneakers where owner_id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3' limit 1), 'NaN') $q$,
+  'NaN 값으로 매물을 걸 수 없다');
+reset role;
+call pg_temp.must_fail(
+  format($q$ update public.market_sneakers set owner_id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3' where id = %s $q$,
+         pg_temp.fx('orphan_shoe')),
+  '주인 없는 신발의 주인을 바꿀 수 없다(체인에서 넣은 경우 빼고)');
+
+-- 0029 — 상대가 계정을 지운 거래도 "판 것인가"가 거짓/참으로 나온다
+insert into public.market_trades (faction, rarity, variant, level, seller_id, buyer_id, price, fee, kind)
+values ('WIND', 'COMMON', 0, 1, null, 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3', 10, 0, 'BY_ASK');
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin
+  perform pg_temp.ok((select bool_and(sold is not null) and bool_and(not sold) from public.market_my_trades()),
+    '판 사람이 지워진 거래도 sold 가 비지 않는다');
+end $$;
+reset role;
+
+-- 0030 — 앱의 하루 목표가 서버 판정에 쓰인다
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin
+  perform pg_temp.ok(public.profile_set_daily_goal(3000) = 3000, '목표를 서버에 적는다');
+  perform pg_temp.ok(public.profile_set_daily_goal(999999) = 30000, '범위 밖 목표는 goal_claim 범위로 맞춘다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select daily_goal from public.profiles where id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3') = 30000,
+    '프로필에 남는다');
+end $$;
+set role anon;
+call pg_temp.must_fail($q$ select public.profile_set_daily_goal(5000) $q$, '로그인 없이는 못 바꾼다');
 reset role;
 
 \echo ''

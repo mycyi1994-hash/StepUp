@@ -387,12 +387,17 @@ private fun sneakerLabel(slotKey: String): String {
 @Composable
 private fun messageFor(entity: NotificationEntity): String {
     val amount = "%,.2f".format(entity.argAmount)
+    // 서버 경제에서는 아래 네 가지 알림을 더 만들지 않는다 — 남은 것은 폰이 계산하던 때의 기록이라
+    // 서버가 인정한 금액이 아니다. 금액 없이 무슨 일이었는지만 보인다.
+    val legacy = com.stepup.android.core.ServiceLocator.serverEconomyOn
     return when (entity.type) {
         NotificationType.REWARD_EARNED ->
-            stringResource(R.string.notif_reward_earned, entity.argText, amount)
+            if (legacy) stringResource(R.string.notif_reward_earned_plain, entity.argText)
+            else stringResource(R.string.notif_reward_earned, entity.argText, amount)
 
         NotificationType.GOAL_REACHED ->
-            stringResource(R.string.notif_goal_reached, entity.argText, amount)
+            if (legacy) stringResource(R.string.notif_goal_reached_plain, entity.argText)
+            else stringResource(R.string.notif_goal_reached, entity.argText, amount)
 
         NotificationType.SNEAKER_MINTED ->
             stringResource(R.string.notif_sneaker_minted, sneakerLabel(entity.argText))
@@ -407,7 +412,8 @@ private fun messageFor(entity: NotificationEntity): String {
             stringResource(R.string.notif_crew_joined, entity.argText)
 
         NotificationType.PARTY_FINISHED ->
-            stringResource(R.string.notif_party_finished, entity.argText, amount)
+            if (legacy) stringResource(R.string.notif_party_finished_plain, entity.argText)
+            else stringResource(R.string.notif_party_finished, entity.argText, amount)
 
         NotificationType.EVENT_CLAIMED ->
             stringResource(R.string.notif_event_claimed, entity.argText, amount)
@@ -419,7 +425,8 @@ private fun messageFor(entity: NotificationEntity): String {
             stringResource(R.string.notif_comment_reply, entity.argText)
 
         NotificationType.COURSE_COMPLETE ->
-            stringResource(R.string.notif_course_complete, entity.argText, amount)
+            if (legacy) stringResource(R.string.notif_course_complete_plain, entity.argText)
+            else stringResource(R.string.notif_course_complete, entity.argText, amount)
 
         NotificationType.CREW_INVITE ->
             stringResource(R.string.notif_crew_invite, entity.argText)

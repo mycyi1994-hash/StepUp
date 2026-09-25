@@ -36,6 +36,9 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch:
   push:
+    # service_role 열쇠로 운영 표에 쓰므로 main 의 수집기만 돈다(작업 브랜치 코드는 자체 검사만)
+    branches:
+      - "main"
     paths:
       - "scripts/feed-collect.py"
       - ".github/workflows/feed-collect.yml"
@@ -61,8 +64,11 @@ jobs:
 
       - name: 열쇠가 있는지
         id: keys
+        env:
+          HAS_KEY: ${{ secrets.SUPABASE_SERVICE_KEY != '' }}
+          HAS_URL: ${{ secrets.SUPABASE_URL != '' }}
         run: |
-          if [ -n "${{ secrets.SUPABASE_SERVICE_KEY }}" ] && [ -n "${{ secrets.SUPABASE_URL }}" ]; then
+          if [ "$HAS_KEY" = "true" ] && [ "$HAS_URL" = "true" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
@@ -70,7 +76,7 @@ jobs:
           fi
 
       - name: 소식 모아서 표에 넣기
-        if: steps.keys.outputs.ready == 'yes'
+        if: steps.keys.outputs.ready == 'yes' && github.ref == 'refs/heads/main'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

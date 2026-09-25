@@ -336,7 +336,7 @@ class CourseRepository(
 
     companion object {
         /** 게시판의 서버 코스 번호에 더하는 값. 폰의 코스 번호는 여기까지 가지 않는다. */
-        const val REMOTE_BASE = 1_000_000_000_000L
+        const val REMOTE_BASE = RunCourse.SERVER_ID_BASE
     }
 }
 

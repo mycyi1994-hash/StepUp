@@ -209,7 +209,7 @@ class ItemsViewModel(
     val freeDrawsLeft: StateFlow<Int> = sneakerRepository.freeDrawsLeft
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    private fun savePurchase(action: suspend () -> Unit) {
+    private fun savePurchase(onDone: () -> Unit = {}, action: suspend () -> Unit) {
         viewModelScope.launch {
             try {
                 action()
@@ -217,12 +217,19 @@ class ItemsViewModel(
                 throw cancelled
             } catch (_: Exception) {
                 message.value = ItemsMessage.SaveFailed
+            } finally {
+                onDone()
             }
         }
     }
 
+    /** 구매 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번 사지 않게 */
+    private var buyingBoost = false
+
     fun buyBoost(type: BoostType) {
-        savePurchase {
+        if (buyingBoost) return
+        buyingBoost = true
+        savePurchase(onDone = { buyingBoost = false }) {
             message.value = when (boostRepository.purchase(type)) {
                 null -> ItemsMessage.BoostBought
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance

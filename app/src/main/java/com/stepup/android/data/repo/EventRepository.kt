@@ -3,7 +3,6 @@ package com.stepup.android.data.repo
 import com.stepup.android.data.local.ClaimedEventDao
 import com.stepup.android.data.local.ClaimedEventEntity
 import com.stepup.android.data.local.StepDao
-import com.stepup.android.data.remote.DaySteps
 import com.stepup.android.data.remote.EventApi
 import com.stepup.android.data.remote.ServerResult
 import java.time.LocalDate
@@ -64,8 +63,17 @@ class EventRepository(
     private val dao: ClaimedEventDao,
     private val api: EventApi,
     private val stepDao: StepDao,
-    private val zone: () -> ZoneId = { ZoneId.systemDefault() },
+    /** 받는 단위(이번 주)를 세는 시간대 — 서버와 같은 한국 시각 */
+    private val zone: () -> ZoneId = { ZoneId.of(EventApi.SERVER_TIME_ZONE) },
 ) {
+
+    /**
+     * 서버가 잰 진행값. 로그인하지 않았거나 연결이 없으면 null — 화면은 "—" 로 둔다.
+     * 폰 만보기 걸음은 서버가 인정하지 않으므로 대신 보이지 않는다.
+     */
+    suspend fun serverProgress(def: EventDef): Double? =
+        (api.progress(def.id) as? ServerResult.Ok)?.value
+
 
     /** 이번 기간에 받은 도전의 id(`step_surge` · `night_quest`) */
     val claimedIds: Flow<Set<String>> =
@@ -84,18 +92,7 @@ class EventRepository(
         if (dao.byId(key) != null) return EventClaimResult.AlreadyClaimed
         if (!def.claimableWithoutTarget && progress < 1f) return EventClaimResult.NotFinished
 
-        // 주간 걸음은 서버가 올려 둔 일별 걸음으로 잰다. 받기 전에 최근 걸음을 올린다.
-        if (def == Events.STEP_SURGE) {
-            val today = LocalDate.now(zone()).toEpochDay()
-            val days = (today - 7..today).mapNotNull { day ->
-                stepDao.byDay(day)?.let { DaySteps(it.epochDay, it.steps, it.goal) }
-            }
-            if (days.isNotEmpty()) {
-                val synced = api.syncSteps(days)
-                if (synced is ServerResult.SignInRequired) return EventClaimResult.SignInRequired
-                if (synced !is ServerResult.Ok) return EventClaimResult.Failed
-            }
-        }
+        // 주간 걸음은 서버가 확인한 러닝 걸음으로 잰다(0024) — 폰의 일별 걸음은 올려도 쓰이지 않는다.
 
         return when (val result = api.claim(def.id, zone().id)) {
             is ServerResult.Ok -> {

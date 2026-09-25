@@ -185,7 +185,7 @@
     <string name="crew_boost_hint" formatted="false">크루원 1명당 적립 +10%, 최대 +50%까지 붙어요.</string>
     <string name="crew_running_together">%1$d명이 함께 달리는 중</string>
     <string name="crew_result_title">파티런 완료! 🎉</string>
-    <string name="crew_result_body">%1$s걸음 적립 · 파티 부스트 %2$d%% 적용</string>
+    <string name="crew_result_body">%1$s걸음 · 파티 부스트 %2$d%%</string>
     <string name="crew_leave_lobby">로비 나가기</string>
     <string name="crew_join_first">같이 달리려면 먼저 크루에 가입하세요</string>
 
@@ -296,12 +296,15 @@
     <string name="notif_empty_title">아직 알림이 없어요</string>
     <string name="notif_empty_body">적립, 크루 소식, 이벤트 알림이 여기에 모여요.</string>
     <string name="notif_reward_earned">%1$s걸음으로 %2$s SUP 적립</string>
+    <string name="notif_reward_earned_plain">%1$s걸음 러닝 기록</string>
     <string name="notif_goal_reached">일일 목표 달성! %1$s일 연속 · +%2$s SUP</string>
+    <string name="notif_goal_reached_plain">일일 목표 달성! %1$s일 연속</string>
     <string name="notif_sneaker_minted">%1$s 민팅 완료</string>
     <string name="notif_sneaker_upgraded">%1$s 레벨이 올랐어요</string>
     <string name="notif_boost_activated">부스트가 활성화됐어요</string>
     <string name="notif_crew_joined">%1$s에 가입했어요</string>
     <string name="notif_party_finished">%1$s명과 파티런 · +%2$s SUP</string>
+    <string name="notif_party_finished_plain">%1$s명과 파티런</string>
     <string name="notif_event_claimed">이벤트 보상 수령 · +%2$s SUP</string>
 
     <!-- Profile -->
@@ -1035,7 +1038,10 @@ StepUp과 함께 달려보세요.</string>
     <string name="course_selected">선택됨</string>
     <string name="course_today">오늘의 챌린지</string>
     <string name="course_reward_value">+%1$s SUP</string>
-    <string name="course_per_km">1km당 %1$s SUP · 최대 %2$s</string>
+    <string name="course_reward_upto">최대 +%1$s SUP</string>
+    <string name="course_reward_none">이 코스는 완주 보상이 없어요 (체험 · 내 코스)</string>
+    <string name="course_apply_body_no_reward">%1$s · %2$s km\n이 코스는 완주 보상이 없어요 (체험 · 내 코스). 기록은 남아요.</string>
+    <string name="course_per_km">1km당 %1$s SUP · 최대 %2$s · 하루 한 번, 서버 확인 후</string>
     <string name="course_to_finish">완주까지</string>
     <string name="course_none_title">선택한 코스가 없어요</string>
     <string name="course_none_body">코스를 고르면 실시간 지도와 거리 기반 완주 보상이 열려요.</string>
@@ -1075,10 +1081,11 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_open_google">구글 지도에서 열기</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">이 코스를 적용할까요?</string>
-    <string name="course_apply_body">%1$s · %2$s km\n완주하면 %3$s SUP를 받아요.</string>
+    <string name="course_apply_body">%1$s · %2$s km\n완주하면 서버 확인 후 최대 %3$s SUP를 받아요 (하루 한 번).</string>
     <string name="course_clear_title">코스 적용을 해제할까요?</string>
     <string name="course_clear_body">%1$s이(가) 더 이상 적용 코스가 아니게 돼요.</string>
     <string name="notif_course_complete">%1$s 완주! +%2$s SUP 받았어요</string>
+    <string name="notif_course_complete_plain">%1$s 완주!</string>
     <string name="news_refresh">새로 고침</string>
     <string name="news_loading">러닝 소식을 받아 오는 중…</string>
     <string name="news_empty">아직 받아 온 소식이 없습니다. 매일 아침 9시에 한 번 모읍니다.</string>
@@ -1463,6 +1470,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_waiting_title">내 위치를 찾는 중이에요</string>
     <string name="map_waiting_body">GPS가 잡히면 실제로 달린 경로가 여기에 그려져요.</string>
     <string name="finish_pending_short">서버 확인 중</string>
+    <string name="finish_no_reward">서버 확인 · 이번 러닝은 적립 없음</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">오늘도 좋은 하루예요.</string>

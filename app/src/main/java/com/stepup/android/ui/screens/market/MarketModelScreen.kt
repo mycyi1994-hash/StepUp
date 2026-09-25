@@ -84,9 +84,11 @@ fun MarketModelScreen(
     var asking by remember { mutableStateOf(false) }
     var bidding by remember { mutableStateOf(false) }
 
-    // 팔 수 있는 신발 = 이 모델이면서 신고 있지 않은 것.
-    // 신고 있는 것을 팔면 다음 러닝의 부스트가 말없이 사라진다.
-    val sellable = state.mySneakers.filter { !it.equipped }
+    // 팔 수 있는 신발 = 이 모델이면서 신고 있지 않고, 서버가 넘길 수 있다고 한 것.
+    // 신고 있는 것을 팔면 다음 러닝의 부스트가 말없이 사라진다. 첫 신발 · 예전 신발 ·
+    // 잠금 거리(50km) 전 · 이미 건 것 · 체인에 있는 것은 서버가 거절하므로 고르지 못하게 한다
+    // (서버의 can_withdraw 가 같은 조건이다).
+    val sellable = state.mySneakers.filter { !it.equipped && it.canWithdraw }
 
     // 보관함에서 판매로 들어왔으면 등록 창을 한 번 열어 준다. 장부를
     // 받아 온 뒤에 여는 것은, 그 전에는 고를 신발 목록이 비어 있어 창이

@@ -94,11 +94,12 @@ create policy event_claims_select_own on public.event_claims
   for select using ((select auth.uid()) = user_id);
 grant select on public.event_claims to authenticated;
 
--- 도전 기간. 주간 도전은 이번 ISO 주, 나머지는 한 번.
+-- 도전 기간. 주간 도전은 이번 ISO 주(한국 시각), 나머지는 한 번.
+-- 사용자가 보낸 시간대는 쓰지 않는다 — 시간대를 바꿔 가며 같은 주를 두 번 받지 못하게.
 create or replace function economy.event_period(p_event text, p_tz text) returns text
   language sql stable as $$
     select case p_event
-      when 'step_surge' then to_char(now() at time zone p_tz, 'IYYY-"W"IW')
+      when 'step_surge' then to_char(now() at time zone 'Asia/Seoul', 'IYYY-"W"IW')
       else 'once'
     end
   $$;

@@ -455,8 +455,10 @@ class WalkSessionService : Service() {
             if (verdict.isRewardable) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {
+                    // 보폭이 0.762m 보다 긴 사람은 걸음 거리로는 완주에 못 미친다 — GPS 거리와 큰 쪽.
+                    // 서버가 경로로 다시 확인한다.
                     val finished = ServiceLocator.courseRepository.grantCompletionIfFinished(
-                        RewardEconomy.distanceMeters(creditedSteps) / 1000,
+                        maxOf(session.gpsKm, RewardEconomy.distanceMeters(creditedSteps) / 1000),
                     )
                     // 완주한 코스는 러닝이 서버에 올라간 뒤 코스 기록으로 낸다
                     // (ServerSessionRecorder). 서버가 경로로 다시 확인한다.
@@ -493,7 +495,7 @@ class WalkSessionService : Service() {
             // 방에서 출발했어도(인원 1) 방은 닫아야 한다 — 안 그러면 로비가 계속
             // 뛰는 중으로 남아 위치를 보낸다.
             if (ServiceLocator.crewRepository.party.value.isActive) {
-                ServiceLocator.crewRepository.finishParty(reward.points, reward.rewardedSteps)
+                ServiceLocator.crewRepository.finishParty(session.startedAt, reward.rewardedSteps)
             }
             settling = false
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)

@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,6 +93,7 @@ fun PartyLobbyScreen(
     }
     val context = LocalContext.current
     val party by viewModel.party.collectAsStateWithLifecycle()
+    val resultPoints by viewModel.resultServerPoints.collectAsStateWithLifecycle()
 
     // 번개러닝이면 글에서 제목을 가져온다.
     val posts by community.allPosts.collectAsStateWithLifecycle()
@@ -308,14 +310,26 @@ fun PartyLobbyScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                     color = Snow,
                                 )
-                                Text(
-                                    text = "+%.2f SUP".format(party.resultPoints),
-                                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                                    fontSize = 34.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-1).sp,
-                                    color = Volt,
-                                )
+                                // 금액은 서버가 확인한 뒤에만 — 그 전에는 "서버 확인 중"
+                                val confirmed = resultPoints
+                                if (confirmed != null) {
+                                    Text(
+                                        text = "+%.2f SUP".format(confirmed),
+                                        fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
+                                        fontSize = 34.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = (-1).sp,
+                                        color = Volt,
+                                        modifier = Modifier.testTag("party-result-points"),
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.finish_pending_short),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Silver,
+                                        modifier = Modifier.testTag("party-result-pending"),
+                                    )
+                                }
                                 Text(
                                     text = stringResource(
                                         R.string.crew_result_body,

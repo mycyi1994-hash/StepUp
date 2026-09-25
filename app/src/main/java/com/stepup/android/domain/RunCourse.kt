@@ -1,5 +1,6 @@
 package com.stepup.android.domain
 
+import kotlin.math.floor
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -33,8 +34,16 @@ data class RunCourse(
     val runCount: Int,
     val createdAt: Long,
 ) {
-    /** 완주 보상(SUP) — 거리에 정비례한다 */
+    /** 완주 보상(SUP) — 거리에 정비례한다 (서버 없이 도는 폰 경제용) */
     val reward: Double get() = CourseRewards.forDistance(distanceKm)
+
+    /**
+     * 서버가 주는 완주 보상의 최대치. 서버는 게시판의 **남이 만든** 코스에만, km 를 버린 값으로,
+     * 하루 한 번 준다(0024 course_run_submit). 체험 코스 · 내 코스는 0.
+     * 실제 금액은 달린 GPS 거리로 서버가 정하므로 화면에는 "최대"로만 보인다.
+     */
+    val serverReward: Double
+        get() = if (id >= SERVER_ID_BASE && !mine) floor(distanceKm).coerceIn(0.0, CourseRewards.MAX_REWARD) else 0.0
 
     /** 좌표가 없으면 지도를 그릴 수 없다 */
     val hasTrack: Boolean get() = points.size >= 2
@@ -45,6 +54,9 @@ data class RunCourse(
     fun encode(): String = points.joinToString(";") { "${it.lat},${it.lng}" }
 
     companion object {
+        /** 게시판(서버) 코스의 폰 번호는 서버 번호에 이 값을 더한다 — 폰에서 만든 코스와 섞이지 않게 */
+        const val SERVER_ID_BASE = 1_000_000_000_000L
+
         fun decode(raw: String): List<GeoPoint> = raw.split(';')
             .mapNotNull { chunk ->
                 val parts = chunk.split(',')

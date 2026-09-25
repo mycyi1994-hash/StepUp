@@ -1,7 +1,7 @@
 import { clients } from './chain.js'
 import { getUser, rpc, HttpError } from './supabase.js'
 import { linkWallet, executeOp } from './handlers.js'
-import { indexEvents, expireOps, reconcile } from './indexer.js'
+import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
 
 /**
@@ -63,7 +63,8 @@ async function rateLimited(request, env) {
 
 async function metadataResponse(request, env, ctx, url, id) {
   const cache = globalThis.caches?.default
-  const key = new Request(url.toString(), { method: 'GET' })
+  // 쿼리(?x=…)를 바꿔 캐시를 피해 RPC 를 두드리지 못하게 경로만으로 캐시한다
+  const key = new Request(url.origin + url.pathname, { method: 'GET' })
   if (cache) {
     const hit = await cache.match(key)
     if (hit) return hit
@@ -111,6 +112,8 @@ export default {
           sneakerSigner: c.sneakerSigner.address,
           relayer: c.relayer.account.address,
           guardian: c.guardian?.account.address ?? null,
+          // 지킴이 키가 없으면 이상이 보여도 컨트랙트를 멈추지 못한다
+          canPause: Boolean(c.guardian),
           contracts: c.addresses,
         })
       }
@@ -154,12 +157,19 @@ export default {
       console.log('contracts not configured — skipping')
       return
     }
+    // 세 일을 따로 돌린다 — 앞의 일이 실패해도 대조(키가 샜는지 보는 일)는 매번 한다
+    const step = (name, fn) =>
+      fn(env, deps).catch((e) => {
+        console.error(`scheduled ${name} error`, e?.message)
+        return { error: true }
+      })
     const run = async () => {
-      const events = await indexEvents(env, deps)
-      const expiry = await expireOps(env, deps)
-      const books = await reconcile(env, deps)
-      console.log(JSON.stringify({ events, expiry, books }))
+      const events = await step('events', indexEvents)
+      const expiry = await step('expiry', expireOps)
+      const books = await step('reconcile', reconcile)
+      const guard = await step('guard', keepPaused)
+      console.log(JSON.stringify({ events, expiry, books, guard }))
     }
-    ctx.waitUntil(run().catch((e) => console.error('scheduled error', e?.message)))
+    ctx.waitUntil(run())
   },
 }

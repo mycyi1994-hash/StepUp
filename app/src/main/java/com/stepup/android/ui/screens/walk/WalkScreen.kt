@@ -837,8 +837,13 @@ private fun CourseChallengeCard(
         if (course != null) {
             FinishStat(stringResource(R.string.course_to_finish), "%.2f".format((course.distanceKm - sessionKm).coerceAtLeast(0.0)), "km")
             BarMeter(fraction = progress, height = 7.dp)
-            Text(stringResource(R.string.course_reward_value, "%.1f".format(course.reward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
-            Text(stringResource(R.string.course_per_km, "%.0f".format(CourseRewards.SUP_PER_KM), "%.0f".format(CourseRewards.MAX_REWARD)), style = MaterialTheme.typography.bodyMedium, color = Silver)
+            // 서버가 주는 코스만 금액을 보인다(최대치) — 체험 · 내 코스는 "보상 없음"
+            if (course.serverReward > 0) {
+                Text(stringResource(R.string.course_reward_upto, "%.0f".format(course.serverReward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
+            } else {
+                Text(stringResource(R.string.course_reward_none), style = MaterialTheme.typography.bodyMedium, color = Silver)
+            }
+            if (course.serverReward > 0) Text(stringResource(R.string.course_per_km, "%.0f".format(CourseRewards.SUP_PER_KM), "%.0f".format(CourseRewards.MAX_REWARD)), style = MaterialTheme.typography.bodyMedium, color = Silver)
         } else if (!running) {
             Text(stringResource(R.string.course_none_body), style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
@@ -1064,14 +1069,17 @@ private fun FinishCard(
     val context = LocalContext.current
     val voided = session.lastVerdict == RunVerdict.VOID
     // 서버가 확인했고 그 금액까지 읽었을 때만 확정으로 보인다 — 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게
-    val confirmed = !voided && upload == UploadState.SIGNED.name && points != null
-    val rejected = voided || upload == UploadState.REJECTED.name
+    // 금액이 0 이면(서버가 무효 · 상한 처리) 확인은 됐어도 "적립 완료"가 아니다 — 축하도 하지 않는다
+    val confirmed = !voided && upload == UploadState.SIGNED.name && points != null && points > 0.0
+    val noReward = !voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0
+    val rejected = voided || upload == UploadState.REJECTED.name || noReward
     val km = if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
     val paceSec: Long? = if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
     // 서버가 확인한 뒤에만 "적립 완료". 그 전에는 확인 중이라고 적는다.
     val headline = when {
         voided -> R.string.run_void_title
         confirmed -> R.string.finish_confirmed
+        noReward -> R.string.finish_no_reward
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
     }

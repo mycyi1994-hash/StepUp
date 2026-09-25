@@ -24,6 +24,7 @@ export const SNEAKERS_ABI = parseAbi([
   'function pause()',
   'function release((bytes32 opId, address to, uint256 tokenId, uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo, bool locked, uint64 deadline) r, bytes signature)',
   'event Released(bytes32 indexed opId, uint256 indexed tokenId, address indexed to, bool minted)',
+  'event OpCancelled(bytes32 indexed opId)',
   'event Deposited(uint256 indexed tokenId, address indexed from, bytes32 indexed account)',
 ])
 

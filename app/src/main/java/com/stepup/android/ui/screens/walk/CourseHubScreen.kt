@@ -266,7 +266,8 @@ fun CourseHubScreen(
                 CourseTrackMap(points = remember(pending.id, pending.points) { pending.normalized() }, seed = pending.id.toInt(), modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)))
                 Text(
                     text = if (clearing) stringResource(R.string.course_clear_body, pending.name)
-                    else stringResource(R.string.course_apply_body, pending.name, "%.2f".format(pending.distanceKm), "%.1f".format(pending.reward)),
+                    else if (pending.serverReward > 0) stringResource(R.string.course_apply_body, pending.name, "%.2f".format(pending.distanceKm), "%.0f".format(pending.serverReward))
+                    else stringResource(R.string.course_apply_body_no_reward, pending.name, "%.2f".format(pending.distanceKm)),
                     style = MaterialTheme.typography.bodyLarge, color = Silver,
                 )
             }
@@ -310,7 +311,12 @@ private fun CourseCard(
             points = remember(course.id, course.points) { course.normalized() }, seed = course.id.toInt(),
             modifier = Modifier.fillMaxWidth().height(136.dp).clip(RoundedCornerShape(16.dp)).quietClickable(onSelect),
         )
-        Text(stringResource(R.string.course_reward_value, "%.1f".format(course.reward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
+        // 서버가 주는 코스만 금액을 보인다(최대치) — 체험 · 내 코스는 "보상 없음"
+        if (course.serverReward > 0) {
+            Text(stringResource(R.string.course_reward_upto, "%.0f".format(course.serverReward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
+        } else {
+            Text(stringResource(R.string.course_reward_none), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.course_runs, course.runCount), style = MaterialTheme.typography.bodyMedium, color = Silver, modifier = Modifier.weight(1f))
             IconToggleButton(checked = course.liked, onCheckedChange = { onLike() }, modifier = Modifier.size(48.dp)) {

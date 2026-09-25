@@ -339,7 +339,7 @@ language plpgsql security definer set search_path = public as $$
 declare v public.market_sneakers;
 begin
   select * into v from public.market_sneakers where id = p_id for update;
-  if not found or v.owner_id <> p_user then
+  if not found or v.owner_id is distinct from p_user then
     raise exception '내 신발이 아닙니다' using errcode = '42501';
   end if;
   if v.chain_state <> 'APP' then
@@ -518,6 +518,10 @@ begin
      and current_setting('stepup.chain_deposit', true) = 'on' then
     new.equipped := false;
     return new;
+  end if;
+  -- 주인이 계정을 지워 비어 있는 신발은 아무에게도 넘어가지 않는다(체인에서 넣은 경우만 위에서 허락).
+  if old.owner_id is null then
+    raise exception '주인이 없는 신발입니다' using errcode = '42501';
   end if;
 
   if old.chain_state <> 'APP' or new.chain_state <> 'APP' then

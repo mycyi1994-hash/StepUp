@@ -186,7 +186,7 @@
     <string name="crew_boost_hint" formatted="false">クルーメイト1人につき獲得量が+10%、最大+50%までアップします。</string>
     <string name="crew_running_together">%1$d人のランナーと一緒に走行中</string>
     <string name="crew_result_title">パーティーラン完了！ 🎉</string>
-    <string name="crew_result_body">%1$s歩ぶんをパーティーブースト%2$d%%で獲得しました</string>
+    <string name="crew_result_body">%1$s歩 · パーティーブースト%2$d%%</string>
     <string name="crew_leave_lobby">ロビーを出る</string>
     <string name="crew_join_first">一緒に走るにはクルーに参加してね</string>
 
@@ -297,12 +297,15 @@
     <string name="notif_empty_title">まだ何もありません</string>
     <string name="notif_empty_body">報酬・クルーの招待・イベント情報がここに届きます。</string>
     <string name="notif_reward_earned">%1$s歩で %2$s SUP を獲得</string>
+    <string name="notif_reward_earned_plain">%1$s歩のラン記録</string>
     <string name="notif_goal_reached">1日の目標を達成！ %1$s日連続 · +%2$s SUP</string>
+    <string name="notif_goal_reached_plain">デイリー目標達成！%1$s日連続</string>
     <string name="notif_sneaker_minted">%1$sをミントしました</string>
     <string name="notif_sneaker_upgraded">%1$sのレベルが上がりました</string>
     <string name="notif_boost_activated">ブーストを発動しました</string>
     <string name="notif_crew_joined">%1$sに参加しました</string>
     <string name="notif_party_finished">%1$s人とパーティーラン · +%2$s SUP</string>
+    <string name="notif_party_finished_plain">%1$s人でパーティーラン</string>
     <string name="notif_event_claimed">イベント報酬を受け取りました · +%2$s SUP</string>
 
     <!-- Profile -->
@@ -1036,7 +1039,10 @@ StepUp と走り出そう。</string>
     <string name="course_selected">選択中</string>
     <string name="course_today">今日のチャレンジ</string>
     <string name="course_reward_value">+%1$s SUP</string>
-    <string name="course_per_km">1kmあたり %1$s SUP · 最大 %2$s</string>
+    <string name="course_reward_upto">最大 +%1$s SUP</string>
+    <string name="course_reward_none">このコースは完走報酬がありません（体験・自分のコース）</string>
+    <string name="course_apply_body_no_reward">%1$s · %2$s km\nこのコースは完走報酬がありません（体験・自分のコース）。記録は残ります。</string>
+    <string name="course_per_km">1kmあたり %1$s SUP · 最大 %2$s · 1日1回、サーバー確認後</string>
     <string name="course_to_finish">完走まで</string>
     <string name="course_none_title">コース未選択</string>
     <string name="course_none_body">コースを選ぶとライブマップと距離に応じた完走報酬が使えます。</string>
@@ -1076,10 +1082,11 @@ StepUp と走り出そう。</string>
     <string name="map_open_google">Google マップで開く</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">このコースを適用しますか？</string>
-    <string name="course_apply_body">%1$s · %2$s km\n完走すると %3$s SUP を獲得できます。</string>
+    <string name="course_apply_body">%1$s · %2$s km\n完走するとサーバー確認後に最大 %3$s SUP（1日1回）。</string>
     <string name="course_clear_title">コースの適用を解除しますか？</string>
     <string name="course_clear_body">%1$s は現在のコースではなくなります。</string>
     <string name="notif_course_complete">%1$s 完走！+%2$s SUP 獲得</string>
+    <string name="notif_course_complete_plain">%1$s 完走！</string>
     <string name="news_refresh">再読み込み</string>
     <string name="news_loading">ランニングの最新情報を取得中…</string>
     <string name="news_empty">まだ届いた記事がありません。毎朝9時(KST)に1回集めます。</string>
@@ -1464,6 +1471,7 @@ StepUp と走り出そう。</string>
     <string name="map_waiting_title">現在地を探しています</string>
     <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
     <string name="finish_pending_short">サーバー確認中</string>
+    <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
     <string name="me_greeting">今日もいい一日を。</string>

@@ -52,6 +52,12 @@ npm run new-key -- GUARDIAN_PRIVATE_KEY
 3. `npx wrangler deploy`
 4. `curl https://<워커 주소>/health` 로 주소가 컨트랙트 설정과 같은지 확인
 
+### 고친 뒤 다시 배포 (매번)
+
+워커는 자동으로 배포되지 않는다. main 에 합치면 서버 SQL 은 자동으로 올라가지만 워커는 옛 코드로 계속 돈다.
+`attester/` 를 바꾼 PR 을 합친 뒤에는 `git pull` → `cd attester` → `npm ci` → `npx wrangler deploy` →
+`curl https://<워커 주소>/health` 로 확인한다. (SQL 과 워커는 어느 쪽을 먼저 올려도 서로 깨지지 않게 만든다.)
+
 ## 검사
 
 ```bash

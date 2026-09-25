@@ -18,6 +18,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -68,6 +69,9 @@ class EconomySync(
 
         if (bootstrapped != userId) {
             api.bootstrap().failure()?.let { return it }
+            // 폰의 하루 목표를 서버에 맞춘다 — 목표 보너스를 서버가 이 값으로 판정한다(0030).
+            // 목표를 바꿀 때 보내지 못했어도(연결 없음) 여기서 따라간다. 실패해도 동기화는 계속한다.
+            api.setDailyGoal(prefs.dailyGoal.first())
             bootstrapped = userId
         }
         importLegacy(userId)?.let { return it }
@@ -120,6 +124,7 @@ class EconomySync(
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()
             db.boostDao().deleteAll()
+            db.claimedEventDao().deleteAll()
         }
         prefs.clearServerEconomy()
         bootstrapped = null
