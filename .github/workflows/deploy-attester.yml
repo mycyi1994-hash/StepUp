@@ -6,7 +6,8 @@
 #
 # 필요한 것 (처음 한 번): 저장소 Settings → Secrets and variables → Actions 에
 #   CLOUDFLARE_API_TOKEN   Cloudflare › My Profile › API Tokens › "Edit Cloudflare Workers" 템플릿
-#   (계정 ID 는 attester/wrangler.toml 의 account_id 를 쓴다 — 비밀이 아니다)
+#   토큰은 워커가 도는 계정(stepup-attester.gana003.workers.dev 의 계정)에서 만든다. 다른 계정 토큰이면
+#   배포하지 않고 멈춘다 — 그 계정에는 워커의 키가 없다.
 # 비밀이 없으면 건너뛰기만 하고 실패하지 않는다.
 name: Deploy attester
 
@@ -21,6 +22,10 @@ on:
 
 permissions:
   contents: read
+
+env:
+  # 워커가 도는 Cloudflare 계정의 workers.dev 이름 (stepup-attester.<이 이름>.workers.dev)
+  WORKER_SUBDOMAIN: gana003
 
 concurrency:
   group: deploy-attester
@@ -61,7 +66,7 @@ jobs:
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::warning::CLOUDFLARE_API_TOKEN 이 없어 배포를 건너뜁니다. attester 에서 npx wrangler deploy 를 직접 돌리세요."
+            echo "::warning::CLOUDFLARE_API_TOKEN 이 없어 배포를 건너뜁니다. attester 에서 npm run deploy 를 직접 돌리세요."
           fi
 
       # 토큰이 살아 있는지, 어떤 권한 · 계정을 보는지 — 배포가 거절될 때 원인을 바로 알 수 있게.
@@ -80,7 +85,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         # 커밋을 워커 변수로 넣어 /health 에서 새 코드가 떴는지 확인한다(비밀이 아니다)
-        run: npx wrangler deploy --var "COMMIT_SHA:${GITHUB_SHA}"
+        # 워커가 도는 계정(WORKER_SUBDOMAIN)을 찾아 그 계정으로만 올린다 — 다른 계정 토큰이면 멈춘다(scripts/deploy.mjs)
+        run: npm run deploy -- --var "COMMIT_SHA:${GITHUB_SHA}"
 
       # 새 코드가 떴는지 — /health 가 응답하고 긴급 정지 키가 있는지
       - name: 확인
@@ -89,7 +95,7 @@ jobs:
           # 새 버전이 퍼지는 데 잠깐 걸린다 — 몇 번 다시 본다
           for i in 1 2 3 4 5 6; do
             sleep 10
-            body=$(curl -fsS https://stepup-attester.gana003.workers.dev/health || true)
+            body=$(curl -fsS https://stepup-attester.${WORKER_SUBDOMAIN}.workers.dev/health || true)
             echo "$body" | grep -q "\"commit\":\"${GITHUB_SHA}\"" && break
           done
           echo "$body"

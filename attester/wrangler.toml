@@ -2,8 +2,9 @@ name = "stepup-attester"
 main = "src/index.js"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
-# Cloudflare 계정 — 공개해도 되는 값이다(대시보드 주소에 그대로 나온다). 자동 배포가 이 계정으로 올린다.
-account_id = "74d62697b5d34b55f20c58bff180138d"
+# Cloudflare 계정은 적지 않는다. 배포는 `npm run deploy`(scripts/deploy.mjs)로만 한다 — 워커가 도는 계정
+# (workers.dev 이름 gana003)을 찾아 그 계정으로만 올린다. `npx wrangler deploy` 를 그냥 돌리면 로그인한 계정으로
+# 올라가, 다른 계정이면 키가 없는 복제 워커가 생긴다.
 
 # 1분마다 — 체인 이벤트를 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
 [triggers]

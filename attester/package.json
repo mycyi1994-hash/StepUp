@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "node scripts/deploy.mjs",
     "test": "node --test \"test/*.test.js\"",
     "new-key": "node scripts/new-key.mjs"
   },
