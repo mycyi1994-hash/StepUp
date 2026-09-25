@@ -36,6 +36,8 @@ jobs:
             dir: contracts
           - name: attester
             dir: attester
+          - name: web
+            dir: web
     name: ${{ matrix.name }}
     steps:
       - name: Checkout
