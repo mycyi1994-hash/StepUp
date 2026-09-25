@@ -235,20 +235,23 @@ settled on-chain — the client already produces exactly the per-session
 
 ## ⛓️ Contracts
 
-Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat · **43 passing tests** ·
-**live on GIWA Sepolia (91342)** since 2026-07-31
+Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat · **v2 live on GIWA Sepolia (91342)** since 2026-09-25,
+source verified on Blockscout.
 
-| Deployed | Address |
+| Deployed (v2) | Address |
 |---|---|
-| `SUPToken` | [`0xb052A8f6…9006c1B`](https://sepolia-explorer.giwa.io/address/0xb052A8f6A5034747902b6d6787bbfF31A9006c1B) |
-| `SneakerNFT` | [`0x8174f905…BabEFc960`](https://sepolia-explorer.giwa.io/address/0x8174f905d86438ac8922c85d3A48604BabEFc960) |
-| `RewardDistributor` | [`0x9f9E87bD…aCFE36E1`](https://sepolia-explorer.giwa.io/address/0x9f9E87bD825144A8315d30979E3004FbaCFE36E1) |
-| `CourseRegistry` | [`0x6c815DF0…C588542`](https://sepolia-explorer.giwa.io/address/0x6c815DF0d8a5CA7CA0487D1AC2f96c0fEC588542) |
+| `SUPToken` | [`0x55B48827…38Dbb1F6`](https://sepolia-explorer.giwa.io/address/0x55B4882797a365FEAa29F3267437b17F38Dbb1F6) |
+| `RewardDistributor` | [`0x3b99358c…69ac3FE0`](https://sepolia-explorer.giwa.io/address/0x3b99358cE05Ee74e6EaD5c5C799B462f69ac3FE0) |
+| `StepUpSneakers` | [`0x3Da82CF9…c6080019`](https://sepolia-explorer.giwa.io/address/0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019) |
+| `SupVault` | [`0x76fDAc77…3FBBbd5c`](https://sepolia-explorer.giwa.io/address/0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c) |
+| `CourseRegistry` | [`0xd0FC89bA…582fF3Ab`](https://sepolia-explorer.giwa.io/address/0xd0FC89bA5067b75670D9672f6AF66853582fF3Ab) |
 
-The reward pool holds 50,000,000 SUP (5% of supply). Full record:
-[`contracts/deployments/giwaSepolia.json`](contracts/deployments/giwaSepolia.json).
-The app still settles locally — wiring the client to these contracts is the
-next step, and this README will say so plainly until it is done.
+The reward pool holds 50,000,000 SUP. Full record:
+[`contracts/deployments/giwaSepolia-v2.json`](contracts/deployments/giwaSepolia-v2.json).
+The server is the source of truth for SUP and sneakers; the attester worker signs only what the server
+reserved (withdraw SUP, release sneakers, bonus mints) and indexes deposits back. The v1 contracts
+(2026-07-31, [`giwaSepolia.json`](contracts/deployments/giwaSepolia.json)) are retired — their keys
+cannot manage them — and are kept only as a record.
 
 | Contract | Standard | What it guarantees |
 |---|---|---|

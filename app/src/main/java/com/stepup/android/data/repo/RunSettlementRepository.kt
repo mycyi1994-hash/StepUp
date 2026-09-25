@@ -59,7 +59,12 @@ class RunSettlementRepository(
 
     private suspend fun applyEnergy(receipt: RunSettlement) {
         if (receipt.energyApplied) return
-        prefs.consumeRunEnergy(receipt.energyReceiptId, receipt.energyDay, receipt.energyUsed)
+        // 서버 경제의 영수증은 폰 에너지를 쓰지 않고(0) 날짜가 한국 시각이다. 폰 날짜보다 하루 앞설 수
+        // 있어(해외 · 시간대가 다른 폰의 한국 0–9시) "미래 영수증"으로 거절되면 이 러닝과 그 뒤 모든
+        // 러닝의 저장이 막힌다. 줄일 에너지가 없으면 적용할 것도 없다.
+        if (receipt.energyUsed > 0.0) {
+            prefs.consumeRunEnergy(receipt.energyReceiptId, receipt.energyDay, receipt.energyUsed)
+        }
         db.runSettlementDao().markEnergyApplied(receipt.recordingOwner, receipt.startedAt)
     }
 }

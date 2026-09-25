@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.local.RunSettlement
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.repo.RunSettlementRepository
@@ -96,6 +97,29 @@ class RunSettlementPersistenceTest {
         } finally {
             db.close(); scope.coroutineContext.job.cancelAndJoin()
             context.deleteDatabase(dbName); file.delete()
+        }
+    }
+
+    // 서버 경제의 영수증은 한국 날짜 · 에너지 0 이다. 한국이 폰보다 하루 앞선 시각(시간대가 다른 폰의
+    // 한국 0–9시)에도 "미래 영수증"으로 거절돼 이 러닝과 그 뒤 러닝의 저장이 막히면 안 된다.
+    @Test fun serverReceiptDatedAheadOfThePhoneDoesNotBlockSaving() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val file = File(context.cacheDir, "run-settlement-${UUID.randomUUID()}.preferences_pb")
+        val prefs = UserPrefs(context, PreferenceDataStoreFactory.create(scope = scope, produceFile = { file }))
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val initialEnergy = prefs.energy.first()
+            val tomorrow = LocalDate.now().toEpochDay() + 1
+            db.runSettlementDao().insert(RunSettlement("account:runner-a", 500, tomorrow, 400, 0.0, 0.0))
+            val repo = RunSettlementRepository(db, prefs, serverEconomy = true)
+            val result = SessionReward(500, 3.0, 1.0)
+            assertEquals(0.0, repo.settle(run()) { result }.energyUsed, 0.0)
+            assertTrue(db.runSettlementDao().pendingEnergy().isEmpty())
+            assertEquals(1, db.walkSessionDao().observeSessionCount().first())
+            assertEquals(initialEnergy, prefs.energy.first(), 0.0)
+        } finally {
+            db.close(); scope.coroutineContext.job.cancelAndJoin(); file.delete()
         }
     }
 }

@@ -38,6 +38,7 @@ class RunCrashRecoveryTest {
         prefs.setSounds(false)
         prefs.setSelectedCourse(-1)
         WalkSessionService.showStateForTest(WalkSessionState()) // 프로세스가 죽어 메모리의 러닝은 없다
+        clearAnyRunCheckpointForTest() // 앞 테스트가 남긴 저장본과 섞이지 않게
         ServiceLocator.runCheckpoints.save(
             RunCheckpoint(
                 WalkSessionState(isActive = true, startedAt = startedAt, recordingOwner = "guest",
