@@ -2976,6 +2976,31 @@ begin
 end $$;
 reset role;
 
+-- (8) 잠금 거리를 못 채운 무료 신발은 그 계정에 붙은 지갑이 넣을 때만 받는다
+reset role;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+insert into fix (k, v)
+  select 'op_bonus', id::text from public.chain_ops
+   where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and kind = 'BONUS_MINT' order by created_at limit 1;
+set role stepup_attester;
+do $$
+declare r record;
+begin
+  select * into r from public.attester_op_payload(pg_temp.fx('op_bonus')::uuid);
+  perform pg_temp.ok(r.transfer_locked, '보너스 신발은 잠긴 채로 발행된다');
+  perform public.attester_chain_event('0x' || repeat('e1', 32), 0, 200, 'SNEAKER_RELEASED',
+    jsonb_build_object('op', r.op_ref, 'tokenId', '900'));
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('e2', 32), 0, 201, 'SNEAKER_DEPOSITED',
+    jsonb_build_object('account', '0x' || lpad('f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1', 64, '0'), 'tokenId', '900',
+                       'from', '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')) = 'ORPHAN',
+    '잠긴 신발을 남의 지갑에서 넣으면 받지 않는다');
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('e3', 32), 0, 202, 'SNEAKER_DEPOSITED',
+    jsonb_build_object('account', '0x' || lpad('f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1', 64, '0'), 'tokenId', '900',
+                       'from', '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')) = 'CREDITED',
+    '잠긴 신발은 그 계정의 지갑에서 넣으면 받는다');
+end $$;
+reset role;
+
 -- (5)(6) 계정을 지워도 지갑은 다시 못 쓰고, 체인 작업 기록은 남는다
 do $$ begin
   perform pg_temp.ok((select count(*) from public.chain_ops

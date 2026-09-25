@@ -190,6 +190,11 @@ contract CourseRegistry is Ownable2Step {
 
     // ── Admin ────────────────────────────────────────────────────────────
 
+    /// @notice Ownership can move (two steps) but never disappear.
+    function renounceOwnership() public pure override {
+        revert("renounce disabled");
+    }
+
     function setRecorder(address recorder_) external onlyOwner {
         require(recorder_ != address(0), "CR: recorder is zero");
         emit RecorderUpdated(recorder, recorder_);

@@ -35,8 +35,11 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  *
  *   - identity fields (model, rarity, base stats, Genesis number) of an existing
  *     token can never change, and a level can never go down
- *   - at most `maxMintsPerDay` new tokens per day
- *   - `guardian` (a hot key) can pause; only `owner` can unpause or rotate keys
+ *   - at most `maxMintsPerDay` new tokens and `maxReleasesPerDay` vault
+ *     hand-backs per day — a leaked signer cannot empty the vault in one go
+ *   - base stats must sit inside the rarity's range; Genesis numbers are capped
+ *   - `guardian` (a hot key) can pause or cancel a signed operation; only
+ *     `owner` can unpause or rotate keys, and ownership cannot be renounced
  *
  * ## Transfer lock
  *
@@ -92,6 +95,10 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     uint256 public nextTokenId = 1;
     uint256 public maxMintsPerDay;
     mapping(uint64 day => uint256 count) public mintedOn;
+    uint256 public maxReleasesPerDay;
+    mapping(uint64 day => uint256 count) public releasedOn;
+    /// Highest Genesis number that may be minted. 0 = no Genesis at all.
+    uint32 public maxGenesisNo;
 
     /// Catalog. A model can be added but never changed or removed.
     mapping(uint32 model => bool) public modelExists;
@@ -111,6 +118,12 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     event SignerUpdated(address indexed previous, address indexed current);
     event GuardianUpdated(address indexed previous, address indexed current);
     event MintCapUpdated(uint256 perDay);
+    event ReleaseCapUpdated(uint256 perDay);
+    event GenesisCapUpdated(uint32 maxGenesisNo);
+    event OpCancelled(bytes32 indexed opId);
+    /// ERC-5192 — lets marketplaces show that a token cannot be traded yet.
+    event Locked(uint256 tokenId);
+    event Unlocked(uint256 tokenId);
     event BaseURIUpdated(string baseURI);
 
     error ReleaseExpired(uint64 deadline);
@@ -124,11 +137,24 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     error NotInVault(uint256 tokenId);
     error GenesisTaken(uint32 genesisNo);
     error DailyMintCapReached(uint64 day);
+    error DailyReleaseCapReached(uint64 day);
+    error GenesisOutOfRange(uint32 genesisNo);
+    error UseDeposit();
+    error LockedDepositByOperator(uint256 tokenId);
+    error CannotRenounce();
     error TransferIsLocked(uint256 tokenId);
     error ZeroAccount();
     error NotGuardian();
 
-    constructor(address signer_, address guardian_, address treasury, uint256 maxMintsPerDay_, string memory baseURI_)
+    constructor(
+        address signer_,
+        address guardian_,
+        address treasury,
+        uint256 maxMintsPerDay_,
+        uint256 maxReleasesPerDay_,
+        uint32 maxGenesisNo_,
+        string memory baseURI_
+    )
         ERC721("StepUp Sneakers", "SUPSNK")
         EIP712("StepUpSneakers", "2")
         Ownable(msg.sender)
@@ -138,6 +164,8 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
         signer = signer_;
         guardian = guardian_;
         maxMintsPerDay = maxMintsPerDay_;
+        maxReleasesPerDay = maxReleasesPerDay_;
+        maxGenesisNo = maxGenesisNo_;
         _base = baseURI_;
         _setDefaultRoyalty(treasury, ROYALTY_BPS);
     }
@@ -147,6 +175,29 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     function statsOf(uint256 tokenId) external view returns (Stats memory) {
         _requireOwned(tokenId);
         return _stats[tokenId];
+    }
+
+    /// ERC-5192
+    function locked(uint256 tokenId) external view returns (bool) {
+        _requireOwned(tokenId);
+        return transferLocked[tokenId];
+    }
+
+    /// Base-stat ceilings per rarity — the top of the server's draw ranges (0022).
+    function maxEfficiencyBps(uint8 rarity) public pure returns (uint16) {
+        if (rarity == 0) return 400;
+        if (rarity == 1) return 700;
+        if (rarity == 2) return 1000;
+        if (rarity == 3) return 1300;
+        return 0;
+    }
+
+    function maxComfortBps(uint8 rarity) public pure returns (uint16) {
+        if (rarity == 0) return 300;
+        if (rarity == 1) return 600;
+        if (rarity == 2) return 900;
+        if (rarity == 3) return 1200;
+        return 0;
     }
 
     function maxLevel(uint8 rarity) public pure returns (uint16) {
@@ -196,8 +247,9 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
         if (!modelExists[r.model]) revert UnknownModel(r.model);
         if (modelRarity[r.model] != r.rarity) revert RarityMismatch(r.model, r.rarity);
         if (
-            r.to == address(0) || r.level == 0 || r.level > maxLevel(r.rarity) || r.efficiencyBps > MAX_EFFICIENCY_BPS
-                || r.comfortBps > MAX_COMFORT_BPS || r.durability > MAX_DURABILITY
+            r.to == address(0) || r.to == address(this) || r.level == 0 || r.level > maxLevel(r.rarity)
+                || r.efficiencyBps > maxEfficiencyBps(r.rarity) || r.comfortBps > maxComfortBps(r.rarity)
+                || r.durability > MAX_DURABILITY
         ) revert BadStats();
 
         opUsed[r.opId] = true;
@@ -209,12 +261,16 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
             if (mintedOn[d] >= maxMintsPerDay) revert DailyMintCapReached(d);
             mintedOn[d] += 1;
             if (r.genesisNo != 0) {
+                if (r.genesisNo > maxGenesisNo) revert GenesisOutOfRange(r.genesisNo);
                 if (genesisTaken[r.genesisNo]) revert GenesisTaken(r.genesisNo);
                 genesisTaken[r.genesisNo] = true;
             }
             tokenId = nextTokenId++;
         } else {
             if (_ownerOf(tokenId) != address(this)) revert NotInVault(tokenId);
+            uint64 d = today();
+            if (releasedOn[d] >= maxReleasesPerDay) revert DailyReleaseCapReached(d);
+            releasedOn[d] += 1;
             Stats storage s = _stats[tokenId];
             if (
                 s.model != r.model || s.rarity != r.rarity || s.efficiencyBps != r.efficiencyBps
@@ -233,6 +289,8 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
             genesisNo: r.genesisNo
         });
         transferLocked[tokenId] = r.locked;
+        if (r.locked) emit Locked(tokenId);
+        else emit Unlocked(tokenId);
 
         if (minted) {
             _mint(r.to, tokenId);
@@ -251,6 +309,9 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     function deposit(uint256 tokenId, bytes32 account) external whenNotPaused {
         if (account == bytes32(0)) revert ZeroAccount();
         address holder = ownerOf(tokenId);
+        // A locked (free) sneaker may only be put back by its holder — an approved
+        // operator must not be able to move it into some other StepUp account.
+        if (transferLocked[tokenId] && msg.sender != holder) revert LockedDepositByOperator(tokenId);
         _checkAuthorized(holder, msg.sender, tokenId);
         _transfer(holder, address(this), tokenId);
         emit Deposited(tokenId, holder, account);
@@ -260,10 +321,18 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
 
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = _ownerOf(tokenId);
+        // Into the vault only through deposit() (auth == 0): a plain transferFrom
+        // would park the token with no Deposited event and no account to credit.
+        if (to == address(this) && auth != address(0)) revert UseDeposit();
         if (transferLocked[tokenId] && from != address(0) && from != address(this) && to != address(this)) {
             revert TransferIsLocked(tokenId);
         }
         return super._update(to, tokenId, auth);
+    }
+
+    /// ERC-5192 (0xb45a3c0e) on top of ERC-721 and ERC-2981.
+    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
+        return interfaceId == 0xb45a3c0e || super.supportsInterface(interfaceId);
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -299,6 +368,33 @@ contract StepUpSneakers is ERC721Royalty, EIP712, Ownable2Step, Pausable {
     function setMaxMintsPerDay(uint256 perDay) external onlyOwner {
         maxMintsPerDay = perDay;
         emit MintCapUpdated(perDay);
+    }
+
+    function setMaxReleasesPerDay(uint256 perDay) external onlyOwner {
+        maxReleasesPerDay = perDay;
+        emit ReleaseCapUpdated(perDay);
+    }
+
+    function setMaxGenesisNo(uint32 maxGenesisNo_) external onlyOwner {
+        maxGenesisNo = maxGenesisNo_;
+        emit GenesisCapUpdated(maxGenesisNo_);
+    }
+
+    function setDefaultRoyalty(address receiver) external onlyOwner {
+        _setDefaultRoyalty(receiver, ROYALTY_BPS);
+    }
+
+    /// @notice Kill a signed operation before it is submitted (e.g. the server expired it).
+    function cancelOp(bytes32 opId) external {
+        if (msg.sender != owner() && msg.sender != guardian) revert NotGuardian();
+        opUsed[opId] = true;
+        emit OpCancelled(opId);
+    }
+
+    /// @notice Ownership can move (two steps) but never disappear — without an
+    ///         owner nobody could unpause after a guardian pause.
+    function renounceOwnership() public pure override {
+        revert CannotRenounce();
     }
 
     function setBaseURI(string calldata baseURI_) external onlyOwner {

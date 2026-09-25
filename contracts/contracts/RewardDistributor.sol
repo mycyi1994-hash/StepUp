@@ -80,6 +80,11 @@ contract RewardDistributor is EIP712, Ownable2Step, Pausable {
     /// Largest single claim. 0 = no per-claim limit.
     uint256 public maxClaim;
 
+    /// Paid out on each calendar day, whatever `day` the claims name. A claim may
+    /// name any of the last 8 days, so without this a leaked key could draw 8
+    /// days of `dailyCap` at once.
+    mapping(uint64 payoutDay => uint256 paid) public paidOnPayoutDay;
+
     /// @notice Session hashes already paid. Replay protection.
     mapping(bytes32 sessionHash => bool claimed) public sessionClaimed;
 
@@ -125,6 +130,8 @@ contract RewardDistributor is EIP712, Ownable2Step, Pausable {
     error PoolExhausted(uint256 requested, uint256 balance);
     error ClaimTooLarge(uint256 amount, uint256 maxClaim);
     error NotGuardian();
+    error PayoutCapReached(uint64 payoutDay, uint256 requested, uint256 remaining);
+    error CannotRenounce();
 
     constructor(address supToken, address attester_) EIP712("StepUpRewards", "1") Ownable(msg.sender) {
         require(supToken != address(0), "RD: sup is zero");
@@ -198,11 +205,18 @@ contract RewardDistributor is EIP712, Ownable2Step, Pausable {
         uint256 remaining = dayRemaining(c.day);
         if (c.amount > remaining) revert DailyBudgetExceeded(c.day, c.amount, remaining);
 
+        if (dailyCap != 0) {
+            uint256 paidToday = paidOnPayoutDay[today];
+            uint256 left = paidToday >= dailyCap ? 0 : dailyCap - paidToday;
+            if (c.amount > left) revert PayoutCapReached(today, c.amount, left);
+        }
+
         uint256 balance = poolBalance();
         if (c.amount > balance) revert PoolExhausted(c.amount, balance);
 
         sessionClaimed[c.sessionHash] = true;
         dailyPaid[c.day] += c.amount;
+        paidOnPayoutDay[today] += c.amount;
         totalDistributed += c.amount;
         claimedBy[c.runner] += c.amount;
 
@@ -227,6 +241,11 @@ contract RewardDistributor is EIP712, Ownable2Step, Pausable {
         require(attester_ != address(0), "RD: attester is zero");
         emit AttesterUpdated(attester, attester_);
         attester = attester_;
+    }
+
+    /// @notice Without an owner nobody could unpause after a guardian pause.
+    function renounceOwnership() public pure override {
+        revert CannotRenounce();
     }
 
     function setGuardian(address guardian_) external onlyOwner {

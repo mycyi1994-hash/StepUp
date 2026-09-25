@@ -78,6 +78,11 @@ contract SupVault is Ownable2Step, Pausable {
         emit MinDepositUpdated(amount);
     }
 
+    /// @notice Ownership can move (two steps) but never disappear.
+    function renounceOwnership() public pure override {
+        revert("renounce disabled");
+    }
+
     function setGuardian(address guardian_) external onlyOwner {
         emit GuardianUpdated(guardian, guardian_);
         guardian = guardian_;

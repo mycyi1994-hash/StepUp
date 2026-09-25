@@ -44,7 +44,7 @@ async function deploy() {
   ).deploy(await sup.getAddress(), signer.address);
   const sneakers = await (
     await ethers.getContractFactory("StepUpSneakers")
-  ).deploy(signer.address, guardian.address, treasury.address, 3, "ipfs://cid/");
+  ).deploy(signer.address, guardian.address, treasury.address, 3, 3, 1000, "ipfs://cid/");
   const vault = await (
     await ethers.getContractFactory("SupVault")
   ).deploy(await sup.getAddress(), await distributor.getAddress(), guardian.address);
@@ -121,7 +121,10 @@ describe("StepUpSneakers — release (app → wallet)", () => {
       [{ model: 999 }, "UnknownModel"],
       [{ rarity: 3 }, "RarityMismatch"],
       [{ level: 21 }, "BadStats"],
-      [{ efficiencyBps: 5001 }, "BadStats"],
+      [{ efficiencyBps: 1001 }, "BadStats"], // EPIC base tops out at 10%
+      [{ comfortBps: 901 }, "BadStats"],
+      [{ to: await ctx.sneakers.getAddress() }, "BadStats"],
+      [{ genesisNo: 1001 }, "GenesisOutOfRange"],
       [{ durability: 10001 }, "BadStats"],
     ]) {
       const r = await releaseArgs(ctx, over);
@@ -200,7 +203,7 @@ describe("StepUpSneakers — deposit (wallet → app) and back", () => {
     const id = await minted(ctx, { level: 3 });
     await ctx.sneakers.connect(ctx.runner).deposit(id, ALICE);
     for (const [over, err] of [
-      [{ efficiencyBps: 1000 }, "IdentityChanged"],
+      [{ efficiencyBps: 900 }, "IdentityChanged"],
       [{ genesisNo: 9 }, "IdentityChanged"],
       [{ level: 2 }, "LevelWentDown"],
     ]) {
@@ -400,5 +403,111 @@ describe("RewardDistributor — limits for a leaked attester key", () => {
       ctx.distributor,
       "OwnableUnauthorizedAccount",
     );
+  });
+});
+
+describe("v2 — limits that hold when a hot key leaks (security review)", () => {
+  it("a leaked signer cannot empty the vault — hand-backs are capped per day, apart from mints", async () => {
+    const [owner, treasury, signer, guardian, runner] = await ethers.getSigners();
+    const sneakers = await (
+      await ethers.getContractFactory("StepUpSneakers")
+    ).deploy(signer.address, guardian.address, treasury.address, 10, 2, 1000, "ipfs://cid/");
+    await sneakers.addModels([21], [2]);
+    const ctx = { signer, runner, sneakers };
+    for (let i = 1; i <= 3; i++) {
+      const r = await releaseArgs(ctx, { opId: op(i) });
+      await sneakers.release(r, await signRelease(signer, sneakers, r));
+      await sneakers.connect(runner).deposit(i, ALICE);
+    }
+    for (let i = 1; i <= 2; i++) {
+      const r = await releaseArgs(ctx, { opId: op(10 + i), tokenId: i });
+      await sneakers.release(r, await signRelease(signer, sneakers, r));
+    }
+    const r = await releaseArgs(ctx, { opId: op(13), tokenId: 3 });
+    await expect(sneakers.release(r, await signRelease(signer, sneakers, r))).to.be.revertedWithCustomError(
+      sneakers,
+      "DailyReleaseCapReached",
+    );
+  });
+
+  it("a leaked attester cannot pay more than dailyCap in one calendar day, whatever days it names", async () => {
+    const ctx = await deploy();
+    await ctx.sup.connect(ctx.treasury).approve(await ctx.distributor.getAddress(), eth(1_000_000));
+    await ctx.distributor.connect(ctx.treasury).fund(eth(1_000_000));
+    await time.increase(10 * 24 * 60 * 60);
+    await ctx.distributor.setLimits(eth(1500), eth(1000));
+    const { chainId } = await ethers.provider.getNetwork();
+    const today = await ctx.distributor.currentDay();
+    const sign = async (hash, day, amount) => {
+      const c = {
+        runner: ctx.runner.address,
+        sessionHash: op(hash),
+        amount,
+        day,
+        deadline: (await time.latest()) + 600,
+      };
+      const sig = await ctx.signer.signTypedData(
+        { name: "StepUpRewards", version: "1", chainId, verifyingContract: await ctx.distributor.getAddress() },
+        {
+          Claim: [
+            { name: "runner", type: "address" },
+            { name: "sessionHash", type: "bytes32" },
+            { name: "amount", type: "uint256" },
+            { name: "day", type: "uint64" },
+            { name: "deadline", type: "uint256" },
+          ],
+        },
+        c,
+      );
+      return [c, sig];
+    };
+    const [a, aSig] = await sign(1, today, eth(1000));
+    await ctx.distributor.claim(a, aSig);
+    const [b, bSig] = await sign(2, today - 3n, eth(1000)); // another day's budget, same payout day
+    await expect(ctx.distributor.claim(b, bSig)).to.be.revertedWithCustomError(ctx.distributor, "PayoutCapReached");
+  });
+
+  it("a plain transferFrom into the vault is refused — only deposit() credits an account", async () => {
+    const ctx = await deploy();
+    const r = await releaseArgs(ctx);
+    await ctx.sneakers.release(r, await signRelease(ctx.signer, ctx.sneakers, r));
+    await expect(
+      ctx.sneakers.connect(ctx.runner).transferFrom(ctx.runner.address, await ctx.sneakers.getAddress(), 1),
+    ).to.be.revertedWithCustomError(ctx.sneakers, "UseDeposit");
+  });
+
+  it("a locked sneaker can only be deposited by its holder, not an approved operator", async () => {
+    const ctx = await deploy();
+    const r = await releaseArgs(ctx, { locked: true });
+    await ctx.sneakers.release(r, await signRelease(ctx.signer, ctx.sneakers, r));
+    await ctx.sneakers.connect(ctx.runner).setApprovalForAll(ctx.other.address, true);
+    await expect(ctx.sneakers.connect(ctx.other).deposit(1, ALICE)).to.be.revertedWithCustomError(
+      ctx.sneakers,
+      "LockedDepositByOperator",
+    );
+    expect(await ctx.sneakers.locked(1)).to.equal(true);
+    expect(await ctx.sneakers.supportsInterface("0xb45a3c0e")).to.equal(true);
+  });
+
+  it("owner or guardian can cancel a signed operation before it is used", async () => {
+    const ctx = await deploy();
+    const r = await releaseArgs(ctx);
+    const sig = await signRelease(ctx.signer, ctx.sneakers, r);
+    await expect(ctx.sneakers.connect(ctx.other).cancelOp(r.opId)).to.be.revertedWithCustomError(
+      ctx.sneakers,
+      "NotGuardian",
+    );
+    await ctx.sneakers.connect(ctx.guardian).cancelOp(r.opId);
+    await expect(ctx.sneakers.release(r, sig)).to.be.revertedWithCustomError(ctx.sneakers, "OpAlreadyUsed");
+  });
+
+  it("ownership can never be renounced — someone must always be able to unpause", async () => {
+    const ctx = await deploy();
+    await expect(ctx.sneakers.renounceOwnership()).to.be.revertedWithCustomError(ctx.sneakers, "CannotRenounce");
+    await expect(ctx.distributor.renounceOwnership()).to.be.revertedWithCustomError(
+      ctx.distributor,
+      "CannotRenounce",
+    );
+    await expect(ctx.vault.renounceOwnership()).to.be.revertedWith("renounce disabled");
   });
 });

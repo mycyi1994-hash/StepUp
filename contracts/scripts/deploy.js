@@ -55,6 +55,9 @@ async function main() {
   const maxClaim = e(process.env.MAX_CLAIM || "1000");
   // 서버 한도: 꺼내기 발행 500 + 보너스 발행 2,000
   const maxMintsPerDay = BigInt(process.env.MAX_MINTS_PER_DAY || "2500");
+  // 금고에서 되돌려 주는 수 — 서명 키가 새도 하루에 이만큼만 빠져나간다
+  const maxReleasesPerDay = BigInt(process.env.MAX_RELEASES_PER_DAY || "500");
+  const maxGenesisNo = Number(process.env.MAX_GENESIS_NO || "100000");
 
   if (live) {
     const roles = { owner, treasury, attester, sneakerSigner, guardian, recorder };
@@ -66,6 +69,12 @@ async function main() {
     const signers = [attester, sneakerSigner, guardian, recorder];
     if (new Set(signers).size !== signers.length) {
       throw new Error("서명 키(ATTESTER · SNEAKER_SIGNER · GUARDIAN · RECORDER)는 서로 달라야 합니다.");
+    }
+    // 관리자 · 금고는 사람이 드는 지갑이다. Cloudflare 에 두는 키와 겹치면 안 된다.
+    for (const [name, addr] of Object.entries({ owner, treasury })) {
+      if (signers.includes(addr)) {
+        throw new Error(`${name} 가 서버에 두는 키(서명 · 정지 · 기록)와 같습니다. 따로 두어야 합니다.`);
+      }
     }
     if (baseURI.includes("REPLACE_WITH_CID")) {
       throw new Error("SNEAKER_BASE_URI 에 IPFS 주소를 넣어 주세요 (끝에 / 포함).");
@@ -84,7 +93,8 @@ async function main() {
   console.log(`guardian       ${guardian}`);
   console.log(`recorder       ${recorder}`);
   console.log(`baseURI        ${baseURI}`);
-  console.log(`limits         하루 ${hre.ethers.formatEther(dailyCap)} SUP · 1회 ${hre.ethers.formatEther(maxClaim)} SUP · 하루 발행 ${maxMintsPerDay}`);
+  console.log(`limits         하루 ${hre.ethers.formatEther(dailyCap)} SUP · 1회 ${hre.ethers.formatEther(maxClaim)} SUP`);
+  console.log(`               하루 발행 ${maxMintsPerDay} · 하루 반환 ${maxReleasesPerDay} · Genesis 최대 #${maxGenesisNo}`);
   console.log(line);
 
   if (live && process.env.CONFIRM_DEPLOY !== "yes") {
@@ -107,7 +117,9 @@ async function main() {
   const supAddr = await sup.getAddress();
   const distributor = await deploy("RewardDistributor", [supAddr, attester]);
   const distributorAddr = await distributor.getAddress();
-  const sneakers = await deploy("StepUpSneakers", [sneakerSigner, guardian, treasury, maxMintsPerDay, baseURI]);
+  const sneakers = await deploy("StepUpSneakers", [
+    sneakerSigner, guardian, treasury, maxMintsPerDay, maxReleasesPerDay, maxGenesisNo, baseURI,
+  ]);
   const vault = await deploy("SupVault", [supAddr, distributorAddr, guardian]);
   const registry = await deploy("CourseRegistry", [recorder]);
 
@@ -147,6 +159,8 @@ async function main() {
       dailyCap: hre.ethers.formatEther(dailyCap),
       maxClaim: hre.ethers.formatEther(maxClaim),
       maxMintsPerDay: Number(maxMintsPerDay),
+      maxReleasesPerDay: Number(maxReleasesPerDay),
+      maxGenesisNo,
     },
     rewardPoolFunded: funded,
     contracts: {
@@ -154,7 +168,10 @@ async function main() {
       RewardDistributor: { address: distributorAddr, args: [supAddr, attester] },
       StepUpSneakers: {
         address: await sneakers.getAddress(),
-        args: [sneakerSigner, guardian, treasury, maxMintsPerDay.toString(), baseURI],
+        args: [
+          sneakerSigner, guardian, treasury, maxMintsPerDay.toString(), maxReleasesPerDay.toString(),
+          maxGenesisNo, baseURI,
+        ],
       },
       SupVault: { address: await vault.getAddress(), args: [supAddr, distributorAddr, guardian] },
       CourseRegistry: { address: await registry.getAddress(), args: [recorder] },
@@ -180,6 +197,8 @@ async function main() {
   }
   if (owner !== deployer.address) {
     console.log("  2. 관리자 지갑: 4개 컨트랙트에서 acceptOwnership()");
+    console.log("     → 4개 모두 owner() 가 관리자 주소로 나오는지 탐색기에서 확인한 **뒤에만** 배포 키를 지운다");
+    console.log("       (관리자 주소가 틀렸으면 배포 키로 transferOwnership 을 다시 해야 한다)");
   }
   console.log(`  3. 소스 검증: DEPLOYMENT=${net}-v2 npx hardhat run scripts/verify-blockscout.js --network ${net}`);
   console.log("  4. Cloudflare: wrangler secret put 으로 서명 키 등록 → wrangler deploy");
