@@ -342,7 +342,8 @@ fun RunScreen(
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
                     Spacer(Modifier.height(20.dp))
-                    val mapModifier = Modifier.fillMaxWidth().height(280.dp)
+                    val mapHeight = if (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800) 256.dp else 280.dp
+                    val mapModifier = Modifier.fillMaxWidth().height(mapHeight)
                         .clip(RoundedCornerShape(20.dp)).testTag("run-live-map")
                     if (session.geoTrack.isNotEmpty()) {
                         LiveRouteMap(points = session.geoTrack, modifier = mapModifier, progress = 1f)

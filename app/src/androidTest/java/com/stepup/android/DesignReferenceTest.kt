@@ -150,6 +150,7 @@ class DesignReferenceTest {
             Triple(430, 932, false),
             Triple(390, 844, true),
         )
+        val layoutFailures = mutableListOf<String>()
         for ((w, h, enlarged) in viewports) {
             for (s in Scene.entries) {
                 prepareScene(s)
@@ -158,10 +159,15 @@ class DesignReferenceTest {
                 val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
                 try {
                     awaitScene(s)
-                    assertReviewedLayout(s, enlarged)
                 } catch (failure: Throwable) {
                     capture("$name-failed")
                     throw failure
+                }
+                try {
+                    assertReviewedLayout(s, enlarged)
+                } catch (failure: AssertionError) {
+                    // Retain every scene for diagnosis; report all layout failures at the end.
+                    layoutFailures += "$name: ${failure.message}"
                 }
                 audit(name)
                 capture(name)
@@ -169,6 +175,10 @@ class DesignReferenceTest {
         }
         val directory = File(compose.activity.getExternalFilesDir(null), "experience-qa").apply { mkdirs() }
         File(directory, "ref-audit.jsonl").writeText(findings.joinToString("\n") { it.toString() })
+        File(directory, "ref-layout-checks.txt").writeText(
+            if (layoutFailures.isEmpty()) "PASS: reviewed layout checks" else layoutFailures.joinToString("\n"),
+        )
+        assertTrue(layoutFailures.joinToString("\n"), layoutFailures.isEmpty())
     }
 
     private fun prepareScene(s: Scene) {
@@ -250,7 +260,7 @@ class DesignReferenceTest {
         if (scene == Scene.RUN_ACTIVE && !enlarged) {
             val map = compose.onNodeWithTag("run-live-map").getUnclippedBoundsInRoot()
             val action = compose.onNodeWithTag("run-primary-action").getUnclippedBoundsInRoot()
-            assertTrue("Full live map must be above the pinned action", map.bottom <= action.top)
+            assertTrue("Full live map must be above the pinned action: map=${map.bottom}, action=${action.top}", map.bottom <= action.top)
         }
         if (scene == Scene.PROFILE) {
             compose.onNodeWithTag("profile-records").assertIsDisplayed()
