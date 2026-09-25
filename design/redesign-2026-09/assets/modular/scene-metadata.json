@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "coordinateSystem": "normalized original bitmap, x and y in [0,1]",
+  "selectionPolicy": {
+    "onScreenEntry": "choose from compatible scenes, excluding current when more than one is available",
+    "onRecomposition": "keep selected scene",
+    "onOutfitChange": "keep selected scene",
+    "onBackNavigationOrStateRestore": "restore selected scene",
+    "duringRunningSession": "freeze selected scene",
+    "onAssetLoadFailure": "keep current scene",
+    "transition": "crossfade scenery only; honor reduced motion by replacing without animation"
+  },
+  "scenes": [
+    {
+      "id": "riverside_blue_night_grounded",
+      "file": "scene-riverside-blue-night-grounded.png",
+      "size": [853, 1844],
+      "uses": ["home", "wardrobe", "profile"],
+      "footAnchor": [0.5, 0.78],
+      "dryGroundStartY": 0.61,
+      "safeHeaderEndY": 0.15,
+      "lighting": "cool blue night",
+      "status": "visual crop/contact test pending"
+    },
+    {
+      "id": "riverside_dawn_grounded",
+      "file": "scene-riverside-dawn-grounded.png",
+      "size": [853, 1844],
+      "uses": ["home", "wardrobe", "profile"],
+      "footAnchor": [0.5, 0.78],
+      "dryGroundStartY": 0.61,
+      "safeHeaderEndY": 0.15,
+      "lighting": "cool lilac dawn",
+      "status": "visual crop/contact test pending"
+    },
+    {
+      "id": "riverside_run_sunset",
+      "file": "scene-riverside-run-sunset.png",
+      "size": [853, 1844],
+      "uses": ["running_preparation", "running_active", "running_result"],
+      "footAnchor": [0.5, 0.76],
+      "dryGroundStartY": 0.43,
+      "safeHeaderEndY": 0.15,
+      "lighting": "warm coral sunset",
+      "status": "visual crop/contact test pending"
+    },
+    {
+      "id": "riverside_run_night",
+      "file": "scene-riverside-run-night.png",
+      "size": [853, 1844],
+      "uses": ["running_preparation", "running_active", "running_result"],
+      "footAnchor": [0.5, 0.76],
+      "dryGroundStartY": 0.43,
+      "safeHeaderEndY": 0.15,
+      "lighting": "cool blue night",
+      "status": "visual crop/contact test pending"
+    }
+  ]
+}

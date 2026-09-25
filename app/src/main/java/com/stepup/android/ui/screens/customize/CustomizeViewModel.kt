@@ -16,6 +16,8 @@ import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.experience.ExperienceEvents
+import com.stepup.android.ui.experience.FeedbackCue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
@@ -75,6 +77,7 @@ class CustomizeViewModel(
     fun equipOutfit(outfit: Outfit) {
         saveLook {
             message.value = if (avatars.equipOutfit(outfit)) {
+                ExperienceEvents.emit(FeedbackCue.Equip)
                 when {
                     !avatars.isOwned(outfit) -> R.string.customize_trial_on
                     // 입었지만 그 옷을 입은 캐릭터 그림은 없다 — "장착 완료"라고만 하지 않는다
@@ -96,6 +99,7 @@ class CustomizeViewModel(
                 return@saveLook
             }
             val shown = AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).shoeShown
+            ExperienceEvents.emit(FeedbackCue.Equip)
             message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
         }
     }

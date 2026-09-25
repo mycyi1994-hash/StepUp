@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -96,7 +95,7 @@ import com.stepup.android.ui.theme.VoltText
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.ShortcutButton
+import com.stepup.android.ui.components.QuietListRow
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RewardEconomy
@@ -201,26 +200,34 @@ fun ProfileScreen(
         )
     }
 
-    val pills = listOf(
-        SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
-        SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
-        SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
-        // 내 정보 첫 화면을 시안대로 비우면서 여기로 옮겼다
-        SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
-        SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
-        SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
-        SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
-        SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
-        SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
-        SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
-        SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
-        SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
-        SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
-        SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
-        SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
+    val groups = listOf(
+        SettingsGroup(R.string.settings_group_account, listOf(
+            SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
+            SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
+            SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
+            SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
+        )),
+        SettingsGroup(R.string.settings_group_activity, listOf(
+            SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
+            SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
+            SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
+            SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
+            SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
+        )),
+        SettingsGroup(R.string.settings_group_preferences, listOf(
+            SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
+            SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
+            SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
+            SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
+        )),
+        SettingsGroup(R.string.settings_group_help, listOf(
+            SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
+            SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
+        )),
     )
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
+    if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     // Reserve room for identity, totals and the three destinations before giving art the rest.
     val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
         .coerceIn(220.dp, 360.dp)
@@ -237,13 +244,19 @@ fun ProfileScreen(
                     onBack = { tab = 0 },
                 )
             }
-            item { SectionHeader(title = stringResource(R.string.profile_account)) }
-            items(pills) { pill ->
-                SettingsRow(
-                    icon = pill.icon,
-                    label = stringResource(pill.label),
-                    onClick = pill.onClick,
-                )
+            groups.forEach { group ->
+                item { SectionHeader(title = stringResource(group.title)) }
+                item {
+                    Column {
+                        group.items.forEach { pill ->
+                            QuietListRow(
+                                icon = pill.icon,
+                                label = stringResource(pill.label),
+                                onClick = pill.onClick,
+                            )
+                        }
+                    }
+                }
             }
             // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 운영 데이터와 섞이지 않는다.
             item { DemoModeRow(on = demo, onChange = viewModel::setDemoMode) }
@@ -278,8 +291,8 @@ fun ProfileScreen(
         }
 
         item {
-            GlowCard {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—",
                             color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
@@ -292,38 +305,33 @@ fun ProfileScreen(
                         Text(stringResource(R.string.profile_total_distance), color = Silver, fontSize = 14.sp)
                     }
                 }
+                HairlineDivider()
             }
         }
         item {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ShortcutButton(
+            Column(Modifier.fillMaxWidth()) {
+                QuietListRow(
                     icon = Icons.AutoMirrored.Filled.DirectionsRun,
                     label = stringResource(R.string.me_recent_runs),
                     onClick = onOpenAnalytics,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-records"),
+                    modifier = Modifier.testTag("profile-records"),
                 )
-                ShortcutButton(
+                QuietListRow(
                     icon = Icons.Filled.EmojiEvents,
                     label = stringResource(R.string.home_shortcut_challenges),
                     onClick = onOpenChallenges,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-challenges"),
+                    modifier = Modifier.testTag("profile-challenges"),
                 )
-                ShortcutButton(
+                QuietListRow(
                     icon = Icons.Filled.AccountBalanceWallet,
                     label = stringResource(R.string.settings_wallet),
                     onClick = onOpenWallet,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("profile-wallet"),
+                    modifier = Modifier.testTag("profile-wallet"),
                 )
             }
         }
     }
     }
-}
-
-/** 설정 한 줄 — 아이콘 · 이름 · 들어가는 화살표 */
-@Composable
-private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
-    com.stepup.android.ui.components.ListRow(icon = icon, title = label, onClick = onClick)
 }
 
 /** 설정 필 칩 하나 — 아이콘 + 라벨 + 탭 액션 */
@@ -332,6 +340,8 @@ private data class SettingsPill(
     val label: Int,
     val onClick: () -> Unit,
 )
+
+private data class SettingsGroup(val title: Int, val items: List<SettingsPill>)
 
 /** 초 → H:MM:SS */
 private fun formatDuration(totalSec: Long): String {
@@ -1069,6 +1079,7 @@ private fun MeHeader(
                 icon = Icons.Outlined.Image,
                 contentDescription = stringResource(R.string.wardrobe_change_background),
                 onClick = onChangeBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
                 modifier = Modifier.align(Alignment.TopStart).testTag("profile-background"),
             )
             DarkIconButton(

@@ -24,6 +24,7 @@ data class ExperiencePreferences(
     val sounds: Boolean = true,
     val haptics: Boolean = true,
     val reducedMotion: Boolean = false,
+    val ambience: Boolean = false,
 )
 
 /**
@@ -38,6 +39,7 @@ class UserPrefs(
 
     private object Keys {
         val SOUNDS = booleanPreferencesKey("experience_sounds")
+        val AMBIENCE = booleanPreferencesKey("experience_ambience")
         val HAPTICS = booleanPreferencesKey("experience_haptics")
         val REDUCED_MOTION = booleanPreferencesKey("experience_reduced_motion")
         val DAILY_GOAL = intPreferencesKey("daily_goal")
@@ -147,10 +149,16 @@ class UserPrefs(
     }
 
     val experience: Flow<ExperiencePreferences> = store.data.map {
-        ExperiencePreferences(it[Keys.SOUNDS] ?: true, it[Keys.HAPTICS] ?: true, it[Keys.REDUCED_MOTION] ?: false)
+        ExperiencePreferences(
+            sounds = it[Keys.SOUNDS] ?: true,
+            haptics = it[Keys.HAPTICS] ?: true,
+            reducedMotion = it[Keys.REDUCED_MOTION] ?: false,
+            ambience = it[Keys.AMBIENCE] ?: false,
+        )
     }
 
     suspend fun setSounds(enabled: Boolean) { store.edit { it[Keys.SOUNDS] = enabled } }
+    suspend fun setAmbience(enabled: Boolean) { store.edit { it[Keys.AMBIENCE] = enabled } }
     suspend fun setHaptics(enabled: Boolean) { store.edit { it[Keys.HAPTICS] = enabled } }
     suspend fun setReducedMotion(enabled: Boolean) { store.edit { it[Keys.REDUCED_MOTION] = enabled } }
 

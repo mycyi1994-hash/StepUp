@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StepUp 달리기 2프레임 시험</title>
+<style>
+  :root { color-scheme: dark; font: 15px/1.5 system-ui, sans-serif; background: #07111f; color: white; }
+  body { max-width: 1060px; margin: auto; padding: 24px; }
+  h1 { margin: 0 0 8px; }
+  p { color: #b9c8dc; }
+  button { border: 1px solid #5e86b3; background: #1764c9; color: white; border-radius: 18px; padding: 10px 18px; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 18px; }
+  .card { background: linear-gradient(#172a4c, #563b54 72%, #192a44); border: 1px solid #557096; border-radius: 20px; overflow: hidden; }
+  .stage { height: 470px; position: relative; display: grid; place-items: end center; }
+  .stage::after { content: ''; width: 60%; height: 14px; border: 1px solid #4bafff; border-radius: 50%; position: absolute; bottom: 12px; box-shadow: 0 0 20px #3e8eff; }
+  .stage img { position: absolute; bottom: 17px; height: 95%; max-width: 95%; object-fit: contain; }
+  .stage .b { animation: stride 540ms steps(1, end) infinite; }
+  @keyframes stride { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+  .paused .stage .b, .reduced .stage .b { animation: none; opacity: 0; }
+  .caption { padding: 12px 16px; border-top: 1px solid #557096; }
+  @media (prefers-reduced-motion: reduce) { .stage .b { animation: none; opacity: 0; } }
+</style>
+<h1>달리기 애니메이션 가능성 시험</h1>
+<p>두 프레임을 번갈아 보여 주는 검토용 파일입니다. 머리·발 기준점과 의상·신발 일치, 경계 빛 번짐이 아직 승인되지 않아 앱에는 연결하지 않았습니다.</p>
+<button id="toggle">일시정지</button>
+<section class="grid">
+  <div class="card"><div class="stage"><img src="running/runo-run-frame-a-source.webp" alt="RUNO 첫 번째 달리기 자세"><img class="b" src="running/runo-run-frame-b-pilot.png" alt=""></div><div class="caption">RUNO · 기본 착장 · 2프레임 시험</div></div>
+  <div class="card"><div class="stage"><img src="running/lumi-run-frame-a-pilot.png" alt="LUMI 첫 번째 달리기 자세"><img class="b" src="running/lumi-run-frame-b-pilot.png" alt=""></div><div class="caption">LUMI · 기본 착장 · 2프레임 시험</div></div>
+</section>
+<script>
+  const button = document.getElementById('toggle');
+  button.onclick = () => {
+    const paused = document.body.classList.toggle('paused');
+    button.textContent = paused ? '재생' : '일시정지';
+  };
+</script>
+</html>

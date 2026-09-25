@@ -331,6 +331,10 @@
     <string name="stat_sessions">러닝</string>
     <string name="stat_tokens_earned">적립 토큰</string>
     <string name="profile_account">계정 및 설정</string>
+    <string name="settings_group_account">계정</string>
+    <string name="settings_group_activity">나의 활동</string>
+    <string name="settings_group_preferences">앱 설정</string>
+    <string name="settings_group_help">도움말</string>
     <string name="settings_wallet">지갑 및 토큰</string>
     <string name="settings_notifications">알림</string>
     <string name="settings_privacy">개인정보 및 보안</string>
@@ -514,6 +518,7 @@
 
     <!-- Compose -->
     <string name="post_write">글쓰기</string>
+    <string name="post_type">게시글 유형</string>
     <string name="post_submit">올리기</string>
     <string name="post_field_title">제목</string>
     <string name="post_field_title_hint">무슨 이야기인가요?</string>
@@ -521,7 +526,7 @@
     <string name="post_field_body_hint">자세한 내용을 적어주세요…</string>
     <string name="post_flash_details">모임 정보</string>
     <string name="post_field_place">만나는 곳</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">예: 강변공원 3번 출입구</string>
     <string name="post_field_distance">달릴 거리 (km)</string>
     <string name="post_field_starts_in">출발까지 (분)</string>
     <string name="post_field_capacity">정원</string>

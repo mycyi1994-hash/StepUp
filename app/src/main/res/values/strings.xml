@@ -333,6 +333,10 @@
     <string name="stat_sessions">Runs</string>
     <string name="stat_tokens_earned">Tokens Earned</string>
     <string name="profile_account">Account &amp; Settings</string>
+    <string name="settings_group_account">Account</string>
+    <string name="settings_group_activity">My activity</string>
+    <string name="settings_group_preferences">App settings</string>
+    <string name="settings_group_help">Help</string>
     <string name="settings_wallet">Wallet &amp; Tokens</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_privacy">Privacy &amp; Security</string>
@@ -516,6 +520,7 @@
 
     <!-- Compose -->
     <string name="post_write">Write</string>
+    <string name="post_type">Post type</string>
     <string name="post_submit">Post it</string>
     <string name="post_field_title">TITLE</string>
     <string name="post_field_title_hint">What\'s this about?</string>

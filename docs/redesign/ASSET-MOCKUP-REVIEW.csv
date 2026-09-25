@@ -1,0 +1,105 @@
+﻿path,title,work_item_or_state,status
+design/redesign-2026-09/concepts/01-launch-loading.png,01-launch-loading,screen-33,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/02-logo-reveal.png,02-logo-reveal,launch-logo-reveal,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/03-home.png,03-home,screen-00,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/04-running.png,04-running,screen-34,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/05-community.png,05-community,screen-02,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/06-wardrobe.png,06-wardrobe,screen-28,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/07-challenge.png,07-challenge,screen-04,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/concepts/08-profile.png,08-profile,screen-05,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/09-running-ready.png,09-running-ready,screen-01,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/10-running-paused.png,10-running-paused,러닝 일시정지 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/11-running-result.png,11-running-result,screen-35,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/12-items-vault.png,12-items-vault,screen-03,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/13-community-meetups.png,13-community-meetups,extra-community-meetups,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/14-profile-settings.png,14-profile-settings,extra-profile-settings,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/15-running-stop-confirm-v2.png,15-running-stop-confirm-v2,러닝 종료 확인 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/16-running-save-failed.png,16-running-save-failed,러닝 저장 실패 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/17-running-location-off.png,17-running-location-off,러닝 위치 권한 없음 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/18-running-save-course.png,18-running-save-course,러닝 코스 저장 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/19-community-stories-v2.png,19-community-stories-v2,extra-community-stories,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/20-community-my-crew.png,20-community-my-crew,extra-community-crews,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/21-community-meetup-detail-v2.png,21-community-meetup-detail-v2,screen-22,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/22-community-meetup-lobby.png,22-community-meetup-lobby,screen-36,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/23-community-crew-board.png,23-community-crew-board,screen-21,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/24-community-crew-create-v2.png,24-community-crew-create-v2,screen-18,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/25-community-post-compose-v2.png,25-community-post-compose-v2,screen-19 / extra-compose-free,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/26-community-meetups-empty.png,26-community-meetups-empty,다른 모임 검색 결과 없음 추가 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/27-items-store.png,27-items-store,extra-items-store,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/28-items-nft-market.png,28-items-nft-market,extra-items-exchange,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/29-items-my-trades-empty-v2.png,29-items-my-trades-empty-v2,extra-items-my-trades의 빈 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/30-items-filter.png,30-items-filter,extra-items-filter,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/31-items-sneaker-detail.png,31-items-sneaker-detail,screen-20,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/32-items-collection.png,32-items-collection,screen-26,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/33-items-runner-market.png,33-items-runner-market,screen-29 / extra-market-shoes,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/34-items-market-detail.png,34-items-market-detail,screen-32,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/35-settings-experience.png,35-settings-experience,screen-11,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/36-settings-notifications.png,36-settings-notifications,screen-12,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/37-settings-connected-accounts.png,37-settings-connected-accounts,screen-15,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/38-settings-language.png,38-settings-language,screen-16,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/39-settings-support-v2.png,39-settings-support-v2,screen-14,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/40-settings-theme.png,40-settings-theme,screen-25,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/41-profile-edit.png,41-profile-edit,extra-profile-edit,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/42-profile-goal.png,42-profile-goal,extra-profile-goal,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/43-notifications-list.png,43-notifications-list,screen-10,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/44-wallet-empty-v2.png,44-wallet-empty-v2,screen-06,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/45-achievements.png,45-achievements,screen-08,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/46-analytics-week-v2.png,46-analytics-week-v2,screen-09,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/47-analytics-quarter-v2.png,47-analytics-quarter-v2,extra-analytics-quarter,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/48-analytics-day-detail.png,48-analytics-day-detail,extra-analytics-day-details,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/49-analytics-week-detail.png,49-analytics-week-detail,extra-analytics-week-details,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/50-ranking-speed.png,50-ranking-speed,screen-17 / extra-ranking-speed,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/51-ranking-time.png,51-ranking-time,extra-ranking-time,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/52-ranking-sup.png,52-ranking-sup,extra-ranking-sup,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/53-ranking-crews.png,53-ranking-crews,extra-ranking-crews,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/54-ranking-factions.png,54-ranking-factions,extra-ranking-factions,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/55-challenge-weekly.png,55-challenge-weekly,extra-challenge-weekly,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/56-challenge-night.png,56-challenge-night,extra-challenge-night,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/57-news-health.png,57-news-health,extra-news-health,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/58-settings-privacy.png,58-settings-privacy,screen-13,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/59-login.png,59-login,screen-24,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/60-news-races.png,60-news-races,screen-27 / 대회 탭,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/61-notifications-empty.png,61-notifications-empty,screen-10 / 빈 상태,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/62-guide-running.png,62-guide-running,guide-00,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/63-guide-customize.png,63-guide-customize,guide-01,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/64-guide-community.png,64-guide-community,guide-02,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/65-guide-profile.png,65-guide-profile,guide-03,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/66-home-details.png,66-home-details,extra-home-details,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/67-community-crew-lobby.png,67-community-crew-lobby,screen-23,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/68-community-compose-tip-v2.png,68-community-compose-tip-v2,extra-compose-tip,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/69-launch-error.png,69-launch-error,launch-preparation-error,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/70-courses-create-empty-v2.png,70-courses-create-empty-v2,extra-courses-create / 경로 없음,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/71-customize-shoes-empty-v2.png,71-customize-shoes-empty-v2,extra-customize-shoes / 보유 없음,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/72-customize-options.png,72-customize-options,extra-customize-options,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/73-market-outfits.png,73-market-outfits,extra-market-outfits,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/74-sneaker-upgrade-confirm.png,74-sneaker-upgrade-confirm,extra-sneaker-upgrade-confirm,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/75-map-nearby.png,75-map-nearby,screen-30,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/76-courses-select-map.png,76-courses-select-map,screen-07,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/77-courses-board-map.png,77-courses-board-map,extra-courses-board,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/78-map-territory.png,78-map-territory,extra-map-territory,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/79-history-map-empty.png,79-history-map-empty,screen-31,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/80-history-map-month.png,80-history-map-month,extra-history-month,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/81-history-map-all.png,81-history-map-all,extra-history-all,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/82-community-comments-empty.png,82-community-comments-empty,extra-community-comments-empty,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/83-community-comments-replies.png,83-community-comments-replies,extra-community-comments-replies,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/84-community-report-dialog.png,84-community-report-dialog,extra-community-report-dialog,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/85-community-board-load-failed.png,85-community-board-load-failed,extra-community-board-load-failed,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/86-community-board-sign-in.png,86-community-board-sign-in,extra-community-board-sign-in,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/87-map-territory-sign-in.png,87-map-territory-sign-in,extra-map-territory-sign-in,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/88-map-territory-zoom-in.png,88-map-territory-zoom-in,extra-map-territory-zoom-in,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/89-map-territory-empty.png,89-map-territory-empty,extra-map-territory-empty,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/90-map-territory-load-failed.png,90-map-territory-load-failed,extra-map-territory-load-failed,CURRENT_DRAFT_PENDING_NATIVE_REVIEW
+design/redesign-2026-09/screens/15-running-stop-confirm.png,15-running-stop-confirm,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/19-community-stories.png,19-community-stories,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/21-community-meetup-detail.png,21-community-meetup-detail,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/24-community-crew-create.png,24-community-crew-create,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/25-community-post-compose.png,25-community-post-compose,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/29-items-my-trades-empty.png,29-items-my-trades-empty,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/39-settings-support.png,39-settings-support,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/44-wallet-empty.png,44-wallet-empty,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/46-analytics-week.png,46-analytics-week,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/47-analytics-quarter.png,47-analytics-quarter,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/68-community-compose-tip.png,68-community-compose-tip,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/70-courses-create-empty.png,70-courses-create-empty,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/71-customize-shoes-empty.png,71-customize-shoes-empty,superseded by current status-table draft,SUPERSEDED_REFERENCE
+design/redesign-2026-09/screens/component-board.png,component board,M01-M18,SHARED_COMPONENT_DRAFT_PENDING_NATIVE_REVIEW

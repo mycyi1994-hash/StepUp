@@ -19,11 +19,11 @@ class RunFeedbackTest {
         val paused = running.copy(isPaused = true)
         assertEquals(FeedbackCue.Start, runFeedbackCue(idle, running))
         assertEquals(FeedbackCue.Pause, runFeedbackCue(running, paused))
-        assertEquals(FeedbackCue.Start, runFeedbackCue(paused, running))
+        assertEquals(FeedbackCue.Resume, runFeedbackCue(paused, running))
     }
     @Test fun invalidSettlementNeverCelebratesAndExistingReceiptNeverReplays() {
         val receipt = idle.copy(lastRewardPoints = 15.0)
-        assertEquals(FeedbackCue.Reward, runFeedbackCue(running, receipt))
+        assertEquals(FeedbackCue.Finish, runFeedbackCue(running, receipt))
         assertNull(runFeedbackCue(receipt, receipt))
         assertEquals(FeedbackCue.Error, runFeedbackCue(running, receipt.copy(lastVerdict = RunVerdict.VOID)))
     }

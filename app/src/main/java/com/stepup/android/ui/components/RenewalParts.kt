@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.StepUpColors
@@ -124,7 +125,8 @@ fun FocusHeader(title: String, onBack: () -> Unit, action: (@Composable () -> Un
         Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack)
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
+            cue = FeedbackCue.Back)
         Text(
             title, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             fontSize = StepUpDesign.PrimaryLabel, fontWeight = FontWeight.SemiBold,
@@ -154,6 +156,7 @@ fun SubHeader(
             icon = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(R.string.cd_back),
             onClick = onBack,
+            cue = FeedbackCue.Back,
         )
         Text(
             text = title,
@@ -213,7 +216,8 @@ fun SecondaryHeader(
             .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack)
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
+            cue = FeedbackCue.Back)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (title == null) Wordmark() else Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
@@ -401,6 +405,33 @@ fun ShortcutButton(
             }
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** A quiet destination row for long menus and profile shortcuts. */
+@Composable
+fun QuietListRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .feedbackClickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = Silver, modifier = Modifier.size(22.dp))
+            Text(label, modifier = Modifier.weight(1f), fontSize = 16.sp,
+                fontWeight = FontWeight.Medium, color = Snow)
+            Icon(Icons.Filled.ChevronRight, contentDescription = null,
+                tint = Silver, modifier = Modifier.size(20.dp))
+        }
+        HairlineDivider()
     }
 }
 

@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.stepup.android.ui.theme.*
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.experience.LocalFeedback
 
 /** Settings rows share spacing, selection semantics and controls across every preference page. */
 @Composable
@@ -30,11 +32,15 @@ fun PreferenceToggle(
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
 ) {
+    val feedback = LocalFeedback.current
     val shape = RoundedCornerShape(StepUpDesign.PanelRadius)
     Row(
         Modifier.fillMaxWidth().clip(shape).background(CarbonHigh)
             .border(1.dp, Edge, shape)
-            .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+            .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = {
+                feedback?.play(FeedbackCue.Toggle)
+                onCheckedChange(it)
+            })
             .padding(StepUpDesign.PanelPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

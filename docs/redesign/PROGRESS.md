@@ -1,5 +1,94 @@
 # Redesign progress
 
+## 2026-09-25 — image and sound integration, source applied
+
+- Applied all 29 newly produced WAVs to Android resources. Eighteen short cues now follow their corresponding app events; eight draw transaction cues are also copied to the web DApp and gated on real receipt/result or failure; three scene ambience loops are opt-in and stop when foreground/audio policy does not allow playback.
+- Audited 89 prepared illustration files: 67 are directly used, seven are conditionally displayed, and 15 are exploratory/reference-only. The six audio preview mixes are also reference-only. See the [per-file application report](MEDIA-APPLICATION-2026-09-25.csv) and [integration notes](MEDIA-INTEGRATION-2026-09-25-KO.md).
+- Web draw bundle, source/resource checks and the per-file audit pass. Android compilation and device audio/visual verification on this exact revision are still pending; the locally available machine has no Android SDK/JDK/adb. Live draw sounds also depend on DApp deployment and contract configuration.
+
+## 2026-09-25 — writing and profile simplification, source only
+
+- Mapped every non-equipment asset used by writing, My Info, settings, profile edit and goal dialogs in [the focused asset map](COMPOSE-PROFILE-ASSETS-2026-09-25-KO.md). Existing independent scenery, bench and exact-match seated character art are reused; controls and icons remain native Compose components. No new bitmap was needed for these screens.
+- Writing now opens as the simpler free-post form; choosing Flash reveals its meeting fields. The nested form cards were removed and the route uses the shared calm utility backdrop. The existing Flash form interaction test now selects Flash before checking its numeric fields.
+- My Info keeps its separate scenery/character and now presents unboxed totals and light shared destination rows. Settings uses the same row component in four groups over a calm utility backdrop; all existing destinations remain reachable.
+- Source design contract, four-language resource check, experience-asset check and whitespace check passed. Local Android SDK/JDK/adb are unavailable, so this revision has not been compiled or captured on a device. Do not mark these screens visually approved or the full redesign complete.
+
+## 2026-09-25 — product art and base-look run frames wired for APK validation
+
+- Replaced the 52 sneaker and 10 premium outfit runtime WebP cuts with 640px transparent versions of the prepared product candidates. The five existing high-resolution base/trial outfit cuts remain in place. Existing catalog IDs and UI mapping are unchanged.
+- Added separate 640×960 RUNO/LUMI running frames and a two-frame swap on the live Run screen. It plays only while running, only for the base outfit with base shoes, and stops on pause/background or reduced motion. Other equipped looks keep their existing art and mismatch notice; these frames do not solve arbitrary modular gear combinations.
+- Source/design checks and alpha/dimension checks passed. Commit `c129bef` passed the Build APK workflow (unit tests, signed debug APK, R8 release compile) and Android 14/15 wardrobe gallery workflows. Both device captures show the new sneaker and outfit cuts on their cards. The debug APK is 92,410,523 bytes (SHA-256 `c83b0754b77582dd23727efa054df5f869a9337bd4b81878590f72bc41923bae`) at `C:/Users/gana0/StepUp-apk/redesign-c129bef/app-debug.apk`.
+- Motion remains a limited pilot: the actual starter WND-010 shoe is equipped by default, so that look continues to show its accurate static figure. The alternating frames apply only with no NFT shoe equipped, and the running screen itself was not in the wardrobe capture suite. Do not report default-look running motion or all-gear modular animation as visually verified.
+
+## 2026-09-24 — full product-art candidate set and running-motion feasibility
+
+- Collected 52 high-resolution transparent sneaker candidates: 32 earlier unintegrated pilots plus 20 newly generated from each catalog ID's small source art. Generated 10 high-resolution outfit cuts; the 5 existing base/trial cuts remain reuse candidates. `tools/verify_product_catalog.py` passed for all 67 catalog IDs and checks size, alpha corners, presence and duplicate files. See `PRODUCT-ASSET-PRODUCTION-2026-09-24-KO.md` and `design/redesign-2026-09/assets/modular/product-catalog-review.html`.
+- Generated three new base-look running frame candidates (LUMI A/B and RUNO B), paired with the existing RUNO A in `running-preview.html`. Real frame animation is feasible in Compose, but the current app only bobs a flattened RUNO pose; candidate frame alignment, glow edges and equipped-gear fidelity have not passed. Do not register these as production animation yet.
+- No runtime product resource was replaced, no animation was wired into the app, and no APK was built for this asset-only work. The previous preview APK remains the last app build.
+
+## 2026-09-24 — screen design QA first pass, source only (no APK)
+
+- Began [the Korean first-pass design QA](DESIGN-QA-FIRST-PASS-2026-09-24-KO.md) for screen/UI work, leaving character and equipment expansion deferred as the user requested. Opened eight core mockups and compared their composition and states with current source; all 86 backlog IDs now resolve to actual current mockup paths in the generated screen-coverage CSV.
+- Home, wardrobe, community and live-map architecture match the intended separation of art and native controls at source level. Found two material draft/source differences to resolve during visual review: run-result content order and login hero illustration. Seven active scene images are about 853×1844 px and need native quality/crop review.
+- Design contract (33 routes), string resources, experience assets and inventory generation passed. No local Android SDK/JDK or same-revision native captures; all native screen-review statuses remain pending. No APK/AAB, CI, push, or image generation.
+
+## 2026-09-24 — remaining design assets inventoried (no APK)
+
+- [Full Korean asset checklist](ASSET-REQUIREMENTS-2026-09-24-KO.md) now expands the current catalog into 556 pose-correct modular character packages and 62 high-resolution product redraws. These are logical work units, not 618 guaranteed single-file PNGs or completed assets.
+- Separate CSVs enumerate all 556 packages, 72 outfit-to-cap bindings, 67 product candidates, 9 scene/bench reviews, 86 screen/state mappings, 90 current mockups plus 13 superseded drafts and a component board, and all 229 packaged visual/font files. The source-to-resource check found 208 UI drawable names with no missing reference. Five product candidates and the active backgrounds/bench still require visual review.
+- This corrects the earlier 8/464 estimates, which omitted base/demo outfits, base shoes, caps, and full pose coverage. No images or APK were generated by this inventory step.
+
+## 2026-09-24 — shared component finish, source only (no APK)
+
+- Refined common hero surfaces, action gradients, outline controls, segmented labels, shortcuts, status/count badges and numeric fitting. See `SHARED-COMPONENT-FINISH-2026-09-24-KO.md`. This is shared-source refinement, not additional completed pages.
+- Hero text now uses a theme-paired surface; artwork scales with available width. Controls and badges use an opaque base independent of replaceable scenery. Button fills are separate from bright decorative highlights; long labels and badge counts have room to grow. Existing header/logo policy and real callbacks/data are preserved.
+- AdaptiveNumber measures candidate sizes instead of assuming linear font scaling. Exploration is bounded and remembered. Native large-font review remains pending.
+- Added source-reference notes for 28 screen functions without changing their existing implementation/verification records. Design contract, strings/resources, assets, whitespace and syntax parsing of 62 changed Kotlin files passed. Computed contrast for the new shared button fill is at least 4.65:1 including peak sheen; this is limited color-pair evidence, not whole-app accessibility verification.
+- Android compilation and native visual/interaction review remain pending. Existing equipment/compositing and functional release gaps remain open. No APK/AAB, CI build, release, push or image generation.
+
+## 2026-09-24 — home/catalog/news finish, source only (no APK)
+
+- Applied the remaining 18 source-finish backlog entries for home/details, three launch states, wardrobe/options, inventory/filter/trades, collection, runner market and race/health news. See `HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md`; the table covers UI source application, not verified visual completion or release readiness.
+- Home retains a large equipped character and pinned start action; constrained hero space scrolls. Details use complete numbers and separate units. Launch content scrolls within safe areas and keeps retry outside the body, retaining actual preparation/reveal behavior.
+- Wardrobe preserves the reference composition and independent background; compact/large-font screens give more room to controls. Worn/trial labels sit below art. Inventory/collection show full names and readable metadata, with fewer columns at larger text sizes. Boost actions are separate full-width controls.
+- Trading rows separate real amounts, metadata and actions; absent listing prices remain unknown. Shared filters and sorting reuse `DialogPanel`. News uses common form fields, 48dp native save controls, wrapping tags and full-width external-link/retry actions. Real ownership, listing/demo state, feed content, callbacks and filter draft/apply semantics are preserved.
+- Checks passed: design contract, strings/resources, existing assets, whitespace and syntax parsing of 61 changed Kotlin files. Android compilation and native visual/interaction checks remain pending. No APK/AAB, CI build, release, push or image generation.
+- Every backlog row now has a UI source-application record. Full equipment/pose asset coverage, body-part compositing, combined native review and broader functional release work remain open.
+
+## 2026-09-24 — running/map/course finish, source only (no APK)
+
+- Refined 12 existing backlog entries across run ready/active/result, course selection/create/board, nearby map and five territory states. See `RUN-MAP-COURSE-FINISH-2026-09-24-KO.md` for exact mapping; these are source changes, not new pages or native verification.
+- Run content now scrolls independently of the primary controls. Shared `AdaptiveNumber` keeps complete timers/amounts within the available width; larger text switches live metrics to a vertical layout. Results separate real reward state, amount, units and readable record values.
+- Reused `DialogPanel` in five additional places: stop confirmation, run goal, course save, apply/clear course and course ranking. Native form fields, 48dp course choice/like controls and separate course actions replace compact inline controls.
+- Actual map tiles, coordinates, pin/territory hit testing and viewport logic are unchanged. Status/retry and bounded scrollable details sit below the map; selected course/live-path actions sit outside route previews. Added two course-like labels in four locales.
+- Design contract, strings/resources, existing assets, whitespace and syntax parsing of 50 changed Kotlin files passed. No Android compilation, same-source native capture or interaction verification. No APK/AAB, CI, release, push or image generation.
+
+## 2026-09-24 — detail/dialog finish, source only (no APK)
+
+- Refined 9 existing backlog entries covering profile edit/goal, three challenge states, store, sneaker detail/upgrade, and market model detail. See `DETAIL-DIALOG-FINISH-2026-09-24-KO.md`; these are source refinements, not 9 new pages or device-verified completions.
+- Added `DialogPanel` with shared shape/surface, safe-area/IME handling, fixed header/close and actions, and scrollable content. Eight popup call sites reuse it, including mint result, copies, bid/ask and invite editors. Existing callbacks, limits, equipment/price/reward truth and action eligibility are preserved.
+- Profile and trading inputs reuse `FormField`; avatar choices retain their IDs with adaptive 3/4-column layout. Challenge rewards move below the description; store rows separate description and price/status; market rows have independent full-width actions and readable history/empty states.
+- Inventory detection now includes `DialogPanel`: 33 routes, 34 screens, 20 overlay declarations. Counts are not completion evidence.
+- Design contract, strings/resources, existing assets, whitespace, and syntax parsing of 46 changed Kotlin files passed. No local Android compile/runtime evidence; keyboard, font, theme and interaction verification remain pending. No APK/AAB, CI, release, push or new image generation.
+
+## 2026-09-24 — seated profile composition, source only (no APK)
+
+- Added LUMI/RUNO seated portraits for the exact STUDIO-PINK + WND-010 look, plus an independent transparent bench. `ProfileCharacterStage` scales both layers within one contact-point frame. Scenery, contact shadow, bench, portrait and native UI remain independent; body/clothes/shoes inside the portrait are still a complete image.
+- Profile now uses a larger artwork area and its own saved/random initial night/dawn scene with a native background-change button. Names, statistics, account data and settings callbacks remain native and unchanged. Unsupported seated combinations fall back to the prior standing presentation, with an equipment-fidelity note when the existing art cannot depict the selected combination.
+- `AvatarArtCatalog` restricts seated assets to the matching gender/outfit/shoe and SIT request. Other poses cannot select them. Added two focused unit tests for these boundaries (not executed locally).
+- Browser composition review checked the alpha edges and bench contact on night, dawn and white backgrounds. This is asset-composition evidence, not an Android screen capture. See `design/redesign-2026-09/assets/profile/README-KO.md` and its review HTML.
+- Design contract (33 routes), strings, existing experience assets, whitespace and Kotlin syntax parsing (39 changed files including the tests) passed. Android compilation/runtime validation remains pending. No APK/AAB, CI workflow, release or push was performed.
+
+## 2026-09-24 — stages 7–9 design finish, source only (no APK)
+
+- User explicitly requested finishing the remaining design and withholding APK generation until a combined review. No build workflow, APK/AAB, release or push was performed.
+- Applied source refinements across the 46 backlog states in stages 7–9 (23 community, 9 records/wallet, 14 account/settings/onboarding). See `DESIGN-FINISH-2026-09-24-KO.md` for the exact per-state mapping; shared refinements are identified as such.
+- Added shared preference toggle/choice rows, notes, state panels, native form fields and record metrics. Unified segmented controls, complete labels and touch heights. Utility scenery now follows theme tokens.
+- Community: readable post/comment layouts and actions, separate full-width join action, native compose inputs, scrollable report/roster dialogs, authentic empty/error/sign-in states, fixed lobby readiness CTA. Removed invented route art from the meetup hero; real maps are unchanged.
+- Rankings now show each participant once in legible rows; achievements use horizontal criteria/progress rows. Analytics gets larger charts and an accessible week-selection lane. Wallet/notification states and profile settings use the same presentation system. Four-step onboarding keeps description and controls in one constrained panel and honors reduced motion.
+- Checks: design contract, strings/resources, whitespace and syntax parsing of 33 changed Kotlin files passed. Syntax parsing is not Android compilation. No local Android toolchain or same-source native captures; runtime visual/IME/theme/font validation remains pending. Existing seated-character and compositing art gaps remain open.
+
+
 ## 2026-09-24 — stage 5–6 screen application
 
 - Stage 5: the profile/goal dialogs and three challenge states retain their shared scenery, controls, and actual equipped avatar. News now gives the race/health lists and search priority over a large decorative hero. Feed data, links, and save actions are unchanged.
@@ -698,3 +787,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Defined 18 proposed component families and 9 layout families; mapped the existing 77 capture items to layout, modules, asset needs and work stage. These are proposed mappings, not completed implementations. Unlisted overlays/permission/error states remain an explicit expansion list.
 - Next sequence is 3A parts/state board and layer specifications, 3B a one-gender/one-pose/two-outfit/two-shoe compositing pilot plus representative screens, then 3C home/startup. Existing flattened character assets remain available while compatibility is proved. No bulk generation is authorized by this planning update.
 - Current production implementation remains the previously verified 44e2367; this turn changed documentation only. Checked all 77 unique IDs, module/layout references and local document links. No APK build or image generation was run.
+
+## 2026-09-25 — mystery draw and ambient motion source checkpoint
+
+- Added a separate colored gift action between Customize and Community in the shared bottom bar. Its new route shows independent mystery-box art plus native sneaker/tracksuit actions. The older vault shoe mint remains a separate local flow. Both new draw actions are gated by public deployment config, so the current app cannot imply a GIWA transaction happened.
+- Added home background arrows with a crossfade, slow scenery-only drift, and subtle grounded character breathing. Reduced-motion settings stop decorative loops. These changes need native capture for foot contact, compact layouts and perceived motion.
+- Prepared `MysteryDrawNFT` for the 52-shoe/5-tracksuit catalog, a deterministic signed authorization endpoint, and a wallet transaction page. No contract, Worker or website was deployed. The existing GIWA Sepolia demo contract is not usable for this new draw because its roller key was not retained. SUP cost values are constructor parameters; final pricing remains a deployment decision.
+- Local checks: new Solidity contract compiled; 2 focused contract checks and 2 roller checks passed; draw web bundle built; source design/string/asset checks passed. Android compilation, native screenshot review and a real GIWA wallet transaction remain unverified.

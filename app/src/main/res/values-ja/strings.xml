@@ -332,6 +332,10 @@
     <string name="stat_sessions">ラン回数</string>
     <string name="stat_tokens_earned">獲得トークン</string>
     <string name="profile_account">アカウント &amp; 設定</string>
+    <string name="settings_group_account">アカウント</string>
+    <string name="settings_group_activity">マイアクティビティ</string>
+    <string name="settings_group_preferences">アプリ設定</string>
+    <string name="settings_group_help">ヘルプ</string>
     <string name="settings_wallet">ウォレット &amp; トークン</string>
     <string name="settings_notifications">通知</string>
     <string name="settings_privacy">プライバシー &amp; セキュリティ</string>
@@ -515,6 +519,7 @@
 
     <!-- Compose -->
     <string name="post_write">投稿</string>
+    <string name="post_type">投稿の種類</string>
     <string name="post_submit">投稿する</string>
     <string name="post_field_title">タイトル</string>
     <string name="post_field_title_hint">どんな話題ですか？</string>
@@ -522,7 +527,7 @@
     <string name="post_field_body_hint">詳しく書いてみましょう…</string>
     <string name="post_flash_details">集合の詳細</string>
     <string name="post_field_place">集合場所</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">例：川沿い公園の3番入口</string>
     <string name="post_field_distance">走る距離 (km)</string>
     <string name="post_field_starts_in">出発まで (分)</string>
     <string name="post_field_capacity">定員</string>

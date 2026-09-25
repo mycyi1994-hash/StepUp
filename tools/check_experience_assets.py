@@ -27,6 +27,17 @@ for name, path in files.items():
         assert 0.01 < max(map(abs, samples)) / 32768 < .8, name
         assert abs(samples[0]) < 10 and abs(samples[-1]) < 10, name
         assert max(abs(a - b) for a, b in zip(samples, samples[1:])) < 4000, name
+manifest = __import__('json').loads((ROOT / 'design/redesign-2026-09/audio/manifest.json').read_text(encoding='utf-8'))
+assert len(manifest) == 29
+for entry in manifest:
+    source = ROOT / 'design/redesign-2026-09/audio' / entry['file']
+    packaged = RES / 'raw' / source.name
+    assert source.is_file() and packaged.is_file(), entry['file']
+    assert source.read_bytes() == packaged.read_bytes(), f'{source.name}: packaged audio differs'
+    with wave.open(str(packaged)) as audio:
+        assert (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) == (1, 2, 44100), source.name
+        seconds = audio.getnframes() / audio.getframerate()
+        assert (7.9 < seconds < 8.1) if source.parent.name == 'ambience' else (0.09 < seconds < 2.0), source.name
 base = {node.attrib['name'] for node in ET.parse(RES / 'values/experience.xml').getroot()}
 for locale in ['values-ko', 'values-ja', 'values-zh']:
     assert {node.attrib['name'] for node in ET.parse(RES / locale / 'experience.xml').getroot()} == base
@@ -77,4 +88,4 @@ wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in lumi_outfits]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
     assert webp_has_alpha(head), f'{name}: no alpha'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 5 base/starter alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')
+print('PASS: 29 new packaged PCM sounds plus 9 legacy cues; 4-locale setting parity; font binaries and licenses; 5 base/starter alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')

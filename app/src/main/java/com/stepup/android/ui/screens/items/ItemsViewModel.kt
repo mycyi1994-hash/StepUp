@@ -110,7 +110,7 @@ class ItemsViewModel(
                 val target = inventory.value.firstOrNull { it.id == id }
                 if (target != null) {
                     message.value = ItemsMessage.Equipped(target)
-                    ExperienceEvents.emit(FeedbackCue.Success)
+                    ExperienceEvents.emit(FeedbackCue.Equip)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -146,7 +146,7 @@ class ItemsViewModel(
                 message.value = ItemsMessage.NotEnoughBalance
             } else {
                 mintResult.value = minted
-                ExperienceEvents.emit(FeedbackCue.Reward)
+                ExperienceEvents.emit(FeedbackCue.Success)
             }
         }
     }

@@ -150,12 +150,14 @@ fun HomeScreen(
                 icon = Icons.Filled.ChevronLeft,
                 contentDescription = stringResource(R.string.home_previous_background),
                 onClick = onPreviousBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
                 modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"),
             )
             com.stepup.android.ui.components.DarkIconButton(
                 icon = Icons.Filled.ChevronRight,
                 contentDescription = stringResource(R.string.home_next_background),
                 onClick = onNextBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
                 modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"),
             )
             com.stepup.android.ui.components.DarkIconButton(

@@ -41,7 +41,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Routes.CREW_BOARD | Community | Detail | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending; no APK requested |
 | Routes.FLASH_DETAIL | Community | Detail | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending; no APK requested |
 | Routes.FLASH_LOBBY | Community | Detail | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending; no APK requested |
-| Routes.POST_COMPOSE | Community | Form | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending; no APK requested |
+| Routes.POST_COMPOSE | Community | Form | simplified free-first form and separated native assets; see COMPOSE-PROFILE-ASSETS-2026-09-25-KO.md | source checks only; Android compile/capture pending |
 
 ## Screen functions
 
@@ -52,7 +52,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CrewCreateScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt:38 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:83 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:80 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
-| PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:43 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
+| PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:43 | free-first form, conditional Flash fields, shared utility background and native controls; see COMPOSE-PROFILE-ASSETS-2026-09-25-KO.md | source checks only; Android compile/capture pending |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:73 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:100 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:93 | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
@@ -70,7 +70,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:178 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:139 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:117 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
-| ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:132 | profile seated exact pink + WND-010 portraits; independent bench and saved random scenery; shared native controls; see assets/profile/README-KO.md | source checks and browser asset composition only; Android compile/capture and unit test execution pending; no APK requested |
+| ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:132 | independent scenery/bench/exact-match seated portrait; unboxed totals and grouped quiet menu rows; see COMPOSE-PROFILE-ASSETS-2026-09-25-KO.md | source checks and browser asset composition only; Android compile/capture pending |
 | WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:74 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | ConnectedAccountsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt:57 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | ExperienceSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt:25 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |

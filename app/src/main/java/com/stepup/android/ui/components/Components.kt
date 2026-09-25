@@ -818,6 +818,7 @@ fun DarkIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     badge: Boolean = false,
+    cue: FeedbackCue = FeedbackCue.Tap,
 ) {
     Box(modifier = modifier.size(StepUpDesign.TouchTarget)) {
         Box(
@@ -826,7 +827,7 @@ fun DarkIconButton(
                 .clip(RoundedCornerShape(StepUpDesign.ControlRadius))
                 .background(CarbonHigh)
                 .border(1.dp, Edge, RoundedCornerShape(StepUpDesign.ControlRadius))
-                .feedbackClickable(role = Role.Button, onClick = onClick),
+                .feedbackClickable(cue = cue, role = Role.Button, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(StepUpDesign.ControlIcon))

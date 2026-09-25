@@ -26,7 +26,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.domain.PostCategory
-import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Silver
@@ -46,7 +45,7 @@ fun PostComposeScreen(
     onBack: () -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
-    var category by rememberSaveable { mutableStateOf(PostCategory.FLASH.id) }
+    var category by rememberSaveable { mutableStateOf(PostCategory.FREE.id) }
     var title by rememberSaveable { mutableStateOf("") }
     var body by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
@@ -81,39 +80,42 @@ fun PostComposeScreen(
         }
 
         item {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PostCategory.entries.forEach { entry ->
-                    PillChip(
-                        text = entry.label(),
-                        selected = selected == entry,
-                        onClick = { category = entry.id },
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.post_type), style = MaterialTheme.typography.titleSmall, color = Snow)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PostCategory.entries.forEach { entry ->
+                        PillChip(
+                            text = entry.label(),
+                            selected = selected == entry,
+                            onClick = { category = entry.id },
+                        )
+                    }
                 }
             }
         }
 
         item {
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 14.dp) {
-                LabeledField(
-                    label = stringResource(R.string.post_field_title),
-                    value = title,
-                    onValueChange = { title = it },
-                    placeholder = stringResource(R.string.post_field_title_hint),
-                )
-                LabeledField(
-                    label = stringResource(R.string.post_field_body),
-                    value = body,
-                    onValueChange = { body = it },
-                    placeholder = stringResource(R.string.post_field_body_hint),
-                    singleLine = false,
-                    minHeight = 156,
-                )
-            }
+            LabeledField(
+                label = stringResource(R.string.post_field_title),
+                value = title,
+                onValueChange = { title = it },
+                placeholder = stringResource(R.string.post_field_title_hint),
+            )
+        }
+        item {
+            LabeledField(
+                label = stringResource(R.string.post_field_body),
+                value = body,
+                onValueChange = { body = it },
+                placeholder = stringResource(R.string.post_field_body_hint),
+                singleLine = false,
+                minHeight = 176,
+            )
         }
 
         if (selected == PostCategory.FLASH) {
             item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 14.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Text(
                         text = stringResource(R.string.post_flash_details),
                         style = MaterialTheme.typography.titleSmall,

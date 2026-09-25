@@ -27,6 +27,11 @@ const result = document.querySelector('#result')
 const shoeButton = document.querySelector('#shoe')
 const outfitButton = document.querySelector('#outfit')
 const buttons = [shoeButton, outfitButton]
+const soundEnabled = new URLSearchParams(location.search).get('sound') === 'on'
+const drawSounds = new Set([
+  'draw_charge', 'draw_box_open', 'draw_reveal_common', 'draw_reveal_rare',
+  'draw_reveal_epic', 'draw_reveal_legendary', 'draw_cancel', 'draw_fail',
+])
 const configured = isAddress(config.contract || '') && isAddress(config.sup || '') && /^https:\/\//.test(config.attesterUrl || '')
 const rpcUrl = config.rpcUrl || chain.rpcUrls.default.http[0]
 const publicClient = createPublicClient({ chain, transport: http(rpcUrl) })
@@ -34,6 +39,14 @@ let evmClientPromise
 
 function message(value) { status.textContent = value }
 function busy(value) { buttons.forEach(button => { button.disabled = value || !configured }) }
+function playDrawSound(name) {
+  if (!soundEnabled || !drawSounds.has(name)) return false
+  const player = new Audio(new URL(`assets/sounds/${name}.wav`, location.href))
+  player.volume = 0.45
+  player.play().catch(() => {})
+  return true
+}
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 if (!configured) {
   busy(false)
@@ -91,6 +104,7 @@ async function draw(category) {
   if (!configured) return
   busy(true)
   result.hidden = true
+  let transactionConfirmed = false
   try {
     message('지갑을 연결해 주세요.')
     const { provider, account } = await connectWallet()
@@ -137,6 +151,7 @@ async function draw(category) {
     message('GIWA 거래 확인을 기다리고 있어요…')
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
     if (receipt.status !== 'success') throw new Error('뽑기 거래가 완료되지 않았습니다.')
+    transactionConfirmed = true
     let prize
     for (const log of receipt.logs) {
       if (getAddress(log.address) !== contract) continue
@@ -146,6 +161,11 @@ async function draw(category) {
       } catch { /* Another event from the same transaction. */ }
     }
     if (!prize) throw new Error('거래는 확인됐지만 뽑기 결과를 읽지 못했습니다. 탐색기에서 확인해 주세요.')
+    message('GIWA 거래가 확인됐습니다. 상자를 여는 중이에요…')
+    if (playDrawSound('draw_charge')) await wait(1100)
+    if (playDrawSound('draw_box_open')) await wait(750)
+    const rarity = Math.max(0, Math.min(3, Number(prize.rarity)))
+    playDrawSound(['draw_reveal_common', 'draw_reveal_rare', 'draw_reveal_epic', 'draw_reveal_legendary'][rarity])
     result.replaceChildren()
     const title = document.createElement('strong')
     title.textContent = `${prizeLabel(prize)} 획득 · #${prize.tokenId}`
@@ -158,6 +178,9 @@ async function draw(category) {
     result.hidden = false
     message('GIWA에서 뽑기가 완료됐습니다.')
   } catch (error) {
+    const rejected = error?.code === 4001 || error?.cause?.code === 4001 ||
+      /reject|denied|cancel|거절/i.test(error?.shortMessage || error?.message || '')
+    if (!transactionConfirmed) playDrawSound(rejected ? 'draw_cancel' : 'draw_fail')
     message(error?.shortMessage || error?.message || '뽑기를 완료하지 못했습니다.')
   } finally {
     busy(false)

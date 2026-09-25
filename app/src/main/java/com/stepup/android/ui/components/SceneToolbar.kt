@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.stepup.android.R
+import com.stepup.android.ui.experience.FeedbackCue
 
 /** Scene controls reuse the same native 48 dp targets as every shared header. */
 @Composable
@@ -24,10 +25,11 @@ fun SceneToolbar(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack)
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
+            cue = FeedbackCue.Back)
         Spacer(Modifier.weight(1f))
         DarkIconButton(Icons.Outlined.Image, stringResource(R.string.wardrobe_change_background),
-            onChangeBackground, Modifier.testTag("wardrobe-background"))
+            onChangeBackground, Modifier.testTag("wardrobe-background"), cue = FeedbackCue.BackgroundSwitch)
         DarkIconButton(Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
             onMore, Modifier.testTag("wardrobe-options"))
     }

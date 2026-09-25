@@ -39,6 +39,11 @@ fun ExperienceSettingsScreen(onBack: () -> Unit) {
             }
         }
         item {
+            ExperienceToggle(Icons.Filled.VolumeUp, R.string.experience_ambience, R.string.experience_ambience_desc, settings.ambience) {
+                scope.launch { prefs.setAmbience(it) }
+            }
+        }
+        item {
             ExperienceToggle(Icons.Filled.Vibration, R.string.experience_haptic, R.string.experience_haptic_desc, settings.haptics) {
                 scope.launch { prefs.setHaptics(it) }
             }

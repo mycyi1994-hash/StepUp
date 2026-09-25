@@ -45,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -348,6 +349,28 @@ internal fun MainScaffold(
     val wardrobeScene = wardrobeSetting.takeIf {
         it in com.stepup.android.ui.components.WardrobeBackgrounds.settings
     } ?: com.stepup.android.ui.components.RunnerSetting.Wardrobe
+    val feedback = LocalFeedback.current
+    LaunchedEffect(currentRoute, homeSetting, profileSetting, wardrobeScene, runSetting, feedback) {
+        val setting = when (currentRoute) {
+            Screen.Run.route -> homeSetting
+            Screen.Customize.route -> wardrobeScene
+            Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.HomeDawn
+            Screen.Profile.route -> profileSetting
+            Routes.RUN_ROUTE -> runSetting
+            else -> null
+        }
+        feedback?.setAmbientScene(when (setting) {
+            com.stepup.android.ui.components.RunnerSetting.Wardrobe -> AmbientScene.Wardrobe
+            com.stepup.android.ui.components.RunnerSetting.Night,
+            com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
+            com.stepup.android.ui.components.RunnerSetting.RunNight -> AmbientScene.Night
+            com.stepup.android.ui.components.RunnerSetting.Sunset,
+            com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+            com.stepup.android.ui.components.RunnerSetting.RunSunset -> AmbientScene.Dawn
+            null -> null
+        })
+    }
+    DisposableEffect(feedback) { onDispose { feedback?.setAmbientScene(null) } }
 
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
@@ -374,6 +397,8 @@ internal fun MainScaffold(
             Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
             Routes.SNEAKER, Routes.MARKET_MODEL,
         )) {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    } else if (currentRoute == Routes.POST_COMPOSE) {
         com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     } else if (currentRoute == Routes.COURSES) {
         com.stepup.android.ui.components.RunnerScene(
@@ -440,12 +465,16 @@ internal fun MainScaffold(
                     onDrawShoe = {
                         com.stepup.android.core.ExternalIntents.openUrl(context,
                             android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
-                                .appendQueryParameter("category", "shoe").build().toString())
+                                .appendQueryParameter("category", "shoe")
+                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
+                                .build().toString())
                     },
                     onDrawOutfit = {
                         com.stepup.android.core.ExternalIntents.openUrl(context,
                             android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
-                                .appendQueryParameter("category", "outfit").build().toString())
+                                .appendQueryParameter("category", "outfit")
+                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
+                                .build().toString())
                     },
                 )
             }

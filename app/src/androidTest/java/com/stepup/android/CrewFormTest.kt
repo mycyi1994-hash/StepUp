@@ -40,6 +40,7 @@ class CrewFormTest {
             compose.onNodeWithContentDescription(compose.activity.getString(label))
                 .performScrollTo().performTextReplacement(value)
         }
+        compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
         fill(R.string.post_field_title, "Riverside run")
         fill(R.string.post_field_place, "Bridge entrance")
         compose.onNodeWithTag("post-submit").assertIsEnabled()

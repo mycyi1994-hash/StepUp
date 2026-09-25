@@ -1,0 +1,68 @@
+﻿id,kind,status,existing,requirement
+FIR-001,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_01.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-002,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_02.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-003,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_03.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-004,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_04.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-005,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_05.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-006,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_06.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-007,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_07.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-008,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_08.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-009,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_09.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-010,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_10.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-011,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_11.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-012,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_12.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+FIR-013,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_fire_13.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-001,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_01.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-002,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_02.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-003,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_03.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-004,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_04.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-005,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_05.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-006,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_06.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-007,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_07.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-008,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_08.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-009,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_09.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-010,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_10.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-011,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_11.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-012,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_12.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WAT-013,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_water_13.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-001,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_01.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-002,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_02.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-003,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_03.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-004,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_04.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-005,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_05.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-006,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_06.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-007,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_07.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-008,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_08.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-009,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_09.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-010,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_10.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-011,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_11.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-012,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_12.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+LIT-013,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_lightning_13.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-001,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_01.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-002,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_02.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-003,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_03.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-004,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_04.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-005,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_05.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-006,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_06.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-007,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_07.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-008,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_08.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-009,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_09.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-010,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_10.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-011,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_11.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-012,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_12.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+WND-013,sneaker_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/sneaker_wind_13.webp,transparent product cutout; preserve shared scale; inspect light/dark edges; 340x209 current source
+MALE-CLO-001,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_clo_001.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+FEMALE-CLO-001,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_lum_clo_001.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+MALE-CLO-002,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_clo_002.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+FEMALE-CLO-002,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_lum_clo_002.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+MALE-CLO-003,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_clo_003.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+FEMALE-CLO-003,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_lum_clo_003.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+MALE-CLO-004,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_clo_004.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+FEMALE-CLO-004,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_lum_clo_004.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+MALE-CLO-005,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_clo_005.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+FEMALE-CLO-005,outfit_product,RENDER_HIGH_RES,app/src/main/res/drawable-nodpi/outfit_lum_clo_005.webp,transparent product cutout matching worn garment/cap; existing width under 310px
+outfit_runo_base,outfit_product,REUSE_VISUAL_REVIEW,app/src/main/res/drawable-nodpi/outfit_runo_base.webp,review against new worn layers and both themes; 1254px existing art
+outfit_lumi_base,outfit_product,REUSE_VISUAL_REVIEW,app/src/main/res/drawable-nodpi/outfit_lumi_base.webp,review against new worn layers and both themes; 1254px existing art
+outfit_studio_pink,outfit_product,REUSE_VISUAL_REVIEW,app/src/main/res/drawable-nodpi/outfit_studio_pink.png,review against new worn layers and both themes; 1254px existing art
+outfit_studio_lavender,outfit_product,REUSE_VISUAL_REVIEW,app/src/main/res/drawable-nodpi/outfit_studio_lavender.png,review against new worn layers and both themes; 1254px existing art
+outfit_studio_olive,outfit_product,REUSE_VISUAL_REVIEW,app/src/main/res/drawable-nodpi/outfit_studio_olive.png,review against new worn layers and both themes; 1254px existing art

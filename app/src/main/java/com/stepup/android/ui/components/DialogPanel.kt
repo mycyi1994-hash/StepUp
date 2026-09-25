@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -23,6 +24,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
 import com.stepup.android.R
 import com.stepup.android.ui.theme.*
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.experience.LocalFeedback
 
 /** Native dialog: one scrollable body, fixed title/close and a separate action footer. */
 @Composable
@@ -32,8 +35,14 @@ fun DialogPanel(
     actions: @Composable ColumnScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val feedback = LocalFeedback.current
+    LaunchedEffect(feedback) { feedback?.play(FeedbackCue.SheetOpen) }
+    fun dismiss() {
+        feedback?.play(FeedbackCue.SheetClose)
+        onDismiss()
+    }
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { dismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         BoxWithConstraints(
@@ -41,7 +50,7 @@ fun DialogPanel(
             contentAlignment = Alignment.Center,
         ) {
             Box(Modifier.matchParentSize().pointerInput(onDismiss) {
-                detectTapGestures { onDismiss() }
+                detectTapGestures { dismiss() }
             })
             val shape = RoundedCornerShape(StepUpDesign.DialogRadius)
             Surface(
@@ -55,7 +64,7 @@ fun DialogPanel(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(title, style = MaterialTheme.typography.titleLarge, color = Snow, modifier = Modifier.weight(1f))
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+                        IconButton(onClick = { dismiss() }, modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Filled.Close, stringResource(R.string.common_close), tint = Silver)
                         }
                     }

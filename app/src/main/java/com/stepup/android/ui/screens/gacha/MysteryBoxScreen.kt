@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -29,6 +30,8 @@ import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.ambientPhase
 import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.experience.LocalFeedback
+import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.theme.Cyan
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
@@ -43,6 +46,8 @@ fun MysteryBoxScreen(
     onDrawShoe: () -> Unit = {},
     onDrawOutfit: () -> Unit = {},
 ) {
+    val feedback = LocalFeedback.current
+    LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
     val pulse = if (LocalMotion.current.decorative) ambientPhase(3400, reverse = true) else null
     Column(
         modifier = Modifier.fillMaxSize()

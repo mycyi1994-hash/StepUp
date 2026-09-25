@@ -4,6 +4,8 @@
     <string name="experience_intro">根据每日跑步习惯调整 StepUp 的操作体验。</string>
     <string name="experience_sound">音效</string>
     <string name="experience_sound_desc">通过短音提示操作、跑步状态和已确认的奖励。</string>
+    <string name="experience_ambience">场景环境音</string>
+    <string name="experience_ambience_desc">安静的河畔与衣橱循环音，默认关闭。</string>
     <string name="experience_haptic">触感反馈</string>
     <string name="experience_haptic_desc">用轻微振动提示操作和重要成就。</string>
     <string name="experience_motion">减少动态效果</string>

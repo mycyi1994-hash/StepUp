@@ -331,6 +331,10 @@
     <string name="stat_sessions">跑步次数</string>
     <string name="stat_tokens_earned">已赚代币</string>
     <string name="profile_account">账户与设置</string>
+    <string name="settings_group_account">账户</string>
+    <string name="settings_group_activity">我的活动</string>
+    <string name="settings_group_preferences">应用设置</string>
+    <string name="settings_group_help">帮助</string>
     <string name="settings_wallet">钱包与代币</string>
     <string name="settings_notifications">通知</string>
     <string name="settings_privacy">隐私与安全</string>
@@ -514,6 +518,7 @@
 
     <!-- Compose -->
     <string name="post_write">发帖</string>
+    <string name="post_type">帖子类型</string>
     <string name="post_submit">发布</string>
     <string name="post_field_title">标题</string>
     <string name="post_field_title_hint">想聊点什么？</string>
@@ -521,7 +526,7 @@
     <string name="post_field_body_hint">补充一些细节…</string>
     <string name="post_flash_details">集合信息</string>
     <string name="post_field_place">集合地点</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">例如：滨河公园3号入口</string>
     <string name="post_field_distance">跑步距离 (km)</string>
     <string name="post_field_starts_in">多久后出发 (分)</string>
     <string name="post_field_capacity">名额</string>
