@@ -307,12 +307,6 @@ fun ProfileScreen(
         item {
             Column(Modifier.fillMaxWidth()) {
                 QuietListRow(
-                    icon = Icons.AutoMirrored.Filled.DirectionsRun,
-                    label = stringResource(R.string.me_recent_runs),
-                    onClick = onOpenAnalytics,
-                    modifier = Modifier.testTag("profile-records"),
-                )
-                QuietListRow(
                     icon = Icons.Filled.EmojiEvents,
                     label = stringResource(R.string.home_shortcut_challenges),
                     onClick = onOpenChallenges,
@@ -1047,32 +1041,33 @@ private fun MeHeader(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            DarkIconButton(
-                icon = Icons.Filled.Settings,
-                contentDescription = stringResource(R.string.profile_tab_settings),
-                onClick = onOpenSettings,
-                modifier = Modifier.testTag("profile-settings"),
-            )
-        }
-        LevelAvatar(level = state.runner.level, size = 76.dp,
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LevelAvatar(level = state.runner.level, size = 64.dp,
             contentDescription = stringResource(R.string.profile_edit_profile), avatarId = state.avatarId,
             customBitmap = rememberCustomAvatar(state.avatarRev),
             modifier = Modifier.feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR))
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-                fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Snow,
+                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Snow,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier.weight(1f),
             )
             DarkIconButton(Icons.Filled.Edit, stringResource(R.string.profile_edit_profile), onClick = onEditProfile)
+        }
+        DarkIconButton(
+            icon = Icons.Filled.Settings,
+            contentDescription = stringResource(R.string.profile_tab_settings),
+            onClick = onOpenSettings,
+            modifier = Modifier.testTag("profile-settings"),
+        )
         }
         Text(stringResource(R.string.me_greeting), color = Silver, fontSize = 14.sp)
     }
@@ -1189,7 +1184,7 @@ private fun WeekCard(week: List<DailyStepsEntity>, onOpen: () -> Unit) {
 @Composable
 private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
+    GlowCard(modifier = Modifier.testTag("profile-recent-runs"), contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.me_recent_runs),
@@ -1201,6 +1196,7 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
             Text(
                 text = stringResource(R.string.me_see_all),
                 modifier = Modifier
+                    .testTag("profile-records")
                     .feedbackClickable(onClick = onOpenAll)
                     .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget).padding(12.dp),
                 fontSize = 13.sp,

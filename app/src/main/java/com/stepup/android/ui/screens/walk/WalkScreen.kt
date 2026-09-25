@@ -1097,7 +1097,7 @@ private fun FinishCard(
         // Keep the three activity results together in the first viewport. Stack
         // only when a narrow screen or enlarged type needs the full line width.
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
+            val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.25f
             GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
                 if (stacked) {
                     FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
@@ -1217,7 +1217,7 @@ private fun RunHero(
     avgPaceSec: Long?,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
+        val stacked = maxWidth < 300.dp || LocalDensity.current.fontScale > 1.25f
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             GpsChip(gpsFix, locationAllowed)
             AdaptiveNumber(formatDuration(elapsedSec), if (elapsedSec >= 3600) 44.sp else 64.sp, color = if (paused) Silver else Snow, textAlign = TextAlign.Center)

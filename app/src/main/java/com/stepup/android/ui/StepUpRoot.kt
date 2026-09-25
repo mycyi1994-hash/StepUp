@@ -782,8 +782,22 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
-    val labelWidth = with(density) { (maxWidth / (bottomTabs.size + 1) - 8.dp).roundToPx().coerceAtLeast(1) }
-    val labelHeightPx = bottomTabs.map { screen ->
+    val labels = bottomTabs.map { stringResource(it.labelRes) } + stringResource(R.string.tab_draw)
+    // Allocate spare space to long localized labels without defeating system font scaling.
+    val preferredWidths = labels.map { label ->
+        val measured = measurer.measure(text = label, style = labelStyle, softWrap = false)
+        (with(density) { measured.size.width.toDp().value } + 10f)
+            .coerceAtLeast(StepUpDesign.TouchTarget.value)
+    }
+    val equalWidth = maxWidth.value / labels.size
+    val minimumWidth = StepUpDesign.TouchTarget.value
+    val extra = (maxWidth.value - minimumWidth * labels.size).coerceAtLeast(0f)
+    val needs = preferredWidths.map { (it - minimumWidth).coerceAtLeast(0f) }
+    val totalNeed = needs.sum().coerceAtLeast(1f)
+    val widths = if (preferredWidths.all { it <= equalWidth }) labels.map { equalWidth } else
+        needs.map { minimumWidth + extra * it / totalNeed }
+    val labelHeightPx = bottomTabs.mapIndexed { index, screen ->
+        val labelWidth = with(density) { (widths[index].dp - 8.dp).roundToPx().coerceAtLeast(1) }
         measurer.measure(
             text = stringResource(screen.labelRes), style = labelStyle,
             constraints = androidx.compose.ui.unit.Constraints(maxWidth = labelWidth),
@@ -812,6 +826,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             bottomTabs.forEachIndexed { index, screen ->
                 NavTab(
                     screen = screen,
+                    slotWeight = widths[index],
                     labelHeight = labelHeight,
                     labelStyle = labelStyle,
                     selected = parent == screen,
@@ -836,6 +851,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 )
                 if (index == 1) {
                     GiftNavAction(
+                        slotWeight = widths.last(),
                         selected = currentRoute == Routes.MYSTERY_BOX,
                         onClick = { navController.navigate(Routes.MYSTERY_BOX) {
                             launchSingleTop = true
@@ -849,10 +865,10 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 }
 
 @Composable
-private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit, slotWeight: Float) {
     val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
     Column(
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(slotWeight)
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
             .heightIn(min = StepUpDesign.NavigationItemHeight)
@@ -886,6 +902,7 @@ private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun RowScope.NavTab(
     screen: Screen, labelHeight: androidx.compose.ui.unit.Dp,
+    slotWeight: Float,
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
@@ -899,7 +916,7 @@ private fun RowScope.NavTab(
         label = "navTabDot",
     )
     Column(
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(slotWeight)
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }

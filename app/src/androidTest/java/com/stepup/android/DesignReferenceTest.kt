@@ -158,6 +158,7 @@ class DesignReferenceTest {
                 val name = "ref-$w-${if (enlarged) "large" else "normal"}-${s.ordinal.toString().padStart(2, '0')}-${s.name.lowercase()}"
                 try {
                     awaitScene(s)
+                    assertReviewedLayout(s, enlarged)
                 } catch (failure: Throwable) {
                     capture("$name-failed")
                     throw failure
@@ -229,6 +230,37 @@ class DesignReferenceTest {
             setLocales(LocaleList(Locale.KOREAN))
         }
         return compose.activity.createConfigurationContext(config).getString(id)
+    }
+
+    /** Guard the visible regressions from the independent visual review. */
+    private fun assertReviewedLayout(scene: Scene, enlarged: Boolean) {
+        if (scene == Scene.HOME) {
+            val nodes = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile).map {
+                compose.onNodeWithTag("nav-label-${it.route}", useUnmergedTree = true).fetchSemanticsNode()
+            }
+            compose.runOnIdle {
+                nodes.forEach { node ->
+                    val layouts = mutableListOf<TextLayoutResult>()
+                    node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+                    assertTrue("Navigation label must fit without shrinking or orphan syllables",
+                        layouts.isNotEmpty() && layouts.all { it.lineCount == 1 && !it.didOverflowWidth })
+                }
+            }
+        }
+        if (scene == Scene.RUN_ACTIVE && !enlarged) {
+            val map = compose.onNodeWithTag("run-live-map").getUnclippedBoundsInRoot()
+            val action = compose.onNodeWithTag("run-primary-action").getUnclippedBoundsInRoot()
+            assertTrue("Full live map must be above the pinned action", map.bottom <= action.top)
+        }
+        if (scene == Scene.PROFILE) {
+            compose.onNodeWithTag("profile-records").assertIsDisplayed()
+        }
+        if (scene == Scene.COMMUNITY) {
+            val title = compose.onNodeWithTag("community-featured-title", useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+            val action = compose.onNodeWithTag("community-primary").getUnclippedBoundsInRoot()
+            assertTrue("Meetup title must remain above its action", title.bottom <= action.top)
+        }
     }
 
     @Composable private fun Render(s: Scene) {

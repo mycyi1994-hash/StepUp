@@ -60,7 +60,7 @@ internal fun TogetherTab(
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (sync != BoardSyncState.Ready) {
-                item { BoardSyncCard(sync, onRetry = viewModel::refreshBoard) }
+                item { BoardSyncCard(sync, onRetry = viewModel::refreshBoard, compact = true) }
             }
             item { SectionHeader(title = stringResource(R.string.community_upcoming)) }
             if (upcoming.isNotEmpty()) {
