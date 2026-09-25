@@ -180,7 +180,8 @@ class DesignReferenceTest {
                 capture(name)
                 if (s == Scene.POST_COMPOSE) {
                     compose.onNodeWithText(korean(R.string.post_cat_flash)).performClick()
-                    compose.onNodeWithContentDescription(korean(R.string.post_field_capacity)).performScrollTo().assertIsDisplayed()
+                    compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(korean(R.string.post_field_capacity)))
+                    compose.onNodeWithContentDescription(korean(R.string.post_field_capacity)).assertIsDisplayed()
                     compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsNotEnabled()
                     capture("$name-meetup-fields")
                 }

@@ -39,8 +39,9 @@ class CrewFormTest {
             }
         }
         fun fill(label: Int, value: String) {
-            compose.onNodeWithContentDescription(compose.activity.getString(label))
-                .performScrollTo().performTextReplacement(value)
+            val description = compose.activity.getString(label)
+            compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
+            compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
         compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
         fill(R.string.post_field_title, "Riverside run")
