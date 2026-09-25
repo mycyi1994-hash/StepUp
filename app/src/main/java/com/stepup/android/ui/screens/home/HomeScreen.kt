@@ -128,7 +128,7 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.home_record_title), style = MaterialTheme.typography.titleLarge,
@@ -148,7 +148,12 @@ fun HomeScreen(
             BarMeter(fraction = if (state.loaded && state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 9.dp)
             Text(stringResource(R.string.home_daily_goal, "%,d".format(state.goal)), color = Silver)
             }
-            Box(Modifier.fillMaxWidth().height(if (largeText) 190.dp else 132.dp).clip(RoundedCornerShape(16.dp))) {
+            val bannerHeight = when {
+                largeText -> 190.dp
+                androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800 -> 112.dp
+                else -> 132.dp
+            }
+            Box(Modifier.fillMaxWidth().height(bannerHeight).clip(RoundedCornerShape(16.dp))) {
                 com.stepup.android.ui.components.RunnerBanner(Modifier.fillMaxSize(), backgroundSetting)
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
                     listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f)))))
@@ -157,10 +162,10 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp, vertical = 16.dp))
                 com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronLeft,
                     stringResource(R.string.home_previous_background), onClick = onPreviousBackground,
-                    modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"))
+                    modifier = Modifier.align(Alignment.TopStart).testTag("home-background-previous"))
                 com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronRight,
                     stringResource(R.string.home_next_background), onClick = onNextBackground,
-                    modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"))
+                    modifier = Modifier.align(Alignment.TopEnd).testTag("home-background-next"))
             }
             if (!hasPermission) PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
             RecordWeek(state.week, state.todaySteps, state.loaded)
