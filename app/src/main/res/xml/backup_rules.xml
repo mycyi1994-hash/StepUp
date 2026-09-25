@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 이하. 로그인 세션 파일만 백업에서 뺀다 — 나머지(설정 · 기록)는 그대로 백업된다. -->
 <full-backup-content>
-    <!-- 기본 백업 사용: 별도 제외 규칙 없음 -->
+    <exclude domain="file" path="datastore/stepup_auth.preferences_pb" />
 </full-backup-content>

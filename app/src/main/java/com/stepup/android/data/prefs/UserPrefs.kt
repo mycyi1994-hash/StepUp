@@ -20,6 +20,12 @@ import kotlinx.coroutines.flow.map
 // 로그인 세션이 사라진다. ServiceLocator 의 DB 파일명과 같은 이유다.
 private val Context.dataStore by preferencesDataStore(name = "strideup_prefs")
 
+// 로그인 세션만 따로 둔 파일. 백업에서 이 파일만 뺀다(res/xml/backup_rules ·
+// data_extraction_rules) — 백업 파일을 손에 넣은 사람이 로그인까지 가져가지 못하게.
+// 설정 파일(strideup_prefs)은 그대로 백업된다: 통째로 빼면 거래소 커서가 사라져
+// 거래 줄이 다시 들어온다.
+private val Context.authDataStore by preferencesDataStore(name = "stepup_auth")
+
 data class ExperiencePreferences(
     val sounds: Boolean = true,
     val haptics: Boolean = true,
@@ -35,6 +41,7 @@ data class ExperiencePreferences(
 class UserPrefs(
     private val context: Context,
     private val store: androidx.datastore.core.DataStore<Preferences> = context.dataStore,
+    private val authStore: androidx.datastore.core.DataStore<Preferences> = context.authDataStore,
 ) {
 
     private object Keys {
@@ -286,14 +293,28 @@ class UserPrefs(
     // 서버가 준 출입증을 그대로 담아 둔다. 앱을 껐다 켜도 로그인이 유지되어야
     // 하고, 유지되지 않으면 그 사람의 서버 기록에 다시 닿지 못한다.
 
-    suspend fun authSessionJson(): String =
-        store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+    //
+    // 세션은 백업에서 빠지는 별도 파일(stepup_auth)에 둔다. 예전 버전은 설정 파일에
+    // 두었으므로, 처음 읽을 때 옮기고 설정 파일에서는 지운다.
+
+    suspend fun authSessionJson(): String {
+        val current = authStore.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (current.isNotBlank()) return current
+        val legacy = store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (legacy.isNotBlank()) {
+            authStore.edit { it[Keys.AUTH_SESSION] = legacy }
+            store.edit { it.remove(Keys.AUTH_SESSION) }
+        }
+        return legacy
+    }
 
     suspend fun setAuthSessionJson(json: String) {
-        store.edit { it[Keys.AUTH_SESSION] = json }
+        authStore.edit { it[Keys.AUTH_SESSION] = json }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
     }
 
     suspend fun clearAuthSession() {
+        authStore.edit { it.remove(Keys.AUTH_SESSION) }
         store.edit { it.remove(Keys.AUTH_SESSION) }
     }
 

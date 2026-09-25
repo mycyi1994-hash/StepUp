@@ -434,8 +434,11 @@
     <string name="wallet_empty_title">还没有记录</string>
     <string name="wallet_empty_body">跑一次，就能赚到第一笔 SUP。</string>
     <string name="wallet_giwa">GIWA 钱包</string>
-    <string name="wallet_giwa_status">当前版本暂不支持</string>
-    <string name="wallet_giwa_body">此页面显示应用中记录的 SUP。当前版本暂不支持连接 GIWA 钱包和提现。</string>
+    <string name="wallet_giwa_status">测试网 · 网页版</string>
+    <string name="wallet_giwa_body">在 StepUp 钱包页面可以连接钱包、领取奖励抽取，并在应用和钱包之间转移 SUP 和运动鞋。首次使用需要设置两步验证。</string>
+    <string name="wallet_web_open">打开钱包页面</string>
+    <string name="wallet_web_sign_in">请先登录再打开钱包页面。</string>
+    <string name="wallet_web_offline">无法连接，请稍后再试。</string>
     <string name="wallet_withdraw">提现</string>
     <string name="wallet_withdraw_title">提现到 GIWA 链</string>
     <string name="wallet_withdraw_body">链上结算会在主网上线时开放。到那时余额会 1:1 平移过去。</string>

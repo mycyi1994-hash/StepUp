@@ -434,8 +434,11 @@
     <string name="wallet_empty_title">아직 내역이 없어요</string>
     <string name="wallet_empty_body">러닝 한 번이면 첫 SUP가 쌓여요.</string>
     <string name="wallet_giwa">GIWA 지갑</string>
-    <string name="wallet_giwa_status">현재 버전에서 지원하지 않음</string>
-    <string name="wallet_giwa_body">앱에 기록된 SUP를 표시합니다. 현재 버전에서는 GIWA 지갑 연결과 출금을 지원하지 않습니다.</string>
+    <string name="wallet_giwa_status">테스트넷 · 웹에서 이용</string>
+    <string name="wallet_giwa_body">StepUp 지갑 페이지에서 지갑을 연결하고, 보너스 뽑기를 받고, SUP와 신발을 앱과 지갑 사이로 옮길 수 있습니다. 처음에는 2단계 인증을 설정합니다.</string>
+    <string name="wallet_web_open">지갑 페이지 열기</string>
+    <string name="wallet_web_sign_in">로그인한 뒤에 지갑 페이지를 열 수 있습니다.</string>
+    <string name="wallet_web_offline">연결하지 못했습니다. 잠시 뒤 다시 해 주세요.</string>
     <string name="wallet_withdraw">출금하기</string>
     <string name="wallet_withdraw_title">GIWA 체인으로 출금</string>
     <string name="wallet_withdraw_body">온체인 정산은 메인넷 출시와 함께 열려요. 그때 잔액이 1:1로 그대로 넘어가요.</string>
