@@ -54,6 +54,8 @@ class CrewFormTest {
         fun fill(label: Int, value: String) {
             val description = compose.activity.getString(label)
             compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
+            compose.onNodeWithContentDescription(description).performClick()
+            compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
         compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
@@ -138,7 +140,9 @@ class CrewFormTest {
                         ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
                 }
                 name.performTextInput("River runners")
-                name.assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("River runners")))
+                name.assert(SemanticsMatcher("crew name text is retained") {
+                    it.config[SemanticsProperties.EditableText].text == "River runners"
+                })
             } finally {
                 // Preserve the focused form before JUnit tears down its activity,
                 // including a missing keyboard; a post-test adb screenshot is too late.
