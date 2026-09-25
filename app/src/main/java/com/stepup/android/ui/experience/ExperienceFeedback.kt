@@ -95,7 +95,7 @@ class ExperienceFeedback(context: Context, private val view: View) : AutoCloseab
     fun recheckAmbientPolicy() = refreshAmbient()
 
     private fun otherMediaActive(): Boolean = runCatching { audio.activePlaybackConfigurations.any { config ->
-            config.isActive && config.audioAttributes.usage in listOf(
+            config.audioAttributes.usage in listOf(
                 AudioAttributes.USAGE_MEDIA, AudioAttributes.USAGE_GAME,
             )
         } }.getOrDefault(audio.isMusicActive)
