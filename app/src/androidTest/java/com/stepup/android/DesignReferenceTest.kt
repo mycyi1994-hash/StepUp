@@ -26,6 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.GeoPoint
+import com.stepup.android.domain.TrackPoint
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Routes
 import com.stepup.android.ui.Screen
@@ -170,18 +171,18 @@ class DesignReferenceTest {
         val fixtureTrack = listOf(
             GeoPoint(37.5280, 126.9320), GeoPoint(37.5290, 126.9340),
             GeoPoint(37.5295, 126.9370), GeoPoint(37.5302, 126.9390),
-        )
+        ).mapIndexed { index, point -> TrackPoint(point.lat, point.lng, now - 1_458_000 + index * 120_000L) }
         WalkSessionService.showStateForTest(when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> WalkSessionState(
                 isActive = true, isPaused = s == Scene.RUN_PAUSED,
                 steps = 4_200, elapsedSec = 1_458, startedAt = now - 1_458_000,
                 gpsFix = s != Scene.RUN_NO_GPS,
-                geoTrack = if (s == Scene.RUN_NO_GPS) emptyList() else fixtureTrack,
+                track = if (s == Scene.RUN_NO_GPS) emptyList() else fixtureTrack,
             )
             Scene.RUN_FINISH -> WalkSessionState(
                 lastRewardPoints = 4.0, lastSessionSteps = 4_200, lastRewardedSteps = 4_200,
                 lastElapsedSec = 1_458, lastGpsKm = 3.2, lastStartedAt = now,
-                geoTrack = fixtureTrack,
+                track = fixtureTrack,
             )
             else -> WalkSessionState()
         })

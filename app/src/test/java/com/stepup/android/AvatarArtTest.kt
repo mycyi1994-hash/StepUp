@@ -15,11 +15,14 @@ import com.stepup.android.domain.designIdFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
+import com.stepup.android.ui.components.avatarArtResOrNull
+import com.stepup.android.ui.components.outfitProductRes
 import org.junit.Test
 import java.io.File
 
 /**
- * 캐릭터 그림과 장비의 약속.
+ * 이전 착장 데이터의 호환성과 현재 캐릭터 없는 패키지의 자산 계약.
  *
  *   * 성별은 절대 바뀌지 않는다.
  *   * 입은 것이 그림에 보이면 보인다고, 아니면 아니라고 한다.
@@ -75,18 +78,20 @@ class AvatarArtTest {
     }
 
     @Test
-    fun `모든 그림은 실제 파일이 있다`() {
+    fun `캐릭터 없는 패키지는 신발과 배경만 유지하고 이전 그림은 해석하지 않는다`() {
         val dir = listOf(File("src/main/res/drawable-nodpi"), File("app/src/main/res/drawable-nodpi")).first { it.exists() }
-        AvatarArtCatalog.ALL.forEach { art ->
-            assertTrue("avatar_${art.key} 가 없다", listOf("webp", "png").any { ext ->
-                File(dir, "avatar_${art.key}.$ext").exists()
-            })
-        }
-        Outfits.ALL.filter { it.nft }.forEach { o ->
-            AvatarGender.entries.forEach { g ->
-                val name = "outfit_" + o.designIdFor(g).lowercase().replace('-', '_') + ".webp"
-                assertTrue("$name 가 없다", File(dir, name).exists())
-            }
+        val packaged = requireNotNull(dir.listFiles()).map { it.nameWithoutExtension }
+        assertFalse(packaged.any { it.startsWith("avatar_") || it.startsWith("outfit_") || it.startsWith("run_frame_") })
+        val expectedShoes = Faction.entries.flatMap { faction ->
+            (1..13).map { "sneaker_${faction.name.lowercase()}_${it.toString().padStart(2, '0')}" }
+        }.toSet()
+        assertEquals(expectedShoes, packaged.filter { it.startsWith("sneaker_") }.toSet())
+        assertTrue("home_banner_blue_night" in packaged)
+        assertTrue("home_banner_dawn" in packaged)
+        // Stored legacy appearance values remain valid data, but resolve to no runtime artwork.
+        AvatarArtCatalog.ALL.forEach { assertNull(avatarArtResOrNull(it.key)) }
+        (Outfits.ALL + Outfits.STUDIO).forEach { outfit ->
+            AvatarGender.entries.forEach { gender -> assertNull(outfitProductRes(outfit.designIdFor(gender))) }
         }
     }
 
@@ -132,13 +137,13 @@ class AvatarArtTest {
     // ── 고르기 ──────────────────────────────────────────────────
 
     @Test
-    fun `스튜디오 샘플은 구매 목록과 분리되고 남녀 착장과 실제 시작 신발이 맞는다`() {
+    fun `이전 스튜디오 정보는 보존하지만 상품 그림은 패키지에 넣지 않는다`() {
         val dir = listOf(File("src/main/res/drawable-nodpi"), File("app/src/main/res/drawable-nodpi")).first { it.exists() }
         Outfits.STUDIO.forEach { outfit ->
             assertFalse(outfit.starter || outfit.nft)
             assertFalse(outfit in Outfits.ALL)
             assertTrue(outfit in Outfits.PREVIEWABLE)
-            assertTrue(File(dir, "outfit_${outfit.id.lowercase().replace('-', '_')}.png").exists())
+            assertFalse(File(dir, "outfit_${outfit.id.lowercase().replace('-', '_')}.png").exists())
             AvatarGender.entries.forEach { gender ->
                 val look = AvatarLook(gender = gender, outfit = outfit, shoe = shoe("WND-010"), trial = true)
                 val exact = AvatarArtCatalog.resolve(look, AvatarPose.IDLE)
