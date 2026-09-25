@@ -3099,6 +3099,31 @@ do $$ begin
 end $$;
 update public.economy_settings set value = 'false' where key = 'chain_paused';
 
+-- 2차 점검 — 같은 작업을 곧바로 다시 서명하지 않는다 · 멈춤 상태를 어테스터가 읽는다
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform public.attester_op_payload(pg_temp.fx('op_bonus4')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  perform pg_temp.ok(public.attester_chain_paused() = false, '멈추지 않았을 때 false');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select * from public.attester_op_payload('%s', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') $q$, pg_temp.fx('op_bonus4')),
+  '방금 서명한 작업은 다른 요청이 곧바로 다시 서명하지 못한다');
+reset role;
+update public.chain_ops set updated_at = now() - interval '1 minute' where id = pg_temp.fx('op_bonus4')::uuid;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform public.attester_op_payload(pg_temp.fx('op_bonus4')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+  perform pg_temp.ok(true, '잠시 뒤에는 다시 서명할 수 있다(보내기가 실패했을 때)');
+  perform public.attester_pause('검사');
+  perform pg_temp.ok(public.attester_chain_paused(), '멈추면 true');
+end $$;
+reset role;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
 -- 계정을 지운 사람의 꺼내기가 만료돼도 오류 없이 만료된다(어테스터 만료가 멈추지 않게)
 insert into public.chain_ops (id, user_id, kind, status, wallet, amount, deadline)
 values ('0d0d0d0d-0d0d-0d0d-0d0d-0d0d0d0d0d0d', null, 'SUP_WITHDRAW', 'SIGNED',

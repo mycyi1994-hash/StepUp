@@ -1,7 +1,7 @@
 import { clients } from './chain.js'
 import { getUser, rpc, HttpError } from './supabase.js'
 import { linkWallet, executeOp } from './handlers.js'
-import { indexEvents, expireOps, reconcile } from './indexer.js'
+import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
 
 /**
@@ -63,7 +63,8 @@ async function rateLimited(request, env) {
 
 async function metadataResponse(request, env, ctx, url, id) {
   const cache = globalThis.caches?.default
-  const key = new Request(url.toString(), { method: 'GET' })
+  // 쿼리(?x=…)를 바꿔 캐시를 피해 RPC 를 두드리지 못하게 경로만으로 캐시한다
+  const key = new Request(url.origin + url.pathname, { method: 'GET' })
   if (cache) {
     const hit = await cache.match(key)
     if (hit) return hit
@@ -111,6 +112,8 @@ export default {
           sneakerSigner: c.sneakerSigner.address,
           relayer: c.relayer.account.address,
           guardian: c.guardian?.account.address ?? null,
+          // 지킴이 키가 없으면 이상이 보여도 컨트랙트를 멈추지 못한다
+          canPause: Boolean(c.guardian),
           contracts: c.addresses,
         })
       }
@@ -164,7 +167,8 @@ export default {
       const events = await step('events', indexEvents)
       const expiry = await step('expiry', expireOps)
       const books = await step('reconcile', reconcile)
-      console.log(JSON.stringify({ events, expiry, books }))
+      const guard = await step('guard', keepPaused)
+      console.log(JSON.stringify({ events, expiry, books, guard }))
     }
     ctx.waitUntil(run())
   },

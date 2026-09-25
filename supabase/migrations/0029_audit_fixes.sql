@@ -261,3 +261,69 @@ language sql stable security definer set search_path = public as $$
    limit greatest(1, least(coalesce(p_limit, 30), 100))
 $$;
 
+-- 9. (2차 점검) 같은 작업을 두 요청이 동시에 보내지 못하게 — 45초 동안 한 요청만 서명한다
+create or replace function public.attester_op_payload(p_op uuid, p_user uuid)
+returns table (
+  op_id uuid,
+  op_ref text,
+  kind text,
+  wallet text,
+  account_ref text,
+  amount numeric,
+  deadline_unix bigint,
+  run_day date,
+  sneaker_id bigint,
+  token_id numeric,
+  faction text,
+  rarity text,
+  variant int,
+  level int,
+  efficiency_bps int,
+  comfort_bps int,
+  durability numeric,
+  genesis_no int,
+  transfer_locked boolean
+)
+language plpgsql security definer set search_path = public, economy as $$
+declare v public.chain_ops;
+begin
+  perform economy.attester_guard();
+  select * into v from public.chain_ops o where o.id = p_op for update;
+  if not found or p_user is null or v.user_id is distinct from p_user then
+    raise exception '없는 작업입니다' using errcode = '22023';
+  end if;
+  if v.status not in ('RESERVED', 'SIGNED') or v.deadline <= now() then
+    raise exception '서명할 수 없는 작업입니다 (%)', v.status using errcode = '22023';
+  end if;
+  -- 방금 다른 요청이 서명해 보내는 중이다. 둘이 겹치면 가스비를 두 번 내고 하나는 체인이
+  -- 거절한다. 보내기가 실패했으면 잠시 뒤 다시 보낼 수 있다.
+  if v.status = 'SIGNED' and v.updated_at > now() - interval '45 seconds' then
+    raise exception '이 작업을 보내는 중입니다. 잠시 뒤에 다시 해 주세요' using errcode = '55000';
+  end if;
+  if (economy.setting('chain_paused') #>> '{}')::boolean then
+    raise exception '지금은 체인 작업을 잠시 멈췄습니다' using errcode = '55000';
+  end if;
+
+  update public.chain_ops o set status = 'SIGNED', updated_at = now() where o.id = p_op;
+
+  return query
+  select v.id, economy.op_ref(v.id), v.kind, v.wallet, economy.account_ref(v.user_id),
+         v.amount, extract(epoch from v.deadline)::bigint, economy.game_day(v.created_at),
+         s.id, s.token_id, s.faction, s.rarity, s.variant, s.level,
+         s.efficiency_bps, s.comfort_bps, s.durability_pts, s.genesis_no,
+         coalesce(s.km_run < s.lock_km, false)
+    from (select 1) one
+    left join public.market_sneakers s on s.id = v.sneaker_id;
+end $$;
+
+-- 10. (2차 점검) 서버가 체인 작업을 멈춰 두었는가 — 어테스터가 매분 보고 컨트랙트도 멈춰 있게 한다
+create or replace function public.attester_chain_paused()
+returns boolean
+language plpgsql stable security definer set search_path = public, economy as $$
+begin
+  perform economy.attester_guard();
+  return coalesce((economy.setting('chain_paused') #>> '{}')::boolean, false);
+end $$;
+revoke all on function public.attester_chain_paused() from public, anon, authenticated;
+grant execute on function public.attester_chain_paused() to stepup_attester, authenticated;
+

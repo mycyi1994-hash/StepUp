@@ -4,7 +4,7 @@ import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts'
 import { verifyTypedData } from 'viem'
 import { linkWallet, executeOp } from '../src/handlers.js'
 import { HttpError } from '../src/supabase.js'
-import { toServerEvent, indexEvents, expireOps } from '../src/indexer.js'
+import { toServerEvent, indexEvents, expireOps, pauseAll, keepPaused } from '../src/indexer.js'
 import { walletLinkMessage, RELEASE_TYPES, releaseDomain } from '../src/typed.js'
 
 const USER = { id: 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' }
@@ -44,7 +44,8 @@ function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null }
       publicClient: {
         readContract: async () => 7n,
         simulateContract: async (x) => ({ request: x }),
-        getBalance: async () => 0n,
+        // 새 지갑은 0, 가스비를 대는 relayer 는 넉넉히
+        getBalance: async ({ address }) => (address === '0x' + '3'.repeat(40) ? 10n ** 18n : 0n),
       },
       relayer: {
         account: { address: '0x' + '3'.repeat(40) },
@@ -209,12 +210,19 @@ test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', as
       addresses: { distributor: '0x' + '1'.repeat(40) },
       publicClient: {
         getBlockNumber: async () => 1000n,
+        getBlock: async ({ blockTag, blockNumber }) => ({ number: blockTag === 'safe' ? 970n : blockNumber }),
+        waitForTransactionReceipt: async () => ({ status: 'success' }),
         getContractEvents: async () => [
           { eventName: 'Claimed', args: { sessionHash: '0xop', runner: '0xA', amount: 10n ** 18n }, transactionHash: '0xt', logIndex: 0, blockNumber: 900n },
         ],
         readContract: async () => false,
       },
-      guardian: { writeContract: async (x) => paused.push(x.address) },
+      guardian: {
+        writeContract: async (x) => {
+          paused.push(x.address)
+          return '0x' + 'ee'.repeat(32)
+        },
+      },
     }),
     rpc: async (_env, fn, args) => {
       calls.push([fn, args])
@@ -228,4 +236,38 @@ test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', as
   assert.deepEqual(paused, ['0x' + '1'.repeat(40)])
   // 멈춘 뒤에도 커서는 옮긴다 — 같은 이벤트로 매분 다시 멈추지 않게
   assert.ok(calls.some(([fn]) => fn === 'attester_cursor_set'))
+})
+
+test('정지: 한 컨트랙트가 실패해도 나머지는 멈추고, 문제가 난 컨트랙트부터 멈춘다', async () => {
+  const order = []
+  const addresses = { distributor: '0x' + '1'.repeat(40), sneakers: '0x' + '2'.repeat(40), vault: '0x' + '4'.repeat(40) }
+  const deps = {
+    clients: () => ({
+      addresses,
+      publicClient: {
+        readContract: async () => false,
+        waitForTransactionReceipt: async () => ({ status: 'success' }),
+      },
+      guardian: {
+        writeContract: async (x) => {
+          order.push(x.address)
+          if (x.address === addresses.sneakers) throw new Error('insufficient funds')
+          return '0x' + 'ee'.repeat(32)
+        },
+      },
+    }),
+    rpc: async (_env, fn) => {
+      if (fn === 'attester_pause') throw new Error('supabase down')
+      if (fn === 'attester_chain_paused') return true
+      return null
+    },
+  }
+  await assert.rejects(pauseAll({}, deps, '검사', 'vault'))
+  // 서버 알리기가 실패해도 컨트랙트는 멈추려 했고, vault 가 먼저, sneakers 가 실패해도 distributor 까지
+  assert.deepEqual(order, [addresses.vault, addresses.distributor, addresses.sneakers])
+  // 서버가 멈춰 있으면 매분 다시 멈춘다
+  order.length = 0
+  const out = await keepPaused({}, deps)
+  assert.equal(out.paused, true)
+  assert.deepEqual(out.failed, ['sneakers'])
 })
