@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { accountRef, jwtClaims, tokenFromHash, parseSup, opStatusLabel, createApi } from '../wallet-core.js'
+import { accountRef, jwtClaims, tokenFromHash, parseSup, opStatusLabel, createApi, formatSup, sameWallet, blockRanges } from '../wallet-core.js'
 
 const jwt = (claims) => `h.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.s`
 
@@ -42,4 +42,26 @@ test('서버 요청: 공개 키 + 로그인 토큰, 오류는 서버 문장 그�
   assert.equal(calls[0][0], 'https://s.co/rest/v1/rpc/sup_withdraw_request')
   assert.equal(calls[0][1].headers.apikey, 'pk')
   assert.equal(calls[0][1].headers.authorization, 'Bearer T')
+})
+
+test('잔고 표시는 버림 — 보이는 만큼은 꺼낼 수 있다', () => {
+  assert.equal(formatSup('12.3456'), '12.3456')
+  assert.equal(formatSup('12.34569'), '12.3456')
+  assert.equal(formatSup(0.9999), '0.9999')
+  assert.equal(formatSup(1000), '1,000')
+})
+
+test('넣기는 계정에 연결된 지갑에서만', () => {
+  assert.equal(sameWallet('0xAbC0000000000000000000000000000000000001', '0xabc0000000000000000000000000000000000001'), true)
+  assert.equal(sameWallet('0xabc0000000000000000000000000000000000002', '0xabc0000000000000000000000000000000000001'), false)
+  assert.equal(sameWallet('0xabc', null), false)
+})
+
+test('블록 구간은 RPC 한도 안으로 나눈다', () => {
+  assert.deepEqual(blockRanges(100n, 100n), [[100n, 100n]])
+  const r = blockRanges(36979816n, 37000000n)
+  assert.equal(r[0][0], 36979816n)
+  assert.equal(r.at(-1)[1], 37000000n)
+  for (const [a, b] of r) assert.ok(b - a < 10000n)
+  for (let i = 1; i < r.length; i++) assert.equal(r[i][0], r[i - 1][1] + 1n)
 })

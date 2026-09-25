@@ -40,9 +40,25 @@ export function parseSup(text) {
   return { text: s, wei }
 }
 
+/** 잔고 표시 — 4자리까지, 남는 자리는 버린다(보이는 만큼은 꼭 꺼낼 수 있게) */
 export function formatSup(value) {
-  const n = Number(value ?? 0)
-  return n.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
+  const n = Math.floor(Number(value ?? 0) * 1e4 + 1e-6) / 1e4
+  return n.toLocaleString('ko-KR', { maximumFractionDigits: 4 })
+}
+
+/** 넣기는 지금 연결된 계정의 지갑에서만 — 남의 로그인 링크로 열린 페이지에서 내 SUP 를 남에게 넣지 않게 */
+export function sameWallet(account, linked) {
+  return Boolean(account && linked) && String(account).toLowerCase() === String(linked).toLowerCase()
+}
+
+/** [from, to] 를 RPC 한 번에 읽을 수 있는 크기로 나눈다 (GIWA RPC 는 10,000 블록까지) */
+export function blockRanges(from, to, size = 9000n) {
+  const out = []
+  for (let start = BigInt(from); start <= BigInt(to); start += size) {
+    const end = start + size - 1n
+    out.push([start, end < BigInt(to) ? end : BigInt(to)])
+  }
+  return out
 }
 
 /** 작업 상태를 사람이 읽는 말로. CONFIRMED 전에는 "완료"라고 하지 않는다. */

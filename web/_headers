@@ -10,3 +10,7 @@
   Referrer-Policy: no-referrer
   Cache-Control: no-store
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+
+# 지갑 페이지 스크립트 — 파일 이름이 늘 같으므로, 고친 것이 바로 닿게 매번 새로 확인한다
+/assets/wallet.js
+  Cache-Control: no-cache

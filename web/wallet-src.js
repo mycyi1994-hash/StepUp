@@ -1,9 +1,11 @@
 import {
   createPublicClient, createWalletClient, custom, defineChain, getAddress, http,
-  parseAbi, parseAbiItem, stringToHex,
+  parseAbi, parseAbiItem, parseSignature, stringToHex,
 } from 'viem'
 import { createEVMClient } from '@metamask/connect-evm'
-import { accountRef, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, tokenFromHash } from './wallet-core.js'
+import {
+  accountRef, blockRanges, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, sameWallet, tokenFromHash,
+} from './wallet-core.js'
 
 // STEPUP 지갑 페이지 — 지갑 연결 · 보너스 뽑기 · 꺼내기 · 넣기.
 //
@@ -27,6 +29,7 @@ const supAbi = parseAbi([
   'function balanceOf(address) view returns (uint256)',
 ])
 const vaultAbi = parseAbi([
+  'function minDeposit() view returns (uint256)',
   'function depositWithPermit(uint256 amount, bytes32 account, uint256 deadline, uint8 v, bytes32 r, bytes32 s)',
 ])
 const sneakersAbi = parseAbi([
@@ -182,7 +185,8 @@ async function runOp(opId, label) {
 
 // ── 단계 3~: 지갑 · 꺼내기 · 넣기 ──
 async function renderWallet(userId) {
-  const [[econ], [wallet], shoes, ops] = await Promise.all([
+  const [me, [econ], [wallet], shoes, ops] = await Promise.all([
+    api.user(),
     api.rpc('my_economy'),
     api.rpc('my_wallet'),
     api.rpc('my_sneakers'),
@@ -217,6 +221,8 @@ async function renderWallet(userId) {
 
   const openAt = wallet.withdraw_open_at ? new Date(wallet.withdraw_open_at) : null
   sections.push(card('내 지갑',
+    // 어느 계정으로 열렸는지 보여 준다 — 남이 보낸 링크로 열렸으면 여기서 알아챈다
+    el('p', {}, `STEPUP 계정 ${me?.email || '(이메일 없음)'}`),
     el('p', { class: 'mono' }, wallet.address),
     el('p', {}, `앱 잔고 ${formatSup(econ?.balance)} SUP · 오늘 꺼낸 양 ${formatSup(wallet.withdrawn_today)} / ${formatSup(wallet.withdraw_daily_limit)} SUP`),
     openAt && openAt > new Date() ? el('p', { class: 'note' }, `보안을 위해 ${openAt.toLocaleString('ko-KR')} 부터 꺼낼 수 있습니다.`) : null,
@@ -263,7 +269,12 @@ async function renderWallet(userId) {
       onclick: (e) => guard(e.target, async () => {
         const v = parseSup(depositAmount.value)
         if (!v) throw new Error('금액을 확인해 주세요')
+        const min = await publicClient.readContract({ address: config.vault, abi: vaultAbi, functionName: 'minDeposit' })
+        if (v.wei < min) throw new Error(`${formatSup(Number(min) / 1e18)} SUP 이상부터 넣을 수 있습니다`)
         const { account, wallet: w } = await connectWallet()
+        if (!sameWallet(account, wallet.address)) {
+          throw new Error(`이 계정에 연결된 지갑(${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)})으로 바꿔 주세요`)
+        }
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
         const [name, nonce] = await Promise.all([
           publicClient.readContract({ address: config.sup, abi: supAbi, functionName: 'name' }),
@@ -279,9 +290,9 @@ async function renderWallet(userId) {
           primaryType: 'Permit',
           message: { owner: account, spender: config.vault, value: v.wei, nonce, deadline },
         })
-        const r = `0x${sig.slice(2, 66)}`
-        const s = `0x${sig.slice(66, 130)}`
-        const vv = parseInt(sig.slice(130, 132), 16)
+        // 지갑마다 v 를 0/1 또는 27/28 로 준다 — viem 이 맞춰 준다
+        const { r, s, v: sv, yParity } = parseSignature(sig)
+        const vv = sv != null ? Number(sv) : 27 + yParity
         say('지갑 앱에서 넣기 거래를 보내 주세요.')
         const hash = await w.writeContract({
           address: config.vault, abi: vaultAbi, functionName: 'depositWithPermit',
@@ -295,12 +306,21 @@ async function renderWallet(userId) {
       class: 'secondary',
       onclick: (e) => guard(e.target, async () => {
         const { account, wallet: w } = await connectWallet()
+        if (!sameWallet(account, wallet.address)) {
+          throw new Error(`이 계정에 연결된 지갑(${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)})으로 바꿔 주세요`)
+        }
         say('지갑의 신발을 찾는 중…')
-        const logs = await publicClient.getLogs({
-          address: config.sneakers, event: transferEvent, args: { to: account },
-          fromBlock: BigInt(config.startBlock || 0), toBlock: 'latest',
-        })
-        const ids = [...new Set(logs.map((l) => l.args.tokenId))]
+        // 이 계정이 꺼낸 신발은 서버가 번호를 안다. 체인에서 산 신발은 받은 기록(Transfer)을 찾는다 —
+        // RPC 가 한 번에 10,000 블록까지만 읽으므로 나눠서, 몇 개씩 함께 읽는다.
+        const ids = new Set((shoes || []).filter((x) => x.chain_state === 'ON_CHAIN' && x.token_id != null)
+          .map((x) => BigInt(x.token_id)))
+        const ranges = blockRanges(BigInt(config.startBlock || 0), await publicClient.getBlockNumber())
+        for (let i = 0; i < ranges.length; i += 4) {
+          say(`지갑의 신발을 찾는 중… ${Math.min(100, Math.round((i / ranges.length) * 100))}%`)
+          const pages = await Promise.all(ranges.slice(i, i + 4).map(([fromBlock, toBlock]) =>
+            publicClient.getLogs({ address: config.sneakers, event: transferEvent, args: { to: account }, fromBlock, toBlock })))
+          for (const log of pages.flat()) ids.add(log.args.tokenId)
+        }
         const owned = []
         for (const id of ids) {
           const owner = await publicClient.readContract({ address: config.sneakers, abi: sneakersAbi, functionName: 'ownerOf', args: [id] })
