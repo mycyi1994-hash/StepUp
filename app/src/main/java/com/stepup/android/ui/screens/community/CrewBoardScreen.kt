@@ -1,26 +1,19 @@
 package com.stepup.android.ui.screens.community
 
+import androidx.compose.material.icons.filled.Groups
+
 import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.Analytics
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.Share
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,15 +32,13 @@ import com.stepup.android.R
 import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarStack
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
+import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
@@ -89,63 +79,30 @@ fun CrewBoardScreen(
         if (manages) viewModel.loadCrewRequests(crewId)
     }
 
-    Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 18.dp,
-                end = 18.dp,
-                top = 10.dp,
-                bottom = if (isMember) 92.dp else 26.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
+    DetailPage(
+        title = crew?.name.orEmpty(),
+        onBack = onBack,
+        primaryActionLabel = if (isMember) stringResource(R.string.post_write) else null,
+        onPrimaryAction = if (isMember) ({ onWritePost(crewId) }) else null,
+    ) {
+        if (crew != null && isMember) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = onBack,
-                    )
-                    Text(
-                        text = crew?.name.orEmpty(),
-                        modifier = Modifier.weight(1f),
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    // 크루원은 초대 링크를 보낼 수 있다. 받은 사람이 누르면 앱이 이 크루를 연다.
-                    if (crew != null && isMember) {
-                        val context = LocalContext.current
-                        val message = stringResource(
-                            R.string.crew_invite_message,
-                            crew.name,
-                            InviteLinks.crewLink(crew.id),
-                        )
-                        val chooser = stringResource(R.string.crew_invite_chooser)
-                        DarkIconButton(
-                            icon = Icons.Filled.Share,
-                            contentDescription = stringResource(R.string.crew_invite_share),
-                            onClick = {
-                                val send = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, message)
-                                }
-                                context.startActivity(Intent.createChooser(send, chooser))
-                                Analytics.crewInviteShared()
-                            },
-                        )
-                    }
-                }
+                val context = LocalContext.current
+                val message = stringResource(R.string.crew_invite_message, crew.name, InviteLinks.crewLink(crew.id))
+                val chooser = stringResource(R.string.crew_invite_chooser)
+                GhostButton(
+                    text = stringResource(R.string.crew_invite_share),
+                    onClick = {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                        }
+                        context.startActivity(Intent.createChooser(send, chooser))
+                        Analytics.crewInviteShared()
+                    },
+                )
             }
-
+        }
             if (crew == null) {
                 item {
                     GlowCard(contentPadding = PaddingValues(24.dp)) {
@@ -156,7 +113,7 @@ fun CrewBoardScreen(
                         )
                     }
                 }
-                return@LazyColumn
+                return@DetailPage
             }
 
             item {
@@ -183,7 +140,7 @@ fun CrewBoardScreen(
                                     R.string.community_members,
                                     crew.memberCount,
                                 ) + crew.area.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(),
-                                fontSize = 11.sp,
+                                fontSize = 14.sp,
                                 color = Silver,
                             )
                         }
@@ -194,7 +151,7 @@ fun CrewBoardScreen(
                             R.string.crew_boost,
                             RewardEconomy.partyBonusPercent(crew.memberCount.coerceAtLeast(1)),
                         ),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
                     )
@@ -230,13 +187,9 @@ fun CrewBoardScreen(
 
             if (sorted.isEmpty()) {
                 item {
-                    GlowCard(contentPadding = PaddingValues(26.dp)) {
-                        Text(
-                            text = stringResource(R.string.crew_board_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Silver,
-                        )
-                    }
+                    com.stepup.android.ui.components.StatePanel(
+                        stringResource(R.string.crew_board_empty), androidx.compose.material.icons.Icons.Filled.Groups,
+                    )
                 }
             }
 
@@ -263,32 +216,4 @@ fun CrewBoardScreen(
                 }
             }
         }
-
-        if (isMember) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 18.dp, bottom = 20.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Volt)
-                    .quietClickable { onWritePost(crewId) }
-                    .padding(horizontal = 18.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                androidx.compose.material3.Icon(
-                    Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = OnVolt,
-                    modifier = Modifier.size(17.dp),
-                )
-                Text(
-                    text = stringResource(R.string.post_write),
-                    color = OnVolt,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Black,
-                )
-            }
-        }
-    }
 }

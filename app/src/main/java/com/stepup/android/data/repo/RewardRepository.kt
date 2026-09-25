@@ -18,11 +18,12 @@ import com.stepup.android.domain.Sneaker
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /** SUP 포인트 원장, 에너지, 세션 정산을 관리한다. */
 class RewardRepository(
@@ -31,30 +32,13 @@ class RewardRepository(
     private val boostDao: BoostDao,
     private val notificationDao: NotificationDao,
     private val prefs: UserPrefs,
+    private val recoverRunEnergy: suspend () -> Unit = {},
 ) {
 
     val balance: Flow<Double> = rewardDao.observeBalance()
+    val totals: Flow<com.stepup.android.data.local.RewardTotals> = rewardDao.observeTotals()
 
     val sneakerLevel: Flow<Int> = prefs.sneakerLevel
-
-    /**
-     * 에너지 상한. 신은 신발의 레벨로 정하고, 신발이 없으면 옛 레벨 값을 쓴다.
-     * 화면(홈·러닝)이 보여 주는 상한과 같은 식이다 — 둘이 다르면 강화해도
-     * 실제로 벌 수 있는 걸음은 늘지 않는다.
-     */
-    val maxEnergy: Flow<Double> =
-        combine(sneakerDao.observeEquipped(), prefs.sneakerLevel) { equipped, level ->
-            RewardEconomy.maxEnergy(equipped?.level ?: level)
-        }
-
-    /** 오늘 남은 에너지(표시용) */
-    val energy: Flow<Double> = prefs.energy(maxEnergy)
-
-    suspend fun maxEnergyNow(): Double =
-        RewardEconomy.maxEnergy(sneakerDao.equippedNow()?.level ?: prefs.sneakerLevel.first())
-
-    // 잔액 확인과 차감 사이에 다른 차감이 끼면 잔액이 음수가 된다(버튼 두 번 누르기).
-    private val spendLock = Mutex()
 
     fun ledger(limit: Int = 100): Flow<List<RewardEntity>> = rewardDao.observeLedger(limit)
 
@@ -81,11 +65,10 @@ class RewardRepository(
         )
     }
 
-    /** 잔액이 부족하면 false. 성공 시 음수 원장을 남긴다. */
-    suspend fun spend(type: String, amount: Double, description: String): Boolean = spendLock.withLock {
+    /** 잔액이 부족하면 false. 성공 시 음수 원장을 남긴다. 확인과 기록은 한 트랜잭션이다. */
+    suspend fun spend(type: String, amount: Double, description: String): Boolean {
         if (amount <= 0) return true
-        if (rewardDao.balanceNow() < amount) return false
-        rewardDao.insert(
+        return rewardDao.spendIfEnough(
             RewardEntity(
                 timestamp = System.currentTimeMillis(),
                 type = type,
@@ -93,7 +76,27 @@ class RewardRepository(
                 description = description,
             )
         )
-        true
+    }
+
+    /** 에너지 상한을 지금 신은 신발 레벨로 맞춘다. 에너지를 읽고 쓰기 전에 부른다. */
+    suspend fun syncEnergyCap() {
+        prefs.setEnergyCapLevel(sneakerDao.equippedNow()?.level)
+    }
+
+    /** 신발을 갈아 신거나 강화하면 에너지 상한도 따라가게 한다(화면 표시용). 앱이 한 번 부른다. */
+    fun keepEnergyCapInSync(scope: CoroutineScope) {
+        scope.launch {
+            sneakerDao.observeEquipped().map { it?.level }.distinctUntilChanged()
+                .collect { prefs.setEnergyCapLevel(it) }
+        }
+    }
+
+    /** [day](epochDay) 하루 중 스트릭 보호막이 켜져 있던 때가 있었는가 */
+    suspend fun streakShieldCovered(day: Long): Boolean {
+        val zone = ZoneId.systemDefault()
+        val from = LocalDate.ofEpochDay(day).atStartOfDay(zone).toInstant().toEpochMilli()
+        val to = LocalDate.ofEpochDay(day + 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return boostDao.activeDuring(BoostType.STREAK_SHIELD.id, from, to) != null
     }
 
     suspend fun notify(
@@ -129,14 +132,6 @@ class RewardRepository(
         notify(NotificationType.GOAL_REACHED, argText = streak.toString(), argAmount = amount)
     }
 
-    /** [day](epochDay) 하루 중 스트릭 보호막이 켜져 있던 때가 있었는가 */
-    suspend fun streakShieldCovered(day: Long): Boolean {
-        val zone = ZoneId.systemDefault()
-        val from = LocalDate.ofEpochDay(day).atStartOfDay(zone).toInstant().toEpochMilli()
-        val to = LocalDate.ofEpochDay(day + 1).atStartOfDay(zone).toInstant().toEpochMilli()
-        return boostDao.activeDuring(BoostType.STREAK_SHIELD.id, from, to) != null
-    }
-
     // ── 세션 정산 ────────────────────────────────────────────
 
     /**
@@ -156,10 +151,10 @@ class RewardRepository(
         return ((multiplier - 1.0) * 10_000).roundToInt().coerceAtLeast(0)
     }
 
-    suspend fun settleSession(steps: Int, partySize: Int = 1): SessionReward {
-        val today = LocalDate.now().toEpochDay()
-        val energyCap = maxEnergyNow()
-        val energyRemaining = prefs.currentEnergy(today, energyCap)
+    /** Calculation only; RunSettlementRepository commits the record and local effects together. */
+    suspend fun calculateSessionReward(steps: Int, partySize: Int = 1, today: Long = LocalDate.now().toEpochDay()): SessionReward {
+        syncEnergyCap()
+        val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
 
         val earningMultiplier = equipped?.earningMultiplier
@@ -179,18 +174,6 @@ class RewardRepository(
             boostMultiplier = boostMultiplier,
         )
 
-        if (reward.points > 0) {
-            val type = if (partySize > 1) RewardType.EARN_PARTY else RewardType.EARN_WALK
-            credit(type, reward.points, "러닝 세션 적립 (${reward.rewardedSteps}보)")
-            if (partySize > 1) {
-                notify(NotificationType.PARTY_FINISHED, partySize.toString(), reward.points)
-            } else {
-                notify(NotificationType.REWARD_EARNED, reward.rewardedSteps.toString(), reward.points)
-            }
-        }
-        if (reward.energyUsed > 0) {
-            prefs.consumeEnergy(today, reward.energyUsed, energyCap)
-        }
         return reward
     }
 
@@ -210,9 +193,10 @@ class RewardRepository(
      */
     suspend fun settleBackground(steps: Int): SessionReward {
         if (steps <= 0) return SessionReward(0, 0.0, 0.0)
+        recoverRunEnergy()
         val today = LocalDate.now().toEpochDay()
-        val energyCap = maxEnergyNow()
-        val energyRemaining = prefs.currentEnergy(today, energyCap)
+        syncEnergyCap()
+        val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
 
         val earningMultiplier = equipped?.earningMultiplier
@@ -235,7 +219,7 @@ class RewardRepository(
             credit(RewardType.EARN_WALK, reward.points, "일상 걸음 적립 (${reward.rewardedSteps}보)")
         }
         if (reward.energyUsed > 0) {
-            prefs.consumeEnergy(today, reward.energyUsed, energyCap)
+            prefs.consumeEnergy(today, reward.energyUsed)
         }
         return reward
     }

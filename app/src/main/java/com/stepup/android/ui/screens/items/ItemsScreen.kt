@@ -9,20 +9,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
@@ -30,11 +25,9 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,8 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,9 +53,8 @@ import com.stepup.android.R
 import com.stepup.android.domain.BoostType
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
-import com.stepup.android.domain.VARIANTS_PER_FACTION
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.EquippedSneakerCard
 import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.FilterSummaryRow
@@ -84,10 +76,8 @@ import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.screens.community.SegmentedTabs
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.screens.market.MarketMessageBar
 import com.stepup.android.ui.screens.market.MarketViewModel
 import com.stepup.android.ui.screens.market.nftMarketSection
@@ -96,9 +86,6 @@ import com.stepup.android.ui.theme.Volt
 
 import com.stepup.android.ui.components.reveal
 import com.stepup.android.ui.components.celebrate
-import com.stepup.android.domain.Rarity
-import com.stepup.android.ui.components.PillChip
-import com.stepup.android.ui.components.Wordmark
 
 @Composable
 fun ItemsScreen(
@@ -145,8 +132,10 @@ fun ItemsScreen(
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
         val text = when (m) {
+            ItemsMessage.SaveFailed -> context.getString(R.string.feed_save_failed)
             ItemsMessage.NotEnoughBalance -> msgNoBalance
             ItemsMessage.BoostAlreadyActive -> msgBoostActive
+            ItemsMessage.EnergyCapacity -> context.getString(R.string.energy_purchase_capacity)
             ItemsMessage.BoostBought -> msgBoostBought
             ItemsMessage.MaxLevel -> msgMaxLevel
             is ItemsMessage.Upgraded -> msgUpgraded
@@ -156,102 +145,47 @@ fun ItemsScreen(
         viewModel.consumeMessage()
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
-    ) {
-        // 머리글 한 줄 — 제목이 로고 자리에 서고, 도감과 토큰이 그 맞은편에 선다.
-        //
-        // 로고를 뺀 것은 탭 하나에 이름이 둘 필요가 없어서다. 아래 탭 막대가
-        // 이미 "아이템"에 불을 켜 두었고, 그 위에 다시 STEPUP 이 있으면
-        // 정작 이 화면이 무엇인지는 셋째 줄에 가서야 나온다.
+    val filteredGroups = groups.filter { group ->
+        (rarityFilter == null || group.representative.rarity.id == rarityFilter) &&
+            (factionFilter == null || group.representative.faction.id == factionFilter) &&
+            (equipFilter == EquipFilter.ALL ||
+                group.copies.any { it.equipped } == (equipFilter == EquipFilter.ON))
+    }.let { list ->
+        when (itemSort) {
+            ItemSort.RECENT -> list.sortedWith(
+                compareByDescending<SneakerGroup> { it.representative.equipped }
+                    .thenByDescending { it.representative.acquiredAt },
+            )
+            ItemSort.LEVEL -> list.sortedWith(
+                compareByDescending<SneakerGroup> { it.representative.equipped }
+                    .thenByDescending { it.representative.level }
+                    .thenByDescending { it.representative.acquiredAt },
+            )
+            else -> list
+        }
+    }
+    val gridColumns = when {
+        LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 360 -> 1
+        LocalConfiguration.current.screenWidthDp >= 600 -> 3
+        else -> 2
+    }
+
+    DetailPage(title = stringResource(R.string.items_vault_title), onBack = onBack ?: {}) {
         item {
-            // 큰 글자에서는 제목 옆에 도감·토큰까지 서면 "신발 보…"로 잘린다 —
-            // 그때는 도감·토큰을 제목 아래 줄 오른쪽으로 내린다.
-            val stackedHeader = LocalDensity.current.fontScale > 1.3f
-            val headerActions: @Composable () -> Unit = {
-                // 도감 입구 — 아이콘만. 옆의 토큰 카드와 높이를 맞춰 두면
-                // 글자 없이도 "누르는 것"으로 읽힌다. 몇 개 모았는지는
-                // 아래 보관함 머리글이 이미 말하고 있다.
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(CarbonHigh)
-                        .border(1.dp, Volt.copy(alpha = 0.35f), RoundedCornerShape(15.dp))
-                        .quietClickable(onOpenDex),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                        contentDescription = stringResource(R.string.dex_title),
-                        tint = Volt,
-                        modifier = Modifier.size(21.dp),
-                    )
-                }
-                // 하위 화면이라 자리가 좁다. 시세·달러 환산이 붙은 토큰 카드 대신
-                // 다른 리뉴얼 화면과 같은 작은 SUP 알약을 쓴다.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                GhostButton(
+                    text = stringResource(R.string.dex_title),
+                    onClick = onOpenDex,
+                    modifier = Modifier.weight(1f),
+                )
                 SupPill(balance = balance, onClick = null)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    // 꾸미기 밑의 화면이다 — 돌아갈 길을 머리글 맨 앞에 둔다
-                    if (onBack != null) {
-                        DarkIconButton(
-                            icon = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                            onClick = onBack,
-                        )
-                    }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.items_vault_title),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1).sp,
-                            color = Snow,
-                        )
-                        Text(
-                            text = stringResource(
-                                when (tab) {
-                                    0 -> R.string.store_sub
-                                    1 -> R.string.nft_sub
-                                    else -> R.string.items_sub
-                                },
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Silver,
-                        )
-                    }
-                    if (!stackedHeader) headerActions()
-                }
-                if (stackedHeader) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        headerActions()
-                    }
-                }
             }
         }
 
         // 탭 안의 탭 — 스토어와 아이템(보관함).
         //
-        // 도감 입구와 토큰은 머리글에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
+        // 도감 입구와 토큰은 탭 위에 그대로 둔다. 둘 다 어느 쪽에서 눌러도
         // 뜻이 같아서, 탭마다 옮기면 찾는 자리가 두 곳이 된다.
         item {
             SegmentedTabs(
@@ -267,7 +201,7 @@ fun ItemsScreen(
 
         if (tab == 0) {
             storeSection()
-            return@LazyColumn
+            return@DetailPage
         }
         if (tab == 1) {
             marketMessage?.let { note ->
@@ -284,93 +218,9 @@ fun ItemsScreen(
                 onOpenModel = { onOpenMarketModel(it.faction, it.rarity, it.variant) },
                 onCancelListing = marketViewModel::cancelListing,
                 onCancelBid = marketViewModel::cancelBid,
+                onRetry = marketViewModel::refresh,
             )
-            return@LazyColumn
-        }
-
-        // ── 속성별 도감 진행도 — 탭하면 그 속성만 필터링 ─────────
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Faction.entries.forEach { faction ->
-                    FactionProgressCell(
-                        faction = faction,
-                        owned = factions[faction] ?: 0,
-                        total = VARIANTS_PER_FACTION,
-                        selected = factionFilter == faction.id,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            factionFilter = if (factionFilter == faction.id) null else faction.id
-                        },
-                    )
-                }
-            }
-        }
-
-        // ── 추가 필터: 등급 · 장착 상태 · 정렬 ─────────────────
-        //
-        // 가로로 밀던 칩 줄을 버튼 둘과 요약 한 줄로 바꾼다. 속성은 위
-        // 카드가 맡고, 여기서는 그 밖의 조건만 다룬다.
-        item {
-            FilterToolbar(
-                filterLabel = stringResource(R.string.filter_button_detail),
-                filterCount = itemFilterCount(rarityFilter, equipFilter),
-                sortLabel = stringResource(itemSortRes(itemSort)),
-                onOpenFilters = { itemFilterSheet = true },
-                onOpenSort = { itemSortSheet = true },
-            )
-        }
-
-        item {
-            FilterSummaryRow(
-                parts = itemFilterParts(rarityFilter, equipFilter),
-                // 요약 줄의 초기화는 추가 조건만 푼다. 위에서 고른 속성은
-                // 남는다 — 속성을 풀려면 그 카드를 다시 누르거나, 아래
-                // "전체 초기화"를 누른다.
-                onReset = {
-                    rarityFilter = null
-                    equipFilter = EquipFilter.ALL
-                },
-                extraAction = if (factionFilter != null) {
-                    stringResource(R.string.filter_reset_all) to {
-                        rarityFilter = null
-                        equipFilter = EquipFilter.ALL
-                        factionFilter = null
-                    }
-                } else {
-                    null
-                },
-            )
-        }
-
-        // ── 컬렉션 헤더 — "N / 52 조합" ───────────────────────
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.items_vault),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Snow,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.items_combo, progress.first, progress.second),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Slate,
-                    )
-                    Icon(
-                        Icons.Filled.ChevronRight,
-                        contentDescription = null,
-                        tint = Slate,
-                        modifier = Modifier.size(15.dp),
-                    )
-                }
-            }
+            return@DetailPage
         }
 
         // ── 착용 중인 스니커즈 ──────────────────────────────
@@ -382,49 +232,67 @@ fun ItemsScreen(
                     onClick = { onOpenSneaker(sneaker.id) },
                 )
             }
+        }
+
+        // Detailed conditions and faction collection counts live in the filter sheet.
+        item {
+            FilterToolbar(
+                filterLabel = stringResource(R.string.filter_button_detail),
+                filterCount = itemFilterCount(rarityFilter, equipFilter) + if (factionFilter != null) 1 else 0,
+                sortLabel = stringResource(itemSortRes(itemSort)),
+                onOpenFilters = { itemFilterSheet = true },
+                onOpenSort = { itemSortSheet = true },
+            )
+        }
+
+        item {
+            FilterSummaryRow(
+                parts = listOfNotNull(Faction.entries.firstOrNull { it.id == factionFilter }?.label()) +
+                    itemFilterParts(rarityFilter, equipFilter),
+                onReset = {
+                    factionFilter = null
+                    rarityFilter = null
+                    equipFilter = EquipFilter.ALL
+                },
+            )
+        }
+
+        // ── 컬렉션 헤더 — "N / 52 조합" ───────────────────────
+        item {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.items_vault), style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(stringResource(R.string.items_combo, progress.first, progress.second), style = MaterialTheme.typography.bodyMedium, color = Silver)
+            }
+        }
+
+        if (filteredGroups.isEmpty()) {
             item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 11.dp) {
-                    if (sneaker.canUpgrade) {
-                        val cost = sneaker.upgradeCost
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.items_next_level),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Silver,
-                            )
-                            Text(
-                                text = "%,.0f / %,.0f SUP".format(balance.coerceAtMost(cost), cost),
-                               fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (balance >= cost) Volt else Slate,
-                            )
-                        }
-                        BarMeter(
-                            fraction = (balance / cost).coerceIn(0.0, 1.0).toFloat(),
-                            height = 7.dp,
-                        )
-                        VoltButton(
-                            text = stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
-                            onClick = { viewModel.upgrade(sneaker.id) },
-                            enabled = balance >= cost,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                            text = stringResource(R.string.items_upgrade_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.items_max_level),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Volt,
+                GlowCard(contentPadding = PaddingValues(24.dp)) {
+                    Text(stringResource(R.string.common_none),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                }
+            }
+        } else {
+            items(filteredGroups.chunked(gridColumns), key = { it.first().representative.slotKey }) { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (row.first().representative.slotKey == filteredGroups.first().representative.slotKey)
+                            Modifier.guideTarget(GuideTour.Targets.ITEMS_COLLECTION) else Modifier,
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    row.forEach { group ->
+                        SneakerCollectionCard(
+                            sneaker = group.representative,
+                            count = group.count,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                if (group.count == 1) onOpenSneaker(group.representative.id)
+                                else copiesFor = group.representative.slotKey
+                            },
                         )
                     }
+                    repeat(gridColumns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
@@ -449,7 +317,7 @@ fun ItemsScreen(
                         )
                         Text(
                             text = stringResource(R.string.items_mint_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = Silver,
                         )
                     }
@@ -460,72 +328,13 @@ fun ItemsScreen(
                         "%,.0f".format(RewardEconomy.MINT_COST),
                     ),
                     onClick = { viewModel.mint() },
-                    enabled = balance >= RewardEconomy.MINT_COST,
+                    enabled = balance?.let { it >= RewardEconomy.MINT_COST } == true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
 
         // ── 컬렉션 — 한 줄, 옆으로 밀어서 넘긴다 ───────────────
-        item {
-            val filtered = groups.filter { g ->
-                (rarityFilter == null || g.representative.rarity.id == rarityFilter) &&
-                    (factionFilter == null || g.representative.faction.id == factionFilter) &&
-                    (
-                        equipFilter == EquipFilter.ALL ||
-                            g.copies.any { it.equipped } == (equipFilter == EquipFilter.ON)
-                        )
-            }
-                // 정렬은 실제 값으로만 한다 — 획득일 · 등급 차례 · 레벨.
-                // 착용 중인 것은 어느 차례에서나 맨 앞에 둔다. 지금 신고
-                // 있는 신발을 찾으러 목록을 뒤지게 하지 않는다.
-                .let { list ->
-                    when (itemSort) {
-                        ItemSort.RECENT -> list.sortedWith(
-                            compareByDescending<SneakerGroup> { it.representative.equipped }
-                                .thenByDescending { it.representative.acquiredAt },
-                        )
-                        ItemSort.LEVEL -> list.sortedWith(
-                            compareByDescending<SneakerGroup> { it.representative.equipped }
-                                .thenByDescending { it.representative.level }
-                                .thenByDescending { it.representative.acquiredAt },
-                        )
-                        // 등급 높은순은 ViewModel 이 이미 매겨 둔 차례다
-                        else -> list
-                    }
-                }
-            if (filtered.isEmpty()) {
-                GlowCard(contentPadding = PaddingValues(24.dp)) {
-                    Text(
-                        text = stringResource(R.string.common_none),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
-                    )
-                }
-            } else {
-                LazyRow(
-                    modifier = Modifier.guideTarget(GuideTour.Targets.ITEMS_COLLECTION),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(filtered.size, key = { filtered[it].representative.slotKey }) { index ->
-                        val group = filtered[index]
-                        SneakerCollectionCard(
-                            sneaker = group.representative,
-                            count = group.count,
-                            modifier = Modifier.width(172.dp),
-                            onClick = {
-                                if (group.count == 1) {
-                                    onOpenSneaker(group.representative.id)
-                                } else {
-                                    copiesFor = group.representative.slotKey
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-        }
-
         // ── 활성 부스트 ─────────────────────────────────────
         if (boosts.isNotEmpty()) {
             item { SectionHeader(title = stringResource(R.string.items_active_boosts)) }
@@ -542,27 +351,16 @@ fun ItemsScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         IconSquare(icon = boostIcon(boost.type), size = 36.dp)
-                        Text(
-                            text = stringResource(boostTitle(boost.type)),
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Snow,
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.boost_time_left,
-                                remainingLabel(boost.expiresAt),
-                            ),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Volt,
-                        )
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(stringResource(boostTitle(boost.type)), style = MaterialTheme.typography.titleMedium, color = Snow)
+                            Text(stringResource(R.string.boost_time_left, remainingLabel(boost.expiresAt)), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
+                        }
                     }
                 }
             }
         }
 
-        // ── 부스트 상점 — 3개 카드 한 줄 ─────────────────────
+        // ── 부스트 상점 — 설명과 구매 동작 분리 ─────────────────────
         item {
             SectionHeader(
                 title = stringResource(R.string.items_boosts),
@@ -570,21 +368,11 @@ fun ItemsScreen(
             )
         }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                BoostType.entries.forEach { type ->
-                    BoostCard(
-                        type = type,
-                        affordable = balance >= type.cost,
-                        onBuy = { viewModel.buyBoost(type) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+        items(BoostType.entries.toList()) { type ->
+            BoostCard(type = type, affordable = balance?.let { it >= type.cost } == true,
+                onBuy = { viewModel.buyBoost(type) }, modifier = Modifier.fillMaxWidth())
         }
+
     }
 
     // ── 사본 목록 ───────────────────────────────────────────
@@ -611,54 +399,29 @@ fun ItemsScreen(
 
     // ── 민팅 결과 ───────────────────────────────────────────
     minted?.let { sneaker ->
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissMintResult() },
-            containerColor = Carbon,
-            titleContentColor = Snow,
-            textContentColor = Silver,
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissMintResult() }) {
-                    Text(stringResource(R.string.common_ok), color = Volt, fontWeight = FontWeight.Bold)
+        com.stepup.android.ui.components.DialogPanel(
+            title = stringResource(R.string.mint_result_title),
+            onDismiss = { viewModel.dismissMintResult() },
+            actions = {
+                VoltButton(stringResource(R.string.common_ok), { viewModel.dismissMintResult() }, Modifier.fillMaxWidth())
+            },
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().reveal(sneaker.id).celebrate(sneaker.id),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FactionChip(sneaker.faction)
+                    RarityChip(sneaker.rarity)
                 }
-            },
-            title = {
-                Text(
-                    text = stringResource(R.string.mint_result_title),
-                    fontWeight = FontWeight.Black,
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth().reveal(sneaker.id).celebrate(sneaker.id),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FactionChip(sneaker.faction)
-                        RarityChip(sneaker.rarity)
-                    }
-                    SneakerFrame(
-                        sneaker = sneaker,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp),
-                        corner = 16.dp,
-                        animate = true,
-                    )
-                    Text(
-                        text = sneaker.fullLabel(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Snow,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = stringResource(R.string.sneaker_mint_no, sneaker.mintNumber),
-                        fontSize = 11.sp,
-                        color = Slate,
-                    )
-                }
-            },
-        )
+                SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(180.dp),
+                    corner = 16.dp, animate = true)
+                Text(sneaker.fullLabel(), style = MaterialTheme.typography.titleLarge,
+                    color = Snow, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), fontSize = 14.sp, color = Silver)
+            }
+        }
     }
 
     // ── 추가 거르기 패널 ───────────────────────────────────────
@@ -667,12 +430,15 @@ fun ItemsScreen(
     // 화면 밖으로 밀릴 때 창까지 사라진다.
     if (itemFilterSheet) {
         ItemFilterSheet(
+            faction = factionFilter,
+            factionProgress = factions,
             rarity = rarityFilter,
             equip = equipFilter,
             sort = itemSort,
             onDismiss = { itemFilterSheet = false },
-            onApply = { rarity, equip, sort ->
+            onApply = { faction, rarity, equip, sort ->
                 itemFilterSheet = false
+                factionFilter = faction
                 rarityFilter = rarity
                 equipFilter = equip
                 itemSort = sort
@@ -742,7 +508,7 @@ private fun FactionProgressCell(
         Text(
             text = faction.label(),
             color = c,
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 0.6.sp,
         )
@@ -768,83 +534,32 @@ private fun CopiesDialog(
     onDismiss: () -> Unit,
 ) {
     val first = copies.firstOrNull() ?: return
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.common_close),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        },
-        title = {
-            Text(
-                text = first.fullLabel() + " ×${copies.size}",
-                fontWeight = FontWeight.Black,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                copies.forEach { copy ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CarbonHigh)
-                            .quietClickable { onOpen(copy.id) }
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(11.dp),
-                    ) {
-                        SneakerFrame(
-                            sneaker = copy,
-                            modifier = Modifier.size(52.dp),
-                            corner = 10.dp,
-                            fade = false,
-                        )
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.level_chip, copy.level),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Volt,
-                                )
-                                if (copy.equipped) {
-                                    Text(
-                                        text = stringResource(R.string.items_equipped),
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = Volt,
-                                    )
-                                }
-                            }
-                            Text(
-                                text = stringResource(R.string.sneaker_mint_no, copy.mintNumber) +
-                                    "  ·  +%.1f%%".format(copy.boostPercent),
-                                fontSize = 11.sp,
-                                color = Silver,
-                            )
-                        }
-                        Icon(
-                            Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = Slate,
-                            modifier = Modifier.size(16.dp),
-                        )
+    com.stepup.android.ui.components.DialogPanel(
+        title = first.fullLabel() + " ×${copies.size}", onDismiss = onDismiss,
+        actions = { VoltButton(stringResource(R.string.common_close), onDismiss, Modifier.fillMaxWidth()) },
+    ) {
+        copies.forEach { copy ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CarbonHigh)
+                    .quietClickable { onOpen(copy.id) }.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SneakerFrame(sneaker = copy, modifier = Modifier.size(64.dp), corner = 12.dp, fade = false)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(stringResource(R.string.level_chip, copy.level),
+                        style = MaterialTheme.typography.titleMedium, color = Snow)
+                    if (copy.equipped) {
+                        Text(stringResource(R.string.items_equipped), fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold, color = com.stepup.android.ui.theme.VoltText)
                     }
+                    Text(stringResource(R.string.sneaker_mint_no, copy.mintNumber) +
+                        " · +%.1f%%".format(copy.boostPercent), fontSize = 14.sp, color = Silver)
                 }
+                Icon(Icons.Filled.ChevronRight, null, tint = Silver, modifier = Modifier.size(20.dp))
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -854,49 +569,15 @@ private fun BoostCard(
     onBuy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(CarbonHigh.copy(alpha = 0.6f))
-            .padding(horizontal = 10.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(9.dp),
-    ) {
-        // 볼트 링 안의 아이콘 — 목업의 원형 아이콘
-        Box(
-            modifier = Modifier
-                .size(54.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, Volt.copy(alpha = 0.7f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = boostIcon(type),
-                contentDescription = null,
-                tint = Volt,
-                modifier = Modifier.size(24.dp),
-            )
+    GlowCard(modifier, contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            IconSquare(icon = boostIcon(type), size = 44.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(boostTitle(type)), style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(stringResource(boostDesc(type)), style = MaterialTheme.typography.bodyMedium, color = Silver)
+            }
         }
-        Text(
-            text = stringResource(boostTitle(type)),
-            style = MaterialTheme.typography.titleSmall,
-            color = Snow,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(boostDesc(type)),
-            fontSize = 10.sp,
-            color = Silver,
-            textAlign = TextAlign.Center,
-            lineHeight = 14.sp,
-            minLines = 2,
-        )
-        GhostButton(
-            text = stringResource(R.string.price_sup, "%,.0f".format(type.cost)),
-            onClick = onBuy,
-            enabled = affordable,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        GhostButton(stringResource(R.string.price_sup, "%,.0f".format(type.cost)), onClick = onBuy, enabled = affordable, modifier = Modifier.fillMaxWidth())
     }
 }
 

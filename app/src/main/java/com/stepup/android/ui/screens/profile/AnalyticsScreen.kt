@@ -11,18 +11,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -44,6 +42,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
@@ -65,13 +69,13 @@ import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.repo.StepRepository
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.components.SectionHeader
-import com.stepup.android.ui.components.StatCell
+import com.stepup.android.ui.components.RecordMetric as StatCell
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.community.SegmentedTabs
 import com.stepup.android.ui.theme.Night
@@ -149,34 +153,7 @@ fun AnalyticsScreen(
     // "요즘 늘고 있나". 한 화면에 다 쌓으면 둘 다 흐려진다.
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.analytics_title),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.analytics_title), onBack = onBack) {
         // 기록 지도 — 달린 길을 모두 겹쳐 본다
         item { HistoryMapEntry(onClick = onOpenHistoryMap) }
 
@@ -233,6 +210,8 @@ fun AnalyticsScreen(
  */
 @Composable
 private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val stepsLabel = stringResource(R.string.stat_steps)
     val today = LocalDate.now().toEpochDay()
     val days = (0..6).map { offset -> today - 6 + offset }
     val byDay = week.associateBy { it.epochDay }
@@ -243,36 +222,36 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
     var selectedDay by rememberSaveable { mutableStateOf<Long?>(null) }
 
     GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Eyebrow(text = stringResource(R.string.analytics_week))
                 Text(
                     text = "%,d".format(weekSteps),
-                    fontSize = 34.sp,
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
                     color = Snow,
                 )
             }
             Column(
-                horizontalAlignment = Alignment.End,
+                horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.padding(bottom = 6.dp),
             ) {
                 Text(
                     text = stringResource(R.string.home_daily_goal, "%,d".format(goal)),
-                    fontSize = 10.sp,
+                    fontSize = 14.sp,
                     color = Slate,
                 )
                 // 누를 수 있다는 것을 모르면 없는 기능이나 같다.
                 Text(
                     text = stringResource(R.string.analytics_tap_hint),
-                    fontSize = 9.sp,
-                    color = Volt.copy(alpha = 0.75f),
+                    fontSize = 14.sp,
+                    color = Silver,
                 )
             }
         }
@@ -280,7 +259,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(190.dp),
         ) {
             val chartWidth = maxWidth
             val gap = 8.dp
@@ -301,6 +280,12 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                             // 막대만 누르면 손가락보다 얇아 자꾸 빗나간다.
                             // 칸 전체(빈 위쪽 포함)를 누를 수 있게 한다.
                             .fillMaxHeight()
+                            .testTag("analytics-day-$day")
+                            .semantics {
+                                contentDescription = "${LocalDate.ofEpochDay(day)}, $steps $stepsLabel"
+                                this.selected = selected
+                                role = Role.Button
+                            }
                             .quietClickable {
                                 selectedDay = if (selected) null else day
                             },
@@ -333,29 +318,7 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
                 )
             }
 
-            // 고른 막대 위에 뜨는 작은 창.
-            //
-            // 카드 아래에 붙이지 않고 차트 안에 띄우는 이유는, 창이 생길 때마다
-            // 카드가 늘어나면 아래 내용이 밀려 내려가 눈이 따라가야 하기 때문이다.
-            // 막대 쪽으로 붙여 두면 어느 날 것인지도 따로 읽을 필요가 없다.
-            selectedDay?.let { day ->
-                val index = days.indexOf(day)
-                if (index >= 0) {
-                    val panelWidth = 132.dp
-                    val center = slot * index + slot / 2 + gap * index
-                    val x = (center - panelWidth / 2)
-                        .coerceIn(0.dp, (chartWidth - panelWidth).coerceAtLeast(0.dp))
-                    DayCallout(
-                        day = day,
-                        steps = byDay[day]?.steps ?: 0,
-                        goal = goal,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(x = x)
-                            .width(panelWidth),
-                    )
-                }
-            }
+
         }
 
         Row(
@@ -364,22 +327,26 @@ private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
         ) {
             days.forEach { day ->
                 val label = LocalDate.ofEpochDay(day).dayOfWeek
-                    .getDisplayName(TextStyle.NARROW, Locale.getDefault())
+                    .getDisplayName(TextStyle.NARROW, locale)
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (day == today || day == selectedDay) {
                         Box(
                             modifier = Modifier
-                                .size(17.dp)
+                                .sizeIn(minWidth = 28.dp, minHeight = 28.dp)
                                 .background(Volt, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(label, color = OnVolt, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            Text(label, color = OnVolt, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
-                        Text(label, color = Slate, fontSize = 10.sp)
+                        Text(label, color = Slate, fontSize = 14.sp)
                     }
                 }
             }
+        }
+        selectedDay?.takeIf { it in days }?.let { day ->
+            DayCallout(day, byDay[day]?.steps ?: 0, goal,
+                Modifier.fillMaxWidth().testTag("analytics-day-details"))
         }
     }
 }
@@ -449,7 +416,7 @@ private fun StatGridCard(
             Spacer(Modifier.width(5.dp))
             Text(
                 text = stringResource(R.string.goal_steps_suffix),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
         }
@@ -460,14 +427,9 @@ private fun StatGridCard(
 @Composable
 private fun RecentRunsCard(sessions: List<WalkSessionEntity>) {
     if (sessions.isEmpty()) {
-        GlowCard(contentPadding = PaddingValues(26.dp)) {
-            Text(
-                text = stringResource(R.string.analytics_no_runs),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodySmall,
-                color = Silver,
-            )
-        }
+        com.stepup.android.ui.components.StatePanel(
+            message = stringResource(R.string.analytics_no_runs), icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+        )
         return
     }
 
@@ -501,7 +463,7 @@ private fun SessionRow(session: WalkSessionEntity) {
             )
             Text(
                 text = duration + " · " + stringResource(R.string.notification_steps, session.steps),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Slate,
             )
         }
@@ -537,8 +499,8 @@ private fun DayCallout(
             .clip(RoundedCornerShape(13.dp))
             .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
-            .padding(horizontal = 11.dp, vertical = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -546,14 +508,15 @@ private fun DayCallout(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = date.format(calloutDateFormatter),
-                fontSize = 11.sp,
+                text = date.format(DateTimeFormatter.ofPattern("M.d (E)",
+                    androidx.compose.ui.platform.LocalConfiguration.current.locales[0])),
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
             )
             Text(
                 text = "$rate%",
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 // 목표를 넘긴 날은 색으로 먼저 보인다.
                 color = if (steps >= goal) Volt else Slate,
@@ -572,8 +535,8 @@ private fun CalloutRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = label, fontSize = 10.sp, color = Slate)
-        Text(text = value, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Snow)
+        Text(text = label, modifier = Modifier.weight(1f).padding(end = 12.dp), fontSize = 14.sp, color = Silver)
+        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Snow)
     }
 }
 
@@ -669,22 +632,23 @@ private fun weekBuckets(days: List<DailyStepsEntity>, weeks: Int = 13): List<Wee
 /** 3개월 주간 막대 — 막대를 누르면 그 주 기록 */
 @Composable
 private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
+    val stepsLabel = stringResource(R.string.stat_steps)
     val buckets = remember(days) { weekBuckets(days) }
     val maxValue = maxOf(buckets.maxOfOrNull { it.steps } ?: 0L, 1L)
     val total = buckets.sumOf { it.steps }
     var selected by rememberSaveable { mutableStateOf<Int?>(null) }
 
     GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Eyebrow(text = stringResource(R.string.analytics_tab_quarter))
                 Text(
                     text = "%,d".format(total),
-                    fontSize = 34.sp,
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
                     color = Snow,
@@ -692,7 +656,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
             }
             Text(
                 text = stringResource(R.string.analytics_tap_hint_week),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Volt.copy(alpha = 0.75f),
                 modifier = Modifier.padding(bottom = 6.dp),
             )
@@ -701,7 +665,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp),
+                .height(190.dp),
         ) {
             val chartWidth = maxWidth
             val gap = 3.dp
@@ -720,6 +684,12 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
+                            .testTag("analytics-week-$index")
+                            .semantics {
+                                contentDescription = "${bucket.start} – ${bucket.end}, ${bucket.steps} $stepsLabel"
+                                this.selected = isSelected
+                                role = Role.Button
+                            }
                             .quietClickable { selected = if (isSelected) null else index },
                         contentAlignment = Alignment.BottomCenter,
                     ) {
@@ -753,21 +723,7 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
                 )
             }
 
-            selected?.let { index ->
-                val bucket = buckets[index]
-                val panelWidth = 150.dp
-                val center = slot * index + slot / 2 + gap * index
-                val x = (center - panelWidth / 2)
-                    .coerceIn(0.dp, (chartWidth - panelWidth).coerceAtLeast(0.dp))
-                WeekCallout(
-                    bucket = bucket,
-                    goal = goal,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = x)
-                        .width(panelWidth),
-                )
-            }
+
         }
 
         // 맨 왼쪽 주와 이번 주만 적는다. 13개를 다 적으면 글자가 겹친다.
@@ -777,14 +733,28 @@ private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
         ) {
             Text(
                 text = buckets.firstOrNull()?.start?.format(monthDayFormatter).orEmpty(),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
             Text(
                 text = stringResource(R.string.analytics_this_week),
-                fontSize = 9.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
+        }
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(buckets.size) { index ->
+                com.stepup.android.ui.components.PillChip(
+                    text = buckets[index].start.format(monthDayFormatter) + " – " + buckets[index].end.format(monthDayFormatter),
+                    selected = selected == index,
+                    onClick = { selected = if (selected == index) null else index },
+                )
+            }
+        }
+        selected?.let { index ->
+            buckets.getOrNull(index)?.let { bucket ->
+                WeekCallout(bucket, goal, Modifier.fillMaxWidth().testTag("analytics-week-details"))
+            }
         }
     }
 }
@@ -801,8 +771,8 @@ private fun WeekCallout(bucket: WeekBucket, goal: Int, modifier: Modifier = Modi
             .clip(RoundedCornerShape(13.dp))
             .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
-            .padding(horizontal = 11.dp, vertical = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -812,13 +782,13 @@ private fun WeekCallout(bucket: WeekBucket, goal: Int, modifier: Modifier = Modi
             Text(
                 text = bucket.start.format(monthDayFormatter) + " – " +
                     bucket.end.format(monthDayFormatter),
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
             )
             Text(
                 text = "$rate%",
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (rate >= 100) Volt else Slate,
             )
@@ -893,7 +863,7 @@ private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
                 Spacer(Modifier.weight(1f))
                 Text(
                     text = LocalDate.ofEpochDay(best.epochDay).format(calloutDateFormatter),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Snow,
                 )
@@ -915,14 +885,14 @@ private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
         if (byMonth.isEmpty()) {
             Text(
                 text = stringResource(R.string.analytics_no_data),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Slate,
             )
         } else {
             byMonth.forEach { (month, entries) ->
                 val steps = entries.sumOf { it.steps.toLong() }
                 val km = steps * RewardEconomy.STRIDE_METERS / 1000
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -936,7 +906,7 @@ private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
                         )
                         Text(
                             text = "%,d".format(steps) + " · " + "%.0f km".format(km),
-                            fontSize = 11.sp,
+                            fontSize = 14.sp,
                             color = Silver,
                         )
                     }
@@ -1045,7 +1015,7 @@ private fun HistoryMapEntry(onClick: () -> Unit) {
             Text(
                 text = stringResource(R.string.history_map_entry_sub),
                 color = Silver,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
             )
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)

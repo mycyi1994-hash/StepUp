@@ -502,6 +502,7 @@ class CommunityViewModel(
         if (_posting.value) return
         _posting.value = true
         viewModelScope.launch {
+            try {
             val result = communityRepository.write(
                 category = category,
                 title = title,
@@ -514,15 +515,24 @@ class CommunityViewModel(
                 lat = lat,
                 lng = lng,
             )
-            _posting.value = false
             if (result is BoardResult.Ok) {
                 ExperienceEvents.emit(FeedbackCue.Success)
                 onDone()
             } else {
                 noticeFailure(result)
             }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _boardNotice.value = BoardNotice.FAILED
+            } finally {
+                _posting.value = false
+            }
         }
     }
+
+    private val _creatingCrew = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val creatingCrew: kotlinx.coroutines.flow.StateFlow<Boolean> = _creatingCrew
 
     fun createCrew(
         name: String,
@@ -531,7 +541,10 @@ class CommunityViewModel(
         policy: CrewJoinPolicy,
         onCreated: (String) -> Unit,
     ) {
+        if (name.isBlank() || _creatingCrew.value) return
+        _creatingCrew.value = true
         viewModelScope.launch {
+            try {
             when (val result = crewRepository.create(name, tagline, area, policy)) {
                 is CrewActionResult.Created -> {
                     ExperienceEvents.emit(FeedbackCue.Success)
@@ -540,6 +553,13 @@ class CommunityViewModel(
                 is CrewActionResult.Failed ->
                     _crewNotice.value = if (result.signIn) CrewNotice.SIGN_IN else CrewNotice.FAILED
                 else -> Unit
+            }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _crewNotice.value = CrewNotice.FAILED
+            } finally {
+                _creatingCrew.value = false
             }
         }
     }

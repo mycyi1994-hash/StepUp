@@ -1,0 +1,10 @@
+﻿id,status,existing,review
+Night,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_riverside_night.webp,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+Sunset,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_riverside_sunset.webp,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+Wardrobe,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_wardrobe_terrace.webp,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+HomeBlueNight,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_home_blue_night.png,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+HomeDawn,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_home_dawn.png,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+RunNight,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_run_night.png,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+RunSunset,REUSE_CROP_LIGHT_DARK_REVIEW,app/src/main/res/drawable-nodpi/scene_run_sunset.png,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+Terrace,AVAILABLE_NOT_ACTIVE,app/src/main/res/drawable-nodpi/scene_terrace_stage.webp,"ground/contact, safe crop, title contrast and character light in every allowed scene"
+ProfileBench,REUSE_CONTACT_REVIEW,app/src/main/res/drawable-nodpi/prop_profile_bench_v2.png,"seat/front overlap for RUNO and LUMI, all outfits and both profile backgrounds"

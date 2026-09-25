@@ -6,6 +6,16 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / 'app/src/main/res'
+
+def webp_has_alpha(head: bytes) -> bool:
+    if head[:4] != b'RIFF' or head[8:12] != b'WEBP':
+        return False
+    if head[12:16] == b'VP8X':
+        return bool(head[20] & 0x10)
+    if head[12:16] == b'VP8L':
+        # Lossless WebP stores the alpha flag in bit 28 of its image header.
+        return head[20] == 0x2f and bool(int.from_bytes(head[21:25], 'little') & (1 << 28))
+    return False
 expected = {'tap', 'select', 'success', 'reward', 'start', 'pause', 'lap', 'countdown', 'error'}
 files = {p.stem.removeprefix('cue_'): p for p in (RES / 'raw').glob('cue_*.wav')}
 assert files.keys() == expected
@@ -17,6 +27,17 @@ for name, path in files.items():
         assert 0.01 < max(map(abs, samples)) / 32768 < .8, name
         assert abs(samples[0]) < 10 and abs(samples[-1]) < 10, name
         assert max(abs(a - b) for a, b in zip(samples, samples[1:])) < 4000, name
+manifest = __import__('json').loads((ROOT / 'design/redesign-2026-09/audio/manifest.json').read_text(encoding='utf-8'))
+assert len(manifest) == 29
+for entry in manifest:
+    source = ROOT / 'design/redesign-2026-09/audio' / entry['file']
+    packaged = RES / 'raw' / source.name
+    assert source.is_file() and packaged.is_file(), entry['file']
+    assert source.read_bytes() == packaged.read_bytes(), f'{source.name}: packaged audio differs'
+    with wave.open(str(packaged)) as audio:
+        assert (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) == (1, 2, 44100), source.name
+        seconds = audio.getnframes() / audio.getframerate()
+        assert (7.9 < seconds < 8.1) if source.parent.name == 'ambience' else (0.09 < seconds < 2.0), source.name
 base = {node.attrib['name'] for node in ET.parse(RES / 'values/experience.xml').getroot()}
 for locale in ['values-ko', 'values-ja', 'values-zh']:
     assert {node.attrib['name'] for node in ET.parse(RES / locale / 'experience.xml').getroot()} == base
@@ -26,7 +47,7 @@ for family in ['Pretendard', 'Barlow']:
     assert 'SIL OPEN FONT LICENSE' in (ROOT / f'app/src/main/assets/licenses/{family}-OFL.txt').read_text()
 # 러너 캐릭터 그림 — 투명 배경(알파)이 있는 WebP 이고, 화면에서 크게 쓰므로
 # 작은 썸네일로 바뀌지 않았는지 캔버스 크기도 본다.
-for name in ['avatar_male_running', 'avatar_female_idle']:
+for name in ['avatar_male_running', 'avatar_female_idle', 'avatar_runo_idle_wnd_010_v2', 'avatar_lumi_idle_base_wnd_010']:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
     assert head[:4] == b'RIFF' and head[8:12] == b'WEBP' and head[12:16] == b'VP8X', name
     assert head[20] & 0x10, f'{name}: no alpha channel'
@@ -34,6 +55,13 @@ for name in ['avatar_male_running', 'avatar_female_idle']:
     height = int.from_bytes(head[27:30], 'little') + 1
     assert width >= 900 and height >= 1300, f'{name}: {width}x{height}'
 # RUNO 서 있기 — 캐릭터 가이드에서 떼어 낸 그림(원본 309×573 을 2배). 알파만 본다.
+for name in ['outfit_runo_base', 'outfit_lumi_base']:
+    head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
+    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+    assert int.from_bytes(head[24:27], 'little') + 1 >= 1000, name
+    assert int.from_bytes(head[27:30], 'little') + 1 >= 1000, name
+head = (RES / 'drawable-nodpi' / 'community_warmup.webp').read_bytes()[:30]
+assert head[12:16] == b'VP8X' and head[20] & 0x10, 'community warmup requires alpha'
 head = (RES / 'drawable-nodpi' / 'avatar_male_idle.webp').read_bytes()[:30]
 assert head[12:16] == b'VP8X' and head[20] & 0x10, 'avatar_male_idle: no alpha'
 # RUNO 장비 그림 — 신발 52 · 의상 5 착용 전신과 의상 상품 5 (design/equipment 시트에서 떼어 냄)
@@ -49,7 +77,7 @@ wanted = [f"avatar_runo_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + 
 wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in outfit_ids]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
-    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
+    assert webp_has_alpha(head), f'{name}: no alpha'
 # LUMI 장비 그림 — 신발 52(속성별 추천 의상) · 의상 5 착용 전신과 모자 포함 의상 상품 5
 lumi = json.loads((ROOT / 'design/equipment/lumi/equipment-catalog.json').read_text(encoding='utf-8'))
 assert sorted(x['id'] for x in lumi['shoes']) == sorted(shoe_ids), 'LUMI shoe ids differ from RUNO'
@@ -59,5 +87,5 @@ wanted = [f"avatar_lumi_idle_{i.lower().replace('-', '_')}" for i in shoe_ids + 
 wanted += [f"outfit_{i.lower().replace('-', '_')}" for i in lumi_outfits]
 for name in wanted:
     head = (RES / 'drawable-nodpi' / f'{name}.webp').read_bytes()[:30]
-    assert head[12:16] == b'VP8X' and head[20] & 0x10, f'{name}: no alpha'
-print('PASS: 9 bounded, click-free PCM cues; 4-locale setting parity; font binaries and licenses; 3 alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')
+    assert webp_has_alpha(head), f'{name}: no alpha'
+print('PASS: 29 new packaged PCM sounds plus 9 legacy cues; 4-locale setting parity; font binaries and licenses; 5 base/starter alpha avatar images; 52 shoe + 5 outfit figures and 5 outfit products for RUNO and for LUMI')

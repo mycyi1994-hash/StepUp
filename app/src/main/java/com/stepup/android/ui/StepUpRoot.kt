@@ -1,6 +1,11 @@
 package com.stepup.android.ui
 
+import kotlinx.coroutines.flow.map
+
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.statusBarsPadding
+import com.stepup.android.ui.components.MainHeader
+import com.stepup.android.ui.theme.StepUpDesign
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -8,8 +13,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import com.stepup.android.ui.experience.*
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -34,13 +38,14 @@ import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -71,11 +76,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import com.stepup.android.R
+import com.stepup.android.BuildConfig
 import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.NightCanvas
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.guide.GuideOverlay
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
@@ -90,6 +95,7 @@ import com.stepup.android.ui.screens.community.RankingScreen
 import com.stepup.android.ui.screens.events.EventsScreen
 import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
+import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
 import com.stepup.android.ui.screens.login.LoginScreen
 import com.stepup.android.ui.screens.market.MarketModelScreen
 import com.stepup.android.ui.screens.items.ItemsScreen
@@ -136,7 +142,8 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 }
 
 /**
- * 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
+ * 하단 목적지 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
+ * 그 사이의 선물 버튼은 독립 뽑기 화면으로 가는 공통 동작이다.
  *
  * 예전의 뉴스 · 마켓 · 이벤트 탭은 없어진 것이 아니라 자리를 옮겼다.
  *
@@ -147,12 +154,7 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
  * 길 이름("news" · "events" · "items")은 그대로라, 알림이나 다른 화면에서
  * 그 자리로 가는 이동은 전처럼 동작한다.
  */
-private val bottomTabs = listOf(
-    Screen.Run,
-    Screen.Customize,
-    Screen.Community,
-    Screen.Profile,
-)
+private val bottomTabs get() = AppChromePolicy.tabs
 
 /**
  * 하위 화면이 어느 탭 밑에 있는가.
@@ -160,34 +162,7 @@ private val bottomTabs = listOf(
  * 소식을 보고 있으면 러닝 탭에 불이 들어와 있어야 "지금 러닝 안에 있다"가
  * 읽힌다. 불이 꺼지면 사용자는 길을 잃은 것처럼 느낀다.
  */
-internal fun parentTabOf(route: String?): Screen? {
-    if (route == null) return null
-    return when {
-        route == Screen.Run.route || route == Routes.NEWS || route == Routes.EVENTS ||
-            route == Routes.RUN || route.startsWith("run?") || route == Routes.COURSES -> Screen.Run
-        route == Screen.Customize.route || route == Routes.RUNNER_MARKET ||
-            route == Routes.ITEMS || route.startsWith("sneaker") ||
-            route.startsWith("market/") -> Screen.Customize
-        route == Screen.Community.route || route.startsWith("crew") ||
-            route.startsWith("post") || route.startsWith("flash") ||
-            route.startsWith("lobby") || route == Routes.RANKING || route == Routes.MAP -> Screen.Community
-        route == Screen.Profile.route || route == Routes.WALLET ||
-            route == Routes.NOTIFICATIONS || route == Routes.ACHIEVEMENTS ||
-            route.startsWith(Routes.ANALYTICS) || route.startsWith("settings") -> Screen.Profile
-        else -> null
-    }
-}
-
-/**
- * 하단 탭을 숨기는 화면 — 글을 쓰는 동안에는 키보드와 탭이 겹친다.
- *
- * 러닝 중에는 숨기지 않는다. 러닝은 서비스에서 돌기 때문에 다른 탭으로
- * 가도 끊기지 않고, 탭이 보여야 러닝 중에도 다른 것을 볼 수 있다.
- */
-private val barHiddenRoutes = setOf(
-    "post/compose/{crewId}",
-    "crew/create",
-)
+internal fun parentTabOf(route: String?): Screen? = AppChromePolicy.destination(route)?.parent
 
 
 object Routes {
@@ -199,6 +174,7 @@ object Routes {
 
     /** 꾸미기 안의 신발 보관함 · 거래소 · 스토어 */
     const val ITEMS = "items"
+    const val MYSTERY_BOX = "mystery-box"
 
     /** 꾸미기 안의 러너 마켓 — 의상 / 신발 */
     const val RUNNER_MARKET = "runner-market"
@@ -306,7 +282,11 @@ fun StepUpRoot() {
 }
 
 @Composable
-internal fun MainScaffold(startTour: Boolean = false) {
+internal fun MainScaffold(
+    startTour: Boolean = false,
+    initialTab: Screen = Screen.Run,
+    initialRoute: String = initialTab.route,
+) {
     RunFeedback()
     val motion = LocalMotion.current
     val context = LocalContext.current
@@ -319,17 +299,11 @@ internal fun MainScaffold(startTour: Boolean = false) {
             GuideTour.start()
         }
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
+    // Browsing the app never prompts for run permissions. Start passive tracking only when already allowed.
+    LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
             ServiceLocator.stepRepository.startTracking()
         }
-    }
-
-    LaunchedEffect(Unit) {
-        val missing = StepPermissions.missing(context)
-        if (missing.isNotEmpty()) permissionLauncher.launch(missing)
     }
 
     val navController = rememberNavController()
@@ -344,11 +318,111 @@ internal fun MainScaffold(startTour: Boolean = false) {
 
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
-    val showBar = currentRoute != null && currentRoute !in barHiddenRoutes
+    val chrome = AppChromePolicy.destination(currentRoute)
+    val showBar = chrome?.showBottomBar == true
+    val balanceFlow = remember { ServiceLocator.rewardRepository.balance.map<Double, Double?> { it } }
+    val balance by balanceFlow.collectAsState(initial = null)
+    var wardrobeSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.RunnerSetting.Wardrobe)
+    }
+    var homeSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.initial.random())
+    }
+    var profileSetting by rememberSaveable {
+        mutableStateOf(com.stepup.android.ui.components.ProfileBackgrounds.settings.random())
+    }
+    // The scene belongs to the running journey, not to its timer or live data updates.
+    val runSetting = rememberSaveable {
+        com.stepup.android.ui.components.RunBackgrounds.settings.random()
+    }
+    var previousRoute by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != null) {
+            if (currentRoute == Screen.Run.route && previousRoute in listOf(
+                    Screen.Customize.route, Screen.Community.route, Screen.Profile.route,
+                )) {
+                homeSetting = com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
+            }
+            previousRoute = currentRoute
+        }
+    }
+    val wardrobeScene = wardrobeSetting.takeIf {
+        it in com.stepup.android.ui.components.WardrobeBackgrounds.settings
+    } ?: com.stepup.android.ui.components.RunnerSetting.Wardrobe
+    val feedback = LocalFeedback.current
+    LaunchedEffect(currentRoute, homeSetting, profileSetting, wardrobeScene, runSetting, feedback) {
+        val setting = when (currentRoute) {
+            Screen.Run.route -> homeSetting
+            Screen.Customize.route -> wardrobeScene
+            Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.RunSunset
+            Screen.Profile.route -> profileSetting
+            Routes.RUN_ROUTE -> runSetting
+            else -> null
+        }
+        feedback?.setAmbientScene(when (setting) {
+            com.stepup.android.ui.components.RunnerSetting.Wardrobe -> AmbientScene.Wardrobe
+            com.stepup.android.ui.components.RunnerSetting.Night,
+            com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
+            com.stepup.android.ui.components.RunnerSetting.RunNight -> AmbientScene.Night
+            com.stepup.android.ui.components.RunnerSetting.Sunset,
+            com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+            com.stepup.android.ui.components.RunnerSetting.RunSunset -> AmbientScene.Dawn
+            null -> null
+        })
+    }
+    DisposableEffect(feedback) { onDispose { feedback?.setAmbientScene(null) } }
 
     Box(Modifier.fillMaxSize()) {
+    if (currentRoute == Screen.Run.route) {
+        Crossfade(homeSetting, animationSpec = tween(motion.duration(420)), label = "homeBackground") { scene ->
+            com.stepup.android.ui.components.RunnerScene(
+                Modifier.fillMaxSize().testTag("home-scene-${scene.name}"), scene, home = true,
+            )
+        }
+    } else if (currentRoute == Screen.Customize.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
+            wardrobeScene, wardrobe = true,
+        )
+    } else if (currentRoute == Screen.Community.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
+        )
+    } else if (currentRoute == Screen.Profile.route) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize().testTag("profile-scene-${profileSetting.name}"),
+            profileSetting, home = true,
+        )
+    } else if (currentRoute in listOf(
+            Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
+            Routes.SNEAKER, Routes.MARKET_MODEL,
+        )) {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    } else if (currentRoute == Routes.POST_COMPOSE) {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    } else if (currentRoute == Routes.COURSES) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
+        )
+    } else if (chrome?.header == AppChromePolicy.Header.Focus) {
+        com.stepup.android.ui.components.RunnerScene(
+            Modifier.fillMaxSize(), runSetting,
+        )
+    } else {
+        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    }
     Scaffold(
         containerColor = Color.Transparent,
+        topBar = {
+            if (chrome?.header == AppChromePolicy.Header.Main) {
+                MainHeader(
+                    balance = balance,
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    modifier = Modifier.statusBarsPadding().padding(horizontal = StepUpDesign.Gutter),
+                    balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
+                )
+            }
+        },
         bottomBar = {
             AnimatedVisibility(
                 visible = showBar,
@@ -361,8 +435,8 @@ internal fun MainScaffold(startTour: Boolean = false) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Run.route,
-            modifier = Modifier.padding(innerPadding),
+            startDestination = initialRoute,
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
             enterTransition = { fadeIn(tween(motion.duration(180))) + slideInHorizontally(tween(motion.duration(220))) { if (motion.reduced) 0 else it / 18 } },
             exitTransition = { fadeOut(tween(motion.duration(140))) },
             popEnterTransition = { fadeIn(tween(motion.duration(180))) },
@@ -375,10 +449,41 @@ internal fun MainScaffold(startTour: Boolean = false) {
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    onPreviousBackground = {
+                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
+                    },
+                    onNextBackground = {
+                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.nextInOrder(homeSetting)
+                    },
+                )
+            }
+            composable(Routes.MYSTERY_BOX) {
+                val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
+                MysteryBoxScreen(
+                    shoeDrawReady = drawReady,
+                    outfitDrawReady = drawReady,
+                    onDrawShoe = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context,
+                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
+                                .appendQueryParameter("category", "shoe")
+                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
+                                .build().toString())
+                    },
+                    onDrawOutfit = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context,
+                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
+                                .appendQueryParameter("category", "outfit")
+                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
+                                .build().toString())
+                    },
                 )
             }
             composable(Screen.Customize.route) {
                 CustomizeScreen(
+                    onBack = { navController.switchTab(Screen.Run) },
+                    onChangeBackground = {
+                        wardrobeSetting = com.stepup.android.ui.components.WardrobeBackgrounds.next(wardrobeScene)
+                    },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
@@ -459,6 +564,11 @@ internal fun MainScaffold(startTour: Boolean = false) {
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
+                    onChangeBackground = {
+                        profileSetting = com.stepup.android.ui.components.ProfileBackgrounds.next(profileSetting)
+                    },
+                    onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenGuide = {
                         navController.switchTab(Screen.Run)
                         GuideTour.start()
@@ -501,6 +611,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
             composable(Routes.WALLET) { WalletScreen(onBack = { navController.popBackStack() }) }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onBack = { navController.popBackStack() },
                     onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
                     onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
@@ -646,6 +757,7 @@ internal fun MainScaffold(startTour: Boolean = false) {
             },
             onFinished = {
                 scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
+                navController.switchTab(Screen.Run)
             },
         )
     }
@@ -666,6 +778,21 @@ const val BOTTOM_NAV_TAG = "bottom-nav"
 
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val labelStyle = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
+        fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.sp, textAlign = TextAlign.Center,
+    )
+    val labelWidth = with(density) { (maxWidth / (bottomTabs.size + 1) - 8.dp).roundToPx().coerceAtLeast(1) }
+    val labelHeightPx = bottomTabs.map { screen ->
+        measurer.measure(
+            text = stringResource(screen.labelRes), style = labelStyle,
+            constraints = androidx.compose.ui.unit.Constraints(maxWidth = labelWidth),
+        ).size.height
+    }.maxOrNull() ?: 0
+    val labelHeight = with(density) { labelHeightPx.toDp() }
     Column(
         Modifier
             .fillMaxWidth()
@@ -679,18 +806,25 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
                 // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
-                .heightIn(min = 64.dp)
+                .heightIn(min = StepUpDesign.NavigationHeight)
                 .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val parent = parentTabOf(currentRoute)
-            bottomTabs.forEach { screen ->
+            val parent = if (currentRoute == Routes.MYSTERY_BOX) null else parentTabOf(currentRoute)
+            bottomTabs.forEachIndexed { index, screen ->
                 NavTab(
                     screen = screen,
+                    labelHeight = labelHeight,
+                    labelStyle = labelStyle,
                     selected = parent == screen,
                     onClick = {
-                        if (parent == screen) {
+                        if (currentRoute == Routes.MYSTERY_BOX) {
+                            // The draw screen is an action, not a saved tab destination.
+                            // Remove it before switching so restoreState cannot reopen it.
+                            navController.popBackStack()
+                            navController.switchTab(screen)
+                        } else if (parent == screen) {
                             // 같은 탭의 하위 화면에 있으면 그 탭의 첫 화면으로 돌아간다.
                             // 첫 화면이 백스택에 없으면(다른 길로 들어왔으면) 탭 전환으로 간다.
                             if (currentRoute != screen.route &&
@@ -703,13 +837,61 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                         }
                     },
                 )
+                if (index == 1) {
+                    GiftNavAction(
+                        selected = currentRoute == Routes.MYSTERY_BOX,
+                        onClick = { navController.navigate(Routes.MYSTERY_BOX) {
+                            launchSingleTop = true
+                        } },
+                    )
+                }
             }
         }
+    }
     }
 }
 
 @Composable
-private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
+    val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
+    Column(
+        modifier = Modifier.weight(1f)
+            .semantics { this.selected = selected }
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
+            .heightIn(min = StepUpDesign.NavigationItemHeight)
+            .padding(horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            Modifier.size(39.dp)
+                .background(
+                    Brush.linearGradient(listOf(Volt, com.stepup.android.ui.theme.Cyan)),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.CardGiftcard, contentDescription = null, tint = tint, modifier = Modifier.size(25.dp))
+        }
+        Text(
+            stringResource(R.string.tab_draw),
+            color = tint,
+            style = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
+                fontSize = StepUpDesign.NavigationLabel,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.NavTab(
+    screen: Screen, labelHeight: androidx.compose.ui.unit.Dp,
+    labelStyle: androidx.compose.ui.text.TextStyle,
+    selected: Boolean, onClick: () -> Unit,
+) {
     val tint by animateColorAsState(
         // 선택한 탭은 밝은 파랑 — 버튼 바탕색(Volt)은 검은 바닥 위 작은 글자에 어둡다
         targetValue = if (selected) VoltText else Slate,
@@ -725,8 +907,8 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
-            // 탭이 넷이라 한 칸이 넉넉하다. 누르는 자리는 최소 48dp 로 잡는다.
-            .heightIn(min = 56.dp)
+            // 네 목적지와 가운데 뽑기 동작을 같은 줄에 둔다.
+            .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -735,20 +917,18 @@ private fun RowScope.NavTab(screen: Screen, selected: Boolean, onClick: () -> Un
             imageVector = screen.icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(StepUpDesign.NavigationIcon).testTag("nav-icon-${screen.route}"),
         )
         Text(
             text = stringResource(screen.labelRes),
+            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            letterSpacing = 0.sp,
-            textAlign = TextAlign.Center,
+            style = labelStyle,
             softWrap = true,
         )
         Box(
             modifier = Modifier
-                .size(4.dp)
+                .size(StepUpDesign.NavigationIndicator)
                 .alpha(dotAlpha)
                 .background(Volt, CircleShape),
         )

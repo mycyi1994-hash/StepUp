@@ -1,22 +1,18 @@
 package com.stepup.android.ui.screens.profile
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
@@ -27,7 +23,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -42,9 +37,9 @@ import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.formatKm
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.domain.trackDistanceKm
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.StepUpMap
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
@@ -117,6 +112,7 @@ class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryMapScreen(
     onBack: () -> Unit = {},
@@ -127,53 +123,24 @@ fun HistoryMapScreen(
     val focus = remember(map) { map.routes.flatten() }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, top = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            DarkIconButton(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                onClick = onBack,
-            )
-            Text(
-                text = stringResource(R.string.history_map_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                color = Snow,
-            )
-        }
+        SecondaryHeader(
+            title = stringResource(R.string.history_map_title),
+            onBack = onBack, balance = null, onOpenWallet = null,
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+        )
 
-        Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PillChip(
-                text = stringResource(R.string.history_period_week),
-                selected = period == HistoryPeriod.WEEK,
-                onClick = { viewModel.period.value = HistoryPeriod.WEEK },
-            )
-            PillChip(
-                text = stringResource(R.string.history_period_month),
-                selected = period == HistoryPeriod.MONTH,
-                onClick = { viewModel.period.value = HistoryPeriod.MONTH },
-            )
-            PillChip(
-                text = stringResource(R.string.history_period_all),
-                selected = period == HistoryPeriod.ALL,
-                onClick = { viewModel.period.value = HistoryPeriod.ALL },
-            )
-        }
+        com.stepup.android.ui.components.TwoWaySwitch(
+            labels = listOf(stringResource(R.string.history_period_week), stringResource(R.string.history_period_month), stringResource(R.string.history_period_all)),
+            selected = HistoryPeriod.entries.indexOf(period),
+            onSelect = { viewModel.period.value = HistoryPeriod.entries[it] },
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
+        )
 
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = StepUpDesign.Gutter)
                 .clip(RoundedCornerShape(18.dp)),
         ) {
             StepUpMap(
@@ -203,7 +170,7 @@ fun HistoryMapScreen(
             }
         }
 
-        Box(Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 18.dp)) {
+        Box(Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
             GlowCard(contentPadding = PaddingValues(16.dp), spacing = 6.dp) {
                 if (map.runs == 0) {
                     Text(
@@ -219,7 +186,7 @@ fun HistoryMapScreen(
                     )
                     Text(
                         text = stringResource(R.string.history_map_sub),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Silver,
                     )
                 }

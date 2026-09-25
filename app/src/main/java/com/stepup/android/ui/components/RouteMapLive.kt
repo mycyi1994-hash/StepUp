@@ -276,8 +276,8 @@ fun StepUpMap(
             // arrivals를 읽어야 타일 도착이 다시 그리기로 이어진다
             val revision = arrivals
 
-            // 폴백을 먼저 깔고 타일로 덮는다. 타일은 불투명이라 있는 자리는 가려지고,
-            // 없는 자리는 도로망이 남는다 — 로딩 중에도 화면이 비지 않는다.
+            // Unloaded tiles show only an abstract grid. Never imply invented streets
+            // are real location data when the tile provider is unavailable.
             drawStreets(seed)
             val drawn = if (plan != null && revision >= 0) drawTiles(plan) else 0
             if (drawn > 0) {

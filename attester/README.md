@@ -1,5 +1,11 @@
 # StepUp Attester
 
+## 미스터리 박스 서명 준비
+
+`POST /draw/authorization`은 GIWA Sepolia의 새 `MysteryDrawNFT` 계약에서 지갑의 다음 추첨 순번과 비용을 읽고, `DRAW_SEED`·지갑·종류·순번으로 고정된 결과에 EIP-712 서명을 붙인다. 같은 순번을 반복 요청해도 결과는 바뀌지 않는다. 요청 예: `{ "address": "0x...", "category": 0 }` (신발 0, 트레이닝복 1). 서버 응답은 발행 성공이 아니라 **거래 제출용 승인**이다.
+
+계약 배포 후 Worker에 공개 `DRAW_CONTRACT_ADDRESS`를 설정하고, `DRAW_ROLLER_PRIVATE_KEY`와 충분히 긴 `DRAW_SEED`를 Secret으로 등록해야 한다. 계약의 `roller()`가 이 키의 주소와 같지 않으면 서명하지 않는다. 키나 seed를 소스·앱·웹에 넣지 않는다. GIWA 거래가 확정되기 전에는 획득으로 표시하지 않는다.
+
 러닝 세션을 검사하고 EIP-712로 서명해, `RewardDistributor`가 받아들일 청구서를
 만드는 서비스. Cloudflare Worker 하나로 돌아간다.
 

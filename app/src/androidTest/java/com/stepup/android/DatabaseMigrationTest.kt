@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.local.WalkSessionEntity
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,6 +14,94 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DatabaseMigrationTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test fun versionThirteenKeepsSignedRunsAndPendingPurchasesWithoutInventingSettlements() = runBlocking {
+        val name = "migration-v13-settlement-test.db"
+        context.deleteDatabase(name)
+        val path = context.getDatabasePath(name).apply { parentFile!!.mkdirs() }
+        val fixture = InstrumentationRegistry.getInstrumentation().context.assets
+            .open("schema-v13.sql").bufferedReader().use { it.readText() }
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { raw ->
+            fixture.lineSequence().filter { it.isNotBlank() }.forEach(raw::execSQL)
+            raw.execSQL("""INSERT INTO walk_sessions VALUES (
+                17, 1000, 3601000, 9000, 3600, 6840.0, 360.0, 62.82,
+                'account:runner-a', 'retained-track', 1200, 2, 'WIND', 'crew-A',
+                'SIGNED', 456, 2, '', 'CLEAN', 'saved-signature', 'saved-hash', '62820000', 20000, 999999)""")
+            raw.execSQL("INSERT INTO rewards VALUES (41, 12345, 'EARN_WALK', 62.82, 'Existing local credit')")
+            raw.execSQL("INSERT INTO energy_purchases VALUES ('pending-purchase', 12345, 2.0, 0)")
+            raw.version = 13
+        }
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
+            .addMigrations(*AppDatabase.MIGRATIONS).build()
+        try {
+            val sql = db.openHelper.writableDatabase // Triggers complete Room schema validation.
+            sql.query("SELECT recordingOwner, uploadState, claimSignature, claimSessionHash, claimAmount, pointsEarned FROM walk_sessions WHERE id=17").use {
+                assertTrue(it.moveToFirst())
+                assertEquals("account:runner-a", it.getString(0))
+                assertEquals("SIGNED", it.getString(1))
+                assertEquals("saved-signature", it.getString(2))
+                assertEquals("saved-hash", it.getString(3))
+                assertEquals("62820000", it.getString(4))
+                assertEquals(62.82, it.getDouble(5), 0.001)
+            }
+            assertEquals(62.82, db.rewardDao().balanceNow(), 0.001)
+            assertEquals("pending-purchase", db.energyPurchaseDao().pending().single().id)
+            assertNull(db.runSettlementDao().find("account:runner-a", 1000))
+            assertTrue(db.runSettlementDao().pendingEnergy().isEmpty())
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
+    @Test fun versionTwelvePendingRunKeepsItsDataWithoutInventingAnOwner() = runBlocking {
+        val name = "migration-v12-owner-test.db"
+        context.deleteDatabase(name)
+        val path = context.getDatabasePath(name).apply { parentFile!!.mkdirs() }
+        val fixture = InstrumentationRegistry.getInstrumentation().context.assets
+            .open("schema-v12.sql").bufferedReader().use { it.readText() }
+        SQLiteDatabase.openOrCreateDatabase(path, null).use { raw ->
+            fixture.lineSequence().filter { it.isNotBlank() }.forEach(raw::execSQL)
+            raw.execSQL("""INSERT INTO walk_sessions VALUES (
+                17, 1000, 3601000, 9000, 3600, 6840.0, 360.0, 62.82,
+                'retained-track', 1200, 1, 'WIND', 'crew-A', 'PENDING', 123, 2,
+                'offline', '', '', '', '', 0, 0)""")
+            raw.version = 12
+        }
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
+            .addMigrations(*AppDatabase.MIGRATIONS).build()
+        try {
+            val row = db.walkSessionDao().pendingUploads(10, "legacy").single()
+            assertEquals(17L, row.id)
+            assertEquals("retained-track", row.track)
+            assertEquals("PENDING", row.uploadState)
+            assertEquals(2, row.uploadAttempts)
+            assertEquals("offline", row.uploadError)
+            assertEquals(62.82, row.pointsEarned, 0.001)
+            assertTrue(db.walkSessionDao().pendingUploads(10, "account:A").isEmpty())
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
+    @Test fun recordingOwnerSurvivesReopeningAndQueuesDoNotMixAccounts() = runBlocking {
+        val name = "recording-owner-test.db"
+        context.deleteDatabase(name)
+        fun open() = Room.databaseBuilder(context, AppDatabase::class.java, name)
+            .addMigrations(*AppDatabase.MIGRATIONS).build()
+        var db = open()
+        try {
+            listOf("legacy", "guest", "account:A", "account:B").forEachIndexed { index, owner ->
+                db.walkSessionDao().insert(WalkSessionEntity(
+                    id = index + 1L, startedAt = index + 1000L, endedAt = 10000,
+                    steps = 100, durationSec = 300, distanceMeters = 76.0,
+                    calories = 4.0, pointsEarned = 1.0, track = "retained-track",
+                    recordingOwner = owner,
+                ))
+            }
+            db.close(); db = open()
+            // The oldest unknown/guest rows must not block or join either account's queue.
+            assertEquals(listOf(3L), db.walkSessionDao().pendingUploads(1, "account:A").map { it.id })
+            assertEquals(listOf(4L), db.walkSessionDao().pendingUploads(1, "account:B").map { it.id })
+            assertEquals(listOf(1L), db.walkSessionDao().pendingUploads(10, "legacy").map { it.id })
+            assertEquals(listOf(2L), db.walkSessionDao().pendingUploads(10, "guest").map { it.id })
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
 
     @Test fun versionSixUpgradePreservesRecordsBalanceAndInventory() {
         val name = "migration-v6-test.db"
@@ -38,10 +128,11 @@ class DatabaseMigrationTest {
                 assertTrue(it.moveToFirst()); assertEquals(82.82, it.getDouble(0), 0.001)
                 assertEquals("Retained reward", it.getString(1))
             }
-            sql.query("SELECT steps, pointsEarned, uploadState, track FROM walk_sessions WHERE id=17").use {
+            sql.query("SELECT steps, pointsEarned, uploadState, track, recordingOwner FROM walk_sessions WHERE id=17").use {
                 assertTrue(it.moveToFirst()); assertEquals(9000, it.getInt(0))
                 assertEquals(62.82, it.getDouble(1), 0.001)
                 assertEquals("REJECTED", it.getString(2)); assertEquals("", it.getString(3))
+                assertEquals("legacy", it.getString(4))
             }
             sql.query("SELECT level, mintNumber, luck, serverId FROM sneakers WHERE id=9").use {
                 assertTrue(it.moveToFirst()); assertEquals(7, it.getInt(0)); assertEquals(77, it.getInt(1))

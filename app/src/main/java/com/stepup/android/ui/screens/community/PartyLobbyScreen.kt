@@ -3,17 +3,14 @@ package com.stepup.android.ui.screens.community
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import com.stepup.android.ui.experience.*
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,14 +20,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
@@ -44,9 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,15 +51,11 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
 import com.stepup.android.ui.components.HexEmblem
-import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -102,6 +86,10 @@ fun PartyLobbyScreen(
     viewModel: PartyLobbyViewModel = viewModel(factory = PartyLobbyViewModel.Factory),
     community: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
+    androidx.activity.compose.BackHandler {
+        viewModel.leaveLobby()
+        onBack()
+    }
     val context = LocalContext.current
     val party by viewModel.party.collectAsStateWithLifecycle()
 
@@ -112,8 +100,9 @@ fun PartyLobbyScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        if (StepPermissions.hasActivityRecognition(context)) {
+        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
             WalkSessionService.start(context, party.partySize)
+            onRunStarted()
         }
     }
 
@@ -145,43 +134,30 @@ fun PartyLobbyScreen(
     }
 
     val boostPercent = RewardEconomy.partyBonusPercent(party.partySize)
+    val showReadyAction = party.phase == PartyPhase.LOBBY && party.problem == null && (party.canStart || !party.myReady)
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        DetailPage(
+            title = stringResource(R.string.crew_lobby),
+            onBack = { viewModel.leaveLobby(); onBack() },
+            primaryActionLabel = if (showReadyAction) when {
+                party.canStart && party.allReady -> stringResource(R.string.party_start)
+                party.canStart -> stringResource(R.string.party_start_ready, party.readyCount)
+                else -> stringResource(R.string.crew_ready)
+            } else null,
+            onPrimaryAction = {
+                if (party.canStart) viewModel.startParty() else viewModel.setReady(true)
+            },
         ) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = {
-                            viewModel.leaveLobby()
-                            onBack()
-                        },
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Snow,
                     )
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.crew_lobby),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Volt,
-                        )
-                        Text(
-                            text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp,
-                            color = Snow,
-                        )
-                    }
                     HexBadge(text = "${party.partySize}", size = 36.dp)
                 }
             }
@@ -227,7 +203,7 @@ fun PartyLobbyScreen(
                                 party.readyCount,
                                 party.partySize,
                             ),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (party.canStart) Volt else Silver,
                         )
@@ -266,7 +242,7 @@ fun PartyLobbyScreen(
                     }
                     Text(
                         text = stringResource(R.string.crew_boost_hint),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Slate,
                     )
                 }
@@ -287,7 +263,7 @@ fun PartyLobbyScreen(
                 item {
                     Text(
                         text = stringResource(R.string.party_join_hint),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Slate,
                     )
                 }
@@ -346,7 +322,7 @@ fun PartyLobbyScreen(
                                         "%,d".format(party.resultSteps),
                                         boostPercent,
                                     ),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = Silver,
                                 )
                             }
@@ -365,24 +341,13 @@ fun PartyLobbyScreen(
                             // 전원을 기다리지 않는다. 파티장이 준비했으면
                             // 준비된 사람들끼리 출발할 수 있다.
                             if (party.canStart) {
-                                VoltButton(
-                                    text = if (party.allReady) {
-                                        stringResource(R.string.party_start)
-                                    } else {
-                                        // 몇 명과 출발하는지 버튼에 적는다.
-                                        // 누르고 나서야 두 명인 걸 알면 늦다.
-                                        stringResource(R.string.party_start_ready, party.readyCount)
-                                    },
-                                    onClick = { viewModel.startParty() },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
                                 if (!party.allReady) {
                                     Text(
                                         text = stringResource(
                                             R.string.party_start_leaves_behind,
                                             party.partySize - party.readyCount,
                                         ),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         color = Slate,
                                     )
                                 }
@@ -394,19 +359,14 @@ fun PartyLobbyScreen(
                                     accent = Silver,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
-                            } else {
-                                VoltButton(
-                                    text = stringResource(R.string.crew_ready),
-                                    onClick = { viewModel.setReady(true) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
                             }
+
                             Text(
                                 text = stringResource(
                                     R.string.party_gps_rule,
                                     CrewRepository.MAX_PARTY_DISTANCE_M,
                                 ),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = Slate,
                             )
                         }
@@ -465,114 +425,24 @@ private fun MemberRow(
     onKick: () -> Unit,
 ) {
     val name = if (member.isMe) stringResource(R.string.crew_you) else member.name
-    GlowCard(
-        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 13.dp),
-        shape = RoundedCornerShape(18.dp),
-        accent = member.isMe,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(CarbonHigh)
-                    .border(
-                        width = 1.5.dp,
-                        color = if (member.ready) Volt else Edge,
-                        shape = CircleShape,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Groups,
-                    contentDescription = null,
-                    tint = if (member.ready) Volt else Slate,
-                    modifier = Modifier.size(17.dp),
-                )
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                    )
-                    if (member.isHost) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(Volt.copy(alpha = 0.16f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.party_host_badge),
-                                color = Volt,
-                                fontSize = 8.5.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
-                    }
+    GlowCard(contentPadding = PaddingValues(18.dp), accent = member.isMe) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.stepup.android.ui.components.IconSquare(Icons.Filled.Groups, size = 44.dp, tint = if (member.ready) Volt else Silver)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(name, style = MaterialTheme.typography.titleMedium, color = Snow)
+                if (member.isHost) {
+                    Text(stringResource(R.string.party_host_badge), style = MaterialTheme.typography.labelLarge, color = Volt)
                 }
-                // 방장에게서의 거리 — 달리는 동안 위치를 보낸 사람만 안다
-                if (!member.isHost && member.distanceM >= 0) {
-                    Text(
-                        text = "${member.distanceM}m",
-                        fontSize = 11.sp,
-                        color = Slate,
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (member.ready) Icon(Icons.Filled.Check, null, tint = Volt, modifier = Modifier.size(18.dp))
+                    Text(stringResource(if (member.ready) R.string.crew_state_ready else R.string.crew_state_waiting),
+                        style = MaterialTheme.typography.bodyMedium, color = if (member.ready) Volt else Silver)
                 }
-            }
-            if (member.ready) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(Volt.copy(alpha = 0.13f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = Volt,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.crew_state_ready),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Volt,
-                    )
-                }
-            } else {
-                Text(
-                    text = stringResource(R.string.crew_state_waiting),
-                    fontSize = 11.sp,
-                    color = Slate,
-                )
+                if (!member.isHost && member.distanceM >= 0) Text("${member.distanceM}m", color = Silver, style = MaterialTheme.typography.bodyMedium)
             }
             if (canKick) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(CarbonHigh)
-                        .quietClickable(onKick),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.party_kick),
-                        tint = Slate,
-                        modifier = Modifier.size(13.dp),
-                    )
+                androidx.compose.material3.IconButton(onClick = onKick) {
+                    Icon(Icons.Filled.Close, stringResource(R.string.party_kick), tint = Silver, modifier = Modifier.size(22.dp))
                 }
             }
         }

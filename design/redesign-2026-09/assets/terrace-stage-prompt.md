@@ -1,0 +1,7 @@
+# Grounded terrace environment
+
+Generated with the built-in image_gen tool. Style reference: riverside-sunset.png. Source retained as riverside-terrace-stage.png; mechanical WebP conversion at quality 88 supplies scene_terrace_stage.webp. This is scenery only; actual equipped character and all controls remain native/separate.
+
+## Exact prompt
+
+Create one production environment image for the StepUp mobile running app. The attached image is STYLE AND WORLD REFERENCE, not an edit target. Generate a new landscape 3:2 composition (1536x1024). Preserve its premium stylized 3D Seoul riverside world, deep midnight blue and peach-purple dusk, soft cinematic light, restrained city windows and river reflections. Camera at child-size mascot chest height facing an empty broad riverside terrace. CRITICAL COMPOSITION: horizon and distant railing at 45 percent image height; entire lower 45 percent is a clearly continuous flat terrace ground plane, especially the center at 88-96 percent height where a separate character's shoes will be composited. Distant skyline/river behind the terrace only, never under the shoe anchor. Wide open center for a separately rendered full-body mascot, no foreground objects occluding feet, subdued luminous warm rim lighting. Keep upper corners and bottom edge deep blue to blend into a navy app canvas. Crisp clean polished game environment, architectural depth, subtly textured stone paving. NO people, NO characters, NO text, NO logos, NO UI, NO rings, NO buttons. This is scenery only, not an app mockup.

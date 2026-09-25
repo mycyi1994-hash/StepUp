@@ -302,6 +302,13 @@ class CommunityRepository(
         _sync.value = BoardSyncState.Ready
     }
 
+    /** 화면 검사용 — 빈 게시판의 서버/로그인 상태를 실제 화면에 표시한다. */
+    @VisibleForTesting
+    fun showBoardStateForTest(state: BoardSyncState) {
+        _posts.value = emptyList()
+        _sync.value = state
+    }
+
     // ── 핫글 ─────────────────────────────────────────────────
     //
     // 매주 한 번, 그 주에 가장 많이 읽히고 이야기된 글 30개를 골라 둔다.

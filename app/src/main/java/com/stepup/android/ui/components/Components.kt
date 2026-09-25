@@ -1,5 +1,9 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.StepUpDesign
+import com.stepup.android.ui.theme.BrandLogoRole
+import androidx.compose.ui.platform.testTag
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -7,15 +11,14 @@ import androidx.compose.foundation.border
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.theme.StepUpSans
-import com.stepup.android.ui.theme.MetricTypography
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import com.stepup.android.ui.experience.LocalMotion
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +26,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,7 +76,6 @@ import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.ui.theme.CardFill
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.HairlineFade
@@ -86,9 +87,9 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 import com.stepup.android.ui.theme.VoltInk
 import com.stepup.android.ui.theme.VoltPlate
-import com.stepup.android.ui.theme.VoltSoft
 import com.stepup.android.ui.theme.VoltSweep
 import kotlin.math.PI
 import kotlin.math.cos
@@ -238,19 +239,22 @@ fun GradientText(
 /**
  * STEPUP 워드마크 — 브랜드 로고 이미지.
  *
- * [fontSize]는 기존 호출부와의 호환을 위해 남겨둔 이름이고, 실제로는
- * 로고 높이를 정한다(대문자 높이 기준이라 글자 크기와 비슷하게 보인다).
- * 가로폭은 5.76:1 비율로 자동 결정된다.
+ * 크기는 공통 디자인의 Header / Launch 역할만 허용한다.
+ * 화면마다 숫자 크기를 정하거나 로고 비율을 바꿀 수 없다.
  */
 @Composable
-fun Wordmark(fontSize: TextUnit = 20.sp, modifier: Modifier = Modifier) {
+fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Modifier) {
+    val logoHeight = when (role) {
+        BrandLogoRole.Header -> StepUpDesign.HeaderLogoHeight
+        BrandLogoRole.Launch -> StepUpDesign.LaunchLogoHeight
+    }
     // "STEP"은 바닥과 반대여야 읽힌다 — 밝은 바탕에서는 네이비, 어두운
     // 바탕에서는 흰색. "UP"은 두 벌 모두 같은 블루다.
     val asset = if (StepUpColors.dark) R.drawable.logo_wordmark_on_dark else R.drawable.logo_wordmark
     Image(
         painter = painterResource(asset),
         contentDescription = "STEPUP",
-        modifier = modifier.height(fontSize.value.dp * 0.92f),
+        modifier = modifier.size(width = logoHeight * StepUpDesign.LogoAspectRatio, height = logoHeight).testTag("brand-wordmark"),
         contentScale = ContentScale.Fit,
         // weight(1f)로 늘어난 헤더에서도 로고는 왼쪽에 붙어 있게 한다
         alignment = Alignment.CenterStart,
@@ -682,20 +686,21 @@ fun VoltButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(
                 if (enabled) VoltPlate else Brush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
                 shape,
             )
-            .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 12.dp),
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             color = if (enabled) OnVolt else Slate,
-            fontSize = 13.sp,
+            fontSize = StepUpDesign.SecondaryLabel,
+            textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.2.sp,
         )
@@ -714,18 +719,22 @@ fun GhostButton(
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
+            .background(CarbonHigh, shape)
             .background(accent.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
             .border(1.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
-            .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            color = if (enabled) accent else Slate,
-            fontSize = 13.sp,
+            color = if (!enabled) Slate else if (accent == Volt) {
+                if (StepUpColors.dark) VoltText else StepUpColors.voltDeep
+            } else accent,
+            fontSize = StepUpDesign.SecondaryLabel,
+            textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp,
         )
@@ -743,6 +752,7 @@ fun PillChip(
     badge: Int = 0,
 ) {
     val shape = RoundedCornerShape(50)
+    val selectedInk = if (StepUpColors.dark) VoltText else StepUpColors.voltDeep
     val motion = LocalMotion.current
     val fill by animateColorAsState(if (selected) Volt.copy(alpha = .12f) else CarbonHigh,
         tween(motion.duration(180)), label = "chipFill")
@@ -753,9 +763,10 @@ fun PillChip(
             .heightIn(min = 48.dp)
             .semantics { this.selected = selected }
             .clip(shape)
+            .background(CarbonHigh, shape)
             .background(fill, shape)
             .border(1.dp, outline, shape)
-            .feedbackClickable(cue = FeedbackCue.Select, onClick = onClick)
+            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -764,32 +775,33 @@ fun PillChip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Volt else Silver,
-                modifier = Modifier.size(14.dp),
+                tint = if (selected) selectedInk else Silver,
+                modifier = Modifier.size(20.dp),
             )
         }
         Text(
             text = text,
-            color = if (selected) Volt else Silver,
-            fontSize = 13.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) selectedInk else Silver,
+            fontSize = StepUpDesign.SecondaryLabel,
+            fontWeight = FontWeight.SemiBold,
         )
         if (badge > 0) {
             Box(
                 modifier = Modifier
-                    .size(16.dp)
-                    .background(Volt, CircleShape),
+                    .heightIn(min = 24.dp)
+                    .background(VoltPlate, RoundedCornerShape(50))
+                    .padding(horizontal = 7.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                // 폰트 패딩을 빼야 숫자가 원의 정중앙에 온다
+                // 개수에 맞춰 배지가 넓어지고 글자 확대에도 높이가 늘어난다
                 Text(
                     text = "$badge",
                     color = OnVolt,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(
-            fontFamily = StepUpSans,
-                        fontSize = 9.sp,
-                        lineHeight = 9.sp,
+                        fontFamily = StepUpSans,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                     ),
                 )
@@ -806,18 +818,19 @@ fun DarkIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     badge: Boolean = false,
+    cue: FeedbackCue = FeedbackCue.Tap,
 ) {
-    Box(modifier = modifier.size(48.dp)) {
+    Box(modifier = modifier.size(StepUpDesign.TouchTarget)) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(StepUpDesign.ControlRadius))
                 .background(CarbonHigh)
-                .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                .feedbackClickable(onClick = onClick),
+                .border(1.dp, Edge, RoundedCornerShape(StepUpDesign.ControlRadius))
+                .feedbackClickable(cue = cue, role = Role.Button, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(19.dp))
+            Icon(icon, contentDescription = contentDescription, tint = Snow, modifier = Modifier.size(StepUpDesign.ControlIcon))
         }
         if (badge) {
             Box(
@@ -859,7 +872,7 @@ fun CircleControl(
                         .border(1.5.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), CircleShape)
                 },
             )
-            .feedbackClickable(enabled = enabled, onClick = onClick),
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -936,7 +949,7 @@ fun ListRow(
     val shape = RoundedCornerShape(18.dp)
     Row(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxWidth().heightIn(min = 64.dp)
             .clip(shape)
             .background(CarbonHigh.copy(alpha = 0.6f), shape)
             .border(1.dp, Edge, shape)
@@ -945,7 +958,7 @@ fun ListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = Silver, modifier = Modifier.size(20.dp))
+        IconSquare(icon, size = 40.dp)
         Text(
             text = title,
             modifier = Modifier.weight(1f),
@@ -953,125 +966,6 @@ fun ListRow(
             color = Snow,
         )
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Slate, modifier = Modifier.size(18.dp))
-    }
-}
-
-/**
- * 루트 맵 — 원근이 들어간 3D 도시 위 볼트 글로우 궤적.
- *
- * 바닥 그리드가 지평선으로 수렴하고, 빌딩 블록이 낮게 솟아 있으며
- * 루트는 지면을 따라 흐르다 출발·도착 핀으로 끝난다.
- */
-@Composable
-fun RouteMap(modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-
-        // 지면 좌표 (u: 0..1 가로, v: 0..1 깊이) → 화면 투영
-        fun ground(u: Float, v: Float): Offset {
-            val spread = 1f - v * 0.46f
-            return Offset(
-                x = w / 2f + (u - 0.5f) * w * spread,
-                y = h * (0.94f - v * 0.74f),
-            )
-        }
-
-        // 지평선 글로우
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(Color.Transparent, Volt.copy(alpha = 0.07f), Color.Transparent),
-                startY = h * 0.10f,
-                endY = h * 0.42f,
-            ),
-        )
-
-        // 깊이 방향 그리드 (지평선으로 수렴)
-        val gridColor = Snow.copy(alpha = 0.07f)
-        for (c in 0..8) {
-            val u = c / 8f
-            drawLine(gridColor, ground(u, 0f), ground(u, 1f), strokeWidth = 1f)
-        }
-        // 가로 그리드 — 멀수록 촘촘하게
-        for (r in 0..5) {
-            val v = 1f - (1f - r / 5f) * (1f - r / 5f)
-            drawLine(gridColor, ground(0f, v), ground(1f, v), strokeWidth = 1f)
-        }
-
-        // 빌딩 블록 (u, v, 폭, 깊이감 높이) — 먼 것부터 그린다
-        data class Block(val u: Float, val v: Float, val bw: Float, val bh: Float)
-        val blocks = listOf(
-            Block(0.14f, 0.86f, 0.10f, 0.16f),
-            Block(0.80f, 0.82f, 0.12f, 0.22f),
-            Block(0.46f, 0.74f, 0.09f, 0.13f),
-            Block(0.68f, 0.58f, 0.10f, 0.18f),
-            Block(0.18f, 0.50f, 0.11f, 0.14f),
-            Block(0.86f, 0.36f, 0.09f, 0.12f),
-            Block(0.32f, 0.24f, 0.08f, 0.10f),
-        )
-        for (b in blocks) {
-            val bl = ground(b.u - b.bw / 2, b.v)
-            val br = ground(b.u + b.bw / 2, b.v)
-            val rise = h * b.bh * (1f - b.v * 0.45f)
-            val tl = Offset(bl.x, bl.y - rise)
-            val tr = Offset(br.x, br.y - rise)
-            // 앞면
-            drawPath(
-                Path().apply {
-                    moveTo(bl.x, bl.y); lineTo(br.x, br.y); lineTo(tr.x, tr.y); lineTo(tl.x, tl.y); close()
-                },
-                Snow.copy(alpha = 0.06f),
-            )
-            // 지붕 (살짝 뒤로 기울여 입체감)
-            val depth = rise * 0.30f
-            drawPath(
-                Path().apply {
-                    moveTo(tl.x, tl.y); lineTo(tr.x, tr.y)
-                    lineTo(tr.x + depth * 0.35f, tr.y - depth)
-                    lineTo(tl.x + depth * 0.35f, tl.y - depth)
-                    close()
-                },
-                Snow.copy(alpha = 0.10f),
-            )
-            // 모서리 하이라이트
-            drawLine(Volt.copy(alpha = 0.14f), tl, tr, strokeWidth = 1.4f)
-            // 창문 불빛
-            drawCircle(Volt.copy(alpha = 0.35f), radius = 1.6f, center = Offset((tl.x + tr.x) / 2f, (tl.y + bl.y) / 2f))
-        }
-
-        // 루트 (지면 좌표) — 가까운 곳에서 출발해 멀리 사라진다
-        val route = listOf(
-            0.10f to 0.10f, 0.30f to 0.22f, 0.24f to 0.42f, 0.52f to 0.52f,
-            0.48f to 0.68f, 0.74f to 0.76f, 0.66f to 0.90f,
-        ).map { ground(it.first, it.second) }
-        val path = Path().apply {
-            moveTo(route.first().x, route.first().y)
-            for (i in 1 until route.size) {
-                val p = route[i]
-                val prev = route[i - 1]
-                quadraticBezierTo((prev.x + p.x) / 2f, (prev.y + p.y) / 2f, p.x, p.y)
-            }
-        }
-        drawPath(path, Volt.copy(alpha = 0.20f), style = Stroke(width = 12f, cap = StrokeCap.Round))
-        drawPath(path, Volt, style = Stroke(width = 3.6f, cap = StrokeCap.Round))
-
-        // 출발 핀
-        val start = route.first()
-        drawCircle(Volt.copy(alpha = 0.28f), radius = 11f, center = start)
-        drawCircle(Night, radius = 5.5f, center = start)
-        drawCircle(Volt, radius = 5.5f, center = start, style = Stroke(width = 2.4f))
-
-        // 도착 핀 — 지면 그림자 + 살짝 떠 있는 헤드
-        val end = route.last()
-        drawOval(
-            color = Volt.copy(alpha = 0.20f),
-            topLeft = Offset(end.x - 9f, end.y - 3.5f),
-            size = Size(18f, 7f),
-        )
-        val head = Offset(end.x, end.y - 14f)
-        drawLine(Volt.copy(alpha = 0.7f), end, head, strokeWidth = 2.2f)
-        drawCircle(Volt.copy(alpha = 0.35f), radius = 10f, center = head)
-        drawCircle(Volt, radius = 5.2f, center = head)
     }
 }
 
@@ -1104,20 +998,6 @@ fun TokenCard(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.5).sp,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "≈ $%,.2f".format(balance * 0.01),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    color = Slate,
-                    fontSize = 10.sp,
-                )
-                Text(
-                    text = "+0.51%",
-                    color = Volt,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
         }
         if (onClick != null) {
             Icon(

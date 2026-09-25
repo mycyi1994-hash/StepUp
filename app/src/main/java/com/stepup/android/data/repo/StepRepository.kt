@@ -33,12 +33,16 @@ class StepRepository(
     val todaySteps: StateFlow<Int> = tracker.todaySteps
     val dailyGoal: Flow<Int> = prefs.dailyGoal
     val streak: Flow<Int> = prefs.streak
-    val energy: Flow<Double> = rewardRepository.energy
+    val energy: Flow<Double> = prefs.energy
 
     val stepSensorAvailable: Boolean get() = tracker.isAvailable
 
     fun recentSessions(limit: Int = 20): Flow<List<WalkSessionEntity>> =
         walkSessionDao.observeRecent(limit)
+
+    fun observeRunTotals(): Flow<com.stepup.android.data.local.RunTotals> = walkSessionDao.observeRunTotals()
+
+    fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>> = walkSessionDao.observeVerifiedSessions()
 
     /** 세션 누적 운동 시간(초) — 프로필 '총 운동 시간' 표기용 */
     fun observeTotalDurationSec(): Flow<Long> = walkSessionDao.observeDurationSince(0L)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wardrobe_change_background">背景を変更</string>
+    <string name="outfit_studio_pink">ソフトピンクセット</string>
+    <string name="outfit_studio_lavender">ソフトラベンダーセット</string>
+    <string name="outfit_studio_olive">ソフトオリーブセット</string>
+    <string name="wardrobe_shoes_preview_pending">プレビューには別のシューズが表示されています。</string>
+</resources>

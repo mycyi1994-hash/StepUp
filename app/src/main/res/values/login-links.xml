@@ -1,0 +1,4 @@
+<resources>
+    <string name="login_terms_link">Terms of service</string>
+    <string name="login_privacy_link">Privacy policy</string>
+</resources>

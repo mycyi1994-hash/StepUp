@@ -54,8 +54,9 @@ class WalkViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /** 헤더 컴팩트 토큰 표시용 SUP 잔액 */
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
      * 랩은 세션 상태의 일부로 서비스가 소유한다.
@@ -133,8 +134,9 @@ class WalkViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 완료 화면의 캐릭터 — 홈 · 꾸미기와 같은 모습 */
-    val look: StateFlow<AvatarLook> = ServiceLocator.avatarRepository.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = ServiceLocator.avatarRepository.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 완료 화면의 오늘 목표 진행 */
     val todaySteps: StateFlow<Int> = stepRepository.todaySteps

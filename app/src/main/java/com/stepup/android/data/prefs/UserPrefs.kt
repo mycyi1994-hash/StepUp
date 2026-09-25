@@ -10,9 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.stepup.android.domain.Faction
+import com.stepup.android.domain.RewardEconomy
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -24,6 +24,7 @@ data class ExperiencePreferences(
     val sounds: Boolean = true,
     val haptics: Boolean = true,
     val reducedMotion: Boolean = false,
+    val ambience: Boolean = false,
 )
 
 /**
@@ -31,22 +32,30 @@ data class ExperiencePreferences(
  * 포인트 잔액은 Room의 rewards 원장 합계로 관리하고, 여기에는
  * 목표/스니커즈 레벨/에너지/스트릭/걸음 기준점만 저장한다.
  */
-class UserPrefs(private val context: Context) {
+class UserPrefs(
+    private val context: Context,
+    private val store: androidx.datastore.core.DataStore<Preferences> = context.dataStore,
+) {
 
     private object Keys {
         val SOUNDS = booleanPreferencesKey("experience_sounds")
+        val AMBIENCE = booleanPreferencesKey("experience_ambience")
         val HAPTICS = booleanPreferencesKey("experience_haptics")
         val REDUCED_MOTION = booleanPreferencesKey("experience_reduced_motion")
         val DAILY_GOAL = intPreferencesKey("daily_goal")
         val SNEAKER_LEVEL = intPreferencesKey("sneaker_level")
         val ENERGY = doublePreferencesKey("energy_remaining")
         val ENERGY_DAY = longPreferencesKey("energy_day")
+        val ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("energy_purchase_receipts")
+        val RUN_ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("run_energy_receipts")
         val STREAK = intPreferencesKey("streak")
         val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
         val BASELINE_DAY = longPreferencesKey("baseline_day")
         val BASELINE_STEPS = longPreferencesKey("baseline_steps")
         /** 기준점을 잡을 때의 기기 부팅 횟수. 바뀌었으면 재부팅이다(-1 = 모름). */
         val BASELINE_BOOT = intPreferencesKey("baseline_boot")
+        /** 에너지 상한을 정하는 레벨 — 지금 신은 신발의 레벨. 없으면 옛 SNEAKER_LEVEL */
+        val ENERGY_CAP_LEVEL = intPreferencesKey("energy_cap_level")
         val RUNNER_UID = stringPreferencesKey("runner_uid")
         val NICKNAME = stringPreferencesKey("nickname")
 
@@ -95,25 +104,23 @@ class UserPrefs(private val context: Context) {
         val NOTIFY_GOAL = booleanPreferencesKey("notify_goal_reminder")
         val NOTIFY_PARTY = booleanPreferencesKey("notify_party_invite")
         val NOTIFY_EVENT = booleanPreferencesKey("notify_event_news")
-        /** 알림 설정을 바꿨는데 아직 서버에 못 올렸다 */
-        val NOTIFY_PENDING = booleanPreferencesKey("notify_prefs_pending")
         val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
     }
 
-    val dailyGoal: Flow<Int> = context.dataStore.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
+    val dailyGoal: Flow<Int> = store.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
 
     // ── 러너 캐릭터 ──────────────────────────────────────────
 
-    val avatarGender: Flow<String> = context.dataStore.data.map { it[Keys.AVATAR_GENDER] ?: "" }
+    val avatarGender: Flow<String> = store.data.map { it[Keys.AVATAR_GENDER] ?: "" }
 
     suspend fun setAvatarGender(id: String) {
-        context.dataStore.edit { it[Keys.AVATAR_GENDER] = id }
+        store.edit { it[Keys.AVATAR_GENDER] = id }
     }
 
-    val avatarOutfit: Flow<String> = context.dataStore.data.map { it[Keys.AVATAR_OUTFIT] ?: "" }
+    val avatarOutfit: Flow<String> = store.data.map { it[Keys.AVATAR_OUTFIT] ?: "" }
 
     suspend fun setAvatarOutfit(id: String) {
-        context.dataStore.edit { it[Keys.AVATAR_OUTFIT] = id }
+        store.edit { it[Keys.AVATAR_OUTFIT] = id }
     }
 
     // ── 데모 모드 ────────────────────────────────────────────
@@ -124,10 +131,10 @@ class UserPrefs(private val context: Context) {
      * 켜져 있으면 소식 · 러너 마켓이 **예시 데이터**를 보여 주고, 화면마다
      * "데모"라고 적힌다. 원장(SUP)과 서버에는 아무것도 쓰지 않는다.
      */
-    val demoMode: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEMO_MODE] ?: false }
+    val demoMode: Flow<Boolean> = store.data.map { it[Keys.DEMO_MODE] ?: false }
 
     suspend fun setDemoMode(on: Boolean) {
-        context.dataStore.edit {
+        store.edit {
             it[Keys.DEMO_MODE] = on
             // 끄면 체험으로 입힌 옷도 벗긴다. 남겨 두면 다음에 켤 때 갑자기
             // 입고 나타난다 — 그 사이에 무엇을 했는지 사용자는 기억하지 못한다.
@@ -136,29 +143,35 @@ class UserPrefs(private val context: Context) {
     }
 
     /** 데모에서 체험으로 입혀 본 의상. 데모가 꺼지면 비어 있다. */
-    val demoOutfit: Flow<String> = context.dataStore.data.map { it[Keys.DEMO_OUTFIT] ?: "" }
+    val demoOutfit: Flow<String> = store.data.map { it[Keys.DEMO_OUTFIT] ?: "" }
 
     suspend fun setDemoOutfit(id: String) {
-        context.dataStore.edit {
+        store.edit {
             // 데모가 꺼져 있으면 체험 착용을 받지 않는다
             if (it[Keys.DEMO_MODE] == true) it[Keys.DEMO_OUTFIT] = id
         }
     }
 
-    val experience: Flow<ExperiencePreferences> = context.dataStore.data.map {
-        ExperiencePreferences(it[Keys.SOUNDS] ?: true, it[Keys.HAPTICS] ?: true, it[Keys.REDUCED_MOTION] ?: false)
+    val experience: Flow<ExperiencePreferences> = store.data.map {
+        ExperiencePreferences(
+            sounds = it[Keys.SOUNDS] ?: true,
+            haptics = it[Keys.HAPTICS] ?: true,
+            reducedMotion = it[Keys.REDUCED_MOTION] ?: false,
+            ambience = it[Keys.AMBIENCE] ?: false,
+        )
     }
 
-    suspend fun setSounds(enabled: Boolean) { context.dataStore.edit { it[Keys.SOUNDS] = enabled } }
-    suspend fun setHaptics(enabled: Boolean) { context.dataStore.edit { it[Keys.HAPTICS] = enabled } }
-    suspend fun setReducedMotion(enabled: Boolean) { context.dataStore.edit { it[Keys.REDUCED_MOTION] = enabled } }
+    suspend fun setSounds(enabled: Boolean) { store.edit { it[Keys.SOUNDS] = enabled } }
+    suspend fun setAmbience(enabled: Boolean) { store.edit { it[Keys.AMBIENCE] = enabled } }
+    suspend fun setHaptics(enabled: Boolean) { store.edit { it[Keys.HAPTICS] = enabled } }
+    suspend fun setReducedMotion(enabled: Boolean) { store.edit { it[Keys.REDUCED_MOTION] = enabled } }
 
     // ── 알림 설정 ─────────────────────────────────────────────
     //
     // 알림은 서버가 보내므로 서버에도 같은 값을 올린다(notify_prefs). 여기는 화면이
     // 바로 읽는 사본이다.
 
-    val notifyPrefs: Flow<NotifyPrefs> = context.dataStore.data.map {
+    val notifyPrefs: Flow<NotifyPrefs> = store.data.map {
         NotifyPrefs(
             push = it[Keys.NOTIFY_PUSH] ?: true,
             goalReminder = it[Keys.NOTIFY_GOAL] ?: true,
@@ -168,45 +181,18 @@ class UserPrefs(private val context: Context) {
     }
 
     suspend fun setNotifyPrefs(prefs: NotifyPrefs) {
-        context.dataStore.edit {
+        store.edit {
             it[Keys.NOTIFY_PUSH] = prefs.push
             it[Keys.NOTIFY_GOAL] = prefs.goalReminder
             it[Keys.NOTIFY_PARTY] = prefs.partyInvite
             it[Keys.NOTIFY_EVENT] = prefs.eventNews
-            // 서버에 올라가면 PushRegistrar 가 지운다
-            it[Keys.NOTIFY_PENDING] = true
-        }
-    }
-
-    /**
-     * 이 폰에서 바꿨는데 아직 서버에 못 올린 알림 설정. 없으면 null.
-     *
-     * 바꾼 적 없는 기본값(새로 설치한 폰)은 올리지 않는다 — 올리면 다른 폰에서
-     * 꺼 둔 알림이 다시 켜진다.
-     */
-    suspend fun pendingNotifyPrefs(): NotifyPrefs? {
-        val raw = context.dataStore.data.first()
-        if (raw[Keys.NOTIFY_PENDING] != true) return null
-        return notifyPrefs.first()
-    }
-
-    /** [synced] 가 서버에 올라갔다. 그 사이 또 바뀌었으면 표시를 남겨 둔다. */
-    suspend fun markNotifyPrefsSynced(synced: NotifyPrefs) {
-        context.dataStore.edit {
-            val current = NotifyPrefs(
-                push = it[Keys.NOTIFY_PUSH] ?: true,
-                goalReminder = it[Keys.NOTIFY_GOAL] ?: true,
-                partyInvite = it[Keys.NOTIFY_PARTY] ?: true,
-                eventNews = it[Keys.NOTIFY_EVENT] ?: true,
-            )
-            if (current == synced) it[Keys.NOTIFY_PENDING] = false
         }
     }
 
     // ── 러너 식별 · 프로필 ───────────────────────────────────
 
     /** 러너 고유 ID — "SU-XXXXXX". 발급 전이면 빈 문자열. */
-    val runnerUid: Flow<String> = context.dataStore.data.map { it[Keys.RUNNER_UID] ?: "" }
+    val runnerUid: Flow<String> = store.data.map { it[Keys.RUNNER_UID] ?: "" }
 
     /**
      * 사용자가 정한 닉네임. 정하지 않았으면 빈 문자열이고, 화면은 기본 호칭을 쓴다.
@@ -214,20 +200,20 @@ class UserPrefs(private val context: Context) {
      * 빈 문자열을 "러너"로 채워 두지 않는 이유는, 그러면 "아직 안 정했다"와
      * "러너라고 정했다"를 구별할 수 없기 때문이다.
      */
-    val nickname: Flow<String> = context.dataStore.data.map { it[Keys.NICKNAME] ?: "" }
+    val nickname: Flow<String> = store.data.map { it[Keys.NICKNAME] ?: "" }
 
     // ── 핫글 ─────────────────────────────────────────────────
 
     /** 이번 주 핫글 — 뽑힌 순서 그대로 */
     val hotPostIds: Flow<List<Long>> =
-        context.dataStore.data.map { it[Keys.HOT_POST_IDS].toIdList() }
+        store.data.map { it[Keys.HOT_POST_IDS].toIdList() }
 
     /** 지금까지 핫글에 올랐던 글 전부 */
     val hotFeaturedIds: Flow<Set<Long>> =
-        context.dataStore.data.map { it[Keys.HOT_FEATURED_IDS].toIdList().toSet() }
+        store.data.map { it[Keys.HOT_FEATURED_IDS].toIdList().toSet() }
 
     suspend fun hotRotatedAt(): Long =
-        context.dataStore.data.first()[Keys.HOT_ROTATED_AT] ?: 0L
+        store.data.first()[Keys.HOT_ROTATED_AT] ?: 0L
 
     /**
      * 이번 주 핫글을 확정한다.
@@ -236,7 +222,7 @@ class UserPrefs(private val context: Context) {
      * 새 글이 올라올 자리가 없어지고, 핫글은 붙박이 명예의 전당이 된다.
      */
     suspend fun setHotPosts(ids: List<Long>, rotatedAt: Long) {
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             val featured = prefs[Keys.HOT_FEATURED_IDS].toIdList().toMutableSet()
             featured += ids
             prefs[Keys.HOT_POST_IDS] = ids.joinToString(",")
@@ -250,7 +236,7 @@ class UserPrefs(private val context: Context) {
      * 옛 번호가 남아 있으면 같은 번호의 새 글이 "이미 올랐던 글"로 막힌다.
      */
     suspend fun clearHotPosts() {
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             prefs.remove(Keys.HOT_POST_IDS)
             prefs.remove(Keys.HOT_FEATURED_IDS)
             prefs.remove(Keys.HOT_ROTATED_AT)
@@ -258,30 +244,30 @@ class UserPrefs(private val context: Context) {
     }
 
     /** 선택한 아바타 인덱스 (기본 0, [AVATAR_CUSTOM]이면 갤러리 사진) */
-    val avatarId: Flow<Int> = context.dataStore.data.map { it[Keys.AVATAR_ID] ?: 0 }
+    val avatarId: Flow<Int> = store.data.map { it[Keys.AVATAR_ID] ?: 0 }
 
     /** 갤러리 사진이 바뀔 때마다 올라가는 리비전 — UI가 파일을 다시 읽는 신호 */
-    val avatarRev: Flow<Int> = context.dataStore.data.map { it[Keys.AVATAR_REV] ?: 0 }
+    val avatarRev: Flow<Int> = store.data.map { it[Keys.AVATAR_REV] ?: 0 }
 
     /** 앞뒤 공백을 떼고 [NICKNAME_MAX] 자로 자른다. 빈 값이면 기본 호칭으로 돌아간다. */
     suspend fun setNickname(name: String) {
         val cleaned = name.trim().take(NICKNAME_MAX)
-        context.dataStore.edit { it[Keys.NICKNAME] = cleaned }
+        store.edit { it[Keys.NICKNAME] = cleaned }
     }
 
     suspend fun setAvatarId(id: Int) {
-        context.dataStore.edit { it[Keys.AVATAR_ID] = id }
+        store.edit { it[Keys.AVATAR_ID] = id }
     }
 
     suspend fun bumpAvatarRev() {
-        context.dataStore.edit { it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1 }
+        store.edit { it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1 }
     }
 
     /** 로그인 방식 — "google" / "guest" / ""(미선택) */
-    val loginMethod: Flow<String> = context.dataStore.data.map { it[Keys.LOGIN_METHOD] ?: "" }
+    val loginMethod: Flow<String> = store.data.map { it[Keys.LOGIN_METHOD] ?: "" }
 
     suspend fun setLoginMethod(method: String) {
-        context.dataStore.edit { it[Keys.LOGIN_METHOD] = method }
+        store.edit { it[Keys.LOGIN_METHOD] = method }
     }
 
     /**
@@ -290,10 +276,10 @@ class UserPrefs(private val context: Context) {
      * 비어 있으면 세션은 올라가지 않고 기기에 쌓인다. 나중에 지갑을 만들었을
      * 때 그동안 뛴 기록이 살아 있어야 하기 때문이다.
      */
-    val runnerAddress: Flow<String> = context.dataStore.data.map { it[Keys.RUNNER_ADDRESS] ?: "" }
+    val runnerAddress: Flow<String> = store.data.map { it[Keys.RUNNER_ADDRESS] ?: "" }
 
     suspend fun setRunnerAddress(address: String) {
-        context.dataStore.edit { it[Keys.RUNNER_ADDRESS] = address.trim() }
+        store.edit { it[Keys.RUNNER_ADDRESS] = address.trim() }
     }
 
     // ── 로그인 세션 ──────────────────────────────────────────
@@ -302,35 +288,35 @@ class UserPrefs(private val context: Context) {
     // 하고, 유지되지 않으면 그 사람의 서버 기록에 다시 닿지 못한다.
 
     suspend fun authSessionJson(): String =
-        context.dataStore.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
 
     suspend fun setAuthSessionJson(json: String) {
-        context.dataStore.edit { it[Keys.AUTH_SESSION] = json }
+        store.edit { it[Keys.AUTH_SESSION] = json }
     }
 
     suspend fun clearAuthSession() {
-        context.dataStore.edit { it.remove(Keys.AUTH_SESSION) }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
     }
 
     /** 앱 언어 태그. 빈 문자열이면 기기 설정을 따른다 */
-    val language: Flow<String> = context.dataStore.data.map { it[Keys.LANGUAGE] ?: "" }
+    val language: Flow<String> = store.data.map { it[Keys.LANGUAGE] ?: "" }
 
     suspend fun setLanguage(tag: String) {
-        context.dataStore.edit { it[Keys.LANGUAGE] = tag }
+        store.edit { it[Keys.LANGUAGE] = tag }
     }
 
-    suspend fun languageNow(): String = context.dataStore.data.first()[Keys.LANGUAGE] ?: ""
+    suspend fun languageNow(): String = store.data.first()[Keys.LANGUAGE] ?: ""
 
     // ── 화면 테마 ────────────────────────────────────────────
 
     /** 고른 화면 테마의 이름. 빈 문자열이면 아직 안 골랐다(기기 설정을 따른다). */
-    val themeMode: Flow<String> = context.dataStore.data.map { it[Keys.THEME_MODE] ?: "" }
+    val themeMode: Flow<String> = store.data.map { it[Keys.THEME_MODE] ?: "" }
 
     suspend fun setThemeMode(name: String) {
-        context.dataStore.edit { it[Keys.THEME_MODE] = name }
+        store.edit { it[Keys.THEME_MODE] = name }
     }
 
-    suspend fun themeModeNow(): String = context.dataStore.data.first()[Keys.THEME_MODE] ?: ""
+    suspend fun themeModeNow(): String = store.data.first()[Keys.THEME_MODE] ?: ""
 
     /**
      * 거래 원장을 어디까지 폰에 옮겨 적었는지.
@@ -340,28 +326,28 @@ class UserPrefs(private val context: Context) {
      * 그다음부터만 가져온다.
      */
     val marketLedgerCursor: Flow<Long> =
-        context.dataStore.data.map { it[Keys.MARKET_LEDGER_CURSOR] ?: 0L }
+        store.data.map { it[Keys.MARKET_LEDGER_CURSOR] ?: 0L }
 
     suspend fun setMarketLedgerCursor(id: Long) {
-        context.dataStore.edit { it[Keys.MARKET_LEDGER_CURSOR] = id }
+        store.edit { it[Keys.MARKET_LEDGER_CURSOR] = id }
     }
 
     /** 소식을 마지막으로 받아 온 시각. 하루에 한 번만 받으려고 쓴다. */
     suspend fun newsFetchedAtNow(): Long =
-        context.dataStore.data.first()[Keys.NEWS_FETCHED_AT] ?: 0L
+        store.data.first()[Keys.NEWS_FETCHED_AT] ?: 0L
 
     suspend fun setNewsFetchedAt(millis: Long) {
-        context.dataStore.edit { it[Keys.NEWS_FETCHED_AT] = millis }
+        store.edit { it[Keys.NEWS_FETCHED_AT] = millis }
     }
 
     /** 선택한 러닝 코스 id. -1이면 선택 없음 */
-    val selectedCourseId: Flow<Long> = context.dataStore.data.map { it[Keys.SELECTED_COURSE] ?: -1L }
+    val selectedCourseId: Flow<Long> = store.data.map { it[Keys.SELECTED_COURSE] ?: -1L }
 
     suspend fun setSelectedCourse(id: Long) {
-        context.dataStore.edit { it[Keys.SELECTED_COURSE] = id }
+        store.edit { it[Keys.SELECTED_COURSE] = id }
     }
 
-    suspend fun selectedCourseNow(): Long = context.dataStore.data.first()[Keys.SELECTED_COURSE] ?: -1L
+    suspend fun selectedCourseNow(): Long = store.data.first()[Keys.SELECTED_COURSE] ?: -1L
 
     // ── 코스 기록으로 낼 러닝 ─────────────────────────────────
     //
@@ -371,23 +357,23 @@ class UserPrefs(private val context: Context) {
     /** 이 러닝이 끝나면 [track] 코스의 기록으로 낸다 */
     suspend fun addPendingCourseRun(startedAt: Long, track: String) {
         if (track.isBlank()) return
-        context.dataStore.edit {
+        store.edit {
             val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
             rows[startedAt] = track
-            // 오래 못 올린 것까지 끝없이 쌓지 않는다 — 최근 20개만
-            val kept = rows.entries.sortedByDescending { e -> e.key }.take(20)
-            it[Keys.PENDING_COURSE_RUNS] = kept.joinToString("\n") { e -> "${e.key}\t${e.value}" }
+            // This is an outbox, not recent-history UI. Never discard an unacknowledged run.
+            it[Keys.PENDING_COURSE_RUNS] = rows.entries.sortedBy { e -> e.key }
+                .joinToString("\n") { e -> "${e.key}\t${e.value}" }
         }
     }
 
-    /** [startedAt] 러닝의 코스 길. 목록에서 지우지 않는다. 없으면 null */
+    /** Read without consuming: a failed or account-mismatched request must retain it. */
     suspend fun pendingCourseRun(startedAt: Long): String? =
-        decodePendingRuns(context.dataStore.data.first()[Keys.PENDING_COURSE_RUNS])[startedAt]
+        decodePendingRuns(store.data.first()[Keys.PENDING_COURSE_RUNS])[startedAt]
 
-    /** [startedAt] 러닝의 코스 길을 꺼내고 목록에서 지운다. 없으면 null */
+    /** Remove only after the server acknowledges this run. */
     suspend fun takePendingCourseRun(startedAt: Long): String? {
         var found: String? = null
-        context.dataStore.edit {
+        store.edit {
             val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
             found = rows.remove(startedAt)
             if (found != null) {
@@ -413,17 +399,17 @@ class UserPrefs(private val context: Context) {
      * 기억하고 있어야 끝나고 저장 창을 띄울 수 있다.
      */
     val courseRecording: Flow<Boolean> =
-        context.dataStore.data.map { it[Keys.COURSE_RECORDING] ?: false }
+        store.data.map { it[Keys.COURSE_RECORDING] ?: false }
 
     suspend fun setCourseRecording(on: Boolean) {
-        context.dataStore.edit { it[Keys.COURSE_RECORDING] = on }
+        store.edit { it[Keys.COURSE_RECORDING] = on }
     }
 
     suspend fun courseSeedVersion(): Int =
-        context.dataStore.data.first()[Keys.COURSE_SEED_VERSION] ?: 0
+        store.data.first()[Keys.COURSE_SEED_VERSION] ?: 0
 
     suspend fun setCourseSeedVersion(version: Int) {
-        context.dataStore.edit { it[Keys.COURSE_SEED_VERSION] = version }
+        store.edit { it[Keys.COURSE_SEED_VERSION] = version }
     }
 
     // ── 적립 정산 기준점 ─────────────────────────────────────────
@@ -436,7 +422,7 @@ class UserPrefs(private val context: Context) {
      * 스윕은 "오늘 걸음 − 이 값"만 정산한다. 날짜가 바뀌면 0에서 시작한다.
      */
     suspend fun accountedStepsToday(today: Long): Int {
-        val prefs = context.dataStore.data.first()
+        val prefs = store.data.first()
         val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
         if (day != today) return 0
         return (prefs[Keys.ACCOUNTED_STEPS] ?: 0L).toInt()
@@ -445,7 +431,7 @@ class UserPrefs(private val context: Context) {
     /** 정산한 걸음을 기준점에 더한다. 날짜가 바뀌었으면 오늘치부터 다시 센다. */
     suspend fun addAccountedSteps(today: Long, steps: Int) {
         if (steps <= 0) return
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
             val base = if (day == today) prefs[Keys.ACCOUNTED_STEPS] ?: 0L else 0L
             prefs[Keys.ACCOUNTED_DAY] = today
@@ -466,7 +452,7 @@ class UserPrefs(private val context: Context) {
      */
     suspend fun raiseAccountedTo(today: Long, floorValue: Int) {
         if (floorValue <= 0) return
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
             val base = if (day == today) prefs[Keys.ACCOUNTED_STEPS] ?: 0L else 0L
             prefs[Keys.ACCOUNTED_DAY] = today
@@ -477,11 +463,11 @@ class UserPrefs(private val context: Context) {
     // ── 랭킹 재료 ────────────────────────────────────────────────
 
     /** 역대 최고 속도(km/h). 러닝 판정을 통과한 구간에서만 갱신된다. */
-    val topSpeedKmh: Flow<Double> = context.dataStore.data.map { it[Keys.TOP_SPEED] ?: 0.0 }
+    val topSpeedKmh: Flow<Double> = store.data.map { it[Keys.TOP_SPEED] ?: 0.0 }
 
     suspend fun recordTopSpeed(kmh: Double) {
         if (kmh <= 0.0) return
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             val best = prefs[Keys.TOP_SPEED] ?: 0.0
             if (kmh > best) prefs[Keys.TOP_SPEED] = kmh
         }
@@ -493,13 +479,13 @@ class UserPrefs(private val context: Context) {
      * Faction.entries 순서대로 ";"로 이어 붙인 문자열 하나로 보관한다.
      * 종족이 늘어도 키를 새로 파지 않아도 되고, 짧아진 문자열은 0으로 채운다.
      */
-    val factionKm: Flow<Map<Faction, Double>> = context.dataStore.data.map { prefs ->
+    val factionKm: Flow<Map<Faction, Double>> = store.data.map { prefs ->
         decodeFactionKm(prefs[Keys.FACTION_KM])
     }
 
     suspend fun addFactionKm(faction: Faction, km: Double) {
         if (km <= 0.0) return
-        context.dataStore.edit { prefs ->
+        store.edit { prefs ->
             val current = decodeFactionKm(prefs[Keys.FACTION_KM]).toMutableMap()
             current[faction] = (current[faction] ?: 0.0) + km
             prefs[Keys.FACTION_KM] = Faction.entries.joinToString(";") {
@@ -516,10 +502,10 @@ class UserPrefs(private val context: Context) {
     }
 
     /** 온보딩 가이드를 끝까지 봤는지 */
-    val guideSeen: Flow<Boolean> = context.dataStore.data.map { (it[Keys.GUIDE_SEEN] ?: 0) == 1 }
+    val guideSeen: Flow<Boolean> = store.data.map { (it[Keys.GUIDE_SEEN] ?: 0) == 1 }
 
     suspend fun setGuideSeen() {
-        context.dataStore.edit { it[Keys.GUIDE_SEEN] = 1 }
+        store.edit { it[Keys.GUIDE_SEEN] = 1 }
     }
 
     /**
@@ -527,7 +513,7 @@ class UserPrefs(private val context: Context) {
      * 헷갈리는 문자(0/O, 1/I)를 뺀 32문자 알파벳을 쓴다.
      */
     suspend fun ensureRunnerUid(): String {
-        val existing = context.dataStore.data.first()[Keys.RUNNER_UID]
+        val existing = store.data.first()[Keys.RUNNER_UID]
         if (!existing.isNullOrBlank()) return existing
         val alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         val random = java.security.SecureRandom()
@@ -535,44 +521,42 @@ class UserPrefs(private val context: Context) {
             repeat(6) { append(alphabet[random.nextInt(alphabet.length)]) }
         }
         val uid = "SU-$body"
-        context.dataStore.edit { it[Keys.RUNNER_UID] = uid }
+        store.edit { it[Keys.RUNNER_UID] = uid }
         return uid
     }
 
-    val sneakerLevel: Flow<Int> = context.dataStore.data.map { it[Keys.SNEAKER_LEVEL] ?: 1 }
+    val sneakerLevel: Flow<Int> = store.data.map { it[Keys.SNEAKER_LEVEL] ?: 1 }
 
-    val streak: Flow<Int> = context.dataStore.data.map { it[Keys.STREAK] ?: 0 }
+    val streak: Flow<Int> = store.data.map { it[Keys.STREAK] ?: 0 }
 
     /**
      * 표시용 에너지. 저장된 날짜가 오늘이 아니면 아직 소모가 없는 것이므로
      * 최대치(= 자정 리필 후 값)로 보여준다. 실제 저장값 갱신은 [currentEnergy]가 담당.
-     *
-     * [maxEnergy] 는 지금 신은 신발 레벨로 정한 상한이다. 화면에 보이는 상한과
-     * 실제로 깎고 채우는 상한이 같은 값을 써야 한다.
      */
-    fun energy(maxEnergy: Flow<Double>): Flow<Double> =
-        combine(context.dataStore.data, maxEnergy) { prefs, max ->
-            energyIn(prefs, LocalDate.now().toEpochDay(), max)
-        }
+    val energy: Flow<Double> = store.data.map { prefs ->
+        val max = energyMax(prefs)
+        val day = prefs[Keys.ENERGY_DAY] ?: -1L
+        if (day != LocalDate.now().toEpochDay()) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
+    }
 
     suspend fun setDailyGoal(goal: Int) {
-        context.dataStore.edit { it[Keys.DAILY_GOAL] = goal }
+        store.edit { it[Keys.DAILY_GOAL] = goal }
     }
 
     suspend fun setSneakerLevel(level: Int) {
-        context.dataStore.edit { it[Keys.SNEAKER_LEVEL] = level }
+        store.edit { it[Keys.SNEAKER_LEVEL] = level }
     }
 
     /**
      * 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다.
      *
-     * 리필도 [edit] 안에서 읽고 쓴다. 바깥에서 읽고 안에서 쓰면 자정 직후
+     * 리필도 edit 안에서 읽고 쓴다. 바깥에서 읽고 안에서 쓰면 자정 직후
      * 동시에 들어온 소모가 리필에 덮여 사라진다.
      */
-    suspend fun currentEnergy(today: Long, max: Double): Double {
-        var remaining = max
-        context.dataStore.edit { prefs ->
-            remaining = energyIn(prefs, today, max)
+    suspend fun currentEnergy(today: Long): Double {
+        var remaining = 0.0
+        store.edit { prefs ->
+            remaining = energyIn(prefs, today)
             if ((prefs[Keys.ENERGY_DAY] ?: -1L) != today) {
                 prefs[Keys.ENERGY] = remaining
                 prefs[Keys.ENERGY_DAY] = today
@@ -582,6 +566,19 @@ class UserPrefs(private val context: Context) {
     }
 
     /**
+     * 에너지 상한을 정하는 레벨을 적는다 — 착용 신발이 바뀌거나 강화될 때.
+     *
+     * 화면(홈·러닝)은 착용 신발 레벨로 상한을 보여 주는데, 소모·리필이 옛 레벨 값(기본 1)을
+     * 쓰면 강화해도 실제로 벌 수 있는 걸음이 늘지 않는다. 신발이 없으면 null.
+     */
+    suspend fun setEnergyCapLevel(level: Int?) {
+        store.edit { if (level == null) it.remove(Keys.ENERGY_CAP_LEVEL) else it[Keys.ENERGY_CAP_LEVEL] = level }
+    }
+
+    private fun energyMax(prefs: Preferences): Double =
+        RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+
+    /**
      * 에너지를 소모한다.
      *
      * 읽기와 쓰기를 한 [edit] 블록 안에서 끝낸다. DataStore는 edit를 직렬화하므로
@@ -589,35 +586,82 @@ class UserPrefs(private val context: Context) {
      * 에너지를 건드리는 일이 일상이 됐고, 바깥에서 읽고 안에서 쓰면 갱신이
      * 유실되어 상한이 새거나 구매한 에너지 셀이 사라진다.
      */
-    suspend fun consumeEnergy(today: Long, amount: Double, max: Double) {
-        context.dataStore.edit { prefs ->
-            val remaining = energyIn(prefs, today, max)
+    suspend fun consumeEnergy(today: Long, amount: Double) {
+        store.edit { prefs ->
+            val remaining = energyIn(prefs, today)
             prefs[Keys.ENERGY] = (remaining - amount).coerceAtLeast(0.0)
             prefs[Keys.ENERGY_DAY] = today
         }
     }
 
+    /** Receipt and debit are one durable preference edit, safe to replay after a Room-ack failure. */
+    suspend fun consumeRunEnergy(receiptId: String, energyDay: Long, amount: Double, today: Long = LocalDate.now().toEpochDay()) {
+        require(receiptId.isNotBlank() && amount.isFinite() && amount >= 0)
+        require(energyDay <= today) { "Cannot apply a future energy receipt" }
+        store.edit { prefs ->
+            val receipts = prefs[Keys.RUN_ENERGY_RECEIPTS].orEmpty()
+            if (receiptId !in receipts) {
+                // A later day's refill supersedes the old day's consumption. Do not debit it twice.
+                if (energyDay == today) {
+                    prefs[Keys.ENERGY] = (energyIn(prefs, today) - amount).coerceAtLeast(0.0)
+                    prefs[Keys.ENERGY_DAY] = today
+                }
+                prefs[Keys.RUN_ENERGY_RECEIPTS] = receipts + receiptId
+            }
+        }
+    }
+
     /** 에너지 셀 등으로 에너지를 회복한다. 최대치를 넘지 않는다. */
-    suspend fun restoreEnergy(today: Long, amount: Double, max: Double) {
-        context.dataStore.edit { prefs ->
-            val remaining = energyIn(prefs, today, max)
+    suspend fun restoreEnergy(today: Long, amount: Double) {
+        store.edit { prefs ->
+            val remaining = energyIn(prefs, today)
+            val max = energyMax(prefs)
             prefs[Keys.ENERGY] = (remaining + amount).coerceIn(0.0, max)
             prefs[Keys.ENERGY_DAY] = today
         }
     }
 
+    /** Applying a receipt and remembering it are one durable edit, including on replay. */
+    suspend fun hasEnergyCapacity(today: Long, amount: Double): Boolean {
+        require(amount.isFinite() && amount > 0)
+        val prefs = store.data.first()
+        return energyMax(prefs) - energyIn(prefs, today) >= amount
+    }
+
+    suspend fun restorePurchasedEnergy(receiptId: String, today: Long, amount: Double): Boolean {
+        require(receiptId.isNotBlank() && amount.isFinite() && amount > 0)
+        var applied = false
+        store.edit { prefs ->
+            val receipts = prefs[Keys.ENERGY_RECEIPTS].orEmpty()
+            if (receiptId in receipts) {
+                applied = true
+            } else {
+                val max = energyMax(prefs)
+                val remaining = energyIn(prefs, today)
+                if (max - remaining >= amount) {
+                    prefs[Keys.ENERGY] = remaining + amount
+                    prefs[Keys.ENERGY_DAY] = today
+                    prefs[Keys.ENERGY_RECEIPTS] = receipts + receiptId
+                    applied = true
+                }
+            }
+        }
+        return applied
+    }
+
     /** 자정 리필을 반영한 현재 에너지. [consumeEnergy]/[restoreEnergy]가 edit 안에서 쓴다. */
-    private fun energyIn(prefs: Preferences, today: Long, max: Double): Double {
+    private fun energyIn(prefs: Preferences, today: Long): Double {
         val day = prefs[Keys.ENERGY_DAY] ?: -1L
+        val max = energyMax(prefs)
         return if (day != today) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
     }
 
-    suspend fun streakValue(): Int = context.dataStore.data.first()[Keys.STREAK] ?: 0
+    suspend fun streakValue(): Int = store.data.first()[Keys.STREAK] ?: 0
 
-    suspend fun lastGoalMetDay(): Long = context.dataStore.data.first()[Keys.LAST_GOAL_MET_DAY] ?: -1L
+    suspend fun lastGoalMetDay(): Long = store.data.first()[Keys.LAST_GOAL_MET_DAY] ?: -1L
 
     suspend fun setGoalMet(day: Long, newStreak: Int) {
-        context.dataStore.edit {
+        store.edit {
             it[Keys.LAST_GOAL_MET_DAY] = day
             it[Keys.STREAK] = newStreak
         }
@@ -625,15 +669,15 @@ class UserPrefs(private val context: Context) {
 
     /** 걸음 센서 기준점 (기준 날짜 epochDay, 그 시점의 센서 누적값) */
     suspend fun baseline(): Pair<Long, Long> {
-        val prefs = context.dataStore.data.first()
+        val prefs = store.data.first()
         return (prefs[Keys.BASELINE_DAY] ?: -1L) to (prefs[Keys.BASELINE_STEPS] ?: -1L)
     }
 
     /** 기준점을 잡을 때의 부팅 횟수. 모르면 -1 */
-    suspend fun baselineBoot(): Int = context.dataStore.data.first()[Keys.BASELINE_BOOT] ?: -1
+    suspend fun baselineBoot(): Int = store.data.first()[Keys.BASELINE_BOOT] ?: -1
 
     suspend fun setBaseline(day: Long, steps: Long, boot: Int) {
-        context.dataStore.edit {
+        store.edit {
             it[Keys.BASELINE_DAY] = day
             it[Keys.BASELINE_STEPS] = steps
             it[Keys.BASELINE_BOOT] = boot

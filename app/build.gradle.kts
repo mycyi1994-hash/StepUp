@@ -48,6 +48,10 @@ android {
             "ATTESTER_URL",
             "\"${secret("ATTESTER_URL", "stepupAttesterUrl") ?: ""}\"",
         )
+        // Public web entry and on-chain address; both stay blank until the new
+        // draw contract, roller and web config are deployed together.
+        buildConfigField("String", "DRAW_DAPP_URL", "\"${secret("DRAW_DAPP_URL", "stepupDrawDappUrl") ?: ""}\"")
+        buildConfigField("String", "DRAW_CONTRACT_ADDRESS", "\"${secret("DRAW_CONTRACT_ADDRESS", "stepupDrawContractAddress") ?: ""}\"")
 
         // ── 서버·로그인 설정 ────────────────────────────────────────
         //

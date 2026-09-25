@@ -17,9 +17,9 @@ object ExperienceEvents {
 fun runFeedbackCue(previous: WalkSessionState, current: WalkSessionState): FeedbackCue? = when {
     current.isActive && !previous.isActive -> FeedbackCue.Start
     current.isActive && current.isPaused != previous.isPaused ->
-        if (current.isPaused) FeedbackCue.Pause else FeedbackCue.Start
+        if (current.isPaused) FeedbackCue.Pause else FeedbackCue.Resume
     current.lastRewardPoints != null && previous.lastRewardPoints == null ->
-        if (current.lastVerdict == RunVerdict.VOID) FeedbackCue.Error else FeedbackCue.Reward
+        if (current.lastVerdict == RunVerdict.VOID) FeedbackCue.Error else FeedbackCue.Finish
     current.isActive && current.laps.size > previous.laps.size -> FeedbackCue.Lap
     else -> null
 }

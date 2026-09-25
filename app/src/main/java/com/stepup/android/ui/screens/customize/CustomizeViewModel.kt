@@ -16,12 +16,16 @@ import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.Outfit
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.experience.ExperienceEvents
+import com.stepup.android.ui.experience.FeedbackCue
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /**
  * 꾸미기 · 러너 마켓이 함께 쓰는 상태.
@@ -36,11 +40,13 @@ class CustomizeViewModel(
     rewards: RewardRepository,
 ) : ViewModel() {
 
-    val look: StateFlow<AvatarLook> = avatars.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = avatars.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val balance: StateFlow<Double> = rewards.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewards.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 가진 신발 — 착용 중인 것이 맨 앞, 그다음 등급 높은 순 */
     val shoes: StateFlow<List<Sneaker>?> = sneakers.inventory
@@ -65,16 +71,17 @@ class CustomizeViewModel(
     fun isOwned(outfit: Outfit): Boolean = avatars.isOwned(outfit)
 
     fun setGender(gender: AvatarGender) {
-        viewModelScope.launch { avatars.setGender(gender) }
+        saveLook { avatars.setGender(gender) }
     }
 
     fun equipOutfit(outfit: Outfit) {
-        viewModelScope.launch {
+        saveLook {
             message.value = if (avatars.equipOutfit(outfit)) {
+                ExperienceEvents.emit(FeedbackCue.Equip)
                 when {
                     !avatars.isOwned(outfit) -> R.string.customize_trial_on
                     // 입었지만 그 옷을 입은 캐릭터 그림은 없다 — "장착 완료"라고만 하지 않는다
-                    !AvatarArtCatalog.resolve(look.value.copy(outfit = outfit), AvatarPose.IDLE).outfitShown ->
+                    !AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).outfitShown ->
                         R.string.customize_equipped_art_pending
                     else -> R.string.customize_equipped
                 }
@@ -85,11 +92,27 @@ class CustomizeViewModel(
     }
 
     fun equipShoe(id: Long) {
-        viewModelScope.launch {
+        saveLook {
             val shoe = shoes.value?.firstOrNull { it.id == id }
-            sneakers.equip(id)
-            val shown = AvatarArtCatalog.resolve(look.value.copy(shoe = shoe), AvatarPose.IDLE).shoeShown
+            if (shoe == null || !sneakers.equip(id)) {
+                message.value = R.string.customize_not_owned
+                return@saveLook
+            }
+            val shown = AvatarArtCatalog.resolve(avatars.look.first(), AvatarPose.IDLE).shoeShown
+            ExperienceEvents.emit(FeedbackCue.Equip)
             message.value = if (shown) R.string.customize_equipped else R.string.customize_equipped_art_pending
+        }
+    }
+
+    private fun saveLook(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = R.string.feed_save_failed
+            }
         }
     }
 

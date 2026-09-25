@@ -2,35 +2,28 @@ package com.stepup.android.ui.screens.events
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,12 +32,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,27 +46,16 @@ import com.stepup.android.data.repo.Events
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.ui.components.SectionHeader
-import com.stepup.android.ui.components.SmallBadge
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.PageHero
 import com.stepup.android.ui.components.SecondaryHeader
-import com.stepup.android.domain.AvatarArt
-import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.celebrate
-import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpNumbers
-import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltText
 
 /**
@@ -110,6 +89,9 @@ fun EventsScreen(
     val claimResult by viewModel.claimResult.collectAsStateWithLifecycle()
     val daily by viewModel.daily.collectAsStateWithLifecycle()
     val nightKm by viewModel.nightKm.collectAsStateWithLifecycle()
+    val look by viewModel.look.collectAsStateWithLifecycle()
+    val claimingId by viewModel.claimingId.collectAsStateWithLifecycle()
+    var selected by rememberSaveable { mutableIntStateOf(0) }
 
     var celebration by rememberSaveable { mutableStateOf(0) }
     val claimedFmt = stringResource(R.string.toast_claimed, "%s")
@@ -157,41 +139,62 @@ fun EventsScreen(
         )
     }
 
-    val weekFraction = (weekSteps.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f)
-    val nightFraction = (nightKm / Events.NIGHT_QUEST.target).toFloat().coerceIn(0f, 1f)
+    val weekFraction = weekSteps?.let { (it.toFloat() / Events.STEP_SURGE.target.toFloat()).coerceIn(0f, 1f) }
+    val nightFraction = nightKm?.let { (it / Events.NIGHT_QUEST.target).toFloat().coerceIn(0f, 1f) }
+    val selectedEvent = when (selected) { 1 -> Events.STEP_SURGE; 2 -> Events.NIGHT_QUEST; else -> null }
+    val selectedFraction = when (selected) { 1 -> weekFraction; 2 -> nightFraction; else -> null }
+    val canClaim = selectedEvent != null && selectedFraction != null && selectedFraction >= 1f &&
+        claimed != null && selectedEvent.id !in claimed!!
 
+    Box(Modifier.fillMaxSize()) {
+    com.stepup.android.ui.components.RunnerScene(
+        Modifier.fillMaxSize(),
+        setting = when (selected) {
+            1 -> com.stepup.android.ui.components.RunnerSetting.RunSunset
+            2 -> com.stepup.android.ui.components.RunnerSetting.RunNight
+            else -> com.stepup.android.ui.components.RunnerSetting.RunNight
+        },
+    )
+    Column(Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
+        SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet,
+            title = stringResource(R.string.challenge_title))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
+            itemsIndexed(listOf(R.string.challenge_tag_daily, R.string.challenge_tag_weekly, R.string.event_night_quest)) { index, label ->
+                com.stepup.android.ui.components.PillChip(
+                    text = stringResource(label), selected = selected == index,
+                    onClick = { selected = index }, modifier = Modifier.testTag("challenge-choice-$index"),
+                )
+            }
+        }
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 18.dp),
+        modifier = Modifier.weight(1f).fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
-        }
-        // 큰 제목 · 한 줄 소개 · 두 러너(RUNO · LUMI 그림 그대로)
-        item {
-            PageHero(
-                title = stringResource(R.string.challenge_title),
-                subtitle = stringResource(R.string.challenge_hero_sub),
-                modifier = Modifier.celebrate(celebration.takeIf { it > 0 }),
-            ) {
-                AvatarImage(
-                    art = AvatarArt.MALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .size(width = 84.dp, height = 140.dp),
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(when (selected) {
+                        1 -> R.string.event_step_surge
+                        2 -> R.string.event_night_quest
+                        else -> R.string.challenge_daily_title
+                    }),
+                    fontSize = 29.sp, fontWeight = FontWeight.Black, color = Snow,
                 )
-                AvatarImage(
-                    art = AvatarArt.FEMALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(width = 84.dp, height = 140.dp),
-                )
+                Box(Modifier.fillMaxWidth().height(230.dp).celebrate(celebration.takeIf { it > 0 }),
+                    contentAlignment = Alignment.Center) {
+                    look?.let {
+                        com.stepup.android.ui.components.CharacterStage(
+                            look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
+                            modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
+                        )
+                    } ?: androidx.compose.material3.CircularProgressIndicator()
+                }
             }
         }
 
         // ── 일일 — 걸음 목표. 달성하면 보너스가 저절로 들어온다 ──
-        item {
+        if (selected == 0) item {
             val d = daily
             ChallengeCard(
                 tag = stringResource(R.string.challenge_tag_daily),
@@ -201,7 +204,7 @@ fun EventsScreen(
                 desc = stringResource(R.string.challenge_daily_desc),
                 reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
                 rewardNote = if (d != null && d.paidToday > 0) null else stringResource(R.string.challenge_daily_streak_note),
-                fraction = d?.fraction ?: 0f,
+                fraction = d?.fraction,
                 progressText = if (d == null) "—" else "%,d / %,d".format(d.steps, d.goal),
                 state = when {
                     d == null -> ChallengeState.Loading
@@ -214,8 +217,8 @@ fun EventsScreen(
         }
 
         // ── 주간 — 7일 걸음 합 ──
-        item {
-            val done = weekFraction >= 1f
+        if (selected == 1) item {
+            val done = weekFraction != null && weekFraction >= 1f
             ChallengeCard(
                 tag = stringResource(R.string.challenge_tag_weekly),
                 tagTone = BadgeTone.Nft,
@@ -224,15 +227,15 @@ fun EventsScreen(
                 desc = stringResource(R.string.event_step_surge_desc, "%,d".format(Events.STEP_SURGE.target.toLong())),
                 reward = Events.STEP_SURGE.reward,
                 fraction = weekFraction,
-                progressText = "%,d / %,d".format(weekSteps, Events.STEP_SURGE.target.toLong()),
-                state = claimState(Events.STEP_SURGE, claimed, done),
-                onClaim = { viewModel.claim(Events.STEP_SURGE, weekFraction) },
+                progressText = weekSteps?.let { "%,d / %,d".format(it, Events.STEP_SURGE.target.toLong()) } ?: "—",
+                state = if (claimingId == Events.STEP_SURGE.id) ChallengeState.Settling else claimState(Events.STEP_SURGE, claimed, done),
+                onClaim = null,
             )
         }
 
         // ── 나이트 러너 — 저녁 8시 이후 러닝 거리 합 ──
-        item {
-            val done = nightFraction >= 1f
+        if (selected == 2) item {
+            val done = nightFraction != null && nightFraction >= 1f
             ChallengeCard(
                 tag = stringResource(R.string.tag_limited),
                 tagTone = BadgeTone.Glow,
@@ -241,26 +244,35 @@ fun EventsScreen(
                 desc = stringResource(R.string.event_night_quest_desc),
                 reward = Events.NIGHT_QUEST.reward,
                 fraction = nightFraction,
-                progressText = "%.1f / %.0f km".format(nightKm, Events.NIGHT_QUEST.target),
-                state = claimState(Events.NIGHT_QUEST, claimed, done),
-                onClaim = { viewModel.claim(Events.NIGHT_QUEST, nightFraction) },
+                progressText = nightKm?.let { "%.1f / %.0f km".format(it, Events.NIGHT_QUEST.target) } ?: "—",
+                state = if (claimingId == Events.NIGHT_QUEST.id) ChallengeState.Settling else claimState(Events.NIGHT_QUEST, claimed, done),
+                onClaim = null,
             )
         }
 
-        item {
+    }
             PrimaryCta(
-                text = stringResource(R.string.home_start_run),
-                icon = Icons.AutoMirrored.Filled.DirectionsRun,
-                onClick = onStartRun,
+                text = stringResource(when {
+                    claimingId != null -> R.string.challenge_state_settling
+                    canClaim -> R.string.events_claim
+                    else -> R.string.home_start_run
+                }),
+                icon = if (canClaim) null else Icons.AutoMirrored.Filled.DirectionsRun,
+                enabled = claimingId == null,
+                onClick = {
+                    if (canClaim) viewModel.claim(selectedEvent!!, selectedFraction!!) else onStartRun()
+                },
+                modifier = Modifier.padding(vertical = 12.dp).testTag("challenge-primary-action"),
             )
-        }
+    }
     }
 }
 
 private enum class ChallengeState { Loading, InProgress, Ready, Settling, Paid, Claimed, Soon }
 
 /** 받기형 도전의 상태 — 받았으면 받음, 채웠으면 받기, 아니면 진행 중 */
-private fun claimState(def: EventDef, claimed: Set<String>, done: Boolean): ChallengeState = when {
+private fun claimState(def: EventDef, claimed: Set<String>?, done: Boolean): ChallengeState = when {
+    claimed == null -> ChallengeState.Loading
     claimed.contains(def.id) -> ChallengeState.Claimed
     done -> ChallengeState.Ready
     else -> ChallengeState.InProgress
@@ -282,43 +294,22 @@ private fun ChallengeCard(
     rewardNote: String? = null,
     extra: (@Composable () -> Unit)? = null,
 ) {
-    val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
     GlowCard(
         accent = state == ChallengeState.Ready,
-        contentPadding = PaddingValues(16.dp),
-        spacing = 12.dp,
+        contentPadding = PaddingValues(20.dp), spacing = 16.dp,
     ) {
-        // 시안대로 — 아이콘 · 제목과 설명 · 오른쪽 위에 보상(받았으면 "지급 완료").
-        // 보상 표시를 먼저 재고 제목이 남은 폭을 쓴다. 글자가 크면 보상을 위로 올린다.
-        val badge: @Composable () -> Unit = {
-            when (state) {
-                ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
-                else -> RewardPill(reward)
-            }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.stepup.android.ui.components.IconSquare(icon, size = 48.dp)
+            Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Snow, modifier = Modifier.weight(1f))
         }
-        if (large) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { badge() }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(CarbonHigh, CircleShape)
-                    .border(1.dp, Edge, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(24.dp))
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Snow)
-                Text(text = desc, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
-            }
-            if (!large) badge()
+        Text(desc, fontSize = 15.sp, lineHeight = 23.sp, color = Silver)
+        when (state) {
+            ChallengeState.Paid, ChallengeState.Claimed, ChallengeState.Settling -> StatusChip(state)
+            ChallengeState.Loading -> Text("—", color = Silver)
+            else -> RewardPill(reward)
         }
         if (rewardNote != null) {
-            Text(text = rewardNote, fontSize = 11.sp, color = Slate)
+            Text(text = rewardNote, fontSize = 14.sp, color = Silver)
         }
         if (fraction != null) {
             // 큰 진행값 한 줄, 그 아래 막대와 백분율
@@ -357,41 +348,29 @@ private fun ChallengeCard(
 /** 보상 알약 — "보상 ⬡ 30 SUP" */
 @Composable
 private fun RewardPill(reward: Double) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, Volt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 9.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Text(text = stringResource(R.string.challenge_reward_label), fontSize = 11.sp, color = Silver, maxLines = 1, softWrap = false)
-        HexEmblem(size = 15.dp, glow = false)
-        Text(
-            text = "%,.0f".format(reward),
-            fontFamily = StepUpNumbers,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
-            maxLines = 1,
-            softWrap = false,
-        )
-        Text(text = "SUP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Silver, maxLines = 1, softWrap = false)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.challenge_reward_label), fontSize = 14.sp, color = Silver)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HexEmblem(size = 22.dp, glow = false)
+            Text("%,.0f".format(reward), fontFamily = StepUpNumbers, fontSize = 28.sp,
+                fontWeight = FontWeight.Bold, color = Snow)
+            Text("SUP", fontSize = 14.sp, color = Silver)
+        }
     }
 }
 
 @Composable
 private fun StatusChip(state: ChallengeState) {
-    val (text, tone) = when (state) {
+    val text = when (state) {
         ChallengeState.Loading -> return
-        ChallengeState.InProgress -> stringResource(R.string.challenge_state_progress) to BadgeTone.Muted
-        ChallengeState.Ready -> stringResource(R.string.challenge_state_ready) to BadgeTone.Accent
-        ChallengeState.Settling -> stringResource(R.string.challenge_state_settling) to BadgeTone.Accent
-        ChallengeState.Paid -> stringResource(R.string.challenge_state_paid) to BadgeTone.Glow
-        ChallengeState.Claimed -> stringResource(R.string.events_claimed) to BadgeTone.Glow
-        ChallengeState.Soon -> stringResource(R.string.challenge_soon) to BadgeTone.Muted
+        ChallengeState.InProgress -> stringResource(R.string.challenge_state_progress)
+        ChallengeState.Ready -> stringResource(R.string.challenge_state_ready)
+        ChallengeState.Settling -> stringResource(R.string.challenge_state_settling)
+        ChallengeState.Paid -> stringResource(R.string.challenge_state_paid)
+        ChallengeState.Claimed -> stringResource(R.string.events_claimed)
+        ChallengeState.Soon -> stringResource(R.string.challenge_soon)
     }
-    SmallBadge(text, tone = tone)
+    Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = VoltText)
 }
 
 /**
@@ -413,63 +392,21 @@ private fun InviteDialog(
 ) {
     var text by rememberSaveable(initialText) { mutableStateOf(initialText) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(
-                onClick = { onSend(text.trim()) },
-                enabled = text.isNotBlank(),
-            ) {
-                Text(
-                    text = stringResource(R.string.invite_send),
-                    color = if (text.isNotBlank()) Volt else Slate,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+    com.stepup.android.ui.components.DialogPanel(
+        title = subject, onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.invite_send), { onSend(text.trim()) },
+                Modifier.fillMaxWidth(), enabled = text.isNotBlank())
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel), color = Slate)
-            }
-        },
-        title = { Text(text = subject, fontWeight = FontWeight.Black) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.invite_edit_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(CarbonHigh)
-                        .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 13.dp, vertical = 12.dp),
-                ) {
-                    BasicTextField(
-                        value = text,
-                        onValueChange = { if (it.length <= INVITE_MAX) text = it },
-                        textStyle = TextStyle(color = Snow, fontSize = 14.sp, lineHeight = 20.sp),
-                        cursorBrush = SolidColor(Volt),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 76.dp),
-                    )
-                }
-                Text(
-                    text = "${text.length} / $INVITE_MAX",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                    modifier = Modifier.align(Alignment.End),
-                )
-            }
-        },
-    )
+    ) {
+        com.stepup.android.ui.components.FormField(
+            label = stringResource(R.string.invite_edit_hint), value = text,
+            onValueChange = { if (it.length <= INVITE_MAX) text = it },
+            singleLine = false, minLines = 4,
+        )
+        Text("${text.length} / $INVITE_MAX", fontSize = 14.sp, color = Silver,
+            modifier = Modifier.align(Alignment.End))
+    }
 }
 
 /** 초대 문구 길이 상한. 문자 메시지 한 통에 들어가는 정도. */

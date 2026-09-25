@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StepUp 상품 그림 67종 검토</title>
+<style>
+  :root { color-scheme: dark; font: 15px/1.5 system-ui, sans-serif; background: #07111f; color: #f2f7ff; }
+  body { margin: 0 auto; max-width: 1450px; padding: 22px; }
+  h1 { font-size: 27px; margin: 0 0 4px; }
+  p { color: #a9bbd4; margin: 0 0 18px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  button { background: #172a44; color: inherit; border: 1px solid #3b587b; border-radius: 20px; padding: 9px 15px; cursor: pointer; }
+  button[aria-pressed="true"] { background: #1766d9; border-color: #71b5ff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  article { border: 1px solid #30415b; border-radius: 16px; overflow: hidden; background: #102039; }
+  .art { height: 218px; display: grid; place-items: center; position: relative; background: #152b4a; }
+  .light .art { background: #f7f9fc; }
+  .art img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .art .original { width: 38%; height: 33%; position: absolute; right: 6px; bottom: 5px; background: #263142; border: 1px solid #7489a7; border-radius: 8px; }
+  .info { padding: 10px 12px; }
+  .id { font-weight: 750; }
+  .note { color: #a9bbd4; font-size: 12px; }
+</style>
+<h1>상품 그림 67종</h1>
+<p>52종 신발·10종 의상은 새 고해상도 후보, 기본/체험 의상 5종은 기존 원본 재사용 후보입니다. 작은 그림은 현행 앱 원본입니다. 이 보드는 앱 적용·최종 승인을 뜻하지 않습니다.</p>
+<div class="controls" id="filters"></div>
+<div class="controls"><button id="theme" aria-pressed="false">밝은 카드 배경</button><button id="old" aria-pressed="true">현행 원본 비교 표시</button></div>
+<main class="grid" id="grid"></main>
+<script>
+  const runtime = '../../../../app/src/main/res/drawable-nodpi/';
+  const groups = [
+    ['불', 'FIR', 'fire'], ['물', 'WAT', 'water'], ['번개', 'LIT', 'lightning'], ['바람', 'WND', 'wind'],
+  ];
+  const items = groups.flatMap(([label, id, name]) => Array.from({length: 13}, (_, k) => {
+    const n = String(k + 1).padStart(2, '0');
+    return {id: `${id}-${String(k + 1).padStart(3, '0')}`, group: label, art: `sneakers/sneaker_${name}_${n}.png`, original: `${runtime}sneaker_${name}_${n}.webp`, state: '새 원본 후보'};
+  }));
+  for (let n = 1; n <= 5; n++) {
+    const code = String(n).padStart(3, '0');
+    items.push({id: `CLO-${code}`, group: '의상', art: `outfits/outfit_clo_${code}.png`, original: `${runtime}outfit_clo_${code}.webp`, state: '새 원본 후보'});
+    items.push({id: `LUM-CLO-${code}`, group: '의상', art: `outfits/outfit_lum_clo_${code}.png`, original: `${runtime}outfit_lum_clo_${code}.webp`, state: '새 원본 후보'});
+  }
+  for (const name of ['outfit_runo_base.webp', 'outfit_lumi_base.webp', 'outfit_studio_pink.png', 'outfit_studio_lavender.png', 'outfit_studio_olive.png']) {
+    items.push({id: name.replace(/\.(webp|png)$/, ''), group: '기존 재사용', art: runtime + name, original: null, state: '기존 원본 검토'});
+  }
+  let selected = '전체';
+  let compare = true;
+  const filters = document.getElementById('filters');
+  const grid = document.getElementById('grid');
+  function render() {
+    filters.replaceChildren();
+    for (const label of ['전체', '불', '물', '번개', '바람', '의상', '기존 재사용']) {
+      const button = document.createElement('button');
+      button.textContent = label;
+      button.setAttribute('aria-pressed', String(selected === label));
+      button.onclick = () => { selected = label; render(); };
+      filters.append(button);
+    }
+    grid.replaceChildren();
+    for (const item of items.filter(x => selected === '전체' || x.group === selected)) {
+      const card = document.createElement('article');
+      const art = document.createElement('div');
+      art.className = 'art';
+      const image = document.createElement('img');
+      image.src = item.art;
+      image.alt = `${item.id} 상품 그림`;
+      art.append(image);
+      if (compare && item.original) {
+        const old = document.createElement('img');
+        old.src = item.original;
+        old.alt = `${item.id} 현행 앱 원본`;
+        old.className = 'original';
+        art.append(old);
+      }
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = `<div class="id"></div><div class="note"></div>`;
+      info.children[0].textContent = item.id;
+      info.children[1].textContent = item.state;
+      card.append(art, info);
+      grid.append(card);
+    }
+  }
+  document.getElementById('theme').onclick = event => {
+    const light = grid.classList.toggle('light');
+    event.currentTarget.setAttribute('aria-pressed', String(light));
+  };
+  document.getElementById('old').onclick = event => {
+    compare = !compare;
+    event.currentTarget.setAttribute('aria-pressed', String(compare));
+    render();
+  };
+  render();
+</script>
+</html>

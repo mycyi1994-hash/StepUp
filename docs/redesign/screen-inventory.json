@@ -1,0 +1,696 @@
+{
+  "schema": 1,
+  "note": "Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.",
+  "routes": [
+    {
+      "id": "Screen.Run.route",
+      "parent": "Run",
+      "chrome": "Main",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+    },
+    {
+      "id": "Routes.MYSTERY_BOX",
+      "parent": "Customize",
+      "chrome": "Main",
+      "implementation": "source implemented; contract deployment gates actions",
+      "verification": "Android compile/capture and wallet transaction pending"
+    },
+    {
+      "id": "Screen.Customize.route",
+      "parent": "Customize",
+      "chrome": "Main",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+    },
+    {
+      "id": "Routes.RUNNER_MARKET",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+    },
+    {
+      "id": "Screen.Community.route",
+      "parent": "Community",
+      "chrome": "Main",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.MAP",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+    },
+    {
+      "id": "Routes.ITEMS",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "Routes.MARKET_MODEL",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+    },
+    {
+      "id": "Routes.NEWS",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+    },
+    {
+      "id": "Routes.EVENTS",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+    },
+    {
+      "id": "Screen.Profile.route",
+      "parent": "Profile",
+      "chrome": "Main",
+      "implementation": "profile seated exact pink + WND-010 portraits; independent bench and saved random scenery; shared native controls; see assets/profile/README-KO.md",
+      "verification": "source checks and browser asset composition only; Android compile/capture and unit test execution pending; no APK requested",
+      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "Routes.RUN_ROUTE",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+    },
+    {
+      "id": "Routes.COURSES",
+      "parent": "Run",
+      "chrome": "Detail",
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+    },
+    {
+      "id": "Routes.WALLET",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.NOTIFICATIONS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.ACHIEVEMENTS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.ANALYTICS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.HISTORY_MAP",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_NOTIFICATIONS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_PRIVACY",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_SUPPORT",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_CONNECTED",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_EXPERIENCE",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_THEME",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SETTINGS_LANGUAGE",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SNEAKER",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+    },
+    {
+      "id": "Routes.LOBBY",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.SNEAKER_DEX",
+      "parent": "Customize",
+      "chrome": "Detail",
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+    },
+    {
+      "id": "Routes.RANKING",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.CREW_CREATE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.CREW_BOARD",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.FLASH_DETAIL",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.FLASH_LOBBY",
+      "parent": "Community",
+      "chrome": "Detail",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.POST_COMPOSE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending; no APK requested"
+    }
+  ],
+  "screen_functions": [
+    {
+      "id": "CommunityScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
+      "line": 86,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "CrewBoardScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt",
+      "line": 51,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "CrewCreateScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
+      "line": 38,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "FlashRunDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
+      "line": 83,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "PartyLobbyScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
+      "line": 80,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "PostComposeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
+      "line": 43,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "RankingScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt",
+      "line": 73,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "CustomizeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
+      "line": 100,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "RunnerMarketScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt",
+      "line": 93,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "EventsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
+      "line": 79,
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "NewsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/NewsScreen.kt",
+      "line": 76,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "MysteryBoxScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
+      "line": 42,
+      "implementation": "source implemented",
+      "verification": "Android capture pending"
+    },
+    {
+      "id": "HomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
+      "line": 85,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "ItemsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 91,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending; shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "SneakerDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
+      "line": 44,
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "SneakerDexScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
+      "line": 77,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "LoginScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
+      "line": 67,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "MapScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt",
+      "line": 93,
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "MarketModelScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
+      "line": 65,
+      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "NotificationsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt",
+      "line": 147,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "AchievementsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
+      "line": 178,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "AnalyticsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt",
+      "line": 139,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "HistoryMapScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt",
+      "line": 117,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "ProfileScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 132,
+      "implementation": "profile seated exact pink + WND-010 portraits; independent bench and saved random scenery; shared native controls; see assets/profile/README-KO.md",
+      "verification": "source checks and browser asset composition only; Android compile/capture and unit test execution pending; no APK requested",
+      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending; shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "WalletScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
+      "line": 74,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "ConnectedAccountsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
+      "line": 57,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "ExperienceSettingsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt",
+      "line": 25,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "LanguageScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/LanguageScreen.kt",
+      "line": 39,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "NotificationSettingsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
+      "line": 44,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "PrivacyScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt",
+      "line": 50,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "SupportScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt",
+      "line": 49,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "ThemeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt",
+      "line": 39,
+      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/capture pending"
+    },
+    {
+      "id": "SplashScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
+      "line": 40,
+      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "CourseHubScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 86,
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 135,
+      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
+      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
+      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    }
+  ],
+  "overlays": [
+    {
+      "kind": "AlertDialog",
+      "owner": "ReportDialogHost",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
+      "line": 95,
+      "verification": "pending"
+    },
+    {
+      "kind": "Dialog",
+      "owner": "CommentSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt",
+      "line": 148,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "FlashMembersDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
+      "line": 385,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "CustomizeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
+      "line": 256,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "InviteDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
+      "line": 395,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "HomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
+      "line": 190,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "ItemsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 402,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "CopiesDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
+      "line": 537,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "SneakerDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
+      "line": 257,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "BidDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
+      "line": 307,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "AskDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
+      "line": 334,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "GoalDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 927,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "ProfileEditDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "line": 976,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "ConnectedAccountsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
+      "line": 66,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "CourseHubScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 257,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "CourseRankingDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
+      "line": 592,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 419,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 456,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 480,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "SaveCourseDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 971,
+      "verification": "pending"
+    }
+  ],
+  "required_state_matrix": [
+    "initializing",
+    "ready/data",
+    "empty",
+    "loading",
+    "error/retry",
+    "permission denied",
+    "signed out",
+    "signed in",
+    "offline/reconnect",
+    "restore/back/relaunch",
+    "large font",
+    "light/dark"
+  ],
+  "additional_entry_states": [
+    "system launch",
+    "initialization",
+    "logo reveal",
+    "login",
+    "first-use tour"
+  ],
+  "additional_run_states": [
+    "ready",
+    "permission denied",
+    "acquiring GPS",
+    "active",
+    "paused",
+    "confirm finish",
+    "result",
+    "pending server reward",
+    "reward rejected",
+    "restored active session"
+  ]
+}

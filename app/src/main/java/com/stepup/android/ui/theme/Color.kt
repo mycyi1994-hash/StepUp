@@ -108,8 +108,8 @@ class StepUpPalette(
         1.00f to voltDeep,
     )
 
-    /** 큰 CTA 면 — START RUN 등 */
-    val voltPlate: Brush = Brush.linearGradient(listOf(voltDeep, volt, voltSoft))
+    /** 버튼 면은 장식용 하이라이트와 분리한다. 흰 글자가 그라데이션 전체에서 읽혀야 한다. */
+    val voltPlate: Brush = Brush.linearGradient(listOf(Color(0xFF0B3FCC), Color(0xFF145BFF)))
 
     /** 강조 텍스트 채움 */
     val voltInk: Brush = Brush.verticalGradient(listOf(voltSoft, volt))
@@ -186,8 +186,7 @@ val DarkPalette = StepUpPalette(
     carbon = Color(0xFF0B1D35),
     carbonHigh = Color(0xFF0F2542),
     edge = Color(0xFF1A3B61),
-    // 버튼 바탕. 토큰 #147BFF 위의 흰 글자는 3.96:1 이라 초록 채널만 셋 내려
-    // 4:1 을 넘긴다(#1478FF). 눈으로는 같은 파랑이다.
+    // 브랜드 강조색. 흰 글자를 얹는 공통 버튼 면은 voltPlate에서 별도로 정한다.
     volt = Color(0xFF1478FF),
     voltDeep = Color(0xFF0B5BD6),
     voltSoft = Color(0xFF5AA7FF),

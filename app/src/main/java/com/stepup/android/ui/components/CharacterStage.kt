@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,21 +32,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.AvatarArt
 import com.stepup.android.domain.AvatarArtCatalog
+import com.stepup.android.domain.AvatarGender
 import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.AvatarRender
+import com.stepup.android.domain.Outfits
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Cyan
@@ -51,6 +57,9 @@ import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 /**
  * 러너 캐릭터 — 디자인 패키지의 완성 그림을 **그대로** 띄운다.
@@ -83,6 +92,42 @@ fun AvatarImage(
 }
 
 /**
+ * 실제 러닝 중 기본 착장에 한해서 보폭 프레임을 바꾼다. 다른 장비를 착용한
+ * 캐릭터는 해당 장비가 그려진 기존 이미지를 유지한다.
+ */
+@Composable
+fun RunningAvatarImage(
+    look: AvatarLook,
+    render: AvatarRender,
+    running: Boolean,
+    stridePhase: State<Float>?,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+) {
+    val hasMatchingFrames = look.outfit.id == Outfits.BASE_ID && look.shoe == null && render.lookShown
+    if (!running || !hasMatchingFrames) {
+        AvatarImage(render.art, modifier, contentDescription)
+        return
+    }
+
+    val firstRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_a else R.drawable.run_frame_runo_a
+    val secondRes = if (look.gender == AvatarGender.FEMALE) R.drawable.run_frame_lumi_b else R.drawable.run_frame_runo_b
+    val first = painterResource(firstRes)
+    val second = painterResource(secondRes)
+    // Frame, body lift and ground shadow share one clock.
+    val alternate by remember(stridePhase) {
+        derivedStateOf { (stridePhase?.value ?: 0f) >= 0.5f }
+    }
+    Image(
+        painter = if (alternate) second else first,
+        contentDescription = contentDescription,
+        contentScale = ContentScale.Fit,
+        alignment = Alignment.BottomCenter,
+        modifier = modifier,
+    )
+}
+
+/**
  * 캐릭터 무대 — 뒤의 푸른 조명, 낮은 도시 실루엣, 바닥의 타원 무대와 접지
  * 그림자, 그 위의 캐릭터 그림.
  *
@@ -104,10 +149,10 @@ fun CharacterStage(
     overlay: @Composable BoxScope.(AvatarRender) -> Unit = {},
 ) {
     val render = AvatarArtCatalog.resolve(look, pose)
-    val running = render.art.pose == AvatarPose.RUN
+    val running = pose == AvatarPose.RUN
     // 모션 줄이기면 멈춘다
     val phase = if (animate && LocalMotion.current.decorative) {
-        ambientPhase(if (running) 760 else 2800, reverse = true)
+        ambientPhase(if (running) 760 else 2800, reverse = !running)
     } else {
         null
     }
@@ -122,10 +167,14 @@ fun CharacterStage(
         ),
     ) {
         val stageH = maxHeight
+        val geometry = render.art.geometry()
+        val imageHeight = minOf(stageH * characterFraction, maxWidth / geometry.aspectRatio)
         Canvas(Modifier.fillMaxSize()) {
             if (skyline) drawSkyline(building, window)
             drawBackGlow(glow, cyan)
-            drawFloor(glow, cyan)
+            val p = phase?.value ?: 0.5f
+            val lift = if (running && phase != null) abs(sin(p.toDouble() * 2.0 * PI)).toFloat() else p
+            drawFloor(glow, cyan, lift)
         }
         // 발이 타원 무대의 한가운데에 닿도록 바닥에서 조금 띄운다
         Box(
@@ -136,10 +185,25 @@ fun CharacterStage(
                 .height(stageH * characterFraction)
                 .graphicsLayer {
                     val p = phase?.value ?: 0.5f
-                    translationY = (p - 0.5f) * (if (running) 5.dp else 2.dp).toPx()
+                    val stride = if (running && phase != null) sin(p.toDouble() * 2.0 * PI).toFloat() else 0f
+                    // Fit includes transparent pixels below the soles. Anchor the visible feet,
+                    // not the source rectangle, to the shared floor on every screen.
+                    translationY = (imageHeight * geometry.bottomInsetFraction).toPx() +
+                        if (running) -abs(stride) * 4.dp.toPx()
+                        else (p - 0.5f) * 1.dp.toPx()
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                    if (!running) {
+                        rotationZ = (p - 0.5f) * 1.1f
+                        scaleY = 0.995f + p * 0.01f
+                    } else {
+                        rotationZ = stride * 0.5f
+                    }
                 },
         ) {
-            AvatarImage(art = render.art, modifier = Modifier.fillMaxSize())
+            RunningAvatarImage(
+                look = look, render = render, running = running, stridePhase = phase,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
         overlay(render)
     }
@@ -218,16 +282,16 @@ private fun DrawScope.drawBackGlow(glow: Color, cyan: Color) {
     )
 }
 
-private fun DrawScope.drawFloor(glow: Color, cyan: Color) {
+private fun DrawScope.drawFloor(glow: Color, cyan: Color, phase: Float) {
     val cy = size.height * FLOOR_Y
     val ringW = size.width * 0.68f
     val ringH = size.height * 0.09f
     // 접지 그림자
-    val shadowW = ringW * 0.78f
-    val shadowH = ringH * 0.7f
+    val shadowW = ringW * (0.56f + (1f - phase) * 0.04f)
+    val shadowH = ringH * 0.48f
     drawOval(
         brush = Brush.radialGradient(
-            0f to Color.Black.copy(alpha = 0.55f),
+            0f to Color.Black.copy(alpha = 0.76f - phase * 0.06f),
             1f to Color.Transparent,
             center = Offset(size.width / 2f, cy),
             radius = shadowW / 2f,
@@ -277,7 +341,7 @@ fun AvatarLookNote(
             .clip(shape)
             .background(Night.copy(alpha = 0.82f), shape)
             .border(1.dp, Edge, shape)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
     ) {
@@ -287,24 +351,21 @@ fun AvatarLookNote(
         Column {
             Text(
                 text = stringResource(R.string.avatar_art_wearing, wearing),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = stringResource(
                     when {
+                        !render.shoeShown && render.art.shoeCode != null -> R.string.wardrobe_shoes_preview_pending
                         !render.outfitShown && !render.shoeShown -> R.string.avatar_art_base_look
                         !render.shoeShown -> R.string.avatar_art_base_shoes
                         else -> R.string.avatar_art_base_outfit
                     },
                 ),
-                fontSize = 10.sp,
+                fontSize = 13.sp,
                 color = Silver,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.customize
 
+import androidx.compose.material3.MaterialTheme
+import com.stepup.android.ui.components.AdaptiveNumber
+import androidx.compose.foundation.layout.BoxWithConstraints
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,11 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -31,9 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,11 +55,9 @@ import com.stepup.android.ui.components.OutfitArt
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.outfitNameRes
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.RenewalCardPadding
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.SneakerFrame
-import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.TwoWaySwitch
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.market.MarketProblemNote
@@ -69,7 +69,6 @@ import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.VoltText
 
 /**
@@ -100,13 +99,22 @@ fun RunnerMarketScreen(
     marketViewModel: MarketViewModel = viewModel(factory = MarketViewModel.Factory),
 ) {
     val context = LocalContext.current
-    val look by viewModel.look.collectAsStateWithLifecycle()
+    val savedLook by viewModel.look.collectAsStateWithLifecycle()
+    val look = savedLook ?: run {
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxSize(), contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.feed_loading), color = Silver)
+        }
+        return
+    }
     val balance by viewModel.balance.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val board by marketViewModel.board.collectAsStateWithLifecycle()
 
-    var filter by rememberSaveable { mutableIntStateOf(0) }
+    var filter by rememberSaveable { mutableIntStateOf(1) }
+    if (filter !in 0..1) filter = 1
 
     LaunchedEffect(message) {
         val m = message ?: return@LaunchedEffect
@@ -114,7 +122,8 @@ fun RunnerMarketScreen(
         viewModel.consumeMessage()
     }
 
-    val cols = if (LocalDensity.current.fontScale > 1.3f) 1 else 2
+    val cols = if (LocalConfiguration.current.screenWidthDp >= 600 &&
+        LocalDensity.current.fontScale <= 1.2f) 2 else 1
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(cols),
@@ -143,7 +152,6 @@ fun RunnerMarketScreen(
         item(span = { GridItemSpan(cols) }) {
             TwoWaySwitch(
                 labels = listOf(
-                    stringResource(R.string.feed_filter_all),
                     stringResource(R.string.customize_tab_outfit),
                     stringResource(R.string.customize_tab_shoes),
                 ),
@@ -155,8 +163,8 @@ fun RunnerMarketScreen(
             item(span = { GridItemSpan(cols) }) { DemoNote() }
         }
 
-        // 0 = 전체, 1 = 의상, 2 = 신발
-        if (filter != 2) {
+        // 의상은 출시 예정, 신발은 실제 매물이 있는 모델만 보여 준다.
+        if (filter == 0) {
             // ── 의상 — NFT 의상만. 기본 의상은 이미 갖고 있다 ──
             val nft = Outfits.ALL.filter { it.nft }
             items(nft, key = { it.id }) { outfit ->
@@ -171,7 +179,7 @@ fun RunnerMarketScreen(
                 )
             }
         }
-        if (filter != 1) {
+        if (filter == 1) {
             // ── 신발 ──
             when {
                 demo -> items(DEMO_SHOES, key = { "demo-${it.faction}-${it.rarity}-${it.variant}" }) { d ->
@@ -188,7 +196,7 @@ fun RunnerMarketScreen(
                     StateCard(stringResource(R.string.feed_loading), null)
                 }
                 board.problem != null -> item(span = { GridItemSpan(cols) }) {
-                    MarketProblemNote(board.problem!!)
+                    MarketProblemNote(board.problem!!, onRetry = marketViewModel::refresh)
                 }
                 else -> {
                     val listed = board.quotes.filter { it.ask != null }.sortedBy { it.ask }
@@ -246,10 +254,11 @@ private fun DemoNote() {
     ) {
         SmallBadge(stringResource(R.string.demo_badge), tone = BadgeTone.Glow)
         Text(
+            modifier = Modifier.weight(1f),
             text = stringResource(R.string.market_demo_note),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = Silver,
-            lineHeight = 18.sp,
+            lineHeight = 21.sp,
         )
     }
 }
@@ -258,12 +267,12 @@ private fun DemoNote() {
 private fun StateCard(title: String, hint: String?, action: (@Composable () -> Unit)? = null) {
     GlowCard(contentPadding = RenewalCardPadding, spacing = 8.dp) {
         Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Snow)
-        if (hint != null) Text(text = hint, fontSize = 13.sp, color = Silver, lineHeight = 18.sp)
+        if (hint != null) Text(text = hint, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
         action?.invoke()
     }
 }
 
-/** 상품 카드 틀 — 그림 · 이름 · 값 · 표시 */
+/** 상품 행. 그림·상태·가격·터치 영역은 각각 독립적인 Compose 요소다. */
 @Composable
 private fun ProductCard(
     onClick: () -> Unit,
@@ -274,33 +283,27 @@ private fun ProductCard(
 ) {
     val shape = RoundedCornerShape(18.dp)
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(CarbonHigh, shape)
-            .border(1.dp, Edge, shape)
-            .feedbackClickable(onClick = onClick)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        Modifier.fillMaxWidth().clip(shape).background(CarbonHigh, shape)
+            .border(1.dp, Edge, shape).feedbackClickable(onClick = onClick).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp),
-                contentAlignment = Alignment.Center,
-            ) { art() }
-            Box(Modifier.align(Alignment.TopEnd)) { badge() }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 300.dp || LocalDensity.current.fontScale > 1.2f) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.fillMaxWidth().height(164.dp), contentAlignment = Alignment.Center) { art() }
+                    badge()
+                    Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) { art() }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        badge()
+                        Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                    }
+                }
+            }
         }
-        Text(
-            text = name,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.heightIn(min = 20.dp),
-        )
         price()
     }
 }
@@ -330,17 +333,8 @@ private fun ShoeProduct(
         },
         name = modelName(faction, rarity, variant),
         price = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                HexEmblem(size = 18.dp, glow = false)
-                Text(
-                    text = price?.let { "%,.0f".format(it) } ?: "—",
-                    fontFamily = StepUpNumbers,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                Text(text = "SUP", fontSize = 12.sp, color = Silver)
-            }
+            AdaptiveNumber(price?.let { "%,.0f".format(it) } ?: "—", 28.sp)
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
         },
     )
 }

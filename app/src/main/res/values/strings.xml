@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">Faction · collection</string>
+    <string name="pref_saved_on_device">Saved on this phone</string>
+    <string name="pref_sync_pending">Your choices are saved on this phone, but the server has not confirmed them. Previous notification settings may still apply. Sign in and retry when connected.</string>
+    <string name="pref_sync_retry">Retry sync</string>
+    <string name="pref_sync_sending">Updating notification settings…</string>
+    <string name="pref_notifications_blocked">Notifications are blocked in your phone settings. Allow StepUp notifications there to receive your selected alerts.</string>
+    <string name="post_like_action">Like this post</string>
+    <string name="post_unlike_action">Remove like</string>
     <string name="app_name" translatable="false">StepUp</string>
 
     <!-- Notification -->
@@ -10,7 +18,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">Home</string>
-    <string name="tab_community">Community</string>
+    <string name="tab_community">Social</string>
     <string name="tab_items">Items</string>
     <string name="tab_events">Events</string>
     <string name="tab_profile">Profile</string>
@@ -325,6 +333,10 @@
     <string name="stat_sessions">Runs</string>
     <string name="stat_tokens_earned">Tokens Earned</string>
     <string name="profile_account">Account &amp; Settings</string>
+    <string name="settings_group_account">Account</string>
+    <string name="settings_group_activity">My activity</string>
+    <string name="settings_group_preferences">App settings</string>
+    <string name="settings_group_help">Help</string>
     <string name="settings_wallet">Wallet &amp; Tokens</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_privacy">Privacy &amp; Security</string>
@@ -384,7 +396,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">What we store</string>
     <string name="privacy_data_body">When you sign in, your runs (including GPS routes), daily step totals, SUP history, posts and crew activity are kept on the StepUp server, so the server can compute rewards and crews, rankings, courses and territory can be shared. No advertising ID is collected. You can delete your account any time under Connected Accounts.</string>
-    <string name="privacy_perm_title">Permissions in use</string>
+    <string name="privacy_perm_title">App permissions</string>
     <string name="privacy_perm_activity">Physical activity — counts your steps</string>
     <string name="privacy_perm_notification">Notifications — shows the running session</string>
     <string name="privacy_reset_title">Reset local data</string>
@@ -409,9 +421,10 @@
     <string name="connected_giwa">GIWA Wallet</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">Social account</string>
-    <string name="connected_status_soon">Coming soon</string>
+    <string name="connected_status_soon">Not supported</string>
+    <string name="connected_status_on">Signed in</string>
     <string name="connected_status_off">Not connected</string>
-    <string name="connected_body">Linking accounts will let you carry SUP on-chain and sync steps across devices.</string>
+    <string name="connected_body">Check your sign-in status and which external services this version supports.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP Balance</string>
@@ -423,8 +436,8 @@
     <string name="wallet_empty_title">No history yet</string>
     <string name="wallet_empty_body">One run is all it takes to earn your first SUP.</string>
     <string name="wallet_giwa">GIWA Wallet</string>
-    <string name="wallet_giwa_status">On-chain link in progress</string>
-    <string name="wallet_giwa_body">Soon you\'ll be able to swap SUP into tokens on GIWA Chain.</string>
+    <string name="wallet_giwa_status">Not available in this version</string>
+    <string name="wallet_giwa_body">This screen shows SUP recorded in the app. GIWA wallet connection and withdrawals are not supported in this version.</string>
     <string name="wallet_withdraw">Withdraw</string>
     <string name="wallet_withdraw_title">Withdraw to GIWA Chain</string>
     <string name="wallet_withdraw_body">On-chain settlement opens with the mainnet launch. Your balance carries over 1:1 when it does.</string>
@@ -507,6 +520,7 @@
 
     <!-- Compose -->
     <string name="post_write">Write</string>
+    <string name="post_type">Post type</string>
     <string name="post_submit">Post it</string>
     <string name="post_field_title">TITLE</string>
     <string name="post_field_title_hint">What\'s this about?</string>
@@ -868,13 +882,13 @@ Start running with StepUp.</string>
     <string name="tour2_title">Energy</string>
     <string name="tour2_body">Earning uses energy — it refills at midnight. When it hits zero, steps stop paying until tomorrow.</string>
     <string name="tour3_title">Start Run</string>
-    <string name="tour3_body">Tap here to start. Steps during the run earn SUP with your sneaker boost.</string>
+    <string name="tour3_body">Tap Start run on Home. After checking the permissions you need, StepUp records your activity.</string>
     <string name="tour4_title">Board / Crews</string>
     <string name="tour4_body">Switch between the open board (flash runs, tips) and your crews — small communities you can create yourself.</string>
     <string name="tour5_title">Ranking</string>
     <string name="tour5_body">See where you stand this week. Tap to open the full leaderboard — weekly steps or SUP balance.</string>
-    <string name="tour6_title">Write a post</string>
-    <string name="tour6_body">Recruit a flash run or share tips. Flash runs are sorted by distance, so nearby runners see yours first.</string>
+    <string name="tour6_title">Meet other runners</string>
+    <string name="tour6_body">Find a group run and share stories with other runners in Community.</string>
     <string name="tour7_title">Equipped sneaker</string>
     <string name="tour7_body">This pair\'s boost applies to every run. Tap it to see stats, upgrade, or swap pairs.</string>
     <string name="tour8_title">Minting</string>
@@ -884,7 +898,7 @@ Start running with StepUp.</string>
     <string name="tour10_title">Events</string>
     <string name="tour10_body">Weekly campaigns pay real SUP. Check progress here and claim rewards when you hit the target.</string>
     <string name="tour11_title">Your profile</string>
-    <string name="tour11_body">Your runner ID lives here. Tap the pencil to change your avatar — pick an emoji or a photo from your gallery.</string>
+    <string name="tour11_body">In Profile, see your runs and total distance. Use the pencil beside your name to change your nickname.</string>
     <string name="tour12_title">100 achievements</string>
     <string name="tour12_body">From Bronze to Diamond — a year of steady running unlocks them all. That\'s the tour, enjoy StepUp!</string>
 
@@ -924,7 +938,7 @@ Start running with StepUp.</string>
     <string name="language_ko">Korean</string>
     <string name="language_zh">Chinese</string>
     <string name="language_ja">Japanese</string>
-    <string name="language_note">Everything in the app switches instantly — screens, notifications and posts. Only names stay as they are.</string>
+    <string name="language_note">The app uses your selected language. User posts and names may remain in their original language.</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">Rookie</string>
@@ -1295,7 +1309,7 @@ Start running with StepUp.</string>
     <string name="tour_tab_customize_title">② Style tab</string>
     <string name="tour_tab_customize_body">Dress your runner with outfits and shoes. The Runner Market is inside.</string>
     <string name="tour_customize_title">Your runner</string>
-    <string name="tour_customize_body">Pick male or female, then equip an outfit and shoes. What you wear shows up on Run and Me too.</string>
+    <string name="tour_customize_body">Choose clothes and shoes in Customize. Your equipped look also appears during runs and in your profile.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">Trying on</string>
@@ -1362,7 +1376,7 @@ Start running with StepUp.</string>
     <string name="feed_demo_note">Demo mode. These are samples for testing, not real races or articles.</string>
     <string name="finish_confirmed">Points confirmed</string>
     <string name="finish_pending">Run complete · server check pending</string>
-    <string name="finish_pending_note">Added to the app. It becomes final once the server confirms the record.</string>
+    <string name="finish_pending_note">Your run is saved. Your reward is final only after the server confirms it.</string>
     <string name="finish_rejected">The server did not accept this record</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>
@@ -1392,6 +1406,7 @@ Start running with StepUp.</string>
     <string name="market_outfit_try">Try on (demo)</string>
     <string name="market_demo_note">Demo mode. These are test items and can\'t be bought.</string>
     <string name="market_demo_toast">Demo items can\'t be bought.</string>
+    <string name="me_total_runs">Recorded runs</string>
     <string name="me_default_name">Runner</string>
     <string name="me_points">Points</string>
     <string name="me_points_history">History</string>
@@ -1424,6 +1439,11 @@ Start running with StepUp.</string>
     <string name="run_gps_search">Finding GPS</string>
     <string name="run_avg_pace">Avg pace</string>
     <string name="finish_title">Run complete</string>
+    <string name="community_together">Run together</string>
+    <string name="community_stories">Stories</string>
+    <string name="community_view_meetup">View meetup</string>
+    <string name="community_other_meetups">Other meetups</string>
+    <string name="community_meetups_empty">No upcoming runs with open spots yet. Start a conversation and find someone to run with.</string>
     <string name="community_hero_title">Run together</string>
     <string name="community_hero_sub">Stories from runners going further, together.</string>
     <string name="news_hero_sub">More fun when we run together.</string>
@@ -1492,4 +1512,31 @@ Start running with StepUp.</string>
     <string name="account_delete_body">Your account and everything on the server — runs, GPS routes, SUP history, posts, comments, courses and territory marks — will be deleted and cannot be restored. If you own a crew, its longest-standing member becomes owner. Records left on this phone are removed when you uninstall the app.</string>
     <string name="account_delete_confirm">Delete</string>
     <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
+    <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
+    <string name="run_location_disabled">Location access off</string>
+    <string name="finish_share_activity">I ran %1$s km in %2$s on StepUp.</string>
+    <string name="notif_reward_unverified">This earlier reward notice has no verified payment record. Check Challenges for available rewards.</string>
+    <string name="session_sign_in_again">Sign in again</string>
+    <string name="post_invalid_numbers">Enter a distance above 0 km, at least 1 minute until departure, and 2–200 people.</string>
+    <string name="energy_purchase_capacity">Use at least 2 energy, then try again. Pending purchases resume without another charge.</string>
+    <string name="privacy_permission_allowed">Allowed</string>
+    <string name="privacy_permission_not_allowed">Not allowed</string>
+    <string name="privacy_perm_location">Location — records your route</string>
+    <string name="privacy_location_precise">Precise location allowed</string>
+    <string name="privacy_location_approximate">Approximate location allowed</string>
+    <string name="run_saving">Saving run</string>
+    <string name="run_save_retry">Retry saving</string>
+    <string name="run_save_failed">Your run could not finish saving. Keep the app open and try again.</string>
+    <string name="course_like_action">Like this course</string>
+    <string name="course_unlike_action">Remove course like</string>
+    <string name="tab_draw">Draw</string>
+    <string name="mystery_title">Mystery Box</string>
+    <string name="mystery_subtitle">Choose what you want to draw.</string>
+    <string name="mystery_box_description">Closed glowing mystery box</string>
+    <string name="mystery_draw_shoe">Draw sneakers</string>
+    <string name="mystery_draw_outfit">Draw a tracksuit</string>
+    <string name="mystery_pending_chain">Drawing opens after the GIWA contract is deployed.</string>
+    <string name="home_previous_background">Previous background</string>
+    <string name="home_next_background">Next background</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

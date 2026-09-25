@@ -2,6 +2,11 @@ package com.stepup.android.ui.screens.home
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.material3.MaterialTheme
+import com.stepup.android.ui.components.AdaptiveNumber
+import com.stepup.android.ui.components.BarMeter
+import com.stepup.android.ui.components.HairlineDivider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +16,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,11 +26,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,9 +48,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -60,17 +62,11 @@ import com.stepup.android.domain.AvatarPose
 import com.stepup.android.domain.AvatarArtCatalog
 import com.stepup.android.ui.components.BadgeTone
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.MainHeader
-import com.stepup.android.ui.components.GoalBar
 import com.stepup.android.ui.components.PrimaryCta
 import com.stepup.android.ui.components.CharacterStage
 import com.stepup.android.ui.components.AvatarLookNote
 import com.stepup.android.ui.components.ShortcutButton
 import com.stepup.android.ui.components.SmallBadge
-import com.stepup.android.ui.components.StatCell
-import com.stepup.android.ui.components.SupPill
-import com.stepup.android.ui.components.VerticalHairline
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
@@ -78,27 +74,13 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.Volt
-import com.stepup.android.ui.theme.VoltInk
 import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
-/**
- * 러닝 — 앱을 열면 가장 먼저 보이는 화면.
- *
- * 세 가지가 바로 보여야 한다.
- *
- *   1. 오늘 받은 포인트
- *   2. 내 캐릭터
- *   3. 러닝 시작
- *
- * 나머지(거리 · 운동 시간 · 목표)는 그 셋을 받쳐 주는 줄이다. 예전 홈의 큰
- * 에너지 원형 차트, 겹치던 거리 카드, 통계 여러 장은 이 화면에서 뺐다.
- * 에너지는 러닝 시작 바로 위에 한 줄로만 남긴다 — 러닝을 누르기 직전에
- * 알아야 하는 제한이기 때문이다.
- */
+/** Home prioritizes the equipped character and one pinned run action. Details stay reachable in a sheet. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onStartRun: () -> Unit = {},
@@ -106,6 +88,8 @@ fun HomeScreen(
     onOpenChallenges: () -> Unit = {},
     onOpenNews: () -> Unit = {},
     onOpenCustomize: () -> Unit = {},
+    onPreviousBackground: () -> Unit = {},
+    onNextBackground: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -117,14 +101,17 @@ fun HomeScreen(
     var hasPermission by remember {
         mutableStateOf(StepPermissions.hasActivityRecognition(context))
     }
+    var permissionDenied by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
         hasPermission = StepPermissions.hasActivityRecognition(context)
+        permissionDenied = !hasPermission
         if (hasPermission) viewModel.onPermissionGranted()
     }
     LifecycleResumeEffect(Unit) {
         val granted = StepPermissions.hasActivityRecognition(context)
+        if (granted) permissionDenied = false
         if (granted != hasPermission) {
             hasPermission = granted
             if (granted) viewModel.onPermissionGranted()
@@ -133,160 +120,160 @@ fun HomeScreen(
     }
 
     val largeText = LocalDensity.current.fontScale > 1.2f
+    var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
+    val savedLook = look
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize()
+            .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // ── 머리글 48dp — 로고와 작은 보유 포인트 ──
-        MainHeader(
-            balance = state.balance,
-            onOpenWallet = onOpenWallet,
-            balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
+            val artHeight = maxHeight.coerceAtLeast(240.dp)
+            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.BottomCenter) {
+                if (savedLook != null) CharacterStage(
+                    look = savedLook, pose = AvatarPose.IDLE, skyline = false,
+                    characterFraction = 0.92f, animate = true,
+                    contentDescription = stringResource(R.string.cd_home_character),
+                    modifier = Modifier.fillMaxWidth().height(artHeight).padding(top = 48.dp, bottom = 12.dp)
+                        .testTag("home-character-ready")
+                        .quietClickable(onOpenCustomize),
+                ) else Text(
+                    text = stringResource(R.string.feed_loading),
+                    color = Silver,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.ChevronLeft,
+                contentDescription = stringResource(R.string.home_previous_background),
+                onClick = onPreviousBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
+                modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"),
+            )
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.ChevronRight,
+                contentDescription = stringResource(R.string.home_next_background),
+                onClick = onNextBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
+                modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"),
+            )
+            com.stepup.android.ui.components.DarkIconButton(
+                icon = Icons.Filled.MoreHoriz,
+                contentDescription = stringResource(R.string.common_more),
+                onClick = { showDetails = true },
+                modifier = Modifier.align(Alignment.TopEnd)
+                    .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
+                    .testTag("home-details"),
+            )
+            if (savedLook?.trial == true) {
+                SmallBadge(
+                    text = stringResource(R.string.avatar_trial),
+                    tone = BadgeTone.Glow,
+                    modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp),
+                )
+            }
+        }
+        if (savedLook != null) AvatarLookNote(
+            look = savedLook, render = AvatarArtCatalog.resolve(savedLook, AvatarPose.IDLE),
+            modifier = Modifier.padding(bottom = 8.dp),
         )
-
-        if (!hasPermission) {
-            PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missing(context)) })
-        }
-
-        // ── 1. 오늘 받은 포인트 + 2. 내 캐릭터(누르면 꾸미기) ──
-        //
-        // 숫자와 캐릭터를 한 덩어리로 둔다 — 캐릭터 무대의 조명이 숫자 뒤까지
-        // 번져 두 요소가 따로 떠 보이지 않는다.
-        val characterCd = stringResource(R.string.cd_home_character)
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
-            TodayEarned(earned)
-            CharacterStage(
-                look = look,
-                pose = AvatarPose.RUN,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (largeText) 230.dp else 300.dp)
-                    .quietClickable(onOpenCustomize),
-                characterFraction = 0.92f,
-                contentDescription = characterCd,
-            ) { _ ->
-                if (look.trial) {
-                    SmallBadge(
-                        text = stringResource(R.string.avatar_trial),
-                        tone = BadgeTone.Glow,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp),
-                    )
-                }
-            }
-            // 그림 속 착장이 실제 착장과 다르면 여기서 밝힌다
-            AvatarLookNote(
-                look = look,
-                render = AvatarArtCatalog.resolve(look, AvatarPose.RUN),
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-
-        // ── 오늘 거리 · 운동 시간 (≈60dp) ──
-        GlowCard(contentPadding = HomeCardPadding) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                StatCell(
-                    icon = Icons.Filled.LocationOn,
-                    value = "%.1f".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000),
-                    unit = "km",
-                    label = stringResource(R.string.stat_distance),
-                    modifier = Modifier.weight(1f),
-                )
-                VerticalHairline(height = 44.dp)
-                StatCell(
-                    icon = Icons.Filled.Timer,
-                    value = clock(runSec),
-                    unit = "",
-                    label = stringResource(R.string.home_run_time),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp),
-                )
-            }
-        }
-
-        // ── 오늘의 목표 — 걸음 목표. 단위를 바꾸지 않는다 (≈56dp) ──
-        GlowCard(contentPadding = HomeCardPadding) {
-            GoalBar(
-                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
-                title = stringResource(R.string.home_goal),
-                value = "%,d".format(state.todaySteps),
-                suffix = stringResource(R.string.home_goal_suffix, "%,d".format(state.goal)),
-                fraction = if (state.goal > 0) state.todaySteps.toFloat() / state.goal else 0f,
-            )
-        }
-
-        // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .guideTarget(GuideTour.Targets.HOME_SHORTCUTS),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_shortcuts_title),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-            )
-            val challenge: @Composable (Modifier) -> Unit = { m ->
-                ShortcutButton(
-                    icon = Icons.Filled.EmojiEvents,
-                    label = stringResource(R.string.home_shortcut_challenges),
-                    subtitle = stringResource(R.string.home_shortcut_challenges_sub),
-                    onClick = onOpenChallenges,
-                    modifier = m,
-                )
-            }
-            val news: @Composable (Modifier) -> Unit = { m ->
-                ShortcutButton(
-                    icon = Icons.AutoMirrored.Filled.Article,
-                    label = stringResource(R.string.home_shortcut_news),
-                    subtitle = stringResource(R.string.home_shortcut_news_sub),
-                    onClick = onOpenNews,
-                    modifier = m,
-                )
-            }
-            // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
-            if (largeText) {
-                challenge(Modifier.fillMaxWidth())
-                news(Modifier.fillMaxWidth())
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    challenge(Modifier.weight(1f))
-                    news(Modifier.weight(1f))
-                }
-            }
-        }
-
-        // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
-        EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
-
-        // ── 3. 러닝 시작 ──
         PrimaryCta(
-            text = stringResource(R.string.home_start_run),
+            text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
             icon = Icons.AutoMirrored.Filled.DirectionsRun,
             onClick = onStartRun,
-            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
+            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
         )
+    }
+
+    if (showDetails) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showDetails = false },
+            containerColor = com.stepup.android.ui.theme.Night,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (!hasPermission) {
+                    PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+                    if (permissionDenied) {
+                        androidx.compose.material3.TextButton(onClick = {
+                            com.stepup.android.core.ExternalIntents.openAppSettings(context)
+                        }) { Text(stringResource(R.string.cd_open_settings)) }
+                    }
+                }
+                TodayEarned(earned)
+                GlowCard(contentPadding = HomeCardPadding, spacing = 16.dp) {
+                    Text(stringResource(R.string.stat_distance), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    AdaptiveNumber("%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000), 28.sp)
+                    HairlineDivider()
+                    Text(stringResource(R.string.home_run_time), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    AdaptiveNumber(clock(runSec), 28.sp)
+                }
+                GlowCard(contentPadding = HomeCardPadding, spacing = 12.dp) {
+                    Text(stringResource(R.string.home_goal), style = MaterialTheme.typography.titleMedium, color = Snow)
+                    AdaptiveNumber("%,d".format(state.todaySteps), 28.sp)
+                    Text(stringResource(R.string.home_goal_suffix, "%,d".format(state.goal)), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    BarMeter(fraction = if (state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 7.dp)
+                }
+
+                // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_shortcuts_title),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Snow,
+                    )
+                    val challenge: @Composable (Modifier) -> Unit = { m ->
+                        ShortcutButton(
+                            icon = Icons.Filled.EmojiEvents,
+                            label = stringResource(R.string.home_shortcut_challenges),
+                            subtitle = stringResource(R.string.home_shortcut_challenges_sub),
+                            onClick = { showDetails = false; onOpenChallenges() },
+                            modifier = m,
+                        )
+                    }
+                    val news: @Composable (Modifier) -> Unit = { m ->
+                        ShortcutButton(
+                            icon = Icons.AutoMirrored.Filled.Article,
+                            label = stringResource(R.string.home_shortcut_news),
+                            subtitle = stringResource(R.string.home_shortcut_news_sub),
+                            onClick = { showDetails = false; onOpenNews() },
+                            modifier = m,
+                        )
+                    }
+                    // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
+                    if (largeText) {
+                        challenge(Modifier.fillMaxWidth())
+                        news(Modifier.fillMaxWidth())
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            challenge(Modifier.weight(1f))
+                            news(Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
+                EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
+
+
+            }
+        }
     }
 }
 
-/** 홈의 얇은 카드 — 지표 60dp · 목표 56dp 안팎 */
-private val HomeCardPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+/** Home details share the same spacing as the other record panels. */
+private val HomeCardPadding = PaddingValues(20.dp)
 
 /** 오늘 받은 포인트 — 이 화면에서 가장 큰 숫자 */
 @Composable
@@ -302,30 +289,8 @@ private fun TodayEarned(earned: Double?) {
             fontWeight = FontWeight.Bold,
             color = Silver,
         )
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                // 아직 못 읽었으면 대시. "0"은 정말 못 번 날에만 보인다.
-                text = earned?.let { "+%,.0f".format(it) } ?: "—",
-                // 포인트는 빛 번짐을 쓰는 몇 안 되는 자리다
-                style = TextStyle(
-                    brush = VoltInk,
-                    shadow = Shadow(color = Volt.copy(alpha = 0.55f), blurRadius = 28f),
-                ),
-                fontFamily = StepUpNumbers,
-                fontSize = 56.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-1).sp,
-                maxLines = 1,
-            )
-            Text(
-                text = " SUP",
-                fontFamily = StepUpNumbers,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = VoltText,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-        }
+        AdaptiveNumber(earned?.let { "+%,.0f".format(it) } ?: "—", 44.sp, color = VoltText, textAlign = TextAlign.Center)
+        Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -365,7 +330,7 @@ private fun EnergyLine(earnableSteps: Int, ready: Boolean) {
                     stringResource(R.string.home_recharge_in, countdown)
                 else -> stringResource(R.string.home_energy_can, "%,d".format(earnableSteps))
             },
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = if (empty) Alert else Silver,
             textAlign = TextAlign.Center,
         )

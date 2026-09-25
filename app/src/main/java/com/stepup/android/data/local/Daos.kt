@@ -41,6 +41,12 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions")
     fun observeSessionCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions")
+    fun observeRunTotals(): Flow<RunTotals>
+
+    @Query("SELECT * FROM walk_sessions WHERE uploadState = 'SIGNED' AND verdict NOT IN ('FLAGGED', 'VOID')")
+    fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>>
+
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis")
     fun observeDurationSince(fromMillis: Long): Flow<Long>
 
@@ -58,11 +64,12 @@ interface WalkSessionDao {
          WHERE uploadState IN ('PENDING', 'FAILED')
            AND track != ''
            AND steps > 0
+           AND recordingOwner = :owner
          ORDER BY startedAt ASC
          LIMIT :limit
         """,
     )
-    suspend fun pendingUploads(limit: Int): List<WalkSessionEntity>
+    suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND track != '' AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
@@ -94,14 +101,21 @@ interface WalkSessionDao {
 }
 
 /** [WalkSessionDao.crewDistances] 의 한 줄 — 크루 하나의 누적 거리(m)와 횟수 */
+data class RunTotals(val runs: Int, val meters: Double)
+
 data class CrewDistance(
     val crewId: String,
     val meters: Double,
     val runs: Int,
 )
 
+data class RewardTotals(val balance: Double, val earned: Double, val spent: Double)
+
 @Dao
 interface RewardDao {
+
+    @Query("SELECT COALESCE(SUM(amount), 0.0) AS balance, COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, COALESCE(SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent FROM rewards")
+    fun observeTotals(): Flow<RewardTotals>
 
     @Insert
     suspend fun insert(reward: RewardEntity)
@@ -111,6 +125,17 @@ interface RewardDao {
 
     @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards")
     suspend fun balanceNow(): Double
+
+    /**
+     * 잔액이 [entry] 의 차감액 이상일 때만 기록한다. 확인과 기록이 한 트랜잭션이라
+     * 두 번 누르기처럼 동시에 들어온 차감이 둘 다 "잔액 충분"을 보고 통과하지 못한다.
+     */
+    @Transaction
+    suspend fun spendIfEnough(entry: RewardEntity): Boolean {
+        if (balanceNow() < -entry.amount) return false
+        insert(entry)
+        return true
+    }
 
     @Query("SELECT * FROM rewards ORDER BY timestamp DESC, id DESC LIMIT :limit")
     fun observeLedger(limit: Int): Flow<List<RewardEntity>>
@@ -181,6 +206,10 @@ interface SneakerDao {
 
     @Query("UPDATE sneakers SET equipped = 0")
     suspend fun clearEquipped()
+
+    /** One atomic write; a stale/missing target must not clear the current equipment. */
+    @Query("UPDATE sneakers SET equipped = CASE WHEN id = :id THEN 1 ELSE 0 END WHERE EXISTS (SELECT 1 FROM sneakers WHERE id = :id)")
+    suspend fun equipExclusively(id: Long): Int
 
     @Query("SELECT COUNT(*) FROM sneakers")
     suspend fun count(): Int
@@ -260,6 +289,26 @@ interface ClaimedEventDao {
 
     @Query("SELECT * FROM claimed_events WHERE eventId = :id")
     suspend fun byId(id: String): ClaimedEventEntity?
+
+    @Insert
+    suspend fun insertReward(reward: RewardEntity)
+
+    @Insert
+    suspend fun insertNotification(notification: NotificationEntity)
+
+    /** The receipt, local credit and notification commit together, or none of them do. */
+    @Transaction
+    suspend fun recordPaidClaim(claim: ClaimedEventEntity, eventId: String): Boolean {
+        require(claim.amount.isFinite() && claim.amount > 0)
+        if (byId(claim.eventId) != null) return false
+        insert(claim)
+        insertReward(RewardEntity(timestamp = claim.claimedAt, type = RewardType.EARN_EVENT,
+            amount = claim.amount, description = "이벤트 보상: $eventId"))
+        insertNotification(NotificationEntity(timestamp = claim.claimedAt,
+            type = NotificationType.EVENT_CLAIMED, argText = eventId, argAmount = claim.amount,
+            argExtra = "", read = false, actioned = false))
+        return true
+    }
 }
 
 @Dao
@@ -435,10 +484,6 @@ interface NotificationDao {
 
     @Query("UPDATE notifications SET actioned = 1, read = 1 WHERE id = :id")
     suspend fun markActioned(id: Long)
-
-    /** 아직 처리 전이면 처리로 바꾸고 1, 이미 처리됐으면 0. 보상을 한 번만 주는 근거다. */
-    @Query("UPDATE notifications SET actioned = 1, read = 1 WHERE id = :id AND actioned = 0")
-    suspend fun markActionedOnce(id: Long): Int
 
     @Query("DELETE FROM notifications WHERE id = :id")
     suspend fun delete(id: Long)

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "claude/**"
+      - "codex/stepup-cohesive-redesign"
       - "main"
   pull_request:
   workflow_dispatch:
@@ -37,6 +38,9 @@ jobs:
       # 검사를 앞에 둬서 그 7분을 아낀다.
       - name: Check string resources
         run: python3 scripts/check-strings.py
+
+      - name: Check shared design contract
+        run: python3 tools/check_design_contract.py
 
       - name: Unit tests
         run: |
@@ -106,6 +110,12 @@ jobs:
         with:
           name: StepUp-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Preserve generated Room schemas
+        uses: actions/upload-artifact@v4
+        with:
+          name: StepUp-room-schemas
+          path: app/schemas/
 
       # 폰에서 주소 하나로 바로 받을 수 있게 릴리스에 붙인다.
       #

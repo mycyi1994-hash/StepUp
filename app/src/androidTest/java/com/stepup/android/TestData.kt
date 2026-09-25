@@ -17,6 +17,17 @@ import com.stepup.android.domain.PostCategory
  * (ExperienceUiTest · DesignReferenceTest)이 같은 자료를 본다.
  */
 object TestData {
+    /** Legacy notification fixture only; production startup must never fabricate rewards. */
+    suspend fun seedWelcomeNotification() {
+        val dao = ServiceLocator.database.notificationDao()
+        if (dao.count() > 0) return
+        dao.insert(com.stepup.android.data.local.NotificationEntity(
+            timestamp = System.currentTimeMillis() - 40_000,
+            type = "EVENT_REWARD", argText = "Welcome Runner", argAmount = 30.0,
+            argExtra = "welcome", read = false, actioned = false,
+        ))
+    }
+
     fun seedCommunity() {
         // 크루는 서버에만 있다. 화면 검사는 서버 없이 도는 것이라, 실제 크루와 같은
         // 모양의 크루 하나를 채워 넣는다. 크루장이고 승인제라 관리 카드까지 그려진다.

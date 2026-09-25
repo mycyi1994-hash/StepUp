@@ -2,7 +2,8 @@ package com.stepup.android.data.repo
 
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
-import com.stepup.android.data.local.SneakerDao
+import com.stepup.android.data.local.AppDatabase
+import androidx.room.withTransaction
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.Sneaker
@@ -11,14 +12,13 @@ import com.stepup.android.domain.TOTAL_COLLECTION
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /** 스니커즈 NFT 인벤토리 — 민팅 · 착용 · 강화 */
 class SneakerRepository(
-    private val sneakerDao: SneakerDao,
+    private val database: AppDatabase,
     private val rewardRepository: RewardRepository,
 ) {
+    private val sneakerDao = database.sneakerDao()
 
     val inventory: Flow<List<Sneaker>> =
         sneakerDao.observeAll().map { list -> list.map { it.toDomain() } }
@@ -28,34 +28,26 @@ class SneakerRepository(
 
     val ownedCount: Flow<Int> = sneakerDao.observeCount()
 
-    // 강화·민팅은 "읽고 → SUP 차감 → 쓰기"다. 두 번 누르면 둘 다 같은 레벨을 읽어
-    // 두 번 차감되고 레벨은 한 번만 오르거나, 같은 민팅 번호가 두 개 생긴다.
-    private val writeLock = Mutex()
-
     /** 첫 실행 시 스타터 스니커즈를 지급한다. 이미 있으면 아무것도 하지 않는다. */
-    suspend fun ensureStarter() {
-        if (sneakerDao.count() > 0) return
+    suspend fun ensureStarter() = database.withTransaction {
+        if (sneakerDao.count() > 0) return@withTransaction
         sneakerDao.insert(SneakerMint.starter().toEntity())
     }
 
-    suspend fun equip(id: Long) {
-        val target = sneakerDao.byId(id) ?: return
-        sneakerDao.clearEquipped()
-        sneakerDao.update(target.copy(equipped = true))
-    }
+    suspend fun equip(id: Long): Boolean = sneakerDao.equipExclusively(id) > 0
 
     /** 강화. 잔액 부족이거나 최대 레벨이면 null. */
-    suspend fun upgrade(id: Long): Sneaker? = writeLock.withLock {
-        val entity = sneakerDao.byId(id) ?: return null
+    suspend fun upgrade(id: Long): Sneaker? = database.withTransaction {
+        val entity = sneakerDao.byId(id) ?: return@withTransaction null
         val current = entity.toDomain()
-        if (!current.canUpgrade) return null
+        if (!current.canUpgrade) return@withTransaction null
         val cost = current.upgradeCost
         val ok = rewardRepository.spend(
             RewardType.SPEND_UPGRADE,
             cost,
             "${current.displayName} Lv.${current.level} → Lv.${current.level + 1}",
         )
-        if (!ok) return null
+        if (!ok) return@withTransaction null
         val upgraded = entity.copy(
             level = entity.level + 1,
             // 강화하면 스탯도 소폭 상승한다
@@ -75,10 +67,10 @@ class SneakerRepository(
      * 새 스니커즈 민팅. 착용 중인 스니커즈의 행운 스탯이 상위 희귀도 확률을 올린다.
      * 잔액 부족이면 null.
      */
-    suspend fun mint(): Sneaker? = writeLock.withLock {
+    suspend fun mint(): Sneaker? = database.withTransaction {
         val cost = RewardEconomy.MINT_COST
         val luck = sneakerDao.equippedNow()?.luck?.minus(1.0)?.coerceAtLeast(0.0) ?: 0.0
-        if (!rewardRepository.spend(RewardType.SPEND_MINT, cost, "스니커즈 민팅")) return null
+        if (!rewardRepository.spend(RewardType.SPEND_MINT, cost, "스니커즈 민팅")) return@withTransaction null
 
         val mintNumber = sneakerDao.maxMintNumber() + 1
         val minted = SneakerMint.mint(

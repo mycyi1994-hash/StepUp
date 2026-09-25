@@ -6,26 +6,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NearMe
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,14 +55,11 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.AvatarStack
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
-import com.stepup.android.ui.components.RouteMap
 import com.stepup.android.ui.components.VerticalHairline
-import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Alert
@@ -75,7 +69,6 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
-import com.stepup.android.ui.theme.VoltSoft
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -105,33 +98,24 @@ fun FlashRunDetailScreen(
     // "채팅 입장"이 여는 댓글 창은 이 화면 위에 그대로 뜬다
     CommentSheetHost(viewModel)
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Wordmark(fontSize = 20.sp, modifier = Modifier.weight(1f))
-                DarkIconButton(
-                    icon = Icons.Filled.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    onClick = {},
-                )
+    DetailPage(
+        title = stringResource(R.string.post_flash_details),
+        onBack = onBack,
+        primaryActionLabel = post?.let {
+            stringResource(when {
+                it.isClosed -> R.string.flash_closed_badge
+                it.joined -> R.string.flash_lobby_cta
+                it.isFull -> R.string.flash_full_badge
+                else -> R.string.flash_join_cta
+            })
+        },
+        primaryActionEnabled = post != null && !post.isClosed && (post.joined || !post.isFull),
+        onPrimaryAction = {
+            post?.let {
+                if (it.joined) onOpenLobby() else viewModel.toggleJoinFlash(it.id)
             }
-        }
-
+        },
+    ) {
         if (post == null) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp)) {
@@ -142,7 +126,7 @@ fun FlashRunDetailScreen(
                     )
                 }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         item { FlashHeroCard(post) }
@@ -166,7 +150,6 @@ fun FlashRunDetailScreen(
 
         item {
             FlashCtaRow(
-                onOpenLobby = onOpenLobby,
                 post = post,
                 onLike = { viewModel.toggleLike(post.id) },
                 onToggleJoin = { viewModel.toggleJoinFlash(post.id) },
@@ -188,78 +171,21 @@ fun FlashRunDetailScreen(
 @Composable
 private fun FlashHeroCard(post: Post) {
     GlowCard(accent = true, contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
-        Box(Modifier.fillMaxWidth()) {
-            // 배경 아트 — 아이소메트릭 루트맵을 반투명으로 깐다
-            RouteMap(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .align(Alignment.TopEnd)
-                    .alpha(0.55f),
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-            ) {
-                FlashStatusPill(post)
-                Spacer(Modifier.height(78.dp))
-                Text(
-                    text = post.title,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    fontStyle = FontStyle.Italic,
-                    letterSpacing = (-0.5).sp,
-                    lineHeight = 32.sp,
-                    color = Snow,
-                )
-                if (post.body.isNotBlank()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = post.body,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = VoltSoft.copy(alpha = 0.85f),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+        com.stepup.android.ui.components.RunnerScene(
+            modifier = Modifier.fillMaxWidth().height(170.dp),
+            setting = com.stepup.android.ui.components.RunnerSetting.Sunset,
+        )
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            FlashStatusPill(post)
+            Text(post.title, style = MaterialTheme.typography.headlineSmall, color = Snow)
+            if (post.body.isNotBlank()) Text(post.body, style = MaterialTheme.typography.bodyLarge, color = Silver)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.size(36.dp).background(CarbonHigh, CircleShape), contentAlignment = Alignment.Center) {
+                    Text(post.author.take(1).uppercase(), color = Volt, style = MaterialTheme.typography.titleMedium)
                 }
-                Spacer(Modifier.height(14.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .background(CarbonHigh, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = post.author.take(1).uppercase(),
-                            color = Volt,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.flash_host),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.6.sp,
-                        color = Slate,
-                    )
-                    Text(
-                        text = post.author,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Snow,
-                    )
-                    Icon(
-                        Icons.Filled.Verified,
-                        contentDescription = null,
-                        tint = Volt,
-                        modifier = Modifier.size(14.dp),
-                    )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stringResource(R.string.flash_host), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    Text(post.author, style = MaterialTheme.typography.titleMedium, color = Snow)
                 }
             }
         }
@@ -283,7 +209,7 @@ private fun FlashStatusPill(post: Post) {
         Text(
             text = label,
             color = tint,
-            fontSize = 10.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 0.6.sp,
         )
@@ -373,7 +299,7 @@ private fun InfoCell(
     ) {
         Text(
             text = label,
-            fontSize = 9.5.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.8.sp,
             color = Slate,
@@ -393,17 +319,15 @@ private fun InfoCell(
             Text(
                 text = value,
                 fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                fontSize = 13.5.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
         if (sub != null) {
             Text(
                 text = sub,
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -431,7 +355,7 @@ private fun FlashParticipantsCard(post: Post, onViewMembers: () -> Unit) {
             Spacer(Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.post_slots, post.joinedCount, post.capacity),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -460,14 +384,15 @@ private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit
     val members = roster.orEmpty()
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(com.stepup.android.ui.theme.StepUpDesign.DialogRadius),
         containerColor = Carbon,
         titleContentColor = Snow,
         textContentColor = Silver,
         title = { Text(stringResource(R.string.flash_members)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (roster == null) {
-                    Text(stringResource(R.string.board_loading), fontSize = 13.sp, color = Silver)
+                    Text(stringResource(R.string.board_loading), fontSize = 14.sp, color = Silver)
                 }
                 members.forEach { member ->
                     val name = member.name
@@ -487,13 +412,13 @@ private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit
                             Text(
                                 text = name.take(1).uppercase(),
                                 color = if (member.isHost) Volt else Silver,
-                                fontSize = 11.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Black,
                             )
                         }
                         Text(
                             text = name,
-                            fontSize = 13.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Snow,
                             modifier = Modifier.weight(1f),
@@ -501,7 +426,7 @@ private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit
                         if (member.isHost) {
                             Text(
                                 text = stringResource(R.string.flash_host),
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Volt,
                             )
@@ -544,18 +469,18 @@ private fun FlashChatCard(
             )
             Text(
                 text = stringResource(R.string.flash_chat_latest),
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Slate,
             )
             Spacer(Modifier.weight(1f))
             Row(
-                modifier = Modifier.quietClickable(onEnterChat),
+                modifier = Modifier.heightIn(min = 48.dp).quietClickable(onEnterChat),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = stringResource(R.string.flash_enter_chat),
-                    fontSize = 11.5.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Volt,
                 )
@@ -570,7 +495,7 @@ private fun FlashChatCard(
         if (latest.isEmpty()) {
             Text(
                 text = stringResource(R.string.comments_empty),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Slate,
             )
         } else {
@@ -588,7 +513,7 @@ private fun FlashChatCard(
                         Text(
                             text = thread.comment.author.take(1).uppercase(),
                             color = Silver,
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                         )
                     }
@@ -602,20 +527,21 @@ private fun FlashChatCard(
                         ) {
                             Text(
                                 text = thread.comment.author,
-                                fontSize = 11.5.sp,
+                                modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Snow,
                             )
                             Text(
                                 text = relativeTime(thread.comment.createdAt),
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 color = Slate,
                             )
                         }
                         Text(
                             text = thread.comment.body,
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp,
+                            fontSize = 14.sp,
+                            lineHeight = 22.sp,
                             color = Silver,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -636,7 +562,6 @@ private fun FlashCtaRow(
     post: Post,
     onLike: () -> Unit,
     onToggleJoin: () -> Unit,
-    onOpenLobby: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
     Row(
@@ -654,19 +579,12 @@ private fun FlashCtaRow(
         ) {
             Icon(
                 imageVector = if (post.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = null,
+                contentDescription = stringResource(if (post.liked) R.string.post_unlike_action else R.string.post_like_action),
                 tint = if (post.liked) Alert else Silver,
                 modifier = Modifier.size(20.dp),
             )
         }
-        if (!post.joined) {
-            VoltButton(
-                text = stringResource(R.string.flash_join_cta),
-                onClick = onToggleJoin,
-                modifier = Modifier.weight(1f),
-                enabled = !post.isClosed && !post.isFull,
-            )
-        } else {
+        if (post.joined) {
             GhostButton(
                 text = stringResource(R.string.flash_joined_cta),
                 onClick = onToggleJoin,
@@ -678,17 +596,12 @@ private fun FlashCtaRow(
     // 참가만 눌러 놓고 끝나면 이 글은 게시판 글일 뿐이다. 실제로 같이
     // 뛰려면 크루 파티런과 같은 자리 — 준비하고, 모이면 출발하는 — 가 있어야 한다.
     if (post.joined && !post.isClosed) {
-        VoltButton(
-            text = stringResource(R.string.flash_lobby_cta),
-            onClick = onOpenLobby,
-            modifier = Modifier.fillMaxWidth(),
-        )
         Text(
             text = stringResource(
                 R.string.flash_lobby_hint,
                 RewardEconomy.partyBonusPercent(post.joinedCount.coerceAtLeast(1)),
             ),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = Slate,
         )
     }
