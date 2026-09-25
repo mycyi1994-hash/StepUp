@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -44,7 +45,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * the attester (so a lost signing key is recoverable) and pause claims, and
  * that is the entire privileged surface.
  */
-contract RewardDistributor is EIP712, Ownable, Pausable {
+contract RewardDistributor is EIP712, Ownable2Step, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice Emission budget for the first epoch, per day.
@@ -67,6 +68,22 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
 
     /// @notice Signs run proofs. Replaceable; see the contract-level note.
     address public attester;
+
+    /// Hot key that may pause (never unpause). The attester Worker holds it so it
+    /// can stop claims the moment it sees something wrong.
+    address public guardian;
+
+    /// Owner-set ceiling below the emission budget — limits the damage if the
+    /// attester key ever leaks. 0 = only the emission budget applies.
+    uint256 public dailyCap;
+
+    /// Largest single claim. 0 = no per-claim limit.
+    uint256 public maxClaim;
+
+    /// Paid out on each calendar day, whatever `day` the claims name. A claim may
+    /// name any of the last 8 days, so without this a leaked key could draw 8
+    /// days of `dailyCap` at once.
+    mapping(uint64 payoutDay => uint256 paid) public paidOnPayoutDay;
 
     /// @notice Session hashes already paid. Replay protection.
     mapping(bytes32 sessionHash => bool claimed) public sessionClaimed;
@@ -98,6 +115,8 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
     );
     event AttesterUpdated(address indexed previous, address indexed current);
     event PoolFunded(address indexed from, uint256 amount);
+    event GuardianUpdated(address indexed previous, address indexed current);
+    event LimitsUpdated(uint256 dailyCap, uint256 maxClaim);
 
     // ── Errors ───────────────────────────────────────────────────────────
 
@@ -109,6 +128,10 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
     error DayTooOld(uint64 day, uint64 currentDay);
     error DailyBudgetExceeded(uint64 day, uint256 requested, uint256 remaining);
     error PoolExhausted(uint256 requested, uint256 balance);
+    error ClaimTooLarge(uint256 amount, uint256 maxClaim);
+    error NotGuardian();
+    error PayoutCapReached(uint64 payoutDay, uint256 requested, uint256 remaining);
+    error CannotRenounce();
 
     constructor(address supToken, address attester_) EIP712("StepUpRewards", "1") Ownable(msg.sender) {
         require(supToken != address(0), "RD: sup is zero");
@@ -140,6 +163,7 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
     /// @notice Emission still available for a given day.
     function dayRemaining(uint64 day) public view returns (uint256) {
         uint256 budget = dailyBudget(day);
+        if (dailyCap != 0 && dailyCap < budget) budget = dailyCap;
         uint256 paid = dailyPaid[day];
         return paid >= budget ? 0 : budget - paid;
     }
@@ -168,6 +192,7 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
     function claim(Claim calldata c, bytes calldata signature) external whenNotPaused {
         if (block.timestamp > c.deadline) revert ClaimExpired(c.deadline);
         if (c.amount == 0) revert ZeroAmount();
+        if (maxClaim != 0 && c.amount > maxClaim) revert ClaimTooLarge(c.amount, maxClaim);
         if (sessionClaimed[c.sessionHash]) revert SessionAlreadyClaimed(c.sessionHash);
 
         uint64 today = currentDay();
@@ -180,11 +205,18 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
         uint256 remaining = dayRemaining(c.day);
         if (c.amount > remaining) revert DailyBudgetExceeded(c.day, c.amount, remaining);
 
+        if (dailyCap != 0) {
+            uint256 paidToday = paidOnPayoutDay[today];
+            uint256 left = paidToday >= dailyCap ? 0 : dailyCap - paidToday;
+            if (c.amount > left) revert PayoutCapReached(today, c.amount, left);
+        }
+
         uint256 balance = poolBalance();
         if (c.amount > balance) revert PoolExhausted(c.amount, balance);
 
         sessionClaimed[c.sessionHash] = true;
         dailyPaid[c.day] += c.amount;
+        paidOnPayoutDay[today] += c.amount;
         totalDistributed += c.amount;
         claimedBy[c.runner] += c.amount;
 
@@ -211,7 +243,25 @@ contract RewardDistributor is EIP712, Ownable, Pausable {
         attester = attester_;
     }
 
-    function pause() external onlyOwner {
+    /// @notice Without an owner nobody could unpause after a guardian pause.
+    function renounceOwnership() public pure override {
+        revert CannotRenounce();
+    }
+
+    function setGuardian(address guardian_) external onlyOwner {
+        emit GuardianUpdated(guardian, guardian_);
+        guardian = guardian_;
+    }
+
+    function setLimits(uint256 dailyCap_, uint256 maxClaim_) external onlyOwner {
+        dailyCap = dailyCap_;
+        maxClaim = maxClaim_;
+        emit LimitsUpdated(dailyCap_, maxClaim_);
+    }
+
+    /// @notice Owner or guardian can stop claims. Only the owner can resume.
+    function pause() external {
+        if (msg.sender != owner() && msg.sender != guardian) revert NotGuardian();
         _pause();
     }
 

@@ -8883,7 +8883,7 @@ revoke all on function economy.op_confirm(uuid, text, bigint, numeric) from publ
  *   SUP_CLAIMED        {"op": opRef}
  *   SNEAKER_RELEASED   {"op": opRef, "tokenId": "123"}
  *   SUP_DEPOSITED      {"account": accountRef, "amount": "12.5"}
- *   SNEAKER_DEPOSITED  {"account": accountRef, "tokenId": "123"}
+ *   SNEAKER_DEPOSITED  {"account": accountRef, "tokenId": "123", "from": "0x…"}
  */
 create or replace function public.attester_chain_event(
   p_tx text, p_log int, p_block bigint, p_kind text, p_data jsonb
@@ -8935,6 +8935,14 @@ begin
     if v_user is null or not exists (select 1 from auth.users where id = v_user)
        or not exists (select 1 from public.market_sneakers where token_id = v_token and chain_state = 'ON_CHAIN') then
       perform public.admin_log('chain_orphan_deposit', v_tx, p_data);
+      return 'ORPHAN';
+    end if;
+    -- 잠금 거리를 못 채운(무료) 신발은 넣은 지갑이 그 계정에 붙은 지갑일 때만 받는다.
+    -- 무료 신발을 다른 계정으로 옮겨 몰아주지 못하게.
+    if exists (select 1 from public.market_sneakers where token_id = v_token and km_run < lock_km)
+       and not exists (select 1 from public.wallet_links w
+                        where w.user_id = v_user and w.address = lower(p_data ->> 'from')) then
+      perform public.admin_log('chain_locked_deposit_mismatch', v_tx, p_data);
       return 'ORPHAN';
     end if;
     -- 넣은 사람이 새 주인이다(체인에서 샀을 수 있다). 스탯은 꺼낼 때 서버가 적은 값 그대로다.

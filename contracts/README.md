@@ -1,47 +1,56 @@
 # StepUp Contracts — GIWA
 
-온체인 정산 컨트랙트 4종. Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat.
+온체인 컨트랙트. Solidity 0.8.28 · OpenZeppelin 5.x · Hardhat.
 
-앱의 리워드 계산(`app/.../domain/RewardEconomy.kt`, `domain/Sneaker.kt`)에 있는
-상수를 그대로 옮겨 왔습니다. 숫자가 새로 생긴 게 아니라, **서버가 주장하던 값을
-누구나 검증할 수 있는 곳으로 옮긴 것**입니다.
+**v2 (지금 배포할 것)** — 앱 경제의 정본은 서버(Supabase)다. 체인은 서버가 확정한
+것을 **꺼내고(앱 → 지갑)** 사용자가 **넣는(지갑 → 앱)** 통로다. 서명 키가 새도
+피해가 정해진 선을 넘지 않게 컨트랙트마다 상한과 긴급 정지를 둔다.
 
 | 컨트랙트 | 표준 | 역할 |
 |---|---|---|
-| `SUPToken` | ERC-20 | 10억 SUP 고정 발행. **배포 후 추가 발행 함수 없음** |
-| `SneakerNFT` | ERC-721 | 44종 스니커즈. 스탯 온체인, EIP-712 서명 민팅, 결정적 강화 |
-| `MysteryDrawNFT` | ERC-721 | 신규 52종 신발·5종 트레이닝복 뽑기 준비. 계약은 미배포이며 기존 데모 계약과 별개다. |
-| `RewardDistributor` | — | 서명된 러닝 증명 → SUP 지급. **일일 배출 예산 하드캡** |
-| `CourseRegistry` | — | 코스 작성자·완주 횟수 공개 기록, 거리별 정량 보상 |
+| `SUPToken` | ERC-20 + Permit | 10억 SUP 고정 발행. **추가 발행 함수 없음** |
+| `RewardDistributor` | — | 서버가 확정한 SUP 꺼내기를 지급. 일일 배출 예산 + 지급일 기준 하루 상한 · 1회 상한 |
+| `StepUpSneakers` | ERC-721 + 로열티 5% | 신발 NFT. 서버 서명으로 발행 · 반환(작업마다 1회), 앱으로 넣기(금고 보관), 무료 신발 전송 잠금(ERC-5192), 하루 발행 · 반환 상한, 등급별 스탯 상한, 도감 추가만 가능, 작업 취소 |
+| `SupVault` | — | SUP 를 앱으로 넣는 금고. 나가는 길은 보상 풀로 되돌리기뿐 |
+| `CourseRegistry` | — | 코스 작성자 · 완주 기록 |
 
-전체 경제 모델: [`../docs/TOKENOMICS.md`](../docs/TOKENOMICS.md)
+키 역할 — 관리자(`owner`, 2단계 이전) · 금고(`treasury`) · SUP 서명(`attester`) ·
+신발 서명(`signer`) · 긴급 정지(`guardian`, 정지만 가능 — 재개는 관리자만) · 코스 기록(`recorder`).
+
+**v1 (기록용)** — `SneakerNFT` · `MysteryDrawNFT` · `scripts/deploy-v1.js` 는 2026-07-31
+테스트넷 데모 배포에 쓴 것이다. 그 배포는 키를 보관하지 않아 운영할 수 없다
+([`deployments/giwaSepolia.json`](deployments/giwaSepolia.json)). v2 배포에는 쓰지 않는다.
+
+전체 설계: [`../docs/PHASE4-온체인-설계.md`](../docs/PHASE4-온체인-설계.md)
 
 ---
 
-## 배포 현황 — GIWA Sepolia (chain 91342)
+## v2 배포 순서 (대표님 PC)
 
-**2026-07-31 배포 완료.** 리워드 풀에 5천만 SUP(전체 공급의 5%)가 들어가 있습니다.
+1. MetaMask 등에서 계정 7개를 만든다: 배포 · 관리자 · 금고 · SUP 서명 · 신발 서명 · 긴급 정지 · 코스 기록.
+   복구 문구는 종이에. **주소만** 공유한다.
+2. 배포 계정에 테스트 ETH (https://faucet.giwa.io).
+3. 신발 그림 메타데이터를 IPFS 에 올리고 CID 를 받는다.
+4. `cp .env.example .env` → 배포 개인키 1개와 역할 주소 6개, `SNEAKER_BASE_URI` 를 채운다.
+5. 드라이런: `npm run deploy:dry` (로컬 체인, 가스 없음)
+6. 요약 확인: `npm run deploy:giwa` — 요약만 찍고 멈춘다
+7. 배포: `CONFIRM_DEPLOY=yes npm run deploy:giwa` → `deployments/giwaSepolia-v2.json`
+8. 금고 지갑: `SUPToken.approve(RewardDistributor, 금액)` → `RewardDistributor.fund(금액)`
+9. 관리자 지갑: 4개 컨트랙트에서 `acceptOwnership()`
+10. 소스 검증: `DEPLOYMENT=giwaSepolia-v2 npm run verify:giwa`
+11. 서명 키 3개(SUP · 신발 · 정지)와 코스 기록 키를 Cloudflare 에 `wrangler secret put` 으로 등록
+12. 배포 개인키와 `.env` 를 PC 에서 지운다
 
-| 컨트랙트 | 주소 |
-|---|---|
-| `SUPToken` | [`0xb052A8f6A5034747902b6d6787bbfF31A9006c1B`](https://sepolia-explorer.giwa.io/address/0xb052A8f6A5034747902b6d6787bbfF31A9006c1B) |
-| `SneakerNFT` | [`0x8174f905d86438ac8922c85d3A48604BabEFc960`](https://sepolia-explorer.giwa.io/address/0x8174f905d86438ac8922c85d3A48604BabEFc960) |
-| `RewardDistributor` | [`0x9f9E87bD825144A8315d30979E3004FbaCFE36E1`](https://sepolia-explorer.giwa.io/address/0x9f9E87bD825144A8315d30979E3004FbaCFE36E1) |
-| `CourseRegistry` | [`0x6c815DF0d8a5CA7CA0487D1AC2f96c0fEC588542`](https://sepolia-explorer.giwa.io/address/0x6c815DF0d8a5CA7CA0487D1AC2f96c0fEC588542) |
-
-기계가 읽는 형태: [`deployments/giwaSepolia.json`](deployments/giwaSepolia.json)
-
-> **테스트넷 배포라 treasury·attester·roller가 모두 배포자 계정입니다.**
-> 메인넷에서는 treasury를 멀티시그로, 어테스터를 별도 키로 분리해야 합니다.
-> 어테스터 분리는 배포자 계정으로 `setAttester(주소)` 한 번이면 됩니다.
+키 교체(유출 시): 긴급 정지 → 새 키 등록 → 관리자 지갑으로 `setAttester` / `setSigner` / `setGuardian` → 재개.
 
 ---
 
 ## 설계에서 중요한 세 가지
 
-**1. 발행 상한이 파라미터가 아니라 `constant`입니다.**
-최강 신발(레전더리 만렙)의 부스트는 `1780 bps = +17.8%`. 소유자도 바꿀 수
-없습니다. `test/StepUp.test.js`가 전 등급을 순회하며 이 천장을 검증합니다.
+**1. 서명 키가 새도 바꿀 수 없는 것이 있습니다.**
+`StepUpSneakers` 는 이미 있는 신발의 모델 · 등급 · 기본 스탯 · Genesis 번호를 바꾸지
+않고, 레벨을 내리지 않으며, 하루 발행 수를 넘기지 않습니다. 스탯 상한(효율성 50%,
+착화감 20%, 내구도 100)은 `constant` 입니다. `test/V2.test.js` 가 확인합니다.
 
 **2. 어테스터는 공급을 늘릴 수 없습니다.**
 `RewardDistributor`는 "누구에게 얼마"는 어테스터에게 맡기되, "얼마나 존재할 수
