@@ -27,7 +27,17 @@ import { sneakerMetadata } from './meta.js'
  * 컨트랙트를 모두 멈춘다. 다시 켜는 것은 관리자 지갑과 관리자 계정만 할 수 있다.
  */
 
-const deps = { getUser, rpc, clients }
+/**
+ * 로그인한 사용자별 요청 수 제한 — IP 제한은 통신사 공용 IP 를 쓰는 사람들이 서로 막고, IP 를 바꾸면
+ * 피해 간다. 작업 실행 · 지갑 연결은 로그인 확인 뒤 계정 번호로도 센다.
+ */
+async function limitUser(env, userId) {
+  if (!env.RATE_LIMITER || !userId) return false
+  const { success } = await env.RATE_LIMITER.limit({ key: `user:${userId}` })
+  return !success
+}
+
+const deps = { getUser, rpc, clients, limitUser }
 
 /** 컨트랙트 주소가 다 채워졌는가 — 배포 전에는 워커만 먼저 올려 주소(URL)를 정할 수 있다 */
 const configured = (env) => Boolean(env.DISTRIBUTOR_ADDRESS && env.SNEAKERS_ADDRESS && env.VAULT_ADDRESS)

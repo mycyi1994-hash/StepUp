@@ -55,8 +55,8 @@ npm run new-key -- GUARDIAN_PRIVATE_KEY
 ### 고친 뒤 다시 배포
 
 `attester/` 를 바꾼 PR 이 main 에 합쳐지면 `.github/workflows/deploy-attester.yml` 이 검사 후 배포하고
-`/health` 로 확인한다. 저장소 Secrets 에 `CLOUDFLARE_API_TOKEN`(“Edit Cloudflare Workers” 템플릿)과
-`CLOUDFLARE_ACCOUNT_ID` 가 있어야 한다 — 없으면 건너뛰므로 그때는 `cd attester` → `npm ci` →
+`/health` 로 확인한다. 저장소 Secrets 에 `CLOUDFLARE_API_TOKEN`(“Edit Cloudflare Workers” 템플릿)이
+있어야 한다(계정 ID 는 `wrangler.toml` 의 `account_id`). 없으면 건너뛰므로 그때는 `cd attester` → `npm ci` →
 `npx wrangler deploy` 를 직접 돌린다. (SQL 과 워커는 어느 쪽을 먼저 올려도 서로 깨지지 않게 만든다.)
 
 ## 검사

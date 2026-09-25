@@ -6,7 +6,7 @@
 #
 # 필요한 것 (처음 한 번): 저장소 Settings → Secrets and variables → Actions 에
 #   CLOUDFLARE_API_TOKEN   Cloudflare › My Profile › API Tokens › "Edit Cloudflare Workers" 템플릿
-#   CLOUDFLARE_ACCOUNT_ID  Cloudflare 대시보드 › Workers & Pages 오른쪽의 Account ID
+#   (계정 ID 는 attester/wrangler.toml 의 account_id 를 쓴다 — 비밀이 아니다)
 # 비밀이 없으면 건너뛰기만 하고 실패하지 않는다.
 name: Deploy attester
 
@@ -56,20 +56,29 @@ jobs:
         id: keys
         env:
           HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
-          HAS_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
         run: |
-          if [ "$HAS_TOKEN" = "true" ] && [ "$HAS_ACCOUNT" = "true" ]; then
+          if [ "$HAS_TOKEN" = "true" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID 가 없어 배포를 건너뜁니다. attester 에서 npx wrangler deploy 를 직접 돌리세요."
+            echo "::warning::CLOUDFLARE_API_TOKEN 이 없어 배포를 건너뜁니다. attester 에서 npx wrangler deploy 를 직접 돌리세요."
           fi
+
+      # 토큰이 살아 있는지, 어떤 권한 · 계정을 보는지 — 배포가 거절될 때 원인을 바로 알 수 있게.
+      # (토큰 값은 찍지 않는다. 계정 ID · 권한 이름만 나온다.)
+      - name: 토큰 확인
+        if: steps.keys.outputs.ready == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify | jq '{success, status: .result.status}' || true
+          npx wrangler whoami || true
 
       - name: Cloudflare 에 배포
         if: steps.keys.outputs.ready == 'yes'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
       # 새 코드가 떴는지 — /health 가 응답하고 긴급 정지 키가 있는지

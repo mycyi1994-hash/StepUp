@@ -51,26 +51,52 @@ export async function attesterToken(env, fetchImpl = fetch) {
   return cached.token
 }
 
-/** attester_* 함수 호출. 실패하면 서버가 준 이유를 그대로 올린다. */
+/** 서버 함수가 규칙으로 거절한 코드 — 이유 문구는 우리가 쓴 한국어라 사용자에게 그대로 보여 줘도 된다 */
+const RULE_CODES = ['22023', '23514', '23505', '42501']
+
+/**
+ * attester_* 함수 호출. 규칙에 걸린 거절은 서버가 적은 이유를, 그 밖의 오류는 일반 문구를 올린다
+ * (PostgREST 내부 문구 · 함수 이름 같은 것을 사용자에게 흘리지 않게). 로그인 토큰이 만료 · 취소됐으면
+ * 한 번 새로 받아 다시 부른다 — 예전에는 한 시간 동안 이 인스턴스의 모든 호출이 실패했다.
+ */
 export async function rpc(env, fn, args, fetchImpl = fetch) {
   if (!fn.startsWith('attester_')) throw new Error(`어테스터 함수가 아닙니다: ${fn}`)
-  const token = await attesterToken(env, fetchImpl)
-  const res = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: {
-      apikey: env.SUPABASE_ANON_KEY,
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(args ?? {}),
-  })
-  const text = await res.text()
-  const body = text ? JSON.parse(text) : null
-  if (!res.ok) {
-    // 22023 · 23514 · 23505 · 55000 은 사용자의 요청이 규칙에 걸린 것 — 4xx 로 돌려준다
+  for (let attempt = 0; ; attempt++) {
+    const token = await attesterToken(env, fetchImpl)
+    const res = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(args ?? {}),
+    })
+    const text = await res.text()
+    let body = null
+    let parsed = true
+    try {
+      body = text ? JSON.parse(text) : null
+    } catch {
+      parsed = false
+    }
+    if (res.ok) {
+      // 성공인데 본문이 깨졌으면 성공으로 치지 않는다 — 인덱서가 이벤트를 처리한 것으로 보고
+      // 커서를 옮기면 그 입금 · 지급을 영영 건너뛴다
+      if (!parsed) {
+        console.error('rpc malformed success body', fn, res.status)
+        throw new HttpError(502, '서버가 응답하지 않습니다. 잠시 뒤에 다시 해 주세요')
+      }
+      return body
+    }
+    if (res.status === 401 && attempt === 0 && !env.ATTESTER_DB_JWT) {
+      cached = { token: null, until: 0 }
+      continue
+    }
     const code = body?.code
-    const status = code === '55000' ? 503 : ['22023', '23514', '23505', '42501'].includes(code) ? 409 : 502
-    throw new HttpError(status, body?.message ?? `서버 오류 (${res.status})`)
+    if (code === '55000') throw new HttpError(503, body?.message ?? '지금은 잠시 멈췄습니다')
+    if (RULE_CODES.includes(code)) throw new HttpError(409, body?.message ?? '처리할 수 없는 요청입니다')
+    console.error('rpc failed', fn, res.status, code ?? '')
+    throw new HttpError(502, '서버가 응답하지 않습니다. 잠시 뒤에 다시 해 주세요')
   }
-  return body
 }

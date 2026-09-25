@@ -57,7 +57,15 @@ class StepRepository(
         tracker.start()
         if (!trackingStarted.compareAndSet(false, true)) return
         scope.launch {
-            tracker.todaySteps.collect { steps -> onSteps(steps) }
+            tracker.todaySteps.collect { steps ->
+                // 한 번의 저장 · 서버 오류로 걸음 집계가 멈추거나 앱이 꺼지지 않게 — 다음 걸음에서 다시 한다
+                try {
+                    onSteps(steps)
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
