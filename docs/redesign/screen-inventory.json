@@ -674,6 +674,13 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
       "line": 960,
       "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "RunRecoveryDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+      "line": 1055,
+      "verification": "RunCrashRecoveryTest (finish/resume) added to the CI interaction suite; physical process termination not yet run on a device"
     }
   ],
   "required_state_matrix": [

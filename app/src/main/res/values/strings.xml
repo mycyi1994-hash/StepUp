@@ -1580,5 +1580,11 @@ Start running with StepUp.</string>
     <string name="mystery_draw_paid">Draw · %1$s SUP</string>
     <string name="community_upcoming">Upcoming meetups</string>
     <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
+    <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
+    <string name="run_recover_title">A run was interrupted</string>
+    <string name="run_recover_body">The run you started at %1$s stopped when the app closed. So far: %2$s steps · %3$d min. Time and steps while the app was closed are not added.</string>
+    <string name="run_recover_other_account">A run from another account (or from before sign-in) was interrupted. It will not continue here; it is saved to the account that started it.</string>
+    <string name="run_recover_resume">Keep running</string>
+    <string name="run_recover_finish">Finish and save</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

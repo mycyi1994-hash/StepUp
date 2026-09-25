@@ -101,6 +101,9 @@ object ServiceLocator {
 
     /** 지금 누구로 로그인해 있는지. 화면이 로그인 상태를 물을 때 쓴다. */
     lateinit var sessionHolder: SessionHolder
+
+    /** 달리는 중인 러닝의 저장본 — 앱이 죽어도 러닝을 되살린다. 백업하지 않는 폴더에 둔다. */
+    lateinit var runCheckpoints: com.stepup.android.service.RunCheckpointStore
         private set
 
     /** 서버 경제(A안) — 잔고 · 신발 · 에너지의 정본은 서버다 */
@@ -140,6 +143,7 @@ object ServiceLocator {
         if (this::database.isInitialized) return
         val app = context.applicationContext
         appContext = app
+        runCheckpoints = com.stepup.android.service.RunCheckpointStore(java.io.File(app.noBackupFilesDir, "run-checkpoint.bin"))
         // 파일 이름은 옛 이름 그대로 둔다. 패키지는 바꿔도 이 이름을 바꾸면
         // 안드로이드가 다른 파일을 찾게 되어, 이미 설치된 기기의 기록이 통째로
         // 사라진다. 눈에 거슬려도 건드리지 않는다.

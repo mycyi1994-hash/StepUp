@@ -91,4 +91,16 @@ class RunCheckpointPersistenceTest {
             assertEquals(settling, RunCheckpointStore(file).read())
         } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
     }
+
+    @Test fun fakeLocationFlagSurvivesReopen() = runBlocking {
+        // 가짜 위치를 본 러닝은 앱을 죽였다 살려도 무효 표시가 남아야 한다
+        val file = file()
+        try {
+            val flagged = checkpoint().let { it.copy(state = it.state.copy(mockLocation = true)) }
+            RunCheckpointStore(file).save(flagged)
+            val restored = RunCheckpointStore(file).read()!!
+            assertTrue(restored.state.mockLocation)
+            assertTrue(restored.pausedForRecovery().mockLocation)
+        } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
+    }
 }

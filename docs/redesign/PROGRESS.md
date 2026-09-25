@@ -1,5 +1,13 @@
 # Redesign progress
 
+## 2026-09-25 — interrupted-run recovery connected (PR #22)
+
+- The service now writes `RunCheckpointStore` (`noBackupFilesDir/run-checkpoint.bin`, format 2 adds the fake-location flag and the party crew) every 5 s while recording, writes the SETTLING boundary before settlement and clears the matching checkpoint after durable completion. Settlement does not start if the SETTLING boundary cannot be written (FAILED/Retry instead).
+- A new start is refused while an unresolved checkpoint exists; the app asks first. Unreadable checkpoints are moved aside (renamed, not deleted).
+- On reopen, `RunRecoveryDialog` offers Resume (paused, no downtime added, fresh step baseline) or Finish and save. A SETTLING checkpoint is re-saved without asking (the Room receipt prevents a second credit). A run from another account (or from before sign-in) is only saved under its original owner, without its details or the current account's shoe/course/crew.
+- Exercise time is accumulated from `SystemClock.elapsedRealtime()` deltas excluding pauses instead of counting 1 s ticks.
+- Evidence: compile, unit tests, lint, androidTest compile. Native `RunCrashRecoveryTest` (finish saves once and clears; resume is paused with 300 s and keeps the fake-location flag) and `RunCheckpointPersistenceTest.fakeLocationFlagSurvivesReopen` run in the CI interaction suite. Physical process termination on a device has not been run; background GPS behavior and uploading phone-voided runs remain separate work.
+
 ## 2026-09-25 — app stage 5 (2): server economy (balance, sneakers, draws)
 
 - The server is the only source of SUP, sneakers, energy and boosts (decision A, server records only). `EconomySync` replaces the phone's `rewards`/`sneakers`/`boosts` tables with the server's (`my_economy`, `my_sneakers`, `sup_ledger`, `draw_grants`, `boosts`) on app start, sign-in, run upload and screen open. Draws, upgrades, repairs, equips and boosts are server functions; the phone never credits or debits.

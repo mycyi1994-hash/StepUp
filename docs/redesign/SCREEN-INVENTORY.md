@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-34 registered navigation routes; 35 screen functions; 19 overlay declarations. These counts are different measures, not completed screens.
+34 registered navigation routes; 35 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -106,6 +106,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:445 | pending |
 | RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:469 | pending |
 | SaveCourseDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:960 | pending |
+| RunRecoveryDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/StepUpRoot.kt:1055 | RunCrashRecoveryTest (finish/resume) in the CI interaction suite; physical process termination not yet run on a device |
 
 ## State review
 

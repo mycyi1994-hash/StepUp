@@ -1578,5 +1578,11 @@
     <string name="mystery_draw_paid">抽取 · %1$s SUP</string>
     <string name="community_upcoming">即将开始的跑步聚会</string>
     <string name="run_route_unavailable">本次跑步没有记录GPS路线。</string>
+    <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
+    <string name="run_recover_title">有一次跑步被中断了</string>
+    <string name="run_recover_body">你在 %1$s 开始的跑步因应用关闭而停止。目前 %2$s 步 · %3$d 分钟。应用关闭期间的时间和步数不会计入。</string>
+    <string name="run_recover_other_account">有一次用其他账号（或登录前）跑步时中断的记录。不会在这里继续，只会保存到开始跑步的账号。</string>
+    <string name="run_recover_resume">继续跑</string>
+    <string name="run_recover_finish">在此结束并保存</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
