@@ -121,6 +121,7 @@ class StepUpServer(
         boostBps: Int,
         partySize: Int,
         faction: String,
+        expectedUserId: String,
     ): ServerResult<SessionRecorded> {
         val body = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
@@ -133,7 +134,7 @@ class StepUpServer(
             put("p_faction", faction)
         }
 
-        return authed { token ->
+        return authed(expectedUserId) { token ->
             http.post(
                 url = "$restUrl/rpc/record_session",
                 body = body,
@@ -178,12 +179,12 @@ class StepUpServer(
     }
 
     /** 방금 올린 러닝이 어느 크루의 러닝이었는지 적는다(`session_tag_crew`). */
-    suspend fun tagSessionCrew(startedAtMillis: Long, crewId: String): ServerResult<Unit> {
+    suspend fun tagSessionCrew(startedAtMillis: Long, crewId: String, expectedUserId: String): ServerResult<Unit> {
         val body = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
             put("p_crew", crewId)
         }
-        return authed { token ->
+        return authed(expectedUserId) { token ->
             http.post("$restUrl/rpc/session_tag_crew", body, headers(token))
         }.mapBody { }
     }
@@ -230,11 +231,20 @@ class StepUpServer(
     )
 
     /** 출입증을 챙겨서 요청하고, 응답을 결말로 옮긴다. */
-    internal suspend fun authed(call: suspend (String) -> HttpResponse): ServerResult<String> {
+    internal suspend fun authed(
+        expectedUserId: String? = null,
+        call: suspend (String) -> HttpResponse,
+    ): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
 
         val token = when (val t = sessions.accessToken()) {
-            is TokenResult.Ok -> t.accessToken
+            is TokenResult.Ok -> {
+                // Check the identity attached to this exact token, not an earlier store read.
+                if (expectedUserId != null && (expectedUserId.isBlank() || t.userId != expectedUserId)) {
+                    return ServerResult.SignInRequired("이 러닝을 시작한 계정으로 로그인해 주세요")
+                }
+                t.accessToken
+            }
             is TokenResult.Unavailable -> return ServerResult.Retry(t.reason)
             is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
         }
@@ -244,7 +254,10 @@ class StepUpServer(
             response.status in 200..299 -> ServerResult.Ok(response.body)
             response.status == 0 -> ServerResult.Retry(response.body)
             // 출입증이 방금 만료됐을 수 있다. 다음 차례에 갱신해서 다시 시도한다.
-            response.status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
+            response.status == 401 -> {
+                sessions.markExpired(token)
+                ServerResult.Retry("인증이 만료되었습니다")
+            }
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")

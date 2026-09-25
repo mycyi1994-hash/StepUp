@@ -49,8 +49,18 @@ class RunningFeedApi(private val server: StepUpServer) {
     ) { serverJson.decodeFromString<List<EventRow>>(it) }
 
     suspend fun event(id: String): ServerResult<EventDetailRow> =
-        rpc("get_running_event", jsonBody { put("p_id", id) }) {
-            serverJson.decodeFromString<List<EventDetailRow>>(it).firstOrNull()
+        when (
+            val result = rpc("get_running_event", jsonBody { put("p_id", id) }) {
+                serverJson.decodeFromString<List<EventDetailRow>>(it)
+            }
+        ) {
+            // 행이 없으면 숨겨졌거나 지워진 대회다. "다시 시도"로 보이면 몇 번을 눌러도 같다.
+            is ServerResult.Ok ->
+                result.value.firstOrNull()?.let { ServerResult.Ok(it) }
+                    ?: ServerResult.Rejected("대회를 찾을 수 없습니다")
+            is ServerResult.Rejected -> result
+            is ServerResult.Retry -> result
+            is ServerResult.SignInRequired -> result
         }
 
     suspend fun disciplines(id: String): ServerResult<List<DisciplineRow>> =

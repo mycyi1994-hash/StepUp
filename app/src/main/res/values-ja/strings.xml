@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">属性・収集状況</string>
+    <string name="pref_saved_on_device">この端末に保存しました</string>
+    <string name="pref_sync_pending">選択はこの端末に保存しましたが、サーバーへの反映は確認できていません。以前の通知設定が適用される場合があります。ログインと接続を確認して再試行してください。</string>
+    <string name="pref_sync_retry">再試行</string>
+    <string name="pref_sync_sending">通知設定を更新しています…</string>
+    <string name="pref_notifications_blocked">端末の設定で通知がブロックされています。選択した通知を受け取るには、StepUpの通知を許可してください。</string>
+    <string name="post_like_action">いいね</string>
+    <string name="post_unlike_action">いいねを取り消す</string>
 
     <!-- Notification -->
     <string name="notification_channel_walk">ランセッション</string>
@@ -324,6 +332,10 @@
     <string name="stat_sessions">ラン回数</string>
     <string name="stat_tokens_earned">獲得トークン</string>
     <string name="profile_account">アカウント &amp; 設定</string>
+    <string name="settings_group_account">アカウント</string>
+    <string name="settings_group_activity">マイアクティビティ</string>
+    <string name="settings_group_preferences">アプリ設定</string>
+    <string name="settings_group_help">ヘルプ</string>
     <string name="settings_wallet">ウォレット &amp; トークン</string>
     <string name="settings_notifications">通知</string>
     <string name="settings_privacy">プライバシー &amp; セキュリティ</string>
@@ -383,7 +395,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">保存されるデータ</string>
     <string name="privacy_data_body">ログインすると、ラン記録（GPSルートを含む）・歩数の合計・SUP履歴・投稿とクルー活動がStepUpサーバーに保管されます。サーバーが付与を直接計算し、クルー・ランキング・コース・陣取りを共有するためです。広告IDは収集しません。アカウントは連携アカウント画面からいつでも削除できます。</string>
-    <string name="privacy_perm_title">使用中の権限</string>
+    <string name="privacy_perm_title">アプリの権限</string>
     <string name="privacy_perm_activity">身体活動 — 歩数のカウント</string>
     <string name="privacy_perm_notification">通知 — ラン中のセッション表示</string>
     <string name="privacy_reset_title">ローカルデータをリセット</string>
@@ -408,9 +420,10 @@
     <string name="connected_giwa">GIWA ウォレット</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">ソーシャルアカウント</string>
-    <string name="connected_status_soon">近日公開</string>
+    <string name="connected_status_soon">未対応</string>
+    <string name="connected_status_on">ログイン中</string>
     <string name="connected_status_off">未連携</string>
-    <string name="connected_body">アカウントを連携すると、SUPをオンチェーンに持ち出したり、複数の端末で歩数を同期できるようになります。</string>
+    <string name="connected_body">ログイン状態と、このバージョンで対応している外部サービスを確認できます。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 残高</string>
@@ -422,8 +435,8 @@
     <string name="wallet_empty_title">まだ履歴がありません</string>
     <string name="wallet_empty_body">1回走るだけで、最初のSUPが手に入ります。</string>
     <string name="wallet_giwa">GIWA ウォレット</string>
-    <string name="wallet_giwa_status">オンチェーン連携を準備中</string>
-    <string name="wallet_giwa_body">もうすぐSUPをGIWA チェーンのトークンに交換できるようになります。</string>
+    <string name="wallet_giwa_status">現在のバージョンでは利用できません</string>
+    <string name="wallet_giwa_body">アプリに記録されたSUPを表示しています。現在のバージョンではGIWAウォレット接続と出金に対応していません。</string>
     <string name="wallet_withdraw">出金する</string>
     <string name="wallet_withdraw_title">GIWA チェーンへ出金</string>
     <string name="wallet_withdraw_body">オンチェーン決済はメインネットのローンチと同時にスタート。そのとき残高は1:1でそのまま引き継がれます。</string>
@@ -506,6 +519,7 @@
 
     <!-- Compose -->
     <string name="post_write">投稿</string>
+    <string name="post_type">投稿の種類</string>
     <string name="post_submit">投稿する</string>
     <string name="post_field_title">タイトル</string>
     <string name="post_field_title_hint">どんな話題ですか？</string>
@@ -513,7 +527,7 @@
     <string name="post_field_body_hint">詳しく書いてみましょう…</string>
     <string name="post_flash_details">集合の詳細</string>
     <string name="post_field_place">集合場所</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">例：川沿い公園の3番入口</string>
     <string name="post_field_distance">走る距離 (km)</string>
     <string name="post_field_starts_in">出発まで (分)</string>
     <string name="post_field_capacity">定員</string>
@@ -867,13 +881,13 @@ StepUp と走り出そう。</string>
     <string name="tour2_title">エナジー</string>
     <string name="tour2_body">獲得にはエナジーを使います。深夜0時に回復し、0になると明日まで貯まりません。</string>
     <string name="tour3_title">ラン開始</string>
-    <string name="tour3_body">ここをタップして開始。ラン中の歩数にスニーカーブースト付きのSUPが貯まります。</string>
+    <string name="tour3_body">ホームのラン開始を押しましょう。必要な権限を確認してから運動を記録します。</string>
     <string name="tour4_title">掲示板 / クルー</string>
     <string name="tour4_body">オープン掲示板（フラッシュラン・お役立ち）とクルー（自分で作れる小さなコミュニティ）を切り替えます。</string>
     <string name="tour5_title">ランキング</string>
     <string name="tour5_body">今週の順位をチェック。タップすると週間歩数／SUP 残高の全ランキングが開きます。</string>
-    <string name="tour6_title">投稿</string>
-    <string name="tour6_body">フラッシュランを募集したりお役立ち情報をシェア。近い順に並ぶので近くのランナーに先に届きます。</string>
+    <string name="tour6_title">ランナーとつながる</string>
+    <string name="tour6_body">コミュニティで一緒に走る仲間を探し、ランナー同士で交流しましょう。</string>
     <string name="tour7_title">装備中のスニーカー</string>
     <string name="tour7_body">この一足のブーストが毎回のランに反映。タップでステータス確認・強化・履き替え。</string>
     <string name="tour8_title">ミント</string>
@@ -883,7 +897,7 @@ StepUp と走り出そう。</string>
     <string name="tour10_title">イベント</string>
     <string name="tour10_body">週間キャンペーンで SUP を獲得。進行度を確認し、達成したら報酬を受け取りましょう。</string>
     <string name="tour11_title">マイプロフィール</string>
-    <string name="tour11_body">ランナーID はここ。鉛筆をタップしてアバター変更 — 絵文字かギャラリーの写真を選べます。</string>
+    <string name="tour11_body">プロフィールでランの記録と累計距離を確認できます。名前の横の鉛筆でニックネームを変更できます。</string>
     <string name="tour12_title">実績100種</string>
     <string name="tour12_body">ブロンズからダイヤまで、1年続ければ全解除。ツアーはここまで — さあ走ろう！</string>
 
@@ -923,7 +937,7 @@ StepUp と走り出そう。</string>
     <string name="language_ko">韓国語</string>
     <string name="language_zh">中国語</string>
     <string name="language_ja">日本語</string>
-    <string name="language_note">アプリ全体がすぐ切り替わります — 画面も通知も投稿も。人名とクルー名だけそのままです。</string>
+    <string name="language_note">選択した言語でアプリを表示します。ユーザーの投稿や名前は元の言語で表示される場合があります。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">ルーキー</string>
@@ -1294,7 +1308,7 @@ StepUp と走り出そう。</string>
     <string name="tour_tab_customize_title">② 着せ替えタブ</string>
     <string name="tour_tab_customize_body">キャラクターに服と靴を着せる場所です。ランナーマーケットもここにあります。</string>
     <string name="tour_customize_title">マイキャラクター</string>
-    <string name="tour_customize_body">男性・女性を選び、服と靴を装備しましょう。着せた姿はラン・マイにも同じように表示されます。</string>
+    <string name="tour_customize_body">着せ替えで服やシューズを選びましょう。装備した姿はラン中やプロフィールにも表示されます。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">試着中</string>
@@ -1361,7 +1375,7 @@ StepUp と走り出そう。</string>
     <string name="feed_demo_note">デモモードです。以下はテスト用のサンプルで、実際の大会・記事ではありません。</string>
     <string name="finish_confirmed">ポイント付与完了</string>
     <string name="finish_pending">ラン完了 · サーバー確認中</string>
-    <string name="finish_pending_note">アプリには付与されました。サーバーが記録を確認すると完了になります。</string>
+    <string name="finish_pending_note">ランの記録を保存しました。報酬はサーバーの確認後に確定します。</string>
     <string name="finish_rejected">サーバーがこの記録を認めませんでした</string>
     <string name="finish_balance">保有</string>
     <string name="finish_done">完了</string>
@@ -1391,6 +1405,7 @@ StepUp と走り出そう。</string>
     <string name="market_outfit_try">試着（デモ）</string>
     <string name="market_demo_note">デモモードです。テスト用商品のため購入できません。</string>
     <string name="market_demo_toast">デモ商品は購入できません。</string>
+    <string name="me_total_runs">記録したラン</string>
     <string name="me_default_name">ランナー</string>
     <string name="me_points">保有ポイント</string>
     <string name="me_points_history">獲得履歴</string>
@@ -1423,6 +1438,11 @@ StepUp と走り出そう。</string>
     <string name="run_gps_search">GPS検索中</string>
     <string name="run_avg_pace">平均ペース</string>
     <string name="finish_title">ラン完了</string>
+    <string name="community_together">一緒に走る</string>
+    <string name="community_stories">トーク</string>
+    <string name="community_view_meetup">集まりの詳細</string>
+    <string name="community_other_meetups">ほかの集まりを見る</string>
+    <string name="community_meetups_empty">参加できるランの予定はまだありません。投稿して一緒に走る仲間を探しましょう。</string>
     <string name="community_hero_title">一緒に走ろう</string>
     <string name="community_hero_sub">今日も、もっと遠くへ。一緒に走るランナーたちの話。</string>
     <string name="news_hero_sub">一緒に走る、もっと大きな楽しさ。</string>
@@ -1491,4 +1511,31 @@ StepUp と走り出そう。</string>
     <string name="account_delete_body">アカウントとサーバー上のラン記録・GPSルート・SUP履歴・投稿・コメント・コース・陣地マークがすべて削除され、元に戻せません。クルー長の場合は最も古いメンバーがクルー長になります。この端末に残った記録はアプリを削除すると消えます。</string>
     <string name="account_delete_confirm">削除</string>
     <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
+    <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
+    <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
+    <string name="finish_share_activity">StepUpで%1$s kmを%2$sで走りました。</string>
+    <string name="notif_reward_unverified">この過去の報酬通知には確認済みの支払い記録がありません。獲得できる報酬はチャレンジで確認してください。</string>
+    <string name="session_sign_in_again">再ログイン</string>
+    <string name="post_invalid_numbers">距離は0kmより大きく、出発までは1分以上、定員は2〜200人で入力してください。</string>
+    <string name="energy_purchase_capacity">エネルギーを2以上使ってから再試行してください。保留中の購入は追加の支払いなしで再開します。</string>
+    <string name="privacy_permission_allowed">許可済み</string>
+    <string name="privacy_permission_not_allowed">未許可</string>
+    <string name="privacy_perm_location">位置情報 — ランのルートを記録</string>
+    <string name="privacy_location_precise">正確な位置情報を許可</string>
+    <string name="privacy_location_approximate">おおよその位置情報を許可</string>
+    <string name="run_saving">ランニングを保存中</string>
+    <string name="run_save_retry">保存を再試行</string>
+    <string name="run_save_failed">保存を完了できませんでした。アプリを開いたまま再試行してください。</string>
+    <string name="course_like_action">このコースにいいね</string>
+    <string name="course_unlike_action">コースのいいねを取り消す</string>
+    <string name="tab_draw">抽選</string>
+    <string name="mystery_title">ミステリーボックス</string>
+    <string name="mystery_subtitle">引きたいアイテムを選んでください。</string>
+    <string name="mystery_box_description">青く光る閉じたミステリーボックス</string>
+    <string name="mystery_draw_shoe">シューズを引く</string>
+    <string name="mystery_draw_outfit">トレーニングウェアを引く</string>
+    <string name="mystery_pending_chain">GIWAコントラクトのデプロイ後に抽選できます。</string>
+    <string name="home_previous_background">前の背景</string>
+    <string name="home_next_background">次の背景</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -137,6 +137,23 @@ object Outfits {
 
     val ALL = listOf(STARTER_HOODIE, CORE_ZIP, EMBER_SHELL, TIDE_ANORAK, VOLT_JERSEY, AERO_WINDBREAKER)
 
+    // Design samples belong to the existing trial mode, not the owned/NFT catalog.
+    val SOFT_PINK = STARTER_HOODIE.copy(
+        id = "STUDIO-PINK", top = 0xFFE7ADBD, topShade = 0xFFBA7E93,
+        trim = 0xFFE7ADBD, shorts = 0xFFE7ADBD, cap = 0xFFE7ADBD, starter = false,
+    )
+    val SOFT_LAVENDER = STARTER_HOODIE.copy(
+        id = "STUDIO-LAVENDER", top = 0xFFB5A0D9, topShade = 0xFF8270AE,
+        trim = 0xFFB5A0D9, shorts = 0xFFB5A0D9, cap = 0xFFB5A0D9, starter = false,
+    )
+    val SOFT_OLIVE = STARTER_HOODIE.copy(
+        id = "STUDIO-OLIVE", top = 0xFF8D9471, topShade = 0xFF626B4F,
+        trim = 0xFF8D9471, shorts = 0xFF8D9471, cap = 0xFF8D9471, starter = false,
+    )
+    val STUDIO = listOf(SOFT_PINK, SOFT_LAVENDER, SOFT_OLIVE)
+    val PREVIEWABLE = listOf(STARTER_HOODIE, TIDE_ANORAK, SOFT_PINK, CORE_ZIP,
+        SOFT_LAVENDER, SOFT_OLIVE, EMBER_SHELL, VOLT_JERSEY, AERO_WINDBREAKER)
+
     val DEFAULT = STARTER_HOODIE
 
     /** 모르는 id(예전에 있던 기본 티셔츠 등)는 기본 의상으로 */

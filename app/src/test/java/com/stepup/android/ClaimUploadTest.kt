@@ -36,6 +36,12 @@ class ClaimUploadTest {
 
     private class FakeDao(sessions: List<WalkSessionEntity>) : WalkSessionDao {
         val rows = sessions.associateBy { it.id }.toMutableMap()
+        override fun observeVerifiedSessions() = flowOf(rows.values.filter {
+            it.uploadState == UploadState.SIGNED.name && it.verdict !in setOf("FLAGGED", "VOID")
+        })
+        override fun observeRunTotals() = flowOf(com.stepup.android.data.local.RunTotals(
+            rows.size, rows.values.sumOf { it.distanceMeters },
+        ))
 
         override suspend fun insert(session: WalkSessionEntity) {
             rows[session.id] = session
@@ -45,8 +51,9 @@ class ClaimUploadTest {
             rows[session.id] = session
         }
 
-        override suspend fun pendingUploads(limit: Int): List<WalkSessionEntity> =
+        override suspend fun pendingUploads(limit: Int, owner: String): List<WalkSessionEntity> =
             rows.values
+                .filter { it.recordingOwner == owner }
                 .filter { it.uploadState in setOf(UploadState.PENDING.name, UploadState.FAILED.name) }
                 .filter { it.track.isNotEmpty() && it.steps > 0 }
                 .sortedBy { it.startedAt }

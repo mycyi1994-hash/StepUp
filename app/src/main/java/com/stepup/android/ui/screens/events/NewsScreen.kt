@@ -2,7 +2,6 @@ package com.stepup.android.ui.screens.events
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,10 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.stepup.android.domain.AvatarArtCatalog
-import com.stepup.android.domain.AvatarPose
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.PageHero
+import androidx.compose.ui.text.font.FontWeight
 import com.stepup.android.ui.components.SecondaryHeader
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,7 +33,6 @@ import com.stepup.android.ui.screens.feed.isDemo
 import com.stepup.android.ui.screens.feed.demoNews
 import com.stepup.android.ui.screens.feed.demoEvents
 import com.stepup.android.ui.components.TwoWaySwitch
-import com.stepup.android.ui.components.SubHeader
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.BadgeTone
 import androidx.compose.ui.draw.clip
@@ -48,7 +41,6 @@ import androidx.compose.foundation.background
 import com.stepup.android.core.ExternalIntents
 import com.stepup.android.data.repo.EventFilter
 import com.stepup.android.data.repo.NewsFilter
-import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.screens.feed.EventFilterSheet
 import com.stepup.android.ui.screens.feed.EventSortSheet
@@ -104,9 +96,6 @@ fun NewsScreen(
         serverNews
     }
     val sources by feedViewModel.sources.collectAsStateWithLifecycle()
-    // 제목 옆 캐릭터 — 내 성별의 그림
-    val look by com.stepup.android.core.ServiceLocator.avatarRepository.look
-        .collectAsStateWithLifecycle(com.stepup.android.domain.AvatarLook())
     val message by feedViewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -139,17 +128,13 @@ fun NewsScreen(
         }
 
         item {
-            PageHero(
-                title = stringResource(R.string.news_title),
-                subtitle = stringResource(R.string.news_hero_sub),
-            ) {
-                AvatarImage(
-                    art = AvatarArtCatalog.resolve(look, AvatarPose.RUN).art,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxSize(),
-                )
-            }
+            Text(
+                text = stringResource(R.string.news_title),
+                color = com.stepup.android.ui.theme.Snow,
+                fontSize = 31.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+            )
         }
 
         item {
@@ -172,7 +157,7 @@ fun NewsScreen(
                 Box(Modifier.quietClickable { feedViewModel.consumeMessage() }) {
                     Text(
                         text = stringResource(note),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Silver,
                         modifier = Modifier.padding(horizontal = 4.dp),
                     )
@@ -305,10 +290,11 @@ private fun FeedDemoNote() {
     ) {
         SmallBadge(stringResource(R.string.demo_badge), tone = BadgeTone.Glow)
         Text(
+            modifier = Modifier.weight(1f),
             text = stringResource(R.string.feed_demo_note),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = Silver,
-            lineHeight = 18.sp,
+            lineHeight = 21.sp,
         )
     }
 }

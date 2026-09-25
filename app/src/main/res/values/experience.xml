@@ -4,6 +4,8 @@
     <string name="experience_intro">Fine-tune how StepUp feels during your day.</string>
     <string name="experience_sound">Sound effects</string>
     <string name="experience_sound_desc">Short cues for controls, runs and confirmed rewards.</string>
+    <string name="experience_ambience">Scene ambience</string>
+    <string name="experience_ambience_desc">Quiet riverside and wardrobe loops. Off by default.</string>
     <string name="experience_haptic">Touch feedback</string>
     <string name="experience_haptic_desc">Gentle vibration for actions and milestones.</string>
     <string name="experience_motion">Reduce motion</string>

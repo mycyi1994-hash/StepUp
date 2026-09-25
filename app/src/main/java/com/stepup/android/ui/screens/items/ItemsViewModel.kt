@@ -21,11 +21,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /** 화면에 한 번만 보여줄 메시지 */
 sealed interface ItemsMessage {
+    data object SaveFailed : ItemsMessage
     data object NotEnoughBalance : ItemsMessage
     data object BoostAlreadyActive : ItemsMessage
+    data object EnergyCapacity : ItemsMessage
     data object BoostBought : ItemsMessage
     data object MaxLevel : ItemsMessage
     data class Upgraded(val sneaker: Sneaker) : ItemsMessage
@@ -79,8 +82,9 @@ class ItemsViewModel(
     val equipped: StateFlow<Sneaker?> = sneakerRepository.equipped
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val activeBoosts: StateFlow<List<ActiveBoost>> = boostRepository.active
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -98,22 +102,31 @@ class ItemsViewModel(
 
     fun equip(id: Long) {
         viewModelScope.launch {
-            sneakerRepository.equip(id)
-            val target = inventory.value.firstOrNull { it.id == id }
-            if (target != null) {
-                message.value = ItemsMessage.Equipped(target)
-                ExperienceEvents.emit(FeedbackCue.Success)
+            try {
+                if (!sneakerRepository.equip(id)) {
+                    message.value = ItemsMessage.SaveFailed
+                    return@launch
+                }
+                val target = inventory.value.firstOrNull { it.id == id }
+                if (target != null) {
+                    message.value = ItemsMessage.Equipped(target)
+                    ExperienceEvents.emit(FeedbackCue.Equip)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = ItemsMessage.SaveFailed
             }
         }
     }
 
     fun upgrade(id: Long) {
-        viewModelScope.launch {
+        savePurchase {
             val target = inventory.value.firstOrNull { it.id == id }
             if (target != null && !target.canUpgrade) {
                 ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = ItemsMessage.MaxLevel
-                return@launch
+                return@savePurchase
             }
             val result = sneakerRepository.upgrade(id)
             ExperienceEvents.emit(if (result != null) FeedbackCue.Success else FeedbackCue.Error)
@@ -126,24 +139,37 @@ class ItemsViewModel(
     }
 
     fun mint() {
-        viewModelScope.launch {
+        savePurchase {
             val minted = sneakerRepository.mint()
             if (minted == null) {
                 ExperienceEvents.emit(FeedbackCue.Error)
                 message.value = ItemsMessage.NotEnoughBalance
             } else {
                 mintResult.value = minted
-                ExperienceEvents.emit(FeedbackCue.Reward)
+                ExperienceEvents.emit(FeedbackCue.Success)
+            }
+        }
+    }
+
+    private fun savePurchase(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                message.value = ItemsMessage.SaveFailed
             }
         }
     }
 
     fun buyBoost(type: BoostType) {
-        viewModelScope.launch {
+        savePurchase {
             message.value = when (boostRepository.purchase(type)) {
                 null -> ItemsMessage.BoostBought
                 PurchaseError.NOT_ENOUGH_BALANCE -> ItemsMessage.NotEnoughBalance
                 PurchaseError.ALREADY_ACTIVE -> ItemsMessage.BoostAlreadyActive
+                PurchaseError.ENERGY_CAPACITY -> ItemsMessage.EnergyCapacity
             }
             ExperienceEvents.emit(if (message.value == ItemsMessage.BoostBought) FeedbackCue.Success else FeedbackCue.Error)
         }

@@ -7,19 +7,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.annotation.StringRes
@@ -35,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,13 +45,11 @@ import com.stepup.android.domain.FactionRank
 import com.stepup.android.domain.RankBoard
 import com.stepup.android.domain.RankEntry
 import com.stepup.android.domain.RankPeriod
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
@@ -104,35 +98,7 @@ fun RankingScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.community_ranking),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.community_ranking), onBack = onBack) {
         // 부문은 다섯이라 한 줄에 균등 분할로는 글자가 뭉개진다 — 옆으로
         // 밀어서 고른다. 기간은 넷이고 이름이 짧아 한 줄에 들어간다.
         item {
@@ -177,9 +143,9 @@ fun RankingScreen(
                     )
                     Text(
                         text = stringResource(R.string.rank_crew_body),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Silver,
-                        lineHeight = 17.sp,
+                        lineHeight = 22.sp,
                     )
                 }
             }
@@ -191,7 +157,7 @@ fun RankingScreen(
                 crews.none { it.runs > 0 } -> item { RankingNotice(R.string.rank_crew_empty) }
                 else -> items(crews, key = { it.crewId }) { row -> CrewRow(row) }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         if (boardIndex == factionIndex) {
@@ -204,21 +170,23 @@ fun RankingScreen(
                     )
                     Text(
                         text = stringResource(R.string.rank_faction_body),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Silver,
-                        lineHeight = 17.sp,
+                        lineHeight = 22.sp,
                     )
                 }
             }
             when (val state = factionRanking) {
                 is FactionRankingState.Loading -> item { RankingNotice(R.string.rank_loading) }
                 is FactionRankingState.Failed -> item {
-                    RankingNotice(state.problem.message()) { viewModel.loadFactionRanking(force = true) }
+                    RankingNotice(state.problem.message(),
+                        signInRequired = state.problem == RankingProblem.SIGN_IN_REQUIRED,
+                    ) { viewModel.loadFactionRanking(force = true) }
                 }
                 is FactionRankingState.Ready ->
                     items(state.rows, key = { it.faction.id }) { row -> FactionRow(row) }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         val ready = ranking as? RankingState.Ready
@@ -226,14 +194,16 @@ fun RankingScreen(
             item {
                 val state = ranking
                 if (state is RankingState.Failed) {
-                    RankingNotice(state.problem.message()) {
+                    RankingNotice(state.problem.message(),
+                        signInRequired = state.problem == RankingProblem.SIGN_IN_REQUIRED,
+                    ) {
                         viewModel.loadRanking(board, meLabel, force = true)
                     }
                 } else {
                     RankingNotice(R.string.rank_loading)
                 }
             }
-            return@LazyColumn
+            return@DetailPage
         }
 
         val entries = ready.entries
@@ -241,7 +211,7 @@ fun RankingScreen(
 
         // 시상대는 3명이 모여야 성립한다. 아직 두 명뿐일 때 빈 자리를 세워
         // 두면 순위표가 아니라 공사장처럼 보인다.
-        if (entries.size >= 3) item { Podium(entries.take(3), board) }
+        // Every runner appears once, in the ranked list below.
 
         if (me == null) {
             // 순위에 오르려면 이 기간에 한 번은 뛰어야 한다. 0으로 채운 줄을
@@ -251,7 +221,7 @@ fun RankingScreen(
             GlowCard(accent = true, contentPadding = PaddingValues(16.dp), spacing = 4.dp) {
                 Text(
                     text = stringResource(R.string.rank_my_position),
-                    fontSize = 10.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                     color = Slate,
@@ -265,7 +235,7 @@ fun RankingScreen(
                         text = "#${me.rank}",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = (-1.5).sp,
+                        letterSpacing = (-0.6).sp,
                         color = Volt,
                     )
                     Text(
@@ -280,7 +250,7 @@ fun RankingScreen(
                         R.string.rank_total_runners,
                         ready.totalRunners,
                     ),
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
@@ -299,29 +269,20 @@ fun RankingScreen(
  * 해 볼 수 있는 것이면 누를 자리를 준다.
  */
 @Composable
-private fun RankingNotice(@StringRes message: Int, onRetry: (() -> Unit)? = null) {
-    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 8.dp) {
-        Text(
-            text = stringResource(message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Silver,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (onRetry != null) {
-            Text(
-                text = stringResource(R.string.rank_retry),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .quietClickable(onRetry)
-                    .padding(vertical = 6.dp),
-            )
-        }
-    }
+private fun RankingNotice(
+    @StringRes message: Int,
+    signInRequired: Boolean = false,
+    onRetry: (() -> Unit)? = null,
+) {
+    com.stepup.android.ui.components.StatePanel(
+        message = stringResource(message), icon = Icons.Filled.EmojiEvents,
+        loading = message == R.string.rank_loading,
+        action = if (signInRequired) {
+            { com.stepup.android.ui.components.SignInAgainButton() }
+        } else if (onRetry != null) {
+            { com.stepup.android.ui.components.GhostButton(stringResource(R.string.rank_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth()) }
+        } else null,
+    )
 }
 
 @StringRes
@@ -332,124 +293,21 @@ private fun RankingProblem.message(): Int = when (this) {
 }
 
 @Composable
-private fun Podium(top: List<RankEntry>, board: RankBoard) {
-    if (top.size < 3) return
-    // 2등 - 1등 - 3등 순으로 세운다
-    val order = listOf(top[1] to 78, top[0] to 104, top[2] to 62)
-    GlowCard(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 18.dp), spacing = 0.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            order.forEach { (entry, barHeight) ->
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .border(
-                                width = if (entry.isMe) 2.dp else 1.dp,
-                                color = if (entry.isMe) Volt else medalColor(entry.rank),
-                                shape = CircleShape,
-                            )
-                            .background(CarbonHigh, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = entry.monogram,
-                            color = Snow,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                    }
-                    Text(
-                        text = entry.name,
-                        color = if (entry.isMe) Volt else Silver,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(barHeight.dp)
-                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                            .background(medalColor(entry.rank).copy(alpha = 0.18f)),
-                        contentAlignment = Alignment.TopCenter,
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(top = 9.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = "${entry.rank}",
-                                color = medalColor(entry.rank),
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                            Text(
-                                text = valueLabel(entry, board),
-                                color = Silver,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
-                }
+private fun RankRow(entry: RankEntry, board: RankBoard) {
+    GlowCard(accent = entry.isMe, contentPadding = PaddingValues(18.dp), spacing = 0.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("${entry.rank}", modifier = Modifier.width(30.dp),
+                color = if (entry.rank <= 3) medalColor(entry.rank) else Silver,
+                style = MaterialTheme.typography.titleLarge)
+            Box(Modifier.size(44.dp).background(CarbonHigh, CircleShape), contentAlignment = Alignment.Center) {
+                Text(entry.monogram, color = if (entry.isMe) Volt else Silver, style = MaterialTheme.typography.titleMedium)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(entry.name, color = Snow, style = MaterialTheme.typography.titleMedium)
+                Text(valueLabel(entry, board), color = if (entry.isMe) Volt else Silver,
+                    style = MaterialTheme.typography.titleLarge, fontFamily = com.stepup.android.ui.theme.StepUpNumbers)
             }
         }
-    }
-}
-
-@Composable
-private fun RankRow(entry: RankEntry, board: RankBoard) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (entry.isMe) Volt.copy(alpha = 0.11f) else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        Box(Modifier.width(28.dp), contentAlignment = Alignment.CenterStart) {
-            Text(
-                text = "${entry.rank}",
-                color = if (entry.rank <= 3) medalColor(entry.rank) else Slate,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(if (entry.isMe) Volt else CarbonHigh, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = entry.monogram,
-                color = if (entry.isMe) OnVolt else Silver,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
-            )
-        }
-        Text(
-            text = entry.name,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (entry.isMe) Snow else Silver,
-            fontWeight = if (entry.isMe) FontWeight.Bold else FontWeight.Normal,
-        )
-        Text(
-            text = valueLabel(entry, board),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (entry.isMe) Volt else Snow,
-        )
     }
 }
 
@@ -482,56 +340,20 @@ private fun durationLabel(seconds: Long): String {
  */
 @Composable
 private fun CrewRow(row: CrewRank) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (row.joined) Volt.copy(alpha = 0.11f) else Color.Transparent)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        Box(Modifier.width(28.dp), contentAlignment = Alignment.CenterStart) {
-            Text(
-                text = "${row.rank}",
-                color = if (row.rank <= 3) medalColor(row.rank) else Slate,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-            )
+    GlowCard(accent = row.joined, contentPadding = PaddingValues(18.dp), spacing = 0.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("${row.rank}", modifier = Modifier.width(30.dp),
+                color = if (row.rank <= 3) medalColor(row.rank) else Silver, style = MaterialTheme.typography.titleLarge)
+            Box(Modifier.size(44.dp).background(CarbonHigh, CircleShape), contentAlignment = Alignment.Center) {
+                Text(row.monogram, color = if (row.joined) Volt else Silver, style = MaterialTheme.typography.titleMedium)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(row.name, style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(stringResource(R.string.rank_crew_runs, row.runs), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                Text("%,.1f km".format(row.km), style = MaterialTheme.typography.titleLarge,
+                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers, color = if (row.joined) Volt else Silver)
+            }
         }
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(if (row.joined) Volt else CarbonHigh, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = row.monogram,
-                color = if (row.joined) OnVolt else Silver,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
-            )
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = row.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (row.joined) Snow else Silver,
-                fontWeight = if (row.joined) FontWeight.Bold else FontWeight.Normal,
-                maxLines = 1,
-            )
-            Text(
-                text = stringResource(R.string.rank_crew_runs, row.runs),
-                fontSize = 10.sp,
-                color = Slate,
-            )
-        }
-        Text(
-            text = "%,.1f km".format(row.km),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (row.joined) Volt else Snow,
-        )
     }
 }
 
@@ -569,14 +391,14 @@ private fun FactionRow(row: FactionRank) {
                 )
                 Text(
                     text = stringResource(R.string.rank_faction_km, "%,.1f".format(row.km)),
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
             if (row.isMine) {
                 Text(
                     text = stringResource(R.string.rank_faction_mine),
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     color = Volt,
                 )
@@ -601,7 +423,7 @@ private fun FactionRow(row: FactionRank) {
             }
             Text(
                 text = stringResource(R.string.rank_faction_my_km, "%,.2f".format(row.myKm)),
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
         }

@@ -128,7 +128,7 @@ class TerritoryTest {
     @Test
     fun `코스 기록은 길과 러닝 시작 시각으로 낸다`() = runBlocking {
         val http = FakeHttp(HttpResponse(200, """[{"course_id":7,"duration_sec":601,"rank":2,"runners":5}]"""))
-        val result = CourseApi(server(http)).submitRun("37.5,127.0;37.51,127.0", 1_700_000_000_000L)
+        val result = CourseApi(server(http)).submitRun("37.5,127.0;37.51,127.0", 1_700_000_000_000L, "me")
 
         assertTrue(http.lastUrl.endsWith("/rpc/course_run_submit"))
         assertEquals(
@@ -141,7 +141,7 @@ class TerritoryTest {
     @Test
     fun `서버에 없는 코스면 기록 없이 넘어간다`() = runBlocking {
         val http = FakeHttp(HttpResponse(200, "[]"))
-        val result = CourseApi(server(http)).submitRun("37.5,127.0;37.51,127.0", 1_700_000_000_000L)
+        val result = CourseApi(server(http)).submitRun("37.5,127.0;37.51,127.0", 1_700_000_000_000L, "me")
         assertEquals(ServerResult.Ok(null), result)
     }
 }

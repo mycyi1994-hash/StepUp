@@ -1,6 +1,7 @@
 package com.stepup.android.ui.screens.community
 
 import android.widget.Toast
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,16 +81,16 @@ fun CrewSyncCard(state: CrewSyncState, onRetry: () -> Unit) {
         is CrewSyncState.Failed -> stringResource(R.string.crew_load_failed)
         CrewSyncState.Ready -> return
     }
-    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-        Text(message, style = MaterialTheme.typography.bodyMedium, color = Silver)
-        if (state is CrewSyncState.Failed) {
-            GhostButton(
-                text = stringResource(R.string.crew_retry),
-                onClick = onRetry,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    com.stepup.android.ui.components.StatePanel(
+        message = message,
+        icon = androidx.compose.material.icons.Icons.Filled.CloudOff,
+        loading = state == CrewSyncState.Idle || state == CrewSyncState.Loading,
+        action = if (state == CrewSyncState.SignInRequired) {
+            { com.stepup.android.ui.components.SignInAgainButton() }
+        } else if (state is CrewSyncState.Failed) {
+            { GhostButton(stringResource(R.string.crew_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth()) }
+        } else null,
+    )
 }
 
 /** 이름 옆에 붙는 작은 표. 승인제 크루와 크루장 표시에 쓴다. */
@@ -101,7 +102,7 @@ fun CrewTag(text: String) {
             .background(Volt.copy(alpha = 0.16f))
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
-        Text(text = text, color = Volt, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+        Text(text = text, color = Volt, fontSize = 12.sp, fontWeight = FontWeight.Black)
     }
 }
 
@@ -116,7 +117,7 @@ fun CrewJoinAction(crew: Crew, onToggleJoin: () -> Unit, modifier: Modifier = Mo
         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = stringResource(R.string.crew_waiting_approval),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Silver,
             )
@@ -145,31 +146,21 @@ fun CrewPolicyPicker(selected: CrewJoinPolicy, onSelect: (CrewJoinPolicy) -> Uni
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.crew_policy_title),
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Black,
             color = Slate,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            CrewJoinPolicy.entries.forEach { policy ->
-                val label = stringResource(policy.labelRes())
-                if (policy == selected) {
-                    VoltButton(text = label, onClick = {}, modifier = Modifier.weight(1f))
-                } else {
-                    GhostButton(
-                        text = label,
-                        onClick = { onSelect(policy) },
-                        modifier = Modifier.weight(1f),
-                        accent = Silver,
-                    )
-                }
-            }
-        }
+        com.stepup.android.ui.components.TwoWaySwitch(
+            labels = CrewJoinPolicy.entries.map { stringResource(it.labelRes()) },
+            selected = CrewJoinPolicy.entries.indexOf(selected),
+            onSelect = { onSelect(CrewJoinPolicy.entries[it]) },
+        )
         Text(
             text = stringResource(
                 if (selected == CrewJoinPolicy.APPROVAL) R.string.crew_policy_approval_desc
                 else R.string.crew_policy_open_desc,
             ),
-            fontSize = 11.sp,
+            fontSize = 14.sp,
             color = Silver,
         )
     }
@@ -203,14 +194,14 @@ fun CrewManageCard(
         if (crew.joinPolicy == CrewJoinPolicy.APPROVAL) {
             Text(
                 text = stringResource(R.string.crew_requests_title),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 color = Slate,
             )
             when (requests) {
                 null, CrewRequestsState.Loading -> Text(
                     text = stringResource(R.string.crew_loading),
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
                 CrewRequestsState.Failed -> GhostButton(
@@ -222,7 +213,7 @@ fun CrewManageCard(
                     if (requests.requests.isEmpty()) {
                         Text(
                             text = stringResource(R.string.crew_requests_empty),
-                            fontSize = 12.sp,
+                            fontSize = 14.sp,
                             color = Silver,
                         )
                     } else {

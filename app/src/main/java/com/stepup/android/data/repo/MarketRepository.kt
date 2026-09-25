@@ -19,6 +19,8 @@ import com.stepup.android.data.remote.TradeRow
 import java.time.OffsetDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * 거래가 어떻게 끝났는지.
@@ -198,10 +200,14 @@ class MarketRepository(
      * 실패해도 조용히 넘어간다. 맞추지 못한 것은 다음에 열 때 맞춰지고,
      * 그동안 화면이 멈추는 것보다는 낫다.
      */
-    suspend fun sync() {
+    suspend fun sync() = syncLock.withLock {
         reconcileSneakers()
         mirrorLedger()
     }
+
+    // 화면 여러 곳(아이템·거래소·모델 화면)이 동시에 부른다. 겹치면 둘이 같은
+    // 커서를 읽어 같은 거래 줄을 두 번 적고(잔고가 늘어난다), 산 신발도 두 켤레가 된다.
+    private val syncLock = Mutex()
 
     private suspend fun reconcileSneakers() {
         val mine = api.mySneakers()
@@ -211,6 +217,16 @@ class MarketRepository(
         // 1) 서버에는 있는데 폰에 없다 → 사서 받은 신발이다
         for (row in mine.value) {
             if (sneakerDao.byServerId(row.id) != null) continue
+            // 이 폰에서 올렸는데 응답을 못 받아 번호를 못 적은 신발이면 번호만 잇는다.
+            // 새로 넣으면 같은 신발이 두 켤레가 된다.
+            val uploaded = row.localId?.let { sneakerDao.byId(it) }
+            if (uploaded != null && uploaded.serverId == 0L &&
+                uploaded.factionId == row.faction && uploaded.rarity == row.rarity &&
+                uploaded.variant == row.variant
+            ) {
+                sneakerDao.setServerId(uploaded.id, row.id)
+                continue
+            }
             sneakerDao.insert(
                 SneakerEntity(
                     factionId = row.faction,

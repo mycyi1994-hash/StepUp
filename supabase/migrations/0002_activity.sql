@@ -109,12 +109,13 @@ comment on column public.walk_sessions.top_speed_kmh is
 alter table public.daily_steps enable row level security;
 alter table public.walk_sessions enable row level security;
 
--- 걸음은 본인 것만 읽고 쓴다.
+-- 걸음은 본인 것만 읽는다. 쓰기는 steps_sync()(하루 상한·줄지 않음 규칙)만 한다 —
+-- 표에 바로 쓰게 두면 999만 보를 적어 주간 걸음 이벤트 보상을 받는다.
 drop policy if exists daily_steps_own on public.daily_steps;
 create policy daily_steps_own
-  on public.daily_steps for all
-  using ((select auth.uid()) = user_id)
-  with check ((select auth.uid()) = user_id);
+  on public.daily_steps for select
+  using ((select auth.uid()) = user_id);
+revoke insert, update, delete on public.daily_steps from anon, authenticated;
 
 -- 세션은 본인 것만 읽는다.
 drop policy if exists walk_sessions_select_own on public.walk_sessions;

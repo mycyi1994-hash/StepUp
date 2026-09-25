@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,17 +28,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,7 +44,7 @@ import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.TOTAL_COLLECTION
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SneakerFrame
@@ -64,7 +57,6 @@ import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 
 /**
  * NFT 도감 — 52칸 전부를 보여준다.
@@ -104,56 +96,14 @@ fun SneakerDexScreen(
     }
 
     val ownedCount = owned.keys.size
+    val columns = if (LocalDensity.current.fontScale > 1.5f) 1 else 2
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.dex_title),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
         // ── 전체 진행도 ──
         item {
             GlowCard(accent = true, contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text = stringResource(R.string.dex_progress),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Snow,
-                    )
-                    Text(
-                        text = "$ownedCount / $TOTAL_COLLECTION",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Volt,
-                    )
-                }
+                Text(stringResource(R.string.dex_progress), style = MaterialTheme.typography.titleMedium, color = Snow)
+                com.stepup.android.ui.components.AdaptiveNumber("$ownedCount / $TOTAL_COLLECTION", 28.sp, color = com.stepup.android.ui.theme.VoltText)
                 BarMeter(
                     fraction = ownedCount.toFloat() / TOTAL_COLLECTION.coerceAtLeast(1),
                     height = 7.dp,
@@ -225,7 +175,7 @@ fun SneakerDexScreen(
                 GlowCard(contentPadding = PaddingValues(26.dp)) {
                     Text(
                         text = stringResource(R.string.dex_empty),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Slate,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
@@ -234,9 +184,9 @@ fun SneakerDexScreen(
             }
         }
 
-        // 3칸씩. LazyVerticalGrid 를 쓰지 않는 이유는 이 화면이 이미
+        // 큰 글씨에서는 2칸, 보통 글씨에서는 3칸. LazyVerticalGrid 를 쓰지 않는 이유는 이 화면이 이미
         // LazyColumn 안이기 때문이다 — 스크롤 컨테이너를 겹치면 높이 계산이 깨진다.
-        items(slots.chunked(3)) { row ->
+        items(slots.chunked(columns)) { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -249,8 +199,7 @@ fun SneakerDexScreen(
                         onClick = { owned[slot.key]?.let { onOpenSneaker(it.id) } },
                     )
                 }
-                // 마지막 줄이 3칸을 못 채우면 남는 자리를 비워 둔다.
-                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
+                repeat(columns - row.size) { Box(Modifier.weight(1f)) }
             }
         }
     }
@@ -286,7 +235,7 @@ private fun DexCell(
 ) {
     val hasIt = sneaker != null
     // 없는 칸을 그릴 견본. 스탯은 쓰지 않으므로 기본값으로 둔다.
-    val sample = remember(slot) {
+    val sample = remember(slot, sneaker) {
         sneaker ?: Sneaker(
             id = -1,
             faction = slot.faction,
@@ -311,7 +260,7 @@ private fun DexCell(
                 color = if (hasIt) slot.faction.tint().copy(alpha = 0.55f) else Edge,
                 shape = RoundedCornerShape(16.dp),
             )
-            .quietClickable(onClick)
+            .then(if (hasIt) Modifier.quietClickable(onClick) else Modifier)
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -326,8 +275,9 @@ private fun DexCell(
             // 형태는 남으므로 "이 자리에 무엇이 오는가"는 그대로 읽힌다.
             SneakerFrame(
                 sneaker = sample,
-                modifier = if (hasIt) Modifier.fillMaxSize() else Modifier.fillMaxSize().grayedOut(),
+                modifier = Modifier.fillMaxSize().alpha(if (hasIt) 1f else 0.48f),
                 corner = 12.dp,
+                muted = !hasIt,
             )
             if (!hasIt) {
                 Icon(
@@ -343,11 +293,9 @@ private fun DexCell(
 
         Text(
             text = variantLabel(slot.faction, slot.rarity, slot.variant),
-            fontSize = 10.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = if (hasIt) Snow else Slate,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            color = if (hasIt) Snow else Silver,
         )
         Text(
             text = if (hasIt) {
@@ -355,27 +303,8 @@ private fun DexCell(
             } else {
                 slot.rarity.label()
             },
-            fontSize = 9.sp,
-            color = if (hasIt) slot.faction.tint() else Slate,
-            maxLines = 1,
+            fontSize = 14.sp,
+            color = if (hasIt) slot.faction.tint() else Silver,
         )
     }
 }
-
-/**
- * 아직 없는 칸을 회색으로.
- *
- * 그린 결과 위에 **채도 0인 회색을 Saturation 블렌드로** 덮는다. 색만 빠지고
- * 형태와 명암은 그대로 남아, 무엇이 오는 자리인지는 계속 읽힌다.
- *
- * 신발은 이미지일 때도 있고 Canvas 로 그린 그림일 때도 있어서, 컴포저블마다
- * 색을 바꾸는 방법이 다르다. 이렇게 그려진 결과에 거는 방식이면 둘 다 한 번에
- * 먹는다. 블렌드는 별도 레이어에서 합성해야 해서 Offscreen 을 지정한다.
- */
-private fun Modifier.grayedOut(): Modifier = this
-    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-    .drawWithContent {
-        drawContent()
-        drawRect(Color(0xFF8A9199), blendMode = BlendMode.Saturation)
-    }
-    .alpha(0.5f)

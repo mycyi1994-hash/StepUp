@@ -1,0 +1,7 @@
+# Community warmup illustration
+
+Built-in ImageGen, reference: ../concepts/05-community.png. Original output retained as community-warmup.png, converted with ffmpeg/libwebp quality 92 to community_warmup.webp. Decorative mascots, never a representation of a real participant list. All meetup labels and controls are native UI.
+
+## Exact prompt
+
+Create a production illustration asset for the StepUp running app community screen, using the provided concept ONLY as visual style and character reference. Three friendly stylized 3D runners warming up together: left navy hoodie ponytail LUMI stretching, center cream hoodie short-haired RUNO chatting, right mint hoodie ponytail runner bending forward. All have smooth black faces, two luminous blue capsule eyes, UP baseball caps, fabric hoodies, running shorts and chunky sneakers. Match the reference's high-quality dimensional materials, chibi proportions and cinematic blue edge lighting with warm sunset rim light. Full bodies and feet fully visible, relaxed social warmup, side-by-side wide triangular group, cohesive ground baseline. TRANSPARENT alpha outside the three figures, no scenery, no floor, no cast oval, no UI, no headings, no labels, no numbers, no badges. The characters are decorative mascots and not actual meetup participants. Wide landscape composition around 3:2, generous margin. This output must be a standalone illustration, not an app screenshot.

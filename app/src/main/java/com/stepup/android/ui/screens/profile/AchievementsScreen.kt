@@ -4,20 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -48,10 +42,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -74,7 +66,7 @@ import com.stepup.android.domain.AchievementGrade
 import com.stepup.android.domain.AchievementMetrics
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.theme.CarbonHigh
@@ -197,44 +189,7 @@ fun AchievementsScreen(
         achievements.filter { it.grade.name == filter }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.ach_all_title),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(R.string.ach_progress, unlockedCount, achievements.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Silver,
-                    )
-                }
-            }
-        }
-
+    DetailPage(title = stringResource(R.string.ach_all_title), onBack = onBack) {
         // 전체 진행 바
         item {
             GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
@@ -244,12 +199,12 @@ fun AchievementsScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.ach_total_progress),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Silver,
                     )
                     Text(
                         text = "$unlockedCount / ${achievements.size}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = Volt,
                     )
@@ -287,26 +242,8 @@ fun AchievementsScreen(
             }
         }
 
-        items(visible.chunked(2).size) { rowIndex ->
-            val pair = visible.chunked(2)[rowIndex]
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                pair.forEach { achievement ->
-                    AchievementTile(
-                        achievement = achievement,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                    )
-                }
-                if (pair.size == 1) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
+        items(visible.size) { index ->
+            AchievementTile(achievement = visible[index])
         }
     }
 }
@@ -395,50 +332,19 @@ private fun AchievementTile(
     modifier: Modifier = Modifier,
 ) {
     val gradeColor = achievement.grade.tint()
-    GlowCard(
-        modifier = modifier,
-        contentPadding = PaddingValues(15.dp),
-        spacing = 9.dp,
-        accent = achievement.unlocked,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            HexAchievementBadge(
-                icon = categoryIcon(achievement.category),
-                unlocked = achievement.unlocked,
-                color = gradeColor,
-            )
-            Text(
-                text = "${achievement.category.label()} ${AchievementBook.roman(achievement.tier)}",
-                style = MaterialTheme.typography.titleSmall,
-                color = if (achievement.unlocked) Snow else Slate,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = achievement.grade.label(),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.2.sp,
-                color = if (achievement.unlocked) gradeColor else Slate,
-            )
-            Text(
-                text = achievement.goalText(),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (achievement.unlocked) Silver else Slate,
-                textAlign = TextAlign.Center,
-            )
-            if (!achievement.unlocked) {
-                BarMeter(
-                    fraction = achievement.progress,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 5.dp,
-                    color = gradeColor,
-                )
+    GlowCard(modifier = modifier, contentPadding = PaddingValues(18.dp), spacing = 12.dp, accent = achievement.unlocked) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            HexAchievementBadge(icon = categoryIcon(achievement.category), unlocked = achievement.unlocked,
+                color = gradeColor, badgeSize = 60.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("${achievement.category.label()} ${AchievementBook.roman(achievement.tier)}",
+                    style = MaterialTheme.typography.titleMedium, color = Snow)
+                Text(achievement.goalText(), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                Text(achievement.grade.label(), style = MaterialTheme.typography.labelLarge, color = Silver)
             }
         }
+        BarMeter(fraction = achievement.progress, modifier = Modifier.fillMaxWidth(), height = 7.dp,
+            color = if (achievement.unlocked) Volt else gradeColor)
     }
 }
 

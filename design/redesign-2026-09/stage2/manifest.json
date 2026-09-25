@@ -1,0 +1,174 @@
+{
+  "stage": 2,
+  "method": "built-in image_gen reference editing; PNGs copied without pixel editing",
+  "ownership": "trial-only design samples; not added to owned or NFT catalog",
+  "reference": "design/redesign-2026-09/references/wardrobe-user-reference.png",
+  "assets": [
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_lumi_idle_studio_lavender.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.5856,
+      "silhouette": [
+        104,
+        18,
+        871,
+        1518
+      ],
+      "bytes": 2049817,
+      "bottom_inset_fraction": 0.011719
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_lumi_idle_studio_olive.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.5857,
+      "silhouette": [
+        104,
+        18,
+        871,
+        1518
+      ],
+      "bytes": 2004504,
+      "bottom_inset_fraction": 0.011719
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_lumi_idle_studio_pink.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.585,
+      "silhouette": [
+        103,
+        18,
+        871,
+        1517
+      ],
+      "bytes": 2086453,
+      "bottom_inset_fraction": 0.01237
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_runo_idle_studio_lavender.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.56,
+      "silhouette": [
+        165,
+        29,
+        857,
+        1478
+      ],
+      "bytes": 2119543,
+      "bottom_inset_fraction": 0.03776
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_runo_idle_studio_olive.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.5592,
+      "silhouette": [
+        164,
+        29,
+        857,
+        1479
+      ],
+      "bytes": 2084816,
+      "bottom_inset_fraction": 0.037109
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/avatar_runo_idle_studio_pink.png",
+      "width": 1024,
+      "height": 1536,
+      "alpha_range": [
+        0,
+        254
+      ],
+      "clear_fraction": 0.5598,
+      "silhouette": [
+        164,
+        30,
+        856,
+        1477
+      ],
+      "bytes": 2175170,
+      "bottom_inset_fraction": 0.038411
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/outfit_studio_lavender.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha_range": [
+        0,
+        255
+      ],
+      "clear_fraction": 0.536,
+      "silhouette": [
+        130,
+        74,
+        1165,
+        1155
+      ],
+      "bytes": 1453917
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/outfit_studio_olive.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha_range": [
+        0,
+        255
+      ],
+      "clear_fraction": 0.5369,
+      "silhouette": [
+        130,
+        75,
+        1164,
+        1154
+      ],
+      "bytes": 1569418
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/outfit_studio_pink.png",
+      "width": 1254,
+      "height": 1254,
+      "alpha_range": [
+        0,
+        255
+      ],
+      "clear_fraction": 0.5388,
+      "silhouette": [
+        131,
+        75,
+        1163,
+        1153
+      ],
+      "bytes": 1582382
+    }
+  ],
+  "backgrounds": [
+    "scene_wardrobe_terrace.webp",
+    "scene_riverside_sunset.webp",
+    "scene_riverside_night.webp"
+  ],
+  "character_floor_fraction": 0.955,
+  "backgrounds_separate": true
+}

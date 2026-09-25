@@ -1,6 +1,8 @@
 package com.stepup.android.ui.components
 
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import com.stepup.android.ui.experience.LocalMotion
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -140,12 +142,14 @@ fun SneakerFrame(
     corner: Dp = 14.dp,
     animate: Boolean = false,
     fade: Boolean = true,
+    muted: Boolean = false,
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         SneakerVisual(
             sneaker = sneaker,
             modifier = Modifier.fillMaxSize(),
             animate = animate,
+            muted = muted,
             contentScale = ContentScale.Fit,
         )
     }
@@ -160,6 +164,7 @@ fun SneakerVisual(
     sneaker: Sneaker,
     modifier: Modifier = Modifier,
     animate: Boolean = false,
+    muted: Boolean = false,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
     val res = sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant)
@@ -175,6 +180,9 @@ fun SneakerVisual(
                 }
             },
             contentScale = contentScale,
+            colorFilter = if (muted) ColorFilter.colorMatrix(
+                ColorMatrix().apply { setToSaturation(0f) },
+            ) else null,
         )
     } else if (animate) {
         SneakerHero(sneaker = sneaker, modifier = modifier)

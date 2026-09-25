@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wardrobe_change_background">Change background</string>
+    <string name="outfit_studio_pink">Soft pink set</string>
+    <string name="outfit_studio_lavender">Soft lavender set</string>
+    <string name="outfit_studio_olive">Soft olive set</string>
+    <string name="wardrobe_shoes_preview_pending">The preview shows a different pair of shoes.</string>
+</resources>

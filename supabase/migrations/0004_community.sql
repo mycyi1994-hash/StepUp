@@ -377,6 +377,11 @@ drop policy if exists courses_update_own on public.courses;
 create policy courses_update_own on public.courses for update
   using ((select auth.uid()) = owner_id)
   with check ((select auth.uid()) = owner_id);
+-- 달린 횟수(run_count)는 서버가 센다(course_run_submit). 주인이라도 새로 넣거나 고치며
+-- 적지 못한다. 경로(track)는 코스를 알아보는 열쇠(md5)라 올린 뒤에는 바꾸지 못한다.
+revoke insert, update on public.courses from anon, authenticated;
+grant insert (owner_id, name, area, distance_km, elevation_m, track, shared) on public.courses to authenticated;
+grant update (name, area, distance_km, elevation_m, shared) on public.courses to authenticated;
 
 drop policy if exists courses_delete_own on public.courses;
 create policy courses_delete_own on public.courses for delete
@@ -424,7 +429,7 @@ begin
      for update;
 
   if not found then
-    raise exception '번개러닝 글을 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '번개러닝 글을 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
   if not public.is_crew_member(v_crew) then
     raise exception '이 크루의 멤버가 아닙니다' using errcode = '42501';

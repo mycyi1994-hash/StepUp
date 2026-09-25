@@ -37,6 +37,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -54,12 +55,16 @@ data class RunLap(
 )
 
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
+enum class RunSaveStatus { IDLE, SAVING, FAILED }
+
 data class WalkSessionState(
     val isActive: Boolean = false,
     val isPaused: Boolean = false,
+    val saveStatus: RunSaveStatus = RunSaveStatus.IDLE,
     val steps: Int = 0,
     val elapsedSec: Long = 0,
     val startedAt: Long = 0,
+    val recordingOwner: String = com.stepup.android.domain.RecordingOwner.LEGACY,
     /** 파티런 인원 (본인 포함). 1이면 개인 러닝. */
     val partySize: Int = 1,
     /** 마지막 세션 정산 결과 (종료 직후 화면 표시용) */
@@ -139,7 +144,9 @@ class WalkSessionService : Service() {
             speedAnchorAt = now
 
             val meters = if (prev == null) 0.0 else haversineMeters(prev, p)
-            val seconds = if (prevAt == 0L) 0L else (now - prevAt) / 1000
+            // 어테스터(economy.js)와 같이 반올림한다. 버리면 2.5초 간격이 2초가 되어
+            // 서버보다 25% 엄격하게 튄 구간으로 잡힌다.
+            val seconds = if (prevAt == 0L) 0L else (now - prevAt + 500) / 1000
             val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
 
             // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
@@ -155,7 +162,8 @@ class WalkSessionService : Service() {
                 val track = current.track
                 val moved = track.isEmpty() ||
                     haversineMeters(track.last().toGeoPoint(), p) >= 8.0
-                val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS
+                val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS &&
+                    seconds >= RunIntegrity.MIN_SEGMENT_SEC
                 current.copy(
                     track = if (moved) track + TrackPoint(p.lat, p.lng, now) else track,
                     gpsFix = true,
@@ -209,7 +217,9 @@ class WalkSessionService : Service() {
 
     /** 세션 걸음 집계 기준점. 첫 실측값 방출로 초기화된다(null = 아직 미정). */
     private var lastTodaySteps: Int? = null
-    private var settling = false
+    @Volatile private var settling = false
+    private var startJob: Job? = null
+    private var followupsAttempted = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -224,13 +234,15 @@ class WalkSessionService : Service() {
     }
 
     private fun startSession(partySize: Int) {
-        if (_state.value.isActive) return
+        if (_state.value.isActive || startJob?.isActive == true) return
         speedAnchor = null
         speedAnchorAt = 0L
         createChannel()
         // 위치 권한이 있을 때만 location 타입을 함께 선언한다 —
         // 권한 없이 선언하면 API 34+에서 시작 자체가 거부된다.
-        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && hasLocationPermission()) {
+        // location 타입은 API 29(Q)부터 있다. 29~33 에서 빼 두면 화면을 끄거나 앱을
+        // 벗어나는 순간 GPS 가 멈춰, 멀쩡한 러닝이 "GPS 거리 부족"으로 깎인다.
+        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && hasLocationPermission()) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
         } else {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
@@ -241,9 +253,20 @@ class WalkSessionService : Service() {
             buildNotification(0),
             fgsType,
         )
+        startJob = scope.launch(Dispatchers.Main.immediate) {
+            // Begin tracking only after the recording account has been captured.
+            // Finishing later must never read the replacement login account.
+            val owner = ServiceLocator.sessionHolder.recordingOwner()
+            beginTracking(partySize, owner)
+        }
+    }
+
+    private fun beginTracking(partySize: Int, owner: String) {
+        followupsAttempted = false
         _state.value = WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
+            recordingOwner = owner,
             partySize = partySize,
         )
 
@@ -301,22 +324,28 @@ class WalkSessionService : Service() {
 
     private fun setPaused(paused: Boolean) {
         val current = _state.value
-        if (current.isActive) {
+        if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) {
             _state.value = current.copy(isPaused = paused)
         }
     }
 
     private fun stopSession() {
-        val session = _state.value
-        if (!session.isActive || settling) {
-            if (!session.isActive) stopSelf()
+        val current = _state.value
+        if (!current.isActive || settling) {
+            if (!current.isActive) {
+                startJob?.cancel()
+                stopSelf()
+            }
             return
         }
         settling = true
+        _state.update { it.copy(isPaused = true, saveStatus = RunSaveStatus.SAVING) }
+        val session = _state.value
         stepJob?.cancel()
         timerJob?.cancel()
         stopLocation()
         scope.launch {
+          try {
             // 파티런이면 정산 시점의 실제 인원을 쓴다 — 러닝 중 거리 이탈로 빠진 인원 반영.
             val settleSize = if (session.partySize > 1) {
                 ServiceLocator.crewRepository.currentPartySize()
@@ -361,21 +390,16 @@ class WalkSessionService : Service() {
             // 이 거리가 어느 편에 쌓일지를 정한다.
             val equippedFaction = ServiceLocator.database.sneakerDao().equippedNow()
                 ?.factionId?.let { Faction.of(it) }
-            val reward = ServiceLocator.rewardRepository.settleSession(creditedSteps, settleSize)
-            // 성장 지표(주간 러닝 사용자) — 러닝으로 인정된 것만 센다
-            if (creditedSteps > 0) {
-                val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
-                Analytics.runFinished(km, settleSize)
-            }
-            ServiceLocator.database.walkSessionDao().insert(
+            val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
+                    recordingOwner = session.recordingOwner,
                     endedAt = System.currentTimeMillis(),
                     steps = creditedSteps,
                     durationSec = if (verdict.isRewardable) session.elapsedSec else 0,
                     distanceMeters = RewardEconomy.distanceMeters(creditedSteps),
                     calories = RewardEconomy.calories(creditedSteps),
-                    pointsEarned = reward.points,
+                    pointsEarned = 0.0, // Replaced by the committed settlement calculation.
                     // 경로는 판정에 쓰이므로 화면용으로 솎아내기 전 원본을 남긴다.
                     // 점을 걷어내면 그만큼 구간이 길어져 서버가 다시 계산할
                     // 속도가 실제와 달라진다.
@@ -385,7 +409,15 @@ class WalkSessionService : Service() {
                     faction = equippedFaction?.id.orEmpty(),
                     crewId = partyCrewId,
                 )
-            )
+            ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
+            // These legacy follow-ups are not durable yet. A same-process save retry
+            // must not issue them again after a scheduling failure.
+            if (!followupsAttempted) {
+                followupsAttempted = true
+            if (creditedSteps > 0) {
+                val km = if (session.gpsKm > 0.0) session.gpsKm else RewardEconomy.distanceMeters(creditedSteps) / 1000
+                runCatching { Analytics.runFinished(km, settleSize) }
+            }
             if (verdict.isRewardable) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {
@@ -411,6 +443,7 @@ class WalkSessionService : Service() {
                     if (km > 0.0 && equippedFaction != null) prefs.addFactionKm(equippedFaction, km)
                 }
             }
+            }
             // 방금 달린 트랙을 남겨 "코스 만들기"의 재료로 쓴다
             if (session.track.size >= 2) {
                 lastTrack.value = session.geoTrack.simplify()
@@ -420,6 +453,8 @@ class WalkSessionService : Service() {
             // 일꾼이 연결이 돌아올 때까지 기다렸다 보낸다.
             SessionUploadWorker.schedule(this@WalkSessionService)
             _state.value = WalkSessionState(
+                // Keep this session's route available to its result/share card.
+                track = session.track,
                 lastRewardPoints = reward.points,
                 lastRewardedSteps = reward.rewardedSteps,
                 lastSessionSteps = session.steps,
@@ -439,6 +474,15 @@ class WalkSessionService : Service() {
             settling = false
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
+          } catch (cancelled: CancellationException) {
+            throw cancelled
+          } catch (_: Exception) {
+            // Preserve the stopped run. A retry uses the same identity and durable receipt.
+            // Never resume collecting steps into a run whose settlement may already exist.
+            _state.update { if (it.isActive) it.copy(isPaused = true, saveStatus = RunSaveStatus.FAILED) else it }
+          } finally {
+            settling = false
+          }
         }
     }
 

@@ -9,17 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
@@ -29,23 +24,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.stepup.android.R
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.StepUpDesign
 
 /**
  * 거르기 한 벌 — 버튼 둘, 요약 한 줄, 아래에서 올라오는 패널.
@@ -109,14 +103,17 @@ private fun ToolbarButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(StepUpDesign.ControlRadius)
     Row(
         modifier = modifier
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(if (active) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
             .border(1.dp, if (active) Volt.copy(alpha = 0.55f) else Edge, shape)
             .quietClickable(onClick)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
+            .semantics { role = Role.Button }
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding,
+                vertical = StepUpDesign.SecondaryVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -125,17 +122,17 @@ private fun ToolbarButton(
                 imageVector = leading,
                 contentDescription = null,
                 tint = if (active) Volt else Silver,
-                modifier = Modifier.size(15.dp),
+                modifier = Modifier.size(StepUpDesign.ControlIcon),
             )
             Spacer(Modifier.size(6.dp))
         }
         Text(
             text = text,
-            fontSize = 13.sp,
+            modifier = Modifier.weight(1f),
+            fontSize = StepUpDesign.SecondaryLabel,
             fontWeight = FontWeight.Bold,
             color = if (active) Volt else Silver,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         if (trailing != null) {
             Spacer(Modifier.size(4.dp))
@@ -143,7 +140,7 @@ private fun ToolbarButton(
                 imageVector = trailing,
                 contentDescription = null,
                 tint = Silver,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(StepUpDesign.ControlIcon),
             )
         }
     }
@@ -152,8 +149,8 @@ private fun ToolbarButton(
 /**
  * 고른 조건을 짧은 글로.
  *
- * 세 개까지 적고 나머지는 "외 N개"로 줄인다. 두 줄을 넘기지 않는 것은
- * 요약이 목록보다 길어지면 요약이 아니기 때문이다.
+ * 세 개까지 적고 나머지는 "외 N개"로 줄인다. 요약과 초기화 동작을
+ * 분리해서 글자 확대 때도 조건과 버튼이 서로를 밀어내지 않는다.
  */
 @Composable
 fun FilterSummaryRow(
@@ -170,43 +167,30 @@ fun FilterSummaryRow(
         rest > 0 -> shown.joinToString(" · ") + " " + stringResource(R.string.filter_summary_more, rest)
         else -> shown.joinToString(" · ")
     }
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = text,
-            modifier = Modifier.weight(1f),
-            fontSize = 12.sp,
+            modifier = Modifier.fillMaxWidth(),
+            fontSize = StepUpDesign.SecondaryLabel,
             color = if (parts.isEmpty()) Slate else Silver,
-            lineHeight = 17.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            lineHeight = 20.sp,
         )
-        if (parts.isNotEmpty()) {
-            Text(
-                text = resetLabel ?: stringResource(R.string.filter_reset),
-                modifier = Modifier
-                    .quietClickable(onReset)
-                    .padding(vertical = 4.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-                maxLines = 1,
-            )
-        }
-        if (extraAction != null) {
-            Text(
-                text = extraAction.first,
-                modifier = Modifier
-                    .quietClickable(extraAction.second)
-                    .padding(vertical = 4.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Slate,
-                maxLines = 1,
-            )
+        if (parts.isNotEmpty() || extraAction != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (parts.isNotEmpty()) GhostButton(
+                    text = resetLabel ?: stringResource(R.string.filter_reset),
+                    onClick = onReset,
+                    modifier = Modifier.weight(1f),
+                )
+                if (extraAction != null) GhostButton(
+                    text = extraAction.first,
+                    onClick = extraAction.second,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -214,9 +198,8 @@ fun FilterSummaryRow(
 /**
  * 아래에서 올라오는 거르기 패널.
  *
- * Dialog 로 띄우는 것은 이 앱의 다른 창과 같은 틀을 쓰기 위해서이고, 그
- * 덕에 뒤 배경이 스크롤되지 않고 뒤로가기·바깥 누르기가 그대로 닫기가
- * 된다. 높이는 화면의 85%까지만 쓰고, 그 안에서 내용만 세로로 구른다.
+ * 공통 DialogPanel을 사용한다. 본문만 스크롤하며 적용·초기화는 아래에 유지된다.
+ * 닫기·뒤로가기는 기존처럼 임시 선택을 버린다.
  */
 @Composable
 fun FilterBottomSheet(
@@ -229,34 +212,14 @@ fun FilterBottomSheet(
     applyLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    SheetFrame(title = title, onDismiss = onDismiss, modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-            content = content,
-        )
-        // 바닥 버튼은 구르지 않는다 — 조건을 한참 고르다 적용하려고 다시
-        // 위아래로 찾게 하지 않기 위해서다.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            GhostButton(
-                text = resetLabel ?: stringResource(R.string.filter_reset),
-                onClick = onReset,
-                modifier = Modifier.weight(1f),
-            )
-            VoltButton(
-                text = applyLabel ?: stringResource(R.string.filter_apply),
-                onClick = onApply,
-                modifier = Modifier.weight(1f),
-            )
-        }
+    DialogPanel(
+        title = title, onDismiss = onDismiss,
+        actions = {
+            VoltButton(applyLabel ?: stringResource(R.string.filter_apply), onClick = onApply, modifier = Modifier.fillMaxWidth())
+            GhostButton(resetLabel ?: stringResource(R.string.filter_reset), onClick = onReset, modifier = Modifier.fillMaxWidth())
+        },
+    ) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(20.dp), content = content)
     }
 }
 
@@ -275,83 +238,12 @@ fun <T> SortBottomSheet(
     onPick: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    SheetFrame(title = title, onDismiss = onDismiss) {
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            options.forEach { option ->
-                ChoiceChip(
-                    text = label(option),
-                    selected = option == selected,
-                    onClick = {
-                        onPick(option)
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-        Spacer(Modifier.size(6.dp))
-    }
-}
-
-@Composable
-private fun SheetFrame(
-    title: String,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+    DialogPanel(
+        title = title, onDismiss = onDismiss,
+        actions = { GhostButton(stringResource(R.string.common_close), onClick = onDismiss, modifier = Modifier.fillMaxWidth()) },
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .quietClickable(onDismiss),
-            contentAlignment = Alignment.BottomCenter,
-        ) {
-            val sheetMax = maxHeight * 0.85f
-            val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(max = sheetMax)
-                    // 패널 본체를 누른 것이 배경으로 새어 나가 닫히지 않게 흡수한다
-                    .quietClickable { }
-                    .clip(shape)
-                    .background(Carbon, shape)
-                    .border(1.dp, Edge, shape)
-                    .navigationBarsPadding()
-                    .padding(bottom = 14.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = title,
-                        modifier = Modifier.weight(1f),
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.3).sp,
-                        color = Snow,
-                    )
-                    DarkIconButton(
-                        icon = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.common_close),
-                        onClick = onDismiss,
-                    )
-                }
-                content()
-            }
+        options.forEach { option ->
+            ChoiceChip(label(option), selected = option == selected, onClick = { onPick(option); onDismiss() }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -366,7 +258,7 @@ fun FilterSection(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
             text = title,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Slate,
         )
@@ -390,7 +282,12 @@ fun <T> ChoiceGrid(
     columns: Int = 3,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val cols = if (maxWidth < 340.dp) minOf(columns, 2) else columns
+        val fontScale = LocalDensity.current.fontScale
+        val cols = when {
+            fontScale >= 1.5f -> 1
+            maxWidth < 340.dp || fontScale > 1f -> minOf(columns, 2)
+            else -> columns
+        }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             values.chunked(cols).forEach { row ->
                 Row(
@@ -413,7 +310,7 @@ fun <T> ChoiceGrid(
     }
 }
 
-/** 격자 한 칸. 가운데 정렬에 두 줄까지 접힌다. */
+/** Shared choice: full label, growing height and a stable selected-state weight. */
 @Composable
 fun ChoiceChip(
     text: String,
@@ -421,26 +318,26 @@ fun ChoiceChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(StepUpDesign.ControlRadius)
     Box(
         modifier = modifier
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
             .border(1.dp, if (selected) Volt.copy(alpha = 0.55f) else Edge, shape)
             .quietClickable(onClick)
-            .semantics { this.selected = selected }
-            .padding(horizontal = 8.dp, vertical = 11.dp),
+            .semantics { this.selected = selected; role = Role.Button }
+            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding,
+                vertical = StepUpDesign.SecondaryVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = StepUpDesign.SecondaryLabel,
+            fontWeight = FontWeight.SemiBold,
             color = if (selected) Volt else Silver,
             textAlign = TextAlign.Center,
-            lineHeight = 16.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            lineHeight = 20.sp,
         )
     }
 }

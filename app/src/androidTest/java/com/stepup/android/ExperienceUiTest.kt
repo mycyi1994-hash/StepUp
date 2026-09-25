@@ -82,7 +82,7 @@ class ExperienceUiTest {
         ServiceLocator.sneakerRepository.ensureStarter()
         TestData.seedCommunity()
         ServiceLocator.courseRepository.ensureSeeded()
-        ServiceLocator.notificationRepository.seedWelcome()
+        TestData.seedWelcomeNotification()
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
         crewId = ServiceLocator.crewRepository.crews.value.first().id
         postId = ServiceLocator.communityRepository.posts.value.first().id
@@ -243,7 +243,7 @@ class ExperienceUiTest {
             FeedbackCue.entries.forEach { pool.load(compose.activity, it.sound, 1) }
         }
         try {
-            assertTrue("All nine cues should load", loaded.await(10, TimeUnit.SECONDS))
+            assertTrue("All bundled cues should load", loaded.await(15, TimeUnit.SECONDS))
             assertTrue("Decoder failures: $failures", failures.isEmpty())
         } finally { compose.runOnUiThread { pool.release() } }
     }

@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">속성 · 수집 현황</string>
+    <string name="pref_saved_on_device">이 휴대폰에 저장했어요</string>
+    <string name="pref_sync_pending">선택은 이 휴대폰에 저장했지만 서버 반영은 확인하지 못했어요. 이전 알림 설정이 적용될 수 있어요. 로그인과 인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="pref_sync_retry">다시 반영하기</string>
+    <string name="pref_sync_sending">알림 설정을 반영하고 있어요…</string>
+    <string name="pref_notifications_blocked">휴대폰 설정에서 알림이 차단되어 있어요. 선택한 알림을 받으려면 StepUp 알림을 허용해 주세요.</string>
+    <string name="post_like_action">좋아요</string>
+    <string name="post_unlike_action">좋아요 취소</string>
     <!-- Notification -->
     <string name="notification_channel_walk">러닝 세션</string>
     <string name="notification_channel_community">크루·번개 소식</string>
@@ -323,6 +331,10 @@
     <string name="stat_sessions">러닝</string>
     <string name="stat_tokens_earned">적립 토큰</string>
     <string name="profile_account">계정 및 설정</string>
+    <string name="settings_group_account">계정</string>
+    <string name="settings_group_activity">나의 활동</string>
+    <string name="settings_group_preferences">앱 설정</string>
+    <string name="settings_group_help">도움말</string>
     <string name="settings_wallet">지갑 및 토큰</string>
     <string name="settings_notifications">알림</string>
     <string name="settings_privacy">개인정보 및 보안</string>
@@ -382,7 +394,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">저장하는 정보</string>
     <string name="privacy_data_body">로그인하면 러닝 기록(GPS 경로 포함)·걸음 합계·SUP 내역·글과 크루 활동이 StepUp 서버에 보관돼요. 서버가 적립을 직접 계산하고, 크루·랭킹·코스·땅따먹기를 함께 쓰기 위해서예요. 광고 식별자는 모으지 않아요. 계정은 연결된 계정 화면에서 언제든 지울 수 있어요.</string>
-    <string name="privacy_perm_title">사용 중인 권한</string>
+    <string name="privacy_perm_title">앱 권한</string>
     <string name="privacy_perm_activity">신체 활동 — 걸음 수 집계</string>
     <string name="privacy_perm_notification">알림 — 러닝 세션 표시</string>
     <string name="privacy_reset_title">로컬 데이터 정리</string>
@@ -407,9 +419,10 @@
     <string name="connected_giwa">GIWA 지갑</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">소셜 계정</string>
-    <string name="connected_status_soon">준비 중</string>
+    <string name="connected_status_soon">지원하지 않음</string>
+    <string name="connected_status_on">로그인됨</string>
     <string name="connected_status_off">연결 안 됨</string>
-    <string name="connected_body">계정을 연결하면 SUP를 온체인으로 옮기고 여러 기기에서 걸음을 동기화할 수 있어요.</string>
+    <string name="connected_body">로그인 상태와 현재 버전의 외부 서비스 지원 여부를 확인하세요.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 잔액</string>
@@ -421,8 +434,8 @@
     <string name="wallet_empty_title">아직 내역이 없어요</string>
     <string name="wallet_empty_body">러닝 한 번이면 첫 SUP가 쌓여요.</string>
     <string name="wallet_giwa">GIWA 지갑</string>
-    <string name="wallet_giwa_status">온체인 연동 준비 중</string>
-    <string name="wallet_giwa_body">곧 SUP를 GIWA 체인 토큰으로 바꿀 수 있어요.</string>
+    <string name="wallet_giwa_status">현재 버전에서 지원하지 않음</string>
+    <string name="wallet_giwa_body">앱에 기록된 SUP를 표시합니다. 현재 버전에서는 GIWA 지갑 연결과 출금을 지원하지 않습니다.</string>
     <string name="wallet_withdraw">출금하기</string>
     <string name="wallet_withdraw_title">GIWA 체인으로 출금</string>
     <string name="wallet_withdraw_body">온체인 정산은 메인넷 출시와 함께 열려요. 그때 잔액이 1:1로 그대로 넘어가요.</string>
@@ -505,6 +518,7 @@
 
     <!-- Compose -->
     <string name="post_write">글쓰기</string>
+    <string name="post_type">게시글 유형</string>
     <string name="post_submit">올리기</string>
     <string name="post_field_title">제목</string>
     <string name="post_field_title_hint">무슨 이야기인가요?</string>
@@ -512,7 +526,7 @@
     <string name="post_field_body_hint">자세한 내용을 적어주세요…</string>
     <string name="post_flash_details">모임 정보</string>
     <string name="post_field_place">만나는 곳</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">예: 강변공원 3번 출입구</string>
     <string name="post_field_distance">달릴 거리 (km)</string>
     <string name="post_field_starts_in">출발까지 (분)</string>
     <string name="post_field_capacity">정원</string>
@@ -866,13 +880,13 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour2_title">에너지</string>
     <string name="tour2_body">적립할 때마다 에너지를 써요. 자정에 다시 차고, 0이 되면 내일까지 적립이 멈춰요.</string>
     <string name="tour3_title">러닝 시작</string>
-    <string name="tour3_body">여기를 눌러 시작하세요. 러닝 중의 걸음마다 스니커즈 부스트가 붙은 SUP가 쌓여요.</string>
+    <string name="tour3_body">홈의 러닝 시작을 누르세요. 필요한 권한을 확인한 뒤 운동을 기록해요.</string>
     <string name="tour4_title">게시판 / 크루</string>
     <string name="tour4_body">열린 게시판(번개러닝·꿀팁)과 크루(직접 만들 수 있는 소모임) 사이를 전환해요.</string>
     <string name="tour5_title">랭킹</string>
     <string name="tour5_body">이번 주 내 순위를 확인하세요. 누르면 주간 걸음/보유 SUP 전체 순위표가 열려요.</string>
-    <string name="tour6_title">글쓰기</string>
-    <string name="tour6_body">번개러닝을 모집하거나 꿀팁을 나눠보세요. 번개러닝은 가까운 순이라 근처 러너에게 먼저 보여요.</string>
+    <string name="tour6_title">함께 달릴 사람 찾기</string>
+    <string name="tour6_body">커뮤니티에서 함께 달릴 모임을 찾고 러너들의 이야기를 나눠보세요.</string>
     <string name="tour7_title">착용 중인 스니커즈</string>
     <string name="tour7_body">이 신발의 부스트가 모든 러닝에 적용돼요. 눌러서 스탯 확인·강화·교체를 할 수 있어요.</string>
     <string name="tour8_title">민팅</string>
@@ -882,7 +896,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour10_title">이벤트</string>
     <string name="tour10_body">주간 캠페인에서 실제 SUP를 받아요. 진행도를 확인하고 목표 달성 시 보상을 수령하세요.</string>
     <string name="tour11_title">내 프로필</string>
-    <string name="tour11_body">러너 ID가 여기 있어요. 연필을 눌러 아바타를 바꿔보세요 — 이모지나 갤러리 사진을 고를 수 있어요.</string>
+    <string name="tour11_body">내 정보에서 러닝 기록과 누적 거리를 확인해요. 이름 옆 연필로 닉네임을 바꿀 수 있어요.</string>
     <string name="tour12_title">업적 100종</string>
     <string name="tour12_body">브론즈부터 다이아까지, 1년 꾸준히 달리면 전부 달성할 수 있어요. 투어는 여기까지 — 이제 달려볼까요!</string>
 
@@ -922,7 +936,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="language_ko">한국어</string>
     <string name="language_zh">중국어</string>
     <string name="language_ja">일본어</string>
-    <string name="language_note">앱 전체가 바로 바뀝니다 — 화면, 알림, 게시글까지. 사람·크루 이름만 원래대로 남습니다.</string>
+    <string name="language_note">선택한 언어로 앱을 표시해요. 사용자 게시글과 이름은 원문으로 남을 수 있어요.</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">루키</string>
@@ -1293,7 +1307,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour_tab_customize_title">② 꾸미기 탭</string>
     <string name="tour_tab_customize_body">내 캐릭터에 의상과 신발을 입히는 곳이에요. 러너 마켓도 이 안에 있어요.</string>
     <string name="tour_customize_title">내 캐릭터</string>
-    <string name="tour_customize_body">남자·여자를 고르고 의상과 신발을 장착해 보세요. 입힌 모습은 러닝·내 정보에도 똑같이 보여요.</string>
+    <string name="tour_customize_body">꾸미기에서 의상과 신발을 골라보세요. 장착한 모습은 러닝과 내 정보에도 그대로 보여요.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">체험 중</string>
@@ -1324,7 +1338,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="customize_tab_outfit">의상</string>
     <string name="customize_tab_shoes">신발</string>
     <string name="customize_equip">장착하기</string>
-    <string name="customize_wearing">장착 중</string>
+    <string name="customize_wearing">착용 중</string>
     <string name="customize_open_market">마켓 보기</string>
     <string name="customize_open_vault">신발 보관함</string>
     <string name="customize_shoe_detail">이 신발 자세히 보기 ›</string>
@@ -1360,7 +1374,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="feed_demo_note">데모 모드예요. 아래는 테스트용 예시이며 실제 대회·기사가 아니에요.</string>
     <string name="finish_confirmed">포인트 적립 완료</string>
     <string name="finish_pending">러닝 완료 · 서버 확인 중</string>
-    <string name="finish_pending_note">앱에는 적립됐어요. 서버가 기록을 확인하면 완료로 바뀌어요.</string>
+    <string name="finish_pending_note">러닝 기록을 저장했어요. 보상은 서버 확인 후 확정돼요.</string>
     <string name="finish_rejected">서버가 이 기록을 인정하지 않았어요</string>
     <string name="finish_balance">보유</string>
     <string name="finish_done">완료</string>
@@ -1390,6 +1404,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_outfit_try">체험 착용 (데모)</string>
     <string name="market_demo_note">데모 모드예요. 테스트용 상품이라 살 수 없어요.</string>
     <string name="market_demo_toast">데모 상품은 살 수 없어요.</string>
+    <string name="me_total_runs">기록한 러닝</string>
     <string name="me_default_name">러너님</string>
     <string name="me_points">보유 포인트</string>
     <string name="me_points_history">적립 내역</string>
@@ -1422,6 +1437,11 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_gps_search">GPS 찾는 중</string>
     <string name="run_avg_pace">평균 페이스</string>
     <string name="finish_title">러닝 완료</string>
+    <string name="community_together">함께 뛰기</string>
+    <string name="community_stories">이야기</string>
+    <string name="community_view_meetup">모임 자세히 보기</string>
+    <string name="community_other_meetups">다른 모임 보기</string>
+    <string name="community_meetups_empty">아직 참가할 수 있는 예정된 러닝이 없어요. 글을 써서 함께 달릴 사람을 찾아보세요.</string>
     <string name="community_hero_title">함께 달리기</string>
     <string name="community_hero_sub">오늘도, 더 멀리, 함께 달리는 러너들의 이야기.</string>
     <string name="news_hero_sub">함께 달리는 더 큰 즐거움.</string>
@@ -1490,4 +1510,31 @@ StepUp과 함께 달려보세요.</string>
     <string name="account_delete_body">계정과 서버에 있는 러닝 기록·GPS 경로·SUP 내역·글·댓글·코스·땅 표시가 모두 지워지고 되돌릴 수 없어요. 크루장이라면 가장 오래된 크루원이 크루장이 돼요. 이 폰에 남은 기록은 앱을 삭제하면 지워져요.</string>
     <string name="account_delete_confirm">삭제</string>
     <string name="account_delete_failed">지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 계속 안 되면 support@stepupcrew.com 으로 알려 주세요.</string>
+    <string name="splash_prepare_failed">앱을 준비하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="run_location_disabled">위치 권한 꺼짐</string>
+    <string name="finish_share_activity">StepUp에서 %1$s km를 %2$s 동안 달렸어요.</string>
+    <string name="notif_reward_unverified">이전 보상 알림에는 확인된 지급 기록이 없어요. 받을 수 있는 보상은 도전에서 확인하세요.</string>
+    <string name="session_sign_in_again">다시 로그인</string>
+    <string name="post_invalid_numbers">거리는 0km 초과, 출발까지는 1분 이상, 정원은 2~200명으로 입력해 주세요.</string>
+    <string name="energy_purchase_capacity">에너지를 2 이상 사용한 뒤 다시 시도해 주세요. 대기 중인 구매는 추가 차감 없이 처리됩니다.</string>
+    <string name="privacy_permission_allowed">허용됨</string>
+    <string name="privacy_permission_not_allowed">허용 안 됨</string>
+    <string name="privacy_perm_location">위치 — 러닝 경로 기록</string>
+    <string name="privacy_location_precise">정확한 위치 허용</string>
+    <string name="privacy_location_approximate">대략적인 위치 허용</string>
+    <string name="run_saving">러닝 저장 중</string>
+    <string name="run_save_retry">저장 다시 시도</string>
+    <string name="run_save_failed">러닝 저장을 마치지 못했어요. 앱을 닫지 말고 다시 시도해 주세요.</string>
+    <string name="course_like_action">이 코스 좋아요</string>
+    <string name="course_unlike_action">코스 좋아요 취소</string>
+    <string name="tab_draw">뽑기</string>
+    <string name="mystery_title">미스터리 박스</string>
+    <string name="mystery_subtitle">원하는 아이템을 골라 뽑아보세요.</string>
+    <string name="mystery_box_description">푸른빛이 나는 닫힌 미스터리 박스</string>
+    <string name="mystery_draw_shoe">신발 뽑기</string>
+    <string name="mystery_draw_outfit">트레이닝복 뽑기</string>
+    <string name="mystery_pending_chain">GIWA 컨트랙트 배포 후 뽑기가 열립니다.</string>
+    <string name="home_previous_background">이전 배경</string>
+    <string name="home_next_background">다음 배경</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

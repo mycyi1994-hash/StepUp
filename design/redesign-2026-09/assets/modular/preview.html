@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StepUp 분리 자산 검토</title>
+<style>
+  body{margin:0;background:#090f22;color:#e8efff;font:14px system-ui,sans-serif}
+  header{padding:22px 26px}h1{font-size:22px;margin:0 0 6px}p{margin:0;color:#aebfe5}
+  main{display:flex;gap:20px;flex-wrap:wrap;padding:0 26px 26px}
+  article{width:284px}h2{font-size:15px;font-weight:600;margin:0 0 9px}
+  .stage{position:relative;width:284px;height:615px;overflow:hidden;border:1px solid #48659c;border-radius:15px;background:#172c59}
+  .night{background-image:url('scene-riverside-blue-night-grounded.png');background-size:100% 100%}
+  .dawn{background-image:url('scene-riverside-dawn-grounded.png');background-size:100% 100%}
+  .avatar{position:absolute;width:270px;height:405px;object-fit:fill;left:7px;top:113px}
+  .sit{top:91px}.bench{position:absolute;width:277px;left:4px;top:295px}
+  .bench-behind{z-index:1}.sit-figure{z-index:2}
+  .label{position:absolute;left:10px;bottom:9px;padding:5px 8px;border-radius:6px;background:#06122ccc;color:white;font-size:11px}
+  small{display:block;color:#aebfe5;line-height:1.45;margin-top:8px}
+</style>
+<header><h1>분리 이미지 시험 합성</h1><p>배경·캐릭터·의상·신발·벤치를 별도 파일로 겹친 검토 보드. 실제 앱 적용 전 정렬 검증용.</p></header>
+<main>
+  <article><h2>밤 + 기존 전신</h2><div class="stage night"><img class="avatar" src="../../../../app/src/main/res/drawable-nodpi/avatar_lumi_idle_studio_pink.png"><span class="label">배경 교체</span></div><small>기존 2차 캐릭터를 신규 배경 위에 배치한 기준 비교.</small></article>
+  <article><h2>새벽 + 핑크/청록</h2><div class="stage dawn"><img class="avatar" src="lumi-idle-base-pilot.png"><img class="avatar" src="lumi-idle-outfit-pink-pilot.png"><img class="avatar" src="lumi-idle-shoes-teal-pilot.png"><img class="avatar" src="lumi-idle-cap-pink-pilot.png"><span class="label">4개 독립 레이어 · 시험</span></div><small>소매·손, 양말·발, 모자·머리 정렬과 광륜을 검수한다. 현재 승인 자산 아님.</small></article>
+  <article><h2>새벽 + 라벤더/청록</h2><div class="stage dawn"><img class="avatar" src="lumi-idle-base-pilot.png"><img class="avatar" src="lumi-idle-outfit-lavender-pilot.png"><img class="avatar" src="lumi-idle-shoes-teal-pilot.png"><img class="avatar" src="lumi-idle-cap-pink-pilot.png"><span class="label">의상 교체 · 시험</span></div><small>모자 색은 독립 슬롯이며 현재 핑크만 생성됨.</small></article>
+  <article><h2>새벽 + 핑크/워터</h2><div class="stage dawn"><img class="avatar" src="lumi-idle-base-pilot.png"><img class="avatar" src="lumi-idle-outfit-pink-pilot.png"><img class="avatar" src="lumi-idle-shoes-water-pilot.png"><img class="avatar" src="lumi-idle-cap-pink-pilot.png"><span class="label">신발 교체 · 시험</span></div><small>같은 몸체에서 신발만 교체한 시험.</small></article>
+  <article><h2>새벽 + 라벤더/워터</h2><div class="stage dawn"><img class="avatar" src="lumi-idle-base-pilot.png"><img class="avatar" src="lumi-idle-outfit-lavender-pilot.png"><img class="avatar" src="lumi-idle-shoes-water-pilot.png"><img class="avatar" src="lumi-idle-cap-pink-pilot.png"><span class="label">의상·신발 교체 · 시험</span></div><small>교차 조합 4종의 마지막 시험.</small></article>
+  <article><h2>새벽 + 핑크/워터 v3</h2><div class="stage dawn"><img class="avatar" src="lumi-idle-base-pilot.png"><img class="avatar" src="lumi-idle-outfit-pink-pilot.png"><img class="avatar" src="lumi-idle-shoes-water-v3-pilot.png"><img class="avatar" src="lumi-idle-cap-pink-pilot.png"><span class="label">교정 재시도 · 정렬 검수</span></div><small>독립 레이어로 그대로 겹친 결과. 발·양말 경계를 원본과 비교한다.</small></article>
+  <article><h2>밤 + 달리기 LUMI</h2><div class="stage night"><img class="avatar" src="lumi-run-rear-pink-pilot.png"><span class="label">독립 포즈 · 시험</span></div><small>러닝 화면의 배경을 바꿔도 캐릭터가 유지되는지 확인.</small></article>
+  <article><h2>새벽 + 앉기 LUMI + 벤치</h2><div class="stage dawn"><img class="bench bench-behind" src="bench-riverside-pilot.png"><img class="avatar sit sit-figure" src="lumi-sit-pink-pilot.png"><span class="label">분리 벤치 · 시험</span></div><small>벤치 좌면과 캐릭터 좌석 위치를 검수한다.</small></article>
+  <article><h2>새벽 + 앉기 RUNO + 벤치</h2><div class="stage dawn"><img class="bench bench-behind" src="bench-riverside-pilot.png"><img class="avatar sit sit-figure" src="runo-sit-pink-pilot.png"><span class="label">분리 벤치 · 시험</span></div><small>두 성별에서 벤치 위치가 맞는지 확인.</small></article>
+</main>
+</html>

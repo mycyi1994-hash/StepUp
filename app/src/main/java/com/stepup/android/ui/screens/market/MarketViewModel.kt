@@ -16,10 +16,12 @@ import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.ModelBook
 import com.stepup.android.data.repo.MyMarket
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * 서버에 못 닿았을 때 화면이 할 말.
@@ -60,39 +62,57 @@ class MarketViewModel(private val repo: MarketRepository) : ViewModel() {
 
     val message = MutableStateFlow<MarketMessage?>(null)
 
+    private var refreshJob: Job? = null
+
     init {
         refresh()
     }
 
     fun refresh() {
-        viewModelScope.launch {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
             board.value = board.value.copy(loading = true, problem = null)
 
-            // 사는 사람과 파는 사람의 장부를 맞추는 것이 먼저다. 팔린 신발이
-            // 아직 보관함에 남아 있는 채로 시세판을 열면, 없는 신발을 팔려고
-            // 하게 된다.
-            repo.sync()
+            try {
+                // 사는 사람과 파는 사람의 장부를 맞추는 것이 먼저다. 팔린 신발이
+                // 아직 보관함에 남아 있는 채로 시세판을 열면, 없는 신발을 팔려고
+                // 하게 된다.
+                repo.sync()
 
-            when (val quotes = repo.quotes()) {
-                is ServerResult.Ok -> {
-                    // 내 거래와 잔고는 없어도 시세판은 보여 준다.
-                    // 셋을 묶어 하나가 실패했다고 전부 못 보게 할 이유가 없다.
-                    val mineResult = repo.mine()
-                    val mine = if (mineResult is ServerResult.Ok) mineResult.value else null
-                    val balanceResult = repo.tradableBalance()
-                    val tradable =
-                        if (balanceResult is ServerResult.Ok) balanceResult.value else 0.0
-                    board.value = MarketBoard(
-                        loading = false,
-                        quotes = quotes.value,
-                        mine = mine,
-                        tradable = tradable,
-                    )
+                when (val quotes = repo.quotes()) {
+                    is ServerResult.Ok -> {
+                        val mineResult = repo.mine()
+                        if (mineResult !is ServerResult.Ok) {
+                            currentCoroutineContext().ensureActive()
+                            board.value = board.value.copy(loading = false, problem = mineResult.problem())
+                            return@launch
+                        }
+                        val mine = mineResult.value
+                        val balanceResult = repo.tradableBalance()
+                        if (balanceResult !is ServerResult.Ok) {
+                            currentCoroutineContext().ensureActive()
+                            board.value = board.value.copy(loading = false, problem = balanceResult.problem())
+                            return@launch
+                        }
+                        val tradable = balanceResult.value
+                        currentCoroutineContext().ensureActive()
+                        board.value = MarketBoard(
+                            loading = false,
+                            quotes = quotes.value,
+                            mine = mine,
+                            tradable = tradable,
+                        )
+                    }
+                    else -> {
+                        currentCoroutineContext().ensureActive()
+                        board.value = board.value.copy(loading = false, problem = quotes.problem())
+                    }
                 }
-                else -> board.value = board.value.copy(
-                    loading = false,
-                    problem = quotes.problem(),
-                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                currentCoroutineContext().ensureActive()
+                board.value = board.value.copy(loading = false, problem = MarketProblem.OFFLINE)
             }
         }
     }
@@ -135,52 +155,64 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
     val state = MutableStateFlow(MarketModelState())
     val message = MutableStateFlow<MarketMessage?>(null)
 
-    private val inventory: StateFlow<List<SneakerEntity>> = repo.inventory()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     private var model: ModelKey? = null
+    private var loadJob: Job? = null
 
     fun open(key: ModelKey) {
-        if (model == key && state.value.book != null) return
+        if (model == key && state.value.book != null && state.value.problem == null) return
+        if (model != key) state.value = MarketModelState()
         model = key
         load()
     }
 
     fun load() {
         val key = model ?: return
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             state.value = state.value.copy(loading = true, problem = null)
-            when (val book = repo.book(key)) {
-                is ServerResult.Ok -> {
-                    val quotesResult = repo.quotes()
-                    val quote = if (quotesResult is ServerResult.Ok) {
-                        quotesResult.value.firstOrNull {
-                            it.faction == key.faction &&
-                                it.rarity == key.rarity &&
-                                it.variant == key.variant
+            try {
+                when (val book = repo.book(key)) {
+                    is ServerResult.Ok -> {
+                        val quotesResult = repo.quotes()
+                        val quote = if (quotesResult is ServerResult.Ok) {
+                            quotesResult.value.firstOrNull {
+                                it.faction == key.faction &&
+                                    it.rarity == key.rarity &&
+                                    it.variant == key.variant
+                            }
+                        } else {
+                            null
                         }
-                    } else {
-                        null
+                        val balanceResult = repo.tradableBalance()
+                        if (balanceResult !is ServerResult.Ok) {
+                            currentCoroutineContext().ensureActive()
+                            state.value = state.value.copy(loading = false, problem = balanceResult.problem())
+                            return@launch
+                        }
+                        val tradable = balanceResult.value
+                        currentCoroutineContext().ensureActive()
+                        state.value = MarketModelState(
+                            loading = false,
+                            book = book.value,
+                            quote = quote,
+                            tradable = tradable,
+                            mySneakers = repo.inventory().first().filter {
+                                it.factionId == key.faction &&
+                                    it.rarity == key.rarity &&
+                                    it.variant == key.variant
+                            },
+                        )
                     }
-                    val balanceResult = repo.tradableBalance()
-                    val tradable =
-                        if (balanceResult is ServerResult.Ok) balanceResult.value else 0.0
-                    state.value = MarketModelState(
-                        loading = false,
-                        book = book.value,
-                        quote = quote,
-                        tradable = tradable,
-                        mySneakers = inventory.value.filter {
-                            it.factionId == key.faction &&
-                                it.rarity == key.rarity &&
-                                it.variant == key.variant
-                        },
-                    )
+                    else -> {
+                        currentCoroutineContext().ensureActive()
+                        state.value = state.value.copy(loading = false, problem = book.problem())
+                    }
                 }
-                else -> state.value = state.value.copy(
-                    loading = false,
-                    problem = book.problem(),
-                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                currentCoroutineContext().ensureActive()
+                state.value = state.value.copy(loading = false, problem = MarketProblem.OFFLINE)
             }
         }
     }
@@ -191,9 +223,9 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
 
     fun listForSale(localId: Long, price: Double) = act { repo.listForSale(localId, price) }
 
-    fun bid(minLevel: Int, price: Double) = act {
-        val key = model ?: return@act MarketOutcome.Offline("")
-        repo.placeBid(key, minLevel, price)
+    fun bid(minLevel: Int, price: Double) {
+        val key = model ?: return
+        act { repo.placeBid(key, minLevel, price) }
     }
 
     private fun act(block: suspend () -> MarketOutcome) {

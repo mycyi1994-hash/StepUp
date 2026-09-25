@@ -1,6 +1,7 @@
 import { createPublicClient, http, defineChain, isAddress, keccak256, toBytes } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { inspectTrack, verdict, payout, MAX_DAILY_STEPS } from './economy.js'
+import { handleDrawAuth } from './draw.js'
 
 /**
  * StepUp 어테스터 — 러닝 세션을 검사하고 EIP-712로 서명한다.
@@ -103,6 +104,10 @@ export default {
 
     if (request.method === 'OPTIONS') return json({ ok: true })
 
+    if (url.pathname === '/draw/authorization' && request.method === 'POST') {
+      return handleDrawAuth(request, env)
+    }
+
     if (url.pathname === '/health') {
       const configured = Boolean(env.ATTESTER_PRIVATE_KEY && env.DISTRIBUTOR_ADDRESS)
       return json({
@@ -111,6 +116,7 @@ export default {
         chain: GIWA_SEPOLIA.id,
         distributor: env.DISTRIBUTOR_ADDRESS ?? null,
         attester: configured ? privateKeyToAccount(env.ATTESTER_PRIVATE_KEY).address : null,
+        drawConfigured: Boolean(env.DRAW_CONTRACT_ADDRESS && env.DRAW_ROLLER_PRIVATE_KEY && env.DRAW_SEED),
       })
     }
 
@@ -141,6 +147,9 @@ export default {
     if (!Number.isInteger(steps) || steps <= 0 || steps > MAX_DAILY_STEPS) {
       return badRequest('steps 범위를 벗어났습니다')
     }
+    // 정수가 아니면 지급액 계산의 BigInt() 가 던져, CORS 헤더 없는 500 으로 끝난다
+    if (!Number.isInteger(boostBps) || boostBps < 0) return badRequest('boostBps 가 올바르지 않습니다')
+    if (!Number.isInteger(partySize) || partySize < 1) return badRequest('partySize 가 올바르지 않습니다')
     if (!Array.isArray(track) || track.length < 2) {
       return badRequest('GPS 경로가 필요합니다 (최소 2점)')
     }

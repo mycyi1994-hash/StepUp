@@ -1,11 +1,7 @@
 package com.stepup.android.ui.screens.feed
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,10 +11,7 @@ import com.stepup.android.R
 import com.stepup.android.data.remote.EventRow
 import com.stepup.android.data.remote.NewsRow
 import com.stepup.android.data.remote.SourceRow
-import com.stepup.android.ui.components.FilterSummaryRow
-import com.stepup.android.ui.components.FilterToolbar
-import com.stepup.android.ui.components.PillChip
-import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.theme.Silver
 
 /**
  * 뉴스 탭 안의 두 자리.
@@ -114,9 +107,9 @@ fun LazyListScope.runningEventsSection(
         Text(
             text = stringResource(R.string.feed_events_notice),
             modifier = Modifier.padding(horizontal = 4.dp),
-            fontSize = 10.sp,
-            color = Slate,
-            lineHeight = 16.sp,
+            fontSize = 14.sp,
+            color = Silver,
+            lineHeight = 21.sp,
         )
     }
 }
@@ -195,9 +188,9 @@ fun LazyListScope.runningNewsSection(
                 )
             },
             modifier = Modifier.padding(horizontal = 4.dp),
-            fontSize = 10.sp,
-            color = Slate,
-            lineHeight = 16.sp,
+            fontSize = 14.sp,
+            color = Silver,
+            lineHeight = 21.sp,
         )
     }
 }

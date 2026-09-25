@@ -3,16 +3,24 @@ package com.stepup.android.ui.screens.login
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +35,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -38,15 +45,12 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.Analytics
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.sync.SessionUploadWorker
 import com.stepup.android.data.remote.GoogleIdResult
 import com.stepup.android.data.remote.TokenResult
-import com.stepup.android.ui.components.HexEmblem
 import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import kotlinx.coroutines.launch
 
@@ -89,6 +93,8 @@ fun LoginScreen(onDone: () -> Unit) {
                                 Analytics.login()
                                 // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
                                 ServiceLocator.pushRegistrar.syncInBackground()
+                                // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
+                                runCatching { SessionUploadWorker.schedule(activity) }
                                 onDone()
                             }
                             // 서버가 토큰을 거절했다. 대개 설정 문제다 —
@@ -104,6 +110,10 @@ fun LoginScreen(onDone: () -> Unit) {
                     is GoogleIdResult.NoAccount -> error = R.string.login_no_account
                     is GoogleIdResult.Failed -> error = R.string.login_failed
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                error = R.string.login_failed
             } finally {
                 // 성공하면 화면이 바뀌지만, 그 사이 무엇이 터져도 버튼이
                 // 영원히 도는 상태로 남으면 안 된다.
@@ -112,96 +122,87 @@ fun LoginScreen(onDone: () -> Unit) {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Night),
-    ) {
+    LoginContent(signingIn = signingIn, error = error, onSignIn = ::signIn)
+}
+
+/** Production presentation, also rendered directly for loading/error accessibility checks. */
+@Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+internal fun LoginContent(signingIn: Boolean, error: Int?, onSignIn: () -> Unit) {
+    val context = LocalContext.current
+    Box(Modifier.fillMaxSize()) {
+        com.stepup.android.ui.components.RunnerScene(Modifier.fillMaxSize())
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 30.dp, vertical = 48.dp),
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.weight(0.9f))
-
-            HexEmblem(size = 74.dp)
-            Spacer(Modifier.height(18.dp))
-            Wordmark(fontSize = 42.sp)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = stringResource(R.string.splash_tagline),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Silver,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.weight(1f))
-
-            Text(
-                text = stringResource(R.string.login_headline),
-                style = MaterialTheme.typography.titleMedium,
-                color = Snow,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(18.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(50))
-                    .background(Color.White)
-                    // 바닥이 흰색이라 테두리가 없으면 버튼이 사라진다.
-                    // 구글 브랜드 가이드가 허용하는 회색 선이다.
-                    .border(1.dp, Color(0xFFDADCE0), RoundedCornerShape(50))
-                    .quietClickable { signIn() }
-                    .padding(vertical = 15.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (signingIn) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = Color(0xFF4285F4),
-                        strokeWidth = 2.4.dp,
-                    )
-                } else {
-                    GoogleGlyph()
+            Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.community_warmup),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                )
+            }
+            // Scroll only when font expansion needs more room; login and legal links remain reachable.
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                com.stepup.android.ui.components.GlowCard(contentPadding = PaddingValues(24.dp), spacing = 18.dp) {
+                    Text(stringResource(R.string.login_headline), color = Snow,
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    GoogleSignInButton(signingIn, onSignIn)
+                    error?.let {
+                        Text(stringResource(it), color = Alert, fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth().testTag("login-error")
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            textAlign = TextAlign.Center)
+                    }
+                    Text(stringResource(R.string.login_terms), color = Silver, fontSize = 14.sp,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-terms"), onClick = {
+                            com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/terms.html")
+                        }) { Text(stringResource(R.string.login_terms_link)) }
+                        androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-privacy"), onClick = {
+                            com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/privacy.html")
+                        }) { Text(stringResource(R.string.login_privacy_link)) }
+                    }
                 }
-                Spacer(Modifier.size(10.dp))
-                Text(
-                    text = stringResource(
-                        if (signingIn) R.string.login_google_progress else R.string.login_google,
-                    ),
-                    color = Color(0xFF1F1F1F),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                )
             }
-
-            Spacer(Modifier.height(14.dp))
-
-            // 실패했으면 이유를 보여준다. 아무 말 없이 제자리면 사용자는
-            // 버튼이 고장 난 줄 안다.
-            error?.let { message ->
-                Text(
-                    text = stringResource(message),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontSize = 12.sp,
-                    color = Alert,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-
-            Text(
-                text = stringResource(R.string.login_terms),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
-                color = Slate.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-            )
         }
+    }
+}
+
+@Composable
+private fun GoogleSignInButton(signingIn: Boolean, onClick: () -> Unit) {
+    androidx.compose.material3.OutlinedButton(
+        onClick = onClick, enabled = !signingIn,
+        modifier = Modifier.fillMaxWidth().heightIn(min = com.stepup.android.ui.theme.StepUpDesign.PrimaryHeight)
+            .testTag("login-google"),
+        shape = RoundedCornerShape(50),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF747775)),
+        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White, contentColor = Color(0xFF1F1F1F),
+            disabledContainerColor = Color.White, disabledContentColor = Color(0xFF1F1F1F),
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(R.drawable.google_g),
+            contentDescription = null, modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.size(10.dp))
+        Text(stringResource(if (signingIn) R.string.login_google_progress else R.string.login_google),
+            fontSize = 14.sp, fontWeight = FontWeight.Medium,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
+            modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+        if (signingIn) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
     }
 }
 
@@ -218,12 +219,4 @@ private fun Context.findActivity(): Activity? {
         current = current.baseContext
     }
     return null
-}
-
-/** 구글 'G' 글리프 */
-@Composable
-private fun GoogleGlyph() {
-    Row {
-        Text("G", color = Color(0xFF4285F4), fontSize = 16.sp, fontWeight = FontWeight.Black)
-    }
 }

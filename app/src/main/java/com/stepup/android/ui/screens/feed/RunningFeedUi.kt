@@ -1,5 +1,11 @@
 package com.stepup.android.ui.screens.feed
 
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material3.IconToggleButton
+import com.stepup.android.ui.components.FormField
+import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.GhostButton
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,14 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Search
 import com.stepup.android.ui.theme.VoltText
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
@@ -29,11 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +39,6 @@ import com.stepup.android.R
 import com.stepup.android.data.remote.EventRow
 import com.stepup.android.data.remote.NewsRow
 import com.stepup.android.data.remote.RunningFeedApi
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
@@ -174,51 +171,13 @@ fun FeedSearchField(
     onFilter: (() -> Unit)? = null,
     filterCount: Int = 0,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Search,
-            contentDescription = null,
-            tint = Slate,
-            modifier = Modifier.size(18.dp),
-        )
-        Box(Modifier.weight(1f)) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = TextStyle(color = Snow, fontSize = 14.sp),
-                cursorBrush = SolidColor(Volt),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (value.isEmpty()) {
-                Text(text = hint, fontSize = 14.sp, color = Slate, maxLines = 1)
-            }
-        }
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FormField(label = hint, value = value, onValueChange = onValueChange, modifier = Modifier.weight(1f))
         if (onFilter != null) {
             val label = stringResource(R.string.filter_button)
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (filterCount > 0) Volt.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
-                    .quietClickable(onFilter)
-                    .semantics { contentDescription = label },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Tune,
-                    contentDescription = null,
-                    tint = if (filterCount > 0) VoltText else Silver,
-                    modifier = Modifier.size(18.dp),
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                DarkIconButton(Icons.Filled.Tune, if (filterCount > 0) "$label $filterCount" else label, onClick = onFilter)
+                if (filterCount > 0) Text("$filterCount", style = MaterialTheme.typography.bodyMedium, color = VoltText)
             }
         }
     }
@@ -249,29 +208,21 @@ fun FeedProblemNote(
                 if (problem == FeedProblem.REJECTED) R.string.feed_problem_rejected
                 else R.string.feed_problem_offline
             ),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = Silver,
-            lineHeight = 18.sp,
+            lineHeight = 21.sp,
         )
         if (loadedAtMillis > 0) {
             Text(
                 text = stringResource(R.string.feed_showing_cached, timeLabel(loadedAtMillis)),
-                fontSize = 10.sp,
+                fontSize = 14.sp,
                 color = Slate,
             )
         }
         // 서버가 거절한 것은 다시 해도 같은 답이 온다. 그때는 다시 시도를
         // 내놓지 않는다 — 눌러도 달라지지 않는 버튼을 두는 것은 거짓말이다.
         if (onRetry != null && problem == FeedProblem.OFFLINE) {
-            Text(
-                text = stringResource(R.string.feed_retry),
-                modifier = Modifier
-                    .quietClickable(onRetry)
-                    .padding(top = 2.dp, bottom = 2.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
+            GhostButton(stringResource(R.string.feed_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -297,21 +248,13 @@ fun FeedEmptyNote(
         if (hint != null) {
             Text(
                 text = stringResource(hint),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 color = Silver,
-                lineHeight = 17.sp,
+                lineHeight = 21.sp,
             )
         }
         if (action != null) {
-            Text(
-                text = stringResource(action.first),
-                modifier = Modifier
-                    .quietClickable(action.second)
-                    .padding(top = 4.dp, bottom = 2.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
+            GhostButton(stringResource(action.first), onClick = action.second, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -332,7 +275,7 @@ fun FeedTag(text: String, accent: Boolean = false, warn: Boolean = false) {
             .background(if (warn || accent) tint.copy(alpha = 0.14f) else CarbonHigh)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text(text = text, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = tint, maxLines = 1)
+        Text(text = text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tint)
     }
 }
 
@@ -344,132 +287,40 @@ fun FeedTag(text: String, accent: Boolean = false, warn: Boolean = false) {
  * 카드 본문을 누르면 그 대회의 바깥 페이지로 바로 간다. 관심 저장 버튼은
  * 따로 동작한다 — 저장하려다 브라우저가 열리면 놀란다.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun EventCard(
-    row: EventRow,
-    onOpen: () -> Unit,
-    onToggleSave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val (statusText, statusMuted) = registrationLabel(
-        row.registrationStatus, row.lastVerifiedAt, row.cancelled,
-    )
-    GlowCard(
-        modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
-        spacing = 10.dp,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .quietClickable(onOpen),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Eyebrow(text = dayLabel(row.eventDate))
-                Text(
-                    text = row.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Snow,
-                    lineHeight = 21.sp,
-                )
-                Text(
-                    text = listOf(row.region, row.venue).filter { it.isNotBlank() }
-                        .joinToString(" · ")
-                        .ifBlank { stringResource(R.string.feed_place_unknown) },
-                    fontSize = 11.sp,
-                    color = Silver,
-                )
-            }
-            // 관심 저장. 터치 영역을 44dp 로 잡는다 — 손가락은 아이콘보다 크다.
-            val saveLabel = stringResource(
-                if (row.saved) R.string.feed_unsave else R.string.feed_save
-            )
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(50))
-                    .quietClickable(onToggleSave)
-                    .semantics { contentDescription = saveLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (row.saved) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = null,
-                    tint = if (row.saved) Volt else Slate,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+fun EventCard(row: EventRow, onOpen: () -> Unit, onToggleSave: () -> Unit, modifier: Modifier = Modifier) {
+    val (statusText, statusMuted) = registrationLabel(row.registrationStatus, row.lastVerifiedAt, row.cancelled)
+    GlowCard(modifier, contentPadding = PaddingValues(20.dp), spacing = 14.dp) {
+        Text(dayLabel(row.eventDate), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(row.title, style = MaterialTheme.typography.titleLarge, color = Snow, modifier = Modifier.weight(1f).quietClickable(onOpen))
+            FeedSaveButton(row.saved, onToggleSave)
         }
-
-        if (row.disciplineNames.isNotEmpty()) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                items(row.disciplineNames.size) { i ->
-                    // 원문 이름 그대로 보여 준다. "10K"를 "10km"로 고쳐 적으면
-                    // 주최 측 안내와 글자가 달라져 같은 것인지 헷갈린다.
-                    FeedTag(row.disciplineNames[i])
-                }
-            }
+        Text(listOf(row.region, row.venue).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { stringResource(R.string.feed_place_unknown) }, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.disciplineNames.forEach { FeedTag(it) }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_event), accent = true)
             FeedTag(statusText, accent = !statusMuted, warn = statusMuted)
-            if (row.feeMin != null) {
-                FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin.toLong())))
-            }
-            if (row.organizer.isNotBlank()) {
-                Text(
-                    text = row.organizer,
-                    fontSize = 10.sp,
-                    color = Slate,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            if (row.feeMin != null) FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin.toLong())))
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Volt.copy(alpha = 0.10f))
-                .quietClickable(onOpen)
-                .padding(horizontal = 14.dp, vertical = 11.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(destinationRes(row.destinationType)),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = null,
-                tint = Volt,
-                modifier = Modifier.size(15.dp),
-            )
-        }
-
+        if (row.organizer.isNotBlank()) Text(row.organizer, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        GhostButton(stringResource(destinationRes(row.destinationType)), onClick = onOpen, modifier = Modifier.fillMaxWidth())
         Text(
-            text = if (row.lastVerifiedAt != null) {
-                stringResource(R.string.feed_last_checked, dayLabel(row.lastVerifiedAt))
-            } else {
-                stringResource(R.string.feed_last_checked_unknown)
-            },
-            fontSize = 9.sp,
-            color = Slate,
+            if (row.lastVerifiedAt != null) stringResource(R.string.feed_last_checked, dayLabel(row.lastVerifiedAt))
+            else stringResource(R.string.feed_last_checked_unknown),
+            style = MaterialTheme.typography.bodyMedium, color = Silver,
         )
+    }
+}
+
+@Composable
+private fun FeedSaveButton(saved: Boolean, onToggle: () -> Unit) {
+    IconToggleButton(saved, onCheckedChange = { onToggle() }, modifier = Modifier.size(48.dp)) {
+        Icon(if (saved) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            stringResource(if (saved) R.string.feed_unsave else R.string.feed_save), tint = if (saved) VoltText else Silver)
     }
 }
 
@@ -484,103 +335,25 @@ fun EventCard(
  * 사진은 이용 권한이 확인된 것만 온다(서버가 걸러 보낸다). 그래서 사진 없이도
  * 카드가 완성되게 만들었다.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun NewsCard(
-    row: NewsRow,
-    onOpen: () -> Unit,
-    onToggleSave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    GlowCard(modifier = modifier, contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .quietClickable(onOpen),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_news), accent = true)
-                    FeedTag(stringResource(categoryRes(row.category)), accent = true)
-                    Eyebrow(
-                        text = listOfNotNull(
-                            row.publisherName.ifBlank { row.publisherDomain },
-                            parseDay(row.publishedAt)?.format(DAY_SHORT),
-                        ).joinToString(" · "),
-                    )
-                }
-                Text(
-                    text = row.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Snow,
-                    lineHeight = 21.sp,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(50))
-                    .quietClickable(onToggleSave),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (row.saved) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = stringResource(
-                        if (row.saved) R.string.feed_unsave else R.string.feed_save
-                    ),
-                    tint = if (row.saved) Volt else Slate,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+fun NewsCard(row: NewsRow, onOpen: () -> Unit, onToggleSave: () -> Unit, modifier: Modifier = Modifier) {
+    GlowCard(modifier, contentPadding = PaddingValues(20.dp), spacing = 14.dp) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_news), accent = true)
+            FeedTag(stringResource(categoryRes(row.category)), accent = true)
         }
-
-        // 검색 설명과 AI 요약을 갈라 적는다. 설명을 요약이라고 부르면,
-        // 본문을 읽고 정리한 것처럼 보이지만 실제로는 읽지 않았다.
+        Text(listOfNotNull(row.publisherName.ifBlank { row.publisherDomain }, parseDay(row.publishedAt)?.format(DAY_SHORT)).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(row.title, style = MaterialTheme.typography.titleLarge, color = Snow, modifier = Modifier.weight(1f).quietClickable(onOpen))
+            FeedSaveButton(row.saved, onToggleSave)
+        }
         val body = row.summary ?: row.description.takeIf { it.isNotBlank() }
         if (body != null) {
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodySmall,
-                color = Silver,
-                lineHeight = 19.sp,
-            )
-            Text(
-                text = stringResource(
-                    if (row.summaryType == "AI_SUMMARY") R.string.feed_ai_summary
-                    else R.string.feed_search_description
-                ),
-                fontSize = 9.sp,
-                color = Slate,
-            )
+            Text(body, style = MaterialTheme.typography.bodyLarge, color = Silver)
+            Text(stringResource(if (row.summaryType == "AI_SUMMARY") R.string.feed_ai_summary else R.string.feed_search_description), style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(CarbonHigh)
-                .quietClickable(onOpen)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.feed_read_original),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = null,
-                tint = Volt,
-                modifier = Modifier.size(15.dp),
-            )
-        }
+        GhostButton(stringResource(R.string.feed_read_original), onClick = onOpen, modifier = Modifier.fillMaxWidth())
     }
 }
 

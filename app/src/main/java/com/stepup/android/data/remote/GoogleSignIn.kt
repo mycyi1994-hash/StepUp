@@ -98,6 +98,8 @@ class GoogleSignIn(
             }
         } catch (e: GetCredentialException) {
             GoogleIdResult.Failed(e.message ?: "구글 로그인에 실패했습니다")
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             GoogleIdResult.Failed(e.message ?: "구글 로그인에 실패했습니다")
         }

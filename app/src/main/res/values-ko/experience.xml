@@ -4,6 +4,8 @@
     <string name="experience_intro">오늘의 러닝에 맞게 StepUp의 반응을 조절하세요.</string>
     <string name="experience_sound">효과음</string>
     <string name="experience_sound_desc">버튼, 러닝 상태, 확정된 보상을 짧은 소리로 알려드려요.</string>
+    <string name="experience_ambience">배경 환경음</string>
+    <string name="experience_ambience_desc">강변과 옷장 장면에 조용한 환경음을 재생해요. 기본은 꺼져 있어요.</string>
     <string name="experience_haptic">터치 진동</string>
     <string name="experience_haptic_desc">동작과 주요 달성 순간을 가벼운 진동으로 알려드려요.</string>
     <string name="experience_motion">동작 줄이기</string>

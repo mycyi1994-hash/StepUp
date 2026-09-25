@@ -1,6 +1,7 @@
 package com.stepup.android.data.local
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
 /** 일별 걸음 수 기록 (epochDay = LocalDate.toEpochDay) */
@@ -23,6 +24,9 @@ data class WalkSessionEntity(
     val distanceMeters: Double,
     val calories: Double,
     val pointsEarned: Double,
+    /** Account captured when recording began; legacy/guest are never auto-attributed. */
+    @ColumnInfo(defaultValue = "'legacy'")
+    val recordingOwner: String = com.stepup.android.domain.RecordingOwner.LEGACY,
     /**
      * 이번 세션에 실제로 지나간 GPS 경로. `RunTrack.encode`가 만든 문자열이고,
      * 좌표마다 시각이 붙어 있다.

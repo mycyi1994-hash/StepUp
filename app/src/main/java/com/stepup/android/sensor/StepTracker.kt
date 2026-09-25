@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.provider.Settings
 import com.stepup.android.data.prefs.UserPrefs
 import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,11 @@ class StepTracker(
 ) : SensorEventListener {
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val resolver = context.contentResolver
+
+    /** 기기가 켜진 횟수. 바뀌었으면 그 사이 재부팅했다. 못 읽으면 -1 */
+    private fun bootCount(): Int =
+        runCatching { Settings.Global.getInt(resolver, Settings.Global.BOOT_COUNT, -1) }.getOrDefault(-1)
     private val stepSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -95,6 +101,8 @@ class StepTracker(
     private suspend fun processCumulative(cumulative: Long) {
         val today = LocalDate.now().toEpochDay()
         val (savedDay, savedBaseline) = prefs.baseline()
+        val boot = bootCount()
+        val savedBoot = prefs.baselineBoot()
         val baseline = when {
             savedDay != today -> {
                 // 날짜가 바뀐 경우. 여기서 기준점을 그냥 지금 누적값으로 잡으면
@@ -109,18 +117,29 @@ class StepTracker(
                 //    걸음이 섞여 있어, 하루치를 넘게 얹어줄 이유가 없다.
                 val carried = carryOver(savedDay, savedBaseline, today, cumulative)
                 val newBaseline = cumulative - carried
-                prefs.setBaseline(today, newBaseline)
+                prefs.setBaseline(today, newBaseline, boot)
                 newBaseline
             }
-            cumulative < savedBaseline -> {
-                // 재부팅으로 센서 누적값이 초기화된 경우:
-                // 오늘 이미 기록된 걸음 수를 오프셋으로 보존해 이어서 센다.
+            // 재부팅으로 센서 누적값이 초기화된 경우:
+            // 오늘 이미 기록된 걸음 수를 오프셋으로 보존해 이어서 센다.
+            //
+            // "누적값 < 기준점"만으로는 못 잡는다. 오늘 한 번 재부팅한 뒤에는
+            // 기준점이 음수라 두 번째 재부팅이 안 보이고, 기준점이 작으면 부팅 뒤
+            // 쌓인 누적값이 금방 기준점을 넘는다. 그래서 부팅 횟수를 함께 적어 두고,
+            // 바뀌었으면 재부팅으로 본다(확실한 신호만 쓴다 — 저장된 걸음과 비교하면
+            // 자정·시간대 변경 때 재부팅으로 오인해 걸음이 부풀어 오른다).
+            (boot >= 0 && savedBoot >= 0 && boot != savedBoot) || cumulative < savedBaseline -> {
                 val preBoot = todayPersistedSteps(today).coerceAtLeast(0)
-                val newBaseline = cumulative - preBoot
-                prefs.setBaseline(today, newBaseline)
+                // 부팅 뒤 누적값은 0부터 다시 쌓인 것이다 — 부팅 뒤 걸음까지 그대로 센다.
+                val newBaseline = -preBoot.toLong()
+                prefs.setBaseline(today, newBaseline, boot)
                 newBaseline
             }
-            else -> savedBaseline
+            else -> {
+                // 부팅 횟수를 아직 안 적어 둔 기준점(이전 버전)이면 지금 값을 적어 둔다
+                if (savedBoot < 0 && boot >= 0) prefs.setBaseline(today, savedBaseline, boot)
+                savedBaseline
+            }
         }
         val sensorSteps = (cumulative - baseline).toInt().coerceAtLeast(0)
         _todaySteps.value = sensorSteps + simulatedSteps

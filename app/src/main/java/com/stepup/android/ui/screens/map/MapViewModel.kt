@@ -118,6 +118,15 @@ class MapViewModel(
         reloadViewport()
     }
 
+    /** 화면 검사용 — 지도 영역의 빈/오류 상태를 실제 지도 화면에 표시한다. */
+    @androidx.annotation.VisibleForTesting
+    fun showTerritoryForTest(state: TerritoryState) {
+        viewportJob?.cancel()
+        mode.value = MapMode.TERRITORY
+        _territory.value = state
+        _standings.value = emptyList()
+    }
+
     private fun reloadViewport() {
         val v = lastViewport ?: return
         lastBox = ""

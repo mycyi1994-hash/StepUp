@@ -1,0 +1,17 @@
+[
+  {
+    "id": "lumi_pink",
+    "src": "avatar_lumi_idle_base_wnd_010.webp",
+    "prompt": "Use case: identity-preserve. Edit target: image 1, the transparent full-body LUMI production character. Supporting clothing style: image 2, the user's pink wardrobe reference. Create one production sprite on a genuinely transparent RGBA background, portrait 1024x1536. Change only her cap, hoodie and shorts into a matching soft dusty-pink cotton set like image 2, with small blue UP emblems on cap and left chest, matching pink ribbed cuffs and drawstrings. Preserve the exact LUMI face, luminous cyan eyes, black ponytail, head/body proportions, pose, camera, hands, socks and WHITE/TEAL starter sneakers from image 1. No pink shoes. Keep a pullover hoodie with kangaroo pocket, no zipper, subtle seams and fabric depth. Calm neutral studio lighting with restrained cool edge light, usable on sunset or night scenery. Full head and both shoe soles within frame, subject centered with only a little empty margin. No scene, no floor, no cast shadow, no pedestal, no UI, no words except existing UP marks. Transparent means alpha, not checkerboard or white/black backdrop."
+  },
+  {
+    "id": "runo_pink",
+    "src": "avatar_runo_idle_wnd_010_v2.webp",
+    "prompt": "Use case: identity-preserve. Edit target: image 1, the transparent full-body RUNO production character. Supporting outfit style: image 2, user's pink wardrobe reference. One production sprite, genuinely transparent RGBA background, portrait 1024x1536. Dress RUNO in matching soft dusty-pink cap, PULLOVER cotton hoodie with kangaroo pocket and NO ZIPPER, and pink sports shorts, small blue UP emblems on cap and left chest, matching pink cuffs and drawstrings. Preserve exact RUNO black face, cyan glowing eyes, short black hair (NO ponytail), face/body proportions, relaxed standing pose, camera, hands, socks and WHITE/TEAL starter sneakers from image 1. Do not recolor shoes. Neutral studio lighting, restrained cool edge light compatible with sunset/night backgrounds, realistic soft cloth. Full cap and both soles within frame, same centered full-body scale. No scene, floor, cast shadow, pedestal, UI, text beyond the UP marks. True alpha transparency, no checkerboard, no solid background."
+  },
+  {
+    "id": "outfit_pink",
+    "src": "outfit_lumi_base.webp",
+    "prompt": "Use case: precise-object-edit. Image 1 is the editable production garment cutout, image 2 provides the user's pink clothing color/style reference. Produce a single centered product cutout of one soft dusty-pink cotton PULLOVER hoodie and matching pink sports shorts, genuinely transparent RGBA background, square 1024x1024. Same garment silhouette and premium 3D cotton material as image 1, but ALL cloth including cuffs, hems and drawstrings is pink with subtle darker seams, only a small blue UP emblem on left chest. Kangaroo pocket, NO ZIPPER. Plain matching pink shorts with tiny blue UP mark. No character, no mannequin, no shoes, no cap, no background, floor, shadow, pedestal, labels or frame. Entire garment fully visible at large scale, same three-quarter product perspective as image 1. Restrained cool edge light and neutral lighting, matching the pink set in reference 2. True alpha, no checkerboard or white backdrop."
+  }
+]

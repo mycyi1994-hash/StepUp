@@ -421,7 +421,9 @@ begin
 end $$;
 
 -- 함수만 부를 수 있어야 한다. 아무나 체결을 지어내면 안 된다.
-revoke all on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) from public;
+-- Supabase 는 public 스키마의 새 함수에 anon · authenticated 실행 권한을 따로 붙인다.
+-- public 에서만 거두면 그 권한이 남아, 누구나 이 함수로 SUP 를 만들고 남의 신발을 가져간다.
+revoke all on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) from public, anon, authenticated;
 
 comment on function public.market_settle(bigint, uuid, uuid, numeric, text, boolean) is
   '체결 한 번 — 소유자 이전, 원장 기록, 체결 내역. 다른 함수 안에서만 불린다.';
@@ -572,6 +574,11 @@ declare
   v_l record;
   v_balance numeric;
 begin
+  -- 잔고를 세고 쓰는 사이에 같은 사람의 다른 결제가 끼면 둘 다 "잔고 충분"을 보고
+  -- 잔고가 음수가 된다. 이 사람의 원장 쓰기를 한 줄로 세운다(spend_sup 과 같은 잠금).
+  -- 매물 잠금보다 먼저 잡아, 입찰과 이 잠금을 서로 반대 순서로 잡지 않게 한다.
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
   select * into v_l from public.market_listings where id = p_listing_id for update;
   if not found or v_l.status <> 'OPEN' then
     raise exception '이미 끝난 매물입니다' using errcode = '22023';
@@ -615,6 +622,9 @@ begin
   if p_price < economy.market_min_price() then
     raise exception '값이 너무 낮습니다' using errcode = '22023';
   end if;
+
+  -- 잔고 확인과 묶기 사이에 같은 사람의 다른 결제가 끼지 못하게(spend_sup 과 같은 잠금)
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
 
   select coalesce(sum(amount), 0) into v_balance
     from public.sup_ledger where user_id = v_user;

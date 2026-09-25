@@ -1,4 +1,5 @@
 package com.stepup.android.core
+import kotlinx.coroutines.flow.first
 
 import android.content.Context
 import androidx.room.Room
@@ -51,6 +52,8 @@ object ServiceLocator {
     lateinit var stepTracker: StepTracker
         private set
     lateinit var rewardRepository: RewardRepository
+        private set
+    lateinit var runSettlementRepository: com.stepup.android.data.repo.RunSettlementRepository
         private set
     lateinit var stepRepository: StepRepository
         private set
@@ -137,14 +140,20 @@ object ServiceLocator {
         )
         server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
         Analytics.init(app)
-        pushRegistrar = PushRegistrar(PushApi(server)) { userPrefs.languageNow() }
+        pushRegistrar = PushRegistrar(
+            PushApi(server),
+            locale = { userPrefs.languageNow() },
+            preferences = { userPrefs.notifyPrefs.first() },
+        )
         territoryApi = TerritoryApi(server)
         claimRepository = ClaimRepository(
             sessionDao = database.walkSessionDao(),
+            uploadOwner = { sessionHolder.recordingOwner() },
             recorder = ServerSessionRecorder(
                 server = server,
                 courseApi = CourseApi(server),
-                takeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt) },
+                readCourseRun = { startedAt -> userPrefs.pendingCourseRun(startedAt) },
+                acknowledgeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt); Unit },
             ),
         )
         rankingRepository = RankingRepository(server)
@@ -157,6 +166,12 @@ object ServiceLocator {
             boostDao = database.boostDao(),
             notificationDao = database.notificationDao(),
             prefs = userPrefs,
+            recoverRunEnergy = { runSettlementRepository.recoverEnergy() },
+        )
+        runSettlementRepository = com.stepup.android.data.repo.RunSettlementRepository(database, userPrefs)
+        // 신발을 갈아 신거나 강화하면 에너지 상한(화면·소모·리필)도 따라가게 한다
+        rewardRepository.keepEnergyCapInSync(
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO),
         )
         stepRepository = StepRepository(
             stepDao = database.stepDao(),
@@ -165,9 +180,9 @@ object ServiceLocator {
             tracker = stepTracker,
             rewardRepository = rewardRepository,
         )
-        sneakerRepository = SneakerRepository(database.sneakerDao(), rewardRepository)
+        sneakerRepository = SneakerRepository(database, rewardRepository)
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
-        boostRepository = BoostRepository(database.boostDao(), rewardRepository, userPrefs)
+        boostRepository = BoostRepository(database, rewardRepository, userPrefs)
         crewRepository = CrewRepository(
             api = CrewApi(server),
             crewDao = database.crewDao(),
@@ -193,11 +208,10 @@ object ServiceLocator {
         )
         eventRepository = EventRepository(
             dao = database.claimedEventDao(),
-            rewardRepository = rewardRepository,
             api = EventApi(server),
             stepDao = database.stepDao(),
         )
-        notificationRepository = NotificationRepository(database.notificationDao(), rewardRepository)
+        notificationRepository = NotificationRepository(database.notificationDao())
         marketRepository = MarketRepository(
             api = MarketApi(server),
             server = server,

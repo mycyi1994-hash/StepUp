@@ -7,16 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -60,14 +56,14 @@ import com.stepup.android.data.local.NotificationEntity
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.CrewRepository
+import com.stepup.android.data.repo.CrewActionResult
 import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.domain.parseSlotKey
-import com.stepup.android.ui.components.DarkIconButton
+import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.IconSquare
 import com.stepup.android.ui.components.VoltButton
-import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.theme.Silver
@@ -75,7 +71,11 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -84,24 +84,43 @@ class NotificationsViewModel(
     private val repo: NotificationRepository,
     private val crewRepository: CrewRepository,
 ) : ViewModel() {
+    private val _busy = MutableStateFlow<Set<Long>>(emptySet())
+    val busy = _busy.asStateFlow()
+    private val _notices = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    val notices = _notices.asStateFlow()
 
-    val items: StateFlow<List<NotificationEntity>> = repo.notifications()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val items: StateFlow<List<NotificationEntity>?> = repo.notifications()
+        .map<List<NotificationEntity>, List<NotificationEntity>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun markAllRead() {
         viewModelScope.launch { repo.markAllRead() }
     }
 
-    /** "모두 읽음" — 알림함 전체 비우기 */
-    fun clearAll() {
-        viewModelScope.launch { repo.clearAll() }
-    }
-
     fun acceptCrewInvite(entity: NotificationEntity) {
-        viewModelScope.launch { repo.acceptCrewInvite(entity, crewRepository) }
+        if (entity.id in _busy.value) return
+        _busy.value += entity.id
+        _notices.value -= entity.id
+        viewModelScope.launch {
+            try {
+                val message = when (val result = repo.acceptCrewInvite(entity, crewRepository)) {
+                    CrewActionResult.Requested -> R.string.crew_notice_requested
+                    is CrewActionResult.Failed -> if (result.signIn) R.string.crew_sign_in_needed else R.string.crew_notice_failed
+                    else -> null
+                }
+                if (message != null) _notices.value += entity.id to message
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _notices.value += entity.id to R.string.crew_notice_failed
+            } finally {
+                _busy.value -= entity.id
+            }
+        }
     }
 
     fun decline(entity: NotificationEntity) {
+        if (entity.id in _busy.value) return
         viewModelScope.launch { repo.decline(entity) }
     }
 
@@ -110,10 +129,6 @@ class NotificationsViewModel(
             repo.acceptPartyInvite(entity)
             if (entity.argExtra.isNotBlank()) onOpenLobby(entity.argExtra)
         }
-    }
-
-    fun claimEventReward(entity: NotificationEntity) {
-        viewModelScope.launch { repo.claimEventReward(entity) }
     }
 
     companion object {
@@ -136,50 +151,36 @@ fun NotificationsScreen(
     onOpenComment: (CommentTarget) -> Unit = {},
     /** 알림이 가리키는 크루 게시판으로 이동 */
     onOpenCrew: (String) -> Unit = {},
+    onOpenChallenges: () -> Unit = {},
     viewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.Factory),
 ) {
     val notifications by viewModel.items.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val notices by viewModel.notices.collectAsStateWithLifecycle()
     val now = remember { System.currentTimeMillis() }
 
     // 화면을 열면 배지를 비운다.
     LaunchedEffect(Unit) { viewModel.markAllRead() }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.notif_title),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-                Spacer(Modifier.weight(1f))
-                if (notifications.isNotEmpty()) {
+    DetailPage(title = stringResource(R.string.notif_title), onBack = onBack) {
+        if (notifications?.any { !it.read } == true) {
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     GhostButton(
                         text = stringResource(R.string.notif_mark_read),
-                        onClick = viewModel::clearAll,
+                        onClick = viewModel::markAllRead,
                     )
                 }
             }
         }
 
-        if (notifications.isEmpty()) {
+        if (notifications == null) {
+            item {
+                com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.feed_loading), Icons.Filled.Notifications, loading = true,
+                )
+            }
+        } else if (notifications.orEmpty().isEmpty()) {
             item {
                 GlowCard(contentPadding = PaddingValues(26.dp), spacing = 6.dp) {
                     Column(
@@ -187,8 +188,8 @@ fun NotificationsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
-                        IconSquare(icon = Icons.Filled.Notifications, size = 42.dp)
-                        Spacer(Modifier.size(4.dp))
+                        IconSquare(icon = Icons.Filled.Notifications, size = 56.dp)
+                        Spacer(Modifier.size(7.dp))
                         Text(
                             text = stringResource(R.string.notif_empty_title),
                             style = MaterialTheme.typography.titleSmall,
@@ -197,7 +198,7 @@ fun NotificationsScreen(
                         )
                         Text(
                             text = stringResource(R.string.notif_empty_body),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = Silver,
                             textAlign = TextAlign.Center,
                         )
@@ -205,14 +206,16 @@ fun NotificationsScreen(
                 }
             }
         } else {
-            items(notifications, key = { it.id }) { entity ->
+            items(notifications.orEmpty(), key = { it.id }) { entity ->
                 NotificationRow(
                     entity = entity,
                     now = now,
+                    busy = entity.id in busy,
+                    notice = notices[entity.id],
                     onAcceptCrew = { viewModel.acceptCrewInvite(entity) },
                     onDecline = { viewModel.decline(entity) },
                     onAcceptParty = { viewModel.acceptPartyInvite(entity, onOpenLobby) },
-                    onClaim = { viewModel.claimEventReward(entity) },
+                    onClaim = onOpenChallenges,
                     onOpen = destinationOf(entity)?.let { destination ->
                         {
                             when (destination) {
@@ -232,6 +235,8 @@ fun NotificationsScreen(
 private fun NotificationRow(
     entity: NotificationEntity,
     now: Long,
+    busy: Boolean,
+    notice: Int?,
     onAcceptCrew: () -> Unit,
     onDecline: () -> Unit,
     onAcceptParty: () -> Unit,
@@ -248,7 +253,7 @@ private fun NotificationRow(
         // 알림을 누르면 그 알림이 생긴 자리로 간다. 읽고 나서 직접 찾아
         // 들어가야 한다면, 알림은 "무슨 일이 있었다"까지만 알려 주고 끝난다.
         modifier = if (onOpen != null) Modifier.quietClickable(onOpen) else Modifier,
-        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 13.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
         shape = RoundedCornerShape(18.dp),
         accent = actionable && !entity.actioned,
     ) {
@@ -269,14 +274,14 @@ private fun NotificationRow(
                 )
                 Text(
                     text = relativeTime(timestamp = entity.timestamp, now = now),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }
             if (!entity.read) {
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
+                        .size(7.dp)
                         .background(Volt, CircleShape),
                 )
             }
@@ -291,11 +296,14 @@ private fun NotificationRow(
             }
         }
 
+        if (notice != null) {
+            Text(text = stringResource(notice), color = Silver, fontSize = 14.sp)
+        }
         if (actionable) {
             if (entity.actioned) {
                 Text(
                     text = stringResource(R.string.notif_done),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = Slate,
                 )
@@ -309,11 +317,13 @@ private fun NotificationRow(
                             VoltButton(
                                 text = stringResource(R.string.notif_accept),
                                 onClick = onAcceptCrew,
+                                enabled = !busy,
                                 modifier = Modifier.weight(1f),
                             )
                             GhostButton(
                                 text = stringResource(R.string.notif_decline),
                                 onClick = onDecline,
+                                enabled = !busy,
                                 accent = Silver,
                                 modifier = Modifier.weight(1f),
                             )
@@ -335,7 +345,7 @@ private fun NotificationRow(
 
                         else -> {
                             VoltButton(
-                                text = stringResource(R.string.notif_claim),
+                                text = stringResource(R.string.challenge_title),
                                 onClick = onClaim,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -418,7 +428,8 @@ private fun messageFor(entity: NotificationEntity): String {
             stringResource(R.string.notif_party_invite, entity.argText)
 
         NotificationType.EVENT_REWARD ->
-            stringResource(R.string.notif_event_reward, entity.argText, amount)
+            if (entity.actioned) stringResource(R.string.notif_event_reward, entity.argText, amount)
+            else stringResource(R.string.notif_reward_unverified)
 
         else -> stringResource(R.string.notif_title)
     }

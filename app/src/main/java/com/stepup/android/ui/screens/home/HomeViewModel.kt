@@ -53,8 +53,9 @@ class HomeViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
 
     /** 캐릭터가 지금 입고 있는 것 — 꾸미기 · 내 정보와 같은 값 */
-    val look: StateFlow<AvatarLook> = avatarRepository.look
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarLook())
+    val look: StateFlow<AvatarLook?> = avatarRepository.look
+        .map<AvatarLook, AvatarLook?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     data class UiState(
         val todaySteps: Int = 0,

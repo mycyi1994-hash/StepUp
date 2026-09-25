@@ -8,6 +8,7 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.RewardRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -18,8 +19,9 @@ import kotlinx.coroutines.flow.stateIn
  */
 class NewsViewModel(rewardRepository: RewardRepository) : ViewModel() {
 
-    val balance: StateFlow<Double> = rewardRepository.balance
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val balance: StateFlow<Double?> = rewardRepository.balance
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
      * 러닝 이벤트와 러닝·건강 뉴스는 RunningFeedViewModel 이 맡는다.

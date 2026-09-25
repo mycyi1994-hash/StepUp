@@ -1,8 +1,6 @@
 package com.stepup.android.ui.screens.community
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,14 +8,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
@@ -35,13 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,19 +47,12 @@ import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 
-import com.stepup.android.ui.experience.FeedbackCue
-import com.stepup.android.ui.experience.LocalMotion
-import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.Night
 
 // ─────────────────────────────────────────────────────────────
 // 세그먼트 컨트롤 — "게시판 / 크루"
@@ -80,42 +66,7 @@ fun SegmentedTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(50))
-            .background(Carbon)
-            .border(1.dp, Edge, RoundedCornerShape(50))
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        labels.forEachIndexed { index, label ->
-            val active = index == selected
-            val alpha by animateFloatAsState(
-                targetValue = if (active) 1f else 0f,
-                animationSpec = androidx.compose.animation.core.tween(LocalMotion.current.duration(180)),
-                label = "segment$index",
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(50))
-                    .background(Volt.copy(alpha = alpha))
-                    .semantics { this.selected = active }
-                    .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onSelect(index) }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = label,
-                    color = if (active) OnVolt else Silver,
-                    fontSize = 13.sp,
-                    fontWeight = if (active) FontWeight.Black else FontWeight.SemiBold,
-                    letterSpacing = 0.2.sp,
-                )
-            }
-        }
-    }
+    com.stepup.android.ui.components.TwoWaySwitch(labels = labels, selected = selected, onSelect = onSelect, modifier = modifier)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -161,7 +112,7 @@ fun CategoryChip(category: PostCategory, modifier: Modifier = Modifier) {
         Text(
             text = category.label(),
             color = c,
-            fontSize = 9.5.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.4.sp,
         )
@@ -208,42 +159,32 @@ fun FlashRunCard(
                 } else {
                     stringResource(R.string.post_run_km, "%.1f".format(post.distanceKm))
                 },
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = relativeTime(post.createdAt),
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Slate,
             )
             if (onDelete != null && post.mine) {
-                Icon(
-                    Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.post_delete),
-                    tint = Slate,
-                    modifier = Modifier
-                        .size(15.dp)
-                        .quietClickable(onDelete),
-                )
+                androidx.compose.material3.IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, stringResource(R.string.post_delete), tint = Silver, modifier = Modifier.size(20.dp))
+                }
             }
             // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
             if (onReport != null && !post.mine) {
-                Icon(
-                    Icons.Filled.Flag,
-                    contentDescription = stringResource(R.string.report_title),
-                    tint = Slate,
-                    modifier = Modifier
-                        .size(15.dp)
-                        .quietClickable(onReport),
-                )
+                androidx.compose.material3.IconButton(onClick = onReport) {
+                    Icon(Icons.Filled.Flag, stringResource(R.string.report_title), tint = Silver, modifier = Modifier.size(20.dp))
+                }
             }
         }
 
         Text(
             text = post.title,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleLarge,
             color = Snow,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -251,7 +192,7 @@ fun FlashRunCard(
         if (post.body.isNotBlank()) {
             Text(
                 text = post.body,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -285,7 +226,7 @@ fun FlashRunCard(
             )
             Text(
                 text = post.place.ifBlank { stringResource(R.string.post_place_tbd) },
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 color = Silver,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -307,34 +248,17 @@ fun FlashRunCard(
             )
             Text(
                 text = startsInLabel(post.meetAt),
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (post.isClosed) Slate else Volt,
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.post_slots, post.joinedCount, post.capacity),
-                fontSize = 11.sp,
-                color = Silver,
-            )
-            LikeRow(
-                post = post,
-                onLike = onLike,
-                onComment = onComment,
-                modifier = Modifier.weight(1f),
-            )
-            JoinPill(
-                joined = post.joined,
-                enabled = !post.isClosed && (post.joined || !post.isFull),
-                onClick = onJoin,
-            )
-        }
+        Text(stringResource(R.string.post_slots, post.joinedCount, post.capacity), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        com.stepup.android.ui.components.HairlineDivider()
+        LikeRow(post = post, onLike = onLike, onComment = onComment)
+        JoinPill(joined = post.joined, enabled = !post.isClosed && (post.joined || !post.isFull), onClick = onJoin)
+
     }
 }
 
@@ -347,60 +271,30 @@ fun TextPostCard(
     onDelete: (() -> Unit)? = null,
     onReport: (() -> Unit)? = null,
 ) {
-    GlowCard(contentPadding = PaddingValues(15.dp), spacing = 9.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(CarbonHigh, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = post.author.take(1).uppercase(),
-                    color = Volt,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Black,
-                )
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(38.dp).background(Volt.copy(alpha = .12f), CircleShape), contentAlignment = Alignment.Center) {
+                Text(post.author.take(1).uppercase(), color = Volt, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
-            Text(
-                text = post.author,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Snow,
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(post.author, style = MaterialTheme.typography.titleSmall, color = Snow, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(relativeTime(post.createdAt), style = MaterialTheme.typography.bodySmall, color = Silver)
+            }
             CategoryChip(post.category)
-            Spacer(Modifier.weight(1f))
-            Text(text = relativeTime(post.createdAt), fontSize = 10.sp, color = Slate)
-            if (onDelete != null && post.mine) {
-                Icon(
-                    Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.post_delete),
-                    tint = Slate,
-                    modifier = Modifier
-                        .size(15.dp)
-                        .quietClickable(onDelete),
-                )
-            }
-            // 남의 글에는 신고. 신고가 5건 모이면 서버가 모두의 목록에서 내린다.
-            if (onReport != null && !post.mine) {
-                Icon(
-                    Icons.Filled.Flag,
-                    contentDescription = stringResource(R.string.report_title),
-                    tint = Slate,
-                    modifier = Modifier
-                        .size(15.dp)
-                        .quietClickable(onReport),
-                )
+            if (post.mine && onDelete != null) {
+                androidx.compose.material3.IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, stringResource(R.string.post_delete), tint = Silver, modifier = Modifier.size(20.dp))
+                }
+            } else if (!post.mine && onReport != null) {
+                androidx.compose.material3.IconButton(onClick = onReport) {
+                    Icon(Icons.Filled.Flag, stringResource(R.string.report_title), tint = Silver, modifier = Modifier.size(20.dp))
+                }
             }
         }
 
         Text(
             text = post.title,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleLarge,
             color = Snow,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -408,12 +302,13 @@ fun TextPostCard(
         if (post.body.isNotBlank()) {
             Text(
                 text = post.body,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        com.stepup.android.ui.components.HairlineDivider()
         LikeRow(post = post, onLike = onLike, onComment = onComment)
     }
 }
@@ -431,7 +326,7 @@ private fun LikeRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(
-            modifier = Modifier.quietClickable(onLike),
+            modifier = Modifier.heightIn(min = 48.dp).quietClickable(onLike).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -441,10 +336,10 @@ private fun LikeRow(
                 tint = if (post.liked) Alert else Silver,
                 modifier = Modifier.size(15.dp),
             )
-            Text("${post.likes}", fontSize = 11.sp, color = Silver)
+            Text("${post.likes}", fontSize = 14.sp, color = Silver)
         }
         Row(
-            modifier = Modifier.quietClickable(onComment),
+            modifier = Modifier.heightIn(min = 48.dp).quietClickable(onComment).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -454,51 +349,21 @@ private fun LikeRow(
                 tint = Silver,
                 modifier = Modifier.size(14.dp),
             )
-            Text("${post.commentCount}", fontSize = 11.sp, color = Silver)
+            Text("${post.commentCount}", fontSize = 14.sp, color = Silver)
         }
     }
 }
 
 @Composable
 private fun JoinPill(joined: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val bg = when {
-        joined -> Volt
-        !enabled -> CarbonHigh
-        else -> Color.Transparent
-    }
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .border(
-                width = 1.dp,
-                color = if (joined || !enabled) Color.Transparent else Volt.copy(alpha = 0.55f),
-                shape = RoundedCornerShape(50),
-            )
-            .then(if (enabled) Modifier.quietClickable(onClick) else Modifier)
-            .padding(horizontal = 13.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(
-            Icons.Filled.Bolt,
-            contentDescription = null,
-            tint = if (joined) OnVolt else if (enabled) Volt else Slate,
-            modifier = Modifier.size(13.dp),
-        )
-        Text(
-            text = stringResource(
-                when {
-                    joined -> R.string.post_joined
-                    !enabled -> R.string.post_closed
-                    else -> R.string.post_join
-                }
-            ),
-            color = if (joined) OnVolt else if (enabled) Volt else Slate,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
+    com.stepup.android.ui.components.GhostButton(
+        text = stringResource(when {
+            joined -> R.string.post_joined
+            !enabled -> R.string.post_closed
+            else -> R.string.post_join
+        }),
+        onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -514,38 +379,13 @@ fun LabeledField(
     placeholder: String = "",
     minHeight: Int = 0,
     singleLine: Boolean = true,
+    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            color = Slate,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(CarbonHigh)
-                .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                .padding(horizontal = 13.dp, vertical = 12.dp),
-        ) {
-            if (value.isEmpty() && placeholder.isNotEmpty()) {
-                Text(placeholder, fontSize = 13.sp, color = Slate)
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = singleLine,
-                textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = Snow, fontSize = 13.sp, lineHeight = 19.sp),
-                cursorBrush = SolidColor(Volt),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (minHeight > 0) Modifier.height(minHeight.dp) else Modifier),
-            )
-        }
-    }
+    com.stepup.android.ui.components.FormField(
+        label = label, value = value, onValueChange = onValueChange, modifier = modifier,
+        placeholder = placeholder, singleLine = singleLine,
+        minHeight = maxOf(56, minHeight).dp, keyboardType = keyboardType,
+    )
 }
 
 // ─────────────────────────────────────────────────────────────

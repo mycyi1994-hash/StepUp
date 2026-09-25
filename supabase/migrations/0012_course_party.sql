@@ -78,7 +78,10 @@ begin
   if auth.uid() is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
-  delete from public.courses
+  -- 지우지 않고 내리기만 한다. 지우면 다른 러너의 코스 기록·좋아요가 함께 사라지고,
+  -- 다시 올리면 새 코스가 되어 이미 받아 간 사람들의 기록이 이어지지 않는다.
+  -- (다시 올리면 course_share 의 on conflict 가 shared 를 되돌린다.)
+  update public.courses set shared = false
    where owner_id = auth.uid() and md5(track) = md5(coalesce(p_track, ''));
 end;
 $$;
@@ -100,7 +103,7 @@ begin
     select 1 from public.courses c
      where c.id = p_course and (c.shared or c.owner_id = v_user)
   ) then
-    raise exception '코스를 찾을 수 없습니다' using errcode = 'P0002';
+    raise exception '코스를 찾을 수 없습니다' using errcode = '22023';  -- 4xx 로 가야 앱이 이유를 보여 준다(P0002 는 500)
   end if;
 
   delete from public.course_likes where course_id = p_course and user_id = v_user;

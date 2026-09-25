@@ -40,7 +40,7 @@ class AvatarRepository(
     ) { gender, outfitId, demo, demoOutfitId, shoe ->
         // 저장된 값이라도 가진 옷이 아니면 입히지 않는다
         val worn = Outfits.of(outfitId).takeIf { isOwned(it) } ?: Outfits.DEFAULT
-        val trial = if (demo) Outfits.ALL.firstOrNull { it.id == demoOutfitId } else null
+        val trial = if (demo) Outfits.PREVIEWABLE.firstOrNull { it.id == demoOutfitId } else null
         AvatarLook(
             gender = AvatarGender.of(gender),
             outfit = trial ?: worn,

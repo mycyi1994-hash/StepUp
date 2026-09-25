@@ -1,6 +1,8 @@
 package com.stepup.android.ui.screens.profile
 
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material.icons.filled.Tune
@@ -8,6 +10,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,21 +29,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import com.stepup.android.ui.components.MainHeader
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
@@ -55,13 +53,11 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -79,7 +75,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -93,16 +88,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.BuildConfig
 import com.stepup.android.R
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.VoltText
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.StepUpIcons
-import com.stepup.android.ui.components.ShortcutButton
-import com.stepup.android.ui.components.AvatarBadge
+import com.stepup.android.ui.components.QuietListRow
 import com.stepup.android.data.local.DailyStepsEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RewardEconomy
@@ -123,7 +116,6 @@ import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCustomAvatar
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
-import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -137,6 +129,8 @@ import java.util.Locale
 
 @Composable
 fun ProfileScreen(
+    onOpenCustomize: () -> Unit = {},
+    onOpenChallenges: () -> Unit = {},
     onOpenGuide: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenAchievements: () -> Unit = {},
@@ -151,11 +145,12 @@ fun ProfileScreen(
     onOpenItems: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenRanking: () -> Unit = {},
+    onChangeBackground: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val look by viewModel.look.collectAsStateWithLifecycle()
-    val recentRuns by viewModel.recentRuns.collectAsStateWithLifecycle()
+    val totals by viewModel.runTotals.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
@@ -167,6 +162,7 @@ fun ProfileScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var showProfileEdit by rememberSaveable { mutableStateOf(false) }
     var showGoalDialog by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = tab == 1 && !showProfileEdit && !showGoalDialog) { tab = 0 }
 
     // 갤러리 사진 선택 — 시스템 포토 피커 (권한 불필요)
     val photoPicker = rememberLauncherForActivityResult(
@@ -179,6 +175,7 @@ fun ProfileScreen(
     if (showProfileEdit) {
         ProfileEditDialog(
             nickname = state.nickname,
+            level = state.runner.level,
             selectedAvatar = state.avatarId,
             avatarRev = state.avatarRev,
             onPickAvatar = viewModel::setAvatar,
@@ -203,60 +200,64 @@ fun ProfileScreen(
         )
     }
 
-    val pills = listOf(
-        SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
-        SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
-        SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
-        // 내 정보 첫 화면을 시안대로 비우면서 여기로 옮겼다
-        SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
-        SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
-        SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
-        SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
-        SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
-        SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
-        SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
-        SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
-        SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
-        SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
-        SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
-        SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
+    val groups = listOf(
+        SettingsGroup(R.string.settings_group_account, listOf(
+            SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
+            SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
+            SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
+            SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
+        )),
+        SettingsGroup(R.string.settings_group_activity, listOf(
+            SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
+            SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
+            SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
+            SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
+            SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
+        )),
+        SettingsGroup(R.string.settings_group_preferences, listOf(
+            SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
+            SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
+            SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
+            SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
+        )),
+        SettingsGroup(R.string.settings_group_help, listOf(
+            SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
+            SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
+        )),
     )
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    // Keep the identity and primary destinations in the first viewport. The
+    // profile background pool supplies a real ground plane under the runner.
+    val artworkHeight = (maxHeight - 340.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)
+        .coerceIn(220.dp, 360.dp)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 22.dp),
+        contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // ── 설정 — 안쪽 화면. 돌아가는 길을 맨 위에 둔다 ──
         if (tab == 1) {
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DarkIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.cd_back),
-                        onClick = { tab = 0 },
-                    )
-                    Text(
-                        text = stringResource(R.string.profile_tab_settings),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Snow,
-                    )
-                }
-            }
-            item { SectionHeader(title = stringResource(R.string.profile_account)) }
-            items(pills) { pill ->
-                SettingsRow(
-                    icon = pill.icon,
-                    label = stringResource(pill.label),
-                    onClick = pill.onClick,
+                com.stepup.android.ui.components.FocusHeader(
+                    title = stringResource(R.string.profile_tab_settings),
+                    onBack = { tab = 0 },
                 )
+            }
+            groups.forEach { group ->
+                item { SectionHeader(title = stringResource(group.title)) }
+                item {
+                    Column {
+                        group.items.forEach { pill ->
+                            QuietListRow(
+                                icon = pill.icon,
+                                label = stringResource(pill.label),
+                                onClick = pill.onClick,
+                            )
+                        }
+                    }
+                }
             }
             // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 운영 데이터와 섞이지 않는다.
             item { DemoModeRow(on = demo, onChange = viewModel::setDemoMode) }
@@ -276,79 +277,61 @@ fun ProfileScreen(
         }
 
         // ── 머리글 — 로고 · 보유 SUP ──
-        item { MainHeader(balance = state.balance, onOpenWallet = onOpenWallet) }
 
         // ── 작은 캐릭터 · 닉네임 · 인사 ──
         item {
             MeHeader(
                 state = state,
                 look = look,
+                artworkHeight = artworkHeight,
                 onEditProfile = { showProfileEdit = true },
-                onOpenCustomize = onOpenItems,
+                onOpenCustomize = onOpenCustomize,
                 onOpenSettings = { tab = 1 },
+                onChangeBackground = onChangeBackground,
             )
         }
 
-        // ── 보유 포인트 · 적립 내역 ──
-        item { PointsCard(balance = state.balance, onOpen = onOpenWallet) }
-
-        // ── 이번 주 러닝 거리 + 주간 그래프 ──
-        item { WeekCard(week = state.week, onOpen = onOpenAnalytics) }
-
-        // ── 최근 러닝 기록 ──
-        item { RecentRunsCard(runs = recentRuns, onOpenAll = onOpenAnalytics) }
-
-        // ── 내 아이템 · 설정 — 한 줄씩 ──
         item {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ShortcutButton(
-                    icon = StepUpIcons.Shirt,
-                    label = stringResource(R.string.me_items),
-                    onClick = onOpenItems,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 52.dp),
+            Column {
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—",
+                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.me_total_runs), color = Silver, fontSize = 14.sp)
+                    }
+                    VerticalHairline()
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—",
+                            color = Snow, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.profile_total_distance), color = Silver, fontSize = 14.sp)
+                    }
+                }
+                HairlineDivider()
+            }
+        }
+        item {
+            Column(Modifier.fillMaxWidth()) {
+                QuietListRow(
+                    icon = Icons.AutoMirrored.Filled.DirectionsRun,
+                    label = stringResource(R.string.me_recent_runs),
+                    onClick = onOpenAnalytics,
+                    modifier = Modifier.testTag("profile-records"),
                 )
-                ShortcutButton(
-                    icon = Icons.Filled.Settings,
-                    label = stringResource(R.string.profile_tab_settings),
-                    onClick = { tab = 1 },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 52.dp),
+                QuietListRow(
+                    icon = Icons.Filled.EmojiEvents,
+                    label = stringResource(R.string.home_shortcut_challenges),
+                    onClick = onOpenChallenges,
+                    modifier = Modifier.testTag("profile-challenges"),
+                )
+                QuietListRow(
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    label = stringResource(R.string.settings_wallet),
+                    onClick = onOpenWallet,
+                    modifier = Modifier.testTag("profile-wallet"),
                 )
             }
         }
     }
-}
-
-/** 설정 한 줄 — 아이콘 · 이름 · 들어가는 화살표 */
-@Composable
-private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .border(1.dp, Edge, RoundedCornerShape(18.dp))
-            .quietClickable(onClick)
-            .padding(horizontal = 16.dp, vertical = 15.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Volt, modifier = Modifier.size(19.dp))
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Snow,
-        )
-        Icon(
-            imageVector = Icons.Filled.ChevronRight,
-            contentDescription = null,
-            tint = Slate,
-            modifier = Modifier.size(18.dp),
-        )
     }
 }
 
@@ -358,6 +341,8 @@ private data class SettingsPill(
     val label: Int,
     val onClick: () -> Unit,
 )
+
+private data class SettingsGroup(val title: Int, val items: List<SettingsPill>)
 
 /** 초 → H:MM:SS */
 private fun formatDuration(totalSec: Long): String {
@@ -950,108 +935,47 @@ private fun GoalDialog(
     var sliderValue by remember(goal) { mutableFloatStateOf(goal.toFloat()) }
     val steps = sliderValue.toInt()
     val distanceKm = RewardEconomy.distanceMeters(steps) / 1000
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.common_close),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+    com.stepup.android.ui.components.DialogPanel(
+        title = stringResource(R.string.goal_title),
+        onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.common_close), onDismiss, Modifier.fillMaxWidth())
         },
-        title = {
-            Text(
-                text = stringResource(R.string.goal_title),
-                fontWeight = FontWeight.Black,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "%,d".format(steps),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-1).sp,
-                            color = Snow,
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.goal_steps_suffix),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                            modifier = Modifier.padding(bottom = 5.dp),
-                        )
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.padding(bottom = 5.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.goal_about_km, "%.1f".format(distanceKm)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Slate,
-                        )
-                        // 목표를 올리면 보너스도 오른다는 것을 여기서 보여준다.
-                        // 규칙만 바꾸고 알리지 않으면 아무도 목표를 올리지 않는다.
-                        Text(
-                            text = stringResource(
-                                R.string.goal_bonus_preview,
-                                "%,.1f".format(RewardEconomy.goalBaseBonus(steps)),
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Volt,
-                        )
-                    }
-                }
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    onValueChangeFinished = { onGoalChange(sliderValue.toInt()) },
-                    valueRange = UserPrefs.MIN_GOAL.toFloat()..UserPrefs.MAX_GOAL.toFloat(),
-                    steps = (UserPrefs.MAX_GOAL - UserPrefs.MIN_GOAL) / 500 - 1,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Volt,
-                        activeTrackColor = Volt,
-                        inactiveTrackColor = Snow.copy(alpha = 0.10f),
-                        activeTickColor = Color.Transparent,
-                        inactiveTickColor = Color.Transparent,
-                    ),
-                )
-                Text(
-                    text = stringResource(R.string.goal_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Slate,
-                )
-            }
-        },
-    )
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("%,d".format(steps), fontFamily = StepUpNumbers, fontSize = 44.sp,
+                fontWeight = FontWeight.Bold, color = Snow)
+            Text(stringResource(R.string.goal_steps_suffix), fontSize = 14.sp, color = Silver)
+        }
+        Text(stringResource(R.string.goal_about_km, "%.1f".format(distanceKm)),
+            style = MaterialTheme.typography.bodyLarge, color = Silver)
+        Text(stringResource(R.string.goal_bonus_preview, "%,.1f".format(RewardEconomy.goalBaseBonus(steps))),
+            style = MaterialTheme.typography.bodyMedium, color = VoltText)
+        Slider(
+            value = sliderValue,
+            onValueChange = { sliderValue = it },
+            onValueChangeFinished = { onGoalChange(sliderValue.toInt()) },
+            valueRange = UserPrefs.MIN_GOAL.toFloat()..UserPrefs.MAX_GOAL.toFloat(),
+            steps = (UserPrefs.MAX_GOAL - UserPrefs.MIN_GOAL) / 500 - 1,
+            colors = SliderDefaults.colors(
+                thumbColor = Volt, activeTrackColor = Volt,
+                inactiveTrackColor = Snow.copy(alpha = 0.10f),
+                activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
+            ),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("%,d".format(UserPrefs.MIN_GOAL), color = Silver, fontSize = 14.sp)
+            Text("%,d".format(UserPrefs.MAX_GOAL), color = Silver, fontSize = 14.sp)
+        }
+        Text(stringResource(R.string.goal_hint), style = MaterialTheme.typography.bodyMedium, color = Silver)
+    }
 }
 
-/**
- * 프로필 편집 — 사진과 이름을 한 창에서.
- *
- * 예전에는 "프로필 편집"이 사진만 바꾸고 이름은 옆 칩에 따로 있었다.
- * 이름을 바꾸러 프로필 편집을 누른 사람은 거기서 멈춘다.
- *
- * 사진은 고르는 즉시 저장한다(되돌릴 것이 없다). 이름은 저장을 눌러야
- * 반영한다 — 글자를 지우는 중간 상태가 그대로 저장되면 곤란하다.
- */
+/** Photos keep their existing immediate-save behavior; the nickname saves on confirmation. */
 @Composable
 private fun ProfileEditDialog(
     nickname: String,
+    level: Int,
     selectedAvatar: Int,
     avatarRev: Int,
     onPickAvatar: (Int) -> Unit,
@@ -1060,156 +984,61 @@ private fun ProfileEditDialog(
     onDismiss: () -> Unit,
 ) {
     var text by rememberSaveable(nickname) { mutableStateOf(nickname) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Carbon,
-        titleContentColor = Snow,
-        textContentColor = Silver,
-        confirmButton = {
-            TextButton(onClick = { onSave(text) }) {
-                Text(
-                    text = stringResource(R.string.common_confirm),
-                    color = Volt,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel), color = Slate)
-            }
-        },
-        title = {
-            Text(
-                text = stringResource(R.string.profile_edit_profile),
-                fontWeight = FontWeight.Black,
+    com.stepup.android.ui.components.DialogPanel(
+        title = stringResource(R.string.profile_edit_profile),
+        onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.common_confirm), { onSave(text) }, Modifier.fillMaxWidth())
+            com.stepup.android.ui.components.GhostButton(
+                stringResource(R.string.common_cancel), onDismiss, Modifier.fillMaxWidth(),
             )
         },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                // ── 이름 ──
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stringResource(R.string.profile_set_nickname),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = Slate,
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CarbonHigh)
-                            .border(1.dp, Edge, RoundedCornerShape(14.dp))
-                            .padding(horizontal = 13.dp, vertical = 12.dp),
-                    ) {
-                        if (text.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.profile_nickname_hint),
-                                fontSize = 13.sp,
-                                color = Slate,
-                            )
+    ) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            LevelAvatar(level = level, size = 72.dp, avatarId = selectedAvatar,
+                customBitmap = rememberCustomAvatar(avatarRev))
+        }
+        com.stepup.android.ui.components.FormField(
+            label = stringResource(R.string.profile_set_nickname), value = text,
+            onValueChange = { if (it.length <= UserPrefs.NICKNAME_MAX) text = it },
+            placeholder = stringResource(R.string.profile_nickname_hint),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.profile_nickname_note), fontSize = 14.sp, color = Silver,
+                modifier = Modifier.weight(1f))
+            Text("${text.length} / ${UserPrefs.NICKNAME_MAX}", fontSize = 14.sp, color = Silver)
+        }
+        HairlineDivider()
+        Text(stringResource(R.string.profile_edit_avatar), style = MaterialTheme.typography.titleMedium, color = Snow)
+        com.stepup.android.ui.components.GhostButton(
+            stringResource(R.string.profile_avatar_gallery), onPickGallery, Modifier.fillMaxWidth(),
+        )
+        if (selectedAvatar == UserPrefs.AVATAR_CUSTOM) {
+            Text(stringResource(R.string.profile_avatar_current), fontSize = 14.sp, color = Silver)
+        }
+        Text(stringResource(R.string.profile_avatar_or_emoji), fontSize = 14.sp, color = Silver)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val columns = if (maxWidth < 232.dp) 3 else 4
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AvatarEmojis.chunked(columns).forEachIndexed { rowIndex, row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEachIndexed { colIndex, emoji ->
+                            val id = rowIndex * columns + colIndex
+                            Box(
+                                Modifier.weight(1f).heightIn(min = 48.dp).aspectRatio(1f)
+                                    .clip(CircleShape).background(CarbonHigh)
+                                    .border(if (selectedAvatar == id) 2.dp else 1.dp,
+                                        if (selectedAvatar == id) Volt else Edge, CircleShape)
+                                    .selectable(selectedAvatar == id, role = Role.RadioButton) { onPickAvatar(id) },
+                                contentAlignment = Alignment.Center,
+                            ) { Text(emoji, fontSize = 26.sp) }
                         }
-                        BasicTextField(
-                            // 길이 제한은 저장할 때가 아니라 입력할 때 건다. 17자를
-                            // 쳐 놓고 저장 뒤에 잘려 있으면 고장으로 읽힌다.
-                            value = text,
-                            onValueChange = { if (it.length <= UserPrefs.NICKNAME_MAX) text = it },
-                            singleLine = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(color = Snow, fontSize = 14.sp),
-                            cursorBrush = SolidColor(Volt),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.profile_nickname_note),
-                            fontSize = 11.sp,
-                            color = Slate,
-                        )
-                        Text(
-                            text = "${text.length} / ${UserPrefs.NICKNAME_MAX}",
-                            fontSize = 11.sp,
-                            color = Slate,
-                        )
-                    }
-                }
-
-                HairlineDivider()
-
-                // ── 사진 ──
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Text(
-                        text = stringResource(R.string.profile_edit_avatar),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = Slate,
-                    )
-                    VoltButton(
-                        text = stringResource(R.string.profile_avatar_gallery),
-                        onClick = onPickGallery,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    // 갤러리 사진을 쓰고 있으면 지금 무엇이 걸려 있는지 보여준다.
-                    if (selectedAvatar == UserPrefs.AVATAR_CUSTOM) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(9.dp),
-                        ) {
-                            LevelAvatar(
-                                level = 1,
-                                size = 42.dp,
-                                avatarId = selectedAvatar,
-                                customBitmap = rememberCustomAvatar(avatarRev),
-                            )
-                            Text(
-                                text = stringResource(R.string.profile_avatar_current),
-                                fontSize = 11.sp,
-                                color = Silver,
-                            )
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.profile_avatar_or_emoji),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Slate,
-                    )
-                    AvatarEmojis.chunked(4).forEachIndexed { rowIndex, row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEachIndexed { colIndex, emoji ->
-                                val id = rowIndex * 4 + colIndex
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1f)
-                                        .clip(CircleShape)
-                                        .background(CarbonHigh)
-                                        .border(
-                                            width = if (selectedAvatar == id) 2.dp else 1.dp,
-                                            color = if (selectedAvatar == id) Volt else Edge,
-                                            shape = CircleShape,
-                                        )
-                                        .quietClickable { onPickAvatar(id) },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(text = emoji, fontSize = 24.sp)
-                                }
-                            }
-                        }
+                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
-        },
-    )
+        }
+    }
 }
 
 // ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
@@ -1223,58 +1052,66 @@ private fun ProfileEditDialog(
 @Composable
 private fun MeHeader(
     state: ProfileViewModel.UiState,
-    look: com.stepup.android.domain.AvatarLook,
+    look: com.stepup.android.domain.AvatarLook?,
+    artworkHeight: androidx.compose.ui.unit.Dp,
     onEditProfile: () -> Unit,
     onOpenCustomize: () -> Unit,
     onOpenSettings: () -> Unit,
+    onChangeBackground: () -> Unit,
 ) {
-    val runner = state.runner
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AvatarBadge(
-            look = look,
-            modifier = Modifier
-                .size(width = 88.dp, height = 104.dp)
-                .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
-                .feedbackClickable(onClick = onOpenCustomize),
-        )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.feedbackClickable(onClick = onEditProfile),
-            ) {
-                Text(
-                    text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Snow,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
+        Box(Modifier.fillMaxWidth().height(artworkHeight)) {
+            if (look != null) {
+                com.stepup.android.ui.components.ProfileCharacterStage(
+                    look = look,
+                    contentDescription = stringResource(R.string.cd_home_character),
+                    modifier = Modifier.fillMaxSize()
+                        .guideTarget(GuideTour.Targets.PROFILE_AVATAR)
+                        .feedbackClickable(onClick = onOpenCustomize),
                 )
+            } else {
+                androidx.compose.material3.CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
-            Text(
-                text = stringResource(R.string.me_greeting),
-                fontSize = 14.sp,
-                color = Silver,
+            DarkIconButton(
+                icon = Icons.Outlined.Image,
+                contentDescription = stringResource(R.string.wardrobe_change_background),
+                onClick = onChangeBackground,
+                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
+                modifier = Modifier.align(Alignment.TopStart).testTag("profile-background"),
+            )
+            DarkIconButton(
+                icon = Icons.Filled.Settings,
+                contentDescription = stringResource(R.string.profile_tab_settings),
+                onClick = onOpenSettings,
+                modifier = Modifier.align(Alignment.TopEnd).testTag("profile-settings"),
             )
         }
-        Icon(
-            Icons.Filled.ChevronRight,
-            contentDescription = stringResource(R.string.profile_edit_profile),
-            tint = VoltText,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .feedbackClickable(onClick = onEditProfile)
-                .padding(8.dp),
-        )
+        if (look != null) {
+            com.stepup.android.ui.components.AvatarLookNote(
+                look = look,
+                render = com.stepup.android.domain.AvatarArtCatalog.resolve(
+                    look, com.stepup.android.domain.AvatarPose.IDLE,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
+                fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Snow,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            DarkIconButton(Icons.Filled.Edit, stringResource(R.string.profile_edit_profile), onClick = onEditProfile)
+        }
+        Text(stringResource(R.string.me_greeting), color = Silver, fontSize = 14.sp)
     }
 }
 
@@ -1457,30 +1294,9 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
 /** 데모 모드 스위치 — 켜면 소식 · 러너 마켓에 "예시"가 뜬다 */
 @Composable
 private fun DemoModeRow(on: Boolean, onChange: (Boolean) -> Unit) {
-    GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), spacing = 4.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_demo),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Snow,
-                )
-                Text(
-                    text = stringResource(R.string.settings_demo_note),
-                    fontSize = 12.sp,
-                    color = Silver,
-                    lineHeight = 17.sp,
-                )
-            }
-            androidx.compose.material3.Switch(
-                checked = on,
-                onCheckedChange = onChange,
-                colors = androidx.compose.material3.SwitchDefaults.colors(
-                    checkedThumbColor = com.stepup.android.ui.theme.OnVolt,
-                    checkedTrackColor = Volt,
-                ),
-            )
-        }
-    }
+    com.stepup.android.ui.components.PreferenceToggle(
+        title = stringResource(R.string.settings_demo),
+        description = stringResource(R.string.settings_demo_note),
+        icon = Icons.Filled.Tune, checked = on, onCheckedChange = onChange,
+    )
 }

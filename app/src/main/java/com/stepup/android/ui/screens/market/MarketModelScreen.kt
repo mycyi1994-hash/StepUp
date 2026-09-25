@@ -1,24 +1,16 @@
 package com.stepup.android.ui.screens.market
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,18 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
@@ -47,21 +32,21 @@ import com.stepup.android.data.remote.AskRow
 import com.stepup.android.data.remote.BidRow
 import com.stepup.android.data.remote.ModelKey
 import com.stepup.android.data.remote.TradeRow
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
+import com.stepup.android.ui.components.DetailPage
+import com.stepup.android.ui.components.DialogPanel
+import com.stepup.android.ui.components.FormField
+import com.stepup.android.ui.components.PreferenceChoice
+import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
-import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltText
 
 /**
  * 모델 하나의 장부.
@@ -115,41 +100,13 @@ fun MarketModelScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 26.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Eyebrow(text = stringResource(R.string.market_tab_nft))
-                    Text(
-                        text = modelName(faction, rarity, variant),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.6).sp,
-                        color = Snow,
-                        maxLines = 1,
-                    )
-                }
-                SneakerFrame(
-                    sneaker = previewSneaker(faction, rarity, variant),
-                    modifier = Modifier.size(52.dp),
-                    corner = 15.dp,
-                )
-            }
+            SneakerFrame(
+                sneaker = previewSneaker(faction, rarity, variant),
+                modifier = Modifier.fillMaxWidth().height(220.dp),
+                corner = 24.dp,
+            )
         }
 
         message?.let { note ->
@@ -160,34 +117,28 @@ fun MarketModelScreen(
             }
         }
 
+        if (state.loading) {
+            item {
+                com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.feed_loading), androidx.compose.material.icons.Icons.Filled.HourglassEmpty,
+                    loading = true,
+                )
+            }
+            return@DetailPage
+        }
         if (state.problem != null) {
-            item { MarketProblemNote(state.problem!!) }
-            return@LazyColumn
+            item { MarketProblemNote(state.problem!!, onRetry = viewModel::load) }
+            return@DetailPage
         }
 
         // ── 시세 ──
         item {
             GlowCard(contentPadding = MarketCardPadding, spacing = 12.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    PriceCell(
-                        label = stringResource(R.string.market_ask),
-                        value = state.quote?.ask,
-                        modifier = Modifier.weight(1f),
-                        accent = true,
-                    )
-                    PriceCell(
-                        label = stringResource(R.string.market_bid),
-                        value = state.quote?.bid,
-                        modifier = Modifier.weight(1f),
-                    )
-                    PriceCell(
-                        label = stringResource(R.string.market_last),
-                        value = state.quote?.lastPrice,
-                        modifier = Modifier.weight(1f),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PriceCell(stringResource(R.string.market_ask), state.quote?.ask,
+                        Modifier.fillMaxWidth(), accent = true)
+                    PriceCell(stringResource(R.string.market_bid), state.quote?.bid, Modifier.fillMaxWidth())
+                    PriceCell(stringResource(R.string.market_last), state.quote?.lastPrice, Modifier.fillMaxWidth())
                 }
                 Text(
                     text = stringResource(
@@ -195,9 +146,9 @@ fun MarketModelScreen(
                         state.quote?.supply ?: 0,
                         state.quote?.trades24h ?: 0,
                     ),
-                    fontSize = 10.sp,
+                    fontSize = 14.sp,
                     color = Slate,
-                    lineHeight = 15.sp,
+                    lineHeight = 20.sp,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     VoltButton(
@@ -215,9 +166,9 @@ fun MarketModelScreen(
                 if (sellable.isEmpty()) {
                     Text(
                         text = stringResource(R.string.market_nothing_to_sell),
-                        fontSize = 10.sp,
+                        fontSize = 14.sp,
                         color = Slate,
-                        lineHeight = 15.sp,
+                        lineHeight = 20.sp,
                     )
                 }
             }
@@ -275,7 +226,7 @@ fun MarketModelScreen(
         }
     }
 
-    if (bidding) {
+    if (bidding && !state.loading && state.problem == null) {
         BidDialog(
             tradable = state.tradable,
             suggested = state.quote?.bid ?: state.quote?.lastPrice,
@@ -287,7 +238,7 @@ fun MarketModelScreen(
         )
     }
 
-    if (asking) {
+    if (asking && !state.loading && state.problem == null) {
         AskDialog(
             sneakers = sellable,
             preselect = sellLocalId,
@@ -305,89 +256,37 @@ fun MarketModelScreen(
 
 @Composable
 private fun AskRowCard(row: AskRow, onBuy: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 13.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                text = stringResource(R.string.price_sup, formatSup(row.price)),
-                style = MaterialTheme.typography.titleSmall,
-                color = Snow,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Tag(stringResource(R.string.market_level, row.level), accent = true)
-                Tag("#${row.mintNumber}")
-                Tag(stringResource(R.string.market_durability, row.durability))
-            }
-        }
-        VoltButton(
-            text = stringResource(R.string.market_buy_now),
-            onClick = onBuy,
-            modifier = Modifier.padding(start = 4.dp),
-        )
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Text(stringResource(R.string.price_sup, formatSup(row.price)),
+            style = MaterialTheme.typography.titleLarge, color = Snow)
+        Text(stringResource(R.string.market_level, row.level) + " · #${row.mintNumber} · " +
+            stringResource(R.string.market_durability, row.durability), fontSize = 14.sp, color = Silver)
+        VoltButton(stringResource(R.string.market_buy_now), onBuy, Modifier.fillMaxWidth())
     }
 }
 
 @Composable
 private fun BidRowCard(row: BidRow, canSell: Boolean, onSell: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(CarbonHigh)
-            .padding(horizontal = 13.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                text = stringResource(R.string.price_sup, formatSup(row.price)),
-                style = MaterialTheme.typography.titleSmall,
-                color = Snow,
-            )
-            Tag(stringResource(R.string.market_min_level, row.minLevel))
-        }
-        GhostButton(
-            text = stringResource(R.string.market_sell_now),
-            onClick = onSell,
-            enabled = canSell,
-        )
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Text(stringResource(R.string.price_sup, formatSup(row.price)),
+            style = MaterialTheme.typography.titleLarge, color = Snow)
+        Text(stringResource(R.string.market_min_level, row.minLevel), fontSize = 14.sp, color = Silver)
+        GhostButton(stringResource(R.string.market_sell_now), onSell, Modifier.fillMaxWidth(), enabled = canSell)
     }
 }
 
 @Composable
 private fun TradeHistoryRow(row: TradeRow) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(CarbonHigh.copy(alpha = 0.6f))
-            .padding(horizontal = 13.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = stringResource(R.string.market_level, row.level),
-            fontSize = 11.sp,
-            color = Silver,
-        )
-        Text(
-            text = row.tradedAt.take(10),
-            fontSize = 10.sp,
-            color = Slate,
-        )
-        Text(
-            text = stringResource(R.string.price_sup, formatSup(row.price)),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            color = Volt,
-        )
+    Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.market_level, row.level), fontSize = 14.sp,
+                color = Silver, modifier = Modifier.weight(1f))
+            Text(row.tradedAt.take(10), fontSize = 14.sp, color = Silver)
+        }
+        Text(stringResource(R.string.price_sup, formatSup(row.price)),
+            style = MaterialTheme.typography.titleMedium, color = VoltText)
+        HairlineDivider()
     }
 }
 
@@ -405,37 +304,18 @@ private fun BidDialog(
     val amount = price.toDoubleOrNull() ?: 0.0
     val level = minLevel.toIntOrNull() ?: 1
     val canSend = amount >= 1 && amount <= tradable && level in 1..30
-
-    MarketDialog(onDismiss = onDismiss) {
-        DialogTitle(stringResource(R.string.market_place_bid))
-        Text(
-            text = stringResource(R.string.market_bid_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = Silver,
-            lineHeight = 18.sp,
-        )
-        NumberField(
-            label = stringResource(R.string.market_price_label),
-            value = price,
-            onValueChange = { price = it.filter(Char::isDigit).take(9) },
-        )
-        NumberField(
-            label = stringResource(R.string.market_min_level_label),
-            value = minLevel,
-            onValueChange = { minLevel = it.filter(Char::isDigit).take(2) },
-        )
-        Text(
-            text = stringResource(R.string.market_tradable) + " " +
-                stringResource(R.string.price_sup, formatSup(tradable)),
-            fontSize = 11.sp,
-            color = if (amount > tradable) Volt else Slate,
-        )
-        VoltButton(
-            text = stringResource(R.string.market_place_bid),
-            onClick = { onConfirm(level, amount) },
-            enabled = canSend,
-            modifier = Modifier.fillMaxWidth(),
-        )
+    DialogPanel(
+        title = stringResource(R.string.market_place_bid), onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.market_place_bid), { onConfirm(level, amount) },
+                Modifier.fillMaxWidth(), enabled = canSend)
+        },
+    ) {
+        Text(stringResource(R.string.market_bid_help), style = MaterialTheme.typography.bodyLarge, color = Silver)
+        NumberField(stringResource(R.string.market_price_label), price) { price = it.filter(Char::isDigit).take(9) }
+        NumberField(stringResource(R.string.market_min_level_label), minLevel) { minLevel = it.filter(Char::isDigit).take(2) }
+        Text(stringResource(R.string.market_tradable) + " " + stringResource(R.string.price_sup, formatSup(tradable)),
+            fontSize = 14.sp, color = if (amount > tradable) VoltText else Silver)
     }
 }
 
@@ -445,129 +325,33 @@ private fun AskDialog(
     suggested: Double?,
     onDismiss: () -> Unit,
     onConfirm: (SneakerEntity, Double) -> Unit,
-    /** 보관함에서 고르고 온 켤레. 목록에 없으면 첫 켤레를 고른다. */
     preselect: Long = 0,
 ) {
     var price by remember { mutableStateOf(suggested?.toLong()?.toString() ?: "") }
-    var picked by remember {
-        mutableStateOf(
-            sneakers.firstOrNull { it.id == preselect } ?: sneakers.firstOrNull(),
-        )
-    }
+    var picked by remember { mutableStateOf(sneakers.firstOrNull { it.id == preselect } ?: sneakers.firstOrNull()) }
     val amount = price.toDoubleOrNull() ?: 0.0
     val canSend = amount >= 1 && picked != null
-
-    MarketDialog(onDismiss = onDismiss) {
-        DialogTitle(stringResource(R.string.market_place_ask))
-        Text(
-            text = stringResource(R.string.market_ask_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = Silver,
-            lineHeight = 18.sp,
-        )
-        // 어느 켤레를 파는지 골라야 한다. 같은 모델이라도 레벨이 다르면
-        // 값이 다르고, 파는 것은 한 켤레다.
-        sneakers.forEach { sneaker ->
-            val selected = picked?.id == sneaker.id
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh)
-                    .quietClickable { picked = sneaker }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.market_level, sneaker.level),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (selected) Volt else Snow,
-                )
-                Text(
-                    text = stringResource(R.string.market_durability, sneaker.durability),
-                    fontSize = 11.sp,
-                    color = Silver,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(text = "#${sneaker.mintNumber}", fontSize = 10.sp, color = Slate)
-            }
-        }
-        NumberField(
-            label = stringResource(R.string.market_price_label),
-            value = price,
-            onValueChange = { price = it.filter(Char::isDigit).take(9) },
-        )
-        VoltButton(
-            text = stringResource(R.string.market_place_ask),
-            onClick = { picked?.let { onConfirm(it, amount) } },
-            enabled = canSend,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
-private fun MarketDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+    DialogPanel(
+        title = stringResource(R.string.market_place_ask), onDismiss = onDismiss,
+        actions = {
+            VoltButton(stringResource(R.string.market_place_ask), { picked?.let { onConfirm(it, amount) } },
+                Modifier.fillMaxWidth(), enabled = canSend)
+        },
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .quietClickable(onDismiss)
-                .padding(22.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // 창 본체를 눌렀을 때 배경으로 새어 나가 닫히지 않게 흡수한다
-                    .quietClickable { }
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Carbon)
-                    .border(1.dp, Edge, RoundedCornerShape(24.dp))
-                    .imePadding()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                content()
-            }
+        Text(stringResource(R.string.market_ask_help), style = MaterialTheme.typography.bodyLarge, color = Silver)
+        NumberField(stringResource(R.string.market_price_label), price) { price = it.filter(Char::isDigit).take(9) }
+        sneakers.forEach { sneaker ->
+            PreferenceChoice(
+                title = stringResource(R.string.market_level, sneaker.level) + " · #${sneaker.mintNumber}",
+                description = stringResource(R.string.market_durability, sneaker.durability),
+                selected = picked?.id == sneaker.id, onClick = { picked = sneaker },
+            )
         }
     }
 }
 
-/**
- * 숫자만 받는 칸.
- *
- * Material 의 TextField 를 쓰지 않는 것은 이 앱의 다른 입력과 같은 모양을
- * 지키기 위해서다 — 한 화면 안에서 입력칸이 두 가지 모양이면 다른 앱처럼 보인다.
- */
 @Composable
 private fun NumberField(label: String, value: String, onValueChange: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        Text(text = label, fontSize = 10.sp, color = Slate)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(CarbonHigh)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = TextStyle(color = Snow, fontSize = 15.sp, fontWeight = FontWeight.Bold),
-                cursorBrush = SolidColor(Volt),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (value.isEmpty()) {
-                Text(text = "0", fontSize = 15.sp, color = Slate)
-            }
-        }
-    }
+    FormField(label = label, value = value, onValueChange = onValueChange,
+        placeholder = "0", keyboardType = KeyboardType.Number)
 }

@@ -1,0 +1,205 @@
+[
+  {
+    "file": "sfx/ui_tap.wav",
+    "group": "공통",
+    "use": "가벼운 버튼 터치",
+    "duration_ms": 105,
+    "peak_dbfs": -13.2
+  },
+  {
+    "file": "sfx/ui_select.wav",
+    "group": "공통",
+    "use": "하단 탭·선택 확정",
+    "duration_ms": 190,
+    "peak_dbfs": -12.0
+  },
+  {
+    "file": "sfx/ui_back.wav",
+    "group": "공통",
+    "use": "뒤로 가기",
+    "duration_ms": 180,
+    "peak_dbfs": -12.4
+  },
+  {
+    "file": "sfx/ui_toggle.wav",
+    "group": "공통",
+    "use": "설정 토글 전환",
+    "duration_ms": 180,
+    "peak_dbfs": -12.0
+  },
+  {
+    "file": "sfx/ui_sheet_open.wav",
+    "group": "공통",
+    "use": "시트·상세 패널 열기",
+    "duration_ms": 360,
+    "peak_dbfs": -10.8
+  },
+  {
+    "file": "sfx/ui_sheet_close.wav",
+    "group": "공통",
+    "use": "시트·상세 패널 닫기",
+    "duration_ms": 270,
+    "peak_dbfs": -12.0
+  },
+  {
+    "file": "sfx/ui_background_switch.wav",
+    "group": "공통",
+    "use": "홈 배경 좌우 전환",
+    "duration_ms": 430,
+    "peak_dbfs": -11.4
+  },
+  {
+    "file": "sfx/item_equip.wav",
+    "group": "꾸미기",
+    "use": "의상·신발 착용 확정",
+    "duration_ms": 490,
+    "peak_dbfs": -10.2
+  },
+  {
+    "file": "sfx/action_success.wav",
+    "group": "결과",
+    "use": "저장·게시·참여 성공",
+    "duration_ms": 490,
+    "peak_dbfs": -11.1
+  },
+  {
+    "file": "sfx/action_error.wav",
+    "group": "결과",
+    "use": "일반 오류·거절",
+    "duration_ms": 340,
+    "peak_dbfs": -12.0
+  },
+  {
+    "file": "sfx/reward_claim.wav",
+    "group": "결과",
+    "use": "보상 지급이 확정된 순간",
+    "duration_ms": 850,
+    "peak_dbfs": -10.2
+  },
+  {
+    "file": "sfx/run_countdown.wav",
+    "group": "러닝",
+    "use": "출발 카운트다운 한 박자",
+    "duration_ms": 190,
+    "peak_dbfs": -11.7
+  },
+  {
+    "file": "sfx/run_start.wav",
+    "group": "러닝",
+    "use": "실제 러닝 시작",
+    "duration_ms": 570,
+    "peak_dbfs": -10.5
+  },
+  {
+    "file": "sfx/run_pause.wav",
+    "group": "러닝",
+    "use": "일시정지",
+    "duration_ms": 280,
+    "peak_dbfs": -11.4
+  },
+  {
+    "file": "sfx/run_resume.wav",
+    "group": "러닝",
+    "use": "일시정지 후 재개",
+    "duration_ms": 390,
+    "peak_dbfs": -11.1
+  },
+  {
+    "file": "sfx/run_lap.wav",
+    "group": "러닝",
+    "use": "랩·구간 완료",
+    "duration_ms": 460,
+    "peak_dbfs": -10.8
+  },
+  {
+    "file": "sfx/run_finish.wav",
+    "group": "러닝",
+    "use": "러닝 결과 확정",
+    "duration_ms": 980,
+    "peak_dbfs": -9.9
+  },
+  {
+    "file": "sfx/draw_enter.wav",
+    "group": "뽑기",
+    "use": "미스터리 박스 화면 진입",
+    "duration_ms": 590,
+    "peak_dbfs": -11.1
+  },
+  {
+    "file": "sfx/draw_charge.wav",
+    "group": "뽑기",
+    "use": "거래 확정 후 상자 충전",
+    "duration_ms": 1300,
+    "peak_dbfs": -10.2
+  },
+  {
+    "file": "sfx/draw_box_open.wav",
+    "group": "뽑기",
+    "use": "상자 열림 연출",
+    "duration_ms": 960,
+    "peak_dbfs": -9.6
+  },
+  {
+    "file": "sfx/draw_reveal_common.wav",
+    "group": "뽑기",
+    "use": "확정된 일반 결과 공개",
+    "duration_ms": 670,
+    "peak_dbfs": -11.1
+  },
+  {
+    "file": "sfx/draw_reveal_rare.wav",
+    "group": "뽑기",
+    "use": "확정된 희귀 결과 공개",
+    "duration_ms": 940,
+    "peak_dbfs": -10.2
+  },
+  {
+    "file": "sfx/draw_reveal_epic.wav",
+    "group": "뽑기",
+    "use": "확정된 에픽 결과 공개",
+    "duration_ms": 1280,
+    "peak_dbfs": -9.6
+  },
+  {
+    "file": "sfx/draw_reveal_legendary.wav",
+    "group": "뽑기",
+    "use": "확정된 전설 결과 공개",
+    "duration_ms": 1820,
+    "peak_dbfs": -9.4
+  },
+  {
+    "file": "sfx/draw_cancel.wav",
+    "group": "뽑기",
+    "use": "지갑 서명·거래 취소",
+    "duration_ms": 320,
+    "peak_dbfs": -12.4
+  },
+  {
+    "file": "sfx/draw_fail.wav",
+    "group": "뽑기",
+    "use": "뽑기 거래 실패",
+    "duration_ms": 390,
+    "peak_dbfs": -11.7
+  },
+  {
+    "file": "ambience/ambience_night_river.wav",
+    "group": "배경(선택)",
+    "use": "밤 강변 · 홈/러닝/프로필",
+    "duration_ms": 8000,
+    "peak_dbfs": -20.4
+  },
+  {
+    "file": "ambience/ambience_dawn_river.wav",
+    "group": "배경(선택)",
+    "use": "새벽·노을 강변 · 홈/러닝/꾸미기",
+    "duration_ms": 8000,
+    "peak_dbfs": -20.4
+  },
+  {
+    "file": "ambience/ambience_wardrobe_terrace.wav",
+    "group": "배경(선택)",
+    "use": "옷장 테라스 · 꾸미기",
+    "duration_ms": 8000,
+    "peak_dbfs": -20.4
+  }
+]

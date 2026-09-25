@@ -4,16 +4,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Icon
@@ -28,11 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
 import com.stepup.android.ui.components.IconSquare
@@ -55,34 +49,9 @@ private val faqEntries = listOf(
 fun SupportScreen(onBack: () -> Unit = {}) {
     var expandedIndex by rememberSaveable { mutableStateOf(-1) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_support), onBack = onBack,
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Text(
-                    text = stringResource(R.string.settings_support),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp,
-                    color = Snow,
-                )
-            }
-        }
-
         item { SectionHeader(title = stringResource(R.string.support_faq)) }
 
         itemsIndexed(faqEntries) { index, (questionRes, answerRes) ->
@@ -119,6 +88,7 @@ private fun FaqCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .quietClickable(onToggle),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -141,11 +111,11 @@ private fun FaqCard(
         androidx.compose.animation.AnimatedVisibility(visible = expanded,
             enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(com.stepup.android.ui.experience.LocalMotion.current.duration(160))),
             exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(com.stepup.android.ui.experience.LocalMotion.current.duration(120)))) {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             HairlineDivider()
             Text(
                 text = stringResource(answerRes),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Silver,
             )
             }
@@ -170,7 +140,7 @@ private fun ContactCard() {
         }
         Text(
             text = stringResource(R.string.support_contact_body),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = Silver,
         )
     }

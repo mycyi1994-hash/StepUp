@@ -1,21 +1,19 @@
 package com.stepup.android.ui.screens.community
 
 import androidx.compose.foundation.background
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -27,7 +25,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,24 +50,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.ui.components.TwoWaySwitch
-import com.stepup.android.ui.components.AvatarImage
-import com.stepup.android.ui.components.MainHeader
-import com.stepup.android.ui.components.PageHero
 import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.domain.AvatarArt
-import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
-import com.stepup.android.domain.RankBoard
 import com.stepup.android.ui.components.AvatarStack
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HexBadge
-import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
@@ -105,9 +95,18 @@ fun CommunityScreen(
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
+    var stories by rememberSaveable { mutableStateOf(false) }
+    var allMeetups by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(GuideTour.active) {
+        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); stories = false; allMeetups = false }
+    }
+    BackHandler(enabled = tab == CommunityTab.CREW || allMeetups) {
+        viewModel.selectTab(CommunityTab.BOARD)
+        allMeetups = false
+    }
     val segments = listOf(
-        stringResource(R.string.community_tab_feed),
-        stringResource(R.string.community_tab_my_crew),
+        stringResource(R.string.community_together),
+        stringResource(R.string.community_stories),
     )
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
@@ -118,41 +117,38 @@ fun CommunityScreen(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // 시안대로 — 로고 · 보유 SUP, 그 아래 큰 제목과 함께 달리는 두 러너.
-            // 알림함은 내 정보 › 설정에 있다.
-            val balance by viewModel.balance.collectAsStateWithLifecycle()
-            MainHeader(balance = balance, onOpenWallet = null)
-            PageHero(
-                title = stringResource(R.string.community_hero_title),
-                subtitle = stringResource(R.string.community_hero_sub),
-            ) {
-                AvatarImage(
-                    art = AvatarArt.MALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .size(width = 84.dp, height = 140.dp),
+            if (tab == CommunityTab.CREW) {
+                com.stepup.android.ui.components.FocusHeader(
+                    stringResource(R.string.community_tab_my_crew),
+                    onBack = { viewModel.selectTab(CommunityTab.BOARD) },
                 )
-                AvatarImage(
-                    art = AvatarArt.FEMALE_IDLE,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(width = 84.dp, height = 140.dp),
-                )
-            }
-
+            } else {
+              Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.community_hero_title), modifier = Modifier.weight(1f),
+                    color = Snow, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
+                DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
+                    onClick = { viewModel.selectTab(CommunityTab.CREW) })
+              }
             TwoWaySwitch(
                 labels = segments,
-                selected = if (tab == CommunityTab.BOARD) 0 else 1,
+                selected = if (stories) 1 else 0,
                 onSelect = {
-                    viewModel.selectTab(if (it == 0) CommunityTab.BOARD else CommunityTab.CREW)
+                    stories = it == 1
+                    allMeetups = false
                 },
                 modifier = Modifier.guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
             )
+            }
         }
 
         when (tab) {
-            CommunityTab.BOARD -> BoardTab(
+            CommunityTab.BOARD -> if (!stories && !allMeetups) TogetherTab(
+                viewModel = viewModel, onOpenFlash = onOpenFlash,
+                onWritePost = { onWritePost("") }, onAllMeetups = { allMeetups = true },
+            ) else BoardTab(
                 viewModel = viewModel,
+                onlyFlash = !stories,
                 onOpenRanking = onOpenRanking,
                 onWritePost = { onWritePost("") },
                 onOpenFlash = onOpenFlash,
@@ -176,6 +172,7 @@ fun CommunityScreen(
 @Composable
 private fun BoardTab(
     viewModel: CommunityViewModel,
+    onlyFlash: Boolean,
     onOpenRanking: () -> Unit,
     onWritePost: () -> Unit,
     onOpenFlash: (Long) -> Unit,
@@ -183,24 +180,13 @@ private fun BoardTab(
 ) {
     val posts by viewModel.boardPosts.collectAsStateWithLifecycle()
     val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
-    val filter by viewModel.boardFilter.collectAsStateWithLifecycle()
-    val hotPosts by viewModel.hotPosts.collectAsStateWithLifecycle()
-    val balance by viewModel.balance.collectAsStateWithLifecycle()
-    var query by rememberSaveable { mutableStateOf("") }
-
-    // 티저는 적립 랭킹을 보여준다 — 세 부문 중 누구에게나 값이 있는 축이다.
-    // 서버에서 오므로 아직 모를 수 있고, 그때는 등수 대신 "내 순위 보기"라고 한다.
-    // 모르는 등수를 지어내면 들어가 보는 순간 다른 숫자가 나온다.
-    val meLabel = stringResource(R.string.rank_me)
-    val myRank by viewModel.mySupRank.collectAsStateWithLifecycle()
 
     // 시안대로 한 줄 피드 — 번개러닝도 일반 글도 최신 순으로 섞어 보여 준다.
     // 검색 · 분류 칩 · 랭킹 카드는 두지 않는다(랭킹은 내 정보 › 설정).
     // 번개 카드의 "몇 km"는 내 자리에서 잰다. 모르면 함께 달릴 거리를 적는다.
     val here = rememberCurrentLocation()
-    val visible = remember(posts) { posts.sortedByDescending { it.createdAt } }
-    val flashWindow = remember(posts, query, here) {
-        filterPosts(posts, PostCategory.FLASH, query, here)
+    val visible = remember(posts, onlyFlash) {
+        posts.filter { it.isFlash == onlyFlash }.sortedByDescending { it.createdAt }
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -214,21 +200,14 @@ private fun BoardTab(
             item { MapEntryCard(onClick = onOpenMap) }
 
             // 글은 서버에만 있다. 로그인·연결 문제로 비었으면 "아직 글이 없어요"와 섞지 않는다.
-            if (posts.isEmpty() && boardSync != BoardSyncState.Ready) {
+            if (boardSync != BoardSyncState.Ready) {
                 item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
             } else if (visible.isEmpty()) {
                 item {
-                    GlowCard(contentPadding = PaddingValues(26.dp)) {
-                        Text(
-                            text = if (query.isBlank()) {
-                                stringResource(R.string.community_board_empty)
-                            } else {
-                                stringResource(R.string.community_no_results, query)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Silver,
-                        )
-                    }
+                    com.stepup.android.ui.components.StatePanel(
+                        message = stringResource(if (onlyFlash) R.string.community_meetups_empty else R.string.community_board_empty),
+                        icon = Icons.Filled.Groups,
+                    )
                 }
             }
 
@@ -418,7 +397,7 @@ private fun RankingTeaser(rank: Int?, balance: Double, onClick: () -> Unit) {
                     } else {
                         stringResource(R.string.ranking_teaser, rank, "%,.0f".format(balance))
                     },
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
@@ -503,13 +482,9 @@ private fun CrewTab(
 
         if (myCrews.isEmpty()) {
             item {
-                GlowCard(contentPadding = PaddingValues(24.dp)) {
-                    Text(
-                        text = stringResource(R.string.community_no_crew_yet),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
-                    )
-                }
+                com.stepup.android.ui.components.StatePanel(
+                    stringResource(R.string.community_no_crew_yet), Icons.Filled.Groups,
+                )
             }
         }
 
@@ -586,7 +561,7 @@ private fun CreateCrewCard(onClick: () -> Unit) {
                 )
                 Text(
                     text = stringResource(R.string.crew_create_sub),
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Silver,
                 )
             }
@@ -635,7 +610,7 @@ private fun CrewCard(
                     }
                 }
                 if (crew.tagline.isNotBlank()) {
-                    Text(crew.tagline, fontSize = 11.sp, color = Silver, maxLines = 1)
+                    Text(crew.tagline, fontSize = 14.sp, color = Silver, maxLines = 1)
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -653,13 +628,13 @@ private fun CrewCard(
                         } else {
                             crew.area.ifBlank { stringResource(R.string.crew_area_here) }
                         },
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Slate,
                     )
-                    Text("·", fontSize = 11.sp, color = Slate)
+                    Text("·", fontSize = 14.sp, color = Slate)
                     Text(
                         text = stringResource(R.string.community_members, crew.memberCount),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         color = Silver,
                     )
                 }
@@ -672,7 +647,7 @@ private fun CrewCard(
             Text(
                 text = stringResource(R.string.crew_pending_badge, crew.pendingCount),
                 modifier = Modifier.quietClickable(onOpenBoard),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Volt,
             )
@@ -734,7 +709,7 @@ private fun SearchField(
             if (query.isEmpty()) {
                 Text(
                     text = stringResource(R.string.community_search_hint),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Slate,
                 )
             }
@@ -774,7 +749,7 @@ private fun MapEntryCard(onClick: () -> Unit) {
             Text(
                 text = stringResource(R.string.community_map_sub),
                 color = Silver,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
             )
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)

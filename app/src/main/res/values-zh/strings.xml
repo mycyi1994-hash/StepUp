@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="filter_group_faction">属性 · 收集进度</string>
+    <string name="pref_saved_on_device">已保存在这部手机上</string>
+    <string name="pref_sync_pending">选择已保存在这部手机上，但尚未确认服务器已更新。之前的通知设置可能仍然有效。请确认已登录并连接网络后重试。</string>
+    <string name="pref_sync_retry">重试同步</string>
+    <string name="pref_sync_sending">正在更新通知设置…</string>
+    <string name="pref_notifications_blocked">手机设置已阻止通知。请允许 StepUp 发送通知，以接收你选择的提醒。</string>
+    <string name="post_like_action">点赞</string>
+    <string name="post_unlike_action">取消点赞</string>
     <!-- Notification -->
     <string name="notification_channel_walk">跑步记录</string>
     <string name="notification_channel_community">跑团与闪电跑消息</string>
@@ -323,6 +331,10 @@
     <string name="stat_sessions">跑步次数</string>
     <string name="stat_tokens_earned">已赚代币</string>
     <string name="profile_account">账户与设置</string>
+    <string name="settings_group_account">账户</string>
+    <string name="settings_group_activity">我的活动</string>
+    <string name="settings_group_preferences">应用设置</string>
+    <string name="settings_group_help">帮助</string>
     <string name="settings_wallet">钱包与代币</string>
     <string name="settings_notifications">通知</string>
     <string name="settings_privacy">隐私与安全</string>
@@ -382,7 +394,7 @@
     <!-- Privacy -->
     <string name="privacy_data_title">我们存了什么</string>
     <string name="privacy_data_body">登录后，跑步记录（含 GPS 路线）、每日步数、SUP 记录、帖子和跑团活动会保存在 StepUp 服务器上，以便服务器直接计算奖励，并共享跑团、排行、路线和占地盘。不收集广告标识符。可随时在已连接账户中删除账户。</string>
-    <string name="privacy_perm_title">正在使用的权限</string>
+    <string name="privacy_perm_title">应用权限</string>
     <string name="privacy_perm_activity">身体活动 —— 统计你的步数</string>
     <string name="privacy_perm_notification">通知 —— 显示进行中的跑步</string>
     <string name="privacy_reset_title">重置本地数据</string>
@@ -407,9 +419,10 @@
     <string name="connected_giwa">GIWA 钱包</string>
     <string name="connected_health">Health Connect</string>
     <string name="connected_social">社交账号</string>
-    <string name="connected_status_soon">即将上线</string>
+    <string name="connected_status_soon">暂不支持</string>
+    <string name="connected_status_on">已登录</string>
     <string name="connected_status_off">未连接</string>
-    <string name="connected_body">绑定账号后，就能把 SUP 带上链，还能在多台设备之间同步步数。</string>
+    <string name="connected_body">查看登录状态及当前版本支持的外部服务。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 余额</string>
@@ -421,8 +434,8 @@
     <string name="wallet_empty_title">还没有记录</string>
     <string name="wallet_empty_body">跑一次，就能赚到第一笔 SUP。</string>
     <string name="wallet_giwa">GIWA 钱包</string>
-    <string name="wallet_giwa_status">链上打通中</string>
-    <string name="wallet_giwa_body">很快你就能把 SUP 换成 GIWA 链上的代币。</string>
+    <string name="wallet_giwa_status">当前版本暂不支持</string>
+    <string name="wallet_giwa_body">此页面显示应用中记录的 SUP。当前版本暂不支持连接 GIWA 钱包和提现。</string>
     <string name="wallet_withdraw">提现</string>
     <string name="wallet_withdraw_title">提现到 GIWA 链</string>
     <string name="wallet_withdraw_body">链上结算会在主网上线时开放。到那时余额会 1:1 平移过去。</string>
@@ -505,6 +518,7 @@
 
     <!-- Compose -->
     <string name="post_write">发帖</string>
+    <string name="post_type">帖子类型</string>
     <string name="post_submit">发布</string>
     <string name="post_field_title">标题</string>
     <string name="post_field_title_hint">想聊点什么？</string>
@@ -512,7 +526,7 @@
     <string name="post_field_body_hint">补充一些细节…</string>
     <string name="post_flash_details">集合信息</string>
     <string name="post_field_place">集合地点</string>
-    <string name="post_field_place_hint">Riverside Park Gate 3</string>
+    <string name="post_field_place_hint">例如：滨河公园3号入口</string>
     <string name="post_field_distance">跑步距离 (km)</string>
     <string name="post_field_starts_in">多久后出发 (分)</string>
     <string name="post_field_capacity">名额</string>
@@ -866,13 +880,13 @@
     <string name="tour2_title">能量</string>
     <string name="tour2_body">赚取会消耗能量，午夜恢复。归零后要等到明天才能继续赚。</string>
     <string name="tour3_title">开始跑步</string>
-    <string name="tour3_body">点击这里开始。跑步中的每一步都会累积带球鞋加成的SUP。</string>
+    <string name="tour3_body">点击首页的开始跑步。确认所需权限后，StepUp 会记录你的运动。</string>
     <string name="tour4_title">帖子 / 跑团</string>
     <string name="tour4_body">在公开帖子（闪电跑、干货）和跑团（可自建的小社群）之间切换。</string>
     <string name="tour5_title">排行榜</string>
     <string name="tour5_body">查看你本周的名次。点开可见完整榜单：周步数或 SUP 余额。</string>
-    <string name="tour6_title">发帖</string>
-    <string name="tour6_body">发起闪电跑或分享干货。闪电跑按距离排序，附近的跑者最先看到。</string>
+    <string name="tour6_title">认识跑步伙伴</string>
+    <string name="tour6_body">在社区寻找一起跑步的伙伴，与其他跑者交流。</string>
     <string name="tour7_title">穿戴中的球鞋</string>
     <string name="tour7_body">这双鞋的加成作用于每次跑步。点开可查看属性、强化或更换。</string>
     <string name="tour8_title">铸造</string>
@@ -882,7 +896,7 @@
     <string name="tour10_title">活动</string>
     <string name="tour10_body">每周活动发放真 SUP。在这里查看进度，达标后领取奖励。</string>
     <string name="tour11_title">我的资料</string>
-    <string name="tour11_body">跑者 ID 在这里。点铅笔更换头像——可选表情或相册照片。</string>
+    <string name="tour11_body">在个人页面查看跑步记录和累计距离。点击名字旁的铅笔可修改昵称。</string>
     <string name="tour12_title">100 个成就</string>
     <string name="tour12_body">从青铜到钻石，坚持一年就能全部解锁。导览到此结束，开跑吧！</string>
 
@@ -922,7 +936,7 @@
     <string name="language_ko">韩语</string>
     <string name="language_zh">中文</string>
     <string name="language_ja">日语</string>
-    <string name="language_note">整个应用会立刻切换——界面、通知、帖子都是。只有人名和跑团名保持原样。</string>
+    <string name="language_note">应用将使用所选语言。用户发布的内容和名称可能保留原文。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">新秀</string>
@@ -1293,7 +1307,7 @@
     <string name="tour_tab_customize_title">② 装扮标签</string>
     <string name="tour_tab_customize_body">给角色穿衣服和鞋子的地方。跑者市场也在这里面。</string>
     <string name="tour_customize_title">我的角色</string>
-    <string name="tour_customize_body">选择男生或女生，再装备服装和鞋子。装扮会同样显示在跑步和我的页面。</string>
+    <string name="tour_customize_body">在装扮中选择衣服和跑鞋。装备后的形象也会显示在跑步和个人页面中。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">试穿中</string>
@@ -1360,7 +1374,7 @@
     <string name="feed_demo_note">演示模式。以下为测试示例，并非真实赛事或文章。</string>
     <string name="finish_confirmed">积分已确认</string>
     <string name="finish_pending">跑步完成 · 服务器确认中</string>
-    <string name="finish_pending_note">已计入应用。服务器确认记录后将变为完成。</string>
+    <string name="finish_pending_note">跑步记录已保存。奖励将在服务器确认后确定。</string>
     <string name="finish_rejected">服务器未认可此记录</string>
     <string name="finish_balance">持有</string>
     <string name="finish_done">完成</string>
@@ -1390,6 +1404,7 @@
     <string name="market_outfit_try">试穿（演示）</string>
     <string name="market_demo_note">演示模式。这些是测试商品，无法购买。</string>
     <string name="market_demo_toast">演示商品无法购买。</string>
+    <string name="me_total_runs">跑步记录</string>
     <string name="me_default_name">跑者</string>
     <string name="me_points">持有积分</string>
     <string name="me_points_history">积分记录</string>
@@ -1422,6 +1437,11 @@
     <string name="run_gps_search">正在搜索GPS</string>
     <string name="run_avg_pace">平均配速</string>
     <string name="finish_title">跑步完成</string>
+    <string name="community_together">一起跑</string>
+    <string name="community_stories">交流</string>
+    <string name="community_view_meetup">查看活动详情</string>
+    <string name="community_other_meetups">查看其他活动</string>
+    <string name="community_meetups_empty">暂时没有可报名的跑步活动。发帖寻找一起跑步的伙伴吧。</string>
     <string name="community_hero_title">一起跑</string>
     <string name="community_hero_sub">今天也一起跑得更远——跑者们的故事。</string>
     <string name="news_hero_sub">一起跑，乐趣更多。</string>
@@ -1490,4 +1510,31 @@
     <string name="account_delete_body">账户及服务器上的跑步记录、GPS 路线、SUP 记录、帖子、评论、路线和地盘标记将全部删除且无法恢复。如果你是团长，最早加入的成员将成为团长。留在本机的记录会在卸载应用时删除。</string>
     <string name="account_delete_confirm">删除</string>
     <string name="account_delete_failed">删除失败。请检查网络后重试。若仍失败，请发邮件至 support@stepupcrew.com。</string>
+    <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
+    <string name="run_location_disabled">位置权限已关闭</string>
+    <string name="finish_share_activity">我在StepUp用%2$s跑了%1$s公里。</string>
+    <string name="notif_reward_unverified">此历史奖励通知没有已验证的发放记录。请前往挑战查看可领取的奖励。</string>
+    <string name="session_sign_in_again">重新登录</string>
+    <string name="post_invalid_numbers">距离须大于0公里，出发时间至少为1分钟后，人数须为2至200人。</string>
+    <string name="energy_purchase_capacity">请消耗至少2点能量后重试。待处理的购买不会再次扣费。</string>
+    <string name="privacy_permission_allowed">已允许</string>
+    <string name="privacy_permission_not_allowed">未允许</string>
+    <string name="privacy_perm_location">位置信息 — 记录跑步路线</string>
+    <string name="privacy_location_precise">已允许精确位置</string>
+    <string name="privacy_location_approximate">已允许大致位置</string>
+    <string name="run_saving">正在保存跑步记录</string>
+    <string name="run_save_retry">重新保存</string>
+    <string name="run_save_failed">跑步记录尚未保存完成。请保持应用打开并重试。</string>
+    <string name="course_like_action">点赞此路线</string>
+    <string name="course_unlike_action">取消路线点赞</string>
+    <string name="tab_draw">抽取</string>
+    <string name="mystery_title">神秘宝箱</string>
+    <string name="mystery_subtitle">选择要抽取的物品。</string>
+    <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
+    <string name="mystery_draw_shoe">抽取运动鞋</string>
+    <string name="mystery_draw_outfit">抽取运动服</string>
+    <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
+    <string name="home_previous_background">上一张背景</string>
+    <string name="home_next_background">下一张背景</string>
 </resources>
+<!-- Startup preparation failures are retryable, never presented as successful loading. -->

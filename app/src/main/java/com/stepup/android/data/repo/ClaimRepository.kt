@@ -50,6 +50,7 @@ class ClaimRepository(
     private val sessionDao: WalkSessionDao,
     private val recorder: SessionRecorder,
     private val now: () -> Long = System::currentTimeMillis,
+    private val uploadOwner: suspend () -> String = { "legacy" },
 ) {
 
     /** 올릴 것이 몇 개 남았는지 — 화면에 보여주기 위한 값 */
@@ -67,7 +68,7 @@ class ClaimRepository(
             return UploadRun(blockedBy = "서버 주소가 아직 설정되지 않았습니다")
         }
 
-        val pending = sessionDao.pendingUploads(limit)
+        val pending = sessionDao.pendingUploads(limit, uploadOwner())
         if (pending.isEmpty()) return UploadRun()
 
         var signed = 0

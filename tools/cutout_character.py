@@ -1,6 +1,9 @@
 """밝은 회청색 바탕의 캐릭터 가이드에서 캐릭터를 떼어 낸다.
-바탕(저채도 · 중간~밝은 밝기, 흰색은 제외)을 가장자리에서부터 채워 지운다."""
-import sys, numpy as np
+바탕(저채도 · 중간~밝은 밝기, 흰색은 제외)을 가장자리에서부터 채워 지운다.
+
+avatar_male_idle.webp: design/characters/runo-guide.webp 의 3/4 전신 (420, 80, 780, 670) 을
+잘라 이 도구로 떼어 내고 tools/upscale_cutout.py 로 4배 키운다."""
+import os, sys, numpy as np
 from PIL import Image, ImageFilter
 from collections import deque
 src, dst = sys.argv[1], sys.argv[2]
@@ -81,6 +84,8 @@ if edge.any():
     arr[edge] = arr[idx[0][edge], idx[1][edge]]
 out = Image.fromarray(arr).convert('RGBA'); out.putalpha(alpha)
 bbox = out.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox()
-out = out.crop((max(bbox[0]-6,0), max(bbox[1]-6,0), min(bbox[2]+6,w), min(bbox[3]+6,h)))
+# CUTOUT_NOCROP=1 이면 칸 크기 그대로(뒤에서 tools/upscale_cutout.py 로 키울 때)
+if not os.environ.get('CUTOUT_NOCROP'):
+    out = out.crop((max(bbox[0]-6,0), max(bbox[1]-6,0), min(bbox[2]+6,w), min(bbox[3]+6,h)))
 out.save(dst)
 print(dst, out.size)

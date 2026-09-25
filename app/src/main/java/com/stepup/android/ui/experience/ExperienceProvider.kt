@@ -34,6 +34,14 @@ fun ExperienceProvider(content: @Composable () -> Unit) {
             ExperienceEvents.cues.collect { feedback.play(it) }
         }
     }
+    LaunchedEffect(lifecycle, feedback) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                kotlinx.coroutines.delay(2_000)
+                feedback.recheckAmbientPolicy()
+            }
+        }
+    }
     var active by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     fun systemReduced() = Settings.Global.getFloat(
         context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
@@ -60,6 +68,7 @@ fun ExperienceProvider(content: @Composable () -> Unit) {
     }
     SideEffect {
         feedback.soundsEnabled = preferences?.sounds == true
+        feedback.ambientEnabled = preferences?.ambience == true
         feedback.hapticsEnabled = preferences?.haptics == true
         if (!feedback.soundsEnabled) feedback.stop()
     }

@@ -35,7 +35,7 @@ package com.stepup.android.domain
  *     화면은 그 사실을 적는다. 다른 아이템의 그림을 보여 주며 "장착 완료"라고
  *     하지 않는다.
  */
-enum class AvatarPose { IDLE, RUN, CHEER }
+enum class AvatarPose { IDLE, RUN, CHEER, SIT }
 
 /**
  * 그림 한 장.
@@ -81,6 +81,7 @@ fun shoeCode(faction: Faction, rarity: Rarity, variant: Int): String =
  * RUNO 는 "CLO-001", LUMI 는 "LUM-CLO-001", 기본 의상은 둘 다 "OUTFIT-BASE".
  */
 fun Outfit.designIdFor(gender: AvatarGender): String = when {
+    this in Outfits.STUDIO -> id
     !nft -> "OUTFIT-BASE"
     gender == AvatarGender.FEMALE -> "LUM-$id"
     else -> id
@@ -94,7 +95,8 @@ object AvatarArtCatalog {
     /** 신발 52종 도감 번호 — 속성마다 13 */
     val SHOE_CODES: List<String> = SneakerDesigns.all.map { it.code }
 
-    private fun keyOf(id: String) = "runo_idle_" + id.lowercase().replace('-', '_')
+    private fun keyOf(id: String) = if (id == "WND-010") "runo_idle_wnd_010_v2"
+        else "runo_idle_" + id.lowercase().replace('-', '_')
     private fun lumiKeyOf(id: String) = "lumi_idle_" + id.lowercase().replace('-', '_')
 
     /** LUMI 신발 시트의 추천 의상 — 속성마다 하나. 그림 속 루미가 입은 옷이다(강제 조합은 아니다). */
@@ -110,6 +112,8 @@ object AvatarArtCatalog {
         add(AvatarArt.MALE_RUN)
         add(AvatarArt.MALE_IDLE)
         add(AvatarArt.FEMALE_IDLE)
+        // High-resolution starter combination: keep the base outfit and actual starter shoe together.
+        add(AvatarArt("lumi_idle_base_wnd_010", AvatarGender.FEMALE, AvatarPose.IDLE, Outfits.BASE_ID, "WND-010"))
         // RUNO — 기본 의상 + 신발 52종
         SHOE_CODES.forEach { code ->
             add(AvatarArt(keyOf(code), AvatarGender.MALE, AvatarPose.IDLE, Outfits.BASE_ID, code))
@@ -126,12 +130,30 @@ object AvatarArtCatalog {
         Outfits.ALL.filter { it.nft }.forEach { o ->
             add(AvatarArt(lumiKeyOf(o.designIdFor(AvatarGender.FEMALE)), AvatarGender.FEMALE, AvatarPose.IDLE, o.id, null))
         }
+        Outfits.STUDIO.forEach { outfit ->
+            AvatarGender.entries.forEach { gender ->
+                val prefix = if (gender == AvatarGender.FEMALE) "lumi" else "runo"
+                val key = "${prefix}_idle_${outfit.id.lowercase().replace('-', '_')}"
+                add(AvatarArt(key, gender, AvatarPose.IDLE, outfit.id, "WND-010"))
+            }
+        }
+        // Profile-only seated portraits. Scenery and the bench are separate layers.
+        AvatarGender.entries.forEach { gender ->
+            val prefix = if (gender == AvatarGender.FEMALE) "lumi" else "runo"
+            add(AvatarArt("${prefix}_sit_studio_pink_v2", gender, AvatarPose.SIT, Outfits.SOFT_PINK.id, "WND-010"))
+        }
     }
 
     fun resolve(look: AvatarLook, pose: AvatarPose): AvatarRender {
         val shoe = look.shoe?.designCode()
         // 성별마다 그림이 적어도 한 장 있다 — AvatarArtTest 가 지킨다
-        val art = ALL.filter { it.gender == look.gender }.maxBy { a ->
+        val art = ALL.filter { a ->
+            a.gender == look.gender &&
+                // A seated portrait is eligible only for its exact equipped combination.
+                // It must never replace another outfit/shoe or appear on the running screen.
+                (a.pose != AvatarPose.SIT ||
+                    (pose == AvatarPose.SIT && a.outfitId == look.outfit.id && a.shoeCode == shoe))
+        }.maxBy { a ->
             var score = 0
             if (a.outfitId == look.outfit.id) score += 5 // 의상이 화면을 더 많이 차지한다
             if (a.shoeCode == shoe) score += 4

@@ -1,9 +1,14 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.StepUpDesign
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.widthIn
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,9 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -41,7 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Cyan
 import com.stepup.android.ui.theme.Edge
 import com.stepup.android.ui.theme.OnVolt
@@ -68,9 +77,10 @@ import com.stepup.android.ui.theme.VoltText
  * 여기 한 군데에서 작게 보이면 충분하다.
  */
 @Composable
-fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
-    val label = stringResource(R.string.cd_sup_balance, "%,.0f".format(balance))
+    val amount = balance?.let { "%,.0f".format(it) } ?: "—"
+    val label = stringResource(R.string.cd_sup_balance, amount)
     Row(
         modifier = modifier
             .clip(shape)
@@ -78,21 +88,25 @@ fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifi
             .border(1.dp, Volt.copy(alpha = 0.45f), shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
-            .heightIn(min = 40.dp)
+            .heightIn(min = StepUpDesign.BalanceHeight)
+            .widthIn(max = 160.dp)
+            .testTag("sup-balance")
             .padding(start = 8.dp, end = if (onClick != null) 6.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         HexEmblem(size = 20.dp, glow = false)
         Text(
-            text = "%,.0f".format(balance),
+            text = amount,
+            modifier = Modifier.weight(1f, fill = false),
+            overflow = TextOverflow.Ellipsis,
             fontFamily = StepUpNumbers,
-            fontSize = 14.sp,
+            fontSize = StepUpDesign.BalanceAmount,
             fontWeight = FontWeight.Bold,
             color = Snow,
             maxLines = 1,
         )
-        Text(text = "SUP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Silver)
+        Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.Bold, color = Silver)
         if (onClick != null) {
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
         }
@@ -105,6 +119,23 @@ fun SupPill(balance: Double, onClick: (() -> Unit)?, modifier: Modifier = Modifi
  * 소식 · 챌린지 · 러너 마켓이 쓴다. 뒤로 가기가 늘 같은 자리에 있어야
  * 어느 화면에서든 손이 먼저 간다.
  */
+@Composable
+fun FocusHeader(title: String, onBack: () -> Unit, action: (@Composable () -> Unit)? = null) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
+            cue = FeedbackCue.Back)
+        Text(
+            title, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            fontSize = StepUpDesign.PrimaryLabel, fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center, color = Snow,
+        )
+        if (action != null) action() else Spacer(Modifier.size(StepUpDesign.TouchTarget))
+    }
+}
+
 @Composable
 fun SubHeader(
     title: String,
@@ -125,6 +156,7 @@ fun SubHeader(
             icon = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(R.string.cd_back),
             onClick = onBack,
+            cue = FeedbackCue.Back,
         )
         Text(
             text = title,
@@ -146,7 +178,7 @@ fun SubHeader(
  */
 @Composable
 fun MainHeader(
-    balance: Double,
+    balance: Double?,
     onOpenWallet: (() -> Unit)?,
     modifier: Modifier = Modifier,
     balanceModifier: Modifier = Modifier,
@@ -154,10 +186,11 @@ fun MainHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .heightIn(min = StepUpDesign.HeaderHeight)
+            .testTag("main-header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(fontSize = 24.sp, modifier = Modifier.weight(1f, fill = false))
+        Wordmark(modifier = Modifier.weight(1f, fill = false))
         Spacer(Modifier.weight(1f))
         SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
     }
@@ -175,31 +208,22 @@ fun SecondaryHeader(
     balance: Double?,
     onOpenWallet: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    title: String? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .feedbackClickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                tint = Snow,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
+            cue = FeedbackCue.Back)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Wordmark(fontSize = 20.sp)
+            if (title == null) Wordmark() else Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
-        if (balance != null) SupPill(balance, onOpenWallet) else Spacer(Modifier.size(44.dp))
+        // Wallet-enabled headers keep the same slot while the balance is loading.
+        if (balance != null || onOpenWallet != null) SupPill(balance, onOpenWallet)
+        else Spacer(Modifier.size(StepUpDesign.TouchTarget))
     }
 }
 
@@ -213,41 +237,33 @@ fun PageHero(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    setting: RunnerSetting = RunnerSetting.RunNight,
     art: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val large = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = if (art != null && !large) 150.dp else 0.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+    val shape = RoundedCornerShape(22.dp)
+    BoxWithConstraints(modifier.fillMaxWidth().clip(shape).border(1.dp, Volt.copy(alpha = 0.32f), shape)) {
+        val showArt = art != null && !large && maxWidth >= 280.dp
+        val artWidth = (maxWidth * 0.36f).coerceAtMost(146.dp)
+        RunnerScene(Modifier.matchParentSize(), setting = setting, home = true)
+        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(
+            // Keep the text surface paired with its theme, even when scenery changes.
+            0f to Carbon, 0.6f to Carbon.copy(alpha = 0.98f),
+            1f to Carbon.copy(alpha = if (showArt) 0.65f else 0.98f),
+        )))
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp)
+                .padding(start = 18.dp, end = 8.dp, top = 14.dp, bottom = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = title,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-1).sp,
-                color = Snow,
-                lineHeight = 40.sp,
-            )
-            Text(text = subtitle, fontSize = 14.sp, color = Silver, lineHeight = 20.sp)
-        }
-        if (art != null && !large) {
-            Box(
-                modifier = Modifier
-                    .size(width = 168.dp, height = 150.dp)
-                    .background(
-                        androidx.compose.ui.graphics.Brush.radialGradient(
-                            0f to Volt.copy(alpha = 0.28f),
-                            1f to androidx.compose.ui.graphics.Color.Transparent,
-                        ),
-                    ),
-                content = art,
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(title, fontSize = 30.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = (-1).sp, color = Snow, lineHeight = 34.sp)
+                Text(subtitle, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
+            }
+            if (art != null && showArt) {
+                Box(modifier = Modifier.size(width = artWidth, height = 162.dp), content = art)
+            }
         }
     }
 }
@@ -271,7 +287,7 @@ fun PrimaryCta(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 58.dp)
+            .heightIn(min = StepUpDesign.PrimaryHeight)
             // 화면의 주 행동 하나에만 푸른 번짐을 준다
             .then(
                 if (enabled) {
@@ -282,23 +298,23 @@ fun PrimaryCta(
             )
             .clip(shape)
             .then(
-                if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.18f)
+                if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.08f)
                 else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
             )
-            .feedbackClickable(enabled = enabled, onClick = onClick)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 22.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) OnVolt else Slate, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = if (enabled) OnVolt else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
             Spacer(Modifier.width(12.dp))
         }
         Text(
             text = text,
             modifier = Modifier.weight(1f, fill = false),
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Black,
+            fontSize = StepUpDesign.PrimaryLabel,
+            fontWeight = FontWeight.SemiBold,
             color = if (enabled) OnVolt else Slate,
             textAlign = TextAlign.Center,
         )
@@ -366,12 +382,12 @@ fun ShortcutButton(
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier = modifier
-            // 보조 진입점 — 러닝 시작보다 확실히 작게(44dp)
-            .heightIn(min = 44.dp)
+            // 보조 진입점도 공통 터치 높이를 확보한다.
+            .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
             .background(CarbonHigh, shape)
             .border(1.dp, Edge, shape)
-            .feedbackClickable(onClick = onClick)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -383,13 +399,39 @@ fun ShortcutButton(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
-                maxLines = 2,
             )
             if (subtitle != null) {
-                Text(text = subtitle, fontSize = 12.sp, color = Silver, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = subtitle, fontSize = 14.sp, lineHeight = 20.sp, color = Silver)
             }
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** A quiet destination row for long menus and profile shortcuts. */
+@Composable
+fun QuietListRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .feedbackClickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = Silver, modifier = Modifier.size(22.dp))
+            Text(label, modifier = Modifier.weight(1f), fontSize = 16.sp,
+                fontWeight = FontWeight.Medium, color = Snow)
+            Icon(Icons.Filled.ChevronRight, contentDescription = null,
+                tint = Silver, modifier = Modifier.size(20.dp))
+        }
+        HairlineDivider()
     }
 }
 
@@ -402,28 +444,25 @@ fun SmallBadge(
 ) {
     val color = when (tone) {
         BadgeTone.Accent -> VoltText
-        BadgeTone.Glow -> Cyan
+        BadgeTone.Glow -> if (StepUpColors.dark) Cyan else Color(0xFF086B83)
         BadgeTone.Muted -> Silver
-        BadgeTone.Nft -> NftPurple
+        BadgeTone.Nft -> if (StepUpColors.dark) Color(0xFFAC90FF) else Color(0xFF5D2ABD)
     }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(50))
             // 신발·옷 그림 위에 얹힐 때가 있다. 반투명만 두면 흰 모자 위에서
             // 글자가 사라진다 — 불투명한 바닥을 먼저 깔고 그 위에 색을 얹는다.
-            .background(CarbonHigh)
-            .background(color.copy(alpha = 0.16f))
+            .background(Carbon)
+            .background(color.copy(alpha = 0.04f))
             .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text(text = text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+        Text(text = text, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
 
 enum class BadgeTone { Accent, Glow, Muted, Nft }
-
-/** NFT 표시 — 보라. 블루(누르는 것)·시안(빛나는 것)과 겹치지 않는 색이라야 "소유물"로 읽힌다. */
-private val NftPurple = androidx.compose.ui.graphics.Color(0xFF9B6BFF)
 
 /** 두 칸짜리 분류 탭 — 의상 / 신발, 피드 / 내 크루, 대회 / 러닝·건강 */
 @Composable
@@ -450,7 +489,7 @@ fun TwoWaySwitch(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = StepUpDesign.TouchTarget)
                     .clip(itemShape)
                     .then(if (on) Modifier.background(VoltPlate, itemShape) else Modifier)
                     .feedbackClickable(role = Role.Tab) { onSelect(index) }
@@ -465,11 +504,11 @@ fun TwoWaySwitch(
                 }
                 Text(
                     text = label,
+                    modifier = Modifier.weight(1f, fill = false),
                     fontSize = 15.sp,
-                    fontWeight = if (on) FontWeight.Black else FontWeight.SemiBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (on) OnVolt else Silver,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
             }
         }

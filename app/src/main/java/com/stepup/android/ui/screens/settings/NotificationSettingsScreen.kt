@@ -6,47 +6,33 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.DarkIconButton
-import com.stepup.android.ui.components.Eyebrow
 import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.IconSquare
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 
 /**
  * 알림 설정 — 네 개의 토글.
@@ -57,53 +43,88 @@ import com.stepup.android.ui.theme.Volt
 @Composable
 fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
-    val savedMessage = stringResource(R.string.pref_saved)
+    val savedMessage = stringResource(R.string.pref_saved_on_device)
     val notifySaved = { Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show() }
 
-    val prefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = NotifyPrefs())
+    val storedPrefs by ServiceLocator.userPrefs.notifyPrefs.collectAsState(initial = null)
+    val syncState by ServiceLocator.pushRegistrar.preferenceSync.collectAsState()
+    val prefs = storedPrefs ?: NotifyPrefs()
+    var saving by remember { mutableStateOf(false) }
+    val saveFailed = stringResource(R.string.feed_save_failed)
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var notificationsAllowed by remember(context) {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     fun save(next: NotifyPrefs) {
-        scope.launch { ServiceLocator.userPrefs.setNotifyPrefs(next) }
-        ServiceLocator.pushRegistrar.syncPrefsInBackground(next)
-        notifySaved()
+        if (saving || storedPrefs == null) return
+        saving = true
+        scope.launch {
+            try {
+                ServiceLocator.userPrefs.setNotifyPrefs(next)
+                ServiceLocator.pushRegistrar.syncPrefsInBackground()
+                notifySaved()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(context, saveFailed, Toast.LENGTH_SHORT).show()
+            } finally {
+                saving = false
+            }
+        }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    com.stepup.android.ui.components.DetailPage(
+        title = stringResource(R.string.settings_notifications), onBack = onBack,
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DarkIconButton(
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back),
-                    onClick = onBack,
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Eyebrow(text = stringResource(R.string.profile_account))
-                    Text(
-                        text = stringResource(R.string.settings_notifications),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        color = Snow,
+        if (storedPrefs == null) {
+            item { Text(stringResource(R.string.feed_loading), color = Silver) }
+            return@DetailPage
+        }
+        if (syncState == com.stepup.android.push.NotificationSyncState.Pending) {
+            item {
+                GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+                    Text(stringResource(R.string.pref_sync_pending),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    com.stepup.android.ui.components.GhostButton(
+                        text = stringResource(R.string.pref_sync_retry),
+                        onClick = { ServiceLocator.pushRegistrar.syncPrefsInBackground() },
+                        enabled = !saving,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        } else if (syncState == com.stepup.android.push.NotificationSyncState.Sending) {
+            item {
+                Text(stringResource(R.string.pref_sync_sending),
+                    style = MaterialTheme.typography.bodyMedium, color = Silver)
+            }
+        }
+        if (prefs.push && !notificationsAllowed) {
+            item {
+                GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
+                    Text(stringResource(R.string.pref_notifications_blocked),
+                        style = MaterialTheme.typography.bodyMedium, color = Silver)
+                    com.stepup.android.ui.components.GhostButton(
+                        text = stringResource(R.string.cd_open_settings),
+                        onClick = { com.stepup.android.core.ExternalIntents.openAppSettings(context) },
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
         }
-
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.Notifications,
                 title = stringResource(R.string.pref_push),
                 description = stringResource(R.string.pref_push_desc),
@@ -114,6 +135,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.Schedule,
                 title = stringResource(R.string.pref_goal_reminder),
                 description = stringResource(R.string.pref_goal_reminder_desc),
@@ -124,6 +146,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                 title = stringResource(R.string.pref_party_invite),
                 description = stringResource(R.string.pref_party_invite_desc),
@@ -134,6 +157,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
 
         item {
             ToggleRow(
+                enabled = !saving && storedPrefs != null,
                 icon = Icons.Filled.EmojiEvents,
                 title = stringResource(R.string.pref_event_news),
                 description = stringResource(R.string.pref_event_news_desc),
@@ -144,53 +168,18 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     }
 }
 
-/** 아이콘 · 제목 · 설명 + 볼트 스위치 한 줄. */
+/** One shared switch row for every settings page. */
 @Composable
 private fun ToggleRow(
     icon: ImageVector,
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    GlowCard(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
-        spacing = 0.dp,
-        shape = RoundedCornerShape(22.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            IconSquare(icon = icon, size = 38.dp, tint = if (checked) Volt else Slate)
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Snow,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Silver,
-                )
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = OnVolt,
-                    checkedTrackColor = Volt,
-                    uncheckedThumbColor = Slate,
-                    uncheckedTrackColor = CarbonHigh,
-                    checkedBorderColor = Volt,
-                    uncheckedBorderColor = Edge,
-                ),
-            )
-        }
-    }
+    com.stepup.android.ui.components.PreferenceToggle(
+        title = title, description = description, icon = icon,
+        checked = checked, enabled = enabled, onCheckedChange = onCheckedChange,
+    )
 }

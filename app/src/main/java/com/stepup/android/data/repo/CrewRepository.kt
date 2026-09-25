@@ -95,8 +95,15 @@ sealed interface CrewActionResult {
     data class Created(val crewId: String) : CrewActionResult
     data object Done : CrewActionResult
 
-    /** @param signIn 로그인해야 할 수 있는 일이었다 */
-    data class Failed(val reason: String, val signIn: Boolean = false) : CrewActionResult
+    /**
+     * @param signIn 로그인해야 할 수 있는 일이었다
+     * @param retryable 연결·서버 문제라 나중에 다시 하면 될 수 있다
+     */
+    data class Failed(
+        val reason: String,
+        val signIn: Boolean = false,
+        val retryable: Boolean = false,
+    ) : CrewActionResult
 }
 
 data class PartyMember(
@@ -528,6 +535,12 @@ class CrewRepository(
                 }
                 !(far || gone)
             }
+            // 거리는 방장 기준이라, 방장이 아닌 내가 멀어지면 위 검사로는 안 걸린다.
+            // 그러면 무리를 떠난 내가 보너스를 그대로 받는다 — 떨어진 동안은 나 혼자로 센다.
+            val me = members.firstOrNull { it.isMe }
+            if (me != null && !me.isHost && me.distanceM > MAX_PARTY_DISTANCE_M) {
+                visible = visible.filter { it.isMe }
+            }
         }
         // 출발 때 준비 안 한 사람은 서버가 방에서 뺀다. 조용히 사라지면 본인은
         // 앱이 고장 난 줄 알고, 남은 사람은 왜 줄었는지 모른다.
@@ -731,6 +744,6 @@ private fun ServerResult<*>.asPartyProblem(): PartyProblem = when (this) {
 private fun ServerResult<*>.asFailure(): CrewActionResult.Failed = when (this) {
     is ServerResult.SignInRequired -> CrewActionResult.Failed(reason, signIn = true)
     is ServerResult.Rejected -> CrewActionResult.Failed(reason)
-    is ServerResult.Retry -> CrewActionResult.Failed(reason)
+    is ServerResult.Retry -> CrewActionResult.Failed(reason, retryable = true)
     is ServerResult.Ok -> CrewActionResult.Failed("")
 }

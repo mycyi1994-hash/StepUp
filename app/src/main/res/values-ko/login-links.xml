@@ -1,0 +1,4 @@
+<resources>
+    <string name="login_terms_link">이용약관</string>
+    <string name="login_privacy_link">개인정보처리방침</string>
+</resources>
