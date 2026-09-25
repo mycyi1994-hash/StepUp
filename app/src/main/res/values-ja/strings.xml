@@ -1476,7 +1476,7 @@ StepUp と走り出そう。</string>
     <string name="map_seg_nearby">周辺</string>
     <string name="map_seg_territory">陣取り</string>
     <string name="map_legend_course">コース</string>
-    <string name="map_nearby_summary">フラッシュラン %1$d件 · コース %2$d件。ピンをタップしてください。</string>
+    <string name="map_nearby_summary">登録済みのフラッシュラン %1$d件 · コース %2$d件。見えるピンをタップしてください。</string>
     <string name="map_empty_nearby">近くにフラッシュランやコースはまだありません。</string>
     <string name="map_away_km">%1$s km先</string>
     <string name="map_flash_people">%1$d/%2$d人</string>

@@ -220,9 +220,10 @@ private fun DrawScope.drawPins(plan: TilePlan, pins: List<Pin>, selected: Pin?) 
 
 private fun DrawScope.drawHere(plan: TilePlan, here: GeoPoint) {
     val at = plan.toScreen(here)
-    drawCircle(Color.White.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = at)
-    drawCircle(Color.White, radius = 5.dp.toPx(), center = at)
-    drawCircle(Color(0xFF3B82F6), radius = 3.5f.dp.toPx(), center = at)
+    drawCircle(Color.White.copy(alpha = 0.20f), radius = 15.dp.toPx(), center = at)
+    drawCircle(Night, radius = 10.dp.toPx(), center = at)
+    drawCircle(Color.White, radius = 8.dp.toPx(), center = at, style = Stroke(width = 2.dp.toPx()))
+    drawCircle(Color(0xFF3B82F6), radius = 4.dp.toPx(), center = at)
 }
 
 /** 크루 색 — 크루마다 늘 같은 색 */

@@ -1475,7 +1475,7 @@
     <string name="map_seg_nearby">附近</string>
     <string name="map_seg_territory">占地盘</string>
     <string name="map_legend_course">路线</string>
-    <string name="map_nearby_summary">地图上有 %1$d 个快闪跑 · %2$d 条路线。点一下图钉看看。</string>
+    <string name="map_nearby_summary">已收录 %1$d 个快闪跑 · %2$d 条路线。点按可见的图钉。</string>
     <string name="map_empty_nearby">附近还没有快闪跑或路线。</string>
     <string name="map_away_km">距离 %1$s km</string>
     <string name="map_flash_people">%1$d/%2$d 人</string>

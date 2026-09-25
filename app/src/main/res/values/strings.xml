@@ -1477,7 +1477,7 @@ Start running with StepUp.</string>
     <string name="map_seg_nearby">Nearby</string>
     <string name="map_seg_territory">Territory</string>
     <string name="map_legend_course">Course</string>
-    <string name="map_nearby_summary">%1$d flash runs · %2$d courses on the map. Tap a pin.</string>
+    <string name="map_nearby_summary">%1$d flash runs · %2$d courses available. Tap a visible pin.</string>
     <string name="map_empty_nearby">No flash runs or courses nearby yet.</string>
     <string name="map_away_km">%1$s km away</string>
     <string name="map_flash_people">%1$d/%2$d people</string>

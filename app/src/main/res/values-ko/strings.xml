@@ -1475,7 +1475,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_seg_nearby">내 주변</string>
     <string name="map_seg_territory">땅따먹기</string>
     <string name="map_legend_course">코스</string>
-    <string name="map_nearby_summary">번개러닝 %1$d개 · 코스 %2$d개가 지도에 있어요. 핀을 눌러 보세요.</string>
+    <string name="map_nearby_summary">등록된 번개러닝 %1$d개 · 코스 %2$d개. 핀이 보이면 눌러보세요.</string>
     <string name="map_empty_nearby">근처에 번개러닝이나 코스가 아직 없어요.</string>
     <string name="map_away_km">%1$s km 거리</string>
     <string name="map_flash_people">%1$d/%2$d명</string>
