@@ -166,9 +166,12 @@ revoke all on function economy.security_notice(uuid, text, jsonb) from public;
 /*
  * 어테스터 — 지갑 서명을 검증한 뒤 부른다.
  * 처음 붙이는 지갑이면 보너스 뽑기 10회(Genesis 1)를 준다.
+ * 이 계정의 첫 지갑이면 true — 어테스터는 그때만 가스비를 조금 보낸다(주소를 바꿔 가며
+ * 가스비를 빼 가지 못하게). 예전(void) 형태가 있으면 반환 형식이 달라 먼저 지운다.
  */
-create or replace function public.attester_wallet_link(p_user uuid, p_address text, p_nonce text)
-returns void
+drop function if exists public.attester_wallet_link(uuid, text, text);
+create function public.attester_wallet_link(p_user uuid, p_address text, p_nonce text)
+returns boolean
 language plpgsql security definer set search_path = public, economy as $$
 declare
   v_addr text := lower(p_address);
@@ -212,6 +215,7 @@ begin
 
   perform economy.security_notice(p_user, 'WALLET_LINKED',
     jsonb_build_object('address', left(v_addr, 6) || '…' || right(v_addr, 4)));
+  return v_first;
 end $$;
 
 -- ══════════════════════════════════════════════════════════════════

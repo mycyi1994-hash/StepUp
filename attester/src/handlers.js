@@ -39,13 +39,14 @@ export async function linkWallet(request, env, deps) {
   const ok = await verifyMessage({ address, message: walletLinkMessage(user.id, nonce), signature })
   if (!ok) throw new HttpError(400, '지갑 서명이 맞지 않습니다')
 
-  await deps.rpc(env, 'attester_wallet_link', { p_user: user.id, p_address: address, p_nonce: nonce })
+  const first = await deps.rpc(env, 'attester_wallet_link', { p_user: user.id, p_address: address, p_nonce: nonce })
 
   // 새 지갑에 가스 조금 — 앱으로 넣기(deposit)는 사용자가 직접 보내는 거래라서.
-  // 이미 가스가 있는 지갑에는 보내지 않는다. 테스트넷에서만 켠다(DRIP_WEI).
+  // 계정의 첫 지갑에만, 이미 가스가 있는 지갑에는 보내지 않는다(주소를 바꿔 가며 빼 가지
+  // 못하게). 테스트넷에서만 켠다(DRIP_WEI).
   let drip = null
   const dripWei = BigInt(env.DRIP_WEI ?? '0')
-  if (dripWei > 0n) {
+  if (dripWei > 0n && first === true) {
     const c = deps.clients(env)
     const balance = await c.publicClient.getBalance({ address })
     if (balance < dripWei) {

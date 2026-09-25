@@ -21,10 +21,21 @@ export function toServerEvent(source, log) {
   const base = { p_tx: log.transactionHash, p_log: Number(log.logIndex), p_block: Number(log.blockNumber) }
   const a = log.args
   if (source === 'distributor' && log.eventName === 'Claimed') {
-    return { ...base, p_kind: 'SUP_CLAIMED', p_data: { op: a.sessionHash } }
+    return {
+      ...base,
+      p_kind: 'SUP_CLAIMED',
+      p_data: { op: a.sessionHash, runner: a.runner?.toLowerCase(), amount: a.amount == null ? undefined : weiToSup(a.amount) },
+    }
   }
   if (source === 'sneakers' && log.eventName === 'Released') {
-    return { ...base, p_kind: 'SNEAKER_RELEASED', p_data: { op: a.opId, tokenId: a.tokenId.toString() } }
+    return {
+      ...base,
+      p_kind: 'SNEAKER_RELEASED',
+      p_data: { op: a.opId, tokenId: a.tokenId.toString(), to: a.to?.toLowerCase() },
+    }
+  }
+  if (source === 'sneakers' && log.eventName === 'OpCancelled') {
+    return { ...base, p_kind: 'OP_CANCELLED', p_data: { op: a.opId } }
   }
   if (source === 'sneakers' && log.eventName === 'Deposited') {
     return {
@@ -67,8 +78,13 @@ export async function indexEvents(env, deps) {
     for (const log of logs) {
       const ev = toServerEvent(source, log)
       if (!ev) continue
-      await deps.rpc(env, 'attester_chain_event', ev) // 실패하면 여기서 멈추고 커서를 옮기지 않는다
+      // 실패하면 여기서 멈추고 커서를 옮기지 않는다
+      const result = await deps.rpc(env, 'attester_chain_event', ev)
       handled += 1
+      // 서버가 허락하지 않은 지급 · 발행이다(서명 키가 샜다). 서버는 이미 멈췄고, 컨트랙트도 멈춘다.
+      if (result === 'UNKNOWN_OP' || result === 'MISMATCH') {
+        await pauseAll(env, deps, `${source} ${ev.p_kind} ${result} ${ev.p_tx}`)
+      }
     }
     await deps.rpc(env, 'attester_cursor_set', { p_name: source, p_block: Number(to) })
     report[source] = { from: Number(from), to: Number(to), events: handled }
@@ -96,11 +112,18 @@ export async function expireOps(env, deps) {
             args: [op.op_ref],
           })
     if (used) {
-      out.pendingOnChain += 1 // 이벤트가 곧 들어온다. 되돌리지 않는다.
+      out.pendingOnChain += 1 // 이벤트가 곧 들어온다(취소도 이벤트로 들어온다). 되돌리지 않는다.
       continue
     }
-    await deps.rpc(env, 'attester_op_expire', { p_op: op.op_id, p_used_on_chain: false })
-    out.expired += 1
+    // 한 작업이 막혀도 뒤의 작업은 계속 되돌린다 — 앞에서 매번 같은 오류로 멈추면 그 뒤의
+    // SUP · 신발이 영영 묶인다.
+    try {
+      await deps.rpc(env, 'attester_op_expire', { p_op: op.op_id, p_used_on_chain: false })
+      out.expired += 1
+    } catch (e) {
+      out.failed = (out.failed ?? 0) + 1
+      console.error('expire failed', op.op_id, e?.message)
+    }
   }
   return out
 }

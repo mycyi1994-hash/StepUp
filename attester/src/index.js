@@ -154,12 +154,18 @@ export default {
       console.log('contracts not configured — skipping')
       return
     }
+    // 세 일을 따로 돌린다 — 앞의 일이 실패해도 대조(키가 샜는지 보는 일)는 매번 한다
+    const step = (name, fn) =>
+      fn(env, deps).catch((e) => {
+        console.error(`scheduled ${name} error`, e?.message)
+        return { error: true }
+      })
     const run = async () => {
-      const events = await indexEvents(env, deps)
-      const expiry = await expireOps(env, deps)
-      const books = await reconcile(env, deps)
+      const events = await step('events', indexEvents)
+      const expiry = await step('expiry', expireOps)
+      const books = await step('reconcile', reconcile)
       console.log(JSON.stringify({ events, expiry, books }))
     }
-    ctx.waitUntil(run().catch((e) => console.error('scheduled error', e?.message)))
+    ctx.waitUntil(run())
   },
 }

@@ -4,7 +4,7 @@ import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts'
 import { verifyTypedData } from 'viem'
 import { linkWallet, executeOp } from '../src/handlers.js'
 import { HttpError } from '../src/supabase.js'
-import { toServerEvent } from '../src/indexer.js'
+import { toServerEvent, indexEvents, expireOps } from '../src/indexer.js'
 import { walletLinkMessage, RELEASE_TYPES, releaseDomain } from '../src/typed.js'
 
 const USER = { id: 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' }
@@ -19,7 +19,7 @@ function req(body, auth = 'Bearer t') {
   })
 }
 
-function fakeDeps({ payload, rpcCalls = [], submitted = [] } = {}) {
+function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null } = {}) {
   const signer = privateKeyToAccount(generatePrivateKey())
   const attester = privateKeyToAccount(generatePrivateKey())
   return {
@@ -33,6 +33,7 @@ function fakeDeps({ payload, rpcCalls = [], submitted = [] } = {}) {
     rpc: async (_env, fn, args) => {
       rpcCalls.push([fn, args])
       if (fn === 'attester_op_payload') return payload ? [payload] : []
+      if (fn === 'attester_wallet_link') return firstWallet
       return null
     },
     clients: () => ({
@@ -47,6 +48,10 @@ function fakeDeps({ payload, rpcCalls = [], submitted = [] } = {}) {
       },
       relayer: {
         account: { address: '0x' + '3'.repeat(40) },
+        sendTransaction: async (x) => {
+          submitted.push(x)
+          return '0x' + 'cd'.repeat(32)
+        },
         writeContract: async (x) => {
           submitted.push(x)
           return '0x' + 'ab'.repeat(32)
@@ -136,7 +141,91 @@ test('체인 이벤트 → 서버 이벤트', () => {
     toServerEvent('sneakers', log('Deposited', { account: '0xacc', from: '0xABC', tokenId: 9n })).p_data.from,
     '0xabc',
   )
-  assert.equal(toServerEvent('sneakers', log('Released', { opId: '0xop', tokenId: 9n })).p_kind, 'SNEAKER_RELEASED')
-  assert.equal(toServerEvent('distributor', log('Claimed', { sessionHash: '0xop' })).p_data.op, '0xop')
+  assert.deepEqual(toServerEvent('sneakers', log('Released', { opId: '0xop', tokenId: 9n, to: '0xABC' })).p_data, {
+    op: '0xop',
+    tokenId: '9',
+    to: '0xabc',
+  })
+  // 받는 지갑과 금액도 넘긴다 — 서버가 작업 기록과 맞는지 본다
+  assert.deepEqual(
+    toServerEvent('distributor', log('Claimed', { sessionHash: '0xop', runner: '0xABC', amount: 125n * 10n ** 17n })).p_data,
+    { op: '0xop', runner: '0xabc', amount: '12.5' },
+  )
+  assert.deepEqual(toServerEvent('sneakers', log('OpCancelled', { opId: '0xop' })), {
+    p_tx: '0xt',
+    p_log: 3,
+    p_block: 10,
+    p_kind: 'OP_CANCELLED',
+    p_data: { op: '0xop' },
+  })
   assert.equal(toServerEvent('vault', log('Recycled', {})), null)
+})
+
+test('지갑 연결: 가스비는 계정의 첫 지갑에만 보낸다', async () => {
+  const dripEnv = { DRIP_WEI: '200000000000000' }
+  const link = async (firstWallet) => {
+    const wallet = privateKeyToAccount(generatePrivateKey())
+    const nonce = 'b'.repeat(32)
+    const signature = await wallet.signMessage({ message: walletLinkMessage(USER.id, nonce) })
+    const deps = fakeDeps({ firstWallet })
+    const out = await linkWallet(req({ address: wallet.address, nonce, signature }), dripEnv, deps)
+    return { out, sent: deps.submitted.length }
+  }
+  const first = await link(true)
+  assert.equal(first.sent, 1)
+  assert.ok(first.out.drip)
+  const again = await link(false)
+  assert.equal(again.sent, 0)
+  assert.equal(again.out.drip, null)
+})
+
+test('만료: 한 작업이 실패해도 뒤의 작업은 계속 되돌린다', async () => {
+  const calls = []
+  const deps = {
+    clients: () => ({ addresses: { distributor: '0x1', sneakers: '0x2' }, publicClient: { readContract: async () => false } }),
+    rpc: async (_env, fn, args) => {
+      calls.push([fn, args])
+      if (fn === 'attester_due_ops') {
+        return [
+          { op_id: 'bad', op_ref: '0x1', kind: 'SUP_WITHDRAW' },
+          { op_id: 'good', op_ref: '0x2', kind: 'SNEAKER_WITHDRAW' },
+        ]
+      }
+      if (fn === 'attester_op_expire' && args.p_op === 'bad') throw new Error('로그인이 필요합니다')
+      return 'EXPIRED'
+    },
+  }
+  const out = await expireOps({}, deps)
+  assert.equal(out.expired, 1)
+  assert.equal(out.failed, 1)
+  assert.ok(calls.some(([fn, a]) => fn === 'attester_op_expire' && a.p_op === 'good'))
+})
+
+test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', async () => {
+  const calls = []
+  const paused = []
+  const deps = {
+    clients: () => ({
+      addresses: { distributor: '0x' + '1'.repeat(40) },
+      publicClient: {
+        getBlockNumber: async () => 1000n,
+        getContractEvents: async () => [
+          { eventName: 'Claimed', args: { sessionHash: '0xop', runner: '0xA', amount: 10n ** 18n }, transactionHash: '0xt', logIndex: 0, blockNumber: 900n },
+        ],
+        readContract: async () => false,
+      },
+      guardian: { writeContract: async (x) => paused.push(x.address) },
+    }),
+    rpc: async (_env, fn, args) => {
+      calls.push([fn, args])
+      if (fn === 'attester_cursor_get') return 899
+      if (fn === 'attester_chain_event') return 'UNKNOWN_OP'
+      return null
+    },
+  }
+  await indexEvents({ CONFIRMATIONS: '30' }, deps)
+  assert.ok(calls.some(([fn]) => fn === 'attester_pause'))
+  assert.deepEqual(paused, ['0x' + '1'.repeat(40)])
+  // 멈춘 뒤에도 커서는 옮긴다 — 같은 이벤트로 매분 다시 멈추지 않게
+  assert.ok(calls.some(([fn]) => fn === 'attester_cursor_set'))
 })
