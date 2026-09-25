@@ -2,12 +2,13 @@
   "name": "stepup-attester",
   "version": "1.0.0",
   "private": true,
-  "description": "StepUp 러닝 증명 어테스터 — 세션을 검사하고 EIP-712로 서명해 RewardDistributor가 받을 청구서를 만든다",
+  "description": "StepUp 어테스터 v2 — 서버가 예약한 체인 작업만 서명하고 가스비를 대신 내 보낸다. 체인 이벤트를 서버에 알린다.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "new-key": "node scripts/new-key.mjs"
   },
   "dependencies": {
     "viem": "^2.21.0"

@@ -8330,6 +8330,28 @@ end $$;
 
 grant usage on schema public to stepup_attester;
 
+-- 어테스터를 알아보는 두 가지 길.
+--   1) stepup_attester 역할로 서명된 DB 토큰 (예전 JWT 비밀로 만들 수 있는 프로젝트)
+--   2) 어테스터 전용 로그인 계정 — 새 API 키(sb_publishable_…)를 쓰는 프로젝트는 역할
+--      토큰을 직접 만들기 어렵다. 이 계정의 id 를 economy_settings.attester_user_id 에
+--      적어 두면 그 계정만 통과한다. 둘 다 service_role 이 아니다.
+insert into public.economy_settings (key, value) values ('attester_user_id', 'null'::jsonb)
+on conflict (key) do nothing;
+
+create or replace function economy.attester_guard() returns void
+language plpgsql stable security definer set search_path = public, economy as $$
+declare v_id text := economy.setting('attester_user_id') #>> '{}';
+begin
+  if coalesce(auth.jwt() ->> 'role', '') = 'stepup_attester' then
+    return;
+  end if;
+  if v_id is not null and auth.uid() is not null and auth.uid()::text = v_id then
+    return;
+  end if;
+  raise exception '어테스터만 부를 수 있습니다' using errcode = '42501';
+end $$;
+revoke all on function economy.attester_guard() from public;
+
 -- 2단계 인증을 거친 로그인인가 (Supabase JWT 의 aal)
 create or replace function economy.mfa_ok() returns boolean
   language sql stable as $$
@@ -8446,6 +8468,7 @@ declare
   v_addr text := lower(p_address);
   v_first boolean;
 begin
+  perform economy.attester_guard();
   if v_addr !~ '^0x[0-9a-f]{40}$' then
     raise exception '지갑 주소가 올바르지 않습니다' using errcode = '22023';
   end if;
@@ -8801,6 +8824,7 @@ returns table (
 language plpgsql security definer set search_path = public, economy as $$
 declare v public.chain_ops;
 begin
+  perform economy.attester_guard();
   select * into v from public.chain_ops o where o.id = p_op for update;
   if not found then
     raise exception '없는 작업입니다' using errcode = '22023';
@@ -8827,8 +8851,9 @@ end $$;
 
 create or replace function public.attester_op_submitted(p_op uuid, p_tx text)
 returns void
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, economy as $$
 begin
+  perform economy.attester_guard();
   if p_tx !~ '^0x[0-9a-fA-F]{64}$' then
     raise exception '거래 해시가 올바르지 않습니다' using errcode = '22023';
   end if;
@@ -8896,6 +8921,7 @@ declare
   v_token numeric;
   v_amount numeric;
 begin
+  perform economy.attester_guard();
   insert into public.chain_events (tx_hash, log_index, block_number, kind, data)
   values (v_tx, p_log, p_block, p_kind, p_data)
   on conflict do nothing;
@@ -8962,14 +8988,17 @@ end $$;
 -- 되돌릴 차례가 된 작업 — 서명 유효 시간 + 안전 마진이 지난 것
 create or replace function public.attester_due_ops()
 returns table (op_id uuid, op_ref text, status text, kind text, deadline timestamptz, tx_hash text)
-language sql stable security definer set search_path = public, economy as $$
+language plpgsql stable security definer set search_path = public, economy as $$
+begin
+  perform economy.attester_guard();
+  return query
   select o.id, economy.op_ref(o.id), o.status, o.kind, o.deadline, o.tx_hash
     from public.chain_ops o
    where o.status in ('RESERVED', 'SIGNED', 'SUBMITTED')
      and o.deadline + make_interval(secs => economy.setting_num('op_expire_margin_sec')::int) < now()
    order by o.deadline
-   limit 200
-$$;
+   limit 200;
+end $$;
 
 /*
  * 만료. 어테스터가 체인에서 이 작업 번호가 쓰였는지 확인하고 부른다.
@@ -8982,6 +9011,7 @@ returns text
 language plpgsql security definer set search_path = public, economy as $$
 declare v public.chain_ops;
 begin
+  perform economy.attester_guard();
   select * into v from public.chain_ops where id = p_op for update;
   if not found then
     raise exception '없는 작업입니다' using errcode = '22023';
@@ -9018,8 +9048,9 @@ end $$;
 -- 이상 징후를 본 어테스터가 스스로 멈춘다. 다시 켜는 것은 관리자만(admin_economy_set).
 create or replace function public.attester_pause(p_reason text)
 returns void
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, economy as $$
 begin
+  perform economy.attester_guard();
   update public.economy_settings set value = 'true'::jsonb, updated_at = now() where key = 'chain_paused';
   insert into public.admin_audit (actor, action, target, detail)
   values (null, 'chain_pause', 'attester', jsonb_build_object('reason', p_reason));
@@ -9034,18 +9065,22 @@ returns table (
   sneakers_on_chain bigint,
   sneakers_pending bigint
 )
-language sql stable security definer set search_path = public as $$
-  select
+language plpgsql stable security definer set search_path = public, economy as $$
+begin
+  perform economy.attester_guard();
+  return query
+select
     coalesce((select sum(amount) from public.chain_ops where kind = 'SUP_WITHDRAW' and status = 'CONFIRMED'), 0),
     coalesce((select sum(amount) from public.chain_ops
                where kind = 'SUP_WITHDRAW' and status in ('RESERVED', 'SIGNED', 'SUBMITTED')), 0),
     -- 원장이 아니라 체인 이벤트로 센다. 계정을 지우면 원장 줄은 사라진다.
     coalesce((select sum((data ->> 'amount')::numeric) from public.chain_events where kind = 'SUP_DEPOSITED'), 0),
     (select count(*) from public.market_sneakers where chain_state = 'ON_CHAIN'),
-    (select count(*) from public.market_sneakers where chain_state in ('WITHDRAWING', 'DEPOSITING'))
-$$;
+    (select count(*) from public.market_sneakers where chain_state in ('WITHDRAWING', 'DEPOSITING'));
+end $$;
 
--- 어테스터 함수는 어테스터 역할만. 앱 권한(anon·authenticated)으로는 부를 수 없다.
+-- 어테스터 함수: anon 은 못 부른다. authenticated 에는 열되 함수 첫 줄의
+-- attester_guard 가 어테스터 계정이 아니면 막는다(전용 로그인 계정 방식 때문에).
 do $$
 declare r record;
 begin
@@ -9054,7 +9089,111 @@ begin
      where p.pronamespace = 'public'::regnamespace and p.proname like 'attester\_%'
   loop
     execute format('revoke all on function %s from public, anon, authenticated', r.sig);
-    execute format('grant execute on function %s to stepup_attester', r.sig);
+    execute format('grant execute on function %s to stepup_attester, authenticated', r.sig);
+  end loop;
+end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0026_attester_support.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 어테스터 받침 — 체인을 어디까지 읽었는지, 작업을 부른 사람이 주인인지.
+--
+--   chain_cursors            컨트랙트마다 마지막으로 처리한 블록. 워커는 저장소가 없다.
+--   attester_op_payload      사용자가 부른 작업이 그 사람 것인지 서버가 한 번 더 본다.
+--                            남의 작업 번호를 넣어 SIGNED 로 바꿔 놓는 장난을 막는다.
+
+create table if not exists public.chain_cursors (
+  name text primary key,
+  block bigint not null check (block >= 0),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.chain_cursors enable row level security;
+revoke all on public.chain_cursors from anon, authenticated;
+
+create or replace function public.attester_cursor_get(p_name text)
+returns bigint
+language plpgsql stable security definer set search_path = public, economy as $$
+begin
+  perform economy.attester_guard();
+  return (select block from public.chain_cursors where name = p_name);
+end $$;
+
+-- 앞으로만 간다. 워커 두 개가 겹쳐 돌아도 커서가 뒤로 가서 같은 구간을 두 번
+-- 처리하지 않게 — 같은 이벤트를 두 번 받아도 chain_events 가 막지만, 한 번 더 막는다.
+create or replace function public.attester_cursor_set(p_name text, p_block bigint)
+returns void
+language plpgsql security definer set search_path = public, economy as $$
+begin
+  perform economy.attester_guard();
+  insert into public.chain_cursors (name, block) values (p_name, p_block)
+  on conflict (name) do update
+    set block = greatest(public.chain_cursors.block, excluded.block), updated_at = now();
+end $$;
+
+-- 0025 의 attester_op_payload(uuid) 를 사용자 확인이 있는 것으로 바꾼다.
+drop function if exists public.attester_op_payload(uuid);
+
+create or replace function public.attester_op_payload(p_op uuid, p_user uuid)
+returns table (
+  op_id uuid,
+  op_ref text,
+  kind text,
+  wallet text,
+  account_ref text,
+  amount numeric,
+  deadline_unix bigint,
+  run_day date,
+  sneaker_id bigint,
+  token_id numeric,
+  faction text,
+  rarity text,
+  variant int,
+  level int,
+  efficiency_bps int,
+  comfort_bps int,
+  durability numeric,
+  genesis_no int,
+  transfer_locked boolean
+)
+language plpgsql security definer set search_path = public, economy as $$
+declare v public.chain_ops;
+begin
+  perform economy.attester_guard();
+  select * into v from public.chain_ops o where o.id = p_op for update;
+  if not found or p_user is null or v.user_id is distinct from p_user then
+    raise exception '없는 작업입니다' using errcode = '22023';
+  end if;
+  if v.status not in ('RESERVED', 'SIGNED') or v.deadline <= now() then
+    raise exception '서명할 수 없는 작업입니다 (%)', v.status using errcode = '22023';
+  end if;
+  if (economy.setting('chain_paused') #>> '{}')::boolean then
+    raise exception '지금은 체인 작업을 잠시 멈췄습니다' using errcode = '55000';
+  end if;
+
+  update public.chain_ops o set status = 'SIGNED', updated_at = now() where o.id = p_op;
+
+  return query
+  select v.id, economy.op_ref(v.id), v.kind, v.wallet, economy.account_ref(v.user_id),
+         v.amount, extract(epoch from v.deadline)::bigint, economy.game_day(v.created_at),
+         s.id, s.token_id, s.faction, s.rarity, s.variant, s.level,
+         s.efficiency_bps, s.comfort_bps, s.durability_pts, s.genesis_no,
+         coalesce(s.km_run < s.lock_km, false)
+    from (select 1) one
+    left join public.market_sneakers s on s.id = v.sneaker_id;
+end $$;
+
+-- 어테스터 함수 권한 — 0025 와 같은 규칙을 새 함수에도 (첫 줄의 attester_guard 가 막는다)
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure as sig from pg_proc p
+     where p.pronamespace = 'public'::regnamespace and p.proname like 'attester\_%'
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', r.sig);
+    execute format('grant execute on function %s to stepup_attester, authenticated', r.sig);
   end loop;
 end $$;
 

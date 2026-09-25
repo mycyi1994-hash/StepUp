@@ -511,3 +511,66 @@ describe("v2 — limits that hold when a hot key leaks (security review)", () =>
     await expect(ctx.vault.renounceOwnership()).to.be.revertedWith("renounce disabled");
   });
 });
+
+describe("v2 — the attester's signing payloads are what the contracts accept", () => {
+  // attester/src/typed.js 를 그대로 불러 서명한다. 워커와 컨트랙트가 어긋나면 여기서 깨진다.
+  let typed;
+  before(async () => {
+    typed = await import("../../attester/src/typed.js");
+  });
+
+  it("Release built from a server payload is accepted by StepUpSneakers", async () => {
+    const ctx = await deploy();
+    await ctx.sneakers.addModels([typed.modelId("WIND", "EPIC", 2)], [2]);
+    const deadline = (await time.latest()) + 600;
+    const message = typed.releaseMessage({
+      kind: "BONUS_MINT",
+      op_ref: op(77),
+      wallet: ctx.runner.address,
+      deadline_unix: deadline,
+      token_id: null,
+      faction: "WIND",
+      rarity: "EPIC",
+      variant: 2,
+      level: 1,
+      efficiency_bps: 812,
+      comfort_bps: 640,
+      durability: "100.00",
+      genesis_no: 1,
+      transfer_locked: true,
+    });
+    const { chainId } = await ethers.provider.getNetwork();
+    const sig = await ctx.signer.signTypedData(
+      typed.releaseDomain(chainId, await ctx.sneakers.getAddress()),
+      typed.RELEASE_TYPES,
+      message,
+    );
+    await ctx.sneakers.connect(ctx.relayer).release(message, sig);
+    expect(await ctx.sneakers.ownerOf(1)).to.equal(ctx.runner.address);
+    expect(await ctx.sneakers.locked(1)).to.equal(true);
+  });
+
+  it("Claim built from a server payload is accepted by RewardDistributor", async () => {
+    const ctx = await deploy();
+    await ctx.sup.connect(ctx.treasury).approve(await ctx.distributor.getAddress(), eth(1000));
+    await ctx.distributor.connect(ctx.treasury).fund(eth(1000));
+    const message = typed.claimMessage(
+      {
+        kind: "SUP_WITHDRAW",
+        op_ref: op(78),
+        wallet: ctx.runner.address,
+        amount: "12.5",
+        deadline_unix: (await time.latest()) + 600,
+      },
+      await ctx.distributor.currentDay(),
+    );
+    const { chainId } = await ethers.provider.getNetwork();
+    const sig = await ctx.signer.signTypedData(
+      typed.claimDomain(chainId, await ctx.distributor.getAddress()),
+      typed.CLAIM_TYPES,
+      message,
+    );
+    await ctx.distributor.connect(ctx.relayer).claim(message, sig);
+    expect(await ctx.sup.balanceOf(ctx.runner.address)).to.equal(eth(12.5));
+  });
+});
