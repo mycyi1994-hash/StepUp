@@ -28,6 +28,7 @@ type ServiceAccount = { project_id: string; client_email: string; private_key: s
 
 const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string, string]>> = {
   ko: {
+    WALLET_LINKED: (a) => ["지갑이 연결됐어요 🔐", `${a.address} 지갑이 계정에 연결됐어요. 본인이 아니라면 바로 고객센터에 알려 주세요`],
     COMMENT: (a) => ["새 댓글", `${a.name}님이 "${a.title}"에 댓글을 남겼어요`],
     REPLY: (a) => ["새 답글", `${a.name}님이 내 댓글에 답글을 남겼어요`],
     CREW_REQUEST: (a) => ["가입 신청", `${a.name}님이 ${a.crew} 크루에 가입을 신청했어요`],
@@ -35,6 +36,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_FLASH: (a) => ["크루 번개 ⚡", `${a.name}: ${a.title}`],
   },
   en: {
+    WALLET_LINKED: (a) => ["Wallet linked 🔐", `Wallet ${a.address} was linked to your account. If this wasn't you, contact support now`],
     COMMENT: (a) => ["New comment", `${a.name} commented on "${a.title}"`],
     REPLY: (a) => ["New reply", `${a.name} replied to your comment`],
     CREW_REQUEST: (a) => ["Join request", `${a.name} wants to join ${a.crew}`],
@@ -42,6 +44,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_FLASH: (a) => ["Crew flash run ⚡", `${a.name}: ${a.title}`],
   },
   ja: {
+    WALLET_LINKED: (a) => ["ウォレットを連携しました 🔐", `ウォレット ${a.address} がアカウントに連携されました。心当たりがない場合はすぐにサポートへご連絡ください`],
     COMMENT: (a) => ["新しいコメント", `${a.name}さんが「${a.title}」にコメントしました`],
     REPLY: (a) => ["新しい返信", `${a.name}さんがあなたのコメントに返信しました`],
     CREW_REQUEST: (a) => ["参加申請", `${a.name}さんが${a.crew}への参加を申請しました`],
@@ -49,6 +52,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_FLASH: (a) => ["クルーのフラッシュラン ⚡", `${a.name}: ${a.title}`],
   },
   zh: {
+    WALLET_LINKED: (a) => ["钱包已绑定 🔐", `钱包 ${a.address} 已绑定到你的账户。如非本人操作，请立即联系客服`],
     COMMENT: (a) => ["新评论", `${a.name} 评论了「${a.title}」`],
     REPLY: (a) => ["新回复", `${a.name} 回复了你的评论`],
     CREW_REQUEST: (a) => ["加入申请", `${a.name} 申请加入 ${a.crew}`],

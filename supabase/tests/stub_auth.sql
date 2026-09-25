@@ -23,6 +23,12 @@ language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
 
+-- JWT 전체. 2단계 인증(aal) 같은 값을 읽는다. 실제 Supabase 에도 같은 함수가 있다.
+create or replace function auth.jwt() returns jsonb
+language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+$$;
+
 do $$ begin
   create role anon nologin;
 exception when duplicate_object then null; end $$;

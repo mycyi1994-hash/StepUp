@@ -6502,6 +6502,2390 @@ comment on function public.account_delete is
 revoke execute on function public.account_delete() from public, anon;
 grant execute on function public.account_delete() to authenticated;
 
+-- ══════════════════════════════════════════════════════════════════
+-- 0022_economy_core.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 서버가 경제의 정본이 된다 (A안) — 잔고 · 신발 · 에너지 · 설정.
+--
+-- 지금까지 SUP 와 신발은 폰이 먼저 정했다. 폰 값을 체인으로 꺼낼 수 있게 되면
+-- 폰을 고친 사람이 진짜 토큰과 NFT 를 만든다. 그래서 이 파일부터는 **체인으로
+-- 나갈 수 있는 모든 가치를 서버가 정한다.** 폰은 요청만 보내고 화면을 그린다.
+--
+-- 이 파일은 더하기만 한다. 지금 깔려 있는 앱이 부르는 함수는 그대로 둔다 —
+-- main 에 합치면 바로 배포되므로, 앱이 바뀌기 전에 옛 앱이 깨지면 안 된다.
+--
+--   economy_settings     운영 값(상한 · 정지 스위치). 다시 배포하지 않고 바꾼다
+--   economy.ledger_apply 잔고를 바꾸는 유일한 길. 사용자별로 줄을 세운다
+--   market_sneakers      서버 신발 표. 이름은 그대로 두고 스탯·체인 상태를 더한다
+--   energy_days          하루 에너지. 폰이 아니라 서버가 센다
+--   boosts               부스터(XP ×2 · 스트릭 보호 · 에너지 셀) 기록
+
+-- ══════════════════════════════════════════════════════════════════
+-- 게임의 하루 — 한국 시간
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 에너지 리필, 하루 상한, 목표 보너스가 모두 이 하루를 쓴다. 저장은 시각으로
+-- 하고 날짜는 읽을 때 계산하므로, 예전 UTC 기준에서 바꿔도 상한이 두 번 열리지
+-- 않는다(같은 시각이 두 하루에 동시에 들어가지 않는다).
+create or replace function economy.game_day(p_at timestamptz) returns date
+  language sql immutable as $$ select (p_at at time zone 'Asia/Seoul')::date $$;
+
+create or replace function economy.game_day_start(p_day date) returns timestamptz
+  language sql immutable as $$ select p_day::timestamp at time zone 'Asia/Seoul' $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 운영 값
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 상한과 정지 스위치는 사고가 났을 때 **바로** 바꿔야 한다. 함수 상수로 두면
+-- 바꾸려고 배포를 기다려야 한다. 그래서 표에 둔다. 앱 권한으로는 읽지도 쓰지도
+-- 못한다 — 관리자 함수와 서버 함수만 본다.
+create table if not exists public.economy_settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.economy_settings is
+  '운영 값(상한·정지 스위치·시작 시각). 앱 권한으로는 못 본다. admin_economy_set 으로 바꾼다.';
+
+alter table public.economy_settings enable row level security;
+revoke all on public.economy_settings from anon, authenticated;
+
+-- 처음 설치할 때만 넣는다. 다시 붙여넣어도 운영 중에 바꾼 값을 덮지 않는다.
+insert into public.economy_settings (key, value) values
+  -- 이 시각 뒤에 가입한 사람만 무료 뽑기 10회를 받는다. 처음 배포한 순간으로 굳는다.
+  ('free_draw_since',            to_jsonb(now())),
+  -- 사람별 하루 적립 상한(SUP). 걸음 상한(48,000)과 별도로 금액에도 선을 긋는다.
+  ('daily_earn_cap',             '600'::jsonb),
+  -- 가입 며칠까지를 신규로 보고 적립 상한을 절반으로 할지
+  ('new_account_days',           '7'::jsonb),
+  -- 꺼내기(체인) 상한과 조건
+  ('withdraw_user_daily_sup',    '1000'::jsonb),
+  ('withdraw_global_daily_sup',  '50000'::jsonb),
+  ('mint_global_daily',          '500'::jsonb),
+  ('withdraw_min_account_days',  '7'::jsonb),
+  ('withdraw_min_km',            '20'::jsonb),
+  ('wallet_cooldown_hours',      '72'::jsonb),
+  ('free_shoe_lock_km',          '50'::jsonb),
+  -- 서명 유효 시간(초)과, 만료 뒤 되돌리기 전에 더 기다리는 시간(초)
+  ('op_deadline_sec',            '600'::jsonb),
+  ('op_expire_margin_sec',       '1800'::jsonb),
+  -- 정지 스위치. true 면 꺼내기·넣기·보너스 발행을 모두 멈춘다.
+  ('chain_paused',               'false'::jsonb)
+on conflict (key) do nothing;
+
+create or replace function economy.setting(p_key text) returns jsonb
+  language sql stable security definer set search_path = public as $$
+  select value from public.economy_settings where key = p_key
+$$;
+
+create or replace function economy.setting_num(p_key text) returns numeric
+  language sql stable security definer set search_path = public as $$
+  select (value #>> '{}')::numeric from public.economy_settings where key = p_key
+$$;
+
+revoke all on function economy.setting(text) from public;
+revoke all on function economy.setting_num(text) from public;
+
+-- 관리자만 바꾼다. 누가 언제 무엇을 바꿨는지 admin_audit 에 남는다.
+create or replace function public.admin_economy_set(p_key text, p_value jsonb)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.admin_guard();
+  if not exists (select 1 from public.economy_settings where key = p_key) then
+    raise exception '없는 설정입니다: %', p_key using errcode = '22023';
+  end if;
+  update public.economy_settings set value = p_value, updated_at = now() where key = p_key;
+  perform public.admin_log('economy_set', p_key, jsonb_build_object('value', p_value));
+end $$;
+
+revoke all on function public.admin_economy_set(text, jsonb) from public, anon;
+grant execute on function public.admin_economy_set(text, jsonb) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 원장 — 종류를 더하고, 잔고를 바꾸는 길을 하나로 모은다
+-- ══════════════════════════════════════════════════════════════════
+--
+--   EARN_COURSE     코스 완주 보상
+--   SPEND_DRAW      뽑기
+--   SPEND_REPAIR    신발 수리 (태운다 — 누구에게도 가지 않는다)
+--   CHAIN_WITHDRAW  체인으로 꺼냄 (음수)
+--   CHAIN_REFUND    꺼내기가 체인에 안 올라가 만료됨 → 되돌림 (양수)
+--   CHAIN_DEPOSIT   체인에서 넣음 (양수)
+alter table public.sup_ledger drop constraint if exists sup_ledger_kind_check;
+alter table public.sup_ledger add constraint sup_ledger_kind_check check (kind in (
+  'EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE',
+  'SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR',
+  'ESCROW_LOCK', 'ESCROW_UNLOCK', 'TRADE_BUY', 'TRADE_SELL', 'TRADE_FEE',
+  'CHAIN_WITHDRAW', 'CHAIN_REFUND', 'CHAIN_DEPOSIT'
+));
+
+-- 같은 요청이 두 번 들어와도 한 번만 적히게 하는 꼬리표.
+-- 체인 작업 번호 · 목표 보너스의 날짜 같은 것이 들어간다.
+alter table public.sup_ledger add column if not exists ref text;
+create unique index if not exists sup_ledger_ref_once
+  on public.sup_ledger (user_id, ref) where ref is not null;
+
+/*
+ * 잔고를 바꾸는 유일한 길.
+ *
+ * 새로 만드는 함수는 모두 이것을 부른다. 잔고 검사와 기록 사이에 다른 요청이
+ * 끼어들지 못하게 이 사람의 원장 잠금을 먼저 잡는다 — record_session ·
+ * spend_sup · 거래소가 잡는 것과 같은 잠금이라 모두 한 줄로 선다.
+ *
+ * 앱 권한으로는 부를 수 없다. economy 스키마는 앱에 열려 있지 않고, 함수 권한도 거둔다.
+ */
+create or replace function economy.ledger_apply(
+  p_user uuid,
+  p_kind text,
+  p_amount numeric,
+  p_description text,
+  p_ref text default null
+) returns numeric
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_balance numeric(20, 4);
+begin
+  if p_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_amount is null or p_amount = 0 then
+    raise exception '금액이 올바르지 않습니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || p_user::text));
+
+  if p_ref is not null and exists (
+       select 1 from public.sup_ledger where user_id = p_user and ref = p_ref) then
+    raise exception '이미 처리된 요청입니다' using errcode = '23505';
+  end if;
+
+  select coalesce(sum(amount), 0) into v_balance
+    from public.sup_ledger where user_id = p_user;
+
+  if p_amount < 0 and v_balance + p_amount < 0 then
+    raise exception 'SUP가 부족합니다 (보유 %, 필요 %)', v_balance, -p_amount
+      using errcode = '23514';
+  end if;
+
+  insert into public.sup_ledger (user_id, kind, amount, description, ref)
+  values (p_user, p_kind, round(p_amount, 4), coalesce(p_description, ''), p_ref);
+
+  return v_balance + round(p_amount, 4);
+end $$;
+
+revoke all on function economy.ledger_apply(uuid, text, numeric, text, text) from public;
+
+create or replace function economy.balance_of(p_user uuid) returns numeric
+  language sql stable security definer set search_path = public as $$
+  select coalesce(sum(amount), 0)::numeric(20, 4) from public.sup_ledger where user_id = p_user
+$$;
+revoke all on function economy.balance_of(uuid) from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 신발 규칙 — 등급 · 레벨 · 효율성 · 착화감 · 내구도
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 행운과 속성은 스탯에서 뺐다. 속성(불·물·번개·바람)은 모델 그림의 주제로만 남는다.
+--
+--            확률   최대Lv  효율성(Lv1)    착화감(Lv1)   내구도 -/km  수리계수
+--   COMMON    55%     10    +2 ~  4%       0 ~  3%        1.0        1.00
+--   RARE      28%     15    +4 ~  7%       3 ~  6%        0.9        1.25
+--   EPIC      13%     20    +7 ~ 10%       6 ~  9%        0.8        1.50
+--   LEGENDARY  4%     30    +10 ~ 13%      9 ~ 12%        0.7        1.75
+--
+-- 레벨 한 칸: 효율성 +0.5%p, 착화감 +0.2%p(최대 20%), 에너지 최대 +2칸.
+-- 내구도 50 이상 정상 · 20~49 적립 -30% · 20 미만 적립 없음.
+-- 값은 bps(1% = 100)로 적는다. 소수로 적으면 더할 때 오차가 쌓인다.
+
+create or replace function economy.rarity_ord(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 0 when 'RARE' then 1
+                       when 'EPIC' then 2 when 'LEGENDARY' then 3 end
+$$;
+
+create or replace function economy.rarity_weight(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 55 when 'RARE' then 28
+                       when 'EPIC' then 13 when 'LEGENDARY' then 4 end
+$$;
+
+create or replace function economy.max_level(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 10 when 'RARE' then 15
+                       when 'EPIC' then 20 when 'LEGENDARY' then 30 end
+$$;
+
+-- 등급 안 모델 수. 앱 도감(domain/Sneaker.kt)과 같다 — 속성마다 13종.
+create or replace function economy.variant_count(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 4 when 'RARE' then 4
+                       when 'EPIC' then 3 when 'LEGENDARY' then 2 end
+$$;
+
+create or replace function economy.efficiency_range(p_rarity text, out lo int, out hi int)
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 200 when 'RARE' then 400
+                       when 'EPIC' then 700 else 1000 end,
+         case p_rarity when 'COMMON' then 400 when 'RARE' then 700
+                       when 'EPIC' then 1000 else 1300 end
+$$;
+
+create or replace function economy.comfort_range(p_rarity text, out lo int, out hi int)
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 0 when 'RARE' then 300
+                       when 'EPIC' then 600 else 900 end,
+         case p_rarity when 'COMMON' then 300 when 'RARE' then 600
+                       when 'EPIC' then 900 else 1200 end
+$$;
+
+create or replace function economy.efficiency_per_level_bps() returns int
+  language sql immutable as $$ select 50 $$;
+create or replace function economy.comfort_per_level_bps() returns int
+  language sql immutable as $$ select 20 $$;
+create or replace function economy.comfort_cap_bps() returns int
+  language sql immutable as $$ select 2000 $$;
+
+create or replace function economy.durability_loss_per_km(p_rarity text) returns numeric
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 1.0 when 'RARE' then 0.9
+                       when 'EPIC' then 0.8 else 0.7 end::numeric
+$$;
+
+-- 내구도에 따른 적립 배율
+create or replace function economy.durability_factor(p_durability numeric) returns numeric
+  language sql immutable as $$
+  select case when p_durability >= 50 then 1.0
+              when p_durability >= 20 then 0.7
+              else 0 end::numeric
+$$;
+
+-- 수리 1칸 값. 좋은 신발일수록 더 벌고 더 든다.
+create or replace function economy.repair_cost_per_point(p_rarity text, p_level int) returns numeric
+  language sql immutable as $$
+  select round((1 + 0.25 * economy.rarity_ord(p_rarity)) * (1 + 0.05 * p_level), 4)
+$$;
+
+-- 강화 값 — 앱의 RewardEconomy.sneakerUpgradeCost 와 같다
+create or replace function economy.upgrade_cost(p_rarity text, p_level int) returns numeric
+  language sql immutable as $$
+  select round(p_level * 100.0 * (1 + 0.25 * economy.rarity_ord(p_rarity)))
+$$;
+
+create or replace function economy.draw_cost() returns numeric
+  language sql immutable as $$ select 500::numeric $$;
+
+create or replace function economy.energy_max_for_level(p_level int) returns numeric
+  language sql immutable as $$
+  select economy.base_max_energy() + greatest(coalesce(p_level, 1) - 1, 0) * 2
+$$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 서버 신발 표
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 거래소 장부(market_sneakers)를 그대로 신발의 정본으로 쓴다. 이미 소유자·
+-- 등급·레벨을 들고 있고 거래소 함수가 이 표를 본다. 이름을 바꾸면 옛 앱이 부르는
+-- 함수가 깨지므로 이름은 두고 칸을 더한다.
+--
+-- origin
+--   IMPORT      폰에 있던 신발을 올린 것. 폰이 정한 값이라 **믿지 않는다** —
+--               적립 계산에서는 일반 1레벨로 치고, 체인으로 꺼낼 수 없다.
+--   STARTER     가입 때 주는 첫 신발. 꺼낼 수 없다.
+--   FREE_DRAW   신규 무료 뽑기. 이 신발로 50km 를 달려야 꺼낼 수 있다.
+--   PAID_DRAW   SUP 로 뽑은 신발
+--   BONUS_DRAW  지갑 연결 보너스(체인에서 발행). 50km 전에는 전송이 잠긴다.
+--   DEPOSIT     체인에서 처음 넣은 신발(남에게 산 NFT 등)
+--   MINT        예전 표기. 쓰지 않는다.
+alter table public.market_sneakers
+  add column if not exists efficiency_bps int not null default 200,
+  add column if not exists comfort_bps int not null default 0,
+  add column if not exists durability_pts numeric(6, 2) not null default 100,
+  add column if not exists equipped boolean not null default false,
+  add column if not exists chain_state text not null default 'APP',
+  add column if not exists token_id numeric(78, 0),
+  add column if not exists genesis_no int,
+  add column if not exists km_run numeric(10, 3) not null default 0,
+  add column if not exists lock_km numeric(10, 3) not null default 0,
+  add column if not exists withdrawable boolean not null default false,
+  add column if not exists draw_nonce bigint,
+  add column if not exists updated_at timestamptz not null default now();
+
+alter table public.market_sneakers drop constraint if exists market_sneakers_origin_check;
+alter table public.market_sneakers add constraint market_sneakers_origin_check check (origin in (
+  'IMPORT', 'MINT', 'STARTER', 'FREE_DRAW', 'PAID_DRAW', 'BONUS_DRAW', 'DEPOSIT'
+));
+
+alter table public.market_sneakers drop constraint if exists market_sneakers_chain_state_check;
+alter table public.market_sneakers add constraint market_sneakers_chain_state_check check (
+  chain_state in ('APP', 'WITHDRAWING', 'ON_CHAIN', 'DEPOSITING')
+);
+
+alter table public.market_sneakers drop constraint if exists market_sneakers_stats_check;
+alter table public.market_sneakers add constraint market_sneakers_stats_check check (
+  efficiency_bps between 0 and 5000
+  and comfort_bps between 0 and 2000
+  and durability_pts between 0 and 100
+  and km_run >= 0 and lock_km >= 0
+);
+
+create unique index if not exists market_sneakers_token_once
+  on public.market_sneakers (token_id) where token_id is not null;
+create unique index if not exists market_sneakers_genesis_once
+  on public.market_sneakers (genesis_no) where genesis_no is not null;
+-- 한 사람이 동시에 신는 신발은 하나
+create unique index if not exists market_sneakers_one_equipped
+  on public.market_sneakers (owner_id) where equipped;
+
+create sequence if not exists public.genesis_seq start 1;
+revoke all on sequence public.genesis_seq from anon, authenticated;
+
+comment on table public.market_sneakers is
+  '서버 신발 표 — 신발의 정본. 폰 목록은 사본이다. IMPORT 는 폰이 정한 값이라 적립·꺼내기에 쓰지 않는다.';
+
+-- 적립 계산에 쓰는 실효 스탯. 폰이 정한 신발(IMPORT·MINT)은 일반 1레벨로 친다.
+create or replace function economy.sneaker_effective(
+  p_origin text, p_rarity text, p_level int,
+  p_efficiency_bps int, p_comfort_bps int, p_durability numeric,
+  out efficiency_bps int, out comfort_bps int, out level int, out durability numeric
+) language sql immutable as $$
+  select
+    case when p_origin in ('IMPORT', 'MINT') then 200
+         else p_efficiency_bps + economy.efficiency_per_level_bps() * greatest(p_level - 1, 0) end,
+    case when p_origin in ('IMPORT', 'MINT') then 0
+         else least(p_comfort_bps + economy.comfort_per_level_bps() * greatest(p_level - 1, 0),
+                    economy.comfort_cap_bps()) end,
+    case when p_origin in ('IMPORT', 'MINT') then 1 else p_level end,
+    case when p_origin in ('IMPORT', 'MINT') then 100 else p_durability end
+$$;
+
+-- 지금 신고 있는 신발(서버 기준). 없거나 체인에 나가 있으면 null.
+create or replace function economy.equipped_sneaker(p_user uuid)
+returns setof public.market_sneakers
+language sql stable security definer set search_path = public as $$
+  select * from public.market_sneakers
+   where owner_id = p_user and equipped and chain_state = 'APP' and status = 'OWNED'
+   limit 1
+$$;
+revoke all on function economy.equipped_sneaker(uuid) from public;
+
+-- 판매 중이거나 체인에 나가 있는 신발은 신을 수도, 강화할 수도, 다시 팔 수도
+-- 없다(결정표 X7). 거래소 함수를 고치지 않고 표에서 막는다 — 새 매물을 거는
+-- 순간 신발 상태를 본다.
+create or replace function economy.guard_listing() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from public.market_sneakers
+              where id = new.sneaker_id and (chain_state <> 'APP' or equipped)) then
+    raise exception '착용 중이거나 체인에 있는 신발은 팔 수 없습니다' using errcode = '22023';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists market_listings_guard on public.market_listings;
+create trigger market_listings_guard before insert on public.market_listings
+  for each row execute function economy.guard_listing();
+
+-- ══════════════════════════════════════════════════════════════════
+-- 에너지 — 하루(한국 시간)마다 최대치로 찬다
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists public.energy_days (
+  user_id uuid not null references auth.users on delete cascade,
+  day date not null,
+  -- 쓴 에너지(칸)
+  used numeric(10, 4) not null default 0 check (used >= 0),
+  -- 에너지 셀로 더 받은 칸
+  bonus numeric(10, 4) not null default 0 check (bonus >= 0),
+  primary key (user_id, day)
+);
+
+comment on table public.energy_days is
+  '하루 에너지 사용량. 최대치는 신은 신발 레벨로 정해지고 한국 자정에 다시 찬다.';
+
+alter table public.energy_days enable row level security;
+revoke all on public.energy_days from anon, authenticated;
+drop policy if exists energy_days_select_own on public.energy_days;
+create policy energy_days_select_own on public.energy_days
+  for select using ((select auth.uid()) = user_id);
+grant select on public.energy_days to authenticated;
+
+create or replace function economy.energy_max(p_user uuid) returns numeric
+language sql stable security definer set search_path = public, economy as $$
+  select economy.energy_max_for_level(coalesce((
+    select e.level from public.market_sneakers s,
+           lateral economy.sneaker_effective(s.origin, s.rarity, s.level,
+             s.efficiency_bps, s.comfort_bps, s.durability_pts) e
+     where s.owner_id = p_user and s.equipped and s.chain_state = 'APP' and s.status = 'OWNED'
+     limit 1), 1))
+$$;
+revoke all on function economy.energy_max(uuid) from public;
+
+-- 남은 에너지(칸)
+create or replace function economy.energy_left(p_user uuid, p_day date) returns numeric
+language sql stable security definer set search_path = public, economy as $$
+  select greatest(economy.energy_max(p_user)
+                  + coalesce((select bonus - used from public.energy_days
+                               where user_id = p_user and day = p_day), 0), 0)
+$$;
+revoke all on function economy.energy_left(uuid, date) from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 부스터 — 앱의 BoostType 과 같은 값
+-- ══════════════════════════════════════════════════════════════════
+--   ENERGY_CELL    50 SUP   즉시 에너지 2칸
+--   STREAK_SHIELD 120 SUP   24시간 동안 목표를 못 채워도 연속 기록 유지
+--   XP_BOOSTER    200 SUP   24시간 동안 러닝 적립 ×2
+create table if not exists public.boosts (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null check (kind in ('ENERGY_CELL', 'STREAK_SHIELD', 'XP_BOOSTER')),
+  starts_at timestamptz not null default now(),
+  ends_at timestamptz not null default now(),
+  cost numeric(20, 4) not null check (cost >= 0),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists boosts_user_active on public.boosts (user_id, ends_at desc);
+
+alter table public.boosts enable row level security;
+revoke all on public.boosts from anon, authenticated;
+drop policy if exists boosts_select_own on public.boosts;
+create policy boosts_select_own on public.boosts
+  for select using ((select auth.uid()) = user_id);
+grant select on public.boosts to authenticated;
+
+create or replace function economy.boost_cost(p_kind text) returns numeric
+  language sql immutable as $$
+  select case p_kind when 'ENERGY_CELL' then 50 when 'STREAK_SHIELD' then 120
+                     when 'XP_BOOSTER' then 200 end::numeric
+$$;
+
+create or replace function economy.boost_active(p_user uuid, p_kind text, p_at timestamptz)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.boosts
+                  where user_id = p_user and kind = p_kind
+                    and starts_at <= p_at and ends_at > p_at)
+$$;
+revoke all on function economy.boost_active(uuid, text, timestamptz) from public;
+
+create or replace function public.boost_buy(p_kind text)
+returns numeric
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_cost numeric := economy.boost_cost(p_kind);
+  v_day date := economy.game_day(now());
+  v_balance numeric;
+  v_from timestamptz;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if v_cost is null then
+    raise exception '없는 부스터입니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  if p_kind = 'ENERGY_CELL' then
+    -- 가득 찬데 사면 돈만 사라진다(결정표 X9). 2칸이 들어갈 자리가 있어야 판다.
+    if economy.energy_left(v_user, v_day) + 2 > economy.energy_max(v_user) then
+      raise exception '에너지가 이미 충분합니다' using errcode = '23514';
+    end if;
+  end if;
+
+  v_balance := economy.ledger_apply(v_user, 'SPEND_BOOST', -v_cost, '부스터: ' || p_kind);
+
+  if p_kind = 'ENERGY_CELL' then
+    insert into public.energy_days (user_id, day, bonus) values (v_user, v_day, 2)
+    on conflict (user_id, day) do update set bonus = public.energy_days.bonus + 2;
+    insert into public.boosts (user_id, kind, cost) values (v_user, p_kind, v_cost);
+  else
+    -- 이미 켜져 있으면 끝나는 시각 뒤로 이어 붙인다. 겹쳐 사도 손해가 없게.
+    select greatest(now(), coalesce(max(ends_at), now())) into v_from
+      from public.boosts where user_id = v_user and kind = p_kind and ends_at > now();
+    insert into public.boosts (user_id, kind, starts_at, ends_at, cost)
+    values (v_user, p_kind, v_from, v_from + interval '24 hours', v_cost);
+  end if;
+
+  return v_balance;
+end $$;
+
+revoke all on function public.boost_buy(text) from public, anon;
+grant execute on function public.boost_buy(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 직접 쓰기 막기 (결정표 X4)
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 게시글·크루는 post_create · crew_create 가 도배 제한과 크루 10개 상한을
+-- 검사한다. 표에 직접 INSERT 할 수 있으면 그 검사를 건너뛴다. 앱은 이미 두
+-- 함수만 부르므로 직접 쓰기를 닫아도 바뀌는 것이 없다.
+drop policy if exists posts_insert_own on public.posts;
+drop policy if exists crews_insert_own on public.crews;
+revoke insert on public.posts from anon, authenticated;
+revoke insert on public.crews from anon, authenticated;
+
+-- 거래소 표도 함수로만 바뀐다. 지금은 RLS 정책이 없어 막혀 있지만, 누가 정책을
+-- 하나 잘못 붙이는 순간 열린다. 잔고와 소유권이 걸린 표라 권한부터 거둔다.
+revoke insert, update, delete on public.market_sneakers, public.market_imports,
+  public.market_listings, public.market_bids, public.market_trades from anon, authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 내 경제 한눈에 — 앱이 화면을 그릴 때 읽는다
+-- ══════════════════════════════════════════════════════════════════
+create or replace function public.my_economy()
+returns table (
+  balance numeric,
+  energy_max numeric,
+  energy_left numeric,
+  xp_booster_until timestamptz,
+  streak_shield_until timestamptz,
+  equipped_id bigint,
+  game_day date
+)
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_day date := economy.game_day(now());
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  return query select
+    economy.balance_of(v_user),
+    economy.energy_max(v_user),
+    economy.energy_left(v_user, v_day),
+    (select max(b.ends_at) from public.boosts b
+      where b.user_id = v_user and b.kind = 'XP_BOOSTER' and b.ends_at > now()),
+    (select max(b.ends_at) from public.boosts b
+      where b.user_id = v_user and b.kind = 'STREAK_SHIELD' and b.ends_at > now()),
+    (select s.id from economy.equipped_sneaker(v_user) s),
+    v_day;
+end $$;
+
+revoke all on function public.my_economy() from public, anon;
+grant execute on function public.my_economy() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0023_sneaker_ops.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 신발 — 뽑기 · 강화 · 수리 · 착용을 서버가 한다.
+--
+-- 폰이 난수를 굴리면 원하는 결과가 나올 때까지 다시 굴릴 수 있다. 서버가 굴리고,
+-- 결과를 미리 봉해 둔 씨앗(seed)에서 뽑아 나중에 누구든 확인할 수 있게 한다.
+--
+--   뽑기 공정성: 사람마다 비밀 씨앗이 있고, 그 해시(seed_hash)는 미리 공개된다.
+--   n 번째 뽑기의 결과는 sha256(씨앗 || ':' || n) 에서 정해진다. 씨앗을 바꿀 때
+--   옛 씨앗을 공개하므로, 공개된 해시와 맞는지·결과가 맞는지 누구나 다시 계산할
+--   수 있다. 서버도 결과를 고를 수 없다 — 해시를 먼저 공개했기 때문이다.
+--
+--   다시 뽑기 막기: 값을 치르는 것과 결과를 정하는 것이 한 트랜잭션이다. 결과를
+--   보고 값을 안 치르는 길이 없다.
+
+-- ══════════════════════════════════════════════════════════════════
+-- 씨앗
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists public.draw_seeds (
+  user_id uuid primary key references auth.users on delete cascade,
+  seed bytea not null,
+  seed_hash text not null,
+  -- 이 씨앗으로 다음에 뽑을 번호
+  nonce bigint not null default 0,
+  first_nonce bigint not null default 0,
+  created_at timestamptz not null default now()
+);
+
+comment on table public.draw_seeds is
+  '뽑기 씨앗. 씨앗 자체는 아무도 못 읽는다(앱 권한 없음). 해시만 draw_fairness 로 공개된다.';
+
+alter table public.draw_seeds enable row level security;
+revoke all on public.draw_seeds from anon, authenticated;
+
+create table if not exists public.draw_seed_reveals (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  seed_hex text not null,
+  seed_hash text not null,
+  first_nonce bigint not null,
+  last_nonce bigint not null,
+  revealed_at timestamptz not null default now()
+);
+
+alter table public.draw_seed_reveals enable row level security;
+revoke all on public.draw_seed_reveals from anon, authenticated;
+drop policy if exists draw_seed_reveals_select_own on public.draw_seed_reveals;
+create policy draw_seed_reveals_select_own on public.draw_seed_reveals
+  for select using ((select auth.uid()) = user_id);
+grant select on public.draw_seed_reveals to authenticated;
+
+-- 강한 난수 32바이트. gen_random_uuid 는 운영체제의 강한 난수로 만든다.
+create or replace function economy.random_bytes32() returns bytea
+  language sql volatile as $$
+  select decode(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 'hex')
+$$;
+
+create or replace function economy.seed_ensure(p_user uuid) returns void
+language plpgsql security definer set search_path = public, economy as $$
+declare v_seed bytea;
+begin
+  if exists (select 1 from public.draw_seeds where user_id = p_user) then
+    return;
+  end if;
+  v_seed := economy.random_bytes32();
+  insert into public.draw_seeds (user_id, seed, seed_hash)
+  values (p_user, v_seed, encode(sha256(v_seed), 'hex'))
+  on conflict (user_id) do nothing;
+end $$;
+revoke all on function economy.seed_ensure(uuid) from public;
+
+-- 다음 뽑기의 32바이트. 번호를 하나 올린다. 부르는 쪽이 이 사람의 잠금을 잡고 있어야 한다.
+create or replace function economy.draw_digest(p_user uuid, out o_nonce bigint, out o_digest bytea)
+language plpgsql security definer set search_path = public, economy as $$
+begin
+  perform economy.seed_ensure(p_user);
+  update public.draw_seeds d
+     set nonce = d.nonce + 1
+   where d.user_id = p_user
+  returning d.nonce - 1, sha256(d.seed || convert_to(':' || (d.nonce - 1)::text, 'UTF8'))
+    into o_nonce, o_digest;
+end $$;
+revoke all on function economy.draw_digest(uuid) from public;
+
+-- 바이트 몇 개를 음이 아닌 정수로
+create or replace function economy.bytes_int(p_b bytea, p_off int, p_len int) returns bigint
+  language plpgsql immutable as $$
+declare v bigint := 0; i int;
+begin
+  for i in 0 .. p_len - 1 loop
+    v := v * 256 + get_byte(p_b, p_off + i);
+  end loop;
+  return v;
+end $$;
+
+-- 씨앗 결과 → 등급. p_min 이 있으면 그 등급 이상만(예: Genesis 는 EPIC 이상).
+-- 가중치 표 안에서 굴리므로 제한이 있어도 위 등급끼리의 비율(13:4)은 그대로다.
+create or replace function economy.roll_rarity(p_roll bigint, p_min text default null) returns text
+  language plpgsql immutable as $$
+declare
+  v_order text[] := array['COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
+  v_from int := coalesce(economy.rarity_ord(p_min), 0) + 1;
+  v_total int := 0;
+  v_pick int;
+  i int;
+begin
+  for i in v_from .. 4 loop
+    v_total := v_total + economy.rarity_weight(v_order[i]);
+  end loop;
+  v_pick := (p_roll % v_total)::int;
+  for i in v_from .. 4 loop
+    v_pick := v_pick - economy.rarity_weight(v_order[i]);
+    if v_pick < 0 then
+      return v_order[i];
+    end if;
+  end loop;
+  return v_order[4];
+end $$;
+
+/*
+ * 뽑은 결과로 신발을 만든다. 값은 부르는 쪽이 이미 치렀다.
+ *
+ *   FREE_DRAW   이 신발로 50km 를 달려야 꺼낼 수 있다(무료 농사 막기)
+ *   PAID_DRAW   바로 꺼낼 수 있다
+ *   BONUS_DRAW  체인에서 발행된다. 50km 전에는 전송 잠금
+ *   STARTER     꺼낼 수 없다
+ */
+create or replace function economy.draw_create(
+  p_user uuid,
+  p_origin text,
+  p_min_rarity text default null,
+  p_genesis boolean default false
+) returns bigint
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_nonce bigint;
+  v_d bytea;
+  v_rarity text;
+  v_faction text;
+  v_variant int;
+  v_eff_lo int; v_eff_hi int;
+  v_cmf_lo int; v_cmf_hi int;
+  v_id bigint;
+  v_lock numeric := 0;
+begin
+  select n.o_nonce, n.o_digest into v_nonce, v_d from economy.draw_digest(p_user) n;
+
+  v_rarity := economy.roll_rarity(economy.bytes_int(v_d, 0, 4), p_min_rarity);
+  v_faction := (array['FIRE', 'WATER', 'LIGHTNING', 'WIND'])[economy.bytes_int(v_d, 4, 2) % 4 + 1];
+  v_variant := (economy.bytes_int(v_d, 6, 2) % economy.variant_count(v_rarity))::int;
+  select lo, hi into v_eff_lo, v_eff_hi from economy.efficiency_range(v_rarity);
+  select lo, hi into v_cmf_lo, v_cmf_hi from economy.comfort_range(v_rarity);
+
+  if p_origin in ('FREE_DRAW', 'BONUS_DRAW') then
+    v_lock := economy.setting_num('free_shoe_lock_km');
+  end if;
+
+  insert into public.market_sneakers (
+    owner_id, faction, rarity, variant, level, luck, comfort, durability,
+    origin, efficiency_bps, comfort_bps, durability_pts,
+    lock_km, withdrawable, draw_nonce, genesis_no
+  ) values (
+    p_user, v_faction, v_rarity, v_variant, 1, 1,
+    -- 옛 comfort 칸(배율 1.00~1.40)은 옛 앱 화면용으로만 채운다.
+    1 + v_cmf_lo / 10000.0, 100,
+    p_origin,
+    v_eff_lo + (economy.bytes_int(v_d, 8, 2) % (v_eff_hi - v_eff_lo + 1))::int,
+    v_cmf_lo + (economy.bytes_int(v_d, 10, 2) % (v_cmf_hi - v_cmf_lo + 1))::int,
+    100,
+    v_lock, p_origin <> 'STARTER', v_nonce,
+    case when p_genesis then nextval('public.genesis_seq')::int end
+  ) returning id into v_id;
+
+  return v_id;
+end $$;
+revoke all on function economy.draw_create(uuid, text, text, boolean) from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 뽑기 권리 — 신규 무료 10회 · 지갑 보너스 10회(Genesis 1)
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists public.draw_grants (
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null check (kind in ('FREE', 'BONUS')),
+  granted int not null check (granted >= 0),
+  used int not null default 0,
+  genesis_granted int not null default 0,
+  genesis_used int not null default 0,
+  created_at timestamptz not null default now(),
+  primary key (user_id, kind),
+  check (used between 0 and granted),
+  check (genesis_used between 0 and genesis_granted)
+);
+
+alter table public.draw_grants enable row level security;
+revoke all on public.draw_grants from anon, authenticated;
+drop policy if exists draw_grants_select_own on public.draw_grants;
+create policy draw_grants_select_own on public.draw_grants
+  for select using ((select auth.uid()) = user_id);
+grant select on public.draw_grants to authenticated;
+
+-- 첫 신발은 한 사람에 하나
+create unique index if not exists market_sneakers_one_starter
+  on public.market_sneakers (owner_id) where origin = 'STARTER';
+
+/*
+ * 앱을 켤 때 부른다. 여러 번 불러도 한 번만 일어난다.
+ *   - 서버 신발이 없으면 첫 신발(바람 · 일반)을 주고 신긴다
+ *   - 무료 뽑기 시작 시각 뒤에 가입했으면 무료 뽑기 10회
+ */
+create or replace function public.economy_bootstrap()
+returns void
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_since timestamptz := (economy.setting('free_draw_since') #>> '{}')::timestamptz;
+  v_id bigint;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform economy.seed_ensure(v_user);
+
+  if not exists (select 1 from public.market_sneakers where owner_id = v_user and origin = 'STARTER') then
+    insert into public.market_sneakers (
+      owner_id, faction, rarity, variant, level, luck, comfort, durability,
+      origin, efficiency_bps, comfort_bps, durability_pts, withdrawable
+    ) values (
+      v_user, 'WIND', 'COMMON', 0, 1, 1, 1.01, 100,
+      'STARTER', 300, 100, 100, false
+    ) returning id into v_id;
+    if not exists (select 1 from public.market_sneakers where owner_id = v_user and equipped) then
+      update public.market_sneakers set equipped = true where id = v_id;
+    end if;
+  end if;
+
+  if (select p.created_at from public.profiles p where p.id = v_user) >= v_since then
+    insert into public.draw_grants (user_id, kind, granted)
+    values (v_user, 'FREE', 10)
+    on conflict (user_id, kind) do nothing;
+  end if;
+end $$;
+
+revoke all on function public.economy_bootstrap() from public, anon;
+grant execute on function public.economy_bootstrap() to authenticated;
+
+-- 무료 뽑기 한 번. 남은 횟수가 없으면 23514.
+create or replace function public.draw_free()
+returns bigint
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  update public.draw_grants set used = used + 1
+   where user_id = v_user and kind = 'FREE' and used < granted;
+  if not found then
+    raise exception '무료 뽑기가 남아 있지 않습니다' using errcode = '23514';
+  end if;
+
+  return economy.draw_create(v_user, 'FREE_DRAW');
+end $$;
+
+-- SUP 로 뽑기. 치르는 것과 굴리는 것이 한 번에 일어난다.
+create or replace function public.draw_paid()
+returns bigint
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform economy.ledger_apply(v_user, 'SPEND_DRAW', -economy.draw_cost(), '신발 뽑기');
+  return economy.draw_create(v_user, 'PAID_DRAW');
+end $$;
+
+revoke all on function public.draw_free() from public, anon;
+revoke all on function public.draw_paid() from public, anon;
+grant execute on function public.draw_free() to authenticated;
+grant execute on function public.draw_paid() to authenticated;
+
+-- 공정성 — 지금 씨앗의 해시와 다음 번호
+create or replace function public.draw_fairness()
+returns table (seed_hash text, next_nonce bigint, first_nonce bigint)
+language plpgsql security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform economy.seed_ensure(v_user);
+  return query select d.seed_hash, d.nonce, d.first_nonce from public.draw_seeds d where d.user_id = v_user;
+end $$;
+
+-- 씨앗을 바꾸고 옛 씨앗을 공개한다. 공개된 씨앗으로 지난 뽑기를 다시 계산해 볼 수 있다.
+create or replace function public.draw_rotate_seed()
+returns table (seed_hex text, seed_hash text, first_nonce bigint, last_nonce bigint)
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_old public.draw_seeds;
+  v_new bytea := economy.random_bytes32();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform economy.seed_ensure(v_user);
+
+  select * into v_old from public.draw_seeds where user_id = v_user for update;
+  insert into public.draw_seed_reveals (user_id, seed_hex, seed_hash, first_nonce, last_nonce)
+  values (v_user, encode(v_old.seed, 'hex'), v_old.seed_hash, v_old.first_nonce, v_old.nonce - 1);
+
+  -- 번호는 이어서 센다. 씨앗이 바뀌어도 번호가 겹치지 않아 신발의 draw_nonce 로 어느 씨앗인지 안다.
+  update public.draw_seeds
+     set seed = v_new, seed_hash = encode(sha256(v_new), 'hex'), first_nonce = nonce, created_at = now()
+   where user_id = v_user;
+
+  return query select encode(v_old.seed, 'hex'), v_old.seed_hash, v_old.first_nonce, v_old.nonce - 1;
+end $$;
+
+revoke all on function public.draw_fairness() from public, anon;
+revoke all on function public.draw_rotate_seed() from public, anon;
+grant execute on function public.draw_fairness() to authenticated;
+grant execute on function public.draw_rotate_seed() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 강화 · 수리 · 착용
+-- ══════════════════════════════════════════════════════════════════
+
+-- 내 신발을 잠그고 가져온다. 앱에서 쓸 수 있는 상태가 아니면 거절.
+create or replace function economy.my_app_sneaker(p_user uuid, p_id bigint)
+returns public.market_sneakers
+language plpgsql security definer set search_path = public as $$
+declare v public.market_sneakers;
+begin
+  select * into v from public.market_sneakers where id = p_id for update;
+  if not found or v.owner_id <> p_user then
+    raise exception '내 신발이 아닙니다' using errcode = '42501';
+  end if;
+  if v.chain_state <> 'APP' then
+    raise exception '체인에 있는 신발입니다. 먼저 앱으로 넣어 주세요' using errcode = '22023';
+  end if;
+  if v.status <> 'OWNED' then
+    raise exception '판매 중인 신발입니다' using errcode = '22023';
+  end if;
+  return v;
+end $$;
+revoke all on function economy.my_app_sneaker(uuid, bigint) from public;
+
+create or replace function public.sneaker_upgrade(p_id bigint)
+returns int
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v public.market_sneakers;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  v := economy.my_app_sneaker(v_user, p_id);
+
+  -- 폰에서 올린 신발은 레벨을 서버가 믿지 않으므로 서버에서 강화해도 효과가 없다.
+  -- 효과 없는 곳에 SUP 를 받지 않는다.
+  if v.origin in ('IMPORT', 'MINT') then
+    raise exception '예전 신발은 강화할 수 없습니다' using errcode = '22023';
+  end if;
+  if v.level >= economy.max_level(v.rarity) then
+    raise exception '최대 레벨입니다' using errcode = '23514';
+  end if;
+
+  perform economy.ledger_apply(v_user, 'SPEND_UPGRADE', -economy.upgrade_cost(v.rarity, v.level),
+                               format('신발 강화 #%s Lv%s→%s', v.mint_number, v.level, v.level + 1));
+  update public.market_sneakers set level = level + 1, updated_at = now() where id = p_id;
+  return v.level + 1;
+end $$;
+
+-- 수리. p_points 를 비우면 가득 채운다. 치른 SUP 는 누구에게도 가지 않는다(소각).
+create or replace function public.sneaker_repair(p_id bigint, p_points numeric default null)
+returns numeric
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v public.market_sneakers;
+  v_points numeric;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  v := economy.my_app_sneaker(v_user, p_id);
+
+  v_points := least(coalesce(p_points, 100), 100 - v.durability_pts);
+  if v_points is null or v_points <= 0 then
+    raise exception '고칠 곳이 없습니다' using errcode = '23514';
+  end if;
+  v_points := round(v_points, 2);
+
+  perform economy.ledger_apply(v_user, 'SPEND_REPAIR',
+    -round(v_points * economy.repair_cost_per_point(v.rarity, v.level), 4),
+    format('신발 수리 #%s +%s', v.mint_number, v_points));
+  update public.market_sneakers
+     set durability_pts = least(durability_pts + v_points, 100),
+         durability = least(durability_pts + v_points, 100)::int,
+         updated_at = now()
+   where id = p_id;
+  return least(v.durability_pts + v_points, 100);
+end $$;
+
+create or replace function public.sneaker_equip(p_id bigint)
+returns void
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform economy.my_app_sneaker(v_user, p_id);
+  update public.market_sneakers set equipped = false where owner_id = v_user and equipped and id <> p_id;
+  update public.market_sneakers set equipped = true, updated_at = now() where id = p_id;
+end $$;
+
+revoke all on function public.sneaker_upgrade(bigint) from public, anon;
+revoke all on function public.sneaker_repair(bigint, numeric) from public, anon;
+revoke all on function public.sneaker_equip(bigint) from public, anon;
+grant execute on function public.sneaker_upgrade(bigint) to authenticated;
+grant execute on function public.sneaker_repair(bigint, numeric) to authenticated;
+grant execute on function public.sneaker_equip(bigint) to authenticated;
+
+-- 내 신발 — 화면에 필요한 실효 스탯까지
+create or replace function public.my_sneakers()
+returns table (
+  id bigint, faction text, rarity text, variant int, level int, max_level int,
+  efficiency_bps int, comfort_bps int, durability numeric,
+  equipped boolean, origin text, chain_state text, status text,
+  mint_number bigint, genesis_no int, token_id numeric,
+  km_run numeric, lock_km numeric, can_withdraw boolean,
+  upgrade_cost numeric, repair_cost_per_point numeric
+)
+language plpgsql stable security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  return query
+  select s.id, s.faction, s.rarity, s.variant, s.level, economy.max_level(s.rarity),
+         e.efficiency_bps, e.comfort_bps, s.durability_pts,
+         s.equipped, s.origin, s.chain_state, s.status,
+         s.mint_number, s.genesis_no, s.token_id,
+         s.km_run, s.lock_km,
+         (s.withdrawable and s.km_run >= s.lock_km and s.chain_state = 'APP' and s.status = 'OWNED'),
+         economy.upgrade_cost(s.rarity, s.level),
+         economy.repair_cost_per_point(s.rarity, s.level)
+    from public.market_sneakers s,
+         lateral economy.sneaker_effective(s.origin, s.rarity, s.level,
+           s.efficiency_bps, s.comfort_bps, s.durability_pts) e
+   where s.owner_id = v_user
+   order by s.equipped desc, s.id;
+end $$;
+
+revoke all on function public.my_sneakers() from public, anon;
+grant execute on function public.my_sneakers() to authenticated;
+
+-- 첫 신발은 팔 수 없고, 무료로 받은 신발은 잠금 거리를 채우기 전에는 팔 수 없다.
+-- 무료 신발을 팔 수 있으면 계정을 여러 개 만들어 무료 뽑기를 SUP 로 바꾼다.
+create or replace function economy.guard_listing() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v public.market_sneakers;
+begin
+  select * into v from public.market_sneakers where id = new.sneaker_id;
+  if v.chain_state <> 'APP' or v.equipped then
+    raise exception '착용 중이거나 체인에 있는 신발은 팔 수 없습니다' using errcode = '22023';
+  end if;
+  if v.origin = 'STARTER' then
+    raise exception '첫 신발은 팔 수 없습니다' using errcode = '22023';
+  end if;
+  if v.km_run < v.lock_km then
+    raise exception '이 신발로 %km 를 더 달려야 팔 수 있습니다', round(v.lock_km - v.km_run, 1)
+      using errcode = '22023';
+  end if;
+  return new;
+end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0024_session_reward.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 러닝 보상 — 서버가 신발 · 에너지 · 파티 · 부스터까지 모두 계산한다.
+--
+-- 0018 까지는 폰이 부스트(bps)와 파티 인원을 보냈고 서버는 그 값을 믿었다.
+-- 이제 폰이 보내는 값 가운데 믿는 것은 걸음 · 시각 · 경로뿐이고, 그것도 검사한다.
+--
+--   가짜 위치 앱          폰이 "모의 위치"라고 알리면 보상 0 (VOID)
+--   파티 인원             파티 출발 때 서버가 적어 둔 명단으로 센다 (결정표 X2)
+--   신발                  서버 신발 표에서 지금 신은 신발의 효율성 · 착화감 · 내구도
+--   에너지                서버가 센다. 한국 자정에 다시 찬다
+--   하루 상한             걸음 48,000 보 + 금액 상한(신규 계정은 절반)
+--   무효가 잦은 사람      최근 7일에 무효 러닝이 5번 이상이면 적립을 보류
+--
+-- 인자는 옛 앱과 맞춘다. p_boost_bps · p_party_size · p_faction 은 받기만 하고 쓰지 않는다.
+
+-- ══════════════════════════════════════════════════════════════════
+-- 세션 표에 칸 더하기
+-- ══════════════════════════════════════════════════════════════════
+alter table public.walk_sessions
+  add column if not exists mock_location boolean not null default false,
+  -- 검사를 통과한 걸음(에너지 · 금액 상한을 걸기 전). 목표 달성과 도전에 쓴다.
+  add column if not exists verified_steps int,
+  add column if not exists energy_used numeric(10, 4) not null default 0,
+  add column if not exists sneaker_id bigint;
+
+-- 효율성은 레전더리 30레벨에서 +27.5% 까지 오른다. 예전 상한(20%)으로는 못 담는다.
+alter table public.walk_sessions drop constraint if exists walk_sessions_boost_bps_check;
+alter table public.walk_sessions add constraint walk_sessions_boost_bps_check
+  check (boost_bps between 0 and 5000);
+
+-- ══════════════════════════════════════════════════════════════════
+-- 파티 러닝 명단 — 출발할 때 적어 둔다 (결정표 X2)
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 참가자는 러닝을 마치면 방에서 나가고(party_leave) 방 명단에서 지워진다.
+-- 그래서 출발 순간의 명단을 따로 남긴다. 적립 때는 이 명단의 인원만 믿는다.
+create table if not exists public.party_runs (
+  party_id bigint not null references public.parties on delete cascade,
+  user_id uuid not null references auth.users on delete cascade,
+  starts_at timestamptz not null,
+  primary key (party_id, user_id)
+);
+
+create index if not exists party_runs_user_time on public.party_runs (user_id, starts_at);
+
+alter table public.party_runs enable row level security;
+revoke all on public.party_runs from anon, authenticated;
+
+create or replace function public.party_start(p_party bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_starts timestamptz := now() + interval '4 seconds';
+begin
+  if not exists (
+    select 1 from public.parties
+     where id = p_party and host_id = auth.uid() and status = 'LOBBY'
+  ) then
+    raise exception '로비에서 방장만 출발할 수 있습니다' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.party_members
+     where party_id = p_party and user_id = auth.uid() and ready
+  ) then
+    raise exception '방장이 먼저 준비해야 합니다' using errcode = '23514';
+  end if;
+
+  delete from public.party_members where party_id = p_party and not ready;
+  update public.parties
+     set status = 'COUNTDOWN', starts_at = v_starts
+   where id = p_party;
+
+  insert into public.party_runs (party_id, user_id, starts_at)
+  select p_party, m.user_id, v_starts from public.party_members m where m.party_id = p_party
+  on conflict do nothing;
+end;
+$$;
+
+-- 이 러닝의 파티 인원. 출발 시각이 러닝 시작과 10분 안쪽인 파티 명단에서 센다.
+create or replace function economy.party_size_for(p_user uuid, p_started_at timestamptz)
+returns int
+language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select count(*)::int from public.party_runs r2
+     where r2.party_id = (
+       select r.party_id from public.party_runs r
+        where r.user_id = p_user
+          and r.starts_at between p_started_at - interval '10 minutes'
+                              and p_started_at + interval '10 minutes'
+        order by abs(extract(epoch from (r.starts_at - p_started_at)))
+        limit 1)
+  ), 1)
+$$;
+revoke all on function economy.party_size_for(uuid, timestamptz) from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 적립 (0018 을 대신한다)
+-- ══════════════════════════════════════════════════════════════════
+
+-- 인자가 하나 늘어서(p_mock_location) 옛 8개짜리를 먼저 치운다. 둘 다 있으면
+-- 옛 앱의 호출이 어느 쪽인지 모호해져 실패한다.
+drop function if exists public.record_session(timestamptz, timestamptz, int, int, text, int, int, text);
+
+create or replace function public.record_session(
+  p_started_at timestamptz,
+  p_ended_at timestamptz,
+  p_steps int,
+  p_duration_sec int,
+  p_track text default '',
+  p_boost_bps int default 0,
+  p_party_size int default 1,
+  p_faction text default '',
+  -- 안드로이드가 "모의 위치"로 표시한 좌표가 하나라도 있었나
+  p_mock_location boolean default false
+)
+returns table (
+  session_id bigint,
+  verdict text,
+  points_awarded numeric,
+  balance numeric
+)
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_gday date;
+  v_already_steps int;
+  v_already_points numeric;
+  v_verified int;
+  v_rewardable int;
+  v_points numeric(20, 4);
+  v_cap numeric;
+  v_verdict text := 'CLEAN';
+  v_reason text := '';
+  v_session_id bigint;
+  v_kind text;
+  v_elapsed int;
+  v_top_speed double precision := 0;
+  v_glitch double precision := 0;
+  v_gps_m double precision := 0;
+  v_points_n int := 0;
+  v_first_at bigint;
+  v_last_at bigint;
+  v_step_m double precision;
+  v_distance_m double precision;
+  v_track text := coalesce(p_track, '');
+  v_party int;
+  v_shoe public.market_sneakers;
+  v_eff int := 0;
+  v_comfort int := 0;
+  v_dur numeric := 100;
+  v_energy_left numeric;
+  v_energy_per_step numeric;
+  v_energy_used numeric := 0;
+  v_xp numeric := 1;
+  v_recent_void int;
+  v_new_account boolean;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  -- ── 형식 검사 ──
+  if p_steps is null or p_steps < 0 then
+    raise exception '걸음 수가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_ended_at < p_started_at then
+    raise exception '종료 시각이 시작보다 빠릅니다' using errcode = '22023';
+  end if;
+  if p_ended_at > now() + interval '5 minutes' then
+    raise exception '종료 시각이 미래입니다' using errcode = '22023';
+  end if;
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 이미 올린 러닝의 재시도면 원래 결과를 그대로 돌려준다. 아래 계산을 다시 하면
+  -- 에너지 · 내구도를 두 번 깎는다.
+  select s.id, s.verdict, s.points_awarded into v_session_id, v_verdict, v_points
+    from public.walk_sessions s
+   where s.user_id = v_user and s.started_at = p_started_at;
+  if found then
+    return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user);
+    return;
+  end if;
+  v_verdict := 'CLEAN';
+
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
+  v_gday := economy.game_day(p_started_at);
+  v_step_m := p_steps * 0.762;
+
+  select t.top_speed_kmh, t.glitch_ratio into v_top_speed, v_glitch
+    from economy.track_speed_stats(v_track) t;
+  select t.gps_m, t.points, t.first_at, t.last_at
+    into v_gps_m, v_points_n, v_first_at, v_last_at
+    from economy.track_summary(v_track) t;
+
+  -- ── 판정 ──
+  if coalesce(p_mock_location, false) then
+    v_verdict := 'VOID';
+    v_reason := '가짜 위치가 감지되었습니다';
+
+  elsif p_steps::numeric * 60 / greatest(v_elapsed, 60) > 240 then
+    v_verdict := 'VOID';
+    v_reason := '케이던스가 사람 범위를 벗어납니다';
+
+  elsif v_glitch > 0.5 then
+    v_verdict := 'VOID';
+    v_reason := '이동 속도가 사람 범위를 벗어납니다';
+
+  elsif v_points_n >= 2 and (
+        v_first_at < (extract(epoch from p_started_at) * 1000)::bigint - economy.track_time_slack_ms()
+     or v_last_at > (extract(epoch from p_ended_at) * 1000)::bigint + economy.track_time_slack_ms()) then
+    v_verdict := 'VOID';
+    v_reason := '경로 시각이 러닝 시간과 맞지 않습니다';
+
+  elsif v_track <> '' and exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.track <> ''
+           and md5(s.track) = md5(v_track) and s.started_at <> p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '이미 올린 경로입니다';
+
+  elsif v_gps_m >= 1000 and v_step_m < v_gps_m * 0.2 then
+    v_verdict := 'VOID';
+    v_reason := '걸음 없이 이동한 거리입니다';
+  end if;
+
+  -- ── 검사를 통과한 걸음 ──
+  if v_verdict = 'VOID' then
+    v_verified := 0;
+  else
+    v_verified := p_steps;
+    if v_gps_m >= economy.gps_check_min_m()
+       and v_step_m > v_gps_m * economy.step_gps_max_ratio() then
+      v_verified := floor(v_gps_m * economy.step_gps_max_ratio() / 0.762)::int;
+      v_verdict := 'FLAGGED';
+      v_reason := '걸음 수가 GPS 거리보다 많습니다';
+    end if;
+  end if;
+  v_rewardable := v_verified;
+
+  -- ── 하루 걸음 상한 (한국 하루) ──
+  if v_rewardable > 0 then
+    select coalesce(sum(s.rewarded_steps), 0) into v_already_steps
+      from public.walk_sessions s
+     where s.user_id = v_user
+       and s.verdict in ('CLEAN', 'FLAGGED')
+       and economy.game_day(s.started_at) = v_gday;
+    if v_rewardable > economy.max_daily_steps() - v_already_steps then
+      v_rewardable := greatest(economy.max_daily_steps() - v_already_steps, 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 무효가 잦으면 보류 ──
+  if v_rewardable > 0 then
+    select count(*) into v_recent_void from public.walk_sessions s
+     where s.user_id = v_user and s.verdict = 'VOID'
+       and s.started_at > now() - interval '7 days';
+    if v_recent_void >= 5 then
+      v_rewardable := 0;
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
+    end if;
+  end if;
+
+  -- ── 신발 · 에너지 ──
+  select * into v_shoe from economy.equipped_sneaker(v_user);
+  if found then
+    select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
+      from economy.sneaker_effective(v_shoe.origin, v_shoe.rarity, v_shoe.level,
+             v_shoe.efficiency_bps, v_shoe.comfort_bps, v_shoe.durability_pts) e;
+  end if;
+
+  if v_rewardable > 0 then
+    v_energy_left := economy.energy_left(v_user, v_gday);
+    v_energy_per_step := (1 - v_comfort / 10000.0) / economy.steps_per_energy();
+    if v_rewardable * v_energy_per_step > v_energy_left then
+      v_rewardable := greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '에너지를 다 썼습니다');
+    end if;
+    v_energy_used := round(v_rewardable * v_energy_per_step, 4);
+  end if;
+
+  v_party := economy.party_size_for(v_user, p_started_at);
+  if economy.boost_active(v_user, 'XP_BOOSTER', p_started_at) then
+    v_xp := 2;
+  end if;
+
+  v_points := round(
+    v_rewardable * economy.points_per_step()
+      * (1 + v_eff / 10000.0)
+      * economy.durability_factor(v_dur)
+      * economy.party_multiplier(v_party)
+      * v_xp,
+    4
+  );
+  if v_rewardable > 0 and economy.durability_factor(v_dur) < 1 then
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 낮아 적립이 줄었습니다');
+  end if;
+
+  -- ── 하루 금액 상한 — 가입 7일 안은 절반 ──
+  if v_points > 0 then
+    v_new_account := (select p.created_at from public.profiles p where p.id = v_user)
+                     > now() - make_interval(days => economy.setting_num('new_account_days')::int);
+    v_cap := economy.setting_num('daily_earn_cap') * case when v_new_account then 0.5 else 1 end;
+    select coalesce(sum(s.points_awarded), 0) into v_already_points
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap - v_already_points then
+      v_points := greatest(round(v_cap - v_already_points, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 금액 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  v_distance_m := case
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3 + 100)
+    else v_step_m
+  end;
+  if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
+  -- ── 기록 ──
+  insert into public.walk_sessions (
+    user_id, started_at, ended_at, duration_sec, steps,
+    distance_meters, calories, track, boost_bps, party_size,
+    faction, top_speed_kmh, gps_distance_m,
+    verdict, verdict_reason, points_awarded, rewarded_steps,
+    mock_location, verified_steps, energy_used, sneaker_id
+  )
+  values (
+    v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
+    v_distance_m, p_steps * 0.04, v_track, least(v_eff, 5000), least(greatest(v_party, 1), 20),
+    '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
+    v_verdict, v_reason, v_points, v_rewardable,
+    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id
+  )
+  returning id into v_session_id;
+
+  if v_points > 0 then
+    v_kind := case when v_party > 1 then 'EARN_PARTY' else 'EARN_WALK' end;
+    insert into public.sup_ledger (user_id, kind, amount, description, session_id, occurred_at)
+    values (v_user, v_kind, v_points, format('러닝 세션 적립 (%s보)', v_rewardable),
+            v_session_id, p_ended_at);
+  end if;
+
+  if v_energy_used > 0 then
+    insert into public.energy_days (user_id, day, used) values (v_user, v_gday, v_energy_used)
+    on conflict (user_id, day) do update set used = public.energy_days.used + excluded.used;
+  end if;
+
+  -- 신발이 닳는다. 폰에서 올린 예전 신발은 서버가 값을 믿지 않으므로 거리만 센다.
+  if v_shoe.id is not null and v_verdict <> 'VOID' and v_distance_m > 0 then
+    update public.market_sneakers s
+       set km_run = s.km_run + round((v_distance_m / 1000)::numeric, 3),
+           durability_pts = case when s.origin in ('IMPORT', 'MINT') then s.durability_pts
+             else greatest(s.durability_pts
+               - round((v_distance_m / 1000)::numeric * economy.durability_loss_per_km(s.rarity), 2), 0) end,
+           updated_at = now()
+     where s.id = v_shoe.id;
+    update public.market_sneakers s set durability = floor(s.durability_pts)::int
+     where s.id = v_shoe.id and s.origin not in ('IMPORT', 'MINT');
+  end if;
+
+  if v_verdict <> 'VOID' then
+    update public.profiles
+       set lifetime_km = lifetime_km + (v_distance_m / 1000),
+           top_speed_kmh = greatest(top_speed_kmh, v_top_speed)
+     where id = v_user;
+  end if;
+
+  return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user);
+end;
+$$;
+
+comment on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean) is
+  '러닝 세션을 기록하고 적립액을 서버가 계산한다. 신발·에너지·파티·부스터·상한 모두 서버 값으로.';
+
+revoke all on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean)
+  from public, anon;
+grant execute on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean)
+  to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 목표 달성 보너스 — 서버가 확인한 걸음으로
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 앱의 RewardEconomy.goalBonus 와 같은 식: 목표 1,000보당 2.5 SUP, 연속 달성
+-- 하루당 +10% (7일까지). 걸음은 폰의 걸음 센서가 아니라 서버가 검사한 러닝의
+-- 걸음(verified_steps)만 센다 — 폰이 올린 하루 걸음(daily_steps)은 누구나 적어 넣을 수 있다.
+create or replace function economy.verified_steps_on(p_user uuid, p_day date) returns int
+language sql stable security definer set search_path = public, economy as $$
+  select coalesce(sum(coalesce(s.verified_steps, s.rewarded_steps)), 0)::int
+    from public.walk_sessions s
+   where s.user_id = p_user and s.verdict in ('CLEAN', 'FLAGGED')
+     and economy.game_day(s.started_at) = p_day
+$$;
+revoke all on function economy.verified_steps_on(uuid, date) from public;
+
+create or replace function public.goal_claim()
+returns numeric
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_today date := economy.game_day(now());
+  v_goal int;
+  v_streak int := 1;
+  v_day date;
+  v_bonus numeric;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  select least(greatest(coalesce(p.daily_goal, 8000), 1000), 30000) into v_goal
+    from public.profiles p where p.id = v_user;
+
+  if economy.verified_steps_on(v_user, v_today) < v_goal then
+    raise exception '아직 목표를 채우지 않았습니다' using errcode = '23514';
+  end if;
+
+  -- 어제부터 거꾸로 — 보너스를 받았거나 스트릭 보호가 덮은 날이 이어진 만큼
+  v_day := v_today - 1;
+  while v_streak < 8 loop
+    exit when not (
+      exists (select 1 from public.sup_ledger l where l.user_id = v_user and l.ref = 'goal:' || v_day)
+      or exists (select 1 from public.boosts b
+                  where b.user_id = v_user and b.kind = 'STREAK_SHIELD'
+                    and b.starts_at < economy.game_day_start(v_day + 1)
+                    and b.ends_at > economy.game_day_start(v_day)));
+    v_streak := v_streak + 1;
+    v_day := v_day - 1;
+  end loop;
+
+  v_bonus := round((v_goal / 1000.0) * 2.5 * (1 + 0.1 * least(v_streak - 1, 7)), 2);
+  -- 같은 날 두 번 받으면 ref 가 겹쳐 23505 로 거절된다.
+  perform economy.ledger_apply(v_user, 'BONUS_GOAL', v_bonus,
+                               format('목표 달성 보너스 (%s일 연속)', v_streak), 'goal:' || v_today);
+  return v_bonus;
+end $$;
+
+revoke all on function public.goal_claim() from public, anon;
+grant execute on function public.goal_claim() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 도전 진행 — 주간 걸음도 서버가 확인한 걸음으로
+-- ══════════════════════════════════════════════════════════════════
+create or replace function public.event_progress(p_event text, p_tz text default 'Asia/Seoul')
+returns double precision
+language plpgsql
+stable
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_tz text := coalesce(nullif(p_tz, ''), 'Asia/Seoul');
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if not exists (select 1 from pg_timezone_names where name = v_tz) then
+    v_tz := 'Asia/Seoul';
+  end if;
+
+  if p_event = 'step_surge' then
+    -- 예전에는 폰이 올린 하루 걸음(daily_steps)을 더했다. 그 값은 폰이 마음대로
+    -- 적을 수 있어 250 SUP 가 거저 나갔다. 검사를 통과한 러닝 걸음만 센다.
+    return coalesce((
+      select sum(coalesce(s.verified_steps, s.rewarded_steps)) from public.walk_sessions s
+       where s.user_id = v_user and s.verdict in ('CLEAN', 'FLAGGED')
+         and economy.game_day(s.started_at) between economy.game_day(now()) - 6 and economy.game_day(now())
+    ), 0);
+  elsif p_event = 'night_quest' then
+    return coalesce((
+      select sum(s.distance_meters) / 1000.0 from public.walk_sessions s
+       where s.user_id = v_user
+         and s.verdict not in ('FLAGGED', 'VOID')
+         and extract(hour from s.started_at at time zone v_tz) >= economy.night_from_hour()
+    ), 0);
+  end if;
+  raise exception '없는 도전입니다' using errcode = '22023';
+end;
+$$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 코스 완주 보상 — 서버가 확인한 완주에만
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 코스 거리는 만든 사람이 적은 값이라 믿지 않는다. 실제로 달린 거리와 코스
+-- 거리 중 짧은 쪽으로 1km 당 1 SUP, 최대 42 SUP. 같은 코스는 하루에 한 번만.
+create or replace function public.course_run_submit(p_course_track text, p_started_at timestamptz)
+returns table (
+  course_id bigint,
+  duration_sec int,
+  rank int,
+  runners int
+)
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_course bigint;
+  v_course_track text;
+  v_course_km double precision;
+  v_session public.walk_sessions%rowtype;
+  v_inserted bigint;
+  v_reward numeric;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  v_course := public.course_by_track(p_course_track);
+  if v_course is null then
+    return;
+  end if;
+  select c.track, c.distance_km into v_course_track, v_course_km from public.courses c where c.id = v_course;
+
+  select * into v_session
+    from public.walk_sessions s
+   where s.user_id = v_user and s.started_at = p_started_at;
+  if not found then
+    raise exception '러닝 기록이 서버에 없습니다' using errcode = '22023';
+  end if;
+  if v_session.verdict = 'VOID' or v_session.duration_sec <= 0 then
+    raise exception '인정되지 않은 러닝입니다' using errcode = '23514';
+  end if;
+  if economy.course_coverage(v_course_track, v_session.track) < 0.8 then
+    raise exception '코스를 따라 달리지 않았습니다' using errcode = '23514';
+  end if;
+
+  insert into public.course_runs (course_id, user_id, session_id, duration_sec)
+  values (v_course, v_user, v_session.id, v_session.duration_sec)
+  on conflict do nothing
+  returning id into v_inserted;
+
+  if v_inserted is not null then
+    update public.courses set run_count = run_count + 1 where id = v_course;
+
+    v_reward := least(floor(least(coalesce(v_course_km, 0), v_session.distance_meters / 1000.0)), 42);
+    if v_reward >= 1 then
+      begin
+        perform economy.ledger_apply(v_user, 'EARN_COURSE', v_reward, '코스 완주 보상',
+          format('course:%s:%s', v_course, economy.game_day(v_session.started_at)));
+      exception when unique_violation then
+        null;  -- 오늘 이 코스 보상은 이미 받았다. 기록은 남기고 보상만 건너뛴다.
+      end;
+    end if;
+  end if;
+
+  return query
+    with best as (
+      select r.user_id, min(r.duration_sec) as t
+        from public.course_runs r
+       where r.course_id = v_course
+       group by r.user_id
+    )
+    select v_course,
+           (select b.t from best b where b.user_id = v_user),
+           (select count(*)::int + 1 from best b
+             where b.t < (select b2.t from best b2 where b2.user_id = v_user)),
+           (select count(*)::int from best);
+end;
+$$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0025_wallet_bridge.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 지갑과 체인 — 연결 · 꺼내기 · 넣기 · 지갑 보너스 · 정지 스위치 · 정산 대조.
+--
+-- 흐름 (서명과 체인 제출은 어테스터가 한다 — attester/):
+--
+--   사용자  ──요청──▶  서버: 조건 검사 → 작업(chain_ops) 예약 · 잔고/신발 잠금
+--   어테스터 ──서명 전 확인──▶ 서버: 예약된 작업만 서명 재료를 준다 → SIGNED
+--   어테스터 ──제출──▶ 체인 → SUBMITTED
+--   어테스터 ──확정 블록을 기다린 뒤 이벤트──▶ 서버: CONFIRMED (한 이벤트는 한 번만)
+--   만료: 서명 유효 시간 + 안전 마진이 지나고, 체인에서 그 작업 번호가 안 쓰였음을
+--         어테스터가 확인했을 때만 되돌린다 → EXPIRED
+--
+-- 사고를 막는 겹:
+--   - 지갑 1개 = 계정 1개, 한 번 쓴 지갑은 다른 계정에 못 붙는다
+--   - 지갑을 붙이거나 바꾸면 72시간 꺼내기 금지 (계정 탈취 대비), 알림을 보낸다
+--   - 꺼내기는 2단계 인증(aal2) · 가입 7일 · 누적 20km 이후
+--   - 사람별 · 전체 하루 상한, 전체 하루 NFT 발행 상한
+--   - 정지 스위치(chain_paused) — 어테스터나 관리자가 켠다
+--   - 작업 번호마다 체인에서 한 번만 성공한다(컨트랙트가 막는다)
+
+-- ══════════════════════════════════════════════════════════════════
+-- 어테스터 역할
+-- ══════════════════════════════════════════════════════════════════
+--
+-- 어테스터는 service_role 을 쓰지 않는다. 이 역할로 서명된 JWT 하나만 들고,
+-- 아래 attester_* 함수만 부를 수 있다. 표는 하나도 직접 못 읽는다.
+do $$ begin
+  create role stepup_attester nologin;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  -- Supabase 의 PostgREST 는 authenticator 로 접속해 JWT 의 role 로 바꾼다.
+  if exists (select 1 from pg_roles where rolname = 'authenticator') then
+    execute 'grant stepup_attester to authenticator';
+  end if;
+end $$;
+
+grant usage on schema public to stepup_attester;
+
+-- 2단계 인증을 거친 로그인인가 (Supabase JWT 의 aal)
+create or replace function economy.mfa_ok() returns boolean
+  language sql stable as $$
+  select coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
+$$;
+
+-- 사용자 번호 ↔ 체인의 bytes32. uuid 16바이트를 앞을 0 으로 채워 32바이트로.
+create or replace function economy.account_ref(p_user uuid) returns text
+  language sql immutable as $$
+  select '0x' || lpad(replace(p_user::text, '-', ''), 64, '0')
+$$;
+
+create or replace function economy.account_from_ref(p_ref text) returns uuid
+  language plpgsql immutable as $$
+declare v text := lower(regexp_replace(coalesce(p_ref, ''), '^0x', ''));
+begin
+  if v !~ '^0{32}[0-9a-f]{32}$' then
+    return null;
+  end if;
+  return (substr(v, 33, 8) || '-' || substr(v, 41, 4) || '-' || substr(v, 45, 4) || '-'
+          || substr(v, 49, 4) || '-' || substr(v, 53, 12))::uuid;
+end $$;
+
+-- 작업 번호 ↔ bytes32. 컨트랙트가 이 값으로 "한 번만"을 지킨다.
+create or replace function economy.op_ref(p_op uuid) returns text
+  language sql immutable as $$
+  select '0x' || lpad(replace(p_op::text, '-', ''), 64, '0')
+$$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 지갑
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists public.wallet_links (
+  user_id uuid primary key references auth.users on delete cascade,
+  address text not null unique check (address ~ '^0x[0-9a-f]{40}$'),
+  linked_at timestamptz not null default now(),
+  -- 붙이거나 바꾼 마지막 시각. 여기서 72시간은 꺼내지 못한다.
+  changed_at timestamptz not null default now()
+);
+
+-- 한 번 붙은 지갑은 영원히 그 계정 것. 계정을 여러 개 만들어 한 지갑으로 몰아
+-- 보너스를 받거나 상한을 나눠 쓰지 못하게 한다.
+create table if not exists public.wallet_history (
+  address text primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  first_linked_at timestamptz not null default now()
+);
+
+create table if not exists public.wallet_link_nonces (
+  user_id uuid primary key references auth.users on delete cascade,
+  nonce text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.wallet_links enable row level security;
+alter table public.wallet_history enable row level security;
+alter table public.wallet_link_nonces enable row level security;
+revoke all on public.wallet_links, public.wallet_history, public.wallet_link_nonces from anon, authenticated;
+drop policy if exists wallet_links_select_own on public.wallet_links;
+create policy wallet_links_select_own on public.wallet_links
+  for select using ((select auth.uid()) = user_id);
+grant select on public.wallet_links to authenticated;
+
+-- 지갑이 서명할 문장. 어테스터가 이 문장의 서명을 검증한 뒤 attester_wallet_link 를 부른다.
+create or replace function public.wallet_link_challenge()
+returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_nonce text := replace(gen_random_uuid()::text, '-', '');
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  insert into public.wallet_link_nonces (user_id, nonce) values (v_user, v_nonce)
+  on conflict (user_id) do update set nonce = excluded.nonce, created_at = now();
+  return economy.wallet_link_message(v_user, v_nonce);
+end $$;
+
+create or replace function economy.wallet_link_message(p_user uuid, p_nonce text) returns text
+  language sql immutable as $$
+  select format(E'StepUp 지갑 연결\n계정: %s\n확인 번호: %s\n\n이 서명은 거래가 아니며 수수료가 들지 않습니다.', p_user, p_nonce)
+$$;
+
+revoke all on function public.wallet_link_challenge() from public, anon;
+grant execute on function public.wallet_link_challenge() to authenticated;
+
+-- 보안 알림 — 알림 설정과 상관없이 보낸다. 모르는 사이 지갑이 바뀌면 알아야 한다.
+create or replace function economy.security_notice(p_user uuid, p_kind text, p_args jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from public.push_tokens t where t.user_id = p_user) then
+    insert into public.push_outbox (user_id, kind, args, link)
+    values (p_user, p_kind, coalesce(p_args, '{}'::jsonb), 'stepup://wallet');
+  end if;
+end $$;
+revoke all on function economy.security_notice(uuid, text, jsonb) from public;
+
+/*
+ * 어테스터 — 지갑 서명을 검증한 뒤 부른다.
+ * 처음 붙이는 지갑이면 보너스 뽑기 10회(Genesis 1)를 준다.
+ */
+create or replace function public.attester_wallet_link(p_user uuid, p_address text, p_nonce text)
+returns void
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_addr text := lower(p_address);
+  v_first boolean;
+begin
+  if v_addr !~ '^0x[0-9a-f]{40}$' then
+    raise exception '지갑 주소가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if not exists (select 1 from public.wallet_link_nonces
+                  where user_id = p_user and nonce = p_nonce
+                    and created_at > now() - interval '10 minutes') then
+    raise exception '확인 번호가 맞지 않거나 만료되었습니다' using errcode = '22023';
+  end if;
+  delete from public.wallet_link_nonces where user_id = p_user;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || p_user::text));
+
+  if exists (select 1 from public.wallet_history where address = v_addr and user_id <> p_user) then
+    raise exception '다른 계정에 연결된 적 있는 지갑입니다' using errcode = '23505';
+  end if;
+
+  v_first := not exists (select 1 from public.wallet_history where user_id = p_user);
+
+  insert into public.wallet_history (address, user_id) values (v_addr, p_user)
+  on conflict (address) do nothing;
+
+  insert into public.wallet_links (user_id, address) values (p_user, v_addr)
+  on conflict (user_id) do update
+    set address = excluded.address,
+        changed_at = case when public.wallet_links.address = excluded.address
+                          then public.wallet_links.changed_at else now() end;
+
+  if v_first then
+    insert into public.draw_grants (user_id, kind, granted, genesis_granted)
+    values (p_user, 'BONUS', 10, 1)
+    on conflict (user_id, kind) do nothing;
+  end if;
+
+  perform economy.security_notice(p_user, 'WALLET_LINKED',
+    jsonb_build_object('address', left(v_addr, 6) || '…' || right(v_addr, 4)));
+end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 체인 작업
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists public.chain_ops (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null check (kind in ('SUP_WITHDRAW', 'SNEAKER_WITHDRAW', 'BONUS_MINT')),
+  status text not null default 'RESERVED'
+    check (status in ('RESERVED', 'SIGNED', 'SUBMITTED', 'CONFIRMED', 'EXPIRED')),
+  wallet text not null,
+  amount numeric(20, 4),
+  sneaker_id bigint references public.market_sneakers on delete set null,
+  deadline timestamptz not null,
+  tx_hash text,
+  block_number bigint,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check ((kind = 'SUP_WITHDRAW') = (amount is not null)),
+  check ((kind <> 'SUP_WITHDRAW') = (sneaker_id is not null))
+);
+
+create index if not exists chain_ops_user_recent on public.chain_ops (user_id, created_at desc);
+create index if not exists chain_ops_open on public.chain_ops (status, deadline)
+  where status in ('RESERVED', 'SIGNED', 'SUBMITTED');
+
+alter table public.chain_ops enable row level security;
+revoke all on public.chain_ops from anon, authenticated;
+drop policy if exists chain_ops_select_own on public.chain_ops;
+create policy chain_ops_select_own on public.chain_ops
+  for select using ((select auth.uid()) = user_id);
+grant select on public.chain_ops to authenticated;
+
+-- 체인에서 본 이벤트. (거래, 로그 번호) 하나는 한 번만 처리한다.
+create table if not exists public.chain_events (
+  tx_hash text not null,
+  log_index int not null,
+  block_number bigint not null,
+  kind text not null,
+  data jsonb not null,
+  processed_at timestamptz not null default now(),
+  primary key (tx_hash, log_index)
+);
+
+alter table public.chain_events enable row level security;
+revoke all on public.chain_events from anon, authenticated;
+
+-- 꺼내기 공통 조건. 걸리면 이유와 함께 거절한다.
+create or replace function economy.withdraw_gate(p_user uuid, p_need_mfa boolean default true)
+returns text
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_wallet public.wallet_links;
+  v_profile public.profiles;
+begin
+  if (economy.setting('chain_paused') #>> '{}')::boolean then
+    raise exception '지금은 체인 작업을 잠시 멈췄습니다' using errcode = '55000';
+  end if;
+
+  select * into v_wallet from public.wallet_links where user_id = p_user;
+  if not found then
+    raise exception '먼저 지갑을 연결해 주세요' using errcode = '23514';
+  end if;
+
+  if p_need_mfa then
+    if not economy.mfa_ok() then
+      raise exception '2단계 인증이 필요합니다' using errcode = '42501';
+    end if;
+    if v_wallet.changed_at > now() - make_interval(hours => economy.setting_num('wallet_cooldown_hours')::int) then
+      raise exception '지갑을 연결하거나 바꾼 뒤 %시간은 꺼낼 수 없습니다',
+        economy.setting_num('wallet_cooldown_hours') using errcode = '23514';
+    end if;
+    select * into v_profile from public.profiles where id = p_user;
+    if v_profile.created_at > now() - make_interval(days => economy.setting_num('withdraw_min_account_days')::int) then
+      raise exception '가입 %일이 지나야 꺼낼 수 있습니다',
+        economy.setting_num('withdraw_min_account_days') using errcode = '23514';
+    end if;
+    if v_profile.lifetime_km < economy.setting_num('withdraw_min_km') then
+      raise exception '누적 %km 를 달려야 꺼낼 수 있습니다',
+        economy.setting_num('withdraw_min_km') using errcode = '23514';
+    end if;
+  end if;
+
+  return v_wallet.address;
+end $$;
+revoke all on function economy.withdraw_gate(uuid, boolean) from public;
+
+create or replace function economy.today_start() returns timestamptz
+  language sql stable as $$ select economy.game_day_start(economy.game_day(now())) $$;
+
+-- 오늘(한국) 꺼낸 SUP — 만료된 것은 빼고
+create or replace function economy.withdrawn_today(p_user uuid default null) returns numeric
+language sql stable security definer set search_path = public, economy as $$
+  select coalesce(sum(o.amount), 0) from public.chain_ops o
+   where o.kind = 'SUP_WITHDRAW' and o.status <> 'EXPIRED'
+     and o.created_at >= economy.today_start()
+     and (p_user is null or o.user_id = p_user)
+$$;
+revoke all on function economy.withdrawn_today(uuid) from public;
+
+create or replace function economy.mints_today() returns int
+language sql stable security definer set search_path = public, economy as $$
+  select count(*)::int from public.chain_ops o
+   where o.kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT') and o.status <> 'EXPIRED'
+     and o.created_at >= economy.today_start()
+$$;
+revoke all on function economy.mints_today() from public;
+
+create or replace function economy.op_deadline() returns timestamptz
+  language sql stable as $$
+  select now() + make_interval(secs => economy.setting_num('op_deadline_sec')::int)
+$$;
+
+-- ── SUP 꺼내기 ──
+create or replace function public.sup_withdraw_request(p_amount numeric)
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v_amount numeric := round(p_amount, 4);
+  v_op uuid := gen_random_uuid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if v_amount is null or v_amount < 1 then
+    raise exception '1 SUP 이상부터 꺼낼 수 있습니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  -- 전체 상한은 모두가 함께 쓰므로 전체 잠금 아래에서 센다
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, true);
+
+  if v_amount > economy.setting_num('withdraw_user_daily_sup') - economy.withdrawn_today(v_user) then
+    raise exception '오늘 꺼낼 수 있는 양을 넘었습니다' using errcode = '23514';
+  end if;
+  if v_amount > economy.setting_num('withdraw_global_daily_sup') - economy.withdrawn_today(null) then
+    raise exception '오늘 전체 꺼내기 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  -- 예약하는 순간 잔고에서 뺀다. 서명을 기다리는 동안 같은 돈을 앱에서 쓰지 못하게.
+  perform economy.ledger_apply(v_user, 'CHAIN_WITHDRAW', -v_amount, '체인으로 꺼내기', 'op:' || v_op);
+
+  insert into public.chain_ops (id, user_id, kind, wallet, amount, deadline)
+  values (v_op, v_user, 'SUP_WITHDRAW', v_wallet, v_amount, economy.op_deadline());
+  return v_op;
+end $$;
+
+-- ── 신발 꺼내기 ──
+create or replace function public.sneaker_withdraw_request(p_sneaker_id bigint)
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v public.market_sneakers;
+  v_op uuid := gen_random_uuid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, true);
+
+  v := economy.my_app_sneaker(v_user, p_sneaker_id);
+  if not v.withdrawable or v.origin in ('IMPORT', 'MINT', 'STARTER') then
+    raise exception '꺼낼 수 없는 신발입니다' using errcode = '22023';
+  end if;
+  if v.km_run < v.lock_km then
+    raise exception '이 신발로 %km 를 더 달려야 꺼낼 수 있습니다', round(v.lock_km - v.km_run, 1)
+      using errcode = '23514';
+  end if;
+  if v.token_id is null and economy.mints_today() >= economy.setting_num('mint_global_daily') then
+    raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  update public.market_sneakers
+     set chain_state = 'WITHDRAWING', equipped = false, updated_at = now()
+   where id = p_sneaker_id;
+
+  insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+  values (v_op, v_user, 'SNEAKER_WITHDRAW', v_wallet, p_sneaker_id, economy.op_deadline());
+  return v_op;
+end $$;
+
+-- ── 지갑 보너스 뽑기 (체인에서 발행) ──
+-- 첫 번째가 Genesis(희귀 이상 확정)다. 꺼내기가 아니라 받는 것이라 2단계 인증과
+-- 72시간 대기는 묻지 않는다 — 받은 NFT 는 50km 를 달리기 전에는 옮길 수 없다.
+create or replace function public.bonus_draw_request()
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v_genesis boolean;
+  v_id bigint;
+  v_op uuid := gen_random_uuid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, false);
+
+  if economy.mints_today() >= economy.setting_num('mint_global_daily') then
+    raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  select g.genesis_used < g.genesis_granted into v_genesis
+    from public.draw_grants g where g.user_id = v_user and g.kind = 'BONUS';
+
+  update public.draw_grants
+     set used = used + 1,
+         genesis_used = genesis_used + case when v_genesis then 1 else 0 end
+   where user_id = v_user and kind = 'BONUS' and used < granted;
+  if not found then
+    raise exception '보너스 뽑기가 남아 있지 않습니다' using errcode = '23514';
+  end if;
+
+  v_id := economy.draw_create(v_user, 'BONUS_DRAW',
+                              case when v_genesis then 'EPIC' end, coalesce(v_genesis, false));
+  update public.market_sneakers set chain_state = 'WITHDRAWING' where id = v_id;
+
+  insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+  values (v_op, v_user, 'BONUS_MINT', v_wallet, v_id, economy.op_deadline());
+  return v_op;
+end $$;
+
+revoke all on function public.sup_withdraw_request(numeric) from public, anon;
+revoke all on function public.sneaker_withdraw_request(bigint) from public, anon;
+revoke all on function public.bonus_draw_request() from public, anon;
+grant execute on function public.sup_withdraw_request(numeric) to authenticated;
+grant execute on function public.sneaker_withdraw_request(bigint) to authenticated;
+grant execute on function public.bonus_draw_request() to authenticated;
+
+-- 내 지갑 · 꺼내기 상태
+create or replace function public.my_wallet()
+returns table (
+  address text,
+  linked_at timestamptz,
+  withdraw_open_at timestamptz,
+  mfa boolean,
+  withdrawn_today numeric,
+  withdraw_daily_limit numeric,
+  bonus_left int,
+  genesis_left int,
+  paused boolean
+)
+language plpgsql stable security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  return query
+  select w.address, w.linked_at,
+         w.changed_at + make_interval(hours => economy.setting_num('wallet_cooldown_hours')::int),
+         economy.mfa_ok(),
+         economy.withdrawn_today(v_user),
+         economy.setting_num('withdraw_user_daily_sup'),
+         coalesce((select g.granted - g.used from public.draw_grants g
+                    where g.user_id = v_user and g.kind = 'BONUS'), 0),
+         coalesce((select g.genesis_granted - g.genesis_used from public.draw_grants g
+                    where g.user_id = v_user and g.kind = 'BONUS'), 0),
+         (economy.setting('chain_paused') #>> '{}')::boolean
+    from (select 1) one
+    left join public.wallet_links w on w.user_id = v_user;
+end $$;
+
+revoke all on function public.my_wallet() from public, anon;
+grant execute on function public.my_wallet() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 어테스터 함수
+-- ══════════════════════════════════════════════════════════════════
+
+/*
+ * 서명 재료. RESERVED(또는 이미 SIGNED)이고 유효 시간이 남은 작업만 준다.
+ * 같은 작업을 다시 물어도 같은 재료가 나온다 — 체인은 작업 번호로 한 번만 받는다.
+ */
+create or replace function public.attester_op_payload(p_op uuid)
+returns table (
+  op_id uuid,
+  op_ref text,
+  kind text,
+  wallet text,
+  account_ref text,
+  amount numeric,
+  deadline_unix bigint,
+  run_day date,
+  sneaker_id bigint,
+  token_id numeric,
+  faction text,
+  rarity text,
+  variant int,
+  level int,
+  efficiency_bps int,
+  comfort_bps int,
+  durability numeric,
+  genesis_no int,
+  transfer_locked boolean
+)
+language plpgsql security definer set search_path = public, economy as $$
+declare v public.chain_ops;
+begin
+  select * into v from public.chain_ops o where o.id = p_op for update;
+  if not found then
+    raise exception '없는 작업입니다' using errcode = '22023';
+  end if;
+  if v.status not in ('RESERVED', 'SIGNED') or v.deadline <= now() then
+    raise exception '서명할 수 없는 작업입니다 (%)', v.status using errcode = '22023';
+  end if;
+  if (economy.setting('chain_paused') #>> '{}')::boolean then
+    raise exception '지금은 체인 작업을 잠시 멈췄습니다' using errcode = '55000';
+  end if;
+
+  update public.chain_ops o set status = 'SIGNED', updated_at = now() where o.id = p_op;
+
+  return query
+  select v.id, economy.op_ref(v.id), v.kind, v.wallet, economy.account_ref(v.user_id),
+         v.amount, extract(epoch from v.deadline)::bigint, economy.game_day(v.created_at),
+         s.id, s.token_id, s.faction, s.rarity, s.variant, s.level,
+         s.efficiency_bps, s.comfort_bps, s.durability_pts, s.genesis_no,
+         -- 무료로 받은 신발은 잠금 거리를 채우기 전에는 체인에서도 못 옮긴다
+         coalesce(s.km_run < s.lock_km, false)
+    from (select 1) one
+    left join public.market_sneakers s on s.id = v.sneaker_id;
+end $$;
+
+create or replace function public.attester_op_submitted(p_op uuid, p_tx text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_tx !~ '^0x[0-9a-fA-F]{64}$' then
+    raise exception '거래 해시가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  update public.chain_ops set status = 'SUBMITTED', tx_hash = lower(p_tx), updated_at = now()
+   where id = p_op and status in ('SIGNED', 'SUBMITTED');
+end $$;
+
+-- 작업을 확정한다. 이미 확정이면 아무것도 안 한다.
+create or replace function economy.op_confirm(p_op uuid, p_tx text, p_block bigint, p_token numeric)
+returns void language plpgsql security definer set search_path = public, economy as $$
+declare v public.chain_ops;
+begin
+  select * into v from public.chain_ops where id = p_op for update;
+  if not found or v.status = 'CONFIRMED' then
+    return;
+  end if;
+  if v.status = 'EXPIRED' then
+    -- 되돌린 뒤에 체인에서 성공했다 — 일어나면 안 되는 일(만료 마진 · 체인 확인이
+    -- 막는다). 두 번 받는 것을 막기 위해 되돌린 것을 다시 거두고 경보를 남긴다.
+    if v.kind = 'SUP_WITHDRAW' then
+      begin
+        perform economy.ledger_apply(v.user_id, 'CHAIN_WITHDRAW', -v.amount,
+          '만료 뒤 체인 확정 — 되돌린 금액 회수', 'reclaim:' || v.id);
+      exception when others then
+        null;  -- 잔고가 모자라면 여기서는 못 거둔다. 아래 경보로 사람이 본다.
+      end;
+    end if;
+    perform public.admin_log('chain_late_confirm', v.id::text, jsonb_build_object('tx', p_tx));
+  end if;
+
+  update public.chain_ops
+     set status = 'CONFIRMED', tx_hash = coalesce(lower(p_tx), tx_hash), block_number = p_block, updated_at = now()
+   where id = p_op;
+
+  -- 꺼내는 중인 신발만 체인으로 옮긴다. 이미 다시 넣어 앱에 돌아온 신발을 늦게 온
+  -- 이벤트가 체인으로 되돌려 놓지 않게. (어테스터는 이벤트를 블록·로그 순서대로 넘긴다.)
+  if v.kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT') then
+    update public.market_sneakers
+       set chain_state = 'ON_CHAIN', equipped = false,
+           token_id = coalesce(p_token, token_id), updated_at = now()
+     where id = v.sneaker_id and chain_state in ('WITHDRAWING', 'APP');
+  end if;
+end $$;
+revoke all on function economy.op_confirm(uuid, text, bigint, numeric) from public;
+
+/*
+ * 확정된 체인 이벤트 하나. 어테스터가 확정 블록까지 기다린 뒤, 블록 번호 · 로그 번호
+ * 순서대로 부른다(같은 신발의 꺼내기 이벤트가 넣기 이벤트보다 먼저 와야 한다).
+ *
+ *   SUP_CLAIMED        {"op": opRef}
+ *   SNEAKER_RELEASED   {"op": opRef, "tokenId": "123"}
+ *   SUP_DEPOSITED      {"account": accountRef, "amount": "12.5"}
+ *   SNEAKER_DEPOSITED  {"account": accountRef, "tokenId": "123"}
+ */
+create or replace function public.attester_chain_event(
+  p_tx text, p_log int, p_block bigint, p_kind text, p_data jsonb
+) returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_tx text := lower(p_tx);
+  v_op uuid;
+  v_user uuid;
+  v_token numeric;
+  v_amount numeric;
+begin
+  insert into public.chain_events (tx_hash, log_index, block_number, kind, data)
+  values (v_tx, p_log, p_block, p_kind, p_data)
+  on conflict do nothing;
+  if not found then
+    return 'DUPLICATE';
+  end if;
+
+  if p_kind in ('SUP_CLAIMED', 'SNEAKER_RELEASED') then
+    v_op := economy.account_from_ref(p_data ->> 'op');
+    v_token := nullif(p_data ->> 'tokenId', '')::numeric;
+    if v_op is null or not exists (select 1 from public.chain_ops where id = v_op) then
+      perform public.admin_log('chain_unknown_op', v_tx, p_data);
+      return 'UNKNOWN_OP';
+    end if;
+    perform economy.op_confirm(v_op, v_tx, p_block, v_token);
+    return 'CONFIRMED';
+
+  elsif p_kind = 'SUP_DEPOSITED' then
+    v_user := economy.account_from_ref(p_data ->> 'account');
+    v_amount := round((p_data ->> 'amount')::numeric, 4);
+    if v_user is null or not exists (select 1 from auth.users where id = v_user) or v_amount <= 0 then
+      -- 받을 계정이 없는 입금. 토큰은 금고에 있으므로 사람이 보고 돌려준다.
+      perform public.admin_log('chain_orphan_deposit', v_tx, p_data);
+      return 'ORPHAN';
+    end if;
+    perform economy.ledger_apply(v_user, 'CHAIN_DEPOSIT', v_amount, '체인에서 넣기',
+                                 'dep:' || v_tx || ':' || p_log);
+    return 'CREDITED';
+
+  elsif p_kind = 'SNEAKER_DEPOSITED' then
+    v_user := economy.account_from_ref(p_data ->> 'account');
+    v_token := (p_data ->> 'tokenId')::numeric;
+    if v_user is null or not exists (select 1 from auth.users where id = v_user)
+       or not exists (select 1 from public.market_sneakers where token_id = v_token) then
+      perform public.admin_log('chain_orphan_deposit', v_tx, p_data);
+      return 'ORPHAN';
+    end if;
+    -- 넣은 사람이 새 주인이다(체인에서 샀을 수 있다). 스탯은 꺼낼 때 서버가 적은 값 그대로다.
+    update public.market_sneakers
+       set owner_id = v_user, chain_state = 'APP', status = 'OWNED', equipped = false, updated_at = now()
+     where token_id = v_token;
+    return 'CREDITED';
+  end if;
+
+  perform public.admin_log('chain_unknown_event', v_tx, jsonb_build_object('kind', p_kind, 'data', p_data));
+  return 'IGNORED';
+end $$;
+
+-- 되돌릴 차례가 된 작업 — 서명 유효 시간 + 안전 마진이 지난 것
+create or replace function public.attester_due_ops()
+returns table (op_id uuid, op_ref text, status text, kind text, deadline timestamptz, tx_hash text)
+language sql stable security definer set search_path = public, economy as $$
+  select o.id, economy.op_ref(o.id), o.status, o.kind, o.deadline, o.tx_hash
+    from public.chain_ops o
+   where o.status in ('RESERVED', 'SIGNED', 'SUBMITTED')
+     and o.deadline + make_interval(secs => economy.setting_num('op_expire_margin_sec')::int) < now()
+   order by o.deadline
+   limit 200
+$$;
+
+/*
+ * 만료. 어테스터가 체인에서 이 작업 번호가 쓰였는지 확인하고 부른다.
+ *   p_used_on_chain = true   → 이벤트를 놓친 것. 확정으로 처리한다.
+ *   p_used_on_chain = false  → 되돌린다(잔고 환불 · 신발 앱으로).
+ * 서명한 적 없는 작업(RESERVED)은 체인에 있을 수 없으므로 마진 없이도 되돌린다.
+ */
+create or replace function public.attester_op_expire(p_op uuid, p_used_on_chain boolean, p_token numeric default null)
+returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare v public.chain_ops;
+begin
+  select * into v from public.chain_ops where id = p_op for update;
+  if not found then
+    raise exception '없는 작업입니다' using errcode = '22023';
+  end if;
+  if v.status in ('CONFIRMED', 'EXPIRED') then
+    return v.status;
+  end if;
+  if v.status <> 'RESERVED'
+     and v.deadline + make_interval(secs => economy.setting_num('op_expire_margin_sec')::int) >= now() then
+    raise exception '아직 만료 마진이 지나지 않았습니다' using errcode = '55000';
+  end if;
+  if v.status = 'RESERVED' and v.deadline >= now() then
+    raise exception '아직 유효한 작업입니다' using errcode = '55000';
+  end if;
+
+  if p_used_on_chain then
+    perform economy.op_confirm(p_op, v.tx_hash, v.block_number, p_token);
+    return 'CONFIRMED';
+  end if;
+
+  update public.chain_ops set status = 'EXPIRED', updated_at = now() where id = p_op;
+
+  if v.kind = 'SUP_WITHDRAW' then
+    perform economy.ledger_apply(v.user_id, 'CHAIN_REFUND', v.amount, '꺼내기 만료 — 되돌림', 'refund:' || v.id);
+  else
+    -- 신발은 앱으로 돌아온다. 보너스 뽑기로 만든 신발도 사라지지 않고 앱에 남는다.
+    update public.market_sneakers
+       set chain_state = 'APP', updated_at = now()
+     where id = v.sneaker_id and chain_state = 'WITHDRAWING';
+  end if;
+  return 'EXPIRED';
+end $$;
+
+-- 이상 징후를 본 어테스터가 스스로 멈춘다. 다시 켜는 것은 관리자만(admin_economy_set).
+create or replace function public.attester_pause(p_reason text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.economy_settings set value = 'true'::jsonb, updated_at = now() where key = 'chain_paused';
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'chain_pause', 'attester', jsonb_build_object('reason', p_reason));
+end $$;
+
+-- 정산 대조 — 서버 장부의 합. 어테스터가 체인의 발행·입금 합과 비교한다.
+create or replace function public.attester_ledger_totals()
+returns table (
+  sup_withdrawn_confirmed numeric,
+  sup_withdraw_pending numeric,
+  sup_deposited numeric,
+  sneakers_on_chain bigint,
+  sneakers_pending bigint
+)
+language sql stable security definer set search_path = public as $$
+  select
+    coalesce((select sum(amount) from public.chain_ops where kind = 'SUP_WITHDRAW' and status = 'CONFIRMED'), 0),
+    coalesce((select sum(amount) from public.chain_ops
+               where kind = 'SUP_WITHDRAW' and status in ('RESERVED', 'SIGNED', 'SUBMITTED')), 0),
+    coalesce((select sum(amount) from public.sup_ledger where kind = 'CHAIN_DEPOSIT'), 0),
+    (select count(*) from public.market_sneakers where chain_state = 'ON_CHAIN'),
+    (select count(*) from public.market_sneakers where chain_state in ('WITHDRAWING', 'DEPOSITING'))
+$$;
+
+-- 어테스터 함수는 어테스터 역할만. 앱 권한(anon·authenticated)으로는 부를 수 없다.
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure as sig from pg_proc p
+     where p.pronamespace = 'public'::regnamespace and p.proname like 'attester\_%'
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', r.sig);
+    execute format('grant execute on function %s to stepup_attester', r.sig);
+  end loop;
+end $$;
+
 commit;
 
 -- ════════════════════════════════════════════════════════════════════
