@@ -366,8 +366,11 @@ exception when duplicate_object then null; end $$;
 -- 앱이 읽는 자리
 -- ══════════════════════════════════════════════════════════════════
 
+-- 뷰는 만든 쪽 권한으로 읽는다(security_invoker = false). 호출자 권한으로 읽으면
+-- 호출자에게 원본 표 읽기를 열어 줘야 하고, 그러면 /content_sources 로 endpoint 와
+-- 오류 원문을 그대로 읽을 수 있다. 원본 표는 아래에서 닫는다.
 create or replace view public.running_sources_public
-with (security_invoker = true) as
+with (security_invoker = false) as
   select id, name, homepage_url, provider_type, enabled,
          can_discover, can_show_title, can_show_description,
          can_fetch_body, can_summarize, can_use_image,
@@ -379,6 +382,12 @@ with (security_invoker = true) as
 
 comment on view public.running_sources_public is
   '앱·운영 화면이 보는 출처 목록. endpoint 와 오류 원문은 빼고 보낸다.';
+
+revoke select on public.content_sources from anon, authenticated;
+-- 이 뷰는 표 하나를 그대로 비추므로 Postgres 가 쓰기도 받아 준다. 만든 쪽 권한으로
+-- 쓰이면 RLS 를 건너뛰므로, Supabase 가 기본으로 붙이는 쓰기 권한을 거두고 읽기만 준다.
+revoke all on public.running_sources_public from anon, authenticated;
+grant select on public.running_sources_public to anon, authenticated;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 대회 목록
@@ -708,7 +717,8 @@ language sql security definer set search_path = public as $$
   values (auth.uid(), p_action, p_target, coalesce(p_detail, '{}'::jsonb))
 $$;
 
-revoke all on function public.admin_log(text, text, jsonb) from public;
+-- public 에서만 거두면 Supabase 가 따로 붙인 anon · authenticated 권한이 남는다(가짜 감사 기록).
+revoke all on function public.admin_log(text, text, jsonb) from public, anon, authenticated;
 
 /**
  * 대회 한 건을 넣거나 고친다.

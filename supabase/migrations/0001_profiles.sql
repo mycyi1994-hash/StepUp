@@ -94,5 +94,10 @@ create policy profiles_update_own
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
+-- 본인이 고칠 수 있는 것은 보이는 정보뿐이다. 최고 속도·누적 거리·스트릭은
+-- 서버 함수(record_session)만 쓴다 — 열어 두면 PATCH 한 번으로 순위 1등이 된다.
+revoke update on public.profiles from anon, authenticated;
+grant update (display_name, avatar_id, daily_goal, language) on public.profiles to authenticated;
+
 -- INSERT 정책을 두지 않는다. 프로필은 위 트리거만 만든다.
 -- DELETE 정책도 두지 않는다. 계정을 지우면 따라 지워진다.

@@ -1600,9 +1600,15 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 begin
   perform public.course_unshare('37.55,126.89;37.56,126.90');
+  -- 게시판(앱은 shared=eq.true 로 읽는다)에서 사라진다
   perform pg_temp.ok(
-    (select count(*) from public.course_feed where id = pg_temp.fx('course')::bigint) = 0,
+    (select count(*) from public.course_feed
+      where id = pg_temp.fx('course')::bigint and shared) = 0,
     '내 코스를 내리면 게시판에서 사라진다');
+  -- 지우지 않고 내리기만 한다 — 다른 러너의 좋아요·기록이 남는다
+  perform pg_temp.ok(
+    (select likes from public.course_feed where id = pg_temp.fx('course')::bigint) = 1,
+    '코스를 내려도 받은 좋아요는 남는다');
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
@@ -2331,6 +2337,127 @@ set role authenticated;
 call pg_temp.login(null);
 call pg_temp.must_fail($q$ select public.account_delete() $q$, '로그인하지 않으면 지울 수 없다');
 reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 보수 점검 회귀 검사 ──────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+-- 한 번 뚫렸던 자리들. 다시 열리면 여기서 걸린다.
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'r@test', '{"full_name":"Regress"}');
+
+set role authenticated;
+call pg_temp.login('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
+
+-- 내부 함수는 로그인한 사람도 부를 수 없다(Supabase 기본 권한까지 거둔다)
+call pg_temp.must_fail(
+  $q$ select public.market_settle(1, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+        'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 1000000, 'BY_ASK', true) $q$,
+  '로그인한 사람도 체결 함수로 SUP 를 만들 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.admin_log('X', 'Y', '{}'::jsonb) $q$,
+  '감사 기록을 바깥에서 적을 수 없다');
+
+-- 순위 재료는 표에 바로 쓰지 못한다
+call pg_temp.must_fail(
+  $q$ update public.profiles set top_speed_kmh = 999
+       where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' $q$,
+  '최고 속도를 직접 고칠 수 없다');
+call pg_temp.must_fail(
+  $q$ update public.profiles set lifetime_km = 99999
+       where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' $q$,
+  '누적 거리를 직접 고칠 수 없다');
+do $$ begin
+  update public.profiles set display_name = '고친 이름'
+   where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  perform pg_temp.ok(
+    (select display_name from public.profiles where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee') = '고친 이름',
+    '이름은 직접 고칠 수 있다');
+end $$;
+call pg_temp.must_fail(
+  $q$ insert into public.daily_steps (user_id, epoch_day, steps, goal)
+      values ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 20000, 9999999, 8000) $q$,
+  '일별 걸음을 표에 직접 적을 수 없다(steps_sync 만)');
+call pg_temp.must_fail(
+  $q$ update public.courses set run_count = 1000000
+       where owner_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' $q$,
+  '코스 달린 횟수를 직접 고칠 수 없다');
+
+call pg_temp.must_fail(
+  $q$ insert into public.courses (owner_id, name, track, shared, run_count)
+      values ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'x', '1,2;3,4', true, 999999) $q$,
+  '코스를 새로 넣으며 달린 횟수를 적을 수 없다');
+
+-- 세션 시각·시간은 앱이 적은 대로 믿지 않는다
+call pg_temp.must_fail(
+  $q$ select public.record_session(now() - interval '30 days', now() - interval '30 days' + interval '10 minutes',
+        40000, 0, '', 2000, 6, '') $q$,
+  '7일보다 오래된 러닝은 받지 않는다');
+do $$
+declare r record; v_start timestamptz := now() - interval '2 hours';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '10 minutes',
+    40000, 0, '', 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'VOID' and r.points_awarded = 0,
+    '운동 시간을 0으로 적어도 케이던스 검사를 피하지 못한다');
+
+  v_start := now() - interval '3 hours';
+  perform public.record_session(v_start, v_start + interval '10 minutes',
+    0, 2147483647, '', 0, 1, '');
+  perform pg_temp.ok(
+    (select duration_sec from public.walk_sessions
+      where user_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' and started_at = v_start) <= 600,
+    '운동 시간은 시작~종료보다 길게 적히지 않는다');
+
+  v_start := now() - interval '4 hours';
+  select * into r from public.record_session(v_start, v_start + interval '10 minutes',
+    1200, 600, '', 3000, 1, '');
+  perform pg_temp.ok(r.session_id is not null
+    and (select boost_bps from public.walk_sessions where id = r.session_id) = 2000,
+    '부스트가 범위를 넘어도 세션은 기록되고 범위 안 값으로 적힌다');
+end $$;
+reset role;
+
+-- 입찰을 걸었다 거둔 돈(ESCROW_UNLOCK)은 적립 순위에 들어가지 않는다
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'ESCROW_UNLOCK', 50000, '회귀 검사');
+set role authenticated;
+call pg_temp.login('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
+do $$
+declare r record;
+begin
+  select * into r from public.leaderboard('TOTAL_SUP', 20) where is_me;
+  perform pg_temp.ok(r.sup is null or r.sup < 50000, '적립 순위는 번 것만 센다');
+end $$;
+reset role;
+
+-- 출처 원본 표(endpoint · 오류 원문)는 앱이 읽지 못하고, 공개 뷰는 읽힌다
+set role anon;
+call pg_temp.login(null);
+call pg_temp.must_fail($q$ select endpoint from public.content_sources $q$,
+  '출처 원본 표를 바로 읽을 수 없다');
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.running_sources_public) >= 1,
+    '출처 공개 뷰는 그대로 읽힌다');
+end $$;
+call pg_temp.must_fail($q$ update public.running_sources_public set enabled = true where id = 'manual' $q$,
+  '출처 공개 뷰로 출처를 고칠 수 없다');
+call pg_temp.must_fail($q$ delete from public.running_sources_public where id = 'naver-news' $q$,
+  '출처 공개 뷰로 출처를 지울 수 없다');
+reset role;
+
+-- 푸시: 가져간 줄은 표시하기 전에 다른 호출이 다시 가져가지 않는다
+insert into public.push_outbox (user_id, kind, args)
+  values ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'COMMENT', '{}'::jsonb);
+do $$
+declare v_first int; v_again int;
+begin
+  select count(*) into v_first from public.push_claim_batch(500)
+   where user_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  select count(*) into v_again from public.push_claim_batch(500)
+   where user_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  perform pg_temp.ok(v_first = 1 and v_again = 0, '같은 푸시를 두 번 가져가지 않는다');
+end $$;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
