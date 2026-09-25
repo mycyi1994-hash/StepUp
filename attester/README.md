@@ -45,6 +45,8 @@ npm run new-key -- GUARDIAN_PRIVATE_KEY
 
 ## 배포
 
+0. (처음 한 번) 컨트랙트보다 워커를 먼저 `npx wrangler deploy` — 주소(`https://stepup-attester.<계정>.workers.dev`)가
+   정해져야 컨트랙트의 `SNEAKER_BASE_URI` 를 넣을 수 있다. 주소가 비어 있는 동안 워커는 요청을 받지 않고(503) 1분 작업도 쉰다
 1. 컨트랙트 v2 배포 뒤 `wrangler.toml` 의 `DISTRIBUTOR_ADDRESS` · `SNEAKERS_ADDRESS` · `VAULT_ADDRESS` · `START_BLOCK` 을 채운다
 2. 위 키 · 계정을 넣는다
 3. `npx wrangler deploy`
