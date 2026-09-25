@@ -66,7 +66,7 @@ jobs:
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::warning::CLOUDFLARE_API_TOKEN 이 없어 배포를 건너뜁니다. attester 에서 npx wrangler deploy 를 직접 돌리세요."
+            echo "::warning::CLOUDFLARE_API_TOKEN 이 없어 배포를 건너뜁니다. attester 에서 npm run deploy 를 직접 돌리세요."
           fi
 
       # 토큰이 살아 있는지, 어떤 권한 · 계정을 보는지 — 배포가 거절될 때 원인을 바로 알 수 있게.
@@ -80,32 +80,13 @@ jobs:
             https://api.cloudflare.com/client/v4/user/tokens/verify | jq '{success, status: .result.status}' || true
           npx wrangler whoami || true
 
-      # 토큰의 계정이 워커가 도는 계정인지 — workers.dev 이름으로 확인하고, 그 계정으로만 올린다
-      - name: 배포할 계정 확인
-        if: steps.keys.outputs.ready == 'yes'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          found=""
-          for acct in $(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              https://api.cloudflare.com/client/v4/accounts | jq -r '.result[].id'); do
-            sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$acct/workers/subdomain" | jq -r '.result.subdomain // empty' || true)
-            echo "계정 $acct → workers.dev: ${sub:-(없음)}"
-            if [ "$sub" = "$WORKER_SUBDOMAIN" ]; then found="$acct"; fi
-          done
-          if [ -z "$found" ]; then
-            echo "::error::이 토큰으로는 워커가 도는 계정($WORKER_SUBDOMAIN.workers.dev)에 올릴 수 없습니다. 그 계정에 로그인해 토큰을 다시 만들어 주세요."
-            exit 1
-          fi
-          echo "CLOUDFLARE_ACCOUNT_ID=$found" >> "$GITHUB_ENV"
-
       - name: Cloudflare 에 배포
         if: steps.keys.outputs.ready == 'yes'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         # 커밋을 워커 변수로 넣어 /health 에서 새 코드가 떴는지 확인한다(비밀이 아니다)
-        run: npx wrangler deploy --var "COMMIT_SHA:${GITHUB_SHA}"
+        # 워커가 도는 계정(WORKER_SUBDOMAIN)을 찾아 그 계정으로만 올린다 — 다른 계정 토큰이면 멈춘다(scripts/deploy.mjs)
+        run: npm run deploy -- --var "COMMIT_SHA:${GITHUB_SHA}"
 
       # 새 코드가 떴는지 — /health 가 응답하고 긴급 정지 키가 있는지
       - name: 확인

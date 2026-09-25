@@ -45,19 +45,23 @@ npm run new-key -- GUARDIAN_PRIVATE_KEY
 
 ## 배포
 
-0. (처음 한 번) 컨트랙트보다 워커를 먼저 `npx wrangler deploy` — 주소(`https://stepup-attester.<계정>.workers.dev`)가
+배포는 늘 `npm run deploy` 로 한다 — 워커가 도는 계정(`gana003.workers.dev`)을 찾아 그 계정으로만 올린다
+(`npx wrangler deploy` 를 그냥 쓰면 로그인한 다른 계정에 키 없는 복제 워커가 생길 수 있다).
+토큰(`CLOUDFLARE_API_TOKEN`)이 없으면 `CLOUDFLARE_ACCOUNT_ID` 를 직접 준다.
+
+0. (처음 한 번) 컨트랙트보다 워커를 먼저 `npm run deploy` — 주소(`https://stepup-attester.<계정>.workers.dev`)가
    정해져야 컨트랙트의 `SNEAKER_BASE_URI` 를 넣을 수 있다. 주소가 비어 있는 동안 워커는 요청을 받지 않고(503) 1분 작업도 쉰다
 1. 컨트랙트 v2 배포 뒤 `wrangler.toml` 의 `DISTRIBUTOR_ADDRESS` · `SNEAKERS_ADDRESS` · `VAULT_ADDRESS` · `START_BLOCK` 을 채운다
 2. 위 키 · 계정을 넣는다
-3. `npx wrangler deploy`
+3. `npm run deploy`
 4. `curl https://<워커 주소>/health` 로 주소가 컨트랙트 설정과 같은지 확인
 
 ### 고친 뒤 다시 배포
 
 `attester/` 를 바꾼 PR 이 main 에 합쳐지면 `.github/workflows/deploy-attester.yml` 이 검사 후 배포하고
 `/health` 로 확인한다. 저장소 Secrets 에 `CLOUDFLARE_API_TOKEN`(“Edit Cloudflare Workers” 템플릿)이
-있어야 한다(계정 ID 는 `wrangler.toml` 의 `account_id`). 없으면 건너뛰므로 그때는 `cd attester` → `npm ci` →
-`npx wrangler deploy` 를 직접 돌린다. (SQL 과 워커는 어느 쪽을 먼저 올려도 서로 깨지지 않게 만든다.)
+있어야 한다 — 워커가 도는 계정에서 만든 토큰이어야 하고, 다른 계정 토큰이면 배포하지 않고 멈춘다. 없으면
+건너뛰므로 그때는 `cd attester` → `npm ci` → `npm run deploy` 를 직접 돌린다. (SQL 과 워커는 어느 쪽을 먼저 올려도 서로 깨지지 않게 만든다.)
 
 ## 검사
 
