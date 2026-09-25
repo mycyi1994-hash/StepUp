@@ -38,13 +38,10 @@ class ServerSessionRecorder(
         // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
         // Retry the idempotent run when a follow-up is temporarily unavailable.
         // Never send a follow-up using another account's token.
-        // 다만 몇 번 해도 안 되면 포기한다. 대기열은 오래된 것부터 올리고 실패하면 멈추므로,
-        // 곁가지 하나가 계속 실패하면 뒤의 러닝이 전부 막혀 7일 청구 창을 넘긴다.
-        val keepTrying = session.uploadAttempts < SIDE_CALL_MAX_ATTEMPTS
         if (result is ServerResult.Ok && session.crewId.isNotBlank()) {
             when (val tagged = server.tagSessionCrew(session.startedAt, session.crewId, owner)) {
                 is ServerResult.SignInRequired -> return tagged
-                is ServerResult.Retry -> if (keepTrying) return tagged else Unit
+                is ServerResult.Retry -> return tagged
                 else -> Unit
             }
         }
@@ -55,16 +52,11 @@ class ServerSessionRecorder(
                 when (val submitted = courseApi.submitRun(track, session.startedAt, owner)) {
                     is ServerResult.Ok -> acknowledgeCourseRun(session.startedAt)
                     is ServerResult.SignInRequired -> return submitted
-                    is ServerResult.Retry -> if (keepTrying) return submitted else Unit
+                    is ServerResult.Retry -> return submitted
                     is ServerResult.Rejected -> Unit // Preserve the course entry for recovery.
                 }
             }
         }
         return result
-    }
-
-    private companion object {
-        /** 크루 표시·코스 기록 때문에 러닝 업로드를 미루는 최대 횟수 */
-        const val SIDE_CALL_MAX_ATTEMPTS = 5
     }
 }
