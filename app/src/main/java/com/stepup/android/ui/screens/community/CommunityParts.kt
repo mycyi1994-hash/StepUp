@@ -384,7 +384,7 @@ fun LabeledField(
     com.stepup.android.ui.components.FormField(
         label = label, value = value, onValueChange = onValueChange, modifier = modifier,
         placeholder = placeholder, singleLine = singleLine,
-        minHeight = maxOf(56, minHeight).dp, keyboardType = keyboardType,
+        minHeight = maxOf(56, minHeight).dp, keyboardType = keyboardType, labelAbove = true,
     )
 }
 

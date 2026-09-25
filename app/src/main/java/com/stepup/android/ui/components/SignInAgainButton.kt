@@ -13,14 +13,14 @@ import kotlinx.coroutines.launch
 
 /** Opens the root login flow without discarding local records, equipment or rewards. */
 @Composable
-fun SignInAgainButton() {
+fun SignInAgainButton(modifier: Modifier = Modifier.fillMaxWidth()) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var busy by remember { mutableStateOf(false) }
     GhostButton(
         text = stringResource(R.string.session_sign_in_again),
         enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         onClick = {
             busy = true
             scope.launch {

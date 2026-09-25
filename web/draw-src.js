@@ -25,8 +25,7 @@ const config = window.STEPUP_DRAW_CONFIG || {}
 const status = document.querySelector('#status')
 const result = document.querySelector('#result')
 const shoeButton = document.querySelector('#shoe')
-const outfitButton = document.querySelector('#outfit')
-const buttons = [shoeButton, outfitButton]
+const buttons = [shoeButton]
 const soundEnabled = new URLSearchParams(location.search).get('sound') === 'on'
 const drawSounds = new Set([
   'draw_charge', 'draw_box_open', 'draw_reveal_common', 'draw_reveal_rare',
@@ -188,6 +187,4 @@ async function draw(category) {
 }
 
 shoeButton.addEventListener('click', () => draw(0))
-outfitButton.addEventListener('click', () => draw(1))
-if (new URLSearchParams(location.search).get('category') === 'outfit') outfitButton.focus()
-else if (new URLSearchParams(location.search).get('category') === 'shoe') shoeButton.focus()
+if (new URLSearchParams(location.search).get('category') === 'shoe') shoeButton.focus()

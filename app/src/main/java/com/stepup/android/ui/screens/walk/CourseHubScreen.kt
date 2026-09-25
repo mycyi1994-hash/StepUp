@@ -1,8 +1,6 @@
 package com.stepup.android.ui.screens.walk
 
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import com.stepup.android.ui.components.DialogPanel
 import com.stepup.android.ui.components.FormField
 import com.stepup.android.ui.components.DarkIconButton
@@ -132,9 +130,9 @@ fun CourseHubScreen(
             item {
                 SegmentedTabs(
                     labels = listOf(
-                        stringResource(R.string.courses_select),
-                        stringResource(R.string.courses_make),
-                        stringResource(R.string.courses_board),
+                        stringResource(R.string.courses_tab_select),
+                        stringResource(R.string.courses_tab_make),
+                        stringResource(R.string.courses_tab_board),
                     ),
                     selected = tab,
                     onSelect = { tab = it },
@@ -296,24 +294,21 @@ private fun CourseCard(
     /** 이 코스의 기록 순위 보기. null 이면 붙이지 않는다. */
     onOpenRanking: (() -> Unit)? = null,
 ) {
-    GlowCard(accent = selected, contentPadding = PaddingValues(20.dp), spacing = 16.dp) {
-        CourseTrackMap(
-            points = remember(course.id, course.points) { course.normalized() }, seed = course.id.toInt(),
-            modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)).quietClickable(onSelect),
-        )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (rank > 0) Text("$rank", style = MaterialTheme.typography.bodyMedium, color = if (rank <= 3) Volt else Silver)
-                Text(course.name, style = MaterialTheme.typography.titleLarge, color = Snow)
-                if (course.mine && course.shared) Text(stringResource(R.string.course_shared_badge), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
-            }
-            RadioButton(selected, onClick = onSelect, modifier = Modifier.size(48.dp), colors = RadioButtonDefaults.colors(selectedColor = Volt, unselectedColor = Silver))
+    GlowCard(accent = selected, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (rank > 0) Text("$rank", style = MaterialTheme.typography.bodyMedium, color = if (rank <= 3) Volt else Silver)
+            Text(course.name, style = MaterialTheme.typography.titleLarge, color = Snow)
+            if (course.mine && course.shared) Text(stringResource(R.string.course_shared_badge), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
         }
         Text(
             text = buildString {
                 if (course.area.isNotBlank()) append(course.area).append(" · ")
                 append("%.2f km".format(course.distanceKm))
             }, style = MaterialTheme.typography.bodyMedium, color = Silver,
+        )
+        CourseTrackMap(
+            points = remember(course.id, course.points) { course.normalized() }, seed = course.id.toInt(),
+            modifier = Modifier.fillMaxWidth().height(136.dp).clip(RoundedCornerShape(16.dp)).quietClickable(onSelect),
         )
         Text(stringResource(R.string.course_reward_value, "%.1f".format(course.reward)), style = MaterialTheme.typography.titleMedium, color = com.stepup.android.ui.theme.VoltText)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -2,6 +2,10 @@ package com.stepup.android.ui.screens.community
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,7 +63,6 @@ import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.HairlineDivider
-import com.stepup.android.ui.components.VerticalHairline
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Alert
@@ -171,8 +174,8 @@ fun FlashRunDetailScreen(
 @Composable
 private fun FlashHeroCard(post: Post) {
     GlowCard(accent = true, contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
-        com.stepup.android.ui.components.RunnerScene(
-            modifier = Modifier.fillMaxWidth().height(170.dp),
+        com.stepup.android.ui.components.RunnerBanner(
+            modifier = Modifier.fillMaxWidth().height(100.dp),
             setting = com.stepup.android.ui.components.RunnerSetting.Sunset,
         )
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -236,48 +239,33 @@ private fun FlashInfoGrid(post: Post, here: GeoPoint?) {
             .format(DateTimeFormatter.ofPattern("HH:mm"))
     }
 
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            InfoCell(
-                label = stringResource(R.string.flash_place),
-                value = post.place.ifBlank { stringResource(R.string.post_place_tbd) },
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.LocationOn,
-                onClick = if (hasPlace) {
-                    { ExternalIntents.openPlaceInMaps(context, post.place) }
-                } else {
-                    null
-                },
-            )
-            VerticalHairline(height = 44.dp)
-            InfoCell(
-                label = stringResource(R.string.flash_time),
-                value = meetTime,
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Schedule,
-                sub = startsInLabel(post.meetAt),
-            )
-        }
+    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 14.dp) {
+        InfoCell(
+            label = stringResource(R.string.flash_place),
+            value = post.place.ifBlank { stringResource(R.string.post_place_tbd) },
+            modifier = Modifier.fillMaxWidth(), icon = Icons.Filled.LocationOn,
+            onClick = if (hasPlace) { { ExternalIntents.openPlaceInMaps(context, post.place) } } else null,
+        )
         HairlineDivider()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            InfoCell(
-                label = stringResource(R.string.flash_from_me),
-                value = fromMe,
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.NearMe,
-            )
-            VerticalHairline(height = 44.dp)
-            InfoCell(
-                label = stringResource(R.string.flash_est_distance),
-                value = runDistance,
-                modifier = Modifier.weight(1f),
-            )
+        InfoCell(
+            label = stringResource(R.string.flash_time), value = meetTime,
+            modifier = Modifier.fillMaxWidth(), icon = Icons.Filled.Schedule,
+            sub = startsInLabel(post.meetAt),
+        )
+        HairlineDivider()
+        BoxWithConstraints {
+            val stacked = maxWidth < 280.dp || LocalDensity.current.fontScale > 1.25f
+            if (stacked) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    InfoCell(stringResource(R.string.flash_est_distance), runDistance)
+                    InfoCell(stringResource(R.string.flash_from_me), fromMe, icon = Icons.Filled.NearMe)
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    InfoCell(stringResource(R.string.flash_est_distance), runDistance, Modifier.weight(1f))
+                    InfoCell(stringResource(R.string.flash_from_me), fromMe, Modifier.weight(1f), Icons.Filled.NearMe)
+                }
+            }
         }
     }
 }
@@ -292,8 +280,8 @@ private fun InfoCell(
     onClick: (() -> Unit)? = null,
 ) {
     Column(
-        modifier = modifier
-            .then(if (onClick != null) Modifier.quietClickable(onClick) else Modifier)
+        modifier = modifier.fillMaxWidth()
+            .then(if (onClick != null) Modifier.heightIn(min = 48.dp).quietClickable(onClick) else Modifier)
             .padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
@@ -318,7 +306,7 @@ private fun InfoCell(
             }
             Text(
                 text = value,
-                fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
+                modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Snow,
@@ -349,10 +337,10 @@ private fun FlashParticipantsCard(post: Post, onViewMembers: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.flash_members),
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleSmall,
                 color = Snow,
             )
-            Spacer(Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.post_slots, post.joinedCount, post.capacity),
                 fontSize = 14.sp,
@@ -447,6 +435,7 @@ private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit
 // 파티 채팅 (댓글 미리보기)
 // ─────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FlashChatCard(
     post: Post,
@@ -457,10 +446,10 @@ private fun FlashChatCard(
         threads.sortedByDescending { it.comment.createdAt }.take(2)
     }
     GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
                 text = stringResource(R.string.flash_chat),
@@ -472,7 +461,6 @@ private fun FlashChatCard(
                 fontSize = 12.sp,
                 color = Slate,
             )
-            Spacer(Modifier.weight(1f))
             Row(
                 modifier = Modifier.heightIn(min = 48.dp).quietClickable(onEnterChat),
                 verticalAlignment = Alignment.CenterVertically,

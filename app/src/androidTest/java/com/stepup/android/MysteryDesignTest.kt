@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -76,15 +78,20 @@ class MysteryDesignTest {
                 StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold() } }
             }
         }
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
         val out = File(compose.activity.getExternalFilesDir(null), "screen-gallery").apply { mkdirs() }
         compose.onNodeWithText(compose.activity.getString(R.string.tab_draw)).performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isEmpty()
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.mystery_title)).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_shoe)).assertIsNotEnabled()
-        compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertIsNotEnabled()
+        compose.onNodeWithText(compose.activity.getString(R.string.mystery_subtitle)).assertIsDisplayed()
+        val draw = compose.onNodeWithTag("draw-shoe").assertIsDisplayed()
+        if (BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()) {
+            draw.assertIsEnabled()
+        } else {
+            draw.assertIsNotEnabled()
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
         captureDisplay(File(out, "mystery-01-normal.png"))
 
         compose.runOnIdle { largeType = true }
@@ -93,15 +100,15 @@ class MysteryDesignTest {
 
         compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithText(compose.activity.getString(R.string.mystery_title)).fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithText(compose.activity.getString(R.string.mystery_subtitle)).fetchSemanticsNodes().isEmpty()
         }
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-character-ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
         val before = HomeBackgrounds.settings.first { scene ->
             compose.onAllNodesWithTag("home-scene-${scene.name}").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("home-background-next").performClick()
+        compose.onNodeWithTag("home-background-next").performScrollTo().performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("home-scene-${before.name}").fetchSemanticsNodes().isEmpty()
         }

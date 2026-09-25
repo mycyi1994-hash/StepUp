@@ -32,7 +32,7 @@ object WardrobeBackgrounds {
  * never shuffle the scenery underneath the user. */
 object HomeBackgrounds {
     val initial = listOf(RunnerSetting.HomeBlueNight, RunnerSetting.HomeDawn)
-    val settings = initial + RunnerSetting.Night
+    val settings = initial
 
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 
@@ -64,42 +64,21 @@ fun RunnerScene(
     wardrobe: Boolean = false,
     home: Boolean = false,
 ) {
-    val drift = if (LocalMotion.current.decorative) ambientPhase(16000, reverse = true) else null
-    Box(modifier) {
-        Image(
-            painterResource(when (setting) {
-                RunnerSetting.Night -> R.drawable.scene_riverside_night
-                RunnerSetting.Sunset -> R.drawable.scene_riverside_sunset
-                RunnerSetting.Wardrobe -> R.drawable.scene_wardrobe_terrace
-                RunnerSetting.HomeBlueNight -> R.drawable.scene_home_blue_night
-                RunnerSetting.HomeDawn -> R.drawable.scene_home_dawn
-                RunnerSetting.RunNight -> R.drawable.scene_run_night
-                RunnerSetting.RunSunset -> R.drawable.scene_run_sunset
-            }),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().graphicsLayer {
-                // Scenery alone moves. Native controls and the character keep their anchors.
-                val progress = drift?.value ?: 0.5f
-                scaleX = 1.035f
-                scaleY = 1.035f
-                translationX = (progress - 0.5f) * 10.dp.toPx()
-            },
-        )
-        // Protect native header/footer contrast in both themes without tinting the avatar.
-        val stops = if (wardrobe) arrayOf(
-            0f to Night.copy(alpha = 0.86f), 0.12f to Night.copy(alpha = 0.3f),
-            0.25f to Color.Transparent, 0.6f to Color.Transparent,
-            0.78f to Night, 1f to Night,
-        ) else if (home) arrayOf(
-            0f to Night.copy(alpha = 0.52f), 0.14f to Night.copy(alpha = 0.22f),
-            0.28f to Color.Transparent, 0.70f to Color.Transparent,
-            0.90f to Night.copy(alpha = 0.54f), 1f to Night,
-        ) else arrayOf(
-            0f to Night, 0.16f to Night.copy(alpha = 0.8f),
-            0.33f to Color.Transparent, 0.72f to Color.Transparent,
-            0.91f to Night.copy(alpha = 0.92f), 1f to Night,
-        )
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(*stops)))
-    }
+    // Scenery now belongs to an independent banner, never to a full-screen character stage.
+    Box(modifier.background(Night))
+}
+
+/** Independent, text-free scenery shared by home and login. */
+@Composable
+fun RunnerBanner(
+    modifier: Modifier = Modifier,
+    setting: RunnerSetting = RunnerSetting.HomeBlueNight,
+) {
+    val dawn = setting == RunnerSetting.HomeDawn || setting == RunnerSetting.Sunset || setting == RunnerSetting.RunSunset
+    Image(
+        painter = painterResource(if (dawn) R.drawable.home_banner_dawn else R.drawable.home_banner_blue_night),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier,
+    )
 }

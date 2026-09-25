@@ -1,5 +1,17 @@
 # Redesign progress
 
+## 2026-09-25 — character-free stage 9, courses/map/ranking
+
+- Reordered course cards around name/distance, schematic route, reward/record and one native selection action. Removed the duplicate radio control; kept existing selection and ownership data. Short course and ranking-period tabs remain on one line in the 1.6× font capture. Nearby map now links directly to the existing course list.
+- Android 14/15 `explore` galleries cover the three routes, three viewport/font combinations and course/territory/ranking inner states. The first final-source pass at `236a084` passed the build and 48 captures; visual review found the map summary claimed off-screen courses were on the visible map. Source `597a639` now separates total registered count from visible pins and distinguishes the current-location marker. Final build/capture links and outcome: [stage 9 report](CHARACTER-FREE-STAGE9-2026-09-25-KO.md).
+- The map tile/GPS environment, pin selection, server rankings/territory, other themes/locales, whole-app release, main merge and public APK remain outside this visual checkpoint.
+
+## 2026-09-25 — character-free stage 8, record and wallet routes
+
+- Analytics now shows the chart and summary before its history-map entry; the wallet shows balance, totals and real ledger before the connected-wallet notice. History map, achievements and notifications retain their existing data and empty states.
+- A bounded real-device gallery covers five routes, three viewport/font combinations and the quarter/all-period variants: 21 screenshots on each of Android 14 and 15. First review found an ambiguous quarter-chart target line; it was removed. Quarter distance precision, zero-spend tint and empty-map zoom controls were corrected; map controls are 48dp when shown.
+- Final app source `a36055c` passed [Build APK 36108963617](https://github.com/mycyi1994-hash/StepUp/actions/runs/36108963617) and [screen gallery 36108963541](https://github.com/mycyi1994-hash/StepUp/actions/runs/36108963541). The first failed gallery was a duplicate text selector in the test; the subsequent and final Android 14/15 runs passed. See [stage 8 report](CHARACTER-FREE-STAGE8-2026-09-25-KO.md) and [final screenshot review](CLAUDE-RECORDS-FINAL-REVIEW-2026-09-25.md). No public APK release or main merge. Real GPS, tiles, external wallet, other states and full-app readiness remain unverified.
+
 ## 2026-09-25 — image and sound integration, source applied
 
 - Applied all 29 newly produced WAVs to Android resources. Eighteen short cues now follow their corresponding app events; eight draw transaction cues are also copied to the web DApp and gated on real receipt/result or failure; three scene ambience loops are opt-in and stop when foreground/audio policy does not allow playback.
@@ -794,3 +806,70 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Added home background arrows with a crossfade, slow scenery-only drift, and subtle grounded character breathing. Reduced-motion settings stop decorative loops. These changes need native capture for foot contact, compact layouts and perceived motion.
 - Prepared `MysteryDrawNFT` for the 52-shoe/5-tracksuit catalog, a deterministic signed authorization endpoint, and a wallet transaction page. No contract, Worker or website was deployed. The existing GIWA Sepolia demo contract is not usable for this new draw because its roller key was not retained. SUP cost values are constructor parameters; final pricing remains a deployment decision.
 - Local checks: new Solidity contract compiled; 2 focused contract checks and 2 roller checks passed; draw web bundle built; source design/string/asset checks passed. Android compilation, native screenshot review and a real GIWA wallet transaction remain unverified.
+
+
+## 2026-09-25 — character-free asset replacement
+
+- User selected record-first home and retained shoes/draw. Produced 10 screen mockups, 2 independent landscape PNGs and 1 shoe SVG; review pending with Claude.
+- Archived and removed exactly 156 packaged character/clothing/old scene images; preserved 58 existing shoe/brand/box images by hash. New banners and shoe vector are installed as separate resources.
+- Removed dead drawable references, character stages and outfit draw entrances; routed the former wardrobe through the existing shoe inventory. Reused existing functional screens; native visual matching is not claimed.
+- Static design/string/media/resource checks and web draw bundle build pass. No local Android SDK/JDK: Android compile/device validation and visual regression expectations remain pending. No APK/push/deployment.
+- See CHARACTER-FREE-ASSETS-2026-09-25.md for deliverables, exact deletion archive and application limits.
+
+## 2026-09-25 — stage 1: preserve redesign and merge current main
+
+- Saved the character-free source/resource work as checkpoint `30bdce4` before merging `origin/main` (`488ee5d`). This is a local integration checkpoint, not a release.
+- Backed up all 118 previously untracked files and verified their post-merge hashes. Pre-existing screenshot/review work remains untouched and untracked; the new runtime assets and asset report are in the checkpoint commit.
+- Resolved 115 character-image modify/delete conflicts by preserving the explicitly approved removals. Also copied main's updated image versions into the external sync backup before removing them from runtime resources. Regenerated the sole conflicting source file, `AvatarArtRes.kt`, from the current character-free resource inventory.
+- Login contains both main's pending-run upload scheduling fix and the new independent landscape. Main backend, database/server changes and QA workflow/script files match `origin/main` exactly in the merged index.
+- Checks passed: no unresolved entries, design contract, localized strings, packaged media, staged diff whitespace, and original untracked-file preservation. Android compile/device tests were not run during this merge-only step.
+- `ExperienceUiTest` / `DesignReferenceTest` redesign updates remain the separately planned test stage. No push, APK, deployment or next-stage UI work was performed.
+- Backup: `C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-main-sync-20260925-134513`.
+
+## 2026-09-25 — stage 2: character-free native screen layouts
+
+- Implemented the ten mockup destinations as native presentation changes: record home, dedicated shoe selection, draw, active run, run result, community, profile, challenges, login and three-step guide.
+- Replaced the wardrobe's temporary ItemsScreen wrapper with a real inventory-backed shoe preview/selection UI. Loading, empty, equipped and save-in-flight states are separate; detail, collection, vault and market stay reachable.
+- Restored real GPS maps on active/result screens, moved activity results before settlement information, restored actual profile photos and recent activity, and replaced the single meetup card with upcoming real meetups and joined crews.
+- Kept illustrations independent of native labels/buttons/charts, existing reward/deployment gates and main's backend/login upload work. No new generated art, APK, push or deployment.
+- Checks: design contract, four-locale strings, packaged media and diff whitespace pass. Local Java/Android SDK unavailable; Android compilation, native captures and device interaction remain pending. ExperienceUiTest and DesignReferenceTest expectations remain stage 3.
+- Per-screen evidence and scope: CHARACTER-FREE-STAGE2-2026-09-25-KO.md. Inventory marks source implementation only, not visual acceptance.
+
+## 2026-09-25 — stage 3: character-free device-test expectations
+
+- Updated ExperienceUiTest and DesignReferenceTest for native record/shoe/draw layouts, shared chrome, the profile settings action and three-step guide. Replaced gender/trial-outfit reference scenes with 14 current scenes across 4 viewports; 56 captures planned, none produced locally.
+- Added bounded checks for preview-versus-confirmed shoe equipment, draw readiness/callbacks, five navigation destinations and the guide. Updated the dependent MysteryDesignTest to stop waiting for removed character tags/outfit controls.
+- Added the explicit redesign runner/workflow selection, preserving main's existing split regression suites. Kept the optional multilingual matrix separate from the default checkpoint to avoid running hundreds of captures for this change.
+- Source design/string/media, Bash syntax, scene/method mappings and whitespace checks pass. No local Java/Android SDK, so Android compile/instrumentation remains unexecuted and is the next stage. No APK/push/remote run.
+- Evidence and exact limits: CHARACTER-FREE-STAGE3-2026-09-25-KO.md. Legacy full-gallery/wardrobe character fixtures outside these three test classes remain historical coverage, not proof of the new design.
+
+## 2026-09-25 — stage 4: native build and device evidence
+
+- Verified runtime/test source `6e327f6` on the redesign branch. Build run `36099618225` passed unit tests, debug/signature validation and unsigned release R8 build. Gallery run `36099618150` passed on Android 14 and 15: five interaction tests and one 56-capture reference test per OS.
+- Fixed stale character-asset expectations and instrumentation compilation errors exposed by the first CI attempt. Fixed community capture lookup through merged accessibility nodes without changing production repositories.
+- Actual compact captures exposed oversized home/shoe previews and banner controls overlapping copy. Compacted record/goal spacing, used a horizontal shoe preview for normal text, sized the banner to available height, and moved scenery arrows above the copy. Large text remains scrollable.
+- Collected 112 reference PNGs (56 viewport/state combinations on each OS), original result XML, raw text-overflow signals and logs. Prepared a local original-image gallery plus normal/large-text contact sheets. Evidence and known limitations: CHARACTER-FREE-STAGE4-2026-09-25-KO.md.
+- Source design/string/media checks pass. This is primary-scene/device evidence, not approval of every secondary screen, every raw text-overflow signal, all locales/themes, real outdoor GPS or wallet/backend transactions. Claude visual review is next. No main merge, public release upload or deployment.
+
+## 2026-09-25 — stage 5: Claude visual review returned
+
+- Prepared a portable reference/capture comparison package: 10 mockups, 112 native captures, eight source snapshots, evidence and mappings. Executed Claude Code with read/search tools only in the package directory and received an actual review; this is not a simulated Claude verdict.
+- Verdict: changes requested. Six findings consolidate into four required layout groups (large-text navigation, compact running, profile density/duplicate entry, community sign-in notice) and one optional banner-spacing polish. No app-source changes in this stage; verified `app/src` still matches `6e327f6`.
+- Preserved Claude's original report and separately corrected its five-versus-six-slot calculation and accessibility/regression risks in the proposed remedies. Do not blindly shrink navigation text to 11sp or restore centered banner arrows.
+- See CHARACTER-FREE-STAGE5-2026-09-25-KO.md and CLAUDE-VISUAL-REVIEW-2026-09-25.md. The review is bounded primary-screen coverage, not a whole-app release approval. Next: apply the four required layout groups and recapture the affected screens. No new CI/APK, main merge or public release.
+
+## 2026-09-25 — stage 6: required visual-review fixes verified
+
+- Implemented the four required groups: measured navigation label widths with a centered draw action and unchanged font scaling; distinct compact breakpoints for active/result run statistics and a shorter map on low-height screens; a horizontal profile identity and one records entry; a compact community sign-in notice reusing the existing authentication action.
+- Added focused layout assertions to the existing capture test for single-line native labels, centered draw action, complete active-map bounds above controls, visible profile-records access and meetup-title bounds. Retained scene captures when collecting layout assertion failures.
+- First run exposed Android 15 map/control clearance; Android 14 captures also exposed a displaced draw action. Corrected both. Final source `29bb16b` passed build run `36102357282` and device run `36102357154`: five interaction tests plus 56 captures on each of Android 14/15, all layout checks PASS.
+- Claude read-only recheck of seven final originals judged all four original groups resolved with no remaining blockers within that scope. Preserved original response, before/after board, 112 original captures and execution evidence. See CHARACTER-FREE-STAGE6-2026-09-25-KO.md and CLAUDE-VISUAL-RECHECK-2026-09-25.md.
+- Source design/string/asset checks pass. No new image assets, backend/data changes, main merge or public release. Selected map captures show the tile-loading grid; real tile loading, outdoor GPS, auth/transactions, secondary screens, all locales/themes and optional banner polish remain separate coverage.
+
+
+## 2026-09-25 — character-free stage 7: secondary forms and settings
+
+- Covered 10 routes: post/crew creation, meetup detail, and 7 settings destinations. Shared FormPage; native labels above community form fields; full-width preference descriptions; independent meetup scenery banner and responsive detail information.
+- App source be6d0ef passed unit/debug/signature/release checks (36105578228). Test-only correction 7f2df93 passed Android 14/15: 4 form tests + 1 gallery test per OS, 36 gallery images each (36106239083). Final artifacts and XML/hash evidence under stage7 output/verified-api34 and verified-api35.
+- Claude reviewed 8 intermediate images, requested floating-label polish, then confirmed both label and empty-banner corrections from 4 final app images. Original review and recheck preserved. Optional wording/alignment and keyboard-header spacing notes remain separate.
+- Earlier failed/cancelled attempts remain documented, not counted as passes. No public APK, main merge, account/storage identity change, server mutation, or full release-completion claim. See CHARACTER-FREE-STAGE7-2026-09-25-KO.md.

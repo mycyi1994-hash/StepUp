@@ -53,6 +53,14 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.After
+import com.stepup.android.ui.Routes
+import com.stepup.android.ui.Screen
+import com.stepup.android.ui.guide.GuideTour
+import com.stepup.android.service.WalkSessionService
+import com.stepup.android.service.WalkSessionState
+import com.stepup.android.ui.screens.customize.CustomizeScreen
+import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -78,6 +86,8 @@ class ExperienceUiTest {
         ServiceLocator.userPrefs.setHaptics(false)
         ServiceLocator.userPrefs.setLoginMethod("guest")
         ServiceLocator.userPrefs.setGuideSeen()
+        GuideTour.stop()
+        WalkSessionService.showStateForTest(WalkSessionState())
         ServiceLocator.userPrefs.ensureRunnerUid()
         ServiceLocator.sneakerRepository.ensureStarter()
         TestData.seedCommunity()
@@ -86,6 +96,11 @@ class ExperienceUiTest {
         sneakerId = ServiceLocator.sneakerRepository.inventory.first().first().id
         crewId = ServiceLocator.crewRepository.crews.value.first().id
         postId = ServiceLocator.communityRepository.posts.value.first().id
+    }
+
+    @After fun restorePresentation() {
+        GuideTour.stop()
+        WalkSessionService.showStateForTest(WalkSessionState())
     }
 
     @Test fun allModulesRenderInFourLanguagesAndLargeText() {
@@ -104,7 +119,7 @@ class ExperienceUiTest {
                 screenWidthDp = if (large) 320 else 360
                 screenHeightDp = if (large) 568 else 680
             }
-            val localized = remember(language) { base.createConfigurationContext(config) }
+            val localized = remember(language, large) { base.createConfigurationContext(config) }
             CompositionLocalProvider(LocalActivityResultRegistryOwner provides compose.activity,
                 LocalOnBackPressedDispatcherOwner provides compose.activity,
                 LocalContext provides localized, LocalConfiguration provides config,
@@ -113,7 +128,7 @@ class ExperienceUiTest {
                     ExperienceProvider {
                         Box(Modifier.requiredSize(config.screenWidthDp.dp, config.screenHeightDp.dp)
                             .background(Night).testTag("capture")) {
-                            key(screen, language, large) { Scene(screen) }
+                            key(screen, language, large, dark) { Scene(screen) }
                         }
                     }
                 }
@@ -122,7 +137,7 @@ class ExperienceUiTest {
         for (locale in listOf("ko", "en", "ja", "zh")) {
             for (night in listOf(false, true)) {
                 for (enlarged in listOf(false, true)) {
-                    for (index in 0..29) {
+                    for (index in 0..30) {
                         compose.runOnIdle { language = locale; dark = night; large = enlarged; screen = index }
                         compose.waitForIdle()
                         if (index == 0) compose.waitUntil(5_000) {
@@ -156,12 +171,12 @@ class ExperienceUiTest {
 
     @Composable private fun Scene(index: Int) {
         when (index) {
-            0 -> HomeScreen()
-            1 -> RunScreen()
-            2 -> CommunityScreen()
+            0 -> MainScaffold()
+            1 -> MainScaffold(initialRoute = Routes.RUN)
+            2 -> MainScaffold(initialTab = Screen.Community)
             3 -> ItemsScreen()
-            4 -> EventsScreen()
-            5 -> ProfileScreen()
+            4 -> MainScaffold(initialRoute = Routes.EVENTS)
+            5 -> MainScaffold(initialTab = Screen.Profile)
             6 -> WalletScreen()
             7 -> CourseHubScreen()
             8 -> AchievementsScreen()
@@ -184,8 +199,9 @@ class ExperienceUiTest {
             25 -> ThemeScreen()
             26 -> SneakerDexScreen()
             27 -> com.stepup.android.ui.screens.events.NewsScreen()
-            28 -> com.stepup.android.ui.screens.customize.CustomizeScreen()
-            29 -> com.stepup.android.ui.screens.customize.RunnerMarketScreen()
+            28 -> MainScaffold(initialTab = Screen.Customize)
+            29 -> MainScaffold(initialRoute = Routes.RUNNER_MARKET)
+            30 -> MainScaffold(initialRoute = Routes.MYSTERY_BOX)
         }
     }
 
@@ -253,7 +269,7 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        // 하단 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보
+        // Four tab roles plus the independent center draw button: five visible destinations.
         val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
@@ -264,15 +280,89 @@ class ExperienceUiTest {
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        // 설정은 내 정보 목록 맨 아래의 "설정" 줄로 들어간다 — 스크롤해야 보일 수 있다
-        val settingsRow = compose.activity.getString(R.string.profile_tab_settings)
-        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsRow))
-        compose.onNodeWithText(settingsRow).performClick()
+        val draw = compose.onNode(hasText(compose.activity.getString(R.string.tab_draw)) and
+            hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
+        draw.performClick().assertIsSelected()
+        compose.onNodeWithTag("draw-shoe").assertIsDisplayed()
+        compose.onAllNodes(tabRole and isSelected()).assertCountEquals(0)
+        capture("navigation-draw")
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
+        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
+        compose.onNodeWithTag("profile-settings").performClick()
         val settingsLabel = compose.activity.getString(R.string.settings_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).assertIsDisplayed()
         capture("navigation-experience")
+    }
+
+    @Test fun shoePreviewOnlyEquipsAfterConfirmation() {
+        val dao = ServiceLocator.database.sneakerDao()
+        val original = runBlocking { requireNotNull(dao.equippedNow()) }
+        val candidateId = runBlocking {
+            dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
+                equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0))
+        }
+        var detailId: Long? = null
+        try {
+            compose.setContent { StepUpTheme { ExperienceProvider {
+                CustomizeScreen(onOpenSneaker = { detailId = it })
+            } } }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-equip").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
+            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
+            compose.onNodeWithTag("shoe-choice-$candidateId").performClick().assertIsSelected()
+            assertEquals("Preview must not change the stored equipment", original.id,
+                runBlocking { dao.equippedNow()?.id })
+            compose.onNodeWithTag("shoe-equip").assertIsEnabled().performClick()
+            compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
+            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
+            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-detail"))
+            compose.onNodeWithTag("shoe-detail").performClick()
+            compose.runOnIdle { assertEquals(candidateId, detailId) }
+        } finally {
+            // Remove only this test's new copy and restore the previous pair.
+            runBlocking {
+                ServiceLocator.sneakerRepository.equip(original.id)
+                dao.byId(candidateId)?.let { dao.delete(it) }
+            }
+        }
+    }
+
+    @Test fun shoeDrawRespectsReadinessAndKeepsCatalogReachable() {
+        var ready by mutableStateOf(false)
+        var draws = 0
+        var catalogOpens = 0
+        var walletOpens = 0
+        compose.setContent { StepUpTheme { ExperienceProvider {
+            MysteryBoxScreen(shoeDrawReady = ready, onDrawShoe = { draws++ },
+                onOpenDex = { catalogOpens++ }, onOpenWallet = { walletOpens++ })
+        } } }
+        compose.onNodeWithTag("draw-shoe").assertIsNotEnabled().performTouchInput { click() }
+        compose.runOnIdle { assertEquals(0, draws) }
+        compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
+        compose.onNodeWithTag("draw-dex").performScrollTo().performClick()
+        compose.onNodeWithTag("draw-wallet").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, catalogOpens); assertEquals(1, walletOpens); ready = true }
+        compose.onNodeWithTag("draw-shoe").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, draws) }
+    }
+
+    @Test fun firstGuideVisitsRunningShoesAndProfile() {
+        compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("guide-step-title").fetchSemanticsNodes().isNotEmpty() }
+        val expected = listOf(R.string.tour3_title, R.string.tour_customize_title, R.string.tour11_title)
+        expected.forEachIndexed { index, title ->
+            compose.onNodeWithTag("guide-step-title").assertTextEquals(compose.activity.getString(title))
+            assertEquals(index, GuideTour.stepIndex)
+            val target = when (index) { 0 -> "home-start-run"; 1 -> "shoe-equip"; else -> "profile-settings" }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag(target).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText(compose.activity.getString(
+                if (index == expected.lastIndex) R.string.guide_start else R.string.guide_next)).performClick()
+        }
+        compose.waitUntil(5_000) { !GuideTour.active }
+        compose.onNodeWithTag("guide-step-title").assertDoesNotExist()
+        compose.onNodeWithTag("home-start-run").assertIsDisplayed()
     }
 
     private fun capture(name: String) {

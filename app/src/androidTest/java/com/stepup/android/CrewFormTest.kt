@@ -21,12 +21,25 @@ import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
 /** Exercises the production form without submitting a real crew to the server. */
 class CrewFormTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @After fun closeKeyboardBeforeActivityIsDestroyed() {
+        compose.runOnUiThread {
+            androidx.core.view.WindowInsetsControllerCompat(
+                compose.activity.window, compose.activity.window.decorView,
+            ).hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+    }
 
     @Test fun meetupFormKeepsInvalidNumbersAndRequiresCorrectionBeforeSubmission() {
         runBlocking {
@@ -39,8 +52,11 @@ class CrewFormTest {
             }
         }
         fun fill(label: Int, value: String) {
-            compose.onNodeWithContentDescription(compose.activity.getString(label))
-                .performScrollTo().performTextReplacement(value)
+            val description = compose.activity.getString(label)
+            compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
+            compose.onNodeWithContentDescription(description).performClick()
+            compose.onNodeWithContentDescription(description).assertIsFocused()
+            compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
         compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
         fill(R.string.post_field_title, "Riverside run")
@@ -61,6 +77,34 @@ class CrewFormTest {
         fill(R.string.post_field_distance, "1,5")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
         // Deliberately do not publish a real meetup from instrumentation.
+    }
+
+    @Test fun postBodyAndKeyboardLeaveSubmitReachable() {
+        runBlocking {
+            ServiceLocator.userPrefs.setReducedMotion(true)
+            ServiceLocator.userPrefs.setGuideSeen()
+        }
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) {
+                ExperienceProvider { MainScaffold(initialRoute = Routes.postCompose("")) }
+            }
+        }
+        val title = compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_title))
+        title.performScrollTo().performTextInput("Evening riverside run")
+        val body = compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_body))
+        body.performScrollTo().performClick().performTextInput("Meet at the park entrance.")
+        try {
+            compose.waitUntil(5_000) {
+                androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                    ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+            }
+            body.assertIsDisplayed()
+            compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsEnabled()
+            compose.onNodeWithTag("bottom-nav").assertDoesNotExist()
+        } finally {
+            capture("post-body-keyboard")
+        }
+        // Never submit or create a real post from this design test.
     }
 
     @Test fun nameInputAndKeyboardLeaveSubmitReachable() = exerciseCrewForm(1f)
@@ -89,12 +133,16 @@ class CrewFormTest {
         run {
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsNotEnabled()
             val name = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_name))
-            name.performScrollTo().performClick().performTextInput("River runners")
+            name.performScrollTo().performClick()
             try {
                 compose.waitUntil(timeoutMillis = 5_000) {
                     androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
                         ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
                 }
+                name.performTextInput("River runners")
+                name.assert(SemanticsMatcher("crew name text is retained") {
+                    it.config[SemanticsProperties.EditableText].text == "River runners"
+                })
             } finally {
                 // Preserve the focused form before JUnit tears down its activity,
                 // including a missing keyboard; a post-test adb screenshot is too late.

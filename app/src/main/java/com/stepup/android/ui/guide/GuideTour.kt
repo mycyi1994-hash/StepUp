@@ -126,12 +126,11 @@ object GuideTour {
         fun tab(route: String) = "tab_$route"
     }
 
-    /** Four everyday actions; no unsupported payout promises. */
+    /** Three entry points for the character-free version. */
     val steps: List<GuideStep> = listOf(
         // One useful action per main destination; advanced features remain in the app.
         GuideStep(Targets.HOME_START_RUN, "home", R.string.tour3_title, R.string.tour3_body),
-        GuideStep(Targets.CUSTOMIZE_PREVIEW, "customize", R.string.tour_customize_title, R.string.tour_customize_body),
-        GuideStep(Targets.COMMUNITY_SEGMENTS, "community", R.string.tour6_title, R.string.tour6_body),
+        GuideStep(Targets.tab("customize"), "customize", R.string.tour_customize_title, R.string.tour_customize_body),
         GuideStep(Targets.tab("profile"), "profile", R.string.tour11_title, R.string.tour11_body),
     )
 
@@ -297,7 +296,13 @@ fun GuideOverlay(
             }
             Text(stringResource(step.bodyRes), style = MaterialTheme.typography.bodyLarge, color = Silver,
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()))
-            VoltButton(
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                GuideTour.steps.forEachIndexed { index, _ ->
+                    Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp))
+                        .background(if (index <= GuideTour.stepIndex) com.stepup.android.ui.theme.Volt else Silver.copy(alpha = 0.25f)))
+                }
+            }
+            com.stepup.android.ui.components.PrimaryCta(
                 text = stringResource(if (isLast) R.string.guide_start else R.string.guide_next),
                 onClick = { if (!GuideTour.advance()) onFinished() }, modifier = Modifier.fillMaxWidth(),
             )

@@ -36,55 +36,6 @@ fun ProfileCharacterStage(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
-    val render = AvatarArtCatalog.resolve(look, AvatarPose.SIT)
-    if (!render.exactPose || !render.lookShown) {
-        CharacterStage(
-            look = look, pose = AvatarPose.IDLE, skyline = false,
-            animate = false, characterFraction = 0.95f,
-            contentDescription = contentDescription,
-            modifier = modifier.testTag("profile-character-standing"),
-        )
-        return
-    }
-
-    BoxWithConstraints(
-        modifier.testTag("profile-character-seated").then(
-            if (contentDescription != null) Modifier.semantics {
-                this.contentDescription = contentDescription
-            } else Modifier,
-        ),
-    ) {
-        val sceneSize = minOf(maxWidth, maxHeight)
-        // Shared 1536 × 1536 composition frame; bench source is 1536 × 1024,
-        // portrait source is 1024 × 1536. All offsets refer to these source frames.
-        val benchTop = if (look.gender == AvatarGender.FEMALE) 440f else 480f
-        Box(Modifier.align(Alignment.BottomCenter).size(sceneSize)) {
-            Canvas(Modifier.fillMaxSize()) {
-                val center = Offset(size.width * 0.63f, size.height * 0.958f)
-                drawOval(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.35f), Color.Transparent),
-                        center = center,
-                        radius = size.width * 0.27f,
-                    ),
-                    topLeft = Offset(size.width * 0.38f, size.height * 0.932f),
-                    size = Size(size.width * 0.5f, size.height * 0.05f),
-                )
-            }
-            Image(
-                painter = painterResource(R.drawable.prop_profile_bench_v2),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .offset(y = sceneSize * (benchTop / 1536f))
-                    .size(width = sceneSize, height = sceneSize * (1024f / 1536f)),
-            )
-            AvatarImage(
-                art = render.art,
-                modifier = Modifier
-                    .offset(x = sceneSize * (256f / 1536f))
-                    .size(width = sceneSize * (1024f / 1536f), height = sceneSize),
-            )
-        }
-    }
+    // Legacy signature retained for saved profile compatibility; no mascot art is packaged.
+    CharacterStage(look = look, pose = AvatarPose.IDLE, modifier = modifier, contentDescription = contentDescription)
 }

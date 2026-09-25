@@ -4,11 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,12 +55,11 @@ fun CrewCreateScreen(
         .joinToString("")
         .ifBlank { "ST" }
 
-    Column(Modifier.fillMaxSize().imePadding().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)) {
-    com.stepup.android.ui.components.FocusHeader(stringResource(R.string.crew_create_title), onBack)
-    LazyColumn(
-        modifier = Modifier.weight(1f),
-        contentPadding = PaddingValues(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp),
+    com.stepup.android.ui.components.FormPage(
+        title = stringResource(R.string.crew_create_title), onBack = onBack,
+        actionLabel = stringResource(if (creating) R.string.feed_loading else R.string.crew_create_submit),
+        actionEnabled = name.isNotBlank() && !creating, actionTag = "crew-create-submit",
+        onAction = { viewModel.createCrew(name, tagline, area, policy, onCreated) },
     ) {
         item {
             if (!editing) {
@@ -124,13 +119,5 @@ fun CrewCreateScreen(
                 CrewPolicyPicker(selected = policy, onSelect = { policy = it })
             }
         }
-
-    }
-            com.stepup.android.ui.components.PrimaryCta(
-                text = stringResource(if (creating) R.string.feed_loading else R.string.crew_create_submit),
-                enabled = name.isNotBlank() && !creating,
-                onClick = { viewModel.createCrew(name, tagline, area, policy, onCreated) },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("crew-create-submit"),
-            )
     }
 }

@@ -79,7 +79,7 @@ import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlinx.coroutines.delay
 
-/** Home prioritizes the equipped character and one pinned run action. Details stay reachable in a sheet. */
+/** Native records and one pinned run action; scenic artwork is an independent layer. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -88,6 +88,7 @@ fun HomeScreen(
     onOpenChallenges: () -> Unit = {},
     onOpenNews: () -> Unit = {},
     onOpenCustomize: () -> Unit = {},
+    backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
@@ -95,7 +96,6 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val earned by viewModel.todayEarned.collectAsStateWithLifecycle()
     val runSec by viewModel.todayRunSec.collectAsStateWithLifecycle()
-    val look by viewModel.look.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -122,70 +122,68 @@ fun HomeScreen(
     val largeText = LocalDensity.current.fontScale > 1.2f
     var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
-    val savedLook = look
-
     Column(
-        Modifier.fillMaxSize()
-            .padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
+        Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
             .padding(bottom = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-            val artHeight = maxHeight.coerceAtLeast(240.dp)
-            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.BottomCenter) {
-                if (savedLook != null) CharacterStage(
-                    look = savedLook, pose = AvatarPose.IDLE, skyline = false,
-                    characterFraction = 0.92f, animate = true,
-                    contentDescription = stringResource(R.string.cd_home_character),
-                    modifier = Modifier.fillMaxWidth().height(artHeight).padding(top = 48.dp, bottom = 12.dp)
-                        .testTag("home-character-ready")
-                        .quietClickable(onOpenCustomize),
-                ) else Text(
-                    text = stringResource(R.string.feed_loading),
-                    color = Silver,
-                    modifier = Modifier.align(Alignment.Center),
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.home_record_title), style = MaterialTheme.typography.titleLarge,
+                    color = Silver, modifier = Modifier.weight(1f))
+                com.stepup.android.ui.components.DarkIconButton(
+                    icon = Icons.Filled.MoreHoriz, contentDescription = stringResource(R.string.common_more),
+                    onClick = { showDetails = true },
+                    modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
                 )
             }
-            com.stepup.android.ui.components.DarkIconButton(
-                icon = Icons.Filled.ChevronLeft,
-                contentDescription = stringResource(R.string.home_previous_background),
-                onClick = onPreviousBackground,
-                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
-                modifier = Modifier.align(Alignment.CenterStart).testTag("home-background-previous"),
-            )
-            com.stepup.android.ui.components.DarkIconButton(
-                icon = Icons.Filled.ChevronRight,
-                contentDescription = stringResource(R.string.home_next_background),
-                onClick = onNextBackground,
-                cue = com.stepup.android.ui.experience.FeedbackCue.BackgroundSwitch,
-                modifier = Modifier.align(Alignment.CenterEnd).testTag("home-background-next"),
-            )
-            com.stepup.android.ui.components.DarkIconButton(
-                icon = Icons.Filled.MoreHoriz,
-                contentDescription = stringResource(R.string.common_more),
-                onClick = { showDetails = true },
-                modifier = Modifier.align(Alignment.TopEnd)
-                    .guideTarget(GuideTour.Targets.HOME_SHORTCUTS)
-                    .testTag("home-details"),
-            )
-            if (savedLook?.trial == true) {
-                SmallBadge(
-                    text = stringResource(R.string.avatar_trial),
-                    tone = BadgeTone.Glow,
-                    modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.weight(1f, fill = false)) {
+                    AdaptiveNumber(if (state.loaded) "%,d".format(state.todaySteps) else "—", 56.sp)
+                }
+                Text(stringResource(R.string.stat_steps), color = Silver)
+            }
+            BarMeter(fraction = if (state.loaded && state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 9.dp)
+            Text(stringResource(R.string.home_daily_goal, "%,d".format(state.goal)), color = Silver)
+            }
+            val bannerHeight = when {
+                largeText -> 190.dp
+                androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800 -> 112.dp
+                else -> 132.dp
+            }
+            Box(Modifier.fillMaxWidth().height(bannerHeight).clip(RoundedCornerShape(16.dp))) {
+                com.stepup.android.ui.components.RunnerBanner(Modifier.fillMaxSize(), backgroundSetting)
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f)))))
+                Text(stringResource(R.string.home_banner_message), color = androidx.compose.ui.graphics.Color.White,
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp, vertical = 16.dp))
+                com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronLeft,
+                    stringResource(R.string.home_previous_background), onClick = onPreviousBackground,
+                    modifier = Modifier.align(Alignment.TopStart).testTag("home-background-previous"))
+                com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronRight,
+                    stringResource(R.string.home_next_background), onClick = onNextBackground,
+                    modifier = Modifier.align(Alignment.TopEnd).testTag("home-background-next"))
+            }
+            if (!hasPermission) PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+            RecordWeek(state.week, state.todaySteps, state.loaded)
+            HairlineDivider()
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.stat_distance), color = Silver)
+                    AdaptiveNumber(if (state.loaded) "%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000) else "—", 26.sp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.home_run_time), color = Silver)
+                    AdaptiveNumber(clock(runSec), 26.sp)
+                }
             }
         }
-        if (savedLook != null) AvatarLookNote(
-            look = savedLook, render = AvatarArtCatalog.resolve(savedLook, AvatarPose.IDLE),
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-        PrimaryCta(
-            text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
-            icon = Icons.AutoMirrored.Filled.DirectionsRun,
-            onClick = onStartRun,
-            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
-        )
+        PrimaryCta(text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
+            icon = Icons.AutoMirrored.Filled.DirectionsRun, onClick = onStartRun,
+            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"))
     }
 
     if (showDetails) {
@@ -367,4 +365,33 @@ private fun clock(totalSec: Long): String {
     val m = (totalSec % 3600) / 60
     val s = totalSec % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+}
+
+@Composable
+private fun RecordWeek(week: List<com.stepup.android.data.local.DailyStepsEntity>, todaySteps: Int, loaded: Boolean) {
+    val today = java.time.LocalDate.now()
+    val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
+    val recorded = week.associateBy { it.epochDay }
+    val values = days.map { if (it == today) todaySteps else recorded[it.toEpochDay()]?.steps ?: 0 }
+    val maximum = (values.maxOrNull() ?: 0).coerceAtLeast(1)
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Text(stringResource(R.string.home_recent_week), style = MaterialTheme.typography.titleMedium, color = Snow)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        days.forEachIndexed { index, day ->
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                AdaptiveNumber(if (loaded) "%,d".format(values[index]) else "—", 12.sp,
+                    color = if (day == today) VoltText else Silver, textAlign = TextAlign.Center)
+                Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.BottomCenter) {
+                    Box(Modifier.fillMaxWidth(0.72f)
+                        .height(if (loaded) (40f * values[index].toFloat() / maximum).coerceAtLeast(2f).dp else 2.dp)
+                        .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                        .background(if (day == today) Volt else Volt.copy(alpha = 0.4f)))
+                }
+                Text(day.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale),
+                    style = MaterialTheme.typography.labelSmall, color = Silver)
+            }
+        }
+    }
+    }
 }

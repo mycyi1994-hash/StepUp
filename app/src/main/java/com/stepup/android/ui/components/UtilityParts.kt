@@ -36,7 +36,7 @@ fun PreferenceToggle(
 ) {
     val feedback = LocalFeedback.current
     val shape = RoundedCornerShape(StepUpDesign.PanelRadius)
-    Row(
+    Column(
         Modifier.fillMaxWidth().clip(shape).background(CarbonHigh)
             .border(1.dp, Edge, shape)
             .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = {
@@ -44,22 +44,22 @@ fun PreferenceToggle(
                 onCheckedChange(it)
             })
             .padding(StepUpDesign.PanelPadding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        IconSquare(icon, tint = if (checked && enabled) Volt else Silver, size = 40.dp)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = if (enabled) Snow else Silver)
-            Text(description, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IconSquare(icon, tint = if (checked && enabled) Volt else Silver, size = 40.dp)
+            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
+                color = if (enabled) Snow else Silver)
+            Switch(
+                checked = checked, onCheckedChange = null, enabled = enabled,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = OnVolt, checkedTrackColor = Volt,
+                    uncheckedThumbColor = Silver, uncheckedTrackColor = Carbon,
+                    uncheckedBorderColor = Edge,
+                ),
+            )
         }
-        Switch(
-            checked = checked, onCheckedChange = null, enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = OnVolt, checkedTrackColor = Volt,
-                uncheckedThumbColor = Silver, uncheckedTrackColor = Carbon,
-                uncheckedBorderColor = Edge,
-            ),
-        )
+        Text(description, style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -72,21 +72,20 @@ fun PreferenceChoice(
     icon: ImageVector? = null,
 ) {
     val shape = RoundedCornerShape(StepUpDesign.PanelRadius)
-    Row(
+    Column(
         Modifier.fillMaxWidth().clip(shape)
             .background(if (selected) Volt.copy(alpha = .10f) else CarbonHigh)
             .border(1.dp, if (selected) Volt else Edge, shape)
             .selectable(selected, role = Role.RadioButton, onClick = onClick)
             .padding(StepUpDesign.PanelPadding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (icon != null) IconSquare(icon, tint = if (selected) Volt else Silver, size = 40.dp)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = Snow)
-            if (!description.isNullOrBlank()) Text(description, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (icon != null) IconSquare(icon, tint = if (selected) Volt else Silver, size = 40.dp)
+            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = Snow)
+            RadioButton(selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = Volt, unselectedColor = Silver))
         }
-        RadioButton(selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = Volt, unselectedColor = Silver))
+        if (!description.isNullOrBlank()) Text(description, style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -144,12 +143,14 @@ fun FormField(
     maxLines: Int = Int.MAX_VALUE,
     minHeight: Dp = 56.dp,
     keyboardType: KeyboardType = KeyboardType.Text,
+    labelAbove: Boolean = false,
 ) {
+    val field: @Composable (Modifier) -> Unit = { fieldModifier ->
     OutlinedTextField(
         value = value, onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth().heightIn(min = minHeight)
+        modifier = fieldModifier.fillMaxWidth().heightIn(min = minHeight)
             .semantics { contentDescription = label },
-        label = { Text(label) }, placeholder = { Text(placeholder) },
+        label = if (labelAbove) null else ({ Text(label) }), placeholder = { Text(placeholder) },
         singleLine = singleLine, minLines = minLines, maxLines = maxLines,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         textStyle = MaterialTheme.typography.bodyLarge,
@@ -163,4 +164,13 @@ fun FormField(
             cursorColor = Volt,
         ),
     )
+    }
+    if (labelAbove) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
+            field(Modifier)
+        }
+    } else {
+        field(modifier)
+    }
 }

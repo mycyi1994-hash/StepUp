@@ -602,6 +602,7 @@
     <string name="rank_period_week">周榜</string>
     <string name="rank_period_month">月榜</string>
     <string name="rank_period_all">总榜</string>
+    <string name="rank_period_all_short">全部</string>
     <string name="rank_my_position">我的排名</string>
     <string name="rank_total_runners">共 %1$d 位跑者</string>
     <string name="ranking_teaser">第 %1$d 名 · %2$s SUP</string>
@@ -832,7 +833,7 @@
     <string name="journey_withdraw_desc">在钱包内提现 · 最低 1,000 SUP</string>
     <string name="journey_soon">准备中</string>
     <string name="tour_tab_home_title">① 跑步标签</string>
-    <string name="tour_tab_home_body">最下方第一个按钮。今日积分、我的角色和开始跑步都在这里。</string>
+    <string name="tour_tab_home_body">查看今日记录和目标，并开始跑步。</string>
     <string name="tour_tab_news_title">② 资讯标签</string>
     <string name="tour_tab_news_body">底部第二个按钮。跑步活动消息、特价公告和健康资讯都在这里。</string>
     <string name="tour_tab_community_title">③ 社区标签</string>
@@ -1017,6 +1018,9 @@
     <string name="courses_select">选择路线</string>
     <string name="courses_make">创建路线</string>
     <string name="courses_board">路线分享区</string>
+    <string name="courses_tab_select">选择</string>
+    <string name="courses_tab_make">创建</string>
+    <string name="courses_tab_board">分享</string>
     <string name="courses_empty">还没有路线——先跑一次来创建，或去分享区看看。</string>
     <string name="courses_board_empty">还没有人分享路线。来分享你的第一条吧！</string>
     <string name="course_selected">已选择</string>
@@ -1300,14 +1304,14 @@
 
     <!-- 하단 탭 넷 · 가이드 -->
     <string name="tab_run">跑步</string>
-    <string name="tab_customize">装扮</string>
+    <string name="tab_customize">跑鞋</string>
     <string name="tab_me">我的</string>
     <string name="tour_shortcuts_title">挑战 · 资讯</string>
     <string name="tour_shortcuts_body">带额外奖励的目标、赛事日程和健康资讯，都能从这里一键打开。</string>
-    <string name="tour_tab_customize_title">② 装扮标签</string>
-    <string name="tour_tab_customize_body">给角色穿衣服和鞋子的地方。跑者市场也在这里面。</string>
-    <string name="tour_customize_title">我的角色</string>
-    <string name="tour_customize_body">在装扮中选择衣服和跑鞋。装备后的形象也会显示在跑步和个人页面中。</string>
+    <string name="tour_tab_customize_title">② 跑鞋</string>
+    <string name="tour_tab_customize_body">选择跑鞋，查看收藏、图鉴和市场。</string>
+    <string name="tour_customize_title">我的跑鞋</string>
+    <string name="tour_customize_body">选择跑鞋，查看收藏、图鉴和市场。</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">试穿中</string>
@@ -1471,7 +1475,7 @@
     <string name="map_seg_nearby">附近</string>
     <string name="map_seg_territory">占地盘</string>
     <string name="map_legend_course">路线</string>
-    <string name="map_nearby_summary">地图上有 %1$d 个快闪跑 · %2$d 条路线。点一下图钉看看。</string>
+    <string name="map_nearby_summary">已收录 %1$d 个快闪跑 · %2$d 条路线。点按可见的图钉。</string>
     <string name="map_empty_nearby">附近还没有快闪跑或路线。</string>
     <string name="map_away_km">距离 %1$s km</string>
     <string name="map_flash_people">%1$d/%2$d 人</string>
@@ -1529,12 +1533,27 @@
     <string name="course_unlike_action">取消路线点赞</string>
     <string name="tab_draw">抽取</string>
     <string name="mystery_title">神秘宝箱</string>
-    <string name="mystery_subtitle">选择要抽取的物品。</string>
+    <string name="mystery_subtitle">发现你的下一双跑鞋。</string>
     <string name="mystery_box_description">发出蓝光的未开启神秘宝箱</string>
     <string name="mystery_draw_shoe">抽取运动鞋</string>
     <string name="mystery_draw_outfit">抽取运动服</string>
     <string name="mystery_pending_chain">GIWA 合约部署后即可抽取。</string>
     <string name="home_previous_background">上一张背景</string>
     <string name="home_next_background">下一张背景</string>
+    <string name="home_record_title">今日记录</string>
+    <string name="home_recent_week">最近7天</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">我的鞋子</string>
+    <string name="shoes_preview">选中的鞋子</string>
+    <string name="shoes_details">鞋子详情</string>
+    <string name="shoes_owned">已拥有 · %1$d</string>
+    <string name="shoes_select">使用这双鞋</string>
+    <string name="shoes_market">前往鞋子市场</string>
+    <string name="home_banner_message">再迈一步，\n向更好的方向。</string>
+    <string name="mystery_guide_title">抽取须知</string>
+    <string name="mystery_guide_body">请在抽取页面确认价格和可获得的鞋子后再继续。</string>
+    <string name="community_upcoming">即将开始的跑步聚会</string>
+    <string name="run_route_unavailable">本次跑步没有记录GPS路线。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

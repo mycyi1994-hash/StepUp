@@ -20,23 +20,6 @@ import com.stepup.android.R
 /** Scenery shares the avatar's bounds, so changing the hero height cannot move its feet into the sky. */
 @Composable
 fun TerraceStage(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
-    Box(modifier.clipToBounds()) {
-        Image(painterResource(R.drawable.scene_terrace_stage), contentDescription = null,
-            contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                .drawWithContent {
-                    drawContent()
-                    // Reveal the actual canvas behind the artwork, including its gradient/theme.
-                    // Mask only scenery: the avatar and interactive content retain full opacity.
-                    drawRect(Brush.verticalGradient(
-                        0f to Color.Transparent, 0.16f to Color.White,
-                        0.92f to Color.White, 1f to Color.Transparent,
-                    ), blendMode = BlendMode.DstIn)
-                    drawRect(Brush.horizontalGradient(
-                        0f to Color.Transparent, 0.09f to Color.White,
-                        0.91f to Color.White, 1f to Color.Transparent,
-                    ), blendMode = BlendMode.DstIn)
-                })
-        content()
-    }
+    // Retired scenery: preserve caller content without a character stage.
+    Box(modifier, content = content)
 }

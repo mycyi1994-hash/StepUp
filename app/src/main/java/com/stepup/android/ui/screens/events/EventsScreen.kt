@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.events
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -181,16 +183,16 @@ fun EventsScreen(
                     }),
                     fontSize = 29.sp, fontWeight = FontWeight.Black, color = Snow,
                 )
-                Box(Modifier.fillMaxWidth().height(230.dp).celebrate(celebration.takeIf { it > 0 }),
-                    contentAlignment = Alignment.Center) {
-                    look?.let {
-                        com.stepup.android.ui.components.CharacterStage(
-                            look = it, pose = com.stepup.android.domain.AvatarPose.IDLE,
-                            modifier = Modifier.fillMaxSize(), skyline = false, animate = false, characterFraction = 0.95f,
-                        )
-                    } ?: androidx.compose.material3.CircularProgressIndicator()
-                }
+
             }
+        }
+
+        item {
+            com.stepup.android.ui.components.RunnerBanner(
+                Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(20.dp)),
+                setting = if (selected == 2) com.stepup.android.ui.components.RunnerSetting.HomeBlueNight
+                    else com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+            )
         }
 
         // ── 일일 — 걸음 목표. 달성하면 보너스가 저절로 들어온다 ──

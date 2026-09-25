@@ -13,6 +13,20 @@ import androidx.compose.ui.unit.dp
  * 옷장이나 세탁으로 읽히고, 붓은 사진 편집으로 읽힌다.
  */
 object StepUpIcons {
+    val Shoe: ImageVector by lazy {
+        ImageVector.Builder(name = "StepUpShoe", defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(2f, 14f); lineTo(4f, 6f); lineTo(7f, 7f)
+                curveTo(7f, 10f, 9f, 11f, 11f, 9f)
+                lineTo(13f, 11f); lineTo(11f, 12f); lineTo(12f, 13f)
+                lineTo(14f, 12f); lineTo(16f, 14f); lineTo(20f, 15f)
+                curveTo(21f, 15f, 22f, 16f, 22f, 18f)
+                lineTo(22f, 20f); lineTo(2f, 20f); close()
+            }
+        }.build()
+    }
+
     val Shirt: ImageVector by lazy {
         ImageVector.Builder(
             name = "StepUpShirt",

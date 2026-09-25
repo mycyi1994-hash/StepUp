@@ -6,22 +6,28 @@
       "id": "Screen.Run.route",
       "parent": "Run",
       "chrome": "Main",
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Routes.MYSTERY_BOX",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "source implemented; contract deployment gates actions",
-      "verification": "Android compile/capture and wallet transaction pending"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Screen.Customize.route",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Routes.RUNNER_MARKET",
@@ -34,8 +40,10 @@
       "id": "Screen.Community.route",
       "parent": "Community",
       "chrome": "Main",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Routes.MAP",
@@ -70,23 +78,28 @@
       "id": "Routes.EVENTS",
       "parent": "Run",
       "chrome": "Detail",
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Screen.Profile.route",
       "parent": "Profile",
       "chrome": "Main",
-      "implementation": "profile seated exact pink + WND-010 portraits; independent bench and saved random scenery; shared native controls; see assets/profile/README-KO.md",
-      "verification": "source checks and browser asset composition only; Android compile/capture and unit test execution pending; no APK requested",
-      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Routes.RUN_ROUTE",
       "parent": "Run",
       "chrome": "Focus",
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "Routes.COURSES",
@@ -248,9 +261,10 @@
       "id": "CommunityScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
       "line": 86,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "CrewBoardScreen",
@@ -263,7 +277,7 @@
     {
       "id": "CrewCreateScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
-      "line": 38,
+      "line": 40,
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -279,7 +293,7 @@
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
-      "line": 80,
+      "line": 81,
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -287,7 +301,7 @@
     {
       "id": "PostComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
-      "line": 43,
+      "line": 42,
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -303,10 +317,11 @@
     {
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 100,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "line": 40,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "RunnerMarketScreen",
@@ -319,10 +334,11 @@
     {
       "id": "EventsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 79,
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "line": 81,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "NewsScreen",
@@ -335,17 +351,20 @@
     {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 42,
-      "implementation": "source implemented",
-      "verification": "Android capture pending"
+      "line": 48,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
       "line": 85,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "ItemsScreen",
@@ -366,7 +385,7 @@
     {
       "id": "SneakerDexScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
-      "line": 77,
+      "line": 72,
       "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -374,9 +393,11 @@
     {
       "id": "LoginScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
-      "line": 67,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending"
+      "line": 68,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "MapScreen",
@@ -429,10 +450,11 @@
     {
       "id": "ProfileScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 132,
-      "implementation": "profile seated exact pink + WND-010 portraits; independent bench and saved random scenery; shared native controls; see assets/profile/README-KO.md",
-      "verification": "source checks and browser asset composition only; Android compile/capture and unit test execution pending; no APK requested",
-      "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending; shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "line": 131,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
       "id": "WalletScreen",
@@ -513,17 +535,18 @@
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
       "line": 135,
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     }
   ],
   "overlays": [
     {
       "kind": "AlertDialog",
-      "owner": "ReportDialogHost",
+      "owner": "ReportDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
-      "line": 95,
+      "line": 113,
       "verification": "pending"
     },
     {
@@ -541,38 +564,31 @@
       "verification": "pending"
     },
     {
-      "kind": "ModalBottomSheet",
-      "owner": "CustomizeScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 256,
-      "verification": "pending"
-    },
-    {
       "kind": "DialogPanel",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 395,
+      "line": 397,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 190,
+      "line": 179,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 402,
+      "line": 405,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 537,
+      "line": 540,
       "verification": "pending"
     },
     {
@@ -600,14 +616,14 @@
       "kind": "DialogPanel",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 927,
+      "line": 933,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 976,
+      "line": 982,
       "verification": "pending"
     },
     {
@@ -635,28 +651,28 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 419,
+      "line": 408,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 456,
+      "line": 445,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 480,
+      "line": 469,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 971,
+      "line": 960,
       "verification": "pending"
     }
   ],

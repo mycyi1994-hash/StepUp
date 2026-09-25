@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,12 +63,30 @@ private fun BoardNotice.messageRes(): Int = when (this) {
  * 빈다. 그걸 "아직 글이 없어요"와 섞으면 사용자는 게시판이 망한 줄 안다.
  */
 @Composable
-fun BoardSyncCard(state: BoardSyncState, onRetry: () -> Unit) {
+fun BoardSyncCard(state: BoardSyncState, onRetry: () -> Unit, compact: Boolean = false) {
     val message = when (state) {
         BoardSyncState.Idle, BoardSyncState.Loading -> stringResource(R.string.board_loading)
         BoardSyncState.SignInRequired -> stringResource(R.string.board_sign_in_needed)
         is BoardSyncState.Failed -> stringResource(R.string.board_load_failed)
         BoardSyncState.Ready -> return
+    }
+    if (compact && state == BoardSyncState.SignInRequired) {
+        com.stepup.android.ui.components.GlowCard(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), spacing = 0.dp,
+        ) {
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(message, modifier = Modifier.weight(1f), color = Silver,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
+                com.stepup.android.ui.components.SignInAgainButton(
+                    modifier = Modifier.widthIn(max = 148.dp),
+                )
+            }
+        }
+        return
     }
     com.stepup.android.ui.components.StatePanel(
         message = message,

@@ -281,12 +281,7 @@ fun RunScreen(
     val finishing = !session.isActive && session.lastRewardPoints != null
 
     var showDetails by rememberSaveable { mutableStateOf(false) }
-    val savedLook = look
-    val render = savedLook?.let {
-        com.stepup.android.domain.AvatarArtCatalog.resolve(it, if (running) AvatarPose.RUN else AvatarPose.IDLE)
-    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val characterHeight = (maxHeight - 360.dp * LocalDensity.current.fontScale.coerceAtMost(1.5f)).coerceIn(160.dp, 400.dp)
         Column(
             Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -342,25 +337,19 @@ fun RunScreen(
                     if (recordingCourse && !readyToSaveCourse) {
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
-                    if (render != null && savedLook != null) {
-                        CharacterStage(
-                            look = savedLook,
-                            pose = if (running) AvatarPose.RUN else AvatarPose.IDLE,
-                            skyline = false,
-                            characterFraction = 0.9f,
-                            contentDescription = stringResource(R.string.cd_home_character),
-                            modifier = Modifier.fillMaxWidth().height(characterHeight).padding(vertical = 8.dp),
-                        )
-                        com.stepup.android.ui.components.AvatarLookNote(savedLook, render)
-                    } else {
-                        Box(Modifier.fillMaxWidth().height(characterHeight), contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.feed_loading), color = Silver)
-                        }
-                    }
                     RunHero(
                         paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
+                    Spacer(Modifier.height(20.dp))
+                    val mapHeight = if (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800) 256.dp else 280.dp
+                    val mapModifier = Modifier.fillMaxWidth().height(mapHeight)
+                        .clip(RoundedCornerShape(20.dp)).testTag("run-live-map")
+                    if (session.geoTrack.isNotEmpty()) {
+                        LiveRouteMap(points = session.geoTrack, modifier = mapModifier, progress = 1f)
+                    } else {
+                        MapWaiting(mapModifier)
+                    }
                     if (session.flaggedSegments > 0) {
                         TextButton(onClick = { showDetails = true }) {
                             Icon(Icons.Filled.Warning, null, tint = Alert, modifier = Modifier.size(18.dp))
@@ -1103,6 +1092,36 @@ private fun FinishCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Icon(Icons.Filled.Check, contentDescription = null, tint = com.stepup.android.ui.theme.VoltText,
+            modifier = Modifier.size(48.dp).padding(8.dp))
+        Text(stringResource(R.string.finish_title), color = Snow, style = MaterialTheme.typography.headlineSmall)
+        // Keep the three activity results together in the first viewport. Stack
+        // only when a narrow screen or enlarged type needs the full line width.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.25f
+            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
+                if (stacked) {
+                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
+                    HairlineDivider()
+                    FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
+                    HairlineDivider()
+                    FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km", Modifier.weight(1f))
+                        FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "", Modifier.weight(1f))
+                        FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        if (session.geoTrack.isNotEmpty()) {
+            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxWidth().height(220.dp)
+                .clip(RoundedCornerShape(20.dp)).testTag("run-result-map"))
+        } else {
+            Text(stringResource(R.string.run_route_unavailable), color = Silver,
+                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 12.dp))
+        }
         GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
           Column(
               modifier = Modifier.fillMaxWidth(),
@@ -1145,38 +1164,6 @@ private fun FinishCard(
             }
         }
 
-        }
-        // 내 캐릭터 — 축하 자세 그림이 아직 없어 같은 성별의 그림을 쓴다
-        if (look != null) CharacterStage(
-            look = look,
-            pose = if (voided) AvatarPose.IDLE else AvatarPose.CHEER,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 170.dp else 200.dp),
-            characterFraction = 0.9f,
-            skyline = false,
-            animate = false,
-        )
-
-        // Keep the three activity results together in the first viewport. Stack
-        // only when a narrow screen or enlarged type needs the full line width.
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
-                if (stacked) {
-                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
-                    HairlineDivider()
-                    FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
-                    HairlineDivider()
-                    FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
-                } else {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km", Modifier.weight(1f))
-                        FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "", Modifier.weight(1f))
-                        FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
-                    }
-                }
-            }
         }
         GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
             Text(stringResource(R.string.finish_balance), style = MaterialTheme.typography.bodyMedium, color = Silver)
@@ -1231,7 +1218,7 @@ private fun RunHero(
     avgPaceSec: Long?,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.25f
+        val stacked = maxWidth < 300.dp || LocalDensity.current.fontScale > 1.25f
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             GpsChip(gpsFix, locationAllowed)
             AdaptiveNumber(formatDuration(elapsedSec), if (elapsedSec >= 3600) 44.sp else 64.sp, color = if (paused) Silver else Snow, textAlign = TextAlign.Center)

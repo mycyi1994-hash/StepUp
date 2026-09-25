@@ -604,6 +604,7 @@
     <string name="rank_period_week">Week</string>
     <string name="rank_period_month">Month</string>
     <string name="rank_period_all">All time</string>
+    <string name="rank_period_all_short">All</string>
     <string name="rank_my_position">MY POSITION</string>
     <string name="rank_total_runners">out of %1$d runners</string>
     <string name="ranking_teaser">You\'re #%1$d · %2$s SUP</string>
@@ -834,7 +835,7 @@ Start running with StepUp.</string>
     <string name="journey_withdraw_desc">Inside the wallet · 1,000 SUP minimum</string>
     <string name="journey_soon">Coming soon</string>
     <string name="tour_tab_home_title">① Run tab</string>
-    <string name="tour_tab_home_body">The first button at the bottom. Today\'s points, your runner and Start Run are all here.</string>
+    <string name="tour_tab_home_body">Find today’s activity, your goal and Start run here.</string>
     <string name="tour_tab_news_title">2. News tab</string>
     <string name="tour_tab_news_body">Second button along the bottom. Running events, deal notices and health reads sit inside.</string>
     <string name="tour_tab_community_title">③ Community tab</string>
@@ -1019,6 +1020,9 @@ Start running with StepUp.</string>
     <string name="courses_select">Pick a course</string>
     <string name="courses_make">Create course</string>
     <string name="courses_board">Course board</string>
+    <string name="courses_tab_select">Select</string>
+    <string name="courses_tab_make">Create</string>
+    <string name="courses_tab_board">Board</string>
     <string name="courses_empty">No courses yet — record a run to create one, or check the board.</string>
     <string name="courses_board_empty">Nothing shared yet. Share your course first!</string>
     <string name="course_selected">Selected</string>
@@ -1302,14 +1306,14 @@ Start running with StepUp.</string>
 
     <!-- 하단 탭 넷 · 가이드 -->
     <string name="tab_run">Run</string>
-    <string name="tab_customize">Style</string>
+    <string name="tab_customize">Shoes</string>
     <string name="tab_me">Me</string>
     <string name="tour_shortcuts_title">Challenges · News</string>
     <string name="tour_shortcuts_body">Goals with bonus rewards, and race dates and health news, are one tap away here.</string>
-    <string name="tour_tab_customize_title">② Style tab</string>
-    <string name="tour_tab_customize_body">Dress your runner with outfits and shoes. The Runner Market is inside.</string>
-    <string name="tour_customize_title">Your runner</string>
-    <string name="tour_customize_body">Choose clothes and shoes in Customize. Your equipped look also appears during runs and in your profile.</string>
+    <string name="tour_tab_customize_title">② Shoes tab</string>
+    <string name="tour_tab_customize_body">Choose your running shoes and explore your collection and the market.</string>
+    <string name="tour_customize_title">Your shoes</string>
+    <string name="tour_customize_body">Choose running shoes and explore your collection and the market.</string>
 
     <!-- 리뉴얼 — 러닝 · 꾸미기 · 커뮤니티 · 내 정보 -->
     <string name="avatar_trial">Trying on</string>
@@ -1473,7 +1477,7 @@ Start running with StepUp.</string>
     <string name="map_seg_nearby">Nearby</string>
     <string name="map_seg_territory">Territory</string>
     <string name="map_legend_course">Course</string>
-    <string name="map_nearby_summary">%1$d flash runs · %2$d courses on the map. Tap a pin.</string>
+    <string name="map_nearby_summary">%1$d flash runs · %2$d courses available. Tap a visible pin.</string>
     <string name="map_empty_nearby">No flash runs or courses nearby yet.</string>
     <string name="map_away_km">%1$s km away</string>
     <string name="map_flash_people">%1$d/%2$d people</string>
@@ -1531,12 +1535,27 @@ Start running with StepUp.</string>
     <string name="course_unlike_action">Remove course like</string>
     <string name="tab_draw">Draw</string>
     <string name="mystery_title">Mystery Box</string>
-    <string name="mystery_subtitle">Choose what you want to draw.</string>
+    <string name="mystery_subtitle">Discover your next running shoes.</string>
     <string name="mystery_box_description">Closed glowing mystery box</string>
     <string name="mystery_draw_shoe">Draw sneakers</string>
     <string name="mystery_draw_outfit">Draw a tracksuit</string>
     <string name="mystery_pending_chain">Drawing opens after the GIWA contract is deployed.</string>
     <string name="home_previous_background">Previous background</string>
     <string name="home_next_background">Next background</string>
+    <string name="home_record_title">Today’s activity</string>
+    <string name="home_recent_week">Last 7 days</string>
+
+    <!-- Character-free native screens: art and controls remain independent. -->
+    <string name="shoes_title">My shoes</string>
+    <string name="shoes_preview">Selected pair</string>
+    <string name="shoes_details">Shoe details</string>
+    <string name="shoes_owned">Owned shoes · %1$d</string>
+    <string name="shoes_select">Use these shoes</string>
+    <string name="shoes_market">Browse the shoe market</string>
+    <string name="home_banner_message">One more step.\nIn a good direction.</string>
+    <string name="mystery_guide_title">Before you draw</string>
+    <string name="mystery_guide_body">Check the price and available shoes on the draw page before confirming.</string>
+    <string name="community_upcoming">Upcoming meetups</string>
+    <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

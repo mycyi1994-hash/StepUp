@@ -353,7 +353,7 @@ private const val MAX_USER_ZOOM_IN = 4
 /** 더 밀어낼 수 있는 단계 (음수) */
 private const val MAX_USER_ZOOM_OUT = -3
 
-/** 지도 위 작은 원형 버튼 */
+/** 지도 위 원형 버튼. 보이는 원과 터치 영역을 모두 48dp로 유지한다. */
 @Composable
 private fun MapButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -362,7 +362,7 @@ private fun MapButton(
 ) {
     Box(
         modifier = modifier
-            .size(32.dp)
+            .size(48.dp)
             .clip(CircleShape)
             .background(Night.copy(alpha = 0.95f))
             .border(1.dp, Volt.copy(alpha = 0.4f), CircleShape)
@@ -373,7 +373,7 @@ private fun MapButton(
             imageVector = icon,
             contentDescription = null,
             tint = Volt,
-            modifier = Modifier.size(17.dp),
+            modifier = Modifier.size(21.dp),
         )
     }
 }

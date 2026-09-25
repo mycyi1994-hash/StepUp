@@ -133,7 +133,7 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
     data object Run : Screen("home", R.string.tab_run, Icons.AutoMirrored.Filled.DirectionsRun)
 
     /** 꾸미기 — 캐릭터에 의상과 신발을 입히는 곳. 러너 마켓은 이 안에 있다. */
-    data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shirt)
+    data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shoe)
 
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
@@ -353,7 +353,7 @@ internal fun MainScaffold(
     LaunchedEffect(currentRoute, homeSetting, profileSetting, wardrobeScene, runSetting, feedback) {
         val setting = when (currentRoute) {
             Screen.Run.route -> homeSetting
-            Screen.Customize.route -> wardrobeScene
+            Screen.Customize.route -> null
             Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.RunSunset
             Screen.Profile.route -> profileSetting
             Routes.RUN_ROUTE -> runSetting
@@ -449,6 +449,7 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    backgroundSetting = homeSetting,
                     onPreviousBackground = {
                         homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
                     },
@@ -461,18 +462,12 @@ internal fun MainScaffold(
                 val drawReady = BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()
                 MysteryBoxScreen(
                     shoeDrawReady = drawReady,
-                    outfitDrawReady = drawReady,
+                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onDrawShoe = {
                         com.stepup.android.core.ExternalIntents.openUrl(context,
                             android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
                                 .appendQueryParameter("category", "shoe")
-                                .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
-                                .build().toString())
-                    },
-                    onDrawOutfit = {
-                        com.stepup.android.core.ExternalIntents.openUrl(context,
-                            android.net.Uri.parse(BuildConfig.DRAW_DAPP_URL).buildUpon()
-                                .appendQueryParameter("category", "outfit")
                                 .appendQueryParameter("sound", if (feedback?.soundsEnabled == true) "on" else "off")
                                 .build().toString())
                     },
@@ -487,6 +482,8 @@ internal fun MainScaffold(
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
+                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                 )
             }
@@ -785,8 +782,33 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
-    val labelWidth = with(density) { (maxWidth / (bottomTabs.size + 1) - 8.dp).roundToPx().coerceAtLeast(1) }
-    val labelHeightPx = bottomTabs.map { screen ->
+    val labels = bottomTabs.map { stringResource(it.labelRes) } + stringResource(R.string.tab_draw)
+    // Allocate spare space to long localized labels without defeating system font scaling.
+    val preferredWidths = labels.map { label ->
+        val measured = measurer.measure(text = label, style = labelStyle, softWrap = false)
+        (with(density) { measured.size.width.toDp().value } + 10f)
+            .coerceAtLeast(StepUpDesign.TouchTarget.value)
+    }
+    val equalWidth = maxWidth.value / labels.size
+    val minimumWidth = StepUpDesign.TouchTarget.value
+    val widths = if (preferredWidths.all { it <= equalWidth }) labels.map { equalWidth } else {
+        val giftWidth = preferredWidths.last().coerceIn(minimumWidth,
+            (maxWidth.value - minimumWidth * bottomTabs.size).coerceAtLeast(minimumWidth))
+        val sideWidth = (maxWidth.value - giftWidth) / 2f
+        fun pairWidths(start: Int): List<Float> {
+            val preferred = preferredWidths.subList(start, start + 2)
+            val spare = sideWidth - preferred.sum()
+            if (spare >= 0f) return preferred.map { it + spare / 2f }
+            val needs = preferred.map { (it - minimumWidth).coerceAtLeast(0f) }
+            val available = (sideWidth - minimumWidth * 2f).coerceAtLeast(0f)
+            val totalNeed = needs.sum().coerceAtLeast(1f)
+            return needs.map { minimumWidth + available * it / totalNeed }
+        }
+        // Both sides occupy equal width, so the draw action stays at screen center.
+        pairWidths(0) + pairWidths(2) + giftWidth
+    }
+    val labelHeightPx = bottomTabs.mapIndexed { index, screen ->
+        val labelWidth = with(density) { (widths[index].dp - 8.dp).roundToPx().coerceAtLeast(1) }
         measurer.measure(
             text = stringResource(screen.labelRes), style = labelStyle,
             constraints = androidx.compose.ui.unit.Constraints(maxWidth = labelWidth),
@@ -815,6 +837,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             bottomTabs.forEachIndexed { index, screen ->
                 NavTab(
                     screen = screen,
+                    slotWeight = widths[index],
                     labelHeight = labelHeight,
                     labelStyle = labelStyle,
                     selected = parent == screen,
@@ -839,6 +862,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                 )
                 if (index == 1) {
                     GiftNavAction(
+                        slotWeight = widths.last(),
                         selected = currentRoute == Routes.MYSTERY_BOX,
                         onClick = { navController.navigate(Routes.MYSTERY_BOX) {
                             launchSingleTop = true
@@ -852,10 +876,10 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
 }
 
 @Composable
-private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit, slotWeight: Float) {
     val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
     Column(
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(slotWeight).testTag("nav-draw-action")
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
             .heightIn(min = StepUpDesign.NavigationItemHeight)
@@ -889,6 +913,7 @@ private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun RowScope.NavTab(
     screen: Screen, labelHeight: androidx.compose.ui.unit.Dp,
+    slotWeight: Float,
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
@@ -902,7 +927,7 @@ private fun RowScope.NavTab(
         label = "navTabDot",
     )
     Column(
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(slotWeight)
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }

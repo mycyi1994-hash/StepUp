@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe|mystery) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records|explore) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -90,6 +90,41 @@ run_instrumentation() {
     fi
   fi
 }
+# Character-free checkpoint: bounded interactions and 14 reference scenes x 4 viewports.
+# The full multilingual gallery remains a separately selectable test, not a default run.
+if [[ "$suite" == "redesign" ]]; then
+  run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndKeepsCatalogReachable,com.stepup.android.ExperienceUiTest#firstGuideVisitsRunningShoesAndProfile,com.stepup.android.MysteryDesignTest"
+  mkdir -p screen-gallery/redesign-interaction-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-interaction-results/ || true
+  run_instrumentation redesign-reference "com.stepup.android.DesignReferenceTest#referenceViewports"
+  mkdir -p screen-gallery/redesign-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+  pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/mystery/ || status=1
+fi
+# Secondary design checkpoint: real writing forms + 10 detail/settings routes at three viewports.
+if [[ "$suite" == "secondary" ]]; then
+  run_instrumentation secondary-forms "com.stepup.android.CrewFormTest"
+  mkdir -p screen-gallery/secondary-forms-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-forms-results/ || true
+  run_instrumentation secondary-reference "com.stepup.android.DesignReferenceTest#secondaryViewports"
+  mkdir -p screen-gallery/secondary-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+  pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
+fi
+if [[ "$suite" == "records" ]]; then
+  run_instrumentation records-reference "com.stepup.android.DesignReferenceTest#recordViewports"
+  mkdir -p screen-gallery/records-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/records-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+fi
+if [[ "$suite" == "explore" ]]; then
+  run_instrumentation explore-reference "com.stepup.android.DesignReferenceTest#exploreViewports"
+  mkdir -p screen-gallery/explore-reference-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/explore-reference-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"
   pull_captures /sdcard/Android/data/com.stepup.android/files/screen-gallery/. screen-gallery/ || status=1
