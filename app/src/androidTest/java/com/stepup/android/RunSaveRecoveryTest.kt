@@ -35,6 +35,7 @@ class RunSaveRecoveryTest {
             previous
         }
         val startedAt = System.currentTimeMillis() - 500_000
+        clearAnyRunCheckpointForTest() // 앞 테스트가 남긴 다른 러닝의 저장본이 있으면 이 러닝을 저장할 수 없다
         WalkSessionService.showStateForTest(WalkSessionState(isActive = true, isPaused = true,
             startedAt = startedAt, recordingOwner = "guest", steps = 500, elapsedSec = 500))
         db.openHelper.writableDatabase.execSQL("""
@@ -76,6 +77,7 @@ class RunSaveRecoveryTest {
             db.openHelper.writableDatabase.execSQL("DROP TRIGGER IF EXISTS fail_test_run_save")
             compose.activity.stopService(Intent(compose.activity, WalkSessionService::class.java))
             WalkSessionService.showStateForTest(WalkSessionState())
+            clearAnyRunCheckpointForTest()
             runBlocking { prefs.setSelectedCourse(previousCourse) }
         }
     }
