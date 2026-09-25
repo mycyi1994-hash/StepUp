@@ -1,8 +1,10 @@
 {
-  "name": "stepup-draw-page",
+  "name": "stepup-web",
   "private": true,
   "scripts": {
-    "build:draw": "esbuild draw-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/draw.js"
+    "build:draw": "esbuild draw-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/draw.js",
+    "build:wallet": "esbuild wallet-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/wallet.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@metamask/connect-evm": "^2.1.1",
