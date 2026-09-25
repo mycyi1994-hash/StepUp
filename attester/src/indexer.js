@@ -7,7 +7,7 @@ import { weiToSup } from './typed.js'
  *
  * 1. 이벤트: 체인이 알려 주는 safe 블록까지만 읽는다. 뒤집힐 수 있는 블록의
  *    넣기를 반영하면 체인에는 없는 잔고가 앱에 생긴다. 컨트랙트마다 블록 · 로그 순서로
- *    서버에 넘기고, 끝까지 받아들여진 블록까지만 커서를 옮긴다(한 번에 EVENTS_PER_RUN 개). 같은 이벤트를 두 번 넘겨도
+ *    서버에 넘기고, 받아들여진 이벤트 바로 뒤까지만 커서를 옮긴다(한 번에 EVENTS_PER_RUN 개). 같은 이벤트를 두 번 넘겨도
  *    서버가 (거래, 로그 번호)로 한 번만 처리한다.
  * 2. 만료: 서명 유효 시간 + 안전 마진이 지난 작업. 체인에서 그 작업 번호가 안 쓰였을
  *    때만 되돌린다. 쓰였으면 이벤트를 놓친 것이므로 되돌리지 않고 다음 읽기에 맡긴다.
@@ -74,17 +74,23 @@ async function safeBlock(_env, c) {
   return null
 }
 
-/**
- * 한 번에 서버로 넘기는 이벤트 수. 워커는 실행 한 번에 보낼 수 있는 요청 수가 정해져 있어
- * (무료 50 · 유료 1000), 한 구간의 이벤트가 그보다 많으면 매번 같은 곳에서 실패하고 커서가
- * 영영 멈췄다. 이만큼만 넘기고, 끝까지 처리한 블록까지만 커서를 옮긴다.
- */
-const EVENTS_PER_RUN = 25
-
 /** 서버가 허락하지 않은 지급 · 발행을 봤을 때 — 서버와 컨트랙트를 멈춘다(그 컨트랙트 먼저) */
 async function alarm(env, deps, source, ev, result) {
   await pauseAll(env, deps, `${source} ${ev.p_kind} ${result} ${ev.p_tx}`, source)
 }
+
+/**
+ * 한 번에 서버로 넘기는 이벤트 수. 워커는 실행 한 번에 보낼 수 있는 요청 수가 정해져 있어
+ * (무료 50 · 유료 1000), 한 구간의 이벤트가 그보다 많으면 매번 같은 곳에서 실패하고 커서가
+ * 영영 멈췄다. 이만큼만 넘기고, 넘긴 이벤트 바로 뒤(블록 · 로그 번호)까지만 커서를 옮긴다 —
+ * 한 블록에 이벤트가 몰려 있어도 그 블록 안에서 이어 간다.
+ */
+const EVENTS_PER_RUN = 20
+
+/** 커서 위치 = 블록 × 100000 + 로그 번호. "다음에 넘길 이벤트"를 가리킨다. 늘기만 한다. */
+const LOG_SLOTS = 100000n
+const posName = (source) => `${source}@pos`
+const posOf = (block, logIndex) => block * LOG_SLOTS + BigInt(logIndex)
 
 export async function indexEvents(env, deps) {
   const c = deps.clients(env)
@@ -97,13 +103,20 @@ export async function indexEvents(env, deps) {
     const address = c.addresses[source]
     if (!address) continue
     // 한 컨트랙트를 못 읽어도 다른 컨트랙트는 읽는다
-    let from
-    let done = null // 이벤트를 끝까지 처리한 마지막 블록
+    let start = null // 이번 실행을 시작한 위치
+    let next = null // 다음에 넘길 이벤트의 위치
     try {
-      const cursor = await deps.rpc(env, 'attester_cursor_get', { p_name: source })
-      from = cursor == null ? BigInt(env.START_BLOCK ?? '0') : BigInt(cursor) + 1n
+      const saved = await deps.rpc(env, 'attester_cursor_get', { p_name: posName(source) })
+      if (saved != null) {
+        start = BigInt(saved)
+      } else {
+        // 예전 커서(마지막으로 끝낸 블록)에서 이어 간다
+        const cursor = await deps.rpc(env, 'attester_cursor_get', { p_name: source })
+        start = posOf(cursor == null ? BigInt(env.START_BLOCK ?? '0') : BigInt(cursor) + 1n, 0)
+      }
+      const from = start / LOG_SLOTS
       if (from > safe) continue
-      let to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
+      const to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
 
       const logs = await c.publicClient.getContractEvents({ address, abi, fromBlock: from, toBlock: to })
       // RPC 뒤의 노드가 아직 그 블록을 모르면 오류 없이 빈 목록을 준다. 끝 블록이 실제로
@@ -117,35 +130,34 @@ export async function indexEvents(env, deps) {
         x.blockNumber === y.blockNumber ? Number(x.logIndex) - Number(y.logIndex) : Number(x.blockNumber - y.blockNumber),
       )
       let handled = 0
-      let block = null
-      done = from - 1n
+      let stopped = false
       for (const log of logs) {
-        if (log.blockNumber !== block) {
-          if (block != null) done = block
-          // 이번 실행 몫을 다 썼다 — 앞 블록까지만 처리한 것으로 하고 나머지는 다음 실행에
-          if (handled >= budget) {
-            to = done
-            break
-          }
-          block = log.blockNumber
+        const at = posOf(log.blockNumber, log.logIndex)
+        if (at < start) continue // 앞 실행이 이미 넘겼다
+        next = at
+        // 이번 실행 몫을 다 썼다 — 여기서부터는 다음 실행에
+        if (handled >= budget) {
+          stopped = true
+          break
         }
         const ev = toServerEvent(source, log)
         if (!ev) continue
-        // 실패하면 여기서 멈추고, 끝까지 처리한 블록까지만 커서를 옮긴다(아래 catch)
+        // 실패하면 여기서 멈추고, 이 이벤트 앞까지만 커서를 옮긴다(아래 catch)
         const result = await deps.rpc(env, 'attester_chain_event', ev)
         handled += 1
         // 서버가 허락하지 않은 지급 · 발행이다(서명 키가 샜다). 서버는 이미 멈췄고, 컨트랙트도 멈춘다.
         // 컨트랙트 정지가 실패해도 다음 실행의 keepPaused 가 다시 멈춘다.
         if (result === 'UNKNOWN_OP' || result === 'MISMATCH') await alarm(env, deps, source, ev, result)
       }
-      await deps.rpc(env, 'attester_cursor_set', { p_name: source, p_block: Number(to) })
-      report[source] = { from: Number(from), to: Number(to), events: handled }
+      const end = stopped ? next : posOf(to + 1n, 0)
+      await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source), p_block: Number(end) })
+      report[source] = { from: Number(from), to: Number(stopped ? next / LOG_SLOTS : to), events: handled }
     } catch (e) {
       console.error(`index ${source} failed`, e?.message)
-      // 앞 블록들은 끝까지 넘겼다 — 거기까지는 커서를 옮겨 다음 실행이 같은 이벤트를 다시 보내며
-      // 요청 수를 다 써 버리지 않게 한다(서버는 같은 이벤트를 한 번만 처리한다)
-      if (done != null && from != null && done >= from) {
-        await deps.rpc(env, 'attester_cursor_set', { p_name: source, p_block: Number(done) }).catch(() => {})
+      // 앞의 이벤트는 넘겼다 — 실패한 이벤트 앞까지는 커서를 옮겨, 다음 실행이 같은 이벤트를 다시
+      // 보내며 요청 수를 다 써 버리지 않게 한다(서버는 같은 이벤트를 한 번만 처리한다)
+      if (next != null && start != null && next > start) {
+        await deps.rpc(env, 'attester_cursor_set', { p_name: posName(source), p_block: Number(next) }).catch(() => {})
       }
       report[source] = { error: true }
     }

@@ -5,9 +5,9 @@
 --  그런데 표 자체에도 쓰기 권한이 열려 있어, 함수가 하는 검사를 건너뛸 수 있었다.
 --    · crew_members: 가입 시각(joined_at)을 과거로 적어, 방장이 나가면 먼저 들어온 사람 대신
 --      방장이 된다. 숨긴(신고 누적) 크루에도 들어간다.
---    · comments: 작성 시각을 적고, 다른 글의 댓글에 답글을 달고, 시간당 개수 제한을 건너뛴다.
+--    · comments: 작성 시각을 적고, 다른 글의 댓글에 답글을 달고, 시간당 개수 제한을 건너뛴다 → 직접 쓰기 막음.
 --    · posts: 글쓴이가 아무 칸이나 고친다(작성 시각 · 분류 · 번개 모임 시각 · 정원).
---  시각 칸은 쓰지 못하게(기본값 now()), 답글은 같은 글의 댓글에만, 글 고치기는 막는다.
+--  가입 시각은 쓰지 못하게(기본값 now()), 댓글은 함수로만, 글 고치기는 막는다.
 -- ════════════════════════════════════════════════════════════════════
 
 -- 크루 가입 — 가입 시각은 서버가 적는다
@@ -26,9 +26,9 @@ create policy crew_members_join_self on public.crew_members for insert
     and not public.is_hidden('CREW', crew_id::text)
   );
 
--- 댓글 — 작성 시각은 서버가, 답글은 같은 글의 댓글에만
+-- 댓글 — comment_create 로만 쓴다(시간당 개수 제한 · 답글 검사가 거기 있다). 아래 정책은 혹시 권한이
+-- 다시 열려도 답글이 다른 글로 가지 않게 남겨 둔다.
 revoke insert on public.comments from anon, authenticated;
-grant insert (post_id, parent_id, author_id, body) on public.comments to authenticated;
 
 drop policy if exists comments_insert_own on public.comments;
 create policy comments_insert_own on public.comments for insert

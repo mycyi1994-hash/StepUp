@@ -226,7 +226,7 @@ test('이벤트: 서버가 모르는 작업이면 컨트랙트를 멈춘다', as
     }),
     rpc: async (_env, fn, args) => {
       calls.push([fn, args])
-      if (fn === 'attester_cursor_get') return 899
+      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 899
       if (fn === 'attester_chain_event') return 'UNKNOWN_OP'
       return null
     },
@@ -304,7 +304,7 @@ test('작업 실행: 로그인한 사용자별로도 요청 수를 센다', asyn
   await assert.rejects(executeOp(req({}), env, deps, OP), (e) => e.status === 429)
 })
 
-test('이벤트: 한 번에 넘기는 수를 넘으면 끝까지 넘긴 블록까지만 커서를 옮긴다', async () => {
+test('이벤트: 한 번에 넘기는 수를 넘으면 넘긴 이벤트 바로 뒤까지만 커서를 옮긴다', async () => {
   const events = Array.from({ length: 60 }, (_, i) => ({
     eventName: 'Claimed', args: { sessionHash: `0x${i}`, runner: '0xA', amount: 1n },
     transactionHash: `0xt${i}`, logIndex: 0, blockNumber: 101n + BigInt(i),
@@ -320,20 +320,48 @@ test('이벤트: 한 번에 넘기는 수를 넘으면 끝까지 넘긴 블록�
       },
     }),
     rpc: async (_env, fn, args) => {
-      if (fn === 'attester_cursor_get') return 100
-      if (fn === 'attester_cursor_set') cursors.push(args.p_block)
+      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 100
+      if (fn === 'attester_cursor_set') cursors.push([args.p_name, args.p_block])
       if (fn === 'attester_chain_event') { sent += 1; return 'OK' }
       return null
     },
   }
-  const out = await indexEvents({ INDEX_EVENTS_PER_RUN: '25' }, deps)
+  await indexEvents({ INDEX_EVENTS_PER_RUN: '25' }, deps)
   assert.equal(sent, 25)
-  // 25번째 이벤트가 있던 블록(125)까지 — 다음 실행은 126 부터
-  assert.deepEqual(cursors, [125])
-  assert.equal(out.distributor.to, 125)
+  // 26번째 이벤트(블록 126, 로그 0)부터 다음 실행에
+  assert.deepEqual(cursors, [['distributor@pos', 126 * 100000]])
 })
 
-test('이벤트: 중간에 실패하면 앞의 끝난 블록까지는 커서를 옮긴다', async () => {
+test('이벤트: 한 블록에 이벤트가 몰려 있어도 블록 안에서 이어 간다', async () => {
+  const events = Array.from({ length: 50 }, (_, i) => ({
+    eventName: 'Claimed', args: { sessionHash: `0x${i}`, runner: '0xA', amount: 1n },
+    transactionHash: `0xt${i}`, logIndex: i, blockNumber: 300n,
+  }))
+  let pos = null
+  const seen = []
+  const deps = {
+    clients: () => ({
+      addresses: { distributor: '0x' + '1'.repeat(40) },
+      publicClient: {
+        getBlock: async ({ blockTag, blockNumber }) => ({ number: blockTag === 'safe' ? 300n : blockNumber }),
+        getContractEvents: async () => events,
+      },
+    }),
+    rpc: async (_env, fn, args) => {
+      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? pos : 299
+      if (fn === 'attester_cursor_set') pos = args.p_block
+      if (fn === 'attester_chain_event') { seen.push(args.p_tx); return 'OK' }
+      return null
+    },
+  }
+  for (let run = 0; run < 3; run++) await indexEvents({ INDEX_EVENTS_PER_RUN: '20' }, deps)
+  // 세 번에 걸쳐 50개를 한 번씩만 넘기고, 커서는 다음 블록 처음으로
+  assert.equal(seen.length, 50)
+  assert.equal(new Set(seen).size, 50)
+  assert.equal(pos, 301 * 100000)
+})
+
+test('이벤트: 중간에 실패하면 실패한 이벤트 앞까지는 커서를 옮긴다', async () => {
   const events = [0, 1, 2].map((i) => ({
     eventName: 'Claimed', args: { sessionHash: `0x${i}`, runner: '0xA', amount: 1n },
     transactionHash: `0xt${i}`, logIndex: 0, blockNumber: 201n + BigInt(i),
@@ -348,7 +376,7 @@ test('이벤트: 중간에 실패하면 앞의 끝난 블록까지는 커서를 
       },
     }),
     rpc: async (_env, fn, args) => {
-      if (fn === 'attester_cursor_get') return 200
+      if (fn === 'attester_cursor_get') return args.p_name.endsWith('@pos') ? null : 200
       if (fn === 'attester_cursor_set') cursors.push(args.p_block)
       if (fn === 'attester_chain_event' && args.p_tx === '0xt2') throw new Error('too many subrequests')
       return 'OK'
@@ -356,7 +384,8 @@ test('이벤트: 중간에 실패하면 앞의 끝난 블록까지는 커서를 
   }
   const out = await indexEvents({}, deps)
   assert.equal(out.distributor.error, true)
-  assert.deepEqual(cursors, [202])
+  // 실패한 이벤트(블록 203, 로그 0) 앞까지
+  assert.deepEqual(cursors, [203 * 100000])
 })
 
 test('이벤트: safe · finalized 블록을 못 받으면 이번에는 읽지 않는다', async () => {

@@ -417,8 +417,7 @@ declare v_post bigint := pg_temp.fx('post_open')::bigint;
 begin
   insert into public.post_likes (post_id, user_id)
   values (v_post, '22222222-2222-2222-2222-222222222222');
-  insert into public.comments (post_id, author_id, body)
-  values (v_post, '22222222-2222-2222-2222-222222222222', '저도 갈래요');
+  perform public.comment_create(v_post, null, '저도 갈래요');
 
   perform pg_temp.ok(
     (select likes from public.post_feed where id = v_post) = 1, '좋아요가 세어진다');
@@ -3371,7 +3370,7 @@ call pg_temp.must_fail(
 call pg_temp.must_fail(
   format($q$ insert into public.comments (post_id, author_id, body, created_at)
              values (%s, '33333333-3333-3333-3333-333333333333', '옛날 댓글', '2000-01-01') $q$, pg_temp.fx('post_open')),
-  '댓글 작성 시각을 직접 적을 수 없다');
+  '댓글은 표에 직접 쓸 수 없다(작성 시각 · 시간당 개수 제한을 건너뛰지 못하게)');
 call pg_temp.must_fail(
   format($q$ insert into public.comments (post_id, parent_id, author_id, body)
              values (%s, %s, '33333333-3333-3333-3333-333333333333', '다른 글의 댓글에 답글') $q$,
