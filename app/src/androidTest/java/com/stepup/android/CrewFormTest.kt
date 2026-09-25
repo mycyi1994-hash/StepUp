@@ -21,12 +21,25 @@ import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
 /** Exercises the production form without submitting a real crew to the server. */
 class CrewFormTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @After fun closeKeyboardBeforeActivityIsDestroyed() {
+        compose.runOnUiThread {
+            androidx.core.view.WindowInsetsControllerCompat(
+                compose.activity.window, compose.activity.window.decorView,
+            ).hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+    }
 
     @Test fun meetupFormKeepsInvalidNumbersAndRequiresCorrectionBeforeSubmission() {
         runBlocking {
@@ -118,12 +131,14 @@ class CrewFormTest {
         run {
             compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsNotEnabled()
             val name = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_name))
-            name.performScrollTo().performClick().performTextInput("River runners")
+            name.performScrollTo().performClick()
             try {
                 compose.waitUntil(timeoutMillis = 5_000) {
                     androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
                         ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
                 }
+                name.performTextInput("River runners")
+                name.assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("River runners")))
             } finally {
                 // Preserve the focused form before JUnit tears down its activity,
                 // including a missing keyboard; a post-test adb screenshot is too late.
