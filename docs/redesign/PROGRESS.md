@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-09-25 — character-free stage 8, record and wallet routes
+
+- Analytics now shows the chart and summary before its history-map entry; the wallet shows balance, totals and real ledger before the connected-wallet notice. History map, achievements and notifications retain their existing data and empty states.
+- A bounded real-device gallery covers five routes, three viewport/font combinations and the quarter/all-period variants: 21 screenshots on each of Android 14 and 15. First review found an ambiguous quarter-chart target line; it was removed. Quarter distance precision, zero-spend tint and empty-map zoom controls were corrected; map controls are 48dp when shown.
+- Final app source `a36055c` passed [Build APK 36108963617](https://github.com/mycyi1994-hash/StepUp/actions/runs/36108963617) and [screen gallery 36108963541](https://github.com/mycyi1994-hash/StepUp/actions/runs/36108963541). The first failed gallery was a duplicate text selector in the test; the subsequent and final Android 14/15 runs passed. See [stage 8 report](CHARACTER-FREE-STAGE8-2026-09-25-KO.md) and [final screenshot review](CLAUDE-RECORDS-FINAL-REVIEW-2026-09-25.md). No public APK release or main merge. Real GPS, tiles, external wallet, other states and full-app readiness remain unverified.
+
 ## 2026-09-25 — image and sound integration, source applied
 
 - Applied all 29 newly produced WAVs to Android resources. Eighteen short cues now follow their corresponding app events; eight draw transaction cues are also copied to the web DApp and gated on real receipt/result or failure; three scene ambience loops are opt-in and stop when foreground/audio policy does not allow playback.
