@@ -104,15 +104,18 @@ class DesignReferenceTest {
         POST_COMPOSE, CREW_CREATE, FLASH_DETAIL, EXPERIENCE, NOTIFICATIONS, PRIVACY, SUPPORT,
         CONNECTED, THEME, LANGUAGE,
         ANALYTICS, HISTORY_MAP, WALLET, ACHIEVEMENTS, INBOX,
+        COURSES, EXPLORE_MAP, RANKING,
     }
 
-    private enum class Group { PRIMARY, SECONDARY, RECORDS }
+    private enum class Group { PRIMARY, SECONDARY, RECORDS, EXPLORE }
 
     @Test fun referenceViewports() = captureViewports(Group.PRIMARY)
 
     @Test fun secondaryViewports() = captureViewports(Group.SECONDARY)
 
     @Test fun recordViewports() = captureViewports(Group.RECORDS)
+
+    @Test fun exploreViewports() = captureViewports(Group.EXPLORE)
 
     private fun captureViewports(group: Group) {
         ServiceLocator.stepRepository.startTracking()
@@ -166,13 +169,15 @@ class DesignReferenceTest {
             when (group) {
                 Group.PRIMARY -> it.ordinal <= Scene.NEWS.ordinal
                 Group.SECONDARY -> it.ordinal in Scene.POST_COMPOSE.ordinal..Scene.LANGUAGE.ordinal
-                Group.RECORDS -> it.ordinal >= Scene.ANALYTICS.ordinal
+                Group.RECORDS -> it.ordinal in Scene.ANALYTICS.ordinal..Scene.INBOX.ordinal
+                Group.EXPLORE -> it.ordinal >= Scene.COURSES.ordinal
             }
         }
         val prefix = when (group) {
             Group.PRIMARY -> "ref"
             Group.SECONDARY -> "secondary"
             Group.RECORDS -> "record"
+            Group.EXPLORE -> "explore"
         }
         for ((w, h, enlarged) in viewports.filter { group == Group.PRIMARY || it.first != 430 }) {
             for (s in selected) {
@@ -214,6 +219,20 @@ class DesignReferenceTest {
                 }
                 if (s == Scene.HISTORY_MAP) {
                     compose.onNodeWithText(korean(R.string.history_period_all)).performClick()
+                    capture("$name-all")
+                }
+                if (s == Scene.COURSES) {
+                    compose.onNodeWithText(korean(R.string.courses_make)).performClick()
+                    capture("$name-make")
+                    compose.onNodeWithText(korean(R.string.courses_board)).performClick()
+                    capture("$name-board")
+                }
+                if (s == Scene.EXPLORE_MAP) {
+                    compose.onNodeWithText(korean(R.string.map_seg_territory)).performClick()
+                    capture("$name-territory")
+                }
+                if (s == Scene.RANKING) {
+                    compose.onNodeWithText(korean(R.string.rank_period_all)).performClick()
                     capture("$name-all")
                 }
             }
@@ -269,6 +288,7 @@ class DesignReferenceTest {
             Scene.WALLET -> "bottom-nav"
             Scene.ACHIEVEMENTS -> "bottom-nav"
             Scene.INBOX -> "bottom-nav"
+            Scene.COURSES, Scene.EXPLORE_MAP, Scene.RANKING -> "bottom-nav"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -358,6 +378,9 @@ class DesignReferenceTest {
             Scene.WALLET -> MainScaffold(initialRoute = Routes.WALLET)
             Scene.ACHIEVEMENTS -> MainScaffold(initialRoute = Routes.ACHIEVEMENTS)
             Scene.INBOX -> MainScaffold(initialRoute = Routes.NOTIFICATIONS)
+            Scene.COURSES -> MainScaffold(initialRoute = Routes.COURSES)
+            Scene.EXPLORE_MAP -> MainScaffold(initialRoute = Routes.MAP)
+            Scene.RANKING -> MainScaffold(initialRoute = Routes.RANKING)
         }
     }
 
