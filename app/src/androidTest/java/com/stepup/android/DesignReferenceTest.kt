@@ -232,8 +232,11 @@ class DesignReferenceTest {
                     capture("$name-territory")
                 }
                 if (s == Scene.RANKING) {
-                    compose.onNodeWithText(korean(R.string.rank_period_all)).performClick()
-                    capture("$name-all")
+                    compose.onNodeWithText(korean(R.string.rank_period_week)).performClick()
+                    capture("$name-week")
+                    compose.onNodeWithTag("ranking-board-tabs").performScrollToNode(hasText(korean(R.string.rank_board_crew)))
+                    compose.onNodeWithText(korean(R.string.rank_board_crew)).performClick()
+                    capture("$name-crew")
                 }
             }
         }

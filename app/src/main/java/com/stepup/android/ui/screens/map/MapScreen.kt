@@ -299,6 +299,13 @@ private fun NearbyCard(
                     Legend(Volt, stringResource(R.string.post_cat_flash))
                     Legend(Cyan, stringResource(R.string.map_legend_course))
                 }
+                if (courseCount > 0) {
+                    GhostButton(
+                        text = stringResource(R.string.map_open_courses),
+                        onClick = onOpenCourses,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             is Pin.Flash -> {

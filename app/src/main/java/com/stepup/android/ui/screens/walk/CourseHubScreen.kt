@@ -136,6 +136,7 @@ fun CourseHubScreen(
                     ),
                     selected = tab,
                     onSelect = { tab = it },
+                    scrollWhenLarge = true,
                 )
             }
 

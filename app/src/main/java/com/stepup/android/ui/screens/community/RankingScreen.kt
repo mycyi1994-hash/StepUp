@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -102,7 +103,7 @@ fun RankingScreen(
         // 부문은 다섯이라 한 줄에 균등 분할로는 글자가 뭉개진다 — 옆으로
         // 밀어서 고른다. 기간은 넷이고 이름이 짧아 한 줄에 들어간다.
         item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(modifier = Modifier.testTag("ranking-board-tabs"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val labels = listOf(
                     R.string.rank_board_speed,
                     R.string.rank_board_time,
@@ -130,6 +131,7 @@ fun RankingScreen(
                 ),
                 selected = RankPeriod.entries.indexOf(period),
                 onSelect = { viewModel.selectPeriod(RankPeriod.entries[it]) },
+                scrollWhenLarge = true,
             )
         }
 

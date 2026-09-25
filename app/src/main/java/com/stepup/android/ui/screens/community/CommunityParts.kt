@@ -65,8 +65,9 @@ fun SegmentedTabs(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    scrollWhenLarge: Boolean = false,
 ) {
-    com.stepup.android.ui.components.TwoWaySwitch(labels = labels, selected = selected, onSelect = onSelect, modifier = modifier)
+    com.stepup.android.ui.components.TwoWaySwitch(labels = labels, selected = selected, onSelect = onSelect, modifier = modifier, scrollWhenLarge = scrollWhenLarge)
 }
 
 // ─────────────────────────────────────────────────────────────
