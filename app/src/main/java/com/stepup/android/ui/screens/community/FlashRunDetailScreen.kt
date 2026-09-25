@@ -174,7 +174,7 @@ fun FlashRunDetailScreen(
 @Composable
 private fun FlashHeroCard(post: Post) {
     GlowCard(accent = true, contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
-        com.stepup.android.ui.components.RunnerScene(
+        com.stepup.android.ui.components.RunnerBanner(
             modifier = Modifier.fillMaxWidth().height(100.dp),
             setting = com.stepup.android.ui.components.RunnerSetting.Sunset,
         )
