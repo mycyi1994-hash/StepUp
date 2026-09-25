@@ -209,7 +209,7 @@ class DesignReferenceTest {
                 }
                 if (s == Scene.ANALYTICS) {
                     compose.onNodeWithText(korean(R.string.analytics_tab_quarter)).performClick()
-                    compose.onNodeWithText(korean(R.string.analytics_tab_quarter)).assertExists()
+                    compose.onNode(hasText(korean(R.string.analytics_tab_quarter)) and isSelected()).assertExists()
                     capture("$name-quarter")
                 }
                 if (s == Scene.HISTORY_MAP) {
