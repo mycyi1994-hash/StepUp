@@ -1578,5 +1578,10 @@ StepUp과 함께 달려보세요.</string>
     <string name="mystery_draw_paid">뽑기 · %1$s SUP</string>
     <string name="community_upcoming">다가오는 러닝 모임</string>
     <string name="run_route_unavailable">이 러닝에는 기록된 GPS 경로가 없어요.</string>
+    <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
+    <string name="run_recover_title">멈춘 러닝이 있어요</string>
+    <string name="run_recover_body">%1$s에 시작한 러닝이 앱이 꺼지면서 멈췄어요. 지금까지 %2$s걸음 · %3$d분. 꺼져 있던 동안의 시간과 걸음은 더하지 않아요.</string>
+    <string name="run_recover_resume">이어 달리기</string>
+    <string name="run_recover_finish">여기서 끝내고 저장</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

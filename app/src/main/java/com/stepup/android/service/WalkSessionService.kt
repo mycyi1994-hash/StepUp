@@ -14,6 +14,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -248,6 +249,13 @@ class WalkSessionService : Service() {
     @Volatile private var settling = false
     private var startJob: Job? = null
     private var followupsAttempted = false
+    private var checkpointJob: Job? = null
+
+    /**
+     * 달린 시간(멈춘 시간 제외, ms). 1초 타이머의 횟수를 세면 화면이 꺼진 동안 폰이 잠들 때
+     * 덜 세져 정상 러닝이 "케이던스 초과"로 무효가 된다 — 폰의 누적 시계로 잰다.
+     */
+    @Volatile private var activeMs = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -257,12 +265,52 @@ class WalkSessionService : Service() {
             ACTION_PAUSE -> setPaused(true)
             ACTION_RESUME -> setPaused(false)
             ACTION_STOP -> stopSession()
+            ACTION_RECOVER -> recoverSession(intent.getBooleanExtra(EXTRA_FINISH, false))
         }
         return START_NOT_STICKY
     }
 
     private fun startSession(partySize: Int) {
         if (_state.value.isActive || startJob?.isActive == true) return
+        enterForeground()
+        startJob = scope.launch(Dispatchers.Main.immediate) {
+            // Begin tracking only after the recording account has been captured.
+            // Finishing later must never read the replacement login account.
+            val owner = ServiceLocator.sessionHolder.recordingOwner()
+            beginTracking(partySize, owner)
+        }
+    }
+
+    /**
+     * 앱이 죽어 멈춘 러닝을 저장본에서 되살린다. 멈춰 있던 동안의 시간 · 걸음 · 거리는 더하지 않는다
+     * (되살린 러닝은 일시정지 상태로 시작한다). [finish] 면 되살린 뒤 바로 끝내고 저장한다.
+     * 저장하던 중에 죽었으면(SETTLING) 묻지 않고 같은 러닝을 다시 저장한다 — 정산 영수증이
+     * 같은 러닝을 두 번 적립하지 않게 막는다.
+     */
+    private fun recoverSession(finish: Boolean) {
+        if (_state.value.isActive || startJob?.isActive == true) return
+        enterForeground()
+        startJob = scope.launch(Dispatchers.Main.immediate) {
+            val checkpoint = runCatching { ServiceLocator.runCheckpoints.read() }.getOrNull()
+            recovery.value = null
+            if (checkpoint == null) {
+                ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return@launch
+            }
+            goalKm.value = checkpoint.goalKm
+            if (checkpoint.phase == RunCheckpointPhase.SETTLING) {
+                _state.value = checkpoint.state.copy(isPaused = true, saveStatus = RunSaveStatus.IDLE)
+                activeMs = checkpoint.state.elapsedSec * 1000
+                stopSession()
+                return@launch
+            }
+            beginTracking(checkpoint.state.partySize, checkpoint.state.recordingOwner, checkpoint.pausedForRecovery())
+            if (finish) stopSession()
+        }
+    }
+
+    private fun enterForeground() {
         speedAnchor = null
         speedAnchorAt = 0L
         createChannel()
@@ -281,22 +329,17 @@ class WalkSessionService : Service() {
             buildNotification(0),
             fgsType,
         )
-        startJob = scope.launch(Dispatchers.Main.immediate) {
-            // Begin tracking only after the recording account has been captured.
-            // Finishing later must never read the replacement login account.
-            val owner = ServiceLocator.sessionHolder.recordingOwner()
-            beginTracking(partySize, owner)
-        }
     }
 
-    private fun beginTracking(partySize: Int, owner: String) {
+    private fun beginTracking(partySize: Int, owner: String, restored: WalkSessionState? = null) {
         followupsAttempted = false
-        _state.value = WalkSessionState(
+        _state.value = restored ?: WalkSessionState(
             isActive = true,
             startedAt = System.currentTimeMillis(),
             recordingOwner = owner,
             partySize = partySize,
         )
+        activeMs = (restored?.elapsedSec ?: 0L) * 1000
 
         // 일별 기록/목표 보너스 수집기까지 함께 보장한다 (중복 호출에 안전).
         ServiceLocator.stepRepository.startTracking()
@@ -337,16 +380,37 @@ class WalkSessionService : Service() {
             }
         }
         timerJob = scope.launch {
+            var lastTick = SystemClock.elapsedRealtime()
             while (isActive) {
                 delay(1_000)
-                _state.update { current ->
-                    if (current.isActive && !current.isPaused) {
-                        current.copy(elapsedSec = current.elapsedSec + 1)
-                    } else {
-                        current
-                    }
-                }
+                val now = SystemClock.elapsedRealtime()
+                val delta = (now - lastTick).coerceAtLeast(0L)
+                lastTick = now
+                val current = _state.value
+                if (!current.isActive || current.isPaused) continue
+                activeMs += delta
+                val seconds = activeMs / 1000
+                _state.update { if (it.isActive && !it.isPaused) it.copy(elapsedSec = seconds) else it }
             }
+        }
+        // 5초마다 저장본을 남긴다 — 배터리 절약 · 메모리 부족으로 앱이 죽어도 러닝이 사라지지 않게
+        checkpointJob = scope.launch {
+            while (isActive) {
+                val current = _state.value
+                if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) {
+                    saveCheckpoint(current, RunCheckpointPhase.RECORDING)
+                }
+                delay(CHECKPOINT_EVERY_MS)
+            }
+        }
+    }
+
+    private suspend fun saveCheckpoint(state: WalkSessionState, phase: RunCheckpointPhase) {
+        runCatching {
+            val goal = goalKm.value.takeIf { it.isFinite() && it > 0 } ?: 5.0
+            ServiceLocator.runCheckpoints.save(
+                RunCheckpoint(state, goal, maxOf(System.currentTimeMillis(), state.startedAt), phase),
+            )
         }
     }
 
@@ -371,9 +435,12 @@ class WalkSessionService : Service() {
         val session = _state.value
         stepJob?.cancel()
         timerJob?.cancel()
+        checkpointJob?.cancel()
         stopLocation()
         scope.launch {
           try {
+            // 저장을 시작한다는 표시를 먼저 남긴다 — 저장 도중 죽으면 다음에 같은 러닝을 다시 저장한다
+            saveCheckpoint(session, RunCheckpointPhase.SETTLING)
             // 파티런이면 정산 시점의 실제 인원을 쓴다 — 러닝 중 거리 이탈로 빠진 인원 반영.
             val settleSize = if (session.partySize > 1) {
                 ServiceLocator.crewRepository.currentPartySize()
@@ -497,6 +564,8 @@ class WalkSessionService : Service() {
             if (ServiceLocator.crewRepository.party.value.isActive) {
                 ServiceLocator.crewRepository.finishParty(session.startedAt, reward.rewardedSteps)
             }
+            // 저장까지 끝났다 — 저장본을 지운다(실패해도 다음 실행이 같은 러닝을 다시 저장할 뿐이다)
+            runCatching { ServiceLocator.runCheckpoints.clear(session.startedAt, session.recordingOwner) }
             settling = false
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -607,6 +676,27 @@ class WalkSessionService : Service() {
         const val ACTION_PAUSE = "com.stepup.android.action.SESSION_PAUSE"
         const val ACTION_RESUME = "com.stepup.android.action.SESSION_RESUME"
         const val ACTION_STOP = "com.stepup.android.action.SESSION_STOP"
+        const val ACTION_RECOVER = "com.stepup.android.action.SESSION_RECOVER"
+        const val EXTRA_FINISH = "com.stepup.android.extra.FINISH"
+        private const val CHECKPOINT_EVERY_MS = 5_000L
+
+        /** 앱이 죽어 멈춘 채 남은 러닝 — 화면이 "이어 달리기 / 여기서 끝내기"를 묻는다 */
+        val recovery = MutableStateFlow<RunCheckpoint?>(null)
+
+        /** 남은 러닝 저장본이 있는지 본다. 지금 달리는 중이면 묻지 않는다. */
+        suspend fun checkRecovery() {
+            if (_state.value.isActive) return
+            recovery.value = runCatching { ServiceLocator.runCheckpoints.read() }.getOrNull()
+        }
+
+        /** 남은 러닝을 되살린다. [finish] 면 되살린 뒤 바로 끝내고 저장한다. */
+        fun recover(context: Context, finish: Boolean) {
+            recovery.value = null
+            ContextCompat.startForegroundService(
+                context,
+                intent(context, ACTION_RECOVER).putExtra(EXTRA_FINISH, finish),
+            )
+        }
 
         private const val CHANNEL_ID = "walk_session"
         private const val NOTIFICATION_ID = 1001

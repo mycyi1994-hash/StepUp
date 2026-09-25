@@ -91,6 +91,8 @@ class RunCheckpointStore(file: File) {
                     track.forEach { data.writeDouble(it.lat); data.writeDouble(it.lng); data.writeLong(it.at) }
                     data.writeInt(laps.size)
                     laps.forEach { data.writeInt(it.index); data.writeDouble(it.km); data.writeLong(it.splitSec) }
+                    // 판 2: 가짜 위치 표시도 남긴다 — 빠지면 앱을 죽였다 살려 무효 표시를 지울 수 있다
+                    data.writeBoolean(mockLocation)
                 }
                 data.flush()
                 storage.finishWrite(output)
@@ -119,7 +121,8 @@ class RunCheckpointStore(file: File) {
     private fun readLocked(): RunCheckpoint? {
         if (!storage.baseFile.exists() && !File(storage.baseFile.path + ".bak").exists()) return null
         return DataInputStream(storage.openRead()).use { input ->
-            if (input.readInt() != VERSION) throw IOException("Unsupported run checkpoint version")
+            val version = input.readInt()
+            if (version != 1 && version != VERSION) throw IOException("Unsupported run checkpoint version")
             val phase = RunCheckpointPhase.valueOf(input.readUTF())
             val savedAt = input.readLong()
             val goal = input.readDouble()
@@ -132,6 +135,8 @@ class RunCheckpointStore(file: File) {
                 validSegments = input.readInt(), flaggedSegments = input.readInt(),
                 track = List(input.count()) { TrackPoint(input.readDouble(), input.readDouble(), input.readLong()) },
                 laps = List(input.count()) { RunLap(input.readInt(), input.readDouble(), input.readLong()) },
+                // 판 1 에는 이 값이 없었다 — 그때 저장된 러닝은 가짜 위치를 본 적이 없다고 친다
+                mockLocation = version >= 2 && input.readBoolean(),
             )
             if (input.read() != -1) throw IOException("Unexpected checkpoint trailing data")
             RunCheckpoint(state, goal, savedAt, phase)
@@ -142,5 +147,5 @@ class RunCheckpointStore(file: File) {
         if (it !in 0..1_000_000) throw IOException("Invalid checkpoint collection length")
     }
 
-    private companion object { const val VERSION = 1 }
+    private companion object { const val VERSION = 2 }
 }

@@ -309,6 +309,32 @@ internal fun MainScaffold(
 
     val navController = rememberNavController()
 
+    // 앱이 죽어 멈춘 러닝이 있으면 묻는다. 저장하던 중에 죽었으면 묻지 않고 다시 저장한다.
+    // 걸음 권한이 없으면 러닝 서비스를 띄울 수 없으므로(안드로이드 14 건강 서비스) 권한이 있을 때만.
+    LaunchedEffect(Unit) { com.stepup.android.service.WalkSessionService.checkRecovery() }
+    val pendingRun by com.stepup.android.service.WalkSessionService.recovery.collectAsState()
+    pendingRun?.let { checkpoint ->
+        if (StepPermissions.hasActivityRecognition(context)) {
+            if (checkpoint.phase == com.stepup.android.service.RunCheckpointPhase.SETTLING) {
+                LaunchedEffect(checkpoint.state.startedAt) {
+                    com.stepup.android.service.WalkSessionService.recover(context, finish = true)
+                }
+            } else {
+                RunRecoveryDialog(
+                    checkpoint = checkpoint,
+                    onResume = {
+                        com.stepup.android.service.WalkSessionService.recover(context, finish = false)
+                        navController.navigate(Routes.RUN)
+                    },
+                    onFinish = {
+                        com.stepup.android.service.WalkSessionService.recover(context, finish = true)
+                        navController.navigate(Routes.RUN)
+                    },
+                )
+            }
+        }
+    }
+
     // 초대 링크(stepupcrew.com/c/...)나 크루 알림으로 들어왔으면 그 크루 화면을 연다
     val pendingCrew by InviteLinks.pendingCrew.collectAsState()
     LaunchedEffect(pendingCrew) {
@@ -1006,3 +1032,37 @@ private fun RowScope.NavTab(
         )
     }
 }
+
+/** 앱이 죽어 멈춘 러닝 — 이어 달리거나 여기서 끝내고 저장한다. 버리는 선택은 두지 않는다(뛴 기록을 잃지 않게). */
+@Composable
+private fun RunRecoveryDialog(
+    checkpoint: com.stepup.android.service.RunCheckpoint,
+    onResume: () -> Unit,
+    onFinish: () -> Unit,
+) {
+    val state = checkpoint.state
+    val started = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        .format(java.time.Instant.ofEpochMilli(state.startedAt).atZone(java.time.ZoneId.systemDefault()))
+    val minutes = state.elapsedSec / 60
+    com.stepup.android.ui.components.DialogPanel(
+        title = androidx.compose.ui.res.stringResource(R.string.run_recover_title),
+        onDismiss = {},
+        actions = {
+            com.stepup.android.ui.components.VoltButton(
+                androidx.compose.ui.res.stringResource(R.string.run_recover_resume), onResume,
+                Modifier.fillMaxWidth().testTag("run-recover-resume"),
+            )
+            com.stepup.android.ui.components.GhostButton(
+                androidx.compose.ui.res.stringResource(R.string.run_recover_finish), onFinish,
+                Modifier.fillMaxWidth().testTag("run-recover-finish"),
+            )
+        },
+    ) {
+        androidx.compose.material3.Text(
+            androidx.compose.ui.res.stringResource(R.string.run_recover_body, started, "%,d".format(state.steps), minutes),
+            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+            color = com.stepup.android.ui.theme.Silver,
+        )
+    }
+}
+
