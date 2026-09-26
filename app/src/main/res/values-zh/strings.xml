@@ -1708,5 +1708,10 @@
     <string name="run_together_title">一起跑 · %1$d 人</string>
     <string name="run_together_me">我</string>
     <string name="run_together_hidden">未公开</string>
+    <string name="run_gps_search_rough">大致位置 · 正在搜索 GPS</string>
+    <string name="run_location_off_hint">手机定位已关闭，无法获取位置。开启后即可记录路线。</string>
+    <string name="run_location_off_action">开启定位</string>
+    <string name="run_location_approx_hint">仅允许大致位置，无法使用 GPS。允许精确位置可使路线更准确。</string>
+    <string name="run_countdown_location_services_off">手机定位已关闭 · 开启前仅记录步数</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

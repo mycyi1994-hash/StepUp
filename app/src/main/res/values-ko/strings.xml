@@ -1708,5 +1708,10 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_together_title">같이 뛰는 중 · %1$d명</string>
     <string name="run_together_me">나</string>
     <string name="run_together_hidden">비공개</string>
+    <string name="run_gps_search_rough">대략적인 위치 · GPS 찾는 중</string>
+    <string name="run_location_off_hint">휴대폰 위치가 꺼져 있어 위치를 받을 수 없어요. 켜면 경로가 기록돼요.</string>
+    <string name="run_location_off_action">위치 켜기</string>
+    <string name="run_location_approx_hint">대략적인 위치만 허용돼 GPS를 쓸 수 없어요. 정확한 위치를 허용하면 경로가 정확해져요.</string>
+    <string name="run_countdown_location_services_off">휴대폰 위치 꺼짐 · 켜기 전까지 걸음으로만 기록해요</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

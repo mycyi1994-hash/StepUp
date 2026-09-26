@@ -20,6 +20,11 @@ object ExternalIntents {
             Uri.parse("package:${context.packageName}"))) ||
             start(context, Intent(android.provider.Settings.ACTION_SETTINGS))
 
+    /** 휴대폰 위치 설정(위치 켜기) — 없으면 앱 설정으로 */
+    fun openLocationSettings(context: Context): Boolean =
+        start(context, Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)) ||
+            openAppSettings(context)
+
     private const val GOOGLE_MAPS = "com.google.android.apps.maps"
 
     /** 장소 이름으로 구글 지도를 연다. 이름이 비어 있으면 아무것도 하지 않는다. */
