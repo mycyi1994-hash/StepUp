@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -54,6 +55,13 @@ object TestUpdates {
     private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state.asStateFlow()
 
+    /**
+     * 확인 · 받기는 화면이 아니라 앱 수명에 묶는다 — 받는 중에 화면이 돌거나 다시 그려지면 화면의 작업은
+     * 취소되고, 그러면 "받는 중"에 멈춘 창을 닫을 수 없었다.
+     */
+    // 처음 쓸 때 만든다 — 단위 테스트(JVM)에는 Main 디스패처가 없다
+    private val scope by lazy { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Main.immediate) }
+
     private val json = Json { ignoreUnknownKeys = true }
     private val http = UrlConnectionPoster(timeoutMillis = 10_000)
 
@@ -84,13 +92,23 @@ object TestUpdates {
         if (current is State.Downloading || current is State.Checking) return
         if (!force && current !is State.Idle) return
         _state.value = State.Checking
-        val response = http.get(INFO_URL, mapOf("Cache-Control" to "no-cache"))
-        val remote = if (response.status in 200..299) parse(response.body) else null
-        _state.value = when {
-            remote == null -> if (force) State.CheckFailed else State.Idle
-            isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT) -> State.Available(remote)
-            else -> State.UpToDate
+        try {
+            val response = http.get(INFO_URL, mapOf("Cache-Control" to "no-cache"))
+            val remote = if (response.status in 200..299) parse(response.body) else null
+            _state.value = when {
+                remote == null -> if (force) State.CheckFailed else State.Idle
+                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT) -> State.Available(remote)
+                else -> State.UpToDate
+            }
+        } finally {
+            // 중간에 끊겼으면 "확인 중"에 멈추지 않게 되돌린다
+            if (_state.value == State.Checking) _state.value = State.Idle
         }
+    }
+
+    /** [check] 를 앱 수명의 작업으로 — 화면이 바뀌어도 끝까지 */
+    fun startCheck(force: Boolean = false) {
+        scope.launch { check(force) }
     }
 
     fun dismiss() {
@@ -102,6 +120,12 @@ object TestUpdates {
         _state.value = State.Dismissed(build)
     }
 
+    /** [downloadAndInstall] 을 앱 수명의 작업으로 시작한다 */
+    fun startDownload(context: Context) {
+        val app = context.applicationContext
+        scope.launch { downloadAndInstall(app) }
+    }
+
     /** 새 APK 를 받아 확인하고 설치 화면을 연다. 실패하면 [State.Failed] — 다시 누를 수 있다. */
     suspend fun downloadAndInstall(context: Context) {
         val build = when (val s = _state.value) {
@@ -110,7 +134,11 @@ object TestUpdates {
             else -> return
         }
         _state.value = State.Downloading(build, null)
-        val file = download(context) { progress -> _state.value = State.Downloading(build, progress) }
+        val file = try {
+            download(context) { progress -> _state.value = State.Downloading(build, progress) }
+        } finally {
+            if (_state.value is State.Downloading) _state.value = State.Failed(build)
+        }
         if (file == null) {
             _state.value = State.Failed(build)
             return

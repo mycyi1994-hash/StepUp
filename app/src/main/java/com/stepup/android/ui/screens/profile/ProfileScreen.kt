@@ -66,9 +66,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.clickable
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -389,7 +387,6 @@ private fun weekSlots(week: List<DailyStepsEntity>): List<Pair<LocalDate, DailyS
 /** 테스트 APK 에서만 — 새 빌드를 지금 확인한다. 있으면 앱 위에 업데이트 창이 뜬다. */
 @Composable
 private fun TestUpdateRow() {
-    val scope = rememberCoroutineScope()
     val state by com.stepup.android.core.TestUpdates.state.collectAsState()
     val status = when (state) {
         com.stepup.android.core.TestUpdates.State.Checking -> stringResource(R.string.test_update_checking)
@@ -403,7 +400,7 @@ private fun TestUpdateRow() {
     }
     Row(
         modifier = Modifier.fillMaxWidth().testTag("test-update-check")
-            .clickable { scope.launch { com.stepup.android.core.TestUpdates.check(force = true) } },
+            .clickable { com.stepup.android.core.TestUpdates.startCheck(force = true) },
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(stringResource(R.string.test_update_row), style = MaterialTheme.typography.bodySmall, color = Silver)

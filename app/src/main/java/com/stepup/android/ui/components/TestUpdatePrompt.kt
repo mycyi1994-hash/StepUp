@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -28,7 +27,6 @@ import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.VoltText
-import kotlinx.coroutines.launch
 
 /**
  * 테스트 APK 새 버전 알림 창. 앱을 켤 때 한 번 묻고, 더 새 빌드가 있을 때만 뜬다.
@@ -38,9 +36,8 @@ import kotlinx.coroutines.launch
 fun TestUpdatePrompt() {
     if (!TestUpdates.enabled) return
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val state by TestUpdates.state.collectAsState()
-    LaunchedEffect(Unit) { TestUpdates.check() }
+    LaunchedEffect(Unit) { TestUpdates.startCheck() }
 
     val build = when (val s = state) {
         is TestUpdates.State.Available -> s.build
@@ -90,7 +87,7 @@ fun TestUpdatePrompt() {
         confirmButton = {
             TextButton(
                 enabled = downloading == null,
-                onClick = { scope.launch { TestUpdates.downloadAndInstall(context.applicationContext) } },
+                onClick = { TestUpdates.startDownload(context) },
                 modifier = Modifier.testTag("test-update-install"),
             ) {
                 Text(
