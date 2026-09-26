@@ -1,6 +1,10 @@
 package com.stepup.android
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.LocationOn
@@ -70,17 +74,23 @@ class RunStartFlowTest {
     }
 
     /** 멈춘 시계로는 화면이 그려지지 않아 캡처가 비었다 — 캡처는 보통 시계로 따로 찍는다 */
-    @Test fun countdownCaptures() {
-        var located by mutableStateOf(true)
+    @Test fun countdownCapture() = countdownCapture(located = true, name = "run-countdown.png")
+
+    // 한 화면에서 값만 바꿔 다시 찍으면 같은 장면이 두 번 찍혔다 — 장면마다 새로 그린다
+    @Test fun countdownNoGpsCapture() = countdownCapture(located = false, name = "run-countdown-no-gps.png")
+
+    private fun countdownCapture(located: Boolean, name: String) {
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
                 RunCountdown(courseName = if (located) null else "Hangang 5K", locationAllowed = located, onGo = {}, onCancel = {})
             } }
         }
         compose.onNodeWithTag("run-countdown-cancel").assertIsDisplayed()
-        capture("run-countdown.png")
-        compose.runOnIdle { located = false }
-        capture("run-countdown-no-gps.png")
+        val gps = compose.activity.getString(
+            if (located) R.string.run_countdown_gps_on else R.string.run_countdown_gps_off,
+        )
+        compose.onNodeWithText(gps).assertIsDisplayed()
+        capture(name)
     }
 
     @Test fun primerExplainsEachPermissionAndHandsOff() {
@@ -118,7 +128,13 @@ class RunStartFlowTest {
         )
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                com.stepup.android.ui.screens.walk.TogetherRanking(members, myKm = 3.62)
+                // 앱에서는 러닝 화면의 어두운 바탕 위에 있다 — 캡처도 같은 바탕 위에서
+                androidx.compose.foundation.layout.Box(
+                    androidx.compose.ui.Modifier.fillMaxSize()
+                        .background(com.stepup.android.ui.theme.Night).padding(16.dp),
+                ) {
+                    com.stepup.android.ui.screens.walk.TogetherRanking(members, myKm = 3.62)
+                }
             } }
         }
         compose.onNodeWithText("3.80 km").assertIsDisplayed()

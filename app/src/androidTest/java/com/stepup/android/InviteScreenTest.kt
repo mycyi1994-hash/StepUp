@@ -1,6 +1,9 @@
 package com.stepup.android
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,10 +41,15 @@ class InviteScreenTest {
         )
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                InviteContent(
-                    InviteStatusRow(code = "STEP-AB23CD", rewardSup = reward, invited = 2, rewarded = 1, canRedeem = true),
-                    invitees, modifier = Modifier.fillMaxSize(),
-                )
+                // 앱에서는 상세 화면의 어두운 바탕 위에 있다 — 캡처도 같은 바탕 위에서
+                androidx.compose.foundation.layout.Box(
+                    Modifier.fillMaxSize().background(com.stepup.android.ui.theme.Night).padding(horizontal = 16.dp),
+                ) {
+                    InviteContent(
+                        InviteStatusRow(code = "STEP-AB23CD", rewardSup = reward, invited = 2, rewarded = 1, canRedeem = true),
+                        invitees, modifier = Modifier.fillMaxSize(),
+                    )
+                }
             } }
         }
         compose.onNodeWithText("STEP-AB23CD").assertIsDisplayed()
