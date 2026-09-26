@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>StepUp — 멈추지 않는 사람을 위한 러닝 앱</title>
+<meta name="description" content="GPS 러닝 기록, 크루 결성, 달린 만큼 쌓이는 보상. StepUp Android 앱을 받아보세요.">
+<meta property="og:title" content="StepUp — 멈추지 않는 사람을 위한 러닝 앱">
+<meta property="og:description" content="기록하고, 모이고, 쌓인다. 러닝 앱 StepUp.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#03060D">
+<link rel="icon" href="design/brand/stepup-app-icon.webp" type="image/webp">
+<link rel="preload" as="image" href="design/s2/originals/backgrounds/login-share.jpeg">
+<link rel="preload" as="image" href="design/s2/cutouts/shoes/shoe-main.png">
+<link rel="preload" as="font" type="font/otf" href="web/assets/fonts/pretendard-extrabold.otf" crossorigin="anonymous">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:Pretendard;src:url('web/assets/fonts/pretendard-regular.otf') format('opentype');font-weight:400 600;font-display:swap}
+@font-face{font-family:Pretendard;src:url('web/assets/fonts/pretendard-extrabold.otf') format('opentype');font-weight:700 900;font-display:swap}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#03060D;color:#F4F8FF;font-family:Pretendard,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+a{color:inherit;text-decoration:none}a:hover{color:#fff}
+@keyframes h-pan{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes h-streak{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+@keyframes h-stride{0%,100%{transform:translateY(0) rotate(-14deg)}40%{transform:translateY(-22px) rotate(-9deg)}70%{transform:translateY(-4px) rotate(-13deg)}}
+@keyframes h-shadow{0%,100%{transform:scaleX(1);opacity:.85}40%{transform:scaleX(.72);opacity:.45}}
+@keyframes h-beat{0%,100%{transform:scale(1)}15%{transform:scale(1.5)}30%{transform:scale(1)}45%{transform:scale(1.3)}}
+@keyframes h-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes h-card{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes h-shoe{from{opacity:0;transform:translateX(120px)}to{opacity:1;transform:none}}
+@keyframes h-ring{0%{transform:translate(-50%,-50%) scale(.4);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.6);opacity:0}}
+@keyframes h-dash{to{stroke-dashoffset:-4}}
+@keyframes h-flash{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(2.4)}}
+@keyframes h-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes h-pulse{0%{transform:translate(-50%,-50%) scale(1);opacity:.7}100%{transform:translate(-50%,-50%) scale(1.7);opacity:0}}
+@keyframes h-scroll{0%{transform:translateY(-100%)}100%{transform:translateY(220%)}}
+@keyframes h-load{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes h-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;overflow:hidden;background:#03060D">
+
+  <header style="position:absolute;top:0;left:0;right:0;z-index:20;height:72px;display:flex;justify-content:center;padding:0 clamp(14px,4vw,40px);animation:h-in .8s ease .2s both">
+    <div style="width:min(1200px,100%);display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <img src="design/s2/cutouts/brand/stepup-login.png" alt="StepUp" style="height:22px;width:auto;display:block;cursor:pointer" onClick="{{ goHome }}">
+      <div style="display:flex;align-items:center;gap:10px"><button onClick="{{ toggleSound }}" aria-pressed="{{ soundOn }}" style="flex:none;white-space:nowrap;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid #ffffff2e;background:transparent;color:#DDE6F4;font:600 13px Pretendard,sans-serif;cursor:pointer" style-hover="background:#ffffff14"><span style="width:7px;height:7px;border-radius:50%;background:{{ soundDot }}"></span>{{ soundLabel }}</button><a href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" onClick="{{ trackDl }}" style="flex:none;white-space:nowrap;padding:10px 20px;border-radius:999px;border:1px solid #ffffff2e;font-size:14px;font-weight:600" style-hover="background:#ffffff14">앱 다운로드</a></div>
+    </div>
+  </header>
+
+  <sc-if value="{{ showDots }}" hint-placeholder-val="{{ true }}">
+  <nav aria-label="화면 이동" style="position:absolute;right:max(14px,calc((100vw - 1200px) / 2 - 26px));top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+    <sc-for list="{{ dots }}" as="d" hint-placeholder-count="5">
+      <button onClick="{{ d.go }}" aria-label="{{ d.label }}" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;border:0;padding:5px 0;background:none;cursor:pointer;color:#DDE6F4"><span style="font-size:12px;font-weight:700;white-space:nowrap;opacity:{{ d.labelO }};transform:{{ d.labelT }};transition:opacity .4s,transform .4s">{{ d.name }}</span><span style="width:4px;height:{{ d.h }};border-radius:4px;background:{{ d.bg }};transition:height .5s cubic-bezier(.2,.8,.2,1),background .5s"></span></button>
+    </sc-for>
+  </nav>
+  </sc-if>
+
+  <div style="position:absolute;inset:0;transform:translate3d(0,{{ trackY }},0);transition:transform {{ dur }} cubic-bezier(.76,0,.18,1)">
+
+  <section data-screen-label="01 Hero" style="height:100svh;display:flex;justify-content:center;padding:72px clamp(14px,4vw,40px) clamp(16px,3vh,32px)">
+  <main style="position:relative;width:min(1200px,100%);height:100%;border-radius:28px;overflow:visible;animation:h-card 1s cubic-bezier(.2,.8,.2,1) both">
+    <div data-w="heroCard" style="position:absolute;inset:0;border-radius:28px;overflow:hidden;isolation:isolate;background:#060C18">
+      <div data-w="glow" style="position:absolute;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;background:radial-gradient(circle,#147BFF3D,transparent 65%);pointer-events:none;z-index:-1;transform:translate(900px,420px);transition:transform .35s ease-out"></div>
+      <span style="position:absolute;white-space:nowrap;top:18px;right:22px;z-index:5;padding:5px 10px;border-radius:999px;border:1px solid #ffffff22;background:#03060D99;font-size:11px;font-weight:700;color:#A8BDD9">화면 예시</span>
+      <div style="position:absolute;top:0;bottom:0;left:0;width:max-content;display:flex;height:100%;z-index:-3;animation:h-pan 70s linear infinite">
+        <img src="design/s2/originals/backgrounds/login-share.jpeg" alt="" style="height:100%;width:auto;min-width:100vw;object-fit:cover;display:block">
+        <img src="design/s2/originals/backgrounds/login-share.jpeg" alt="" style="height:100%;width:auto;min-width:100vw;object-fit:cover;display:block;transform:scaleX(-1)">
+      </div>
+      <sc-if value="{{ hasVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ heroVideo }}" autoplay="" muted="" loop="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3"></video></sc-if>
+      <div style="position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,#03060DF2 0%,#03060DB3 45%,#03060D55 75%,#03060D99 100%),linear-gradient(180deg,#03060D66 0%,transparent 30%,transparent 60%,#03060DE6 100%)"></div>
+      <sc-for list="{{ streaks }}" as="s" hint-placeholder-count="0">
+        <div style="position:absolute;left:0;z-index:-1;top:{{ s.top }};width:{{ s.w }};height:{{ s.h }};background:linear-gradient(90deg,transparent,{{ s.c }},transparent);animation:h-streak {{ s.d }} linear {{ s.delay }} infinite both"></div>
+      </sc-for>
+
+      <div style="position:absolute;inset:0;padding:clamp(24px,5vh,56px) clamp(24px,4.5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:20px">
+        <div style="display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#A8BDD9;animation:h-in .8s ease .4s both">
+          <span style="width:9px;height:9px;border-radius:50%;background:#FF3B47;box-shadow:0 0 12px #FF3B47"></span>기록 중 · 서울 나이트 런
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:clamp(10px,2vh,20px);animation:h-in .9s ease .55s both">
+          <div style="display:flex;align-items:baseline;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:min(19vw,24vh,250px);line-height:.82;letter-spacing:-.02em;font-variant-numeric:tabular-nums;cursor:pointer;user-select:none" onClick="{{ lap }}" title="눌러서 랩 기록">
+            <span data-w="main">00:00</span><span data-w="cs" style="color:#147BFF;font-size:.42em;margin-left:.08em">.00</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,56px)">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">거리</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(28px,5vh,44px);line-height:1"><span data-w="km">0.00</span><span style="font-size:.45em;color:#A8BDD9;margin-left:4px">KM</span></span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">페이스</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(28px,5vh,44px);line-height:1">4'58"<span style="font-size:.45em;color:#A8BDD9;margin-left:4px">/KM</span></span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">심박</span><span style="display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(28px,5vh,44px);line-height:1"><span data-w="bpm">168</span><span style="width:10px;height:10px;border-radius:50%;background:#FF3B47;animation:h-beat .72s ease-in-out infinite"></span></span></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:26px">
+            <sc-if value="{{ noLaps }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:#7E93B3">스톱워치를 누르면 랩이 기록돼요</span></sc-if>
+            <sc-for list="{{ laps }}" as="l" hint-placeholder-count="0"><span style="white-space:nowrap;padding:4px 10px;border-radius:999px;background:#0B1D35CC;border:1px solid #1A3B61;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em">LAP {{ l.n }} · {{ l.t }} · {{ l.km }}KM</span></sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;animation:h-in .9s ease .75s both">
+          <div style="display:flex;flex-direction:column;gap:clamp(10px,1.8vh,18px);max-width:620px">
+            <h1 style="margin:0;font-weight:900;font-size:clamp(26px,min(3.2vw,5vh),44px);line-height:1.2;letter-spacing:-.045em;word-break:keep-all">멈추지 않는 사람을 위한<br>러닝 앱, StepUp.</h1>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px"><a href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" onClick="{{ trackDl }}" style="align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:17px 30px;border-radius:999px;background:#147BFF;color:#fff;font-size:17px;font-weight:800;box-shadow:0 12px 36px #147BFF55" style-hover="background:#2A8BFF;color:#fff" style-active="transform:scale(.97)" style-focus="outline:3px solid #24D8FF;outline-offset:3px">Android 앱 받기</a>
+            <span style="font-size:13px;color:#A8BDD9">Android 8.0 이상 · iPhone은 준비 중이에요</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;right:34px;top:62px;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;color:#A8BDD9;animation:h-in .8s ease 1.4s both"><span style="position:relative;width:2px;height:30px;background:#ffffff22;overflow:hidden"><span style="position:absolute;left:0;top:0;width:2px;height:40%;background:#F4F8FF;animation:h-scroll 1.6s ease-in-out infinite"></span></span>스크롤</div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;height:4px;background:#ffffff14"><div data-w="bar" style="height:100%;width:0%;background:linear-gradient(90deg,#147BFF,#24D8FF)"></div></div>
+    </div>
+
+    <div style="position:absolute;right:clamp(-20px,-1vw,0px);bottom:clamp(20px,6vh,70px);width:min(46vw,64vh,600px);pointer-events:none;animation:h-shoe 1.1s cubic-bezier(.2,.8,.2,1) .5s both">
+      <div style="position:absolute;left:12%;right:12%;bottom:-4%;height:14%;border-radius:50%;background:radial-gradient(ellipse,#000000cc,transparent 70%);animation:h-shadow .7s ease-in-out infinite"></div>
+      <img src="design/s2/cutouts/shoes/shoe-main.png" alt="StepUp 러닝화" style="position:relative;width:100%;height:auto;display:block;filter:drop-shadow(0 30px 40px #000000aa);animation:h-stride .7s ease-in-out infinite">
+    </div>
+  </main>
+  </section>
+
+  <section data-screen-label="02 Crew Forming" style="height:100svh;display:flex;justify-content:center;padding:72px clamp(14px,4vw,40px) clamp(16px,3vh,32px)">
+    <div style="position:relative;width:min(1200px,100%);height:100%;border-radius:28px;overflow:hidden;background:#060C18;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));grid-template-rows:{{ gRows.p2 }}">
+      <span style="position:absolute;white-space:nowrap;bottom:14px;right:18px;z-index:5;padding:5px 10px;border-radius:999px;border:1px solid #ffffff22;background:#03060D99;font-size:11px;font-weight:700;color:#A8BDD9">화면 예시</span>
+
+      <div style="position:relative;overflow:hidden;min-height:0">
+        <img src="design/s2/originals/reference/maps/no-crew-map.png" alt="모임 지도" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:{{ p1.img }};transition:transform 2.6s cubic-bezier(.2,.7,.2,1)">
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg,#060C1800 60%,#060C18 100%),radial-gradient(circle at 50% 55%,transparent 20%,#060C18AA 75%)"></div>
+        <sc-for list="{{ runners }}" as="r" hint-placeholder-count="0">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:{{ r.lineO }};transition:opacity .6s">
+            <line x1="{{ r.sx }}" y1="{{ r.sy }}" x2="50" y2="55" stroke="#5B6F8E" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"></line>
+          </svg>
+        </sc-for>
+        <div style="position:absolute;left:50%;top:55%;width:120px;height:120px;border-radius:50%;border:2px solid {{ ringColor }};animation:h-ring 2s ease-out infinite"></div>
+        <div style="position:absolute;left:50%;top:55%;width:120px;height:120px;border-radius:50%;border:2px solid {{ ringColor }};animation:h-ring 2s ease-out 1s infinite"></div>
+        <sc-for list="{{ runners }}" as="r" hint-placeholder-count="0">
+          <div style="position:absolute;left:{{ r.x }};top:{{ r.y }};transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:{{ r.bg }};border:2px solid {{ r.border }};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;box-shadow:{{ r.glow }};transition:left 1.1s cubic-bezier(.5,0,.2,1),top 1.1s cubic-bezier(.5,0,.2,1),background .5s,border-color .5s,box-shadow .5s;cursor:default" onMouseEnter="{{ r.enter }}" onMouseLeave="{{ r.leave }}">{{ r.initial }}<span style="position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:5px 9px;border-radius:8px;background:#03060DEE;border:1px solid #1A3B61;font-size:11px;font-weight:700;color:#DDE6F4;opacity:{{ r.tipO }};pointer-events:none;transition:opacity .2s;z-index:3">{{ r.name }} · 페이스 {{ r.pace }}</span></div>
+        </sc-for>
+        <div style="position:absolute;left:50%;top:calc(55% + 84px);transform:translateX(-50%);white-space:nowrap;padding:8px 14px;border-radius:999px;background:#03060DCC;border:1px solid #1A3B61;font-size:13px;font-weight:700;color:#DDE6F4">여의도 물빛광장 · 20:30 출발</div>
+        
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:clamp(14px,2.6vh,26px);padding:clamp(24px,4vh,48px) clamp(24px,4vw,56px);min-height:0;opacity:{{ p1.o }};transform:{{ p1.t }};transition:opacity .9s ease .3s,transform 1.1s cubic-bezier(.2,.8,.2,1) .3s">
+        <div style="display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#A8BDD9"><span style="width:9px;height:9px;border-radius:50%;background:{{ statusDot }};box-shadow:0 0 12px {{ statusDot }}"></span>{{ statusLabel }}</div>
+        <div style="display:flex;flex-wrap:nowrap;align-items:baseline;gap:14px;white-space:nowrap">
+          <span style="flex:none;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:min(9vw,16vh,132px);line-height:.82;color:{{ countColor }};transition:color .5s">{{ joinedStr }}</span>
+          <span style="flex:none;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:min(4vw,7vh,56px);line-height:1;color:#5B6F8E">/ 06</span>
+        </div>
+        <h2 style="margin:0;font-weight:900;font-size:clamp(24px,min(2.8vw,4.6vh),38px);line-height:1.2;letter-spacing:-.045em;word-break:keep-all">{{ headline }}</h2>
+        <div style="display:flex;flex-direction:column;border-top:1px solid #13284A">
+          <sc-for list="{{ runners }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:clamp(6px,1.2vh,11px) 0;border-bottom:1px solid #13284A;opacity:{{ r.rowO }};transition:opacity .5s">
+              <span style="display:flex;align-items:center;gap:12px;font-size:15px;font-weight:700"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.border }};transition:background .5s"></span>{{ r.name }}</span>
+              <span style="font-size:13px;font-weight:700;color:{{ r.statusColor }};white-space:nowrap">{{ r.status }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <a href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" onClick="{{ trackDl }}" style="align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:16px 28px;border-radius:999px;background:#147BFF;color:#fff;font-size:16px;font-weight:800;box-shadow:0 12px 36px #147BFF55" style-hover="background:#2A8BFF;color:#fff" style-active="transform:scale(.97)" style-focus="outline:3px solid #24D8FF;outline-offset:3px">내 크루 만들기</a>
+      </div>
+    </div>
+  </section>
+  <section data-screen-label="03 Finish · Reward" style="height:100svh;display:flex;flex-direction:column;align-items:center;padding:72px clamp(14px,4vw,40px) clamp(16px,3vh,32px)">
+    <div style="position:relative;width:min(1200px,100%);flex:1;min-height:0;border-radius:28px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 72% 45%,#0F2A52 0%,#060C18 55%,#04080F 100%);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));grid-template-rows:{{ gRows.p3 }}">
+      <span style="position:absolute;white-space:nowrap;bottom:14px;right:18px;z-index:5;padding:5px 10px;border-radius:999px;border:1px solid #ffffff22;background:#03060D99;font-size:11px;font-weight:700;color:#A8BDD9">화면 예시</span>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:clamp(12px,2.4vh,24px);padding:clamp(24px,4vh,52px) clamp(24px,4.5vw,64px);min-height:0">
+        <div style="display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#A8BDD9;opacity:{{ f.o0 }};transition:opacity .5s"><span style="width:9px;height:9px;border-radius:2px;background:#24D8FF"></span>러닝 완료</div>
+        <div style="display:flex;flex-direction:column;gap:6px;opacity:{{ f.o0 }};transform:{{ f.stamp }};transition:opacity .4s,transform .6s cubic-bezier(.2,1.4,.3,1)">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:min(10vw,17vh,150px);line-height:.82;letter-spacing:-.02em">5.00<span style="font-size:.36em;color:#24D8FF;margin-left:.12em">KM</span></span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(20px,3.4vh,30px);color:#A8BDD9;letter-spacing:.04em">24:50.00 · 4'58"/KM</span>
+        </div>
+        <div style="height:1px;background:#13284A;transform-origin:left;transform:{{ f.line }};transition:transform .8s cubic-bezier(.2,.8,.2,1)"></div>
+        <div style="display:flex;flex-direction:column;gap:4px;opacity:{{ f.o1 }};transform:{{ f.t1 }};transition:opacity .5s,transform .7s cubic-bezier(.2,.8,.2,1)">
+          <span style="font-size:14px;font-weight:700;color:#A8BDD9">검증 완료 · 적립 예정</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:min(6vw,10vh,84px);line-height:.9;color:#F4F8FF">+<span data-w="sup">0.00</span><span style="font-size:.42em;color:#147BFF;margin-left:.15em">SUP</span></span>
+          <span style="font-size:13px;line-height:1.6;color:#7E93B3;max-width:380px;word-break:keep-all">SUP는 GPS로 검증된 러닝 거리만큼 쌓이는 StepUp 포인트예요. GIWA 네트워크 기반으로 운영됩니다.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(12px,2vh,18px);margin-top:4px;opacity:{{ f.o3 }};transform:{{ f.t3 }};transition:opacity .6s,transform .8s cubic-bezier(.2,.8,.2,1)">
+          <h2 style="margin:0;font-weight:900;font-size:clamp(24px,min(2.8vw,4.6vh),38px);line-height:1.2;letter-spacing:-.045em;word-break:keep-all">달린 만큼, 쌓인다.</h2>
+          <a href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" onClick="{{ trackDl }}" style="align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:16px 28px;border-radius:999px;background:#147BFF;color:#fff;font-size:16px;font-weight:800;box-shadow:0 12px 36px #147BFF55" style-hover="background:#2A8BFF;color:#fff" style-active="transform:scale(.97)" style-focus="outline:3px solid #24D8FF;outline-offset:3px">Android 앱 받기</a>
+        </div>
+      </div>
+
+      <div style="position:relative;min-height:0;overflow:hidden">
+        <div style="position:absolute;left:50%;top:48%;width:min(80%,64vh);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#147BFF66 0%,#147BFF1A 45%,transparent 70%);opacity:{{ f.o2 }};transition:opacity .8s"></div>
+        <div style="position:absolute;left:50%;top:48%;width:min(70%,56vh);aspect-ratio:1;border-radius:50%;border:1px dashed #24D8FF55;opacity:{{ f.o2 }};transition:opacity .8s;animation:h-spin 24s linear infinite"></div>
+        <sc-if value="{{ f.flash }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:50%;top:48%;width:min(60%,48vh);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#FFFFFF 0%,#24D8FF 30%,transparent 65%);animation:h-flash .9s ease-out both"></div>
+        </sc-if>
+        <div style="position:absolute;left:50%;top:48%;width:min(88%,70vh);transform:translate(-50%,-50%)">
+          <img src="design/s2/cutouts/shoes/shoe-main.png" alt="새 신발" style="width:100%;height:auto;display:block;filter:drop-shadow(0 36px 40px #000000aa);opacity:{{ f.o2 }};transform:{{ f.shoe }};transition:opacity .5s,transform 1.1s cubic-bezier(.2,1.2,.3,1)">
+        </div>
+        <div style="position:absolute;left:50%;bottom:clamp(20px,5vh,48px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;white-space:nowrap;opacity:{{ f.o2 }};transition:opacity .6s ease .5s">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.24em;color:#24D8FF">새 신발 획득</span>
+          <span style="font-size:clamp(18px,2.6vh,22px);font-weight:800">블루 스트라이드</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="04 Courses" style="height:100svh;display:flex;justify-content:center;padding:72px clamp(14px,4vw,40px) clamp(16px,3vh,32px)">
+    <div onPointerDown="{{ cDown }}" onPointerUp="{{ cUp }}" style="position:relative;width:min(1200px,100%);height:100%;border-radius:28px;overflow:hidden;isolation:isolate;background:#060C18;touch-action:pan-y;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));grid-template-rows:{{ gRows.p4 }}">
+      <span style="position:absolute;white-space:nowrap;bottom:14px;right:18px;z-index:5;padding:5px 10px;border-radius:999px;border:1px solid #ffffff22;background:#03060D99;font-size:11px;font-weight:700;color:#A8BDD9">화면 예시</span>
+      <sc-for list="{{ courses }}" as="c" hint-placeholder-count="0">
+        <div role="img" aria-label="코스 배경" style="position:absolute;inset:0;background-image:url({{ c.img }});background-size:cover;background-position:center;z-index:-2;opacity:{{ c.o }};transform:{{ c.scale }};transition:opacity 1.1s ease,transform 6s linear"></div>
+      </sc-for>
+      <div style="position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#03060DEE 0%,#03060DAA 50%,#03060D66 100%),linear-gradient(180deg,transparent 50%,#03060DCC 100%)"></div>
+
+      <div style="display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:clamp(24px,5vh,56px) clamp(24px,4.5vw,64px);min-height:0;opacity:{{ pv3.o }};transform:{{ pv3.t }};transition:opacity .9s ease .3s,transform 1.1s cubic-bezier(.2,.8,.2,1) .3s">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#A8BDD9"><span style="width:9px;height:9px;border-radius:50%;background:#24D8FF"></span>러닝 코스</div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.14em;color:#A8BDD9">{{ course.no }} / 03</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(8px,1.6vh,16px)">
+          <div style="display:grid">
+            <sc-for list="{{ courses }}" as="c" hint-placeholder-count="0">
+              <span style="grid-area:1/1;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:min(9vw,17vh,150px);line-height:.85;opacity:{{ c.o }};transform:{{ c.t }};transition:opacity .7s ease,transform .9s cubic-bezier(.2,.8,.2,1)">{{ c.label }}</span>
+            </sc-for>
+          </div>
+          <span style="font-size:clamp(20px,3.2vh,28px);font-weight:800;letter-spacing:-.03em">{{ course.name }}</span>
+          <span style="font-size:15px;color:#A8BDD9;word-break:keep-all">{{ course.desc }}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:clamp(20px,3.5vw,44px);margin-top:4px">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">거리</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(24px,4.4vh,38px);line-height:1">{{ course.km }}<span style="font-size:.45em;color:#A8BDD9;margin-left:4px">KM</span></span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">누적 상승</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(24px,4.4vh,38px);line-height:1">{{ course.up }}<span style="font-size:.45em;color:#A8BDD9;margin-left:4px">M</span></span></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#A8BDD9">난이도</span><span style="font-size:clamp(18px,3.4vh,26px);font-weight:800;line-height:1.3">{{ course.level }}</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+          <h2 style="margin:0;font-weight:900;font-size:clamp(22px,min(2.4vw,4.2vh),34px);line-height:1.2;letter-spacing:-.045em;word-break:keep-all">오늘 달릴 길을 고른다.</h2>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ courses }}" as="c" hint-placeholder-count="3">
+                <div style="width:36px;height:3px;border-radius:3px;background:#ffffff30;overflow:hidden"><div style="height:100%;width:{{ c.fill }};background:#F4F8FF;transition:{{ c.fillT }}"></div></div>
+              </sc-for>
+            </div>
+            <button onClick="{{ prevCourse }}" aria-label="이전 코스" style="width:46px;height:46px;border-radius:50%;border:1px solid #ffffff40;background:#03060D66;color:#fff;font-size:18px;cursor:pointer" style-hover="background:#ffffff1a">←</button>
+            <button onClick="{{ nextCourse }}" aria-label="다음 코스" style="width:46px;height:46px;border-radius:50%;border:1px solid #ffffff40;background:#03060D66;color:#fff;font-size:18px;cursor:pointer" style-hover="background:#ffffff1a">→</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vh,36px)">
+        <div style="position:relative;height:min(100%,640px);aspect-ratio:9/19;border-radius:44px;border:8px solid #0E1626;background:#040811;box-shadow:0 50px 90px -30px #000,0 0 0 1px #1A3B61;overflow:hidden;opacity:{{ pv3.o }};transform:{{ pv3.phone }};transition:opacity .9s ease .45s,transform 1.2s cubic-bezier(.2,.8,.2,1) .45s">
+          <div style="position:absolute;top:0;left:0;right:0;z-index:3;height:9%;display:flex;align-items:center;justify-content:space-between;padding:0 9%;font-size:11px;font-weight:700;color:#DDE6F4;background:linear-gradient(180deg,#040811,#04081100)"><span>9:41</span><span style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em">GPS ●</span></div>
+          <sc-for list="{{ courses }}" as="c" hint-placeholder-count="0">
+            <div style="position:absolute;inset:0;opacity:{{ c.o }};transition:opacity .6s ease">
+              <div style="position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden;background:#0A1426">
+                <img src="design/s2/originals/reference/maps/no-crew-map.png" alt="" style="position:absolute;left:-40%;top:-30%;width:180%;height:160%;object-fit:cover;transform:{{ c.mapT }}">
+                <svg viewBox="0 0 300 330" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+                  <polyline points="{{ c.pts }}" fill="none" stroke="#2F6BFF" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" pathLength="1" stroke-dasharray="1" style="stroke-dashoffset:{{ c.dash }};transition:{{ c.dashT }}"></polyline>
+                  <polyline points="{{ c.pts }}" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1" stroke-dasharray="1" style="stroke-dashoffset:{{ c.dash }};transition:{{ c.dashT }}"></polyline>
+                  <circle cx="{{ c.sx }}" cy="{{ c.sy }}" r="6" fill="#FFFFFF" stroke="#2F6BFF" stroke-width="3"></circle>
+                  <circle cx="{{ c.ex }}" cy="{{ c.ey }}" r="8" fill="none" stroke="#FFFFFF" stroke-width="3" style="opacity:{{ c.endO }};transition:{{ c.endT }}"></circle>
+                </svg>
+                <div style="position:absolute;left:0;right:0;bottom:0;height:30%;background:linear-gradient(180deg,#04081100,#040811)"></div>
+              </div>
+              <div style="position:absolute;left:0;right:0;bottom:0;height:42%;padding:0 8% 10%;display:flex;flex-direction:column;justify-content:flex-end;gap:12px">
+                <span style="font-size:13px;font-weight:800;color:#DDE6F4">{{ c.name }}</span>
+                <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:46px;line-height:.9">{{ c.km }}<span style="font-size:.4em;color:#6FA0FF;margin-left:4px">KM</span></span>
+                <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-top:10px;border-top:1px solid #1A2A44">
+                  <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#7E93B3">시간</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px">{{ c.time }}</span></div>
+                  <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#7E93B3">페이스</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px">{{ c.pace }}</span></div>
+                  <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#7E93B3">상승</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px">{{ c.up }}m</span></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;height:40px;border-radius:999px;background:#147BFF;font-size:13px;font-weight:800">이 코스 달리기</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="05 Download" style="height:100svh;display:flex;flex-direction:column;align-items:center;gap:12px;padding:72px clamp(14px,4vw,40px) clamp(12px,2vh,20px)">
+    <div style="position:relative;width:min(1200px,100%);flex:1;min-height:0;border-radius:28px;overflow:hidden;isolation:isolate;background:#060C18;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));grid-template-rows:{{ gRows.p5 }};align-items:center">
+      <img src="design/s2/originals/backgrounds/weather-day.jpeg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.55">
+      <div style="position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#03060DCC 0%,#03060D99 50%,#03060DEE 100%)"></div>
+      <div style="position:relative;height:100%;min-height:0;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vh,36px)">
+        <div style="position:relative;height:min(100%,640px);aspect-ratio:9/19;border-radius:44px;border:8px solid #0E1626;background:#040C1B;box-shadow:0 50px 90px -30px #000,0 0 0 1px #1A3B61;overflow:hidden;opacity:{{ pv4x.o }};transform:{{ pv4x.t }};transition:opacity .9s ease .3s,transform 1.1s cubic-bezier(.2,.8,.2,1) .3s">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12% 10% 14%;opacity:{{ ph6.startO }};transition:opacity .35s">
+            <img src="design/s2/cutouts/brand/stepup-login.png" alt="StepUp" style="width:52%;height:auto">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:12px;color:#A8BDD9">오늘의 목표</span><span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:44px;line-height:1">5.00<span style="font-size:.4em;color:#24D8FF;margin-left:4px">KM</span></span></div>
+            <div style="position:relative;width:56%;aspect-ratio:1">
+              <div style="position:absolute;left:50%;top:50%;width:100%;height:100%;border-radius:50%;border:2px solid #147BFF;animation:h-pulse 1.6s ease-out infinite"></div>
+              <div style="position:absolute;inset:0;border-radius:50%;background:#147BFF;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:26px;letter-spacing:.08em;box-shadow:0 0 40px #147BFF88;transform:{{ ph6.press }};transition:transform .18s ease">START</div>
+            </div>
+          </div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:{{ ph6.runO }};transition:opacity .35s">
+            <span style="display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.2em;color:#A8BDD9"><span style="width:7px;height:7px;border-radius:50%;background:#FF3B47"></span>RUNNING</span>
+            <span data-w="p6t" style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:64px;line-height:1;font-variant-numeric:tabular-nums">00:00</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;color:#A8BDD9"><span data-w="p6k">0.00</span> KM</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:clamp(14px,2.6vh,24px);padding:clamp(24px,4vh,52px) clamp(24px,4.5vw,64px);opacity:{{ pv4x.o }};transform:{{ pv4x.t }};transition:opacity .9s ease .5s,transform 1.1s cubic-bezier(.2,.8,.2,1) .5s">
+        <div style="display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#A8BDD9"><span style="width:9px;height:9px;border-radius:50%;background:#24D8FF"></span>준비 완료</div>
+        <h2 style="margin:0;font-weight:900;font-size:clamp(34px,min(4.4vw,7.5vh),64px);line-height:1.1;letter-spacing:-.05em;word-break:keep-all">오늘의 첫 1km,<br>지금 시작한다.</h2>
+        <a href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" onClick="{{ trackDl }}" style="align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:16px 28px;border-radius:999px;background:#147BFF;color:#fff;font-size:16px;font-weight:800;box-shadow:0 12px 36px #147BFF55;padding:19px 34px;font-size:18px">Android 앱 받기</a>
+        <span style="font-size:14px;color:#A8BDD9">Android 8.0 이상 · 약 20MB · iPhone은 준비 중이에요</span>
+      </div>
+    </div>
+    <footer style="width:min(1200px,100%);flex:none;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:13px;color:#7F8CA3">
+      <span>© StepUp · Powered by GIWA</span>
+      <div style="display:flex;gap:20px"><a href="./privacy.html">개인정보처리방침</a><a href="./terms.html">이용약관</a><a href="https://github.com/mycyi1994-hash/StepUp/issues">문의</a><a href="https://github.com/mycyi1994-hash/StepUp">GitHub</a></div>
+    </footer>
+  </section>
+  </div>
+  <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:200;background:#03060D;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;opacity:{{ loadO }};transition:opacity .5s ease">
+      <img src="design/s2/cutouts/brand/stepup-login.png" alt="StepUp" style="width:min(56vw,300px);height:auto">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:44px;line-height:1;color:#F4F8FF;font-variant-numeric:tabular-nums">00:00<span style="color:#147BFF;font-size:.5em">.00</span></span>
+      <div style="width:min(50vw,220px);height:2px;background:#13284A;overflow:hidden"><div style="height:100%;background:#147BFF;transform-origin:left;animation:h-load .8s ease-out both"></div></div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;heroVideo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;소재&quot;},&quot;startSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1458,&quot;min&quot;:0,&quot;max&quot;:7200,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;첫 화면&quot;},&quot;threshold&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:90,&quot;min&quot;:30,&quot;max&quot;:300,&quot;step&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;스크롤&quot;},&quot;duration&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1100,&quot;min&quot;:500,&quot;max&quot;:2000,&quot;step&quot;:100,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;스크롤&quot;}}">
+class Component extends DCLogic {
+  state = { page: 0, joined: 0, phase: -1, course: 0, p6: -1, narrow: false, wide: false, trans: null, loading: true, loadO: 1, sound: false, laps: [], hoverR: -1 };
+  slugs = ['run', 'crew', 'reward', 'course', 'start'];
+  componentDidMount() {
+    const $ = k => document.querySelector(`[data-w="${k}"]`);
+    const start = performance.now() - (this.props.startSeconds ?? 1458) * 1000; this.swStart = start;
+    const tick = now => {
+      const ms = now - start, s = ms / 1000, main = $('main');
+      if (main) {
+        main.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+        $('cs').textContent = '.' + String(Math.floor((ms % 1000) / 10)).padStart(2, '0');
+        const km = s / 298; $('km').textContent = km.toFixed(2);
+        $('bar').style.width = ((km % 5) / 5 * 100) + '%';
+        if (Math.floor(s) !== this.lastS) { this.lastS = Math.floor(s); $('bpm').textContent = 164 + Math.round(Math.sin(s / 7) * 4 + Math.random() * 2); }
+      }
+      this.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+
+    this.acc = 0; this.lockUntil = 0; this.lastWheel = 0; this.inertia = false;
+    this.mq = matchMedia('(max-width: 680px)');
+    this.h_mq = e => this.setState({ narrow: e.matches });
+    this.mq.addEventListener('change', this.h_mq); this.setState({ narrow: this.mq.matches });
+    this.mqw = matchMedia('(min-width: 1380px)'); this.h_mqw = e => this.setState({ wide: e.matches });
+    this.mqw.addEventListener('change', this.h_mqw); this.setState({ wide: this.mqw.matches });
+    this.h_wheel = e => {
+      e.preventDefault();
+      const now = performance.now(), gap = now - this.lastWheel; this.lastWheel = now;
+      if (now < this.lockUntil) return;
+      if (this.inertia) { if (gap < 180) return; this.inertia = false; }
+      this.acc += e.deltaY;
+      clearTimeout(this.reset); this.reset = setTimeout(() => (this.acc = 0), 220);
+      const th = this.props.threshold ?? 90;
+      if (this.acc > th) this.go(1); else if (this.acc < -th) this.go(-1);
+    };
+    this.h_key = e => {
+      if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); this.go(1); }
+      if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.go(-1); }
+    };
+    this.h_ts = e => (this.ty = e.touches[0].clientY);
+    this.h_te = e => { const dy = this.ty - e.changedTouches[0].clientY; if (Math.abs(dy) > 50) this.go(dy > 0 ? 1 : -1); };
+    window.addEventListener('wheel', this.h_wheel, { passive: false });
+    window.addEventListener('keydown', this.h_key);
+    window.addEventListener('touchstart', this.h_ts, { passive: true });
+    window.addEventListener('touchend', this.h_te, { passive: true });
+    this.h_mm = e => { if (this.state.page !== 0) return; const c = document.querySelector('[data-w="heroCard"]'), g = document.querySelector('[data-w="glow"]'); if (!c || !g) return; const r = c.getBoundingClientRect(); g.style.transform = `translate(${e.clientX - r.left}px,${e.clientY - r.top}px)`; };
+    window.addEventListener('mousemove', this.h_mm);
+    this.stepT = setInterval(() => { if (this.state.sound && this.state.page === 0) { this.stepAlt = !this.stepAlt; this.snd(this.stepAlt ? 'step' : 'step2'); } }, 350);
+    let seen = false; try { seen = localStorage.getItem('stepupHero.seen') === '1'; } catch (e) {}
+    if (seen) this.setState({ loading: false });
+    else {
+      const img = new Image(); img.src = 'design/s2/originals/backgrounds/login-share.jpeg';
+      const imgP = new Promise(r => { img.onload = img.onerror = r; });
+      Promise.all([document.fonts ? document.fonts.ready : 0, imgP, new Promise(r => setTimeout(r, 800))]).then(() => {
+        this.setState({ loadO: 0 }); this.loadT = setTimeout(() => this.setState({ loading: false }), 500);
+        try { localStorage.setItem('stepupHero.seen', '1'); } catch (e) {}
+      });
+    }
+    const i0 = this.slugs.indexOf((location.hash || '').slice(1));
+    if (i0 > 0) this.to(i0);
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf); this.clearAll();
+    [this.reset, this.unlock, this.joinStart].forEach(clearTimeout);
+    window.removeEventListener('wheel', this.h_wheel);
+    window.removeEventListener('keydown', this.h_key);
+    window.removeEventListener('touchstart', this.h_ts);
+    window.removeEventListener('touchend', this.h_te);
+    this.mq && this.mq.removeEventListener('change', this.h_mq); window.removeEventListener('mousemove', this.h_mm); clearInterval(this.stepT); clearTimeout(this.loadT); clearTimeout(this.transT); this.mqw && this.mqw.removeEventListener('change', this.h_mqw);
+  }
+  finish() {
+    const d = this.dur() * .6, at = (ms, fn) => this.fT.push(setTimeout(fn, d + ms));
+    this.fT = [];
+    const el = document.querySelector('[data-w="sup"]'); if (el) el.textContent = '0.00';
+    at(0, () => this.setState({ phase: 0 }));
+    at(700, () => { this.setState({ phase: 1 }); this.snd('chime'); const t0 = performance.now(), to = 12.5; const step = now => { const k = Math.min(1, (now - t0) / 1300), e = 1 - Math.pow(1 - k, 3); if (el) el.textContent = (to * e).toFixed(2); if (k < 1) this.supRaf = requestAnimationFrame(step); }; this.supRaf = requestAnimationFrame(step); });
+    at(2100, () => { this.setState({ phase: 2 }); this.snd('reveal'); });
+    at(2900, () => this.setState({ phase: 3 }));
+  }
+  audio() { if (!this.ac) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; this.ac = new AC(); } if (this.ac.state === 'suspended') this.ac.resume(); return this.ac; }
+  snd(type) {
+    if (!this.state.sound) return; const ac = this.audio(); if (!ac) return; const t = ac.currentTime;
+    const tone = (f, dur, vol, wave, when = 0, f2) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = wave || 'sine'; o.frequency.setValueAtTime(f, t + when); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + when + dur); g.gain.setValueAtTime(vol, t + when); g.gain.exponentialRampToValueAtTime(.0001, t + when + dur); o.connect(g).connect(ac.destination); o.start(t + when); o.stop(t + when + dur + .02); };
+    const noise = (dur, vol, freq) => { const b = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol; s.connect(f).connect(g).connect(ac.destination); s.start(t); };
+    if (type === 'step') tone(90, .12, .35, 'sine', 0, 45);
+    if (type === 'step2') tone(80, .12, .3, 'sine', 0, 40);
+    if (type === 'ping') { tone(880, .25, .12, 'triangle'); tone(1320, .3, .06, 'sine', .06); }
+    if (type === 'chime') { tone(660, .4, .1, 'triangle'); tone(990, .5, .08, 'triangle', .1); }
+    if (type === 'reveal') { tone(523, .6, .1, 'triangle'); tone(784, .6, .08, 'triangle', .08); tone(1046, .8, .07, 'sine', .16); }
+    if (type === 'tick') tone(1500, .05, .06, 'square');
+    if (type === 'beep') tone(1046, .18, .12, 'square');
+    if (type === 'whoosh') noise(.45, .25, 900);
+  }
+  clearAll() {
+    clearInterval(this.joinT); clearTimeout(this.joinStart); (this.fT || []).forEach(clearTimeout); cancelAnimationFrame(this.supRaf);
+    clearInterval(this.courseT); (this.pT || []).forEach(clearTimeout); cancelAnimationFrame(this.p6Raf);
+  }
+  startCourses() { clearInterval(this.courseT); this.courseT = setInterval(() => { this.snd('tick'); this.setState(s => ({ course: (s.course + 1) % 3 })); }, 5000); }
+  stepCourse(d) { this.snd('tick'); this.setState(s => ({ course: (s.course + d + 3) % 3 })); this.startCourses(); }
+  startPhone() {
+    const d = this.dur() * .6, at = (ms, fn) => this.pT.push(setTimeout(fn, d + ms));
+    this.pT = [];
+    at(0, () => this.setState({ p6: 0 }));
+    at(1500, () => { this.setState({ p6: 1 }); this.snd('beep'); });
+    at(1750, () => {
+      this.setState({ p6: 2 });
+      const t0 = performance.now(), tEl = document.querySelector('[data-w="p6t"]'), kEl = document.querySelector('[data-w="p6k"]');
+      const step = now => { const s = (now - t0) / 1000; if (tEl) tEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0'); if (kEl) kEl.textContent = (s / 298).toFixed(2); this.p6Raf = requestAnimationFrame(step); };
+      this.p6Raf = requestAnimationFrame(step);
+    });
+  }
+  dur() { return this.props.duration ?? 1100; }
+  go(d) { this.to(this.state.page + d); }
+  to(n) {
+    n = Math.max(0, Math.min(4, n));
+    if (n === this.state.page || performance.now() < this.lockUntil) return;
+    this.lockUntil = performance.now() + this.dur() + 150; this.inertia = true; this.acc = 0;
+    try { history.replaceState(null, '', '#' + this.slugs[n]); } catch (e) {}
+    this.snd('whoosh');
+    this.clearAll();
+    this.setState({ page: n, joined: 0, phase: -1, course: 0, p6: -1 });
+    if (n === 2) this.finish();
+    if (n === 3) this.startCourses();
+    if (n === 4) this.startPhone();
+    if (n === 1) this.joinStart = setTimeout(() => {
+      this.joinT = setInterval(() => this.setState(s => {
+        if (s.joined >= 6) { clearInterval(this.joinT); return null; }
+        this.snd('ping');
+        return { joined: s.joined + 1 };
+      }), 900);
+    }, this.dur() * .7);
+  }
+  renderVals() {
+    const { page, joined } = this.state;
+    const on = page === 1, done = joined >= 6;
+    const base = [
+      { name: '지우', dist: '1.2km', sx: 14, sy: 18, ex: 46, ey: 50 },
+      { name: '민재', dist: '2.4km', sx: 86, sy: 14, ex: 54, ey: 50 },
+      { name: '서연', dist: '0.8km', sx: 90, sy: 72, ex: 57, ey: 56 },
+      { name: '도윤', dist: '1.9km', sx: 18, sy: 88, ex: 50, ey: 60 },
+      { name: '하린', dist: '3.1km', sx: 6, sy: 52, ex: 44, ey: 57 },
+      { name: '태오', dist: '1.5km', sx: 70, sy: 94, ex: 56, ey: 60 }
+    ];
+    const runners = base.map((r, i) => {
+      const j = on && joined > i;
+      return {
+        pace: ["5'12\"", "4'48\"", "5'35\"", "5'02\"", "6'10\"", "5'20\""][i], tipO: this.state.hoverR === i ? 1 : 0, enter: () => this.setState({ hoverR: i }), leave: () => this.setState({ hoverR: -1 }),
+        name: r.name, initial: r.name[0], sx: r.sx, sy: r.sy,
+        x: j ? `calc(50% + ${[0, 42, 42, 0, -42, -42][i]}px)` : r.sx + '%', y: j ? `calc(55% + ${[-48, -24, 24, 48, 24, -24][i]}px)` : r.sy + '%',
+        bg: j ? '#147BFF' : '#0B1D35', border: j ? '#24D8FF' : '#3A5578',
+        glow: j ? '0 0 18px #147BFFAA' : 'none',
+        line: j ? '#24D8FF' : '#5B6F8E', lineO: j ? 0 : .8,
+        rowO: j ? 1 : .45,
+        status: j ? '합류 완료' : `이동 중 · ${r.dist}`,
+        statusColor: j ? '#24D8FF' : '#7E93B3'
+      };
+    });
+    const shown = on ? joined : 0;
+    const ph = page === 2 ? this.state.phase : -1;
+    const f = {
+      o0: ph >= 0 ? 1 : 0, stamp: ph >= 0 ? 'none' : 'scale(1.35)',
+      line: ph >= 1 ? 'scaleX(1)' : 'scaleX(0)',
+      o1: ph >= 1 ? 1 : 0, t1: ph >= 1 ? 'none' : 'translateY(24px)',
+      o2: ph >= 2 ? 1 : 0, shoe: ph >= 2 ? 'rotate(-12deg) scale(1)' : 'rotate(-40deg) scale(.4)', flash: ph === 2,
+      o3: ph >= 3 ? 1 : 0, t3: ph >= 3 ? 'none' : 'translateY(24px)'
+    };
+    const pv = i => ({ o: page === i ? 1 : 0, t: page === i ? 'none' : 'translateY(30px)' });
+    const ci = this.state.course, onC = page === 3;
+    const route = (seed, pts) => { let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280; const out = []; for (let i = 0; i < pts.length - 1; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[i + 1]; for (let k = 0; k < 8; k++) { const t = k / 8; out.push([x1 + (x2 - x1) * t + (rnd() - .5) * 7, y1 + (y2 - y1) * t + (rnd() - .5) * 7]); } } out.push(pts[pts.length - 1]); return out; };
+    const cdata = [
+      { label: 'SUNSET 5K', name: '광안리 해변 코스', desc: '해변 산책로를 따라 광안대교를 보며 달리는 평지 코스', km: '5.02', up: '12', level: '쉬움', time: '26:14', pace: "5'13\"", img: 'design/s2/originals/backgrounds/weather-dusk.jpeg', mapT: 'rotate(0deg)', r: route(3, [[40, 60], [120, 110], [180, 150], [250, 250]]) },
+      { label: 'NIGHT 7K', name: '민락 수변 나이트 코스', desc: '조명이 켜진 수변공원과 방파제를 잇는 야간 코스', km: '7.18', up: '24', level: '보통', time: '38:02', pace: "5'18\"", img: 'design/s2/originals/backgrounds/gwangalli.jpeg', mapT: 'rotate(38deg) scale(1.1)', r: route(11, [[60, 270], [90, 180], [160, 150], [200, 80], [260, 60]]) },
+      { label: 'RAIN 10K', name: '비 오는 날 해안 코스', desc: '비 오는 날에도 미끄럽지 않은 포장로 위주의 장거리 코스', km: '10.04', up: '41', level: '어려움', time: '55:40', pace: "5'33\"", img: 'design/s2/originals/backgrounds/weather-rain.jpeg', mapT: 'rotate(-62deg) scale(1.15)', r: route(27, [[50, 90], [110, 70], [170, 120], [150, 200], [220, 240], [260, 290]]) }
+    ];
+    const courses = cdata.map((c, i) => { const act = i === ci, anim = onC && act, p = c.r, e = p[p.length - 1]; return { img: c.img, label: c.label, name: c.name, km: c.km, time: c.time, pace: c.pace, up: c.up, mapT: c.mapT, pts: p.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' '), sx: p[0][0], sy: p[0][1], ex: e[0], ey: e[1], dash: anim ? 0 : 1, dashT: anim ? 'stroke-dashoffset 2.2s cubic-bezier(.4,0,.2,1) .4s' : 'none', endO: anim ? 1 : 0, endT: anim ? 'opacity .4s ease 2.5s' : 'none', o: act ? 1 : 0, scale: act ? 'scale(1.08)' : 'scale(1)', t: act ? 'none' : 'translateY(20px)', fill: anim ? '100%' : '0%', fillT: anim ? 'width 5s linear' : 'none' }; });
+    const course = { ...cdata[ci], no: '0' + (ci + 1) };
+    const p6 = page === 4 ? this.state.p6 : -1;
+    const ph6 = { startO: p6 >= 2 ? 0 : 1, runO: p6 >= 2 ? 1 : 0, press: p6 === 1 ? 'scale(.86)' : 'scale(1)' };
+    return {
+      pv3: { ...pv(3), phone: page === 3 ? 'none' : 'translateY(60px) rotate(4deg)' }, pv4x: pv(4), courses, course, ph6,
+      prevCourse: () => this.stepCourse(-1), nextCourse: () => this.stepCourse(1),
+      trackY: `-${page * 100}svh`, dur: this.dur() + 'ms',
+      goHome: () => this.to(0),
+      showDots: !this.state.narrow,
+      loading: this.state.loading, loadO: this.state.loadO,
+      heroVideo: this.props.heroVideo || '', hasVideo: !!this.props.heroVideo,
+      soundOn: this.state.sound ? 'true' : 'false', soundLabel: this.state.sound ? '사운드 켜짐' : '사운드', soundDot: this.state.sound ? '#24D8FF' : '#5B6F8E',
+      toggleSound: () => { const on = !this.state.sound; if (on) this.audio(); this.setState({ sound: on }); },
+      laps: this.state.laps, noLaps: this.state.laps.length === 0,
+      lap: () => { const s = (performance.now() - this.swStart) / 1000; const n = (this.lapN = (this.lapN || 0) + 1); const lap = { n, t: String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0'), km: (s / 298).toFixed(2) }; this.snd('tick'); this.setState(st => ({ laps: [lap, ...st.laps].slice(0, 3) })); },
+      cDown: e => { this.px = e.clientX; this.py = e.clientY; },
+      cUp: e => { const dx = e.clientX - (this.px ?? e.clientX), dy = e.clientY - (this.py ?? e.clientY); if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) this.stepCourse(dx < 0 ? 1 : -1); this.px = null; },
+      streaks: this.state.narrow ? [] : [
+        { top: '18%', w: '22vw', h: '1px', c: '#F4F8FF', d: '1.6s', delay: '0s' },
+        { top: '33%', w: '34vw', h: '2px', c: '#147BFF', d: '2.2s', delay: '.7s' },
+        { top: '52%', w: '18vw', h: '1px', c: '#24D8FF', d: '1.4s', delay: '1.2s' },
+        { top: '68%', w: '28vw', h: '2px', c: '#147BFF', d: '1.9s', delay: '.3s' },
+        { top: '84%', w: '20vw', h: '1px', c: '#F4F8FF', d: '1.5s', delay: '1.6s' }
+      ],
+      gRows: this.state.narrow ? { p2: '36% minmax(0,1fr)', p3: 'minmax(0,1fr) 36%', p4: 'minmax(0,1fr) 44%', p5: '44% minmax(0,1fr)' } : { p2: 'minmax(0,1fr)', p3: 'minmax(0,1fr)', p4: 'minmax(0,1fr)', p5: 'minmax(0,1fr)' },
+      trackDl: () => { (window.dataLayer = window.dataLayer || []).push({ event: 'apk_download', screen: this.slugs[this.state.page] }); },
+      dots: [0, 1, 2, 3, 4].map(i => ({ go: () => this.to(i), label: `${i + 1}번째 화면`, name: ['러닝', '크루', '보상', '코스', '시작'][i], labelO: page === i && this.state.wide ? 1 : 0, labelT: page === i ? 'none' : 'translateX(6px)', h: page === i ? '28px' : '10px', bg: page === i ? '#F4F8FF' : '#ffffff40' })),
+      p1: { o: on ? 1 : 0, t: on ? 'none' : 'translateY(30px)', img: on ? 'scale(1)' : 'scale(1.15)' },
+      runners, f,
+      joinedStr: String(shown).padStart(2, '0'),
+      countColor: done ? '#24D8FF' : '#F4F8FF',
+      ringColor: done ? '#24D8FF' : '#147BFF',
+      statusDot: done ? '#24D8FF' : '#FF3B47',
+      statusLabel: done ? '크루 결성 완료 · 한강 나이트 러너스' : '크루 모집 중 · 한강 나이트 러너스',
+      headline: done ? '크루 결성 완료. 이제 같이 달린다.' : '같이 뛸 사람들이 모이고 있다.'
+    };
+  }
+}
+</script>
+</body>
+</html>
