@@ -1588,5 +1588,17 @@ Start running with StepUp.</string>
     <string name="run_recover_other_account">A run from another account (or from before sign-in) was interrupted. It will not continue here; it is saved to the account that started it.</string>
     <string name="run_recover_resume">Keep running</string>
     <string name="run_recover_finish">Finish and save</string>
+    <string name="home_s2_goal">Daily goal %1$s steps</string>
+    <string name="home_s2_headline">You walked\n%1$s steps today</string>
+    <string name="home_s2_left">%1$s steps left to your goal</string>
+    <string name="home_s2_done">You reached today\'s goal</string>
+    <string name="home_s2_balance">Balance</string>
+    <string name="home_s2_today_sup">Today\'s SUP</string>
+    <string name="home_s2_sup_note">SUP arrives after your record is checked</string>
+    <string name="shoes_s2_market">Market</string>
+    <string name="shoes_s2_dex">Shoe dex</string>
+    <string name="shoes_s2_equip">Wear this pair</string>
+    <string name="shoes_s2_owned">Owned %1$d</string>
+    <string name="run_s2_goal_left">Goal %1$s km · %2$s km to go</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

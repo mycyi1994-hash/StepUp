@@ -75,6 +75,8 @@ import com.stepup.android.R
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.service.RunSaveStatus
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.layout.layout
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
@@ -340,17 +342,37 @@ fun RunScreen(
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
                     RunHero(
-                        paused = session.isPaused, gpsFix = session.gpsFix, locationAllowed = locationAllowed,
+                        paused = session.isPaused, active = session.isActive,
+                        gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
                     Spacer(Modifier.height(20.dp))
                     val mapHeight = if (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800) 256.dp else 280.dp
-                    val mapModifier = Modifier.fillMaxWidth().height(mapHeight)
-                        .clip(RoundedCornerShape(20.dp)).testTag("run-live-map")
-                    if (session.geoTrack.isNotEmpty()) {
-                        LiveRouteMap(points = session.geoTrack, modifier = mapModifier, progress = 1f)
-                    } else {
-                        MapWaiting(mapModifier)
+                    val gutter = com.stepup.android.ui.theme.StepUpDesign.Gutter
+                    // S2 — 지도는 화면 끝까지 펼치고 위아래가 바닥색에 녹아든다
+                    val mapModifier = Modifier.fillMaxWidth()
+                        .layout { measurable, constraints ->
+                            val extra = (gutter * 2).roundToPx()
+                            val width = constraints.maxWidth + extra
+                            val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+                            layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
+                        }
+                        .height(mapHeight).testTag("run-live-map")
+                    Box(mapModifier) {
+                        if (session.geoTrack.isNotEmpty()) {
+                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f)
+                        } else {
+                            MapWaiting(Modifier.fillMaxSize())
+                        }
+                        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to Night, 0.14f to Color.Transparent, 0.72f to Color.Transparent, 1f to Night,
+                        )))
+                    }
+                    if (goalKm > 0 && session.isActive) {
+                        Spacer(Modifier.height(12.dp))
+                        com.stepup.android.ui.components.S2Subtitle(stringResource(
+                            R.string.run_s2_goal_left, "%.1f".format(goalKm), "%.2f".format(max(goalKm - distanceKm, 0.0)),
+                        ))
                     }
                     if (session.flaggedSegments > 0) {
                         TextButton(onClick = { showDetails = true }) {
@@ -364,41 +386,52 @@ fun RunScreen(
                         Spacer(Modifier.height(16.dp))
                     }
                 }
-                PrimaryCta(
-                    text = stringResource(when {
-                        session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
-                        session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
-                        !session.isActive -> R.string.home_start_run
-                        session.isPaused -> R.string.cd_resume
-                        else -> R.string.cd_pause
-                    }),
-                    icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
-                        else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    enabled = session.saveStatus != RunSaveStatus.SAVING,
-                    onClick = {
-                        when {
-                            session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
-                            running -> WalkSessionService.pause(context)
-                            session.isActive -> WalkSessionService.resume(context)
-                            else -> {
-                                val missing = StepPermissions.missing(context)
-                                if (missing.isEmpty()) WalkSessionService.start(context)
-                                else permissionLauncher.launch(missing)
-                            }
+                val primaryAction = {
+                    when {
+                        session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
+                        running -> WalkSessionService.pause(context)
+                        session.isActive -> WalkSessionService.resume(context)
+                        else -> {
+                            val missing = StepPermissions.missing(context)
+                            if (missing.isEmpty()) WalkSessionService.start(context)
+                            else permissionLauncher.launch(missing)
+                        }
+                    }
+                }
+                // S2 — 가운데 흰 원이 일시정지 · 재개, 오른쪽 작은 원이 종료(한 번 더 묻는다)
+                com.stepup.android.ui.components.S2ActionRow(
+                    Modifier.padding(top = 8.dp),
+                    end = {
+                        if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
+                            com.stepup.android.ui.components.S2RoundAction(
+                                icon = Icons.Filled.Stop,
+                                label = stringResource(R.string.run_finish),
+                                primary = false,
+                                onClick = { confirmStop = true },
+                                modifier = Modifier.testTag("run-finish"),
+                            )
                         }
                     },
-                    modifier = Modifier.testTag("run-primary-action"),
-                )
+                ) {
+                    com.stepup.android.ui.components.S2RoundAction(
+                        icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
+                            else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        label = stringResource(when {
+                            session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
+                            session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
+                            !session.isActive -> R.string.home_start_run
+                            session.isPaused -> R.string.cd_resume
+                            else -> R.string.cd_pause
+                        }),
+                        enabled = session.saveStatus != RunSaveStatus.SAVING,
+                        onClick = primaryAction,
+                        modifier = Modifier.testTag("run-primary-action"),
+                    )
+                }
                 if (session.saveStatus == RunSaveStatus.FAILED) {
                     Text(stringResource(R.string.run_save_failed), color = Alert,
                         style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
                         modifier = Modifier.padding(vertical = 12.dp).testTag("run-save-error"))
-                } else if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
-                    TextButton(
-                        onClick = { confirmStop = true },
-                        modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
-                            .testTag("run-finish"),
-                    ) { Text(stringResource(R.string.run_finish), color = Silver) }
                 } else {
                     Spacer(Modifier.height(16.dp))
                 }
@@ -1239,27 +1272,46 @@ private fun FinishCard(
 @Composable
 private fun RunHero(
     paused: Boolean,
+    active: Boolean,
     gpsFix: Boolean,
     locationAllowed: Boolean,
     elapsedSec: Long,
     distanceKm: Double,
     avgPaceSec: Long?,
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = maxWidth < 300.dp || LocalDensity.current.fontScale > 1.25f
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            GpsChip(gpsFix, locationAllowed)
-            AdaptiveNumber(formatDuration(elapsedSec), if (elapsedSec >= 3600) 44.sp else 64.sp, color = if (paused) Silver else Snow, textAlign = TextAlign.Center)
-            if (stacked) {
-                FinishStat(stringResource(R.string.stat_distance), "%.2f".format(distanceKm), "km")
-                FinishStat(stringResource(R.string.run_avg_pace), avgPaceSec?.let { formatPace(it) } ?: "—", "")
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(distanceKm), "km", Modifier.weight(1f))
-                    FinishStat(stringResource(R.string.run_avg_pace), avgPaceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
-                }
-            }
+    // S2 — 위에 GPS 상태 한 줄, 가운데 가는 큰 시간, 아래 거리 | 페이스
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(8.dp))
+        val gps = stringResource(when {
+            !locationAllowed -> R.string.run_location_disabled
+            gpsFix -> R.string.run_gps_ok
+            else -> R.string.run_gps_search
+        })
+        val phase = when {
+            paused -> stringResource(R.string.run_paused)
+            active -> stringResource(R.string.run_active)
+            else -> null
         }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.size(7.dp).background(if (gpsFix && locationAllowed) com.stepup.android.ui.theme.Cyan else Slate, CircleShape))
+            Text(listOfNotNull(gps, phase).joinToString(" · "),
+                color = if (gpsFix && locationAllowed) com.stepup.android.ui.theme.VoltText else Silver,
+                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        }
+        Spacer(Modifier.height(10.dp))
+        com.stepup.android.ui.components.S2Number(
+            formatDuration(elapsedSec), if (elapsedSec >= 3600) 60.sp else 79.sp,
+            color = if (paused) Silver else Snow,
+        )
+        Spacer(Modifier.height(14.dp))
+        com.stepup.android.ui.components.S2Stats(
+            listOf(
+                stringResource(R.string.stat_distance) to "%.2f km".format(distanceKm),
+                stringResource(R.string.run_avg_pace) to (avgPaceSec?.let { formatPace(it) } ?: "—"),
+            ),
+            Modifier.padding(horizontal = 30.dp),
+            valueSize = 26.sp,
+        )
     }
 }
 

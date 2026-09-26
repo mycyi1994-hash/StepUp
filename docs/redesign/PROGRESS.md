@@ -910,3 +910,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Added pointers to the root guidance and historical handoffs so old character/wardrobe directions do not override S2. The HTML comparison is not a final approved specification or an Android S2 build; small comparison images are not production assets.
 - Checked asset hashes and referenced files, complete route/frame coverage, local documentation links and preview asset/font paths; no signed download URLs in the shipped JSON. App source is unchanged. No new APK, device tests or deployment in this documentation checkpoint.
 - The user subsequently requested committing and pushing all handoff assets for remote Claude work. This package targets `origin/codex/stepup-cohesive-redesign`; remote users must check out that branch. The delivery response records the final commit and remote verification.
+
+## 2026-09-26 — S2 batch 1: shared parts, home, shoes, active run
+
+- New `ui/components/S2Parts.kt` (stage backdrop, kicker/headline/subtitle, light big numbers, arch scenery, white round action, side info, stat row). Dark `night` is now S2 `#05080E`; tab selection is white label + short blue bar. Tab set unchanged (draw slot pending the user's decision).
+- Home, Shoes and active Run follow S2 composition with existing data and actions only; all existing test tags kept. Scenery arrows cycle the six S2 backgrounds (decorative, not weather). Shoe art stays on the 52 catalog assets.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device captures come from the PR's Experience QA run.
+

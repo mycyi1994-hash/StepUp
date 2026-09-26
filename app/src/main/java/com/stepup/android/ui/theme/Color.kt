@@ -182,7 +182,8 @@ val DarkPalette = StepUpPalette(
     // 디자인 패키지(design/blue-black-2026-09)의 토큰 — 배경 #040C1B · 카드
     // #0B1D35 · 경계 #1A3B61 · 파랑 #147BFF · 시안 #24D8FF · 본문 #F4F8FF ·
     // 보조글 #A8BDD9.
-    night = Color(0xFF040C1B),
+    // S2 무대(docs/redesign/s2) — 푸른 기가 도는 검정 #05080E
+    night = Color(0xFF05080E),
     carbon = Color(0xFF0B1D35),
     carbonHigh = Color(0xFF0F2542),
     edge = Color(0xFF1A3B61),
@@ -205,8 +206,8 @@ val DarkPalette = StepUpPalette(
     cyan = Color(0xFF24D8FF),
     cardTop = Color(0xFF0D2140),
     cardBottom = Color(0xFF0A1A30),
-    backdropTop = Color(0xFF06122A),
-    backdropBottom = Color(0xFF040C1B),
+    backdropTop = Color(0xFF060C18),
+    backdropBottom = Color(0xFF05080E),
     // 밝은 타일을 뒤집어 어두운 지도로 만든다. 채도를 낮춰 도로가 회색 계열로만
     // 남고, 그 위의 파란 경로가 화면에서 유일한 색이 된다.
     mapMatrix = floatArrayOf(
