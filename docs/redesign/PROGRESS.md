@@ -935,5 +935,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 
 - Sneaker detail and vault equipped card use the S2 hero (kicker, name, mint/level, tilted plate, one-line real stats). Dex progress and market model hero/quote row follow S2. PillChip selected = white pill. S2ShoeStage shared.
 - No new stats or prices invented; enhance/repair/sell/buy/bid flows unchanged.
-- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence recorded after this PR's Experience QA.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: pending this PR's Experience QA (not yet reviewed).
+
+## 2026-09-26 — S2 batch D (same PR): neutral dark surfaces, wallet, light numerals
+
+- Dark carbon/carbonHigh/edge/card gradient move to S2 neutral black (PaletteContrastTest passes); overlay unchanged.
+- Wallet hero: kicker, light big balance (rounded down), tagline, earned | spent row. AdaptiveNumber uses light Pretendard numerals.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: pending this PR's Experience QA (not yet reviewed).
 
