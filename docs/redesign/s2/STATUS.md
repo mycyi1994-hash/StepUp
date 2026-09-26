@@ -87,3 +87,9 @@
 - 다크 팔레트의 카드 · 칩 · 경계(carbon · carbonHigh · edge · 카드 그라데이션)를 푸른 남색에서 S2 무채색 검정으로. `GlowCard` 102곳이 함께 바뀐다. 파랑은 강조 · 버튼에만. 대화창 패널(overlay)은 막 위 대비 검사 때문에 그대로.
 - 지갑: 파란 잔액 카드 → 파란 한 줄 + 가는 큰 잔액(내림) + 안내 + 번 SUP | 쓴 SUP 한 줄. 거래 내역 · GIWA 카드 그대로.
 - `AdaptiveNumber`: 큰 숫자를 가는 글꼴(Pretendard Regular, tnum)로. 폭 맞춤 규칙은 그대로.
+
+## 6차 — 마무리(E) 1단계 (2026-09-26)
+
+- 남은 예전 모양: 전체 너비 주 버튼(`PrimaryCta`)을 파란 번짐 알약 → 흰 알약 · 짙은 글자로, 필터 창 선택 칩을 S2 칩과 같게, 숫자 글꼴(`StepUpNumbers`, 28곳)을 Barlow → Pretendard 로.
+- 캡처 범위: PR 기기 검사(`tools/run_device_qa.sh`)에 디자인 기준 장면 4묶음(redesign · secondary · records · explore)을 더했다. 그동안 캡처가 없던 뽑기 · 마켓 · 지갑 · 번개 상세 · 기록 · 코스 · 지도 · 랭킹을 같은 리비전으로 찍는다. 워크플로 제한 시간 50 → 110분.
+- 기기 근거: 이 PR 의 Experience QA 를 본 뒤 적는다(아직 확인 전).

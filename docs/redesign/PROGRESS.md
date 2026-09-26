@@ -943,3 +943,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Wallet hero: kicker, light big balance (rounded down), tagline, earned | spent row. AdaptiveNumber uses light Pretendard numerals.
 - Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: Experience QA run 36236519563 on 148d684 — shoes tab, profile and challenge captures reviewed; sneaker detail, dex, market model and wallet are not in the PR capture set (see STATUS).
 
+## 2026-09-26 — S2 batch E (1): leftovers and capture coverage
+
+- PrimaryCta white pill, FilterSheet ChoiceChip matches S2 chips, StepUpNumbers now Pretendard (28 uses).
+- PR device QA now also runs DesignReferenceTest groups (redesign, secondary, records, explore) so draw, market, wallet, flash detail, records, courses, map and ranking are captured on the same revision. experience-qa timeout 110 min.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: pending this PR's Experience QA (not yet reviewed).
+

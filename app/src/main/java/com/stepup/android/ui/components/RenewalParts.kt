@@ -283,22 +283,18 @@ fun PrimaryCta(
     enabled: Boolean = true,
     showArrow: Boolean = true,
 ) {
+    // S2 — 주 행동은 흰 알약(밝은 테마는 남색)에 짙은 글자. 푸른 번짐은 두지 않는다.
     val shape = RoundedCornerShape(50)
+    val dark = com.stepup.android.ui.theme.StepUpColors.dark
+    val face = if (dark) androidx.compose.ui.graphics.Color(0xFFF3F5FF) else Snow
+    val ink = if (dark) androidx.compose.ui.graphics.Color(0xFF070B12) else androidx.compose.ui.graphics.Color.White
     Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = StepUpDesign.PrimaryHeight)
-            // 화면의 주 행동 하나에만 푸른 번짐을 준다
-            .then(
-                if (enabled) {
-                    Modifier.shadow(elevation = 14.dp, shape = shape, ambientColor = Volt, spotColor = Volt)
-                } else {
-                    Modifier
-                },
-            )
             .clip(shape)
             .then(
-                if (enabled) Modifier.background(VoltPlate, shape).sheen(alpha = 0.08f)
+                if (enabled) Modifier.background(face, shape)
                 else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
             )
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -307,7 +303,7 @@ fun PrimaryCta(
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) OnVolt else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
+            Icon(icon, contentDescription = null, tint = if (enabled) ink else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
             Spacer(Modifier.width(12.dp))
         }
         Text(
@@ -315,7 +311,7 @@ fun PrimaryCta(
             modifier = Modifier.weight(1f, fill = false),
             fontSize = StepUpDesign.PrimaryLabel,
             fontWeight = FontWeight.SemiBold,
-            color = if (enabled) OnVolt else Slate,
+            color = if (enabled) ink else Slate,
             textAlign = TextAlign.Center,
         )
         if (showArrow && enabled) {
@@ -323,7 +319,7 @@ fun PrimaryCta(
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
-                tint = OnVolt,
+                tint = ink,
                 modifier = Modifier.size(20.dp),
             )
         }

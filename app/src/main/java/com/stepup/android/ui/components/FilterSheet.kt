@@ -1,5 +1,11 @@
 package com.stepup.android.ui.components
 
+import com.stepup.android.ui.theme.Snow
+
+import androidx.compose.ui.graphics.Color
+
+import com.stepup.android.ui.theme.StepUpColors
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -323,8 +329,8 @@ fun ChoiceChip(
         modifier = modifier
             .heightIn(min = StepUpDesign.TouchTarget)
             .clip(shape)
-            .background(if (selected) Volt.copy(alpha = 0.12f) else CarbonHigh, shape)
-            .border(1.dp, if (selected) Volt.copy(alpha = 0.55f) else Edge, shape)
+            .background(if (selected) (if (StepUpColors.dark) Color(0xFFF3F5FF) else Snow) else CarbonHigh, shape)
+            .border(1.dp, if (selected) Color.Transparent else Edge.copy(alpha = 0.6f), shape)
             .quietClickable(onClick)
             .semantics { this.selected = selected; role = Role.Button }
             .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding,
@@ -335,7 +341,7 @@ fun ChoiceChip(
             text = text,
             fontSize = StepUpDesign.SecondaryLabel,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) Volt else Silver,
+            color = if (selected) (if (StepUpColors.dark) Color(0xFF070B12) else Color.White) else Silver,
             textAlign = TextAlign.Center,
             lineHeight = 20.sp,
         )
