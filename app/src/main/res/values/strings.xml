@@ -1721,7 +1721,7 @@ Start running with StepUp.</string>
     <string name="home_k1_today">Today</string>
     <string name="home_k1_steps">Steps</string>
     <string name="home_k1_week_label">This week</string>
-    <string name="home_k1_week">%1$s km · %2$d runs · %3$s SUP</string>
+    <string name="home_k1_week">%1$s km · runs %2$d · %3$s SUP</string>
     <string name="home_k1_week_empty">No runs yet this week</string>
     <string name="home_k1_records">Records</string>
     <string name="home_k1_records_title">Detailed records</string>

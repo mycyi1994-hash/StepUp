@@ -11,7 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -111,7 +110,7 @@ class MysteryDesignTest {
         val before = HomeBackgrounds.settings.first { scene ->
             compose.onAllNodesWithTag("home-scene-${scene.name}").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("home-background-next").performScrollTo().performClick()
+        compose.onNodeWithTag("home-background-next").assertIsDisplayed().performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("home-scene-${before.name}").fetchSemanticsNodes().isEmpty()
         }
