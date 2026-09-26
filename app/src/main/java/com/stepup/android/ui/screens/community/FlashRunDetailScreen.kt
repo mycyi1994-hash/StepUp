@@ -1,6 +1,8 @@
 package com.stepup.android.ui.screens.community
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.FlowRow
@@ -113,6 +115,7 @@ fun FlashRunDetailScreen(
             })
         },
         primaryActionEnabled = post != null && !post.isClosed && (post.joined || !post.isFull),
+        primaryActionIcon = if (post?.joined == true) null else Icons.Filled.Groups,
         onPrimaryAction = {
             post?.let {
                 if (it.joined) onOpenLobby() else viewModel.toggleJoinFlash(it.id)
@@ -132,9 +135,7 @@ fun FlashRunDetailScreen(
             return@DetailPage
         }
 
-        item { FlashHeroCard(post) }
-
-        item { FlashInfoGrid(post, here) }
+        item { FlashS2Hero(post, here) }
 
         item {
             FlashParticipantsCard(
@@ -168,158 +169,61 @@ fun FlashRunDetailScreen(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 히어로
+// S2 머리 — 상태 · 남은 시간 → 제목 → 장소 → 시간 | 거리 | 내 위치에서 → 주최자
 // ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun FlashHeroCard(post: Post) {
-    GlowCard(accent = true, contentPadding = PaddingValues(0.dp), spacing = 0.dp) {
-        com.stepup.android.ui.components.RunnerBanner(
-            modifier = Modifier.fillMaxWidth().height(100.dp),
-            setting = com.stepup.android.ui.components.RunnerSetting.Sunset,
-        )
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            FlashStatusPill(post)
-            Text(post.title, style = MaterialTheme.typography.headlineSmall, color = Snow)
-            if (post.body.isNotBlank()) Text(post.body, style = MaterialTheme.typography.bodyLarge, color = Silver)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.size(36.dp).background(CarbonHigh, CircleShape), contentAlignment = Alignment.Center) {
-                    Text(post.author.take(1).uppercase(), color = Volt, style = MaterialTheme.typography.titleMedium)
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(stringResource(R.string.flash_host), style = MaterialTheme.typography.bodyMedium, color = Silver)
-                    Text(post.author, style = MaterialTheme.typography.titleMedium, color = Snow)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlashStatusPill(post: Post) {
-    val (label, tint) = when {
-        post.isClosed -> stringResource(R.string.flash_closed_badge) to Slate
-        post.isFull -> stringResource(R.string.flash_full_badge) to Alert
-        else -> stringResource(R.string.flash_recruiting) to Volt
-    }
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(tint.copy(alpha = 0.12f))
-            .border(1.dp, tint.copy(alpha = 0.55f), RoundedCornerShape(50))
-            .padding(horizontal = 11.dp, vertical = 5.dp),
-    ) {
-        Text(
-            text = label,
-            color = tint,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 0.6.sp,
-        )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// 집결 정보 그리드
-// ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun FlashInfoGrid(post: Post, here: GeoPoint?) {
+private fun FlashS2Hero(post: Post, here: GeoPoint?) {
     val context = LocalContext.current
-    val hasPlace = post.place.isNotBlank()
-
-    // 둘 다 쓴 사람이 적은 값이거나 내 폰이 잰 값이다. 모르면 모른다고 적는다.
     val unknown = stringResource(R.string.flash_unknown)
     val awayKm = post.awayKmFrom(here)
-    val fromMe = if (awayKm != null) "%.1f km".format(awayKm) else unknown
-    val runDistance = if (post.distanceKm > 0.0) "%.1f km".format(post.distanceKm) else unknown
+    val status = when {
+        post.isClosed -> stringResource(R.string.flash_closed_badge)
+        post.isFull -> stringResource(R.string.flash_full_badge)
+        else -> stringResource(R.string.flash_recruiting)
+    }
     val meetTime = remember(post.meetAt) {
-        Instant.ofEpochMilli(post.meetAt)
-            .atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("HH:mm"))
+        Instant.ofEpochMilli(post.meetAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))
     }
-
-    GlowCard(contentPadding = PaddingValues(16.dp), spacing = 14.dp) {
-        InfoCell(
-            label = stringResource(R.string.flash_place),
-            value = post.place.ifBlank { stringResource(R.string.post_place_tbd) },
-            modifier = Modifier.fillMaxWidth(), icon = Icons.Filled.LocationOn,
-            onClick = if (hasPlace) { { ExternalIntents.openPlaceInMaps(context, post.place) } } else null,
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(4.dp))
+        com.stepup.android.ui.components.S2Kicker(
+            status + " · " + startsInLabel(post.meetAt),
+            color = if (post.isFull) Alert else if (post.isClosed) Slate else com.stepup.android.ui.theme.VoltText,
         )
-        HairlineDivider()
-        InfoCell(
-            label = stringResource(R.string.flash_time), value = meetTime,
-            modifier = Modifier.fillMaxWidth(), icon = Icons.Filled.Schedule,
-            sub = startsInLabel(post.meetAt),
-        )
-        HairlineDivider()
-        BoxWithConstraints {
-            val stacked = maxWidth < 280.dp || LocalDensity.current.fontScale > 1.25f
-            if (stacked) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    InfoCell(stringResource(R.string.flash_est_distance), runDistance)
-                    InfoCell(stringResource(R.string.flash_from_me), fromMe, icon = Icons.Filled.NearMe)
-                }
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    InfoCell(stringResource(R.string.flash_est_distance), runDistance, Modifier.weight(1f))
-                    InfoCell(stringResource(R.string.flash_from_me), fromMe, Modifier.weight(1f), Icons.Filled.NearMe)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InfoCell(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    sub: String? = null,
-    onClick: (() -> Unit)? = null,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-            .then(if (onClick != null) Modifier.heightIn(min = 48.dp).quietClickable(onClick) else Modifier)
-            .padding(horizontal = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
+        Spacer(Modifier.height(10.dp))
         Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.8.sp,
-            color = Slate,
+            post.title, color = Snow, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            style = androidx.compose.ui.text.TextStyle(
+                fontFamily = com.stepup.android.ui.theme.StepUpSans, fontWeight = FontWeight.SemiBold,
+                fontSize = 27.sp, lineHeight = 34.sp,
+            ),
+            modifier = Modifier.fillMaxWidth(),
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Volt,
-                    modifier = Modifier.size(13.dp),
-                )
+        Spacer(Modifier.height(6.dp))
+        if (post.place.isNotBlank()) {
+            TextButton(onClick = { ExternalIntents.openPlaceInMaps(context, post.place) },
+                modifier = Modifier.heightIn(min = 48.dp)) {
+                Icon(Icons.Filled.LocationOn, null, tint = Silver, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(post.place, color = Silver, fontSize = 13.sp)
             }
-            Text(
-                text = value,
-                modifier = Modifier.weight(1f),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-            )
+        } else {
+            com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.post_place_tbd))
         }
-        if (sub != null) {
-            Text(
-                text = sub,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Volt,
-            )
+        Spacer(Modifier.height(12.dp))
+        com.stepup.android.ui.components.S2Stats(listOf(
+            stringResource(R.string.flash_time) to meetTime,
+            stringResource(R.string.flash_est_distance) to (if (post.distanceKm > 0.0) "%.1f km".format(post.distanceKm) else unknown),
+            stringResource(R.string.flash_from_me) to (awayKm?.let { "%.1f km".format(it) } ?: unknown),
+        ), valueSize = 22.sp)
+        if (post.body.isNotBlank()) {
+            Spacer(Modifier.height(16.dp))
+            com.stepup.android.ui.components.S2Subtitle(post.body)
         }
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.flash_host) + " · " + post.author, color = Silver, fontSize = 13.sp)
+        Spacer(Modifier.height(8.dp))
     }
 }
 

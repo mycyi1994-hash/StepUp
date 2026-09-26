@@ -1608,5 +1608,8 @@
     <string name="me_s2_balance">持有 SUP</string>
     <string name="me_s2_wallet">查看钱包 ›</string>
     <string name="me_s2_records">查看记录</string>
+    <string name="community_s2_meet_time">集合时间</string>
+    <string name="community_s2_people">参加</string>
+    <string name="community_s2_next">接下来的聚会</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

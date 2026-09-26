@@ -129,24 +129,30 @@ fun MapScreen(
                 modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
             )
 
-            TwoWaySwitch(
-                labels = listOf(stringResource(R.string.map_seg_nearby), stringResource(R.string.map_seg_territory)),
-                selected = if (mode == MapMode.NEARBY) 0 else 1,
-                onSelect = {
-                    selected = null
-                    selectedCell = null
-                    viewModel.select(if (it == 0) MapMode.NEARBY else MapMode.TERRITORY)
-                },
-                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
-            )
+            // S2 — 글자 탭 두 개. 고른 쪽은 밝은 글자와 짧은 파란 선.
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+            ) {
+                listOf(MapMode.NEARBY to R.string.map_seg_nearby, MapMode.TERRITORY to R.string.map_seg_territory)
+                    .forEach { (value, label) ->
+                        com.stepup.android.ui.components.S2TextTab(
+                            label = stringResource(label),
+                            selected = mode == value,
+                            onClick = {
+                                selected = null
+                                selectedCell = null
+                                viewModel.select(value)
+                            },
+                        )
+                    }
+            }
 
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = StepUpDesign.Gutter)
-                    .clip(RoundedCornerShape(18.dp))
-                    .border(1.dp, Volt.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
+                    // S2 — 지도는 테두리 없이 화면 폭 끝까지
+                    .fillMaxWidth(),
             ) {
                 val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
                 val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }

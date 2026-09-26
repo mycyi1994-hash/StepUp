@@ -1,6 +1,8 @@
 package com.stepup.android.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
@@ -17,6 +19,8 @@ fun DetailPage(
     primaryActionLabel: String? = null,
     onPrimaryAction: (() -> Unit)? = null,
     primaryActionEnabled: Boolean = true,
+    /** S2 원형 버튼 안의 아이콘. 비우면 앞으로 가는 화살표 */
+    primaryActionIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     showHeader: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
@@ -29,11 +33,14 @@ fun DetailPage(
             content = content,
         )
         if (primaryActionLabel != null && onPrimaryAction != null) {
-            PrimaryCta(
-                text = primaryActionLabel,
+            // S2 — 화면의 주 행동 하나는 가운데 흰 원 + 이름
+            S2RoundAction(
+                icon = primaryActionIcon ?: Icons.AutoMirrored.Filled.ArrowForward,
+                label = primaryActionLabel,
                 onClick = onPrimaryAction,
                 enabled = primaryActionEnabled,
-                modifier = Modifier.padding(vertical = 12.dp).testTag("detail-primary-action"),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
+                    .padding(vertical = 8.dp).testTag("detail-primary-action"),
             )
         }
     }

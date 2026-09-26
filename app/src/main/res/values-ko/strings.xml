@@ -1608,5 +1608,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="me_s2_balance">보유 SUP</string>
     <string name="me_s2_wallet">지갑 보기 ›</string>
     <string name="me_s2_records">기록 보기</string>
+    <string name="community_s2_meet_time">모임 시간</string>
+    <string name="community_s2_people">참여</string>
+    <string name="community_s2_next">이어서 열리는 모임</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
