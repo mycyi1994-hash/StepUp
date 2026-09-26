@@ -1322,7 +1322,8 @@ private fun FinishCard(
         Text(stringResource(R.string.run_s2_result_sup), color = Silver, fontSize = 13.sp)
         com.stepup.android.ui.components.S2Number(
             text = when {
-                confirmed && points != null -> "+%,.0f".format(points)
+                // 서버가 확인한 금액 — 반올림하면 받은 것보다 크게 보인다(3.6 → +4)
+                confirmed && points != null -> "+" + com.stepup.android.ui.components.formatSupDown(points, 2)
                 rejected -> "0"
                 else -> "—"
             },

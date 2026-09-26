@@ -76,6 +76,8 @@ class ProfileViewModel(
         val totalDurationSec: Long = 0,
         val longestSessionSec: Long = 0,
         val avgPaceSecPerKm: Int = 0,
+        /** 실제 값이 도착했는가 — 도착 전에는 잔액을 0 으로 보이지 않는다 */
+        val loaded: Boolean = false,
     ) {
         /** 러너 레벨 — 누적으로 걸은 거리가 곧 경험치다 */
         val runner: RunnerProgress get() = RunnerLevels.of(lifetimeKm)
@@ -139,6 +141,7 @@ class ProfileViewModel(
             totalDurationSec = totalSec,
             longestSessionSec = sessions.maxOfOrNull { it.durationSec } ?: 0L,
             avgPaceSecPerKm = if (sessionKm > 0.01) (sessionSec / sessionKm).toInt() else 0,
+            loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())
 

@@ -315,7 +315,8 @@ fun ProfileScreen(
                 Spacer(Modifier.height(28.dp))
                 Text(stringResource(R.string.me_s2_balance), color = Silver, fontSize = 13.sp)
                 com.stepup.android.ui.components.S2Number(
-                    com.stepup.android.ui.components.formatSupDown(state.balance), 64.sp,
+                    // 읽기 전에 "0"을 보이면 잔액이 사라진 것처럼 읽힌다
+                    if (state.loaded) com.stepup.android.ui.components.formatSupDown(state.balance) else "—", 64.sp,
                     Modifier.padding(top = 6.dp),
                 )
                 TextButton(
