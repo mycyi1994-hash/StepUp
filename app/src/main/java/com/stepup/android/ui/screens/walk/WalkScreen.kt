@@ -189,18 +189,19 @@ fun RunScreen(
     }
     // S2 — 시작 전에 권한 안내(시안 23), 이어서 3-2-1(시안 24). 둘 다 이 화면 위에 덮인다.
     val primerSeen by viewModel.permissionPrimerSeen.collectAsStateWithLifecycle()
-    val requestStart = {
+    val requestStartWith = { seen: Boolean ->
         val missing = StepPermissions.missing(context)
         when {
             missing.isEmpty() -> countingDown = true
             // 걸음 권한이 없으면 매번, 나머지(위치 · 알림)만 없으면 처음 한 번만 설명한다
-            !StepPermissions.hasActivityRecognition(context) || !primerSeen -> {
+            !StepPermissions.hasActivityRecognition(context) || !seen -> {
                 showPrimer = true
                 viewModel.markPermissionPrimerSeen()
             }
             else -> permissionLauncher.launch(missing)
         }
     }
+    val requestStart = { requestStartWith(primerSeen) }
 
     // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
     // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
@@ -210,7 +211,8 @@ fun RunScreen(
             autoStartDone = true
             if (!WalkSessionService.state.value.isActive) {
                 viewModel.clearReward()
-                requestStart()
+                // 화면이 막 열려 저장된 "안내 봤음"을 아직 못 읽었을 수 있다 — 읽은 뒤에 정한다
+                requestStartWith(viewModel.permissionPrimerSeenNow())
             }
         }
     }

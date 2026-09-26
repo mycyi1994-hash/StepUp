@@ -68,6 +68,7 @@ import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.VoltText
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 /** 권한 안내에 한 줄로 보이는 권한 하나. 필요 정도는 실제 동작 그대로다. */
 internal data class RunPermissionItem(
@@ -210,12 +211,20 @@ internal fun RunCountdown(
         }
     }
     BackHandler { if (!fired) onCancel() }
+    // 앱이 화면에 없으면 세지 않는다 — 백그라운드에서 러닝 서비스를 띄우면 안드로이드 12+ 가
+    // 막아 앱이 죽는다(ForegroundServiceStartNotAllowedException). 돌아오면 남은 숫자부터 잇는다.
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(Unit) {
+        suspend fun awaitShown() {
+            lifecycle.currentStateFlow.first { it.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED) }
+        }
         while (remaining > 0) {
+            awaitShown()
             feedback?.play(FeedbackCue.Countdown)
             delay(1_000)
             remaining -= 1
         }
+        awaitShown()
         go()
     }
     val tapToStart = stringResource(R.string.run_countdown_tap)
