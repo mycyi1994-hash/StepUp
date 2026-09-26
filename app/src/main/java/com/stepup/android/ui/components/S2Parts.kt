@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -25,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -338,6 +341,25 @@ fun S2TextTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: M
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
         )
         S2TabMark(selected)
+    }
+}
+
+/** S2 신발 무대 — 기울인 파란 면 위에 신발 그림. 그림은 기존 신발 자산 그대로다. */
+@Composable
+fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Modifier, animate: Boolean = false) {
+    Box(modifier.aspectRatio(312f / 214f), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 8.dp)
+                .graphicsLayer { rotationZ = -8f }
+                .background(
+                    if (StepUpColors.dark) Color(0xFF294B9C) else StepUpColors.carbonHigh,
+                    RoundedCornerShape(4.dp),
+                ),
+        )
+        SneakerFrame(
+            shoe, Modifier.fillMaxWidth(0.84f).fillMaxHeight(0.86f).graphicsLayer { rotationZ = -7f },
+            animate = animate,
+        )
     }
 }
 

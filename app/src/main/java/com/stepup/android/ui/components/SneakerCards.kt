@@ -334,23 +334,25 @@ fun EquippedSneakerCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    GlowCard(modifier = modifier.quietClickable(onClick), accent = true, contentPadding = PaddingValues(20.dp), spacing = 14.dp) {
-        Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
-        SneakerFrame(sneaker, modifier = Modifier.fillMaxWidth().height(180.dp), animate = false)
-        Text(sneaker.fullLabel(), style = MaterialTheme.typography.titleLarge, color = Snow)
-        Text(sneaker.rarity.label() + " · " + stringResource(R.string.level_chip, sneaker.level), style = MaterialTheme.typography.bodyMedium, color = Silver)
-        BarMeter(fraction = (sneaker.level.toFloat() / sneaker.rarity.maxLevel).coerceIn(0f, 1f), height = 7.dp)
-        listOf(
+    // S2 — 착용 중 · 등급 → 이름 → 민팅 번호 · 레벨 → 기울인 파란 면 위 신발 → 능력치 한 줄
+    androidx.compose.foundation.layout.Column(
+        modifier.fillMaxWidth().quietClickable(onClick).padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        S2Kicker(stringResource(R.string.items_equipped) + " · " + sneaker.rarity.label())
+        androidx.compose.foundation.layout.Spacer(Modifier.height(10.dp))
+        S2Headline(sneaker.fullLabel())
+        androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
+        S2Subtitle(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber) + " · " +
+            stringResource(R.string.level_chip, sneaker.level))
+        androidx.compose.foundation.layout.Spacer(Modifier.height(14.dp))
+        S2ShoeStage(sneaker, Modifier.fillMaxWidth(0.86f))
+        androidx.compose.foundation.layout.Spacer(Modifier.height(14.dp))
+        S2Stats(listOf(
             stringResource(R.string.stat_boost) to "+%.1f%%".format(sneaker.boostPercent),
             stringResource(R.string.stat_luck) to "%.2f".format(sneaker.luck),
             stringResource(R.string.stat_comfort) to "%.2f".format(sneaker.comfort),
-        ).forEach { (label, value) ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver, modifier = Modifier.weight(1f))
-                Text(value, style = MaterialTheme.typography.titleMedium, color = Snow)
-            }
-        }
-        Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        ), valueSize = 22.sp)
     }
 }
 

@@ -99,14 +99,16 @@ fun SneakerDexScreen(
     val columns = if (LocalDensity.current.fontScale > 1.5f) 1 else 2
 
     DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
-        // ── 전체 진행도 ──
+        // ── 전체 진행도 — S2: 파란 한 줄 → 가는 큰 숫자 → 얇은 막대 ──
         item {
-            GlowCard(accent = true, contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                Text(stringResource(R.string.dex_progress), style = MaterialTheme.typography.titleMedium, color = Snow)
-                com.stepup.android.ui.components.AdaptiveNumber("$ownedCount / $TOTAL_COLLECTION", 28.sp, color = com.stepup.android.ui.theme.VoltText)
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                com.stepup.android.ui.components.S2Kicker(stringResource(R.string.dex_progress))
+                com.stepup.android.ui.components.S2Number(
+                    "$ownedCount / $TOTAL_COLLECTION", 56.sp, Modifier.padding(vertical = 8.dp),
+                )
                 BarMeter(
                     fraction = ownedCount.toFloat() / TOTAL_COLLECTION.coerceAtLeast(1),
-                    height = 7.dp,
+                    height = 4.dp,
                 )
             }
         }

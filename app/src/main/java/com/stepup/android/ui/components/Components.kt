@@ -752,11 +752,13 @@ fun PillChip(
     badge: Int = 0,
 ) {
     val shape = RoundedCornerShape(50)
-    val selectedInk = if (StepUpColors.dark) VoltText else StepUpColors.voltDeep
+    // S2 — 고른 칩은 흰 알약(밝은 테마는 남색)에 짙은 글자, 나머지는 어두운 면에 흐린 글자
+    val selectedInk = if (StepUpColors.dark) Color(0xFF070B12) else Color.White
     val motion = LocalMotion.current
-    val fill by animateColorAsState(if (selected) Volt.copy(alpha = .12f) else CarbonHigh,
+    val fill by animateColorAsState(
+        if (selected) (if (StepUpColors.dark) Color(0xFFF3F5FF) else StepUpColors.snow) else CarbonHigh,
         tween(motion.duration(180)), label = "chipFill")
-    val outline by animateColorAsState(if (selected) Volt.copy(alpha = .55f) else Edge,
+    val outline by animateColorAsState(if (selected) Color.Transparent else Edge.copy(alpha = .6f),
         tween(motion.duration(180)), label = "chipOutline")
     Row(
         modifier = modifier
