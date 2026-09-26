@@ -102,7 +102,8 @@ fun LiveRouteMap(
             drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
             drawCircle(Color(0xFFF3F5FF), radius = 9.5f.dp.toPx(), center = at)
             val label = measurer.measure(
-                name.take(1),
+                // 이모지 · 확장 한자처럼 두 글자 단위(서로게이트)로 된 첫 글자를 반으로 자르지 않는다
+                name.trim().takeIf { it.isNotEmpty() }?.let { String(Character.toChars(it.codePointAt(0))) } ?: "?",
                 androidx.compose.ui.text.TextStyle(color = Color(0xFF070B12), fontSize = 10.sp),
             )
             drawText(label, topLeft = Offset(at.x - label.size.width / 2f, at.y - label.size.height / 2f))
