@@ -374,9 +374,11 @@ fun RunScreen(
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
                     // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
-                    if (session.isActive && locationAllowed && !session.gpsFix) {
+                    // 대략적인 위치만 허용하면 기지국 점이 들어와 "잡힘"으로 보여도 경로 · 거리가 수 km 단위로 뭉개진다 —
+                    // 그래서 그 안내는 위치가 잡혔어도 보인다
+                    if (session.isActive && locationAllowed && (!session.gpsFix || !session.precise)) {
                         when {
-                            !session.locationOn -> LocationHint(
+                            !session.locationOn && !session.gpsFix -> LocationHint(
                                 stringResource(R.string.run_location_off_hint),
                                 stringResource(R.string.run_location_off_action),
                                 tag = "run-location-off",
