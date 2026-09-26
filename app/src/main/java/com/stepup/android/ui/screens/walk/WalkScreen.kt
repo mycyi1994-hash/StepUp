@@ -152,7 +152,6 @@ fun RunScreen(
     val course by viewModel.selectedCourse.collectAsStateWithLifecycle()
     val lastUpload by viewModel.lastUpload.collectAsStateWithLifecycle()
     val lastServerPoints by viewModel.lastServerPoints.collectAsStateWithLifecycle()
-    val look by viewModel.look.collectAsStateWithLifecycle()
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -171,6 +170,8 @@ fun RunScreen(
     val readyToSaveCourse = recordingCourse && !session.isActive && recordedTrack.size >= 2
 
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
+    var showPrimer by rememberSaveable { mutableStateOf(false) }
+    var countingDown by rememberSaveable { mutableStateOf(false) }
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         locationAllowed = StepPermissions.hasLocation(context)
@@ -183,7 +184,21 @@ fun RunScreen(
         permissionDenied = !StepPermissions.hasActivityRecognition(context)
         locationAllowed = StepPermissions.hasLocation(context)
         if (!permissionDenied) {
-            WalkSessionService.start(context)
+            countingDown = true
+        }
+    }
+    // S2 — 시작 전에 권한 안내(시안 23), 이어서 3-2-1(시안 24). 둘 다 이 화면 위에 덮인다.
+    val primerSeen by viewModel.permissionPrimerSeen.collectAsStateWithLifecycle()
+    val requestStart = {
+        val missing = StepPermissions.missing(context)
+        when {
+            missing.isEmpty() -> countingDown = true
+            // 걸음 권한이 없으면 매번, 나머지(위치 · 알림)만 없으면 처음 한 번만 설명한다
+            !StepPermissions.hasActivityRecognition(context) || !primerSeen -> {
+                showPrimer = true
+                viewModel.markPermissionPrimerSeen()
+            }
+            else -> permissionLauncher.launch(missing)
         }
     }
 
@@ -195,8 +210,7 @@ fun RunScreen(
             autoStartDone = true
             if (!WalkSessionService.state.value.isActive) {
                 viewModel.clearReward()
-                val missing = StepPermissions.missing(context)
-                if (missing.isEmpty()) WalkSessionService.start(context) else permissionLauncher.launch(missing)
+                requestStart()
             }
         }
     }
@@ -316,7 +330,7 @@ fun RunScreen(
                         FinishCard(
                             // 금액은 서버가 확인한 값만 — 확인 전(또는 금액을 아직 못 읽었으면) "—"
                             session = session, points = lastServerPoints,
-                            upload = lastUpload, look = look, balance = balance,
+                            upload = lastUpload, balance = balance,
                         )
                     }
                 }
@@ -401,11 +415,7 @@ fun RunScreen(
                         session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
                         running -> WalkSessionService.pause(context)
                         session.isActive -> WalkSessionService.resume(context)
-                        else -> {
-                            val missing = StepPermissions.missing(context)
-                            if (missing.isEmpty()) WalkSessionService.start(context)
-                            else permissionLauncher.launch(missing)
-                        }
+                        else -> requestStart()
                     }
                 }
                 // S2 — 가운데 흰 원이 일시정지 · 재개, 오른쪽 작은 원이 종료(한 번 더 묻는다)
@@ -447,7 +457,33 @@ fun RunScreen(
                 }
             }
         }
-
+        if (showPrimer && !session.isActive) {
+            RunPermissionPrimer(
+                items = rememberRunPermissionItems(showPrimer),
+                onAllow = {
+                    showPrimer = false
+                    val missing = StepPermissions.missing(context)
+                    if (missing.isEmpty()) countingDown = true else permissionLauncher.launch(missing)
+                },
+                onLater = {
+                    showPrimer = false
+                    // 걸음 권한만 있으면 경로 없이도 달릴 수 있다
+                    if (StepPermissions.hasActivityRecognition(context)) countingDown = true
+                    else permissionDenied = true
+                },
+            )
+        }
+        if (countingDown && !session.isActive) {
+            RunCountdown(
+                courseName = course?.name,
+                locationAllowed = locationAllowed,
+                onGo = {
+                    countingDown = false
+                    if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
+                },
+                onCancel = { countingDown = false },
+            )
+        }
     }
 
     if (showDetails) {
@@ -1159,7 +1195,6 @@ private fun FinishCard(
     /** 서버가 확인한 적립액. null 이면 아직 확인되지 않았다 */
     points: Double?,
     upload: String?,
-    look: com.stepup.android.domain.AvatarLook?,
     balance: Double?,
 ) {
     val voided = session.lastVerdict == RunVerdict.VOID

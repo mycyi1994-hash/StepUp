@@ -141,7 +141,7 @@ class ExperienceUiTest {
                         compose.runOnIdle { language = locale; dark = night; large = enlarged; screen = index }
                         compose.waitForIdle()
                         if (index == 0) compose.waitUntil(5_000) {
-                            compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty()
+                            compose.onAllNodesWithText("12,840", substring = true).fetchSemanticsNodes().isNotEmpty()
                         }
                         val name = "$locale-${if (night) "dark" else "light"}-${if (enlarged) "large" else "normal"}-${index.toString().padStart(2, '0')}"
                         capture(name)
@@ -269,7 +269,7 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        // Four tab roles plus the independent center draw button: five visible destinations.
+        // Four tab roles; draw is a section inside the shoes tab.
         val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
@@ -280,12 +280,16 @@ class ExperienceUiTest {
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        val draw = compose.onNode(hasText(compose.activity.getString(R.string.tab_draw)) and
-            hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
-        draw.performClick().assertIsSelected()
+        // S2 — no draw slot in the bar; the draw screen is a section inside the shoes tab.
+        compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).performClick()
+        compose.onNodeWithTag("shoes-section-draw").performClick().assertIsSelected()
         compose.onNodeWithTag("draw-shoe").assertIsDisplayed()
-        compose.onAllNodes(tabRole and isSelected()).assertCountEquals(0)
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).assertIsSelected()
         capture("navigation-draw")
+        compose.onNodeWithTag("shoes-section-mine").performClick()
+        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
+        compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
         compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
         compose.onNodeWithTag("profile-settings").performClick()

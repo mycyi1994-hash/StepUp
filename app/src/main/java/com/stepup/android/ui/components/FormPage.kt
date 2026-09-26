@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.stepup.android.ui.theme.StepUpDesign
 
 /** Shared writing surface: the editor scrolls while its action stays above the keyboard. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FormPage(
     title: String,
@@ -33,10 +34,12 @@ fun FormPage(
             content = content,
         )
         // S2 — 작성의 주 행동도 가운데 흰 원 + 이름. 키보드 위에 붙어 있다.
+        // 키보드가 떠 있으면 원 옆에 이름을 둔 낮은 줄로 줄여 입력 칸 자리를 남긴다.
         S2RoundAction(
             icon = actionIcon, label = actionLabel, enabled = actionEnabled, onClick = onAction,
+            compact = WindowInsets.isImeVisible,
             modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
-                .padding(vertical = 8.dp).testTag(actionTag),
+                .padding(vertical = if (WindowInsets.isImeVisible) 4.dp else 8.dp).testTag(actionTag),
         )
     }
 }

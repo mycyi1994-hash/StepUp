@@ -1,8 +1,8 @@
 # StepUp
 
-> Latest visual direction, 2026-09-26: the user selected Figma S2 and proceeding with the acquired assets. Start at [docs/redesign/s2/README.md](docs/redesign/s2/README.md). This handoff distinguishes user decisions from planning proposals and unimplemented features. S2 Android migration has not started; the following text describes the incumbent product and prior decisions where it conflicts with the new direction.
+> Latest visual direction, 2026-09-26: the user selected Figma S2 and proceeding with the acquired assets. Start at [docs/redesign/s2/README.md](docs/redesign/s2/README.md). This handoff distinguishes user decisions from planning proposals and unimplemented features. S2 Android migration is in progress (docs/redesign/s2/STATUS.md). Navigation is four tabs — Running / Shoes / Community / Profile — with Draw inside Shoes (user decision, 2026-09-26). Where the text below conflicts with S2, S2 wins.
 
-> Current user decision, 2026-09-25: ship the character-free, record-first direction from selected 05-record.png. Remove mascot/clothing/wardrobe presentation, keep shoe collection/market/draw and existing user data. Navigation is Running / Shoes / Draw / Community / Profile. Scenery is an independent horizontal banner. Older character-related requirements below describe history, not current release requirements. See docs/redesign/CHARACTER-FREE-ASSETS-2026-09-25.md.
+> Current user decision, 2026-09-25: ship the character-free, record-first direction from selected 05-record.png. Remove mascot/clothing/wardrobe presentation, keep shoe collection/market/draw and existing user data. Navigation was Running / Shoes / Draw / Community / Profile (superseded 2026-09-26: four tabs, Draw inside Shoes). Scenery is an independent horizontal banner. Older character-related requirements below describe history, not current release requirements. See docs/redesign/CHARACTER-FREE-ASSETS-2026-09-25.md.
 
 
 <!-- impeccable:product-schema 1 -->

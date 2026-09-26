@@ -115,6 +115,14 @@ class WalkViewModel(
 
     fun clearReward() = WalkSessionService.clearLastReward()
 
+    /** 러닝 권한 안내를 이미 봤는지 */
+    val permissionPrimerSeen: StateFlow<Boolean> = ServiceLocator.userPrefs.runPermissionPrimerSeen
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun markPermissionPrimerSeen() {
+        viewModelScope.launch { ServiceLocator.userPrefs.setRunPermissionPrimerSeen() }
+    }
+
     /**
      * 방금 끝난 러닝이 서버에서 어디까지 확인됐는가.
      *

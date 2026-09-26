@@ -297,7 +297,8 @@ class DesignReferenceTest {
         // Clickable cards merge child text for accessibility; readiness may target that child.
         compose.waitUntil(10_000) { compose.onAllNodesWithTag(readyTag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         if (s == Scene.HOME) {
-            compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840").fetchSemanticsNodes().isNotEmpty() }
+            // S2 홈은 걸음 수를 문장 안에 쓴다("오늘 12,840걸음 걸었어요")
+            compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840", substring = true).fetchSemanticsNodes().isNotEmpty() }
         }
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE ->
@@ -321,10 +322,8 @@ class DesignReferenceTest {
     /** Guard the visible regressions from the independent visual review. */
     private fun assertReviewedLayout(scene: Scene, enlarged: Boolean) {
         if (scene == Scene.HOME) {
-            val nav = compose.onNodeWithTag(BOTTOM_NAV_TAG).getUnclippedBoundsInRoot()
-            val draw = compose.onNodeWithTag("nav-draw-action").getUnclippedBoundsInRoot()
-            assertTrue("Draw action must stay centered at every font size",
-                kotlin.math.abs((draw.left + draw.right - nav.left - nav.right).value) <= 2f)
+            // S2 — four destinations, draw lives inside the shoes tab.
+            compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
             val nodes = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile).map {
                 compose.onNodeWithTag("nav-label-${it.route}", useUnmergedTree = true).fetchSemanticsNode()
             }

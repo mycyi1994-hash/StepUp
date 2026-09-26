@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -210,6 +211,8 @@ fun S2RoundAction(
     primary: Boolean = true,
     enabled: Boolean = true,
     circle: Dp = if (primary) 60.dp else 48.dp,
+    /** 키보드가 떠 있을 때처럼 세로 자리가 모자라면 원 옆에 이름을 둔 낮은 한 줄로 */
+    compact: Boolean = false,
 ) {
     val dark = StepUpColors.dark
     val face = when {
@@ -222,22 +225,38 @@ fun S2RoundAction(
         primary -> if (dark) Color(0xFF070B12) else Color.White
         else -> if (dark) Color(0xFFD3D8E4) else StepUpColors.snow
     }
+    val labelText: @Composable () -> Unit = {
+        Text(
+            label, color = if (enabled) Snow else StepUpColors.slate, textAlign = TextAlign.Center,
+            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 1.35.em),
+        )
+    }
+    val base = modifier
+        .widthIn(min = 88.dp)
+        .clip(RoundedCornerShape(16.dp))
+        .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+    if (compact) {
+        Row(
+            base.heightIn(min = 48.dp).padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(Modifier.size(40.dp).background(face, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
+            }
+            labelText()
+        }
+        return
+    }
     Column(
-        modifier
-            .widthIn(min = 88.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+        base.padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(Modifier.size(circle).background(face, CircleShape), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(if (primary) 26.dp else 22.dp))
         }
-        Text(
-            label, color = if (enabled) Snow else StepUpColors.slate, textAlign = TextAlign.Center,
-            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 1.35.em),
-        )
+        labelText()
     }
 }
 
@@ -363,3 +382,25 @@ fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Mo
     }
 }
 
+
+/**
+ * 신발 탭 안의 글자 탭 — 내 신발 · 뽑기.
+ *
+ * 하단 탭은 넷(러닝 · 신발 · 같이 뛰기 · 내 정보)이고 뽑기는 신발 안쪽에 있다.
+ * 두 화면 맨 위에 같은 줄을 두어 어느 쪽에서든 한 번에 오간다.
+ */
+@Composable
+fun S2ShoesSections(drawSelected: Boolean, onShoes: () -> Unit, onDraw: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
+        S2TextTab(
+            androidx.compose.ui.res.stringResource(R.string.shoes_section_mine), !drawSelected,
+            onClick = { if (drawSelected) onShoes() },
+            modifier = Modifier.testTag("shoes-section-mine"),
+        )
+        S2TextTab(
+            androidx.compose.ui.res.stringResource(R.string.tab_draw), drawSelected,
+            onClick = { if (!drawSelected) onDraw() },
+            modifier = Modifier.testTag("shoes-section-draw"),
+        )
+    }
+}

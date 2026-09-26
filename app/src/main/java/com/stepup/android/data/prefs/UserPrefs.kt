@@ -83,6 +83,7 @@ class UserPrefs(
         val AVATAR_REV = intPreferencesKey("avatar_rev")
         val LOGIN_METHOD = stringPreferencesKey("login_method")
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
+        val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
         val LANGUAGE = stringPreferencesKey("language")
         /** 화면 테마 — ThemeMode 의 이름 문자열 */
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -510,6 +511,13 @@ class UserPrefs(
 
     suspend fun setGuideSeen() {
         store.edit { it[Keys.GUIDE_SEEN] = 1 }
+    }
+
+    /** 러닝 권한 안내(S2)를 한 번 봤는지 — 걸음 권한이 없을 때는 이 값과 상관없이 다시 보인다 */
+    val runPermissionPrimerSeen: Flow<Boolean> = store.data.map { it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false }
+
+    suspend fun setRunPermissionPrimerSeen() {
+        store.edit { it[Keys.RUN_PERMISSION_PRIMER_SEEN] = true }
     }
 
     /**
