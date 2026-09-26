@@ -309,7 +309,7 @@ fun HomeScreen(
 /** Home details share the same spacing as the other record panels. */
 private val HomeCardPadding = PaddingValues(20.dp)
 
-/** 오늘 받은 포인트 — 이 화면에서 가장 큰 숫자 */
+/** 오늘 받은 포인트 — 이 화면에서 가장 큰 숫자. 오늘 카드와 같이 내림(받은 것보다 크게 보이지 않게) */
 @Composable
 private fun TodayEarned(earned: Double?) {
     Column(
@@ -323,7 +323,7 @@ private fun TodayEarned(earned: Double?) {
             fontWeight = FontWeight.Bold,
             color = Silver,
         )
-        AdaptiveNumber(earned?.let { "+%,.0f".format(it) } ?: "—", 44.sp, color = VoltText, textAlign = TextAlign.Center)
+        AdaptiveNumber(earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", 44.sp, color = VoltText, textAlign = TextAlign.Center)
         Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
@@ -410,7 +410,8 @@ private fun SceneArrow(
             .semantics { contentDescription = description; role = androidx.compose.ui.semantics.Role.Button },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = Silver, modifier = Modifier.size(22.dp))
+        // 사진 위라 흐린 회색은 밝은 테마에서 묻힌다 — 본문색으로
+        Icon(icon, contentDescription = null, tint = Snow.copy(alpha = 0.85f), modifier = Modifier.size(22.dp))
     }
 }
 
@@ -522,7 +523,8 @@ private fun WeekLine(
     ) {
         Text(stringResource(R.string.home_k1_week_label), color = com.stepup.android.ui.theme.VoltText,
             fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        Text(text, color = Snow, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
+        // 큰 글씨 · 좁은 화면에서 끝의 SUP 가 잘리지 않게 두 줄까지
+        Text(text, color = Snow, fontSize = 13.sp, maxLines = 2, modifier = Modifier.weight(1f))
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
     }
 }
