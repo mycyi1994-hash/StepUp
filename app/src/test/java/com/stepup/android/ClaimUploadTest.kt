@@ -66,6 +66,7 @@ class ClaimUploadTest {
         override fun observeSessionCountFor(owner: String): Flow<Int> = observeSessionCount()
         override fun observeRunTotalsFor(owner: String) = observeRunTotals()
         override fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long> = observeDurationSince(fromMillis)
+        override fun observeRunTotalsSinceFor(owner: String, fromMillis: Long) = observeRunTotals()
         override fun observePendingUploadCount(): Flow<Int> = flowOf(pendingCount())
 
         override suspend fun crewDistances(fromMillis: Long): List<CrewDistance> =

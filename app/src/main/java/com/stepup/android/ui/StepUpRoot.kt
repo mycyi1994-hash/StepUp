@@ -429,8 +429,9 @@ internal fun MainScaffold(
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
         Crossfade(homeSetting, animationSpec = tween(motion.duration(420)), label = "homeBackground") { scene ->
-            com.stepup.android.ui.components.RunnerScene(
-                Modifier.fillMaxSize().testTag("home-scene-${scene.name}"), scene, home = true,
+            // 홈 풍경은 화면 전체 바탕 — 가운데 아치를 없앴다(2026-09-26 사용 피드백 · 사용자 결정)
+            com.stepup.android.ui.components.S2Scenery(
+                scene, Modifier.fillMaxSize().testTag("home-scene-${scene.name}"),
             )
         }
     } else if (currentRoute == Screen.Customize.route) {

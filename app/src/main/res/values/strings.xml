@@ -1715,5 +1715,15 @@ Start running with StepUp.</string>
     <string name="run_location_off_action">Turn on location</string>
     <string name="run_location_approx_hint">Only approximate location is allowed, so GPS can’t be used. Allow precise location for an accurate route.</string>
     <string name="run_countdown_location_services_off">Phone location is off · steps only until you turn it on</string>
+    <string name="home_k1_empty_title">No activity yet today</string>
+    <string name="home_k1_empty_body">Start a run and your steps, distance and SUP will show here.</string>
+    <string name="home_k1_left_title">%1$s steps to your goal</string>
+    <string name="home_k1_today">Today</string>
+    <string name="home_k1_steps">Steps</string>
+    <string name="home_k1_week_label">This week</string>
+    <string name="home_k1_week">%1$s km · %2$d runs · %3$s SUP</string>
+    <string name="home_k1_week_empty">No runs yet this week</string>
+    <string name="home_k1_records">Records</string>
+    <string name="home_k1_records_title">Detailed records</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -87,6 +87,33 @@ fun S2Stage(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * 홈 전체 바탕 풍경(2026-09-26 사용자 결정 — 가운데 아치 대신 화면 뒤에 사진을 깐다).
+ * 위 · 아래는 바닥색으로 덮어 글자와 버튼 · 하단 탭이 읽히게 한다. 밝은 테마는 밝은 막.
+ */
+@Composable
+fun S2Scenery(setting: RunnerSetting, modifier: Modifier = Modifier) {
+    Box(modifier.background(Night)) {
+        Image(
+            painter = painterResource(s2SceneryRes(setting)),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Night.copy(alpha = 0.82f),
+                    0.3f to Night.copy(alpha = 0.45f),
+                    0.55f to Night.copy(alpha = 0.40f),
+                    0.78f to Night.copy(alpha = 0.78f),
+                    1f to Night.copy(alpha = 0.97f),
+                ),
+            ),
+        )
+    }
+}
+
 /** 제목 위의 짧은 파란 한 줄 — "일일 목표 8,000걸음" */
 @Composable
 fun S2Kicker(text: String, modifier: Modifier = Modifier, color: Color = VoltText) {

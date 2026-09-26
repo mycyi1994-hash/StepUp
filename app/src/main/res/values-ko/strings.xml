@@ -1713,5 +1713,15 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_location_off_action">위치 켜기</string>
     <string name="run_location_approx_hint">대략적인 위치만 허용돼 GPS를 쓸 수 없어요. 정확한 위치를 허용하면 경로가 정확해져요.</string>
     <string name="run_countdown_location_services_off">휴대폰 위치 꺼짐 · 켜기 전까지 걸음으로만 기록해요</string>
+    <string name="home_k1_empty_title">아직 오늘 활동이 없어요</string>
+    <string name="home_k1_empty_body">러닝을 시작하면 걸음 · 거리 · SUP가 여기에 쌓여요.</string>
+    <string name="home_k1_left_title">목표까지 %1$s걸음 남았어요</string>
+    <string name="home_k1_today">오늘 활동</string>
+    <string name="home_k1_steps">걸음</string>
+    <string name="home_k1_week_label">이번 주</string>
+    <string name="home_k1_week">%1$skm · 러닝 %2$d회 · %3$s SUP</string>
+    <string name="home_k1_week_empty">이번 주 러닝 기록이 아직 없어요</string>
+    <string name="home_k1_records">기록 더보기</string>
+    <string name="home_k1_records_title">상세 기록</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
