@@ -2,6 +2,7 @@ package com.stepup.android.ui.components
 
 import com.stepup.android.ui.theme.Silver
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.drawText
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -85,14 +86,27 @@ fun LiveRouteMap(
      * 안 넘어가면 그게 더 답답하다. 러닝 화면처럼 지도가 주인공인 자리에서만 켠다.
      */
     interactive: Boolean = false,
+    /** 같이 뛰는 사람(S2 시안 14) — 위치를 보이기로 한 사람만 넘어온다. 이름 첫 글자를 원 안에 쓴다. */
+    others: List<Pair<GeoPoint, String>> = emptyList(),
 ) {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     StepUpMap(
-        focus = points,
+        focus = points + others.map { it.first },
         modifier = modifier,
         seed = seed,
         interactive = interactive,
     ) { plan ->
         drawRoute(plan, points, progress)
+        others.forEach { (point, name) ->
+            val at = plan.toScreen(point)
+            drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
+            drawCircle(Color(0xFFF3F5FF), radius = 9.5f.dp.toPx(), center = at)
+            val label = measurer.measure(
+                name.take(1),
+                androidx.compose.ui.text.TextStyle(color = Color(0xFF070B12), fontSize = 10.sp),
+            )
+            drawText(label, topLeft = Offset(at.x - label.size.width / 2f, at.y - label.size.height / 2f))
+        }
     }
 }
 

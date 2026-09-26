@@ -18,6 +18,10 @@ data class PartyMemberRow(
     val lng: Double? = null,
     /** 마지막으로 서버에 소식을 보낸 지 몇 초 */
     @SerialName("seen_sec") val seenSec: Int = 0,
+    /** 달리는 동안 위치 · 거리를 같이 뛰는 사람에게 보이기로 했는가(0037) */
+    val share: Boolean = false,
+    /** 앱이 보낸 화면용 거리(km). 공유하지 않은 다른 사람이면 null */
+    val km: Double? = null,
 )
 
 /** 파티 방의 지금 — `party_state` */
@@ -89,6 +93,24 @@ class PartyApi(private val server: StepUpServer) {
             put("p_party", partyId)
             put("p_lat", lat ?: JsonNull)
             put("p_lng", lng ?: JsonNull)
+        },
+    ) { }
+
+    /** 달리는 동안 내 위치 · 거리를 같이 뛰는 사람에게 보일지(0037) */
+    suspend fun share(partyId: Long, share: Boolean): ServerResult<Unit> = rpc(
+        "party_share",
+        jsonBody {
+            put("p_party", partyId)
+            put("p_share", share)
+        },
+    ) { }
+
+    /** 화면용 거리 보고 — 적립 계산에는 쓰이지 않는다 */
+    suspend fun live(partyId: Long, km: Double): ServerResult<Unit> = rpc(
+        "party_live",
+        jsonBody {
+            put("p_party", partyId)
+            put("p_km", km)
         },
     ) { }
 

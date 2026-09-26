@@ -1705,5 +1705,10 @@ Start running with StepUp.</string>
     <string name="invite_redeem_submit">Enter</string>
     <string name="invite_redeem_done">Linked to %1$s’s invite</string>
     <string name="ledger_earn_invite">Friend invite</string>
+    <string name="party_share_title">Show my location while running</string>
+    <string name="party_share_desc">Only people in this party run see your position and distance, only while it’s running. Off by default; it disappears when the run ends.</string>
+    <string name="run_together_title">Running together · %1$d</string>
+    <string name="run_together_me">Me</string>
+    <string name="run_together_hidden">Hidden</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

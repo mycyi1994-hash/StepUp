@@ -1703,5 +1703,10 @@ StepUp과 함께 달려보세요.</string>
     <string name="invite_redeem_submit">입력</string>
     <string name="invite_redeem_done">%1$s 님의 초대로 연결했어요</string>
     <string name="ledger_earn_invite">친구 초대</string>
+    <string name="party_share_title">달리는 동안 내 위치 보이기</string>
+    <string name="party_share_desc">이 파티런에서 같이 뛰는 사람에게만, 달리는 동안만 내 위치와 거리가 보여요. 기본은 꺼져 있고, 러닝이 끝나면 사라져요.</string>
+    <string name="run_together_title">같이 뛰는 중 · %1$d명</string>
+    <string name="run_together_me">나</string>
+    <string name="run_together_hidden">비공개</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

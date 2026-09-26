@@ -260,6 +260,12 @@ object ServiceLocator {
             partyApi = PartyApi(server),
             // 파티런 중 방에 보내는 위치 — 러닝 서비스가 받은 마지막 GPS 점
             currentLocation = { WalkSessionService.state.value.track.lastOrNull()?.toGeoPoint() },
+            currentKm = {
+                WalkSessionService.state.value.let { s ->
+                    if (s.gpsKm > 0) s.gpsKm else com.stepup.android.domain.RewardEconomy.distanceMeters(s.steps) / 1000
+                }
+            },
+            shareByDefault = { userPrefs.partyShareLocation.first() },
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),

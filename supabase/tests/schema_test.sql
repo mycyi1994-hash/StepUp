@@ -1700,6 +1700,45 @@ begin
     '달리는 중인 방의 멤버는 로비를 다시 열어도 같은 방이다');
 end $$;
 
+-- 같이 뛰는 중 실시간 위치(0037) — 켠 사람만 다른 사람에게 보인다
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'km' is null,
+    '위치 보이기를 켜지 않은 사람의 위치 · 거리는 다른 사람에게 보이지 않는다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform public.party_share(v_party, true);
+  perform public.party_live(v_party, 1.234);
+end $$;
+call pg_temp.must_fail(format($q$ select public.party_live(%s, 999) $q$, pg_temp.fx('party')), '말이 안 되는 거리는 받지 않는다');
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok((v_other->>'lat')::double precision = 37.5301 and (v_other->>'km')::numeric = 1.234,
+    '켠 사람의 위치 · 거리는 달리는 동안 같은 방 사람에게 보인다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_share(pg_temp.fx('party')::bigint, false); end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'km' is null, '끄면 바로 다시 보이지 않는다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
 call pg_temp.login('33333333-3333-3333-3333-333333333333');
 do $$
 begin

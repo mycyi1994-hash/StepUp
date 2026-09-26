@@ -98,6 +98,27 @@ class RunStartFlowTest {
         assertEquals(1, later)
     }
 
+    @Test fun togetherRankingOrdersSharedDistanceAndHidesTheRest() {
+        val members = listOf(
+            com.stepup.android.data.repo.PartyMember("a", "Sora", ready = true, isMe = false, km = 3.80, sharing = true),
+            com.stepup.android.data.repo.PartyMember("b", "Me", ready = true, isMe = true, sharing = true),
+            com.stepup.android.data.repo.PartyMember("c", "Yeonsu", ready = true, isMe = false),
+        )
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                com.stepup.android.ui.screens.walk.TogetherRanking(members, myKm = 3.62)
+            } }
+        }
+        compose.onNodeWithText("3.80 km").assertIsDisplayed()
+        compose.onNodeWithText("3.62 km").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.run_together_hidden)).assertIsDisplayed()
+        val sora = compose.onNodeWithText("Sora").fetchSemanticsNode().boundsInRoot.top
+        val me = compose.onNodeWithText(compose.activity.getString(R.string.run_together_me)).fetchSemanticsNode().boundsInRoot.top
+        val hidden = compose.onNodeWithText("Yeonsu").fetchSemanticsNode().boundsInRoot.top
+        org.junit.Assert.assertTrue("shared distances first, longest on top; hidden last", sora < me && me < hidden)
+        capture("run-together-ranking.png")
+    }
+
     private fun capture(name: String) {
         compose.waitForIdle()
         val directory = File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }

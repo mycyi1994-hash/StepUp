@@ -86,6 +86,7 @@ class UserPrefs(
         val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
         val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
         val WEATHER_BACKGROUND = booleanPreferencesKey("weather_background")
+        val PARTY_SHARE_LOCATION = booleanPreferencesKey("party_share_location")
         val RUN_MODE = stringPreferencesKey("run_mode")
         val BODY_HEIGHT_CM = intPreferencesKey("body_height_cm")
         val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
@@ -539,6 +540,13 @@ class UserPrefs(
 
     suspend fun setWeatherBackground(on: Boolean) {
         store.edit { it[Keys.WEATHER_BACKGROUND] = on }
+    }
+
+    /** 파티런에서 "달리는 동안 내 위치 보이기"를 마지막에 켰는지 — 다음 방에 들어갈 때 그대로 */
+    val partyShareLocation: Flow<Boolean> = store.data.map { it[Keys.PARTY_SHARE_LOCATION] ?: false }
+
+    suspend fun setPartyShareLocation(on: Boolean) {
+        store.edit { it[Keys.PARTY_SHARE_LOCATION] = on }
     }
 
     /** 홈 구성 모드. 적립 규칙과는 상관없다. */

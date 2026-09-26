@@ -1704,5 +1704,10 @@ StepUp と走り出そう。</string>
     <string name="invite_redeem_submit">入力</string>
     <string name="invite_redeem_done">%1$sさんの招待につなぎました</string>
     <string name="ledger_earn_invite">友だち招待</string>
+    <string name="party_share_title">ラン中に自分の位置を表示</string>
+    <string name="party_share_desc">このパーティーランの参加者にだけ、走っている間だけ位置と距離が表示されます。初期設定はオフで、ラン終了後は消えます。</string>
+    <string name="run_together_title">一緒にラン中・%1$d人</string>
+    <string name="run_together_me">自分</string>
+    <string name="run_together_hidden">非公開</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

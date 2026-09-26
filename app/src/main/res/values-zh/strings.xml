@@ -1703,5 +1703,10 @@
     <string name="invite_redeem_submit">提交</string>
     <string name="invite_redeem_done">已关联 %1$s 的邀请</string>
     <string name="ledger_earn_invite">好友邀请</string>
+    <string name="party_share_title">跑步时显示我的位置</string>
+    <string name="party_share_desc">仅向本次组队跑的成员、仅在跑步期间显示你的位置和距离。默认关闭，跑步结束后消失。</string>
+    <string name="run_together_title">一起跑 · %1$d 人</string>
+    <string name="run_together_me">我</string>
+    <string name="run_together_hidden">未公开</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

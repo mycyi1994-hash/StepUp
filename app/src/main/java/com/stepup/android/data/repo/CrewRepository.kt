@@ -118,6 +118,11 @@ data class PartyMember(
     val distanceM: Int = -1,
     /** 마지막으로 서버에 소식을 보낸 지 몇 초 */
     val seenSec: Int = 0,
+    /** 같이 뛰는 중 보이는 위치 — 본인이거나 공유를 켠 사람만 */
+    val point: GeoPoint? = null,
+    /** 화면용 거리(km) — 본인이거나 공유를 켠 사람만 */
+    val km: Double? = null,
+    val sharing: Boolean = false,
 )
 
 /** 로비가 멈춘 까닭 */
@@ -182,6 +187,8 @@ data class PartyState(
     val allReady: Boolean get() = members.isNotEmpty() && members.all { it.ready }
     val myReady: Boolean get() = members.firstOrNull { it.isMe }?.ready == true
     val isHost: Boolean get() = members.firstOrNull { it.isMe }?.isHost == true
+    /** 내 위치 · 거리를 같이 뛰는 사람에게 보이는 중 */
+    val myShare: Boolean get() = members.firstOrNull { it.isMe }?.sharing == true
 
     /**
      * 파티장이 지금 출발할 수 있는가.
@@ -213,6 +220,10 @@ class CrewRepository(
     private val partyApi: PartyApi,
     /** 달리는 동안 방에 보낼 내 위치. 모르면 null */
     private val currentLocation: () -> GeoPoint? = { null },
+    /** 달리는 동안 이 폰이 잰 거리(km) — 공유를 켰을 때만 방에 보낸다(화면용) */
+    private val currentKm: () -> Double? = { null },
+    /** 방에 들어갈 때 "내 위치 보이기"를 켤지 — 사용자가 마지막으로 고른 값(기본 끔) */
+    private val shareByDefault: suspend () -> Boolean = { false },
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -427,6 +438,7 @@ class CrewRepository(
             when (val result = partyApi.open(crewId, flashPostId)) {
                 is ServerResult.Ok -> {
                     _party.value = _party.value.copy(partyId = result.value)
+                    if (shareByDefault()) partyApi.share(result.value, true)
                     poll(result.value)
                 }
                 else -> _party.value = _party.value.copy(problem = result.asPartyProblem())
@@ -445,6 +457,8 @@ class CrewRepository(
             if (before.phase == PartyPhase.RUNNING && running) {
                 val here = currentLocation()
                 if (here != null) partyApi.ping(partyId, here.lat, here.lng)
+                // 공유를 켠 사람만 화면용 거리를 보낸다 — 적립 계산에는 쓰이지 않는다
+                if (before.myShare) currentKm()?.let { km -> partyApi.live(partyId, km.coerceIn(0.0, 300.0)) }
             }
             when (val result = partyApi.state(partyId)) {
                 is ServerResult.Ok -> applyRoom(result.value)
@@ -516,6 +530,9 @@ class CrewRepository(
                     else -> -1
                 },
                 seenSec = m.seenSec,
+                point = point,
+                km = m.km,
+                sharing = m.share,
             )
         }
 
@@ -602,6 +619,19 @@ class CrewRepository(
         if (state.phase != PartyPhase.LOBBY || !state.isHost) return
         _party.value = state.copy(members = state.members.filterNot { it.id == memberId })
         act { partyApi.kick(it, memberId) }
+    }
+
+    /**
+     * 달리는 동안 내 위치 · 거리를 같이 뛰는 사람에게 보일지. 로비와 달리는 중 모두 바꿀 수 있다.
+     * 끄면 서버가 바로 다른 사람에게서 가린다(0037).
+     */
+    fun setMyShare(share: Boolean) {
+        val state = _party.value
+        if (state.partyId == null) return
+        _party.value = state.copy(
+            members = state.members.map { if (it.isMe) it.copy(sharing = share) else it },
+        )
+        act { partyApi.share(it, share) }
     }
 
     /** 내 준비 상태. 화면은 바로 바꾸고, 서버가 거절하면 다음 물음에서 되돌아간다. */
