@@ -53,7 +53,13 @@ class CrewFormTest {
         }
         fun fill(label: Int, value: String) {
             val description = compose.activity.getString(label)
-            compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
+            // 앞 칸의 키보드가 열리고 닫히는 동안 목록 높이가 바뀌어, 스크롤해 둔 칸이 잠깐 목록에서 빠질 수 있다
+            // (PR #34 Experience QA 36254343201). 칸이 실제로 있을 때까지 스크롤을 다시 하고 누른다.
+            compose.waitUntil(5_000) {
+                runCatching {
+                    compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
+                }.isSuccess && compose.onAllNodes(hasContentDescription(description)).fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithContentDescription(description).performClick()
             compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)

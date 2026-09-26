@@ -10024,6 +10024,7 @@ revoke update on public.posts from anon, authenticated;
 --  · 적립액은 economy.invite_config.reward_sup 하나로 정한다. **기본 0 — 0이면 아무것도 적립하지 않고
 --    앱도 보상 문구를 보이지 않는다.** 금액은 운영자가 정해 이렇게 바꾼다:
 --        update economy.invite_config set reward_sup = 5;
+--  (2026-09-26: 사용자 결정으로 0038 이 100 SUP 으로 정한다.)
 --  · 한 사람이 초대로 받는 적립은 max_rewards_per_inviter 명까지(초대받은 사람 몫은 따로 준다).
 --  앱은 표를 직접 읽거나 쓰지 않고 아래 함수로만 쓴다.
 -- ════════════════════════════════════════════════════════════════════
@@ -10311,6 +10312,21 @@ revoke all on function public.party_live(bigint, numeric) from public, anon;
 grant execute on function public.party_share(bigint, boolean) to authenticated;
 grant execute on function public.party_live(bigint, numeric) to authenticated;
 grant execute on function public.party_state(bigint) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0038_invite_reward.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0038 — 친구 초대 적립액 100 SUP (2026-09-26 사용자 결정)
+--
+--  초대받은 사람의 첫 유효 러닝(1,000걸음+, 무효 제외)에 초대한 사람 · 초대받은 사람 각각 100 SUP.
+--  한 사람이 초대로 받는 적립은 50명까지(0036 max_rewards_per_inviter).
+--  이 파일은 배포 때마다 다시 돈다 — 금액을 바꾸려면 이 줄을 고쳐 배포한다
+--  (대시보드에서 직접 바꾼 값은 다음 배포 때 이 값으로 돌아온다).
+-- ════════════════════════════════════════════════════════════════════
+
+update economy.invite_config set reward_sup = 100 where id;
 
 commit;
 

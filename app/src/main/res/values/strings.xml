@@ -1710,5 +1710,10 @@ Start running with StepUp.</string>
     <string name="run_together_title">Running together · %1$d</string>
     <string name="run_together_me">Me</string>
     <string name="run_together_hidden">Hidden</string>
+    <string name="run_gps_search_rough">Approximate location · finding GPS</string>
+    <string name="run_location_off_hint">Your phone’s location is off, so no position can arrive. Turn it on to record your route.</string>
+    <string name="run_location_off_action">Turn on location</string>
+    <string name="run_location_approx_hint">Only approximate location is allowed, so GPS can’t be used. Allow precise location for an accurate route.</string>
+    <string name="run_countdown_location_services_off">Phone location is off · steps only until you turn it on</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

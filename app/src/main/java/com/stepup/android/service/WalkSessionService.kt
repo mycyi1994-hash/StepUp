@@ -104,6 +104,15 @@ data class WalkSessionState(
     val track: List<TrackPoint> = emptyList(),
     /** 최근에 GPS 좌표를 받았는지 (지도 카드 GPS 배지) */
     val gpsFix: Boolean = false,
+    /**
+     * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다.
+     * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
+     */
+    val here: GeoPoint? = null,
+    /** 정확한 위치(ACCESS_FINE_LOCATION)를 허용했는지 — 대략적인 위치만이면 GPS 를 못 쓴다 */
+    val precise: Boolean = true,
+    /** 휴대폰의 위치 기능 자체가 켜져 있는지 — 꺼져 있으면 권한이 있어도 위치가 오지 않는다 */
+    val locationOn: Boolean = true,
     /** GPS로 잰 유효 거리(km). 속도 상한을 넘긴 구간은 빠져 있다. */
     val gpsKm: Double = 0.0,
     /** 이번 세션의 최고 속도(km/h) — 사람 범위 안의 값만 */
@@ -170,6 +179,11 @@ class WalkSessionService : Service() {
             }
             val p = GeoPoint(location.latitude, location.longitude)
             val now = System.currentTimeMillis()
+            // GPS 가 잡혔으면 기지국 위치(대략)는 그만 받는다 — 둘을 섞으면 점이 튄다
+            if (location.provider == LocationManager.GPS_PROVIDER && roughRegistered) {
+                locationManager?.removeUpdates(roughListener)
+                roughRegistered = false
+            }
             // 속도 판정 기준점은 트랙과 따로 든다. 튄 구간의 점은 트랙에 넣지
             // 않지만 기준점은 옮겨야, 다음 구간이 연쇄로 튀지 않는다.
             val prev = speedAnchor
@@ -190,6 +204,7 @@ class WalkSessionService : Service() {
                     // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다
                     return@update current.copy(
                         gpsFix = true,
+                        here = p,
                         flaggedSegments = current.flaggedSegments + 1,
                     )
                 }
@@ -204,6 +219,7 @@ class WalkSessionService : Service() {
                 current.copy(
                     track = if (moved) track + TrackPoint(p.lat, p.lng, at) else track,
                     gpsFix = true,
+                    here = p,
                     gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                     validSegments = if (counted) current.validSegments + 1 else current.validSegments,
                     topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
@@ -215,6 +231,7 @@ class WalkSessionService : Service() {
         @Deprecated("Deprecated in Java")
         override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
         override fun onProviderEnabled(provider: String) {
+            refreshLocationOn()
             // 러닝 중에 GPS 를 켰다 — 대신 쓰던 기지국 위치는 그만 받는다(둘을 섞으면 점이 튄다)
             if (provider == LocationManager.GPS_PROVIDER && locationManager != null) {
                 stopLocation()
@@ -224,8 +241,50 @@ class WalkSessionService : Service() {
                 startLocation()
             }
         }
+        override fun onProviderDisabled(provider: String) = refreshLocationOn()
+    }
+
+    /**
+     * GPS 가 잡히기 전의 대략적인 위치(기지국 · 와이파이) — 지도에 "여기쯤"만 보인다.
+     * 경로 · 거리 · 속도 판정에는 넣지 않는다. 첫 GPS 점이 오면 등록을 푼다.
+     */
+    private var roughRegistered = false
+    private val roughListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            if (isMockLocation(location)) {
+                _state.update { current ->
+                    if (!current.isActive || current.isPaused) current else current.copy(mockLocation = true)
+                }
+                return
+            }
+            _state.update { current ->
+                if (!current.isActive || current.gpsFix) current
+                else current.copy(here = GeoPoint(location.latitude, location.longitude))
+            }
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
+        override fun onProviderEnabled(provider: String) = Unit
         override fun onProviderDisabled(provider: String) = Unit
     }
+
+    private fun refreshLocationOn() {
+        val lm = locationManager ?: return
+        val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
+        _state.update { if (it.locationOn == on) it else it.copy(locationOn = on) }
+    }
+
+    /** 2분 안에 기기가 알던 가장 새 위치 — 러닝 시작 직후 지도에 먼저 보여 준다 */
+    private fun freshLastKnown(lm: LocationManager): GeoPoint? = runCatching {
+        listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+            .mapNotNull { provider ->
+                try { lm.getLastKnownLocation(provider) } catch (_: SecurityException) { null } catch (_: IllegalArgumentException) { null }
+            }
+            .filter { !isMockLocation(it) && System.currentTimeMillis() - it.time <= 2 * 60_000L }
+            .maxByOrNull { it.time }
+            ?.let { GeoPoint(it.latitude, it.longitude) }
+    }.getOrNull()
 
     private fun hasLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -250,15 +309,29 @@ class WalkSessionService : Service() {
             }.isSuccess
         }
         val gpsOn = gps && runCatching { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false)
-        if (!gpsOn && runCatching { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false)) {
+        val networkOn = runCatching { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false)
+        if (!gpsOn && networkOn) {
             runCatching {
                 lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper)
             }
+        } else if (gpsOn && networkOn && !_state.value.gpsFix) {
+            // GPS 첫 위치는 실내 · 빌딩 사이에서 몇 분 걸리기도 한다. 그동안 기지국 위치로 "여기쯤"을 보인다.
+            roughRegistered = runCatching {
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3_000L, 0f, roughListener, mainLooper)
+            }.isSuccess
+        }
+        val seed = if (_state.value.here == null) freshLastKnown(lm) else null
+        val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
+        _state.update { current ->
+            if (!current.isActive) current
+            else current.copy(precise = fine, locationOn = on, here = current.here ?: seed)
         }
     }
 
     private fun stopLocation() {
         locationManager?.removeUpdates(locationListener)
+        if (roughRegistered) locationManager?.removeUpdates(roughListener)
+        roughRegistered = false
         locationManager = null
     }
 

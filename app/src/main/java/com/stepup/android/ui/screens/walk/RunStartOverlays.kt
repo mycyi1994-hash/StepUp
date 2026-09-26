@@ -197,6 +197,8 @@ internal fun RunCountdown(
     locationAllowed: Boolean,
     onGo: () -> Unit,
     onCancel: () -> Unit,
+    /** 휴대폰 위치 기능이 켜져 있는가(권한과 별개) */
+    locationServicesOn: Boolean = true,
 ) {
     val feedback = LocalFeedback.current
     var remaining by rememberSaveable { mutableIntStateOf(3) }
@@ -241,7 +243,11 @@ internal fun RunCountdown(
                     modifier = Modifier.testTag("run-countdown-digit"))
             }
             S2Subtitle(stringResource(
-                if (locationAllowed) R.string.run_countdown_gps_on else R.string.run_countdown_gps_off,
+                when {
+                    !locationAllowed -> R.string.run_countdown_gps_off
+                    !locationServicesOn -> R.string.run_countdown_location_services_off
+                    else -> R.string.run_countdown_gps_on
+                },
             ))
             Spacer(Modifier.height(16.dp))
             S2ActionRow(

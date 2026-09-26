@@ -3454,7 +3454,7 @@ declare r record;
 begin
   select * into r from public.invite_status();
   perform pg_temp.ok(r.code ~ '^STEP-[A-Z2-9]{6}$', '초대 코드는 서버가 만든다(STEP-XXXXXX)');
-  perform pg_temp.ok(r.reward_sup = 0, '적립액은 운영자가 정하기 전까지 0');
+  perform pg_temp.ok(r.reward_sup = 100, '적립액은 배포된 설정값(0038: 100 SUP)');
   perform pg_temp.ok((select code from public.invite_status()) = r.code, '다시 불러도 같은 코드');
   insert into fix (k, v) values ('invite_code', r.code) on conflict (k) do update set v = excluded.v;
 end $$;
@@ -3489,6 +3489,7 @@ call pg_temp.must_fail($q$ select public.invite_redeem('STEP-ZZZZZZ') $q$, '없�
 reset role;
 
 -- 적립액 0: 러닝을 마쳐도 적립하지 않고 확정도 적지 않는다
+update economy.invite_config set reward_sup = 0;
 insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
 values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '3 hours', now() - interval '170 minutes', 600, 2000, 'CLEAN');
 do $$
@@ -3528,7 +3529,7 @@ begin
     '초대 현황 숫자');
 end $$;
 reset role;
-update economy.invite_config set reward_sup = 0;
+update economy.invite_config set reward_sup = 100;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

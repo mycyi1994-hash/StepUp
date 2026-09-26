@@ -1709,5 +1709,10 @@ StepUp と走り出そう。</string>
     <string name="run_together_title">一緒にラン中・%1$d人</string>
     <string name="run_together_me">自分</string>
     <string name="run_together_hidden">非公開</string>
+    <string name="run_gps_search_rough">おおよその位置・GPSを検索中</string>
+    <string name="run_location_off_hint">端末の位置情報がオフのため位置を取得できません。オンにするとルートが記録されます。</string>
+    <string name="run_location_off_action">位置情報をオン</string>
+    <string name="run_location_approx_hint">おおよその位置のみ許可されているためGPSを使えません。正確な位置を許可するとルートが正確になります。</string>
+    <string name="run_countdown_location_services_off">端末の位置情報オフ・オンにするまで歩数のみ記録</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

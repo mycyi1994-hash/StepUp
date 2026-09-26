@@ -368,8 +368,24 @@ fun RunScreen(
                     RunHero(
                         paused = session.isPaused,
                         gpsFix = session.gpsFix, locationAllowed = locationAllowed,
+                        roughFix = session.isActive && session.here != null,
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
+                    // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
+                    if (session.isActive && locationAllowed && !session.gpsFix) {
+                        when {
+                            !session.locationOn -> LocationHint(
+                                stringResource(R.string.run_location_off_hint),
+                                stringResource(R.string.run_location_off_action),
+                                tag = "run-location-off",
+                            ) { ExternalIntents.openLocationSettings(context) }
+                            !session.precise -> LocationHint(
+                                stringResource(R.string.run_location_approx_hint),
+                                stringResource(R.string.cd_open_settings),
+                                tag = "run-location-approx",
+                            ) { ExternalIntents.openAppSettings(context) }
+                        }
+                    }
                     Spacer(Modifier.height(20.dp))
                     val mapHeight = if (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800) 256.dp else 280.dp
                     val gutter = com.stepup.android.ui.theme.StepUpDesign.Gutter
@@ -390,8 +406,12 @@ fun RunScreen(
                         party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } }
                     } else emptyList()
                     Box(mapModifier) {
+                        val here = session.here
                         if (session.geoTrack.isNotEmpty()) {
                             LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others)
+                        } else if (session.isActive && here != null) {
+                            // GPS 가 잡히기 전 — 기지국 · 마지막으로 알던 위치로 "여기쯤"을 먼저 보인다(경로는 아직 없다)
+                            LiveRouteMap(points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others)
                         } else {
                             MapWaiting(Modifier.fillMaxSize())
                         }
@@ -485,9 +505,15 @@ fun RunScreen(
             )
         }
         if (countingDown && !session.isActive) {
+            // 권한이 있어도 휴대폰 위치가 꺼져 있으면 위치가 오지 않는다 — 시작 전에 미리 알린다
+            val locationServicesOn = remember {
+                val lm = androidx.core.content.ContextCompat.getSystemService(context, android.location.LocationManager::class.java)
+                lm == null || runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
+            }
             RunCountdown(
                 courseName = course?.name,
                 locationAllowed = locationAllowed,
+                locationServicesOn = locationServicesOn,
                 onGo = {
                     countingDown = false
                     if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
@@ -1322,6 +1348,8 @@ private fun RunHero(
     paused: Boolean,
     gpsFix: Boolean,
     locationAllowed: Boolean,
+    /** GPS 전에 대략적인 위치는 알고 있다 */
+    roughFix: Boolean = false,
     elapsedSec: Long,
     distanceKm: Double,
     avgPaceSec: Long?,
@@ -1332,6 +1360,7 @@ private fun RunHero(
         val gps = stringResource(when {
             !locationAllowed -> R.string.run_location_disabled
             gpsFix -> R.string.run_gps_ok
+            roughFix -> R.string.run_gps_search_rough
             else -> R.string.run_gps_search
         })
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1452,5 +1481,14 @@ internal fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMem
                     color = if (km != null) Snow else Slate, fontSize = 13.sp)
             }
         }
+    }
+}
+
+/** 위치가 안 잡히는 까닭 한 줄 + 고치러 가는 버튼 */
+@Composable
+private fun LocationHint(text: String, action: String, tag: String, onAction: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).testTag(tag), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text, color = Silver, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+        TextButton(onClick = onAction) { Text(action) }
     }
 }
