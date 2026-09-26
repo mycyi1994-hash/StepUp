@@ -181,7 +181,7 @@ fun EventsScreen(
                 0 -> ChallengeHero(
                     tag = stringResource(R.string.challenge_tag_daily),
                     title = stringResource(R.string.challenge_daily_title),
-                    current = d?.steps?.toDouble(), target = d?.goal?.toDouble(),
+                    current = d?.takeIf { it.known }?.steps?.toDouble(), target = d?.goal?.toDouble(),
                     reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
                     km = false,
                 )
@@ -211,8 +211,8 @@ fun EventsScreen(
                 desc = stringResource(R.string.challenge_daily_desc),
                 reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
                 rewardNote = if (d != null && d.paidToday > 0) null else stringResource(R.string.challenge_daily_streak_note),
-                fraction = d?.fraction,
-                progressText = if (d == null) "—" else "%,d / %,d".format(d.steps, d.goal),
+                fraction = d?.takeIf { it.known }?.fraction,
+                progressText = if (d == null || !d.known) "—" else "%,d / %,d".format(d.steps, d.goal),
                 state = when {
                     d == null -> ChallengeState.Loading
                     d.paidToday > 0 -> ChallengeState.Paid
@@ -271,7 +271,12 @@ fun EventsScreen(
                     if (canClaim) viewModel.claim(selectedEvent!!, selectedFraction!!) else {
                         val d = daily
                         val focus = when (selected) {
-                            0 -> d?.let { ChallengeFocus(ChallengeKind.DAILY, it.steps.toDouble(), it.goal.toDouble()) }
+                            0 -> d?.takeIf { it.known }?.let {
+                                // 폰 걸음이면 달리는 중인 러닝 걸음이 이미 들어 있다 — 러닝 화면이 다시 더하므로 뺀다
+                                val running = com.stepup.android.service.WalkSessionService.state.value
+                                val base = if (it.live && running.isActive) (it.steps - running.steps).coerceAtLeast(0) else it.steps
+                                ChallengeFocus(ChallengeKind.DAILY, base.toDouble(), it.goal.toDouble())
+                            }
                             1 -> weekSteps?.let { ChallengeFocus(ChallengeKind.WEEKLY, it.toDouble(), Events.STEP_SURGE.target) }
                             else -> nightKm?.let { ChallengeFocus(ChallengeKind.NIGHT, it, Events.NIGHT_QUEST.target) }
                         }

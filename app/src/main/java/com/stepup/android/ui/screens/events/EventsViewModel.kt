@@ -25,7 +25,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** 오늘의 도전 상태 — 걸음 · 목표 · 오늘 나간 보너스 */
-data class DailyChallenge(val steps: Int, val goal: Int, val paidToday: Double) {
+data class DailyChallenge(
+    val steps: Int,
+    val goal: Int,
+    val paidToday: Double,
+    /** 진행 걸음을 안다 — 서버 경제에서 확인한 걸음을 아직 못 받았으면 false(0으로 꾸미지 않는다) */
+    val known: Boolean = true,
+    /** 폰 만보기 걸음이라 지금 달리는 러닝의 걸음이 이미 들어 있다 */
+    val live: Boolean = false,
+) {
     val fraction: Float get() = if (goal > 0) (steps.toFloat() / goal).coerceIn(0f, 1f) else 0f
     val done: Boolean get() = goal in 1..steps
 }
@@ -89,9 +97,9 @@ class EventsViewModel(
     ) { phoneSteps, goal, paid, verified ->
         if (com.stepup.android.core.ServiceLocator.serverEconomyOn) {
             // 서버 경제: 서버가 확인한 걸음으로 잰다. 아직 못 받았으면 진행 중으로만 보인다
-            DailyChallenge(steps = verified?.toInt() ?: 0, goal = goal, paidToday = paid)
+            DailyChallenge(steps = verified?.toInt() ?: 0, goal = goal, paidToday = paid, known = verified != null)
         } else {
-            DailyChallenge(steps = phoneSteps, goal = goal, paidToday = paid)
+            DailyChallenge(steps = phoneSteps, goal = goal, paidToday = paid, live = true)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
