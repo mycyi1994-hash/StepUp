@@ -35,11 +35,36 @@ data class ChallengeFocus(
     }
 }
 
-/** 지금 러닝이 향하는 챌린지 — 앱이 살아 있는 동안만. 홈에서 그냥 시작한 러닝이면 비운다. */
+/**
+ * 지금 러닝이 향하는 챌린지 — 앱이 살아 있는 동안만. 홈에서 그냥 시작한 러닝이면 비운다.
+ *
+ * 처음 만난 러닝 하나에 묶는다([bind]). 그 러닝이 끝나고 다른 길(모임 · 알림)로 새 러닝을 시작하면
+ * 예전 챌린지의 옛 기준값으로 막대를 그리지 않도록 비운다.
+ */
 object ChallengeRunFocus {
     private val _current = MutableStateFlow<ChallengeFocus?>(null)
     val current: StateFlow<ChallengeFocus?> = _current.asStateFlow()
 
-    fun set(focus: ChallengeFocus) { _current.value = focus }
-    fun clear() { _current.value = null }
+    /** 묶인 러닝의 시작 시각. 아직 러닝을 만나지 않았으면 null */
+    private var boundTo: Long? = null
+
+    fun set(focus: ChallengeFocus) {
+        boundTo = null
+        _current.value = focus
+    }
+
+    fun clear() {
+        boundTo = null
+        _current.value = null
+    }
+
+    /** [startedAt] 러닝에 보여도 되는가 — 아직 묶이지 않았거나 그 러닝에 묶였을 때만 */
+    fun matches(startedAt: Long): Boolean = _current.value != null && (boundTo == null || boundTo == startedAt)
+
+    /** 달리는 중인 러닝을 만나면 부른다 — 처음이면 묶고, 다른 러닝이면 비운다 */
+    fun bind(startedAt: Long) {
+        if (_current.value == null || startedAt <= 0) return
+        val bound = boundTo
+        if (bound == null) boundTo = startedAt else if (bound != startedAt) clear()
+    }
 }

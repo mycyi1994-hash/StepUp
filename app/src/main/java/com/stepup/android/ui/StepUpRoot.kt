@@ -811,7 +811,11 @@ internal fun MainScaffold(
                 PartyLobbyScreen(
                     crewId = entry.arguments?.getString("crewId").orEmpty(),
                     onBack = { navController.popBackStack() },
-                    onRunStarted = { navController.navigate(Routes.RUN) },
+                    onRunStarted = {
+                        // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        navController.navigate(Routes.RUN)
+                    },
                 )
             }
             composable(Routes.SNEAKER_DEX) {
@@ -862,7 +866,11 @@ internal fun MainScaffold(
                 PartyLobbyScreen(
                     flashPostId = entry.arguments?.getLong("postId") ?: 0L,
                     onBack = { navController.popBackStack() },
-                    onRunStarted = { navController.navigate(Routes.RUN) },
+                    onRunStarted = {
+                        // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        navController.navigate(Routes.RUN)
+                    },
                 )
             }
             composable(

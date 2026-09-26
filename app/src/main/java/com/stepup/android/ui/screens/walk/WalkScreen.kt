@@ -429,7 +429,12 @@ fun RunScreen(
                     }
                     // 챌린지 상세에서 "이 챌린지 달리기"로 시작했으면 그 챌린지의 예상 진행(사용 피드백 9)
                     val challenge by com.stepup.android.ui.screens.events.ChallengeRunFocus.current.collectAsStateWithLifecycle()
-                    val focus = challenge
+                    LaunchedEffect(session.isActive, session.startedAt) {
+                        if (session.isActive) com.stepup.android.ui.screens.events.ChallengeRunFocus.bind(session.startedAt)
+                    }
+                    val focus = challenge?.takeIf {
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.matches(session.startedAt)
+                    }
                     if (focus != null && session.isActive) {
                         Spacer(Modifier.height(12.dp))
                         ChallengeRunStrip(focus, focus.expected(session.steps, distanceKm, session.startedAt))
