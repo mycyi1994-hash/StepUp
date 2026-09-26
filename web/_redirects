@@ -2,3 +2,9 @@
 # 대상은 확장자 없이 /invite 로 적는다. /invite.html 로 적으면 Pages 가 /invite 로
 # 308 넘기면서 주소창의 크루 id 가 사라진다(초대 페이지가 그 id 로 앱을 연다).
 /c/*  /invite  200
+
+# 앱 다운로드 — 홈페이지의 "앱 받기"는 늘 main 에서 방금 만든 APK 로 넘긴다.
+# 예전에는 web/downloads/StepUp-MVP.apk 파일을 저장소에 넣어 두었는데, 한 번 넣은 뒤로
+# 바뀌지 않아 S2 이전 앱(e003e08)을 계속 내려주었다(2026-09-26 확인). 같은 주소를 쓰던
+# 링크가 끊기지 않도록 주소는 그대로 두고, CI 가 main 마다 새로 올리는 test-apk 로 보낸다.
+/downloads/StepUp-MVP.apk  https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk/StepUp-test.apk  302
