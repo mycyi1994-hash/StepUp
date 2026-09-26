@@ -1,5 +1,7 @@
 # StepUp
 
+> Latest visual direction, 2026-09-26: the user selected Figma S2 and proceeding with the acquired assets. Start at [docs/redesign/s2/README.md](docs/redesign/s2/README.md). This handoff distinguishes user decisions from planning proposals and unimplemented features. S2 Android migration has not started; the following text describes the incumbent product and prior decisions where it conflicts with the new direction.
+
 > Current user decision, 2026-09-25: ship the character-free, record-first direction from selected 05-record.png. Remove mascot/clothing/wardrobe presentation, keep shoe collection/market/draw and existing user data. Navigation is Running / Shoes / Draw / Community / Profile. Scenery is an independent horizontal banner. Older character-related requirements below describe history, not current release requirements. See docs/redesign/CHARACTER-FREE-ASSETS-2026-09-25.md.
 
 

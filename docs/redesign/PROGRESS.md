@@ -873,3 +873,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - App source be6d0ef passed unit/debug/signature/release checks (36105578228). Test-only correction 7f2df93 passed Android 14/15: 4 form tests + 1 gallery test per OS, 36 gallery images each (36106239083). Final artifacts and XML/hash evidence under stage7 output/verified-api34 and verified-api35.
 - Claude reviewed 8 intermediate images, requested floating-label polish, then confirmed both label and empty-banner corrections from 4 final app images. Original review and recheck preserved. Optional wording/alignment and keyboard-header spacing notes remain separate.
 - Earlier failed/cancelled attempts remain documented, not counted as passes. No public APK, main merge, account/storage identity change, server mutation, or full release-completion claim. See CHARACTER-FREE-STAGE7-2026-09-25-KO.md.
+
+## 2026-09-26 — S2 planning and asset handoff for Claude
+
+- Added `docs/redesign/s2/` as the current entry point: Korean plan, confirmed/proposed/open decisions, truthful status, 45-frame map, 34-route preservation map, a six-screen before/after HTML preview and a Claude session-start request.
+- Added `design/s2/`: 17 hash-verified originals, 8 alpha-trimmed derivatives, 13 individual Figma image-layer renders and portable source metadata. Four unavailable composite assets have explicit fallback proposals; the user chose to proceed with available images after export was not allowed.
+- Added pointers to the root guidance and historical handoffs so old character/wardrobe directions do not override S2. The HTML comparison is not a final approved specification or an Android S2 build; small comparison images are not production assets.
+- Checked asset hashes and referenced files, complete route/frame coverage, local documentation links and preview asset/font paths; no signed download URLs in the shipped JSON. App source is unchanged. No new APK, device tests or deployment in this documentation checkpoint.
+- The user subsequently requested committing and pushing all handoff assets for remote Claude work. This package targets `origin/codex/stepup-cohesive-redesign`; remote users must check out that branch. The delivery response records the final commit and remote verification.
