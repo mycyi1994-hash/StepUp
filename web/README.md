@@ -4,7 +4,7 @@ Cloudflare Pages 가 이 폴더를 그대로 올린다(빌드 없음). main 에 
 
 | 경로 | 내용 |
 |---|---|
-| `/` | 소개 페이지(`index.html`, `styles.css`, `site.js`) — 오프라인 MVP 체험판 안내와 APK(`downloads/StepUp-MVP.apk`) |
+| `/` | 소개 페이지(`index.html`, `styles.css`, `site.js`) — 다섯 화면(러닝 `#run` · 크루 `#crew` · 보상 `#reward` · 코스 `#course` · 시작 `#start`)을 휠·키보드·스와이프로 한 장씩 넘긴다. 그림은 `assets/img/`(S2 원본을 WebP 로 줄인 것), 공유 미리보기는 `assets/og-image.jpg`. 화면 속 숫자·이름·코스·SUP 는 예시라 카드마다 "화면 예시" 배지를 둔다. 1페이지 배경을 영상으로 바꾸려면 `.root` 에 `data-hero-video="<주소>"` 를 단다. APK 는 `downloads/StepUp-MVP.apk` |
 | `/c/<크루 id>` | 크루 초대 링크. 앱이 있으면 앱이 바로 열리고, 없으면 `invite.html` 이 설치를 안내한다(`_redirects`) |
 | `/.well-known/assetlinks.json` | 안드로이드 App Links 확인 파일. 앱 서명의 SHA-256 이 들어 있다 |
 | `/privacy.html`, `/terms.html` | 개인정보처리방침 · 이용약관 |

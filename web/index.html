@@ -3,79 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1448ef">
-<title>StepUp — 함께 달리는 즐거움</title>
-<meta name="description" content="가볍게 달리고, 자연스럽게 만나고. 러닝 기록부터 크루와의 대화까지, StepUp Android MVP를 체험해 보세요. Powered by GIWA.">
-<meta property="og:title" content="StepUp — 함께 달리는 즐거움">
-<meta property="og:description" content="러닝, 크루, 대화를 한곳에서. Powered by GIWA.">
+<meta name="theme-color" content="#03060D">
+<title>StepUp — 멈추지 않는 사람을 위한 러닝 앱</title>
+<meta name="description" content="GPS 러닝 기록, 크루 결성, 달린 만큼 쌓이는 보상. StepUp Android 앱을 받아보세요.">
+<link rel="canonical" href="https://stepupcrew.com/">
 <meta property="og:type" content="website">
-<link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="./assets/fonts/pretendard-extrabold.otf" as="font" type="font/otf" crossorigin>
-<link rel="preload" href="./assets/fonts/manrope-extrabold.ttf" as="font" type="font/ttf" crossorigin>
+<meta property="og:url" content="https://stepupcrew.com/">
+<meta property="og:title" content="StepUp — 멈추지 않는 사람을 위한 러닝 앱">
+<meta property="og:description" content="기록하고, 모이고, 쌓인다. 러닝 앱 StepUp.">
+<meta property="og:image" content="https://stepupcrew.com/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="StepUp — 멈추지 않는 사람을 위한 러닝 앱">
+<meta name="twitter:description" content="기록하고, 모이고, 쌓인다. 러닝 앱 StepUp.">
+<meta name="twitter:image" content="https://stepupcrew.com/assets/og-image.jpg">
+<link rel="icon" href="./assets/img/app-icon-192.webp" type="image/webp">
+<link rel="apple-touch-icon" href="./assets/img/apple-touch-icon.png">
+<link rel="preload" as="image" href="./assets/img/run-bg.webp" type="image/webp">
+<link rel="preload" as="image" href="./assets/img/shoe-main.webp" type="image/webp">
+<link rel="preload" as="font" type="font/otf" href="./assets/fonts/pretendard-extrabold.otf" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
 <link rel="stylesheet" href="./styles.css">
-<script src="./site.js" defer></script>
+<script>try{if(localStorage.getItem('stepupHero.seen')==='1')document.documentElement.classList.add('seen')}catch(e){}</script>
+<script type="module" src="./site.js"></script>
+<noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
-<a class="skip-link" href="#main">본문으로 이동</a>
-<div class="blue-stage" id="top">
-  <div class="ambient" aria-hidden="true"><div class="glow glow-one"></div><div class="glow glow-two"></div><div class="orbit"></div></div>
-  <header class="site-header wrap">
-    <a class="wordmark" href="#top" aria-label="StepUp 처음으로">StepUp<span class="brand-dot" aria-hidden="true"></span></a>
-    <nav aria-label="주요 메뉴"><a href="#about">서비스 소개</a><a class="nav-download" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk">앱 다운로드 <span aria-hidden="true">↗</span></a></nav>
-  </header>
-  <main id="main">
-    <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow enter" style="--delay:0ms"><span aria-hidden="true"></span> YOUR PACE. OUR CREW.</p>
-        <div class="brand-lockup enter" style="--delay:80ms">
-          <h1 id="hero-title">StepUp<span class="hero-dot" aria-hidden="true">.</span></h1>
-          <p class="powered">Powered by <strong>GIWA</strong><svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true"><path d="M3 13 13 3M3 3h10v10" stroke="currentColor" stroke-width="1.5"/></svg></p>
-        </div>
-        <h2 class="hero-heading enter" style="--delay:160ms">가볍게 달리고.<br>자연스럽게 만나고.</h2>
-        <p class="hero-description enter" style="--delay:240ms">나만의 러닝 기록부터 함께 달릴 크루까지.<br>다음 러닝이 기다려지는 이유, StepUp.</p>
-        <div class="hero-actions enter" style="--delay:320ms">
-          <a class="button button-primary" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Android 앱 받기</a>
-          <a class="button button-film" id="film-open" href="./assets/mvp/StepUp-Film.mp4"><span class="play-icon" aria-hidden="true">▶</span>브랜드 영상 <span class="film-duration">24초</span></a>
-        </div>
-        <p class="download-note enter" style="--delay:380ms">Android 8.0+ · 약 20MB · 로그인 없이 MVP 체험</p>
+<div class="root">
+
+  <header class="site-header">
+    <div class="header-in">
+      <a class="logo" href="#run" data-go="0" aria-label="StepUp 처음 화면으로"><img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp"></a>
+      <div class="header-actions">
+        <button class="pill sound" type="button" aria-pressed="false"><span class="sound-dot" aria-hidden="true"></span><span class="sound-label">사운드</span></button>
+        <a class="pill" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" data-dl>앱 다운로드</a>
       </div>
-      <div class="product-stage enter" style="--delay:140ms">
-        <div class="product-halo" aria-hidden="true"></div>
-        <div class="screen-caption"><span class="scene-index" aria-hidden="true">01 / 03</span><span id="scene-caption">오늘도, 나만의 속도로.</span></div>
-        <div class="phone-drift">
-          <div class="phone" id="product-view"><div class="screen-stack">
-            <div id="panel-run" class="screen-panel is-active" role="tabpanel" aria-labelledby="tab-run"><img src="./assets/mvp/home.png" width="1080" height="2400" alt="StepUp 홈: 러닝 체험 시작과 크루 둘러보기" fetchpriority="high"></div>
-            <div id="panel-crew" class="screen-panel" role="tabpanel" aria-labelledby="tab-crew" hidden><img src="./assets/mvp/crews.png" width="1080" height="2400" alt="StepUp 크루: 러닝크루 가입하기와 만들기, 지역 검색"></div>
-            <div id="panel-chat" class="screen-panel" role="tabpanel" aria-labelledby="tab-chat" hidden><img src="./assets/mvp/chat.png" width="1080" height="2400" alt="StepUp 채팅: 크루 대화방과 빠른 인사, 메시지 입력"></div>
-          </div></div>
+    </div>
+  </header>
+
+  <nav class="dots" aria-label="화면 이동">
+    <button type="button" data-go="0" aria-label="1번째 화면: 러닝"><span class="dot-label">러닝</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="1" aria-label="2번째 화면: 크루"><span class="dot-label">크루</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="2" aria-label="3번째 화면: 보상"><span class="dot-label">보상</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="3" aria-label="4번째 화면: 코스"><span class="dot-label">코스</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="4" aria-label="5번째 화면: 시작"><span class="dot-label">시작</span><span class="dot-bar"></span></button>
+  </nav>
+
+  <div class="track">
+
+    <!-- 01 러닝 -->
+    <section class="page page-run is-active" id="run" aria-label="러닝">
+      <main class="run-card">
+        <div class="run-inner">
+          <div class="run-glow" aria-hidden="true"></div>
+          <span class="badge badge-top">화면 예시</span>
+          <div class="run-pan" aria-hidden="true">
+            <img src="./assets/img/run-bg.webp" width="780" height="1200" alt="" fetchpriority="high">
+            <img src="./assets/img/run-bg.webp" width="780" height="1200" alt="">
+          </div>
+          <div class="run-shade" aria-hidden="true"></div>
+          <div class="streaks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+
+          <div class="run-content">
+            <div class="eyebrow run-eyebrow"><span class="live-dot" aria-hidden="true"></span>기록 중 · 서울 나이트 런</div>
+
+            <div class="run-mid">
+              <button class="watch" type="button" title="눌러서 랩 기록" aria-label="스톱워치 — 눌러서 랩 기록"><span class="watch-main">24:18</span><span class="watch-cs">.00</span></button>
+              <div class="stats">
+                <div class="stat"><span class="stat-k">거리</span><span class="stat-v"><span class="run-km">4.89</span><span class="unit">KM</span></span></div>
+                <div class="stat"><span class="stat-k">페이스</span><span class="stat-v">4'58"<span class="unit">/KM</span></span></div>
+                <div class="stat"><span class="stat-k">심박</span><span class="stat-v bpm-v"><span class="run-bpm">168</span><span class="beat" aria-hidden="true"></span></span></div>
+              </div>
+              <div class="laps" aria-live="polite"><span class="laps-empty">스톱워치를 누르면 랩이 기록돼요</span></div>
+            </div>
+
+            <div class="run-bottom">
+              <div class="run-copy">
+                <h1>멈추지 않는 사람을 위한<br>러닝 앱, StepUp.</h1>
+                <div class="cta-row"><a class="cta cta-lg" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" data-dl>Android 앱 받기</a><span class="note">Android 8.0 이상 · iPhone은 준비 중이에요</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint" aria-hidden="true"><span class="hint-track"><span></span></span>스크롤</div>
+          <div class="run-progress" aria-hidden="true"><div class="run-bar"></div></div>
         </div>
-        <div class="scene-tabs" role="tablist" aria-label="앱 화면 미리보기">
-          <button id="tab-run" role="tab" aria-controls="panel-run" aria-selected="true" data-scene="run" tabindex="0">러닝</button>
-          <button id="tab-crew" role="tab" aria-controls="panel-crew" aria-selected="false" data-scene="crew" tabindex="-1">크루</button>
-          <button id="tab-chat" role="tab" aria-controls="panel-chat" aria-selected="false" data-scene="chat" tabindex="-1">채팅</button>
+
+        <div class="run-shoe" aria-hidden="true">
+          <div class="shoe-shadow"></div>
+          <img src="./assets/img/shoe-main.webp" width="650" height="506" alt="">
         </div>
-        <p class="preview-note">실제 MVP 화면 · 눌러서 둘러보세요</p>
+      </main>
+    </section>
+
+    <!-- 02 크루 -->
+    <section class="page page-crew" id="crew" aria-label="크루">
+      <div class="card grid2 crew-card">
+        <span class="badge badge-bottom">화면 예시</span>
+
+        <div class="crew-map">
+          <img class="crew-map-img" src="./assets/img/crew-map.webp" width="1200" height="946" alt="모임 지도" loading="lazy">
+          <div class="crew-map-shade" aria-hidden="true"></div>
+          <svg class="crew-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="crew-ring" aria-hidden="true"></div>
+          <div class="crew-ring crew-ring-2" aria-hidden="true"></div>
+          <div class="crew-runners"></div>
+          <div class="crew-spot">여의도 물빛광장 · 20:30 출발</div>
+        </div>
+
+        <div class="crew-info">
+          <div class="eyebrow"><span class="crew-dot" aria-hidden="true"></span><span class="crew-status">크루 모집 중 · 한강 나이트 러너스</span></div>
+          <div class="crew-count"><span class="crew-num">00</span><span class="crew-of">/ 06</span></div>
+          <h2 class="h2 crew-headline">같이 뛸 사람들이 모이고 있다.</h2>
+          <div class="roster"></div>
+          <a class="cta" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" data-dl>내 크루 만들기</a>
+        </div>
       </div>
     </section>
-  </main>
-  <div class="hero-baseline wrap"><span>혼자 시작해도, 함께 이어지도록.</span><a href="#about" aria-label="서비스 소개로 이동">조금 더 알아보기 <span aria-hidden="true">↓</span></a></div>
+
+    <!-- 03 보상 -->
+    <section class="page page-reward" id="reward" aria-label="보상">
+      <div class="card grid2 reward-card">
+        <span class="badge badge-bottom">화면 예시</span>
+
+        <div class="reward-info">
+          <div class="eyebrow r0"><span class="sq-dot" aria-hidden="true"></span>러닝 완료</div>
+          <div class="r-stamp">
+            <span class="r-km">5.00<span class="u">KM</span></span>
+            <span class="r-time">24:50.00 · 4'58"/KM</span>
+          </div>
+          <div class="r-line"></div>
+          <div class="r1">
+            <span class="r-k">검증 완료 · 적립 예정</span>
+            <span class="r-sup">+<span class="sup-num">0.00</span><span class="u">SUP</span></span>
+            <span class="r-desc">SUP는 GPS로 검증된 러닝 거리만큼 쌓이는 StepUp 포인트예요. GIWA 네트워크 기반으로 운영됩니다.</span>
+          </div>
+          <div class="r3">
+            <h2 class="h2">달린 만큼, 쌓인다.</h2>
+            <a class="cta" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" data-dl>Android 앱 받기</a>
+          </div>
+        </div>
+
+        <div class="reward-stage">
+          <div class="r-glow" aria-hidden="true"></div>
+          <div class="r-orbit" aria-hidden="true"></div>
+          <div class="r-flash" aria-hidden="true"></div>
+          <div class="r-shoe"><img src="./assets/img/shoe-main.webp" width="650" height="506" alt="새 신발" loading="lazy"></div>
+          <div class="r-caption"><span class="r-cap-k">새 신발 획득</span><span class="r-cap-v">블루 스트라이드</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 코스 -->
+    <section class="page page-course" id="course" aria-label="코스">
+      <div class="card grid2 course-card">
+        <span class="badge badge-bottom">화면 예시</span>
+        <div class="c-bgs" aria-hidden="true">
+          <div class="c-bg is-active" style="background-image:url('./assets/img/course-sunset.webp')"></div>
+          <div class="c-bg" style="background-image:url('./assets/img/course-night.webp')"></div>
+          <div class="c-bg" style="background-image:url('./assets/img/course-rain.webp')"></div>
+        </div>
+        <div class="c-shade" aria-hidden="true"></div>
+
+        <div class="course-info">
+          <div class="c-head">
+            <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span>러닝 코스</div>
+            <span class="c-no"><span class="c-idx">01</span> / 03</span>
+          </div>
+          <div class="c-body" aria-live="polite">
+            <div class="c-labels" aria-hidden="true"><span class="c-label is-active">SUNSET 5K</span><span class="c-label">NIGHT 7K</span><span class="c-label">RAIN 10K</span></div>
+            <span class="c-name">광안리 해변 코스</span>
+            <span class="c-desc">해변 산책로를 따라 광안대교를 보며 달리는 평지 코스</span>
+            <div class="stats c-stats">
+              <div class="stat"><span class="stat-k">거리</span><span class="stat-v"><span class="c-km">5.02</span><span class="unit">KM</span></span></div>
+              <div class="stat"><span class="stat-k">누적 상승</span><span class="stat-v"><span class="c-up">12</span><span class="unit">M</span></span></div>
+              <div class="stat"><span class="stat-k">난이도</span><span class="stat-level c-level">쉬움</span></div>
+            </div>
+          </div>
+          <div class="c-foot">
+            <h2 class="h2 h2-sm">오늘 달릴 길을 고른다.</h2>
+            <div class="c-ctrl">
+              <div class="c-segs" aria-hidden="true"><span class="c-seg"><i></i></span><span class="c-seg"><i></i></span><span class="c-seg"><i></i></span></div>
+              <button class="round" type="button" data-course="-1" aria-label="이전 코스">←</button>
+              <button class="round" type="button" data-course="1" aria-label="다음 코스">→</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="course-phone-wrap">
+          <div class="phone course-phone" aria-hidden="true">
+            <div class="ph-status"><span>9:41</span><span class="ph-gps">GPS ●</span></div>
+            <div class="ph-slides"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 시작 -->
+    <section class="page page-start" id="start" aria-label="시작">
+      <div class="card grid2 start-card">
+        <img class="start-bg" src="./assets/img/start-bg.webp" width="780" height="1200" alt="" loading="lazy">
+        <div class="start-shade" aria-hidden="true"></div>
+        <div class="start-phone-wrap">
+          <div class="phone start-phone" aria-hidden="true">
+            <div class="sp-ready">
+              <img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="" loading="lazy">
+              <div class="sp-goal"><span class="sp-goal-k">오늘의 목표</span><span class="sp-goal-v">5.00<span class="u">KM</span></span></div>
+              <div class="sp-btn-wrap"><div class="sp-pulse"></div><div class="sp-btn">START</div></div>
+            </div>
+            <div class="sp-run">
+              <span class="sp-live"><span class="live-sm"></span>RUNNING</span>
+              <span class="sp-time">00:00</span>
+              <span class="sp-km"><span class="sp-km-v">0.00</span> KM</span>
+            </div>
+          </div>
+        </div>
+        <div class="start-info">
+          <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span>준비 완료</div>
+          <h2 class="h2-xl">오늘의 첫 1km,<br>지금 시작한다.</h2>
+          <a class="cta cta-xl" href="./downloads/StepUp-MVP.apk" download="StepUp-MVP.apk" data-dl>Android 앱 받기</a>
+          <span class="note note-lg">Android 8.0 이상 · 약 20MB · iPhone은 준비 중이에요</span>
+        </div>
+      </div>
+      <footer class="site-footer">
+        <span>© StepUp · Powered by GIWA</span>
+        <div class="footer-links"><a href="./privacy.html">개인정보처리방침</a><a href="./terms.html">이용약관</a><a href="https://github.com/mycyi1994-hash/StepUp/issues" target="_blank" rel="noopener noreferrer">문의</a><a href="https://github.com/mycyi1994-hash/StepUp" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </footer>
+    </section>
+  </div>
+
+  <div class="loader" aria-hidden="true">
+    <img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="">
+    <span class="loader-time">00:00<span>.00</span></span>
+    <div class="loader-bar"><div></div></div>
+  </div>
 </div>
-<section class="essentials wrap" id="about" aria-label="StepUp의 세 가지 경험">
-  <article class="essential" data-reveal><span class="essential-number">01</span><div><h2>달리면, 기록이 되고.</h2><p>나만의 속도와 지나온 길을<br>러닝 체험으로 가볍게 만나보세요.</p></div></article>
-  <article class="essential" data-reveal><span class="essential-number">02</span><div><h2>만나면, 크루가 되고.</h2><p>내 동네 크루를 찾거나 직접 만들고.<br>가입 승인 없이 바로 들어가요.</p></div></article>
-  <article class="essential" data-reveal><span class="essential-number">03</span><div><h2>인사하면, 다음 약속.</h2><p>첫 인사부터 함께 달릴 약속까지.<br>부담 없는 대화로 시작해요.</p></div></article>
-</section>
-<footer class="footer wrap">
-  <p><strong>StepUp</strong><span>함께 달리는 즐거움.</span></p>
-  <div><button class="text-link" id="experience-info">MVP 이용 안내</button><a href="https://github.com/mycyi1994-hash/GIWASTEPN" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
-</footer>
-<noscript><p class="no-script wrap">러닝·크루·채팅을 체험하는 Android MVP입니다. 샘플 크루·자동 답장·예시 러닝을 사용하며 데이터는 이 기기에만 저장됩니다. 앱 설치와 영상 재생 링크는 JavaScript 없이도 이용할 수 있습니다.</p></noscript>
-<dialog id="film-dialog" class="film-dialog" aria-labelledby="film-title">
-  <div class="dialog-bar"><h2 id="film-title">StepUp · 브랜드 영상</h2><button class="close-dialog" aria-label="영상 닫기" data-close="film-dialog">✕</button></div>
-  <video id="brand-film" controls playsinline preload="none" aria-label="StepUp 24초 브랜드 영상"><source src="./assets/mvp/StepUp-Film.mp4" type="video/mp4">브라우저에서 영상을 재생할 수 없어요. <a href="./assets/mvp/StepUp-Film.mp4">영상 파일 열기</a></video>
-</dialog>
-<dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title">
-  <div class="dialog-bar"><h2 id="info-title">가볍게 둘러보세요</h2><button class="close-dialog" aria-label="이용 안내 닫기" data-close="info-dialog">✕</button></div>
-  <div class="info-body"><p>이 앱은 <strong>오프라인 MVP 체험판</strong>이에요. 샘플 크루, 자동 답장, 예시 러닝 코스로 핵심 흐름을 경험할 수 있어요.</p><p>실제 GPS 운동량이나 다른 사용자의 실시간 대화는 아니에요. 입력한 이름·크루·메시지·체험 기록은 기기에만 저장되고, 앱을 삭제하면 함께 삭제돼요.</p><p>Android 8.0 이상에서 설치할 수 있으며 기존 StepUp 앱과 별도로 설치돼요. iPhone에서는 이 APK를 설치할 수 없어요.</p><div class="font-licenses"><a href="./assets/fonts/LICENSE.txt" target="_blank" rel="noopener">Pretendard 라이선스 ↗</a><a href="./assets/fonts/MANROPE-OFL.txt" target="_blank" rel="noopener">Manrope 라이선스 ↗</a></div></div>
-</dialog>
+</body>
 </html>
