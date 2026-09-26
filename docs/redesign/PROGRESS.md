@@ -923,3 +923,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Shared: DetailPage/FormPage primary action → S2RoundAction; TwoWaySwitch → S2 underline text tabs (applies app-wide); new S2TextTab. Test tags unchanged.
 - Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets.
 
+## 2026-09-26 — S2 batch B: header, login, countdown, share card
+
+- SupPill without plate/border (tag and slot unchanged); home side info shows today distance instead of a second balance.
+- Login in S2 order with the S2 login scenery in an arch; standard Google button kept for brand compliance.
+- Party countdown: kicker + light large digit. Share bitmap: dark S2 card with city scenery, route, light big distance, on-dark wordmark; still no SUP.
+- Not added: permission-explainer and solo 3-2-1 countdown (new flows not in the current app).
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets.
+

@@ -1592,7 +1592,6 @@ Start running with StepUp.</string>
     <string name="home_s2_headline">You walked\n%1$s steps today</string>
     <string name="home_s2_left">%1$s steps left to your goal</string>
     <string name="home_s2_done">You reached today\'s goal</string>
-    <string name="home_s2_balance">Balance</string>
     <string name="home_s2_today_sup">Today\'s SUP</string>
     <string name="home_s2_sup_note">SUP arrives after your record is checked</string>
     <string name="shoes_s2_market">Market</string>

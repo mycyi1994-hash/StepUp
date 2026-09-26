@@ -1591,7 +1591,6 @@ StepUp と走り出そう。</string>
     <string name="home_s2_headline">今日は%1$s歩\n歩きました</string>
     <string name="home_s2_left">目標まであと%1$s歩</string>
     <string name="home_s2_done">今日の目標を達成しました</string>
-    <string name="home_s2_balance">保有</string>
     <string name="home_s2_today_sup">今日のSUP</string>
     <string name="home_s2_sup_note">SUPは記録の確認後に入ります</string>
     <string name="shoes_s2_market">マーケット</string>
