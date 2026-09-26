@@ -423,6 +423,13 @@ fun RunScreen(
                         Spacer(Modifier.height(12.dp))
                         TogetherRanking(party.members, myKm = distanceKm)
                     }
+                    // 챌린지 상세에서 "이 챌린지 달리기"로 시작했으면 그 챌린지의 예상 진행(사용 피드백 9)
+                    val challenge by com.stepup.android.ui.screens.events.ChallengeRunFocus.current.collectAsStateWithLifecycle()
+                    val focus = challenge
+                    if (focus != null && session.isActive) {
+                        Spacer(Modifier.height(12.dp))
+                        ChallengeRunStrip(focus, focus.expected(session.steps, distanceKm, session.startedAt))
+                    }
                     if (goalKm > 0 && session.isActive) {
                         Spacer(Modifier.height(12.dp))
                         com.stepup.android.ui.components.S2Subtitle(stringResource(
@@ -1490,5 +1497,28 @@ private fun LocationHint(text: String, action: String, tag: String, onAction: ()
     Column(Modifier.fillMaxWidth().padding(top = 8.dp).testTag(tag), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text, color = Silver, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
         TextButton(onClick = onAction) { Text(action) }
+    }
+}
+
+/** 러닝 중 챌린지 예상 진행 — 확정은 저장 · 서버 확인 뒤 챌린지 화면에서 */
+@Composable
+private fun ChallengeRunStrip(focus: com.stepup.android.ui.screens.events.ChallengeFocus, value: Double) {
+    val km = focus.kind == com.stepup.android.ui.screens.events.ChallengeKind.NIGHT
+    fun fmt(v: Double) = if (km) "%.1f".format(v) else "%,d".format(v.toLong())
+    val title = stringResource(when (focus.kind) {
+        com.stepup.android.ui.screens.events.ChallengeKind.DAILY -> R.string.challenge_daily_title
+        com.stepup.android.ui.screens.events.ChallengeKind.WEEKLY -> R.string.event_step_surge
+        com.stepup.android.ui.screens.events.ChallengeKind.NIGHT -> R.string.event_night_quest
+    })
+    val unit = stringResource(if (km) R.string.challenge_unit_km else R.string.challenge_unit_steps)
+    val fraction = focus.fraction(value)
+    Column(Modifier.fillMaxWidth().testTag("run-challenge-progress"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = com.stepup.android.ui.theme.VoltText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f), maxLines = 1)
+            Text("${fmt(value)} / ${fmt(focus.target)} $unit · ${(fraction * 100).toInt()}%", color = Snow, fontSize = 13.sp)
+        }
+        BarMeter(fraction = fraction, height = 5.dp)
+        Text(stringResource(R.string.challenge_run_expected), color = Slate, fontSize = 11.sp)
     }
 }

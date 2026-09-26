@@ -179,6 +179,10 @@ interface RewardDao {
     @Query("SELECT COUNT(*) FROM rewards WHERE type = :type")
     fun observeCountByType(type: String): Flow<Int>
 
+    /** 종류가 [types] 인 적립 줄(최신순) — 챌린지 기록 */
+    @Query("SELECT * FROM rewards WHERE type IN (:types) AND amount > 0 ORDER BY timestamp DESC, id DESC LIMIT :limit")
+    fun observeByTypes(types: List<String>, limit: Int): Flow<List<RewardEntity>>
+
     @Query("SELECT COUNT(*) FROM rewards WHERE type IN (:types)")
     fun observeCountByTypes(types: List<String>): Flow<Int>
 

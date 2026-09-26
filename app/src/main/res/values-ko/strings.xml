@@ -1723,5 +1723,19 @@ StepUp과 함께 달려보세요.</string>
     <string name="home_k1_week_empty">이번 주 러닝 기록이 아직 없어요</string>
     <string name="home_k1_records">기록 더보기</string>
     <string name="home_k1_records_title">상세 기록</string>
+    <string name="challenge_run">이 챌린지 달리기</string>
+    <string name="challenge_unit_steps">걸음</string>
+    <string name="challenge_unit_km">km</string>
+    <string name="challenge_rate">달성률</string>
+    <string name="challenge_left">남은 목표</string>
+    <string name="challenge_reward">보상</string>
+    <string name="challenge_run_expected">이번 러닝 포함 예상 · 러닝이 저장되면 확정돼요</string>
+    <string name="challenge_history_title">챌린지 기록</string>
+    <string name="challenge_history_current">진행 중인 챌린지</string>
+    <string name="challenge_history_done">완료</string>
+    <string name="challenge_history_goal_days">목표 달성일</string>
+    <string name="challenge_history_total">받은 보상</string>
+    <string name="challenge_history_empty">아직 완료한 챌린지가 없어요</string>
+    <string name="challenge_history_event">챌린지 보상</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

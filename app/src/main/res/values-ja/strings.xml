@@ -1724,5 +1724,19 @@ StepUp と走り出そう。</string>
     <string name="home_k1_week_empty">今週のラン記録はまだありません</string>
     <string name="home_k1_records">記録を見る</string>
     <string name="home_k1_records_title">詳細記録</string>
+    <string name="challenge_run">このチャレンジで走る</string>
+    <string name="challenge_unit_steps">歩</string>
+    <string name="challenge_unit_km">km</string>
+    <string name="challenge_rate">達成率</string>
+    <string name="challenge_left">残り</string>
+    <string name="challenge_reward">報酬</string>
+    <string name="challenge_run_expected">今回のランを含む予想・ラン保存後に確定</string>
+    <string name="challenge_history_title">チャレンジ記録</string>
+    <string name="challenge_history_current">進行中のチャレンジ</string>
+    <string name="challenge_history_done">完了</string>
+    <string name="challenge_history_goal_days">目標達成日</string>
+    <string name="challenge_history_total">獲得報酬</string>
+    <string name="challenge_history_empty">完了したチャレンジはまだありません</string>
+    <string name="challenge_history_event">チャレンジ報酬</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

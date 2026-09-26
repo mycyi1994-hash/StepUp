@@ -4,7 +4,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to neutral S2 black, made PillChip selection a white pill and AdaptiveNumber light numerals — seen in the Experience QA run 36236519563 profile/challenge/shoes captures; screens not listed as S2 keep their older layout apart from these shared parts. Earlier: shared DetailPage/FormPage primary actions and TwoWaySwitch tabs changed to S2 in PR #28; the Main header balance (SupPill) became text-only in PR #29 (home 430dp capture in Experience QA run 36234135671 reviewed); the run share bitmap became the S2 dark card in PR #29, rendered on device by ShareCardRenderTest (form-checks/share-card.png) — its first render (121a06c) showed the footer touching the time/pace values, fixed in the following commit and re-checked on the PR head run; rows not listed as S2 keep their older layout and evidence apart from those shared parts.
 
-37 registered navigation routes; 38 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
+38 registered navigation routes; 39 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -38,6 +38,7 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | Routes.SETTINGS_BODY | Profile | Detail | S2 batch G (PR #32): body info & goal settings; same steps as the first-run setup | S2SetupTest renders the setup flow (form-checks/setup-*.png); this settings route itself not in the capture set |
 | Routes.SETTINGS_MODE | Profile | Detail | S2 batch G (PR #32): Lite/Runner mode picker | S2SetupTest covers the mode step (form-checks/setup-3-mode.png); this settings route itself not in the capture set |
 | Routes.INVITE | Profile | Detail | S2 batch I (PR #32): invite code, share, invitees, code entry; reward wording only when the server amount > 0 | InviteScreenTest renders the content with reward 0 and 5 (form-checks/invite-*.png); live server calls not exercised on device |
+| Routes.CHALLENGE_HISTORY | Profile | Detail | K2 (user feedback 7): completed challenge rewards from the ledger (goal bonus · challenge rewards), link to current challenges | new; see PR evidence |
 | Routes.SNEAKER | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | Routes.LOBBY | Community | Detail | S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md | S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed |
 | Routes.SNEAKER_DEX | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |

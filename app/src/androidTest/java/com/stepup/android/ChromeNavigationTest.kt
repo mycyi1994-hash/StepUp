@@ -119,9 +119,14 @@ class ChromeNavigationTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("profile-settings").assertIsDisplayed()
                     assertEquals("settings Back returns to profile", logo, bounds("brand-wordmark"))
-                    compose.onNode(hasText(compose.activity.getString(R.string.home_shortcut_challenges)) and hasClickAction())
-                        .performScrollTo().performClick()
+                    // 내 정보의 챌린지는 기록(K2) — 거기서 진행 중인 챌린지로 간다
+                    compose.onNodeWithTag("profile-challenges").performScrollTo().performClick()
                     compose.waitForIdle()
+                    compose.onNodeWithTag("challenge-history-summary").assertIsDisplayed()
+                    capture("${next.width}-${next.font}-${next.mode}-challenge-history")
+                    compose.onNodeWithTag("detail-primary-action").performClick()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("challenge-hero").assertIsDisplayed()
                     compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed().assertHasClickAction()
                     (0..2).forEach { choice ->
                         compose.onNodeWithTag("challenge-choice-$choice").performScrollTo().performClick()
@@ -129,6 +134,8 @@ class ChromeNavigationTest {
                         compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed()
                         capture("${next.width}-${next.font}-${next.mode}-challenge-$choice")
                     }
+                    pressBack()
+                    compose.waitForIdle()
                     pressBack()
                     compose.waitForIdle()
                     assertEquals("challenge returns to profile chrome", bar, bounds(BOTTOM_NAV_TAG))

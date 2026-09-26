@@ -1723,5 +1723,19 @@
     <string name="home_k1_week_empty">本周还没有跑步记录</string>
     <string name="home_k1_records">更多记录</string>
     <string name="home_k1_records_title">详细记录</string>
+    <string name="challenge_run">为此挑战跑步</string>
+    <string name="challenge_unit_steps">步</string>
+    <string name="challenge_unit_km">公里</string>
+    <string name="challenge_rate">完成率</string>
+    <string name="challenge_left">剩余</string>
+    <string name="challenge_reward">奖励</string>
+    <string name="challenge_run_expected">含本次跑步（预估）· 保存后确认</string>
+    <string name="challenge_history_title">挑战记录</string>
+    <string name="challenge_history_current">进行中的挑战</string>
+    <string name="challenge_history_done">已完成</string>
+    <string name="challenge_history_goal_days">达标天数</string>
+    <string name="challenge_history_total">获得奖励</string>
+    <string name="challenge_history_empty">还没有完成的挑战</string>
+    <string name="challenge_history_event">挑战奖励</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

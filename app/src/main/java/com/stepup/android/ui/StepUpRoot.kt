@@ -198,6 +198,7 @@ object Routes {
     const val SETTINGS_BODY = "settings/body"
     const val SETTINGS_MODE = "settings/mode"
     const val INVITE = "invite"
+    const val CHALLENGE_HISTORY = "challenge-history"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
     const val RANKING = "ranking"
@@ -499,7 +500,13 @@ internal fun MainScaffold(
         ) {
             composable(Screen.Run.route) {
                 HomeScreen(
-                    onStartRun = { navController.navigate(Routes.RUN_NOW) },
+                    onStartRun = {
+                        // 홈에서 새로 시작하는 러닝은 챌린지와 묶지 않는다(달리던 러닝을 이어 가면 그대로 둔다)
+                        if (!com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        }
+                        navController.navigate(Routes.RUN_NOW)
+                    },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
@@ -692,6 +699,7 @@ internal fun MainScaffold(
                     onOpenBody = { navController.navigate(Routes.SETTINGS_BODY) },
                     onOpenMode = { navController.navigate(Routes.SETTINGS_MODE) },
                     onOpenInvite = { navController.navigate(Routes.INVITE) },
+                    onOpenChallengeHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                     // 내 아이템 — 신발 보관함(강화 · 판매 · 조합 · 도감)
                     onOpenItems = { navController.navigate(Routes.ITEMS) },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
@@ -761,6 +769,12 @@ internal fun MainScaffold(
             }
             composable(Routes.SETTINGS_BODY) {
                 com.stepup.android.ui.screens.setup.BodySettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.CHALLENGE_HISTORY) {
+                com.stepup.android.ui.screens.events.ChallengeHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
+                )
             }
             composable(Routes.INVITE) {
                 com.stepup.android.ui.screens.invite.InviteScreen(onBack = { navController.popBackStack() })

@@ -1725,5 +1725,19 @@ Start running with StepUp.</string>
     <string name="home_k1_week_empty">No runs yet this week</string>
     <string name="home_k1_records">Records</string>
     <string name="home_k1_records_title">Detailed records</string>
+    <string name="challenge_run">Run this challenge</string>
+    <string name="challenge_unit_steps">steps</string>
+    <string name="challenge_unit_km">km</string>
+    <string name="challenge_rate">Done</string>
+    <string name="challenge_left">To go</string>
+    <string name="challenge_reward">Reward</string>
+    <string name="challenge_run_expected">Includes this run (estimate) · confirmed after the run is saved</string>
+    <string name="challenge_history_title">Challenge history</string>
+    <string name="challenge_history_current">Current challenges</string>
+    <string name="challenge_history_done">Completed</string>
+    <string name="challenge_history_goal_days">Goal days</string>
+    <string name="challenge_history_total">Rewards</string>
+    <string name="challenge_history_empty">No completed challenges yet</string>
+    <string name="challenge_history_event">Challenge reward</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
