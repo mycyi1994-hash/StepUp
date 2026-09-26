@@ -931,3 +931,15 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Not added: permission-explainer and solo 3-2-1 countdown (new flows not in the current app).
 - Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets.
 
+## 2026-09-26 — S2 batch C: shoe detail, vault, dex, market
+
+- Sneaker detail and vault equipped card use the S2 hero (kicker, name, mint/level, tilted plate, one-line real stats). Dex progress and market model hero/quote row follow S2. PillChip selected = white pill. S2ShoeStage shared.
+- No new stats or prices invented; enhance/repair/sell/buy/bid flows unchanged.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: Experience QA run 36236519563 on 148d684 — shoes tab, profile and challenge captures reviewed; sneaker detail, dex, market model and wallet are not in the PR capture set (see STATUS).
+
+## 2026-09-26 — S2 batch D (same PR): neutral dark surfaces, wallet, light numerals
+
+- Dark carbon/carbonHigh/edge/card gradient move to S2 neutral black (PaletteContrastTest passes); overlay unchanged.
+- Wallet hero: kicker, light big balance (rounded down), tagline, earned | spent row. AdaptiveNumber uses light Pretendard numerals.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: Experience QA run 36236519563 on 148d684 — shoes tab, profile and challenge captures reviewed; sneaker detail, dex, market model and wallet are not in the PR capture set (see STATUS).
+

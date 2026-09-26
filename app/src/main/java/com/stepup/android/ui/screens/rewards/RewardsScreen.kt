@@ -91,9 +91,24 @@ fun WalletScreen(
     com.stepup.android.ui.components.DetailPage(
         title = stringResource(R.string.settings_wallet), onBack = onBack,
     ) {
-        item { BalanceHero(totals?.balance) }
-
-        item { SummaryRow(earned = totals?.earned, spent = totals?.spent) }
+        // S2 — 파란 한 줄 → 가는 큰 잔액(내림) → 안내 → 번 SUP | 쓴 SUP
+        item {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                com.stepup.android.ui.components.S2Kicker(stringResource(R.string.wallet_balance))
+                com.stepup.android.ui.components.S2Number(
+                    totals?.balance?.let { formatSupDown(it, 2) } ?: "—", 64.sp,
+                    Modifier.padding(top = 10.dp, bottom = 2.dp),
+                )
+                Text("SUP", color = Silver, fontSize = 14.sp)
+                Spacer(Modifier.size(10.dp))
+                com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.wallet_tagline))
+                Spacer(Modifier.size(18.dp))
+                com.stepup.android.ui.components.S2Stats(listOf(
+                    stringResource(R.string.wallet_earned) to (totals?.earned?.let { "+%,.2f".format(it) } ?: "—"),
+                    stringResource(R.string.wallet_spent) to (totals?.spent?.let { if (it == 0.0) "0.00" else "-%,.2f".format(it) } ?: "—"),
+                ), valueSize = 22.sp)
+            }
+        }
 
         item {
             Row(
@@ -165,116 +180,6 @@ fun WalletScreen(
                 },
             )
         }
-    }
-}
-
-/** 잔액 히어로 — 볼트 플레이트 + 헥사곤 워터마크 + sheen */
-@Composable
-@OptIn(ExperimentalLayoutApi::class)
-private fun BalanceHero(balance: Double?) {
-    val shape = RoundedCornerShape(26.dp)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(VoltPlate, shape)
-            ,
-    ) {
-        Canvas(Modifier.matchParentSize()) {
-            val cx = size.width * 0.85f
-            val cy = size.height * 0.35f
-            repeat(3) { i ->
-                drawCircle(
-                    color = OnVolt.copy(alpha = 0.10f),
-                    radius = size.minDimension * (0.35f + i * 0.22f),
-                    center = Offset(cx, cy),
-                    style = Stroke(width = 2f),
-                )
-            }
-        }
-        Column(
-            modifier = Modifier.padding(22.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = stringResource(R.string.wallet_balance),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = OnVolt,
-                    )
-                    Text(
-                        text = stringResource(R.string.wallet_tagline),
-                        fontSize = 14.sp,
-                        color = OnVolt,
-                    )
-                }
-                HexEmblem(size = 30.dp, glow = false)
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    // 내림 — 올려 보이면 가진 것보다 많아 보인다
-                    text = balance?.let {
-                        formatSupDown(it, 2)
-                    } ?: "—",
-                    modifier = Modifier.alignByBaseline(),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-1.5).sp,
-                    color = OnVolt,
-                )
-                Text(
-                    text = "SUP",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = OnVolt,
-                    modifier = Modifier.alignByBaseline(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryRow(earned: Double?, spent: Double?) {
-    GlowCard(contentPadding = PaddingValues(vertical = 17.dp, horizontal = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SummaryCell(
-                label = stringResource(R.string.wallet_earned),
-                value = earned?.let { "+%,.2f".format(it) } ?: "—",
-                tint = Volt,
-            )
-            VerticalHairline(height = 38.dp)
-            SummaryCell(
-                label = stringResource(R.string.wallet_spent),
-                value = spent?.let { if (it == 0.0) "0.00" else "-%,.2f".format(it) } ?: "—",
-                tint = if (spent != null && spent > 0.0) Alert else Silver,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RowScope.SummaryCell(label: String, value: String, tint: Color) {
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
-        Text(value, fontSize = 24.sp, fontFamily = com.stepup.android.ui.theme.StepUpNumbers, fontWeight = FontWeight.Bold, color = tint)
     }
 }
 

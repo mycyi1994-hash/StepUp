@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.items
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.fullLabel
 import com.stepup.android.ui.components.variantLabel
+import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.StatBar
 import com.stepup.android.ui.components.tint
 import com.stepup.android.ui.theme.Silver
@@ -116,49 +118,34 @@ fun SneakerDetailScreen(
             return@DetailPage
         }
 
-        // 히어로
+        // S2 머리 — 계열 · 등급 → 이름 → 민팅 번호 · 레벨 → 기울인 파란 면 위 신발 → 능력치 한 줄
         item {
-            GlowCard(accent = true, contentPadding = PaddingValues(20.dp), spacing = 13.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FactionChip(sneaker.faction)
-                        RarityChip(sneaker.rarity)
-                    }
-                    Text(
-                        text = stringResource(R.string.sneaker_mint_no, sneaker.mintNumber),
-                        fontSize = 14.sp,
-                        color = Slate,
-                    )
-                }
-                SneakerFrame(
-                    sneaker = sneaker,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    corner = 18.dp,
-                    animate = true,
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                com.stepup.android.ui.components.S2Kicker(sneaker.faction.label() + " · " + sneaker.rarity.label())
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.S2Headline(sneaker.variantLabel())
+                Spacer(Modifier.height(8.dp))
+                com.stepup.android.ui.components.S2Subtitle(
+                    stringResource(R.string.sneaker_mint_no, sneaker.mintNumber) + " · " +
+                        stringResource(R.string.level_chip, sneaker.level) + " · " + stringResource(R.string.items_owned),
                 )
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Text(
-                        text = sneaker.variantLabel(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Snow,
-                    )
-                    Text(
-                        text = stringResource(R.string.level_chip, sneaker.level) +
-                            " · " + stringResource(R.string.items_owned),
-                        fontSize = 14.sp,
-                        color = Silver,
-                    )
-                }
+                Spacer(Modifier.height(16.dp))
+                com.stepup.android.ui.components.S2ShoeStage(sneaker, Modifier.fillMaxWidth(0.9f), animate = true)
+                Spacer(Modifier.height(16.dp))
+                // 실제로 가진 능력치만 — 시안의 효율 · 행운 · 편안 · 내구 네 칸을 새로 만들지 않는다
+                val server = sneaker.server
+                com.stepup.android.ui.components.S2Stats(
+                    if (server != null) listOf(
+                        stringResource(R.string.stat_efficiency) to "+%.1f%%".format(server.efficiencyBps / 100.0),
+                        stringResource(R.string.stat_comfort) to "%.1f%%".format(server.comfortBps / 100.0),
+                        stringResource(R.string.sneaker_durability) to "%.0f".format(server.durabilityPts),
+                    ) else listOf(
+                        stringResource(R.string.sneaker_earning) to "+%.1f%%".format(sneaker.boostPercent),
+                        stringResource(R.string.stat_luck) to "%.2f".format(sneaker.luck),
+                        stringResource(R.string.sneaker_durability) to "${sneaker.durability}",
+                    ),
+                    valueSize = 22.sp,
+                )
             }
         }
 

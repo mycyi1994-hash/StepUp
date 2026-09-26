@@ -14,9 +14,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpNumbers
+import com.stepup.android.ui.theme.StepUpSans
+import androidx.compose.ui.unit.em
 
-/** Keep a complete timer or amount on one line; respect font scaling until width runs out. */
+/** Keep a complete timer or amount on one line; respect font scaling until width runs out. S2 light numerals. */
 @Composable
 fun AdaptiveNumber(
     text: String,
@@ -26,7 +27,11 @@ fun AdaptiveNumber(
     textAlign: TextAlign = TextAlign.Start,
 ) {
     val measurer = rememberTextMeasurer()
-    val style = TextStyle(fontFamily = StepUpNumbers, fontSize = fontSize, fontWeight = FontWeight.ExtraBold)
+    // S2 — 큰 숫자는 가는 글꼴로 크게. 폭이 모자라면 줄이는 규칙은 그대로다.
+    val style = TextStyle(
+        fontFamily = StepUpSans, fontSize = fontSize, fontWeight = FontWeight.Normal,
+        letterSpacing = (-0.03).em, fontFeatureSettings = "tnum",
+    )
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val availableWidth = constraints.maxWidth
         val fittedSize = remember(text, style, measurer, availableWidth) {

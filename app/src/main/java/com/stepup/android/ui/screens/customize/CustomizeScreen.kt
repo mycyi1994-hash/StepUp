@@ -98,7 +98,7 @@ fun CustomizeScreen(
                         S2Subtitle(stringResource(R.string.sneaker_mint_no, selected.mintNumber) + " · " +
                             stringResource(R.string.level_chip, selected.level))
                         Spacer(Modifier.height(18.dp))
-                        ShoeStage(selected, Modifier.fillMaxWidth(if (columns == 1) 1f else 0.86f))
+                        S2ShoeStage(selected, Modifier.fillMaxWidth(if (columns == 1) 1f else 0.86f))
                         TextButton(onClick = { onOpenSneaker(selected.id) },
                             modifier = Modifier.heightIn(min = StepUpDesign.TouchTarget).testTag("shoe-detail")) {
                             Text(stringResource(R.string.shoes_details), color = Silver)
@@ -139,22 +139,6 @@ fun CustomizeScreen(
                 Spacer(Modifier.width(88.dp))
             }
         }
-    }
-}
-
-/** S2 신발 무대 — 기울인 파란 면 위에 신발 그림. 그림은 기존 신발 자산 그대로다. */
-@Composable
-private fun ShoeStage(shoe: Sneaker, modifier: Modifier = Modifier) {
-    Box(modifier.aspectRatio(312f / 214f), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 8.dp)
-                .graphicsLayer { rotationZ = -8f }
-                .background(
-                    if (StepUpColors.dark) androidx.compose.ui.graphics.Color(0xFF294B9C) else CarbonHigh,
-                    RoundedCornerShape(4.dp),
-                ),
-        )
-        SneakerFrame(shoe, Modifier.fillMaxWidth(0.84f).fillMaxHeight(0.86f).graphicsLayer { rotationZ = -7f })
     }
 }
 

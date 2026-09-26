@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.Alignment
+import com.stepup.android.ui.components.label
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -103,12 +106,18 @@ fun MarketModelScreen(
     }
 
     DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
+        // S2 머리 — 계열 · 등급 → 모델 이름 → 기울인 파란 면 위 신발
         item {
-            SneakerFrame(
-                sneaker = previewSneaker(faction, rarity, variant),
-                modifier = Modifier.fillMaxWidth().height(220.dp),
-                corner = 24.dp,
-            )
+            val preview = previewSneaker(faction, rarity, variant)
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                com.stepup.android.ui.components.S2Kicker(
+                    preview.faction.label() + " · " + preview.rarity.label(),
+                )
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.S2Headline(modelName(faction, rarity, variant))
+                Spacer(Modifier.height(16.dp))
+                com.stepup.android.ui.components.S2ShoeStage(preview, Modifier.fillMaxWidth(0.86f))
+            }
         }
 
         message?.let { note ->
@@ -136,12 +145,12 @@ fun MarketModelScreen(
         // ── 시세 ──
         item {
             GlowCard(contentPadding = MarketCardPadding, spacing = 12.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    PriceCell(stringResource(R.string.market_ask), state.quote?.ask,
-                        Modifier.fillMaxWidth(), accent = true)
-                    PriceCell(stringResource(R.string.market_bid), state.quote?.bid, Modifier.fillMaxWidth())
-                    PriceCell(stringResource(R.string.market_last), state.quote?.lastPrice, Modifier.fillMaxWidth())
-                }
+                // S2 — 판매가 | 구매가 | 최근 거래가 한 줄. 값이 없으면 "—"
+                com.stepup.android.ui.components.S2Stats(listOf(
+                    stringResource(R.string.market_ask) to (state.quote?.ask?.let { formatSup(it) } ?: "—"),
+                    stringResource(R.string.market_bid) to (state.quote?.bid?.let { formatSup(it) } ?: "—"),
+                    stringResource(R.string.market_last) to (state.quote?.lastPrice?.let { formatSup(it) } ?: "—"),
+                ), valueSize = 20.sp)
                 Text(
                     text = stringResource(
                         R.string.market_quote_note,

@@ -184,9 +184,10 @@ val DarkPalette = StepUpPalette(
     // 보조글 #A8BDD9.
     // S2 무대(docs/redesign/s2) — 푸른 기가 도는 검정 #05080E
     night = Color(0xFF05080E),
-    carbon = Color(0xFF0B1D35),
-    carbonHigh = Color(0xFF0F2542),
-    edge = Color(0xFF1A3B61),
+    // S2 — 카드 · 칩 · 경계를 푸른 남색에서 무채색에 가까운 검정으로. 파랑은 강조에만 남긴다.
+    carbon = Color(0xFF0C111C),
+    carbonHigh = Color(0xFF131A27),
+    edge = Color(0xFF1F2837),
     // 브랜드 강조색. 흰 글자를 얹는 공통 버튼 면은 voltPlate에서 별도로 정한다.
     volt = Color(0xFF1478FF),
     voltDeep = Color(0xFF0B5BD6),
@@ -204,8 +205,8 @@ val DarkPalette = StepUpPalette(
     // 어두운 표면 위의 파란 글자. volt 그대로면 4.3:1 로 작은 글자에 모자란다.
     voltText = Color(0xFF5AA7FF),
     cyan = Color(0xFF24D8FF),
-    cardTop = Color(0xFF0D2140),
-    cardBottom = Color(0xFF0A1A30),
+    cardTop = Color(0xFF0F1522),
+    cardBottom = Color(0xFF0B1019),
     backdropTop = Color(0xFF060C18),
     backdropBottom = Color(0xFF05080E),
     // 밝은 타일을 뒤집어 어두운 지도로 만든다. 채도를 낮춰 도로가 회색 계열로만
