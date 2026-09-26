@@ -189,18 +189,19 @@ fun RunScreen(
     }
     // S2 — 시작 전에 권한 안내(시안 23), 이어서 3-2-1(시안 24). 둘 다 이 화면 위에 덮인다.
     val primerSeen by viewModel.permissionPrimerSeen.collectAsStateWithLifecycle()
-    val requestStart = {
+    val requestStartWith = { seen: Boolean ->
         val missing = StepPermissions.missing(context)
         when {
             missing.isEmpty() -> countingDown = true
             // 걸음 권한이 없으면 매번, 나머지(위치 · 알림)만 없으면 처음 한 번만 설명한다
-            !StepPermissions.hasActivityRecognition(context) || !primerSeen -> {
+            !StepPermissions.hasActivityRecognition(context) || !seen -> {
                 showPrimer = true
                 viewModel.markPermissionPrimerSeen()
             }
             else -> permissionLauncher.launch(missing)
         }
     }
+    val requestStart = { requestStartWith(primerSeen) }
 
     // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
     // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
@@ -210,7 +211,8 @@ fun RunScreen(
             autoStartDone = true
             if (!WalkSessionService.state.value.isActive) {
                 viewModel.clearReward()
-                requestStart()
+                // 화면이 막 열려 저장된 "안내 봤음"을 아직 못 읽었을 수 있다 — 읽은 뒤에 정한다
+                requestStartWith(viewModel.permissionPrimerSeenNow())
             }
         }
     }
@@ -372,9 +374,11 @@ fun RunScreen(
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
                     // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
-                    if (session.isActive && locationAllowed && !session.gpsFix) {
+                    // 대략적인 위치만 허용하면 기지국 점이 들어와 "잡힘"으로 보여도 경로 · 거리가 수 km 단위로 뭉개진다 —
+                    // 그래서 그 안내는 위치가 잡혔어도 보인다
+                    if (session.isActive && locationAllowed && (!session.gpsFix || !session.precise)) {
                         when {
-                            !session.locationOn -> LocationHint(
+                            !session.locationOn && !session.gpsFix -> LocationHint(
                                 stringResource(R.string.run_location_off_hint),
                                 stringResource(R.string.run_location_off_action),
                                 tag = "run-location-off",
@@ -425,7 +429,12 @@ fun RunScreen(
                     }
                     // 챌린지 상세에서 "이 챌린지 달리기"로 시작했으면 그 챌린지의 예상 진행(사용 피드백 9)
                     val challenge by com.stepup.android.ui.screens.events.ChallengeRunFocus.current.collectAsStateWithLifecycle()
-                    val focus = challenge
+                    LaunchedEffect(session.isActive, session.startedAt) {
+                        if (session.isActive) com.stepup.android.ui.screens.events.ChallengeRunFocus.bind(session.startedAt)
+                    }
+                    val focus = challenge?.takeIf {
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.matches(session.startedAt)
+                    }
                     if (focus != null && session.isActive) {
                         Spacer(Modifier.height(12.dp))
                         ChallengeRunStrip(focus, focus.expected(session.steps, distanceKm, session.startedAt))
@@ -1313,7 +1322,8 @@ private fun FinishCard(
         Text(stringResource(R.string.run_s2_result_sup), color = Silver, fontSize = 13.sp)
         com.stepup.android.ui.components.S2Number(
             text = when {
-                confirmed && points != null -> "+%,.0f".format(points)
+                // 서버가 확인한 금액 — 반올림하면 받은 것보다 크게 보인다(3.6 → +4)
+                confirmed && points != null -> "+" + com.stepup.android.ui.components.formatSupDown(points, 2)
                 rejected -> "0"
                 else -> "—"
             },

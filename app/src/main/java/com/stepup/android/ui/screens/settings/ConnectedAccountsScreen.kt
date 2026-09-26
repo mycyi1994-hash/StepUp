@@ -96,6 +96,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                                 ServiceLocator.userPrefs.setLoginMethod("")
                                 // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
                                 ServiceLocator.economySync.clearLocal()
+                                // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
+                                ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                                 confirming = false
                             } else {
                                 failed = true

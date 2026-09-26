@@ -104,8 +104,9 @@ fun WalletScreen(
                 com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.wallet_tagline))
                 Spacer(Modifier.size(18.dp))
                 com.stepup.android.ui.components.S2Stats(listOf(
-                    stringResource(R.string.wallet_earned) to (totals?.earned?.let { "+%,.2f".format(it) } ?: "—"),
-                    stringResource(R.string.wallet_spent) to (totals?.spent?.let { if (it == 0.0) "0.00" else "-%,.2f".format(it) } ?: "—"),
+                    // 원장은 소수 4자리 — 잔액처럼 내림으로 보인다(받은 것보다 크게 보이지 않게)
+                    stringResource(R.string.wallet_earned) to (totals?.earned?.let { "+" + formatSupDown(it, 2) } ?: "—"),
+                    stringResource(R.string.wallet_spent) to (totals?.spent?.let { if (it == 0.0) "0.00" else "-" + formatSupDown(it, 2) } ?: "—"),
                 ), valueSize = 22.sp)
             }
         }

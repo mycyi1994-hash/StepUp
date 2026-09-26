@@ -288,6 +288,8 @@ fun StepUpRoot() {
             else -> MainScaffold(startTour = guideSeen == false)
         }
         }
+        // 테스트 APK 새 버전 알림 — 스플래시가 끝난 뒤에만(debug 빌드 · 테스트 중이 아닐 때)
+        if (stage != 0) com.stepup.android.ui.components.TestUpdatePrompt()
     }
 }
 
@@ -539,6 +541,8 @@ internal fun MainScaffold(
                         com.stepup.android.ui.screens.items.ItemsMessage.NoFreeDraws -> R.string.toast_no_free_draws
                         com.stepup.android.ui.screens.items.ItemsMessage.SignInRequired -> R.string.toast_sign_in_required
                         com.stepup.android.ui.screens.items.ItemsMessage.Offline -> R.string.toast_offline
+                        // 뽑기는 됐다 — 실패라고 하면 다시 눌러 한 번 더 뽑는다
+                        com.stepup.android.ui.screens.items.ItemsMessage.DrawnRefreshing -> R.string.toast_drawn_refreshing
                         else -> R.string.feed_save_failed
                     }
                     android.widget.Toast.makeText(context, context.getString(text), android.widget.Toast.LENGTH_SHORT).show()
@@ -809,7 +813,11 @@ internal fun MainScaffold(
                 PartyLobbyScreen(
                     crewId = entry.arguments?.getString("crewId").orEmpty(),
                     onBack = { navController.popBackStack() },
-                    onRunStarted = { navController.navigate(Routes.RUN) },
+                    onRunStarted = {
+                        // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        navController.navigate(Routes.RUN)
+                    },
                 )
             }
             composable(Routes.SNEAKER_DEX) {
@@ -860,7 +868,11 @@ internal fun MainScaffold(
                 PartyLobbyScreen(
                     flashPostId = entry.arguments?.getLong("postId") ?: 0L,
                     onBack = { navController.popBackStack() },
-                    onRunStarted = { navController.navigate(Routes.RUN) },
+                    onRunStarted = {
+                        // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        navController.navigate(Routes.RUN)
+                    },
                 )
             }
             composable(

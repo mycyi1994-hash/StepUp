@@ -20,6 +20,7 @@ import com.stepup.android.service.RunLap
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -118,6 +119,10 @@ class WalkViewModel(
     /** 러닝 권한 안내를 이미 봤는지 */
     val permissionPrimerSeen: StateFlow<Boolean> = ServiceLocator.userPrefs.runPermissionPrimerSeen
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** 저장된 값을 읽어서 — 화면이 막 열려 [permissionPrimerSeen] 이 아직 기본값일 때 */
+    suspend fun permissionPrimerSeenNow(): Boolean =
+        ServiceLocator.userPrefs.runPermissionPrimerSeen.first()
 
     fun markPermissionPrimerSeen() {
         viewModelScope.launch { ServiceLocator.userPrefs.setRunPermissionPrimerSeen() }

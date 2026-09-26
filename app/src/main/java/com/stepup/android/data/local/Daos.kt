@@ -122,6 +122,8 @@ interface WalkSessionDao {
 /** [WalkSessionDao.crewDistances] 의 한 줄 — 크루 하나의 누적 거리(m)와 횟수 */
 data class RunTotals(val runs: Int, val meters: Double)
 
+data class RewardTypeTotals(val count: Int, val total: Double)
+
 data class CrewDistance(
     val crewId: String,
     val meters: Double,
@@ -185,6 +187,10 @@ interface RewardDao {
 
     @Query("SELECT COUNT(*) FROM rewards WHERE type IN (:types)")
     fun observeCountByTypes(types: List<String>): Flow<Int>
+
+    /** 종류가 [types] 인 적립 전체의 건수 · 합 — 목록은 잘라 보여도 요약은 전부로 */
+    @Query("SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0.0) AS total FROM rewards WHERE type IN (:types) AND amount > 0")
+    fun observeTotalsByTypes(types: List<String>): Flow<RewardTypeTotals>
 
     /** 지금까지 번 SUP — [observeTotals] 의 earned 와 같은 종류만 */
     @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0 AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE', 'EARN_INVITE')")

@@ -29,6 +29,19 @@ val releaseSigningReady =
         releaseKeyPassword != null &&
         file(releaseStorePath).exists()
 
+// 테스트 APK 새 버전 알림에 쓰는 빌드 표시 — 이 빌드가 만들어진 커밋과 그 커밋 시각(초).
+// 앱은 test-apk 릴리스의 StepUp-test.json 과 커밋 시각을 비교해 더 새 빌드가 있으면 알린다.
+// git 을 못 읽으면 0 — 그 빌드는 새 버전 알림을 끈다.
+fun gitOutput(vararg args: String): String? = runCatching {
+    providers.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim().takeIf { it.isNotEmpty() }
+}.getOrNull()
+
+val buildCommitTime = gitOutput("log", "-1", "--format=%ct")?.toLongOrNull() ?: 0L
+val buildCommit = gitOutput("rev-parse", "--short=7", "HEAD") ?: ""
+
 android {
     namespace = "com.stepup.android"
     compileSdk = 35
@@ -90,6 +103,10 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        buildConfigField("long", "BUILD_COMMIT_TIME", "${buildCommitTime}L")
+        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+        // 테스트 APK(debug) 에서만 새 버전을 스스로 받아 설치 화면을 연다. 스토어 빌드에는 없다.
+        buildConfigField("boolean", "SELF_UPDATE", "false")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -127,6 +144,7 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
         }
         release {
             // R8을 지금부터 켜 둔다. 출시 직전에 켜면 그때 처음 보는 난독화

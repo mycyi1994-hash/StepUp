@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** SUP 포인트 원장, 에너지, 세션 정산을 관리한다. */
+private val CHALLENGE_TYPES = listOf(RewardType.BONUS_GOAL, RewardType.EARN_EVENT)
+
 class RewardRepository(
     private val rewardDao: RewardDao,
     private val sneakerDao: SneakerDao,
@@ -51,7 +53,14 @@ class RewardRepository(
 
     /** 챌린지로 받은 적립 — 일일 목표 보너스와 도전 보상(원장에 적힌 것만) */
     fun challengeRewards(limit: Int = 200): Flow<List<RewardEntity>> =
-        rewardDao.observeByTypes(listOf(RewardType.BONUS_GOAL, RewardType.EARN_EVENT), limit)
+        rewardDao.observeByTypes(CHALLENGE_TYPES, limit)
+
+    /** 챌린지 적립 전체의 건수 · 합(목록 한도와 무관) */
+    fun challengeTotals(): Flow<com.stepup.android.data.local.RewardTypeTotals> =
+        rewardDao.observeTotalsByTypes(CHALLENGE_TYPES)
+
+    /** 일일 목표를 채운 날 수(목표 보너스 줄 수) */
+    fun goalDays(): Flow<Int> = rewardDao.observeTotalsByTypes(listOf(RewardType.BONUS_GOAL)).map { it.count }
 
     /** [fromMillis] 이후 러닝·보너스·이벤트로 번 SUP. 거래 대금은 빠진다. */
     fun earnedSince(fromMillis: Long): Flow<Double> = rewardDao.observeEarnedSince(fromMillis)

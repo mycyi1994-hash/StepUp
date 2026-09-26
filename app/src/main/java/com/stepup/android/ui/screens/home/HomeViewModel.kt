@@ -17,7 +17,12 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunnerLevels
 import com.stepup.android.domain.RunnerProgress
 import com.stepup.android.domain.Sneaker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -25,6 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import java.time.ZoneId
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     private val stepRepository: StepRepository,
     rewardRepository: RewardRepository,
@@ -34,9 +40,24 @@ class HomeViewModel(
     avatarRepository: AvatarRepository,
 ) : ViewModel() {
 
-    /** 오늘 0시(기기 시간대). 오늘 번 포인트와 오늘 운동 시간의 기준이다. */
-    private val startOfToday: Long =
-        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    /**
+     * 오늘 날짜(기기 시간대). 1분마다 보고 바뀌면 다시 낸다.
+     *
+     * 기준 시각을 화면을 만들 때 한 번만 정하면, 앱을 켜 둔 채 자정을 넘겼을 때
+     * "오늘 번 SUP"에 어제 것이 섞이고 월요일에도 지난주가 "이번 주"로 남는다.
+     */
+    private val today: Flow<LocalDate> = flow {
+        while (true) {
+            emit(LocalDate.now())
+            delay(60_000)
+        }
+    }.distinctUntilChanged()
+
+    private fun startOf(day: LocalDate): Long = day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    /** 이번 주 월요일 0시(기기 시간대) — 홈의 "이번 주" 요약 기준 */
+    private fun startOfWeek(day: LocalDate): Long =
+        startOf(day.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)))
 
     /**
      * 오늘 러닝·목표 보너스·이벤트로 번 SUP.
@@ -44,27 +65,23 @@ class HomeViewModel(
      * 원장에서 아직 못 읽었으면 null 이다. 0 으로 두면 앱을 켜자마자 잠깐
      * "오늘 0 SUP"가 보였다가 바뀌는데, 그 순간에는 정말 못 번 것처럼 읽힌다.
      */
-    val todayEarned: StateFlow<Double?> = rewardRepository.earnedSince(startOfToday)
+    val todayEarned: StateFlow<Double?> = today.flatMapLatest { rewardRepository.earnedSince(startOf(it)) }
         .map<Double, Double?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** 이번 주 월요일 0시(기기 시간대) — 홈의 "이번 주" 요약 기준 */
-    private val startOfWeek: Long = LocalDate.now()
-        .with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
-        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
     /** 이번 주 러닝 수 · 거리. 읽기 전에는 null */
-    val weekRuns: StateFlow<com.stepup.android.data.local.RunTotals?> = stepRepository.observeRunTotalsSince(startOfWeek)
-        .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val weekRuns: StateFlow<com.stepup.android.data.local.RunTotals?> =
+        today.flatMapLatest { stepRepository.observeRunTotalsSince(startOfWeek(it)) }
+            .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 이번 주 번 SUP(원장 기준). 읽기 전에는 null */
-    val weekEarned: StateFlow<Double?> = rewardRepository.earnedSince(startOfWeek)
+    val weekEarned: StateFlow<Double?> = today.flatMapLatest { rewardRepository.earnedSince(startOfWeek(it)) }
         .map<Double, Double?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
-    val todayRunSec: StateFlow<Long> = stepRepository.observeDurationSince(startOfToday)
+    val todayRunSec: StateFlow<Long> = today.flatMapLatest { stepRepository.observeDurationSince(startOf(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
 
     /** 캐릭터가 지금 입고 있는 것 — 꾸미기 · 내 정보와 같은 값 */
