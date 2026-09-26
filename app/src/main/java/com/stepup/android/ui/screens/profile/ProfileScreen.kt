@@ -149,6 +149,7 @@ fun ProfileScreen(
     onOpenBody: () -> Unit = {},
     onOpenMode: () -> Unit = {},
     onOpenInvite: () -> Unit = {},
+    onOpenChallengeHistory: () -> Unit = {},
     onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -332,7 +333,8 @@ fun ProfileScreen(
                     },
                     end = {
                         com.stepup.android.ui.components.S2SideInfo(
-                            stringResource(R.string.home_shortcut_challenges), end = true, onClick = onOpenChallenges,
+                            // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7). 지금 하는 챌린지는 러닝 홈에서 연다.
+                            stringResource(R.string.challenge_history_title), end = true, onClick = onOpenChallengeHistory,
                             modifier = Modifier.testTag("profile-challenges"),
                         )
                     },

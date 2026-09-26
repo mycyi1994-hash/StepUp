@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -173,26 +174,30 @@ fun EventsScreen(
         contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // 사용 피드백 8 — 큰 그림 대신 진행량 / 목표 / 달성률 / 남은 양 / 보상을 맨 위에
         item {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(when (selected) {
-                        1 -> R.string.event_step_surge
-                        2 -> R.string.event_night_quest
-                        else -> R.string.challenge_daily_title
-                    }),
-                    fontSize = 29.sp, fontWeight = FontWeight.Black, color = Snow,
+            val d = daily
+            when (selected) {
+                0 -> ChallengeHero(
+                    tag = stringResource(R.string.challenge_tag_daily),
+                    title = stringResource(R.string.challenge_daily_title),
+                    current = d?.steps?.toDouble(), target = d?.goal?.toDouble(),
+                    reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
+                    km = false,
                 )
-
+                1 -> ChallengeHero(
+                    tag = stringResource(R.string.challenge_tag_weekly),
+                    title = stringResource(R.string.event_step_surge),
+                    current = weekSteps?.toDouble(), target = Events.STEP_SURGE.target,
+                    reward = Events.STEP_SURGE.reward, km = false,
+                )
+                else -> ChallengeHero(
+                    tag = stringResource(R.string.tag_limited),
+                    title = stringResource(R.string.event_night_quest),
+                    current = nightKm, target = Events.NIGHT_QUEST.target,
+                    reward = Events.NIGHT_QUEST.reward, km = true,
+                )
             }
-        }
-
-        item {
-            com.stepup.android.ui.components.RunnerBanner(
-                Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(20.dp)),
-                setting = if (selected == 2) com.stepup.android.ui.components.RunnerSetting.HomeBlueNight
-                    else com.stepup.android.ui.components.RunnerSetting.HomeDawn,
-            )
         }
 
         // ── 일일 — 걸음 목표. 달성하면 보너스가 저절로 들어온다 ──
@@ -254,15 +259,26 @@ fun EventsScreen(
 
     }
             PrimaryCta(
+                // 사용 피드백 9 — 러닝 홈의 "러닝 시작"과 구분: 이 챌린지를 향해 달린다
                 text = stringResource(when {
                     claimingId != null -> R.string.challenge_state_settling
                     canClaim -> R.string.events_claim
-                    else -> R.string.home_start_run
+                    else -> R.string.challenge_run
                 }),
                 icon = if (canClaim) null else Icons.AutoMirrored.Filled.DirectionsRun,
                 enabled = claimingId == null,
                 onClick = {
-                    if (canClaim) viewModel.claim(selectedEvent!!, selectedFraction!!) else onStartRun()
+                    if (canClaim) viewModel.claim(selectedEvent!!, selectedFraction!!) else {
+                        val d = daily
+                        val focus = when (selected) {
+                            0 -> d?.let { ChallengeFocus(ChallengeKind.DAILY, it.steps.toDouble(), it.goal.toDouble()) }
+                            1 -> weekSteps?.let { ChallengeFocus(ChallengeKind.WEEKLY, it.toDouble(), Events.STEP_SURGE.target) }
+                            else -> nightKm?.let { ChallengeFocus(ChallengeKind.NIGHT, it, Events.NIGHT_QUEST.target) }
+                        }
+                        // 진행값을 아직 못 읽었으면 러닝 화면에 예상 진행을 보이지 않는다(모르는 값을 0으로 꾸미지 않게)
+                        if (focus != null) ChallengeRunFocus.set(focus) else ChallengeRunFocus.clear()
+                        onStartRun()
+                    }
                 },
                 modifier = Modifier.padding(vertical = 12.dp).testTag("challenge-primary-action"),
             )
@@ -413,3 +429,35 @@ private fun InviteDialog(
 
 /** 초대 문구 길이 상한. 문자 메시지 한 통에 들어가는 정도. */
 private const val INVITE_MAX = 300
+
+/** 챌린지 상세 맨 위 — 진행량 / 목표, 막대, 달성률 · 남은 양 · 보상 */
+@Composable
+private fun ChallengeHero(tag: String, title: String, current: Double?, target: Double?, reward: Double, km: Boolean) {
+    fun fmt(v: Double) = if (km) "%.1f".format(v) else "%,d".format(v.toLong())
+    val unit = stringResource(if (km) R.string.challenge_unit_km else R.string.challenge_unit_steps)
+    val fraction = if (current != null && target != null && target > 0) (current / target).coerceIn(0.0, 1.0) else null
+    Column(Modifier.fillMaxWidth().testTag("challenge-hero"), horizontalAlignment = Alignment.CenterHorizontally) {
+        com.stepup.android.ui.components.S2Kicker(tag)
+        Spacer(Modifier.height(8.dp))
+        com.stepup.android.ui.components.S2Headline(title)
+        Spacer(Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
+            Text(current?.let { fmt(it) } ?: "—", color = Snow, fontSize = 44.sp,
+                modifier = Modifier.testTag("challenge-current"))
+            Text(" / " + (target?.let { fmt(it) } ?: "—") + " " + unit, color = Silver, fontSize = 15.sp,
+                modifier = Modifier.padding(bottom = 8.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        com.stepup.android.ui.components.BarMeter(fraction = fraction?.toFloat() ?: 0f, height = 6.dp)
+        Spacer(Modifier.height(14.dp))
+        com.stepup.android.ui.components.S2Stats(
+            listOf(
+                stringResource(R.string.challenge_rate) to (fraction?.let { "${(it * 100).toInt()}%" } ?: "—"),
+                stringResource(R.string.challenge_left) to
+                    (if (current != null && target != null) fmt((target - current).coerceAtLeast(0.0)) + " " + unit else "—"),
+                stringResource(R.string.challenge_reward) to "+%,.0f SUP".format(reward),
+            ),
+            valueSize = 18.sp,
+        )
+    }
+}

@@ -65,6 +65,10 @@ interface WalkSessionDao {
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis AND recordingOwner IN (:owner, 'legacy')")
     fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long>
 
+    /** 지금 계정이 [fromMillis] 이후 시작한 러닝 수 · 거리 — 홈의 "이번 주" 요약. 무효 러닝은 빼고 센다. */
+    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions WHERE startedAt >= :fromMillis AND recordingOwner IN (:owner, 'legacy') AND verdict != 'VOID'")
+    fun observeRunTotalsSinceFor(owner: String, fromMillis: Long): Flow<RunTotals>
+
     /**
      * 아직 서버에 올리지 못한 세션을 오래된 것부터 준다.
      *
@@ -174,6 +178,10 @@ interface RewardDao {
 
     @Query("SELECT COUNT(*) FROM rewards WHERE type = :type")
     fun observeCountByType(type: String): Flow<Int>
+
+    /** 종류가 [types] 인 적립 줄(최신순) — 챌린지 기록 */
+    @Query("SELECT * FROM rewards WHERE type IN (:types) AND amount > 0 ORDER BY timestamp DESC, id DESC LIMIT :limit")
+    fun observeByTypes(types: List<String>, limit: Int): Flow<List<RewardEntity>>
 
     @Query("SELECT COUNT(*) FROM rewards WHERE type IN (:types)")
     fun observeCountByTypes(types: List<String>): Flow<Int>

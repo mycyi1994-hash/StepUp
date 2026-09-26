@@ -1713,5 +1713,29 @@
     <string name="run_location_off_action">开启定位</string>
     <string name="run_location_approx_hint">仅允许大致位置，无法使用 GPS。允许精确位置可使路线更准确。</string>
     <string name="run_countdown_location_services_off">手机定位已关闭 · 开启前仅记录步数</string>
+    <string name="home_k1_empty_title">今天还没有活动</string>
+    <string name="home_k1_empty_body">开始跑步后，步数、距离和 SUP 会显示在这里。</string>
+    <string name="home_k1_left_title">距目标还差 %1$s 步</string>
+    <string name="home_k1_today">今日活动</string>
+    <string name="home_k1_steps">步数</string>
+    <string name="home_k1_week_label">本周</string>
+    <string name="home_k1_week">%1$s 公里 · 跑步 %2$d 次 · %3$s SUP</string>
+    <string name="home_k1_week_empty">本周还没有跑步记录</string>
+    <string name="home_k1_records">更多记录</string>
+    <string name="home_k1_records_title">详细记录</string>
+    <string name="challenge_run">为此挑战跑步</string>
+    <string name="challenge_unit_steps">步</string>
+    <string name="challenge_unit_km">公里</string>
+    <string name="challenge_rate">完成率</string>
+    <string name="challenge_left">剩余</string>
+    <string name="challenge_reward">奖励</string>
+    <string name="challenge_run_expected">含本次跑步（预估）· 保存后确认</string>
+    <string name="challenge_history_title">挑战记录</string>
+    <string name="challenge_history_current">进行中的挑战</string>
+    <string name="challenge_history_done">已完成</string>
+    <string name="challenge_history_goal_days">达标天数</string>
+    <string name="challenge_history_total">获得奖励</string>
+    <string name="challenge_history_empty">还没有完成的挑战</string>
+    <string name="challenge_history_event">挑战奖励</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

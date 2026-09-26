@@ -129,8 +129,16 @@ fun HomeScreen(
     var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
     val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
-    val steps = if (state.loaded) "%,d".format(state.todaySteps) else "—"
-    // S2 홈 — 오늘 걸음 문장 → 아치 풍경 → 오늘 SUP → 원형 시작 버튼. 자세한 기록은 "더보기" 안.
+    val weekRuns by viewModel.weekRuns.collectAsStateWithLifecycle()
+    val weekEarned by viewModel.weekEarned.collectAsStateWithLifecycle()
+    val runMode by com.stepup.android.core.ServiceLocator.userPrefs.runMode
+        .collectAsStateWithLifecycle(initialValue = com.stepup.android.domain.RunMode.LITE)
+    val runner = runMode == com.stepup.android.domain.RunMode.RUNNER
+    // 오늘 아직 아무것도 안 했으면 0걸음 · 0.0km · +0 SUP 를 따로 늘어놓지 않고 한 줄로 말한다(사용 피드백 3)
+    val noActivityYet = state.loaded && state.todaySteps == 0 && (earned ?: 0.0) <= 0.0
+    // 러닝 홈 — 지금 할 운동 + 오늘의 상태 + 이번 주 한 줄. 자세한 기록은 "더보기"(사용 피드백 1 · 2 · 4 · 5).
+    // 풍경은 화면 전체 바탕(StepUpRoot)이다 — 가운데 아치를 없앴다(2026-09-26 사용자 결정).
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
             .padding(bottom = 12.dp),
@@ -140,40 +148,39 @@ fun HomeScreen(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.height(if (screenHeight < 760) 4.dp else 20.dp))
-            val runMode by com.stepup.android.core.ServiceLocator.userPrefs.runMode
-                .collectAsStateWithLifecycle(initialValue = com.stepup.android.domain.RunMode.LITE)
-            val runner = runMode == com.stepup.android.domain.RunMode.RUNNER
+            Box(Modifier.height(if (screenHeight < 760) 8.dp else 24.dp))
             com.stepup.android.ui.components.S2Kicker(
                 stringResource(R.string.home_s2_goal, "%,d".format(state.goal)) +
                     if (runner) " · " + stringResource(R.string.setup_mode_runner) else "",
             )
             Box(Modifier.height(12.dp))
-            com.stepup.android.ui.components.S2Headline(stringResource(R.string.home_s2_headline, steps))
-            Box(Modifier.height(14.dp))
-            com.stepup.android.ui.components.S2Subtitle(
+            com.stepup.android.ui.components.S2Headline(
                 when {
-                    !state.loaded || state.goal <= 0 -> " "
-                    state.todaySteps >= state.goal -> stringResource(R.string.home_s2_done)
-                    else -> stringResource(R.string.home_s2_left, "%,d".format(state.goal - state.todaySteps))
+                    !state.loaded -> " "
+                    noActivityYet -> stringResource(R.string.home_k1_empty_title)
+                    state.goal > 0 && state.todaySteps >= state.goal -> stringResource(R.string.home_s2_done)
+                    else -> stringResource(R.string.home_k1_left_title, "%,d".format((state.goal - state.todaySteps).coerceAtLeast(0)))
                 },
+                Modifier.testTag("home-headline"),
             )
-            Box(Modifier.height(if (screenHeight < 760) 16.dp else 26.dp))
-            val archHeight = com.stepup.android.ui.components.s2ArchHeight(screenHeight, largeText)
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                // 풍경 넘기기 — 아치 양옆의 작은 화살표. 장식이라 날씨·위치처럼 말하지 않는다.
-                SceneArrow(Icons.Filled.ChevronLeft, stringResource(R.string.home_previous_background),
-                    onPreviousBackground, Modifier.testTag("home-background-previous"))
-                com.stepup.android.ui.components.S2Arch(
-                    Modifier.height(archHeight).width(archHeight * (216f / 262f)),
-                    image = com.stepup.android.ui.components.s2SceneryRes(backgroundSetting),
+            Box(Modifier.height(18.dp))
+            if (!hasPermission) {
+                PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+                Box(Modifier.height(12.dp))
+            }
+            if (noActivityYet) {
+                com.stepup.android.ui.components.S2Subtitle(
+                    stringResource(R.string.home_k1_empty_body),
+                    Modifier.testTag("home-empty-state"),
                 )
-                SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background),
-                    onNextBackground, Modifier.testTag("home-background-next"))
+            } else {
+                TodaySummaryCard(
+                    steps = if (state.loaded) "%,d".format(state.todaySteps) else "—",
+                    km = if (state.loaded) "%.1f".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000) else "—",
+                    // 서버가 확인한 오늘 적립만 — 아직 못 읽었으면 "—"
+                    sup = earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—",
+                    goalFraction = if (state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f,
+                )
             }
             if (weatherScene != null) {
                 Box(Modifier.height(8.dp))
@@ -188,19 +195,6 @@ fun HomeScreen(
                     modifier = Modifier.testTag("home-weather-caption"),
                 )
             }
-            Box(Modifier.height(18.dp))
-            if (!hasPermission) {
-                PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
-                Box(Modifier.height(12.dp))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.home_s2_today_sup), color = Silver, fontSize = 13.sp)
-                Text(earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—",
-                    color = Snow, fontSize = 20.sp, fontWeight = FontWeight.Normal)
-            }
-            Box(Modifier.height(4.dp))
-            Text(stringResource(R.string.home_s2_sup_note), color = com.stepup.android.ui.theme.Slate,
-                fontSize = 12.sp, textAlign = TextAlign.Center)
             // 러너 모드 — 착용 신발과 상태를 한 줄로(S2 시안 20). 누르면 신발 탭.
             val shoe = state.equipped
             if (runner && shoe != null) {
@@ -208,30 +202,41 @@ fun HomeScreen(
                 RunnerShoeLine(shoe, onOpenCustomize)
             }
         }
+        // 이번 주 한 줄 — 거리 · 러닝 · SUP. 자세한 기록은 더보기(사용 피드백 4)
+        WeekLine(weekRuns, weekEarned, onClick = { showDetails = true })
         com.stepup.android.ui.components.S2ActionRow(
             start = {
-                // 보유 SUP 는 머리글에 있다 — 여기서는 오늘 거리
+                // 지금 도전 중인 챌린지는 러닝 영역에서 연다(사용 피드백 6)
                 com.stepup.android.ui.components.S2SideInfo(
-                    label = stringResource(R.string.stat_distance),
-                    value = if (state.loaded) "%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000) else "—",
+                    label = stringResource(R.string.home_shortcut_challenges),
+                    onClick = onOpenChallenges,
+                    modifier = Modifier.testTag("home-challenges"),
                 )
             },
             end = {
                 com.stepup.android.ui.components.S2SideInfo(
-                    label = stringResource(R.string.common_more),
+                    label = stringResource(R.string.home_k1_records),
                     end = true,
                     onClick = { showDetails = true },
                     modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
                 )
             },
         ) {
+            // 이 화면의 주 행동 — 가장 크게(사용 피드백 1)
             com.stepup.android.ui.components.S2RoundAction(
                 icon = Icons.Filled.PlayArrow,
                 label = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
                 onClick = onStartRun,
+                circle = 84.dp,
                 modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
             )
         }
+    }
+    // 풍경 넘기기 — 화면 양옆의 작은 화살표. 장식이라 날씨 · 위치처럼 말하지 않는다.
+    SceneArrow(Icons.Filled.ChevronLeft, stringResource(R.string.home_previous_background),
+        onPreviousBackground, Modifier.align(Alignment.CenterStart).testTag("home-background-previous"))
+    SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background),
+        onNextBackground, Modifier.align(Alignment.CenterEnd).testTag("home-background-next"))
     }
 
     if (showDetails) {
@@ -253,6 +258,9 @@ fun HomeScreen(
                         }) { Text(stringResource(R.string.cd_open_settings)) }
                     }
                 }
+                // 더보기 = 상세 기록과 통계(사용 피드백 5). 챌린지는 러닝 홈 아래 줄로 옮겼다.
+                Text(stringResource(R.string.home_k1_records_title), style = MaterialTheme.typography.titleLarge,
+                    color = Snow, modifier = Modifier.testTag("home-records-title"))
                 TodayEarned(earned)
                 RecordWeek(state.week, state.todaySteps, state.loaded)
                 GlowCard(contentPadding = HomeCardPadding, spacing = 16.dp) {
@@ -269,7 +277,7 @@ fun HomeScreen(
                     BarMeter(fraction = if (state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 7.dp)
                 }
 
-                // ── 챌린지 · 소식 — 작은 보조 진입점 두 개 ──
+                // ── 소식 — 작은 보조 진입점 ──
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -280,34 +288,13 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                         color = Snow,
                     )
-                    val challenge: @Composable (Modifier) -> Unit = { m ->
-                        ShortcutButton(
-                            icon = Icons.Filled.EmojiEvents,
-                            label = stringResource(R.string.home_shortcut_challenges),
-                            subtitle = stringResource(R.string.home_shortcut_challenges_sub),
-                            onClick = { showDetails = false; onOpenChallenges() },
-                            modifier = m,
-                        )
-                    }
-                    val news: @Composable (Modifier) -> Unit = { m ->
-                        ShortcutButton(
-                            icon = Icons.AutoMirrored.Filled.Article,
-                            label = stringResource(R.string.home_shortcut_news),
-                            subtitle = stringResource(R.string.home_shortcut_news_sub),
-                            onClick = { showDetails = false; onOpenNews() },
-                            modifier = m,
-                        )
-                    }
-                    // 큰 글자에서는 반 폭에 제목이 끊긴다 — 위아래로 쌓는다
-                    if (largeText) {
-                        challenge(Modifier.fillMaxWidth())
-                        news(Modifier.fillMaxWidth())
-                    } else {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            challenge(Modifier.weight(1f))
-                            news(Modifier.weight(1f))
-                        }
-                    }
+                    ShortcutButton(
+                        icon = Icons.AutoMirrored.Filled.Article,
+                        label = stringResource(R.string.home_shortcut_news),
+                        subtitle = stringResource(R.string.home_shortcut_news_sub),
+                        onClick = { showDetails = false; onOpenNews() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
 
                 // ── 에너지 — 러닝을 누르기 직전에 알아야 하는 제한 한 줄 ──
@@ -479,6 +466,63 @@ private fun RunnerShoeLine(shoe: com.stepup.android.domain.Sneaker, onOpen: () -
         com.stepup.android.ui.components.SneakerFrame(shoe, Modifier.width(44.dp).height(30.dp))
         Text(shoe.variantLabel(), color = Snow, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         Text(stringResource(R.string.home_runner_shoe_state, durability), color = Silver, fontSize = 12.sp, maxLines = 1)
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
+    }
+}
+
+/** 오늘 활동 한 장 — 걸음 | 거리 | 오늘 SUP 와 목표 막대(사용 피드백 2) */
+@Composable
+private fun TodaySummaryCard(steps: String, km: String, sup: String, goalFraction: Float) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(com.stepup.android.ui.theme.StepUpDesign.PanelRadius)
+    Column(
+        Modifier.fillMaxWidth()
+            .background(com.stepup.android.ui.theme.StepUpColors.carbon.copy(alpha = 0.78f), shape)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .testTag("home-today-card"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(stringResource(R.string.home_k1_today), color = Silver, fontSize = 13.sp)
+        com.stepup.android.ui.components.S2Stats(
+            listOf(
+                stringResource(R.string.home_k1_steps) to steps,
+                stringResource(R.string.stat_distance) to "$km km",
+                stringResource(R.string.home_s2_today_sup) to sup,
+            ),
+            valueSize = 22.sp,
+        )
+        BarMeter(fraction = goalFraction, height = 5.dp)
+    }
+}
+
+/** 이번 주 한 줄 — 누르면 더보기(상세 기록) */
+@Composable
+private fun WeekLine(
+    runs: com.stepup.android.data.local.RunTotals?,
+    earned: Double?,
+    onClick: () -> Unit,
+) {
+    val text = when {
+        runs == null -> " "
+        runs.runs == 0 -> stringResource(R.string.home_k1_week_empty)
+        else -> stringResource(
+            R.string.home_k1_week,
+            "%.1f".format(runs.meters / 1000),
+            runs.runs,
+            earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—",
+        )
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 44.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .feedbackClickable(onClick = onClick)
+            .padding(horizontal = 8.dp)
+            .testTag("home-week"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(stringResource(R.string.home_k1_week_label), color = com.stepup.android.ui.theme.VoltText,
+            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = Snow, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
     }
 }

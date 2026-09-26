@@ -49,6 +49,10 @@ class RewardRepository(
 
     fun ledger(limit: Int = 100): Flow<List<RewardEntity>> = rewardDao.observeLedger(limit)
 
+    /** 챌린지로 받은 적립 — 일일 목표 보너스와 도전 보상(원장에 적힌 것만) */
+    fun challengeRewards(limit: Int = 200): Flow<List<RewardEntity>> =
+        rewardDao.observeByTypes(listOf(RewardType.BONUS_GOAL, RewardType.EARN_EVENT), limit)
+
     /** [fromMillis] 이후 러닝·보너스·이벤트로 번 SUP. 거래 대금은 빠진다. */
     fun earnedSince(fromMillis: Long): Flow<Double> = rewardDao.observeEarnedSince(fromMillis)
 

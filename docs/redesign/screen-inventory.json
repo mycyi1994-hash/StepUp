@@ -186,6 +186,13 @@
       "verification": "pending"
     },
     {
+      "id": "Routes.CHALLENGE_HISTORY",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "Routes.INVITE",
       "parent": "Profile",
       "chrome": "Detail",
@@ -353,9 +360,16 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "ChallengeHistoryScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/events/ChallengeHistoryScreen.kt",
+      "line": 43,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "EventsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 81,
+      "line": 82,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -609,14 +623,14 @@
       "kind": "DialogPanel",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 397,
+      "line": 413,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 238,
+      "line": 243,
       "verification": "pending"
     },
     {
@@ -665,14 +679,14 @@
       "kind": "DialogPanel",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 954,
+      "line": 956,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 1003,
+      "line": 1005,
       "verification": "pending"
     },
     {
@@ -700,28 +714,28 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 501,
+      "line": 534,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 538,
+      "line": 571,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 562,
+      "line": 595,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1058,
+      "line": 1091,
       "verification": "pending"
     }
   ],

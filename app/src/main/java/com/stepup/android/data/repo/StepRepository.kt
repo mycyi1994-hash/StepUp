@@ -60,6 +60,11 @@ class StepRepository(
     fun observeDurationSince(fromMillis: Long): Flow<Long> =
         owner.flatMapLatest { walkSessionDao.observeDurationSinceFor(it, fromMillis) }
 
+    /** 지금 계정이 [fromMillis] 이후 달린 러닝 수 · 거리(무효 제외) */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeRunTotalsSince(fromMillis: Long): Flow<com.stepup.android.data.local.RunTotals> =
+        owner.flatMapLatest { walkSessionDao.observeRunTotalsSinceFor(it, fromMillis) }
+
     /** 지금 계정의 러닝 수 */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun observeSessionCount(): Flow<Int> = owner.flatMapLatest { walkSessionDao.observeSessionCountFor(it) }

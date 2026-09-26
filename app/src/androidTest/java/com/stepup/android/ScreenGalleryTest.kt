@@ -306,7 +306,7 @@ class ScreenGalleryTest {
             }
         }
         val variations = listOf(
-            Triple(0, "home-details", listOf(R.string.common_more)),
+            Triple(0, "home-details", listOf(R.string.home_k1_records)),
             Triple(2, "community-crews", listOf(R.string.community_tab_my_crew)),
             Triple(2, "community-stories", listOf(R.string.community_stories)),
             Triple(2, "community-meetups", listOf(R.string.community_other_meetups)),

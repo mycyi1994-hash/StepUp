@@ -48,6 +48,21 @@ class HomeViewModel(
         .map<Double, Double?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 이번 주 월요일 0시(기기 시간대) — 홈의 "이번 주" 요약 기준 */
+    private val startOfWeek: Long = LocalDate.now()
+        .with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    /** 이번 주 러닝 수 · 거리. 읽기 전에는 null */
+    val weekRuns: StateFlow<com.stepup.android.data.local.RunTotals?> = stepRepository.observeRunTotalsSince(startOfWeek)
+        .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 이번 주 번 SUP(원장 기준). 읽기 전에는 null */
+    val weekEarned: StateFlow<Double?> = rewardRepository.earnedSince(startOfWeek)
+        .map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
     val todayRunSec: StateFlow<Long> = stepRepository.observeDurationSince(startOfToday)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
