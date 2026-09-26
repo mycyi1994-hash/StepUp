@@ -91,15 +91,16 @@ object RunShareCard {
         paint.textAlign = Paint.Align.LEFT
         paint.textSize = 210f
         val distance = "%.2f".format(km)
-        canvas.drawText(distance, MARGIN.toFloat(), 1060f, paint)
+        canvas.drawText(distance, MARGIN.toFloat(), 990f, paint)
         val distanceWidth = paint.measureText(distance)
         paint.typeface = medium
         paint.textSize = 52f
-        canvas.drawText("km", MARGIN + distanceWidth + 20f, 1060f, paint)
+        canvas.drawText("km", MARGIN + distanceWidth + 20f, 990f, paint)
 
         // 시간 · 페이스
-        stat(canvas, paint, labels.time, elapsed, MARGIN.toFloat(), 1180f, medium, light)
-        stat(canvas, paint, labels.pace, pace, MARGIN + 360f, 1180f, medium, light)
+        // 값의 아랫줄(1180)과 맨 아래 문구(1294) 사이를 띄운다
+        stat(canvas, paint, labels.time, elapsed, MARGIN.toFloat(), 1100f, medium, light)
+        stat(canvas, paint, labels.pace, pace, MARGIN + 360f, 1100f, medium, light)
 
         paint.typeface = medium
         paint.textSize = 30f
