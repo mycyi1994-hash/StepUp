@@ -80,7 +80,9 @@ fun MysteryBoxScreen(
             S2Subtitle(stringResource(R.string.mystery_guide_body), Modifier.padding(horizontal = 12.dp))
             Box(Modifier.height(20.dp))
             val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
-            val archHeight = s2ArchHeight(screenHeight, androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.2f)
+            // 위에 내 신발 · 뽑기 글자 탭이 한 줄 있어 그만큼 아치를 줄인다 — 아래 안내가 잘리지 않게
+            val archHeight = (s2ArchHeight(screenHeight, androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.2f) - 48.dp)
+                .coerceAtLeast(150.dp)
             Box(Modifier.fillMaxWidth().height(archHeight), contentAlignment = Alignment.Center) {
                 S2Arch(Modifier.height(archHeight).width(archHeight * (216f / 262f)))
                 Box(

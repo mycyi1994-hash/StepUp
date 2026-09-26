@@ -44,7 +44,6 @@ class RunStartFlowTest {
         }
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("3").assertIsDisplayed()
-        capture("run-countdown-3.png")
         compose.mainClock.advanceTimeBy(1_100)
         compose.onNodeWithText("2").assertIsDisplayed()
         compose.onNodeWithTag("run-countdown").performClick()
@@ -65,10 +64,23 @@ class RunStartFlowTest {
             } }
         }
         compose.mainClock.advanceTimeByFrame()
-        capture("run-countdown-no-gps.png")
         compose.onNodeWithTag("run-countdown-cancel").performClick()
         compose.mainClock.advanceTimeBy(5_000)
         assertEquals(0, starts)
+    }
+
+    /** 멈춘 시계로는 화면이 그려지지 않아 캡처가 비었다 — 캡처는 보통 시계로 따로 찍는다 */
+    @Test fun countdownCaptures() {
+        var located by mutableStateOf(true)
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                RunCountdown(courseName = if (located) null else "Hangang 5K", locationAllowed = located, onGo = {}, onCancel = {})
+            } }
+        }
+        compose.onNodeWithTag("run-countdown-cancel").assertIsDisplayed()
+        capture("run-countdown.png")
+        compose.runOnIdle { located = false }
+        capture("run-countdown-no-gps.png")
     }
 
     @Test fun primerExplainsEachPermissionAndHandsOff() {
