@@ -1587,5 +1587,27 @@ StepUp と走り出そう。</string>
     <string name="run_recover_other_account">別のアカウント（またはログイン前）で中断したランがあります。続けて走らず、始めたアカウントの記録として保存だけします。</string>
     <string name="run_recover_resume">続けて走る</string>
     <string name="run_recover_finish">ここで終えて保存</string>
+    <string name="home_s2_goal">1日の目標 %1$s歩</string>
+    <string name="home_s2_headline">今日は%1$s歩\n歩きました</string>
+    <string name="home_s2_left">目標まであと%1$s歩</string>
+    <string name="home_s2_done">今日の目標を達成しました</string>
+    <string name="home_s2_balance">保有</string>
+    <string name="home_s2_today_sup">今日のSUP</string>
+    <string name="home_s2_sup_note">SUPは記録の確認後に入ります</string>
+    <string name="shoes_s2_market">マーケット</string>
+    <string name="shoes_s2_dex">図鑑を見る</string>
+    <string name="shoes_s2_equip">この靴を履く</string>
+    <string name="shoes_s2_owned">保有 %1$d足</string>
+    <string name="run_s2_goal_left">目標 %1$s km · 残り %2$s km</string>
+    <string name="run_s2_result_headline">%1$d分で\n%2$skm走りました</string>
+    <string name="run_s2_result_sub">平均ペース %1$s · %2$s</string>
+    <string name="run_s2_result_sup">今回のランのSUP</string>
+    <string name="me_s2_kicker">%1$sさんのStepUp</string>
+    <string name="me_s2_first">最初のランを\n記録しましょう</string>
+    <string name="me_s2_total">これまで\n%1$s km走りました</string>
+    <string name="me_s2_streak">%1$d日連続で目標達成中</string>
+    <string name="me_s2_balance">保有SUP</string>
+    <string name="me_s2_wallet">ウォレットを見る ›</string>
+    <string name="me_s2_records">記録を見る</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

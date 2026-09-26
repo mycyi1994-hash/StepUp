@@ -1586,5 +1586,27 @@
     <string name="run_recover_other_account">有一次用其他账号（或登录前）跑步时中断的记录。不会在这里继续，只会保存到开始跑步的账号。</string>
     <string name="run_recover_resume">继续跑</string>
     <string name="run_recover_finish">在此结束并保存</string>
+    <string name="home_s2_goal">每日目标 %1$s步</string>
+    <string name="home_s2_headline">今天走了\n%1$s步</string>
+    <string name="home_s2_left">距离目标还差%1$s步</string>
+    <string name="home_s2_done">已完成今天的目标</string>
+    <string name="home_s2_balance">持有</string>
+    <string name="home_s2_today_sup">今日 SUP</string>
+    <string name="home_s2_sup_note">记录确认后 SUP 才会到账</string>
+    <string name="shoes_s2_market">市场</string>
+    <string name="shoes_s2_dex">查看图鉴</string>
+    <string name="shoes_s2_equip">穿这双</string>
+    <string name="shoes_s2_owned">持有 %1$d 双</string>
+    <string name="run_s2_goal_left">目标 %1$s 公里 · 还剩 %2$s 公里</string>
+    <string name="run_s2_result_headline">%1$d 分钟\n跑了 %2$s 公里</string>
+    <string name="run_s2_result_sub">平均配速 %1$s · %2$s</string>
+    <string name="run_s2_result_sup">本次跑步 SUP</string>
+    <string name="me_s2_kicker">%1$s 的 StepUp</string>
+    <string name="me_s2_first">来记录\n第一次跑步吧</string>
+    <string name="me_s2_total">至今已跑了\n%1$s 公里</string>
+    <string name="me_s2_streak">连续 %1$d 天达成目标</string>
+    <string name="me_s2_balance">持有 SUP</string>
+    <string name="me_s2_wallet">查看钱包 ›</string>
+    <string name="me_s2_records">查看记录</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

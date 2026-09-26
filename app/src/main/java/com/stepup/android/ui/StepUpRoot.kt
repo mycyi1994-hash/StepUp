@@ -396,9 +396,13 @@ internal fun MainScaffold(
             com.stepup.android.ui.components.RunnerSetting.Wardrobe -> AmbientScene.Wardrobe
             com.stepup.android.ui.components.RunnerSetting.Night,
             com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
-            com.stepup.android.ui.components.RunnerSetting.RunNight -> AmbientScene.Night
+            com.stepup.android.ui.components.RunnerSetting.RunNight,
+            com.stepup.android.ui.components.RunnerSetting.HomeHarbor,
+            com.stepup.android.ui.components.RunnerSetting.HomeNight,
+            com.stepup.android.ui.components.RunnerSetting.HomeRain -> AmbientScene.Night
             com.stepup.android.ui.components.RunnerSetting.Sunset,
             com.stepup.android.ui.components.RunnerSetting.HomeDawn,
+            com.stepup.android.ui.components.RunnerSetting.HomeDay,
             com.stepup.android.ui.components.RunnerSetting.RunSunset -> AmbientScene.Dawn
             null -> null
         })
@@ -483,6 +487,7 @@ internal fun MainScaffold(
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     backgroundSetting = homeSetting,
+                    balance = balance,
                     onPreviousBackground = {
                         homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
                     },
@@ -897,9 +902,10 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Carbon.copy(alpha = 0.97f), Night))),
+            // S2 — 탭 줄은 바닥에 녹아든다. 카드 면을 두르지 않는다.
+            .background(Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night))),
     ) {
-        HairlineDivider()
+        if (!com.stepup.android.ui.theme.StepUpColors.dark) HairlineDivider()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -997,8 +1003,8 @@ private fun RowScope.NavTab(
     selected: Boolean, onClick: () -> Unit,
 ) {
     val tint by animateColorAsState(
-        // 선택한 탭은 밝은 파랑 — 버튼 바탕색(Volt)은 검은 바닥 위 작은 글자에 어둡다
-        targetValue = if (selected) VoltText else Slate,
+        // S2 — 선택한 탭은 밝은 글자, 아래 짧은 파란 선이 자리를 알린다
+        targetValue = if (selected) com.stepup.android.ui.theme.Snow else Slate,
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
@@ -1032,9 +1038,9 @@ private fun RowScope.NavTab(
         )
         Box(
             modifier = Modifier
-                .size(StepUpDesign.NavigationIndicator)
+                .size(width = 17.dp, height = 3.dp)
                 .alpha(dotAlpha)
-                .background(Volt, CircleShape),
+                .background(Volt, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
         )
     }
 }

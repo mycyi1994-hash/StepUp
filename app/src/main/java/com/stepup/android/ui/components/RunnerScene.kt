@@ -17,7 +17,11 @@ import com.stepup.android.R
 import com.stepup.android.ui.theme.Night
 
 /** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
-enum class RunnerSetting { Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn, RunNight, RunSunset }
+enum class RunnerSetting {
+    Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn, RunNight, RunSunset,
+    // S2 풍경 — 광안리 · 낮 · 밤 · 비. 실시간 날씨가 아니라 고르는 배경이다.
+    HomeHarbor, HomeDay, HomeNight, HomeRain,
+}
 
 /** Only scenes with visible ground at the standing foot anchor belong here. */
 object WardrobeBackgrounds {
@@ -32,7 +36,12 @@ object WardrobeBackgrounds {
  * never shuffle the scenery underneath the user. */
 object HomeBackgrounds {
     val initial = listOf(RunnerSetting.HomeBlueNight, RunnerSetting.HomeDawn)
-    val settings = initial
+
+    /** 화살표로 넘겨 보는 S2 풍경 여섯 장 */
+    val settings = listOf(
+        RunnerSetting.HomeBlueNight, RunnerSetting.HomeHarbor, RunnerSetting.HomeDay,
+        RunnerSetting.HomeDawn, RunnerSetting.HomeNight, RunnerSetting.HomeRain,
+    )
 
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 
@@ -65,7 +74,8 @@ fun RunnerScene(
     home: Boolean = false,
 ) {
     // Scenery now belongs to an independent banner, never to a full-screen character stage.
-    Box(modifier.background(Night))
+    // 바닥은 S2 무대 — 오른쪽 위에서 번지는 남색.
+    S2Stage(modifier)
 }
 
 /** Independent, text-free scenery shared by home and login. */

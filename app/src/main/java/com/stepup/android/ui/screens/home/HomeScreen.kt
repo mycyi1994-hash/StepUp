@@ -26,7 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Bolt
@@ -48,6 +48,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -91,6 +93,8 @@ fun HomeScreen(
     backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
+    /** 보유 SUP — 머리글과 같은 값. 모르면 null */
+    balance: Double? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -122,68 +126,87 @@ fun HomeScreen(
     val largeText = LocalDensity.current.fontScale > 1.2f
     var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
+    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
+    val steps = if (state.loaded) "%,d".format(state.todaySteps) else "—"
+    // S2 홈 — 오늘 걸음 문장 → 아치 풍경 → 오늘 SUP → 원형 시작 버튼. 자세한 기록은 "더보기" 안.
     Column(
         Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter)
-            .padding(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.home_record_title), style = MaterialTheme.typography.titleLarge,
-                    color = Silver, modifier = Modifier.weight(1f))
-                com.stepup.android.ui.components.DarkIconButton(
-                    icon = Icons.Filled.MoreHoriz, contentDescription = stringResource(R.string.common_more),
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(Modifier.height(if (screenHeight < 760) 4.dp else 20.dp))
+            com.stepup.android.ui.components.S2Kicker(
+                stringResource(R.string.home_s2_goal, "%,d".format(state.goal)),
+            )
+            Box(Modifier.height(12.dp))
+            com.stepup.android.ui.components.S2Headline(stringResource(R.string.home_s2_headline, steps))
+            Box(Modifier.height(14.dp))
+            com.stepup.android.ui.components.S2Subtitle(
+                when {
+                    !state.loaded || state.goal <= 0 -> " "
+                    state.todaySteps >= state.goal -> stringResource(R.string.home_s2_done)
+                    else -> stringResource(R.string.home_s2_left, "%,d".format(state.goal - state.todaySteps))
+                },
+            )
+            Box(Modifier.height(if (screenHeight < 760) 16.dp else 26.dp))
+            val archHeight = com.stepup.android.ui.components.s2ArchHeight(screenHeight, largeText)
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                // 풍경 넘기기 — 아치 양옆의 작은 화살표. 장식이라 날씨·위치처럼 말하지 않는다.
+                SceneArrow(Icons.Filled.ChevronLeft, stringResource(R.string.home_previous_background),
+                    onPreviousBackground, Modifier.testTag("home-background-previous"))
+                com.stepup.android.ui.components.S2Arch(
+                    Modifier.height(archHeight).width(archHeight * (216f / 262f)),
+                    image = com.stepup.android.ui.components.s2SceneryRes(backgroundSetting),
+                )
+                SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background),
+                    onNextBackground, Modifier.testTag("home-background-next"))
+            }
+            Box(Modifier.height(18.dp))
+            if (!hasPermission) {
+                PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+                Box(Modifier.height(12.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.home_s2_today_sup), color = Silver, fontSize = 13.sp)
+                Text(earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—",
+                    color = Snow, fontSize = 20.sp, fontWeight = FontWeight.Normal)
+            }
+            Box(Modifier.height(4.dp))
+            Text(stringResource(R.string.home_s2_sup_note), color = com.stepup.android.ui.theme.Slate,
+                fontSize = 12.sp, textAlign = TextAlign.Center)
+        }
+        com.stepup.android.ui.components.S2ActionRow(
+            start = {
+                com.stepup.android.ui.components.S2SideInfo(
+                    label = stringResource(R.string.home_s2_balance),
+                    value = balance?.let { com.stepup.android.ui.components.formatSupDown(it) + " SUP" } ?: "—",
+                    onClick = onOpenWallet,
+                )
+            },
+            end = {
+                com.stepup.android.ui.components.S2SideInfo(
+                    label = stringResource(R.string.common_more),
+                    end = true,
                     onClick = { showDetails = true },
                     modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
                 )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.weight(1f, fill = false)) {
-                    AdaptiveNumber(if (state.loaded) "%,d".format(state.todaySteps) else "—", 56.sp)
-                }
-                Text(stringResource(R.string.stat_steps), color = Silver)
-            }
-            BarMeter(fraction = if (state.loaded && state.goal > 0) (state.todaySteps.toFloat() / state.goal).coerceIn(0f, 1f) else 0f, height = 9.dp)
-            Text(stringResource(R.string.home_daily_goal, "%,d".format(state.goal)), color = Silver)
-            }
-            val bannerHeight = when {
-                largeText -> 190.dp
-                androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 800 -> 112.dp
-                else -> 132.dp
-            }
-            Box(Modifier.fillMaxWidth().height(bannerHeight).clip(RoundedCornerShape(16.dp))) {
-                com.stepup.android.ui.components.RunnerBanner(Modifier.fillMaxSize(), backgroundSetting)
-                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f)))))
-                Text(stringResource(R.string.home_banner_message), color = androidx.compose.ui.graphics.Color.White,
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 20.dp, vertical = 16.dp))
-                com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronLeft,
-                    stringResource(R.string.home_previous_background), onClick = onPreviousBackground,
-                    modifier = Modifier.align(Alignment.TopStart).testTag("home-background-previous"))
-                com.stepup.android.ui.components.DarkIconButton(Icons.Filled.ChevronRight,
-                    stringResource(R.string.home_next_background), onClick = onNextBackground,
-                    modifier = Modifier.align(Alignment.TopEnd).testTag("home-background-next"))
-            }
-            if (!hasPermission) PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
-            RecordWeek(state.week, state.todaySteps, state.loaded)
-            HairlineDivider()
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.stat_distance), color = Silver)
-                    AdaptiveNumber(if (state.loaded) "%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000) else "—", 26.sp)
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.home_run_time), color = Silver)
-                    AdaptiveNumber(clock(runSec), 26.sp)
-                }
-            }
+            },
+        ) {
+            com.stepup.android.ui.components.S2RoundAction(
+                icon = Icons.Filled.PlayArrow,
+                label = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
+                onClick = onStartRun,
+                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
+            )
         }
-        PrimaryCta(text = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
-            icon = Icons.AutoMirrored.Filled.DirectionsRun, onClick = onStartRun,
-            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"))
     }
 
     if (showDetails) {
@@ -206,6 +229,7 @@ fun HomeScreen(
                     }
                 }
                 TodayEarned(earned)
+                RecordWeek(state.week, state.todaySteps, state.loaded)
                 GlowCard(contentPadding = HomeCardPadding, spacing = 16.dp) {
                     Text(stringResource(R.string.stat_distance), style = MaterialTheme.typography.bodyMedium, color = Silver)
                     AdaptiveNumber("%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000), 28.sp)
@@ -356,6 +380,25 @@ private fun PermissionStrip(onClick: () -> Unit) {
             color = Snow,
         )
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VoltText, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** 아치 옆 풍경 넘기기 — 48dp 터치, 아이콘은 가볍게 */
+@Composable
+private fun SceneArrow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier.size(com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .feedbackClickable(onClick = onClick)
+            .semantics { contentDescription = description; role = androidx.compose.ui.semantics.Role.Button },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = Silver, modifier = Modifier.size(22.dp))
     }
 }
 

@@ -1586,5 +1586,27 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_recover_other_account">다른 계정(또는 로그인 전)으로 달리다 멈춘 러닝이 있어요. 이어 달리지 않고, 처음 달린 계정의 기록으로 저장만 해요.</string>
     <string name="run_recover_resume">이어 달리기</string>
     <string name="run_recover_finish">여기서 끝내고 저장</string>
+    <string name="home_s2_goal">일일 목표 %1$s걸음</string>
+    <string name="home_s2_headline">오늘 %1$s걸음\n걸었어요</string>
+    <string name="home_s2_left">목표까지 %1$s걸음 남았어요</string>
+    <string name="home_s2_done">오늘의 목표를 달성했어요</string>
+    <string name="home_s2_balance">보유</string>
+    <string name="home_s2_today_sup">오늘 SUP</string>
+    <string name="home_s2_sup_note">SUP는 기록을 확인한 뒤 들어와요</string>
+    <string name="shoes_s2_market">마켓</string>
+    <string name="shoes_s2_dex">도감 보기</string>
+    <string name="shoes_s2_equip">이 신발 신기</string>
+    <string name="shoes_s2_owned">보유 %1$d켤레</string>
+    <string name="run_s2_goal_left">목표 %1$s km · %2$s km 남았어요</string>
+    <string name="run_s2_result_headline">%1$d분 동안\n%2$skm를 달렸어요</string>
+    <string name="run_s2_result_sub">평균 페이스 %1$s · %2$s</string>
+    <string name="run_s2_result_sup">이번 러닝 SUP</string>
+    <string name="me_s2_kicker">%1$s님의 StepUp</string>
+    <string name="me_s2_first">첫 러닝을\n기록해볼까요</string>
+    <string name="me_s2_total">지금까지 %1$s km를\n달렸어요</string>
+    <string name="me_s2_streak">%1$d일 연속 목표 달성 중</string>
+    <string name="me_s2_balance">보유 SUP</string>
+    <string name="me_s2_wallet">지갑 보기 ›</string>
+    <string name="me_s2_records">기록 보기</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
