@@ -288,6 +288,8 @@ fun StepUpRoot() {
             else -> MainScaffold(startTour = guideSeen == false)
         }
         }
+        // 테스트 APK 새 버전 알림 — 스플래시가 끝난 뒤에만(debug 빌드 · 테스트 중이 아닐 때)
+        if (stage != 0) com.stepup.android.ui.components.TestUpdatePrompt()
     }
 }
 

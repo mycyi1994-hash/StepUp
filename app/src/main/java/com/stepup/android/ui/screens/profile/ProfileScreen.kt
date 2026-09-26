@@ -65,6 +65,10 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -273,8 +277,9 @@ fun ProfileScreen(
                 GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
                     AboutRow(
                         label = stringResource(R.string.about_version),
-                        value = "StepUp " + BuildConfig.VERSION_NAME,
+                        value = "StepUp " + com.stepup.android.core.TestUpdates.buildLabel,
                     )
+                    if (com.stepup.android.core.TestUpdates.enabled) TestUpdateRow()
                     AboutRow(
                         label = stringResource(R.string.about_network),
                         value = stringResource(R.string.about_network_value),
@@ -377,6 +382,31 @@ private fun weekSlots(week: List<DailyStepsEntity>): List<Pair<LocalDate, DailyS
     return (6 downTo 0).map { offset ->
         val date = today.minusDays(offset.toLong())
         date to byDay[date.toEpochDay()]
+    }
+}
+
+/** 테스트 APK 에서만 — 새 빌드를 지금 확인한다. 있으면 앱 위에 업데이트 창이 뜬다. */
+@Composable
+private fun TestUpdateRow() {
+    val scope = rememberCoroutineScope()
+    val state by com.stepup.android.core.TestUpdates.state.collectAsState()
+    val status = when (state) {
+        com.stepup.android.core.TestUpdates.State.Checking -> stringResource(R.string.test_update_checking)
+        com.stepup.android.core.TestUpdates.State.UpToDate -> stringResource(R.string.test_update_latest)
+        com.stepup.android.core.TestUpdates.State.CheckFailed -> stringResource(R.string.test_update_check_failed)
+        is com.stepup.android.core.TestUpdates.State.Available,
+        is com.stepup.android.core.TestUpdates.State.Dismissed,
+        is com.stepup.android.core.TestUpdates.State.Failed -> stringResource(R.string.test_update_found)
+        is com.stepup.android.core.TestUpdates.State.Downloading -> stringResource(R.string.test_update_downloading_short)
+        com.stepup.android.core.TestUpdates.State.Idle -> stringResource(R.string.test_update_check)
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag("test-update-check")
+            .clickable { scope.launch { com.stepup.android.core.TestUpdates.check(force = true) } },
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(stringResource(R.string.test_update_row), style = MaterialTheme.typography.bodySmall, color = Silver)
+        Text(status, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = VoltText)
     }
 }
 

@@ -1739,5 +1739,20 @@ Start running with StepUp.</string>
     <string name="challenge_history_total">Rewards</string>
     <string name="challenge_history_empty">No completed challenges yet</string>
     <string name="challenge_history_event">Challenge reward</string>
+    <string name="test_update_title">New test build</string>
+    <string name="test_update_body">A newer StepUp test build is out. Download it and tap Install on the next screen. Your records and login stay as they are.</string>
+    <string name="test_update_downloading">Downloading the new build…</string>
+    <string name="test_update_failed">Could not download or open the installer. Check your connection and try again.</string>
+    <string name="test_update_versions">This phone: %1$s → New: %2$s</string>
+    <string name="test_update_install">Update</string>
+    <string name="test_update_retry">Try again</string>
+    <string name="test_update_later">Later</string>
+    <string name="test_update_row">Test build update</string>
+    <string name="test_update_check">Check now</string>
+    <string name="test_update_checking">Checking…</string>
+    <string name="test_update_latest">Up to date</string>
+    <string name="test_update_check_failed">Could not check</string>
+    <string name="test_update_found">New build · Update</string>
+    <string name="test_update_downloading_short">Downloading…</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

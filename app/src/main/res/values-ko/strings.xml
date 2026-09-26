@@ -1737,5 +1737,20 @@ StepUp과 함께 달려보세요.</string>
     <string name="challenge_history_total">받은 보상</string>
     <string name="challenge_history_empty">아직 완료한 챌린지가 없어요</string>
     <string name="challenge_history_event">챌린지 보상</string>
+    <string name="test_update_title">새 버전이 있어요</string>
+    <string name="test_update_body">더 새로운 StepUp 테스트 빌드가 나왔어요. 받은 뒤 다음 화면에서 "설치"만 누르면 돼요. 기록과 로그인은 그대로 남아요.</string>
+    <string name="test_update_downloading">새 버전을 받는 중이에요…</string>
+    <string name="test_update_failed">받거나 설치 화면을 여는 데 실패했어요. 연결을 확인하고 다시 해 주세요.</string>
+    <string name="test_update_versions">이 폰: %1$s → 새 버전: %2$s</string>
+    <string name="test_update_install">업데이트</string>
+    <string name="test_update_retry">다시 시도</string>
+    <string name="test_update_later">나중에</string>
+    <string name="test_update_row">테스트 빌드 업데이트</string>
+    <string name="test_update_check">지금 확인</string>
+    <string name="test_update_checking">확인 중…</string>
+    <string name="test_update_latest">최신 버전</string>
+    <string name="test_update_check_failed">확인 못 함 · 다시</string>
+    <string name="test_update_found">새 버전 · 업데이트</string>
+    <string name="test_update_downloading_short">받는 중…</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
