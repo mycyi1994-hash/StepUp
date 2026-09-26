@@ -75,6 +75,8 @@ class RunCrashRecoveryTest {
             }
             assertEquals(400, WalkSessionService.state.value.lastSessionSteps)
             assertEquals(300L, WalkSessionService.state.value.lastElapsedSec)
+            // 서비스는 결과 상태를 먼저 알리고 바로 뒤에 저장본을 지운다 — 그 사이를 읽지 않게 기다린다
+            compose.waitUntil(5_000) { runBlocking { ServiceLocator.runCheckpoints.read() } == null }
             runBlocking {
                 assertNotNull(ServiceLocator.database.runSettlementDao().find("guest", startedAt))
                 assertNull("저장이 끝나면 저장본을 지운다", ServiceLocator.runCheckpoints.read())

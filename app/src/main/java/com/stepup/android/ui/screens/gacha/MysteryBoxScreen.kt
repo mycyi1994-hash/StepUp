@@ -56,6 +56,8 @@ fun MysteryBoxScreen(
     onOpenWallet: () -> Unit = {},
     /** 뽑기 버튼 글자 — 무료 남은 수나 가격. 비우면 "신발 뽑기" */
     drawLabel: String? = null,
+    /** 신발 탭 안의 "내 신발"로 돌아간다 */
+    onOpenShoes: () -> Unit = {},
 ) {
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
@@ -64,9 +66,10 @@ fun MysteryBoxScreen(
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = StepUpDesign.Gutter)
-            .padding(top = 12.dp, bottom = 12.dp),
+            .padding(bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        com.stepup.android.ui.components.S2ShoesSections(drawSelected = true, onShoes = onOpenShoes, onDraw = {})
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.height(12.dp))

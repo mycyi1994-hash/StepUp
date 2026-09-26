@@ -2,7 +2,7 @@
 
 ## Latest direction — S2 handoff, 2026-09-26
 
-Read `docs/redesign/s2/README.md` first, then its linked decisions, plan, status and assets. The user selected Figma S2 and asked to proceed with the images already obtained. This is a documentation/assets handoff; S2 Android implementation has not started. The comparison HTML is a proposal, not an approved pixel specification or an APK capture. Old character/wardrobe visual directions below are historical. Preserve existing functions/data and do not restart blocked Figma exports. Reading this handoff does not independently authorize implementation, committing, pushing or deployment; follow the user's current task.
+Read `docs/redesign/s2/README.md` first, then its linked decisions, plan, status and assets. The user selected Figma S2 and asked to proceed with the images already obtained. S2 Android implementation is in progress — see `docs/redesign/s2/STATUS.md`. Navigation is four tabs (Running / Shoes / Community / Profile); Draw lives inside Shoes (user decision, 2026-09-26). The comparison HTML is a proposal, not an approved pixel specification or an APK capture. Old character/wardrobe visual directions below are historical. Preserve existing functions/data and do not restart blocked Figma exports. Reading this handoff does not independently authorize implementation, committing, pushing or deployment; follow the user's current task.
 
 ## Current handoff / user priority
 

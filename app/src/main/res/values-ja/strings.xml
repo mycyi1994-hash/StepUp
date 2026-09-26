@@ -1611,5 +1611,27 @@ StepUp と走り出そう。</string>
     <string name="community_s2_meet_time">集合時間</string>
     <string name="community_s2_people">参加</string>
     <string name="community_s2_next">この後の集まり</string>
+    <string name="shoes_section_mine">マイシューズ</string>
+    <string name="run_perm_kicker">権限のご案内</string>
+    <string name="run_perm_title">ランに必要な権限を許可してください</string>
+    <string name="run_perm_subtitle">設定からいつでも変更できます</string>
+    <string name="run_perm_activity">身体活動</string>
+    <string name="run_perm_activity_body">歩数を数えます。ないとランを記録できません。</string>
+    <string name="run_perm_location">位置情報</string>
+    <string name="run_perm_location_body">ルートを描き距離を測ります。ないと歩数だけを記録します。</string>
+    <string name="run_perm_notification">通知</string>
+    <string name="run_perm_notification_body">記録中のランを通知に表示します。</string>
+    <string name="run_perm_required">必須</string>
+    <string name="run_perm_recommended">推奨</string>
+    <string name="run_perm_optional">任意</string>
+    <string name="run_perm_done">許可済み</string>
+    <string name="run_perm_granted_label">許可</string>
+    <string name="run_perm_allow_all">すべて許可</string>
+    <string name="run_perm_later">あとで</string>
+    <string name="run_countdown_kicker">ラン開始</string>
+    <string name="run_countdown_kicker_course">ラン開始 · %1$s</string>
+    <string name="run_countdown_tap">タップですぐ開始</string>
+    <string name="run_countdown_gps_on">位置情報オン · 開始するとGPSを探します</string>
+    <string name="run_countdown_gps_off">位置情報オフ · ルートなしで歩数のみ記録</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

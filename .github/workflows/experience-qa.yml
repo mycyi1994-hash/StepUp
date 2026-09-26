@@ -18,7 +18,8 @@ concurrency:
 jobs:
   android-experience:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    # 디자인 기준 장면(4묶음)까지 도므로 넉넉히
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

@@ -1612,5 +1612,27 @@ Start running with StepUp.</string>
     <string name="community_s2_meet_time">Meet time</string>
     <string name="community_s2_people">Joined</string>
     <string name="community_s2_next">More coming up</string>
+    <string name="shoes_section_mine">My shoes</string>
+    <string name="run_perm_kicker">Permissions</string>
+    <string name="run_perm_title">Allow what your run needs</string>
+    <string name="run_perm_subtitle">You can change these anytime in Settings</string>
+    <string name="run_perm_activity">Physical activity</string>
+    <string name="run_perm_activity_body">Counts your steps. Runs can’t be recorded without it.</string>
+    <string name="run_perm_location">Location</string>
+    <string name="run_perm_location_body">Draws your route and measures distance. Without it, only steps are recorded.</string>
+    <string name="run_perm_notification">Notifications</string>
+    <string name="run_perm_notification_body">Shows your run in the notification bar while it’s recording.</string>
+    <string name="run_perm_required">Required</string>
+    <string name="run_perm_recommended">Recommended</string>
+    <string name="run_perm_optional">Optional</string>
+    <string name="run_perm_done">Allowed</string>
+    <string name="run_perm_granted_label">Allowed</string>
+    <string name="run_perm_allow_all">Allow</string>
+    <string name="run_perm_later">Later</string>
+    <string name="run_countdown_kicker">Starting your run</string>
+    <string name="run_countdown_kicker_course">Starting · %1$s</string>
+    <string name="run_countdown_tap">Tap to start now</string>
+    <string name="run_countdown_gps_on">Location on · GPS search begins when you start</string>
+    <string name="run_countdown_gps_off">Location off · steps only, no route</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

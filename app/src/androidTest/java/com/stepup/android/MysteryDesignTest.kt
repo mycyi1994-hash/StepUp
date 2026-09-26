@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.MainScaffold
+import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.HomeBackgrounds
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.theme.StepUpTheme
@@ -80,7 +81,9 @@ class MysteryDesignTest {
         }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
         val out = File(compose.activity.getExternalFilesDir(null), "screen-gallery").apply { mkdirs() }
-        compose.onNodeWithText(compose.activity.getString(R.string.tab_draw)).performClick()
+        compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-draw").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("shoes-section-draw").performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isEmpty()
         }

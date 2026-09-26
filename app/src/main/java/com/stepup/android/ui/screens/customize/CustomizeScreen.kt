@@ -49,6 +49,7 @@ fun CustomizeScreen(
     onOpenMarket: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenSneaker: (Long) -> Unit = {},
+    onOpenDraw: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val loadedInventory by viewModel.selectionInventory.collectAsStateWithLifecycle()
@@ -76,6 +77,7 @@ fun CustomizeScreen(
     }
     // S2 신발 — 신발 한 켤레가 화면 가운데. 고르는 것은 미리 보기이고, 원형 버튼을 눌러야 신는다.
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter).padding(bottom = 12.dp)) {
+        com.stepup.android.ui.components.S2ShoesSections(drawSelected = false, onShoes = {}, onDraw = onOpenDraw)
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (!ready) item {

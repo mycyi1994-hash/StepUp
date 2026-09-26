@@ -943,3 +943,17 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Wallet hero: kicker, light big balance (rounded down), tagline, earned | spent row. AdaptiveNumber uses light Pretendard numerals.
 - Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: Experience QA run 36236519563 on 148d684 — shoes tab, profile and challenge captures reviewed; sneaker detail, dex, market model and wallet are not in the PR capture set (see STATUS).
 
+## 2026-09-26 — S2 batch E (1): leftovers and capture coverage
+
+- PrimaryCta white pill, FilterSheet ChoiceChip matches S2 chips, StepUpNumbers now Pretendard (28 uses).
+- PR device QA now also runs DesignReferenceTest groups (redesign, secondary, records, explore) so draw, market, wallet, flash detail, records, courses, map and ranking are captured on the same revision. experience-qa timeout 110 min.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device evidence: pending this PR's Experience QA (not yet reviewed).
+
+
+## 2026-09-26 — S2 batch F: four tabs, permission explainer, solo countdown
+
+- User decisions: four bottom tabs with Draw inside Shoes; add all S2-only features; keep existing shoe art.
+- Four tabs (Running / Shoes / Community / Profile). Shoes and Draw share a text switch (My shoes · Draw) at the top.
+- Solo runs now show an S2 permission explainer before the system prompt when permissions are missing, then a 3-2-1 countdown (tap to start now, cancel/back starts nothing, starts once).
+- First Experience QA for batch E failed on an emulator "Pixel Launcher isn't responding" dialog stealing focus; the capture script now hides and closes system error dialogs before each phase. A stale pre-S2 assertion (exact "12,840") was fixed.
+- Mode, body info, weather backgrounds, invite and live location are the next batches.

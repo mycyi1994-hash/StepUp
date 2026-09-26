@@ -18,9 +18,15 @@ val StepUpSans = FontFamily(
     Font(R.font.pretendard_bold, FontWeight.Bold),
     Font(R.font.pretendard_extrabold, FontWeight.ExtraBold),
 )
+/**
+ * 숫자 자리. S2 는 숫자도 본문과 같은 Pretendard 를 쓴다(자리 맞춤은 tnum).
+ * Barlow 파일과 라이선스는 남겨 둔다 — 이전 캡처 · 문서가 가리킨다.
+ */
 val StepUpNumbers = FontFamily(
-    Font(R.font.barlow_semibold, FontWeight.SemiBold),
-    Font(R.font.barlow_bold, FontWeight.Bold),
+    Font(R.font.pretendard_regular, FontWeight.Normal),
+    Font(R.font.pretendard_semibold, FontWeight.SemiBold),
+    Font(R.font.pretendard_bold, FontWeight.Bold),
+    Font(R.font.pretendard_extrabold, FontWeight.ExtraBold),
 )
 
 private fun type(size: Int, height: Int, weight: FontWeight, tracking: Double = 0.0) = TextStyle(

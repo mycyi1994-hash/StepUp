@@ -40,7 +40,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -143,8 +142,8 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 }
 
 /**
- * 하단 목적지 탭은 넷이다 — 러닝 / 꾸미기 / 커뮤니티 / 내 정보.
- * 그 사이의 선물 버튼은 독립 뽑기 화면으로 가는 공통 동작이다.
+ * 하단 목적지 탭은 넷이다 — 러닝 / 신발 / 같이 뛰기 / 내 정보(S2).
+ * 뽑기는 신발 탭 안쪽 글자 탭(내 신발 · 뽑기)으로 들어간다.
  *
  * 예전의 뉴스 · 마켓 · 이벤트 탭은 없어진 것이 아니라 자리를 옮겼다.
  *
@@ -535,6 +534,12 @@ internal fun MainScaffold(
                     },
                     // 무료는 바로, SUP 가 나가는 뽑기는 한 번 더 묻는다
                     onDrawShoe = { if (freeDraws > 0) drawVm.mint() else confirmPaid = true },
+                    onOpenShoes = {
+                        if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
+                            navController.popBackStack()
+                            navController.switchTab(Screen.Customize)
+                        }
+                    },
                 )
                 if (confirmPaid) {
                     com.stepup.android.ui.components.DialogPanel(
@@ -568,6 +573,7 @@ internal fun MainScaffold(
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
+                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
                 )
             }
             composable(Routes.RUNNER_MARKET) {
@@ -865,7 +871,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
-    val labels = bottomTabs.map { stringResource(it.labelRes) } + stringResource(R.string.tab_draw)
+    val labels = bottomTabs.map { stringResource(it.labelRes) }
     // Allocate spare space to long localized labels without defeating system font scaling.
     val preferredWidths = labels.map { label ->
         val measured = measurer.measure(text = label, style = labelStyle, softWrap = false)
@@ -875,20 +881,13 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     val equalWidth = maxWidth.value / labels.size
     val minimumWidth = StepUpDesign.TouchTarget.value
     val widths = if (preferredWidths.all { it <= equalWidth }) labels.map { equalWidth } else {
-        val giftWidth = preferredWidths.last().coerceIn(minimumWidth,
-            (maxWidth.value - minimumWidth * bottomTabs.size).coerceAtLeast(minimumWidth))
-        val sideWidth = (maxWidth.value - giftWidth) / 2f
-        fun pairWidths(start: Int): List<Float> {
-            val preferred = preferredWidths.subList(start, start + 2)
-            val spare = sideWidth - preferred.sum()
-            if (spare >= 0f) return preferred.map { it + spare / 2f }
-            val needs = preferred.map { (it - minimumWidth).coerceAtLeast(0f) }
-            val available = (sideWidth - minimumWidth * 2f).coerceAtLeast(0f)
+        val spare = maxWidth.value - preferredWidths.sum()
+        if (spare >= 0f) preferredWidths.map { it + spare / labels.size } else {
+            val needs = preferredWidths.map { (it - minimumWidth).coerceAtLeast(0f) }
+            val available = (maxWidth.value - minimumWidth * labels.size).coerceAtLeast(0f)
             val totalNeed = needs.sum().coerceAtLeast(1f)
-            return needs.map { minimumWidth + available * it / totalNeed }
+            needs.map { minimumWidth + available * it / totalNeed }
         }
-        // Both sides occupy equal width, so the draw action stays at screen center.
-        pairWidths(0) + pairWidths(2) + giftWidth
     }
     val labelHeightPx = bottomTabs.mapIndexed { index, screen ->
         val labelWidth = with(density) { (widths[index].dp - 8.dp).roundToPx().coerceAtLeast(1) }
@@ -917,7 +916,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val parent = if (currentRoute == Routes.MYSTERY_BOX) null else parentTabOf(currentRoute)
+            val parent = parentTabOf(currentRoute)
             bottomTabs.forEachIndexed { index, screen ->
                 NavTab(
                     screen = screen,
@@ -926,12 +925,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                     labelStyle = labelStyle,
                     selected = parent == screen,
                     onClick = {
-                        if (currentRoute == Routes.MYSTERY_BOX) {
-                            // The draw screen is an action, not a saved tab destination.
-                            // Remove it before switching so restoreState cannot reopen it.
-                            navController.popBackStack()
-                            navController.switchTab(screen)
-                        } else if (parent == screen) {
+                        if (parent == screen) {
                             // 같은 탭의 하위 화면에 있으면 그 탭의 첫 화면으로 돌아간다.
                             // 첫 화면이 백스택에 없으면(다른 길로 들어왔으면) 탭 전환으로 간다.
                             if (currentRoute != screen.route &&
@@ -944,53 +938,9 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
                         }
                     },
                 )
-                if (index == 1) {
-                    GiftNavAction(
-                        slotWeight = widths.last(),
-                        selected = currentRoute == Routes.MYSTERY_BOX,
-                        onClick = { navController.navigate(Routes.MYSTERY_BOX) {
-                            launchSingleTop = true
-                        } },
-                    )
-                }
             }
         }
     }
-    }
-}
-
-@Composable
-private fun RowScope.GiftNavAction(selected: Boolean, onClick: () -> Unit, slotWeight: Float) {
-    val tint = if (selected) com.stepup.android.ui.theme.Snow else VoltText
-    Column(
-        modifier = Modifier.weight(slotWeight).testTag("nav-draw-action")
-            .semantics { this.selected = selected }
-            .feedbackClickable(cue = FeedbackCue.Select, role = Role.Button) { onClick() }
-            .heightIn(min = StepUpDesign.NavigationItemHeight)
-            .padding(horizontal = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(
-            Modifier.size(39.dp)
-                .background(
-                    Brush.linearGradient(listOf(Volt, com.stepup.android.ui.theme.Cyan)),
-                    CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.CardGiftcard, contentDescription = null, tint = tint, modifier = Modifier.size(25.dp))
-        }
-        Text(
-            stringResource(R.string.tab_draw),
-            color = tint,
-            style = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
-                fontSize = StepUpDesign.NavigationLabel,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            ),
-            maxLines = 1,
-        )
     }
 }
 
@@ -1016,7 +966,6 @@ private fun RowScope.NavTab(
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
-            // 네 목적지와 가운데 뽑기 동작을 같은 줄에 둔다.
             .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
