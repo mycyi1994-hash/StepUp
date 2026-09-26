@@ -43,6 +43,11 @@ import java.time.ZoneId
 fun ChallengeHistoryScreen(onBack: () -> Unit, onOpenChallenges: () -> Unit) {
     val flow = androidx.compose.runtime.remember { ServiceLocator.rewardRepository.challengeRewards() }
     val rows by flow.collectAsStateWithLifecycle(initialValue = null)
+    // 요약은 목록 한도(200줄)와 무관하게 전부로 센다
+    val totalsFlow = androidx.compose.runtime.remember { ServiceLocator.rewardRepository.challengeTotals() }
+    val totals by totalsFlow.collectAsStateWithLifecycle(initialValue = null)
+    val goalDaysFlow = androidx.compose.runtime.remember { ServiceLocator.rewardRepository.goalDays() }
+    val goalDays by goalDaysFlow.collectAsStateWithLifecycle(initialValue = null)
     DetailPage(
         title = stringResource(R.string.challenge_history_title),
         onBack = onBack,
@@ -54,11 +59,10 @@ fun ChallengeHistoryScreen(onBack: () -> Unit, onOpenChallenges: () -> Unit) {
         item {
             S2Stats(
                 listOf(
-                    stringResource(R.string.challenge_history_done) to (list?.size?.toString() ?: "—"),
-                    stringResource(R.string.challenge_history_goal_days) to
-                        (list?.count { it.type == RewardType.BONUS_GOAL }?.toString() ?: "—"),
+                    stringResource(R.string.challenge_history_done) to (totals?.count?.let { "%,d".format(it) } ?: "—"),
+                    stringResource(R.string.challenge_history_goal_days) to (goalDays?.let { "%,d".format(it) } ?: "—"),
                     stringResource(R.string.challenge_history_total) to
-                        (list?.let { "+" + formatSupDown(it.sumOf { r -> r.amount }, 2) } ?: "—"),
+                        (totals?.let { "+" + formatSupDown(it.total, 2) } ?: "—"),
                 ),
                 valueSize = 22.sp,
                 modifier = Modifier.padding(vertical = 12.dp).testTag("challenge-history-summary"),
