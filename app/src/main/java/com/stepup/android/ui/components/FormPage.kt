@@ -1,6 +1,8 @@
 package com.stepup.android.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
@@ -18,6 +20,8 @@ fun FormPage(
     actionEnabled: Boolean,
     actionTag: String,
     onAction: () -> Unit,
+    /** S2 원형 버튼 안의 아이콘. 비우면 확인 표시 */
+    actionIcon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.Check,
     content: LazyListScope.() -> Unit,
 ) {
     Column(Modifier.fillMaxSize().imePadding().padding(horizontal = StepUpDesign.Gutter)) {
@@ -28,9 +32,11 @@ fun FormPage(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             content = content,
         )
-        PrimaryCta(
-            text = actionLabel, enabled = actionEnabled, onClick = onAction,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag(actionTag),
+        // S2 — 작성의 주 행동도 가운데 흰 원 + 이름. 키보드 위에 붙어 있다.
+        S2RoundAction(
+            icon = actionIcon, label = actionLabel, enabled = actionEnabled, onClick = onAction,
+            modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
+                .padding(vertical = 8.dp).testTag(actionTag),
         )
     }
 }

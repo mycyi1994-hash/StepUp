@@ -917,3 +917,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Home, Shoes and active Run follow S2 composition with existing data and actions only; all existing test tags kept. Scenery arrows cycle the six S2 backgrounds (decorative, not weather). Shoe art stays on the 52 catalog assets.
 - Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets. Device captures come from the PR's Experience QA run.
 
+## 2026-09-26 — S2 batch A: community
+
+- Community home (text tabs, featured meetup hero with big meet time, next meetups, my crews, S2 action row), flash detail hero, party lobby hero, map text tabs and full-bleed map.
+- Shared: DetailPage/FormPage primary action → S2RoundAction; TwoWaySwitch → S2 underline text tabs (applies app-wide); new S2TextTab. Test tags unchanged.
+- Checks: compileDebugKotlin, testDebugUnitTest, lintDebug, compileDebugAndroidTestKotlin, check-strings, check_experience_assets.
+

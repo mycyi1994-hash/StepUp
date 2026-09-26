@@ -1610,5 +1610,8 @@ Start running with StepUp.</string>
     <string name="me_s2_balance">SUP balance</string>
     <string name="me_s2_wallet">Open wallet ›</string>
     <string name="me_s2_records">Records</string>
+    <string name="community_s2_meet_time">Meet time</string>
+    <string name="community_s2_people">Joined</string>
+    <string name="community_s2_next">More coming up</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

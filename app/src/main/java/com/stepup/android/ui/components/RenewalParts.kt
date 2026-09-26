@@ -3,6 +3,7 @@ package com.stepup.android.ui.components
 import com.stepup.android.ui.theme.StepUpDesign
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -465,7 +466,12 @@ fun SmallBadge(
 
 enum class BadgeTone { Accent, Glow, Muted, Nft }
 
-/** 두 칸짜리 분류 탭 — 의상 / 신발, 피드 / 내 크루, 대회 / 러닝·건강 */
+/**
+ * 분류 탭 — 의상 / 신발, 피드 / 내 크루, 대회 / 러닝·건강.
+ *
+ * S2 모양: 면을 두르지 않은 글자 탭. 고른 칸은 밝은 글자와 아래 짧은 파란 선,
+ * 나머지는 흐린 글자. 칸 폭은 똑같이 나눈다.
+ */
 @Composable
 fun TwoWaySwitch(
     labels: List<String>,
@@ -474,45 +480,40 @@ fun TwoWaySwitch(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(CarbonHigh, shape)
-            .border(1.dp, Edge, shape)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        labels.forEachIndexed { index, label ->
-            val on = index == selected
-            val itemShape = RoundedCornerShape(12.dp)
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = StepUpDesign.TouchTarget)
-                    .clip(itemShape)
-                    .then(if (on) Modifier.background(VoltPlate, itemShape) else Modifier)
-                    .feedbackClickable(role = Role.Tab) { onSelect(index) }
-                    .semantics { this.selected = on }
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                icons.getOrNull(index)?.let {
-                    Icon(it, contentDescription = null, tint = if (on) OnVolt else Silver, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            labels.forEachIndexed { index, label ->
+                val on = index == selected
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = StepUpDesign.TouchTarget)
+                        .clip(RoundedCornerShape(10.dp))
+                        .feedbackClickable(role = Role.Tab) { onSelect(index) }
+                        .semantics { this.selected = on }
+                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        icons.getOrNull(index)?.let {
+                            Icon(it, contentDescription = null, tint = if (on) Snow else Silver, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Text(
+                            text = label,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontSize = 15.sp,
+                            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (on) Snow else Silver,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                    }
+                    S2TabMark(on)
                 }
-                Text(
-                    text = label,
-                    modifier = Modifier.weight(1f, fill = false),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (on) OnVolt else Silver,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
             }
         }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Edge.copy(alpha = 0.6f)))
     }
 }
 

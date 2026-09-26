@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -142,6 +143,7 @@ fun PartyLobbyScreen(
         DetailPage(
             title = stringResource(R.string.crew_lobby),
             onBack = { viewModel.leaveLobby(); onBack() },
+            primaryActionIcon = if (party.canStart) Icons.Filled.PlayArrow else Icons.Filled.Check,
             primaryActionLabel = if (showReadyAction) when {
                 party.canStart && party.allReady -> stringResource(R.string.party_start)
                 party.canStart -> stringResource(R.string.party_start_ready, party.readyCount)
@@ -151,16 +153,30 @@ fun PartyLobbyScreen(
                 if (party.canStart) viewModel.startParty() else viewModel.setReady(true)
             },
         ) {
+            // S2 — 준비 상태 한 줄 → 모임 이름 → 큰 준비 인원 → 파티 보너스
             item {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = party.crewName.ifBlank { flashPost?.title.orEmpty() },
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Snow,
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    com.stepup.android.ui.components.S2Kicker(
+                        when {
+                            party.allReady -> stringResource(R.string.crew_all_ready)
+                            party.canStart -> stringResource(R.string.crew_can_start)
+                            party.myReady && !party.isHost -> stringResource(R.string.party_wait_host)
+                            else -> stringResource(R.string.crew_waiting)
+                        },
                     )
-                    HexBadge(text = "${party.partySize}", size = 36.dp)
+                    Spacer(Modifier.height(10.dp))
+                    com.stepup.android.ui.components.S2Headline(party.crewName.ifBlank { flashPost?.title.orEmpty() })
+                    Spacer(Modifier.height(18.dp))
+                    com.stepup.android.ui.components.S2Number("${party.readyCount}/${party.partySize}", 68.sp)
+                    Text(
+                        stringResource(R.string.crew_ready_count, party.readyCount, party.partySize),
+                        color = Silver, fontSize = 13.sp,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    com.stepup.android.ui.components.S2Subtitle(
+                        stringResource(R.string.crew_boost, boostPercent) + " · " + stringResource(R.string.crew_boost_hint),
+                        color = com.stepup.android.ui.theme.VoltText,
+                    )
                 }
             }
 
@@ -174,78 +190,6 @@ fun PartyLobbyScreen(
                             viewModel.leaveLobby()
                             onBack()
                         },
-                    )
-                }
-            }
-
-            // 준비 현황
-            item {
-                GlowCard(accent = party.canStart, contentPadding = PaddingValues(18.dp), spacing = 13.dp) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = when {
-                                party.allReady -> stringResource(R.string.crew_all_ready)
-                                // 파티장이 준비를 마치면 더는 "기다리는 중"이
-                                // 아니다. 출발 여부는 이제 본인이 정한다.
-                                party.canStart -> stringResource(R.string.crew_can_start)
-                                // 방장이 아니면 출발은 방장의 몫이다
-                                party.myReady && !party.isHost -> stringResource(R.string.party_wait_host)
-                                else -> stringResource(R.string.crew_waiting)
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (party.canStart) Volt else Snow,
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.crew_ready_count,
-                                party.readyCount,
-                                party.partySize,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (party.canStart) Volt else Silver,
-                        )
-                    }
-                    BarMeter(
-                        fraction = if (party.partySize > 0) {
-                            party.readyCount.toFloat() / party.partySize
-                        } else {
-                            0f
-                        },
-                        height = 7.dp,
-                    )
-                }
-            }
-
-            // 파티 부스트 안내
-            item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(11.dp),
-                    ) {
-                        Icon(
-                            Icons.Filled.Bolt,
-                            contentDescription = null,
-                            tint = Volt,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Text(
-                            text = stringResource(R.string.crew_boost, boostPercent),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Volt,
-                            modifier = Modifier.weight(1f),
-                        )
-                        HexEmblem(size = 28.dp, glow = false)
-                    }
-                    Text(
-                        text = stringResource(R.string.crew_boost_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Slate,
                     )
                 }
             }

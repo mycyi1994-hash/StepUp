@@ -123,22 +123,24 @@ fun CommunityScreen(
                     onBack = { viewModel.selectTab(CommunityTab.BOARD) },
                 )
             } else {
+              // S2 — 위는 글자 탭 두 개와 지도 · 내 크루 아이콘. 큰 제목은 두지 않는다.
               Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.community_hero_title), modifier = Modifier.weight(1f),
-                    color = Snow, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    Modifier.weight(1f).guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    segments.forEachIndexed { index, label ->
+                        com.stepup.android.ui.components.S2TextTab(
+                            label = label,
+                            selected = (if (stories) 1 else 0) == index,
+                            onClick = { stories = index == 1; allMeetups = false },
+                        )
+                    }
+                }
                 DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
                 DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
                     onClick = { viewModel.selectTab(CommunityTab.CREW) })
               }
-            TwoWaySwitch(
-                labels = segments,
-                selected = if (stories) 1 else 0,
-                onSelect = {
-                    stories = it == 1
-                    allMeetups = false
-                },
-                modifier = Modifier.guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
-            )
             }
         }
 

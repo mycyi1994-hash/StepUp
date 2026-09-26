@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -316,3 +318,26 @@ fun s2ArchHeight(screenHeightDp: Int, largeText: Boolean): Dp = when {
     screenHeightDp < 800 -> 214.dp
     else -> 262.dp
 }
+
+/** S2 글자 탭 — "근처 번개 · 내 크루 · 지난 모임". 고른 탭은 밝은 글자와 짧은 파란 선. */
+@Composable
+fun S2TextTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .feedbackClickable(role = Role.Tab, onClick = onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+    ) {
+        Text(
+            label, color = if (selected) Snow else Silver,
+            style = TextStyle(fontFamily = StepUpSans, fontSize = 15.sp, lineHeight = 1.3.em,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
+        )
+        S2TabMark(selected)
+    }
+}
+
