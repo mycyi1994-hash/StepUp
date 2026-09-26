@@ -352,7 +352,7 @@ fun RunScreen(
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
                     RunHero(
-                        paused = session.isPaused, active = session.isActive,
+                        paused = session.isPaused,
                         gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                         elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
@@ -1191,9 +1191,8 @@ private fun FinishCard(
             .celebrate(if (confirmed) session.lastStartedAt else null),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // "러닝 완료"는 머리글이 말한다 — 바로 문장 제목으로
         Spacer(Modifier.height(8.dp))
-        com.stepup.android.ui.components.S2Kicker(stringResource(R.string.finish_title))
-        Spacer(Modifier.height(12.dp))
         com.stepup.android.ui.components.S2Headline(
             stringResource(R.string.run_s2_result_headline, minutes.toInt(), "%.2f".format(km)),
         )
@@ -1275,7 +1274,6 @@ private fun FinishCard(
 @Composable
 private fun RunHero(
     paused: Boolean,
-    active: Boolean,
     gpsFix: Boolean,
     locationAllowed: Boolean,
     elapsedSec: Long,
@@ -1290,14 +1288,10 @@ private fun RunHero(
             gpsFix -> R.string.run_gps_ok
             else -> R.string.run_gps_search
         })
-        val phase = when {
-            paused -> stringResource(R.string.run_paused)
-            active -> stringResource(R.string.run_active)
-            else -> null
-        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(Modifier.size(7.dp).background(if (gpsFix && locationAllowed) com.stepup.android.ui.theme.Cyan else Slate, CircleShape))
-            Text(listOfNotNull(gps, phase).joinToString(" · "),
+            // 러닝 중 · 일시정지는 머리글이 이미 말한다 — 여기서는 GPS 상태만
+            Text(gps,
                 color = if (gpsFix && locationAllowed) com.stepup.android.ui.theme.VoltText else Silver,
                 fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
         }
