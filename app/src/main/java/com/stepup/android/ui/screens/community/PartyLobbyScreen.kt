@@ -411,33 +411,22 @@ private fun CountdownOverlay(count: Int) {
             .background(Night.copy(alpha = 0.92f)),
         contentAlignment = Alignment.Center,
     ) {
+        // S2 카운트다운 — 파란 한 줄 위에 가는 큰 숫자 하나
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = stringResource(R.string.crew_all_ready),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                color = Volt,
-            )
-            Spacer(Modifier.height(18.dp))
-            Box(
-                modifier = Modifier.size(180.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                HexEmblem(size = 180.dp)
-                AnimatedContent(targetState = count, transitionSpec = {
-                    (fadeIn(tween(motion.duration(130))) + scaleIn(tween(motion.duration(320)), initialScale = .78f)) togetherWith
-                        fadeOut(tween(motion.duration(100)))
-                }, label = "partyCountdown") { digit ->
+            com.stepup.android.ui.components.S2Kicker(stringResource(R.string.crew_all_ready))
+            Spacer(Modifier.height(12.dp))
+            AnimatedContent(targetState = count, transitionSpec = {
+                (fadeIn(tween(motion.duration(130))) + scaleIn(tween(motion.duration(320)), initialScale = .86f)) togetherWith
+                    fadeOut(tween(motion.duration(100)))
+            }, label = "partyCountdown") { digit ->
                 Text(
                     text = if (digit > 0) "$digit" else stringResource(R.string.crew_go),
-                    fontFamily = com.stepup.android.ui.theme.StepUpNumbers,
-                    fontSize = if (count > 0) 92.sp else 44.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-3).sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpSans,
+                    fontSize = if (digit > 0) 160.sp else 56.sp,
+                    fontWeight = FontWeight.Normal,
+                    letterSpacing = (-4).sp,
                     color = Snow,
                 )
-                }
             }
         }
     }

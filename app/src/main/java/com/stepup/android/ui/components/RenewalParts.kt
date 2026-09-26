@@ -83,32 +83,30 @@ fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modif
     // 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리)
     val amount = balance?.let { formatSupDown(it) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
+    // S2 — 면과 테두리 없이 글자만. 숫자는 밝게, 단위와 화살표는 흐리게.
     Row(
         modifier = modifier
             .clip(shape)
-            .background(CarbonHigh, shape)
-            .border(1.dp, Volt.copy(alpha = 0.45f), shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
             .heightIn(min = StepUpDesign.BalanceHeight)
             .widthIn(max = 160.dp)
             .testTag("sup-balance")
-            .padding(start = 8.dp, end = if (onClick != null) 6.dp else 12.dp),
+            .padding(start = 8.dp, end = if (onClick != null) 2.dp else 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        HexEmblem(size = 20.dp, glow = false)
         Text(
             text = amount,
             modifier = Modifier.weight(1f, fill = false),
             overflow = TextOverflow.Ellipsis,
-            fontFamily = StepUpNumbers,
+            fontFamily = com.stepup.android.ui.theme.StepUpSans,
             fontSize = StepUpDesign.BalanceAmount,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = Snow,
             maxLines = 1,
         )
-        Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.Bold, color = Silver)
+        Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.Medium, color = Silver)
         if (onClick != null) {
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
         }

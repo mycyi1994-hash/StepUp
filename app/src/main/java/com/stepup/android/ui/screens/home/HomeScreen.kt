@@ -93,8 +93,6 @@ fun HomeScreen(
     backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
-    /** 보유 SUP — 머리글과 같은 값. 모르면 null */
-    balance: Double? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -185,10 +183,10 @@ fun HomeScreen(
         }
         com.stepup.android.ui.components.S2ActionRow(
             start = {
+                // 보유 SUP 는 머리글에 있다 — 여기서는 오늘 거리
                 com.stepup.android.ui.components.S2SideInfo(
-                    label = stringResource(R.string.home_s2_balance),
-                    value = balance?.let { com.stepup.android.ui.components.formatSupDown(it) + " SUP" } ?: "—",
-                    onClick = onOpenWallet,
+                    label = stringResource(R.string.stat_distance),
+                    value = if (state.loaded) "%.1f km".format(RewardEconomy.distanceMeters(state.todaySteps) / 1000) else "—",
                 )
             },
             end = {

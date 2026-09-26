@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.testTag
@@ -141,41 +143,38 @@ internal fun LoginContent(signingIn: Boolean, error: Int?, onSignIn: () -> Unit)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // S2 로그인 — 로고 → 큰 제목 → 아치 풍경 → Google 버튼 → 약관. 한 스크롤 면이라 큰 글씨에서도 다 닿는다.
             Wordmark(role = com.stepup.android.ui.theme.BrandLogoRole.Launch)
-            Text(stringResource(R.string.login_headline), color = Snow,
-                style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 16.dp))
-            Box(Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 240.dp), contentAlignment = Alignment.Center) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(R.drawable.home_banner_blue_night),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                )
-            }
-            // One scrolling surface keeps sign-in and legal links reachable at large text sizes.
-            Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
-                com.stepup.android.ui.components.GlowCard(contentPadding = PaddingValues(24.dp), spacing = 18.dp) {
-                    GoogleSignInButton(signingIn, onSignIn)
-                    error?.let {
-                        Text(stringResource(it), color = Alert, fontSize = 14.sp,
-                            modifier = Modifier.fillMaxWidth().testTag("login-error")
-                                .semantics { liveRegion = LiveRegionMode.Polite },
-                            textAlign = TextAlign.Center)
-                    }
-                    Text(stringResource(R.string.login_terms), color = Silver, fontSize = 14.sp,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-terms"), onClick = {
-                            com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/terms.html")
-                        }) { Text(stringResource(R.string.login_terms_link)) }
-                        androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-privacy"), onClick = {
-                            com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/privacy.html")
-                        }) { Text(stringResource(R.string.login_privacy_link)) }
-                    }
+            Spacer(Modifier.size(24.dp))
+            com.stepup.android.ui.components.S2Headline(stringResource(R.string.login_headline))
+            Spacer(Modifier.size(24.dp))
+            val archHeight = com.stepup.android.ui.components.s2ArchHeight(
+                androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp,
+                androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.2f,
+            )
+            com.stepup.android.ui.components.S2Arch(
+                Modifier.height(archHeight).width(archHeight * (216f / 262f)),
+                image = R.drawable.s2_bg_login,
+            )
+            Column(Modifier.fillMaxWidth().padding(top = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                GoogleSignInButton(signingIn, onSignIn)
+                error?.let {
+                    Text(stringResource(it), color = Alert, fontSize = 14.sp,
+                        modifier = Modifier.fillMaxWidth().testTag("login-error")
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                        textAlign = TextAlign.Center)
+                }
+                com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.login_terms))
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-terms"), onClick = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/terms.html")
+                    }) { Text(stringResource(R.string.login_terms_link), color = Silver) }
+                    androidx.compose.material3.TextButton(modifier = Modifier.testTag("login-privacy"), onClick = {
+                        com.stepup.android.core.ExternalIntents.openUrl(context, "https://stepupcrew.com/privacy.html")
+                    }) { Text(stringResource(R.string.login_privacy_link), color = Silver) }
                 }
             }
         }

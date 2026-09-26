@@ -487,7 +487,6 @@ internal fun MainScaffold(
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     backgroundSetting = homeSetting,
-                    balance = balance,
                     onPreviousBackground = {
                         homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
                     },

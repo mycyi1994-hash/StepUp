@@ -1590,7 +1590,6 @@
     <string name="home_s2_headline">今天走了\n%1$s步</string>
     <string name="home_s2_left">距离目标还差%1$s步</string>
     <string name="home_s2_done">已完成今天的目标</string>
-    <string name="home_s2_balance">持有</string>
     <string name="home_s2_today_sup">今日 SUP</string>
     <string name="home_s2_sup_note">记录确认后 SUP 才会到账</string>
     <string name="shoes_s2_market">市场</string>
