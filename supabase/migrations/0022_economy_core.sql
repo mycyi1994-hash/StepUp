@@ -108,12 +108,14 @@ grant execute on function public.admin_economy_set(text, jsonb) to authenticated
 --   CHAIN_REFUND    꺼내기가 체인에 안 올라가 만료됨 → 되돌림 (양수)
 --   CHAIN_DEPOSIT   체인에서 넣음 (양수)
 alter table public.sup_ledger drop constraint if exists sup_ledger_kind_check;
+-- not valid: 뒤 파일(0036)이 종류를 더 늘린다. 다시 배포할 때 여기서 옛 목록으로 기존 줄을
+-- 검사하면 배포가 멈춘다. 전체 검사는 최종 목록을 거는 0036 이 한다.
 alter table public.sup_ledger add constraint sup_ledger_kind_check check (kind in (
   'EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE',
   'SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR',
   'ESCROW_LOCK', 'ESCROW_UNLOCK', 'TRADE_BUY', 'TRADE_SELL', 'TRADE_FEE',
   'CHAIN_WITHDRAW', 'CHAIN_REFUND', 'CHAIN_DEPOSIT'
-));
+)) not valid;
 
 -- 같은 요청이 두 번 들어와도 한 번만 적히게 하는 꼬리표.
 -- 체인 작업 번호 · 목표 보너스의 날짜 같은 것이 들어간다.

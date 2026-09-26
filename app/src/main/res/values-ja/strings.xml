@@ -1679,5 +1679,30 @@ StepUp と走り出そう。</string>
     <string name="weather_dusk">夕暮れ</string>
     <string name="weather_night">夜</string>
     <string name="weather_rain">雨</string>
+    <string name="invite_title">友だちを招待</string>
+    <string name="invite_kicker">友だち招待</string>
+    <string name="invite_headline">友だちと一緒に走ろう</string>
+    <string name="invite_headline_reward">招待した友だちと%1$s SUPずつもらえます</string>
+    <string name="invite_subtitle">登録から7日以内にあなたのコードを入力するよう伝えてください</string>
+    <string name="invite_subtitle_reward">友だちが初めてのランを終えると2人とも受け取れます</string>
+    <string name="invite_code_caption">招待コード・友だちが登録後に入力します</string>
+    <string name="invite_copy">コピー</string>
+    <string name="invite_copied">招待コードをコピーしました</string>
+    <string name="invite_friends">招待した友だち %1$d人</string>
+    <string name="invite_confirmed_count">確定 %1$d</string>
+    <string name="invite_empty">まだコードを入力した友だちはいません</string>
+    <string name="invite_status_confirmed">確定</string>
+    <string name="invite_status_waiting">初ラン前</string>
+    <string name="invite_per_friend">友だち1人あたり</string>
+    <string name="invite_send_action">招待する</string>
+    <string name="invite_share_text">StepUpで一緒に走ろう！登録後に招待コード %1$s を入力してね。</string>
+    <string name="invite_sign_in">ログインすると招待コードがもらえます</string>
+    <string name="invite_failed">招待コードを読み込めませんでした</string>
+    <string name="invite_redeem_title">コードを入力</string>
+    <string name="invite_redeem_body">招待されましたか？登録から7日以内に友だちのコードを入力してください。入力は1回だけです。</string>
+    <string name="invite_redeem_field">招待コード</string>
+    <string name="invite_redeem_submit">入力</string>
+    <string name="invite_redeem_done">%1$sさんの招待につなぎました</string>
+    <string name="ledger_earn_invite">友だち招待</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -110,6 +110,7 @@ object ServiceLocator {
 
     /** 서버 경제(A안) — 잔고 · 신발 · 에너지의 정본은 서버다 */
     lateinit var economyApi: com.stepup.android.data.remote.EconomyApi
+    lateinit var inviteApi: com.stepup.android.data.remote.InviteApi
     lateinit var economySync: com.stepup.android.data.repo.EconomySync
 
     /** 서버가 잔고를 정하는 빌드인가 — 화면이 폰이 계산한 옛 금액을 가릴지 정할 때 쓴다 */
@@ -181,6 +182,7 @@ object ServiceLocator {
         )
         territoryApi = TerritoryApi(server)
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
+        inviteApi = com.stepup.android.data.remote.InviteApi(server)
         economySync = com.stepup.android.data.repo.EconomySync(
             api = economyApi,
             market = MarketApi(server),

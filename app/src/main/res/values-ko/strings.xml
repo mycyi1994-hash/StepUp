@@ -1678,5 +1678,30 @@ StepUp과 함께 달려보세요.</string>
     <string name="weather_dusk">해질녘</string>
     <string name="weather_night">밤</string>
     <string name="weather_rain">비</string>
+    <string name="invite_title">친구 초대</string>
+    <string name="invite_kicker">친구 초대</string>
+    <string name="invite_headline">친구와 같이 달려요</string>
+    <string name="invite_headline_reward">초대한 친구와 %1$s SUP씩 받아요</string>
+    <string name="invite_subtitle">친구가 가입하고 7일 안에 내 코드를 입력하게 알려 주세요</string>
+    <string name="invite_subtitle_reward">친구가 첫 러닝을 마치면 둘 다 받아요</string>
+    <string name="invite_code_caption">내 초대 코드 · 친구가 가입한 뒤 입력해요</string>
+    <string name="invite_copy">복사</string>
+    <string name="invite_copied">초대 코드를 복사했어요</string>
+    <string name="invite_friends">초대한 친구 %1$d명</string>
+    <string name="invite_confirmed_count">확정 %1$d</string>
+    <string name="invite_empty">아직 내 코드를 입력한 친구가 없어요</string>
+    <string name="invite_status_confirmed">확정</string>
+    <string name="invite_status_waiting">첫 러닝 전</string>
+    <string name="invite_per_friend">친구 한 명당</string>
+    <string name="invite_send_action">초대하기</string>
+    <string name="invite_share_text">StepUp에서 같이 달려요! 가입한 뒤 내 초대 코드 %1$s 를 입력해 주세요.</string>
+    <string name="invite_sign_in">로그인하면 초대 코드를 받을 수 있어요</string>
+    <string name="invite_failed">초대 코드를 불러오지 못했어요</string>
+    <string name="invite_redeem_title">코드 입력</string>
+    <string name="invite_redeem_body">초대받았나요? 가입하고 7일 안에 친구 코드를 입력해 주세요. 한 번만 입력할 수 있어요.</string>
+    <string name="invite_redeem_field">초대 코드</string>
+    <string name="invite_redeem_submit">입력</string>
+    <string name="invite_redeem_done">%1$s 님의 초대로 연결했어요</string>
+    <string name="ledger_earn_invite">친구 초대</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

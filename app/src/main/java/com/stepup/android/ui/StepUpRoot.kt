@@ -197,6 +197,7 @@ object Routes {
     const val SETTINGS_THEME = "settings/theme"
     const val SETTINGS_BODY = "settings/body"
     const val SETTINGS_MODE = "settings/mode"
+    const val INVITE = "invite"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
     const val RANKING = "ranking"
@@ -689,6 +690,7 @@ internal fun MainScaffold(
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
                     onOpenBody = { navController.navigate(Routes.SETTINGS_BODY) },
                     onOpenMode = { navController.navigate(Routes.SETTINGS_MODE) },
+                    onOpenInvite = { navController.navigate(Routes.INVITE) },
                     // 내 아이템 — 신발 보관함(강화 · 판매 · 조합 · 도감)
                     onOpenItems = { navController.navigate(Routes.ITEMS) },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
@@ -758,6 +760,9 @@ internal fun MainScaffold(
             }
             composable(Routes.SETTINGS_BODY) {
                 com.stepup.android.ui.screens.setup.BodySettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.INVITE) {
+                com.stepup.android.ui.screens.invite.InviteScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_MODE) {
                 com.stepup.android.ui.screens.setup.ModeSettingsScreen(onBack = { navController.popBackStack() })

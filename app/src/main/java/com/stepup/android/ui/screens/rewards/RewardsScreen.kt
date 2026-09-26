@@ -226,6 +226,7 @@ private fun LedgerRow(entry: RewardEntity) {
         "SPEND_DRAW" -> Icons.Filled.AutoAwesome to R.string.ledger_spend_draw
         "SPEND_REPAIR" -> Icons.Filled.Upgrade to R.string.ledger_spend_repair
         "EARN_COURSE" -> Icons.Filled.Redeem to R.string.ledger_earn_course
+        "EARN_INVITE" -> Icons.Filled.Groups to R.string.ledger_earn_invite
         "CHAIN_WITHDRAW", "CHAIN_REFUND", "CHAIN_DEPOSIT" -> Icons.Filled.SwapHoriz to R.string.ledger_chain
         com.stepup.android.data.repo.EconomySync.CARRIED_OVER -> Icons.Filled.Receipt to R.string.ledger_carried_over
         else -> Icons.Filled.EmojiEvents to R.string.ledger_other

@@ -1680,5 +1680,30 @@ Start running with StepUp.</string>
     <string name="weather_dusk">Sunset</string>
     <string name="weather_night">Night</string>
     <string name="weather_rain">Rain</string>
+    <string name="invite_title">Invite friends</string>
+    <string name="invite_kicker">Invite friends</string>
+    <string name="invite_headline">Run together with friends</string>
+    <string name="invite_headline_reward">You and your friend each get %1$s SUP</string>
+    <string name="invite_subtitle">Ask your friend to enter your code within 7 days of signing up</string>
+    <string name="invite_subtitle_reward">Credited to both of you after your friend finishes a first run</string>
+    <string name="invite_code_caption">My invite code · friends enter it after signing up</string>
+    <string name="invite_copy">Copy</string>
+    <string name="invite_copied">Invite code copied</string>
+    <string name="invite_friends">Invited friends %1$d</string>
+    <string name="invite_confirmed_count">Confirmed %1$d</string>
+    <string name="invite_empty">No one has entered your code yet</string>
+    <string name="invite_status_confirmed">Confirmed</string>
+    <string name="invite_status_waiting">Before first run</string>
+    <string name="invite_per_friend">Per friend</string>
+    <string name="invite_send_action">Invite</string>
+    <string name="invite_share_text">Run with me on StepUp! Enter my invite code %1$s after you sign up.</string>
+    <string name="invite_sign_in">Sign in to get your invite code</string>
+    <string name="invite_failed">Couldn’t load your invite code</string>
+    <string name="invite_redeem_title">Enter a code</string>
+    <string name="invite_redeem_body">Were you invited? Enter your friend’s code within 7 days of signing up. You can enter only one.</string>
+    <string name="invite_redeem_field">Invite code</string>
+    <string name="invite_redeem_submit">Enter</string>
+    <string name="invite_redeem_done">Linked to %1$s’s invite</string>
+    <string name="ledger_earn_invite">Friend invite</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

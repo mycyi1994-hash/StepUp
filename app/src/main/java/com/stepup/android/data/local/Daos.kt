@@ -143,7 +143,7 @@ interface RewardDao {
      */
     @Query(
         "SELECT COALESCE(SUM(amount), 0.0) AS balance, " +
-            "COALESCE(SUM(CASE WHEN type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE') AND amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, " +
+            "COALESCE(SUM(CASE WHEN type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE', 'EARN_INVITE') AND amount > 0 THEN amount ELSE 0 END), 0.0) AS earned, " +
             "COALESCE(SUM(CASE WHEN type IN ('SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR', 'TRADE_BUY', 'TRADE_FEE') AND amount < 0 THEN -amount ELSE 0 END), 0.0) AS spent " +
             "FROM rewards",
     )
@@ -179,7 +179,7 @@ interface RewardDao {
     fun observeCountByTypes(types: List<String>): Flow<Int>
 
     /** 지금까지 번 SUP — [observeTotals] 의 earned 와 같은 종류만 */
-    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0 AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')")
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM rewards WHERE amount > 0 AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE', 'EARN_INVITE')")
     fun observeEarnedTotal(): Flow<Double>
 
     /**
@@ -191,7 +191,7 @@ interface RewardDao {
     @Query(
         "SELECT COALESCE(SUM(amount), 0.0) FROM rewards " +
             "WHERE amount > 0 AND timestamp >= :fromMillis " +
-            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE')",
+            "AND type IN ('EARN_WALK', 'BONUS_GOAL', 'EARN_EVENT', 'EARN_PARTY', 'EARN_COURSE', 'EARN_INVITE')",
     )
     fun observeEarnedSince(fromMillis: Long): Flow<Double>
 
