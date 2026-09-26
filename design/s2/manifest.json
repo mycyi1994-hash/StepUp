@@ -1,0 +1,1797 @@
+{
+  "design": "StepUp S2 무대",
+  "fileKey": "BxZ1zZo74Ym7Rb8mM8cDJn",
+  "sectionId": "2:3",
+  "preparedAt": "2026-09-26",
+  "assets": [
+    {
+      "name": "backgrounds/home-sea",
+      "label": "홈 · 도시 야경",
+      "figmaImageHash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "uses": [
+        {
+          "id": "5:48",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 01 home",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:2935",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 20 runnerHome",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 200,
+          "h": 226
+        },
+        {
+          "id": "5:3652",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 26 confirm",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:5479",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 40 errOffline",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/home-sea.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "3cacdb9950569ad24528608de0074d260f03eaf25ece832082526018664d4c52",
+      "figmaLayerExport": "layer-exports/backgrounds/home-sea.png"
+    },
+    {
+      "name": "reference/maps/run-map",
+      "label": "러닝 지도 · 경로 포함 / 참고용",
+      "figmaImageHash": "181673b526b9d95bd362d874d459ed909564c929",
+      "uses": [
+        {
+          "id": "5:167",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 02 run",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:258",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 03 res",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 443.3919982910156
+        },
+        {
+          "id": "5:1625",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 10 crewMap",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 390,
+          "h": 400
+        },
+        {
+          "id": "5:1864",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 12 crewDetail",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 671.969970703125,
+          "h": 413.5199890136719
+        },
+        {
+          "id": "5:2093",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 14 crewRun",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 1950,
+          "h": 980
+        },
+        {
+          "id": "5:2716",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 18 onbCourse",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 632.5800170898438,
+          "h": 350.35198974609375
+        },
+        {
+          "id": "5:3439",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 24 countdown",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:3557",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 25 pause",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5075",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 36 errGps",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5195",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 37 errVehicle",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5288",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 38 errReward",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 443.3919982910156
+        }
+      ],
+      "status": "ready",
+      "original": "originals/reference/maps/run-map.png",
+      "width": 1200,
+      "height": 946,
+      "transparent": false,
+      "sha256": "370fe414cb6218ab80dc6d5ce4f7335f58815575b2a1921e1082315d26214673",
+      "figmaLayerExport": "layer-exports/reference/maps/run-map.png"
+    },
+    {
+      "name": "brand/stepup-light",
+      "label": "StepUp · 흰색 로고",
+      "figmaImageHash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+      "uses": [
+        {
+          "id": "5:778",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 05 start",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 104,
+          "h": 18
+        },
+        {
+          "id": "5:3077",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 21 wallet",
+            "Container:transform",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 69,
+          "h": 12
+        },
+        {
+          "id": "5:3757",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 27 shareCard",
+            "Container:transform",
+            "Container",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 75,
+          "h": 13
+        }
+      ],
+      "status": "ready",
+      "original": "originals/brand/stepup-light.png",
+      "width": 900,
+      "height": 156,
+      "transparent": true,
+      "sha256": "a564de2135ad094fd347293d7a0ee292c0a11624b2f0bf960090d086e36639cb",
+      "figmaLayerExport": "layer-exports/brand/stepup-light.png",
+      "cutout": "cutouts/brand/stepup-light.png",
+      "cutoutSize": [
+        916,
+        172
+      ],
+      "alphaCrop": [
+        0,
+        0,
+        900,
+        156
+      ],
+      "padding": 8
+    },
+    {
+      "name": "shoes/shoe-main",
+      "label": "대표 신발 · 파랑",
+      "figmaImageHash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+      "uses": [
+        {
+          "id": "5:927",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 06 shoes",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 300,
+          "h": 170
+        },
+        {
+          "id": "5:2948",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 20 runnerHome",
+            "Container",
+            "Image:transform",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 50,
+          "h": 30
+        },
+        {
+          "id": "5:4012",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 29 shoeDetail",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 240,
+          "h": 136
+        }
+      ],
+      "status": "ready",
+      "original": "originals/shoes/shoe-main.png",
+      "width": 640,
+      "height": 640,
+      "transparent": true,
+      "sha256": "17d7d43d8c5b8c8f8534dceca112b2fdf6dd486dc97a5bdad9e32e617a2bbaa0",
+      "figmaLayerExport": "layer-exports/shoes/shoe-main.png",
+      "cutout": "cutouts/shoes/shoe-main.png",
+      "cutoutSize": [
+        650,
+        506
+      ],
+      "alphaCrop": [
+        6,
+        27,
+        640,
+        517
+      ],
+      "padding": 8
+    },
+    {
+      "name": "brand/stepup-login",
+      "label": "StepUp · 컬러 로고",
+      "figmaImageHash": "0358f2b91b3a2fa5e54f5056fc526815985b4bdd",
+      "uses": [
+        {
+          "id": "5:3277",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "0358f2b91b3a2fa5e54f5056fc526815985b4bdd",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 103.84375,
+          "h": 18
+        }
+      ],
+      "status": "ready",
+      "original": "originals/brand/stepup-login.png",
+      "width": 900,
+      "height": 156,
+      "transparent": true,
+      "sha256": "4f03fe619ca85b70e700a17a124a2efff35347d6edbeac264e0a2bea260dca15",
+      "figmaLayerExport": "layer-exports/brand/stepup-login.png",
+      "cutout": "cutouts/brand/stepup-login.png",
+      "cutoutSize": [
+        916,
+        172
+      ],
+      "alphaCrop": [
+        0,
+        0,
+        900,
+        156
+      ],
+      "padding": 8
+    },
+    {
+      "name": "backgrounds/login-share",
+      "label": "로그인·공유 · 도시 야경",
+      "figmaImageHash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+      "uses": [
+        {
+          "id": "5:3287",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Image"
+          ],
+          "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:3750",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 27 shareCard",
+            "Container:transform",
+            "Container",
+            "Image"
+          ],
+          "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 240,
+          "h": 427
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/login-share.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "52bcb958bda999a5f3cb83cddd012f7d539d1116de51c7d01fd38d5ffa051c0e",
+      "figmaLayerExport": "layer-exports/backgrounds/login-share.png"
+    },
+    {
+      "name": "brand/google",
+      "label": "Google 로고",
+      "figmaImageHash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+      "uses": [
+        {
+          "id": "5:3311",
+          "name": "Image (Google)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Container",
+            "Container",
+            "Image (Google)"
+          ],
+          "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 24,
+          "h": 24
+        },
+        {
+          "id": "5:4904",
+          "name": "Image (Google)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 35 settings",
+            "Container",
+            "Container:margin",
+            "Container",
+            "Text",
+            "Text",
+            "Image (Google)"
+          ],
+          "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 12,
+          "h": 12
+        }
+      ],
+      "status": "ready",
+      "original": "originals/brand/google.png",
+      "width": 200,
+      "height": 204,
+      "transparent": true,
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a",
+      "figmaLayerExport": "layer-exports/brand/google.png",
+      "cutout": "cutouts/brand/google.png",
+      "cutoutSize": [
+        216,
+        220
+      ],
+      "alphaCrop": [
+        0,
+        0,
+        200,
+        204
+      ],
+      "padding": 8
+    },
+    {
+      "name": "shoes/market-01",
+      "label": "마켓 신발 · 민트 1",
+      "figmaImageHash": "ab8176b5cc9062b75f7350af7609312790e607f4",
+      "uses": [
+        {
+          "id": "5:4161",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "ab8176b5cc9062b75f7350af7609312790e607f4",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ],
+      "status": "ready",
+      "original": "originals/shoes/market-01.png",
+      "width": 640,
+      "height": 640,
+      "transparent": true,
+      "sha256": "5a093e88d8bd34b5024b7d34f6e5b7d485baebc89d515a27a76a9aa19cb8a851",
+      "figmaLayerExport": "layer-exports/shoes/market-01.png",
+      "cutout": "cutouts/shoes/market-01.png",
+      "cutoutSize": [
+        649,
+        364
+      ],
+      "alphaCrop": [
+        7,
+        154,
+        640,
+        502
+      ],
+      "padding": 8
+    },
+    {
+      "name": "shoes/market-02",
+      "label": "마켓 신발 · 노랑",
+      "figmaImageHash": "b09796de2fe40b3b0a2f40510475e47e78ccecd6",
+      "uses": [
+        {
+          "id": "5:4183",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "b09796de2fe40b3b0a2f40510475e47e78ccecd6",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ],
+      "status": "ready",
+      "original": "originals/shoes/market-02.png",
+      "width": 640,
+      "height": 640,
+      "transparent": true,
+      "sha256": "5d1f9d700f833682f03c95b61f6d38fd1fb29e7fc0af0a1ca3bcd3f612497372",
+      "figmaLayerExport": "layer-exports/shoes/market-02.png",
+      "cutout": "cutouts/shoes/market-02.png",
+      "cutoutSize": [
+        648,
+        438
+      ],
+      "alphaCrop": [
+        8,
+        173,
+        640,
+        595
+      ],
+      "padding": 8
+    },
+    {
+      "name": "shoes/market-03",
+      "label": "마켓 신발 · 빨강",
+      "figmaImageHash": "d725ebd472892d58a9b6774e289a019f0c0f04a1",
+      "uses": [
+        {
+          "id": "5:4205",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "d725ebd472892d58a9b6774e289a019f0c0f04a1",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ],
+      "status": "ready",
+      "original": "originals/shoes/market-03.png",
+      "width": 640,
+      "height": 640,
+      "transparent": true,
+      "sha256": "3a878cafd00c9273f1fcac41d24e29bebbdc0fb5aab2cef8ca6a0a209c7cb2d8",
+      "figmaLayerExport": "layer-exports/shoes/market-03.png",
+      "cutout": "cutouts/shoes/market-03.png",
+      "cutoutSize": [
+        643,
+        329
+      ],
+      "alphaCrop": [
+        9,
+        181,
+        636,
+        494
+      ],
+      "padding": 8
+    },
+    {
+      "name": "shoes/market-04",
+      "label": "마켓 신발 · 민트 2",
+      "figmaImageHash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+      "uses": [
+        {
+          "id": "5:4227",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        },
+        {
+          "id": "5:4292",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 31 purchase",
+            "Image"
+          ],
+          "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 122
+        }
+      ],
+      "status": "ready",
+      "original": "originals/shoes/market-04.png",
+      "width": 640,
+      "height": 640,
+      "transparent": true,
+      "sha256": "561116cb7d39d0a6d6a1ddebdad54edc46804954f11c34e570bc62997751c5a7",
+      "figmaLayerExport": "layer-exports/shoes/market-04.png",
+      "cutout": "cutouts/shoes/market-04.png",
+      "cutoutSize": [
+        648,
+        478
+      ],
+      "alphaCrop": [
+        8,
+        103,
+        640,
+        565
+      ],
+      "padding": 8
+    },
+    {
+      "name": "reference/maps/no-crew-map",
+      "label": "모임 지도 / 참고용",
+      "figmaImageHash": "e5bc40902890eb5679e0dba605624ae410483e36",
+      "uses": [
+        {
+          "id": "5:5356",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 39 errNoCrew",
+            "Container",
+            "Image"
+          ],
+          "hash": "e5bc40902890eb5679e0dba605624ae410483e36",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 390,
+          "h": 300
+        }
+      ],
+      "status": "ready",
+      "original": "originals/reference/maps/no-crew-map.png",
+      "width": 1200,
+      "height": 946,
+      "transparent": false,
+      "sha256": "2547e1d209ef6020b26ff4d1c05ee2aa95fcebef3134a35cb8a478bc229f59c1",
+      "figmaLayerExport": "layer-exports/reference/maps/no-crew-map.png"
+    },
+    {
+      "name": "backgrounds/gwangalli",
+      "label": "광안리 기본 배경",
+      "figmaImageHash": "46c6d84529f5be23201ecb9105e9072d86d0bd7e",
+      "uses": [
+        {
+          "id": "5:5584",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 41 home-g",
+            "Container",
+            "Image"
+          ],
+          "hash": "46c6d84529f5be23201ecb9105e9072d86d0bd7e",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/gwangalli.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "865956efa519823b38a55589f42598e49fa2ee44b96b4a9ec88d47b832b1f4c6"
+    },
+    {
+      "name": "backgrounds/weather-day",
+      "label": "광안리 · 낮",
+      "figmaImageHash": "d457713e33c22961d4be42ebe3f73a3bf7240009",
+      "uses": [
+        {
+          "id": "5:5724",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 42 wx-day",
+            "Container",
+            "Image"
+          ],
+          "hash": "d457713e33c22961d4be42ebe3f73a3bf7240009",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/weather-day.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "2ec42883737aa388d16ca279ea9094e015b6a88e45881cfd1012cf7293dec2df"
+    },
+    {
+      "name": "backgrounds/weather-dusk",
+      "label": "광안리 · 해질녘",
+      "figmaImageHash": "8a9d943aad000ce3cddf749fe34f3337cf09dbb9",
+      "uses": [
+        {
+          "id": "5:5870",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 43 wx-dusk",
+            "Container",
+            "Image"
+          ],
+          "hash": "8a9d943aad000ce3cddf749fe34f3337cf09dbb9",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/weather-dusk.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "2c0bb7999e71ad24ef7308c9d203c7e4ba7eb45c15ce708912419abc1937c065",
+      "figmaLayerExport": "layer-exports/backgrounds/weather-dusk.png"
+    },
+    {
+      "name": "backgrounds/weather-night",
+      "label": "광안리 · 밤",
+      "figmaImageHash": "cab3328646ef92a08cb40cc4f2c9638ab0963fd7",
+      "uses": [
+        {
+          "id": "5:6007",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 44 wx-night",
+            "Container",
+            "Image"
+          ],
+          "hash": "cab3328646ef92a08cb40cc4f2c9638ab0963fd7",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/weather-night.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "e0a54c079fad4ce62841ae7112a9240c91217820d1d58e7d376792bc69328cc2"
+    },
+    {
+      "name": "backgrounds/weather-rain",
+      "label": "광안리 · 비",
+      "figmaImageHash": "815580fcc2a5000279696a47c779adef18475b81",
+      "uses": [
+        {
+          "id": "5:6160",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 45 wx-rain",
+            "Container",
+            "Image"
+          ],
+          "hash": "815580fcc2a5000279696a47c779adef18475b81",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ],
+      "status": "ready",
+      "original": "originals/backgrounds/weather-rain.jpeg",
+      "width": 780,
+      "height": 1200,
+      "transparent": false,
+      "sha256": "238a86425906ccc2f11696252c809147014578d52564c2c0a7041919e342e265"
+    }
+  ],
+  "pending": [
+    {
+      "name": "뽑기 상자 일러스트",
+      "nodeId": "5:1072",
+      "reason": "도형 묶음 내보내기 미완료"
+    },
+    {
+      "name": "SUP 도트 코인",
+      "nodeId": "5:593",
+      "reason": "도형 묶음 내보내기 미완료"
+    },
+    {
+      "name": "StepUp 시작 카드",
+      "nodeId": "5:771",
+      "reason": "합성 그룹 내보내기 미완료"
+    },
+    {
+      "name": "아치형 배경 완성본",
+      "nodeId": "5:47",
+      "reason": "부모 프레임의 마스크·그라데이션 내보내기 미완료"
+    }
+  ],
+  "screens": [
+    {
+      "id": "5:14",
+      "name": "S2 · 01 home",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:118",
+      "name": "S2 · 02 run",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:226",
+      "name": "S2 · 03 res",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:302",
+      "name": "S2 · 04 kit",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:728",
+      "name": "S2 · 05 start",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:893",
+      "name": "S2 · 06 shoes",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1033",
+      "name": "S2 · 07 gacha",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1245",
+      "name": "S2 · 08 me",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1407",
+      "name": "S2 · 09 crewList",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1588",
+      "name": "S2 · 10 crewMap",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1678",
+      "name": "S2 · 11 crewMake",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1822",
+      "name": "S2 · 12 crewDetail",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1936",
+      "name": "S2 · 13 crewJoined",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2041",
+      "name": "S2 · 14 crewRun",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2206",
+      "name": "S2 · 15 crewMine",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2388",
+      "name": "S2 · 16 onbBody",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2548",
+      "name": "S2 · 17 onbGoal",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2679",
+      "name": "S2 · 18 onbCourse",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2786",
+      "name": "S2 · 19 mode",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2901",
+      "name": "S2 · 20 runnerHome",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3027",
+      "name": "S2 · 21 wallet",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3257",
+      "name": "S2 · 22 login",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3322",
+      "name": "S2 · 23 perm",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3426",
+      "name": "S2 · 24 countdown",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3506",
+      "name": "S2 · 25 pause",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3618",
+      "name": "S2 · 26 confirm",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3722",
+      "name": "S2 · 27 shareCard",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3842",
+      "name": "S2 · 28 invite",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3963",
+      "name": "S2 · 29 shoeDetail",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4094",
+      "name": "S2 · 30 market",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4253",
+      "name": "S2 · 31 purchase",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4347",
+      "name": "S2 · 32 history",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4562",
+      "name": "S2 · 33 challenge",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4705",
+      "name": "S2 · 34 notifications",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4870",
+      "name": "S2 · 35 settings",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5012",
+      "name": "S2 · 36 errGps",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5132",
+      "name": "S2 · 37 errVehicle",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5253",
+      "name": "S2 · 38 errReward",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5333",
+      "name": "S2 · 39 errNoCrew",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5446",
+      "name": "S2 · 40 errOffline",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5550",
+      "name": "S2 · 41 home-g",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5654",
+      "name": "S2 · 42 wx-day",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5794",
+      "name": "S2 · 43 wx-dusk",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5940",
+      "name": "S2 · 44 wx-night",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:6077",
+      "name": "S2 · 45 wx-rain",
+      "w": 390,
+      "h": 844
+    }
+  ],
+  "notes": [
+    "원본 SHA-1과 Figma imageHash 일치 검증 완료.",
+    "cutouts는 기존 알파 채널의 빈 여백만 자르고 8px 투명 여백 추가. 색상 변경·배경 제거·확대 없음.",
+    "layer-exports는 개별 이미지 레이어의 Figma 렌더. 부모의 아치 마스크·그라데이션 등 화면 전체 효과는 포함하지 않음.",
+    "지도 원본은 시안 참고용. 실제 지도 기능 구현용 타일이 아님.",
+    "텍스트·버튼·일반 UI 아이콘 전체를 이미지화하지 않음.",
+    "앱 소스 및 Figma 디자인 변경 없음."
+  ],
+  "composites": []
+}

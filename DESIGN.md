@@ -1,5 +1,7 @@
 # StepUp design contract — 2026-09 redesign
 
+> S2 transition notice, 2026-09-26: the user selected Figma S2 as the next visual authority. Read [docs/redesign/s2/README.md](docs/redesign/s2/README.md) and its decision record first. Below remains the incumbent implementation contract, not a completed S2 specification. The four-slot navigation and asset fallbacks are planning proposals; the comparison HTML is not final approval. Update actual design tokens/contracts with the requested implementation, not as a side effect of this documentation handoff.
+
 > Current user decision, 2026-09-25: ship the character-free, record-first direction from selected 05-record.png. Remove mascot/clothing/wardrobe presentation, keep shoe collection/market/draw and existing user data. Navigation is Running / Shoes / Draw / Community / Profile. Scenery is an independent horizontal banner. Older character-related requirements below describe history, not current release requirements. See docs/redesign/CHARACTER-FREE-ASSETS-2026-09-25.md.
 
 

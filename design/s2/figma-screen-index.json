@@ -1,0 +1,3159 @@
+{
+  "fileKey": "BxZ1zZo74Ym7Rb8mM8cDJn",
+  "sectionId": "2:3",
+  "screens": [
+    {
+      "id": "5:14",
+      "name": "S2 · 01 home",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:118",
+      "name": "S2 · 02 run",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:226",
+      "name": "S2 · 03 res",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:302",
+      "name": "S2 · 04 kit",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:728",
+      "name": "S2 · 05 start",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:893",
+      "name": "S2 · 06 shoes",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1033",
+      "name": "S2 · 07 gacha",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1245",
+      "name": "S2 · 08 me",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1407",
+      "name": "S2 · 09 crewList",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1588",
+      "name": "S2 · 10 crewMap",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1678",
+      "name": "S2 · 11 crewMake",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1822",
+      "name": "S2 · 12 crewDetail",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:1936",
+      "name": "S2 · 13 crewJoined",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2041",
+      "name": "S2 · 14 crewRun",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2206",
+      "name": "S2 · 15 crewMine",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2388",
+      "name": "S2 · 16 onbBody",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2548",
+      "name": "S2 · 17 onbGoal",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2679",
+      "name": "S2 · 18 onbCourse",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2786",
+      "name": "S2 · 19 mode",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:2901",
+      "name": "S2 · 20 runnerHome",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3027",
+      "name": "S2 · 21 wallet",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3257",
+      "name": "S2 · 22 login",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3322",
+      "name": "S2 · 23 perm",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3426",
+      "name": "S2 · 24 countdown",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3506",
+      "name": "S2 · 25 pause",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3618",
+      "name": "S2 · 26 confirm",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3722",
+      "name": "S2 · 27 shareCard",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3842",
+      "name": "S2 · 28 invite",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:3963",
+      "name": "S2 · 29 shoeDetail",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4094",
+      "name": "S2 · 30 market",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4253",
+      "name": "S2 · 31 purchase",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4347",
+      "name": "S2 · 32 history",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4562",
+      "name": "S2 · 33 challenge",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4705",
+      "name": "S2 · 34 notifications",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:4870",
+      "name": "S2 · 35 settings",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5012",
+      "name": "S2 · 36 errGps",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5132",
+      "name": "S2 · 37 errVehicle",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5253",
+      "name": "S2 · 38 errReward",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5333",
+      "name": "S2 · 39 errNoCrew",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5446",
+      "name": "S2 · 40 errOffline",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5550",
+      "name": "S2 · 41 home-g",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5654",
+      "name": "S2 · 42 wx-day",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5794",
+      "name": "S2 · 43 wx-dusk",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:5940",
+      "name": "S2 · 44 wx-night",
+      "w": 390,
+      "h": 844
+    },
+    {
+      "id": "5:6077",
+      "name": "S2 · 45 wx-rain",
+      "w": 390,
+      "h": 844
+    }
+  ],
+  "inventory": [
+    {
+      "id": "5:48",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 01 home",
+        "Container",
+        "Image"
+      ],
+      "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:167",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 02 run",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 433
+    },
+    {
+      "id": "5:258",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 03 res",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 443.3919982910156
+    },
+    {
+      "id": "5:778",
+      "name": "Image (StepUp)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 05 start",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 104,
+      "h": 18
+    },
+    {
+      "id": "5:927",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 06 shoes",
+        "Image"
+      ],
+      "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 300,
+      "h": 170
+    },
+    {
+      "id": "5:1625",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 10 crewMap",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 390,
+      "h": 400
+    },
+    {
+      "id": "5:1864",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 12 crewDetail",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 671.969970703125,
+      "h": 413.5199890136719
+    },
+    {
+      "id": "5:2093",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 14 crewRun",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 1950,
+      "h": 980
+    },
+    {
+      "id": "5:2716",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 18 onbCourse",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 632.5800170898438,
+      "h": 350.35198974609375
+    },
+    {
+      "id": "5:2935",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 20 runnerHome",
+        "Container",
+        "Image"
+      ],
+      "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 200,
+      "h": 226
+    },
+    {
+      "id": "5:2948",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 20 runnerHome",
+        "Container",
+        "Image:transform",
+        "Image"
+      ],
+      "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 50,
+      "h": 30
+    },
+    {
+      "id": "5:3077",
+      "name": "Image (StepUp)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 21 wallet",
+        "Container:transform",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 69,
+      "h": 12
+    },
+    {
+      "id": "5:3277",
+      "name": "Image (StepUp)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 22 login",
+        "Container",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "0358f2b91b3a2fa5e54f5056fc526815985b4bdd",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 103.84375,
+      "h": 18
+    },
+    {
+      "id": "5:3287",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 22 login",
+        "Container",
+        "Image"
+      ],
+      "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:3311",
+      "name": "Image (Google)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 22 login",
+        "Container",
+        "Container",
+        "Container",
+        "Image (Google)"
+      ],
+      "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 24,
+      "h": 24
+    },
+    {
+      "id": "5:3439",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 24 countdown",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 433
+    },
+    {
+      "id": "5:3557",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 25 pause",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 433
+    },
+    {
+      "id": "5:3652",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 26 confirm",
+        "Container",
+        "Image"
+      ],
+      "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:3750",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 27 shareCard",
+        "Container:transform",
+        "Container",
+        "Image"
+      ],
+      "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 240,
+      "h": 427
+    },
+    {
+      "id": "5:3757",
+      "name": "Image (StepUp)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 27 shareCard",
+        "Container:transform",
+        "Container",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 75,
+      "h": 13
+    },
+    {
+      "id": "5:4012",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 29 shoeDetail",
+        "Image"
+      ],
+      "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 240,
+      "h": 136
+    },
+    {
+      "id": "5:4161",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "ab8176b5cc9062b75f7350af7609312790e607f4",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78
+    },
+    {
+      "id": "5:4183",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "b09796de2fe40b3b0a2f40510475e47e78ccecd6",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78
+    },
+    {
+      "id": "5:4205",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "d725ebd472892d58a9b6774e289a019f0c0f04a1",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78
+    },
+    {
+      "id": "5:4227",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78
+    },
+    {
+      "id": "5:4292",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 31 purchase",
+        "Image"
+      ],
+      "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 122
+    },
+    {
+      "id": "5:4904",
+      "name": "Image (Google)",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 35 settings",
+        "Container",
+        "Container:margin",
+        "Container",
+        "Text",
+        "Text",
+        "Image (Google)"
+      ],
+      "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 12,
+      "h": 12
+    },
+    {
+      "id": "5:5075",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 36 errGps",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 433
+    },
+    {
+      "id": "5:5195",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 37 errVehicle",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 433
+    },
+    {
+      "id": "5:5288",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 38 errReward",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 443.3919982910156
+    },
+    {
+      "id": "5:5356",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 39 errNoCrew",
+        "Container",
+        "Image"
+      ],
+      "hash": "e5bc40902890eb5679e0dba605624ae410483e36",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 390,
+      "h": 300
+    },
+    {
+      "id": "5:5479",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 40 errOffline",
+        "Container",
+        "Image"
+      ],
+      "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:5584",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 41 home-g",
+        "Container",
+        "Image"
+      ],
+      "hash": "46c6d84529f5be23201ecb9105e9072d86d0bd7e",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:5724",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 42 wx-day",
+        "Container",
+        "Image"
+      ],
+      "hash": "d457713e33c22961d4be42ebe3f73a3bf7240009",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:5870",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 43 wx-dusk",
+        "Container",
+        "Image"
+      ],
+      "hash": "8a9d943aad000ce3cddf749fe34f3337cf09dbb9",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:6007",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 44 wx-night",
+        "Container",
+        "Image"
+      ],
+      "hash": "cab3328646ef92a08cb40cc4f2c9638ab0963fd7",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    },
+    {
+      "id": "5:6160",
+      "name": "Image",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 45 wx-rain",
+        "Container",
+        "Image"
+      ],
+      "hash": "815580fcc2a5000279696a47c779adef18475b81",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262
+    }
+  ],
+  "requested": [
+    {
+      "id": "5:5479",
+      "name": "backgrounds/home-sea",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 40 errOffline",
+        "Container",
+        "Image"
+      ],
+      "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:48",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 01 home",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:2935",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 20 runnerHome",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 200,
+          "h": 226
+        },
+        {
+          "id": "5:3652",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 26 confirm",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:5479",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 40 errOffline",
+            "Container",
+            "Image"
+          ],
+          "hash": "1e81663168104d201d62ecfd0caba373902cbd5c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    },
+    {
+      "id": "5:5288",
+      "name": "reference/maps/run-map",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 38 errReward",
+        "Container",
+        "Image"
+      ],
+      "hash": "181673b526b9d95bd362d874d459ed909564c929",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 675.47998046875,
+      "h": 443.3919982910156,
+      "uses": [
+        {
+          "id": "5:167",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 02 run",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:258",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 03 res",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 443.3919982910156
+        },
+        {
+          "id": "5:1625",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 10 crewMap",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 390,
+          "h": 400
+        },
+        {
+          "id": "5:1864",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 12 crewDetail",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 671.969970703125,
+          "h": 413.5199890136719
+        },
+        {
+          "id": "5:2093",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 14 crewRun",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 1950,
+          "h": 980
+        },
+        {
+          "id": "5:2716",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 18 onbCourse",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 632.5800170898438,
+          "h": 350.35198974609375
+        },
+        {
+          "id": "5:3439",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 24 countdown",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:3557",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 25 pause",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5075",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 36 errGps",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5195",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 37 errVehicle",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 433
+        },
+        {
+          "id": "5:5288",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 38 errReward",
+            "Container",
+            "Image"
+          ],
+          "hash": "181673b526b9d95bd362d874d459ed909564c929",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 675.47998046875,
+          "h": 443.3919982910156
+        }
+      ]
+    },
+    {
+      "id": "5:3757",
+      "name": "brand/stepup-light",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 27 shareCard",
+        "Container:transform",
+        "Container",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 75,
+      "h": 13,
+      "uses": [
+        {
+          "id": "5:778",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 05 start",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 104,
+          "h": 18
+        },
+        {
+          "id": "5:3077",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 21 wallet",
+            "Container:transform",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 69,
+          "h": 12
+        },
+        {
+          "id": "5:3757",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 27 shareCard",
+            "Container:transform",
+            "Container",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "09b61b625454be8025be4262ae472e7fd78a3e16",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 75,
+          "h": 13
+        }
+      ]
+    },
+    {
+      "id": "5:4012",
+      "name": "shoes/shoe-main",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 29 shoeDetail",
+        "Image"
+      ],
+      "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 240,
+      "h": 136,
+      "uses": [
+        {
+          "id": "5:927",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 06 shoes",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 300,
+          "h": 170
+        },
+        {
+          "id": "5:2948",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 20 runnerHome",
+            "Container",
+            "Image:transform",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 50,
+          "h": 30
+        },
+        {
+          "id": "5:4012",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 29 shoeDetail",
+            "Image"
+          ],
+          "hash": "973a6bde444977922cc3bde8283248d8780c4ed5",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 240,
+          "h": 136
+        }
+      ]
+    },
+    {
+      "id": "5:3277",
+      "name": "brand/stepup-login",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 22 login",
+        "Container",
+        "Container",
+        "Image (StepUp)"
+      ],
+      "hash": "0358f2b91b3a2fa5e54f5056fc526815985b4bdd",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 103.84375,
+      "h": 18,
+      "uses": [
+        {
+          "id": "5:3277",
+          "name": "Image (StepUp)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Container",
+            "Image (StepUp)"
+          ],
+          "hash": "0358f2b91b3a2fa5e54f5056fc526815985b4bdd",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 103.84375,
+          "h": 18
+        }
+      ]
+    },
+    {
+      "id": "5:3750",
+      "name": "backgrounds/login-share",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 27 shareCard",
+        "Container:transform",
+        "Container",
+        "Image"
+      ],
+      "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 240,
+      "h": 427,
+      "uses": [
+        {
+          "id": "5:3287",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Image"
+          ],
+          "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        },
+        {
+          "id": "5:3750",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 27 shareCard",
+            "Container:transform",
+            "Container",
+            "Image"
+          ],
+          "hash": "aa690bdd33828d0ef287f161d7c6c682f3cca76c",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 240,
+          "h": 427
+        }
+      ]
+    },
+    {
+      "id": "5:4904",
+      "name": "brand/google",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 35 settings",
+        "Container",
+        "Container:margin",
+        "Container",
+        "Text",
+        "Text",
+        "Image (Google)"
+      ],
+      "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 12,
+      "h": 12,
+      "uses": [
+        {
+          "id": "5:3311",
+          "name": "Image (Google)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 22 login",
+            "Container",
+            "Container",
+            "Container",
+            "Image (Google)"
+          ],
+          "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 24,
+          "h": 24
+        },
+        {
+          "id": "5:4904",
+          "name": "Image (Google)",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 35 settings",
+            "Container",
+            "Container:margin",
+            "Container",
+            "Text",
+            "Text",
+            "Image (Google)"
+          ],
+          "hash": "69c4cc55f3049e6289b76d83019d0b7cff80799b",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 12,
+          "h": 12
+        }
+      ]
+    },
+    {
+      "id": "5:4161",
+      "name": "shoes/market-01",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "ab8176b5cc9062b75f7350af7609312790e607f4",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78,
+      "uses": [
+        {
+          "id": "5:4161",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "ab8176b5cc9062b75f7350af7609312790e607f4",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ]
+    },
+    {
+      "id": "5:4183",
+      "name": "shoes/market-02",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "b09796de2fe40b3b0a2f40510475e47e78ccecd6",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78,
+      "uses": [
+        {
+          "id": "5:4183",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "b09796de2fe40b3b0a2f40510475e47e78ccecd6",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ]
+    },
+    {
+      "id": "5:4205",
+      "name": "shoes/market-03",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 30 market",
+        "Container",
+        "Image"
+      ],
+      "hash": "d725ebd472892d58a9b6774e289a019f0c0f04a1",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 145,
+      "h": 78,
+      "uses": [
+        {
+          "id": "5:4205",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "d725ebd472892d58a9b6774e289a019f0c0f04a1",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        }
+      ]
+    },
+    {
+      "id": "5:4292",
+      "name": "shoes/market-04",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 31 purchase",
+        "Image"
+      ],
+      "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+      "scaleMode": "FIT",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 122,
+      "uses": [
+        {
+          "id": "5:4227",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 30 market",
+            "Container",
+            "Image"
+          ],
+          "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 145,
+          "h": 78
+        },
+        {
+          "id": "5:4292",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 31 purchase",
+            "Image"
+          ],
+          "hash": "c5bdf029f7a28a32fff0d2f53e3c8e760b8a9e6f",
+          "scaleMode": "FIT",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 122
+        }
+      ]
+    },
+    {
+      "id": "5:5356",
+      "name": "reference/maps/no-crew-map",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 39 errNoCrew",
+        "Container",
+        "Image"
+      ],
+      "hash": "e5bc40902890eb5679e0dba605624ae410483e36",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 390,
+      "h": 300,
+      "uses": [
+        {
+          "id": "5:5356",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 39 errNoCrew",
+            "Container",
+            "Image"
+          ],
+          "hash": "e5bc40902890eb5679e0dba605624ae410483e36",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 390,
+          "h": 300
+        }
+      ]
+    },
+    {
+      "id": "5:5584",
+      "name": "backgrounds/gwangalli",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 41 home-g",
+        "Container",
+        "Image"
+      ],
+      "hash": "46c6d84529f5be23201ecb9105e9072d86d0bd7e",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:5584",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 41 home-g",
+            "Container",
+            "Image"
+          ],
+          "hash": "46c6d84529f5be23201ecb9105e9072d86d0bd7e",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    },
+    {
+      "id": "5:5724",
+      "name": "backgrounds/weather-day",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 42 wx-day",
+        "Container",
+        "Image"
+      ],
+      "hash": "d457713e33c22961d4be42ebe3f73a3bf7240009",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:5724",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 42 wx-day",
+            "Container",
+            "Image"
+          ],
+          "hash": "d457713e33c22961d4be42ebe3f73a3bf7240009",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    },
+    {
+      "id": "5:5870",
+      "name": "backgrounds/weather-dusk",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 43 wx-dusk",
+        "Container",
+        "Image"
+      ],
+      "hash": "8a9d943aad000ce3cddf749fe34f3337cf09dbb9",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:5870",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 43 wx-dusk",
+            "Container",
+            "Image"
+          ],
+          "hash": "8a9d943aad000ce3cddf749fe34f3337cf09dbb9",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    },
+    {
+      "id": "5:6007",
+      "name": "backgrounds/weather-night",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 44 wx-night",
+        "Container",
+        "Image"
+      ],
+      "hash": "cab3328646ef92a08cb40cc4f2c9638ab0963fd7",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:6007",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 44 wx-night",
+            "Container",
+            "Image"
+          ],
+          "hash": "cab3328646ef92a08cb40cc4f2c9638ab0963fd7",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    },
+    {
+      "id": "5:6160",
+      "name": "backgrounds/weather-rain",
+      "path": [
+        "S2 무대",
+        "S2 화면 45개",
+        "Body",
+        "Main Content:margin",
+        "Main Content",
+        "Container",
+        "S2 · 45 wx-rain",
+        "Container",
+        "Image"
+      ],
+      "hash": "815580fcc2a5000279696a47c779adef18475b81",
+      "scaleMode": "FILL",
+      "transform": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "w": 216,
+      "h": 262,
+      "uses": [
+        {
+          "id": "5:6160",
+          "name": "Image",
+          "path": [
+            "S2 무대",
+            "S2 화면 45개",
+            "Body",
+            "Main Content:margin",
+            "Main Content",
+            "Container",
+            "S2 · 45 wx-rain",
+            "Container",
+            "Image"
+          ],
+          "hash": "815580fcc2a5000279696a47c779adef18475b81",
+          "scaleMode": "FILL",
+          "transform": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "w": 216,
+          "h": 262
+        }
+      ]
+    }
+  ]
+}

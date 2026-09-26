@@ -1,8 +1,12 @@
 # StepUp implementation rules
 
+## Latest direction — S2 handoff, 2026-09-26
+
+Read `docs/redesign/s2/README.md` first, then its linked decisions, plan, status and assets. The user selected Figma S2 and asked to proceed with the images already obtained. This is a documentation/assets handoff; S2 Android implementation has not started. The comparison HTML is a proposal, not an approved pixel specification or an APK capture. Old character/wardrobe visual directions below are historical. Preserve existing functions/data and do not restart blocked Figma exports. Reading this handoff does not independently authorize implementation, committing, pushing or deployment; follow the user's current task.
+
 ## Current handoff / user priority
 
-Read `docs/redesign/HANDOFF.md` first when continuing this work. The user explicitly corrected the previous agent for prioritizing internal storage/tests over visual redesign and raised credit concerns. Prioritize reference-faithful visual completion and reviewable actual captures when implementation is requested. Preserve the pending local changes described there; do not automatically restart the previous long-running goal merely to read this handoff.
+Read `docs/redesign/HANDOFF.md` after the S2 handoff when continuing this work. The user explicitly corrected the previous agent for prioritizing internal storage/tests over visual redesign and raised credit concerns. Prioritize reference-faithful visual completion and reviewable actual captures when implementation is requested. Preserve the pending local changes described there; do not automatically restart the previous long-running goal merely to read this handoff.
 
 Read `PRODUCT.md`, `DESIGN.md`, `CLAUDE.md` and `docs/redesign/PROGRESS.md` before changing UI. User decisions in this task are authoritative over older aesthetic notes.
 
