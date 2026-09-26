@@ -1600,5 +1600,8 @@ Start running with StepUp.</string>
     <string name="shoes_s2_equip">Wear this pair</string>
     <string name="shoes_s2_owned">Owned %1$d</string>
     <string name="run_s2_goal_left">Goal %1$s km · %2$s km to go</string>
+    <string name="run_s2_result_headline">You ran %2$s km\nin %1$d min</string>
+    <string name="run_s2_result_sub">Avg pace %1$s · %2$s</string>
+    <string name="run_s2_result_sup">This run\'s SUP</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

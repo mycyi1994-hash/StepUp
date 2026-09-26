@@ -1598,5 +1598,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="shoes_s2_equip">이 신발 신기</string>
     <string name="shoes_s2_owned">보유 %1$d켤레</string>
     <string name="run_s2_goal_left">목표 %1$s km · %2$s km 남았어요</string>
+    <string name="run_s2_result_headline">%1$d분 동안\n%2$skm를 달렸어요</string>
+    <string name="run_s2_result_sub">평균 페이스 %1$s · %2$s</string>
+    <string name="run_s2_result_sup">이번 러닝 SUP</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

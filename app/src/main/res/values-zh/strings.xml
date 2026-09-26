@@ -1598,5 +1598,8 @@
     <string name="shoes_s2_equip">穿这双</string>
     <string name="shoes_s2_owned">持有 %1$d 双</string>
     <string name="run_s2_goal_left">目标 %1$s 公里 · 还剩 %2$s 公里</string>
+    <string name="run_s2_result_headline">%1$d 分钟\n跑了 %2$s 公里</string>
+    <string name="run_s2_result_sub">平均配速 %1$s · %2$s</string>
+    <string name="run_s2_result_sup">本次跑步 SUP</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1599,5 +1599,8 @@ StepUp と走り出そう。</string>
     <string name="shoes_s2_equip">この靴を履く</string>
     <string name="shoes_s2_owned">保有 %1$d足</string>
     <string name="run_s2_goal_left">目標 %1$s km · 残り %2$s km</string>
+    <string name="run_s2_result_headline">%1$d分で\n%2$skm走りました</string>
+    <string name="run_s2_result_sub">平均ペース %1$s · %2$s</string>
+    <string name="run_s2_result_sup">今回のランのSUP</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

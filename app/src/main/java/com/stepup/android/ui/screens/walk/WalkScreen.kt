@@ -77,6 +77,7 @@ import com.stepup.android.service.RunSaveStatus
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.layout.layout
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
@@ -319,13 +320,22 @@ fun RunScreen(
                         )
                     }
                 }
-                PrimaryCta(
-                    text = stringResource(R.string.finish_done),
-                    icon = Icons.Filled.Check,
-                    showArrow = false,
-                    modifier = Modifier.testTag("run-result-done").padding(vertical = 12.dp),
-                    onClick = { viewModel.clearReward(); onBack() },
-                )
+                // S2 — 가운데 흰 원이 공유, 오른쪽이 완료
+                val share = rememberFinishShare(session, lastServerPoints, lastUpload)
+                com.stepup.android.ui.components.S2ActionRow(
+                    Modifier.padding(vertical = 8.dp),
+                    end = {
+                        com.stepup.android.ui.components.S2SideInfo(
+                            stringResource(R.string.finish_done), end = true,
+                            onClick = { viewModel.clearReward(); onBack() },
+                            modifier = Modifier.testTag("run-result-done"),
+                        )
+                    },
+                ) {
+                    com.stepup.android.ui.components.S2RoundAction(
+                        icon = Icons.Filled.Share, label = stringResource(R.string.finish_share), onClick = share,
+                    )
+                }
             } else {
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -1090,6 +1100,59 @@ private fun RunTimeRing(
  * 화면을 다시 열어도 정산을 다시 하지 않는다 — 정산은 서비스가 러닝을
  * 끝낼 때 한 번만 한다.
  */
+/** 서버가 확인했고 그 금액까지 읽었을 때만 확정 — 금액이 0 이면(무효 · 상한) 확인은 됐어도 적립이 아니다 */
+private fun finishConfirmed(session: WalkSessionState, points: Double?, upload: String?): Boolean =
+    session.lastVerdict != RunVerdict.VOID && upload == UploadState.SIGNED.name && points != null && points > 0.0
+
+private fun finishKm(session: WalkSessionState): Double =
+    if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
+
+private fun finishPace(session: WalkSessionState): Long? {
+    val km = finishKm(session)
+    return if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
+}
+
+/** 결과 공유 — 달린 길과 기록을 그림 한 장으로. 그림을 못 만들면 글만 보낸다. */
+@Composable
+private fun rememberFinishShare(session: WalkSessionState, points: Double?, upload: String?): () -> Unit {
+    val context = LocalContext.current
+    val km = finishKm(session)
+    val paceSec = finishPace(session)
+    val shareLabels = RunShareCard.Labels(
+        distance = stringResource(R.string.share_card_distance),
+        time = stringResource(R.string.share_card_time),
+        pace = stringResource(R.string.share_card_pace),
+        footer = stringResource(R.string.share_card_footer),
+    )
+    val shareText = if (finishConfirmed(session, points, upload) && points != null) {
+        stringResource(R.string.finish_share_text, "%.1f".format(km),
+            formatDuration(session.lastElapsedSec), "%,.0f".format(points))
+    } else {
+        stringResource(R.string.finish_share_activity, "%.1f".format(km), formatDuration(session.lastElapsedSec))
+    }
+    return {
+        val card = runCatching {
+            RunShareCard.render(
+                context = context,
+                km = km,
+                elapsed = formatDuration(session.lastElapsedSec),
+                pace = paceSec?.let { "%d'%02d\"".format(it / 60, it % 60) } ?: "—",
+                track = session.geoTrack,
+                labels = shareLabels,
+            )
+        }.getOrNull()
+        if (card != null) {
+            RunShareCard.share(context, card, shareText, null)
+        } else {
+            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+            }
+            context.startActivity(android.content.Intent.createChooser(send, null))
+        }
+    }
+}
+
 @Composable
 private fun FinishCard(
     session: WalkSessionState,
@@ -1099,18 +1162,16 @@ private fun FinishCard(
     look: com.stepup.android.domain.AvatarLook?,
     balance: Double?,
 ) {
-    val context = LocalContext.current
     val voided = session.lastVerdict == RunVerdict.VOID
-    // 서버가 확인했고 그 금액까지 읽었을 때만 확정으로 보인다 — 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게
-    // 금액이 0 이면(서버가 무효 · 상한 처리) 확인은 됐어도 "적립 완료"가 아니다 — 축하도 하지 않는다
-    val confirmed = !voided && upload == UploadState.SIGNED.name && points != null && points > 0.0
+    // 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게 — 확정은 서버 금액까지 읽었을 때만
+    val confirmed = finishConfirmed(session, points, upload)
     // 걸음이 0 인 러닝은 서버에 올리지 않는다(올릴 것이 없다) — "서버 확인 중"으로 영영 두지 않고 적립 없음으로
     val nothingToUpload = !voided && session.lastSessionSteps <= 0
     val noReward = nothingToUpload ||
         (!voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0)
     val rejected = voided || upload == UploadState.REJECTED.name || noReward
-    val km = if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
-    val paceSec: Long? = if (km >= 0.05 && session.lastElapsedSec > 0) (session.lastElapsedSec / km).toLong() else null
+    val km = finishKm(session)
+    val paceSec = finishPace(session)
     // 서버가 확인한 뒤에만 "적립 완료". 그 전에는 확인 중이라고 적는다.
     val headline = when {
         voided -> R.string.run_void_title
@@ -1120,147 +1181,89 @@ private fun FinishCard(
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
     }
-    val shareLabels = RunShareCard.Labels(
-        distance = stringResource(R.string.share_card_distance),
-        time = stringResource(R.string.share_card_time),
-        pace = stringResource(R.string.share_card_pace),
-        footer = stringResource(R.string.share_card_footer),
-    )
-    val shareText = if (confirmed && points != null) {
-        stringResource(R.string.finish_share_text, "%.1f".format(km),
-            formatDuration(session.lastElapsedSec), "%,.0f".format(points))
-    } else {
-        stringResource(R.string.finish_share_activity, "%.1f".format(km), formatDuration(session.lastElapsedSec))
-    }
+    val minutes = (session.lastElapsedSec / 60).let { if (it == 0L && session.lastElapsedSec > 0) 1L else it }
 
+    // S2 결과 — 문장 제목 → 경로 → 이번 러닝 SUP(서버 확인 상태) → 보유
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .reveal(session.lastStartedAt)
             .celebrate(if (confirmed) session.lastStartedAt else null),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(Icons.Filled.Check, contentDescription = null, tint = com.stepup.android.ui.theme.VoltText,
-            modifier = Modifier.size(48.dp).padding(8.dp))
-        Text(stringResource(R.string.finish_title), color = Snow, style = MaterialTheme.typography.headlineSmall)
-        // Keep the three activity results together in the first viewport. Stack
-        // only when a narrow screen or enlarged type needs the full line width.
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.25f
-            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 12.dp) {
-                if (stacked) {
-                    FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km")
-                    HairlineDivider()
-                    FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "")
-                    HairlineDivider()
-                    FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "")
-                } else {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FinishStat(stringResource(R.string.stat_distance), "%.2f".format(km), "km", Modifier.weight(1f))
-                        FinishStat(stringResource(R.string.home_run_time), formatDuration(session.lastElapsedSec), "", Modifier.weight(1f))
-                        FinishStat(stringResource(R.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "", Modifier.weight(1f))
-                    }
-                }
-            }
-        }
+        Spacer(Modifier.height(8.dp))
+        com.stepup.android.ui.components.S2Kicker(stringResource(R.string.finish_title))
+        Spacer(Modifier.height(12.dp))
+        com.stepup.android.ui.components.S2Headline(
+            stringResource(R.string.run_s2_result_headline, minutes.toInt(), "%.2f".format(km)),
+        )
+        Spacer(Modifier.height(12.dp))
+        com.stepup.android.ui.components.S2Subtitle(stringResource(
+            R.string.run_s2_result_sub, paceSec?.let { formatPace(it) } ?: "—", formatDuration(session.lastElapsedSec),
+        ))
+        Spacer(Modifier.height(16.dp))
         if (session.geoTrack.isNotEmpty()) {
-            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxWidth().height(220.dp)
-                .clip(RoundedCornerShape(20.dp)).testTag("run-result-map"))
+            val gutter = com.stepup.android.ui.theme.StepUpDesign.Gutter
+            Box(
+                Modifier.fillMaxWidth()
+                    .layout { measurable, constraints ->
+                        val extra = (gutter * 2).roundToPx()
+                        val width = constraints.maxWidth + extra
+                        val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+                        layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
+                    }
+                    .height(220.dp).testTag("run-result-map"),
+            ) {
+                LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize())
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to Night, 0.14f to Color.Transparent, 0.72f to Color.Transparent, 1f to Night,
+                )))
+            }
         } else {
             Text(stringResource(R.string.run_route_unavailable), color = Silver,
                 style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 12.dp))
         }
-        GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
-          Column(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalAlignment = Alignment.CenterHorizontally,
-              verticalArrangement = Arrangement.spacedBy(6.dp),
-          ) {
-            Text(
-                text = stringResource(headline),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (voided || upload == UploadState.REJECTED.name) Alert else Silver,
-                textAlign = TextAlign.Center,
-            )
-            AdaptiveNumber(
-                text = when {
-                    confirmed && points != null -> "+%,.0f".format(points)
-                    rejected -> "0"
-                    else -> "—"
-                },
-                fontSize = 32.sp, modifier = Modifier.testTag("run-result-reward"),
-                color = com.stepup.android.ui.theme.VoltText, textAlign = TextAlign.Center,
-            )
-            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
-            if (!voided && !confirmed && upload != UploadState.REJECTED.name) {
-                Text(
-                    text = stringResource(R.string.finish_pending_note),
-                    fontSize = 14.sp,
-                    color = Silver,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp,
-                )
-                // 로그인이 풀렸으면 올리기가 조용히 멈춘다 — 서버는 7일 지난 러닝을 받지 않으므로 여기서 알린다
-                val sync by com.stepup.android.core.ServiceLocator.economySync.state.collectAsStateWithLifecycle()
-                if (!nothingToUpload && sync == com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT) {
-                    Text(
-                        text = stringResource(R.string.finish_sign_in_needed),
-                        fontSize = 14.sp,
-                        color = Silver,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp,
-                    )
-                    com.stepup.android.ui.components.SignInAgainButton()
-                }
-            }
-            if (voided) {
-                Text(
-                    text = stringResource(R.string.run_void_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Silver,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-
-        }
-        GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-            Text(stringResource(R.string.finish_balance), style = MaterialTheme.typography.bodyMedium, color = Silver)
-            AdaptiveNumber(balance?.let { com.stepup.android.ui.components.formatSupDown(it) } ?: "—", 28.sp)
-            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
-        }
-
-        GhostButton(
-            text = stringResource(R.string.finish_share),
-            onClick = {
-                // 달린 길과 기록을 그림 한 장으로. 그림을 못 만들면 글만 보낸다.
-                val card = runCatching {
-                    RunShareCard.render(
-                        context = context,
-                        km = km,
-                        elapsed = formatDuration(session.lastElapsedSec),
-                        pace = paceSec?.let { "%d'%02d\"".format(it / 60, it % 60) } ?: "—",
-                        track = session.geoTrack,
-                        labels = shareLabels,
-                    )
-                }.getOrNull()
-                if (card != null) {
-                    RunShareCard.share(context, card, shareText, null)
-                } else {
-                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                    }
-                    context.startActivity(android.content.Intent.createChooser(send, null))
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 54.dp),
-            accent = Silver,
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(headline),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (voided || upload == UploadState.REJECTED.name) Alert else com.stepup.android.ui.theme.VoltText,
+            textAlign = TextAlign.Center,
         )
+        Spacer(Modifier.height(6.dp))
+        Text(stringResource(R.string.run_s2_result_sup), color = Silver, fontSize = 13.sp)
+        com.stepup.android.ui.components.S2Number(
+            text = when {
+                confirmed && points != null -> "+%,.0f".format(points)
+                rejected -> "0"
+                else -> "—"
+            },
+            fontSize = 36.sp,
+            modifier = Modifier.padding(top = 4.dp).testTag("run-result-reward"),
+        )
+        if (!voided && !confirmed && upload != UploadState.REJECTED.name) {
+            Spacer(Modifier.height(6.dp))
+            com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.finish_pending_note))
+            // 로그인이 풀렸으면 올리기가 조용히 멈춘다 — 서버는 7일 지난 러닝을 받지 않으므로 여기서 알린다
+            val sync by com.stepup.android.core.ServiceLocator.economySync.state.collectAsStateWithLifecycle()
+            if (!nothingToUpload && sync == com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT) {
+                Spacer(Modifier.height(8.dp))
+                com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.finish_sign_in_needed))
+                com.stepup.android.ui.components.SignInAgainButton()
+            }
+        }
+        if (voided) {
+            Spacer(Modifier.height(6.dp))
+            com.stepup.android.ui.components.S2Subtitle(stringResource(R.string.run_void_body))
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.finish_balance), color = Silver, fontSize = 13.sp)
+            Spacer(Modifier.width(8.dp))
+            Text((balance?.let { com.stepup.android.ui.components.formatSupDown(it) } ?: "—") + " SUP",
+                color = Snow, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
