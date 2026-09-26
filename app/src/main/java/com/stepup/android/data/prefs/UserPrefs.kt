@@ -84,6 +84,12 @@ class UserPrefs(
         val LOGIN_METHOD = stringPreferencesKey("login_method")
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
         val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
+        val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
+        val RUN_MODE = stringPreferencesKey("run_mode")
+        val BODY_HEIGHT_CM = intPreferencesKey("body_height_cm")
+        val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
+        val BODY_GOAL_WEIGHT_KG = doublePreferencesKey("body_goal_weight_kg")
+        val BODY_GOAL_WEEKS = intPreferencesKey("body_goal_weeks")
         val LANGUAGE = stringPreferencesKey("language")
         /** 화면 테마 — ThemeMode 의 이름 문자열 */
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -518,6 +524,44 @@ class UserPrefs(
 
     suspend fun setRunPermissionPrimerSeen() {
         store.edit { it[Keys.RUN_PERMISSION_PRIMER_SEEN] = true }
+    }
+
+    /** S2 첫 설정(신체 정보 · 목표 · 모드)을 끝냈거나 건너뛰었는지 — 새로 가입한 사람에게만 한 번 보인다 */
+    val s2SetupSeen: Flow<Boolean> = store.data.map { it[Keys.S2_SETUP_SEEN] ?: false }
+
+    suspend fun setS2SetupSeen() {
+        store.edit { it[Keys.S2_SETUP_SEEN] = true }
+    }
+
+    /** 홈 구성 모드. 적립 규칙과는 상관없다. */
+    val runMode: Flow<com.stepup.android.domain.RunMode> = store.data.map { prefs ->
+        prefs[Keys.RUN_MODE]?.let { raw ->
+            com.stepup.android.domain.RunMode.entries.firstOrNull { it.name == raw }
+        } ?: com.stepup.android.domain.RunMode.LITE
+    }
+
+    suspend fun setRunMode(mode: com.stepup.android.domain.RunMode) {
+        store.edit { it[Keys.RUN_MODE] = mode.name }
+    }
+
+    /** 신체 정보와 목표 — 이 기기에만 둔다 */
+    val bodyProfile: Flow<com.stepup.android.domain.BodyProfile> = store.data.map {
+        com.stepup.android.domain.BodyProfile(
+            heightCm = it[Keys.BODY_HEIGHT_CM],
+            weightKg = it[Keys.BODY_WEIGHT_KG],
+            goalWeightKg = it[Keys.BODY_GOAL_WEIGHT_KG],
+            goalWeeks = it[Keys.BODY_GOAL_WEEKS],
+        )
+    }
+
+    suspend fun setBodyProfile(profile: com.stepup.android.domain.BodyProfile) {
+        store.edit { prefs ->
+            fun <T> put(key: Preferences.Key<T>, value: T?) { if (value == null) prefs.remove(key) else prefs[key] = value }
+            put(Keys.BODY_HEIGHT_CM, profile.heightCm)
+            put(Keys.BODY_WEIGHT_KG, profile.weightKg)
+            put(Keys.BODY_GOAL_WEIGHT_KG, profile.goalWeightKg)
+            put(Keys.BODY_GOAL_WEEKS, profile.goalWeeks)
+        }
     }
 
     /**

@@ -45,6 +45,8 @@ object AppChromePolicy {
         Destination(Routes.SETTINGS_LANGUAGE, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_EXPERIENCE, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_THEME, Screen.Profile, Header.Detail),
+        Destination(Routes.SETTINGS_BODY, Screen.Profile, Header.Detail),
+        Destination(Routes.SETTINGS_MODE, Screen.Profile, Header.Detail),
     )
 
     /** Accept both NavHost route templates and concrete/deep-link route values. */

@@ -195,6 +195,8 @@ object Routes {
     const val SETTINGS_LANGUAGE = "settings/language"
     const val SETTINGS_EXPERIENCE = "settings/experience"
     const val SETTINGS_THEME = "settings/theme"
+    const val SETTINGS_BODY = "settings/body"
+    const val SETTINGS_MODE = "settings/mode"
     const val SNEAKER = "sneaker/{id}"
     const val LOBBY = "lobby/{crewId}"
     const val RANKING = "ranking"
@@ -246,6 +248,8 @@ fun StepUpRoot() {
         .collectAsState(initial = null)
     val guideSeen by ServiceLocator.userPrefs.guideSeen
         .collectAsState(initial = null)
+    val setupSeen by ServiceLocator.userPrefs.s2SetupSeen
+        .collectAsState(initial = null)
 
     // 로그인 표시와 실제 세션이 어긋나면 로그인 화면을 다시 띄운다.
     //
@@ -264,8 +268,10 @@ fun StepUpRoot() {
         NightCanvas(Modifier.fillMaxSize())
 
         val stage = when {
-            !ready || loginMethod == null || guideSeen == null || !sessionChecked -> 0
+            !ready || loginMethod == null || guideSeen == null || setupSeen == null || !sessionChecked -> 0
             loginMethod!!.isEmpty() -> 1
+            // S2 첫 설정은 새로 온 사람(가이드를 아직 안 본 사람)에게만 — 기존 사용자를 다시 붙잡지 않는다
+            guideSeen == false && setupSeen == false -> 3
             else -> 2
         }
         Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visible ->
@@ -274,6 +280,8 @@ fun StepUpRoot() {
                 SplashScreen(onReady = { ready = true })
 
             1 -> LoginScreen(onDone = {})
+
+            3 -> com.stepup.android.ui.screens.setup.S2SetupFlow(onDone = {})
 
             else -> MainScaffold(startTour = guideSeen == false)
         }
@@ -669,6 +677,8 @@ internal fun MainScaffold(
                     onOpenLanguage = { navController.navigate(Routes.SETTINGS_LANGUAGE) },
                     onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenTheme = { navController.navigate(Routes.SETTINGS_THEME) },
+                    onOpenBody = { navController.navigate(Routes.SETTINGS_BODY) },
+                    onOpenMode = { navController.navigate(Routes.SETTINGS_MODE) },
                     // 내 아이템 — 신발 보관함(강화 · 판매 · 조합 · 도감)
                     onOpenItems = { navController.navigate(Routes.ITEMS) },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
@@ -735,6 +745,12 @@ internal fun MainScaffold(
             }
             composable(Routes.SETTINGS_EXPERIENCE) {
                 com.stepup.android.ui.screens.settings.ExperienceSettingsScreen { navController.popBackStack() }
+            }
+            composable(Routes.SETTINGS_BODY) {
+                com.stepup.android.ui.screens.setup.BodySettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_MODE) {
+                com.stepup.android.ui.screens.setup.ModeSettingsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_THEME) {
                 ThemeScreen(onBack = { navController.popBackStack() })
