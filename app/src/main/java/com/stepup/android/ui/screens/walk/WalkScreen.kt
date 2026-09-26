@@ -382,15 +382,26 @@ fun RunScreen(
                             layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
                         }
                         .height(mapHeight).testTag("run-live-map")
+                    // S2 같이 뛰는 중(시안 14) — 파티런이면 위치를 보이기로 한 사람을 지도에, 거리 순위를 아래에
+                    val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
+                    val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING &&
+                        party.members.size > 1
+                    val others = if (together) {
+                        party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } }
+                    } else emptyList()
                     Box(mapModifier) {
                         if (session.geoTrack.isNotEmpty()) {
-                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f)
+                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others)
                         } else {
                             MapWaiting(Modifier.fillMaxSize())
                         }
                         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
                             0f to Night, 0.14f to Color.Transparent, 0.72f to Color.Transparent, 1f to Night,
                         )))
+                    }
+                    if (together) {
+                        Spacer(Modifier.height(12.dp))
+                        TogetherRanking(party.members, myKm = distanceKm)
                     }
                     if (goalKm > 0 && session.isActive) {
                         Spacer(Modifier.height(12.dp))
@@ -1413,5 +1424,33 @@ private fun FinishStat(label: String, value: String, unit: String, modifier: Mod
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
         AdaptiveNumber(value, 26.sp)
         if (unit.isNotEmpty()) Text(unit, style = MaterialTheme.typography.bodyMedium, color = Silver)
+    }
+}
+
+/**
+ * 같이 뛰는 중 실시간 순위 — 거리를 보이기로 한 사람만 숫자가 있고, 나머지는 "비공개"로 아래에 둔다.
+ * 거리는 각 폰이 잰 화면용 값이다(적립과 무관).
+ */
+@Composable
+internal fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMember>, myKm: Double) {
+    val rows = members.map { m -> Triple(m, if (m.isMe) myKm else m.km, m.isMe) }
+        .sortedWith(compareByDescending<Triple<com.stepup.android.data.repo.PartyMember, Double?, Boolean>> { it.second != null }
+            .thenByDescending { it.second ?: 0.0 })
+    Column(Modifier.fillMaxWidth().testTag("run-together-ranking"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(stringResource(R.string.run_together_title, members.size), color = Silver,
+            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+        rows.forEachIndexed { index, (member, km, me) ->
+            Row(Modifier.fillMaxWidth().heightIn(min = 36.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(if (km != null) "${index + 1}" else "–", color = Slate, fontSize = 13.sp,
+                    modifier = Modifier.width(18.dp))
+                Text(
+                    if (me) stringResource(R.string.run_together_me) else member.name,
+                    color = if (me) Snow else Silver, fontSize = 14.sp, maxLines = 1, modifier = Modifier.weight(1f),
+                )
+                Text(km?.let { "%.2f km".format(it) } ?: stringResource(R.string.run_together_hidden),
+                    color = if (km != null) Snow else Slate, fontSize = 13.sp)
+            }
+        }
     }
 }

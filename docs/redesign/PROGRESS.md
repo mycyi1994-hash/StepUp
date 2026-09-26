@@ -957,3 +957,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Solo runs now show an S2 permission explainer before the system prompt when permissions are missing, then a 3-2-1 countdown (tap to start now, cancel/back starts nothing, starts once).
 - First Experience QA for batch E failed on an emulator "Pixel Launcher isn't responding" dialog stealing focus; the capture script now hides and closes system error dialogs before each phase. A stale pre-S2 assertion (exact "12,840") was fixed.
 - Mode, body info, weather backgrounds, invite and live location are the next batches.
+
+## 2026-09-26 — S2 batches G–J: setup, mode, weather scenery, invites, running together
+
+- G: optional first-run setup for new users (height/weight with BMI band, target weight and period, Lite/Runner); settings to edit/delete; Runner mode adds the equipped-shoe line on Home. Same four tabs and SUP rules in both modes.
+- H: off-by-default weather-matched Home scenery via Open-Meteo using a ~10 km rounded last-known location, at most every 30 minutes.
+- I: server-owned invite codes and one-time invite credits (0036). The amount defaults to 0 — no credit and no reward wording until an operator sets it.
+- J: opt-in live position and display distance during party runs (0037), shown on the run map and a live ranking.
+- PR #31 (batch E1 + F) merged after Experience QA 36241116862 passed every phase.

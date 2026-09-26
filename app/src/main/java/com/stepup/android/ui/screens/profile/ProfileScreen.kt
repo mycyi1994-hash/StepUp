@@ -8,6 +8,9 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -143,6 +146,9 @@ fun ProfileScreen(
     onOpenConnected: () -> Unit = {},
     onOpenLanguage: () -> Unit = {},
     onOpenTheme: () -> Unit = {},
+    onOpenBody: () -> Unit = {},
+    onOpenMode: () -> Unit = {},
+    onOpenInvite: () -> Unit = {},
     onOpenExperience: () -> Unit = {},
     onOpenItems: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
@@ -206,6 +212,8 @@ fun ProfileScreen(
         SettingsGroup(R.string.settings_group_account, listOf(
             SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
             SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
+            SettingsPill(Icons.Filled.MonitorWeight, R.string.settings_body, onOpenBody),
+            SettingsPill(Icons.Filled.SwapHoriz, R.string.settings_mode, onOpenMode),
             SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
             SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
         )),
@@ -214,6 +222,7 @@ fun ProfileScreen(
             SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
             SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
             SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
+            SettingsPill(Icons.Filled.PersonAdd, R.string.invite_title, onOpenInvite),
             SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
         )),
         SettingsGroup(R.string.settings_group_preferences, listOf(

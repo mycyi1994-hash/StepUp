@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,6 +52,13 @@ fun ExperienceSettingsScreen(onBack: () -> Unit) {
         item {
             ExperienceToggle(Icons.Filled.Animation, R.string.experience_motion, R.string.experience_motion_desc, settings.reducedMotion) {
                 scope.launch { prefs.setReducedMotion(it) }
+            }
+        }
+        item {
+            // S2 날씨 풍경 — 대략적인 위치를 날씨 서비스에 보내므로 켤 때만 동작한다
+            val weatherOn by prefs.weatherBackground.collectAsStateWithLifecycle(initialValue = false)
+            ExperienceToggle(Icons.Filled.WbSunny, R.string.experience_weather, R.string.experience_weather_desc, weatherOn) {
+                scope.launch { prefs.setWeatherBackground(it) }
             }
         }
         item {

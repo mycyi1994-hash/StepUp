@@ -110,6 +110,7 @@ object ServiceLocator {
 
     /** 서버 경제(A안) — 잔고 · 신발 · 에너지의 정본은 서버다 */
     lateinit var economyApi: com.stepup.android.data.remote.EconomyApi
+    lateinit var inviteApi: com.stepup.android.data.remote.InviteApi
     lateinit var economySync: com.stepup.android.data.repo.EconomySync
 
     /** 서버가 잔고를 정하는 빌드인가 — 화면이 폰이 계산한 옛 금액을 가릴지 정할 때 쓴다 */
@@ -181,6 +182,7 @@ object ServiceLocator {
         )
         territoryApi = TerritoryApi(server)
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
+        inviteApi = com.stepup.android.data.remote.InviteApi(server)
         economySync = com.stepup.android.data.repo.EconomySync(
             api = economyApi,
             market = MarketApi(server),
@@ -258,6 +260,12 @@ object ServiceLocator {
             partyApi = PartyApi(server),
             // 파티런 중 방에 보내는 위치 — 러닝 서비스가 받은 마지막 GPS 점
             currentLocation = { WalkSessionService.state.value.track.lastOrNull()?.toGeoPoint() },
+            currentKm = {
+                WalkSessionService.state.value.let { s ->
+                    if (s.gpsKm > 0) s.gpsKm else com.stepup.android.domain.RewardEconomy.distanceMeters(s.steps) / 1000
+                }
+            },
+            shareByDefault = { userPrefs.partyShareLocation.first() },
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),

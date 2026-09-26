@@ -70,6 +70,8 @@ import com.stepup.android.ui.components.AvatarLookNote
 import com.stepup.android.ui.components.ShortcutButton
 import com.stepup.android.ui.components.SmallBadge
 import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.components.variantLabel
+import androidx.compose.foundation.layout.heightIn
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
@@ -93,6 +95,8 @@ fun HomeScreen(
     backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
+    /** 지금 보이는 풍경이 실제 날씨로 고른 것이면 그 날씨 — 아치 아래에 한 줄로 밝힌다 */
+    weatherScene: com.stepup.android.domain.WeatherScene? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -137,8 +141,12 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(Modifier.height(if (screenHeight < 760) 4.dp else 20.dp))
+            val runMode by com.stepup.android.core.ServiceLocator.userPrefs.runMode
+                .collectAsStateWithLifecycle(initialValue = com.stepup.android.domain.RunMode.LITE)
+            val runner = runMode == com.stepup.android.domain.RunMode.RUNNER
             com.stepup.android.ui.components.S2Kicker(
-                stringResource(R.string.home_s2_goal, "%,d".format(state.goal)),
+                stringResource(R.string.home_s2_goal, "%,d".format(state.goal)) +
+                    if (runner) " · " + stringResource(R.string.setup_mode_runner) else "",
             )
             Box(Modifier.height(12.dp))
             com.stepup.android.ui.components.S2Headline(stringResource(R.string.home_s2_headline, steps))
@@ -167,6 +175,19 @@ fun HomeScreen(
                 SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background),
                     onNextBackground, Modifier.testTag("home-background-next"))
             }
+            if (weatherScene != null) {
+                Box(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.home_weather_caption, stringResource(when (weatherScene) {
+                        com.stepup.android.domain.WeatherScene.DAY -> R.string.weather_day
+                        com.stepup.android.domain.WeatherScene.DUSK -> R.string.weather_dusk
+                        com.stepup.android.domain.WeatherScene.NIGHT -> R.string.weather_night
+                        com.stepup.android.domain.WeatherScene.RAIN -> R.string.weather_rain
+                    })),
+                    color = com.stepup.android.ui.theme.Slate, fontSize = 12.sp,
+                    modifier = Modifier.testTag("home-weather-caption"),
+                )
+            }
             Box(Modifier.height(18.dp))
             if (!hasPermission) {
                 PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
@@ -180,6 +201,12 @@ fun HomeScreen(
             Box(Modifier.height(4.dp))
             Text(stringResource(R.string.home_s2_sup_note), color = com.stepup.android.ui.theme.Slate,
                 fontSize = 12.sp, textAlign = TextAlign.Center)
+            // 러너 모드 — 착용 신발과 상태를 한 줄로(S2 시안 20). 누르면 신발 탭.
+            val shoe = state.equipped
+            if (runner && shoe != null) {
+                Box(Modifier.height(12.dp))
+                RunnerShoeLine(shoe, onOpenCustomize)
+            }
         }
         com.stepup.android.ui.components.S2ActionRow(
             start = {
@@ -434,5 +461,24 @@ private fun RecordWeek(week: List<com.stepup.android.data.local.DailyStepsEntity
             }
         }
     }
+    }
+}
+
+@Composable
+private fun RunnerShoeLine(shoe: com.stepup.android.domain.Sneaker, onOpen: () -> Unit) {
+    val durability = shoe.server?.durabilityPts?.let { "%.0f".format(it) } ?: shoe.durability.toString()
+    Row(
+        Modifier.heightIn(min = 48.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .feedbackClickable(onClick = onOpen)
+            .testTag("home-runner-shoe")
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        com.stepup.android.ui.components.SneakerFrame(shoe, Modifier.width(44.dp).height(30.dp))
+        Text(shoe.variantLabel(), color = Snow, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(stringResource(R.string.home_runner_shoe_state, durability), color = Silver, fontSize = 12.sp, maxLines = 1)
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
     }
 }

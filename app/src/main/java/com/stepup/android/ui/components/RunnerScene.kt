@@ -50,6 +50,14 @@ object HomeBackgrounds {
 
     fun previous(current: RunnerSetting): RunnerSetting =
         settings[(settings.indexOf(current).coerceAtLeast(0) + settings.size - 1) % settings.size]
+
+    /** 지금 날씨에 맞는 풍경(S2 시안 42~45) */
+    fun forWeather(scene: com.stepup.android.domain.WeatherScene): RunnerSetting = when (scene) {
+        com.stepup.android.domain.WeatherScene.DAY -> RunnerSetting.HomeDay
+        com.stepup.android.domain.WeatherScene.DUSK -> RunnerSetting.HomeDawn
+        com.stepup.android.domain.WeatherScene.NIGHT -> RunnerSetting.HomeNight
+        com.stepup.android.domain.WeatherScene.RAIN -> RunnerSetting.HomeRain
+    }
 }
 
 /** A running session keeps one scene from preparation through its result. */

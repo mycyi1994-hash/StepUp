@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -202,6 +203,21 @@ fun PartyLobbyScreen(
                     canKick = party.phase == PartyPhase.LOBBY && party.isHost && !m.isMe,
                     onKick = { viewModel.kick(m.id) },
                 )
+            }
+
+            // S2 같이 뛰는 중 — 내 위치 · 거리를 보일지(기본 끔). 로비와 달리는 중에 바꿀 수 있다.
+            if (party.partyId != null && (party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.RUNNING)) {
+                item {
+                    androidx.compose.foundation.layout.Box(Modifier.testTag("party-share-location")) {
+                        com.stepup.android.ui.components.PreferenceToggle(
+                            title = stringResource(R.string.party_share_title),
+                            description = stringResource(R.string.party_share_desc),
+                            icon = Icons.Filled.LocationOn,
+                            checked = party.myShare,
+                            onCheckedChange = viewModel::setShare,
+                        )
+                    }
+                }
             }
 
             // 누가 이 방에 들어올 수 있는지 (로비 단계에서만)

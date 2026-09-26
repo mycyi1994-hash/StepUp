@@ -1,6 +1,10 @@
 package com.stepup.android
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.LocationOn
@@ -44,7 +48,6 @@ class RunStartFlowTest {
         }
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("3").assertIsDisplayed()
-        capture("run-countdown-3.png")
         compose.mainClock.advanceTimeBy(1_100)
         compose.onNodeWithText("2").assertIsDisplayed()
         compose.onNodeWithTag("run-countdown").performClick()
@@ -65,10 +68,29 @@ class RunStartFlowTest {
             } }
         }
         compose.mainClock.advanceTimeByFrame()
-        capture("run-countdown-no-gps.png")
         compose.onNodeWithTag("run-countdown-cancel").performClick()
         compose.mainClock.advanceTimeBy(5_000)
         assertEquals(0, starts)
+    }
+
+    /** 멈춘 시계로는 화면이 그려지지 않아 캡처가 비었다 — 캡처는 보통 시계로 따로 찍는다 */
+    @Test fun countdownCapture() = countdownCapture(located = true, name = "run-countdown.png")
+
+    // 한 화면에서 값만 바꿔 다시 찍으면 같은 장면이 두 번 찍혔다 — 장면마다 새로 그린다
+    @Test fun countdownNoGpsCapture() = countdownCapture(located = false, name = "run-countdown-no-gps.png")
+
+    private fun countdownCapture(located: Boolean, name: String) {
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                RunCountdown(courseName = if (located) null else "Hangang 5K", locationAllowed = located, onGo = {}, onCancel = {})
+            } }
+        }
+        compose.onNodeWithTag("run-countdown-cancel").assertIsDisplayed()
+        val gps = compose.activity.getString(
+            if (located) R.string.run_countdown_gps_on else R.string.run_countdown_gps_off,
+        )
+        compose.onNodeWithText(gps).assertIsDisplayed()
+        capture(name)
     }
 
     @Test fun primerExplainsEachPermissionAndHandsOff() {
@@ -96,6 +118,33 @@ class RunStartFlowTest {
         compose.onNodeWithTag("run-permission-later").performClick()
         assertEquals(1, allowed)
         assertEquals(1, later)
+    }
+
+    @Test fun togetherRankingOrdersSharedDistanceAndHidesTheRest() {
+        val members = listOf(
+            com.stepup.android.data.repo.PartyMember("a", "Sora", ready = true, isMe = false, km = 3.80, sharing = true),
+            com.stepup.android.data.repo.PartyMember("b", "Me", ready = true, isMe = true, sharing = true),
+            com.stepup.android.data.repo.PartyMember("c", "Yeonsu", ready = true, isMe = false),
+        )
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                // 앱에서는 러닝 화면의 어두운 바탕 위에 있다 — 캡처도 같은 바탕 위에서
+                androidx.compose.foundation.layout.Box(
+                    androidx.compose.ui.Modifier.fillMaxSize()
+                        .background(com.stepup.android.ui.theme.Night).padding(16.dp),
+                ) {
+                    com.stepup.android.ui.screens.walk.TogetherRanking(members, myKm = 3.62)
+                }
+            } }
+        }
+        compose.onNodeWithText("3.80 km").assertIsDisplayed()
+        compose.onNodeWithText("3.62 km").assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.run_together_hidden)).assertIsDisplayed()
+        val sora = compose.onNodeWithText("Sora").fetchSemanticsNode().boundsInRoot.top
+        val me = compose.onNodeWithText(compose.activity.getString(R.string.run_together_me)).fetchSemanticsNode().boundsInRoot.top
+        val hidden = compose.onNodeWithText("Yeonsu").fetchSemanticsNode().boundsInRoot.top
+        org.junit.Assert.assertTrue("shared distances first, longest on top; hidden last", sora < me && me < hidden)
+        capture("run-together-ranking.png")
     }
 
     private fun capture(name: String) {

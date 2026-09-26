@@ -1700,6 +1700,45 @@ begin
     '달리는 중인 방의 멤버는 로비를 다시 열어도 같은 방이다');
 end $$;
 
+-- 같이 뛰는 중 실시간 위치(0037) — 켠 사람만 다른 사람에게 보인다
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'km' is null,
+    '위치 보이기를 켜지 않은 사람의 위치 · 거리는 다른 사람에게 보이지 않는다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform public.party_share(v_party, true);
+  perform public.party_live(v_party, 1.234);
+end $$;
+call pg_temp.must_fail(format($q$ select public.party_live(%s, 999) $q$, pg_temp.fx('party')), '말이 안 되는 거리는 받지 않는다');
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok((v_other->>'lat')::double precision = 37.5301 and (v_other->>'km')::numeric = 1.234,
+    '켠 사람의 위치 · 거리는 달리는 동안 같은 방 사람에게 보인다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_share(pg_temp.fx('party')::bigint, false); end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'km' is null, '끄면 바로 다시 보이지 않는다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+
 call pg_temp.login('33333333-3333-3333-3333-333333333333');
 do $$
 begin
@@ -3401,6 +3440,95 @@ begin
     '걸음 없는 며칠짜리 러닝으로 가장 오래 달린 순위를 차지할 수 없다');
 end $$;
 reset role;
+
+-- ── 친구 초대 (0036) ──────────────────────────────────────────────
+insert into auth.users (id, created_at) values
+  ('1a1a1a1a-0000-0000-0000-000000000001', now()),                      -- 초대하는 사람(새 계정)
+  ('1a1a1a1a-0000-0000-0000-000000000002', now()),                      -- 초대받는 사람(새 계정)
+  ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '30 days')  -- 오래된 계정
+on conflict do nothing;
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000001');
+do $$
+declare r record;
+begin
+  select * into r from public.invite_status();
+  perform pg_temp.ok(r.code ~ '^STEP-[A-Z2-9]{6}$', '초대 코드는 서버가 만든다(STEP-XXXXXX)');
+  perform pg_temp.ok(r.reward_sup = 0, '적립액은 운영자가 정하기 전까지 0');
+  perform pg_temp.ok((select code from public.invite_status()) = r.code, '다시 불러도 같은 코드');
+  insert into fix (k, v) values ('invite_code', r.code) on conflict (k) do update set v = excluded.v;
+end $$;
+call pg_temp.must_fail($q$ select * from public.invite_codes $q$, '초대 코드 표는 앱이 직접 읽지 못한다');
+call pg_temp.must_fail($q$ insert into public.invite_redemptions (invitee, inviter)
+  values ('1a1a1a1a-0000-0000-0000-000000000001', '1a1a1a1a-0000-0000-0000-000000000002') $q$,
+  '초대 기록을 직접 쓸 수 없다');
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code')),
+  '내 초대 코드는 입력할 수 없다');
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000002');
+do $$
+begin
+  perform pg_temp.ok(public.invite_redeem(lower(replace(pg_temp.fx('invite_code'), 'STEP-', ''))) is not null,
+    '새 계정은 코드를 입력한다(소문자 · STEP- 없이도)');
+  perform pg_temp.ok((select redeemed and not can_redeem from public.invite_status()), '입력한 뒤에는 다시 입력할 수 없다고 알린다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code')),
+  '초대 코드는 한 번만 입력한다');
+do $$
+declare v_code text;
+begin
+  select code into v_code from public.invite_status();
+  insert into fix (k, v) values ('invite_code_b', v_code) on conflict (k) do update set v = excluded.v;
+end $$;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000001');
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code_b')),
+  '서로 맞초대로 두 번 받을 수 없다');
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000003');
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code')),
+  '가입 7일이 지난 계정은 코드를 입력할 수 없다');
+call pg_temp.must_fail($q$ select public.invite_redeem('STEP-ZZZZZZ') $q$, '없는 코드는 막는다');
+reset role;
+
+-- 적립액 0: 러닝을 마쳐도 적립하지 않고 확정도 적지 않는다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '3 hours', now() - interval '170 minutes', 600, 2000, 'CLEAN');
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'), '적립액이 0이면 초대 적립이 없다');
+  perform pg_temp.ok((select rewarded_at is null from public.invite_redemptions
+    where invitee = '1a1a1a1a-0000-0000-0000-000000000002'), '적립액이 0이면 확정도 적지 않는다');
+end $$;
+update economy.invite_config set reward_sup = 5;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '160 minutes', now() - interval '150 minutes', 600, 5000, 'VOID'),
+       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '140 minutes', now() - interval '130 minutes', 600, 400, 'CLEAN');
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'),
+    '무효 러닝 · 1,000걸음 미만 러닝으로는 초대 적립이 없다');
+end $$;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '120 minutes', now() - interval '100 minutes', 1200, 2400, 'CLEAN'),
+       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '90 minutes', now() - interval '70 minutes', 1200, 2400, 'CLEAN');
+do $$
+begin
+  perform pg_temp.ok((select sum(amount) from public.sup_ledger where kind = 'EARN_INVITE'
+    and user_id = '1a1a1a1a-0000-0000-0000-000000000002') = 5, '초대받은 사람은 첫 러닝에 한 번 받는다');
+  perform pg_temp.ok((select sum(amount) from public.sup_ledger where kind = 'EARN_INVITE'
+    and user_id = '1a1a1a1a-0000-0000-0000-000000000001') = 5, '초대한 사람도 한 번 받는다');
+  perform pg_temp.ok((select rewarded_at is not null and reward_sup = 5 from public.invite_redemptions
+    where invitee = '1a1a1a1a-0000-0000-0000-000000000002'), '적립하면 확정 시각을 적는다');
+end $$;
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000001');
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.invite_list() where rewarded_at is not null) = 1,
+    '초대한 사람은 확정된 친구를 본다');
+  perform pg_temp.ok((select invited = 1 and rewarded = 1 and reward_sup = 5 from public.invite_status()),
+    '초대 현황 숫자');
+end $$;
+reset role;
+update economy.invite_config set reward_sup = 0;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

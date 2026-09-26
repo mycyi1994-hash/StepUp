@@ -2,6 +2,7 @@ package com.stepup.android.ui.screens.community
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
@@ -44,6 +45,12 @@ class PartyLobbyViewModel(
     fun retry() = crewRepository.retryLobby()
 
     fun setReady(ready: Boolean) = crewRepository.setMyReady(ready)
+
+    /** 달리는 동안 내 위치 · 거리 보이기 — 다음 방에서도 이 값으로 시작한다 */
+    fun setShare(share: Boolean) {
+        crewRepository.setMyShare(share)
+        viewModelScope.launch { com.stepup.android.core.ServiceLocator.userPrefs.setPartyShareLocation(share) }
+    }
 
     fun leaveLobby() = crewRepository.leaveLobby()
 

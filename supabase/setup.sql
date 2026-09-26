@@ -6630,12 +6630,14 @@ grant execute on function public.admin_economy_set(text, jsonb) to authenticated
 --   CHAIN_REFUND    꺼내기가 체인에 안 올라가 만료됨 → 되돌림 (양수)
 --   CHAIN_DEPOSIT   체인에서 넣음 (양수)
 alter table public.sup_ledger drop constraint if exists sup_ledger_kind_check;
+-- not valid: 뒤 파일(0036)이 종류를 더 늘린다. 다시 배포할 때 여기서 옛 목록으로 기존 줄을
+-- 검사하면 배포가 멈춘다. 전체 검사는 최종 목록을 거는 0036 이 한다.
 alter table public.sup_ledger add constraint sup_ledger_kind_check check (kind in (
   'EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE',
   'SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR',
   'ESCROW_LOCK', 'ESCROW_UNLOCK', 'TRADE_BUY', 'TRADE_SELL', 'TRADE_FEE',
   'CHAIN_WITHDRAW', 'CHAIN_REFUND', 'CHAIN_DEPOSIT'
-));
+)) not valid;
 
 -- 같은 요청이 두 번 들어와도 한 번만 적히게 하는 꼬리표.
 -- 체인 작업 번호 · 목표 보너스의 날짜 같은 것이 들어간다.
@@ -10008,6 +10010,307 @@ create policy comments_insert_own on public.comments for insert
 
 -- 글 고치기 — 앱에는 고치는 기능이 없다(지우고 다시 쓴다)
 revoke update on public.posts from anon, authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0036_invites.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0036 — 친구 초대 (S2 시안 28, 2026-09-26)
+--
+--  · 사람마다 초대 코드 하나(STEP-XXXXXX). 서버가 만든다.
+--  · 새로 가입한 사람은 가입 7일 안에 코드 하나를 입력할 수 있다(한 번만, 내 코드 · 서로 맞초대 불가).
+--  · 초대받은 사람이 무효가 아닌 러닝(기본 1,000걸음 이상)을 처음 마치면 두 사람에게 한 번씩 적립한다.
+--  · 적립액은 economy.invite_config.reward_sup 하나로 정한다. **기본 0 — 0이면 아무것도 적립하지 않고
+--    앱도 보상 문구를 보이지 않는다.** 금액은 운영자가 정해 이렇게 바꾼다:
+--        update economy.invite_config set reward_sup = 5;
+--  · 한 사람이 초대로 받는 적립은 max_rewards_per_inviter 명까지(초대받은 사람 몫은 따로 준다).
+--  앱은 표를 직접 읽거나 쓰지 않고 아래 함수로만 쓴다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- 원장 종류에 초대 적립을 더한다(0022 의 목록 + EARN_INVITE). 최종 목록이라 기존 줄까지 검사한다.
+alter table public.sup_ledger drop constraint if exists sup_ledger_kind_check;
+alter table public.sup_ledger add constraint sup_ledger_kind_check check (kind in (
+  'EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE', 'EARN_INVITE',
+  'SPEND_MINT', 'SPEND_UPGRADE', 'SPEND_BOOST', 'SPEND_DRAW', 'SPEND_REPAIR',
+  'ESCROW_LOCK', 'ESCROW_UNLOCK', 'TRADE_BUY', 'TRADE_SELL', 'TRADE_FEE',
+  'CHAIN_WITHDRAW', 'CHAIN_REFUND', 'CHAIN_DEPOSIT'
+));
+
+create table if not exists economy.invite_config (
+  id boolean primary key default true check (id),
+  reward_sup numeric(20, 4) not null default 0 check (reward_sup >= 0 and reward_sup <= 1000),
+  min_steps int not null default 1000 check (min_steps >= 0),
+  max_rewards_per_inviter int not null default 50 check (max_rewards_per_inviter >= 0),
+  redeem_window interval not null default interval '7 days'
+);
+insert into economy.invite_config (id) values (true) on conflict (id) do nothing;
+revoke all on economy.invite_config from public;
+
+create table if not exists public.invite_codes (
+  user_id uuid primary key references auth.users on delete cascade,
+  code text not null unique check (code ~ '^STEP-[A-Z2-9]{6}$'),
+  created_at timestamptz not null default now()
+);
+alter table public.invite_codes enable row level security;
+revoke all on public.invite_codes from anon, authenticated;
+
+create table if not exists public.invite_redemptions (
+  invitee uuid primary key references auth.users on delete cascade,
+  inviter uuid not null references auth.users on delete cascade,
+  created_at timestamptz not null default now(),
+  rewarded_at timestamptz,
+  reward_sup numeric(20, 4),
+  check (invitee <> inviter)
+);
+create index if not exists invite_redemptions_inviter on public.invite_redemptions (inviter, created_at desc);
+alter table public.invite_redemptions enable row level security;
+revoke all on public.invite_redemptions from anon, authenticated;
+
+/* 내 초대 코드(없으면 만든다)와 초대 현황. 적립액이 0이면 reward_sup 도 0 — 앱은 보상을 말하지 않는다. */
+create or replace function public.invite_status()
+returns table (code text, reward_sup numeric, invited int, rewarded int, can_redeem boolean, redeemed boolean)
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_code text;
+  v_alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_cfg economy.invite_config;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  select c.code into v_code from public.invite_codes c where c.user_id = v_user;
+  while v_code is null loop
+    v_code := 'STEP-' || (
+      select string_agg(substr(v_alphabet, 1 + floor(random() * length(v_alphabet))::int, 1), '')
+        from generate_series(1, 6));
+    begin
+      insert into public.invite_codes (user_id, code) values (v_user, v_code);
+    exception when unique_violation then
+      -- 같은 코드가 이미 있으면 다시 뽑는다. 같은 사람이 동시에 불렀으면 그 코드를 읽는다.
+      select c.code into v_code from public.invite_codes c where c.user_id = v_user;
+    end;
+  end loop;
+  select * into v_cfg from economy.invite_config where id;
+  return query select
+    v_code,
+    coalesce(v_cfg.reward_sup, 0)::numeric,
+    (select count(*)::int from public.invite_redemptions r where r.inviter = v_user),
+    (select count(*)::int from public.invite_redemptions r where r.inviter = v_user and r.rewarded_at is not null),
+    not exists (select 1 from public.invite_redemptions r where r.invitee = v_user)
+      and exists (select 1 from auth.users u where u.id = v_user
+                   and u.created_at > now() - coalesce(v_cfg.redeem_window, interval '7 days')),
+    exists (select 1 from public.invite_redemptions r where r.invitee = v_user);
+end $$;
+
+/* 내가 초대한 사람 — 이름 · 입력한 때 · 적립 확정 때(서버가 적은 뒤에만 값이 있다) */
+create or replace function public.invite_list()
+returns table (display_name text, joined_at timestamptz, rewarded_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select coalesce(p.display_name, '러너'), r.created_at, r.rewarded_at
+    from public.invite_redemptions r
+    left join public.profiles p on p.id = r.invitee
+   where r.inviter = auth.uid()
+   order by r.created_at desc
+   limit 100
+$$;
+
+/* 초대 코드 입력 — 새로 가입한 사람이 한 번. 초대한 사람 이름을 돌려준다. */
+create or replace function public.invite_redeem(p_code text)
+returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_code text := upper(regexp_replace(coalesce(p_code, ''), '\s', '', 'g'));
+  v_inviter uuid;
+  v_cfg economy.invite_config;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if v_code !~ '^STEP-' then
+    v_code := 'STEP-' || v_code;
+  end if;
+  select c.user_id into v_inviter from public.invite_codes c where c.code = v_code;
+  if v_inviter is null then
+    raise exception '초대 코드를 찾을 수 없어요' using errcode = 'P0002';
+  end if;
+  if v_inviter = v_user then
+    raise exception '내 초대 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_user) then
+    raise exception '이미 초대 코드를 입력했어요' using errcode = '23505';
+  end if;
+  -- 서로 맞초대로 두 번 받지 못하게
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_inviter and r.inviter = v_user) then
+    raise exception '나를 초대한 사람의 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  select * into v_cfg from economy.invite_config where id;
+  if not exists (select 1 from auth.users u where u.id = v_user
+                  and u.created_at > now() - coalesce(v_cfg.redeem_window, interval '7 days')) then
+    raise exception '초대 코드는 가입하고 7일 안에만 입력할 수 있어요' using errcode = '22023';
+  end if;
+  insert into public.invite_redemptions (invitee, inviter) values (v_user, v_inviter);
+  return (select coalesce(p.display_name, '러너') from public.profiles p where p.id = v_inviter);
+end $$;
+
+/*
+ * 초대받은 사람의 첫 러닝 — 러닝이 기록된 뒤(무효 제외) 한 번만 적립한다.
+ * 적립액이 0이면 아무것도 하지 않고 확정도 적지 않는다(나중에 금액이 정해지면 다음 러닝에서 준다).
+ */
+create or replace function economy.invite_reward_after_session()
+returns trigger
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_r public.invite_redemptions;
+  v_cfg economy.invite_config;
+  v_amount numeric(20, 4);
+begin
+  if new.verdict = 'VOID' then
+    return null;
+  end if;
+  select * into v_r from public.invite_redemptions r
+   where r.invitee = new.user_id and r.rewarded_at is null
+   for update;
+  if not found then
+    return null;
+  end if;
+  select * into v_cfg from economy.invite_config where id;
+  v_amount := coalesce(v_cfg.reward_sup, 0);
+  if v_amount <= 0 or coalesce(new.steps, 0) < coalesce(v_cfg.min_steps, 1000) then
+    return null;
+  end if;
+  perform economy.ledger_apply(new.user_id, 'EARN_INVITE', v_amount, '친구 초대 — 첫 러닝', 'invite:joined');
+  if (select count(*) from public.invite_redemptions r
+       where r.inviter = v_r.inviter and r.rewarded_at is not null) < v_cfg.max_rewards_per_inviter then
+    perform economy.ledger_apply(v_r.inviter, 'EARN_INVITE', v_amount,
+      '친구 초대 — 초대한 친구의 첫 러닝', 'invite:' || new.user_id::text);
+  end if;
+  update public.invite_redemptions set rewarded_at = now(), reward_sup = v_amount
+   where invitee = new.user_id;
+  return null;
+end $$;
+revoke all on function economy.invite_reward_after_session() from public;
+
+drop trigger if exists invite_reward_after_session on public.walk_sessions;
+create trigger invite_reward_after_session
+  after insert on public.walk_sessions
+  for each row execute function economy.invite_reward_after_session();
+
+revoke all on function public.invite_status() from public, anon;
+revoke all on function public.invite_list() from public, anon;
+revoke all on function public.invite_redeem(text) from public, anon;
+grant execute on function public.invite_status() to authenticated;
+grant execute on function public.invite_list() to authenticated;
+grant execute on function public.invite_redeem(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0037_party_live.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0037 — 같이 뛰는 중 실시간 위치 · 거리 (S2 시안 14, 2026-09-26)
+--
+--  파티런 중 앱은 이미 party_ping 으로 위치를 보낸다(파티 인원 확인용, 0032). 지금까지
+--  party_state 는 그 위치를 방 사람 모두에게 그대로 돌려줬다. 이제는
+--    · 본인이 "달리는 동안 내 위치 보이기"를 켠 사람만(share_location),
+--    · 방이 달리는 중(RUNNING)이고 최근 2분 안에 보낸 위치만
+--  다른 사람에게 보인다. 끄면(기본) 위치와 거리 모두 본인에게만 보인다.
+--  서버의 파티 인원 확인은 공유 여부와 상관없이 그대로 동작한다.
+--  거리(km)는 앱이 보내는 화면용 값이다 — 적립 · 순위 계산에 쓰지 않는다.
+-- ════════════════════════════════════════════════════════════════════
+
+alter table public.party_members add column if not exists share_location boolean not null default false;
+alter table public.party_members add column if not exists km numeric(8, 3);
+
+/* 달리는 동안 내 위치 · 거리를 같이 뛰는 사람에게 보일지 */
+create or replace function public.party_share(p_party bigint, p_share boolean)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.party_assert_member(p_party);
+  update public.party_members
+     set share_location = coalesce(p_share, false),
+         -- 끄면 이미 보낸 거리도 다른 사람에게 남기지 않는다
+         km = case when coalesce(p_share, false) then km else null end
+   where party_id = p_party and user_id = auth.uid();
+end $$;
+
+/* 화면용 거리 보고 — 달리는 방에서만 받는다 */
+create or replace function public.party_live(p_party bigint, p_km numeric)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.party_assert_member(p_party);
+  if p_km is null or p_km < 0 or p_km > 300 then
+    raise exception '거리가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  update public.party_members m
+     set km = round(p_km, 3)
+    from public.parties p
+   where m.party_id = p_party and m.user_id = auth.uid()
+     and p.id = m.party_id and p.status = 'RUNNING';
+end $$;
+
+create or replace function public.party_state(p_party bigint)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_state json;
+begin
+  perform public.party_assert_member(p_party);
+  perform public.party_tick(p_party);
+
+  update public.party_members set last_seen = now()
+   where party_id = p_party and user_id = auth.uid();
+
+  select json_build_object(
+    'id', p.id,
+    'status', p.status,
+    'host_id', p.host_id,
+    'crew_id', p.crew_id,
+    'flash_post_id', p.flash_post_id,
+    'starts_at', p.starts_at,
+    'server_now', now(),
+    'members', coalesce((
+      select json_agg(json_build_object(
+        'user_id', m.user_id,
+        'name', coalesce(pr.display_name, '러너'),
+        'ready', m.ready,
+        'is_me', m.user_id = auth.uid(),
+        'is_host', m.user_id = p.host_id,
+        'share', m.share_location,
+        'lat', case when v.visible then m.lat end,
+        'lng', case when v.visible then m.lng end,
+        'km', case when m.user_id = auth.uid() or (m.share_location and p.status = 'RUNNING') then m.km end,
+        'seen_sec', extract(epoch from (now() - m.last_seen))::int
+      ) order by (m.user_id = p.host_id) desc, m.joined_at)
+        from public.party_members m
+        left join public.profiles pr on pr.id = m.user_id
+        cross join lateral (
+          select m.user_id = auth.uid()
+              or (m.share_location and p.status = 'RUNNING' and m.last_seen > now() - interval '2 minutes')
+              as visible
+        ) v
+       where m.party_id = p.id
+    ), '[]'::json)
+  ) into v_state
+  from public.parties p
+  where p.id = p_party;
+
+  return v_state;
+end;
+$$;
+
+revoke all on function public.party_share(bigint, boolean) from public, anon;
+revoke all on function public.party_live(bigint, numeric) from public, anon;
+grant execute on function public.party_share(bigint, boolean) to authenticated;
+grant execute on function public.party_live(bigint, numeric) to authenticated;
+grant execute on function public.party_state(bigint) to authenticated;
 
 commit;
 
