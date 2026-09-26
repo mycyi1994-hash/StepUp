@@ -1671,5 +1671,12 @@ StepUp과 함께 달려보세요.</string>
     <string name="setup_mode_runner_body">홈에 착용 신발과 상태를 함께 보여 주고, 신발 · 뽑기 · 마켓으로 바로 가요.</string>
     <string name="setup_mode_note">두 모드 모두 SUP 적립 규칙은 같아요.</string>
     <string name="home_runner_shoe_state">착용 중 · 내구 %1$s</string>
+    <string name="experience_weather">날씨에 맞춰 홈 풍경 바꾸기</string>
+    <string name="experience_weather_desc">대략적인 위치(약 10km 단위)를 Open-Meteo에 보내 지금 날씨를 받아요. 위치 권한이 있을 때만 동작하고, 화살표로 풍경을 고를 수도 있어요.</string>
+    <string name="home_weather_caption">지금 날씨에 맞춘 풍경 · %1$s</string>
+    <string name="weather_day">낮</string>
+    <string name="weather_dusk">해질녘</string>
+    <string name="weather_night">밤</string>
+    <string name="weather_rain">비</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

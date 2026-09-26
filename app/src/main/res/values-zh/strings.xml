@@ -1671,5 +1671,12 @@
     <string name="setup_mode_runner_body">首页同时显示所穿跑鞋及状态，一键前往跑鞋、抽取和市场。</string>
     <string name="setup_mode_note">两种模式的 SUP 获取规则相同。</string>
     <string name="home_runner_shoe_state">穿着中 · 耐久 %1$s</string>
+    <string name="experience_weather">首页风景随天气变化</string>
+    <string name="experience_weather_desc">将大致位置（约10公里精度）发送给 Open-Meteo 获取当前天气。仅在有位置权限时生效，也可用箭头选择风景。</string>
+    <string name="home_weather_caption">与当前天气相配的风景 · %1$s</string>
+    <string name="weather_day">白天</string>
+    <string name="weather_dusk">黄昏</string>
+    <string name="weather_night">夜晚</string>
+    <string name="weather_rain">雨</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1673,5 +1673,12 @@ Start running with StepUp.</string>
     <string name="setup_mode_runner_body">Home also shows your equipped shoes and their condition, one tap from Shoes, Draw and Market.</string>
     <string name="setup_mode_note">Both modes earn SUP by the same rules.</string>
     <string name="home_runner_shoe_state">Wearing · durability %1$s</string>
+    <string name="experience_weather">Match Home scenery to the weather</string>
+    <string name="experience_weather_desc">Sends your approximate location (about 10 km) to Open-Meteo to get the current weather. Works only with location permission; the arrows still let you pick scenery.</string>
+    <string name="home_weather_caption">Scenery for the current weather · %1$s</string>
+    <string name="weather_day">Clear day</string>
+    <string name="weather_dusk">Sunset</string>
+    <string name="weather_night">Night</string>
+    <string name="weather_rain">Rain</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1672,5 +1672,12 @@ StepUp と走り出そう。</string>
     <string name="setup_mode_runner_body">ホームに装着シューズと状態も表示し、シューズ・ガチャ・マーケットへすぐ移動。</string>
     <string name="setup_mode_note">どちらのモードもSUPの獲得ルールは同じです。</string>
     <string name="home_runner_shoe_state">装着中・耐久 %1$s</string>
+    <string name="experience_weather">天気に合わせてホームの風景を変える</string>
+    <string name="experience_weather_desc">おおよその位置（約10km単位）をOpen-Meteoに送り、現在の天気を取得します。位置情報の権限がある時だけ動作し、矢印で風景も選べます。</string>
+    <string name="home_weather_caption">今の天気に合わせた風景・%1$s</string>
+    <string name="weather_day">昼</string>
+    <string name="weather_dusk">夕暮れ</string>
+    <string name="weather_night">夜</string>
+    <string name="weather_rain">雨</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

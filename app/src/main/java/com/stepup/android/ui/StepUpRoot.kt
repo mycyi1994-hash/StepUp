@@ -375,13 +375,22 @@ internal fun MainScaffold(
     val runSetting = rememberSaveable {
         com.stepup.android.ui.components.RunBackgrounds.settings.random()
     }
+    // S2 날씨 풍경 — 설정에서 켠 사람만. 홈에 올 때 날씨를 (30분에 한 번까지) 묻고 맞는 풍경을 고른다.
+    val weatherOn by ServiceLocator.userPrefs.weatherBackground.collectAsState(initial = false)
+    val weather by com.stepup.android.data.weather.WeatherBackground.scene.collectAsState()
+    val weatherSetting = if (weatherOn) weather?.let { com.stepup.android.ui.components.HomeBackgrounds.forWeather(it) } else null
+    LaunchedEffect(weatherOn, currentRoute) {
+        if (!weatherOn) com.stepup.android.data.weather.WeatherBackground.clear()
+        else if (currentRoute == Screen.Run.route) com.stepup.android.data.weather.WeatherBackground.refresh(context)
+    }
+    LaunchedEffect(weatherSetting) { weatherSetting?.let { homeSetting = it } }
     var previousRoute by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
             if (currentRoute == Screen.Run.route && previousRoute in listOf(
                     Screen.Customize.route, Screen.Community.route, Screen.Profile.route,
                 )) {
-                homeSetting = com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
+                homeSetting = weatherSetting ?: com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
             }
             previousRoute = currentRoute
         }
@@ -494,6 +503,7 @@ internal fun MainScaffold(
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     backgroundSetting = homeSetting,
+                    weatherScene = weather.takeIf { weatherSetting != null && weatherSetting == homeSetting },
                     onPreviousBackground = {
                         homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
                     },

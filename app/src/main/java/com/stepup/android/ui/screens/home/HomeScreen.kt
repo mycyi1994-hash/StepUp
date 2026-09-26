@@ -95,6 +95,8 @@ fun HomeScreen(
     backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
+    /** 지금 보이는 풍경이 실제 날씨로 고른 것이면 그 날씨 — 아치 아래에 한 줄로 밝힌다 */
+    weatherScene: com.stepup.android.domain.WeatherScene? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -172,6 +174,19 @@ fun HomeScreen(
                 )
                 SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background),
                     onNextBackground, Modifier.testTag("home-background-next"))
+            }
+            if (weatherScene != null) {
+                Box(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.home_weather_caption, stringResource(when (weatherScene) {
+                        com.stepup.android.domain.WeatherScene.DAY -> R.string.weather_day
+                        com.stepup.android.domain.WeatherScene.DUSK -> R.string.weather_dusk
+                        com.stepup.android.domain.WeatherScene.NIGHT -> R.string.weather_night
+                        com.stepup.android.domain.WeatherScene.RAIN -> R.string.weather_rain
+                    })),
+                    color = com.stepup.android.ui.theme.Slate, fontSize = 12.sp,
+                    modifier = Modifier.testTag("home-weather-caption"),
+                )
             }
             Box(Modifier.height(18.dp))
             if (!hasPermission) {

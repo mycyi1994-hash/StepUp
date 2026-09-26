@@ -85,6 +85,7 @@ class UserPrefs(
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
         val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
         val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
+        val WEATHER_BACKGROUND = booleanPreferencesKey("weather_background")
         val RUN_MODE = stringPreferencesKey("run_mode")
         val BODY_HEIGHT_CM = intPreferencesKey("body_height_cm")
         val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
@@ -531,6 +532,13 @@ class UserPrefs(
 
     suspend fun setS2SetupSeen() {
         store.edit { it[Keys.S2_SETUP_SEEN] = true }
+    }
+
+    /** 날씨에 맞춰 홈 풍경 바꾸기 — 대략적인 위치를 날씨 서비스에 보내므로 사용자가 켜야 동작한다 */
+    val weatherBackground: Flow<Boolean> = store.data.map { it[Keys.WEATHER_BACKGROUND] ?: false }
+
+    suspend fun setWeatherBackground(on: Boolean) {
+        store.edit { it[Keys.WEATHER_BACKGROUND] = on }
     }
 
     /** 홈 구성 모드. 적립 규칙과는 상관없다. */
