@@ -1601,5 +1601,12 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_s2_result_headline">%1$d분 동안\n%2$skm를 달렸어요</string>
     <string name="run_s2_result_sub">평균 페이스 %1$s · %2$s</string>
     <string name="run_s2_result_sup">이번 러닝 SUP</string>
+    <string name="me_s2_kicker">%1$s님의 StepUp</string>
+    <string name="me_s2_first">첫 러닝을\n기록해볼까요</string>
+    <string name="me_s2_total">지금까지 %1$s km를\n달렸어요</string>
+    <string name="me_s2_streak">%1$d일 연속 목표 달성 중</string>
+    <string name="me_s2_balance">보유 SUP</string>
+    <string name="me_s2_wallet">지갑 보기 ›</string>
+    <string name="me_s2_records">기록 보기</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1603,5 +1603,12 @@ Start running with StepUp.</string>
     <string name="run_s2_result_headline">You ran %2$s km\nin %1$d min</string>
     <string name="run_s2_result_sub">Avg pace %1$s · %2$s</string>
     <string name="run_s2_result_sup">This run\'s SUP</string>
+    <string name="me_s2_kicker">%1$s\'s StepUp</string>
+    <string name="me_s2_first">Ready to log\nyour first run?</string>
+    <string name="me_s2_total">You\'ve run\n%1$s km so far</string>
+    <string name="me_s2_streak">%1$d-day goal streak</string>
+    <string name="me_s2_balance">SUP balance</string>
+    <string name="me_s2_wallet">Open wallet ›</string>
+    <string name="me_s2_records">Records</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

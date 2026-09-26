@@ -1601,5 +1601,12 @@
     <string name="run_s2_result_headline">%1$d 分钟\n跑了 %2$s 公里</string>
     <string name="run_s2_result_sub">平均配速 %1$s · %2$s</string>
     <string name="run_s2_result_sup">本次跑步 SUP</string>
+    <string name="me_s2_kicker">%1$s 的 StepUp</string>
+    <string name="me_s2_first">来记录\n第一次跑步吧</string>
+    <string name="me_s2_total">至今已跑了\n%1$s 公里</string>
+    <string name="me_s2_streak">连续 %1$d 天达成目标</string>
+    <string name="me_s2_balance">持有 SUP</string>
+    <string name="me_s2_wallet">查看钱包 ›</string>
+    <string name="me_s2_records">查看记录</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

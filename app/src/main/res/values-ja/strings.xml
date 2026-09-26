@@ -1602,5 +1602,12 @@ StepUp と走り出そう。</string>
     <string name="run_s2_result_headline">%1$d分で\n%2$skm走りました</string>
     <string name="run_s2_result_sub">平均ペース %1$s · %2$s</string>
     <string name="run_s2_result_sup">今回のランのSUP</string>
+    <string name="me_s2_kicker">%1$sさんのStepUp</string>
+    <string name="me_s2_first">最初のランを\n記録しましょう</string>
+    <string name="me_s2_total">これまで\n%1$s km走りました</string>
+    <string name="me_s2_streak">%1$d日連続で目標達成中</string>
+    <string name="me_s2_balance">保有SUP</string>
+    <string name="me_s2_wallet">ウォレットを見る ›</string>
+    <string name="me_s2_records">記録を見る</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

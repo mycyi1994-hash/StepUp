@@ -4,6 +4,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material.icons.filled.Tune
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -272,9 +274,7 @@ fun ProfileScreen(
             return@LazyColumn
         }
 
-        // ── 머리글 — 로고 · 보유 SUP ──
-
-        // ── 실제 프로필 사진 · 닉네임 · 인사 ──
+        // ── S2 내 정보 — 인사 → 누적 거리 문장 → 보유 SUP → 기록 한 줄 → 수정 · 기록 · 챌린지 ──
         item {
             MeHeader(
                 state = state,
@@ -282,44 +282,62 @@ fun ProfileScreen(
                 onOpenSettings = { tab = 1 },
             )
         }
-
         item {
-            GlowCard(spacing = 16.dp) {
-                Text(stringResource(R.string.profile_total_distance), color = Silver,
-                    style = MaterialTheme.typography.bodyMedium)
-                com.stepup.android.ui.components.AdaptiveNumber(totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—", 42.sp)
-                HairlineDivider()
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.me_total_runs), color = Silver, style = MaterialTheme.typography.bodyMedium)
-                        Text(totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—",
-                            color = Snow, style = MaterialTheme.typography.titleLarge)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.home_run_time), color = Silver, style = MaterialTheme.typography.bodyMedium)
-                        Text(if (totals != null) formatDuration(state.totalDurationSec) else "—",
-                            color = Snow, style = MaterialTheme.typography.titleLarge)
-                    }
+            val name = state.nickname.ifBlank { stringResource(R.string.me_default_name) }
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                com.stepup.android.ui.components.S2Kicker(stringResource(R.string.me_s2_kicker, name))
+                Spacer(Modifier.height(12.dp))
+                com.stepup.android.ui.components.S2Headline(when {
+                    totals == null -> " \n "
+                    totals!!.runs == 0 -> stringResource(R.string.me_s2_first)
+                    else -> stringResource(R.string.me_s2_total, "%.1f".format(totals!!.meters / 1000))
+                })
+                Spacer(Modifier.height(12.dp))
+                com.stepup.android.ui.components.S2Subtitle(
+                    if (state.streak > 0) stringResource(R.string.me_s2_streak, state.streak)
+                    else stringResource(R.string.me_greeting),
+                )
+                Spacer(Modifier.height(28.dp))
+                Text(stringResource(R.string.me_s2_balance), color = Silver, fontSize = 13.sp)
+                com.stepup.android.ui.components.S2Number(
+                    com.stepup.android.ui.components.formatSupDown(state.balance), 64.sp,
+                    Modifier.padding(top = 6.dp),
+                )
+                TextButton(
+                    onClick = onOpenWallet,
+                    modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
+                        .testTag("profile-wallet"),
+                ) { Text(stringResource(R.string.me_s2_wallet), color = Silver, fontSize = 13.sp) }
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.S2Stats(listOf(
+                    stringResource(R.string.profile_total_distance) to (totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—"),
+                    stringResource(R.string.me_total_runs) to (totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—"),
+                    stringResource(R.string.home_run_time) to (if (totals != null) formatDuration(state.totalDurationSec) else "—"),
+                ), valueSize = 22.sp)
+                Spacer(Modifier.height(20.dp))
+                com.stepup.android.ui.components.S2ActionRow(
+                    start = {
+                        com.stepup.android.ui.components.S2SideInfo(
+                            stringResource(R.string.profile_edit_profile), onClick = { showProfileEdit = true },
+                        )
+                    },
+                    end = {
+                        com.stepup.android.ui.components.S2SideInfo(
+                            stringResource(R.string.home_shortcut_challenges), end = true, onClick = onOpenChallenges,
+                            modifier = Modifier.testTag("profile-challenges"),
+                        )
+                    },
+                ) {
+                    com.stepup.android.ui.components.S2RoundAction(
+                        icon = Icons.Filled.BarChart,
+                        label = stringResource(R.string.me_s2_records),
+                        onClick = onOpenAnalytics,
+                        modifier = Modifier.testTag("profile-records"),
+                    )
                 }
             }
         }
         item { RecentRunsCard(recentRuns, onOpenAll = onOpenAnalytics) }
-        item {
-            Column(Modifier.fillMaxWidth()) {
-                QuietListRow(
-                    icon = Icons.Filled.EmojiEvents,
-                    label = stringResource(R.string.home_shortcut_challenges),
-                    onClick = onOpenChallenges,
-                    modifier = Modifier.testTag("profile-challenges"),
-                )
-                QuietListRow(
-                    icon = Icons.Filled.AccountBalanceWallet,
-                    label = stringResource(R.string.settings_wallet),
-                    onClick = onOpenWallet,
-                    modifier = Modifier.testTag("profile-wallet"),
-                )
-            }
-        }
     }
     }
 }
@@ -1039,37 +1057,19 @@ private fun MeHeader(
     onEditProfile: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        LevelAvatar(level = state.runner.level, size = 64.dp,
+    // S2 — 위 한 줄은 작은 사진(누르면 수정)과 설정만. 이름과 인사는 아래 가운데 글이 말한다.
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        LevelAvatar(level = state.runner.level, size = 44.dp,
             contentDescription = stringResource(R.string.profile_edit_profile), avatarId = state.avatarId,
             customBitmap = rememberCustomAvatar(state.avatarRev),
             modifier = Modifier.feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR))
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Snow,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            DarkIconButton(Icons.Filled.Edit, stringResource(R.string.profile_edit_profile), onClick = onEditProfile)
-        }
+        Spacer(Modifier.weight(1f))
         DarkIconButton(
             icon = Icons.Filled.Settings,
             contentDescription = stringResource(R.string.profile_tab_settings),
             onClick = onOpenSettings,
             modifier = Modifier.testTag("profile-settings"),
         )
-        }
-        Text(stringResource(R.string.me_greeting), color = Silver, fontSize = 14.sp)
     }
 }
 
@@ -1196,7 +1196,6 @@ private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit
             Text(
                 text = stringResource(R.string.me_see_all),
                 modifier = Modifier
-                    .testTag("profile-records")
                     .feedbackClickable(onClick = onOpenAll)
                     .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget).padding(12.dp),
                 fontSize = 13.sp,
