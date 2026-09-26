@@ -3529,22 +3529,47 @@ begin
     '초대 현황 숫자');
 end $$;
 reset role;
--- 0039: 초대 적립이 실패해도 러닝은 저장된다 — 확정은 적지 않고 다음 러닝에서 다시 시도
+-- 0039: 이미 적힌 적립(같은 ref)은 건너뛰고 빠진 쪽만 적어 확정한다 — 매번 실패하며 멈추지 않는다
 insert into public.invite_redemptions (invitee, inviter)
 values ('1a1a1a1a-0000-0000-0000-000000000003', '1a1a1a1a-0000-0000-0000-000000000001');
 insert into public.sup_ledger (user_id, kind, amount, description, ref)
-values ('1a1a1a1a-0000-0000-0000-000000000003', 'EARN_INVITE', 1, '이미 있는 줄', 'invite:joined');
+values ('1a1a1a1a-0000-0000-0000-000000000003', 'EARN_INVITE', 5, '이미 있는 줄', 'invite:joined');
 insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
 values ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '60 minutes', now() - interval '40 minutes', 1200, 2400, 'CLEAN');
 do $$
 begin
+  perform pg_temp.ok((select count(*) from public.sup_ledger
+    where user_id = '1a1a1a1a-0000-0000-0000-000000000003' and kind = 'EARN_INVITE') = 1, '이미 받은 초대받은 사람은 다시 받지 않는다');
+  perform pg_temp.ok((select count(*) from public.sup_ledger
+    where user_id = '1a1a1a1a-0000-0000-0000-000000000001' and ref = 'invite:1a1a1a1a-0000-0000-0000-000000000003') = 1,
+    '빠진 초대한 사람 적립은 적는다');
+  perform pg_temp.ok((select rewarded_at is not null from public.invite_redemptions
+    where invitee = '1a1a1a1a-0000-0000-0000-000000000003'), '맞춘 뒤 확정한다');
+end $$;
+
+-- 0039: 그 밖의 까닭으로 적립이 실패해도 러닝은 저장된다 — 확정은 적지 않고 다음 러닝에서 다시 시도
+insert into auth.users (id, created_at) values ('1a1a1a1a-0000-0000-0000-000000000004', now()) on conflict do nothing;
+insert into public.invite_redemptions (invitee, inviter)
+values ('1a1a1a1a-0000-0000-0000-000000000004', '1a1a1a1a-0000-0000-0000-000000000001');
+alter table public.sup_ledger add constraint tmp_block_invite check (kind <> 'EARN_INVITE') not valid;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '30 minutes', now() - interval '10 minutes', 1200, 2400, 'CLEAN');
+alter table public.sup_ledger drop constraint tmp_block_invite;
+do $$
+begin
   perform pg_temp.ok((select count(*) from public.walk_sessions
-    where user_id = '1a1a1a1a-0000-0000-0000-000000000003') = 1, '적립이 실패해도 러닝은 저장된다');
+    where user_id = '1a1a1a1a-0000-0000-0000-000000000004') = 1, '적립이 실패해도 러닝은 저장된다');
   perform pg_temp.ok((select rewarded_at is null from public.invite_redemptions
-    where invitee = '1a1a1a1a-0000-0000-0000-000000000003'), '적립이 실패하면 확정을 적지 않는다');
+    where invitee = '1a1a1a1a-0000-0000-0000-000000000004'), '적립이 실패하면 확정을 적지 않는다');
   perform pg_temp.ok(not exists (select 1 from public.sup_ledger
-    where user_id = '1a1a1a1a-0000-0000-0000-000000000001' and ref = 'invite:1a1a1a1a-0000-0000-0000-000000000003'),
-    '초대받은 사람 적립이 실패하면 초대한 사람 적립도 되돌린다');
+    where ref = 'invite:1a1a1a1a-0000-0000-0000-000000000004'), '실패하면 두 사람 적립 모두 되돌린다');
+end $$;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
+values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '8 minutes', now() - interval '1 minutes', 600, 1500, 'CLEAN');
+do $$
+begin
+  perform pg_temp.ok((select rewarded_at is not null from public.invite_redemptions
+    where invitee = '1a1a1a1a-0000-0000-0000-000000000004'), '다음 러닝에서 다시 시도해 확정한다');
 end $$;
 
 update economy.invite_config set reward_sup = 100;
