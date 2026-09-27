@@ -235,7 +235,9 @@ class DesignReferenceTest {
                     compose.onNodeWithText(korean(R.string.map_seg_territory)).performClick()
                     capture("$name-territory")
                 }
-                if (s == Scene.RUN_GOAL_TIME) {
+                // 확인 창 · 키패드 조작은 한 크기(390 기본 글자)에서만 — 장면마다 되풀이하면 느린 에뮬레이터가 멈춘 적이 있다
+                val interact = w == 390 && !enlarged
+                if (s == Scene.RUN_GOAL_TIME && interact) {
                     // 멈춘 러닝(표시용 값)에서 종료 확인 → 저장 없이 끝내기 확인 → 돌아가기. 서비스를 켜지 않는다
                     compose.onNodeWithTag("run-finish").performClick()
                     compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
@@ -250,15 +252,17 @@ class DesignReferenceTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
                 }
-                if (s == Scene.RUN_DIET_INPUT) {
+                if (s == Scene.RUN_DIET_INPUT && interact) {
                     // 빈 입력으로 추천받기 → 칸 아래 안내(D02), 키 칸을 누르면 숫자 키패드(D01)
                     compose.onNodeWithTag("diet-input-next").performClick()
                     compose.waitForIdle()
                     capture("$name-errors")
                     compose.onNodeWithTag("diet-height").performClick()
-                    compose.onNodeWithTag("keypad-1").performClick()
-                    compose.onNodeWithTag("keypad-7").performClick()
-                    compose.onNodeWithTag("keypad-0").performClick()
+                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("keypad-1").fetchSemanticsNodes().isNotEmpty() }
+                    for (key in listOf("keypad-1", "keypad-7", "keypad-0")) {
+                        compose.onNodeWithTag(key).performClick()
+                        compose.waitForIdle()
+                    }
                     capture("$name-keypad")
                     compose.onNodeWithTag("diet-input-done").performClick()
                     compose.waitForIdle()
@@ -270,7 +274,7 @@ class DesignReferenceTest {
                     capture("$name-leave")
                     compose.onNodeWithTag("diet-leave-stay").performClick()
                 }
-                if (s == Scene.RUN_GOAL_HISTORY) {
+                if (s == Scene.RUN_GOAL_HISTORY && interact) {
                     compose.onNodeWithText(korean(R.string.goal_10min), substring = true).performClick()
                     capture("$name-open")
                 }
