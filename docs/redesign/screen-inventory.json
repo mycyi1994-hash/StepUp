@@ -99,28 +99,7 @@
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
-    },
-    {
-      "id": "Routes.RUN_MENU",
-      "parent": "Run",
-      "chrome": "Focus",
-      "implementation": "pending",
-      "verification": "pending"
-    },
-    {
-      "id": "Routes.RUN_GOALS",
-      "parent": "Run",
-      "chrome": "Focus",
-      "implementation": "pending",
-      "verification": "pending"
-    },
-    {
-      "id": "Routes.RUN_GOAL_HISTORY",
-      "parent": "Run",
-      "chrome": "Focus",
-      "implementation": "pending",
-      "verification": "pending"
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed. Handoff part A (PR #41): plan-specific run layout, pause/end/discard/goal-reached dialogs, result/partial result; device check pending this PR."
     },
     {
       "id": "Routes.COURSES",
@@ -303,6 +282,27 @@
       "chrome": "Form",
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.RUN_MENU",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U01 start menu — free run, running challenge, course (coming soon), diet (coming soon)",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_GOALS",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U02 running challenges — 10 min / 1 km / 3 km",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_GOAL_HISTORY",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — C03 past challenges — device-only list, expandable rows",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],
   "screen_functions": [
@@ -416,7 +416,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 91,
+      "line": 89,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -513,7 +513,7 @@
     {
       "id": "ProfileScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 138,
+      "line": 136,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -609,34 +609,34 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 138,
+      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+    },
+    {
       "id": "RunStartMenuScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 62,
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     },
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 117,
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 160,
-      "implementation": "pending",
-      "verification": "pending"
-    },
-    {
-      "id": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 152,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
-      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],
   "overlays": [
@@ -665,14 +665,14 @@
       "kind": "DialogPanel",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 418,
+      "line": 413,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 242,
+      "line": 243,
       "verification": "pending"
     },
     {
@@ -721,14 +721,14 @@
       "kind": "DialogPanel",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 984,
+      "line": 956,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 1033,
+      "line": 1005,
       "verification": "pending"
     },
     {
@@ -756,21 +756,28 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 642,
+      "line": 534,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 765,
+      "line": 571,
+      "verification": "pending"
+    },
+    {
+      "kind": "DialogPanel",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 595,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1261,
+      "line": 1091,
       "verification": "pending"
     }
   ],

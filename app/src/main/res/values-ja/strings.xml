@@ -1827,5 +1827,6 @@ StepUp と走り出そう。</string>
     <string name="runflow_discard_back">戻る</string>
     <string name="runflow_goal_reached_title">目標を達成しました</string>
     <string name="runflow_goal_reached_body">もう少し走るか、記録を保存できます。</string>
+    <string name="runflow_discard_failed">記録を消せませんでした。ランはそのまま続いています。少し後でもう一度お試しください。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

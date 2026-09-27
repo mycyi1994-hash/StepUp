@@ -329,11 +329,30 @@ fun RunScreen(
         else -> planNow
     }
     val goal = (plan as? RunPlan.Goal)?.goal
-    val goalReached = goal != null && goal.reached(session.elapsedSec, distanceKm)
+    // 목표 거리는 결과(finishKm)와 같은 기준 — GPS 가 있으면 GPS 거리, 없으면 걸음 거리
+    val goalKmNow = if (session.gpsKm > 0.0) session.gpsKm else distanceKm
+    val goalReached = goal != null && goal.reached(session.elapsedSec, goalKmNow)
 
     // 확인 창들 — 일시정지(R03) · 종료(R04) · 저장 없이 끝내기(R07) · 목표 달성(C01)
     var pauseDialog by rememberSaveable { mutableStateOf(false) }
     var discardDialog by rememberSaveable { mutableStateOf(false) }
+    // 저장 없이 끝내기를 서비스가 마칠 때까지 기다린다 — 못 지웠으면 러닝이 그대로 이어진다
+    var discarding by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(discarding, session.isActive) {
+        if (discarding && !session.isActive) {
+            discarding = false
+            RunPlans.clear()
+            onBack()
+        }
+    }
+    val discardFailures by WalkSessionService.discardFailures.collectAsStateWithLifecycle()
+    val discardFailedText = stringResource(R.string.runflow_discard_failed)
+    LaunchedEffect(discardFailures) {
+        if (discarding) {
+            discarding = false
+            android.widget.Toast.makeText(context, discardFailedText, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
     var goalSheetFor by rememberSaveable { mutableLongStateOf(0L) }
     var showGoalReached by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(goalReached, session.startedAt, session.isPaused) {
@@ -427,9 +446,6 @@ fun RunScreen(
                     if (recordingCourse && !readyToSaveCourse) {
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
-                    if (recordingCourse && !readyToSaveCourse) {
-                        CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
-                    }
                     Spacer(Modifier.height(12.dp))
                     Text(planHeadline(plan), color = Snow, fontSize = 28.sp, fontWeight = FontWeight.SemiBold,
                         lineHeight = 38.sp)
@@ -445,13 +461,13 @@ fun RunScreen(
                     when {
                         goal?.km != null -> {
                             KitHero(
-                                stringResource(R.string.runflow_distance_label), "%.2f km".format(distanceKm),
+                                stringResource(R.string.runflow_distance_label), "%.2f km".format(goalKmNow),
                                 caption = if (goalReached) stringResource(R.string.runflow_goal_reached_title)
-                                    else stringResource(R.string.runflow_goal_dist_left, "%.2f".format(max(goal.km - distanceKm, 0.0))),
+                                    else stringResource(R.string.runflow_goal_dist_left, "%.2f".format(max(goal.km - goalKmNow, 0.0))),
                                 dim = session.isPaused,
                             )
                             Spacer(Modifier.height(24.dp))
-                            KitProgress(goal.fraction(session.elapsedSec, distanceKm))
+                            KitProgress(goal.fraction(session.elapsedSec, goalKmNow))
                             Spacer(Modifier.height(24.dp))
                             KitMetricRow(
                                 stringResource(R.string.runflow_time_label) to formatDuration(session.elapsedSec),
@@ -467,7 +483,7 @@ fun RunScreen(
                                 dim = session.isPaused,
                             )
                             Spacer(Modifier.height(24.dp))
-                            KitProgress(goal.fraction(session.elapsedSec, distanceKm))
+                            KitProgress(goal.fraction(session.elapsedSec, goalKmNow))
                             Spacer(Modifier.height(24.dp))
                             KitMetricRow(
                                 stringResource(R.string.runflow_distance_label) to "%.2f km".format(distanceKm),
@@ -719,7 +735,7 @@ fun RunScreen(
     }
 
     // R07 — 저장 없이 끝낼까요? 돌아가면 R04 로
-    if (discardDialog && canAskEnd) {
+    if (discardDialog && canAskEnd && !discarding) {
         KitDialog(
             title = stringResource(R.string.runflow_discard_title),
             body = stringResource(R.string.runflow_discard_body),
@@ -728,9 +744,10 @@ fun RunScreen(
         ) {
             KitButton(stringResource(R.string.runflow_discard_confirm), {
                 discardDialog = false
+                // "코스 만들기"로 시작한 러닝이면 녹화도 그만둔다 — 다음 러닝이 녹화로 이어지지 않게
+                if (recordingCourse) viewModel.cancelRecording()
+                discarding = true
                 WalkSessionService.discard(context)
-                RunPlans.clear()
-                onBack()
             }, tone = KitTone.Danger, modifier = Modifier.testTag("run-discard-confirm"))
             KitButton(stringResource(R.string.runflow_discard_back), {
                 discardDialog = false

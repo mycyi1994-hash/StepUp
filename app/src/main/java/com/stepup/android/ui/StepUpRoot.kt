@@ -737,8 +737,10 @@ internal fun MainScaffold(
                 RunScreen(
                     onBack = { navController.popBackStack() },
                     onOpenCourses = { navController.navigate(Routes.COURSES) },
+                    // "처음 화면으로" — 시작 메뉴(시안 U01). 메뉴 없이 들어왔으면 러닝 탭 첫 화면
                     onHome = {
-                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.popBackStack()
+                        if (!navController.popBackStack(Routes.RUN_MENU, inclusive = false) &&
+                            !navController.popBackStack(Screen.Run.route, inclusive = false)) navController.popBackStack()
                     },
                     onGoals = {
                         if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.popBackStack()

@@ -1826,5 +1826,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="runflow_discard_back">돌아가기</string>
     <string name="runflow_goal_reached_title">목표를 달성했어요</string>
     <string name="runflow_goal_reached_body">조금 더 달리거나 기록을 저장할 수 있어요.</string>
+    <string name="runflow_discard_failed">기록을 지우지 못했어요. 러닝은 그대로 이어져요. 잠시 후 다시 시도해 주세요.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1828,5 +1828,6 @@ Start running with StepUp.</string>
     <string name="runflow_discard_back">Go back</string>
     <string name="runflow_goal_reached_title">Goal reached</string>
     <string name="runflow_goal_reached_body">Keep going, or save your run now.</string>
+    <string name="runflow_discard_failed">Couldn\'t discard the run. It\'s still going — try again in a moment.</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

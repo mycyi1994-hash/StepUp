@@ -41,11 +41,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 
 /** 랩 스냅샷 — km·splitSec은 랩을 찍은 시점의 "누적" 값. 구간값은 UI에서 이전 랩과의 차로 구한다. */
@@ -528,7 +530,11 @@ class WalkSessionService : Service() {
                 _state.update { if (it.isActive && !it.isPaused) it.copy(elapsedSec = seconds) else it }
             }
         }
-        // 5초마다 저장본을 남긴다 — 배터리 절약 · 메모리 부족으로 앱이 죽어도 러닝이 사라지지 않게
+        startCheckpointLoop()
+    }
+
+    /** 5초마다 저장본을 남긴다 — 배터리 절약 · 메모리 부족으로 앱이 죽어도 러닝이 사라지지 않게 */
+    private fun startCheckpointLoop() {
         checkpointJob = scope.launch {
             while (isActive) {
                 val current = _state.value
@@ -753,14 +759,24 @@ class WalkSessionService : Service() {
         if (!canDiscard(current) || settling) return
         if (ServiceLocator.crewRepository.party.value.isActive) return
         settling = true
-        stepJob?.cancel()
-        timerJob?.cancel()
-        checkpointJob?.cancel()
-        stopLocation()
+        val saving = checkpointJob
         scope.launch {
             try {
-                // 저장본을 지운다 — 남기면 다음 실행이 이 러닝을 "이어 달리기"로 되살린다
-                runCatching { ServiceLocator.runCheckpoints.clear(current.startedAt, current.recordingOwner) }
+                // 저장본을 먼저 지운다 — 남기면 다음 실행이 이 러닝을 "이어 달리기"로 되살린다.
+                // 쓰는 중인 저장이 끝난 뒤에 지워야 지운 뒤 다시 생기지 않는다.
+                saving?.cancelAndJoin()
+                val cleared = runCatching {
+                    ServiceLocator.runCheckpoints.clear(current.startedAt, current.recordingOwner)
+                }.isSuccess
+                if (!cleared) {
+                    // 못 지웠으면 러닝을 그대로 두고(저장본도 다시 남긴다) 화면에 알린다
+                    startCheckpointLoop()
+                    discardFailures.value = discardFailures.value + 1
+                    return@launch
+                }
+                stepJob?.cancel()
+                timerJob?.cancel()
+                stopLocation()
                 _state.value = WalkSessionState()
                 ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -909,6 +925,9 @@ class WalkSessionService : Service() {
         /** 저장 없이 끝낼 수 있는 러닝인가 — 달리는 중(저장 전), 혼자 뛰는 러닝 */
         fun canDiscard(state: WalkSessionState): Boolean =
             state.isActive && state.saveStatus == RunSaveStatus.IDLE && state.partySize <= 1
+
+        /** 저장 없이 끝내기가 실패한 횟수 — 바뀌면 화면이 알린다(러닝은 그대로 이어진다) */
+        val discardFailures = MutableStateFlow(0)
 
         fun discard(context: Context) {
             context.startService(intent(context, ACTION_DISCARD))

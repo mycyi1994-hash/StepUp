@@ -1826,5 +1826,6 @@
     <string name="runflow_discard_back">返回</string>
     <string name="runflow_goal_reached_title">已达成目标</string>
     <string name="runflow_goal_reached_body">可以再跑一会儿，或者现在保存记录。</string>
+    <string name="runflow_discard_failed">未能删除记录，跑步仍在继续。请稍后再试。</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
