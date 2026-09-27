@@ -11429,10 +11429,12 @@ revoke all on function public.premium_draw() from public, anon;
 grant execute on function public.draw_free() to authenticated;
 grant execute on function public.premium_draw() to authenticated;
 
--- 이미 뽑은 신발도 체인에 — 한 번. 아직 토큰이 없고 앱에 있는 뽑기 신발(첫 신발 · 예전 폰 신발 제외).
+-- 이미 뽑은 신발도 체인에 — 한 번. 아직 토큰이 없는 뽑기 신발(첫 신발 · 예전 폰 신발 제외).
 -- 상급 뽑기로 예약만 되어 있던(곧 만료될) 신발은 만료 뒤 앱으로 돌아오면 가져갈 때 발행된다.
-insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
-select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id
+-- 1분에 한 켤레씩 차례를 준다 — 한꺼번에 줄 서면 다 빠질 때까지 새 러닝 증명 · 새 뽑기가 뒤로 밀린다.
+insert into public.chain_jobs (kind, ref, user_id, sneaker_id, next_at)
+select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id,
+       now() + make_interval(mins => (row_number() over (order by s.id))::int)
   from public.market_sneakers s
  where s.origin in ('FREE_DRAW', 'PAID_DRAW', 'BONUS_DRAW')
    and s.token_id is null and s.owner_id is not null
