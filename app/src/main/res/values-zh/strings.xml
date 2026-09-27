@@ -1407,7 +1407,6 @@
     <string name="home_run_time">运动时间</string>
     <string name="home_goal">今日目标</string>
     <string name="home_goal_suffix"> / %1$s 步</string>
-    <string name="home_shortcut_challenges">挑战</string>
     <string name="home_shortcut_news">资讯</string>
     <string name="home_energy_can">今天还能累积%1$s步</string>
     <string name="home_energy_empty">今日累积上限已用完</string>
@@ -1710,7 +1709,6 @@
     <string name="home_k1_week_label">本周</string>
     <string name="home_k1_week">%1$s 公里 · 跑步 %2$d 次 · %3$s SUP</string>
     <string name="home_k1_week_empty">本周还没有跑步记录</string>
-    <string name="home_k1_records">更多记录</string>
     <string name="home_k1_records_title">详细记录</string>
     <string name="challenge_run">为此挑战跑步</string>
     <string name="challenge_unit_steps">步</string>

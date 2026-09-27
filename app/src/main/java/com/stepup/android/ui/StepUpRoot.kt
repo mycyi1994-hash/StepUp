@@ -546,7 +546,6 @@ internal fun MainScaffold(
                         }
                     },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },

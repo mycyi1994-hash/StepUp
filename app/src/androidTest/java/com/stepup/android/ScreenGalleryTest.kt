@@ -306,7 +306,8 @@ class ScreenGalleryTest {
             }
         }
         val variations = listOf(
-            Triple(0, "home-details", listOf(R.string.home_k1_records)),
+            // 상세 기록은 "이번 주" 줄을 눌러 연다(시작 버튼 위 "기록 더보기"는 뺐다)
+            Triple(0, "home-details", listOf(R.string.home_k1_week_label)),
             Triple(2, "community-crews", listOf(R.string.community_together, R.string.community_tab_my_crew)),
             Triple(2, "community-stories", listOf(R.string.community_stories)),
             Triple(2, "community-meetups", listOf(R.string.community_together, R.string.community_other_meetups)),

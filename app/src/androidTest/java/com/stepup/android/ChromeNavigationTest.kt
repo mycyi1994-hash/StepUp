@@ -253,7 +253,7 @@ class ChromeNavigationTest {
             compose.waitForIdle()
             assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
             com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
-            compose.onNodeWithTag("home-details").performClick()
+            compose.onNodeWithTag("home-week").performClick()
             compose.waitForIdle()
             compose.onNodeWithText(compose.activity.getString(R.string.home_today_earned)).assertIsDisplayed()
             pressBack()

@@ -171,12 +171,16 @@ fun StoriesTab(
                 revealId = revealId,
                 onLike = viewModel::toggleLike,
             )
-            // 글쓰기 — 오른쪽 아래 흰 알약. 알림과 겹치지 않게 알림이 그 위에 선다
-            StoryWriteButton(
-                onClick = startWriting,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = StoryListGutter, bottom = 14.dp)
-                    .guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
-            )
+            // 글쓰기 — 오른쪽 아래 흰 알약. 알림과 겹치지 않게 알림이 그 위에 선다.
+            // 글이 없을 때(빈 목록 · 불러오는 중 · 오류)는 띄우지 않는다 — 시안 28~30 처럼 그 화면의 행동
+            // ("첫 글 남기기" · "다시 시도") 하나만 둔다. 작은 화면에서 두 흰 버튼이 겹치지도 않는다.
+            if (list.nearby.isNotEmpty()) {
+                StoryWriteButton(
+                    onClick = startWriting,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = StoryListGutter, bottom = 14.dp)
+                        .guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
+                )
+            }
         }
         notice?.let { current ->
             StoryNoticeToast(
@@ -362,9 +366,10 @@ private fun StoryListBody(
             ) {
                 val empty = list.nearby.isEmpty()
                 when {
-                    empty && sync == BoardSyncState.Loading || empty && sync == BoardSyncState.Idle -> {
-                        items(3) { StorySkeletonRow(); StoryDivider() }
-                        item {
+                    // 빈 줄 셋과 안내를 한 덩어리로 — 작은 화면에서 안내가 화면 아래로 밀려도 목록에 남아 낭독된다
+                    empty && sync == BoardSyncState.Loading || empty && sync == BoardSyncState.Idle -> item(key = "loading") {
+                        Column {
+                            repeat(3) { StorySkeletonRow(); StoryDivider() }
                             Text(stringResource(R.string.story_loading), color = Slate, fontSize = 12.sp,
                                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp).testTag("stories-loading"),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center)

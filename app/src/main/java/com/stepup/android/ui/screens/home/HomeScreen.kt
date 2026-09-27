@@ -91,7 +91,6 @@ import kotlinx.coroutines.delay
 fun HomeScreen(
     onStartRun: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
-    onOpenChallenges: () -> Unit = {},
     onOpenNews: () -> Unit = {},
     onOpenCustomize: () -> Unit = {},
     onPreviousBackground: () -> Unit = {},
@@ -203,27 +202,10 @@ fun HomeScreen(
                 RunnerShoeLine(shoe, onOpenCustomize)
             }
         }
-        // 이번 주 한 줄 — 거리 · 러닝 · SUP. 자세한 기록은 더보기(사용 피드백 4)
+        // 이번 주 한 줄 — 거리 · 러닝 · SUP. 누르면 상세 기록(사용 피드백 4).
+        // 시작 버튼 위의 "챌린지 · 기록 더보기" 줄은 뺐다(사용자 요청 2026-09-27) — 챌린지는 내 정보 › 챌린지에서 연다.
         WeekLine(weekRuns, weekEarned, onClick = { showDetails = true })
-        // 챌린지 · 기록 더보기 — 넓은 시작 버튼 위 한 줄(글자 링크는 그대로)
-        com.stepup.android.ui.components.S2ActionRow(
-            start = {
-                // 지금 도전 중인 챌린지는 러닝 영역에서 연다(사용 피드백 6)
-                com.stepup.android.ui.components.S2SideInfo(
-                    label = stringResource(R.string.home_shortcut_challenges),
-                    onClick = onOpenChallenges,
-                    modifier = Modifier.testTag("home-challenges"),
-                )
-            },
-            end = {
-                com.stepup.android.ui.components.S2SideInfo(
-                    label = stringResource(R.string.home_k1_records),
-                    end = true,
-                    onClick = { showDetails = true },
-                    modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
-                )
-            },
-        ) {}
+        Box(Modifier.height(12.dp))
         // 이 화면의 주 행동 — 가로로 넓은 러닝 시작(2026-09-27 시안)
         StartRunButton(
             label = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
@@ -257,7 +239,7 @@ fun HomeScreen(
                         }) { Text(stringResource(R.string.cd_open_settings)) }
                     }
                 }
-                // 더보기 = 상세 기록과 통계(사용 피드백 5). 챌린지는 러닝 홈 아래 줄로 옮겼다.
+                // 상세 기록과 통계(사용 피드백 5) — "이번 주" 줄을 누르면 열린다. 챌린지는 내 정보 › 챌린지.
                 Text(stringResource(R.string.home_k1_records_title), style = MaterialTheme.typography.titleLarge,
                     color = Snow, modifier = Modifier.testTag("home-records-title"))
                 TodayEarned(earned)

@@ -379,6 +379,9 @@ class CommunityStoriesTest {
         assertEquals(2, server.calls.count { it.first == "story_create" })
         assertEquals(1, server.created)
         shot("13-posted", settle = 1_500)
+        // 확인 메시지는 몇 초 뒤 저절로 닫힌다 — 테스트 시계는 멈춰 있어 그만큼 보낸다(다음 장면에 남지 않게)
+        compose.mainClock.advanceTimeBy(4_000)
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-toast").fetchSemanticsNodes().isEmpty() }
 
         // 범위를 기본(1km)으로 돌린다 — 빈 목록에 "더 넓은 범위에서 보기"가 보이게
         tapTag("stories-range")
@@ -389,6 +392,8 @@ class CommunityStoriesTest {
         // ── 28 빈 목록 · 29 불러오는 중 · 30 연결 오류 ──────────────────────
         ServiceLocator.communityRepository.showForTest(emptyList())
         awaitTag("stories-empty")
+        // 글이 없을 때는 떠 있는 글쓰기 대신 "첫 글 남기기" 하나(시안 28)
+        compose.onAllNodesWithTag("stories-write").assertCountEquals(0)
         shot("28-empty", settle = 1_200)
         ServiceLocator.communityRepository.showBoardStateForTest(BoardSyncState.Loading)
         awaitTag("stories-loading")
