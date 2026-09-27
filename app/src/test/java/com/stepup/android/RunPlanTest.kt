@@ -74,4 +74,13 @@ class RunPlanTest {
         assertFalse(WalkSessionService.canDiscard(WalkSessionState(isActive = true, saveStatus = RunSaveStatus.SAVING)))
         assertFalse(WalkSessionService.canDiscard(WalkSessionState(isActive = true, saveStatus = RunSaveStatus.FAILED)))
     }
+
+    @Test
+    fun gpsLostNeedsSilenceWhileWalking() {
+        // 제자리에 서 있으면(걸음이 거의 없으면) 좌표가 안 와도 끊김이 아니다
+        assertFalse(com.stepup.android.service.GpsSignal.isLost(120_000, 5))
+        // 걷는데 30초 넘게 좌표가 없으면 끊김
+        assertTrue(com.stepup.android.service.GpsSignal.isLost(31_000, 60))
+        assertFalse(com.stepup.android.service.GpsSignal.isLost(29_000, 60))
+    }
 }

@@ -109,6 +109,8 @@ class DesignReferenceTest {
         RUN_MENU, RUN_GOALS, RUN_GOAL_TIME, RUN_GOAL_KM, RUN_GOAL_HISTORY,
         // 다이어트 모드 — 입력 · 러닝 방법 · 걷기 구간(멈춤) · 루틴 완료
         RUN_DIET_INPUT, RUN_DIET_PLAN, RUN_DIET_ACTIVE, RUN_DIET_DONE,
+        // 위치 신호 끊김 안내(L04)
+        RUN_GPS_LOST,
     }
 
     private enum class Group { PRIMARY, SECONDARY, RECORDS, EXPLORE }
@@ -328,6 +330,10 @@ class DesignReferenceTest {
                 isActive = true, isPaused = true, steps = 520, elapsedSec = 272, startedAt = now - 272_000,
                 gpsFix = true, track = fixtureTrack,
             )
+            Scene.RUN_GPS_LOST -> WalkSessionState(
+                isActive = true, steps = 2_300, elapsedSec = 812, startedAt = now - 812_000,
+                gpsFix = true, gpsLost = true, track = fixtureTrack,
+            )
             Scene.RUN_DIET_DONE -> WalkSessionState(
                 isActive = true, isPaused = true, steps = 1_500, elapsedSec = 900, startedAt = now - 900_000,
                 gpsFix = true, track = fixtureTrack,
@@ -388,6 +394,7 @@ class DesignReferenceTest {
             Scene.RUN_DIET_INPUT -> "diet-input-next"
             Scene.RUN_DIET_PLAN -> "diet-plan-start"
             Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> "run-hero-value"
+            Scene.RUN_GPS_LOST -> "run-gps-lost"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -399,7 +406,7 @@ class DesignReferenceTest {
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
             Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
-            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE ->
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
@@ -488,7 +495,7 @@ class DesignReferenceTest {
             Scene.RUN_GOAL_HISTORY -> MainScaffold(initialRoute = Routes.RUN_GOAL_HISTORY)
             Scene.RUN_DIET_INPUT -> MainScaffold(initialRoute = Routes.RUN_DIET)
             Scene.RUN_DIET_PLAN -> MainScaffold(initialRoute = Routes.RUN_DIET_PLAN)
-            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> MainScaffold(initialRoute = Routes.RUN)
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST -> MainScaffold(initialRoute = Routes.RUN)
         }
     }
 

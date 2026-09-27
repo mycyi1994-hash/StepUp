@@ -1905,5 +1905,11 @@ StepUp과 함께 달려보세요.</string>
     <string name="diet_run_plus_walk_value">%1$s + %2$s</string>
     <string name="diet_done_segments">완료 구간</string>
     <string name="diet_repeat">같은 방법 다시 하기</string>
+    <string name="runflow_gps_lost_title">위치 신호가 약해요</string>
+    <string name="runflow_gps_lost_body">시간과 걸음은 계속 기록하고 있어요. 위치가 돌아오면 경로를 다시 이어요.</string>
+    <string name="runflow_save_failed_title">아직 저장되지 않았어요</string>
+    <string name="runflow_save_failed_body">러닝 기록은 이 화면에 남아 있어요. 잠시 후 다시 저장해주세요.</string>
+    <string name="runflow_save_again">다시 저장</string>
+    <string name="runflow_save_stay">화면에 머무르기</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

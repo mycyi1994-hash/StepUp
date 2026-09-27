@@ -288,42 +288,42 @@
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U01 start menu — free run, running challenge, course (coming soon), diet (coming soon)",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "Routes.RUN_GOALS",
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U02 running challenges — 10 min / 1 km / 3 km",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "Routes.RUN_GOAL_HISTORY",
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — C03 past challenges — device-only list, expandable rows",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "Routes.RUN_DIET",
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U05 · D01 · D02 · D03 body info and running experience",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "Routes.RUN_DIET_PLAN",
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U06 fixed routine by experience",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "Routes.RUN_DIET_EDIT",
       "parent": "Run",
       "chrome": "Focus",
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — D06 edit body info and experience",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     }
   ],
   "screen_functions": [
@@ -643,35 +643,35 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 62,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 117,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 160,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "DietInputScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
       "line": 92,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "DietPlanScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
       "line": 266,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     }
   ],
   "overlays": [
@@ -814,6 +814,48 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
       "line": 1091,
       "verification": "pending"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 804,
+      "verification": "S01: pending this PR's Experience QA (RunSaveRecoveryTest display capture form-checks/run-save-failed-dialog.png) (S01 save failed)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 821,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R03 pause)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 837,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R04 end)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 864,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R07 end without saving)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 886,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (C01 goal reached)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "DietInputScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 241,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (D03 stop entering)"
     }
   ],
   "required_state_matrix": [
