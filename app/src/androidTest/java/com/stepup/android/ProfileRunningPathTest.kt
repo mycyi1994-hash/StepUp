@@ -34,6 +34,8 @@ import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
+import java.util.Locale
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -43,7 +45,8 @@ import org.junit.Test
  * 내 정보 첫 화면 — 러닝 패스(2026-09-27). 실제 앱 셸에서 버튼마다 이동을 확인하고, 카드 상태를 찍는다.
  *
  * 거리 · 횟수는 앱 DB 의 러닝 세션 합계다. 첫 테스트는 세션 8개(합 34.2km)를 잠깐 넣었다가 끝에 지운다
- * (업로드되지 않게 REJECTED 로 넣는다). 상태 테스트는 같은 화면 부품에 상태만 바꿔 넣는다.
+ * (업로드되지 않게 REJECTED 로 넣는다). 같은 에뮬레이터에서 앞서 돈 기기 테스트가 남긴 세션이 있을 수 있어
+ * 넣기 전 합계에 더한 값을 기대한다. 상태 테스트는 같은 화면 부품에 상태만 바꿔 넣는다.
  */
 class ProfileRunningPathTest {
     @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
@@ -65,18 +68,20 @@ class ProfileRunningPathTest {
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "profile-running-path").apply { mkdirs() }
 
     @Test fun runningPathOpensEveryDestination() {
-        runBlocking {
+        val before = runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setSounds(false)
             ServiceLocator.userPrefs.setHaptics(false)
             ServiceLocator.userPrefs.setGuideSeen()
+            val totals = ServiceLocator.stepRepository.observeRunTotals().first()
             val dao = ServiceLocator.database.walkSessionDao()
             // 8회 · 34.2km — 시안과 같은 크기의 기록으로 실제 집계 경로를 탄다
-            listOf(3200.0, 4100.0, 5000.0, 3800.0, 4600.0, 5200.0, 3900.0, 4400.0).forEachIndexed { i, meters ->
+            RUNS.forEachIndexed { i, meters ->
                 dao.insert(WalkSessionEntity(startedAt = MARKER + i * 60_000L, endedAt = MARKER + i * 60_000L + 1_800_000L,
                     steps = 4000, durationSec = 1800, distanceMeters = meters, calories = 0.0, pointsEarned = 0.0,
                     uploadState = "REJECTED", verdict = "VOID"))
             }
+            totals
         }
         try {
             edgeToEdge()
@@ -84,11 +89,19 @@ class ProfileRunningPathTest {
                 StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Profile) } }
             }
             val context = compose.activity
+            val runs = before.runs + RUNS.size
+            val km = String.format(Locale.ROOT, "%,.1f", (before.meters + RUNS.sum()) / 1000)
             awaitTag("profile-record-card")
             compose.waitUntil(10_000) {
-                runCatching { compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextContains("34.2") }.isSuccess
+                runCatching { compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals(km) }.isSuccess
             }
-            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8번의 러닝을 기록했어요.")
+            compose.onNodeWithTag("profile-runs", useUnmergedTree = true)
+                .assertTextEquals(context.resources.getQuantityString(R.plurals.me_path_runs, runs, runs))
+            if (before.runs == 0) {
+                // 앞선 기록이 없으면 시안과 같은 값이다
+                compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("34.2")
+                compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8번의 러닝을 기록했어요.")
+            }
             // 순서: 프로필 → 카드 → 기록 보기 → 챌린지 · 지갑 · 설정
             val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-challenges", "profile-wallet", "profile-settings")
                 .map { compose.onNodeWithTag(it).fetchSemanticsNode().boundsInRoot.top }
@@ -260,5 +273,8 @@ class ProfileRunningPathTest {
     companion object {
         /** 2100-01-01 — 이 테스트가 넣은 세션만 골라 지운다 */
         private const val MARKER = 4_102_444_800_000L
+
+        /** 넣는 세션의 거리(m) — 합 34.2km */
+        private val RUNS = listOf(3200.0, 4100.0, 5000.0, 3800.0, 4600.0, 5200.0, 3900.0, 4400.0)
     }
 }

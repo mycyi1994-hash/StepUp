@@ -179,7 +179,8 @@ private fun RecordCard(records: RunRecordState, onRetry: () -> Unit) {
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxWidth().testTag("profile-record-card")) {
         val number = when (records) {
-            is RunRecordState.Ready -> String.format(Locale.ROOT, "%.1f", records.meters / 1000)
+            // 천 단위 쉼표(랭킹과 같은 모양) — 1,284.5
+            is RunRecordState.Ready -> String.format(Locale.ROOT, "%,.1f", records.meters / 1000)
             else -> "—"
         }
         val showUnit = records is RunRecordState.Ready
