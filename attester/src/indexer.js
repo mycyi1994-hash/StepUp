@@ -1,6 +1,6 @@
-import { DISTRIBUTOR_ABI, SNEAKERS_ABI, VAULT_ABI } from './chain.js'
+import { DISTRIBUTOR_ABI, SNEAKERS_ABI, SNEAKERS_V3_ABI, VAULT_ABI } from './chain.js'
 import { parseEventLogs } from 'viem'
-import { weiToSup } from './typed.js'
+import { isV3Token, weiToSup } from './typed.js'
 
 /**
  * 1분마다 도는 일 — 체인을 읽어 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
@@ -28,17 +28,28 @@ export function toServerEvent(source, log) {
       p_data: { op: a.sessionHash, runner: a.runner?.toLowerCase(), amount: a.amount == null ? undefined : weiToSup(a.amount) },
     }
   }
-  if (source === 'sneakers' && log.eventName === 'Released') {
+  const sneakers = source === 'sneakers' || source === 'sneakersV3'
+  if (sneakers && log.eventName === 'Released') {
     return {
       ...base,
       p_kind: 'SNEAKER_RELEASED',
       p_data: { op: a.opId, tokenId: a.tokenId.toString(), to: a.to?.toLowerCase() },
     }
   }
-  if (source === 'sneakers' && log.eventName === 'OpCancelled') {
+  if (sneakers && log.eventName === 'OpCancelled') {
     return { ...base, p_kind: 'OP_CANCELLED', p_data: { op: a.opId } }
   }
-  if (source === 'sneakers' && log.eventName === 'Deposited') {
+  if (source === 'sneakersV3' && log.eventName === 'VaultMinted') {
+    return { ...base, p_kind: 'VAULT_MINTED', p_data: { op: a.opId, tokenId: a.tokenId.toString(), account: a.account } }
+  }
+  if (source === 'sneakersV3' && log.eventName === 'StatsSynced') {
+    return {
+      ...base,
+      p_kind: 'STATS_SYNCED',
+      p_data: { op: a.opId, tokenId: a.tokenId.toString(), level: Number(a.level), durability: Number(a.durability) },
+    }
+  }
+  if (sneakers && log.eventName === 'Deposited') {
     return {
       ...base,
       p_kind: 'SNEAKER_DEPOSITED',
@@ -55,7 +66,18 @@ const SOURCES = [
   ['distributor', DISTRIBUTOR_ABI],
   ['sneakers', SNEAKERS_ABI],
   ['vault', VAULT_ABI],
+  // v3 — 주소(SNEAKERS_V3_ADDRESS)가 있을 때만. 뽑은 신발 발행 · 스탯 갱신 · 꺼내기 · 넣기
+  ['sneakersV3', SNEAKERS_V3_ABI],
 ]
+
+const ABI_OF = Object.fromEntries(SOURCES)
+
+/** 컨트랙트마다 처음 읽을 블록 — v3 는 따로(배포보다 앞선 블록) */
+const startBlockOf = (source, env) =>
+  BigInt((source === 'sneakersV3' ? env.SNEAKERS_V3_START_BLOCK : null) ?? env.START_BLOCK ?? '0')
+
+/** 신발 작업이 어느 컨트랙트의 것인가 — v3 토큰(1000001~)을 꺼내는 작업만 v3 */
+export const sneakerSourceOf = (op) => (op.kind === 'SNEAKER_WITHDRAW' && isV3Token(op.token_id) ? 'sneakersV3' : 'sneakers')
 
 /** safe(없으면 finalized) 블록의 번호와 시각 — 못 읽으면 null */
 async function safeHeader(c) {
@@ -98,7 +120,7 @@ async function alarm(env, deps, source, ev, result) {
  * 영영 멈췄다. 이만큼만 넘기고, 넘긴 이벤트 바로 뒤(블록 · 로그 번호)까지만 커서를 옮긴다 —
  * 한 블록에 이벤트가 몰려 있어도 그 블록 안에서 이어 간다.
  */
-const EVENTS_PER_RUN = 20
+const EVENTS_PER_RUN = 16
 
 /**
  * 커서 위치 = 블록 × 100000 + 로그 번호. "다음에 넘길 이벤트"를 가리킨다. 늘기만 한다.
@@ -114,7 +136,7 @@ export async function indexEvents(env, deps) {
   const safe = await safeBlock(env, c)
   if (safe == null) return { skipped: 'safe block unavailable' }
   const report = {}
-  // 세 컨트랙트가 나눠 쓰는 한 몫이다 — 컨트랙트마다 따로 주면 한 번에 60개까지 보내 요청 수 제한을 넘는다
+  // 컨트랙트들이 나눠 쓰는 한 몫이다 — 컨트랙트마다 따로 주면 한 번에 60개까지 보내 요청 수 제한을 넘는다
   let budget = Number(env.INDEX_EVENTS_PER_RUN ?? EVENTS_PER_RUN)
 
   // 시작하는 컨트랙트를 매분 돌린다 — 한 컨트랙트에 이벤트가 계속 밀려도 다른 컨트랙트가 굶지 않게
@@ -134,7 +156,7 @@ export async function indexEvents(env, deps) {
     try {
       const saved = await deps.rpc(env, 'attester_cursor_get', { p_name: posName(source, env, address) })
       // 처음이면 배포 블록부터 — 이미 받은 이벤트는 서버가 (거래, 로그 번호)로 걸러 한 번만 처리한다
-      start = saved != null ? BigInt(saved) : posOf(BigInt(env.START_BLOCK ?? '0'), 0)
+      start = saved != null ? BigInt(saved) : posOf(startBlockOf(source, env), 0)
       const from = start / LOG_SLOTS
       if (from > safe) continue
       const to = safe < from + MAX_RANGE ? safe : from + MAX_RANGE
@@ -211,6 +233,8 @@ export async function expireOps(env, deps) {
     // SUP · 신발이 영영 묶인다.
     try {
       const sup = op.kind === 'SUP_WITHDRAW'
+      const source = sup ? 'distributor' : sneakerSourceOf(op)
+      if (!c.addresses[source]) continue // v3 주소가 없어졌다 — 사람이 본다
       // 기한은 지났지만 마진(30분) 안인 서명 작업. 체인이 거절한 작업이 그동안 잔고 · 하루 한도를 잡지
       // 않도록, safe 블록의 시각이 기한을 넘었고 그 블록에서 안 쓰였으면 바로 되돌린다 — 컨트랙트는
       // 블록 시각이 기한을 넘은 작업을 받지 않으므로(ClaimExpired · ReleaseExpired) 앞으로도 쓰일 수 없다.
@@ -218,8 +242,8 @@ export async function expireOps(env, deps) {
         if (safeHead === undefined) safeHead = await safeHeader(c)
         if (!safeHead || safeHead.timestamp <= chainDeadlineSec(op)) continue // 아직 — 다음 실행이나 마진 뒤에
         const usedAtSafe = await c.publicClient.readContract({
-          address: sup ? c.addresses.distributor : c.addresses.sneakers,
-          abi: sup ? DISTRIBUTOR_ABI : SNEAKERS_ABI,
+          address: c.addresses[source],
+          abi: ABI_OF[source],
           functionName: sup ? 'sessionClaimed' : 'opUsed',
           args: [op.op_ref],
           blockNumber: safeHead.number,
@@ -234,8 +258,8 @@ export async function expireOps(env, deps) {
         continue
       }
       const used = await c.publicClient.readContract({
-        address: sup ? c.addresses.distributor : c.addresses.sneakers,
-        abi: sup ? DISTRIBUTOR_ABI : SNEAKERS_ABI,
+        address: c.addresses[source],
+        abi: ABI_OF[source],
         functionName: sup ? 'sessionClaimed' : 'opUsed',
         args: [op.op_ref],
       })
@@ -244,7 +268,7 @@ export async function expireOps(env, deps) {
         if (op.tx_hash && Date.parse(op.deadline) + RECOVER_AFTER_MS < Date.now()) {
           // 못 받으면 false 로 적어 이번 실행에서는 다시 묻지 않는다
           if (safe === null) safe = (await safeBlock(env, c)) ?? false
-          if (safe !== false && await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
+          if (safe !== false && await recoverFromReceipt(env, deps, c, op, source, safe)) out.recovered = (out.recovered ?? 0) + 1
         }
         continue
       }
@@ -275,7 +299,7 @@ export async function expireOps(env, deps) {
 async function recoverFromReceipt(env, deps, c, op, source, safe) {
   const receipt = await c.publicClient.getTransactionReceipt({ hash: op.tx_hash }).catch(() => null)
   if (!receipt || receipt.status !== 'success' || receipt.blockNumber > safe) return false
-  const abi = source === 'distributor' ? DISTRIBUTOR_ABI : SNEAKERS_ABI
+  const abi = ABI_OF[source]
   const address = c.addresses[source].toLowerCase()
   const logs = parseEventLogs({ abi, logs: receipt.logs.filter((l) => l.address.toLowerCase() === address) })
   let sent = false
@@ -345,6 +369,11 @@ export async function pauseContracts(env, deps, first) {
     const address = c.addresses[source]
     if (!address) continue
     try {
+      // v3 는 워커가 배포한다 — 아직 코드가 없으면 멈출 것도 없다
+      if (source === 'sneakersV3') {
+        const code = await c.publicClient.getCode({ address })
+        if (!code || code === '0x') continue
+      }
       const paused = await c.publicClient.readContract({ address, abi, functionName: 'paused' })
       if (paused) continue
       const hash = await c.guardian.writeContract({ address, abi, functionName: 'pause' })

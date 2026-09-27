@@ -7,8 +7,9 @@ compatibility_flags = ["nodejs_compat"]
 # 올라가, 다른 계정이면 키가 없는 복제 워커가 생긴다.
 
 # 1분마다 — 체인 이벤트를 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
+# 2분마다(따로 도는 실행) — 체인 기록(러닝 증명 · 배지 · 뽑은 신발 발행 · 스탯 갱신)을 보낸다. src/index.js 의 JOBS_CRON.
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "*/2 * * * *"]
 
 # 공개해도 되는 설정만 여기에. 키는 전부 Secret (아래 목록).
 [vars]
@@ -20,6 +21,14 @@ SNEAKERS_ADDRESS = "0x3Da82CF9d749B0cCcA3DB1b9cA3C68B7c6080019"
 VAULT_ADDRESS = "0x76fDAc77a9fb4Ec6c5Abb96941eFd8D93FBBbd5c"
 # 배포한 블록 번호. 이 블록부터 이벤트를 읽는다.
 START_BLOCK = "36979816"
+# v3 신발(뽑은 신발을 금고로 발행 · 강화 · 수리 반영) — contracts/deployments/giwaSepolia-v3.json.
+# CREATE2 배포기로 이 주소에 올라간다. 코드가 없으면 워커가 한 번 보낸다(src/v3.js).
+SNEAKERS_V3_ADDRESS = "0xf57674209f73E4bA8444a5d75693004eE0e85177"
+# v3 이벤트는 이 블록부터 읽는다 — 배포보다 앞선 블록(배포는 이 파일이 올라간 뒤에 한다)
+SNEAKERS_V3_START_BLOCK = "37205000"
+# EAS — OP 스택 기본 탑재(GIWA Sepolia 확인). 러닝 증명 · 배지 · 코스 완주 기록
+EAS_ADDRESS = "0x4200000000000000000000000000000000000021"
+SCHEMA_REGISTRY_ADDRESS = "0x4200000000000000000000000000000000000020"
 # 앱과 같은 Supabase. 이 키는 앱에 들어가는 공개 키다.
 SUPABASE_URL = "https://pupjzcmybuoyhzfwrsdf.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
@@ -28,6 +37,9 @@ ALLOWED_ORIGINS = "https://stepupcrew.com,https://www.stepupcrew.com"
 IMAGE_BASE = "https://stepupcrew.com/assets/sneakers/"
 # 새로 붙인 지갑에 보내는 테스트 가스 (0.0002 ETH). 메인넷에서는 0 으로.
 DRIP_WEI = "200000000000000"
+# 체인 기록 — 한 번(2분)에 보내는 수, 릴레이어 잔액이 이 아래면 보내지 않는다(0.003 ETH — 꺼내기 가스비 몫)
+CHAIN_JOBS_PER_RUN = "3"
+JOBS_MIN_RELAYER_WEI = "3000000000000000"
 
 # 요청 수 제한 — IP 당 1분에 20번
 [[unsafe.bindings]]

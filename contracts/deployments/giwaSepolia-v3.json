@@ -1,0 +1,24 @@
+{
+  "_note": "StepUpSneakersV3 — CREATE2 배포기로 올린다(누가 보내도 같은 주소). 어테스터 워커가 이 주소에 코드가 없으면 한 번 보낸다. 관리자는 생성자에서 정해져 acceptOwnership 이 필요 없다.",
+  "network": "giwaSepolia",
+  "chainId": 91342,
+  "address": "0xf57674209f73E4bA8444a5d75693004eE0e85177",
+  "proxy": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  "salt": "0xb087709d9600ed735faf14f30b70b25bd4cdafbe8cf46e8b6610f3844368c4b6",
+  "saltLabel": "StepUpSneakersV3:giwaSepolia:1",
+  "roles": {
+    "owner": "0xe773BDc4A42c81291045b11592086C518f96CBBa",
+    "signer": "0x50F687496DC7F2E00CB6e3400DDaE4443a1b7274",
+    "guardian": "0xF573532513dd2aB201ef1Cdfe65F04AdB48c318C",
+    "curator": "0x307FD2D78cDD62eaAA61FbC3fB5FF3677F868DC8",
+    "treasury": "0x51145996b49f00a65a7FA8368Cb64B16D46101e6"
+  },
+  "limits": {
+    "maxMintsPerDay": 20000,
+    "maxReleasesPerDay": 500,
+    "maxSyncsPerDay": 20000,
+    "maxGenesisNo": 100000
+  },
+  "baseURI": "https://stepup-attester.gana003.workers.dev/v3/meta/",
+  "models": 52
+}

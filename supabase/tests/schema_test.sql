@@ -3823,8 +3823,12 @@ begin
   perform pg_temp.ok((select origin = 'BONUS_DRAW' and genesis_no is not null and rarity in ('EPIC', 'LEGENDARY')
                         from public.my_sneakers() where id = v_first),
     '첫 상급 뽑기는 Genesis(에픽 이상)이고 결과 신발 번호를 돌려준다');
-  perform pg_temp.ok((select count(*) from public.chain_ops where sneaker_id = v_first and kind = 'BONUS_MINT') = 1,
-    '상급 뽑기 신발은 체인 발행 작업이 하나 생긴다');
+  -- 0044: 지갑 발행 예약(BONUS_MINT) 대신 금고 발행(v3) — 신발은 앱에 남아 바로 신는다
+  perform pg_temp.ok((select count(*) from public.chain_ops where sneaker_id = v_first) = 0
+                     and (select chain_state = 'APP' from public.my_sneakers() where id = v_first),
+    '상급 뽑기 신발은 지갑 발행 예약 없이 앱에 남는다');
+  perform pg_temp.ok((select count(*) from public.my_chain_activity() where sneaker_id = v_first and kind = 'VAULT_MINT') = 1,
+    '상급 뽑기 신발은 금고 발행 일이 하나 줄 선다');
   for i in 2..10 loop
     v_id := public.premium_draw();
   end loop;
@@ -3888,6 +3892,471 @@ do $$ begin
 end $$;
 reset role;
 delete from public.announcements;
+
+\echo ''
+\echo '── 온체인 활동(0044) — 러닝 증명 · 배지 · 코스 완주 · 금고 발행 · 스탯 갱신 ──────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'chain4@test', '{"full_name":"Chain Four"}'),
+  ('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', 'chain5@test', '{"full_name":"Chain Five"}');
+
+-- 러닝 한 번 — p_day 는 오늘(한국)에서 며칠 앞인가. 경로로 잰 거리 = 인정 거리 = p_m
+create or replace function pg_temp.run(p_user uuid, p_day int, p_m double precision,
+  p_verdict text default 'CLEAN', p_backed int default 5000, p_mock boolean default false)
+returns bigint language plpgsql as $$
+declare
+  v_at timestamptz := ((economy.game_day(now()) + p_day) + time '12:00') at time zone 'Asia/Seoul';
+  v_id bigint;
+begin
+  -- (사람, 시작 시각)은 겹칠 수 없다 — 러닝마다 1분씩 뒤로
+  v_at := v_at + make_interval(mins => (select count(*) from public.walk_sessions where user_id = p_user)::int);
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict,
+                                    gps_distance_m, gps_credit_m, gps_backed, backed_steps, mock_location)
+  values (p_user, v_at, v_at + interval '30 minutes', 1800, 6000, p_m, p_verdict,
+          p_m, p_m, p_m >= 300, p_backed, p_mock)
+  returning id into v_id;
+  return v_id;
+end $$;
+
+create or replace function pg_temp.jobs(p_user uuid, p_kind text) returns bigint
+language sql as $$ select count(*) from public.chain_jobs where user_id = p_user and kind = p_kind $$;
+
+do $$
+declare v_run bigint;
+begin
+  v_run := pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 5000);
+  insert into fix (k, v) values ('c4_run', v_run::text);
+  perform pg_temp.ok((select args = jsonb_build_object('day', economy.day_number(economy.game_day(now()) - 1),
+                                                       'distance_m', 5000, 'duration_sec', 1800)
+                        and status = 'QUEUED' and session_id = v_run
+                        from public.chain_jobs where kind = 'RUN_PROOF' and ref = 'run:' || v_run),
+    '경로로 확인한 5km 러닝 → 러닝 증명 한 줄(날짜 · 거리 · 시간)');
+  perform pg_temp.ok(pg_temp.jobs('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'BADGE') = 1
+                     and exists (select 1 from public.chain_jobs where ref = 'badge:c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4:FIRST_RUN:1'),
+    '첫 러닝 배지');
+
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 5000, 'VOID');
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 5000, 'CLEAN', 5000, true);
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 800);
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 5000, 'FLAGGED', 0);
+  perform pg_temp.ok(pg_temp.jobs('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'RUN_PROOF') = 1,
+    '무효 · 가짜 위치 · 1km 미만 · 적립 보류 러닝은 증명하지 않는다');
+
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 6000, 'FLAGGED');
+  perform pg_temp.ok(pg_temp.jobs('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'RUN_PROOF') = 2,
+    '하루 상한에 걸린(FLAGGED) 러닝도 경로 거리는 진짜라 증명한다');
+end $$;
+
+update public.economy_settings set value = '2' where key = 'run_proof_user_daily';
+do $$ begin
+  perform pg_temp.run('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', -1, 7000);
+  perform pg_temp.ok(pg_temp.jobs('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'RUN_PROOF') = 2,
+    '한 사람의 하루 러닝 증명 상한');
+  -- 상한에 걸린 러닝도 누적 거리에는 들어간다: 5 + 6 + 7 = 18km
+  perform pg_temp.ok((select total_m from public.chain_badge_progress
+                       where user_id = 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4') = 18000
+                     and exists (select 1 from public.chain_jobs
+                                  where ref = 'badge:c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4:DISTANCE_KM:10')
+                     and not exists (select 1 from public.chain_jobs
+                                      where ref = 'badge:c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4:DISTANCE_KM:50'),
+    '누적 18km → 10km 배지(50km 는 아직)');
+end $$;
+update public.economy_settings set value = '10' where key = 'run_proof_user_daily';
+
+-- 처음 세는 사람은 지난 러닝으로 채운다 — 줄 세우기를 꺼 둔 동안 달린 사흘
+update public.economy_settings set value = 'false' where key = 'chain_jobs_enabled';
+do $$ begin
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -4, 4000);
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -3, 4000);
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -2, 4000);
+  perform pg_temp.ok(not exists (select 1 from public.chain_jobs where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5'),
+    '꺼 두면 줄 세우지 않는다');
+end $$;
+update public.economy_settings set value = 'true' where key = 'chain_jobs_enabled';
+do $$
+declare r public.chain_badge_progress;
+begin
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -1, 4000);
+  select * into r from public.chain_badge_progress where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5';
+  perform pg_temp.ok(r.runs = 4 and r.total_m = 16000 and r.streak = 4 and r.last_day = economy.game_day(now()) - 1,
+    format('지난 러닝으로 채운다 — %s회 · %sm · 연속 %s일', r.runs, r.total_m, r.streak));
+  perform pg_temp.ok(pg_temp.jobs('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', 'RUN_PROOF') = 1,
+    '지난 러닝은 증명하지 않는다(이번 러닝만)');
+  perform pg_temp.ok((select array_agg(args ->> 'badge' || ':' || (args ->> 'value') order by args ->> 'badge', (args ->> 'value')::int)
+                        from public.chain_jobs where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5' and kind = 'BADGE')
+                     = array['DISTANCE_KM:10', 'FIRST_RUN:1', 'STREAK_DAYS:3'],
+    '첫 러닝 · 10km · 3일 연속 배지');
+  -- 같은 날 한 번 더 · 예전 날짜를 늦게 올린 것 — 연속 날은 그대로, 배지는 두 번 생기지 않는다
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -1, 4000);
+  perform pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -9, 4000);
+  select * into r from public.chain_badge_progress where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5';
+  perform pg_temp.ok(r.streak = 4 and r.runs = 6 and r.total_m = 24000, '같은 날 · 늦게 올린 예전 러닝은 연속 날을 바꾸지 않는다');
+  perform pg_temp.ok(pg_temp.jobs('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', 'BADGE') = 3, '배지는 한 번씩');
+end $$;
+
+-- 코스 완주 — 서버가 확인한 완주만(course_runs), 1km 이상 코스만
+do $$
+declare v_long bigint; v_short bigint;
+begin
+  insert into public.courses (owner_id, name, distance_km, track, shared)
+  values ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', '한강 2km', 2.0, '37.5,126.9;37.51,126.91', true) returning id into v_long;
+  insert into public.courses (owner_id, name, distance_km, track, shared)
+  values ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', '짧은 길', 0.5, '37.5,126.9;37.501,126.901', true) returning id into v_short;
+  insert into public.course_runs (course_id, user_id, session_id, duration_sec)
+  values (v_long, 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', pg_temp.fx('c4_run')::bigint, 700),
+         (v_short, 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', pg_temp.fx('c4_run')::bigint, 200);
+  insert into fix (k, v) values ('course_long', v_long::text);
+  perform pg_temp.ok(pg_temp.jobs('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'COURSE_RUN') = 1
+                     and (select (args ->> 'distance_m')::int = 2000 and (args ->> 'duration_sec')::int = 700
+                            from public.chain_jobs where kind = 'COURSE_RUN'
+                             and user_id = 'c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4'),
+    '2km 코스 완주 → 코스 완주 증명(0.5km 코스는 올리지 않는다)');
+end $$;
+
+-- 앱은 줄을 읽지도 쓰지도 못하고, 어테스터 함수 · 가명 함수를 부르지 못한다
+set role authenticated;
+call pg_temp.login('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4');
+call pg_temp.must_fail($q$ select * from public.chain_jobs $q$, '앱은 체인 일 줄을 직접 읽지 못한다');
+call pg_temp.must_fail($q$ select * from public.attester_jobs_claim(array['RUN_PROOF'], 5) $q$, '어테스터가 아니면 가져가지 못한다');
+call pg_temp.must_fail($q$ select economy.pseudonym('runner', 'x') $q$, '가명 함수는 앱이 부르지 못한다');
+call pg_temp.must_fail($q$ select * from economy.chain_secrets $q$, 'salt 는 앱이 읽지 못한다');
+call pg_temp.must_fail($q$ select * from public.admin_chain_jobs_stats() $q$, '관리자가 아니면 통계를 못 본다');
+do $$
+declare r record;
+begin
+  select count(*) filter (where status = 'PENDING') as pending, count(*) filter (where tx_hash is not null) as tx,
+         count(*) as n
+    into r from public.my_chain_activity();
+  perform pg_temp.ok(r.n = 5 and r.pending = 5 and r.tx = 0,
+    format('내 체인 기록 — 확정 전에는 대기(%s건), 거래 번호 없음', r.n));
+end $$;
+reset role;
+
+-- 어테스터: 가져가기 → 서명한 거래 적기 → 결과
+-- 어테스터 역할은 표 · economy 함수를 읽지 못한다 — 부른 결과를 담아 두고 검사는 밖에서 한다
+create temp table claimed (round int, job_id bigint, op_ref text, kind text, payload jsonb);
+grant all on claimed to stepup_attester;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 1, c.* from public.attester_jobs_claim(array['RUN_PROOF', 'COURSE_RUN', 'BADGE'], 50) c;
+insert into claimed select 2, c.* from public.attester_jobs_claim(array['RUN_PROOF', 'COURSE_RUN', 'BADGE'], 50) c;
+reset role;
+do $$
+declare r record; v_n int := 0;
+begin
+  for r in select c.*, j.user_id from claimed c join public.chain_jobs j on j.id = c.job_id
+            where c.round = 1 and j.user_id in ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5') loop
+    v_n := v_n + 1;
+    perform pg_temp.ok(r.op_ref = economy.op_ref((select op_id from public.chain_jobs where id = r.job_id))
+                       and r.payload ->> 'runner' = economy.pseudonym('runner', r.user_id::text)
+                       and r.payload ->> 'runner' <> economy.account_ref(r.user_id)
+                       and r.payload ->> 'recipient' = '0x0000000000000000000000000000000000000000',
+      format('%s: 계정 번호 대신 가명 · 지갑이 없으면 받는 사람 없음', r.kind));
+    if r.kind = 'RUN_PROOF' and r.job_id = (select id from public.chain_jobs where ref = 'run:' || pg_temp.fx('c4_run')) then
+      perform pg_temp.ok(r.payload ->> 'run' = economy.pseudonym('run', pg_temp.fx('c4_run'))
+                         and (r.payload ->> 'distance_m')::int = 5000 and (r.payload ->> 'duration_sec')::int = 1800
+                         and (r.payload ->> 'day')::int = economy.day_number(economy.game_day(now()) - 1)
+                         and not (r.payload ? 'lat') and not (r.payload ? 'track'),
+        '러닝 증명 재료 — 가명 러닝 번호 · 거리 · 시간 · 날짜(위치 없음)');
+      insert into fix (k, v) values ('job_run', r.job_id::text);
+    end if;
+    if r.kind = 'COURSE_RUN' then
+      perform pg_temp.ok(r.payload ->> 'course' = economy.pseudonym('course', pg_temp.fx('course_long'))
+                         and (r.payload ->> 'distance_m')::int = 2000,
+        '코스 완주 재료 — 가명 코스 번호 · 코스 거리');
+      insert into fix (k, v) values ('job_course', r.job_id::text);
+    end if;
+    if r.kind = 'BADGE' and r.payload ->> 'badge' = 'STREAK_DAYS' then
+      insert into fix (k, v) values ('job_badge', r.job_id::text);
+    end if;
+  end loop;
+  perform pg_temp.ok(v_n = 11, format('가져간 일 %s건(러닝 증명 5 · 코스 1 · 배지 5)', v_n));
+  perform pg_temp.ok((select count(distinct c.payload ->> 'runner') from claimed c join public.chain_jobs j on j.id = c.job_id
+                       where j.user_id in ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5')) = 2,
+    '같은 사람은 늘 같은 가명, 다른 사람은 다른 가명');
+  perform pg_temp.ok(not exists (select 1 from claimed a join claimed b on a.job_id = b.job_id and a.round = 1 and b.round = 2),
+    '가져간 일은 2분 동안 다시 나가지 않는다');
+  perform pg_temp.ok((select count(*) from public.chain_jobs where id in (select job_id from claimed) and status <> 'CLAIMED') = 0,
+    '가져간 일은 CLAIMED');
+end $$;
+
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+call pg_temp.must_fail($q$ select * from public.attester_jobs_signed('[{"id": 1, "nonce": 1, "tx": "0x12", "raw": "0x01"}]') $q$,
+  '거래 번호 꼴이 틀리면 받지 않는다');
+do $$
+declare v_ids bigint[];
+begin
+  select array_agg(x) into v_ids from public.attester_jobs_signed(jsonb_build_array(
+    jsonb_build_object('id', pg_temp.fx('job_run')::bigint, 'nonce', 41, 'tx', '0x' || repeat('a1', 32), 'raw', '0xf86b01'),
+    jsonb_build_object('id', pg_temp.fx('job_course')::bigint, 'nonce', 42, 'tx', '0x' || repeat('a2', 32), 'raw', '0xf86b02'),
+    jsonb_build_object('id', pg_temp.fx('job_badge')::bigint, 'nonce', 43, 'tx', '0x' || repeat('a3', 32), 'raw', '0xf86b03')
+  )) x;
+  perform pg_temp.ok(cardinality(v_ids) = 3, '가져간 일만 보냄으로 적는다');
+  perform pg_temp.ok((select count(*) from public.attester_jobs_open(100) where job_id = any (v_ids)) = 3
+                     and (select nonce = 41 and raw_tx = '0xf86b01' and tx_hash = '0x' || repeat('a1', 32)
+                            from public.attester_jobs_open(100) where job_id = pg_temp.fx('job_run')::bigint),
+    '확정을 기다리는 일 — 번호(nonce) · 서명한 거래 그대로');
+  perform pg_temp.ok(not exists (select 1 from public.attester_jobs_signed(jsonb_build_array(
+    jsonb_build_object('id', pg_temp.fx('job_run')::bigint, 'nonce', 99, 'tx', '0x' || repeat('b1', 32), 'raw', '0x01')))),
+    '이미 보낸 일에 다른 거래를 덮어쓰지 않는다');
+
+  perform pg_temp.ok(public.attester_jobs_result(jsonb_build_array(
+    jsonb_build_object('id', pg_temp.fx('job_run')::bigint, 'status', 'CONFIRMED', 'block', 500, 'result', '0x' || repeat('ee', 32)),
+    jsonb_build_object('id', pg_temp.fx('job_course')::bigint, 'status', 'RETRY', 'error', 'reverted'),
+    jsonb_build_object('id', pg_temp.fx('job_badge')::bigint, 'status', 'DEAD'))) = 'OK', '결과를 받는다');
+  perform public.attester_jobs_result(jsonb_build_array(
+    jsonb_build_object('id', pg_temp.fx('job_run')::bigint, 'status', 'RETRY')));
+  -- 가져갔지만 못 보낸 일: 체인이 받지 않을 일은 거둔다
+  perform public.attester_jobs_release(jsonb_build_array(
+    jsonb_build_object('id', (select min(job_id) from claimed where round = 1 and kind = 'BADGE'
+                                                     and job_id <> pg_temp.fx('job_badge')::bigint),
+                       'cancel', true, 'error', 'NoChange')));
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status = 'CONFIRMED' and result = '0x' || repeat('ee', 32) and raw_tx is null and block_number = 500
+                        from public.chain_jobs where id = pg_temp.fx('job_run')::bigint),
+    '확정 — 증명 번호 · 블록(늦게 온 RETRY 는 확정을 되돌리지 않는다)');
+  perform pg_temp.ok((select status = 'QUEUED' and attempts = 1 and next_at > now() and tx_hash is null and raw_tx is null
+                        from public.chain_jobs where id = pg_temp.fx('job_course')::bigint), '되돌아간 거래 → 다시 줄에(조금 뒤)');
+  perform pg_temp.ok((select status = 'SENT' and dead_checks = 1 from public.chain_jobs where id = pg_temp.fx('job_badge')::bigint),
+    '번호가 다른 거래로 쓰인 것을 한 번 본 것으로는 다시 보내지 않는다');
+  perform pg_temp.ok((select count(*) from public.chain_jobs where status = 'CANCELLED' and error = 'NoChange') = 1, '거둔 일');
+end $$;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+select public.attester_jobs_result(jsonb_build_array(jsonb_build_object('id', pg_temp.fx('job_badge')::bigint, 'status', 'DEAD')));
+select public.attester_jobs_result(jsonb_build_array(jsonb_build_object('id', pg_temp.fx('job_badge')::bigint, 'status', 'DEAD')));
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status = 'QUEUED' and raw_tx is null and nonce is null and next_at <= now() + interval '1 second'
+                        from public.chain_jobs where id = pg_temp.fx('job_badge')::bigint),
+    '세 번 보면 그 거래는 죽었다 — 다시 서명하도록 곧바로 줄에');
+end $$;
+
+-- 멈춤 · 하루 상한이면 가져가지 않는다
+update public.chain_jobs set lease_until = now() - interval '1 second' where status = 'CLAIMED';
+update public.economy_settings set value = 'true' where key = 'chain_paused';
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 3, c.* from public.attester_jobs_claim(array['RUN_PROOF', 'COURSE_RUN', 'BADGE'], 50) c;
+reset role;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+update public.economy_settings set value = '1' where key = 'chain_jobs_global_daily';
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 4, c.* from public.attester_jobs_claim(array['RUN_PROOF', 'COURSE_RUN', 'BADGE'], 50) c;
+reset role;
+update public.economy_settings set value = '20000' where key = 'chain_jobs_global_daily';
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from claimed where round = 3), '체인 작업을 멈추면 가져가지 않는다');
+  perform pg_temp.ok(not exists (select 1 from claimed where round = 4), '하루 상한(오늘 보낸 수)이 차면 가져가지 않는다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4');
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.my_chain_activity() where status = 'CONFIRMED' and tx_hash = '0x' || repeat('a1', 32)
+                        and result = '0x' || repeat('ee', 32) and kind = 'RUN_PROOF' and distance_m = 5000) = 1,
+    '확정된 기록만 거래 번호 · 증명 번호를 보여 준다');
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+
+-- 금고 발행 — 0042 검사에서 뽑은 신발(무료 2 · 상급 14)이 모두 줄에 있다
+do $$ begin
+  perform pg_temp.ok(pg_temp.jobs('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'VAULT_MINT')
+                     = (select count(*) from public.market_sneakers
+                         where owner_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and origin in ('FREE_DRAW', 'BONUS_DRAW'))
+                     and pg_temp.jobs('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'VAULT_MINT') = 16,
+    '뽑은 신발마다 금고 발행 한 줄');
+end $$;
+-- 꺼내는 중(작업이 열린) 신발은 미룬다 — 앞 사람들의 금고 발행은 모두 뒤로 미뤄 f9 것만 가져가게
+update public.chain_jobs set next_at = now() + interval '1 day'
+ where kind = 'VAULT_MINT' and user_id <> 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+insert into fix (k, v)
+select 'held_shoe', min(sneaker_id)::text from public.chain_jobs
+ where kind = 'VAULT_MINT' and user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+values ('0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f', 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'SNEAKER_WITHDRAW',
+        '0x9999999999999999999999999999999999999999', pg_temp.fx('held_shoe')::bigint, now() + interval '10 minutes');
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 5, c.* from public.attester_jobs_claim(array['VAULT_MINT'], 1) c;
+do $$
+declare r record;
+begin
+  select * into r from claimed where round = 5;
+  perform public.attester_jobs_signed(jsonb_build_array(jsonb_build_object(
+    'id', r.job_id, 'nonce', 50, 'tx', '0x' || repeat('c1', 32), 'raw', '0xf86b50')));
+end $$;
+reset role;
+do $$
+declare r record; s public.market_sneakers;
+begin
+  select * into r from claimed where round = 5;
+  select * into s from public.market_sneakers where id = (select sneaker_id from public.chain_jobs where id = r.job_id);
+  insert into fix (k, v) values ('job_mint', r.job_id::text), ('mint_op', r.op_ref), ('mint_shoe', s.id::text);
+  perform pg_temp.ok(s.id <> pg_temp.fx('held_shoe')::bigint
+                     and (select next_at > now() + interval '9 minutes' from public.chain_jobs
+                           where kind = 'VAULT_MINT' and sneaker_id = pg_temp.fx('held_shoe')::bigint),
+    '꺼내는 중(작업이 열린) 신발의 금고 발행은 미룬다');
+  perform pg_temp.ok(r.payload ->> 'account' = economy.pseudonym('runner', 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9')
+                     and (r.payload ->> 'deadline_unix')::bigint > extract(epoch from now())::bigint + 3500
+                     and r.payload ->> 'faction' = s.faction and r.payload ->> 'rarity' = s.rarity
+                     and (r.payload ->> 'variant')::int = s.variant and (r.payload ->> 'level')::int = s.level
+                     and (r.payload ->> 'efficiency_bps')::int = s.efficiency_bps
+                     and (r.payload ->> 'durability')::numeric = s.durability_pts,
+    '금고 발행 재료 — 주인의 가명 · 서버 신발 값 그대로 · 1시간 유효');
+end $$;
+
+-- 보내는 중인 신발은 꺼낼 수 없다(같은 신발이 두 컨트랙트에 생기지 않게)
+update public.wallet_links set changed_at = now() - interval '73 hours'
+ where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+update public.profiles set created_at = now() - interval '8 days', gps_km = 25
+ where id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+update public.market_sneakers set km_run = lock_km where id = pg_temp.fx('mint_shoe')::bigint;
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('mint_shoe')),
+  '금고 발행을 보내는 중인 신발은 꺼낼 수 없다');
+reset role;
+select set_config('request.jwt.claims', '', false);
+
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform pg_temp.ok(public.attester_jobs_result(jsonb_build_array(jsonb_build_object(
+    'id', pg_temp.fx('job_mint')::bigint, 'status', 'CONFIRMED', 'block', 600, 'result', '1000001'))) = 'OK',
+    '금고 발행 확정');
+  -- 인덱서가 같은 발행을 늦게 보내도 그대로
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('c1', 32), 3, 600, 'VAULT_MINTED',
+    jsonb_build_object('op', pg_temp.fx('mint_op'), 'tokenId', '1000001', 'account', '0x' || repeat('00', 32))) = 'CONFIRMED',
+    '같은 발행의 체인 이벤트 — 그대로 확정');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select token_id = 1000001 and chain_state = 'APP' from public.market_sneakers
+                       where id = pg_temp.fx('mint_shoe')::bigint), '신발에 v3 토큰 번호가 적히고 앱에 그대로 있다');
+  perform pg_temp.ok(not coalesce((economy.setting('chain_paused') #>> '{}')::boolean, false), '맞는 이벤트는 멈추지 않는다');
+end $$;
+
+-- 강화 · 수리 → 스탯 갱신(기다리는 것 하나로 모은다), 닳는 것은 올리지 않는다
+update public.market_sneakers set level = level + 1 where id = pg_temp.fx('mint_shoe')::bigint;
+update public.market_sneakers set level = level + 1 where id = pg_temp.fx('mint_shoe')::bigint;
+update public.market_sneakers set durability_pts = durability_pts - 5 where id = pg_temp.fx('mint_shoe')::bigint;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_jobs where kind = 'STATS_SYNC'
+                       and sneaker_id = pg_temp.fx('mint_shoe')::bigint) = 1, '강화 두 번 → 기다리는 갱신 하나');
+end $$;
+update public.market_sneakers set level = level + 1
+ where owner_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and token_id is null and level < 10;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_jobs where kind = 'STATS_SYNC') = 1,
+    '아직 체인에 없는 신발의 강화는 갱신을 만들지 않는다(발행할 때 그때 값으로)');
+end $$;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 6, c.* from public.attester_jobs_claim(array['STATS_SYNC'], 5) c;
+do $$
+declare r record;
+begin
+  select * into r from claimed where round = 6;
+  perform public.attester_jobs_signed(jsonb_build_array(jsonb_build_object(
+    'id', r.job_id, 'nonce', 51, 'tx', '0x' || repeat('c2', 32), 'raw', '0xf86b51')));
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('c2', 32), 1, 601, 'STATS_SYNCED',
+    jsonb_build_object('op', r.op_ref, 'tokenId', '1000001', 'level', 3, 'durability', 9500)) = 'CONFIRMED',
+    '스탯 갱신 이벤트로 확정');
+  -- 모르는 발행은 멈춘다
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('c3', 32), 0, 602, 'VAULT_MINTED',
+    jsonb_build_object('op', '0x' || repeat('0', 32) || repeat('9', 32), 'tokenId', '1000002', 'account', '0x' || repeat('11', 32)))
+    = 'UNKNOWN_OP', '서버가 줄 세우지 않은 금고 발행 → 멈춤');
+end $$;
+reset role;
+do $$
+declare r record; s public.market_sneakers;
+begin
+  select * into r from claimed where round = 6;
+  select * into s from public.market_sneakers where id = pg_temp.fx('mint_shoe')::bigint;
+  perform pg_temp.ok(r.payload ->> 'token_id' = '1000001' and (r.payload ->> 'level')::int = s.level
+                     and (r.payload ->> 'durability')::numeric = s.durability_pts,
+    '스탯 갱신 재료 — 가져갈 때의 레벨 · 내구도');
+  perform pg_temp.ok((select status from public.chain_jobs where id = r.job_id) = 'CONFIRMED', '갱신 확정');
+  perform pg_temp.ok((economy.setting('chain_paused') #>> '{}')::boolean, '모르는 발행을 보면 체인 작업이 멈춘다');
+end $$;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- 이미 다른 신발의 토큰 번호로 확정하려 하면 받지 않고 멈춘다
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed select 7, c.* from public.attester_jobs_claim(array['VAULT_MINT'], 1) c;
+do $$
+declare r record;
+begin
+  select * into r from claimed where round = 7;
+  perform public.attester_jobs_signed(jsonb_build_array(jsonb_build_object(
+    'id', r.job_id, 'nonce', 52, 'tx', '0x' || repeat('c4', 32), 'raw', '0xf86b52')));
+  perform pg_temp.ok(public.attester_jobs_result(jsonb_build_array(jsonb_build_object(
+    'id', r.job_id, 'status', 'CONFIRMED', 'block', 603, 'result', '1000001'))) = 'MISMATCH',
+    '이미 다른 신발의 토큰 번호로는 확정하지 않는다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((economy.setting('chain_paused') #>> '{}')::boolean, '어긋난 확정은 체인 작업을 멈춘다');
+end $$;
+update public.economy_settings set value = 'false' where key = 'chain_paused';
+
+-- 관리자가 체인에서 작업 번호를 막으면(OpCancelled) 그 일은 거둔다
+insert into fix (k, v)
+select 'cancel_job', id::text from public.chain_jobs
+ where kind = 'VAULT_MINT' and status = 'QUEUED' and user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9'
+   and sneaker_id <> pg_temp.fx('held_shoe')::bigint
+ order by id limit 1;
+insert into fix (k, v)
+select 'cancel_op', economy.op_ref(op_id) from public.chain_jobs where id = pg_temp.fx('cancel_job')::bigint;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform pg_temp.ok(public.attester_chain_event('0x' || repeat('c5', 32), 0, 604, 'OP_CANCELLED',
+    jsonb_build_object('op', pg_temp.fx('cancel_op'))) = 'CANCELLED', '체인에서 막힌 작업 번호 → 거둠');
+  perform pg_temp.ok((select token_id from public.attester_due_ops() where op_id = '0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f') is null,
+    '만료 목록은 토큰 번호 칸을 함께 준다');
+end $$;
+reset role;
+delete from public.chain_ops where id = '0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f';
+do $$ begin
+  perform pg_temp.ok((select status from public.chain_jobs where id = pg_temp.fx('cancel_job')::bigint) = 'CANCELLED',
+    '체인에서 막힌 작업 번호의 일은 거둔다');
+end $$;
+update public.chain_jobs set next_at = now() where kind = 'VAULT_MINT' and status = 'QUEUED';
+
+-- 관리자 통계
+insert into public.app_admins (user_id) values ('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5') on conflict do nothing;
+set role authenticated;
+call pg_temp.login('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5');
+do $$ begin
+  perform pg_temp.ok((select confirmed_total from public.admin_chain_jobs_stats() where kind = 'RUN_PROOF') = 1
+                     and (select confirmed_total from public.admin_chain_jobs_stats() where kind = 'VAULT_MINT') = 1
+                     and (select count(*) from public.admin_chain_jobs_stats()) = 5,
+    '관리자는 종류마다 확정 수를 본다');
+end $$;
+reset role;
+delete from public.app_admins where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5';
+select set_config('request.jwt.claims', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

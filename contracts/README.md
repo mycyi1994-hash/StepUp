@@ -13,9 +13,22 @@
 | `StepUpSneakers` | ERC-721 + 로열티 5% | 신발 NFT. 서버 서명으로 발행 · 반환(작업마다 1회), 앱으로 넣기(금고 보관), 무료 신발 전송 잠금(ERC-5192), 하루 발행 · 반환 상한, 등급별 스탯 상한, 도감 추가만 가능, 작업 취소 |
 | `SupVault` | — | SUP 를 앱으로 넣는 금고. 나가는 길은 보상 풀로 되돌리기뿐 |
 | `CourseRegistry` | — | 코스 작성자 · 완주 기록 |
+| `StepUpSneakersV3` | ERC-721 + 로열티 5% + ERC-4906 | v3 — 뽑은 신발 금고 발행 · 강화 · 수리 반영(아래) |
 
 키 역할 — 관리자(`owner`, 2단계 이전) · 금고(`treasury`) · SUP 서명(`attester`) ·
 신발 서명(`signer`) · 긴급 정지(`guardian`, 정지만 가능 — 재개는 관리자만) · 코스 기록(`recorder`).
+
+**v3 신발 (`StepUpSneakersV3`, 2026-09-28)** — 앱에서 뽑은 신발을 뽑는 순간 체인의 **금고로 발행**한다(`vaultMint`).
+신발은 앱에 그대로 있고(신고 달린다), 강화 · 수리하면 체인 스탯이 따라온다(`syncStats` — 레벨은 오르기만, 바뀐 것이
+없으면 거절). 스탯이 바뀌면 ERC-4906 `MetadataUpdate` 를 낸다. 꺼내기 · 넣기 · 전송 잠금 · 하루 상한 · 긴급 정지는 v2 와 같다.
+토큰 번호는 1,000,001 부터(v2 와 겹치지 않는다). 관리자(owner)는 생성자에서 관리자 지갑으로 정해 `acceptOwnership`
+이 필요 없고, 도감 추가만 할 수 있는 `curator`(릴레이어)를 둔다.
+
+배포는 체인에 있는 CREATE2 배포기(`0x4e59…956C`)로 한다 — 주소가 initcode 로만 정해져 누가 보내도 같다.
+어테스터 워커가 그 주소에 코드가 없으면 한 번 보낸다(`attester/src/v3.js`). 설정: `deployments/giwaSepolia-v3.config.json`,
+재료 만들기: `npx hardhat compile && node scripts/v3-initcode.js`(→ `attester/src/v3-deploy.js` · `deployments/giwaSepolia-v3.json`).
+`test/V3.test.js` 가 저장소의 재료 · `wrangler.toml` 주소가 지금 소스로 만든 것과 같은지 확인한다 — 소스를 고치면 주소가
+바뀌므로 **배포한 뒤에는 v3 소스를 고치지 않는다**(새 판은 V4 로).
 
 **v1 (기록용)** — `SneakerNFT` · `MysteryDrawNFT` · `scripts/deploy-v1.js` 는 2026-07-31
 테스트넷 데모 배포에 쓴 것이다. 그 배포는 키를 보관하지 않아 운영할 수 없다

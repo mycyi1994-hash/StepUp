@@ -82,12 +82,45 @@ export const RELEASE_TYPES = {
   ],
 }
 
+// ── v3 — 뽑은 신발을 금고로 발행 · 강화 · 수리를 금고의 신발에 반영 (contracts/StepUpSneakersV3.sol) ──
+export const VAULT_MINT_TYPES = {
+  VaultMint: [
+    { name: 'opId', type: 'bytes32' },
+    { name: 'account', type: 'bytes32' },
+    { name: 'model', type: 'uint32' },
+    { name: 'rarity', type: 'uint8' },
+    { name: 'level', type: 'uint16' },
+    { name: 'efficiencyBps', type: 'uint16' },
+    { name: 'comfortBps', type: 'uint16' },
+    { name: 'durability', type: 'uint16' },
+    { name: 'genesisNo', type: 'uint32' },
+    { name: 'deadline', type: 'uint64' },
+  ],
+}
+
+export const STATS_SYNC_TYPES = {
+  StatsSync: [
+    { name: 'opId', type: 'bytes32' },
+    { name: 'tokenId', type: 'uint256' },
+    { name: 'level', type: 'uint16' },
+    { name: 'durability', type: 'uint16' },
+    { name: 'deadline', type: 'uint64' },
+  ],
+}
+
+/** v3 토큰 번호는 여기서 시작한다 — v2 번호와 겹치지 않아 서버가 번호 하나로 신발을 찾는다 */
+export const V3_FIRST_TOKEN_ID = 1000001n
+
+/** 이 번호의 토큰이 v3 컨트랙트의 것인가 */
+export const isV3Token = (tokenId) => tokenId != null && tokenId !== '' && BigInt(tokenId) >= V3_FIRST_TOKEN_ID
+
 export function claimDomain(chainId, distributor) {
   return { name: 'StepUpRewards', version: '1', chainId: Number(chainId), verifyingContract: distributor }
 }
 
-export function releaseDomain(chainId, sneakers) {
-  return { name: 'StepUpSneakers', version: '2', chainId: Number(chainId), verifyingContract: sneakers }
+/** 신발 컨트랙트의 서명 영역 — v2 는 '2', v3(금고 발행 · 스탯 갱신)는 '3' */
+export function releaseDomain(chainId, sneakers, version = '2') {
+  return { name: 'StepUpSneakers', version, chainId: Number(chainId), verifyingContract: sneakers }
 }
 
 /**
@@ -122,6 +155,39 @@ export function releaseMessage(p) {
     durability: Math.round(Number(p.durability) * 100),
     genesisNo: p.genesis_no == null ? 0 : Number(p.genesis_no),
     locked: Boolean(p.transfer_locked),
+    deadline: BigInt(p.deadline_unix),
+  }
+}
+
+/** 뽑은 신발 → VaultMint. account 는 서버가 준 가명(bytes32) — 계정 번호가 체인에 나가지 않는다. */
+export function vaultMintMessage(p) {
+  if (p.kind !== 'VAULT_MINT') throw new Error(`금고 발행이 아닙니다: ${p.kind}`)
+  if (!/^0x[0-9a-f]{64}$/i.test(String(p.account ?? '')) || /^0x0{64}$/i.test(p.account)) {
+    throw new Error('받을 계정이 올바르지 않습니다')
+  }
+  return {
+    opId: p.op_ref,
+    account: p.account,
+    model: modelId(p.faction, p.rarity, p.variant),
+    rarity: RARITIES.indexOf(p.rarity),
+    level: Number(p.level),
+    efficiencyBps: Number(p.efficiency_bps),
+    comfortBps: Number(p.comfort_bps),
+    durability: Math.round(Number(p.durability) * 100),
+    genesisNo: p.genesis_no == null ? 0 : Number(p.genesis_no),
+    deadline: BigInt(p.deadline_unix),
+  }
+}
+
+/** 강화 · 수리 → StatsSync. 금고에 있는 v3 토큰만. */
+export function statsSyncMessage(p) {
+  if (p.kind !== 'STATS_SYNC') throw new Error(`스탯 갱신이 아닙니다: ${p.kind}`)
+  if (!isV3Token(p.token_id)) throw new Error(`v3 토큰이 아닙니다: ${p.token_id}`)
+  return {
+    opId: p.op_ref,
+    tokenId: BigInt(p.token_id),
+    level: Number(p.level),
+    durability: Math.round(Number(p.durability) * 100),
     deadline: BigInt(p.deadline_unix),
   }
 }

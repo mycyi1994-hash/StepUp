@@ -54,6 +54,62 @@ export const SNEAKERS_ABI = parseAbi([
   'error EnforcedPause()',
 ])
 
+/** v3 — 뽑은 신발을 금고로 발행(vaultMint) · 강화 · 수리 반영(syncStats). 꺼내기 · 넣기는 v2 와 같다. */
+export const SNEAKERS_V3_ABI = parseAbi([
+  'function opUsed(bytes32) view returns (bool)',
+  'function statsOf(uint256) view returns ((uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo))',
+  'function transferLocked(uint256) view returns (bool)',
+  'function modelExists(uint32) view returns (bool)',
+  'function paused() view returns (bool)',
+  'function pause()',
+  'function addModels(uint32[] models, uint8[] rarities)',
+  'function release((bytes32 opId, address to, uint256 tokenId, uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo, bool locked, uint64 deadline) r, bytes signature)',
+  'function vaultMint((bytes32 opId, bytes32 account, uint32 model, uint8 rarity, uint16 level, uint16 efficiencyBps, uint16 comfortBps, uint16 durability, uint32 genesisNo, uint64 deadline) m, bytes signature)',
+  'function syncStats((bytes32 opId, uint256 tokenId, uint16 level, uint16 durability, uint64 deadline) s, bytes signature)',
+  'event Released(bytes32 indexed opId, uint256 indexed tokenId, address indexed to, bool minted)',
+  'event VaultMinted(bytes32 indexed opId, uint256 indexed tokenId, bytes32 indexed account)',
+  'event StatsSynced(bytes32 indexed opId, uint256 indexed tokenId, uint16 level, uint16 durability)',
+  'event OpCancelled(bytes32 indexed opId)',
+  'event Deposited(uint256 indexed tokenId, address indexed from, bytes32 indexed account)',
+  'error ReleaseExpired(uint64 deadline)',
+  'error OpAlreadyUsed(bytes32 opId)',
+  'error BadSignature()',
+  'error UnknownModel(uint32 model)',
+  'error RarityMismatch(uint32 model, uint8 rarity)',
+  'error BadStats()',
+  'error IdentityChanged(uint256 tokenId)',
+  'error LevelWentDown(uint256 tokenId, uint16 was, uint16 now_)',
+  'error NotInVault(uint256 tokenId)',
+  'error NoChange(uint256 tokenId)',
+  'error GenesisTaken(uint32 genesisNo)',
+  'error DailyMintCapReached(uint64 day)',
+  'error DailyReleaseCapReached(uint64 day)',
+  'error DailySyncCapReached(uint64 day)',
+  'error GenesisOutOfRange(uint32 genesisNo)',
+  'error ZeroAccount()',
+  'error EnforcedPause()',
+])
+
+/** EAS (OP 스택 기본 탑재 0x4200…0021) — 러닝 증명 · 배지 · 코스 완주 */
+export const EAS_ABI = parseAbi([
+  'function attest((bytes32 schema, (address recipient, uint64 expirationTime, bool revocable, bytes32 refUID, bytes data, uint256 value) data) request) payable returns (bytes32)',
+  'event Attested(address indexed recipient, address indexed attester, bytes32 uid, bytes32 indexed schemaUID)',
+  'error AccessDenied()',
+  'error InsufficientValue()',
+  'error InvalidAttestation()',
+  'error InvalidExpirationTime()',
+  'error InvalidSchema()',
+  'error NotPayable()',
+  'error WrongSchema()',
+])
+
+/** EAS 스키마 등록소 (0x4200…0020) */
+export const SCHEMA_REGISTRY_ABI = parseAbi([
+  'function register(string schema, address resolver, bool revocable) returns (bytes32)',
+  'function getSchema(bytes32 uid) view returns ((bytes32 uid, address resolver, bool revocable, string schema))',
+  'error AlreadyExists()',
+])
+
 export const VAULT_ABI = parseAbi([
   'function totalDeposited() view returns (uint256)',
   'function paused() view returns (bool)',
@@ -91,6 +147,10 @@ export function clients(env) {
       distributor: env.DISTRIBUTOR_ADDRESS,
       sneakers: env.SNEAKERS_ADDRESS,
       vault: env.VAULT_ADDRESS,
+      // 비어 있으면 그 일은 하지 않는다(v3 발행 · EAS 기록)
+      sneakersV3: env.SNEAKERS_V3_ADDRESS || null,
+      eas: env.EAS_ADDRESS || null,
+      schemaRegistry: env.SCHEMA_REGISTRY_ADDRESS || null,
     },
   }
 }

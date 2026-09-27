@@ -1,5 +1,5 @@
 import { verifyMessage, isAddress } from 'viem'
-import { DISTRIBUTOR_ABI, SNEAKERS_ABI } from './chain.js'
+import { DISTRIBUTOR_ABI, SNEAKERS_ABI, SNEAKERS_V3_ABI } from './chain.js'
 import { HttpError } from './supabase.js'
 import {
   CLAIM_TYPES,
@@ -9,6 +9,7 @@ import {
   claimMessage,
   releaseMessage,
   walletLinkMessage,
+  isV3Token,
 } from './typed.js'
 
 /**
@@ -93,14 +94,18 @@ export async function executeOp(request, env, deps, opId) {
     })
     tx = await submit(c, c.addresses.distributor, DISTRIBUTOR_ABI, 'claim', [message, signature])
   } else {
+    // 금고로 발행된 v3 신발(토큰 1000001~)을 꺼내는 작업만 v3 로. 처음 꺼내는 신발 · 보너스 발행은 v2 로 발행한다
+    const v3 = p.kind === 'SNEAKER_WITHDRAW' && isV3Token(p.token_id)
+    if (v3 && !c.addresses.sneakersV3) throw new HttpError(503, '아직 준비 중입니다')
+    const address = v3 ? c.addresses.sneakersV3 : c.addresses.sneakers
     const message = releaseMessage(p)
     const signature = await c.sneakerSigner.signTypedData({
-      domain: releaseDomain(c.chain.id, c.addresses.sneakers),
+      domain: releaseDomain(c.chain.id, address, v3 ? '3' : '2'),
       types: RELEASE_TYPES,
       primaryType: 'Release',
       message,
     })
-    tx = await submit(c, c.addresses.sneakers, SNEAKERS_ABI, 'release', [message, signature])
+    tx = await submit(c, address, v3 ? SNEAKERS_V3_ABI : SNEAKERS_ABI, 'release', [message, signature])
   }
 
   // 거래는 이미 나갔다. 서버에 적기가 실패해도 성공으로 돌려준다 — 이벤트가 들어오면
@@ -130,7 +135,7 @@ const REVERT_TEXT = {
 }
 
 /** viem 오류에서 컨트랙트가 되돌린 오류 이름을 찾는다 */
-function revertName(e) {
+export function revertName(e) {
   const found = typeof e?.walk === 'function' ? e.walk((x) => x?.data?.errorName) : null
   return found?.data?.errorName ?? e?.cause?.data?.errorName ?? null
 }

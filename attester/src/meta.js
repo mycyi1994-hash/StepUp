@@ -1,4 +1,4 @@
-import { SNEAKERS_ABI } from './chain.js'
+import { SNEAKERS_ABI, SNEAKERS_V3_ABI } from './chain.js'
 import { FACTIONS, RARITIES } from './typed.js'
 import { HttpError } from './supabase.js'
 
@@ -71,15 +71,22 @@ export function metadataOf(tokenId, stats, locked, imageBase) {
   }
 }
 
-export async function sneakerMetadata(env, deps, id) {
+/**
+ * `version` 은 '2'(v2 — /v2/meta/) 또는 '3'(v3 — /v3/meta/). 두 컨트랙트의 statsOf 는 모양이 같다.
+ * v3 의 금고에 있는 신발(앱에서 신는 중)도 같은 메타데이터다 — 강화 · 수리하면 체인 스탯이 따라온다.
+ */
+export async function sneakerMetadata(env, deps, id, version = '2') {
   if (!/^\d{1,20}$/.test(id)) throw new HttpError(400, '신발 번호가 올바르지 않습니다')
   const c = deps.clients(env)
+  const address = version === '3' ? c.addresses.sneakersV3 : c.addresses.sneakers
+  const abi = version === '3' ? SNEAKERS_V3_ABI : SNEAKERS_ABI
+  if (!address) throw new HttpError(404, '없는 신발입니다')
   const tokenId = BigInt(id)
   let stats, locked
   try {
     ;[stats, locked] = await Promise.all([
-      c.publicClient.readContract({ address: c.addresses.sneakers, abi: SNEAKERS_ABI, functionName: 'statsOf', args: [tokenId] }),
-      c.publicClient.readContract({ address: c.addresses.sneakers, abi: SNEAKERS_ABI, functionName: 'transferLocked', args: [tokenId] }),
+      c.publicClient.readContract({ address, abi, functionName: 'statsOf', args: [tokenId] }),
+      c.publicClient.readContract({ address, abi, functionName: 'transferLocked', args: [tokenId] }),
     ])
   } catch (e) {
     // 컨트랙트가 되돌렸을 때만 "없는 신발"이다. RPC 오류(시간 초과 · 요청 제한)를 404 로 두면

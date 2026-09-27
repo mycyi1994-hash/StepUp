@@ -3,6 +3,7 @@ import { getUser, rpc, HttpError } from './supabase.js'
 import { linkWallet, executeOp } from './handlers.js'
 import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
+import { JOBS_CRON, runJobs } from './jobs.js'
 
 /**
  * StepUp 어테스터 v2 — 서버가 허락한 체인 작업만 서명하고, 가스비를 대신 내 보낸다.
@@ -71,7 +72,7 @@ async function rateLimited(request, env) {
   return !success
 }
 
-async function metadataResponse(request, env, ctx, url, id) {
+async function metadataResponse(request, env, ctx, url, id, version) {
   const cache = globalThis.caches?.default
   // 쿼리(?x=…)를 바꿔 캐시를 피해 RPC 를 두드리지 못하게 경로만으로 캐시한다
   const key = new Request(url.origin + url.pathname, { method: 'GET' })
@@ -86,7 +87,7 @@ async function metadataResponse(request, env, ctx, url, id) {
   let status = 200
   let maxAge = 300
   try {
-    body = await sneakerMetadata(env, deps, id)
+    body = await sneakerMetadata(env, deps, id, version)
   } catch (e) {
     if (!(e instanceof HttpError) || e.status >= 500) throw e
     body = { ok: false, error: e.message }
@@ -133,9 +134,9 @@ export default {
       // 신발 메타데이터 — 마켓 · 지갑이 읽는다. 누구나 부를 수 있으므로 워커 캐시를 먼저 보고,
       // 캐시에 없을 때만 요청 수 제한을 거쳐 체인을 읽는다. 없는 번호도 잠깐 캐시한다 —
       // 번호를 바꿔 가며 두드려 인덱서와 같이 쓰는 RPC 를 막지 못하게.
-      const meta = url.pathname.match(/^\/v2\/meta\/([^/]+)$/)
+      const meta = url.pathname.match(/^\/v([23])\/meta\/([^/]+)$/)
       if (meta && request.method === 'GET') {
-        return metadataResponse(request, env, ctx, url, meta[1])
+        return metadataResponse(request, env, ctx, url, meta[2], meta[1])
       }
 
       if (request.method === 'POST' && !configured(env)) {
@@ -163,10 +164,19 @@ export default {
     }
   },
 
-  async scheduled(_event, env, ctx) {
+  async scheduled(event, env, ctx) {
     // 컨트랙트 배포 전(주소가 비어 있을 때)에는 워커만 먼저 올려 둘 수 있게 아무것도 하지 않는다
     if (!configured(env)) {
       console.log('contracts not configured — skipping')
+      return
+    }
+    // 체인 기록 보내기는 따로(2분마다)
+    if (event?.cron === JOBS_CRON) {
+      ctx.waitUntil(
+        runJobs(env, deps)
+          .then((out) => console.log(JSON.stringify({ jobs: out })))
+          .catch((e) => console.error('scheduled jobs error', e?.message)),
+      )
       return
     }
     // 세 일을 따로 돌린다 — 앞의 일이 실패해도 대조(키가 샜는지 보는 일)는 매번 한다
