@@ -117,7 +117,7 @@ fun SneakerDetailScreen(
             return@DetailPage
         }
 
-        // S2 머리 — 계열 · 등급 → 이름 → 민팅 번호 · 레벨 → 기울인 파란 면 위 신발 → 능력치 한 줄
+        // S2 머리 — 계열 · 등급 → 이름 → 민팅 번호 · 레벨 → 등급 무대(프레임 v8) 위 신발 → 능력치 한 줄
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 com.stepup.android.ui.components.S2Kicker(sneaker.faction.label() + " · " + sneaker.rarity.label())

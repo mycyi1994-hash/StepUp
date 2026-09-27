@@ -106,7 +106,7 @@ fun MarketModelScreen(
     }
 
     DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
-        // S2 머리 — 계열 · 등급 → 모델 이름 → 기울인 파란 면 위 신발
+        // S2 머리 — 계열 · 등급 → 모델 이름 → 등급 무대(프레임 v8) 위 신발
         item {
             val preview = previewSneaker(faction, rarity, variant)
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

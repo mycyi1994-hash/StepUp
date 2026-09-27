@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -152,6 +152,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/draw-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/draw-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw/. screen-gallery/shoe-draw/ || status=1
+  # 신발 등급 프레임 v8(2026-09-27) — 네 등급 무대 · 보유 칸 · 보관함 · 상세 · 밝은 테마 · 좁은 폭 · 큰 글씨 · 뽑기 결과
+  run_instrumentation grade "com.stepup.android.ShoeGradeFrameTest"
+  mkdir -p screen-gallery/grade-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/grade-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-grade/. screen-gallery/shoe-grade/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

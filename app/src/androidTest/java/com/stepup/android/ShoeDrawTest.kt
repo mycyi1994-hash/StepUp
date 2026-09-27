@@ -189,6 +189,10 @@ class ShoeDrawTest {
             compose.onNodeWithTag("shoes-section-draw").performClick()
             awaitTag("draw-free-left")
             compose.waitUntil(10_000) { runCatching { text("draw-free-left", "13회") }.isSuccess }
+            // 앱 셸 안(머리 · 아래 탭)은 창이 짧다 — 상자를 줄여서라도 남은 수가 아래 버튼에 가리지 않는다
+            val count = compose.onNodeWithTag("draw-free-left", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val action = compose.onNodeWithTag("draw-shoe").fetchSemanticsNode().boundsInRoot
+            assertTrue("remaining count above the action: $count / $action", count.bottom <= action.top + 1)
             shot("20-in-app-free")
 
             // 서버가 답을 붙잡고 있는 동안: 돌고, 다시 눌러도 두 번 뽑지 않는다

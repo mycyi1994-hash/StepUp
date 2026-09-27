@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="418" viewBox="0 0 440 418"><defs>
+    <linearGradient id="edge0" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#CFD7E5"/><stop offset=".52" stop-color="#91A1B8"/><stop offset="1" stop-color="#CFD7E5"/></linearGradient>
+    <radialGradient id="aura0"><stop stop-color="#91A1B8" stop-opacity="0.035"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ground0"><stop stop-color="#CFD7E5" stop-opacity="0"/><stop offset=".48" stop-color="#91A1B8" stop-opacity="0.000"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo0"><stop offset=".48" stop-color="#91A1B8" stop-opacity="0"/><stop offset=".79" stop-color="#91A1B8" stop-opacity="0"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam0" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#CFD7E5" stop-opacity="0"/><stop offset=".56" stop-color="#91A1B8" stop-opacity="0"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></linearGradient>
+    <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+    </defs><style>text{font-family:Pretendard,"Malgun Gothic",sans-serif}</style><ellipse cx="220" cy="318" rx="127" ry="16" fill="#536986" opacity=".16"/></svg>
