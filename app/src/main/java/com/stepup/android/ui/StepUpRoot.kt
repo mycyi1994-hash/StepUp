@@ -49,6 +49,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -369,8 +370,9 @@ internal fun MainScaffold(
     var wardrobeSetting by rememberSaveable {
         mutableStateOf(com.stepup.android.ui.components.RunnerSetting.Wardrobe)
     }
-    var homeSetting by rememberSaveable {
-        mutableStateOf(com.stepup.android.ui.components.HomeBackgrounds.initial.random())
+    // 홈 바탕 사진(HomePhotos.all 의 순번)
+    var homePhoto by rememberSaveable {
+        mutableIntStateOf(com.stepup.android.ui.components.HomePhotos.initial())
     }
     var profileSetting by rememberSaveable {
         mutableStateOf(com.stepup.android.ui.components.ProfileBackgrounds.settings.random())
@@ -382,19 +384,21 @@ internal fun MainScaffold(
     // S2 날씨 풍경 — 설정에서 켠 사람만. 홈에 올 때 날씨를 (30분에 한 번까지) 묻고 맞는 풍경을 고른다.
     val weatherOn by ServiceLocator.userPrefs.weatherBackground.collectAsState(initial = false)
     val weather by com.stepup.android.data.weather.WeatherBackground.scene.collectAsState()
-    val weatherSetting = if (weatherOn) weather?.let { com.stepup.android.ui.components.HomeBackgrounds.forWeather(it) } else null
+    val weatherPick = weather.takeIf { weatherOn }
     LaunchedEffect(weatherOn, currentRoute) {
         if (!weatherOn) com.stepup.android.data.weather.WeatherBackground.clear()
         else if (currentRoute == Screen.Run.route) com.stepup.android.data.weather.WeatherBackground.refresh(context)
     }
-    LaunchedEffect(weatherSetting) { weatherSetting?.let { homeSetting = it } }
+    LaunchedEffect(weatherPick) {
+        weatherPick?.let { homePhoto = com.stepup.android.ui.components.HomePhotos.forWeather(it, homePhoto) }
+    }
     var previousRoute by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
             if (currentRoute == Screen.Run.route && previousRoute in listOf(
                     Screen.Customize.route, Screen.Community.route, Screen.Profile.route,
                 )) {
-                homeSetting = weatherSetting ?: com.stepup.android.ui.components.HomeBackgrounds.next(homeSetting)
+                homePhoto = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
             }
             previousRoute = currentRoute
         }
@@ -403,9 +407,15 @@ internal fun MainScaffold(
         it in com.stepup.android.ui.components.WardrobeBackgrounds.settings
     } ?: com.stepup.android.ui.components.RunnerSetting.Wardrobe
     val feedback = LocalFeedback.current
-    LaunchedEffect(currentRoute, homeSetting, profileSetting, wardrobeScene, runSetting, feedback) {
+    LaunchedEffect(currentRoute, homePhoto, profileSetting, wardrobeScene, runSetting, feedback) {
+        if (currentRoute == Screen.Run.route) {
+            feedback?.setAmbientScene(when (com.stepup.android.ui.components.HomePhotos.all[homePhoto].mood) {
+                com.stepup.android.domain.WeatherScene.DAY, com.stepup.android.domain.WeatherScene.DUSK -> AmbientScene.Dawn
+                com.stepup.android.domain.WeatherScene.NIGHT, com.stepup.android.domain.WeatherScene.RAIN -> AmbientScene.Night
+            })
+            return@LaunchedEffect
+        }
         val setting = when (currentRoute) {
-            Screen.Run.route -> homeSetting
             Screen.Customize.route -> null
             Screen.Community.route -> com.stepup.android.ui.components.RunnerSetting.RunSunset
             Screen.Profile.route -> profileSetting
@@ -416,13 +426,9 @@ internal fun MainScaffold(
             com.stepup.android.ui.components.RunnerSetting.Wardrobe -> AmbientScene.Wardrobe
             com.stepup.android.ui.components.RunnerSetting.Night,
             com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
-            com.stepup.android.ui.components.RunnerSetting.RunNight,
-            com.stepup.android.ui.components.RunnerSetting.HomeHarbor,
-            com.stepup.android.ui.components.RunnerSetting.HomeNight,
-            com.stepup.android.ui.components.RunnerSetting.HomeRain -> AmbientScene.Night
+            com.stepup.android.ui.components.RunnerSetting.RunNight -> AmbientScene.Night
             com.stepup.android.ui.components.RunnerSetting.Sunset,
             com.stepup.android.ui.components.RunnerSetting.HomeDawn,
-            com.stepup.android.ui.components.RunnerSetting.HomeDay,
             com.stepup.android.ui.components.RunnerSetting.RunSunset -> AmbientScene.Dawn
             null -> null
         })
@@ -431,10 +437,10 @@ internal fun MainScaffold(
 
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
-        Crossfade(homeSetting, animationSpec = tween(motion.duration(420)), label = "homeBackground") { scene ->
+        Crossfade(com.stepup.android.ui.components.HomePhotos.all[homePhoto], animationSpec = tween(motion.duration(420)), label = "homeBackground") { photo ->
             // 홈 풍경은 화면 전체 바탕 — 가운데 아치를 없앴다(2026-09-26 사용 피드백 · 사용자 결정)
             com.stepup.android.ui.components.S2Scenery(
-                scene, Modifier.fillMaxSize().testTag("home-scene-${scene.name}"),
+                photo, Modifier.fillMaxSize().testTag("home-scene-${photo.key}"),
             )
         }
     } else if (currentRoute == Screen.Customize.route) {
@@ -513,13 +519,12 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
-                    backgroundSetting = homeSetting,
-                    weatherScene = weather.takeIf { weatherSetting != null && weatherSetting == homeSetting },
+                    weatherScene = weatherPick.takeIf { it == com.stepup.android.ui.components.HomePhotos.all[homePhoto].mood },
                     onPreviousBackground = {
-                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.previous(homeSetting)
+                        homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)
                     },
                     onNextBackground = {
-                        homeSetting = com.stepup.android.ui.components.HomeBackgrounds.nextInOrder(homeSetting)
+                        homePhoto = com.stepup.android.ui.components.HomePhotos.next(homePhoto)
                     },
                 )
             }

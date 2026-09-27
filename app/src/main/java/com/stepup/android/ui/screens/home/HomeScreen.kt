@@ -94,7 +94,6 @@ fun HomeScreen(
     onOpenChallenges: () -> Unit = {},
     onOpenNews: () -> Unit = {},
     onOpenCustomize: () -> Unit = {},
-    backgroundSetting: com.stepup.android.ui.components.RunnerSetting = com.stepup.android.ui.components.RunnerSetting.HomeBlueNight,
     onPreviousBackground: () -> Unit = {},
     onNextBackground: () -> Unit = {},
     /** 지금 보이는 풍경이 실제 날씨로 고른 것이면 그 날씨 — 아치 아래에 한 줄로 밝힌다 */

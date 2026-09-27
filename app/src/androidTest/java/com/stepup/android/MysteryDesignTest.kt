@@ -24,7 +24,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
-import com.stepup.android.ui.components.HomeBackgrounds
+import com.stepup.android.ui.components.HomePhotos
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
@@ -107,12 +107,12 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
-        val before = HomeBackgrounds.settings.first { scene ->
-            compose.onAllNodesWithTag("home-scene-${scene.name}").fetchSemanticsNodes().isNotEmpty()
+        val before = HomePhotos.all.first { photo ->
+            compose.onAllNodesWithTag("home-scene-${photo.key}").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("home-background-next").assertIsDisplayed().performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithTag("home-scene-${before.name}").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("home-scene-${before.key}").fetchSemanticsNodes().isEmpty()
         }
         captureDisplay(File(out, "home-01-background-next.png"))
     }
