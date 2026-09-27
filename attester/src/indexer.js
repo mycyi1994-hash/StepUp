@@ -57,11 +57,6 @@ const SOURCES = [
   ['vault', VAULT_ABI],
 ]
 
-/**
- * 확정으로 볼 블록. 이 체인(OP 스택)은 1초마다 블록이 나와 "최신 - N" 은 몇십 초뿐이라 뒤집힐 수 있다.
- * 체인이 알려 주는 safe(없으면 finalized) 블록까지만 읽는다. 둘 다 못 받으면 null — 이번 실행은
- * 읽지 않고 넘어간다(예전엔 최신 - 30 으로 읽어, 뒤집힌 입금이 서버에 남을 수 있었다).
- */
 /** safe(없으면 finalized) 블록의 번호와 시각 — 못 읽으면 null */
 async function safeHeader(c) {
   for (const blockTag of ['safe', 'finalized']) {
@@ -75,6 +70,11 @@ async function safeHeader(c) {
   return null
 }
 
+/**
+ * 확정으로 볼 블록. 이 체인(OP 스택)은 1초마다 블록이 나와 "최신 - N" 은 몇십 초뿐이라 뒤집힐 수 있다.
+ * 체인이 알려 주는 safe(없으면 finalized) 블록까지만 읽는다. 둘 다 못 받으면 null — 이번 실행은
+ * 읽지 않고 넘어간다(예전엔 최신 - 30 으로 읽어, 뒤집힌 입금이 서버에 남을 수 있었다).
+ */
 async function safeBlock(_env, c) {
   for (const blockTag of ['safe', 'finalized']) {
     try {
@@ -187,6 +187,9 @@ export async function indexEvents(env, deps) {
   return report
 }
 
+/** 체인에 들어간 기한(초). 서버의 기한은 소수 초까지 있고 체인에는 반올림한 초가 들어가므로 올린다(넉넉한 쪽). */
+const chainDeadlineSec = (op) => BigInt(Math.ceil(Date.parse(op.deadline) / 1000))
+
 /** 체인에서 쓰였는데 이벤트를 못 받은 채 이만큼 지났으면 거래 영수증에서 이벤트를 찾아 넘긴다 */
 const RECOVER_AFTER_MS = 60 * 60 * 1000
 
@@ -202,7 +205,7 @@ export async function expireOps(env, deps) {
     .map(([, op]) => op)
   const out = { expired: 0, pendingOnChain: 0 }
   let safe = null
-  let safeHead // { number, timestamp } — early 작업을 볼 때 한 번만 읽는다(못 읽으면 null)
+  let safeHead // { number, timestamp } — 서명한 작업을 되돌리기 전에 한 번만 읽는다(못 읽으면 null)
   for (const op of due) {
     // 한 작업이 막혀도 뒤의 작업은 계속 한다 — 앞에서 매번 같은 오류로 멈추면 그 뒤의
     // SUP · 신발이 영영 묶인다.
@@ -213,9 +216,7 @@ export async function expireOps(env, deps) {
       // 블록 시각이 기한을 넘은 작업을 받지 않으므로(ClaimExpired · ReleaseExpired) 앞으로도 쓰일 수 없다.
       if (op.early && op.status !== 'RESERVED') {
         if (safeHead === undefined) safeHead = await safeHeader(c)
-        // 서버의 기한은 소수 초까지 있다. 체인에는 반올림한 초가 들어가므로 올림으로 비교한다(넉넉한 쪽).
-        const deadlineSec = BigInt(Math.ceil(Date.parse(op.deadline) / 1000))
-        if (!safeHead || safeHead.timestamp <= deadlineSec) continue // 아직 — 다음 실행이나 마진 뒤에
+        if (!safeHead || safeHead.timestamp <= chainDeadlineSec(op)) continue // 아직 — 다음 실행이나 마진 뒤에
         const usedAtSafe = await c.publicClient.readContract({
           address: sup ? c.addresses.distributor : c.addresses.sneakers,
           abi: sup ? DISTRIBUTOR_ABI : SNEAKERS_ABI,
@@ -246,6 +247,16 @@ export async function expireOps(env, deps) {
           if (safe !== false && await recoverFromReceipt(env, deps, c, op, sup ? 'distributor' : 'sneakers', safe)) out.recovered = (out.recovered ?? 0) + 1
         }
         continue
+      }
+      // 서명한 작업은 체인 시각(safe 블록)이 기한을 넘은 뒤에만 되돌린다. 마진은 서버 시계로 잰다 —
+      // 체인(시퀀서)이 마진보다 오래 멈췄다가 옛 시각의 블록으로 따라잡으면, 풀에 있던 거래가 기한 안의
+      // 블록에 들어가 되돌린 뒤에 쓰일 수 있다(환불과 체인 지급이 둘 다 나간다).
+      if (op.status !== 'RESERVED') {
+        if (safeHead === undefined) safeHead = await safeHeader(c)
+        if (!safeHead || safeHead.timestamp <= chainDeadlineSec(op)) {
+          out.waiting = (out.waiting ?? 0) + 1
+          continue
+        }
       }
       await deps.rpc(env, 'attester_op_expire', { p_op: op.op_id, p_used_on_chain: false })
       out.expired += 1
