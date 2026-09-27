@@ -989,3 +989,11 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Results: finished → "기록을 저장했어요" with total and run + walk minutes; partial → D13 with completed parts "2 / 8"; "같은 방법 다시 하기" starts the same plan again.
 - Not built: D04/D05 loading/failure (the routine is local and instant — no fake loading).
 - Checks: compileDebugKotlin, testDebugUnitTest (DietRoutineTest), lintDebug, compileDebugAndroidTestKotlin, check-strings, check_design_contract, check_experience_assets. Device evidence: pending this PR's Experience QA.
+- Device evidence for parts A and C (PR #41, merged): Experience QA run 36309869227 on f8c207f passed every phase. An earlier run on b3adbf8 stalled the whole emulator (all logcat stopped, no app crash/ANR) right after the diet-input error capture; the interactive steps now run only at 390 normal.
+
+## 2026-09-27 — Designer handoff, part B: save failure and weak location
+
+- S01: when saving fails the run screen shows one dialog ("아직 저장되지 않았어요") with "다시 저장" and "화면에 머무르기"; the record stays on screen and the inline retry remains. RunSaveRecoveryTest captures the dialog (display capture) and then retries from the screen.
+- L04 (inline, not a dialog, because distance keeps coming from steps): once a location fix existed, no new fix for 30 s while 40+ steps were walked shows "위치 신호가 약해요 — 시간과 걸음은 계속 기록하고 있어요". Standing still is not treated as a lost signal (GPS only reports after 6 m).
+- Not built: L01–L03 and K01–K08 (suggested course is "coming soon"), R02_TIME (runs need step permission and always have step distance), R06 (needs a server delete design).
+- Checks: compileDebugKotlin, testDebugUnitTest (GpsSignal), lintDebug, compileDebugAndroidTestKotlin, check-strings, check_design_contract, check_experience_assets. Device evidence: pending this PR's Experience QA.

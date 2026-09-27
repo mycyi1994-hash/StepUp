@@ -52,6 +52,12 @@ class RunSaveRecoveryTest {
             compose.onNodeWithTag("run-finish").performClick()
             compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_yes)).performClick()
             compose.waitUntil(10_000) { WalkSessionService.state.value.saveStatus == RunSaveStatus.FAILED }
+            // S01 — 실패를 창으로 한 번 알린다. "화면에 머무르기"로 닫으면 화면의 다시 저장이 남는다
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("run-save-failed-dialog").fetchSemanticsNodes().isNotEmpty() }
+            captureDisplay(File(compose.activity.getExternalFilesDir(null), "form-checks/run-save-failed-dialog.png"))
+            compose.onNodeWithTag("run-save-stay").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("run-save-failed-dialog").assertDoesNotExist()
             compose.onNodeWithTag("run-save-error").assertIsDisplayed()
             compose.onNodeWithTag("run-primary-action").assertIsEnabled()
             assertEquals(500, WalkSessionService.state.value.steps)

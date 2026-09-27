@@ -597,6 +597,14 @@ fun RunScreen(
                             }
                         }
                     }
+                    // L04 — 위치 신호가 끊긴 것 같다. 시간 · 걸음은 계속 기록한다(안내만, 창을 띄우지 않는다)
+                    if (running && session.gpsLost) {
+                        Spacer(Modifier.height(16.dp))
+                        KitNotice(
+                            stringResource(R.string.runflow_gps_lost_title), stringResource(R.string.runflow_gps_lost_body),
+                            modifier = Modifier.testTag("run-gps-lost"),
+                        )
+                    }
                     // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
                     // 대략적인 위치만 허용하면 기지국 점이 들어와 "잡힘"으로 보여도 경로 · 거리가 수 km 단위로 뭉개진다 —
                     // 그래서 그 안내는 위치가 잡혔어도 보인다
@@ -784,6 +792,27 @@ fun RunScreen(
                     }
                 }
             }
+        }
+    }
+
+    // S01 — 저장이 실패하면 한 번 알린다. 기록은 화면에 남고, 다시 저장하거나 머무를 수 있다
+    var saveFailedDialog by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(session.saveStatus) {
+        if (session.saveStatus == RunSaveStatus.FAILED) saveFailedDialog = true
+    }
+    if (saveFailedDialog && session.saveStatus == RunSaveStatus.FAILED) {
+        KitDialog(
+            title = stringResource(R.string.runflow_save_failed_title),
+            body = stringResource(R.string.runflow_save_failed_body),
+            onDismiss = { saveFailedDialog = false },
+            modifier = Modifier.testTag("run-save-failed-dialog"),
+        ) {
+            KitButton(stringResource(R.string.runflow_save_again), {
+                saveFailedDialog = false
+                WalkSessionService.stop(context)
+            }, modifier = Modifier.testTag("run-save-again"))
+            KitButton(stringResource(R.string.runflow_save_stay), { saveFailedDialog = false }, tone = KitTone.Secondary,
+                modifier = Modifier.testTag("run-save-stay"))
         }
     }
 

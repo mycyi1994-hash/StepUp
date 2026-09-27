@@ -69,6 +69,17 @@ internal fun isMockLocation(location: Location): Boolean =
         location.isFromMockProvider
     }
 
+/**
+ * 위치 신호 끊김(시안 L04) 판단. GPS 는 6m 넘게 움직여야 새 점을 주므로, 제자리에 서 있는 것을
+ * 끊김으로 보지 않도록 "좌표가 30초 넘게 안 오는데 그동안 40걸음 넘게 걸었다"일 때만 끊김으로 본다.
+ */
+object GpsSignal {
+    const val SILENT_MS = 30_000L
+    const val MOVING_STEPS = 40
+
+    fun isLost(sinceFixMs: Long, stepsSinceFix: Int): Boolean = sinceFixMs > SILENT_MS && stepsSinceFix >= MOVING_STEPS
+}
+
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
 enum class RunSaveStatus { IDLE, SAVING, FAILED }
 
@@ -106,6 +117,11 @@ data class WalkSessionState(
     val track: List<TrackPoint> = emptyList(),
     /** 최근에 GPS 좌표를 받았는지 (지도 카드 GPS 배지) */
     val gpsFix: Boolean = false,
+    /**
+     * 위치 신호가 끊긴 것 같은가(시안 L04) — 한 번 잡혔던 위치가 한동안 안 오는데 걸음은 계속 늘 때.
+     * 시간 · 걸음은 계속 기록된다. 화면에 안내만 한다. 저장본에 남기지 않는다.
+     */
+    val gpsLost: Boolean = false,
     /**
      * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다.
      * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
@@ -162,6 +178,9 @@ data class WalkSessionState(
 class WalkSessionService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /** 마지막으로 좌표를 받은 때(부팅 기준 ms)와 그때의 걸음 — 신호 끊김(L04) 판단용 */
+    @Volatile private var lastFixElapsed = 0L
+    @Volatile private var stepsAtLastFix = 0
     private var stepJob: Job? = null
     private var timerJob: Job? = null
     private var locationManager: LocationManager? = null
@@ -181,6 +200,8 @@ class WalkSessionService : Service() {
             }
             val p = GeoPoint(location.latitude, location.longitude)
             val now = System.currentTimeMillis()
+            lastFixElapsed = SystemClock.elapsedRealtime()
+            stepsAtLastFix = _state.value.steps
             // GPS 가 잡혔으면 기지국 위치(대략)는 그만 받는다 — 둘을 섞으면 점이 튄다
             if (location.provider == LocationManager.GPS_PROVIDER && roughRegistered) {
                 locationManager?.removeUpdates(roughListener)
@@ -527,7 +548,15 @@ class WalkSessionService : Service() {
                 if (!current.isActive || current.isPaused) continue
                 activeMs += delta
                 val seconds = activeMs / 1000
-                _state.update { if (it.isActive && !it.isPaused) it.copy(elapsedSec = seconds) else it }
+                val fixAt = lastFixElapsed
+                _state.update {
+                    if (!it.isActive || it.isPaused) it
+                    else it.copy(
+                        elapsedSec = seconds,
+                        gpsLost = it.gpsFix && it.locationOn && fixAt > 0 &&
+                            GpsSignal.isLost(now - fixAt, it.steps - stepsAtLastFix),
+                    )
+                }
             }
         }
         startCheckpointLoop()

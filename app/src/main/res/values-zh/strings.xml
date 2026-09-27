@@ -1905,5 +1905,11 @@
     <string name="diet_run_plus_walk_value">%1$s + %2$s</string>
     <string name="diet_done_segments">已完成段</string>
     <string name="diet_repeat">用同样的方法再来</string>
+    <string name="runflow_gps_lost_title">定位信号较弱</string>
+    <string name="runflow_gps_lost_body">时间和步数仍在记录。定位恢复后会继续绘制路线。</string>
+    <string name="runflow_save_failed_title">尚未保存</string>
+    <string name="runflow_save_failed_body">跑步记录仍保留在此页面。请稍后再保存。</string>
+    <string name="runflow_save_again">重新保存</string>
+    <string name="runflow_save_stay">留在此页</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

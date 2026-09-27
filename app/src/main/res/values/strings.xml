@@ -1907,5 +1907,11 @@ Start running with StepUp.</string>
     <string name="diet_run_plus_walk_value">%1$s + %2$s</string>
     <string name="diet_done_segments">Parts done</string>
     <string name="diet_repeat">Do the same again</string>
+    <string name="runflow_gps_lost_title">Weak location signal</string>
+    <string name="runflow_gps_lost_body">Time and steps are still being recorded. The route picks up again when location returns.</string>
+    <string name="runflow_save_failed_title">Not saved yet</string>
+    <string name="runflow_save_failed_body">Your run is still here. Please try saving again in a moment.</string>
+    <string name="runflow_save_again">Save again</string>
+    <string name="runflow_save_stay">Stay here</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

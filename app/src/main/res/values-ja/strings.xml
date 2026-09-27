@@ -1906,5 +1906,11 @@ StepUp と走り出そう。</string>
     <string name="diet_run_plus_walk_value">%1$s + %2$s</string>
     <string name="diet_done_segments">完了区間</string>
     <string name="diet_repeat">同じ方法でもう一度</string>
+    <string name="runflow_gps_lost_title">位置情報の信号が弱いです</string>
+    <string name="runflow_gps_lost_body">時間と歩数は記録し続けています。位置が戻るとルートを再開します。</string>
+    <string name="runflow_save_failed_title">まだ保存されていません</string>
+    <string name="runflow_save_failed_body">ランの記録はこの画面に残っています。少し後でもう一度保存してください。</string>
+    <string name="runflow_save_again">もう一度保存</string>
+    <string name="runflow_save_stay">この画面に残る</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->
