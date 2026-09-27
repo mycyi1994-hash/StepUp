@@ -965,3 +965,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - I: server-owned invite codes and one-time invite credits (0036). The amount defaults to 0 — no credit and no reward wording until an operator sets it.
 - J: opt-in live position and display distance during party runs (0037), shown on the run map and a live ranking.
 - PR #31 (batch E1 + F) merged after Experience QA 36241116862 passed every phase.
+
+## 2026-09-27 — Home background: 30 Korean scenery photos (PR #40)
+
+- User decision: replace the six home scenes (Yeouido, Gwangalli …) with ~30 Korea-focused photos, and drop every photo that needs attribution. All 30 are CC0 from Wikimedia Commons; sources and authors are recorded in `design/home-photos/README.md`.
+- `HomePhotos` (12 day · 6 dusk · 8 night · 4 cloudy/snow) replaces `HomeBackgrounds` and the HomeHarbor/Day/Night/Rain scenes. Arrows walk all 30 in order; returning to the tab picks a different photo; weather mode picks within the matching mood. `s2_bg_login` stays for login and the share card.
+- Checks: compileDebugKotlin, testDebugUnitTest (new HomePhotosTest), lintDebug, compileDebugAndroidTestKotlin, check-strings, check_design_contract, check_experience_assets. Device evidence: Experience QA run 36298258448 on 443d4fb passed; home and home background-next captures reviewed and show the new photos. Light theme and large font covered only by automated layout checks.
