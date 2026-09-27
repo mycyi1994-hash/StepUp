@@ -19,8 +19,6 @@ import com.stepup.android.ui.theme.Night
 /** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
 enum class RunnerSetting {
     Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn, RunNight, RunSunset,
-    // S2 풍경 — 광안리 · 낮 · 밤 · 비. 실시간 날씨가 아니라 고르는 배경이다.
-    HomeHarbor, HomeDay, HomeNight, HomeRain,
 }
 
 /** Only scenes with visible ground at the standing foot anchor belong here. */
@@ -31,34 +29,7 @@ object WardrobeBackgrounds {
     fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
 }
 
-/** Home scenes share a ground plane with the standing character. Keep the choice
- * in the navigation shell so recomposition, balance updates and outfit changes
- * never shuffle the scenery underneath the user. */
-object HomeBackgrounds {
-    val initial = listOf(RunnerSetting.HomeBlueNight, RunnerSetting.HomeDawn)
-
-    /** 화살표로 넘겨 보는 S2 풍경 여섯 장 */
-    val settings = listOf(
-        RunnerSetting.HomeBlueNight, RunnerSetting.HomeHarbor, RunnerSetting.HomeDay,
-        RunnerSetting.HomeDawn, RunnerSetting.HomeNight, RunnerSetting.HomeRain,
-    )
-
-    fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
-
-    fun nextInOrder(current: RunnerSetting): RunnerSetting =
-        settings[(settings.indexOf(current).coerceAtLeast(0) + 1) % settings.size]
-
-    fun previous(current: RunnerSetting): RunnerSetting =
-        settings[(settings.indexOf(current).coerceAtLeast(0) + settings.size - 1) % settings.size]
-
-    /** 지금 날씨에 맞는 풍경(S2 시안 42~45) */
-    fun forWeather(scene: com.stepup.android.domain.WeatherScene): RunnerSetting = when (scene) {
-        com.stepup.android.domain.WeatherScene.DAY -> RunnerSetting.HomeDay
-        com.stepup.android.domain.WeatherScene.DUSK -> RunnerSetting.HomeDawn
-        com.stepup.android.domain.WeatherScene.NIGHT -> RunnerSetting.HomeNight
-        com.stepup.android.domain.WeatherScene.RAIN -> RunnerSetting.HomeRain
-    }
-}
+// 홈 바탕 사진은 HomePhotos(한국 풍경 30장)가 맡는다.
 
 /** A running session keeps one scene from preparation through its result. */
 object RunBackgrounds {

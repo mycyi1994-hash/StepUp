@@ -92,10 +92,10 @@ fun S2Stage(modifier: Modifier = Modifier) {
  * 위 · 아래는 바닥색으로 덮어 글자와 버튼 · 하단 탭이 읽히게 한다. 밝은 테마는 밝은 막.
  */
 @Composable
-fun S2Scenery(setting: RunnerSetting, modifier: Modifier = Modifier) {
+fun S2Scenery(photo: HomePhoto, modifier: Modifier = Modifier) {
     Box(modifier.background(Night)) {
         Image(
-            painter = painterResource(s2SceneryRes(setting)),
+            painter = painterResource(photo.res),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
@@ -179,18 +179,6 @@ fun S2Number(
         Text(text, Modifier.fillMaxWidth(), style = style.copy(fontSize = fitted), color = color,
             textAlign = textAlign, maxLines = 1, softWrap = false)
     }
-}
-
-/** S2 풍경 그림. 실시간 날씨가 아니라 사용자가 고르는 장식이다. */
-@DrawableRes
-fun s2SceneryRes(setting: RunnerSetting): Int = when (setting) {
-    RunnerSetting.HomeBlueNight, RunnerSetting.Night -> R.drawable.s2_bg_city
-    RunnerSetting.HomeDawn, RunnerSetting.Sunset, RunnerSetting.RunSunset -> R.drawable.s2_bg_dusk
-    RunnerSetting.HomeHarbor -> R.drawable.s2_bg_harbor
-    RunnerSetting.HomeDay -> R.drawable.s2_bg_day
-    RunnerSetting.HomeNight, RunnerSetting.RunNight -> R.drawable.s2_bg_night
-    RunnerSetting.HomeRain -> R.drawable.s2_bg_rain
-    RunnerSetting.Wardrobe -> R.drawable.s2_bg_harbor
 }
 
 /** 아치 창 — 위가 반원인 틀. 풍경을 담거나([image]) 파란 선만 두른 빈 틀로 쓴다. */
