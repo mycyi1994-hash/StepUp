@@ -119,8 +119,9 @@ class ProfileRunningPathTest {
             compose.onAllNodesWithText(editTitle).assertCountEquals(0)
             awaitTag("profile-records")
 
+            // 내 러닝 기록(2026-09-28 전달본) — 이번 달 목록. 예전 기록 · 분석은 통계 안쪽 링크로
             tapTag("profile-records")
-            awaitText(context.getString(R.string.analytics_title))
+            awaitTag("records-period")
             shot("03-records")
             pressBack()
             awaitTag("profile-challenges")

@@ -69,6 +69,18 @@ class ClaimUploadTest {
         override fun observeRunTotalsSinceFor(owner: String, fromMillis: Long) = observeRunTotals()
         override fun observePendingUploadCount(): Flow<Int> = flowOf(pendingCount())
 
+        // 내 러닝 기록 — 이 테스트는 쓰지 않는다
+        override fun observeRecordRows(owner: String, from: Long, until: Long, limit: Int) =
+            flowOf(emptyList<com.stepup.android.data.local.RunRecordRow>())
+        override fun observeRecordTotals(owner: String, from: Long, until: Long) =
+            flowOf(com.stepup.android.data.local.RecordTotals(0, 0.0, 0, 0.0, 0, 0))
+        override fun observeRunMarks(owner: String, from: Long, until: Long) =
+            flowOf(emptyList<com.stepup.android.domain.RunMark>())
+        override fun observeRecord(owner: String, id: Long): Flow<WalkSessionEntity?> = flowOf(rows[id])
+        override fun observeFirstRecordAt(owner: String): Flow<Long?> = flowOf(rows.values.minOfOrNull { it.startedAt })
+        override suspend fun trackOf(owner: String, id: Long): String? = rows[id]?.track
+        override suspend fun deleteRecord(owner: String, id: Long): Int = if (rows.remove(id) != null) 1 else 0
+
         override suspend fun crewDistances(fromMillis: Long): List<CrewDistance> =
             rows.values
                 .filter { it.crewId.isNotEmpty() && it.startedAt >= fromMillis }

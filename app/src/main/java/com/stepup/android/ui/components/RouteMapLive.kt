@@ -88,6 +88,8 @@ fun LiveRouteMap(
     interactive: Boolean = false,
     /** 같이 뛰는 사람(S2 시안 14) — 위치를 보이기로 한 사람만 넘어온다. 이름 첫 글자를 원 안에 쓴다. */
     others: List<Pair<GeoPoint, String>> = emptyList(),
+    /** [interactive] 지도의 버튼 이름 — 화면 낭독이 읽는다. 없으면 예전처럼 그림만 */
+    controlLabels: MapControlLabels? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     StepUpMap(
@@ -95,6 +97,7 @@ fun LiveRouteMap(
         modifier = modifier,
         seed = seed,
         interactive = interactive,
+        controlLabels = controlLabels,
     ) { plan ->
         drawRoute(plan, points, progress)
         others.forEach { (point, name) ->
@@ -170,6 +173,7 @@ fun StepUpMap(
     interactive: Boolean = false,
     onTap: ((Offset, TilePlan) -> Unit)? = null,
     onViewport: ((Double, Double, Double, Double) -> Unit)? = null,
+    controlLabels: MapControlLabels? = null,
     overlay: DrawScope.(TilePlan) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -314,14 +318,14 @@ fun StepUpMap(
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                MapButton(Icons.Filled.Add) {
+                MapButton(Icons.Filled.Add, label = controlLabels?.zoomIn) {
                     if (zoomDelta < MAX_USER_ZOOM_IN) {
                         zoomDelta++
                         panX *= 2
                         panY *= 2
                     }
                 }
-                MapButton(Icons.Filled.Remove) {
+                MapButton(Icons.Filled.Remove, label = controlLabels?.zoomOut) {
                     if (zoomDelta > MAX_USER_ZOOM_OUT) {
                         zoomDelta--
                         panX /= 2
@@ -334,6 +338,7 @@ fun StepUpMap(
             if (moved) {
                 MapButton(
                     icon = Icons.Filled.MyLocation,
+                    label = controlLabels?.recenter,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(10.dp),
@@ -362,6 +367,9 @@ fun StepUpMap(
     }
 }
 
+/** 지도 버튼(확대 · 축소 · 처음 자리로)의 읽을 이름 */
+data class MapControlLabels(val zoomIn: String, val zoomOut: String, val recenter: String)
+
 /** 사용자가 기본 줌에서 더 당길 수 있는 단계 */
 private const val MAX_USER_ZOOM_IN = 4
 
@@ -373,6 +381,7 @@ private const val MAX_USER_ZOOM_OUT = -3
 private fun MapButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier = Modifier,
+    label: String? = null,
     onClick: () -> Unit,
 ) {
     Box(
@@ -386,7 +395,7 @@ private fun MapButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = label,
             tint = Volt,
             modifier = Modifier.size(21.dp),
         )

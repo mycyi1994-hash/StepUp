@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -167,6 +167,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/notifications-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/notifications-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/notifications-v1/. screen-gallery/notifications-v1/ || status=1
+  # 내 러닝 기록(2026-09-28) — 시안 01~16 장면(앱 셸 안의 실제 기록 · 기간 · 통계 · 상세 · 경로 · 삭제 + 예시 자료 장면)
+  run_instrumentation running-records "com.stepup.android.RecordsDesignTest"
+  mkdir -p screen-gallery/running-records-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/running-records-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/running-records/. screen-gallery/running-records/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

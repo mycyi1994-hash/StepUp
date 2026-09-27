@@ -128,6 +128,11 @@ object ServiceLocator {
     lateinit var announcementRepository: com.stepup.android.data.repo.AnnouncementRepository
         private set
 
+    /** 내 러닝 기록 — 이 휴대폰에 저장된 지금 계정의 러닝(목록 · 기간 합계 · 통계 · 하나 · 지우기) */
+    val runRecordsRepository: com.stepup.android.data.repo.RunRecordsRepository by lazy {
+        com.stepup.android.data.repo.RunRecordsRepository(database.walkSessionDao(), recordingOwnerFlow())
+    }
+
     lateinit var claimRepository: ClaimRepository
 
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */

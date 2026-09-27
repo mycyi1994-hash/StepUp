@@ -117,7 +117,89 @@ interface WalkSessionDao {
 
     @Update
     suspend fun update(session: WalkSessionEntity)
+
+    // ── 내 러닝 기록(2026-09-28) — 기간 목록 · 기간 전체 합계 · 막대 · 하나 · 삭제. 모두 지금 계정(+ 옛 기록) ──
+
+    /** 기간 안의 러닝 한 쪽 — 경로 글자는 빼고 가져온다(썸네일은 줄마다 따로). 최근 먼저 */
+    @Query(
+        """
+        SELECT id, startedAt, endedAt, durationSec, distanceMeters, steps, uploadState, length(track) > 0 AS hasTrack
+          FROM walk_sessions
+         WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until
+         ORDER BY startedAt DESC, id DESC
+         LIMIT :limit
+        """,
+    )
+    fun observeRecordRows(owner: String, from: Long, until: Long, limit: Int): Flow<List<RunRecordRow>>
+
+    /**
+     * 기간 전체의 합계 — 불러온 한 쪽이 아니라 기간 전체. 페이스는 거리와 시간이 모두 있는 러닝만의 시간 합 ÷ 거리 합.
+     * [RecordTotals.measured] 는 거리가 있는 러닝 수 — 러닝은 있는데 0이면 거리를 모르는 것이지 0km 가 아니다.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) AS runs,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 THEN distanceMeters ELSE 0 END), 0) AS meters,
+               COALESCE(SUM(durationSec), 0) AS seconds,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 THEN distanceMeters ELSE 0 END), 0) AS pacedMeters,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 THEN durationSec ELSE 0 END), 0) AS pacedSeconds,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 THEN 1 ELSE 0 END), 0) AS measured
+          FROM walk_sessions
+         WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until
+        """,
+    )
+    fun observeRecordTotals(owner: String, from: Long, until: Long): Flow<RecordTotals>
+
+    /** 기간 안 러닝의 시작 시각 · 거리 — 주간 · 월간 막대 */
+    @Query(
+        "SELECT startedAt, distanceMeters AS meters FROM walk_sessions " +
+            "WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until",
+    )
+    fun observeRunMarks(owner: String, from: Long, until: Long): Flow<List<com.stepup.android.domain.RunMark>>
+
+    @Query("SELECT * FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy')")
+    fun observeRecord(owner: String, id: Long): Flow<WalkSessionEntity?>
+
+    /** 가장 오래된 러닝의 시작 시각 — 기간 시트가 몇 년까지 거슬러 갈지. 없으면 null */
+    @Query("SELECT MIN(startedAt) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
+    fun observeFirstRecordAt(owner: String): Flow<Long?>
+
+    /** 목록 썸네일용 경로 — 한 줄씩 필요할 때만 읽는다 */
+    @Query("SELECT track FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy')")
+    suspend fun trackOf(owner: String, id: Long): String?
+
+    /**
+     * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음 있음)은
+     * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다. 지운 수를 돌려준다(0이면 지우지 않았다).
+     */
+    @Query(
+        "DELETE FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy') " +
+            "AND NOT (uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
+    )
+    suspend fun deleteRecord(owner: String, id: Long): Int
 }
+
+/** 기록 목록 한 줄 — [WalkSessionDao.observeRecordRows] */
+data class RunRecordRow(
+    val id: Long,
+    val startedAt: Long,
+    val endedAt: Long,
+    val durationSec: Long,
+    val distanceMeters: Double,
+    val steps: Int,
+    val uploadState: String,
+    val hasTrack: Boolean,
+)
+
+/** 기간 전체 합계 — [WalkSessionDao.observeRecordTotals] */
+data class RecordTotals(
+    val runs: Int,
+    val meters: Double,
+    val seconds: Long,
+    val pacedMeters: Double,
+    val pacedSeconds: Long,
+    val measured: Int,
+)
 
 /** [WalkSessionDao.crewDistances] 의 한 줄 — 크루 하나의 누적 거리(m)와 횟수 */
 data class RunTotals(val runs: Int, val meters: Double)
