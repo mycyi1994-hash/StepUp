@@ -1,11 +1,12 @@
-// stepupcrew.com 소개 페이지 — 다섯 화면을 한 장씩 넘기는 전체화면 사이트.
+// stepupcrew.com 소개 페이지 — 홍보영상과 다섯 가지 러닝 경험.
 // 화면 속 숫자·이름·코스·SUP 는 모두 예시이고, 각 카드에 "화면 예시" 배지가 붙어 있다.
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const pad2 = n => String(n).padStart(2, '0');
 const mmss = s => pad2(Math.floor(s / 60)) + ':' + pad2(Math.floor(s % 60));
 
-const SLUGS = ['run', 'crew', 'reward', 'course', 'start'];
+const SLUGS = ['film', 'run', 'crew', 'reward', 'course', 'start'];
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const DUR = 1100;        // 트랙 전환 시간
 const THRESHOLD = 90;    // 휠 누적 임계값
 const START_SECONDS = 1458;
@@ -78,11 +79,50 @@ function snd(type) {
   if (type === 'whoosh') noise(0.45, 0.25, 900);
 }
 const soundBtn = $('.sound');
+const film = $('.promo-film');
+const filmStatus = $('.film-status');
+let resumeFilm = !reduceMotion.matches;
+function updateSound() {
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  soundBtn.setAttribute('aria-label', soundOn ? '소리 끄기' : '소리 켜기');
+  $('.sound-label', soundBtn).textContent = soundOn ? '소리 끄기' : '소리 켜기';
+}
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
-  if (soundOn) audio();
-  soundBtn.setAttribute('aria-pressed', String(soundOn));
-  $('.sound-label', soundBtn).textContent = soundOn ? '사운드 켜짐' : '사운드';
+  film.muted = !soundOn;
+  if (soundOn && film.volume === 0) film.volume = 1;
+  if (soundOn && page !== 0) audio();
+  updateSound();
+});
+film.addEventListener('volumechange', () => {
+  soundOn = !film.muted && film.volume > 0;
+  updateSound();
+});
+film.addEventListener('play', () => { resumeFilm = true; filmStatus.hidden = true; });
+film.addEventListener('pause', () => {
+  if (page === 0 && !document.hidden) resumeFilm = false;
+});
+function syncFilm() {
+  if (page !== 0 || document.hidden || !resumeFilm) { film.pause(); return; }
+  film.play().catch(() => {
+    if (page !== 0 || document.hidden) return;
+    filmStatus.textContent = '재생 버튼을 누르면 영상이 시작돼요.';
+    filmStatus.hidden = false;
+  });
+}
+film.addEventListener('error', () => {
+  filmStatus.replaceChildren('영상을 불러오지 못했어요. ');
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'film-retry';
+  retry.textContent = '다시 재생하기';
+  retry.addEventListener('click', () => { resumeFilm = true; film.load(); syncFilm(); });
+  filmStatus.append(retry);
+  filmStatus.hidden = false;
+});
+document.addEventListener('visibilitychange', syncFilm);
+reduceMotion.addEventListener('change', () => {
+  if (reduceMotion.matches) { resumeFilm = false; film.pause(); }
 });
 
 // ── 01 러닝: 스톱워치 ─────────────────────────────────────────
@@ -118,7 +158,7 @@ $('.watch').addEventListener('click', () => {
   }));
 });
 window.addEventListener('mousemove', e => {
-  if (page !== 0) return;
+  if (SLUGS[page] !== 'run') return;
   const r = run.inner.getBoundingClientRect();
   run.glow.style.transform = `translate(${e.clientX - r.left}px,${e.clientY - r.top}px)`;
 });
@@ -127,13 +167,6 @@ function startRun() {
   frame('run', runTick);
   let alt = false;
   every(350, () => { if (soundOn) { alt = !alt; snd(alt ? 'step' : 'step2'); } });
-}
-const heroVideo = root.dataset.heroVideo;
-if (heroVideo) {
-  const v = document.createElement('video');
-  Object.assign(v, { src: heroVideo, autoplay: true, muted: true, loop: true, playsInline: true, className: 'run-video' });
-  v.setAttribute('aria-hidden', 'true');
-  $('.run-pan').replaceWith(v);
 }
 
 // ── 02 크루: 러너 여섯 명이 모임 장소로 ──────────────────────────
@@ -182,13 +215,13 @@ function renderCrew(joined) {
     dot.classList.toggle('is-joined', j);
     line.classList.toggle('is-joined', j);
     row.classList.toggle('is-joined', j);
-    st.textContent = j ? '합류 완료' : `이동 중 · ${r.dist}`;
+    st.textContent = j ? '도착했어요' : `오는 중 · ${r.dist}`;
   });
   const done = joined >= RUNNERS.length;
   crew.card.classList.toggle('is-done', done);
   crew.num.textContent = pad2(joined);
-  crew.status.textContent = (done ? '크루 결성 완료' : '크루 모집 중') + ' · 한강 나이트 러너스';
-  crew.headline.textContent = done ? '크루 결성 완료. 이제 같이 달린다.' : '같이 뛸 사람들이 모이고 있다.';
+  crew.status.textContent = (done ? '모두 모였어요' : '크루 모집 중') + ' · 한강 나이트 러너스';
+  crew.headline.textContent = done ? '다 모였네요. 이제 함께 달려요!' : '함께 달릴 크루를 만나보세요.';
 }
 function startCrew() {
   let joined = 0;
@@ -244,9 +277,9 @@ function route(seed, pts) {
   return out;
 }
 const COURSES = [
-  { label: 'SUNSET 5K', name: '광안리 해변 코스', desc: '해변 산책로를 따라 광안대교를 보며 달리는 평지 코스', km: '5.02', up: '12', level: '쉬움', time: '26:14', pace: "5'13\"", mapT: 'rotate(0deg)', r: route(3, [[40, 60], [120, 110], [180, 150], [250, 250]]) },
-  { label: 'NIGHT 7K', name: '민락 수변 나이트 코스', desc: '조명이 켜진 수변공원과 방파제를 잇는 야간 코스', km: '7.18', up: '24', level: '보통', time: '38:02', pace: "5'18\"", mapT: 'rotate(38deg) scale(1.1)', r: route(11, [[60, 270], [90, 180], [160, 150], [200, 80], [260, 60]]) },
-  { label: 'RAIN 10K', name: '비 오는 날 해안 코스', desc: '비 오는 날에도 미끄럽지 않은 포장로 위주의 장거리 코스', km: '10.04', up: '41', level: '어려움', time: '55:40', pace: "5'33\"", mapT: 'rotate(-62deg) scale(1.15)', r: route(27, [[50, 90], [110, 70], [170, 120], [150, 200], [220, 240], [260, 290]]) }
+  { label: 'SUNSET 5K', name: '광안리 해변 코스', desc: '광안대교를 바라보며 해변 산책로를 가볍게 달려보세요.', km: '5.02', up: '12', level: '쉬움', time: '26:14', pace: "5'13\"", mapT: 'rotate(0deg)', r: route(3, [[40, 60], [120, 110], [180, 150], [250, 250]]) },
+  { label: 'NIGHT 7K', name: '민락 수변 야간 코스', desc: '불빛이 켜진 수변공원에서 밤바람을 느끼며 달려보세요.', km: '7.18', up: '24', level: '보통', time: '38:02', pace: "5'18\"", mapT: 'rotate(38deg) scale(1.1)', r: route(11, [[60, 270], [90, 180], [160, 150], [200, 80], [260, 60]]) },
+  { label: 'RAIN 10K', name: '비 오는 날 해안 코스', desc: '해안을 따라 길게 이어지는 코스예요. 비가 오면 노면을 살펴주세요.', km: '10.04', up: '41', level: '어려움', time: '55:40', pace: "5'33\"", mapT: 'rotate(-62deg) scale(1.15)', r: route(27, [[50, 90], [110, 70], [170, 120], [150, 200], [220, 240], [260, 290]]) }
 ];
 const slidesEl = $('.ph-slides');
 COURSES.forEach((c, i) => {
@@ -276,7 +309,7 @@ const course = {
 let ci = 0;
 let courseTimer = null;
 function renderCourse() {
-  const onC = page === 3, c = COURSES[ci];
+  const onC = SLUGS[page] === 'course', c = COURSES[ci];
   course.bgs.forEach((el, i) => el.classList.toggle('is-active', i === ci));
   course.labels.forEach((el, i) => el.classList.toggle('is-active', i === ci));
   course.slides.forEach((el, i) => el.classList.toggle('is-active', i === ci));
@@ -301,7 +334,7 @@ function autoCourses() {
   courseTimer = every(5000, () => { snd('tick'); ci = (ci + 1) % 3; renderCourse(); });
 }
 function stepCourse(d) {
-  if (page !== 3) return;
+  if (SLUGS[page] !== 'course') return;
   snd('tick');
   ci = (ci + d + 3) % 3;
   renderCourse();
@@ -360,11 +393,12 @@ function enter(n) {
   pages.forEach((p, i) => p.classList.toggle('is-active', i === n));
   dotButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === n)));
   renderCourse();
-  if (n === 0) startRun();
-  if (n === 1) startCrew();
-  if (n === 2) startReward();
-  if (n === 3) autoCourses();
-  if (n === 4) startPhone();
+  syncFilm();
+  if (SLUGS[n] === 'run') startRun();
+  if (SLUGS[n] === 'crew') startCrew();
+  if (SLUGS[n] === 'reward') startReward();
+  if (SLUGS[n] === 'course') autoCourses();
+  if (SLUGS[n] === 'start') startPhone();
 }
 function to(n, { force = false, instant = false } = {}) {
   n = Math.max(0, Math.min(SLUGS.length - 1, n));
@@ -405,14 +439,17 @@ window.addEventListener('wheel', e => {
 
 window.addEventListener('keydown', e => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.target.closest?.('video,input,textarea,select')) return;
   const onControl = e.target.closest && e.target.closest('a,button,input,textarea,select');
   if (['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !onControl)) { e.preventDefault(); go(1); }
   if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
-  if (page === 3 && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !onControl) stepCourse(e.key === 'ArrowRight' ? 1 : -1);
+  if (SLUGS[page] === 'course' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !onControl) stepCourse(e.key === 'ArrowRight' ? 1 : -1);
 });
 
 let touchY = null;
-window.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchstart', e => {
+  touchY = e.touches.length === 1 && !e.target.closest?.('video') ? e.touches[0].clientY : null;
+}, { passive: true });
 window.addEventListener('touchend', e => {
   if (touchY === null) return;
   const dy = touchY - e.changedTouches[0].clientY;
@@ -444,18 +481,3 @@ $$('[data-dl]').forEach(a => a.addEventListener('click', () => {
 const i0 = SLUGS.indexOf(location.hash.slice(1));
 enter(0);
 if (i0 > 0) to(i0, { force: true, instant: true });
-
-// 첫 방문 로더: 폰트 + 첫 화면 이미지 + 최소 800ms
-const loader = $('.loader');
-if (document.documentElement.classList.contains('seen')) {
-  loader.remove();
-} else {
-  const img = new Image();
-  const imgReady = new Promise(r => { img.onload = img.onerror = r; });
-  img.src = './assets/img/run-bg.webp';
-  Promise.all([document.fonts ? document.fonts.ready : 0, imgReady, new Promise(r => setTimeout(r, 800))]).then(() => {
-    loader.classList.add('is-out');
-    setTimeout(() => loader.remove(), 500);
-    try { localStorage.setItem('stepupHero.seen', '1'); } catch (e) { /* 저장 불가 브라우저 */ }
-  });
-}

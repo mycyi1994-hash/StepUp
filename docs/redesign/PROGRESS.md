@@ -1054,3 +1054,10 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - The linked status sheet keeps the old wallet screen's "지갑 페이지 열기" as a text action (moving SUP and shoes, 2-step auth), so the feature is not lost after linking.
 - Ledger labels follow the design wording (걷기·러닝 적립, 목표 달성 보너스, 신발 강화, 기타 내역 …) in four languages; the 11 strings only the old screen used were removed. Gallery variation `extra-wallet-page-sign-in` became `extra-wallet-info`.
 - Checks: `WalletAmountTest`, testDebugUnitTest, lintDebug, assembleDebug/AndroidTest, check-strings, check_design_contract (56 routes). Device: `WalletLedgerTest` and `WalletDesignTest` passed in Experience QA run 36350039338 (e8a1021).
+
+## 2026-09-28 — Web homepage: promotional film and Korean copy
+
+- Completed the existing homepage extension: the supplied `StepUp_홍보영상_v5.1.mp4` is the first scene, the previous running scene is second, and the scene copy uses natural Korean. The incumbent web visual system continues across the added section.
+- The complete supplied film and audio were encoded as 1080p and 720p web files, with a poster from its 00:02 frame. Asset provenance and the direction contract are recorded in the [homepage video report](../web/HOMEPAGE-VIDEO-2026-09-28.md).
+- Checks passed: JavaScript syntax, diff whitespace, shared design/string checks and all nine existing web tests. Browser verification at desktop 1280×720 and mobile viewport 390×844 confirmed the correct video source and muted autoplay; sound toggle, wheel film → running with offscreen pause, PageDown running → crew, and the course carousel worked without console errors. Mobile showed the complete frame and introduction controls without horizontal overflow.
+- Finish review: **ship**, no material findings in this scope. Physical mobile devices, reduced-motion playback, manual-pause preservation and media-error recovery were not independently exercised; see the report for the verification boundary.
