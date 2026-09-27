@@ -1,0 +1,79 @@
+{
+  "color": {
+    "bg": "#050911",
+    "surface": "#0D1522",
+    "raised": "#152237",
+    "border": "#25364C",
+    "text": "#F1F3FA",
+    "muted": "#A1AEC3",
+    "blue": "#3D83FF",
+    "softBlue": "#AACBFF",
+    "primary": "#F2F4FA",
+    "ink": "#080D17",
+    "danger": "#FF9B95",
+    "dangerBg": "#341B25",
+    "success": "#96D5BA"
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32,
+    48,
+    56,
+    64,
+    72
+  ],
+  "typography": {
+    "fontFamily": "Noto Sans KR",
+    "sourceAppFont": "Pretendard",
+    "styles": {
+      "Display": {
+        "size": 48,
+        "lineHeight": 62,
+        "weight": 400
+      },
+      "Title": {
+        "size": 28,
+        "lineHeight": 38,
+        "weight": 500
+      },
+      "Section": {
+        "size": 20,
+        "lineHeight": 30,
+        "weight": 500
+      },
+      "Button": {
+        "size": 18,
+        "lineHeight": 28,
+        "weight": 500
+      },
+      "Body": {
+        "size": 16,
+        "lineHeight": 26,
+        "weight": 400
+      },
+      "Caption": {
+        "size": 14,
+        "lineHeight": 22,
+        "weight": 400
+      },
+      "Micro": {
+        "size": 12,
+        "lineHeight": 18,
+        "weight": 400
+      }
+    }
+  },
+  "layout": {
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "gutter": 24,
+    "buttonHeight": 56,
+    "cardRadius": 16,
+    "dialogRadius": 24
+  }
+}

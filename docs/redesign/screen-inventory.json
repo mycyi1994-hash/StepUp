@@ -99,7 +99,7 @@
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed. Handoff part A (PR #41): plan-specific run layout, pause/end/discard/goal-reached dialogs, result/partial result; device check pending this PR."
     },
     {
       "id": "Routes.COURSES",
@@ -282,6 +282,48 @@
       "chrome": "Form",
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending; no APK requested"
+    },
+    {
+      "id": "Routes.RUN_MENU",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U01 start menu — free run, running challenge, course (coming soon), diet (coming soon)",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_GOALS",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U02 running challenges — 10 min / 1 km / 3 km",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_GOAL_HISTORY",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — C03 past challenges — device-only list, expandable rows",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U05 · D01 · D02 · D03 body info and running experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET_PLAN",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U06 fixed routine by experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET_EDIT",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — D06 edit body info and experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],
   "screen_functions": [
@@ -595,6 +637,41 @@
       "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+    },
+    {
+      "id": "RunStartMenuScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
+      "line": 62,
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "RunGoalsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
+      "line": 117,
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "RunGoalHistoryScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
+      "line": 160,
+      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "DietInputScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 92,
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "DietPlanScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 266,
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],
   "overlays": [

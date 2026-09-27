@@ -105,6 +105,10 @@ class DesignReferenceTest {
         CONNECTED, THEME, LANGUAGE,
         ANALYTICS, HISTORY_MAP, WALLET, ACHIEVEMENTS, INBOX,
         COURSES, EXPLORE_MAP, RANKING,
+        // 디자이너 전달본(2026-09-27) — 시작 메뉴 · 러닝 챌린지 · 목표 러닝 · 지난 도전
+        RUN_MENU, RUN_GOALS, RUN_GOAL_TIME, RUN_GOAL_KM, RUN_GOAL_HISTORY,
+        // 다이어트 모드 — 입력 · 러닝 방법 · 걷기 구간(멈춤) · 루틴 완료
+        RUN_DIET_INPUT, RUN_DIET_PLAN, RUN_DIET_ACTIVE, RUN_DIET_DONE,
     }
 
     private enum class Group { PRIMARY, SECONDARY, RECORDS, EXPLORE }
@@ -231,6 +235,49 @@ class DesignReferenceTest {
                     compose.onNodeWithText(korean(R.string.map_seg_territory)).performClick()
                     capture("$name-territory")
                 }
+                // 확인 창 · 키패드 조작은 한 크기(390 기본 글자)에서만 — 장면마다 되풀이하면 느린 에뮬레이터가 멈춘 적이 있다
+                val interact = w == 390 && !enlarged
+                if (s == Scene.RUN_GOAL_TIME && interact) {
+                    // 멈춘 러닝(표시용 값)에서 종료 확인 → 저장 없이 끝내기 확인 → 돌아가기. 서비스를 켜지 않는다
+                    compose.onNodeWithTag("run-finish").performClick()
+                    compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
+                    capture("$name-end")
+                    compose.onNodeWithTag("run-end-discard").performClick()
+                    compose.onNodeWithTag("run-discard-dialog").assertIsDisplayed()
+                    capture("$name-discard")
+                    compose.onNodeWithTag("run-discard-back").performClick()
+                    compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
+                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
+                }
+                if (s == Scene.RUN_DIET_INPUT && interact) {
+                    // 빈 입력으로 추천받기 → 칸 아래 안내(D02), 키 칸을 누르면 숫자 키패드(D01)
+                    compose.onNodeWithTag("diet-input-next").performClick()
+                    compose.waitForIdle()
+                    capture("$name-errors")
+                    compose.onNodeWithTag("diet-height").performClick()
+                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("keypad-1").fetchSemanticsNodes().isNotEmpty() }
+                    for (key in listOf("keypad-1", "keypad-7", "keypad-0")) {
+                        compose.onNodeWithTag(key).performClick()
+                        compose.waitForIdle()
+                    }
+                    capture("$name-keypad")
+                    compose.onNodeWithTag("diet-input-done").performClick()
+                    compose.waitForIdle()
+                    // 적던 중 나가려 하면 한 번 묻는다(D03)
+                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("diet-leave-dialog").assertIsDisplayed()
+                    capture("$name-leave")
+                    compose.onNodeWithTag("diet-leave-stay").performClick()
+                }
+                if (s == Scene.RUN_GOAL_HISTORY && interact) {
+                    compose.onNodeWithText(korean(R.string.goal_10min), substring = true).performClick()
+                    capture("$name-open")
+                }
                 if (s == Scene.RANKING) {
                     compose.onNodeWithText(korean(R.string.rank_period_week)).performClick()
                     capture("$name-week")
@@ -267,8 +314,50 @@ class DesignReferenceTest {
                 lastElapsedSec = 1_458, lastGpsKm = 3.2, lastStartedAt = now,
                 track = fixtureTrack,
             )
+            // 목표 러닝 — 10분 중 6분 24초, 1km 중 0.52km(걸음 거리). 표시용 값일 뿐이다
+            Scene.RUN_GOAL_TIME -> WalkSessionState(
+                isActive = true, isPaused = true, steps = 1_080, elapsedSec = 384, startedAt = now - 384_000,
+                gpsFix = true, track = fixtureTrack,
+            )
+            Scene.RUN_GOAL_KM -> WalkSessionState(
+                isActive = true, steps = 682, elapsedSec = 252, startedAt = now - 252_000,
+                gpsFix = true, track = fixtureTrack,
+            )
+            // 다이어트 — 4분 32초(첫 걷기 구간), 15분(루틴 완료 · 멈춤). 표시용 값일 뿐이다
+            Scene.RUN_DIET_ACTIVE -> WalkSessionState(
+                isActive = true, isPaused = true, steps = 520, elapsedSec = 272, startedAt = now - 272_000,
+                gpsFix = true, track = fixtureTrack,
+            )
+            Scene.RUN_DIET_DONE -> WalkSessionState(
+                isActive = true, isPaused = true, steps = 1_500, elapsedSec = 900, startedAt = now - 900_000,
+                gpsFix = true, track = fixtureTrack,
+            )
             else -> WalkSessionState()
         })
+        com.stepup.android.domain.RunPlans.set(when (s) {
+            Scene.RUN_GOAL_TIME -> com.stepup.android.domain.RunPlan.Goal(com.stepup.android.domain.RunGoal.TEN_MIN)
+            Scene.RUN_GOAL_KM -> com.stepup.android.domain.RunPlan.Goal(com.stepup.android.domain.RunGoal.ONE_KM)
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE ->
+                com.stepup.android.domain.RunPlan.Diet(com.stepup.android.domain.RunExperience.FIRST)
+            else -> com.stepup.android.domain.RunPlan.Free
+        })
+        if (s == Scene.RUN_DIET_INPUT) runBlocking {
+            // 빈 입력에서 시작한다 — 저장된 몸 정보를 지운다(표시용)
+            ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
+            ServiceLocator.userPrefs.setRunExperience(null)
+        }
+        if (s == Scene.RUN_DIET_PLAN) runBlocking {
+            ServiceLocator.userPrefs.setRunExperience(com.stepup.android.domain.RunExperience.FIRST)
+        }
+        if (s == Scene.RUN_GOAL_HISTORY) runBlocking {
+            ServiceLocator.userPrefs.clearGoalAttempts()
+            ServiceLocator.userPrefs.addGoalAttempt(
+                com.stepup.android.domain.GoalAttempt(now - 3_600_000, com.stepup.android.domain.RunGoal.TEN_MIN, true, 600, 1.28),
+            )
+            ServiceLocator.userPrefs.addGoalAttempt(
+                com.stepup.android.domain.GoalAttempt(now - 90_000_000, com.stepup.android.domain.RunGoal.ONE_KM, true, 492, 1.0),
+            )
+        }
     }
 
     private fun awaitScene(s: Scene) {
@@ -292,6 +381,13 @@ class DesignReferenceTest {
             Scene.ACHIEVEMENTS -> "bottom-nav"
             Scene.INBOX -> "bottom-nav"
             Scene.COURSES, Scene.EXPLORE_MAP, Scene.RANKING -> "bottom-nav"
+            Scene.RUN_MENU -> "run-menu-free"
+            Scene.RUN_GOALS -> "run-goal-10min"
+            Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> "run-hero-value"
+            Scene.RUN_GOAL_HISTORY -> "run-goal-history"
+            Scene.RUN_DIET_INPUT -> "diet-input-next"
+            Scene.RUN_DIET_PLAN -> "diet-plan-start"
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> "run-hero-value"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -301,7 +397,9 @@ class DesignReferenceTest {
             compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840", substring = true).fetchSemanticsNodes().isNotEmpty() }
         }
         when (s) {
-            Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE ->
+            Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
+            Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
@@ -337,9 +435,10 @@ class DesignReferenceTest {
             }
         }
         if (scene == Scene.RUN_ACTIVE && !enlarged) {
-            val map = compose.onNodeWithTag("run-live-map").getUnclippedBoundsInRoot()
+            // 디자이너 전달본 — 큰 시간이 먼저, 지도는 그 아래(스크롤). 큰 시간은 고정 버튼 위에 온전히 보인다
+            val hero = compose.onNodeWithTag("run-hero-value").getUnclippedBoundsInRoot()
             val action = compose.onNodeWithTag("run-primary-action").getUnclippedBoundsInRoot()
-            assertTrue("Full live map must be above the pinned action: map=${map.bottom}, action=${action.top}", map.bottom <= action.top)
+            assertTrue("Run time must be above the pinned action: time=${hero.bottom}, action=${action.top}", hero.bottom <= action.top)
         }
         if (scene == Scene.PROFILE) {
             compose.onNodeWithTag("profile-records").assertIsDisplayed()
@@ -383,6 +482,13 @@ class DesignReferenceTest {
             Scene.COURSES -> MainScaffold(initialRoute = Routes.COURSES)
             Scene.EXPLORE_MAP -> MainScaffold(initialRoute = Routes.MAP)
             Scene.RANKING -> MainScaffold(initialRoute = Routes.RANKING)
+            Scene.RUN_MENU -> MainScaffold(initialRoute = Routes.RUN_MENU)
+            Scene.RUN_GOALS -> MainScaffold(initialRoute = Routes.RUN_GOALS)
+            Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> MainScaffold(initialRoute = Routes.RUN)
+            Scene.RUN_GOAL_HISTORY -> MainScaffold(initialRoute = Routes.RUN_GOAL_HISTORY)
+            Scene.RUN_DIET_INPUT -> MainScaffold(initialRoute = Routes.RUN_DIET)
+            Scene.RUN_DIET_PLAN -> MainScaffold(initialRoute = Routes.RUN_DIET_PLAN)
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> MainScaffold(initialRoute = Routes.RUN)
         }
     }
 

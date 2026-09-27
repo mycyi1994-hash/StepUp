@@ -1,0 +1,30 @@
+{
+  "onlineFigma": {
+    "url": "https://www.figma.com/design/NkRcexuwUX38qLIzJpjGRW",
+    "screens": 6,
+    "components": 58,
+    "variables": 37,
+    "textStyles": 7,
+    "fullPluginExecuted": false,
+    "limit": "Figma MCP Starter plan tool-call quota"
+  },
+  "local": {
+    "engine": "Local structural model; not Figma runtime",
+    "screens": 45,
+    "supportScreens": 1,
+    "components": 58,
+    "sets": 5,
+    "variables": 37,
+    "textStyles": 7,
+    "connections": 329,
+    "overlays": 50,
+    "countdowns": 7,
+    "layoutIssues": []
+  },
+  "browser": {
+    "errors": [],
+    "components": 58,
+    "dietFlow": "U05 · 다이어트 모드 입력"
+  },
+  "interactionSpecRoutes": 85
+}
