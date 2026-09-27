@@ -62,6 +62,19 @@ const SOURCES = [
  * 체인이 알려 주는 safe(없으면 finalized) 블록까지만 읽는다. 둘 다 못 받으면 null — 이번 실행은
  * 읽지 않고 넘어간다(예전엔 최신 - 30 으로 읽어, 뒤집힌 입금이 서버에 남을 수 있었다).
  */
+/** safe(없으면 finalized) 블록의 번호와 시각 — 못 읽으면 null */
+async function safeHeader(c) {
+  for (const blockTag of ['safe', 'finalized']) {
+    try {
+      const b = await c.publicClient.getBlock({ blockTag })
+      if (b?.number != null && b?.timestamp != null) return { number: b.number, timestamp: BigInt(b.timestamp) }
+    } catch (e) {
+      console.error(`${blockTag} block unavailable`, e?.message)
+    }
+  }
+  return null
+}
+
 async function safeBlock(_env, c) {
   for (const blockTag of ['safe', 'finalized']) {
     try {
@@ -189,11 +202,36 @@ export async function expireOps(env, deps) {
     .map(([, op]) => op)
   const out = { expired: 0, pendingOnChain: 0 }
   let safe = null
+  let safeHead // { number, timestamp } — early 작업을 볼 때 한 번만 읽는다(못 읽으면 null)
   for (const op of due) {
     // 한 작업이 막혀도 뒤의 작업은 계속 한다 — 앞에서 매번 같은 오류로 멈추면 그 뒤의
     // SUP · 신발이 영영 묶인다.
     try {
       const sup = op.kind === 'SUP_WITHDRAW'
+      // 기한은 지났지만 마진(30분) 안인 서명 작업. 체인이 거절한 작업이 그동안 잔고 · 하루 한도를 잡지
+      // 않도록, safe 블록의 시각이 기한을 넘었고 그 블록에서 안 쓰였으면 바로 되돌린다 — 컨트랙트는
+      // 블록 시각이 기한을 넘은 작업을 받지 않으므로(ClaimExpired · ReleaseExpired) 앞으로도 쓰일 수 없다.
+      if (op.early && op.status !== 'RESERVED') {
+        if (safeHead === undefined) safeHead = await safeHeader(c)
+        // 서버의 기한은 소수 초까지 있다. 체인에는 반올림한 초가 들어가므로 올림으로 비교한다(넉넉한 쪽).
+        const deadlineSec = BigInt(Math.ceil(Date.parse(op.deadline) / 1000))
+        if (!safeHead || safeHead.timestamp <= deadlineSec) continue // 아직 — 다음 실행이나 마진 뒤에
+        const usedAtSafe = await c.publicClient.readContract({
+          address: sup ? c.addresses.distributor : c.addresses.sneakers,
+          abi: sup ? DISTRIBUTOR_ABI : SNEAKERS_ABI,
+          functionName: sup ? 'sessionClaimed' : 'opUsed',
+          args: [op.op_ref],
+          blockNumber: safeHead.number,
+        })
+        if (usedAtSafe) {
+          out.pendingOnChain += 1 // 쓰였다 — 이벤트가 곧 확정한다
+          continue
+        }
+        await deps.rpc(env, 'attester_op_expire', { p_op: op.op_id, p_used_on_chain: false, p_safe_past_deadline: true })
+        out.expired += 1
+        out.early = (out.early ?? 0) + 1
+        continue
+      }
       const used = await c.publicClient.readContract({
         address: sup ? c.addresses.distributor : c.addresses.sneakers,
         abi: sup ? DISTRIBUTOR_ABI : SNEAKERS_ABI,
