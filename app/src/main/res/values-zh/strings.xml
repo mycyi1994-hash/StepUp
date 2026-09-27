@@ -1423,14 +1423,11 @@
     <string name="market_outfit_try">试穿（演示）</string>
     <string name="market_demo_note">演示模式。这些是测试商品，无法购买。</string>
     <string name="market_demo_toast">演示商品无法购买。</string>
-    <string name="me_total_runs">跑步记录</string>
     <string name="me_default_name">跑者</string>
     <string name="me_points">持有积分</string>
     <string name="me_points_history">积分记录</string>
     <string name="me_this_week">本周</string>
-    <string name="me_recent_runs">最近跑步</string>
     <string name="me_see_all">查看全部 ›</string>
-    <string name="me_no_runs">还没有跑步记录。跑步后会显示在这里。</string>
     <string name="me_items">我的物品</string>
     <string name="news_title">资讯</string>
     <string name="news_tab_races">赛事</string>
@@ -1475,7 +1472,6 @@
     <string name="run_storage_blocked">无法读取手机上保存的跑步数据，暂时无法开始新的跑步。请重新打开应用后再试。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
-    <string name="me_greeting">今天也是美好的一天。</string>
     <string name="home_shortcuts_title">挑战 · 资讯</string>
     <string name="home_shortcut_challenges_sub">现在就来挑战!</string>
     <string name="home_shortcut_news_sub">赛事 · 跑步资讯</string>
@@ -1600,13 +1596,6 @@
     <string name="run_s2_result_headline">%1$d 分钟\n跑了 %2$s 公里</string>
     <string name="run_s2_result_sub">平均配速 %1$s · %2$s</string>
     <string name="run_s2_result_sup">本次跑步 SUP</string>
-    <string name="me_s2_kicker">%1$s 的 StepUp</string>
-    <string name="me_s2_first">来记录\n第一次跑步吧</string>
-    <string name="me_s2_total">至今已跑了\n%1$s 公里</string>
-    <string name="me_s2_streak">连续 %1$d 天达成目标</string>
-    <string name="me_s2_balance">持有 SUP</string>
-    <string name="me_s2_wallet">查看钱包 ›</string>
-    <string name="me_s2_records">查看记录</string>
     <string name="community_s2_meet_time">集合时间</string>
     <string name="community_s2_people">参加</string>
     <string name="community_s2_next">接下来的聚会</string>
@@ -2057,5 +2046,16 @@
     <string name="runflow_save_failed_body">跑步记录仍保留在此页面。请稍后再保存。</string>
     <string name="runflow_save_again">重新保存</string>
     <string name="runflow_save_stay">留在此页</string>
+    <!-- 내 정보 러닝 패스 — 2026-09-27 -->
+    <string name="me_path_title">至今跑过的距离</string>
+    <string name="me_path_none">还没有跑步记录。</string>
+    <string name="me_path_loading">正在加载记录…</string>
+    <string name="me_path_failed">无法加载记录。</string>
+    <string name="me_path_retry">重试</string>
+    <string name="me_path_records">查看我的跑步记录</string>
+    <string name="me_path_wallet">钱包</string>
+    <string name="me_path_balance">%1$s SUP</string>
+    <string name="me_path_edit">编辑资料</string>
+    <plurals name="me_path_runs"><item quantity="other">已记录 %1$d 次跑步。</item></plurals>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

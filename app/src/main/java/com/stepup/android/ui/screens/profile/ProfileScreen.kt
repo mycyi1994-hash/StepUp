@@ -160,8 +160,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val totals by viewModel.runTotals.collectAsStateWithLifecycle()
-    val recentRuns by viewModel.recentRuns.collectAsStateWithLifecycle()
+    val records by viewModel.records.collectAsStateWithLifecycle()
     val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
@@ -287,72 +286,20 @@ fun ProfileScreen(
             return@LazyColumn
         }
 
-        // ── S2 내 정보 — 인사 → 누적 거리 문장 → 보유 SUP → 기록 한 줄 → 수정 · 기록 · 챌린지 ──
+        // ── 내 정보 첫 화면 — 러닝 패스(2026-09-27 사용자 선택): 프로필 → 누적 거리 카드 → 기록 보기 → 챌린지 · 지갑 · 설정 ──
         item {
-            MeHeader(
+            ProfileHome(
                 state = state,
+                records = records,
+                onRetryRecords = viewModel::retryRecords,
                 onEditProfile = { showProfileEdit = true },
+                onOpenRecords = onOpenAnalytics,
+                // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7) — 거기서 진행 중인 챌린지로 간다
+                onOpenChallenges = onOpenChallengeHistory,
+                onOpenWallet = onOpenWallet,
                 onOpenSettings = { tab = 1 },
             )
         }
-        item {
-            val name = state.nickname.ifBlank { stringResource(R.string.me_default_name) }
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                com.stepup.android.ui.components.S2Kicker(stringResource(R.string.me_s2_kicker, name))
-                Spacer(Modifier.height(12.dp))
-                com.stepup.android.ui.components.S2Headline(when {
-                    totals == null -> " \n "
-                    totals!!.runs == 0 -> stringResource(R.string.me_s2_first)
-                    else -> stringResource(R.string.me_s2_total, "%.1f".format(totals!!.meters / 1000))
-                })
-                Spacer(Modifier.height(12.dp))
-                com.stepup.android.ui.components.S2Subtitle(
-                    if (state.streak > 0) stringResource(R.string.me_s2_streak, state.streak)
-                    else stringResource(R.string.me_greeting),
-                )
-                Spacer(Modifier.height(28.dp))
-                Text(stringResource(R.string.me_s2_balance), color = Silver, fontSize = 13.sp)
-                com.stepup.android.ui.components.S2Number(
-                    // 읽기 전에 "0"을 보이면 잔액이 사라진 것처럼 읽힌다
-                    if (state.loaded) com.stepup.android.ui.components.formatSupDown(state.balance) else "—", 64.sp,
-                    Modifier.padding(top = 6.dp),
-                )
-                TextButton(
-                    onClick = onOpenWallet,
-                    modifier = Modifier.heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget)
-                        .testTag("profile-wallet"),
-                ) { Text(stringResource(R.string.me_s2_wallet), color = Silver, fontSize = 13.sp) }
-                Spacer(Modifier.height(10.dp))
-                com.stepup.android.ui.components.S2Stats(listOf(
-                    stringResource(R.string.profile_total_distance) to (totals?.let { "%.1f km".format(it.meters / 1000) } ?: "—"),
-                    stringResource(R.string.me_total_runs) to (totals?.let { stringResource(R.string.profile_times_unit, it.runs) } ?: "—"),
-                    stringResource(R.string.home_run_time) to (if (totals != null) formatDuration(state.totalDurationSec) else "—"),
-                ), valueSize = 22.sp)
-                Spacer(Modifier.height(20.dp))
-                com.stepup.android.ui.components.S2ActionRow(
-                    start = {
-                        com.stepup.android.ui.components.S2SideInfo(
-                            stringResource(R.string.profile_edit_profile), onClick = { showProfileEdit = true },
-                        )
-                    },
-                    end = {
-                        com.stepup.android.ui.components.S2SideInfo(
-                            // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7). 지금 하는 챌린지는 러닝 홈에서 연다.
-                            stringResource(R.string.challenge_history_title), end = true, onClick = onOpenChallengeHistory,
-                            modifier = Modifier.testTag("profile-challenges"),
-                        )
-                    },
-                ) {
-                    com.stepup.android.ui.components.S2RoundAction(
-                        icon = Icons.Filled.BarChart,
-                        label = stringResource(R.string.me_s2_records),
-                        onClick = onOpenAnalytics,
-                        modifier = Modifier.testTag("profile-records"),
-                    )
-                }
-            }
-        }
-        item { RecentRunsCard(recentRuns, onOpenAll = onOpenAnalytics) }
     }
     }
 }
@@ -1089,98 +1036,7 @@ private fun ProfileEditDialog(
 
 // ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
 
-/** Profile identity stays editable independently of the removed runner character. */
-@Composable
-private fun MeHeader(
-    state: ProfileViewModel.UiState,
-    onEditProfile: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    // S2 — 위 한 줄은 작은 사진(누르면 수정)과 설정만. 이름과 인사는 아래 가운데 글이 말한다.
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        LevelAvatar(level = state.runner.level, size = 44.dp,
-            contentDescription = stringResource(R.string.profile_edit_profile), avatarId = state.avatarId,
-            customBitmap = rememberCustomAvatar(state.avatarRev),
-            modifier = Modifier.feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR))
-        Spacer(Modifier.weight(1f))
-        DarkIconButton(
-            icon = Icons.Filled.Settings,
-            contentDescription = stringResource(R.string.profile_tab_settings),
-            onClick = onOpenSettings,
-            modifier = Modifier.testTag("profile-settings"),
-        )
-    }
-}
 
-/** 최근 러닝 — 거리 · 날짜 · 그 러닝으로 번 SUP */
-@Composable
-private fun RecentRunsCard(runs: List<WalkSessionEntity>?, onOpenAll: () -> Unit) {
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    GlowCard(modifier = Modifier.testTag("profile-recent-runs"), contentPadding = PaddingValues(16.dp), spacing = 10.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.me_recent_runs),
-                modifier = Modifier.weight(1f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Snow,
-            )
-            Text(
-                text = stringResource(R.string.me_see_all),
-                modifier = Modifier
-                    .feedbackClickable(onClick = onOpenAll)
-                    .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.TouchTarget).padding(12.dp),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = VoltText,
-            )
-        }
-        when {
-            runs == null -> Text(stringResource(R.string.feed_loading), color = Silver)
-            runs.isEmpty() -> Text(
-                text = stringResource(R.string.me_no_runs),
-                fontSize = 13.sp,
-                color = Silver,
-                lineHeight = 18.sp,
-            )
-            else -> runs.forEach { run ->
-                val date = java.time.Instant.ofEpochMilli(run.startedAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(CarbonHigh)
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.DirectionsRun, contentDescription = null, tint = VoltText, modifier = Modifier.size(22.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = "%.1f km".format(run.distanceMeters / 1000),
-                            fontFamily = StepUpNumbers,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Snow,
-                        )
-                        Text(
-                            text = date.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale)),
-                            fontSize = 12.sp,
-                            color = Silver,
-                        )
-                    }
-                    Text(
-                        text = formatDuration(run.durationSec),
-                        fontFamily = StepUpNumbers,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = VoltText,
-                    )
-                }
-            }
-        }
-    }
-}
 
 /** 데모 모드 스위치 — 켜면 소식 · 러너 마켓에 "예시"가 뜬다 */
 @Composable

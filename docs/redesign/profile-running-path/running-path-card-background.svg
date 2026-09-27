@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="342" height="168" viewBox="0 0 342 168" aria-hidden="true"><defs><linearGradient id="route-panel" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#0d182a" /><stop offset="1" stop-color="#182e4c" /></linearGradient>
+ <linearGradient id="route-line" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#5475a7" /><stop offset=".55" stop-color="#8cb6ff" /><stop offset="1" stop-color="#d9e7ff" /></linearGradient>
+ <clipPath id="route-crop"><rect x="24" y="193" width="342" height="168" rx="23" fill="white" /></clipPath></defs><g transform="translate(-24 -193)"><g clip-path="url(#route-crop)"><rect x="24" y="193" width="342" height="168" rx="23" fill="url(#route-panel)" />
+ <g aria-label="실제 지도와 무관한 러닝 경로 장식" fill="none" stroke="#4c6787" stroke-width=".8" opacity=".25">
+ <path d="M205 183C174 226 270 227 248 268S294 313 358 306S394 344 389 382" /><path d="M215 183C186 226 280 227 262 268S304 313 367 306S402 344 389 382" /><path d="M225 183C198 226 290 227 276 268S314 313 376 306S410 344 389 382" /><path d="M235 183C210 226 300 227 290 268S324 313 385 306S418 344 389 382" /><path d="M245 183C222 226 310 227 304 268S334 313 394 306S426 344 389 382" /><path d="M255 183C234 226 320 227 318 268S344 313 403 306S434 344 389 382" /><path d="M265 183C246 226 330 227 332 268S354 313 412 306S442 344 389 382" />
+ <path d="M220 366c-2-55 33-65 66-52s59 30 105-5M240 193c-13 22-9 39 22 42s58-25 109-9" />
+ </g><path d="M283 329C267 317 295 311 292 295S256 284 257 267S283 252 295 261 326 273 333 257 329 237 318 232" fill="none" stroke="#497ac4" stroke-width="9" opacity=".1" />
+ <path d="M283 329C267 317 295 311 292 295S256 284 257 267S283 252 295 261 326 273 333 257 329 237 318 232" fill="none" stroke="url(#route-line)" stroke-width="2.8" stroke-linecap="round" />
+ <circle cx="283" cy="329" r="3.5" fill="#304563" stroke="#839dca" stroke-width="1.7" />
+ <circle cx="318" cy="232" r="10" fill="#4a7ff8" opacity=".12" /><circle cx="318" cy="232" r="4.5" fill="#e1ecff" /><circle cx="318" cy="232" r="2.1" fill="#477aff" />
+ <path d="M49 193.5H199" stroke="#3b557c" stroke-width=".8" opacity=".65" />
+ </g></g></svg>

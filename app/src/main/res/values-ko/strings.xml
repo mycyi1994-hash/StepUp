@@ -1423,14 +1423,11 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_outfit_try">체험 착용 (데모)</string>
     <string name="market_demo_note">데모 모드예요. 테스트용 상품이라 살 수 없어요.</string>
     <string name="market_demo_toast">데모 상품은 살 수 없어요.</string>
-    <string name="me_total_runs">기록한 러닝</string>
     <string name="me_default_name">러너님</string>
     <string name="me_points">보유 포인트</string>
     <string name="me_points_history">적립 내역</string>
     <string name="me_this_week">이번 주</string>
-    <string name="me_recent_runs">최근 러닝 기록</string>
     <string name="me_see_all">전체 보기 ›</string>
-    <string name="me_no_runs">아직 러닝 기록이 없어요. 달리면 여기에 쌓여요.</string>
     <string name="me_items">내 아이템</string>
     <string name="news_title">소식</string>
     <string name="news_tab_races">대회</string>
@@ -1475,7 +1472,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_storage_blocked">이 폰에 남은 러닝 저장본을 읽을 수 없어 새 러닝을 시작하지 못했습니다. 앱을 다시 열고 시도해 주세요.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
-    <string name="me_greeting">오늘도 좋은 하루예요.</string>
     <string name="home_shortcuts_title">챌린지 · 소식</string>
     <string name="home_shortcut_challenges_sub">지금 도전하세요!</string>
     <string name="home_shortcut_news_sub">대회 · 러닝 소식</string>
@@ -1600,13 +1596,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_s2_result_headline">%1$d분 동안\n%2$skm를 달렸어요</string>
     <string name="run_s2_result_sub">평균 페이스 %1$s · %2$s</string>
     <string name="run_s2_result_sup">이번 러닝 SUP</string>
-    <string name="me_s2_kicker">%1$s님의 StepUp</string>
-    <string name="me_s2_first">첫 러닝을\n기록해볼까요</string>
-    <string name="me_s2_total">지금까지 %1$s km를\n달렸어요</string>
-    <string name="me_s2_streak">%1$d일 연속 목표 달성 중</string>
-    <string name="me_s2_balance">보유 SUP</string>
-    <string name="me_s2_wallet">지갑 보기 ›</string>
-    <string name="me_s2_records">기록 보기</string>
     <string name="community_s2_meet_time">모임 시간</string>
     <string name="community_s2_people">참여</string>
     <string name="community_s2_next">이어서 열리는 모임</string>
@@ -2057,5 +2046,16 @@ StepUp과 함께 달려보세요.</string>
     <string name="runflow_save_failed_body">러닝 기록은 이 화면에 남아 있어요. 잠시 후 다시 저장해주세요.</string>
     <string name="runflow_save_again">다시 저장</string>
     <string name="runflow_save_stay">화면에 머무르기</string>
+    <!-- 내 정보 러닝 패스 — 2026-09-27 -->
+    <string name="me_path_title">지금까지 달린 거리</string>
+    <string name="me_path_none">아직 기록한 러닝이 없어요.</string>
+    <string name="me_path_loading">기록을 불러오는 중이에요.</string>
+    <string name="me_path_failed">기록을 불러오지 못했어요.</string>
+    <string name="me_path_retry">다시 시도</string>
+    <string name="me_path_records">내 러닝 기록 보기</string>
+    <string name="me_path_wallet">지갑</string>
+    <string name="me_path_balance">%1$s SUP</string>
+    <string name="me_path_edit">프로필 수정</string>
+    <plurals name="me_path_runs"><item quantity="other">%1$d번의 러닝을 기록했어요.</item></plurals>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -1424,14 +1424,11 @@ StepUp と走り出そう。</string>
     <string name="market_outfit_try">試着（デモ）</string>
     <string name="market_demo_note">デモモードです。テスト用商品のため購入できません。</string>
     <string name="market_demo_toast">デモ商品は購入できません。</string>
-    <string name="me_total_runs">記録したラン</string>
     <string name="me_default_name">ランナー</string>
     <string name="me_points">保有ポイント</string>
     <string name="me_points_history">獲得履歴</string>
     <string name="me_this_week">今週</string>
-    <string name="me_recent_runs">最近のラン</string>
     <string name="me_see_all">すべて見る ›</string>
-    <string name="me_no_runs">まだランの記録がありません。走るとここに貯まります。</string>
     <string name="me_items">マイアイテム</string>
     <string name="news_title">ニュース</string>
     <string name="news_tab_races">大会</string>
@@ -1476,7 +1473,6 @@ StepUp と走り出そう。</string>
     <string name="run_storage_blocked">端末に残ったラン記録を読み込めないため、新しいランを開始できませんでした。アプリを開き直してお試しください。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
-    <string name="me_greeting">今日もいい一日を。</string>
     <string name="home_shortcuts_title">チャレンジ · お知らせ</string>
     <string name="home_shortcut_challenges_sub">今すぐ挑戦しよう!</string>
     <string name="home_shortcut_news_sub">大会 · ランニング情報</string>
@@ -1601,13 +1597,6 @@ StepUp と走り出そう。</string>
     <string name="run_s2_result_headline">%1$d分で\n%2$skm走りました</string>
     <string name="run_s2_result_sub">平均ペース %1$s · %2$s</string>
     <string name="run_s2_result_sup">今回のランのSUP</string>
-    <string name="me_s2_kicker">%1$sさんのStepUp</string>
-    <string name="me_s2_first">最初のランを\n記録しましょう</string>
-    <string name="me_s2_total">これまで\n%1$s km走りました</string>
-    <string name="me_s2_streak">%1$d日連続で目標達成中</string>
-    <string name="me_s2_balance">保有SUP</string>
-    <string name="me_s2_wallet">ウォレットを見る ›</string>
-    <string name="me_s2_records">記録を見る</string>
     <string name="community_s2_meet_time">集合時間</string>
     <string name="community_s2_people">参加</string>
     <string name="community_s2_next">この後の集まり</string>
@@ -2058,5 +2047,16 @@ StepUp と走り出そう。</string>
     <string name="runflow_save_failed_body">ランの記録はこの画面に残っています。少し後でもう一度保存してください。</string>
     <string name="runflow_save_again">もう一度保存</string>
     <string name="runflow_save_stay">この画面に残る</string>
+    <!-- 내 정보 러닝 패스 — 2026-09-27 -->
+    <string name="me_path_title">これまでに走った距離</string>
+    <string name="me_path_none">まだ記録したランはありません。</string>
+    <string name="me_path_loading">記録を読み込んでいます…</string>
+    <string name="me_path_failed">記録を読み込めませんでした。</string>
+    <string name="me_path_retry">もう一度試す</string>
+    <string name="me_path_records">ランの記録を見る</string>
+    <string name="me_path_wallet">ウォレット</string>
+    <string name="me_path_balance">%1$s SUP</string>
+    <string name="me_path_edit">プロフィール編集</string>
+    <plurals name="me_path_runs"><item quantity="other">%1$d回のランを記録しました。</item></plurals>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

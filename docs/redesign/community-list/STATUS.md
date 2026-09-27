@@ -73,3 +73,11 @@
 - **신고한 글**: 시안대로 접수 뒤에도 보인다(5건이 쌓이면 서버가 모두에게서 숨긴다). 안 보려면 "이 글 숨기기".
 - **임시저장 칸은 하나**: 다른 글을 쓰다 임시저장하면 앞의 임시저장을 바꾼다(시안과 같음).
 - **내 위치 캡처**: CI 에뮬레이터에는 위치가 없어 기기 캡처는 "선택한 지역에서" 경로로 찍는다. 문구만 다르고 배치는 같다.
+
+## 기기 확인
+
+- 2026-09-27 PR #43 의 Experience QA: 기존 묶음은 모두 통과, 새 `CommunityStoriesTest`가 지역 고르기에서 멈췄다 —
+  `IllegalStateException: Method setCurrentState must be called on the main thread`. 지역을 저장(DataStore)한 뒤
+  뒤로 가기가 저장이 끝난 스레드에서 불렸다(테스트의 코루틴은 그 스레드에서 이어진다. 앱의 화면 코루틴은 메인으로
+  돌아온다). `StoryLocationScreens.kt`의 `saveRegionThen`으로 저장 뒤 이동을 메인 스레드에서 한다고 못 박았다(후속 PR).
+- 후속 PR 의 Experience QA 결과(31장면 캡처)는 아래에 덧붙인다.

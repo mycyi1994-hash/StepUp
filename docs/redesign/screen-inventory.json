@@ -132,10 +132,9 @@
       "id": "Screen.Profile.route",
       "parent": "Profile",
       "chrome": "Main",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
-      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "implementation": "내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md (settings tab unchanged)",
+      "verification": "ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태",
+      "evidence": "docs/redesign/profile-running-path/README.md"
     },
     {
       "id": "Routes.RUN_ROUTE",
@@ -579,11 +578,11 @@
     {
       "id": "ProfileScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 136,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
-      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "line": 138,
+      "implementation": "내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md; first screen in ProfileHome.kt, card in ui/components/RunningPathCard.kt",
+      "verification": "ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태",
+      "evidence": "docs/redesign/profile-running-path/README.md",
+      "notes": "Settings tab unchanged; running-path card decoration is not a real route."
     },
     {
       "id": "WalletScreen",
@@ -801,14 +800,14 @@
       "kind": "DialogPanel",
       "owner": "GoalDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 956,
+      "line": 931,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 1005,
+      "line": 980,
       "verification": "pending"
     },
     {
