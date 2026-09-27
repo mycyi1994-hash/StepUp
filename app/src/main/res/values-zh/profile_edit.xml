@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 수정 v1(2026-09-28 전달본, docs/redesign/profile-edit-v1) — 사진 · 기본 이미지 · 닉네임 · 저장 상태 · 나가기 -->
+<resources>
+    <string name="pe_title">编辑个人资料</string>
+    <string name="pe_photo_cd">头像</string>
+    <string name="pe_change_photo">更换照片</string>
+    <string name="pe_photo_saving_chip">保存中</string>
+    <string name="pe_photo_note">选择照片后会立即保存。</string>
+    <string name="pe_photo_saving">正在保存照片。</string>
+    <string name="pe_nickname">昵称</string>
+    <string name="pe_nickname_placeholder">显示默认名称</string>
+    <string name="pe_nickname_clear">清除昵称</string>
+    <string name="pe_nickname_where">此名称会显示在我的信息和跑步页面上。</string>
+    <string name="pe_nickname_empty">留空则显示默认名称。</string>
+    <string name="pe_nickname_limit">最多可输入%1$d个字符。</string>
+    <string name="pe_count" formatted="false">%1$d / %2$d</string>
+    <string name="pe_save">保存</string>
+    <string name="pe_saving">保存中…</string>
+    <string name="pe_save_again">重新保存</string>
+    <string name="pe_photo_failed_title">无法保存照片。</string>
+    <string name="pe_photo_failed_body">已保留原来的照片。</string>
+    <string name="pe_pick_again">重新选择</string>
+    <string name="pe_name_failed_title">无法保存昵称。</string>
+    <string name="pe_name_failed_body">输入的名称仍然保留。</string>
+    <string name="pe_photo_sheet_title">头像</string>
+    <string name="pe_photo_sheet_body">选择的照片或图片会立即保存。</string>
+    <string name="pe_from_album">从相册选择照片</string>
+    <string name="pe_default_images">选择默认图片</string>
+    <string name="pe_default_sheet_body">点按图片即可立即使用。</string>
+    <string name="pe_default_failed">无法保存图片，请重新选择。</string>
+    <string name="pe_leave_title">要停止编辑昵称吗？</string>
+    <string name="pe_leave_body">未保存的昵称将被丢弃。</string>
+    <string name="pe_leave_photo_kept">已更换的照片会保留。</string>
+    <string name="pe_keep_editing">继续编辑</string>
+    <string name="pe_discard_leave">放弃昵称并离开</string>
+    <string name="pe_saved_toast">昵称已保存。</string>
+    <string name="pe_photo_saved">照片已保存。</string>
+    <string name="pe_selected">已选择</string>
+    <string-array name="pe_avatar_names">
+        <item>跑步的人</item>
+        <item>跑步的女性</item>
+        <item>闪电</item>
+        <item>火焰</item>
+        <item>水滴</item>
+        <item>龙卷风</item>
+        <item>狼</item>
+        <item>鹰</item>
+        <item>老虎</item>
+        <item>龙</item>
+        <item>狐狸</item>
+        <item>乌龟</item>
+        <item>火箭</item>
+        <item>月亮</item>
+        <item>太阳</item>
+        <item>宝石</item>
+    </string-array>
+</resources>

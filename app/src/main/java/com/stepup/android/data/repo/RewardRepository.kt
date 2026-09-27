@@ -51,6 +51,9 @@ class RewardRepository(
 
     fun ledger(limit: Int = 100): Flow<List<RewardEntity>> = rewardDao.observeLedger(limit)
 
+    /** 지갑 이용 내역 — 원장 전체에서 거른 한 쪽(0 전체 · 1 적립 · 2 사용) */
+    fun ledgerPage(kind: Int, limit: Int): Flow<List<RewardEntity>> = rewardDao.observeLedgerPage(kind, limit)
+
     /** 챌린지로 받은 적립 — 일일 목표 보너스와 도전 보상(원장에 적힌 것만) */
     fun challengeRewards(limit: Int = 200): Flow<List<RewardEntity>> =
         rewardDao.observeByTypes(CHALLENGE_TYPES, limit)

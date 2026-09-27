@@ -201,7 +201,20 @@ object Routes {
     /** 앱 공지 상세(알림·공지 v1) — 알림 화면의 "공지"에서. 바깥 소식(NEWS)과 다른 것이다 */
     const val NOTICE = "notice/{id}"
     const val ACHIEVEMENTS = "achievements"
+    /** 예전 기록 · 분석(걸음 통계 · 기록 지도) — 러닝 통계의 "걸음 통계와 기록 지도"에서 */
     const val ANALYTICS = "analytics"
+
+    /** 프로필 수정(2026-09-28 전달본) — 내 정보의 "프로필 수정". 사진 · 닉네임, 하단 탭 없이 */
+    const val PROFILE_EDIT = "profile/edit"
+
+    /** 편집 화면에서 닉네임을 저장하고 돌아왔다는 표시 — 내 정보 화면의 저장 상태에 한 번 적는다 */
+    const val NICKNAME_SAVED = "profile_nickname_saved"
+
+    /** 내 러닝 기록(2026-09-28 전달본) — 내 정보의 "내 러닝 기록 보기". 목록 · 통계 · 지난 러닝 상세 · 경로 확대 */
+    const val RECORDS = "records"
+    const val RECORD_STATS = "records/stats?month={month}"
+    const val RUN_RECORD = "records/run/{id}"
+    const val RUN_RECORD_MAP = "records/run/{id}/map"
     /** 설정 첫 목록(설정 v1, 2026-09-28) — 내 정보 첫 화면의 "설정"에서 */
     const val SETTINGS = "settings"
     const val SETTINGS_NOTIFICATIONS = "settings/notifications"
@@ -247,6 +260,9 @@ object Routes {
         "market/$faction/$rarity/$variant?sell=$sell"
     fun lobby(crewId: String) = "lobby/$crewId"
     fun notice(id: Long) = "notice/$id"
+    fun recordStats(month: java.time.YearMonth) = "records/stats?month=$month"
+    fun runRecord(id: Long) = "records/run/$id"
+    fun runRecordMap(id: Long) = "records/run/$id/map"
     fun crewBoard(crewId: String) = "crew/board/$crewId"
 
     /** crewId가 비어 있으면 전체 게시판에 쓰는 글 */
@@ -787,7 +803,8 @@ internal fun MainScaffold(
                     },
                 )
             }
-            composable(Screen.Profile.route) {
+            composable(Screen.Profile.route) { entry ->
+                val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()
                 ProfileScreen(
                     onChangeBackground = {
                         profileSetting = com.stepup.android.ui.components.ProfileBackgrounds.next(profileSetting)
@@ -795,9 +812,22 @@ internal fun MainScaffold(
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
+                    onOpenAnalytics = { navController.navigate(Routes.RECORDS) },
                     onOpenChallengeHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                    nicknameSaved = nicknameSaved,
+                    onNicknameNoticeShown = { entry.savedStateHandle[Routes.NICKNAME_SAVED] = false },
+                )
+            }
+            // 프로필 수정 — 닉네임을 실제로 저장한 뒤에만 내 정보에 "닉네임을 저장했어요"
+            composable(Routes.PROFILE_EDIT) {
+                com.stepup.android.ui.screens.profile.ProfileEditScreen(
+                    onBack = { navController.popBackStack() },
+                    onSaved = {
+                        navController.previousBackStackEntry?.savedStateHandle?.set(Routes.NICKNAME_SAVED, true)
+                        navController.popBackStack()
+                    },
                 )
             }
             // 설정 첫 목록 — 세 그룹(러닝과 알림 · 앱 사용 · 계정과 도움말)과 예전 목록에만 있던 길(더 보기 · 앱 정보)
@@ -908,7 +938,20 @@ internal fun MainScaffold(
             composable(Routes.COURSES) {
                 CourseHubScreen(onBack = { navController.popBackStack() })
             }
-            composable(Routes.WALLET) { WalletScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.WALLET) {
+                val walletScope = rememberCoroutineScope()
+                WalletScreen(
+                    onBack = { navController.popBackStack() },
+                    // 연결 상태 → 기존 두 칸 뽑기(자동으로 뽑지 않는다)
+                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
+                    // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
+                    onOpenWalletPage = {
+                        walletScope.openWalletPage(context) {
+                            android.widget.Toast.makeText(context, context.getString(R.string.wallet_web_offline), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
+            }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
@@ -952,7 +995,7 @@ internal fun MainScaffold(
                             // 신발 뽑기(무료 · 상급 두 칸)로 옮겨 갈 뿐 기회를 쓰지 않는다
                             com.stepup.android.data.repo.NoticeAction.DRAW ->
                                 navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true }
-                            com.stepup.android.data.repo.NoticeAction.RUN_HISTORY -> navController.navigate(Routes.ANALYTICS)
+                            com.stepup.android.data.repo.NoticeAction.RUN_HISTORY -> navController.navigate(Routes.RECORDS)
                             com.stepup.android.data.repo.NoticeAction.NOTIFICATION_SETTINGS ->
                                 navController.navigate(Routes.SETTINGS_NOTIFICATIONS)
                             com.stepup.android.data.repo.NoticeAction.PRIVACY_SETTINGS -> navController.navigate(Routes.SETTINGS_PRIVACY)
@@ -962,6 +1005,58 @@ internal fun MainScaffold(
             }
             composable(Routes.ACHIEVEMENTS) {
                 AchievementsScreen(onBack = { navController.popBackStack() })
+            }
+            // 내 러닝 기록 — 목록(기간 · 스크롤은 상세 · 통계에 다녀와도 그대로) → 통계 · 지난 러닝 상세 → 경로 확대
+            composable(Routes.RECORDS) {
+                com.stepup.android.ui.screens.records.RecordsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenStats = { month -> navController.navigate(Routes.recordStats(month)) },
+                    onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
+                    // 기록이 하나도 없을 때(07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 기존 자유 러닝 시작
+                    onStartRun = {
+                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            navController.navigate(Routes.RUN_NOW)
+                        } else {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                            navController.navigate(Routes.RUN_NOW)
+                        }
+                    },
+                )
+            }
+            composable(
+                route = Routes.RECORD_STATS,
+                arguments = listOf(navArgument("month") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { entry ->
+                val month = entry.arguments?.getString("month")
+                    ?.let { runCatching { java.time.YearMonth.parse(it) }.getOrNull() } ?: java.time.YearMonth.now()
+                com.stepup.android.ui.screens.records.RecordStatsScreen(
+                    start = month,
+                    onBack = { navController.popBackStack() },
+                    onOpenStepStats = { navController.navigate(Routes.ANALYTICS) },
+                )
+            }
+            composable(
+                route = Routes.RUN_RECORD,
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+            ) { entry ->
+                val id = entry.arguments?.getLong("id") ?: 0L
+                com.stepup.android.ui.screens.records.RunRecordScreen(
+                    id = id,
+                    onBack = { navController.popBackStack() },
+                    onOpenMap = { navController.navigate(Routes.runRecordMap(id)) },
+                    // 실제로 지운 뒤에만 — 목록은 저장소를 보고 있어 합계 · 줄이 바로 바뀐다
+                    onDeleted = { navController.popBackStack() },
+                )
+            }
+            composable(
+                route = Routes.RUN_RECORD_MAP,
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+            ) { entry ->
+                com.stepup.android.ui.screens.records.RunRouteMapScreen(
+                    id = entry.arguments?.getLong("id") ?: 0L,
+                    onBack = { navController.popBackStack() },
+                )
             }
             composable(Routes.ANALYTICS) {
                 AnalyticsScreen(

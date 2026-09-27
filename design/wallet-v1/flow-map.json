@@ -1,0 +1,21 @@
+{
+  "start": "wallet-capability-and-data-state",
+  "edges": [
+    {"from": "profile", "action": "지갑", "to": "09-wallet-loading"},
+    {"from": "09-wallet-loading", "condition": "data ready, connection unavailable", "to": "12-connection-unavailable"},
+    {"from": "09-wallet-loading", "condition": "data ready, connectable but disconnected", "to": "01-wallet-unlinked"},
+    {"from": "09-wallet-loading", "condition": "data ready, verified connection", "to": "02-wallet-linked"},
+    {"from": "wallet", "action": "적립", "to": "03-earned-filter"},
+    {"from": "wallet", "action": "사용", "to": "04-spent-filter or 08-no-spend-history"},
+    {"from": "ledger-row", "action": "tap", "to": "05-earned-detail or 06-spent-detail", "preserve": ["entryId", "filter", "scrollPosition"]},
+    {"from": "wallet", "action": "SUP 안내", "to": "13-sup-info"},
+    {"from": "01-wallet-unlinked", "action": "WEB3 지갑", "to": "reused/06-wallet-benefit-sheet", "origin": "wallet"},
+    {"from": "15-wallet-reconnect", "action": "WEB3 지갑", "to": "real-connection-provider", "repeatGrant": false},
+    {"from": "02-wallet-linked", "action": "WEB3 지갑", "to": "14-connected-sheet"},
+    {"from": "14-connected-sheet", "action": "신발 뽑기 보기", "to": "existing-draw-home", "autoDraw": false},
+    {"from": "connection-modal", "action": "dismiss", "to": "wallet-with-real-latest-state"},
+    {"from": "10-wallet-error", "action": "다시 불러오기", "to": "09-wallet-loading", "ledgerWrite": false},
+    {"from": "11-history-error", "action": "내역 다시 불러오기", "to": "retry-ledger-only", "ledgerWrite": false},
+    {"from": "16-older-history-error", "action": "다시 불러오기", "to": "retry-current-next-page", "preserveLoadedRows": true}
+  ]
+}

@@ -69,6 +69,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -144,40 +145,29 @@ fun ProfileScreen(
     /** 설정 첫 목록(설정 v1) — 알림 · 개인정보 · 언어 · 테마 · 계정 · 도움말과 예전 목록의 길은 모두 거기서 */
     onOpenSettings: () -> Unit = {},
     onChangeBackground: () -> Unit = {},
+    /** 프로필 수정(v1) — 사진 · 닉네임 편집 화면. 예전의 작은 창을 바꿨다 */
+    onOpenProfileEdit: () -> Unit = {},
+    /** 편집 화면에서 닉네임을 실제로 저장하고 돌아왔다 — 짧은 안내를 한 번 보인다 */
+    nicknameSaved: Boolean = false,
+    onNicknameNoticeShown: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
-    // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
-    // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
-    var showProfileEdit by rememberSaveable { mutableStateOf(false) }
-
-    // 갤러리 사진 선택 — 시스템 포토 피커 (권한 불필요)
-    val photoPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        // 사진을 고르면 창은 열어 둔다 — 이름도 여기서 마저 고칠 수 있어야 한다.
-        if (uri != null) viewModel.setCustomAvatar(uri)
+    var notice by remember { mutableStateOf<String?>(null) }
+    val savedText = stringResource(R.string.pe_saved_toast)
+    // 받은 표시는 바로 지운다(다시 들어와도 한 번만) — 그러면 이 효과가 다시 시작되므로, 안내를 닫는 기다림은 따로 둔다
+    LaunchedEffect(nicknameSaved) {
+        if (nicknameSaved) {
+            notice = savedText
+            onNicknameNoticeShown()
+        }
     }
-
-    if (showProfileEdit) {
-        ProfileEditDialog(
-            nickname = state.nickname,
-            level = state.runner.level,
-            selectedAvatar = state.avatarId,
-            avatarRev = state.avatarRev,
-            onPickAvatar = viewModel::setAvatar,
-            onPickGallery = {
-                photoPicker.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            },
-            onSave = { name ->
-                viewModel.setNickname(name)
-                showProfileEdit = false
-            },
-            onDismiss = { showProfileEdit = false },
-        )
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            kotlinx.coroutines.delay(2_600)
+            notice = null
+        }
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -192,7 +182,7 @@ fun ProfileScreen(
                 state = state,
                 records = records,
                 onRetryRecords = viewModel::retryRecords,
-                onEditProfile = { showProfileEdit = true },
+                onEditProfile = onOpenProfileEdit,
                 onOpenRecords = onOpenAnalytics,
                 // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7) — 거기서 진행 중인 챌린지로 간다
                 onOpenChallenges = onOpenChallengeHistory,
@@ -201,6 +191,9 @@ fun ProfileScreen(
             )
         }
     }
+    com.stepup.android.ui.components.SettingsToast(
+        notice, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp).testTag("profile-saved-notice"),
+    )
     }
 }
 
@@ -776,76 +769,6 @@ private fun RowScope.BadgeCell(
     }
 }
 
-
-/** Photos keep their existing immediate-save behavior; the nickname saves on confirmation. */
-@Composable
-private fun ProfileEditDialog(
-    nickname: String,
-    level: Int,
-    selectedAvatar: Int,
-    avatarRev: Int,
-    onPickAvatar: (Int) -> Unit,
-    onPickGallery: () -> Unit,
-    onSave: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var text by rememberSaveable(nickname) { mutableStateOf(nickname) }
-    com.stepup.android.ui.components.DialogPanel(
-        title = stringResource(R.string.profile_edit_profile),
-        onDismiss = onDismiss,
-        actions = {
-            VoltButton(stringResource(R.string.common_confirm), { onSave(text) }, Modifier.fillMaxWidth())
-            com.stepup.android.ui.components.GhostButton(
-                stringResource(R.string.common_cancel), onDismiss, Modifier.fillMaxWidth(),
-            )
-        },
-    ) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            LevelAvatar(level = level, size = 72.dp, avatarId = selectedAvatar,
-                customBitmap = rememberCustomAvatar(avatarRev))
-        }
-        com.stepup.android.ui.components.FormField(
-            label = stringResource(R.string.profile_set_nickname), value = text,
-            onValueChange = { if (it.length <= UserPrefs.NICKNAME_MAX) text = it },
-            placeholder = stringResource(R.string.profile_nickname_hint),
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.profile_nickname_note), fontSize = 14.sp, color = Silver,
-                modifier = Modifier.weight(1f))
-            Text("${text.length} / ${UserPrefs.NICKNAME_MAX}", fontSize = 14.sp, color = Silver)
-        }
-        HairlineDivider()
-        Text(stringResource(R.string.profile_edit_avatar), style = MaterialTheme.typography.titleMedium, color = Snow)
-        com.stepup.android.ui.components.GhostButton(
-            stringResource(R.string.profile_avatar_gallery), onPickGallery, Modifier.fillMaxWidth(),
-        )
-        if (selectedAvatar == UserPrefs.AVATAR_CUSTOM) {
-            Text(stringResource(R.string.profile_avatar_current), fontSize = 14.sp, color = Silver)
-        }
-        Text(stringResource(R.string.profile_avatar_or_emoji), fontSize = 14.sp, color = Silver)
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val columns = if (maxWidth < 232.dp) 3 else 4
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                AvatarEmojis.chunked(columns).forEachIndexed { rowIndex, row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEachIndexed { colIndex, emoji ->
-                            val id = rowIndex * columns + colIndex
-                            Box(
-                                Modifier.weight(1f).heightIn(min = 48.dp).aspectRatio(1f)
-                                    .clip(CircleShape).background(CarbonHigh)
-                                    .border(if (selectedAvatar == id) 2.dp else 1.dp,
-                                        if (selectedAvatar == id) Volt else Edge, CircleShape)
-                                    .selectable(selectedAvatar == id, role = Role.RadioButton) { onPickAvatar(id) },
-                                contentAlignment = Alignment.Center,
-                            ) { Text(emoji, fontSize = 26.sp) }
-                        }
-                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
-            }
-        }
-    }
-}
 
 // ── 내 정보 리뉴얼 조각 ─────────────────────────────────────────────
 

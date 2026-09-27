@@ -103,6 +103,15 @@ class AvatarAndNavTest {
         assertEquals(Screen.Profile, parentTabOf(Routes.HISTORY_MAP))
     }
 
+    @Test
+    fun `내 러닝 기록은 내 정보 탭 밑이고 상세 · 경로는 하단 탭 없이`() {
+        listOf(Routes.RECORDS, Routes.recordStats(java.time.YearMonth.of(2026, 9)), Routes.runRecord(7), Routes.runRecordMap(7))
+            .forEach { assertEquals(it, Screen.Profile, parentTabOf(it)) }
+        assertTrue(com.stepup.android.ui.AppChromePolicy.destination(Routes.recordStats(java.time.YearMonth.of(2026, 9)))!!.showBottomBar)
+        assertFalse(com.stepup.android.ui.AppChromePolicy.destination(Routes.runRecord(7))!!.showBottomBar)
+        assertFalse(com.stepup.android.ui.AppChromePolicy.destination(Routes.runRecordMap(7))!!.showBottomBar)
+    }
+
     // ── 데모 ────────────────────────────────────────────────────
 
     @Test

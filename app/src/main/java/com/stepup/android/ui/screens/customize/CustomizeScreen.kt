@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.ui.platform.LocalContext
@@ -82,9 +84,18 @@ fun CustomizeScreen(
             // 등급 무대(440:418)는 예전 파란 면보다 높다. 이름 · 무대 한 벌이 목록 창 높이 안에 들도록 글자를 뺀 나머지만큼만
             // 무대를 키운다 — 작은 화면에서는 무대가 줄어 첫 화면에 잘리지 않는다("상세 보기"는 창 아래로 조금 내려갈 수 있다).
             // 창이 아주 짧으면(가로 화면 · 큰 글씨) 무대를 한 변 190dp 아래로 줄이지 않고 스크롤에 맡긴다.
-            val previewHeight = maxOf(maxHeight + 40.dp, 98.dp + 74.dp * LocalDensity.current.fontScale + 190.dp)
+            val previewFloor = 98.dp + 74.dp * LocalDensity.current.fontScale + 190.dp
+            val previewHeight = maxOf(maxHeight + 40.dp, previewFloor)
             val stageWidth = if (columns == 1) maxWidth else maxWidth * 0.86f
-            LazyColumn(Modifier.fillMaxSize().testTag("shoe-list"), contentPadding = PaddingValues(bottom = 16.dp),
+            // 목록 창의 실제 높이 — 위의 상한은 이 창 높이로 한 번 셈한 값이라, 창이 뒤늦게 줄면(아래 원형 버튼이
+            // 신발 정보가 온 뒤에 생겨 버튼 줄이 높아지는 등) 미리 보기가 옛 높이로 남아 무대가 창 아래로 잘릴 수 있다.
+            // 그려질 때마다 이 높이로 다시 재어 상한을 맞춘다(평소에는 위 값과 같다).
+            var windowPx by remember { mutableIntStateOf(0) }
+            val slackPx = with(LocalDensity.current) { 40.dp.roundToPx() }
+            val floorPx = with(LocalDensity.current) { previewFloor.roundToPx() }
+            val fallbackPx = with(LocalDensity.current) { previewHeight.roundToPx() }
+            LazyColumn(Modifier.fillMaxSize().onSizeChanged { windowPx = it.height }.testTag("shoe-list"),
+                contentPadding = PaddingValues(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (!ready) item {
                     StatePanel(stringResource(R.string.feed_loading), StepUpIcons.Shoe, loading = true)
@@ -94,7 +105,12 @@ fun CustomizeScreen(
                 } else {
                     item {
                         Column(
-                            Modifier.fillMaxWidth().heightIn(max = previewHeight)
+                            Modifier.fillMaxWidth()
+                                .layout { measurable, constraints ->
+                                    val cap = if (windowPx > 0) maxOf(windowPx + slackPx, floorPx) else fallbackPx
+                                    val placeable = measurable.measure(constraints.copy(maxHeight = minOf(cap, constraints.maxHeight)))
+                                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                                }
                                 .testTag("shoe-preview").guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {

@@ -108,19 +108,18 @@ class ProfileRunningPathTest {
             assertTrue("running-path order $order", order == order.sorted())
             shot("01-profile")
 
+            // 프로필 수정(v1) — 전체 화면 편집. 아무것도 바꾸지 않았으면 뒤로 가기 한 번에 내 정보로(나가기를 묻지 않는다)
             tapTag("profile-edit")
-            compose.onNodeWithText(context.getString(R.string.profile_edit_profile)).assertIsDisplayed()
+            awaitTag("pe-nickname")
+            compose.onNodeWithTag("pe-save").assertIsNotEnabled()
             shot("02-edit-profile")
-            // 이름 칸에 글자판이 떠 있으면 첫 뒤로 가기는 글자판만 닫는다 — 창이 닫힐 때까지
-            val editTitle = context.getString(R.string.profile_edit_profile)
-            repeat(3) {
-                if (compose.onAllNodesWithText(editTitle).fetchSemanticsNodes().isNotEmpty()) pressBack()
-            }
-            compose.onAllNodesWithText(editTitle).assertCountEquals(0)
+            pressBack()
+            compose.onAllNodesWithTag("pe-leave-sheet").assertCountEquals(0)
             awaitTag("profile-records")
 
+            // 내 러닝 기록(2026-09-28 전달본) — 이번 달 목록. 예전 기록 · 분석은 통계 안쪽 링크로
             tapTag("profile-records")
-            awaitText(context.getString(R.string.analytics_title))
+            awaitTag("records-period")
             shot("03-records")
             pressBack()
             awaitTag("profile-challenges")
@@ -132,7 +131,8 @@ class ProfileRunningPathTest {
             awaitTag("profile-wallet")
 
             tapTag("profile-wallet")
-            awaitText(context.getString(R.string.settings_wallet))
+            // 지갑 v1 — 잔액 카드와 이용 내역 목록
+            awaitTag("wl-list")
             shot("05-wallet")
             pressBack()
             awaitTag("profile-settings")

@@ -77,9 +77,6 @@
     <string name="common_no">아니요</string>
     <string name="common_none">아직 없어요</string>
     <string name="analytics_tap_hint">막대를 누르면 그날 기록</string>
-    <string name="profile_set_nickname">닉네임 변경</string>
-    <string name="profile_nickname_hint">부를 이름을 정해 주세요</string>
-    <string name="profile_nickname_note">비워 두면 기본 호칭</string>
 
     <!-- Splash -->
     <string name="splash_tagline">Every Step. Every Stride. Every Day.</string>
@@ -382,17 +379,6 @@
     <!-- Connected accounts -->
 
     <!-- Wallet -->
-    <string name="wallet_balance">SUP 잔액</string>
-    <string name="wallet_tagline">걸을수록 차곡차곡</string>
-    <string name="wallet_earned">누적 적립</string>
-    <string name="wallet_spent">누적 사용</string>
-    <string name="wallet_history">적립 내역</string>
-    <string name="wallet_records">%1$d건</string>
-    <string name="wallet_empty_title">아직 내역이 없어요</string>
-    <string name="wallet_empty_body">러닝 한 번이면 첫 SUP가 쌓여요.</string>
-    <string name="wallet_giwa">GIWA 지갑</string>
-    <string name="wallet_giwa_status">테스트넷 · 웹에서 이용</string>
-    <string name="wallet_giwa_body">StepUp 지갑 페이지에서 지갑을 연결하고, 보너스 뽑기를 받고, SUP와 신발을 앱과 지갑 사이로 옮길 수 있습니다. 처음에는 2단계 인증을 설정합니다.</string>
     <string name="wallet_web_open">지갑 페이지 열기</string>
     <string name="wallet_web_sign_in">로그인한 뒤에 지갑 페이지를 열 수 있습니다.</string>
     <string name="wallet_web_offline">연결하지 못했습니다. 잠시 뒤 다시 해 주세요.</string>
@@ -402,14 +388,14 @@
     <string name="wallet_withdraw_min">최소 출금 · 1,000 SUP</string>
     <string name="wallet_withdraw_eligible">출시되면 바로 출금할 수 있어요 🎉</string>
     <string name="wallet_withdraw_short">최소 금액까지 %1$s SUP 남았어요</string>
-    <string name="ledger_earn_walk">러닝 세션 적립</string>
-    <string name="ledger_bonus_goal">일일 목표 보너스</string>
-    <string name="ledger_spend_upgrade">스니커즈 강화</string>
-    <string name="ledger_spend_mint">스니커즈 민팅</string>
+    <string name="ledger_earn_walk">걷기·러닝 적립</string>
+    <string name="ledger_bonus_goal">목표 달성 보너스</string>
+    <string name="ledger_spend_upgrade">신발 강화</string>
+    <string name="ledger_spend_mint">신발 민팅</string>
     <string name="ledger_spend_boost">부스트 구매</string>
-    <string name="ledger_earn_event">이벤트 보상</string>
+    <string name="ledger_earn_event">이벤트 적립</string>
     <string name="ledger_earn_party">파티런 적립</string>
-    <string name="ledger_other">리워드</string>
+    <string name="ledger_other">기타 내역</string>
 
     <!-- Run -->
     <string name="run_ready">준비 완료</string>
@@ -822,9 +808,6 @@ StepUp과 함께 달려보세요.</string>
 
     <!-- Board / avatar -->
     <string name="community_board_section">게시판</string>
-    <string name="profile_avatar_gallery">갤러리에서 사진 선택</string>
-    <string name="profile_avatar_or_emoji">…또는 이모지 고르기</string>
-    <string name="profile_avatar_current">지금 쓰는 사진</string>
 
     <!-- Spotlight tour -->
     <string name="tour1_title">오늘 걸음</string>
@@ -929,7 +912,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="profile_longest_time">가장 긴 시간</string>
     <string name="profile_avg_pace">평균 페이스</string>
     <string name="profile_badges">러너 배지</string>
-    <string name="profile_edit_profile">프로필 편집</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
@@ -1067,8 +1049,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_msg_traded">체결됐습니다.</string>
     <string name="market_msg_sign_in">다시 로그인해 주세요.</string>
     <string name="market_msg_equipped">신고 있는 스니커즈는 팔 수 없습니다. 먼저 벗어 주세요.</string>
-    <string name="ledger_trade_buy">스니커즈 구매</string>
-    <string name="ledger_trade_sell">스니커즈 판매</string>
+    <string name="ledger_trade_buy">신발 구매</string>
+    <string name="ledger_trade_sell">신발 판매</string>
     <string name="ledger_trade_fee">거래 수수료</string>
     <string name="ledger_escrow_lock">입찰 잠금</string>
     <string name="ledger_escrow_unlock">입찰 해제</string>

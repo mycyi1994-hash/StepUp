@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 수정 v1(2026-09-28 전달본, docs/redesign/profile-edit-v1) — 사진 · 기본 이미지 · 닉네임 · 저장 상태 · 나가기 -->
+<resources>
+    <string name="pe_title">프로필 수정</string>
+    <string name="pe_photo_cd">프로필 사진</string>
+    <string name="pe_change_photo">사진 변경</string>
+    <string name="pe_photo_saving_chip">저장 중</string>
+    <string name="pe_photo_note">사진은 선택하면 바로 저장돼요.</string>
+    <string name="pe_photo_saving">사진을 저장하고 있어요.</string>
+    <string name="pe_nickname">닉네임</string>
+    <string name="pe_nickname_placeholder">기본 이름으로 표시</string>
+    <string name="pe_nickname_clear">닉네임 지우기</string>
+    <string name="pe_nickname_where">내 정보와 러닝 화면에 이 이름으로 보여요.</string>
+    <string name="pe_nickname_empty">비워두면 기본 이름으로 표시해요.</string>
+    <string name="pe_nickname_limit">최대 %1$d자까지 입력할 수 있어요.</string>
+    <string name="pe_count" formatted="false">%1$d / %2$d</string>
+    <string name="pe_save">저장</string>
+    <string name="pe_saving">저장 중…</string>
+    <string name="pe_save_again">다시 저장</string>
+    <string name="pe_photo_failed_title">사진을 저장하지 못했어요.</string>
+    <string name="pe_photo_failed_body">기존 사진을 유지했어요.</string>
+    <string name="pe_pick_again">다시 선택</string>
+    <string name="pe_name_failed_title">닉네임을 저장하지 못했어요.</string>
+    <string name="pe_name_failed_body">입력한 이름은 그대로 남아 있어요.</string>
+    <string name="pe_photo_sheet_title">프로필 사진</string>
+    <string name="pe_photo_sheet_body">선택한 사진이나 이미지는 바로 저장돼요.</string>
+    <string name="pe_from_album">앨범에서 사진 선택</string>
+    <string name="pe_default_images">기본 이미지 선택</string>
+    <string name="pe_default_sheet_body">원하는 이미지를 누르면 바로 적용돼요.</string>
+    <string name="pe_default_failed">이미지를 저장하지 못했어요. 다시 선택해 주세요.</string>
+    <string name="pe_leave_title">닉네임 수정을 그만둘까요?</string>
+    <string name="pe_leave_body">저장하지 않은 닉네임은 사라져요.</string>
+    <string name="pe_leave_photo_kept">이미 바꾼 사진은 유지돼요.</string>
+    <string name="pe_keep_editing">계속 수정</string>
+    <string name="pe_discard_leave">닉네임 버리고 나가기</string>
+    <string name="pe_saved_toast">닉네임을 저장했어요.</string>
+    <string name="pe_photo_saved">사진을 저장했어요.</string>
+    <string name="pe_selected">선택됨</string>
+    <string-array name="pe_avatar_names">
+        <item>달리는 사람</item>
+        <item>달리는 여성</item>
+        <item>번개</item>
+        <item>불꽃</item>
+        <item>물방울</item>
+        <item>회오리</item>
+        <item>늑대</item>
+        <item>독수리</item>
+        <item>호랑이</item>
+        <item>용</item>
+        <item>여우</item>
+        <item>거북</item>
+        <item>로켓</item>
+        <item>달</item>
+        <item>해</item>
+        <item>보석</item>
+    </string-array>
+</resources>

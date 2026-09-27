@@ -1,0 +1,86 @@
+[
+  {
+    "id": "01-edit-profile",
+    "title": "프로필 수정",
+    "description": "사진과 닉네임만 간결하게",
+    "png": "01-screens/01-edit-profile.png",
+    "svg": "01-screens/01-edit-profile.svg"
+  },
+  {
+    "id": "02-nickname-changed",
+    "title": "닉네임 변경",
+    "description": "이름을 바꾸면 저장 버튼 활성화",
+    "png": "01-screens/02-nickname-changed.png",
+    "svg": "01-screens/02-nickname-changed.svg"
+  },
+  {
+    "id": "03-photo-actions",
+    "title": "사진 변경 메뉴",
+    "description": "앨범 사진 또는 기존 기본 이미지",
+    "png": "01-screens/03-photo-actions.png",
+    "svg": "01-screens/03-photo-actions.svg"
+  },
+  {
+    "id": "04-default-images",
+    "title": "기본 이미지 선택",
+    "description": "기존 이미지 선택 기능은 유지",
+    "png": "01-screens/04-default-images.png",
+    "svg": "01-screens/04-default-images.svg"
+  },
+  {
+    "id": "05-empty-nickname",
+    "title": "닉네임을 비웠을 때",
+    "description": "빈 이름도 저장 가능 · 기본 호칭 사용",
+    "png": "01-screens/05-empty-nickname.png",
+    "svg": "01-screens/05-empty-nickname.svg"
+  },
+  {
+    "id": "06-name-limit",
+    "title": "16자 입력",
+    "description": "제한은 짧게 안내하고 입력은 유지",
+    "png": "01-screens/06-name-limit.png",
+    "svg": "01-screens/06-name-limit.svg"
+  },
+  {
+    "id": "07-photo-saving",
+    "title": "사진 저장 중",
+    "description": "프로필 사진 안에서만 진행 표시",
+    "png": "01-screens/07-photo-saving.png",
+    "svg": "01-screens/07-photo-saving.svg"
+  },
+  {
+    "id": "08-photo-error",
+    "title": "사진 저장 실패",
+    "description": "기존 사진을 보존하고 다시 선택",
+    "png": "01-screens/08-photo-error.png",
+    "svg": "01-screens/08-photo-error.svg"
+  },
+  {
+    "id": "09-leave-confirm",
+    "title": "수정 중 나가기",
+    "description": "닉네임과 사진의 저장 범위를 명시",
+    "png": "01-screens/09-leave-confirm.png",
+    "svg": "01-screens/09-leave-confirm.svg"
+  },
+  {
+    "id": "10-name-saving",
+    "title": "닉네임 저장 중",
+    "description": "중복 저장을 막고 완료를 기다림",
+    "png": "01-screens/10-name-saving.png",
+    "svg": "01-screens/10-name-saving.svg"
+  },
+  {
+    "id": "11-name-error",
+    "title": "닉네임 저장 실패",
+    "description": "입력한 이름을 유지하고 재시도",
+    "png": "01-screens/11-name-error.png",
+    "svg": "01-screens/11-name-error.svg"
+  },
+  {
+    "id": "12-saved-profile",
+    "title": "저장 완료",
+    "description": "러닝 패스 화면에 바뀐 이름 반영",
+    "png": "01-screens/12-saved-profile.png",
+    "svg": "01-screens/12-saved-profile.svg"
+  }
+]

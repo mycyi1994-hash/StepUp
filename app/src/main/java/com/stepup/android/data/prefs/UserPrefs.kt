@@ -353,6 +353,14 @@ class UserPrefs(
         store.edit { it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1 }
     }
 
+    /** 새 갤러리 사진을 쓴다 — 아바타 번호와 리비전을 한 번에(둘 중 하나만 적히지 않게) */
+    suspend fun useCustomAvatar() {
+        store.edit {
+            it[Keys.AVATAR_ID] = AVATAR_CUSTOM
+            it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1
+        }
+    }
+
     /** 로그인 방식 — "google" / "guest" / ""(미선택) */
     val loginMethod: Flow<String> = store.data.map { it[Keys.LOGIN_METHOD] ?: "" }
 

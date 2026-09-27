@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 fun RunningPathCard(
     modifier: Modifier = Modifier,
     textEnd: Dp = 0.dp,
+    /** 내 정보 첫 화면은 168dp, 기록 목록의 요약은 시안대로 작게(134dp) */
+    minHeight: Dp = 168.dp,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(23.dp)
@@ -45,7 +47,7 @@ fun RunningPathCard(
         // 카드 아래로 5dp 비치는 그림자 면(시안의 #03060C)
         Box(Modifier.matchParentSize().offset(y = 5.dp).clip(shape).background(RunningPathColors.shadow))
         Box(
-            Modifier.fillMaxWidth().heightIn(min = 168.dp).clip(shape)
+            Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape)
                 .background(Brush.linearGradient(listOf(RunningPathColors.cardFrom, RunningPathColors.cardTo),
                     start = Offset(0f, Float.POSITIVE_INFINITY), end = Offset(Float.POSITIVE_INFINITY, 0f))),
         ) {

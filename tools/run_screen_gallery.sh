@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -167,6 +167,21 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/notifications-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/notifications-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/notifications-v1/. screen-gallery/notifications-v1/ || status=1
+  # 내 러닝 기록(2026-09-28) — 시안 01~16 장면(앱 셸 안의 실제 기록 · 기간 · 통계 · 상세 · 경로 · 삭제 + 예시 자료 장면)
+  run_instrumentation running-records "com.stepup.android.RecordsDesignTest"
+  mkdir -p screen-gallery/running-records-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/running-records-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/running-records/. screen-gallery/running-records/ || status=1
+  # 프로필 수정 v1(2026-09-28) — 시안 01~12 장면(앱 셸 안의 실제 편집 · 기본 이미지 · 나가기 · 저장 + 저장 중 · 실패 장면)
+  run_instrumentation profile-edit "com.stepup.android.ProfileEditDesignTest"
+  mkdir -p screen-gallery/profile-edit-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/profile-edit-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/profile-edit-v1/. screen-gallery/profile-edit-v1/ || status=1
+  # 지갑 v1(2026-09-28) — 시안 01~16 장면(앱 셸 안의 실제 원장 · 거르개 · 상세 · 다음 쪽 + 예시 원장 · 기기에서 만들 수 없는 상태)
+  run_instrumentation wallet "com.stepup.android.WalletDesignTest"
+  mkdir -p screen-gallery/wallet-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/wallet-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/wallet-v1/. screen-gallery/wallet-v1/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"
@@ -178,7 +193,7 @@ if [[ "$suite" == "mystery" ]]; then
 fi
 if [[ "$suite" == "all" || "$suite" == "interaction" ]]; then
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
-run_instrumentation interaction "com.stepup.android.RunSaveRecoveryTest,com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ShareCardRenderTest,com.stepup.android.RunStartFlowTest,com.stepup.android.S2SetupTest,com.stepup.android.InviteScreenTest,com.stepup.android.RunLocationStateTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.CourseQueuePersistenceTest,com.stepup.android.RunCheckpointPersistenceTest,com.stepup.android.RunCrashRecoveryTest,com.stepup.android.RunSettlementPersistenceTest,com.stepup.android.DatabaseMigrationTest"
+run_instrumentation interaction "com.stepup.android.RunSaveRecoveryTest,com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ShareCardRenderTest,com.stepup.android.RunStartFlowTest,com.stepup.android.S2SetupTest,com.stepup.android.InviteScreenTest,com.stepup.android.RunLocationStateTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.AvatarPhotoStoreTest,com.stepup.android.WalletLedgerTest,com.stepup.android.RouteMapFitTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.CourseQueuePersistenceTest,com.stepup.android.RunCheckpointPersistenceTest,com.stepup.android.RunCrashRecoveryTest,com.stepup.android.RunSettlementPersistenceTest,com.stepup.android.DatabaseMigrationTest"
 cp -R app/build/reports/androidTests/. screen-gallery/chrome-reports/ || true
 cp -R app/build/outputs/androidTest-results/. screen-gallery/chrome-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/chrome-checks/. screen-gallery/chrome/ || status=1
