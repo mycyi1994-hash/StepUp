@@ -49,8 +49,18 @@ class EconomySync(
     private val _state = MutableStateFlow(EconomySyncState.UNKNOWN)
     val state: StateFlow<EconomySyncState> = _state
 
+    /**
+     * 마지막으로 성공한 동기화가 **시작된** 시각. 이보다 뒤에 서버가 확인한 적립은 아직 폰의 원장에
+     * 없을 수 있다(러닝 결과 화면이 서버가 돌려준 잔고를 쓸지 정하는 데 쓴다). 끝난 시각이 아니라
+     * 시작 시각인 것은, 받아 오는 도중에 확인된 적립은 받아 온 원장에 없을 수 있어서다.
+     */
+    private val _syncedFrom = MutableStateFlow(0L)
+    val syncedFrom: StateFlow<Long> = _syncedFrom
+
     suspend fun refresh(): ServerResult<Unit> = lock.withLock {
+        val startedAt = now()
         val result = refreshLocked()
+        if (result is ServerResult.Ok) _syncedFrom.value = startedAt
         _state.value = when (result) {
             is ServerResult.Ok -> EconomySyncState.SYNCED
             is ServerResult.SignInRequired -> EconomySyncState.SIGNED_OUT
@@ -142,6 +152,8 @@ class EconomySync(
     }
 
     private suspend fun clearCopy() {
+        // 앞 계정이 방금 올린 러닝의 잔고도 버린다 — 다음 계정의 결과 화면에 보이지 않게
+        RecordedBalances.clear()
         db.withTransaction {
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()

@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsRun
@@ -131,7 +132,9 @@ class RunStartFlowTest {
                 // 앱에서는 러닝 화면의 어두운 바탕 위에 있다 — 캡처도 같은 바탕 위에서
                 androidx.compose.foundation.layout.Box(
                     androidx.compose.ui.Modifier.fillMaxSize()
-                        .background(com.stepup.android.ui.theme.Night).padding(16.dp),
+                        // 앱에서는 러닝 화면 안쪽이라 상태 표시줄과 겹치지 않는다 — 캡처도 같은 여백으로
+                        .background(com.stepup.android.ui.theme.Night)
+                        .then(androidx.compose.ui.Modifier.systemBarsPadding()).padding(16.dp),
                 ) {
                     com.stepup.android.ui.screens.walk.TogetherRanking(members, myKm = 3.62)
                 }

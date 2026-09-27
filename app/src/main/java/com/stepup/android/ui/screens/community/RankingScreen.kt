@@ -288,7 +288,7 @@ private fun medalColor(rank: Int): Color = when (rank) {
 private fun valueLabel(entry: RankEntry, board: RankBoard): String = when (board) {
     RankBoard.TOP_SPEED -> "%.1f km/h".format(entry.topSpeedKmh)
     RankBoard.LONGEST_TIME -> durationLabel(entry.activeSec)
-    RankBoard.TOTAL_SUP -> "%,.0f SUP".format(entry.sup)
+    RankBoard.TOTAL_SUP -> com.stepup.android.ui.components.formatSupDown(entry.sup) + " SUP"
 }
 
 /** 누적 시간을 "12h 30m" / "45m" 로 — 랭킹 줄에 들어갈 만큼 짧게 */

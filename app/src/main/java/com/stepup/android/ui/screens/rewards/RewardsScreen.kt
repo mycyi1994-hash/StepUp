@@ -258,7 +258,8 @@ private fun LedgerRow(entry: RewardEntity) {
                 )
             }
             Text(
-                text = (if (entry.amount >= 0) "+" else "") + "%,.2f".format(entry.amount),
+                // 원장은 소수 4자리 — 0 쪽으로 잘라 적립 · 사용 모두 실제보다 크게 보이지 않게
+                text = (if (entry.amount >= 0) "+" else "") + com.stepup.android.ui.components.formatSupDown(entry.amount, 2),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = if (entry.amount >= 0) Volt else Alert,

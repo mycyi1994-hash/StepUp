@@ -262,9 +262,14 @@ class CourseRepository(
      * 코스 완주 정산 — 거리 1km당 [CourseRewards.SUP_PER_KM] SUP 정량 지급.
      * 세션 거리가 코스 거리의 98% 이상이면 완주로 인정한다(GPS 오차 허용).
      */
-    suspend fun grantCompletionIfFinished(sessionKm: Double): RunCourse? {
+    /** 이 거리로 고른 코스를 완주했는가 — 아무것도 바꾸지 않고 판정만 */
+    suspend fun finishedCourse(sessionKm: Double): RunCourse? {
         val course = selectedCourseNow() ?: return null
-        if (sessionKm < course.distanceKm * 0.98) return null
+        return course.takeIf { sessionKm >= it.distanceKm * 0.98 }
+    }
+
+    suspend fun grantCompletionIfFinished(sessionKm: Double): RunCourse? {
+        val course = finishedCourse(sessionKm) ?: return null
         if (!serverEconomy) grantLocally(course)
         dao.byId(course.id)?.let { dao.update(it.copy(runCount = it.runCount + 1)) }
         return course

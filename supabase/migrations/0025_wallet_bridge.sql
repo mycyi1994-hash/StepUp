@@ -712,6 +712,8 @@ begin
 end $$;
 
 -- 되돌릴 차례가 된 작업 — 서명 유효 시간 + 안전 마진이 지난 것
+-- 0040 이 돌려주는 열을 늘렸다 — setup.sql 을 다시 붙여도 멈추지 않게 지우고 만든다(0040 이 다시 바꾼다)
+drop function if exists public.attester_due_ops();
 create or replace function public.attester_due_ops()
 returns table (op_id uuid, op_ref text, status text, kind text, deadline timestamptz, tx_hash text)
 language plpgsql stable security definer set search_path = public, economy as $$

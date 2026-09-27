@@ -471,7 +471,8 @@ private fun SessionRow(session: WalkSessionEntity) {
         // 서버가 확인한 러닝만 금액을 보인다 — 확인 전 · 거절 · 옛(폰 계산) 기록은 "—"
         val confirmed = session.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name
         Text(
-            text = if (confirmed) "+%,.2f".format(session.pointsEarned) else "—",
+            // 서버가 확인한 적립 — 반올림하면 받은 것보다 크게 보인다
+            text = if (confirmed) "+" + com.stepup.android.ui.components.formatSupDown(session.pointsEarned, 2) else "—",
             fontSize = 15.sp,
             fontWeight = FontWeight.ExtraBold,
             color = if (confirmed) Volt else Slate,

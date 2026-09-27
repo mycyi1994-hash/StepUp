@@ -55,9 +55,20 @@ class WalkViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /** 헤더 컴팩트 토큰 표시용 SUP 잔액 */
-    val balance: StateFlow<Double?> = rewardRepository.balance
-        .map<Double, Double?> { it }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    /**
+     * 결과 화면의 잔고. 방금 끝난 러닝을 서버가 확인한 뒤 원장 동기화가 아직 성공하지 않았으면
+     * 서버가 돌려준 잔고를 쓴다 — "+N" 옆에 적립 전 잔고가 보이지 않게.
+     */
+    val balance: StateFlow<Double?> = combine(
+        rewardRepository.balance,
+        com.stepup.android.data.repo.RecordedBalances.byStart,
+        ServiceLocator.economySync.syncedFrom,
+        WalkSessionService.state,
+    ) { ledger, recorded, syncedFrom, state ->
+        // 지금 로그인한 계정이 올린 러닝일 때만 — 계정을 바꾼 뒤 앞 계정의 잔고를 보이지 않게
+        val me = runCatching { ServiceLocator.sessionHolder.currentUserId() }.getOrNull()
+        com.stepup.android.data.repo.RecordedBalances.resultBalance(ledger, recorded[state.lastStartedAt], syncedFrom, me)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
      * 랩은 세션 상태의 일부로 서비스가 소유한다.

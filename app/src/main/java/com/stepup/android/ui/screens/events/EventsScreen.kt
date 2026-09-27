@@ -106,7 +106,7 @@ fun EventsScreen(
         when (val r = claimResult) {
             is ClaimResult.Success -> {
                 celebration++
-                Toast.makeText(context, claimedFmt.format("%,.0f".format(r.amount)), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, claimedFmt.format(com.stepup.android.ui.components.formatSupDown(r.amount)), Toast.LENGTH_SHORT).show()
             }
             ClaimResult.NotFinished ->
                 Toast.makeText(context, notFinished, Toast.LENGTH_SHORT).show()

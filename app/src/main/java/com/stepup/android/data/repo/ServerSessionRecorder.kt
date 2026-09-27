@@ -36,6 +36,8 @@ class ServerSessionRecorder(
             faction = session.faction,
             mockLocation = session.mockLocation,
         )
+        // 서버가 이 러닝까지 반영해 돌려준 잔고 — 원장 동기화가 늦어도 결과 화면이 옛 잔고를 보이지 않게
+        if (result is ServerResult.Ok) RecordedBalances.put(session.startedAt, owner, result.value.balance)
         // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
         // Retry the idempotent run when a follow-up is temporarily unavailable.
         // Never send a follow-up using another account's token.

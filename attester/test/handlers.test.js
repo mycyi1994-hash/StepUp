@@ -5,6 +5,7 @@ import { verifyTypedData } from 'viem'
 import { linkWallet, executeOp } from '../src/handlers.js'
 import { HttpError } from '../src/supabase.js'
 import { toServerEvent, indexEvents, expireOps, pauseAll, keepPaused } from '../src/indexer.js'
+import { NONCE_CLASH, nonceBackoffMs } from '../src/handlers.js'
 import { walletLinkMessage, RELEASE_TYPES, releaseDomain } from '../src/typed.js'
 
 const USER = { id: 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' }
@@ -414,4 +415,56 @@ test('체인 오류: 컨트랙트 오류를 이름으로 읽는다', async () =>
   for (const name of ['OpAlreadyUsed', 'DailyMintCapReached', 'EnforcedPause']) {
     assert.ok(SNEAKERS_ABI.some((x) => x.type === 'error' && x.name === name), name)
   }
+})
+
+test('만료: 기한이 지난 서명 작업은 safe 블록이 기한을 넘고 안 쓰였을 때만 바로 되돌린다', async () => {
+  const deadline = new Date(Date.now() - 60_000).toISOString()
+  const deadlineSec = BigInt(Math.ceil(Date.parse(deadline) / 1000))
+  const run = async ({ safeTs, usedAtSafe, status = 'SIGNED' }) => {
+    const calls = []
+    const reads = []
+    const deps = {
+      clients: () => ({
+        addresses: { distributor: '0x1', sneakers: '0x2' },
+        publicClient: {
+          getBlock: async () => ({ number: 77n, timestamp: safeTs }),
+          readContract: async (a) => { reads.push(a); return usedAtSafe },
+        },
+      }),
+      rpc: async (_env, fn, args) => {
+        calls.push([fn, args])
+        if (fn === 'attester_due_ops') return [{ op_id: 'op', op_ref: '0x9', kind: 'SUP_WITHDRAW', status, deadline, early: true }]
+        return 'EXPIRED'
+      },
+    }
+    const out = await expireOps({}, deps)
+    return { out, calls, reads }
+  }
+  // safe 블록이 기한을 넘었고 그 블록에서 안 쓰였다 → 바로 되돌린다(그 블록 번호로 읽는다)
+  let r = await run({ safeTs: deadlineSec + 5n, usedAtSafe: false })
+  assert.equal(r.out.expired, 1)
+  assert.equal(r.reads[0].blockNumber, 77n)
+  assert.deepEqual(r.calls.find(([fn]) => fn === 'attester_op_expire')[1],
+    { p_op: 'op', p_used_on_chain: false, p_safe_past_deadline: true })
+  // safe 블록이 아직 기한 전(같은 초 포함)이면 기다린다
+  r = await run({ safeTs: deadlineSec, usedAtSafe: false })
+  assert.equal(r.out.expired, 0)
+  assert.ok(!r.calls.some(([fn]) => fn === 'attester_op_expire'))
+  // safe 블록에서 쓰였다 → 되돌리지 않는다(이벤트가 확정한다)
+  r = await run({ safeTs: deadlineSec + 5n, usedAtSafe: true })
+  assert.equal(r.out.pendingOnChain, 1)
+  assert.ok(!r.calls.some(([fn]) => fn === 'attester_op_expire'))
+  // 서명 전 작업은 체인에 있을 수 없다 — 예전 길로 되돌린다(확인 표시 없이)
+  r = await run({ safeTs: 0n, usedAtSafe: false, status: 'RESERVED' })
+  assert.equal(r.out.expired, 1)
+  assert.deepEqual(r.calls.find(([fn]) => fn === 'attester_op_expire')[1], { p_op: 'op', p_used_on_chain: false })
+})
+
+test('보내기: 같은 번호(nonce) 충돌을 알아보고 흔들린 간격으로 다시 보낸다', () => {
+  for (const msg of ['nonce too low', 'replacement transaction underpriced', 'already known', 'Nonce has already been used']) {
+    assert.ok(NONCE_CLASH.test(msg), msg)
+  }
+  assert.ok(!NONCE_CLASH.test('execution reverted: PayoutCapReached'))
+  assert.equal(nonceBackoffMs(0, () => 0), 700)
+  assert.equal(nonceBackoffMs(2, () => 0.999), 2100 + 599)
 })

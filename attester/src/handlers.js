@@ -135,6 +135,12 @@ function revertName(e) {
   return found?.data?.errorName ?? e?.cause?.data?.errorName ?? null
 }
 
+/** 같은 번호(nonce)를 두 요청이 잡았을 때 노드가 내는 말 */
+export const NONCE_CLASH = /nonce too low|nonce has already been used|replacement transaction underpriced|already known|invalid nonce/i
+const NONCE_RETRIES = 3
+/** 다시 보내기 전 기다림 — 늘어나는 간격에 흔들림을 더한다 */
+export const nonceBackoffMs = (attempt, rand = Math.random) => 700 * (attempt + 1) + Math.floor(rand() * 600)
+
 /** 먼저 시뮬레이션해서 되돌아갈 거래는 보내지 않는다(가스 낭비 · 이유를 사용자에게). */
 async function submit(c, address, abi, functionName, args) {
   let request
@@ -154,14 +160,15 @@ async function submit(c, address, abi, functionName, args) {
     if (name && REVERT_TEXT[name]) throw new HttpError(409, REVERT_TEXT[name])
     throw new HttpError(409, `체인이 거절했습니다: ${name ?? e?.shortMessage ?? '알 수 없는 이유'}`)
   }
-  // 다른 요청과 같은 번호(nonce)를 잡았으면 한 번만 새 번호로 다시 보낸다
+  // 보내는 키 하나를 여러 요청이 함께 쓴다. 다른 요청과 같은 번호(nonce)를 잡았으면 새 번호로 다시
+  // 보낸다 — 동시에 몰리면 한 번으로는 모자라서, 조금씩 다른 간격으로 세 번까지(서로 또 부딪치지 않게).
   for (let attempt = 0; ; attempt++) {
     try {
       return await c.relayer.writeContract(request)
     } catch (e) {
       const msg = String(e?.details ?? e?.shortMessage ?? e?.message ?? '')
-      if (attempt === 0 && /nonce|replacement transaction underpriced/i.test(msg)) {
-        await new Promise((r) => setTimeout(r, 1500))
+      if (attempt < NONCE_RETRIES && NONCE_CLASH.test(msg)) {
+        await new Promise((r) => setTimeout(r, nonceBackoffMs(attempt)))
         continue
       }
       throw new HttpError(409, `체인이 거절했습니다: ${e?.shortMessage ?? '잠시 뒤에 다시 해 주세요'}`)

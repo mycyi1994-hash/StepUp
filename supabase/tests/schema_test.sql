@@ -2966,6 +2966,43 @@ do $$ begin
     '환불은 한 번만 된다');
 end $$;
 
+-- 0040: 기한이 지났지만 마진 안인 서명 작업 — safe 블록으로 확인했을 때만 바로 되돌린다
+insert into public.chain_ops (id, user_id, kind, status, wallet, amount, deadline)
+values ('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'SUP_WITHDRAW', 'SIGNED',
+        '0x1111111111111111111111111111111111111111', 7, now() - interval '1 minute');
+insert into fix (k, v) values ('bal_before_early', economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1')::text);
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$
+begin
+  perform pg_temp.ok((select early from public.attester_due_ops() where op_id = '0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e'),
+    '기한이 지난 서명 작업은 마진 안이라도 목록에 early 로 나온다');
+end $$;
+call pg_temp.must_fail($q$ select public.attester_op_expire('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e', false) $q$,
+  '확인 없이는 마진 안의 서명 작업을 되돌리지 않는다');
+call pg_temp.must_fail($q$ select public.attester_op_expire('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e', true, null, true) $q$,
+  '체인에서 쓰였다고 하면 safe 확인으로 마진을 건너뛰지 않는다');
+do $$
+begin
+  perform pg_temp.ok(public.attester_op_expire('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e', false, null, true) = 'EXPIRED',
+    'safe 블록이 기한을 넘었고 쓰이지 않았으면 바로 되돌린다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1') = pg_temp.fx('bal_before_early')::numeric + 7,
+    '바로 되돌린 작업은 환불된다');
+end $$;
+insert into public.chain_ops (id, user_id, kind, status, wallet, amount, deadline)
+values ('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0f', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'SUP_WITHDRAW', 'SIGNED',
+        '0x1111111111111111111111111111111111111111', 7, now() + interval '5 minutes');
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+call pg_temp.must_fail($q$ select public.attester_op_expire('0e0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0f', false, null, true) $q$,
+  '기한 전의 작업은 safe 확인이 있어도 되돌리지 않는다');
+reset role;
+
 -- 신발 꺼내기 · 넣기
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
