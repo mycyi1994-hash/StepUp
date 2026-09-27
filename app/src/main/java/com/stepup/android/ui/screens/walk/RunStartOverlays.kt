@@ -222,7 +222,9 @@ internal fun RunCountdown(
             awaitShown()
             feedback?.play(FeedbackCue.Countdown)
             delay(1_000)
-            remaining -= 1
+            // 그 1초 사이에 앱을 벗어났으면 세지 않는다 — 마지막 1초에 벗어났다가 (몇 시간 뒤에) 돌아오는
+            // 순간 카운트 없이 러닝이 시작되지 않게, 돌아오면 그 숫자를 다시 센다
+            if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) remaining -= 1
         }
         awaitShown()
         go()
