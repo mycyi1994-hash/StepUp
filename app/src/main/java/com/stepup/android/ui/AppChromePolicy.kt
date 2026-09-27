@@ -50,6 +50,8 @@ object AppChromePolicy {
         Destination(Routes.NOTICE, Screen.Profile, Header.Detail),
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),
         Destination(Routes.ANALYTICS, Screen.Profile, Header.Detail),
+        // 프로필 수정 — 하단 탭 없이 자기 머리(뒤로 가면 내 정보)
+        Destination(Routes.PROFILE_EDIT, Screen.Profile, Header.Form),
         // 내 러닝 기록 — 목록 · 통계는 내 정보 탭과 함께, 상세 · 경로 확대는 뒤로 가기 중심(하단 탭 없이 자기 머리)
         Destination(Routes.RECORDS, Screen.Profile, Header.Detail),
         Destination(Routes.RECORD_STATS, Screen.Profile, Header.Detail),

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 수정 v1(2026-09-28 전달본, docs/redesign/profile-edit-v1) — 사진 · 기본 이미지 · 닉네임 · 저장 상태 · 나가기 -->
+<resources>
+    <string name="pe_title">Edit profile</string>
+    <string name="pe_photo_cd">Profile photo</string>
+    <string name="pe_change_photo">Change photo</string>
+    <string name="pe_photo_saving_chip">Saving</string>
+    <string name="pe_photo_note">Photos are saved as soon as you pick one.</string>
+    <string name="pe_photo_saving">Saving your photo.</string>
+    <string name="pe_nickname">Nickname</string>
+    <string name="pe_nickname_placeholder">Default name</string>
+    <string name="pe_nickname_clear">Clear nickname</string>
+    <string name="pe_nickname_where">This name appears on your profile and run screens.</string>
+    <string name="pe_nickname_empty">Leave it empty to use the default name.</string>
+    <string name="pe_nickname_limit">You can enter up to %1$d characters.</string>
+    <string name="pe_count" formatted="false">%1$d / %2$d</string>
+    <string name="pe_save">Save</string>
+    <string name="pe_saving">Saving…</string>
+    <string name="pe_save_again">Save again</string>
+    <string name="pe_photo_failed_title">Couldn\'t save the photo.</string>
+    <string name="pe_photo_failed_body">Your previous photo is kept.</string>
+    <string name="pe_pick_again">Pick again</string>
+    <string name="pe_name_failed_title">Couldn\'t save the nickname.</string>
+    <string name="pe_name_failed_body">What you typed is still here.</string>
+    <string name="pe_photo_sheet_title">Profile photo</string>
+    <string name="pe_photo_sheet_body">The photo or image you pick is saved right away.</string>
+    <string name="pe_from_album">Choose from album</string>
+    <string name="pe_default_images">Choose a default image</string>
+    <string name="pe_default_sheet_body">Tap an image to use it right away.</string>
+    <string name="pe_default_failed">Couldn\'t save the image. Please pick again.</string>
+    <string name="pe_leave_title">Stop editing your nickname?</string>
+    <string name="pe_leave_body">The unsaved nickname will be discarded.</string>
+    <string name="pe_leave_photo_kept">The photo you already changed stays.</string>
+    <string name="pe_keep_editing">Keep editing</string>
+    <string name="pe_discard_leave">Discard nickname and leave</string>
+    <string name="pe_saved_toast">Nickname saved.</string>
+    <string name="pe_photo_saved">Photo saved.</string>
+    <string name="pe_selected">Selected</string>
+    <string-array name="pe_avatar_names">
+        <item>Runner</item>
+        <item>Woman running</item>
+        <item>Lightning</item>
+        <item>Fire</item>
+        <item>Droplet</item>
+        <item>Tornado</item>
+        <item>Wolf</item>
+        <item>Eagle</item>
+        <item>Tiger</item>
+        <item>Dragon</item>
+        <item>Fox</item>
+        <item>Turtle</item>
+        <item>Rocket</item>
+        <item>Moon</item>
+        <item>Sun</item>
+        <item>Gem</item>
+    </string-array>
+</resources>

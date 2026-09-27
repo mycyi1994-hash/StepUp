@@ -133,6 +133,22 @@ object ServiceLocator {
         com.stepup.android.data.repo.RunRecordsRepository(database.walkSessionDao(), recordingOwnerFlow())
     }
 
+    /**
+     * 프로필 수정(2026-09-28) — 사진 · 기본 이미지는 고른 즉시, 닉네임은 "저장"으로. 저장은 앱 범위에서 끝까지 한다
+     * (편집 화면을 나가도 반쯤 저장되지 않게). 단계 표시는 메인 스레드에서 바뀐다.
+     */
+    val profileEditor: com.stepup.android.data.repo.ProfileEditor by lazy {
+        val photos = com.stepup.android.data.repo.AvatarPhotoStore(
+            appContext.filesDir, com.stepup.android.data.prefs.UserPrefs.AVATAR_FILE, commit = { userPrefs.useCustomAvatar() },
+        )
+        com.stepup.android.data.repo.ProfileEditor(
+            saveNickname = { userPrefs.setNickname(it) },
+            saveAvatarId = { userPrefs.setAvatarId(it) },
+            savePhotoFile = { open -> photos.save(open) },
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate),
+        )
+    }
+
     lateinit var claimRepository: ClaimRepository
 
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */

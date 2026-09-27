@@ -194,6 +194,13 @@
       "verification": "source checks only; Android compile/capture pending; no APK requested"
     },
     {
+      "id": "Routes.PROFILE_EDIT",
+      "parent": "Profile",
+      "chrome": "Form",
+      "implementation": "프로필 수정 v1(2026-09-28 전달본): full-height photo and nickname editor replacing the small dialog; photo saves on pick, nickname on 저장 — see docs/redesign/profile-edit-v1/README.md",
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+    },
+    {
       "id": "Routes.RECORDS",
       "parent": "Profile",
       "chrome": "Detail",
@@ -799,6 +806,13 @@
       "line": 46,
       "implementation": "내 러닝 기록(2026-09-28 전달본): route 12 — see docs/redesign/running-records/README.md",
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+    },
+    {
+      "id": "ProfileEditScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
+      "line": 188,
+      "implementation": "프로필 수정 v1(2026-09-28 전달본): scenes 01–11, saved notice 12 on the profile — see docs/redesign/profile-edit-v1/README.md",
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
     }
   ],
   "overlays": [
@@ -909,13 +923,6 @@
     },
     {
       "kind": "DialogPanel",
-      "owner": "ProfileEditDialog",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 980,
-      "verification": "pending"
-    },
-    {
-      "kind": "DialogPanel",
       "owner": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
       "line": 255,
@@ -1011,6 +1018,27 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt",
       "line": 276,
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "PhotoActionsSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
+      "line": 510,
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "DefaultImageSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
+      "line": 545,
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "LeaveSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
+      "line": 607,
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
     }
   ],
   "required_state_matrix": [

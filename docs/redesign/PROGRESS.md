@@ -1035,3 +1035,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Delete removes the run from this phone only after confirmation, never while the run awaits server verification, and never touches SUP, draws or rankings; failures keep the record and say so.
 - Map controls gained optional screen-reader labels (`MapControlLabels`, used by the route screen only).
 - Checks: testDebugUnitTest (`RunRecordsTest`, `AvatarAndNavTest`), compileDebugAndroidTestKotlin, check-strings, check_design_contract (55 routes). Device evidence pending (`RecordsDesignTest` in the community suite).
+
+## 2026-09-28 — Profile edit v1
+
+- User handoff "StepUp · 프로필 수정" (12 scenes) imported to `design/profile-edit-v1/`; board references in `docs/redesign/profile-edit-v1/`.
+- The profile "프로필 수정" opens a full-height editor (`Routes.PROFILE_EDIT`, no bottom bar) instead of the small dialog: photo actions sheet (album via the OS photo picker, existing 16 default images), nickname field (existing 16-char rule, empty allowed, same normalization for the dirty check), bottom save.
+- `ProfileEditor` runs saves in an app-scoped coroutine scope with separate photo/name states (saving, saved, failed with the draft kept), so leaving the screen never half-saves and re-entry shows the real state. The leave confirmation appears only for an unsaved nickname and says an already-changed photo stays.
+- `AvatarPhotoStore` decodes with sampling and EXIF orientation, writes a temp JPEG (512 px, q90), verifies it, swaps files, and commits avatar id + revision in one DataStore edit (`UserPrefs.useCustomAvatar`); on any failure the previous file, id and revision stay.
+- The design line "다른 러너에게 이 이름으로 보여요" was not used: the nickname is stored only on this phone.
+- Checks: `ProfileEditorTest`, compileDebugAndroidTestKotlin, check-strings, check_design_contract (56 routes). Device evidence pending (`AvatarPhotoStoreTest`, `ProfileEditDesignTest`).

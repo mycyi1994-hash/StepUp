@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 수정 v1(2026-09-28 전달본, docs/redesign/profile-edit-v1) — 사진 · 기본 이미지 · 닉네임 · 저장 상태 · 나가기 -->
+<resources>
+    <string name="pe_title">プロフィール編集</string>
+    <string name="pe_photo_cd">プロフィール写真</string>
+    <string name="pe_change_photo">写真を変更</string>
+    <string name="pe_photo_saving_chip">保存中</string>
+    <string name="pe_photo_note">写真は選ぶとすぐに保存されます。</string>
+    <string name="pe_photo_saving">写真を保存しています。</string>
+    <string name="pe_nickname">ニックネーム</string>
+    <string name="pe_nickname_placeholder">デフォルトの名前で表示</string>
+    <string name="pe_nickname_clear">ニックネームを消去</string>
+    <string name="pe_nickname_where">マイ情報とランニング画面にこの名前で表示されます。</string>
+    <string name="pe_nickname_empty">空欄にするとデフォルトの名前で表示します。</string>
+    <string name="pe_nickname_limit">最大%1$d文字まで入力できます。</string>
+    <string name="pe_count" formatted="false">%1$d / %2$d</string>
+    <string name="pe_save">保存</string>
+    <string name="pe_saving">保存中…</string>
+    <string name="pe_save_again">もう一度保存</string>
+    <string name="pe_photo_failed_title">写真を保存できませんでした。</string>
+    <string name="pe_photo_failed_body">以前の写真はそのままです。</string>
+    <string name="pe_pick_again">もう一度選ぶ</string>
+    <string name="pe_name_failed_title">ニックネームを保存できませんでした。</string>
+    <string name="pe_name_failed_body">入力した名前はそのまま残っています。</string>
+    <string name="pe_photo_sheet_title">プロフィール写真</string>
+    <string name="pe_photo_sheet_body">選んだ写真や画像はすぐに保存されます。</string>
+    <string name="pe_from_album">アルバムから写真を選ぶ</string>
+    <string name="pe_default_images">デフォルト画像を選ぶ</string>
+    <string name="pe_default_sheet_body">画像を押すとすぐに適用されます。</string>
+    <string name="pe_default_failed">画像を保存できませんでした。もう一度選んでください。</string>
+    <string name="pe_leave_title">ニックネームの編集をやめますか？</string>
+    <string name="pe_leave_body">保存していないニックネームは消えます。</string>
+    <string name="pe_leave_photo_kept">すでに変更した写真はそのままです。</string>
+    <string name="pe_keep_editing">編集を続ける</string>
+    <string name="pe_discard_leave">ニックネームを破棄して戻る</string>
+    <string name="pe_saved_toast">ニックネームを保存しました。</string>
+    <string name="pe_photo_saved">写真を保存しました。</string>
+    <string name="pe_selected">選択中</string>
+    <string-array name="pe_avatar_names">
+        <item>走る人</item>
+        <item>走る女性</item>
+        <item>稲妻</item>
+        <item>炎</item>
+        <item>しずく</item>
+        <item>竜巻</item>
+        <item>オオカミ</item>
+        <item>ワシ</item>
+        <item>トラ</item>
+        <item>ドラゴン</item>
+        <item>キツネ</item>
+        <item>カメ</item>
+        <item>ロケット</item>
+        <item>月</item>
+        <item>太陽</item>
+        <item>宝石</item>
+    </string-array>
+</resources>

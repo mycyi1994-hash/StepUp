@@ -204,6 +204,12 @@ object Routes {
     /** 예전 기록 · 분석(걸음 통계 · 기록 지도) — 러닝 통계의 "걸음 통계와 기록 지도"에서 */
     const val ANALYTICS = "analytics"
 
+    /** 프로필 수정(2026-09-28 전달본) — 내 정보의 "프로필 수정". 사진 · 닉네임, 하단 탭 없이 */
+    const val PROFILE_EDIT = "profile/edit"
+
+    /** 편집 화면에서 닉네임을 저장하고 돌아왔다는 표시 — 내 정보 화면의 저장 상태에 한 번 적는다 */
+    const val NICKNAME_SAVED = "profile_nickname_saved"
+
     /** 내 러닝 기록(2026-09-28 전달본) — 내 정보의 "내 러닝 기록 보기". 목록 · 통계 · 지난 러닝 상세 · 경로 확대 */
     const val RECORDS = "records"
     const val RECORD_STATS = "records/stats?month={month}"
@@ -797,7 +803,8 @@ internal fun MainScaffold(
                     },
                 )
             }
-            composable(Screen.Profile.route) {
+            composable(Screen.Profile.route) { entry ->
+                val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()
                 ProfileScreen(
                     onChangeBackground = {
                         profileSetting = com.stepup.android.ui.components.ProfileBackgrounds.next(profileSetting)
@@ -808,6 +815,19 @@ internal fun MainScaffold(
                     onOpenAnalytics = { navController.navigate(Routes.RECORDS) },
                     onOpenChallengeHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                    nicknameSaved = nicknameSaved,
+                    onNicknameNoticeShown = { entry.savedStateHandle[Routes.NICKNAME_SAVED] = false },
+                )
+            }
+            // 프로필 수정 — 닉네임을 실제로 저장한 뒤에만 내 정보에 "닉네임을 저장했어요"
+            composable(Routes.PROFILE_EDIT) {
+                com.stepup.android.ui.screens.profile.ProfileEditScreen(
+                    onBack = { navController.popBackStack() },
+                    onSaved = {
+                        navController.previousBackStackEntry?.savedStateHandle?.set(Routes.NICKNAME_SAVED, true)
+                        navController.popBackStack()
+                    },
                 )
             }
             // 설정 첫 목록 — 세 그룹(러닝과 알림 · 앱 사용 · 계정과 도움말)과 예전 목록에만 있던 길(더 보기 · 앱 정보)

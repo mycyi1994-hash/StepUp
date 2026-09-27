@@ -4,7 +4,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to neutral S2 black, made PillChip selection a white pill and AdaptiveNumber light numerals — seen in the Experience QA run 36236519563 profile/challenge/shoes captures; screens not listed as S2 keep their older layout apart from these shared parts. Earlier: shared DetailPage/FormPage primary actions and TwoWaySwitch tabs changed to S2 in PR #28; the Main header balance (SupPill) became text-only in PR #29 (home 430dp capture in Experience QA run 36234135671 reviewed); the run share bitmap became the S2 dark card in PR #29, rendered on device by ShareCardRenderTest (form-checks/share-card.png) — its first render (121a06c) showed the footer touching the time/pace values, fixed in the following commit and re-checked on the PR head run; rows not listed as S2 keep their older layout and evidence apart from those shared parts.
 
-55 registered navigation routes; 50 screen functions; 30 overlay declarations. These counts are different measures, not completed screens.
+56 registered navigation routes; 51 screen functions; 32 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -40,6 +40,7 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | Routes.ACHIEVEMENTS | Profile | Detail | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
 | Routes.ANALYTICS | Profile | Detail | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
 | Routes.HISTORY_MAP | Profile | Detail | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
+| Routes.PROFILE_EDIT | Profile | Form | 프로필 수정 v1(2026-09-28 전달본): full-height photo and nickname editor replacing the small dialog; photo saves on pick, nickname on 저장 — see docs/redesign/profile-edit-v1/README.md | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA |
 | Routes.RECORDS | Profile | Detail | 내 러닝 기록(2026-09-28 전달본): list 01 · 02 · 03 · 07–10 — period sheet, summary of the whole period, paged rows with route thumbnails — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
 | Routes.RECORD_STATS | Profile | Detail | 내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — weekly day bars / monthly date-range bars, selectable day cells, link to the old analytics — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
 | Routes.RUN_RECORD | Profile | Form | 내 러닝 기록(2026-09-28 전달본): past run detail 11 · 13 · 14 · 16 — that session only, local delete with confirmation — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
@@ -116,6 +117,7 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | RecordStatsScreen | app/src/main/java/com/stepup/android/ui/screens/records/RecordStatsScreen.kt:74 | 내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
 | RunRecordScreen | app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt:75 | 내 러닝 기록(2026-09-28 전달본): detail 11 · 13 · 14 · 16 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
 | RunRouteMapScreen | app/src/main/java/com/stepup/android/ui/screens/records/RunRouteMapScreen.kt:46 | 내 러닝 기록(2026-09-28 전달본): route 12 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
+| ProfileEditScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt:188 | 프로필 수정 v1(2026-09-28 전달본): scenes 01–11, saved notice 12 on the profile — see docs/redesign/profile-edit-v1/README.md | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA |
 
 ## Dialog / sheet / menu declarations
 
@@ -135,7 +137,6 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | StoredInfoSheet · ClearHistorySheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt | SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48) |
 | DeleteAccountSheet · DeleteUnknownSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt | SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48) |
 | ContactSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt | SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48) |
-| ProfileEditDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:980 | pending |
 | CourseHubScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:257 | pending |
 | CourseRankingDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:592 | pending |
 | RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:408 | pending |
@@ -151,6 +152,9 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | RunRecoveryDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/StepUpRoot.kt:1055 | RunCrashRecoveryTest (finish/resume) in the CI interaction suite; physical process termination not yet run on a device |
 | PeriodSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/records/RecordsScreen.kt | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
 | DeleteSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA |
+| PhotoActionsSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA |
+| DefaultImageSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA |
+| LeaveSheet | SettingsSheet | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA |
 
 ## State review
 

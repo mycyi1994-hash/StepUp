@@ -78,9 +78,6 @@
     <string name="common_no">いいえ</string>
     <string name="common_none">まだありません</string>
     <string name="analytics_tap_hint">バーを押すとその日の記録</string>
-    <string name="profile_set_nickname">ニックネーム変更</string>
-    <string name="profile_nickname_hint">呼び名を決めてください</string>
-    <string name="profile_nickname_note">空にすると既定の呼び名</string>
 
     <!-- Splash -->
     <string name="splash_tagline">Every Step. Every Stride. Every Day.</string>
@@ -823,9 +820,6 @@ StepUp と走り出そう。</string>
 
     <!-- Board / avatar -->
     <string name="community_board_section">掲示板</string>
-    <string name="profile_avatar_gallery">ギャラリーから選ぶ</string>
-    <string name="profile_avatar_or_emoji">…または絵文字を選ぶ</string>
-    <string name="profile_avatar_current">今の写真</string>
 
     <!-- Spotlight tour -->
     <string name="tour1_title">今日の歩数</string>
@@ -930,7 +924,6 @@ StepUp と走り出そう。</string>
     <string name="profile_longest_time">最長時間</string>
     <string name="profile_avg_pace">平均ペース</string>
     <string name="profile_badges">ランナーバッジ</string>
-    <string name="profile_edit_profile">プロフィール編集</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>

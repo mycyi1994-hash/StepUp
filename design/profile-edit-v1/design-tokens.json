@@ -1,0 +1,16 @@
+{
+  "canvas": {"width": 390, "height": 844, "pngScale": 3},
+  "font": {"family": "Pretendard", "regular": 400, "semibold": 600},
+  "colors": {
+    "background": "#050912", "text": "#F2F4FC", "muted": "#98A8C0",
+    "accent": "#A3BFFE", "field": "#0E192A", "sheet": "#111D2E",
+    "line": "#1D2B3F", "buttonText": "#081223", "disabledButton": "#182438",
+    "disabledText": "#8293AD", "notice": "#182033",
+    "buttonGradient": ["#F7F8FF", "#E8EDFA"]
+  },
+  "layout": {"horizontalPadding": 24, "minimumTouch": 48, "photoSize": 100, "fieldHeight": 60, "buttonHeight": 56},
+  "radii": {"field": 15, "button": 17, "sheetTop": 27, "notice": 15},
+  "textSizes": {"title": 19, "sheetTitle": 23, "input": 18, "label": 15, "helper": 13, "button": 16},
+  "nickname": {"maximum": 16, "emptyAllowed": true, "save": "explicit"},
+  "photo": {"save": "immediate-after-selection", "picker": "system", "keepExistingAvatarIds": true}
+}

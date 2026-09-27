@@ -77,9 +77,6 @@
     <string name="common_no">아니요</string>
     <string name="common_none">아직 없어요</string>
     <string name="analytics_tap_hint">막대를 누르면 그날 기록</string>
-    <string name="profile_set_nickname">닉네임 변경</string>
-    <string name="profile_nickname_hint">부를 이름을 정해 주세요</string>
-    <string name="profile_nickname_note">비워 두면 기본 호칭</string>
 
     <!-- Splash -->
     <string name="splash_tagline">Every Step. Every Stride. Every Day.</string>
@@ -822,9 +819,6 @@ StepUp과 함께 달려보세요.</string>
 
     <!-- Board / avatar -->
     <string name="community_board_section">게시판</string>
-    <string name="profile_avatar_gallery">갤러리에서 사진 선택</string>
-    <string name="profile_avatar_or_emoji">…또는 이모지 고르기</string>
-    <string name="profile_avatar_current">지금 쓰는 사진</string>
 
     <!-- Spotlight tour -->
     <string name="tour1_title">오늘 걸음</string>
@@ -929,7 +923,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="profile_longest_time">가장 긴 시간</string>
     <string name="profile_avg_pace">평균 페이스</string>
     <string name="profile_badges">러너 배지</string>
-    <string name="profile_edit_profile">프로필 편집</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>

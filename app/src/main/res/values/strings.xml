@@ -79,9 +79,6 @@
     <string name="common_no">No</string>
     <string name="common_none">None yet</string>
     <string name="analytics_tap_hint">Tap a bar for that day</string>
-    <string name="profile_set_nickname">Nickname</string>
-    <string name="profile_nickname_hint">What should we call you?</string>
-    <string name="profile_nickname_note">Leave empty for the default</string>
 
     <!-- Splash -->
     <string name="splash_tagline">Every Step. Every Stride. Every Day.</string>
@@ -824,9 +821,6 @@ Start running with StepUp.</string>
 
     <!-- Board / avatar -->
     <string name="community_board_section">Board</string>
-    <string name="profile_avatar_gallery">Choose from gallery</string>
-    <string name="profile_avatar_or_emoji">…or pick an emoji</string>
-    <string name="profile_avatar_current">Current photo</string>
 
     <!-- Spotlight tour -->
     <string name="tour1_title">Today\'s steps</string>
@@ -931,7 +925,6 @@ Start running with StepUp.</string>
     <string name="profile_longest_time">Longest session</string>
     <string name="profile_avg_pace">Average pace</string>
     <string name="profile_badges">Runner badges</string>
-    <string name="profile_edit_profile">Edit profile</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
