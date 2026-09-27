@@ -255,6 +255,15 @@ private fun StoryListBody(
     }
     val animatedMap by animateDpAsState(mapHeight, tween(260), label = "storyMap")
     val listState = rememberLazyListState()
+    // 장소를 고르거나 "전체 장소"로 풀면 새 목록의 처음부터 본다 — 줄이 글 번호로 붙어 있어 그대로 두면 보던 글에
+    // 머물러 더 가까운 글이 화면 위로 가려진다. 상세에 다녀올 때는(같은 목록) 보던 자리를 지킨다.
+    var shownFilter by rememberSaveable { mutableStateOf(list.filterKey) }
+    LaunchedEffect(list.filterKey) {
+        if (list.filterKey != shownFilter) {
+            shownFilter = list.filterKey
+            listState.scrollToItem(0)
+        }
+    }
     // 방금 올린 글이 맨 위에 들어온 뒤에 올린다 — 먼저 올리면 새 줄이 화면 위로 밀려 가려진다
     val firstId = list.nearby.firstOrNull()?.post?.id
     LaunchedEffect(revealId, firstId) {

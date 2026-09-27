@@ -1425,14 +1425,11 @@ Start running with StepUp.</string>
     <string name="market_outfit_try">Try on (demo)</string>
     <string name="market_demo_note">Demo mode. These are test items and can\'t be bought.</string>
     <string name="market_demo_toast">Demo items can\'t be bought.</string>
-    <string name="me_total_runs">Recorded runs</string>
     <string name="me_default_name">Runner</string>
     <string name="me_points">Points</string>
     <string name="me_points_history">History</string>
     <string name="me_this_week">This week</string>
-    <string name="me_recent_runs">Recent runs</string>
     <string name="me_see_all">See all ›</string>
-    <string name="me_no_runs">No runs yet. Your runs will show up here.</string>
     <string name="me_items">My items</string>
     <string name="news_title">News</string>
     <string name="news_tab_races">Races</string>
@@ -1477,7 +1474,6 @@ Start running with StepUp.</string>
     <string name="run_storage_blocked">Can’t start a run: saved run data on this phone could not be read. Restart the app and try again.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
-    <string name="me_greeting">Have a great day.</string>
     <string name="home_shortcuts_title">Challenges · News</string>
     <string name="home_shortcut_challenges_sub">Take one on now!</string>
     <string name="home_shortcut_news_sub">Races · running news</string>
@@ -1602,13 +1598,6 @@ Start running with StepUp.</string>
     <string name="run_s2_result_headline">You ran %2$s km\nin %1$d min</string>
     <string name="run_s2_result_sub">Avg pace %1$s · %2$s</string>
     <string name="run_s2_result_sup">This run\'s SUP</string>
-    <string name="me_s2_kicker">%1$s\'s StepUp</string>
-    <string name="me_s2_first">Ready to log\nyour first run?</string>
-    <string name="me_s2_total">You\'ve run\n%1$s km so far</string>
-    <string name="me_s2_streak">%1$d-day goal streak</string>
-    <string name="me_s2_balance">SUP balance</string>
-    <string name="me_s2_wallet">Open wallet ›</string>
-    <string name="me_s2_records">Records</string>
     <string name="community_s2_meet_time">Meet time</string>
     <string name="community_s2_people">Joined</string>
     <string name="community_s2_next">More coming up</string>
@@ -2059,5 +2048,16 @@ Start running with StepUp.</string>
     <string name="runflow_save_failed_body">Your run is still here. Please try saving again in a moment.</string>
     <string name="runflow_save_again">Save again</string>
     <string name="runflow_save_stay">Stay here</string>
+    <!-- 내 정보 러닝 패스 — 2026-09-27 -->
+    <string name="me_path_title">Distance run so far</string>
+    <string name="me_path_none">No runs logged yet.</string>
+    <string name="me_path_loading">Loading your runs…</string>
+    <string name="me_path_failed">Couldn\'t load your runs.</string>
+    <string name="me_path_retry">Try again</string>
+    <string name="me_path_records">View my running records</string>
+    <string name="me_path_wallet">Wallet</string>
+    <string name="me_path_balance">%1$s SUP</string>
+    <string name="me_path_edit">Edit profile</string>
+    <plurals name="me_path_runs"><item quantity="one">%1$d run logged so far.</item><item quantity="other">%1$d runs logged so far.</item></plurals>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

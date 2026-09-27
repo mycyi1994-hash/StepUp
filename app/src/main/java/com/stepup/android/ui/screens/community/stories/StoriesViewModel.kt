@@ -39,6 +39,8 @@ data class StoryListState(
     val pins: List<StoryPin> = emptyList(),
     /** 장소가 없는 예전 글(목록형 이전에 쓴 자유 · 꿀팁 글). 지도 · 거리에는 들어가지 않는다 */
     val legacy: List<StoryItem> = emptyList(),
+    /** 이 목록을 거른 장소([StoryPlace.key]) — 전체 장소면 null */
+    val filterKey: String? = null,
 )
 
 /** 기준점을 정할 수 있는가 */
@@ -290,7 +292,7 @@ internal fun buildStoryList(
     } else {
         emptyList()
     }
-    return StoryListState(shown, pins, legacy)
+    return StoryListState(shown, pins, legacy, filter?.key)
 }
 
 /** 동네 이야기에 들어가는 글 — 전체 게시판의 번개가 아닌 글 중 숨기지 않은 것 */

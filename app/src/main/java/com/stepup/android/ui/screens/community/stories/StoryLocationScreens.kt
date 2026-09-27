@@ -44,13 +44,17 @@ import com.stepup.android.R
 import com.stepup.android.core.ExternalIntents
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.PlaceSearchResult
+import com.stepup.android.domain.StoryPlace
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.VoltText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 내 주변 — 목록 위 동네 이름을 누르면 온다. "내 위치 사용하기"는 실제 권한 요청, "지역 직접 선택"은
@@ -65,14 +69,14 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         if (StepPermissions.hasLocation(context)) {
             // 내 위치로 본다 — 고른 지역을 푼다
-            scope.launch { ServiceLocator.userPrefs.setStoryRegion(null); onBack() }
+            scope.saveRegionThen(null, onBack)
         } else {
             denied = true
         }
     }
     val useLocation = {
         if (StepPermissions.hasLocation(context)) {
-            scope.launch { ServiceLocator.userPrefs.setStoryRegion(null); onBack() }
+            scope.saveRegionThen(null, onBack)
             Unit
         } else {
             permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -116,7 +120,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
         searching = false
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (StepPermissions.hasLocation(context)) scope.launch { ServiceLocator.userPrefs.setStoryRegion(null); onChosen() }
+        if (StepPermissions.hasLocation(context)) scope.saveRegionThen(null, onChosen)
     }
     Column(Modifier.fillMaxSize().imePadding().testTag("story-region")) {
         StoryHeader(stringResource(R.string.story_region_title), onBack)
@@ -135,7 +139,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 52.dp).feedbackClickable(role = Role.Button, onClick = {
                         if (StepPermissions.hasLocation(context)) {
-                            scope.launch { ServiceLocator.userPrefs.setStoryRegion(null); onChosen() }
+                            scope.saveRegionThen(null, onChosen)
                         } else {
                             permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                         }
@@ -173,12 +177,23 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                     }
                     items(found, key = { it.key }) { place ->
                         StoryPlaceRow(place, "") {
-                            scope.launch { ServiceLocator.userPrefs.setStoryRegion(place); onChosen() }
+                            scope.saveRegionThen(place, onChosen)
                         }
                         StoryDivider()
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * 기준 지역을 저장한 뒤 화면을 옮긴다(null 이면 내 위치로). 저장은 다른 스레드에서 끝날 수 있어,
+ * 화면 전환은 화면 스레드로 돌아와서 한다 — 아니면 내비게이션이 "main thread" 오류로 멈춘다.
+ */
+private fun CoroutineScope.saveRegionThen(place: StoryPlace?, then: () -> Unit) {
+    launch {
+        ServiceLocator.userPrefs.setStoryRegion(place)
+        withContext(Dispatchers.Main.immediate) { then() }
     }
 }

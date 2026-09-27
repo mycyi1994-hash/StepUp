@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -142,6 +142,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/community-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/community-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/community-stories/. screen-gallery/community-stories/ || status=1
+  # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
+  run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
+  mkdir -p screen-gallery/profile-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/profile-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/profile-running-path/. screen-gallery/profile-running-path/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

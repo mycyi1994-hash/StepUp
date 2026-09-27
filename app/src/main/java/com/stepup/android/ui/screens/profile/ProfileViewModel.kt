@@ -8,7 +8,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
 import kotlinx.coroutines.flow.map
-import com.stepup.android.data.local.WalkSessionEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onStart
 import com.stepup.android.domain.AvatarLook
 import com.stepup.android.data.repo.AvatarRepository
 import com.stepup.android.data.local.DailyStepsEntity
@@ -40,14 +44,26 @@ class ProfileViewModel(
         .map<AvatarLook, AvatarLook?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val runTotals = stepRepository.observeRunTotals()
-        .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    private val recordAttempt = MutableStateFlow(0)
 
-    /** 최근 러닝 세 번 — 거리 · 날짜 · 그 러닝으로 번 SUP */
-    val recentRuns: StateFlow<List<WalkSessionEntity>?> = stepRepository.recentSessions(3)
-        .map<List<WalkSessionEntity>, List<WalkSessionEntity>?> { it }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    /**
+     * 지금까지 달린 거리 · 횟수 — 저장된 러닝 세션의 합(걸음으로 어림한 거리가 아니다).
+     * 읽는 중 · 실패를 따로 둔다. 실패를 0km 로, 읽기 전을 0회로 보이지 않는다.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val records: StateFlow<RunRecordState> = recordAttempt
+        .flatMapLatest {
+            stepRepository.observeRunTotals()
+                .map<com.stepup.android.data.local.RunTotals, RunRecordState> { RunRecordState.Ready(it.meters, it.runs) }
+                .onStart { emit(RunRecordState.Loading) }
+                .catch { emit(RunRecordState.Failed) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RunRecordState.Loading)
+
+    /** 기록을 다시 읽는다 — 카드의 "다시 시도" */
+    fun retryRecords() {
+        recordAttempt.value++
+    }
 
     val demoMode: StateFlow<Boolean> = avatarRepository.demoMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

@@ -110,7 +110,8 @@ class ChromeNavigationTest {
                         compose.onNodeWithTag("profile-wallet").performScrollTo().assertIsDisplayed()
                         compose.onNodeWithTag("profile-settings").performScrollTo()
                     }
-                    compose.onNodeWithContentDescription(compose.activity.getString(R.string.profile_tab_settings)).performClick()
+                    // 러닝 패스(2026-09-27): 설정은 메뉴의 "설정" 줄이다
+                    compose.onNodeWithTag("profile-settings").performScrollTo().performClick()
                     compose.waitForIdle()
                     assertEquals("profile settings keep header", header, bounds("main-header"))
                     assertEquals("profile settings keep navigation", bar, bounds(BOTTOM_NAV_TAG))

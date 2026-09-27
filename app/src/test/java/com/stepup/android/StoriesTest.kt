@@ -179,6 +179,9 @@ class StoriesTest {
         assertEquals(listOf(4L), state.nearby.map { it.post.id })
         assertTrue(state.legacy.isEmpty())
         assertEquals(1, state.pins.first { it.place.key == creek.key }.count)
+        // 목록이 어느 장소로 걸렀는지 안다 — 필터가 바뀌면 화면이 처음부터 보인다
+        assertEquals(creek.key, state.filterKey)
+        assertNull(buildStoryList(posts, emptySet(), origin, StoryRange.M500, null).filterKey)
     }
 
     @Test fun withoutAnOriginNothingIsPlacedByDistance() {
