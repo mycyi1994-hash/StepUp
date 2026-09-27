@@ -99,6 +99,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                                     ServiceLocator.sessionHolder.signOut()
                                     // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
                                     ServiceLocator.economySync.clearLocal()
+                                    // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
+                                    ServiceLocator.userPrefs.clearStoryData()
                                     // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
                                     ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                                     // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다

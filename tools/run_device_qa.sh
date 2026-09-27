@@ -19,4 +19,6 @@ bash tools/run_screen_gallery.sh redesign || status=1
 bash tools/run_screen_gallery.sh secondary || status=1
 bash tools/run_screen_gallery.sh records || status=1
 bash tools/run_screen_gallery.sh explore || status=1
+# 동네 이야기(목록형 커뮤니티) — 목록 · 상세 · 글쓰기 · 장소 · 관리 · 상태 31장면(2026-09-27)
+bash tools/run_screen_gallery.sh community || status=1
 exit "$status"

@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -76,6 +77,21 @@ sealed interface BoardResult {
     data class Failed(val reason: String, val signIn: Boolean = false) : BoardResult
 }
 
+/** 동네 이야기 목록에 잠깐 띄울 확인 메시지 */
+sealed interface StoryNotice {
+    val postId: Long
+
+    data class Posted(override val postId: Long) : StoryNotice
+    data class Edited(override val postId: Long) : StoryNotice
+    data class Deleted(override val postId: Long) : StoryNotice
+
+    /** 숨긴 글 — 되돌리기를 준다 */
+    data class Hidden(override val postId: Long) : StoryNotice
+
+    /** 쓰던 글을 임시저장했다 — [postId] 는 고치던 글 번호(새 글이면 0) */
+    data class DraftSaved(override val postId: Long) : StoryNotice
+}
+
 /** 신고 사유 — 서버 `content_reports.reason` 과 같은 이름 */
 enum class ReportReason { SPAM, ABUSE, SEXUAL, DANGER, FRAUD, OTHER }
 
@@ -95,6 +111,9 @@ class CommunityRepository(
     private val commentDao: CommentDao,
     private val notificationDao: NotificationDao,
     private val prefs: UserPrefs,
+    /** 지금 계정의 기록 주인(account:… / guest / legacy) — 쓰다 만 글 · 숨긴 글을 계정마다 나눈다 */
+    private val owner: suspend () -> String = { "" },
+    private val ownerFlow: Flow<String> = kotlinx.coroutines.flow.flowOf(""),
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -372,14 +391,17 @@ class CommunityRepository(
             FlashMember(userId = it.userId, name = it.name, isHost = it.isHost, isMe = it.isMe)
         }
 
-    suspend fun loadComments(postId: Long) {
+    /** @return 서버에서 받아 왔으면 true */
+    suspend fun loadComments(postId: Long): Boolean {
         val result = api.comments(postId)
         if (result is ServerResult.Ok) {
             val list = result.value.map { it.toDomain() }
             _comments.value = _comments.value + (postId to list)
             // 글 카드의 댓글 수가 방금 받은 목록과 어긋나지 않게 맞춘다.
             updatePost(postId) { it.copy(commentCount = list.size) }
+            return true
         }
+        return false
     }
 
     /**
@@ -407,6 +429,173 @@ class CommunityRepository(
             }
             else -> result.asBoardFailure()
         }
+
+    // ── 동네 이야기(목록형 커뮤니티) ──────────────────────────────
+    //
+    // 장소가 있는 일반 글. 서버는 0041 의 story_create · story_update 로 쓴다.
+    // 숨기기와 쓰다 만 글은 이 폰에만, 계정마다 따로 둔다 — 숨기기는 차단(user_block)과 다르다.
+
+    /** 지금 계정이 숨긴 글 번호 */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val hiddenStories: Flow<Set<Long>> = ownerFlow.flatMapLatest { prefs.hiddenStories(it) }
+
+    /** 지금 계정이 쓰다 만 글 */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val storyDraft: Flow<com.stepup.android.domain.StoryDraft?> = ownerFlow.flatMapLatest { prefs.storyDraft(it) }
+
+    suspend fun saveStoryDraft(draft: com.stepup.android.domain.StoryDraft?) = prefs.setStoryDraft(owner(), draft)
+
+    suspend fun setStoryHidden(id: Long, hidden: Boolean) = prefs.setStoryHidden(owner(), id, hidden)
+
+    /** 목록에 잠깐 띄울 확인 메시지 — 게시 · 수정 · 삭제 · 숨김(되돌리기) */
+    private val _storyNotice = MutableStateFlow<StoryNotice?>(null)
+    val storyNotice: StateFlow<StoryNotice?> = _storyNotice
+
+    fun postStoryNotice(notice: StoryNotice) {
+        _storyNotice.value = notice
+    }
+
+    fun consumeStoryNotice(notice: StoryNotice) {
+        if (_storyNotice.value == notice) _storyNotice.value = null
+    }
+
+    /** 동네 이야기 삭제 — 서버가 지운 뒤에만 목록에서 뺀다(댓글도 서버에서 함께 지워진다) */
+    suspend fun deleteStory(id: Long): BoardResult {
+        val result = delete(id)
+        if (result is BoardResult.Ok) _storyNotice.value = StoryNotice.Deleted(id)
+        return result
+    }
+
+    /** 이 글 숨기기 — 이 폰 · 이 계정의 목록에서만. 글쓴이 차단과 다르다 */
+    suspend fun hideStory(id: Long) {
+        setStoryHidden(id, true)
+        _storyNotice.value = StoryNotice.Hidden(id)
+    }
+
+    /**
+     * 동네 이야기 쓰기. 서버가 받아 준 뒤에만 목록에 넣는다. 목록을 다시 받지 못해도 방금 쓴 글은
+     * 서버가 준 번호로 목록 맨 위에 한 번만 보인다(다시 받으면 서버 줄로 바뀐다).
+     */
+    suspend fun writeStory(text: String, place: com.stepup.android.domain.StoryPlace): BoardResult {
+        val clean = com.stepup.android.domain.StoryText.normalize(text)
+        if (!com.stepup.android.domain.StoryText.canPost(clean)) return BoardResult.Failed("")
+        val (title, body) = com.stepup.android.domain.StoryText.split(clean)
+        return when (val result = api.createStory(title, body, place.name, place.address, place.lat, place.lng)) {
+            is ServerResult.Ok -> {
+                Analytics.postWritten("STORY")
+                val id = result.value
+                if (refresh() != BoardSyncState.Ready && _posts.value.none { it.id == id }) {
+                    _posts.value = listOf(
+                        Post(
+                            id = id, category = PostCategory.FREE, crewId = "", author = "", title = title.trim(),
+                            body = body, createdAt = System.currentTimeMillis(), likes = 0, liked = false,
+                            commentCount = 0, mine = true, place = place.name, distanceKm = 0.0, meetAt = 0L,
+                            capacity = 0, joinedCount = 0, joined = false, lat = place.lat, lng = place.lng,
+                            placeAddress = place.address,
+                        ),
+                    ) + _posts.value
+                }
+                _storyNotice.value = StoryNotice.Posted(id)
+                BoardResult.Ok(id)
+            }
+            else -> result.asBoardFailure()
+        }
+    }
+
+    /** 내 동네 이야기 고치기 — 같은 글 번호 · 댓글 · 좋아요 그대로 */
+    suspend fun editStory(id: Long, text: String, place: com.stepup.android.domain.StoryPlace): BoardResult {
+        val clean = com.stepup.android.domain.StoryText.normalize(text)
+        if (!com.stepup.android.domain.StoryText.canPost(clean)) return BoardResult.Failed("")
+        val (title, body) = com.stepup.android.domain.StoryText.split(clean)
+        return when (val result = api.updateStory(id, title, body, place.name, place.address, place.lat, place.lng)) {
+            is ServerResult.Ok -> {
+                updatePost(id) {
+                    it.copy(
+                        title = title.trim(), body = body, place = place.name, placeAddress = place.address,
+                        lat = place.lat, lng = place.lng,
+                    )
+                }
+                _storyNotice.value = StoryNotice.Edited(id)
+                BoardResult.Ok(id)
+            }
+            else -> result.asBoardFailure()
+        }
+    }
+
+    private val likeInFlight = mutableSetOf<Long>()
+
+    /**
+     * 좋아요 — 누르는 순간 표시와 개수를 함께 바꾸고, 서버가 거절하면 되돌린다.
+     * 같은 글에 요청이 가는 동안의 두 번째 누름은 무시한다(개수가 어긋나지 않게).
+     */
+    suspend fun toggleStoryLike(id: Long): BoardResult {
+        val before = _posts.value.firstOrNull { it.id == id } ?: return BoardResult.Failed("")
+        synchronized(likeInFlight) { if (!likeInFlight.add(id)) return BoardResult.Ok() }
+        try {
+            val wanted = !before.liked
+            updatePost(id) { it.copy(liked = wanted, likes = (it.likes + if (wanted) 1 else -1).coerceAtLeast(0)) }
+            return when (val result = api.toggleLike(id)) {
+                is ServerResult.Ok -> {
+                    val liked = result.value
+                    // 서버가 다른 상태를 돌려주면(다른 기기에서 눌렀다) 그 상태에 맞춘다
+                    updatePost(id) { now ->
+                        if (now.liked == liked) now
+                        else now.copy(liked = liked, likes = (now.likes + if (liked) 1 else -1).coerceAtLeast(0))
+                    }
+                    BoardResult.Ok()
+                }
+                else -> {
+                    updatePost(id) { it.copy(liked = before.liked, likes = before.likes) }
+                    result.asBoardFailure()
+                }
+            }
+        } finally {
+            synchronized(likeInFlight) { likeInFlight.remove(id) }
+        }
+    }
+
+    /**
+     * 동네 이야기 댓글 — 성공하면 목록을 다시 받는다. 다시 받지 못하면 서버가 준 번호로 내 댓글을
+     * 한 번만 더한다(두 번 세지 않게).
+     */
+    suspend fun addStoryComment(postId: Long, body: String): BoardResult {
+        val text = body.trim()
+        if (text.isEmpty()) return BoardResult.Failed("")
+        return when (val result = api.createComment(postId, 0L, text)) {
+            is ServerResult.Ok -> {
+                val id = result.value
+                if (!loadComments(postId)) {
+                    val now = _comments.value[postId].orEmpty()
+                    if (now.none { it.id == id }) {
+                        val mine = Comment(
+                            id = id, postId = postId, parentId = 0L, author = "", body = text,
+                            createdAt = System.currentTimeMillis(), mine = true,
+                        )
+                        _comments.value = _comments.value + (postId to now + mine)
+                        updatePost(postId) { it.copy(commentCount = it.commentCount + 1) }
+                    }
+                }
+                BoardResult.Ok(id)
+            }
+            else -> result.asBoardFailure()
+        }
+    }
+
+    /**
+     * 신고 — 시안의 사유를 서버 사유로 명시적으로 바꿔 보낸다. 시안대로 접수 뒤에도 글은 그대로 보인다
+     * (확인 후 글로 돌아간다). 안 보고 싶으면 "이 글 숨기기"가 따로 있다. 5건이 쌓이면 서버가 목록에서 뺀다.
+     */
+    suspend fun reportStory(id: Long, reason: com.stepup.android.domain.StoryReportReason): BoardResult =
+        when (val result = api.report("POST", id.toString(), reason.serverReason, reason.note)) {
+            is ServerResult.Ok -> BoardResult.Ok()
+            else -> result.asBoardFailure()
+        }
+
+    /** 화면 검사용 — 서버 없이 댓글을 채운다. */
+    @VisibleForTesting
+    fun showCommentsForTest(postId: Long, list: List<Comment>) {
+        _comments.value = _comments.value + (postId to list)
+    }
 
     companion object HotRules {
         /** 핫글에 올릴 글 수 */
@@ -466,6 +655,7 @@ fun PostRow.toDomain(): Post = Post(
     joined = joined,
     lat = lat,
     lng = lng,
+    placeAddress = placeAddress,
 )
 
 /** 서버 줄 → 도메인 모델 */

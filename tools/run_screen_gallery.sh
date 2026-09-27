@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records|explore) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records|explore|community) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -128,6 +128,20 @@ if [[ "$suite" == "explore" ]]; then
   mkdir -p screen-gallery/explore-reference-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/explore-reference-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
+fi
+# 동네 이야기(목록형 커뮤니티) — 시안 31개 장면을 실제 화면으로. 위치 권한을 거둔 채 시작해
+# 권한 안내 → 지역 직접 선택 경로(시안 26 · 27)를 실제로 탄다. 권한을 거두면 앱이 죽을 수 있어
+# 테스트를 띄우기 전에 거둔다(permissions 묶음과 같은 방식).
+if [[ "$suite" == "community" ]]; then
+  timeout 60s adb install -r app/build/outputs/apk/debug/app-debug.apk || true
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for permission in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION; do
+    timeout 20s adb shell pm revoke com.stepup.android "android.permission.$permission" || true
+  done
+  run_instrumentation community "com.stepup.android.CommunityStoriesTest"
+  mkdir -p screen-gallery/community-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/community-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/community-stories/. screen-gallery/community-stories/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

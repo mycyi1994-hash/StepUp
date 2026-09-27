@@ -262,6 +262,65 @@ class UserPrefs(
      * 핫글 기록을 비운다. 게시판이 서버로 옮겨 가 글 번호가 새로 매겨졌을 때 쓴다 —
      * 옛 번호가 남아 있으면 같은 번호의 새 글이 "이미 올랐던 글"로 막힌다.
      */
+    // ── 동네 이야기 ─────────────────────────────────────────────
+    //
+    // 쓰다 만 글 · 숨긴 글은 계정마다 따로 둔다(다른 계정으로 로그인하면 보이지 않는다).
+    // 직접 고른 지역은 이 폰의 보기 설정이라 계정과 상관없이 하나다.
+
+    private fun storyDraftKey(owner: String) = stringPreferencesKey("story_draft:$owner")
+    private fun storyHiddenKey(owner: String) = stringPreferencesKey("story_hidden:$owner")
+    private val storyRegionKey = stringPreferencesKey("story_region")
+
+    fun storyDraft(owner: String): Flow<com.stepup.android.domain.StoryDraft?> =
+        store.data.map { prefs -> prefs[storyDraftKey(owner)]?.let(::decodeStoryDraft) }
+
+    suspend fun setStoryDraft(owner: String, draft: com.stepup.android.domain.StoryDraft?) {
+        store.edit {
+            if (draft == null || draft.text.isBlank() && draft.place == null) it.remove(storyDraftKey(owner))
+            else it[storyDraftKey(owner)] = storyJson.encodeToString(StoryDraftJson.serializer(), StoryDraftJson.of(draft))
+        }
+    }
+
+    fun hiddenStories(owner: String): Flow<Set<Long>> =
+        store.data.map { prefs ->
+            prefs[storyHiddenKey(owner)].orEmpty().split(',').mapNotNull { it.trim().toLongOrNull() }.toSet()
+        }
+
+    suspend fun setStoryHidden(owner: String, id: Long, hidden: Boolean) {
+        store.edit {
+            val now = it[storyHiddenKey(owner)].orEmpty().split(',').mapNotNull { v -> v.trim().toLongOrNull() }
+            // 숨긴 글이 한없이 쌓이지 않게 최근 500개만 기억한다
+            val next = (if (hidden) now.filterNot { v -> v == id } + id else now.filterNot { v -> v == id }).takeLast(500)
+            if (next.isEmpty()) it.remove(storyHiddenKey(owner)) else it[storyHiddenKey(owner)] = next.joinToString(",")
+        }
+    }
+
+    /** 직접 고른 지역 — null 이면 내 위치로 본다 */
+    val storyRegion: Flow<com.stepup.android.domain.StoryPlace?> =
+        store.data.map { prefs -> prefs[storyRegionKey]?.let(::decodeStoryPlace) }
+
+    suspend fun setStoryRegion(place: com.stepup.android.domain.StoryPlace?) {
+        store.edit {
+            if (place == null) it.remove(storyRegionKey)
+            else it[storyRegionKey] = storyJson.encodeToString(StoryPlaceJson.serializer(), StoryPlaceJson.of(place))
+        }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 쓰다 만 글 · 숨긴 글을 모두 지운다 */
+    suspend fun clearStoryData() {
+        store.edit { prefs ->
+            prefs.asMap().keys
+                .filter { it.name.startsWith("story_draft:") || it.name.startsWith("story_hidden:") }
+                .forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    private fun decodeStoryDraft(raw: String): com.stepup.android.domain.StoryDraft? =
+        runCatching { storyJson.decodeFromString(StoryDraftJson.serializer(), raw).toDomain() }.getOrNull()
+
+    private fun decodeStoryPlace(raw: String): com.stepup.android.domain.StoryPlace? =
+        runCatching { storyJson.decodeFromString(StoryPlaceJson.serializer(), raw).toDomain() }.getOrNull()
+
     suspend fun clearHotPosts() {
         store.edit { prefs ->
             prefs.remove(Keys.HOT_POST_IDS)
@@ -852,3 +911,29 @@ private fun updatedInPlace(context: Context): Boolean = runCatching {
 
 /** 서버의 하루 기준 (economy.game_day) */
 private val SERVER_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")
+
+private val storyJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+@kotlinx.serialization.Serializable
+private data class StoryPlaceJson(val name: String, val address: String = "", val lat: Double, val lng: Double) {
+    fun toDomain() = com.stepup.android.domain.StoryPlace(name, address, lat, lng)
+
+    companion object {
+        fun of(place: com.stepup.android.domain.StoryPlace) = StoryPlaceJson(place.name, place.address, place.lat, place.lng)
+    }
+}
+
+@kotlinx.serialization.Serializable
+private data class StoryDraftJson(
+    val text: String,
+    val place: StoryPlaceJson? = null,
+    val editingId: Long = 0,
+    val savedAt: Long = 0,
+) {
+    fun toDomain() = com.stepup.android.domain.StoryDraft(text, place?.toDomain(), editingId, savedAt)
+
+    companion object {
+        fun of(draft: com.stepup.android.domain.StoryDraft) =
+            StoryDraftJson(draft.text, draft.place?.let(StoryPlaceJson::of), draft.editingId, draft.savedAt)
+    }
+}

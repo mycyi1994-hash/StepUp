@@ -42,17 +42,20 @@ data class Post(
     val commentCount: Int,
     /** 내가 쓴 글 */
     val mine: Boolean,
-    // ── 번개러닝 전용 ──
+    /** 공개 장소 이름 — 번개는 모임 장소, 동네 이야기는 글에 붙인 장소([storyPlace]) */
     val place: String,
+    // ── 번개러닝 전용 ──
     /** 함께 달릴 거리(km) */
     val distanceKm: Double,
     val meetAt: Long,
     val capacity: Int,
     val joinedCount: Int,
     val joined: Boolean,
-    /** 번개 모임 장소. 모르면 null */
+    /** 공개 장소의 좌표(번개 모임 장소 · 동네 이야기 장소). 모르면 null */
     val lat: Double? = null,
     val lng: Double? = null,
+    /** 공개 장소의 주소(동네 이야기). 모르면 빈 문자열 */
+    val placeAddress: String = "",
 ) {
     val isFlash: Boolean get() = category == PostCategory.FLASH
 

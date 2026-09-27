@@ -1,0 +1,762 @@
+{
+  "version": 1,
+  "created": "2026-09-27",
+  "product": "StepUp",
+  "scope": "목록형 커뮤니티",
+  "instruction_entry": "CLAUDE-START.md",
+  "prototype": "design/index.html",
+  "reference_viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "note": "31 scenes are screens, UI states and dialogs; do not create 31 routes. Transitions list design destinations, not live API availability.",
+  "scenes": [
+    {
+      "number": 1,
+      "id": "list",
+      "title": "목록 기본",
+      "group": "reading",
+      "description": "지도와 장소 썸네일 목록",
+      "component_family": "feed",
+      "presentation": "screen",
+      "image": "design/screens/01-list.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"list\"]",
+      "transitions": [
+        "detail",
+        "map-place",
+        "compose-empty",
+        "expanded",
+        "radius",
+        "region"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 2,
+      "id": "expanded",
+      "title": "목록 펼침",
+      "group": "reading",
+      "description": "글 더 보기로 넓게 읽기",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/02-expanded.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"expanded\"]",
+      "transitions": [
+        "list",
+        "detail",
+        "compose-empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 3,
+      "id": "detail",
+      "title": "글 상세",
+      "group": "reading",
+      "description": "본문·장소·댓글",
+      "component_family": "detail",
+      "presentation": "screen",
+      "image": "design/screens/03-detail.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"detail\"]",
+      "transitions": [
+        "comment-entry",
+        "map-place",
+        "own-menu",
+        "other-menu"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 4,
+      "id": "comment-entry",
+      "title": "댓글 입력",
+      "group": "reading",
+      "description": "입력하면 등록 활성화",
+      "component_family": "detail",
+      "presentation": "state",
+      "image": "design/screens/04-comment-entry.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"comment-entry\"]",
+      "transitions": [
+        "comment-added"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 5,
+      "id": "comment-added",
+      "title": "댓글 등록 후",
+      "group": "reading",
+      "description": "내 댓글과 개수 반영",
+      "component_family": "detail",
+      "presentation": "state",
+      "image": "design/screens/05-comment-added.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"comment-added\"]",
+      "transitions": [
+        "detail"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 6,
+      "id": "compose-empty",
+      "title": "글쓰기 시작",
+      "group": "writing",
+      "description": "본문이 비면 올리기 비활성",
+      "component_family": "composer",
+      "presentation": "screen",
+      "image": "design/screens/06-compose-empty.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"compose-empty\"]",
+      "transitions": [
+        "compose-filled",
+        "place-picker"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 7,
+      "id": "compose-filled",
+      "title": "글 작성 중",
+      "group": "writing",
+      "description": "장소와 본문 확인",
+      "component_family": "composer",
+      "presentation": "state",
+      "image": "design/screens/07-compose-filled.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"compose-filled\"]",
+      "transitions": [
+        "place-picker",
+        "publish-pending",
+        "leave-draft"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 8,
+      "id": "place-picker",
+      "title": "장소 선택",
+      "group": "writing",
+      "description": "검색과 가까운 장소",
+      "component_family": "place-picker",
+      "presentation": "screen",
+      "image": "design/screens/08-place-picker.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"place-picker\"]",
+      "transitions": [
+        "place-search",
+        "place-confirm"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 9,
+      "id": "place-search",
+      "title": "장소 검색 결과",
+      "group": "writing",
+      "description": "검색어에 맞는 장소",
+      "component_family": "place-picker",
+      "presentation": "state",
+      "image": "design/screens/09-place-search.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"place-search\"]",
+      "transitions": [
+        "place-confirm",
+        "place-empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 10,
+      "id": "place-empty",
+      "title": "검색 결과 없음",
+      "group": "writing",
+      "description": "검색어를 바꿀 수 있게 안내",
+      "component_family": "place-picker",
+      "presentation": "state",
+      "image": "design/screens/10-place-empty.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"place-empty\"]",
+      "transitions": [
+        "place-picker",
+        "place-search"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 11,
+      "id": "place-confirm",
+      "title": "선택한 장소 확인",
+      "group": "writing",
+      "description": "지도를 보고 장소 확정",
+      "component_family": "map",
+      "presentation": "state",
+      "image": "design/screens/11-place-confirm.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"place-confirm\"]",
+      "transitions": [
+        "compose-filled"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 12,
+      "id": "publish-pending",
+      "title": "게시 중",
+      "group": "writing",
+      "description": "중복 등록 방지",
+      "component_family": "composer",
+      "presentation": "state",
+      "image": "design/screens/12-publish-pending.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"publish-pending\"]",
+      "transitions": [
+        "posted",
+        "publish-error"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 13,
+      "id": "posted",
+      "title": "게시 완료",
+      "group": "writing",
+      "description": "목록 맨 위에 내 글",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/13-posted.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"posted\"]",
+      "transitions": [
+        "detail",
+        "compose-empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 14,
+      "id": "map-overview",
+      "title": "지도 확대",
+      "group": "maps",
+      "description": "주변 장소와 글 수",
+      "component_family": "map",
+      "presentation": "screen",
+      "image": "design/screens/14-map-overview.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"map-overview\"]",
+      "transitions": [
+        "map-place"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 15,
+      "id": "map-place",
+      "title": "장소 확인",
+      "group": "maps",
+      "description": "선택한 장소의 글 미리보기",
+      "component_family": "map",
+      "presentation": "state",
+      "image": "design/screens/15-map-place.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"map-place\"]",
+      "transitions": [
+        "place-feed",
+        "detail"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 16,
+      "id": "place-feed",
+      "title": "장소별 목록",
+      "group": "maps",
+      "description": "선택한 장소의 글만",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/16-place-feed.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"place-feed\"]",
+      "transitions": [
+        "detail",
+        "list",
+        "compose-empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 17,
+      "id": "radius",
+      "title": "주변 범위 선택",
+      "group": "maps",
+      "description": "500m·1km·3km",
+      "component_family": "feed",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/17-radius.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"radius\"]",
+      "transitions": [
+        "list"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 18,
+      "id": "own-menu",
+      "title": "내 글 메뉴",
+      "group": "management",
+      "description": "수정·삭제",
+      "component_family": "detail",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/18-own-menu.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"own-menu\"]",
+      "transitions": [
+        "edit",
+        "delete-confirm"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 19,
+      "id": "edit",
+      "title": "글 수정",
+      "group": "management",
+      "description": "기존 내용과 장소 유지",
+      "component_family": "composer",
+      "presentation": "state",
+      "image": "design/screens/19-edit.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"edit\"]",
+      "transitions": [
+        "detail",
+        "place-picker",
+        "leave-draft"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 20,
+      "id": "delete-confirm",
+      "title": "글 삭제 확인",
+      "group": "management",
+      "description": "취소 / 삭제",
+      "component_family": "detail",
+      "presentation": "dialog",
+      "image": "design/screens/20-delete-confirm.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"delete-confirm\"]",
+      "transitions": [
+        "detail",
+        "list"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 21,
+      "id": "other-menu",
+      "title": "다른 글 메뉴",
+      "group": "management",
+      "description": "숨기기·신고",
+      "component_family": "detail",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/21-other-menu.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"other-menu\"]",
+      "transitions": [
+        "list",
+        "report"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 22,
+      "id": "report",
+      "title": "신고 사유",
+      "group": "management",
+      "description": "사유 선택 후 접수",
+      "component_family": "detail",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/22-report.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"report\"]",
+      "transitions": [
+        "reported",
+        "detail"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 23,
+      "id": "reported",
+      "title": "신고 완료",
+      "group": "management",
+      "description": "확인 후 글로 돌아가기",
+      "component_family": "detail",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/23-reported.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"reported\"]",
+      "transitions": [
+        "detail"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 24,
+      "id": "leave-draft",
+      "title": "작성 중 나가기",
+      "group": "management",
+      "description": "임시저장·계속 쓰기·삭제",
+      "component_family": "composer",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/24-leave-draft.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"leave-draft\"]",
+      "transitions": [
+        "list",
+        "compose-filled"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 25,
+      "id": "resume-draft",
+      "title": "임시저장 이어쓰기",
+      "group": "management",
+      "description": "이어서 쓰기 / 새로 쓰기",
+      "component_family": "feed",
+      "presentation": "bottom-sheet",
+      "image": "design/screens/25-resume-draft.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"resume-draft\"]",
+      "transitions": [
+        "compose-filled",
+        "compose-empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 26,
+      "id": "permission",
+      "title": "위치 권한 안내",
+      "group": "states",
+      "description": "위치 사용 / 지역 직접 선택",
+      "component_family": "location-permission",
+      "presentation": "screen",
+      "image": "design/screens/26-permission.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"permission\"]",
+      "transitions": [
+        "list",
+        "region"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 27,
+      "id": "region",
+      "title": "지역 직접 선택",
+      "group": "states",
+      "description": "권한 없이도 지역 기준 보기",
+      "component_family": "region-picker",
+      "presentation": "screen",
+      "image": "design/screens/27-region.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"region\"]",
+      "transitions": [
+        "list",
+        "empty"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 28,
+      "id": "empty",
+      "title": "주변 글 없음",
+      "group": "states",
+      "description": "첫 글쓰기 / 범위 넓히기",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/28-empty.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"empty\"]",
+      "transitions": [
+        "compose-empty",
+        "radius"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 29,
+      "id": "loading",
+      "title": "목록 불러오는 중",
+      "group": "states",
+      "description": "내용 위치를 유지하는 로딩",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/29-loading.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"loading\"]",
+      "transitions": [
+        "list",
+        "empty",
+        "network-error"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 30,
+      "id": "network-error",
+      "title": "목록 연결 오류",
+      "group": "states",
+      "description": "다시 시도",
+      "component_family": "feed",
+      "presentation": "state",
+      "image": "design/screens/30-network-error.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"network-error\"]",
+      "transitions": [
+        "loading"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    },
+    {
+      "number": 31,
+      "id": "publish-error",
+      "title": "게시 실패",
+      "group": "states",
+      "description": "본문 유지하고 다시 올리기",
+      "component_family": "composer",
+      "presentation": "state",
+      "image": "design/screens/31-publish-error.png",
+      "image_pixels": {
+        "width": 780,
+        "height": 1690
+      },
+      "reference_frame": {
+        "width": 390,
+        "height": 844
+      },
+      "prototype_selector": "[data-scene=\"publish-error\"]",
+      "transitions": [
+        "publish-pending"
+      ],
+      "implementation_status": "not_verified_in_native_app"
+    }
+  ]
+}

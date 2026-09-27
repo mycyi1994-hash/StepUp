@@ -4,7 +4,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to neutral S2 black, made PillChip selection a white pill and AdaptiveNumber light numerals — seen in the Experience QA run 36236519563 profile/challenge/shoes captures; screens not listed as S2 keep their older layout apart from these shared parts. Earlier: shared DetailPage/FormPage primary actions and TwoWaySwitch tabs changed to S2 in PR #28; the Main header balance (SupPill) became text-only in PR #29 (home 430dp capture in Experience QA run 36234135671 reviewed); the run share bitmap became the S2 dark card in PR #29, rendered on device by ShareCardRenderTest (form-checks/share-card.png) — its first render (121a06c) showed the footer touching the time/pace values, fixed in the following commit and re-checked on the PR head run; rows not listed as S2 keep their older layout and evidence apart from those shared parts.
 
-38 registered navigation routes; 39 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
+43 registered navigation routes; 44 screen functions; 22 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -14,7 +14,12 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | Routes.MYSTERY_BOX | Customize | Main | S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md | f131c7b: Experience QA run 36229289268 passed; draw screen not in the reviewed capture set |
 | Screen.Customize.route | Customize | Main | S2 batch 1 (PR #27) + batch C shared stage (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed; shoes tab 430dp capture reviewed (S2 plate, round wear action) with neutral dark cards |
 | Routes.RUNNER_MARKET | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
-| Screen.Community.route | Community | Main | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
+| Screen.Community.route | Community | Main | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md; 2026-09-27: first screen is the list-style stories (map + list), 함께 뛰기 moved to the second segment — docs/redesign/community-list/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
+| Routes.STORY_DETAIL | Community | Form | list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md | pending — CommunityStoriesTest device captures in Experience QA |
+| Routes.STORY_COMPOSE | Community | Form | list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md | pending — CommunityStoriesTest device captures in Experience QA |
+| Routes.STORY_MAP | Community | Form | list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md | pending — CommunityStoriesTest device captures in Experience QA |
+| Routes.STORY_LOCATION | Community | Form | list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md | pending — CommunityStoriesTest device captures in Experience QA |
+| Routes.STORY_REGION | Community | Form | list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md | pending — CommunityStoriesTest device captures in Experience QA |
 | Routes.MAP | Community | Detail | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed; S2 map tabs not in the reviewed capture set; GPS/tiles unverified |
 | Routes.ITEMS | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | Routes.MARKET_MODEL | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |

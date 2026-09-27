@@ -3612,6 +3612,70 @@ end $$;
 
 update economy.invite_config set reward_sup = 100;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0041: 동네 이야기 — 장소가 있는 일반 글 · 같은 글 번호로 고치기
+-- ════════════════════════════════════════════════════════════════════
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_post bigint; r record;
+begin
+  v_post := public.story_create('퇴근하고 2km 뛰었어요.', E'\n짧게 달렸는데도 기분이 좋아지네요.',
+                                '여의도공원', '서울 영등포구 여의공원로', 37.5260, 126.9245);
+  insert into fix (k, v) values ('story', v_post::text);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.category = 'FREE' and r.crew_id is null and r.mine, '장소 글은 전체 게시판의 내 자유 글이다');
+  perform pg_temp.ok(r.place = '여의도공원' and r.place_address = '서울 영등포구 여의공원로'
+                     and r.lat = 37.5260 and r.lng = 126.9245, '장소 이름 · 주소 · 좌표가 남는다');
+  perform pg_temp.ok(r.body = E'\n짧게 달렸는데도 기분이 좋아지네요.', '본문 앞 줄바꿈을 지우지 않는다(첫 줄과 다시 이을 때)');
+  perform pg_temp.ok(r.distance_km = 0 and r.meet_at is null and r.capacity = 0, '장소 글은 번개 칸을 쓰지 않는다');
+end $$;
+call pg_temp.must_fail($q$ select public.story_create('  ', '', '여의도공원', '', 37.5, 126.9) $q$, '빈 글은 올라가지 않는다');
+call pg_temp.must_fail($q$ select public.story_create('글', '', '', '', 37.5, 126.9) $q$, '장소 없이는 올라가지 않는다');
+call pg_temp.must_fail($q$ select public.story_create('글', '', '여의도공원', '', null, null) $q$, '좌표 없는 장소는 받지 않는다');
+call pg_temp.must_fail($q$ select public.story_create('글', '', '여의도공원', '', 123.0, 126.9) $q$, '범위를 벗어난 좌표는 받지 않는다');
+call pg_temp.must_fail(format($q$ select public.story_create('%s', '', '여의도공원', '', 37.5, 126.9) $q$, repeat('가', 121)),
+  '첫 줄(제목)은 120자까지');
+do $$
+declare v_post bigint;
+begin
+  -- 예전 앱의 자유 글은 지금처럼 장소를 버린다(번개 규칙 그대로)
+  v_post := public.post_create('FREE', null, '예전 글', '', '여의도', 0, null, 0, 37.5, 126.9);
+  perform pg_temp.ok((select lat is null and place = '' from public.post_feed where id = v_post), 'post_create 는 바뀌지 않았다');
+end $$;
+
+-- 다른 사람이 좋아요 · 댓글을 남긴 뒤 글쓴이가 고친다
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform public.post_toggle_like(pg_temp.fx('story')::bigint);
+  perform public.comment_create(pg_temp.fx('story')::bigint, 0, '첫 완주 축하해요!');
+end $$;
+call pg_temp.must_fail(format($q$ select public.story_update(%s, '남의 글', '', '여의나루', '', 37.52, 126.93) $q$, pg_temp.fx('story')),
+  '남의 글은 고칠 수 없다');
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare r record;
+begin
+  perform public.story_update(pg_temp.fx('story')::bigint, '퇴근하고 3km 뛰었어요.', E'\n조금 더 달렸어요.',
+                              '여의나루', '여의나루역 2번 출구 주변', 37.5271, 126.9326);
+  select * into r from public.post_feed where id = pg_temp.fx('story')::bigint;
+  perform pg_temp.ok(r.title = '퇴근하고 3km 뛰었어요.' and r.place = '여의나루' and r.lng = 126.9326,
+    '고치면 같은 글 번호에 내용 · 장소가 바뀐다');
+  perform pg_temp.ok(r.likes = 1 and r.comment_count = 1, '고쳐도 좋아요 · 댓글이 그대로다');
+  perform pg_temp.ok((select count(*) from public.posts where title like '퇴근하고%') = 1, '고치기는 새 글을 만들지 않는다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.story_update(%s, '번개', '', '여의도', '', 37.5, 126.9) $q$, pg_temp.fx('post_flash')),
+  '번개 글은 이 길로 고치지 않는다');
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not has_function_privilege('anon',
+    'public.story_create(text, text, text, text, double precision, double precision)', 'execute'), '로그인 전에는 장소 글을 쓸 수 없다');
+  perform pg_temp.ok(not has_function_privilege('authenticated',
+    'public.story_check(text, text, text, text, double precision, double precision)', 'execute'), '검사 함수는 앱에 열지 않는다');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

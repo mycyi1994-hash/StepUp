@@ -141,6 +141,9 @@ class ChromeNavigationTest {
                     assertEquals("challenge returns to profile chrome", bar, bounds(BOTTOM_NAV_TAG))
                 }
                 if (tab == R.string.tab_community) {
+                    // 첫 화면은 동네 이야기(목록형) — 모임 · 크루는 "함께 뛰기"에 있다
+                    compose.onNodeWithTag("community-tab-together").performClick()
+                    compose.waitForIdle()
                     compose.onNodeWithContentDescription(compose.activity.getString(R.string.community_tab_my_crew)).performClick()
                     compose.waitForIdle()
                     assertEquals("crews keep navigation", bar, bounds(BOTTOM_NAV_TAG))

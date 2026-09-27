@@ -69,8 +69,22 @@ object ServiceLocator {
         private set
     lateinit var crewRepository: CrewRepository
         private set
+    /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
+    lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
+        private set
+
     lateinit var communityRepository: CommunityRepository
         private set
+
+    /**
+     * 기기 검사용 — 동네 이야기 화면을 흉내 낸 서버 · 고정 장소 검색으로 돌린다(CommunityStoriesTest).
+     * 앱 코드는 부르지 않는다.
+     */
+    @androidx.annotation.VisibleForTesting
+    fun useCommunityForTest(repository: CommunityRepository, places: com.stepup.android.data.repo.PlaceSearch) {
+        communityRepository = repository
+        placeSearch = places
+    }
     lateinit var courseRepository: CourseRepository
         private set
     lateinit var eventRepository: EventRepository
@@ -273,6 +287,12 @@ object ServiceLocator {
             commentDao = database.commentDao(),
             notificationDao = database.notificationDao(),
             prefs = userPrefs,
+            owner = { sessionHolder.recordingOwner() },
+            ownerFlow = recordingOwnerFlow(),
+        )
+        placeSearch = com.stepup.android.data.repo.PlaceSearch(
+            api = com.stepup.android.data.remote.PlaceSearchApi(),
+            platform = com.stepup.android.data.repo.AndroidGeocoder(app),
         )
         courseRepository = CourseRepository(
             dao = database.courseDao(),

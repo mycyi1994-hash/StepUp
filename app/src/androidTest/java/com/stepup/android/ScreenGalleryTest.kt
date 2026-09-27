@@ -307,9 +307,9 @@ class ScreenGalleryTest {
         }
         val variations = listOf(
             Triple(0, "home-details", listOf(R.string.home_k1_records)),
-            Triple(2, "community-crews", listOf(R.string.community_tab_my_crew)),
+            Triple(2, "community-crews", listOf(R.string.community_together, R.string.community_tab_my_crew)),
             Triple(2, "community-stories", listOf(R.string.community_stories)),
-            Triple(2, "community-meetups", listOf(R.string.community_other_meetups)),
+            Triple(2, "community-meetups", listOf(R.string.community_together, R.string.community_other_meetups)),
             Triple(4, "challenge-weekly", listOf(R.string.challenge_tag_weekly)),
             Triple(4, "challenge-night", listOf(R.string.event_night_quest)),
             Triple(3, "items-store", listOf(R.string.market_tab_store)),
@@ -452,7 +452,9 @@ class ScreenGalleryTest {
         capture("extra-community-report-dialog")
 
         compose.runOnIdle { edge = "board" }
-        compose.onNodeWithText(compose.activity.getString(R.string.community_stories)).performClick()
+        // 일반 게시판 목록은 "함께 뛰기 › 다른 모임 보기"에 남았다(첫 화면은 동네 이야기)
+        compose.onNodeWithTag("community-tab-together").performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.community_other_meetups)).performScrollTo().performClick()
         ServiceLocator.communityRepository.showBoardStateForTest(BoardSyncState.Failed("gallery"))
         compose.onNodeWithText(compose.activity.getString(R.string.board_load_failed)).assertIsDisplayed()
         capture("extra-community-board-load-failed")
