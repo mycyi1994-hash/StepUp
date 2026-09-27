@@ -152,6 +152,8 @@ class EconomySync(
     }
 
     private suspend fun clearCopy() {
+        // 앞 계정이 방금 올린 러닝의 잔고도 버린다 — 다음 계정의 결과 화면에 보이지 않게
+        RecordedBalances.clear()
         db.withTransaction {
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()

@@ -65,7 +65,9 @@ class WalkViewModel(
         ServiceLocator.economySync.syncedFrom,
         WalkSessionService.state,
     ) { ledger, recorded, syncedFrom, state ->
-        com.stepup.android.data.repo.RecordedBalances.resultBalance(ledger, recorded[state.lastStartedAt], syncedFrom)
+        // 지금 로그인한 계정이 올린 러닝일 때만 — 계정을 바꾼 뒤 앞 계정의 잔고를 보이지 않게
+        val me = runCatching { ServiceLocator.sessionHolder.currentUserId() }.getOrNull()
+        com.stepup.android.data.repo.RecordedBalances.resultBalance(ledger, recorded[state.lastStartedAt], syncedFrom, me)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
