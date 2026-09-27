@@ -251,6 +251,12 @@
     <string name="rarity_rare">RARE</string>
     <string name="rarity_epic">EPIC</string>
     <string name="rarity_legendary">LEGENDARY</string>
+    <string name="rarity_redline_preview">REDLINE</string>
+    <string name="rarity_finish_preview">FINISH</string>
+    <string name="shoe_grade_guide_title">Shoe grades</string>
+    <string name="shoe_grade_guide_note">Redline and Finish are upcoming visual grades. The collection still has 52 obtainable models.</string>
+    <string name="shoe_grade_live">Available</string>
+    <string name="shoe_grade_preview">Coming soon</string>
 
     <!-- Events -->
     <string name="events_sub">Challenges. Rewards. Progress.</string>

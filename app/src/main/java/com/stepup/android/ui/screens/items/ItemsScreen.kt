@@ -68,6 +68,7 @@ import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SneakerCollectionCard
 import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.components.ShoeGradeGuide
 import com.stepup.android.ui.components.SupPill
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.fullLabel
@@ -244,6 +245,8 @@ fun ItemsScreen(
                 )
             }
         }
+
+        item { ShoeGradeGuide() }
 
         // Detailed conditions and faction collection counts live in the filter sheet.
         item {

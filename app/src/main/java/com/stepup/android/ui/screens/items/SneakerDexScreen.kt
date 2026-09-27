@@ -48,6 +48,7 @@ import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.components.ShoeGradeGuide
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.components.tint
@@ -99,6 +100,7 @@ fun SneakerDexScreen(
     val columns = if (LocalDensity.current.fontScale > 1.5f) 1 else 2
 
     DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
+        item { ShoeGradeGuide() }
         // ── 전체 진행도 — S2: 파란 한 줄 → 가는 큰 숫자 → 얇은 막대 ──
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

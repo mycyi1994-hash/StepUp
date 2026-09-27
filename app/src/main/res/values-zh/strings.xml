@@ -249,6 +249,12 @@
     <string name="rarity_rare">稀有</string>
     <string name="rarity_epic">史诗</string>
     <string name="rarity_legendary">传说</string>
+    <string name="rarity_redline_preview">红线</string>
+    <string name="rarity_finish_preview">终点</string>
+    <string name="shoe_grade_guide_title">六级跑鞋等级</string>
+    <string name="shoe_grade_guide_note">红线和终点是筹备中的视觉等级。当前可获得的图鉴仍为52款。</string>
+    <string name="shoe_grade_live">当前等级</string>
+    <string name="shoe_grade_preview">即将推出</string>
 
     <!-- Events -->
     <string name="events_sub">挑战。奖励。成长。</string>

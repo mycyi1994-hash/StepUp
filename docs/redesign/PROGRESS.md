@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-09-28 — six visual shoe grades in Shoes and Dex
+
+- Added a six-card grade guide to the Shoes vault and sneaker Dex using the approved layered frame artwork. The progression runs from Common, Rare, Epic and Legendary to Redline and Finish; each step has a distinct color and added effects.
+- Redline and Finish are labeled as upcoming visual grades. The obtainable rarity enum, draw probabilities, sneaker stats, server economy, NFT contract and 52-model collection remain at their existing four-grade behavior.
+- Four-language string validation, experience-asset validation, design-contract source check and whitespace check passed. Android compilation and native screenshot review of these two screens remain pending on this revision because this machine has no JDK or Android SDK.
+
 ## 2026-09-25 — interrupted-run recovery connected (PR #22)
 
 - The service now writes `RunCheckpointStore` (`noBackupFilesDir/run-checkpoint.bin`, format 2 adds the fake-location flag and the party crew) every 5 s while recording, writes the SETTLING boundary before settlement and clears the matching checkpoint after durable completion. Settlement does not start if the SETTLING boundary cannot be written (FAILED/Retry instead).

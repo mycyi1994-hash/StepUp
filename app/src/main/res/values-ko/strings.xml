@@ -249,6 +249,12 @@
     <string name="rarity_rare">레어</string>
     <string name="rarity_epic">희귀</string>
     <string name="rarity_legendary">레전더리</string>
+    <string name="rarity_redline_preview">레드라인</string>
+    <string name="rarity_finish_preview">피니시</string>
+    <string name="shoe_grade_guide_title">신발 등급 6단계</string>
+    <string name="shoe_grade_guide_note">레드라인·피니시는 준비 중인 시각 등급입니다. 획득 가능한 도감은 기존 52종입니다.</string>
+    <string name="shoe_grade_live">현재 등급</string>
+    <string name="shoe_grade_preview">추후 공개</string>
 
     <!-- Events -->
     <string name="events_sub">도전. 보상. 성장.</string>
