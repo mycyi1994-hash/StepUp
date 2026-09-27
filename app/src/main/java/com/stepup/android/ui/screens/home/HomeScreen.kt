@@ -44,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -204,6 +206,7 @@ fun HomeScreen(
         }
         // 이번 주 한 줄 — 거리 · 러닝 · SUP. 자세한 기록은 더보기(사용 피드백 4)
         WeekLine(weekRuns, weekEarned, onClick = { showDetails = true })
+        // 챌린지 · 기록 더보기 — 넓은 시작 버튼 위 한 줄(글자 링크는 그대로)
         com.stepup.android.ui.components.S2ActionRow(
             start = {
                 // 지금 도전 중인 챌린지는 러닝 영역에서 연다(사용 피드백 6)
@@ -221,16 +224,13 @@ fun HomeScreen(
                     modifier = Modifier.guideTarget(GuideTour.Targets.HOME_SHORTCUTS).testTag("home-details"),
                 )
             },
-        ) {
-            // 이 화면의 주 행동 — 가장 크게(사용 피드백 1)
-            com.stepup.android.ui.components.S2RoundAction(
-                icon = Icons.Filled.PlayArrow,
-                label = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
-                onClick = onStartRun,
-                circle = 84.dp,
-                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
-            )
-        }
+        ) {}
+        // 이 화면의 주 행동 — 가로로 넓은 러닝 시작(2026-09-27 시안)
+        StartRunButton(
+            label = stringResource(if (session.isActive) R.string.cd_resume else R.string.home_start_run),
+            onClick = onStartRun,
+            modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
+        )
     }
     // 풍경 넘기기 — 화면 양옆의 작은 화살표. 장식이라 날씨 · 위치처럼 말하지 않는다.
     SceneArrow(Icons.Filled.ChevronLeft, stringResource(R.string.home_previous_background),
@@ -528,3 +528,39 @@ private fun WeekLine(
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
     }
 }
+
+/**
+ * 러닝 홈의 주 행동 — 가로로 넓은 밝은 회백색 버튼(2026-09-27 시안).
+ * 높이 56dp · 모서리 20dp · 굵은 검정 글자 가운데. 아래로 은은한 회청색 두께를 깔아 살짝 떠 보이게 한다.
+ */
+@Composable
+private fun StartRunButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    val depth = 3.dp
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = depth + 4.dp)
+            // 번짐 그림자 + 아래로 3dp 비치는 회청색 면(시안의 두께)
+            .shadow(elevation = 6.dp, shape = shape, ambientColor = StartRunDepth, spotColor = StartRunDepth)
+            .drawBehind {
+                drawRoundRect(
+                    color = StartRunDepth,
+                    topLeft = androidx.compose.ui.geometry.Offset(0f, depth.toPx()),
+                    size = size,
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()),
+                )
+            }
+            .height(56.dp)
+            .clip(shape)
+            .background(StartRunFace, shape)
+            .feedbackClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = StartRunInk, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+private val StartRunFace = androidx.compose.ui.graphics.Color(0xFFF3F5FC)
+private val StartRunInk = androidx.compose.ui.graphics.Color(0xFF0B0F17)
+private val StartRunDepth = androidx.compose.ui.graphics.Color(0xFF8E9AB8)
