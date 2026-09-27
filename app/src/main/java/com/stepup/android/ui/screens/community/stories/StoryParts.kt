@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,6 +101,8 @@ fun StoryButton(
     enabled: Boolean = true,
     busy: Boolean = false,
     icon: ImageVector? = null,
+    /** 입력 줄 옆 "등록"처럼 좁은 자리 — 글자 폭만큼, 보내는 동안은 도는 표시만 */
+    compact: Boolean = false,
 ) {
     val (face, ink) = when (style) {
         StoryButtonStyle.PRIMARY -> primaryFace()
@@ -108,25 +112,29 @@ fun StoryButton(
     val active = enabled && !busy
     Row(
         modifier
-            .fillMaxWidth()
+            .then(if (compact) Modifier.widthIn(min = 64.dp) else Modifier.fillMaxWidth())
             .heightIn(min = 50.dp)
             .clip(ButtonShape)
             .background(if (active || style != StoryButtonStyle.PRIMARY) face else CarbonHigh, ButtonShape)
             .then(if (!active && style == StoryButtonStyle.PRIMARY) Modifier.border(1.dp, Edge, ButtonShape) else Modifier)
             .feedbackClickable(enabled = active, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .semantics { if (busy && compact) contentDescription = text }
+            .padding(horizontal = if (compact) 14.dp else 18.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         val color = if (active || style != StoryButtonStyle.PRIMARY) ink else Slate
         if (busy) {
             CircularProgressIndicator(Modifier.size(16.dp), color = color, strokeWidth = 2.dp)
-            Spacer(Modifier.width(8.dp))
+            if (!compact) Spacer(Modifier.width(8.dp))
         } else if (icon != null) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
         }
-        Text(text, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        if (!(busy && compact)) {
+            Text(text, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+                maxLines = if (compact) 1 else Int.MAX_VALUE)
+        }
     }
 }
 

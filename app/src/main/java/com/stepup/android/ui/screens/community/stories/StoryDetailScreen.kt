@@ -362,10 +362,8 @@ private fun StoryCommentInput(value: String, onValueChange: (String) -> Unit, bu
             )
         }
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.width(64.dp)) {
-            StoryButton(stringResource(R.string.story_comment_send), onSend, Modifier.testTag("story-comment-send"),
-                enabled = canSend, busy = busy)
-        }
+        StoryButton(stringResource(R.string.story_comment_send), onSend, Modifier.testTag("story-comment-send"),
+            enabled = canSend, busy = busy, compact = true)
     }
 }
 
