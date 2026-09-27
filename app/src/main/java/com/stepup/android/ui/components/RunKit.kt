@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -136,24 +137,7 @@ fun KitScreen(
     Box(modifier.fillMaxSize().background(Night)) {
         S2Stage(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            Row(
-                Modifier.fillMaxWidth().height(56.dp).padding(start = 8.dp, end = RunKit.Gutter),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onBack != null) {
-                    Box(
-                        Modifier.size(48.dp).clip(CircleShape)
-                            .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag("kit-back"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = Snow,
-                            modifier = Modifier.size(22.dp))
-                    }
-                } else {
-                    Spacer(Modifier.size(16.dp))
-                }
-                Text(title, style = kitText(16.sp), color = Snow, maxLines = 1)
-            }
+            KitHeader(title, onBack, Modifier.padding(start = 8.dp, end = RunKit.Gutter))
             Column(
                 Modifier.weight(1f).fillMaxWidth()
                     .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
@@ -183,6 +167,35 @@ fun KitScreen(
                 content = bottom,
             )
         }
+    }
+}
+
+/** 위 한 줄 — 뒤로 · 작은 화면 이름 · (오른쪽 행동) */
+@Composable
+fun KitHeader(
+    title: String,
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier.fillMaxWidth().height(56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (onBack != null) {
+            Box(
+                Modifier.size(48.dp).clip(CircleShape)
+                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag("kit-back"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = Snow,
+                    modifier = Modifier.size(22.dp))
+            }
+        } else {
+            Spacer(Modifier.size(16.dp))
+        }
+        Text(title, style = kitText(16.sp), color = Snow, maxLines = 1, modifier = Modifier.weight(1f))
+        action?.invoke()
     }
 }
 
@@ -306,11 +319,12 @@ fun KitMetricRow(left: Pair<String, String>, right: Pair<String, String>, modifi
 
 /** 가운데 큰 값 — 작은 파란 이름 · 큰 숫자 · 아래 한 줄 */
 @Composable
-fun KitHero(label: String, value: String, modifier: Modifier = Modifier, caption: String? = null) {
+fun KitHero(label: String, value: String, modifier: Modifier = Modifier, caption: String? = null, dim: Boolean = false) {
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, style = kitText(14.sp), color = VoltText)
         Spacer(Modifier.height(4.dp))
-        S2Number(value, fontSize = 64.sp, textAlign = TextAlign.Center)
+        S2Number(value, fontSize = 64.sp, textAlign = TextAlign.Center, color = if (dim) Silver else Snow,
+            modifier = Modifier.testTag("run-hero-value"))
         if (caption != null) {
             Spacer(Modifier.height(4.dp))
             Text(caption, style = kitText(14.sp), color = Silver, textAlign = TextAlign.Center)
@@ -428,7 +442,7 @@ fun KitKeypad(onKey: (Char) -> Unit, onDelete: () -> Unit, modifier: Modifier = 
                         contentAlignment = Alignment.Center,
                     ) {
                         if (key == '<') {
-                            Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.Backspace, deleteLabel,
+                            Icon(Icons.AutoMirrored.Filled.Backspace, deleteLabel,
                                 tint = Snow, modifier = Modifier.size(22.dp))
                         } else {
                             Text(key.toString(), style = kitText(22.sp, FontWeight.Medium), color = Snow)

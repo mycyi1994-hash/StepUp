@@ -1,5 +1,19 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.domain.GoalAttempt
+import com.stepup.android.domain.RunPlan
+import com.stepup.android.domain.RunPlans
+import com.stepup.android.ui.components.KitButton
+import com.stepup.android.ui.components.KitDialog
+import com.stepup.android.ui.components.KitDoneMark
+import com.stepup.android.ui.components.KitHeader
+import com.stepup.android.ui.components.KitHero
+import com.stepup.android.ui.components.KitMetricRow
+import com.stepup.android.ui.components.KitNotice
+import com.stepup.android.ui.components.KitProgress
+import com.stepup.android.ui.components.KitTone
+import com.stepup.android.ui.components.RunKit
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -138,6 +152,10 @@ private data class LapSegment(
 fun RunScreen(
     onBack: () -> Unit = {},
     onOpenCourses: () -> Unit = {},
+    /** 결과의 "처음 화면으로" — 러닝 탭 첫 화면(홈) */
+    onHome: () -> Unit = onBack,
+    /** 챌린지 결과의 "챌린지로 돌아가기" — 러닝 챌린지 목록 */
+    onGoals: () -> Unit = onBack,
     /** 러닝 홈의 "러닝 시작"에서 왔으면 곧바로 달리기를 시작한다 */
     autoStart: Boolean = false,
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
@@ -300,22 +318,63 @@ fun RunScreen(
     }
     val finishing = !session.isActive && session.lastRewardPoints != null
 
+    // 시작 메뉴 · 러닝 챌린지에서 고른 계획(시안 U01 · U02) — 처음 만난 러닝 하나에 묶는다
+    val planNow by RunPlans.current.collectAsStateWithLifecycle()
+    LaunchedEffect(session.isActive, session.startedAt) {
+        if (session.isActive) RunPlans.bind(session.startedAt)
+    }
+    val plan: RunPlan = when {
+        session.isActive -> remember(session.startedAt, planNow) { RunPlans.planFor(session.startedAt) }
+        finishing -> remember(session.lastStartedAt, planNow) { RunPlans.planFor(session.lastStartedAt) }
+        else -> planNow
+    }
+    val goal = (plan as? RunPlan.Goal)?.goal
+    val goalReached = goal != null && goal.reached(session.elapsedSec, distanceKm)
+
+    // 확인 창들 — 일시정지(R03) · 종료(R04) · 저장 없이 끝내기(R07) · 목표 달성(C01)
+    var pauseDialog by rememberSaveable { mutableStateOf(false) }
+    var discardDialog by rememberSaveable { mutableStateOf(false) }
+    var goalSheetFor by rememberSaveable { mutableLongStateOf(0L) }
+    var showGoalReached by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(goalReached, session.startedAt, session.isPaused) {
+        if (goalReached && running && goalSheetFor != session.startedAt) {
+            goalSheetFor = session.startedAt
+            showGoalReached = true
+        }
+    }
+    val canAskEnd = session.isActive && session.saveStatus == RunSaveStatus.IDLE
+    // 종료를 누르면 먼저 멈추고 묻는다 — "계속 달리기"를 눌렀을 때만 다시 달린다
+    val askEnd = {
+        if (canAskEnd) {
+            if (!session.isPaused) WalkSessionService.pause(context)
+            pauseDialog = false
+            showGoalReached = false
+            confirmStop = true
+        }
+    }
+    // 달리는 중 뒤로 가기는 화면을 닫지 않고 종료를 묻는다(시안 동작 기준)
+    androidx.activity.compose.BackHandler(enabled = canAskEnd && !confirmStop && !discardDialog) { askEnd() }
+
+    // 저장한 챌린지 러닝은 지난 도전에 남긴다(시안 C03) — 같은 러닝은 한 줄
+    LaunchedEffect(finishing, session.lastStartedAt, goal) {
+        if (finishing && goal != null && session.lastStartedAt > 0) {
+            val km = finishKm(session)
+            com.stepup.android.core.ServiceLocator.userPrefs.addGoalAttempt(
+                GoalAttempt(session.lastStartedAt, goal, goal.reached(session.lastElapsedSec, km), session.lastElapsedSec, km),
+            )
+        }
+    }
+
     var showDetails by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            com.stepup.android.ui.components.FocusHeader(
-                title = stringResource(when {
-                    finishing -> R.string.finish_title
-                    session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
-                    session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
-                    session.isPaused -> R.string.run_paused
-                    session.isActive -> R.string.run_active
-                    else -> R.string.run_ready
-                }),
-                onBack = onBack,
+        Column(Modifier.fillMaxSize().padding(horizontal = RunKit.Gutter)) {
+            val goalMissed = finishing && goal != null && !goal.reached(session.lastElapsedSec, finishKm(session))
+            KitHeader(
+                title = when {
+                    finishing -> stringResource(if (goalMissed) R.string.runflow_result_partial_title else R.string.runflow_result_title)
+                    else -> planTitle(plan)
+                },
+                onBack = if (canAskEnd) askEnd else onBack,
                 action = {
                     DarkIconButton(
                         Icons.Filled.MoreHoriz, stringResource(R.string.common_more),
@@ -329,33 +388,34 @@ fun RunScreen(
                     contentPadding = PaddingValues(bottom = 24.dp),
                 ) {
                     item {
+                        val km = finishKm(session)
                         FinishCard(
                             // 금액은 서버가 확인한 값만 — 확인 전(또는 금액을 아직 못 읽었으면) "—"
                             session = session, points = lastServerPoints,
                             upload = lastUpload, balance = balance,
+                            headline = stringResource(if (goalMissed) R.string.runflow_result_partial_headline else R.string.runflow_result_headline),
+                            subtitle = stringResource(if (goalMissed) R.string.runflow_result_partial_sub else R.string.runflow_result_sub),
+                            note = when {
+                                goal == null -> stringResource(R.string.runflow_result_note_body)
+                                goalMissed -> stringResource(R.string.runflow_result_goal_partial, goalName(goal), formatDuration(session.lastElapsedSec))
+                                else -> stringResource(R.string.runflow_result_goal_done, goalName(goal), "%.2f".format(km))
+                            },
                         )
                     }
                 }
-                // S2 — 가운데 흰 원이 공유, 오른쪽이 완료
                 val share = rememberFinishShare(session, lastServerPoints, lastUpload)
-                com.stepup.android.ui.components.S2ActionRow(
-                    Modifier.padding(vertical = 8.dp),
-                    end = {
-                        com.stepup.android.ui.components.S2SideInfo(
-                            stringResource(R.string.finish_done), end = true,
-                            onClick = { viewModel.clearReward(); onBack() },
-                            modifier = Modifier.testTag("run-result-done"),
-                        )
-                    },
-                ) {
-                    com.stepup.android.ui.components.S2RoundAction(
-                        icon = Icons.Filled.Share, label = stringResource(R.string.finish_share), onClick = share,
+                Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    KitButton(
+                        stringResource(if (goalMissed) R.string.runflow_history_back else R.string.runflow_result_home),
+                        onClick = { viewModel.clearReward(); if (goalMissed) onGoals() else onHome() },
+                        modifier = Modifier.testTag("run-result-done"),
                     )
+                    KitButton(stringResource(R.string.finish_share), share, tone = KitTone.Ghost,
+                        modifier = Modifier.testTag("run-result-share"))
                 }
             } else {
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     if (permissionDenied && !session.isActive) {
                         Text(stringResource(R.string.perm_body), color = Silver,
@@ -367,12 +427,67 @@ fun RunScreen(
                     if (recordingCourse && !readyToSaveCourse) {
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
-                    RunHero(
-                        paused = session.isPaused,
+                    if (recordingCourse && !readyToSaveCourse) {
+                        CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(planHeadline(plan), color = Snow, fontSize = 28.sp, fontWeight = FontWeight.SemiBold,
+                        lineHeight = 38.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(planSubtitle(plan), color = Silver, fontSize = 16.sp)
+                    Spacer(Modifier.height(20.dp))
+                    GpsStatusLine(
                         gpsFix = session.gpsFix, locationAllowed = locationAllowed,
                         roughFix = session.isActive && session.here != null,
-                        elapsedSec = session.elapsedSec, distanceKm = distanceKm, avgPaceSec = avgPaceSec,
                     )
+                    Spacer(Modifier.height(16.dp))
+                    val paceText = avgPaceSec?.let { formatPace(it) } ?: "—"
+                    when {
+                        goal?.km != null -> {
+                            KitHero(
+                                stringResource(R.string.runflow_distance_label), "%.2f km".format(distanceKm),
+                                caption = if (goalReached) stringResource(R.string.runflow_goal_reached_title)
+                                    else stringResource(R.string.runflow_goal_dist_left, "%.2f".format(max(goal.km - distanceKm, 0.0))),
+                                dim = session.isPaused,
+                            )
+                            Spacer(Modifier.height(24.dp))
+                            KitProgress(goal.fraction(session.elapsedSec, distanceKm))
+                            Spacer(Modifier.height(24.dp))
+                            KitMetricRow(
+                                stringResource(R.string.runflow_time_label) to formatDuration(session.elapsedSec),
+                                stringResource(R.string.runflow_goal_distance_label) to "%.2f km".format(goal.km),
+                            )
+                        }
+                        goal?.seconds != null -> {
+                            KitHero(
+                                stringResource(R.string.runflow_goal_time_hero), formatDuration(session.elapsedSec),
+                                caption = if (goalReached) stringResource(R.string.runflow_goal_reached_title)
+                                    else stringResource(R.string.runflow_goal_time_left,
+                                        formatDurationWords(max(goal.seconds - session.elapsedSec, 0L))),
+                                dim = session.isPaused,
+                            )
+                            Spacer(Modifier.height(24.dp))
+                            KitProgress(goal.fraction(session.elapsedSec, distanceKm))
+                            Spacer(Modifier.height(24.dp))
+                            KitMetricRow(
+                                stringResource(R.string.runflow_distance_label) to "%.2f km".format(distanceKm),
+                                stringResource(R.string.runflow_pace_label) to paceText,
+                            )
+                        }
+                        else -> {
+                            KitHero(stringResource(R.string.runflow_time_label), formatDuration(session.elapsedSec),
+                                dim = session.isPaused)
+                            Spacer(Modifier.height(24.dp))
+                            KitMetricRow(
+                                stringResource(R.string.runflow_distance_label) to "%.2f km".format(distanceKm),
+                                stringResource(R.string.runflow_pace_label) to paceText,
+                            )
+                            if (session.isActive) {
+                                Spacer(Modifier.height(20.dp))
+                                KitNotice(stringResource(R.string.runflow_note_title), stringResource(R.string.runflow_note_body))
+                            }
+                        }
+                    }
                     // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
                     // 대략적인 위치만 허용하면 기지국 점이 들어와 "잡힘"으로 보여도 경로 · 거리가 수 km 단위로 뭉개진다 —
                     // 그래서 그 안내는 위치가 잡혔어도 보인다
@@ -439,12 +554,6 @@ fun RunScreen(
                         Spacer(Modifier.height(12.dp))
                         ChallengeRunStrip(focus, focus.expected(session.steps, distanceKm, session.startedAt))
                     }
-                    if (goalKm > 0 && session.isActive) {
-                        Spacer(Modifier.height(12.dp))
-                        com.stepup.android.ui.components.S2Subtitle(stringResource(
-                            R.string.run_s2_goal_left, "%.1f".format(goalKm), "%.2f".format(max(goalKm - distanceKm, 0.0)),
-                        ))
-                    }
                     if (session.flaggedSegments > 0) {
                         TextButton(onClick = { showDetails = true }) {
                             Icon(Icons.Filled.Warning, null, tint = Alert, modifier = Modifier.size(18.dp))
@@ -457,50 +566,38 @@ fun RunScreen(
                         Spacer(Modifier.height(16.dp))
                     }
                 }
-                val primaryAction = {
+                Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when {
-                        session.saveStatus == RunSaveStatus.FAILED -> WalkSessionService.stop(context)
-                        running -> WalkSessionService.pause(context)
-                        session.isActive -> WalkSessionService.resume(context)
-                        else -> requestStart()
-                    }
-                }
-                // S2 — 가운데 흰 원이 일시정지 · 재개, 오른쪽 작은 원이 종료(한 번 더 묻는다)
-                com.stepup.android.ui.components.S2ActionRow(
-                    Modifier.padding(top = 8.dp),
-                    end = {
-                        if (session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
-                            com.stepup.android.ui.components.S2RoundAction(
-                                icon = Icons.Filled.Stop,
-                                label = stringResource(R.string.run_finish),
-                                primary = false,
-                                onClick = { confirmStop = true },
-                                modifier = Modifier.testTag("run-finish"),
-                            )
+                        session.saveStatus == RunSaveStatus.SAVING -> KitButton(
+                            stringResource(R.string.run_saving), {}, enabled = false,
+                            modifier = Modifier.testTag("run-primary-action"),
+                        )
+                        session.saveStatus == RunSaveStatus.FAILED -> {
+                            KitButton(stringResource(R.string.run_save_retry), { WalkSessionService.stop(context) },
+                                modifier = Modifier.testTag("run-primary-action"))
+                            Text(stringResource(R.string.run_save_failed), color = Alert,
+                                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().testTag("run-save-error"))
                         }
-                    },
-                ) {
-                    com.stepup.android.ui.components.S2RoundAction(
-                        icon = if (session.saveStatus != RunSaveStatus.IDLE) Icons.Filled.Check
-                            else if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        label = stringResource(when {
-                            session.saveStatus == RunSaveStatus.SAVING -> R.string.run_saving
-                            session.saveStatus == RunSaveStatus.FAILED -> R.string.run_save_retry
-                            !session.isActive -> R.string.home_start_run
-                            session.isPaused -> R.string.cd_resume
-                            else -> R.string.cd_pause
-                        }),
-                        enabled = session.saveStatus != RunSaveStatus.SAVING,
-                        onClick = primaryAction,
-                        modifier = Modifier.testTag("run-primary-action"),
-                    )
-                }
-                if (session.saveStatus == RunSaveStatus.FAILED) {
-                    Text(stringResource(R.string.run_save_failed), color = Alert,
-                        style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 12.dp).testTag("run-save-error"))
-                } else {
-                    Spacer(Modifier.height(16.dp))
+                        session.isActive -> {
+                            KitButton(
+                                stringResource(if (running) R.string.cd_pause else R.string.runflow_resume),
+                                onClick = {
+                                    if (running) {
+                                        WalkSessionService.pause(context)
+                                        pauseDialog = true
+                                    } else {
+                                        WalkSessionService.resume(context)
+                                    }
+                                },
+                                modifier = Modifier.testTag("run-primary-action"),
+                            )
+                            KitButton(stringResource(R.string.runflow_end), askEnd, tone = KitTone.Ghost,
+                                modifier = Modifier.testTag("run-finish"))
+                        }
+                        else -> KitButton(stringResource(R.string.home_start_run), requestStart,
+                            modifier = Modifier.testTag("run-primary-action"))
+                    }
                 }
             }
         }
@@ -534,10 +631,12 @@ fun RunScreen(
                     countingDown = false
                     if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
                 },
-                onCancel = { countingDown = false },
+                // 시작 취소 — 이 러닝을 연 화면(시작 메뉴 · 챌린지)으로 돌아간다(시안 R01)
+                onCancel = { countingDown = false; onBack() },
             )
         }
     }
+
 
     if (showDetails) {
         androidx.compose.material3.ModalBottomSheet(
@@ -576,19 +675,83 @@ fun RunScreen(
         }
     }
 
-    if (confirmStop) {
-        DialogPanel(
-            title = stringResource(R.string.run_stop_confirm_title),
-            onDismiss = { confirmStop = false },
-            actions = {
-                VoltButton(stringResource(R.string.run_stop_confirm_yes), onClick = {
-                    confirmStop = false
-                    WalkSessionService.stop(context)
-                }, modifier = Modifier.fillMaxWidth())
-                GhostButton(stringResource(R.string.run_stop_confirm_no), onClick = { confirmStop = false }, modifier = Modifier.fillMaxWidth())
-            },
+    // R03 — 잠깐 쉬어가요. 바깥을 누르면 창만 닫고 멈춘 채로 둔다
+    if (pauseDialog && session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
+        KitDialog(
+            title = stringResource(R.string.runflow_pause_title),
+            body = stringResource(R.string.runflow_pause_body),
+            onDismiss = { pauseDialog = false },
+            modifier = Modifier.testTag("run-pause-dialog"),
         ) {
-            Text(stringResource(R.string.run_stop_confirm_body), style = MaterialTheme.typography.bodyLarge, color = Silver)
+            KitButton(stringResource(R.string.runflow_resume), {
+                pauseDialog = false
+                WalkSessionService.resume(context)
+            }, modifier = Modifier.testTag("run-pause-resume"))
+            KitButton(stringResource(R.string.runflow_end), askEnd, tone = KitTone.Secondary)
+        }
+    }
+
+    // R04 — 러닝을 마칠까요? 저장하고 마치기 · 계속 달리기 · 기록 없이 끝내기
+    if (confirmStop && canAskEnd) {
+        KitDialog(
+            title = stringResource(R.string.run_stop_confirm_title),
+            body = stringResource(R.string.run_stop_confirm_body),
+            onDismiss = { confirmStop = false },
+            modifier = Modifier.testTag("run-end-dialog"),
+        ) {
+            KitButton(stringResource(R.string.run_stop_confirm_yes), {
+                confirmStop = false
+                WalkSessionService.stop(context)
+            })
+            KitButton(stringResource(R.string.run_stop_confirm_no), {
+                confirmStop = false
+                WalkSessionService.resume(context)
+            }, tone = KitTone.Secondary)
+            // 모임 러닝(방에 들어가 있으면 혼자여도)은 저장하고 마친다 — 서비스도 같은 까닭으로 거절한다
+            val partyOpen by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
+            if (WalkSessionService.canDiscard(session) && !partyOpen.isActive) {
+                KitButton(stringResource(R.string.runflow_end_discard), {
+                    confirmStop = false
+                    discardDialog = true
+                }, tone = KitTone.Secondary, modifier = Modifier.testTag("run-end-discard"))
+            }
+        }
+    }
+
+    // R07 — 저장 없이 끝낼까요? 돌아가면 R04 로
+    if (discardDialog && canAskEnd) {
+        KitDialog(
+            title = stringResource(R.string.runflow_discard_title),
+            body = stringResource(R.string.runflow_discard_body),
+            onDismiss = { discardDialog = false; confirmStop = true },
+            modifier = Modifier.testTag("run-discard-dialog"),
+        ) {
+            KitButton(stringResource(R.string.runflow_discard_confirm), {
+                discardDialog = false
+                WalkSessionService.discard(context)
+                RunPlans.clear()
+                onBack()
+            }, tone = KitTone.Danger, modifier = Modifier.testTag("run-discard-confirm"))
+            KitButton(stringResource(R.string.runflow_discard_back), {
+                discardDialog = false
+                confirmStop = true
+            }, tone = KitTone.Secondary)
+        }
+    }
+
+    // C01 — 목표를 달성했어요. 계속 달리면 기록은 이어진다
+    if (showGoalReached && session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
+        KitDialog(
+            title = stringResource(R.string.runflow_goal_reached_title),
+            body = stringResource(R.string.runflow_goal_reached_body),
+            onDismiss = { showGoalReached = false },
+            modifier = Modifier.testTag("run-goal-reached"),
+        ) {
+            KitButton(stringResource(R.string.run_stop_confirm_yes), {
+                showGoalReached = false
+                WalkSessionService.stop(context)
+            })
+            KitButton(stringResource(R.string.run_stop_confirm_no), { showGoalReached = false }, tone = KitTone.Secondary)
         }
     }
 
@@ -903,14 +1066,14 @@ private fun lapSegments(laps: List<RunLap>): List<LapSegment> {
 }
 
 
-private fun formatPace(secPerKm: Long): String =
+internal fun formatPace(secPerKm: Long): String =
     "%d'%02d\"".format(secPerKm / 60, secPerKm % 60)
 
 /** 페이스 게이지 정규화 — 15'00"/km ≈ 0, 5'00"/km ≈ 1 */
 private fun paceFraction(secPerKm: Long?): Float =
     if (secPerKm == null || secPerKm <= 0) 0f else ((900f - secPerKm) / 600f).coerceIn(0f, 1f)
 
-private fun formatDuration(totalSec: Long): String {
+internal fun formatDuration(totalSec: Long): String {
     val hours = totalSec / 3600
     val minutes = (totalSec % 3600) / 60
     val seconds = totalSec % 60
@@ -1249,6 +1412,9 @@ private fun FinishCard(
     points: Double?,
     upload: String?,
     balance: Double?,
+    headline: String,
+    subtitle: String,
+    note: String,
 ) {
     val voided = session.lastVerdict == RunVerdict.VOID
     // 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게 — 확정은 서버 금액까지 읽었을 때만
@@ -1261,7 +1427,7 @@ private fun FinishCard(
     val km = finishKm(session)
     val paceSec = finishPace(session)
     // 서버가 확인한 뒤에만 "적립 완료". 그 전에는 확인 중이라고 적는다.
-    val headline = when {
+    val rewardHeadline = when {
         voided -> R.string.run_void_title
         confirmed -> R.string.finish_confirmed
         nothingToUpload -> R.string.finish_no_steps
@@ -1269,7 +1435,6 @@ private fun FinishCard(
         upload == UploadState.REJECTED.name -> R.string.finish_rejected
         else -> R.string.finish_pending_short
     }
-    val minutes = (session.lastElapsedSec / 60).let { if (it == 0L && session.lastElapsedSec > 0) 1L else it }
 
     // S2 결과 — 문장 제목 → 경로 → 이번 러닝 SUP(서버 확인 상태) → 보유
     Column(
@@ -1279,15 +1444,28 @@ private fun FinishCard(
             .celebrate(if (confirmed) session.lastStartedAt else null),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // "러닝 완료"는 머리글이 말한다 — 바로 문장 제목으로
-        Spacer(Modifier.height(8.dp))
-        com.stepup.android.ui.components.S2Headline(
-            stringResource(R.string.run_s2_result_headline, minutes.toInt(), "%.2f".format(km)),
-        )
-        Spacer(Modifier.height(12.dp))
-        com.stepup.android.ui.components.S2Subtitle(stringResource(
-            R.string.run_s2_result_sub, paceSec?.let { formatPace(it) } ?: "—", formatDuration(session.lastElapsedSec),
-        ))
+        // 시안 R05 · C02 — 제목 · 저장했어요 · 체크 · 시간 | 거리 · 오늘의 기록
+        Column(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(12.dp))
+            Text(headline, color = Snow, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, lineHeight = 38.sp,
+                modifier = Modifier.testTag("run-result-headline"))
+            Spacer(Modifier.height(8.dp))
+            Text(subtitle, color = Silver, fontSize = 16.sp)
+            Spacer(Modifier.height(16.dp))
+            KitDoneMark()
+            Spacer(Modifier.height(24.dp))
+            KitMetricRow(
+                stringResource(R.string.runflow_time_label) to formatDuration(session.lastElapsedSec),
+                stringResource(R.string.runflow_distance_label) to "%.2f km".format(km),
+            )
+            Spacer(Modifier.height(16.dp))
+            KitNotice(stringResource(R.string.runflow_result_note_title), note)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.runflow_result_pace, paceSec?.let { formatPace(it) } ?: "—"),
+                color = Silver, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         Spacer(Modifier.height(16.dp))
         if (session.geoTrack.isNotEmpty()) {
             val gutter = com.stepup.android.ui.theme.StepUpDesign.Gutter
@@ -1312,7 +1490,7 @@ private fun FinishCard(
         }
         Spacer(Modifier.height(16.dp))
         Text(
-            text = stringResource(headline),
+            text = stringResource(rewardHeadline),
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (voided || upload == UploadState.REJECTED.name) Alert else com.stepup.android.ui.theme.VoltText,
@@ -1361,47 +1539,54 @@ private fun FinishCard(
  * 시계는 시스템 글자 크기를 따르되, 전체 시간이 한 줄에 들어오도록 폭에 맞춘다.
  */
 @Composable
-private fun RunHero(
-    paused: Boolean,
+private fun GpsStatusLine(
     gpsFix: Boolean,
     locationAllowed: Boolean,
     /** GPS 전에 대략적인 위치는 알고 있다 */
     roughFix: Boolean = false,
-    elapsedSec: Long,
-    distanceKm: Double,
-    avgPaceSec: Long?,
 ) {
-    // S2 — 위에 GPS 상태 한 줄, 가운데 가는 큰 시간, 아래 거리 | 페이스
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(8.dp))
-        val gps = stringResource(when {
-            !locationAllowed -> R.string.run_location_disabled
-            gpsFix -> R.string.run_gps_ok
-            roughFix -> R.string.run_gps_search_rough
-            else -> R.string.run_gps_search
-        })
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(7.dp).background(if (gpsFix && locationAllowed) com.stepup.android.ui.theme.Cyan else Slate, CircleShape))
-            // 러닝 중 · 일시정지는 머리글이 이미 말한다 — 여기서는 GPS 상태만
-            Text(gps,
-                color = if (gpsFix && locationAllowed) com.stepup.android.ui.theme.VoltText else Silver,
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        }
-        Spacer(Modifier.height(10.dp))
-        com.stepup.android.ui.components.S2Number(
-            formatDuration(elapsedSec), if (elapsedSec >= 3600) 60.sp else 79.sp,
-            color = if (paused) Silver else Snow,
-        )
-        Spacer(Modifier.height(14.dp))
-        com.stepup.android.ui.components.S2Stats(
-            listOf(
-                stringResource(R.string.stat_distance) to "%.2f km".format(distanceKm),
-                stringResource(R.string.run_avg_pace) to (avgPaceSec?.let { formatPace(it) } ?: "—"),
-            ),
-            Modifier.padding(horizontal = 30.dp),
-            valueSize = 26.sp,
-        )
+    val gps = stringResource(when {
+        !locationAllowed -> R.string.run_location_disabled
+        gpsFix -> R.string.run_gps_ok
+        roughFix -> R.string.run_gps_search_rough
+        else -> R.string.run_gps_search
+    })
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.size(7.dp).background(if (gpsFix && locationAllowed) com.stepup.android.ui.theme.Cyan else Slate, CircleShape))
+        Text(gps,
+            color = if (gpsFix && locationAllowed) com.stepup.android.ui.theme.VoltText else Silver,
+            fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
+}
+
+/** 이번 러닝의 이름 — "자유 러닝" · "10분 러닝" */
+@Composable
+private fun planTitle(plan: RunPlan): String = when (plan) {
+    is RunPlan.Goal -> goalName(plan.goal)
+    is RunPlan.Diet -> stringResource(R.string.runflow_diet)
+    RunPlan.Free -> stringResource(R.string.runflow_free)
+}
+
+@Composable
+private fun planHeadline(plan: RunPlan): String = stringResource(when (plan) {
+    is RunPlan.Goal -> if (plan.goal.isDistance) R.string.runflow_goal_dist_headline else R.string.runflow_goal_time_headline
+    else -> R.string.runflow_free_headline
+})
+
+@Composable
+private fun planSubtitle(plan: RunPlan): String = when (plan) {
+    is RunPlan.Goal -> if (plan.goal.isDistance) stringResource(R.string.runflow_goal_dist_sub)
+        else stringResource(R.string.runflow_goal_time_sub, goalName(plan.goal))
+    else -> stringResource(R.string.runflow_free_sub)
+}
+
+/** "3분 36초" 모양 — 남은 시간 한 줄 */
+@Composable
+private fun formatDurationWords(totalSec: Long): String {
+    val m = totalSec / 60
+    val sec = totalSec % 60
+    return if (m > 0) stringResource(R.string.runflow_min_sec, m.toInt(), sec.toInt())
+    else stringResource(R.string.runflow_sec, sec.toInt())
 }
 
 /** GPS 상태 알약 — 잡혔으면 시안, 찾는 중이면 흐리게 */

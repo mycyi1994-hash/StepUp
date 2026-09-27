@@ -363,6 +363,7 @@ class WalkSessionService : Service() {
             ACTION_PAUSE -> setPaused(true)
             ACTION_RESUME -> setPaused(false)
             ACTION_STOP -> stopSession()
+            ACTION_DISCARD -> discardSession()
             ACTION_RECOVER -> recoverSession(intent.getBooleanExtra(EXTRA_FINISH, false))
         }
         return START_NOT_STICKY
@@ -742,6 +743,33 @@ class WalkSessionService : Service() {
         }
     }
 
+    /**
+     * 저장 없이 끝내기(시안 R07) — 이번 러닝을 정산하지도, 기록하지도 않고 닫는다.
+     * 혼자 뛰는 러닝만. 모임 러닝은 방 · 순위가 얽혀 있어 저장하고 마친다.
+     * 이 러닝 동안 걸은 걸음은 평소 걸음처럼 오늘 걸음에 그대로 남는다(러닝 보상만 없다).
+     */
+    private fun discardSession() {
+        val current = _state.value
+        if (!canDiscard(current) || settling) return
+        if (ServiceLocator.crewRepository.party.value.isActive) return
+        settling = true
+        stepJob?.cancel()
+        timerJob?.cancel()
+        checkpointJob?.cancel()
+        stopLocation()
+        scope.launch {
+            try {
+                // 저장본을 지운다 — 남기면 다음 실행이 이 러닝을 "이어 달리기"로 되살린다
+                runCatching { ServiceLocator.runCheckpoints.clear(current.startedAt, current.recordingOwner) }
+                _state.value = WalkSessionState()
+                ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            } finally {
+                settling = false
+            }
+        }
+    }
+
     override fun onDestroy() {
         stopLocation()
         scope.cancel()
@@ -837,6 +865,7 @@ class WalkSessionService : Service() {
         const val ACTION_PAUSE = "com.stepup.android.action.SESSION_PAUSE"
         const val ACTION_RESUME = "com.stepup.android.action.SESSION_RESUME"
         const val ACTION_STOP = "com.stepup.android.action.SESSION_STOP"
+        const val ACTION_DISCARD = "com.stepup.android.action.SESSION_DISCARD"
         const val ACTION_RECOVER = "com.stepup.android.action.SESSION_RECOVER"
         const val EXTRA_FINISH = "com.stepup.android.extra.FINISH"
         private const val CHECKPOINT_EVERY_MS = 5_000L
@@ -875,6 +904,14 @@ class WalkSessionService : Service() {
 
         fun resume(context: Context) {
             context.startService(intent(context, ACTION_RESUME))
+        }
+
+        /** 저장 없이 끝낼 수 있는 러닝인가 — 달리는 중(저장 전), 혼자 뛰는 러닝 */
+        fun canDiscard(state: WalkSessionState): Boolean =
+            state.isActive && state.saveStatus == RunSaveStatus.IDLE && state.partySize <= 1
+
+        fun discard(context: Context) {
+            context.startService(intent(context, ACTION_DISCARD))
         }
 
         fun stop(context: Context) {

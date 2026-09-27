@@ -98,6 +98,8 @@ class UserPrefs(
         val SELECTED_COURSE = longPreferencesKey("selected_course")
         /** 서버에 코스 기록으로 낼 러닝 — "시작시각\t코스 길" 줄들 */
         val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
+        /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
+        val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
         /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
         val COURSE_RECORDING = booleanPreferencesKey("course_recording")
         /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
@@ -396,6 +398,23 @@ class UserPrefs(
     // 경로로 코스를 따라갔는지 본다). 그 사이 앱이 꺼져도 잊지 않게 여기 적어 둔다.
 
     /** 이 러닝이 끝나면 [track] 코스의 기록으로 낸다 */
+    /** 러닝 챌린지 지난 도전(시안 C03) — 최근 것이 앞 */
+    val goalAttempts: Flow<List<com.stepup.android.domain.GoalAttempt>> =
+        store.data.map { com.stepup.android.domain.GoalAttempt.decodeAll(it[Keys.GOAL_ATTEMPTS]) }
+
+    suspend fun addGoalAttempt(attempt: com.stepup.android.domain.GoalAttempt) {
+        store.edit {
+            val rows = com.stepup.android.domain.GoalAttempt.merge(
+                com.stepup.android.domain.GoalAttempt.decodeAll(it[Keys.GOAL_ATTEMPTS]), attempt,
+            )
+            it[Keys.GOAL_ATTEMPTS] = rows.joinToString("\n") { row -> row.encode() }
+        }
+    }
+
+    suspend fun clearGoalAttempts() {
+        store.edit { it.remove(Keys.GOAL_ATTEMPTS) }
+    }
+
     suspend fun addPendingCourseRun(startedAt: Long, track: String) {
         if (track.isBlank()) return
         store.edit {
