@@ -71,6 +71,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -637,7 +638,7 @@ fun RunScreen(
                             val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
                             layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
                         }
-                        .height(mapHeight).testTag("run-live-map")
+                        .height(mapHeight).clipToBounds().testTag("run-live-map")
                     // S2 같이 뛰는 중(시안 14) — 파티런이면 위치를 보이기로 한 사람을 지도에, 거리 순위를 아래에
                     val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
                     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING &&
@@ -1625,7 +1626,7 @@ private fun FinishCard(
                         val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
                         layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
                     }
-                    .height(220.dp).testTag("run-result-map"),
+                    .height(220.dp).clipToBounds().testTag("run-result-map"),
             ) {
                 LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize())
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
