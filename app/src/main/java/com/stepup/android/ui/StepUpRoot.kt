@@ -938,7 +938,20 @@ internal fun MainScaffold(
             composable(Routes.COURSES) {
                 CourseHubScreen(onBack = { navController.popBackStack() })
             }
-            composable(Routes.WALLET) { WalletScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.WALLET) {
+                val walletScope = rememberCoroutineScope()
+                WalletScreen(
+                    onBack = { navController.popBackStack() },
+                    // 연결 상태 → 기존 두 칸 뽑기(자동으로 뽑지 않는다)
+                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
+                    // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
+                    onOpenWalletPage = {
+                        walletScope.openWalletPage(context) {
+                            android.widget.Toast.makeText(context, context.getString(R.string.wallet_web_offline), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
+            }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },

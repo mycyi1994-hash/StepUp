@@ -379,17 +379,6 @@
     <!-- Connected accounts -->
 
     <!-- Wallet -->
-    <string name="wallet_balance">SUP 余额</string>
-    <string name="wallet_tagline">每一步都在攒</string>
-    <string name="wallet_earned">累计赚取</string>
-    <string name="wallet_spent">累计消耗</string>
-    <string name="wallet_history">记录</string>
-    <string name="wallet_records">%1$d 条记录</string>
-    <string name="wallet_empty_title">还没有记录</string>
-    <string name="wallet_empty_body">跑一次，就能赚到第一笔 SUP。</string>
-    <string name="wallet_giwa">GIWA 钱包</string>
-    <string name="wallet_giwa_status">测试网 · 网页版</string>
-    <string name="wallet_giwa_body">在 StepUp 钱包页面可以连接钱包、领取奖励抽取，并在应用和钱包之间转移 SUP 和运动鞋。首次使用需要设置两步验证。</string>
     <string name="wallet_web_open">打开钱包页面</string>
     <string name="wallet_web_sign_in">请先登录再打开钱包页面。</string>
     <string name="wallet_web_offline">无法连接，请稍后再试。</string>
@@ -399,14 +388,14 @@
     <string name="wallet_withdraw_min">最低提现 · 1,000 SUP</string>
     <string name="wallet_withdraw_eligible">上线后你就能直接提现啦 🎉</string>
     <string name="wallet_withdraw_short">还差 %1$s SUP 就到最低额度</string>
-    <string name="ledger_earn_walk">跑步奖励</string>
-    <string name="ledger_bonus_goal">每日目标奖励</string>
-    <string name="ledger_spend_upgrade">球鞋升级</string>
-    <string name="ledger_spend_mint">球鞋铸造</string>
+    <string name="ledger_earn_walk">步行·跑步奖励</string>
+    <string name="ledger_bonus_goal">目标达成奖励</string>
+    <string name="ledger_spend_upgrade">鞋子升级</string>
+    <string name="ledger_spend_mint">鞋子铸造</string>
     <string name="ledger_spend_boost">购买加成</string>
     <string name="ledger_earn_event">活动奖励</string>
     <string name="ledger_earn_party">组队跑奖励</string>
-    <string name="ledger_other">奖励</string>
+    <string name="ledger_other">其他</string>
 
     <!-- Run -->
     <string name="run_ready">准备就绪</string>
@@ -1060,8 +1049,8 @@
     <string name="market_msg_traded">已成交。</string>
     <string name="market_msg_sign_in">请重新登录。</string>
     <string name="market_msg_equipped">正在穿着的跑鞋不能卖。请先脱下。</string>
-    <string name="ledger_trade_buy">购买跑鞋</string>
-    <string name="ledger_trade_sell">出售跑鞋</string>
+    <string name="ledger_trade_buy">购买鞋子</string>
+    <string name="ledger_trade_sell">出售鞋子</string>
     <string name="ledger_trade_fee">交易手续费</string>
     <string name="ledger_escrow_lock">出价锁定</string>
     <string name="ledger_escrow_unlock">出价解锁</string>

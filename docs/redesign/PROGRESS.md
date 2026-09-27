@@ -1044,3 +1044,13 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - `AvatarPhotoStore` decodes with sampling and EXIF orientation, writes a temp JPEG (512 px, q90), verifies it, swaps files, and commits avatar id + revision in one DataStore edit (`UserPrefs.useCustomAvatar`); on any failure the previous file, id and revision stay.
 - The design line "다른 러너에게 이 이름으로 보여요" was not used: the nickname is stored only on this phone.
 - Checks: `ProfileEditorTest`, compileDebugAndroidTestKotlin, check-strings, check_design_contract (56 routes). Device evidence pending (`AvatarPhotoStoreTest`, `ProfileEditDesignTest`).
+
+## 2026-09-28 — Wallet v1
+
+- User handoff "StepUp 지갑" (16 scenes) imported to `design/wallet-v1/` (instructions, first-look note, screen index, tokens, flow map, mock sample ledger); board references in `docs/redesign/wallet-v1/`.
+- `WalletScreen` now follows the running-path card style: balance card (existing whole-ledger totals), a WEB3 wallet row and the history with 전체 · 적립 · 사용 filters. Filters run over the whole ledger in SQL (`RewardDao.observeLedgerPage`, `timestamp DESC, id DESC`, 30 more rows per page) instead of the first 100 rows; totals never change with the filter.
+- Explicit states: loading placeholders (never 0), whole failure (reload), history-only failure (balance kept), next-page failure (rows and position kept), stale history note, empty ledger and filter-only empty (show all). Rows open a detail sheet with only that ledger row's amount, kind, date (with year) and description.
+- The WEB3 row shows the server link state (`draw_status.wallet_linked`, re-read on resume): not linked → the draw handoff's benefit sheet (numbers only from the server) → the existing web wallet page; linked → a status sheet → the two-tab draw (no automatic draw). "Coming soon" (scene 12) only for a build without a wallet page URL. Scene 15 and the connection progress sheets are not used: the app cannot observe expiry or connection progress on the web page.
+- The linked status sheet keeps the old wallet screen's "지갑 페이지 열기" as a text action (moving SUP and shoes, 2-step auth), so the feature is not lost after linking.
+- Ledger labels follow the design wording (걷기·러닝 적립, 목표 달성 보너스, 신발 강화, 기타 내역 …) in four languages; the 11 strings only the old screen used were removed. Gallery variation `extra-wallet-page-sign-in` became `extra-wallet-info`.
+- Checks: `WalletAmountTest`, testDebugUnitTest, lintDebug, assembleDebug/AndroidTest, check-strings, check_design_contract (56 routes). Device evidence pending (`WalletLedgerTest` interaction suite, `WalletDesignTest` community suite).

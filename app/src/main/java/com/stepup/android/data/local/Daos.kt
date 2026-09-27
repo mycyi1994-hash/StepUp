@@ -260,6 +260,16 @@ interface RewardDao {
     @Query("SELECT * FROM rewards ORDER BY timestamp DESC, id DESC LIMIT :limit")
     fun observeLedger(limit: Int): Flow<List<RewardEntity>>
 
+    /**
+     * 지갑 이용 내역(지갑 v1) — 원장 **전체**에서 거른 뒤 한 쪽씩: [kind] 0 전체, 1 적립(양수), 2 사용(음수).
+     * 같은 시각의 줄도 번호로 순서를 고정해 쪽을 늘려도 빠지거나 겹치지 않는다.
+     */
+    @Query(
+        "SELECT * FROM rewards WHERE (:kind = 0 OR (:kind = 1 AND amount > 0) OR (:kind = 2 AND amount < 0)) " +
+            "ORDER BY timestamp DESC, id DESC LIMIT :limit",
+    )
+    fun observeLedgerPage(kind: Int, limit: Int): Flow<List<RewardEntity>>
+
     @Query("SELECT COUNT(*) FROM rewards WHERE type = :type")
     fun observeCountByType(type: String): Flow<Int>
 

@@ -1,0 +1,9 @@
+{
+  "canvas": {"width": 390, "height": 844, "pngScale": 3},
+  "font": {"family": "Pretendard", "regular": 400, "semibold": 600},
+  "colors": {"background": "#050912", "text": "#F2F4FC", "muted": "#98A8C0", "accent": "#A3BFFE", "surface": "#0E192A", "sheet": "#111D2E", "line": "#1D2B3F", "buttonText": "#081223", "balanceGradient": ["#0D182A", "#182E4C"]},
+  "layout": {"horizontalPadding": 24, "minimumTouch": 48, "balanceWidth": 342, "balanceHeight": 176, "rowHeight": 80, "buttonHeight": 54},
+  "radii": {"balance": 23, "button": 17, "sheetTop": 27},
+  "textSizes": {"title": 19, "balance": 55, "unit": 19, "section": 18, "rowTitle": 16, "rowAmount": 19, "rowDate": 12.5, "button": 16},
+  "data": {"currencyLabel": "SUP", "displayDecimals": 2, "filters": ["all", "positive", "negative"], "sort": ["timestamp DESC", "id DESC"], "balanceScope": "all-ledger-entries"}
+}

@@ -1,0 +1,125 @@
+{
+  "isMock": true,
+  "currency": "SUP",
+  "entries": [
+    {
+      "id": 7,
+      "type": "EARN_WALK",
+      "amount": 3.5,
+      "title": "걷기·러닝 적립",
+      "time": "2026.09.28 07:50",
+      "description": "아침 러닝으로 적립한 SUP"
+    },
+    {
+      "id": 6,
+      "type": "EARN_WALK",
+      "amount": 1.9,
+      "title": "걷기·러닝 적립",
+      "time": "2026.09.27 19:42",
+      "description": "저녁 걷기로 적립한 SUP"
+    },
+    {
+      "id": 5,
+      "type": "BONUS_GOAL",
+      "amount": 9.47,
+      "title": "목표 달성 보너스",
+      "time": "2026.09.27 19:42",
+      "description": "일일 목표 달성 보너스"
+    },
+    {
+      "id": 4,
+      "type": "SPEND_UPGRADE",
+      "amount": -20,
+      "title": "신발 강화",
+      "time": "2026.09.26 20:10",
+      "description": "이전에 이용한 신발 강화 내역"
+    },
+    {
+      "id": 3,
+      "type": "EARN_WALK",
+      "amount": 18.2,
+      "title": "걷기·러닝 적립",
+      "time": "2026.09.25 08:12",
+      "description": "걷기·러닝으로 적립한 SUP"
+    },
+    {
+      "id": 2,
+      "type": "EARN_WALK",
+      "amount": 20,
+      "title": "걷기·러닝 적립",
+      "time": "2026.09.24 19:30",
+      "description": "걷기·러닝으로 적립한 SUP"
+    },
+    {
+      "id": 1,
+      "type": "EARN_EVENT",
+      "amount": 50,
+      "title": "이벤트 적립",
+      "time": "2026.09.23 09:00",
+      "description": "이벤트로 적립한 SUP"
+    }
+  ],
+  "totals": {
+    "earned": 103.07,
+    "spent": 20,
+    "balance": 83.07
+  },
+  "alternateNoSpend": {
+    "entries": [
+      {
+        "id": 7,
+        "type": "EARN_WALK",
+        "amount": 3.5,
+        "title": "걷기·러닝 적립",
+        "time": "2026.09.28 07:50",
+        "description": "아침 러닝으로 적립한 SUP"
+      },
+      {
+        "id": 6,
+        "type": "EARN_WALK",
+        "amount": 1.9,
+        "title": "걷기·러닝 적립",
+        "time": "2026.09.27 19:42",
+        "description": "저녁 걷기로 적립한 SUP"
+      },
+      {
+        "id": 5,
+        "type": "BONUS_GOAL",
+        "amount": 9.47,
+        "title": "목표 달성 보너스",
+        "time": "2026.09.27 19:42",
+        "description": "일일 목표 달성 보너스"
+      },
+      {
+        "id": 3,
+        "type": "EARN_WALK",
+        "amount": 18.2,
+        "title": "걷기·러닝 적립",
+        "time": "2026.09.25 08:12",
+        "description": "걷기·러닝으로 적립한 SUP"
+      },
+      {
+        "id": 2,
+        "type": "EARN_WALK",
+        "amount": 20,
+        "title": "걷기·러닝 적립",
+        "time": "2026.09.24 19:30",
+        "description": "걷기·러닝으로 적립한 SUP"
+      },
+      {
+        "id": 1,
+        "type": "EARN_EVENT",
+        "amount": 50,
+        "title": "이벤트 적립",
+        "time": "2026.09.23 09:00",
+        "description": "이벤트로 적립한 SUP"
+      }
+    ],
+    "totals": {
+      "balance": 103.07,
+      "earned": 103.07,
+      "spent": 0
+    }
+  },
+  "note": "Illustrative amounts, not a reward formula or new pricing. Legacy spend row is historical, not a new action."
+}

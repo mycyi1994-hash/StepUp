@@ -1,0 +1,114 @@
+[
+  {
+    "id": "01-wallet-unlinked",
+    "title": "지갑 · 연결 전",
+    "description": "잔액과 내역을 먼저 확인",
+    "png": "01-screens/01-wallet-unlinked.png",
+    "svg": "01-screens/01-wallet-unlinked.svg"
+  },
+  {
+    "id": "02-wallet-linked",
+    "title": "지갑 · 연결 완료",
+    "description": "연결 상태만 짧게 표시",
+    "png": "01-screens/02-wallet-linked.png",
+    "svg": "01-screens/02-wallet-linked.svg"
+  },
+  {
+    "id": "03-earned-filter",
+    "title": "적립 내역",
+    "description": "적립한 SUP만 골라 보기",
+    "png": "01-screens/03-earned-filter.png",
+    "svg": "01-screens/03-earned-filter.svg"
+  },
+  {
+    "id": "04-spent-filter",
+    "title": "사용 내역",
+    "description": "기존에 사용한 내역 보존",
+    "png": "01-screens/04-spent-filter.png",
+    "svg": "01-screens/04-spent-filter.svg"
+  },
+  {
+    "id": "05-earned-detail",
+    "title": "적립 상세",
+    "description": "항목을 누르면 금액과 일시 확인",
+    "png": "01-screens/05-earned-detail.png",
+    "svg": "01-screens/05-earned-detail.svg"
+  },
+  {
+    "id": "06-spent-detail",
+    "title": "사용 상세",
+    "description": "기록된 사용 사유만 표시",
+    "png": "01-screens/06-spent-detail.png",
+    "svg": "01-screens/06-spent-detail.svg"
+  },
+  {
+    "id": "07-first-empty",
+    "title": "첫 적립 전",
+    "description": "0 SUP와 조회 실패를 구분",
+    "png": "01-screens/07-first-empty.png",
+    "svg": "01-screens/07-first-empty.svg"
+  },
+  {
+    "id": "08-no-spend-history",
+    "title": "사용 내역 없음",
+    "description": "적립은 있고 사용은 없는 경우",
+    "png": "01-screens/08-no-spend-history.png",
+    "svg": "01-screens/08-no-spend-history.svg"
+  },
+  {
+    "id": "09-wallet-loading",
+    "title": "정보 확인 중",
+    "description": "잔액과 내역 자리를 유지",
+    "png": "01-screens/09-wallet-loading.png",
+    "svg": "01-screens/09-wallet-loading.svg"
+  },
+  {
+    "id": "10-wallet-error",
+    "title": "전체 조회 실패",
+    "description": "확인되지 않은 잔액을 0으로 표시하지 않음",
+    "png": "01-screens/10-wallet-error.png",
+    "svg": "01-screens/10-wallet-error.svg"
+  },
+  {
+    "id": "11-history-error",
+    "title": "내역만 조회 실패",
+    "description": "확인한 잔액은 계속 표시",
+    "png": "01-screens/11-history-error.png",
+    "svg": "01-screens/11-history-error.svg"
+  },
+  {
+    "id": "12-connection-unavailable",
+    "title": "연결 기능 준비 중",
+    "description": "현재 확인한 앱에 적용 가능한 상태",
+    "png": "01-screens/12-connection-unavailable.png",
+    "svg": "01-screens/12-connection-unavailable.svg"
+  },
+  {
+    "id": "13-sup-info",
+    "title": "SUP 안내",
+    "description": "SUP와 뽑기 기회를 구분",
+    "png": "01-screens/13-sup-info.png",
+    "svg": "01-screens/13-sup-info.svg"
+  },
+  {
+    "id": "14-connected-sheet",
+    "title": "연결 상태 확인",
+    "description": "신발 뽑기로 바로 이동",
+    "png": "01-screens/14-connected-sheet.png",
+    "svg": "01-screens/14-connected-sheet.svg"
+  },
+  {
+    "id": "15-wallet-reconnect",
+    "title": "재연결 필요",
+    "description": "기존 SUP와 내역은 유지",
+    "png": "01-screens/15-wallet-reconnect.png",
+    "svg": "01-screens/15-wallet-reconnect.svg"
+  },
+  {
+    "id": "16-older-history-error",
+    "title": "이전 내역 추가 조회 실패",
+    "description": "읽던 목록은 유지하고 재시도",
+    "png": "01-screens/16-older-history-error.png",
+    "svg": "01-screens/16-older-history-error.svg"
+  }
+]

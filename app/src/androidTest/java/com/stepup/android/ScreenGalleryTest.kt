@@ -338,8 +338,8 @@ class ScreenGalleryTest {
             Triple(30, "map-territory", listOf(R.string.map_seg_territory)),
             Triple(31, "history-month", listOf(R.string.history_period_month)),
             Triple(31, "history-all", listOf(R.string.history_period_all)),
-            // 지갑 페이지 버튼 — 로그인 전이라 "로그인한 뒤에" 안내가 뜬다
-            Triple(6, "wallet-page-sign-in", listOf(R.string.wallet_web_open)),
+            // 지갑 v1 — 위쪽 안내(ⓘ)의 SUP 안내 시트
+            Triple(6, "wallet-info", listOf(R.string.wl_info_cd)),
         )
         val selectedVariations = when (galleryPart) {
             "d" -> variations.take(16)

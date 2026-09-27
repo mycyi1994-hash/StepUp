@@ -380,17 +380,6 @@
     <!-- Connected accounts -->
 
     <!-- Wallet -->
-    <string name="wallet_balance">SUP 残高</string>
-    <string name="wallet_tagline">一歩ずつ、どんどん貯まる</string>
-    <string name="wallet_earned">累計獲得</string>
-    <string name="wallet_spent">累計使用</string>
-    <string name="wallet_history">履歴</string>
-    <string name="wallet_records">%1$d件</string>
-    <string name="wallet_empty_title">まだ履歴がありません</string>
-    <string name="wallet_empty_body">1回走るだけで、最初のSUPが手に入ります。</string>
-    <string name="wallet_giwa">GIWA ウォレット</string>
-    <string name="wallet_giwa_status">テストネット · Webで利用</string>
-    <string name="wallet_giwa_body">StepUp ウォレットページで、ウォレットの接続、ボーナス抽選、アプリとウォレット間のSUP・スニーカーの移動ができます。初回は2段階認証を設定します。</string>
     <string name="wallet_web_open">ウォレットページを開く</string>
     <string name="wallet_web_sign_in">ログインしてからウォレットページを開けます。</string>
     <string name="wallet_web_offline">接続できませんでした。しばらくしてからもう一度お試しください。</string>
@@ -400,14 +389,14 @@
     <string name="wallet_withdraw_min">最低出金額 · 1,000 SUP</string>
     <string name="wallet_withdraw_eligible">ローンチしたらすぐ出金できます 🎉</string>
     <string name="wallet_withdraw_short">最低額まであと %1$s SUP</string>
-    <string name="ledger_earn_walk">ランセッション報酬</string>
-    <string name="ledger_bonus_goal">1日の目標ボーナス</string>
-    <string name="ledger_spend_upgrade">スニーカー強化</string>
-    <string name="ledger_spend_mint">スニーカーミント</string>
+    <string name="ledger_earn_walk">ウォーキング・ランニング報酬</string>
+    <string name="ledger_bonus_goal">目標達成ボーナス</string>
+    <string name="ledger_spend_upgrade">シューズ強化</string>
+    <string name="ledger_spend_mint">シューズミント</string>
     <string name="ledger_spend_boost">ブースト購入</string>
     <string name="ledger_earn_event">イベント報酬</string>
     <string name="ledger_earn_party">パーティーラン報酬</string>
-    <string name="ledger_other">リワード</string>
+    <string name="ledger_other">その他</string>
 
     <!-- Run -->
     <string name="run_ready">準備完了</string>
@@ -1061,8 +1050,8 @@ StepUp と走り出そう。</string>
     <string name="market_msg_traded">約定しました。</string>
     <string name="market_msg_sign_in">もう一度ログインしてください。</string>
     <string name="market_msg_equipped">履いているスニーカーは売れません。先に脱いでください。</string>
-    <string name="ledger_trade_buy">スニーカー購入</string>
-    <string name="ledger_trade_sell">スニーカー売却</string>
+    <string name="ledger_trade_buy">シューズ購入</string>
+    <string name="ledger_trade_sell">シューズ売却</string>
     <string name="ledger_trade_fee">取引手数料</string>
     <string name="ledger_escrow_lock">入札ロック</string>
     <string name="ledger_escrow_unlock">入札解除</string>

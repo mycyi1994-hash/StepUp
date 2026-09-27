@@ -131,7 +131,8 @@ class ProfileRunningPathTest {
             awaitTag("profile-wallet")
 
             tapTag("profile-wallet")
-            awaitText(context.getString(R.string.settings_wallet))
+            // 지갑 v1 — 잔액 카드와 이용 내역 목록
+            awaitTag("wl-list")
             shot("05-wallet")
             pressBack()
             awaitTag("profile-settings")
