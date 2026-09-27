@@ -3995,6 +3995,19 @@ begin
   perform pg_temp.ok(pg_temp.jobs('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', 'BADGE') = 3, '배지는 한 번씩');
 end $$;
 
+-- 체인 기록이 실패해도 러닝은 저장된다 — 설정이 깨져 배지 계산이 오류를 내도 경고만
+update public.economy_settings set value = '"broken"' where key = 'badge_distance_km';
+do $$
+declare v_run bigint;
+begin
+  v_run := pg_temp.run('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5', -1, 3000);
+  perform pg_temp.ok(exists (select 1 from public.walk_sessions where id = v_run),
+    '체인 기록 쪽 오류는 러닝 저장을 막지 않는다');
+  perform pg_temp.ok(not exists (select 1 from public.chain_jobs where ref = 'run:' || v_run),
+    '(그 러닝의 체인 기록은 함께 되돌아간다 — 반쯤 적힌 기록이 남지 않는다)');
+end $$;
+update public.economy_settings set value = '[10, 50, 100, 300, 500, 1000]' where key = 'badge_distance_km';
+
 -- 코스 완주 — 서버가 확인한 완주만(course_runs), 1km 이상 코스만
 do $$
 declare v_long bigint; v_short bigint;

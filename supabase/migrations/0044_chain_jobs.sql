@@ -214,55 +214,61 @@ declare
   v_km jsonb;
   v_n int;
 begin
-  if not economy.chain_jobs_on() or not economy.run_provable(new) then
+  -- 체인 기록이 실패해도 러닝 기록은 그대로 된다 — 경고만 남긴다
+  begin
+    if not economy.chain_jobs_on() or not economy.run_provable(new) then
+      return null;
+    end if;
+
+    -- 러닝 증명 — 한 사람의 하루 상한 안에서
+    select count(*) into v_today from public.chain_jobs j
+     where j.user_id = new.user_id and j.kind = 'RUN_PROOF' and (j.args ->> 'day')::int = economy.day_number(v_day);
+    if v_today < coalesce(economy.setting_num('run_proof_user_daily'), 0) then
+      insert into public.chain_jobs (kind, ref, user_id, session_id, args)
+      values ('RUN_PROOF', 'run:' || new.id, new.user_id, new.id,
+              jsonb_build_object('day', economy.day_number(v_day),
+                                 'distance_m', round(new.gps_distance_m)::int,
+                                 'duration_sec', new.duration_sec))
+      on conflict (kind, ref) do nothing;
+    end if;
+
+    -- 배지 — 처음이면 지난 러닝(이 러닝 포함)으로 채우고, 아니면 이 러닝을 더한다
+    v_fresh := not exists (select 1 from public.chain_badge_progress where user_id = new.user_id);
+    v := economy.badge_progress_init(new.user_id);
+    if not v_fresh then
+      v.total_m := v.total_m + new.gps_credit_m;
+      v.runs := v.runs + 1;
+      if v.last_day is null or v_day > v.last_day + 1 then
+        v.streak := 1;
+      elsif v_day = v.last_day + 1 then
+        v.streak := v.streak + 1;
+      end if;
+      -- 예전 날짜의 러닝을 늦게 올린 것은 연속 날을 바꾸지 않는다
+      v.last_day := greatest(coalesce(v.last_day, v_day), v_day);
+      update public.chain_badge_progress
+         set total_m = v.total_m, runs = v.runs, streak = v.streak, last_day = v.last_day, updated_at = now()
+       where user_id = new.user_id;
+    end if;
+
+    if v.runs >= 1 then
+      perform economy.badge_enqueue(new.user_id, 'FIRST_RUN', 1, v_day);
+    end if;
+    for v_km in select * from jsonb_array_elements(coalesce(economy.setting('badge_distance_km'), '[]'::jsonb)) loop
+      v_n := (v_km #>> '{}')::int;
+      if v.total_m >= v_n * 1000 then
+        perform economy.badge_enqueue(new.user_id, 'DISTANCE_KM', v_n, v_day);
+      end if;
+    end loop;
+    for v_km in select * from jsonb_array_elements(coalesce(economy.setting('badge_streak_days'), '[]'::jsonb)) loop
+      v_n := (v_km #>> '{}')::int;
+      if v.streak >= v_n then
+        perform economy.badge_enqueue(new.user_id, 'STREAK_DAYS', v_n, v_day);
+      end if;
+    end loop;
     return null;
-  end if;
-
-  -- 러닝 증명 — 한 사람의 하루 상한 안에서
-  select count(*) into v_today from public.chain_jobs j
-   where j.user_id = new.user_id and j.kind = 'RUN_PROOF' and (j.args ->> 'day')::int = economy.day_number(v_day);
-  if v_today < coalesce(economy.setting_num('run_proof_user_daily'), 0) then
-    insert into public.chain_jobs (kind, ref, user_id, session_id, args)
-    values ('RUN_PROOF', 'run:' || new.id, new.user_id, new.id,
-            jsonb_build_object('day', economy.day_number(v_day),
-                               'distance_m', round(new.gps_distance_m)::int,
-                               'duration_sec', new.duration_sec))
-    on conflict (kind, ref) do nothing;
-  end if;
-
-  -- 배지 — 처음이면 지난 러닝(이 러닝 포함)으로 채우고, 아니면 이 러닝을 더한다
-  v_fresh := not exists (select 1 from public.chain_badge_progress where user_id = new.user_id);
-  v := economy.badge_progress_init(new.user_id);
-  if not v_fresh then
-    v.total_m := v.total_m + new.gps_credit_m;
-    v.runs := v.runs + 1;
-    if v.last_day is null or v_day > v.last_day + 1 then
-      v.streak := 1;
-    elsif v_day = v.last_day + 1 then
-      v.streak := v.streak + 1;
-    end if;
-    -- 예전 날짜의 러닝을 늦게 올린 것은 연속 날을 바꾸지 않는다
-    v.last_day := greatest(coalesce(v.last_day, v_day), v_day);
-    update public.chain_badge_progress
-       set total_m = v.total_m, runs = v.runs, streak = v.streak, last_day = v.last_day, updated_at = now()
-     where user_id = new.user_id;
-  end if;
-
-  if v.runs >= 1 then
-    perform economy.badge_enqueue(new.user_id, 'FIRST_RUN', 1, v_day);
-  end if;
-  for v_km in select * from jsonb_array_elements(coalesce(economy.setting('badge_distance_km'), '[]'::jsonb)) loop
-    v_n := (v_km #>> '{}')::int;
-    if v.total_m >= v_n * 1000 then
-      perform economy.badge_enqueue(new.user_id, 'DISTANCE_KM', v_n, v_day);
-    end if;
-  end loop;
-  for v_km in select * from jsonb_array_elements(coalesce(economy.setting('badge_streak_days'), '[]'::jsonb)) loop
-    v_n := (v_km #>> '{}')::int;
-    if v.streak >= v_n then
-      perform economy.badge_enqueue(new.user_id, 'STREAK_DAYS', v_n, v_day);
-    end if;
-  end loop;
+  exception when others then
+    raise warning 'chain_jobs_on_run: %', sqlerrm;
+  end;
   return null;
 end $$;
 revoke all on function economy.chain_jobs_on_run() from public;
@@ -281,29 +287,35 @@ declare
   s public.walk_sessions;
   v_km double precision;
 begin
-  if not economy.chain_jobs_on() then
+  -- 체인 기록이 실패해도 코스 완주 기록은 그대로 된다 — 경고만 남긴다
+  begin
+    if not economy.chain_jobs_on() then
+      return null;
+    end if;
+    select * into s from public.walk_sessions where id = new.session_id;
+    if not found or s.verdict = 'VOID' or s.mock_location then
+      return null;
+    end if;
+    -- 러닝 증명과 같은 기준 — 짧은 코스를 되풀이해 기록을 불리지 못하게 거리 · 하루 상한
+    select c.distance_km into v_km from public.courses c where c.id = new.course_id;
+    if coalesce(v_km, 0) * 1000 < coalesce(economy.setting_num('run_proof_min_m'), 1000)
+       or (select count(*) from public.chain_jobs j
+            where j.user_id = new.user_id and j.kind = 'COURSE_RUN'
+              and (j.args ->> 'day')::int = economy.day_number(economy.game_day(s.started_at)))
+          >= coalesce(economy.setting_num('run_proof_user_daily'), 0) then
+      return null;
+    end if;
+    insert into public.chain_jobs (kind, ref, user_id, session_id, args)
+    values ('COURSE_RUN', 'course_run:' || new.id, new.user_id, new.session_id,
+            jsonb_build_object('course_id', new.course_id,
+                               'day', economy.day_number(economy.game_day(s.started_at)),
+                               'distance_m', round(coalesce(v_km, 0) * 1000)::int,
+                               'duration_sec', new.duration_sec))
+    on conflict (kind, ref) do nothing;
     return null;
-  end if;
-  select * into s from public.walk_sessions where id = new.session_id;
-  if not found or s.verdict = 'VOID' or s.mock_location then
-    return null;
-  end if;
-  -- 러닝 증명과 같은 기준 — 짧은 코스를 되풀이해 기록을 불리지 못하게 거리 · 하루 상한
-  select c.distance_km into v_km from public.courses c where c.id = new.course_id;
-  if coalesce(v_km, 0) * 1000 < coalesce(economy.setting_num('run_proof_min_m'), 1000)
-     or (select count(*) from public.chain_jobs j
-          where j.user_id = new.user_id and j.kind = 'COURSE_RUN'
-            and (j.args ->> 'day')::int = economy.day_number(economy.game_day(s.started_at)))
-        >= coalesce(economy.setting_num('run_proof_user_daily'), 0) then
-    return null;
-  end if;
-  insert into public.chain_jobs (kind, ref, user_id, session_id, args)
-  values ('COURSE_RUN', 'course_run:' || new.id, new.user_id, new.session_id,
-          jsonb_build_object('course_id', new.course_id,
-                             'day', economy.day_number(economy.game_day(s.started_at)),
-                             'distance_m', round(coalesce(v_km, 0) * 1000)::int,
-                             'duration_sec', new.duration_sec))
-  on conflict (kind, ref) do nothing;
+  exception when others then
+    raise warning 'chain_jobs_on_course_run: %', sqlerrm;
+  end;
   return null;
 end $$;
 revoke all on function economy.chain_jobs_on_course_run() from public;
@@ -319,14 +331,20 @@ create trigger course_runs_chain_jobs
 create or replace function economy.vault_mint_enqueue(p_sneaker bigint) returns void
 language plpgsql security definer set search_path = public, economy as $$
 begin
-  if not economy.chain_jobs_on() then
-    return;
-  end if;
-  insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
-  select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id
-    from public.market_sneakers s
-   where s.id = p_sneaker and s.token_id is null
-  on conflict (kind, ref) do nothing;
+  -- 체인 기록이 실패해도 뽑기는 그대로 된다 — 경고만 남긴다
+  begin
+    if not economy.chain_jobs_on() then
+      return;
+    end if;
+    insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
+    select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id
+      from public.market_sneakers s
+     where s.id = p_sneaker and s.token_id is null
+    on conflict (kind, ref) do nothing;
+  exception when others then
+    raise warning 'vault_mint_enqueue: %', sqlerrm;
+  end;
+  return;
 end $$;
 revoke all on function economy.vault_mint_enqueue(bigint) from public;
 
@@ -334,13 +352,19 @@ revoke all on function economy.vault_mint_enqueue(bigint) from public;
 create or replace function economy.chain_jobs_on_sneaker() returns trigger
 language plpgsql security definer set search_path = public, economy as $$
 begin
-  if economy.chain_jobs_on()
-     and new.token_id >= economy.v3_first_token() and new.chain_state = 'APP'
-     and (new.level > old.level or new.durability_pts > old.durability_pts) then
-    insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
-    values ('STATS_SYNC', 'sync:' || new.id || ':' || gen_random_uuid(), new.owner_id, new.id)
-    on conflict (sneaker_id) where kind = 'STATS_SYNC' and status = 'QUEUED' do nothing;
-  end if;
+  -- 체인 기록이 실패해도 강화 · 수리는 그대로 된다 — 경고만 남긴다
+  begin
+    if economy.chain_jobs_on()
+       and new.token_id >= economy.v3_first_token() and new.chain_state = 'APP'
+       and (new.level > old.level or new.durability_pts > old.durability_pts) then
+      insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
+      values ('STATS_SYNC', 'sync:' || new.id || ':' || gen_random_uuid(), new.owner_id, new.id)
+      on conflict (sneaker_id) where kind = 'STATS_SYNC' and status = 'QUEUED' do nothing;
+    end if;
+    return null;
+  exception when others then
+    raise warning 'chain_jobs_on_sneaker: %', sqlerrm;
+  end;
   return null;
 end $$;
 revoke all on function economy.chain_jobs_on_sneaker() from public;
