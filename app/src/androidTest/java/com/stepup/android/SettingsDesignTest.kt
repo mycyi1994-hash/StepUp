@@ -89,7 +89,9 @@ class SettingsDesignTest {
         val themeBefore = AppTheme.mode
         try {
             edgeToEdge()
-            compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Profile) } } }
+            // 앱(MainActivity)처럼 지금 고른 테마로 그린다 — 17 에서 "밝게"를 고르면 화면이 실제로 밝아져야 한다
+            AppTheme.change(ThemeMode.DARK)
+            compose.setContent { StepUpTheme(AppTheme.mode) { ExperienceProvider { MainScaffold(initialTab = Screen.Profile) } } }
             awaitTag("profile-settings")
             compose.onNodeWithTag("profile-settings").performScrollTo().performClick()
             awaitTag("settings-goal")
@@ -154,8 +156,9 @@ class SettingsDesignTest {
             compose.waitUntil(5_000) { AppTheme.mode == ThemeMode.LIGHT }
             compose.onNodeWithTag("theme-light").assertIsSelected()
             shot("17-theme-light")
-            tap("theme-${themeBefore.name.lowercase()}")
-            compose.waitUntil(5_000) { AppTheme.mode == themeBefore }
+            // 나머지 장면은 어두운 테마로 찍고, 원래 테마는 끝에 되돌린다
+            tap("theme-dark")
+            compose.waitUntil(5_000) { AppTheme.mode == ThemeMode.DARK }
             back()
 
             // 18 — 언어: 지금 고른 것에 표시(다른 언어를 고르면 화면을 다시 만든다 — 19 는 아래 장면에서)
