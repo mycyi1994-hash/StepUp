@@ -41,4 +41,6 @@
   `ProfileEditDesignTest`(community 묶음, `screen-gallery/profile-edit-v1/`) — 앱 셸 안(이름 바꾸기 · 되돌리기 · 16자 · 기본 이미지 저장 ·
   나가기 확인 · 저장 → 내 정보 새 이름 · 안내 · 다시 들어오기) + 저장 중 · 실패 장면, 밝은 테마 · 큰 글씨 · 320dp.
   `ProfileRunningPathTest` 는 "프로필 수정"이 새 화면을 열고 바꾸지 않았으면 묻지 않고 나가는지 본다.
-- 2026-09-28: 단위 테스트 · 컴파일 통과(로컬). 기기 결과는 이 PR 의 Experience QA 에서 확인한다.
+- 2026-09-28 기기(PR #49): 앨범 사진이 한 번도 저장되지 않던 버그(크기만 읽는 decodeStream 의 null 을 "열지 못함"으로 봄,
+  `AvatarPhotoStoreTest` 가 잡음)와 "닉네임을 저장했어요" 안내가 사라지지 않던 버그(받은 표시를 지우며 닫는 기다림까지 취소됨,
+  `ProfileEditDesignTest` 가 잡음)를 고쳤고, Experience QA run 36350039338 (e8a1021) 에서 두 테스트 통과(캡처 24장, 시안 비교판과 나란히 확인).

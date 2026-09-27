@@ -256,8 +256,9 @@ fun StepUpMap(
                                 //
                                 // 끈 거리는 화면 픽셀이다. 타일 좌표계로 옮겨야
                                 // 줌이 바뀌어도 손가락과 지도가 같은 만큼 움직인다.
-                                panX += pan.x / scale
-                                panY += pan.y / scale
+                                val drawn = currentPlan?.scale ?: scale
+                                panX += pan.x / drawn
+                                panY += pan.y / drawn
 
                                 pinch *= gestureZoom
                                 // 타일은 정수 줌만 있다. 2배쯤 벌리면 한 단계 올린다.
@@ -463,6 +464,19 @@ data class TilePlan(
         private fun tileScale(density: Float): Float = (density / 2f).coerceIn(1f, 2f)
 
         /**
+         * 큰 지도(경로 확대처럼 화면 대부분)는 [tileScale] 로 덮으면 타일이 예산([MapTiles.MAX_TILES])을 넘는다. 그때는 타일을
+         * 조금 더 크게 그려 예산 안에서 화면을 덮는다 — 넘는다고 줌을 낮추면(타일 수는 줌과 상관없이 화면 크기로 정해진다)
+         * 세계 지도까지 내려가 경로가 점 하나가 된다. 예산 안의 지도는 그대로다.
+         */
+        private fun fitScale(widthPx: Int, heightPx: Int, base: Float): Float {
+            var scale = base
+            while (MapTiles.tileCount(widthPx / scale.toDouble(), heightPx / scale.toDouble()) > MapTiles.MAX_TILES && scale < 4f) {
+                scale *= 1.05f
+            }
+            return scale
+        }
+
+        /**
          * @param zoomDelta 사용자가 손가락으로 더하거나 뺀 줌 단계
          * @param panX 사용자가 끌어 옮긴 거리(타일 픽셀). 화면 픽셀이 아니다.
          */
@@ -475,7 +489,7 @@ data class TilePlan(
             panX: Double = 0.0,
             panY: Double = 0.0,
         ): TilePlan {
-            val scale = tileScale(density)
+            val scale = fitScale(widthPx, heightPx, tileScale(density))
             // 뷰포트를 타일 픽셀 단위로 환산해서 줌과 원점을 잡는다
             val viewW = (widthPx / scale).toDouble()
             val viewH = (heightPx / scale).toDouble()

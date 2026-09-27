@@ -210,7 +210,8 @@ class WalletDesignTest {
         show("s07-first-empty", "wl-empty", wallet(totals = TotalsLoad.Ready(RewardTotals(0.0, 0.0, 0.0)),
             history = HistoryLoad.Ready(LedgerFilter.ALL, emptyList(), more = false)))
         compose.onNodeWithTag("wl-balance").assertTextContains("0.00")
-        show("s08-no-spend-history", "wl-empty-filtered", wallet(history = HistoryLoad.Ready(LedgerFilter.SPENT, emptyList(), more = false)))
+        show("s08-no-spend-history", "wl-empty-filtered", wallet(totals = TotalsLoad.Ready(RewardTotals(103.07, 103.07, 0.0)),
+            history = HistoryLoad.Ready(LedgerFilter.SPENT, emptyList(), more = false), web3 = Web3State.Linked))
         compose.onNodeWithTag("wl-state-action").assertHasClickAction()
         show("s09-wallet-loading", "wl-history-loading", wallet(totals = TotalsLoad.Loading, history = HistoryLoad.Loading, web3 = Web3State.Checking))
         compose.onNodeWithTag("wl-balance-loading").assertExists()

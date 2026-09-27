@@ -156,7 +156,7 @@
       "parent": "Profile",
       "chrome": "Detail",
       "implementation": "지갑 v1(2026-09-28 전달본): running-path balance card, WEB3 wallet row from the server link state, whole-ledger filters, paged history, entry detail and states — see docs/redesign/wallet-v1/README.md",
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.NOTIFICATIONS",
@@ -198,35 +198,35 @@
       "parent": "Profile",
       "chrome": "Form",
       "implementation": "프로필 수정 v1(2026-09-28 전달본): full-height photo and nickname editor replacing the small dialog; photo saves on pick, nickname on 저장 — see docs/redesign/profile-edit-v1/README.md",
-      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.RECORDS",
       "parent": "Profile",
       "chrome": "Detail",
       "implementation": "내 러닝 기록(2026-09-28 전달본): list 01 · 02 · 03 · 07–10 — period sheet, summary of the whole period, paged rows with route thumbnails — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.RECORD_STATS",
       "parent": "Profile",
       "chrome": "Detail",
       "implementation": "내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — weekly day bars / monthly date-range bars, selectable day cells, link to the old analytics — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.RUN_RECORD",
       "parent": "Profile",
       "chrome": "Form",
       "implementation": "내 러닝 기록(2026-09-28 전달본): past run detail 11 · 13 · 14 · 16 — that session only, local delete with confirmation — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.RUN_RECORD_MAP",
       "parent": "Profile",
       "chrome": "Form",
-      "implementation": "내 러닝 기록(2026-09-28 전달본): route expanded 12 — that session's stored coordinates on the existing map — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "implementation": "내 러닝 기록(2026-09-28 전달본): route expanded 12 — that session's stored coordinates on the existing map (map fit for large viewports fixed after that run: RouteMapFitTest) — see docs/redesign/running-records/README.md",
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "Routes.SETTINGS",
@@ -642,7 +642,7 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
       "line": 96,
       "implementation": "지갑 v1(2026-09-28 전달본): scenes 01–14 · 16 (15 not applicable — no reconnect state in the service) — see docs/redesign/wallet-v1/README.md",
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "ConnectedAccountsScreen",
@@ -784,35 +784,35 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RecordsScreen.kt",
       "line": 88,
       "implementation": "내 러닝 기록(2026-09-28 전달본): list 01 · 02 · 03 · 07–10 — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RecordStatsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RecordStatsScreen.kt",
       "line": 74,
       "implementation": "내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RunRecordScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt",
       "line": 75,
       "implementation": "내 러닝 기록(2026-09-28 전달본): detail 11 · 13 · 14 · 16 — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RunRouteMapScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRouteMapScreen.kt",
       "line": 46,
-      "implementation": "내 러닝 기록(2026-09-28 전달본): route 12 — see docs/redesign/running-records/README.md",
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "implementation": "내 러닝 기록(2026-09-28 전달본): route 12 (map fit for large viewports fixed after that run: RouteMapFitTest) — see docs/redesign/running-records/README.md",
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "ProfileEditScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
       "line": 188,
       "implementation": "프로필 수정 v1(2026-09-28 전달본): scenes 01–11, saved notice 12 on the profile — see docs/redesign/profile-edit-v1/README.md",
-      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     }
   ],
   "overlays": [
@@ -1010,63 +1010,63 @@
       "owner": "PeriodSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RecordsScreen.kt",
       "line": 366,
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "DeleteSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt",
       "line": 276,
-      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): pending this PR's QA"
+      "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "PhotoActionsSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
       "line": 510,
-      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "DefaultImageSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
       "line": 545,
-      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "LeaveSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
       "line": 607,
-      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: pending this PR's QA"
+      "verification": "ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "EntrySheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
       "line": 509,
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "InfoSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
       "line": 544,
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "LinkedSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
       "line": 563,
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "kind": "SettingsSheet",
       "owner": "BenefitSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
       "line": 592,
-      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: pending this PR's QA"
+      "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     }
   ],
   "required_state_matrix": [

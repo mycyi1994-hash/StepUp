@@ -50,7 +50,7 @@ object MapTiles {
 
     const val TILE_SIZE = 256
 
-    /** 한 화면에 받을 타일 상한. 이보다 많이 필요하면 줌을 낮춘다. */
+    /** 한 화면에 받을 타일 상한. 이보다 많이 필요하면 타일을 조금 크게 그려 이 안에서 화면을 덮는다([TilePlan.of]). */
     const val MAX_TILES = 24
 
     /** 경로가 한 점뿐일 때의 기본 줌 */
@@ -259,7 +259,7 @@ object MapTiles {
         return MIN_ZOOM
     }
 
-    private fun tileCount(spanX: Double, spanY: Double): Int {
+    internal fun tileCount(spanX: Double, spanY: Double): Int {
         val cols = (spanX / TILE_SIZE).toInt() + 2
         val rows = (spanY / TILE_SIZE).toInt() + 2
         return max(1, cols * rows)
