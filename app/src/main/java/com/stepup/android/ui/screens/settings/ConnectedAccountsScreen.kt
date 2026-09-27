@@ -87,17 +87,23 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                             try {
                             val result = ServiceLocator.server.deleteAccount()
                             if (result is ServerResult.Ok) {
-                                // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
-                                if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                                    com.stepup.android.service.WalkSessionService.stop(context)
+                                // 로그인 표시를 지우는 순간 첫 화면이 로그인으로 바뀌며 이 화면이 닫히고, 이 코루틴도
+                                // 함께 취소된다. 그 뒤에 지우면 앞 계정의 잔고 · 신발 · 키 · 몸무게가 남을 수 있다 —
+                                // 폰에 남은 것을 취소되지 않게 먼저 다 지우고, 로그인 표시는 맨 마지막에 지운다.
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                                    // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
+                                    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                                        com.stepup.android.service.WalkSessionService.stop(context)
+                                    }
+                                    // 서버 계정이 사라졌다
+                                    ServiceLocator.sessionHolder.signOut()
+                                    // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
+                                    ServiceLocator.economySync.clearLocal()
+                                    // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
+                                    ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
+                                    // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
+                                    ServiceLocator.userPrefs.setLoginMethod("")
                                 }
-                                // 서버 계정이 사라졌다. 이 폰의 로그인도 지우면 첫 화면(로그인)으로 돌아간다.
-                                ServiceLocator.sessionHolder.signOut()
-                                ServiceLocator.userPrefs.setLoginMethod("")
-                                // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
-                                ServiceLocator.economySync.clearLocal()
-                                // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
-                                ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                                 confirming = false
                             } else {
                                 failed = true
