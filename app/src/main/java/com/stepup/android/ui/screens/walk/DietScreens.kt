@@ -244,7 +244,8 @@ fun DietInputScreen(
             onDismiss = { confirmLeave = false },
             modifier = Modifier.testTag("diet-leave-dialog"),
         ) {
-            KitButton(stringResource(R.string.diet_leave_stay), { confirmLeave = false })
+            KitButton(stringResource(R.string.diet_leave_stay), { confirmLeave = false },
+                modifier = Modifier.testTag("diet-leave-stay"))
             KitButton(stringResource(R.string.diet_leave_go), { confirmLeave = false; onBack() }, tone = KitTone.Secondary)
         }
     }

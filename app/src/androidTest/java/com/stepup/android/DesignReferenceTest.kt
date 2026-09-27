@@ -243,7 +243,7 @@ class DesignReferenceTest {
                     compose.onNodeWithTag("run-end-discard").performClick()
                     compose.onNodeWithTag("run-discard-dialog").assertIsDisplayed()
                     capture("$name-discard")
-                    compose.onNodeWithText(korean(R.string.runflow_discard_back)).performClick()
+                    compose.onNodeWithTag("run-discard-back").performClick()
                     compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
                     androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                         .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
@@ -268,7 +268,7 @@ class DesignReferenceTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("diet-leave-dialog").assertIsDisplayed()
                     capture("$name-leave")
-                    compose.onNodeWithText(korean(R.string.diet_leave_stay)).performClick()
+                    compose.onNodeWithTag("diet-leave-stay").performClick()
                 }
                 if (s == Scene.RUN_GOAL_HISTORY) {
                     compose.onNodeWithText(korean(R.string.goal_10min), substring = true).performClick()

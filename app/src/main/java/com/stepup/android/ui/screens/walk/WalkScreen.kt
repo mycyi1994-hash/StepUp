@@ -818,7 +818,7 @@ fun RunScreen(
             KitButton(stringResource(R.string.run_stop_confirm_no), {
                 confirmStop = false
                 WalkSessionService.resume(context)
-            }, tone = KitTone.Secondary)
+            }, tone = KitTone.Secondary, modifier = Modifier.testTag("run-end-continue"))
             // 모임 러닝(방에 들어가 있으면 혼자여도)은 저장하고 마친다 — 서비스도 같은 까닭으로 거절한다
             val partyOpen by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
             if (WalkSessionService.canDiscard(session) && !partyOpen.isActive) {
@@ -848,7 +848,7 @@ fun RunScreen(
             KitButton(stringResource(R.string.runflow_discard_back), {
                 discardDialog = false
                 confirmStop = true
-            }, tone = KitTone.Secondary)
+            }, tone = KitTone.Secondary, modifier = Modifier.testTag("run-discard-back"))
         }
     }
 

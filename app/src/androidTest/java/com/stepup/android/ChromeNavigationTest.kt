@@ -177,7 +177,7 @@ class ChromeNavigationTest {
             compose.onNodeWithTag("run-finish").performClick()
             compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_title)).assertIsDisplayed()
             capture("${next.width}-${next.font}-${next.mode}-run-finish-confirm")
-            compose.onNodeWithText(compose.activity.getString(R.string.run_stop_confirm_no)).performClick()
+            compose.onNodeWithTag("run-end-continue").performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed()
             compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()

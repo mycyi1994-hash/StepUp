@@ -1817,7 +1817,7 @@ Start running with StepUp.</string>
     <string name="runflow_goal_dist_sub">Run to the goal at your own speed.</string>
     <string name="runflow_note_title">Easy does it</string>
     <string name="runflow_note_body">It\'s fine to walk for a bit if you need to.</string>
-    <string name="runflow_resume">Keep running</string>
+    <string name="runflow_resume">Resume run</string>
     <string name="runflow_end">End</string>
     <string name="runflow_pause_title">Taking a break</string>
     <string name="runflow_pause_body">Everything so far is kept.</string>

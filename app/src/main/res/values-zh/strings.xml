@@ -1815,7 +1815,7 @@
     <string name="runflow_goal_dist_sub">按自己的速度跑到目标。</string>
     <string name="runflow_note_title">保持这样慢慢跑</string>
     <string name="runflow_note_body">累了可以走一会儿。</string>
-    <string name="runflow_resume">继续跑</string>
+    <string name="runflow_resume">恢复跑步</string>
     <string name="runflow_end">结束</string>
     <string name="runflow_pause_title">休息一下</string>
     <string name="runflow_pause_body">到目前为止的记录会保留。</string>
