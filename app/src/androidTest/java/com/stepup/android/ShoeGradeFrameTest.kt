@@ -227,6 +227,15 @@ class ShoeGradeFrameTest {
         awaitSingle("grade-stage-${rarity.key}")
         if (!firstView) compose.onNodeWithTag("shoe-list", useUnmergedTree = true).performScrollToNode(hasTestTag("grade-stage-${rarity.key}"))
         compose.waitForIdle()
+        // 신발 목록 · 뽑기 칸의 비동기 값이 들어오며 한 번 더 자리를 잡을 수 있다 — 무대가 제 비율로 설 때까지 조금 기다리고,
+        // 끝내 서지 않으면 그 순간의 화면을 남긴 뒤 아래 검사가 실패한다
+        val settled = runCatching {
+            compose.waitUntil(5_000) {
+                val b = stageBounds("grade-stage-${rarity.key}")
+                abs(b.width / b.height - GradeArtRatio) / GradeArtRatio < 0.02f
+            }
+        }.isSuccess
+        if (!settled) shot("00-unsettled-${rarity.key}", settle = 0)
         val viewport = list().fetchSemanticsNode().boundsInRoot
         val stage = stageBounds("grade-stage-${rarity.key}")
         keepsRatio(stage, "${rarity.key} stage")

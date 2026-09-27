@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -198,10 +199,10 @@ class WalletDesignTest {
         compose.onNodeWithTag("wl-spent").assertTextContains("20.00")
         compose.onNodeWithTag("wl-web3").assertHasClickAction()
         show("s02-wallet-linked", "wl-row-7", wallet(web3 = Web3State.Linked))
-        show("s03-earned-filter", "wl-row-7", wallet(history = earned))
+        show("s03-earned-filter", "wl-row-7", wallet(history = earned, web3 = Web3State.Linked))
         compose.onNodeWithTag("wl-filter-earned").assertIsSelected()
         compose.onNodeWithTag("wl-filter-all").assertIsNotSelected()
-        show("s04-spent-filter", "wl-row-4", wallet(history = spent))
+        show("s04-spent-filter", "wl-row-4", wallet(history = spent, web3 = Web3State.Linked))
         show("s05-earned-detail", "wl-entry-sheet", wallet(entry = SAMPLE.first()))
         compose.onNodeWithTag("wl-entry-amount").assertTextContains("+3.50")
         show("s06-spent-detail", "wl-entry-sheet", wallet(history = spent, entry = SAMPLE.first { it.amount < 0 }))
@@ -225,7 +226,8 @@ class WalletDesignTest {
         compose.onNodeWithTag("wl-open-draw").assertHasClickAction()
         compose.onNodeWithTag("wl-open-wallet-page").assertHasClickAction()
         // 16 — 다음 쪽을 읽지 못했다: 읽은 줄 · 자리는 그대로, 아래에서 다시
-        compose.runOnIdle { scene = wallet(history = HistoryLoad.Ready(LedgerFilter.ALL, SAMPLE + OLDER, more = true, pageFailed = true)) }
+        val older = wallet(history = HistoryLoad.Ready(LedgerFilter.ALL, SAMPLE + OLDER, more = true, pageFailed = true))
+        compose.runOnIdle { scene = { key("s16") { older() } } }
         awaitTag("wl-row-7")
         compose.onNodeWithTag("wl-list").performScrollToNode(hasTestTag("wl-page-failed"))
         compose.onNodeWithTag("wl-page-retry").assertHasClickAction()
@@ -252,8 +254,9 @@ class WalletDesignTest {
 
     private var scene by mutableStateOf<@Composable () -> Unit>({})
 
+    /** 장면마다 새로 그린다(같은 자리의 화면이 앞 장면의 기억 — 열린 시트 · 고른 줄 — 을 이어받지 않게) */
     private fun show(name: String, readyTag: String, content: @Composable () -> Unit) {
-        compose.runOnIdle { scene = content }
+        compose.runOnIdle { scene = { key(name) { content() } } }
         awaitTag(readyTag)
         shot(name)
     }

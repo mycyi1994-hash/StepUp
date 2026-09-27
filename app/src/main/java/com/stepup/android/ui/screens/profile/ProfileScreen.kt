@@ -156,10 +156,15 @@ fun ProfileScreen(
     val records by viewModel.records.collectAsStateWithLifecycle()
     var notice by remember { mutableStateOf<String?>(null) }
     val savedText = stringResource(R.string.pe_saved_toast)
+    // 받은 표시는 바로 지운다(다시 들어와도 한 번만) — 그러면 이 효과가 다시 시작되므로, 안내를 닫는 기다림은 따로 둔다
     LaunchedEffect(nicknameSaved) {
         if (nicknameSaved) {
-            onNicknameNoticeShown()
             notice = savedText
+            onNicknameNoticeShown()
+        }
+    }
+    LaunchedEffect(notice) {
+        if (notice != null) {
             kotlinx.coroutines.delay(2_600)
             notice = null
         }

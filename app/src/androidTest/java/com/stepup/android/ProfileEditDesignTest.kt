@@ -210,7 +210,7 @@ class ProfileEditDesignTest {
         show("s07-photo-saving", "pe-avatar", edit(base.copy(photo = PhotoWork.Saving), "아침러너"))
         compose.onNodeWithTag("pe-save").assertIsNotEnabled()
         compose.onNodeWithTag("pe-change-photo").assertIsNotEnabled()
-        show("s08-photo-error", "pe-photo-error", edit(base.copy(photo = PhotoWork.Failed), "아침러너"))
+        show("s08-photo-error", "pe-photo-error", edit(base.copy(stored = "민수", photo = PhotoWork.Failed), "아침러너"))
         compose.onNodeWithTag("pe-photo-error-action").assertHasClickAction()
         show("s09-leave-confirm", "pe-leave-sheet") {
             ProfileEditContent(base, remember { TextFieldState("민수") })
