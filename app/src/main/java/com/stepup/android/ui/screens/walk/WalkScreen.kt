@@ -517,10 +517,21 @@ fun RunScreen(
                         color = Silver, fontSize = 16.sp,
                     )
                     Spacer(Modifier.height(20.dp))
+                    val gpsLost = running && session.gpsLost
                     GpsStatusLine(
-                        gpsFix = session.gpsFix, locationAllowed = locationAllowed,
+                        gpsFix = session.gpsFix && !gpsLost, locationAllowed = locationAllowed,
                         roughFix = session.isActive && session.here != null,
+                        lost = gpsLost,
                     )
+                    // L04 — 위치 신호가 끊긴 것 같다. 시간 · 걸음은 계속 기록한다(안내만, 창을 띄우지 않는다).
+                    // 큰 시간 위에 둔다 — 지도 아래로 밀리면 못 본다
+                    if (gpsLost) {
+                        Spacer(Modifier.height(12.dp))
+                        KitNotice(
+                            stringResource(R.string.runflow_gps_lost_title), stringResource(R.string.runflow_gps_lost_body),
+                            modifier = Modifier.testTag("run-gps-lost"),
+                        )
+                    }
                     Spacer(Modifier.height(16.dp))
                     val paceText = avgPaceSec?.let { formatPace(it) } ?: "—"
                     when {
@@ -591,19 +602,12 @@ fun RunScreen(
                                 stringResource(R.string.runflow_distance_label) to "%.2f km".format(distanceKm),
                                 stringResource(R.string.runflow_pace_label) to paceText,
                             )
-                            if (session.isActive) {
+                            // 달리는 중에만 — 멈춤 · 저장 중 · 신호 약함 안내와 겹치지 않게
+                            if (running && !session.gpsLost) {
                                 Spacer(Modifier.height(20.dp))
                                 KitNotice(stringResource(R.string.runflow_note_title), stringResource(R.string.runflow_note_body))
                             }
                         }
-                    }
-                    // L04 — 위치 신호가 끊긴 것 같다. 시간 · 걸음은 계속 기록한다(안내만, 창을 띄우지 않는다)
-                    if (running && session.gpsLost) {
-                        Spacer(Modifier.height(16.dp))
-                        KitNotice(
-                            stringResource(R.string.runflow_gps_lost_title), stringResource(R.string.runflow_gps_lost_body),
-                            modifier = Modifier.testTag("run-gps-lost"),
-                        )
                     }
                     // 위치가 안 잡히는 흔한 두 까닭 — 휴대폰 위치가 꺼졌거나, "대략적인 위치"만 허용했다
                     // 대략적인 위치만 허용하면 기지국 점이 들어와 "잡힘"으로 보여도 경로 · 거리가 수 km 단위로 뭉개진다 —
@@ -1688,9 +1692,12 @@ private fun GpsStatusLine(
     locationAllowed: Boolean,
     /** GPS 전에 대략적인 위치는 알고 있다 */
     roughFix: Boolean = false,
+    /** 잡혔던 위치가 한동안 안 온다(L04) */
+    lost: Boolean = false,
 ) {
     val gps = stringResource(when {
         !locationAllowed -> R.string.run_location_disabled
+        lost -> R.string.runflow_gps_lost_title
         gpsFix -> R.string.run_gps_ok
         roughFix -> R.string.run_gps_search_rough
         else -> R.string.run_gps_search
