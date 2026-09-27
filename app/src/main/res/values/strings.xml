@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filter_group_faction">Faction · collection</string>
-    <string name="pref_saved_on_device">Saved on this phone</string>
-    <string name="pref_sync_pending">Your choices are saved on this phone, but the server has not confirmed them. Previous notification settings may still apply. Sign in and retry when connected.</string>
-    <string name="pref_sync_retry">Retry sync</string>
-    <string name="pref_sync_sending">Updating notification settings…</string>
-    <string name="pref_notifications_blocked">Notifications are blocked in your phone settings. Allow StepUp notifications there to receive your selected alerts.</string>
     <string name="post_like_action">Like this post</string>
     <string name="post_unlike_action">Remove like</string>
     <string name="app_name" translatable="false">StepUp</string>
@@ -290,14 +285,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">Notifications</string>
-    <string name="notif_mark_read">Mark all read</string>
-    <string name="notif_empty_title">Nothing here yet</string>
-    <string name="notif_empty_body">Rewards, crew invites and event updates will show up here.</string>
     <string name="notif_reward_earned">Earned %2$s SUP from %1$s steps</string>
     <string name="notif_reward_earned_plain">Run recorded: %1$s steps</string>
     <string name="notif_goal_reached">Daily goal hit! %1$s day streak · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">Daily goal hit! %1$s day streak</string>
-    <string name="notif_sneaker_minted">Minted %1$s</string>
+    <string name="notif_sneaker_minted">You got %1$s</string>
     <string name="notif_sneaker_upgraded">%1$s reached a new level</string>
     <string name="notif_boost_activated">Boost activated</string>
     <string name="notif_crew_joined">You joined %1$s</string>
@@ -344,20 +336,8 @@
     <string name="stat_sessions">Runs</string>
     <string name="stat_tokens_earned">Tokens Earned</string>
     <string name="profile_account">Account &amp; Settings</string>
-    <string name="settings_group_account">Account</string>
-    <string name="settings_group_activity">My activity</string>
-    <string name="settings_group_preferences">App settings</string>
-    <string name="settings_group_help">Help</string>
     <string name="settings_wallet">Wallet &amp; Tokens</string>
-    <string name="settings_notifications">Notifications</string>
-    <string name="settings_privacy">Privacy &amp; Security</string>
-    <string name="settings_support">Support Center</string>
-    <string name="settings_connected">Connected Accounts</string>
-    <string name="goal_title">Daily Goal</string>
     <string name="goal_steps_suffix">steps</string>
-    <string name="goal_about_km">≈ %1$s km</string>
-    <string name="goal_bonus_preview">+%1$s SUP when you hit it</string>
-    <string name="goal_hint">Hit your goal for daily bonus SUP — streaks make it bigger.</string>
     <string name="about_version">Version</string>
     <string name="about_network">Network</string>
     <string name="about_network_value">GIWA Chain (coming soon)</string>
@@ -394,48 +374,14 @@
     <string name="analytics_no_runs">No runs recorded yet</string>
 
     <!-- Notification settings -->
-    <string name="pref_push">Push notifications</string>
-    <string name="pref_push_desc">Session summaries and reward alerts</string>
-    <string name="pref_goal_reminder">Daily goal reminder</string>
-    <string name="pref_goal_reminder_desc">Nudge me if I\'m behind in the evening</string>
-    <string name="pref_party_invite">Crew &amp; party invites</string>
-    <string name="pref_party_invite_desc">Let crewmates ping me for a run</string>
-    <string name="pref_event_news">Event announcements</string>
-    <string name="pref_event_news_desc">New campaigns and limited quests</string>
     <string name="pref_saved">Setting saved</string>
 
     <!-- Privacy -->
-    <string name="privacy_data_title">What we store</string>
     <string name="privacy_data_body">When you sign in, your runs (including GPS routes), daily step totals, SUP history, posts and crew activity are kept on the StepUp server, so the server can compute rewards and crews, rankings, courses and territory can be shared. No advertising ID is collected. You can delete your account any time under Connected Accounts.</string>
-    <string name="privacy_perm_title">App permissions</string>
-    <string name="privacy_perm_activity">Physical activity — counts your steps</string>
-    <string name="privacy_perm_notification">Notifications — shows the running session</string>
-    <string name="privacy_reset_title">Reset local data</string>
-    <string name="privacy_reset_body">Clears your notification history. Steps, SUP and sneakers are kept.</string>
-    <string name="privacy_reset_button">Clear notifications</string>
-    <string name="privacy_reset_done">Notification history cleared</string>
 
     <!-- Support -->
-    <string name="support_faq">FAQ</string>
-    <string name="faq_q_earn">How do I earn SUP?</string>
-    <string name="faq_a_earn">Start a run from the home screen. Steps counted during an active session earn SUP, scaled by your sneaker and any boosts.</string>
-    <string name="faq_q_energy">Why did earning stop?</string>
-    <string name="faq_a_energy">Energy ran out. One energy covers 600 steps and it refills to full every midnight.</string>
-    <string name="faq_q_rarity">How does rarity work?</string>
-    <string name="faq_a_rarity">Rarity sets the stat ranges (efficiency, comfort) and the max level. Draw odds are fixed: Common 55%, Rare 28%, Epic 13%, Legendary 4%.</string>
-    <string name="faq_q_withdraw">When can I withdraw?</string>
-    <string name="faq_a_withdraw">On-chain transfer to GIWA Chain is still in development. Your balance is safe until then.</string>
-    <string name="support_contact">Contact</string>
-    <string name="support_contact_body">Questions or bug reports are welcome through the project repository.</string>
 
     <!-- Connected accounts -->
-    <string name="connected_giwa">GIWA Wallet</string>
-    <string name="connected_health">Health Connect</string>
-    <string name="connected_social">Social account</string>
-    <string name="connected_status_soon">Not supported</string>
-    <string name="connected_status_on">Signed in</string>
-    <string name="connected_status_off">Not connected</string>
-    <string name="connected_body">Check your sign-in status and which external services this version supports.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP Balance</string>
@@ -657,10 +603,8 @@
     <string name="party_gps_rule">Members further than %1$dm from the host are dropped automatically.</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">Accept</string>
     <string name="notif_decline">Decline</string>
     <string name="notif_claim">Claim</string>
-    <string name="notif_done">Done</string>
     <string name="notif_crew_invite">%1$s invited you to their crew</string>
     <string name="notif_party_invite">%1$s invited you to a party run</string>
     <string name="notif_event_reward">Event reward arrived: %1$s · %2$s SUP</string>
@@ -824,7 +768,6 @@ Start running with StepUp.</string>
     <string name="login_offline">Can\'t reach the server. Check your connection.</string>
 
     <!-- Guide -->
-    <string name="settings_guide">App guide</string>
     <string name="guide_heading">How StepUp works</string>
     <string name="guide_skip">Skip</string>
     <string name="guide_next">Next</string>
@@ -933,21 +876,8 @@ Start running with StepUp.</string>
     <!-- Seed comments -->
 
     <!-- Language -->
-    <string name="settings_language">Language</string>
-    <string name="settings_theme">Appearance</string>
-    <string name="theme_note">Light or dark — the blue stays the same either way. Your choice sticks across restarts.</string>
-    <string name="theme_system">Follow the device</string>
-    <string name="theme_system_note">Switches when your phone does</string>
-    <string name="theme_light">Light</string>
-    <string name="theme_light_note">White canvas, navy text</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_dark_note">Deep navy canvas, white text</string>
-    <string name="language_system">System default</string>
-    <string name="language_en">English</string>
-    <string name="language_ko">Korean</string>
     <string name="language_zh">Chinese</string>
     <string name="language_ja">Japanese</string>
-    <string name="language_note">The app uses your selected language. User posts and names may remain in their original language.</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">Rookie</string>
@@ -1002,7 +932,6 @@ Start running with StepUp.</string>
     <string name="profile_avg_pace">Average pace</string>
     <string name="profile_badges">Runner badges</string>
     <string name="profile_edit_profile">Edit profile</string>
-    <string name="profile_set_goal">Set goal</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
@@ -1523,22 +1452,12 @@ Start running with StepUp.</string>
     <string name="notification_channel_reminder">Goal reminders</string>
     <string name="reminder_goal_title">%1$d steps left to today\'s goal</string>
     <string name="reminder_goal_body">How about a quick run to hit your goal?</string>
-    <string name="account_delete_title">Delete account</string>
-    <string name="account_delete_body">Your account and everything on the server — runs, GPS routes, SUP history, posts, comments, courses and territory marks — will be deleted and cannot be restored. If you own a crew, its longest-standing member becomes owner. Records left on this phone are removed when you uninstall the app.</string>
-    <string name="account_delete_confirm">Delete</string>
-    <string name="account_delete_failed">Couldn\'t delete. Check your connection and try again. If it keeps failing, email support@stepupcrew.com.</string>
     <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
     <string name="run_location_disabled">Location access off</string>
     <string name="finish_share_activity">I ran %1$s km in %2$s on StepUp.</string>
-    <string name="notif_reward_unverified">This earlier reward notice has no verified payment record. Check Challenges for available rewards.</string>
     <string name="session_sign_in_again">Sign in again</string>
     <string name="post_invalid_numbers">Enter a distance above 0 km, at least 1 minute until departure, and 2–200 people.</string>
     <string name="energy_purchase_capacity">Use at least 2 energy, then try again. Pending purchases resume without another charge.</string>
-    <string name="privacy_permission_allowed">Allowed</string>
-    <string name="privacy_permission_not_allowed">Not allowed</string>
-    <string name="privacy_perm_location">Location — records your route</string>
-    <string name="privacy_location_precise">Precise location allowed</string>
-    <string name="privacy_location_approximate">Approximate location allowed</string>
     <string name="run_saving">Saving run</string>
     <string name="run_save_retry">Retry saving</string>
     <string name="run_save_failed">Your run could not finish saving. Keep the app open and try again.</string>

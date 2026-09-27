@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filter_group_faction">属性・収集状況</string>
-    <string name="pref_saved_on_device">この端末に保存しました</string>
-    <string name="pref_sync_pending">選択はこの端末に保存しましたが、サーバーへの反映は確認できていません。以前の通知設定が適用される場合があります。ログインと接続を確認して再試行してください。</string>
-    <string name="pref_sync_retry">再試行</string>
-    <string name="pref_sync_sending">通知設定を更新しています…</string>
-    <string name="pref_notifications_blocked">端末の設定で通知がブロックされています。選択した通知を受け取るには、StepUpの通知を許可してください。</string>
     <string name="post_like_action">いいね</string>
     <string name="post_unlike_action">いいねを取り消す</string>
 
@@ -289,14 +284,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">通知</string>
-    <string name="notif_mark_read">すべて既読</string>
-    <string name="notif_empty_title">まだ何もありません</string>
-    <string name="notif_empty_body">報酬・クルーの招待・イベント情報がここに届きます。</string>
     <string name="notif_reward_earned">%1$s歩で %2$s SUP を獲得</string>
     <string name="notif_reward_earned_plain">%1$s歩のラン記録</string>
     <string name="notif_goal_reached">1日の目標を達成！ %1$s日連続 · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">デイリー目標達成！%1$s日連続</string>
-    <string name="notif_sneaker_minted">%1$sをミントしました</string>
+    <string name="notif_sneaker_minted">%1$sを受け取りました</string>
     <string name="notif_sneaker_upgraded">%1$sのレベルが上がりました</string>
     <string name="notif_boost_activated">ブーストを発動しました</string>
     <string name="notif_crew_joined">%1$sに参加しました</string>
@@ -343,20 +335,8 @@
     <string name="stat_sessions">ラン回数</string>
     <string name="stat_tokens_earned">獲得トークン</string>
     <string name="profile_account">アカウント &amp; 設定</string>
-    <string name="settings_group_account">アカウント</string>
-    <string name="settings_group_activity">マイアクティビティ</string>
-    <string name="settings_group_preferences">アプリ設定</string>
-    <string name="settings_group_help">ヘルプ</string>
     <string name="settings_wallet">ウォレット &amp; トークン</string>
-    <string name="settings_notifications">通知</string>
-    <string name="settings_privacy">プライバシー &amp; セキュリティ</string>
-    <string name="settings_support">サポートセンター</string>
-    <string name="settings_connected">連携アカウント</string>
-    <string name="goal_title">1日の目標</string>
     <string name="goal_steps_suffix">歩</string>
-    <string name="goal_about_km">約 %1$s km</string>
-    <string name="goal_bonus_preview">達成で +%1$s SUP</string>
-    <string name="goal_hint">目標を達成するとボーナスSUP！ 連続で達成するほど大きくなります。</string>
     <string name="about_version">バージョン</string>
     <string name="about_network">ネットワーク</string>
     <string name="about_network_value">GIWA チェーン（近日公開）</string>
@@ -393,48 +373,14 @@
     <string name="analytics_no_runs">まだランの記録がありません</string>
 
     <!-- Notification settings -->
-    <string name="pref_push">プッシュ通知</string>
-    <string name="pref_push_desc">セッションのまとめと獲得のお知らせ</string>
-    <string name="pref_goal_reminder">目標リマインダー</string>
-    <string name="pref_goal_reminder_desc">夕方に目標が残っていたら教えてもらう</string>
-    <string name="pref_party_invite">クルー &amp; パーティー招待</string>
-    <string name="pref_party_invite_desc">クルーメイトからランに誘ってもらう</string>
-    <string name="pref_event_news">イベントのお知らせ</string>
-    <string name="pref_event_news_desc">新しいキャンペーンや期間限定クエスト</string>
     <string name="pref_saved">設定を保存しました</string>
 
     <!-- Privacy -->
-    <string name="privacy_data_title">保存されるデータ</string>
     <string name="privacy_data_body">ログインすると、ラン記録（GPSルートを含む）・歩数の合計・SUP履歴・投稿とクルー活動がStepUpサーバーに保管されます。サーバーが付与を直接計算し、クルー・ランキング・コース・陣取りを共有するためです。広告IDは収集しません。アカウントは連携アカウント画面からいつでも削除できます。</string>
-    <string name="privacy_perm_title">アプリの権限</string>
-    <string name="privacy_perm_activity">身体活動 — 歩数のカウント</string>
-    <string name="privacy_perm_notification">通知 — ラン中のセッション表示</string>
-    <string name="privacy_reset_title">ローカルデータをリセット</string>
-    <string name="privacy_reset_body">通知履歴だけを消去します。歩数・SUP・スニーカーはそのまま残ります。</string>
-    <string name="privacy_reset_button">通知を消去</string>
-    <string name="privacy_reset_done">通知履歴を消去しました</string>
 
     <!-- Support -->
-    <string name="support_faq">よくある質問</string>
-    <string name="faq_q_earn">SUPはどうやって貯めるの？</string>
-    <string name="faq_a_earn">ホーム画面からランをスタート。セッション中にカウントされた歩数がSUPになり、スニーカーやブーストに応じて倍率がかかります。</string>
-    <string name="faq_q_energy">獲得が止まったのはなぜ？</string>
-    <string name="faq_a_energy">エナジー切れです。エナジー1つで600歩ぶん、毎日0時に満タンまで回復します。</string>
-    <string name="faq_q_rarity">レアリティのしくみは？</string>
-    <string name="faq_a_rarity">レアリティでステータスの範囲（効率・履き心地）と最大レベルが決まります。抽選確率は固定です：コモン55%、レア28%、エピック13%、レジェンダリー4%。</string>
-    <string name="faq_q_withdraw">出金はいつできるの？</string>
-    <string name="faq_a_withdraw">GIWA チェーンへのオンチェーン送金はまだ開発中です。それまで残高は安全に保管されます。</string>
-    <string name="support_contact">お問い合わせ</string>
-    <string name="support_contact_body">質問やバグ報告はプロジェクトのリポジトリからどうぞ。</string>
 
     <!-- Connected accounts -->
-    <string name="connected_giwa">GIWA ウォレット</string>
-    <string name="connected_health">Health Connect</string>
-    <string name="connected_social">ソーシャルアカウント</string>
-    <string name="connected_status_soon">未対応</string>
-    <string name="connected_status_on">ログイン中</string>
-    <string name="connected_status_off">未連携</string>
-    <string name="connected_body">ログイン状態と、このバージョンで対応している外部サービスを確認できます。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 残高</string>
@@ -656,10 +602,8 @@
     <string name="party_gps_rule">ホストから %1$dm 以上離れると自動的にパーティから外れます。</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">承認</string>
     <string name="notif_decline">辞退</string>
     <string name="notif_claim">受け取る</string>
-    <string name="notif_done">処理済み</string>
     <string name="notif_crew_invite">%1$s からクルーへの招待が届きました</string>
     <string name="notif_party_invite">%1$s からパーティランに招待されました</string>
     <string name="notif_event_reward">イベント報酬が届きました: %1$s · %2$s SUP</string>
@@ -823,7 +767,6 @@ StepUp と走り出そう。</string>
     <string name="login_offline">サーバーに接続できません。通信環境をご確認ください。</string>
 
     <!-- Guide -->
-    <string name="settings_guide">アプリガイド</string>
     <string name="guide_heading">StepUp の使い方</string>
     <string name="guide_skip">スキップ</string>
     <string name="guide_next">次へ</string>
@@ -932,21 +875,8 @@ StepUp と走り出そう。</string>
     <!-- Seed comments -->
 
     <!-- Language -->
-    <string name="settings_language">言語</string>
-    <string name="settings_theme">画面テーマ</string>
-    <string name="theme_note">明るくても暗くても、ブルーはそのままです。選んだ値はアプリを再起動しても残ります。</string>
-    <string name="theme_system">システム設定に従う</string>
-    <string name="theme_system_note">端末の設定に合わせて切り替わります</string>
-    <string name="theme_light">ライト</string>
-    <string name="theme_light_note">白い背景にネイビーの文字</string>
-    <string name="theme_dark">ダーク</string>
-    <string name="theme_dark_note">濃紺の背景に白い文字</string>
-    <string name="language_system">システムに合わせる</string>
-    <string name="language_en">英語</string>
-    <string name="language_ko">韓国語</string>
     <string name="language_zh">中国語</string>
     <string name="language_ja">日本語</string>
-    <string name="language_note">選択した言語でアプリを表示します。ユーザーの投稿や名前は元の言語で表示される場合があります。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">ルーキー</string>
@@ -1001,7 +931,6 @@ StepUp と走り出そう。</string>
     <string name="profile_avg_pace">平均ペース</string>
     <string name="profile_badges">ランナーバッジ</string>
     <string name="profile_edit_profile">プロフィール編集</string>
-    <string name="profile_set_goal">目標設定</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
@@ -1522,22 +1451,12 @@ StepUp と走り出そう。</string>
     <string name="notification_channel_reminder">目標リマインダー</string>
     <string name="reminder_goal_title">今日の目標まであと%1$d歩</string>
     <string name="reminder_goal_body">軽くひと走りして目標を達成しましょう</string>
-    <string name="account_delete_title">アカウント削除</string>
-    <string name="account_delete_body">アカウントとサーバー上のラン記録・GPSルート・SUP履歴・投稿・コメント・コース・陣地マークがすべて削除され、元に戻せません。クルー長の場合は最も古いメンバーがクルー長になります。この端末に残った記録はアプリを削除すると消えます。</string>
-    <string name="account_delete_confirm">削除</string>
-    <string name="account_delete_failed">削除できませんでした。接続を確認して再試行してください。解決しない場合は support@stepupcrew.com までご連絡ください。</string>
     <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
     <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
     <string name="finish_share_activity">StepUpで%1$s kmを%2$sで走りました。</string>
-    <string name="notif_reward_unverified">この過去の報酬通知には確認済みの支払い記録がありません。獲得できる報酬はチャレンジで確認してください。</string>
     <string name="session_sign_in_again">再ログイン</string>
     <string name="post_invalid_numbers">距離は0kmより大きく、出発までは1分以上、定員は2〜200人で入力してください。</string>
     <string name="energy_purchase_capacity">エネルギーを2以上使ってから再試行してください。保留中の購入は追加の支払いなしで再開します。</string>
-    <string name="privacy_permission_allowed">許可済み</string>
-    <string name="privacy_permission_not_allowed">未許可</string>
-    <string name="privacy_perm_location">位置情報 — ランのルートを記録</string>
-    <string name="privacy_location_precise">正確な位置情報を許可</string>
-    <string name="privacy_location_approximate">おおよその位置情報を許可</string>
     <string name="run_saving">ランニングを保存中</string>
     <string name="run_save_retry">保存を再試行</string>
     <string name="run_save_failed">保存を完了できませんでした。アプリを開いたまま再試行してください。</string>

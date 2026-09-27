@@ -31,7 +31,7 @@ def problems(path: pathlib.Path):
 
 def main() -> int:
     found = 0
-    for path in sorted(RES.glob("values*/strings.xml")):
+    for path in sorted(RES.glob("values*/*.xml")):
         for line, name, why, body in problems(path):
             rel = path.relative_to(ROOT)
             print(f"{rel}:{line}  {name}\n    {why}\n    {body.strip()[:80]}", file=sys.stderr)

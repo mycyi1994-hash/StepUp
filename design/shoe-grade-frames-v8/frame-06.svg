@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="418" viewBox="0 0 440 418"><defs>
+    <linearGradient id="edge5" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#70FFF0"/><stop offset=".47" stop-color="#D58BFF"/><stop offset="1" stop-color="#E1FCFF"/></linearGradient>
+    <radialGradient id="aura5"><stop stop-color="#5DE9DE" stop-opacity="0.165"/><stop offset="1" stop-color="#5DE9DE" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ground5"><stop stop-color="#E1FCFF" stop-opacity="0.57"/><stop offset=".48" stop-color="#5DE9DE" stop-opacity="0.274"/><stop offset="1" stop-color="#5DE9DE" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo5"><stop offset=".48" stop-color="#5DE9DE" stop-opacity="0"/><stop offset=".79" stop-color="#5DE9DE" stop-opacity="0.36"/><stop offset="1" stop-color="#5DE9DE" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam5" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#E1FCFF" stop-opacity="0"/><stop offset=".56" stop-color="#5DE9DE" stop-opacity="0.1"/><stop offset="1" stop-color="#5DE9DE" stop-opacity="0"/></linearGradient>
+    <filter id="blur5" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+    </defs><style>text{font-family:Pretendard,"Malgun Gothic",sans-serif}</style><path d="M53 25H387L415 53V365L387 393H53L25 365V53Z" fill="none" stroke="#5DE9DE" stroke-width="6" opacity=".28" filter="url(#blur5)"/>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z M58 37H382L403 58V360L382 381H58L37 360V58Z" fill="#102037" fill-rule="evenodd"/>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z" fill="none" stroke="#293B54" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z" fill="none" stroke="url(#edge5)" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M58 37H382L403 58V360L382 381H58L37 360V58Z" fill="none" stroke="#5DE9DE" stroke-width="1.4" opacity=".68"/>
+    <path d="M54 31h84 M302 31h84 M54 387h84 M302 387h84" stroke="#E1FCFF" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+    
+        <path d="M53 25h96l-19 12H58Z M387 25h-96l19 12h72Z M53 393h96l-19-12H58Z M387 393h-96l19-12h72Z" fill="url(#edge5)" opacity="0.78"/>
+        
+        <path d="M25 95v79l12-18v-43Z M415 323v-79l-12 18v43Z" fill="url(#edge5)" opacity=".28"/>
+        
+        <path d="M19 188q-6 25 0 45 M421 230q6-25 0-45" fill="none" stroke="#5DE9DE" stroke-width="2.2" opacity=".72" stroke-linecap="round"/>
+        <path d="M165 30h110 M165 388h110" stroke="#E3B8FF" stroke-width="2.5" opacity=".85"/><path d="M24 204l13-22v43l-13 22 M416 214l-13-22v43l13 22" fill="#82F7E8" opacity=".22"/>
+        <path d="M25 80v109 M415 229v109 M82 25h89 M269 393h89" stroke="#E1FCFF" stroke-width="4.3" stroke-linecap="round"/>
+        <path d="M182 26l38 24 38-24 M182 392l38-24 38 24" fill="none" stroke="#E1FCFF" stroke-width="3.5"/>
+        <path d="M27 200l-15 31 M413 218l15-31" stroke="#5DE9DE" stroke-width="4" stroke-linecap="round"/>
+        <path d="M30 74l29 26 M410 344l-29-26" stroke="#D49CFF" stroke-width="2.6" opacity=".8"/>
+        <path d="M220 13v19 M210.5 22.5h19 M64 356v14 M57 363h14" stroke="#E1FCFF" stroke-width="1.9"/>
+        <path d="M46 113h13 M46 125h13 M46 137h13 M46 149h13 M381 269h13 M381 281h13 M381 293h13 M381 305h13" stroke="#9CFFF4" stroke-width="2.2" opacity=".85"/>
+        <path d="M341 360h10v10h-10z M355 360h10v10h-10z M369 360h10v10h-10z" fill="#D7ADFF" opacity=".58"/>
+        </svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="418" viewBox="0 0 440 418"><defs>
+    <linearGradient id="edge0" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#CFD7E5"/><stop offset=".52" stop-color="#91A1B8"/><stop offset="1" stop-color="#CFD7E5"/></linearGradient>
+    <radialGradient id="aura0"><stop stop-color="#91A1B8" stop-opacity="0.035"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ground0"><stop stop-color="#CFD7E5" stop-opacity="0"/><stop offset=".48" stop-color="#91A1B8" stop-opacity="0.000"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo0"><stop offset=".48" stop-color="#91A1B8" stop-opacity="0"/><stop offset=".79" stop-color="#91A1B8" stop-opacity="0"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam0" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#CFD7E5" stop-opacity="0"/><stop offset=".56" stop-color="#91A1B8" stop-opacity="0"/><stop offset="1" stop-color="#91A1B8" stop-opacity="0"/></linearGradient>
+    <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+    </defs><style>text{font-family:Pretendard,"Malgun Gothic",sans-serif}</style>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z M58 37H382L403 58V360L382 381H58L37 360V58Z" fill="#102037" fill-rule="evenodd"/>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z" fill="none" stroke="#293B54" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M53 25H387L415 53V365L387 393H53L25 365V53Z" fill="none" stroke="url(#edge0)" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M58 37H382L403 58V360L382 381H58L37 360V58Z" fill="none" stroke="#91A1B8" stroke-width="1.4" opacity=".68"/>
+    <path d="M54 31h84 M302 31h84 M54 387h84 M302 387h84" stroke="#CFD7E5" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+    <path d="M30 112v25 M410 281v25" stroke="#CFD7E5" stroke-width="2" opacity=".55"/></svg>

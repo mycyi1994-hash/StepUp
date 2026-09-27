@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -27,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -378,23 +375,14 @@ fun S2TextTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: M
     }
 }
 
-/** S2 신발 무대 — 기울인 파란 면 위에 신발 그림. 그림은 기존 신발 자산 그대로다. */
+/**
+ * S2 신발 무대 — 등급 프레임 v8(2026-09-27): 무대 면 → 뒤 효과 → 실제 신발 → 앞 효과 → 프레임([SneakerGradeStage]).
+ * 예전의 기울인 파란 면 대신 등급이 테두리 → 바닥광 → 후광 → 스포트라이트로 읽힌다. 신발 그림은 기존 자산 그대로다.
+ * 비율은 440:418 이라 높이를 정하는 쪽은 폭(또는 weight 로 남은 높이)만 준다.
+ */
 @Composable
 fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Modifier, animate: Boolean = false) {
-    Box(modifier.aspectRatio(312f / 214f), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 8.dp)
-                .graphicsLayer { rotationZ = -8f }
-                .background(
-                    if (StepUpColors.dark) Color(0xFF294B9C) else StepUpColors.carbonHigh,
-                    RoundedCornerShape(4.dp),
-                ),
-        )
-        SneakerFrame(
-            shoe, Modifier.fillMaxWidth(0.84f).fillMaxHeight(0.86f).graphicsLayer { rotationZ = -7f },
-            animate = animate,
-        )
-    }
+    SneakerGradeStage(shoe, modifier, animate)
 }
 
 

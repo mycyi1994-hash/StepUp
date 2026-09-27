@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filter_group_faction">属性 · 收集进度</string>
-    <string name="pref_saved_on_device">已保存在这部手机上</string>
-    <string name="pref_sync_pending">选择已保存在这部手机上，但尚未确认服务器已更新。之前的通知设置可能仍然有效。请确认已登录并连接网络后重试。</string>
-    <string name="pref_sync_retry">重试同步</string>
-    <string name="pref_sync_sending">正在更新通知设置…</string>
-    <string name="pref_notifications_blocked">手机设置已阻止通知。请允许 StepUp 发送通知，以接收你选择的提醒。</string>
     <string name="post_like_action">点赞</string>
     <string name="post_unlike_action">取消点赞</string>
     <!-- Notification -->
@@ -288,14 +283,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">通知</string>
-    <string name="notif_mark_read">全部标为已读</string>
-    <string name="notif_empty_title">这里还空着</string>
-    <string name="notif_empty_body">奖励、跑团邀请和活动更新都会出现在这里。</string>
     <string name="notif_reward_earned">%1$s 步赚到 %2$s SUP</string>
     <string name="notif_reward_earned_plain">%1$s 步跑步记录</string>
     <string name="notif_goal_reached">每日目标达成！连续 %1$s 天 · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">达成每日目标！连续 %1$s 天</string>
-    <string name="notif_sneaker_minted">已铸造 %1$s</string>
+    <string name="notif_sneaker_minted">你获得了%1$s</string>
     <string name="notif_sneaker_upgraded">%1$s 升到新等级了</string>
     <string name="notif_boost_activated">加成已激活</string>
     <string name="notif_crew_joined">你加入了 %1$s</string>
@@ -342,20 +334,8 @@
     <string name="stat_sessions">跑步次数</string>
     <string name="stat_tokens_earned">已赚代币</string>
     <string name="profile_account">账户与设置</string>
-    <string name="settings_group_account">账户</string>
-    <string name="settings_group_activity">我的活动</string>
-    <string name="settings_group_preferences">应用设置</string>
-    <string name="settings_group_help">帮助</string>
     <string name="settings_wallet">钱包与代币</string>
-    <string name="settings_notifications">通知</string>
-    <string name="settings_privacy">隐私与安全</string>
-    <string name="settings_support">帮助中心</string>
-    <string name="settings_connected">已连接账户</string>
-    <string name="goal_title">每日目标</string>
     <string name="goal_steps_suffix">步</string>
-    <string name="goal_about_km">≈ %1$s km</string>
-    <string name="goal_bonus_preview">达成可得 +%1$s SUP</string>
-    <string name="goal_hint">达成目标就有每日 SUP 奖励 —— 连续打卡奖励更大。</string>
     <string name="about_version">版本</string>
     <string name="about_network">网络</string>
     <string name="about_network_value">GIWA 链（即将上线）</string>
@@ -392,48 +372,14 @@
     <string name="analytics_no_runs">还没有跑步记录</string>
 
     <!-- Notification settings -->
-    <string name="pref_push">推送通知</string>
-    <string name="pref_push_desc">跑步总结和奖励提醒</string>
-    <string name="pref_goal_reminder">每日目标提醒</string>
-    <string name="pref_goal_reminder_desc">傍晚还没达标就提醒我</string>
-    <string name="pref_party_invite">跑团与组队邀请</string>
-    <string name="pref_party_invite_desc">允许队友喊我一起跑</string>
-    <string name="pref_event_news">活动公告</string>
-    <string name="pref_event_news_desc">新赛季活动和限时任务</string>
     <string name="pref_saved">设置已保存</string>
 
     <!-- Privacy -->
-    <string name="privacy_data_title">我们存了什么</string>
     <string name="privacy_data_body">登录后，跑步记录（含 GPS 路线）、每日步数、SUP 记录、帖子和跑团活动会保存在 StepUp 服务器上，以便服务器直接计算奖励，并共享跑团、排行、路线和占地盘。不收集广告标识符。可随时在已连接账户中删除账户。</string>
-    <string name="privacy_perm_title">应用权限</string>
-    <string name="privacy_perm_activity">身体活动 —— 统计你的步数</string>
-    <string name="privacy_perm_notification">通知 —— 显示进行中的跑步</string>
-    <string name="privacy_reset_title">重置本地数据</string>
-    <string name="privacy_reset_body">只会清空通知记录。步数、SUP 和球鞋都会保留。</string>
-    <string name="privacy_reset_button">清空通知</string>
-    <string name="privacy_reset_done">通知记录已清空</string>
 
     <!-- Support -->
-    <string name="support_faq">常见问题</string>
-    <string name="faq_q_earn">怎么赚 SUP？</string>
-    <string name="faq_a_earn">在首页开始一次跑步。只有跑步过程中记录到的步数才能赚 SUP，倍率取决于你的球鞋和生效中的加成。</string>
-    <string name="faq_q_energy">为什么不赚 SUP 了？</string>
-    <string name="faq_a_energy">能量用完了。1 点能量对应 600 步，每天午夜会自动回满。</string>
-    <string name="faq_q_rarity">稀有度是怎么运作的？</string>
-    <string name="faq_a_rarity">稀有度决定属性范围（效率、舒适度）和最高等级。抽取概率固定：普通 55%、稀有 28%、史诗 13%、传奇 4%。</string>
-    <string name="faq_q_withdraw">什么时候能提现？</string>
-    <string name="faq_a_withdraw">转到 GIWA 链的链上功能还在开发中。在那之前，你的余额都很安全。</string>
-    <string name="support_contact">联系我们</string>
-    <string name="support_contact_body">有问题或想报 bug，欢迎到项目仓库找我们。</string>
 
     <!-- Connected accounts -->
-    <string name="connected_giwa">GIWA 钱包</string>
-    <string name="connected_health">Health Connect</string>
-    <string name="connected_social">社交账号</string>
-    <string name="connected_status_soon">暂不支持</string>
-    <string name="connected_status_on">已登录</string>
-    <string name="connected_status_off">未连接</string>
-    <string name="connected_body">查看登录状态及当前版本支持的外部服务。</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 余额</string>
@@ -655,10 +601,8 @@
     <string name="party_gps_rule">离队长超过 %1$d 米会被自动移出队伍。</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">接受</string>
     <string name="notif_decline">拒绝</string>
     <string name="notif_claim">领取</string>
-    <string name="notif_done">已处理</string>
     <string name="notif_crew_invite">%1$s 邀请你加入跑团</string>
     <string name="notif_party_invite">%1$s 邀请你参加组队跑</string>
     <string name="notif_event_reward">活动奖励已到账：%1$s · %2$s SUP</string>
@@ -822,7 +766,6 @@
     <string name="login_offline">无法连接服务器，请检查网络。</string>
 
     <!-- Guide -->
-    <string name="settings_guide">使用指南</string>
     <string name="guide_heading">StepUp 使用方法</string>
     <string name="guide_skip">跳过</string>
     <string name="guide_next">下一页</string>
@@ -931,21 +874,8 @@
     <!-- Seed comments -->
 
     <!-- Language -->
-    <string name="settings_language">语言</string>
-    <string name="settings_theme">界面主题</string>
-    <string name="theme_note">无论浅色还是深色，蓝色都不变。选择会在重启后保留。</string>
-    <string name="theme_system">跟随系统</string>
-    <string name="theme_system_note">随手机设置自动切换</string>
-    <string name="theme_light">浅色</string>
-    <string name="theme_light_note">白色背景，深蓝文字</string>
-    <string name="theme_dark">深色</string>
-    <string name="theme_dark_note">深蓝背景，白色文字</string>
-    <string name="language_system">跟随系统</string>
-    <string name="language_en">英语</string>
-    <string name="language_ko">韩语</string>
     <string name="language_zh">中文</string>
     <string name="language_ja">日语</string>
-    <string name="language_note">应用将使用所选语言。用户发布的内容和名称可能保留原文。</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">新秀</string>
@@ -1000,7 +930,6 @@
     <string name="profile_avg_pace">平均配速</string>
     <string name="profile_badges">跑者徽章</string>
     <string name="profile_edit_profile">编辑资料</string>
-    <string name="profile_set_goal">目标设置</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
@@ -1521,22 +1450,12 @@
     <string name="notification_channel_reminder">目标提醒</string>
     <string name="reminder_goal_title">距离今日目标还差 %1$d 步</string>
     <string name="reminder_goal_body">去轻松跑一圈完成目标吧？</string>
-    <string name="account_delete_title">删除账户</string>
-    <string name="account_delete_body">账户及服务器上的跑步记录、GPS 路线、SUP 记录、帖子、评论、路线和地盘标记将全部删除且无法恢复。如果你是团长，最早加入的成员将成为团长。留在本机的记录会在卸载应用时删除。</string>
-    <string name="account_delete_confirm">删除</string>
-    <string name="account_delete_failed">删除失败。请检查网络后重试。若仍失败，请发邮件至 support@stepupcrew.com。</string>
     <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
     <string name="run_location_disabled">位置权限已关闭</string>
     <string name="finish_share_activity">我在StepUp用%2$s跑了%1$s公里。</string>
-    <string name="notif_reward_unverified">此历史奖励通知没有已验证的发放记录。请前往挑战查看可领取的奖励。</string>
     <string name="session_sign_in_again">重新登录</string>
     <string name="post_invalid_numbers">距离须大于0公里，出发时间至少为1分钟后，人数须为2至200人。</string>
     <string name="energy_purchase_capacity">请消耗至少2点能量后重试。待处理的购买不会再次扣费。</string>
-    <string name="privacy_permission_allowed">已允许</string>
-    <string name="privacy_permission_not_allowed">未允许</string>
-    <string name="privacy_perm_location">位置信息 — 记录跑步路线</string>
-    <string name="privacy_location_precise">已允许精确位置</string>
-    <string name="privacy_location_approximate">已允许大致位置</string>
     <string name="run_saving">正在保存跑步记录</string>
     <string name="run_save_retry">重新保存</string>
     <string name="run_save_failed">跑步记录尚未保存完成。请保持应用打开并重试。</string>

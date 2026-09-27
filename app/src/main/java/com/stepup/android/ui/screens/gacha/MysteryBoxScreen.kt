@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +50,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
@@ -59,7 +63,7 @@ import com.stepup.android.ui.components.FactionChip
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.RarityChip
 import com.stepup.android.ui.components.S2ShoesSections
-import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.components.SneakerGradeStage
 import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.celebrate
 import com.stepup.android.ui.components.fullLabel
@@ -100,41 +104,38 @@ fun MysteryBoxScreen(
     val palette = drawPalette()
     val status = (state as? DrawScreenState.Ready)?.status
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    val largeText = LocalDensity.current.fontScale > 1.2f
+    val fontScale = LocalDensity.current.fontScale
 
     Column(
         Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter).padding(bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         S2ShoesSections(drawSelected = true, onShoes = onOpenShoes, onDraw = {})
-        Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(12.dp))
-            DrawTabs(tab, onTab, palette)
-            Spacer(Modifier.height(16.dp))
-            Headline(tab, status, palette)
-            Spacer(Modifier.height(4.dp))
-            // 작은 화면 · 큰 글씨에서는 상자를 줄여 아래 수와 버튼 자리를 먼저 둔다
-            val stageWidth = when {
-                screenHeight < 700 || largeText -> 0.62f
-                screenHeight < 800 -> 0.74f
-                else -> 0.89f
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val stageWidth = drawStageWidth(maxWidth - 8.dp, maxHeight, screenHeight, fontScale)
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(Modifier.height(12.dp))
+                DrawTabs(tab, onTab, palette)
+                Spacer(Modifier.height(16.dp))
+                Headline(tab, status, palette)
+                Spacer(Modifier.height(4.dp))
+                Image(
+                    painter = painterResource(R.drawable.draw_shoebox_stage),
+                    contentDescription = stringResource(R.string.draw_box_description),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.width(stageWidth).aspectRatio(DrawStageRatio).testTag("draw-stage"),
+                )
+                Spacer(Modifier.height(12.dp))
+                when {
+                    tab == DrawKind.FREE -> FreeDetails(state, status, palette, onOpenPremium = { onTab(DrawKind.PREMIUM) }, onRetry = onRetry)
+                    status?.walletLinked == true -> PremiumDetails(status, palette)
+                    else -> PremiumConnect(state, status, palette, onRetry = onRetry)
+                }
+                Spacer(Modifier.height(16.dp))
             }
-            Image(
-                painter = painterResource(R.drawable.draw_shoebox_stage),
-                contentDescription = stringResource(R.string.draw_box_description),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth(stageWidth).aspectRatio(1170f / 1028f).testTag("draw-stage"),
-            )
-            Spacer(Modifier.height(12.dp))
-            when {
-                tab == DrawKind.FREE -> FreeDetails(state, status, palette, onOpenPremium = { onTab(DrawKind.PREMIUM) }, onRetry = onRetry)
-                status?.walletLinked == true -> PremiumDetails(status, palette)
-                else -> PremiumConnect(state, status, palette, onRetry = onRetry)
-            }
-            Spacer(Modifier.height(16.dp))
         }
         val action = drawAction(state, status, tab)
         DrawActionButton(
@@ -151,6 +152,24 @@ fun MysteryBoxScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("draw-caption"),
         )
     }
+}
+
+private const val DrawStageRatio = 1170f / 1028f
+
+/**
+ * 상자 폭. 작은 화면 · 큰 글씨에서는 상자부터 줄이고(화면 높이 기준 비율), 앱 셸 안처럼 창이 짧으면 창 높이로 한 번 더 줄여
+ * 위 두 칸 · 제목 · 상자와 함께 **남은 수 한 줄**이 첫 화면에 보이게 한다 — 수가 아래 버튼에 가리지 않게.
+ */
+private fun drawStageWidth(width: Dp, viewport: Dp, screenHeight: Int, fontScale: Float): Dp {
+    val fraction = when {
+        screenHeight < 700 || fontScale > 1.2f -> 0.62f
+        screenHeight < 800 -> 0.74f
+        else -> 0.89f
+    }
+    // 두 칸(54) · 사이 여백(12 + 16 + 4 + 12) · 남은 수 줄의 위아래(12)와 틈 8 + 제목 한 줄(28) · 남은 수 숫자(46)는 글씨를 따라 커진다
+    val reserved = 118.dp + 74.dp * fontScale
+    val byHeight = (viewport - reserved) * DrawStageRatio
+    return minOf(width * fraction, byHeight).coerceIn(minOf(140.dp, width), width)
 }
 
 // ── 위 두 칸 ─────────────────────────────────────────────────────
@@ -415,7 +434,8 @@ fun DrawResultDialog(sneaker: Sneaker, onOpenShoes: () -> Unit, onClose: () -> U
                 FactionChip(sneaker.faction)
                 RarityChip(sneaker.rarity)
             }
-            SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(180.dp), corner = 16.dp, animate = true)
+            // 등급 프레임 v8 — 뽑은 신발의 등급이 테두리 · 바닥광 · 후광 · 스포트라이트로 읽힌다
+            SneakerGradeStage(sneaker, Modifier.widthIn(max = 240.dp).fillMaxWidth(), animate = true)
             Text(sneaker.fullLabel(), style = MaterialTheme.typography.titleLarge, color = Snow, textAlign = TextAlign.Center)
             Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), fontSize = 14.sp, color = Silver)
         }

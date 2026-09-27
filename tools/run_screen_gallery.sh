@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -152,6 +152,21 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/draw-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/draw-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw/. screen-gallery/shoe-draw/ || status=1
+  # 신발 등급 프레임 v8(2026-09-27) — 네 등급 무대 · 보유 칸 · 보관함 · 상세 · 밝은 테마 · 좁은 폭 · 큰 글씨 · 뽑기 결과
+  run_instrumentation grade "com.stepup.android.ShoeGradeFrameTest"
+  mkdir -p screen-gallery/grade-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/grade-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-grade/. screen-gallery/shoe-grade/ || status=1
+  # 설정 v1(2026-09-28) — 시안 01~28 장면(앱 셸 안의 실제 값 + 기기에서 만들 수 없는 상태)
+  run_instrumentation settings "com.stepup.android.SettingsDesignTest"
+  mkdir -p screen-gallery/settings-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/settings-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/settings-v1/. screen-gallery/settings-v1/ || status=1
+  # 알림·공지 v1(2026-09-28) — 시안 01~23 장면(앱 셸 안의 실제 알림함 + 기기에서 만들 수 없는 상태)
+  run_instrumentation notifications "com.stepup.android.NotificationsDesignTest"
+  mkdir -p screen-gallery/notifications-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/notifications-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/notifications-v1/. screen-gallery/notifications-v1/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

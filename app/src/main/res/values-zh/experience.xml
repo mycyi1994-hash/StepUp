@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_experience">声音与动效</string>
-    <string name="experience_intro">根据每日跑步习惯调整 StepUp 的操作体验。</string>
+    <string name="experience_intro">按你习惯的方式调整。</string>
     <string name="experience_sound">音效</string>
-    <string name="experience_sound_desc">通过短音提示操作、跑步状态和已确认的奖励。</string>
+    <string name="experience_sound_desc">用声音提示按钮和跑步状态。</string>
     <string name="experience_ambience">场景环境音</string>
-    <string name="experience_ambience_desc">安静的河畔与衣橱循环音，默认关闭。</string>
+    <string name="experience_ambience_desc">在支持的画面播放背景声音。</string>
     <string name="experience_haptic">触感反馈</string>
-    <string name="experience_haptic_desc">用轻微振动提示操作和重要成就。</string>
+    <string name="experience_haptic_desc">点按按钮时轻微振动。</string>
     <string name="experience_motion">减少动态效果</string>
-    <string name="experience_motion_desc">减少页面过渡和装饰动画。</string>
+    <string name="experience_motion_desc">减少画面切换和装饰动效。</string>
     <string name="experience_preview">预览反馈</string>
-    <string name="experience_system_note">遵循静音、勿扰和系统触摸音效设置。播放音乐时不播放音效，同时遵循系统动画设置。</string>
+    <string name="experience_system_note">静音、勿扰模式和手机设置同样生效。播放音乐时不会播放音效。</string>
 </resources>

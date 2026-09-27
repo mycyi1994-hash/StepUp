@@ -9,6 +9,7 @@ import com.stepup.android.ui.Routes
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -31,16 +32,29 @@ class NotificationNavigationTest {
                 ExperienceProvider { MainScaffold(initialRoute = Routes.NOTIFICATIONS) }
             }
         }
-        val explanation = compose.activity.getString(R.string.notif_reward_unverified)
+        val title = compose.activity.getString(R.string.reward_prev_title)
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithText(explanation).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText(explanation).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.challenge_title)).performClick()
+        // 알림함에 들어온 것만으로는 읽음이 되지 않는다
+        runBlocking { assertEquals(1, ServiceLocator.database.notificationDao().observeUnreadCount().first()) }
+        compose.onNodeWithText(title).performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("sheet-unverified-reward").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.reward_check_title)).assertIsDisplayed()
+        compose.onNodeWithTag("sheet-open-challenges").performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("challenge-primary-action").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed()
         runBlocking {
             assertEquals(before, ServiceLocator.database.rewardDao().balanceNow(), 0.0)
             assertEquals(1, ServiceLocator.database.notificationDao().count())
+            // 열어 본 것만 남는다 — 보상을 받은 것(처리)으로 바뀌지 않는다
+            val row = ServiceLocator.database.notificationDao().observeAll(100).first().single()
+            assertEquals(true, row.read)
+            assertEquals(false, row.actioned)
         }
     }
 }

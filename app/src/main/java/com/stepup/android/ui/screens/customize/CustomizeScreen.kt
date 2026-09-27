@@ -78,48 +78,56 @@ fun CustomizeScreen(
     // S2 신발 — 신발 한 켤레가 화면 가운데. 고르는 것은 미리 보기이고, 원형 버튼을 눌러야 신는다.
     Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter).padding(bottom = 12.dp)) {
         com.stepup.android.ui.components.S2ShoesSections(drawSelected = false, onShoes = {}, onDraw = onOpenDraw)
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (!ready) item {
-                StatePanel(stringResource(R.string.feed_loading), StepUpIcons.Shoe, loading = true)
-            } else if (selected == null) item {
-                StatePanel(stringResource(R.string.customize_no_shoes), StepUpIcons.Shoe,
-                    action = { GhostButton(stringResource(R.string.customize_open_vault), onClick = onOpenVault) })
-            } else {
-                item {
-                    Column(
-                        Modifier.fillMaxWidth().testTag("shoe-preview").guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Spacer(Modifier.height(12.dp))
-                        S2Kicker(stringResource(if (selected.equipped) R.string.items_equipped else R.string.shoes_preview) +
-                            " · " + selected.rarity.label())
-                        Spacer(Modifier.height(10.dp))
-                        S2Headline(selected.variantLabel())
-                        Spacer(Modifier.height(10.dp))
-                        S2Subtitle(stringResource(R.string.sneaker_mint_no, selected.mintNumber) + " · " +
-                            stringResource(R.string.level_chip, selected.level))
-                        Spacer(Modifier.height(18.dp))
-                        S2ShoeStage(selected, Modifier.fillMaxWidth(if (columns == 1) 1f else 0.86f))
-                        TextButton(onClick = { onOpenSneaker(selected.id) },
-                            modifier = Modifier.heightIn(min = StepUpDesign.TouchTarget).testTag("shoe-detail")) {
-                            Text(stringResource(R.string.shoes_details), color = Silver)
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            // 등급 무대(440:418)는 예전 파란 면보다 높다. 이름 · 무대 한 벌이 목록 창 높이 안에 들도록 글자를 뺀 나머지만큼만
+            // 무대를 키운다 — 작은 화면에서는 무대가 줄어 첫 화면에 잘리지 않는다("상세 보기"는 창 아래로 조금 내려갈 수 있다).
+            // 창이 아주 짧으면(가로 화면 · 큰 글씨) 무대를 한 변 190dp 아래로 줄이지 않고 스크롤에 맡긴다.
+            val previewHeight = maxOf(maxHeight + 40.dp, 98.dp + 74.dp * LocalDensity.current.fontScale + 190.dp)
+            val stageWidth = if (columns == 1) maxWidth else maxWidth * 0.86f
+            LazyColumn(Modifier.fillMaxSize().testTag("shoe-list"), contentPadding = PaddingValues(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (!ready) item {
+                    StatePanel(stringResource(R.string.feed_loading), StepUpIcons.Shoe, loading = true)
+                } else if (selected == null) item {
+                    StatePanel(stringResource(R.string.customize_no_shoes), StepUpIcons.Shoe,
+                        action = { GhostButton(stringResource(R.string.customize_open_vault), onClick = onOpenVault) })
+                } else {
+                    item {
+                        Column(
+                            Modifier.fillMaxWidth().heightIn(max = previewHeight)
+                                .testTag("shoe-preview").guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Spacer(Modifier.height(12.dp))
+                            S2Kicker(stringResource(if (selected.equipped) R.string.items_equipped else R.string.shoes_preview) +
+                                " · " + selected.rarity.label())
+                            Spacer(Modifier.height(10.dp))
+                            S2Headline(selected.variantLabel())
+                            Spacer(Modifier.height(10.dp))
+                            S2Subtitle(stringResource(R.string.sneaker_mint_no, selected.mintNumber) + " · " +
+                                stringResource(R.string.level_chip, selected.level))
+                            Spacer(Modifier.height(18.dp))
+                            S2ShoeStage(selected, Modifier.weight(1f, fill = false).widthIn(max = stageWidth))
+                            TextButton(onClick = { onOpenSneaker(selected.id) },
+                                modifier = Modifier.heightIn(min = StepUpDesign.TouchTarget).testTag("shoe-detail")) {
+                                Text(stringResource(R.string.shoes_details), color = Silver)
+                            }
                         }
                     }
-                }
-                item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.shoes_owned, inventory.size), color = Snow,
-                            style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        TextButton(onClick = onOpenVault) { Text(stringResource(R.string.me_see_all)) }
-                    }
-                }
-                items(inventory.chunked(columns), key = { row -> row.first().id }) { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        row.forEach { shoe ->
-                            ShoeChoice(shoe, selected.id == shoe.id, { selectedId = shoe.id }, Modifier.weight(1f))
+                    item {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.shoes_owned, inventory.size), color = Snow,
+                                style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            TextButton(onClick = onOpenVault) { Text(stringResource(R.string.me_see_all)) }
                         }
-                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                    items(inventory.chunked(columns), key = { row -> row.first().id }) { row ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            row.forEach { shoe ->
+                                ShoeChoice(shoe, selected.id == shoe.id, { selectedId = shoe.id }, Modifier.weight(1f))
+                            }
+                            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                 }
             }
@@ -151,7 +159,8 @@ private fun ShoeChoice(shoe: Sneaker, picked: Boolean, onPick: () -> Unit, modif
         .border(if (picked) 2.dp else 1.dp, if (picked) Volt else Edge, shape)
         .feedbackClickable(role = Role.RadioButton, onClick = onPick).semantics { selected = picked }
         .testTag("shoe-choice-${shoe.id}").padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        SneakerFrame(shoe, Modifier.fillMaxWidth().aspectRatio(1.4f))
+        // 등급 프레임 v8 — 보유 신발 칸은 프레임만(모바일 시안), 비율은 그림 그대로
+        SneakerGradeThumb(shoe, Modifier.fillMaxWidth())
         Text(shoe.variantLabel(), color = Snow, style = MaterialTheme.typography.titleSmall)
         Text(stringResource(R.string.sneaker_mint_no, shoe.mintNumber), color = Silver,
             style = MaterialTheme.typography.bodySmall)

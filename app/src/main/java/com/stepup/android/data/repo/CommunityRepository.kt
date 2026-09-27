@@ -136,6 +136,9 @@ class CommunityRepository(
         _commentFocus.value = null
     }
 
+    /** 알림이 가리키는 글을 지금 볼 수 있는가 — 서버가 없다고 답한 것과 닿지 못한 것을 구분한다 */
+    suspend fun postVisible(postId: Long): ServerResult<Boolean> = api.postVisible(postId)
+
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
 
     /** 내가 볼 수 있는 글 전부 — 전체 게시판과 내가 들어간 크루의 게시판 */

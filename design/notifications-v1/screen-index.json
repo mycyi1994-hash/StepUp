@@ -1,0 +1,163 @@
+[
+  {
+    "id": "01-inbox",
+    "title": "내 알림",
+    "description": "새 알림과 지난 알림을 한 목록에",
+    "png": "01-screens/01-inbox.png",
+    "svg": "01-screens/01-inbox.svg"
+  },
+  {
+    "id": "02-read-all",
+    "title": "모두 읽음",
+    "description": "알림 내용은 그대로 남김",
+    "png": "01-screens/02-read-all.png",
+    "svg": "01-screens/02-read-all.svg"
+  },
+  {
+    "id": "03-reward-detail",
+    "title": "적립 알림 내용",
+    "description": "저장된 내용과 지갑 진입",
+    "png": "01-screens/03-reward-detail.png",
+    "svg": "01-screens/03-reward-detail.svg"
+  },
+  {
+    "id": "04-shoe-detail",
+    "title": "신발 알림 내용",
+    "description": "받은 신발은 보유 목록으로",
+    "png": "01-screens/04-shoe-detail.png",
+    "svg": "01-screens/04-shoe-detail.svg"
+  },
+  {
+    "id": "05-crew-invite",
+    "title": "크루 초대",
+    "description": "크루 확인과 응답",
+    "png": "01-screens/05-crew-invite.png",
+    "svg": "01-screens/05-crew-invite.svg"
+  },
+  {
+    "id": "06-membership-requested",
+    "title": "가입 신청 완료",
+    "description": "크루 가입 완료와 구분",
+    "png": "01-screens/06-membership-requested.png",
+    "svg": "01-screens/06-membership-requested.svg"
+  },
+  {
+    "id": "07-invite-error",
+    "title": "초대 응답 실패",
+    "description": "처리 전 상태를 유지하고 재시도",
+    "png": "01-screens/07-invite-error.png",
+    "svg": "01-screens/07-invite-error.svg"
+  },
+  {
+    "id": "08-party-invite",
+    "title": "함께 뛰기 초대",
+    "description": "대기실 확인과 초대 응답",
+    "png": "01-screens/08-party-invite.png",
+    "svg": "01-screens/08-party-invite.svg"
+  },
+  {
+    "id": "09-unverified-reward",
+    "title": "지급 미확인 보상",
+    "description": "챌린지에서 실제 상태 확인",
+    "png": "01-screens/09-unverified-reward.png",
+    "svg": "01-screens/09-unverified-reward.svg"
+  },
+  {
+    "id": "10-empty-inbox",
+    "title": "빈 알림함",
+    "description": "필요하면 알림 설정으로",
+    "png": "01-screens/10-empty-inbox.png",
+    "svg": "01-screens/10-empty-inbox.svg"
+  },
+  {
+    "id": "11-inbox-loading",
+    "title": "알림 조회 중",
+    "description": "빈 알림함과 구분",
+    "png": "01-screens/11-inbox-loading.png",
+    "svg": "01-screens/11-inbox-loading.svg"
+  },
+  {
+    "id": "12-inbox-error",
+    "title": "알림 조회 실패",
+    "description": "다시 불러오기 제공",
+    "png": "01-screens/12-inbox-error.png",
+    "svg": "01-screens/12-inbox-error.svg"
+  },
+  {
+    "id": "13-read-error",
+    "title": "읽음 저장 실패",
+    "description": "기존 읽음 상태 유지",
+    "png": "01-screens/13-read-error.png",
+    "svg": "01-screens/13-read-error.svg"
+  },
+  {
+    "id": "14-target-unavailable",
+    "title": "연결된 글을 열 수 없음",
+    "description": "알림 또는 커뮤니티로 이동",
+    "png": "01-screens/14-target-unavailable.png",
+    "svg": "01-screens/14-target-unavailable.svg"
+  },
+  {
+    "id": "15-announcements",
+    "title": "공지 목록",
+    "description": "제목과 날짜 중심의 짧은 목록",
+    "png": "01-screens/15-announcements.png",
+    "svg": "01-screens/15-announcements.svg"
+  },
+  {
+    "id": "16-announcement-detail",
+    "title": "공지 상세",
+    "description": "안내를 읽고 관련 기능으로",
+    "png": "01-screens/16-announcement-detail.png",
+    "svg": "01-screens/16-announcement-detail.svg"
+  },
+  {
+    "id": "17-empty-announcements",
+    "title": "빈 공지 목록",
+    "description": "임시 공지를 넣지 않음",
+    "png": "01-screens/17-empty-announcements.png",
+    "svg": "01-screens/17-empty-announcements.svg"
+  },
+  {
+    "id": "18-announcement-error",
+    "title": "공지 조회 실패",
+    "description": "실제 빈 목록과 구분",
+    "png": "01-screens/18-announcement-error.png",
+    "svg": "01-screens/18-announcement-error.svg"
+  },
+  {
+    "id": "19-announcement-unavailable",
+    "title": "볼 수 없는 공지",
+    "description": "목록으로 복귀",
+    "png": "01-screens/19-announcement-unavailable.png",
+    "svg": "01-screens/19-announcement-unavailable.svg"
+  },
+  {
+    "id": "20-announcement-loading",
+    "title": "공지 조회 중",
+    "description": "제목과 날짜 자리를 유지",
+    "png": "01-screens/20-announcement-loading.png",
+    "svg": "01-screens/20-announcement-loading.svg"
+  },
+  {
+    "id": "21-decline-invite",
+    "title": "초대 거절 확인",
+    "description": "지워지는 초대만 안내",
+    "png": "01-screens/21-decline-invite.png",
+    "svg": "01-screens/21-decline-invite.svg"
+  },
+  {
+    "id": "22-login-required",
+    "title": "로그인 필요",
+    "description": "초대를 보존하고 로그인으로",
+    "png": "01-screens/22-login-required.png",
+    "svg": "01-screens/22-login-required.svg"
+  },
+  {
+    "id": "23-cached-announcements",
+    "title": "공지 갱신 실패",
+    "description": "저장된 내용은 계속 표시",
+    "png": "01-screens/23-cached-announcements.png",
+    "svg": "01-screens/23-cached-announcements.svg"
+  }
+]

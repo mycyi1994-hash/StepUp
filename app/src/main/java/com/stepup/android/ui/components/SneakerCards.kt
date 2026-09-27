@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -240,7 +239,7 @@ fun RarityChip(rarity: Rarity, modifier: Modifier = Modifier, small: Boolean = f
 
 /**
  * 컬렉션 그리드에 쓰는 스니커즈 카드.
- * 희귀도가 카드 테두리와 배경 그라데이션을 결정해 수집 진열대처럼 보이게 한다.
+ * 신발 그림은 등급 프레임(v8)을 두른 목록 칸이다 — 테두리 색이 속성색을 덮지 않고, 착용 중이면 카드 테두리가 파랗다.
  */
 @Composable
 fun SneakerCollectionCard(
@@ -255,7 +254,8 @@ fun SneakerCollectionCard(
             .quietClickable(onClick).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        SneakerFrame(sneaker, modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f), corner = 14.dp)
+        // 등급 프레임 v8 — 목록 칸은 프레임만(효과 없이), 비율은 그림 그대로 440:418
+        SneakerGradeThumb(sneaker, Modifier.fillMaxWidth())
         Text(sneaker.variantLabel(), style = MaterialTheme.typography.titleMedium, color = Snow)
         Text(sneaker.rarity.label() + " · " + sneaker.faction.label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
         if (sneaker.equipped) Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
@@ -334,7 +334,7 @@ fun EquippedSneakerCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    // S2 — 착용 중 · 등급 → 이름 → 민팅 번호 · 레벨 → 기울인 파란 면 위 신발 → 능력치 한 줄
+    // S2 — 착용 중 · 등급 → 이름 → 민팅 번호 · 레벨 → 등급 무대(프레임 v8) 위 신발 → 능력치 한 줄
     androidx.compose.foundation.layout.Column(
         modifier.fillMaxWidth().quietClickable(onClick).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

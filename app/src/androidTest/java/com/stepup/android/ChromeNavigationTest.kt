@@ -110,10 +110,11 @@ class ChromeNavigationTest {
                         compose.onNodeWithTag("profile-wallet").performScrollTo().assertIsDisplayed()
                         compose.onNodeWithTag("profile-settings").performScrollTo()
                     }
-                    // 러닝 패스(2026-09-27): 설정은 메뉴의 "설정" 줄이다
+                    // 러닝 패스(2026-09-27): 설정은 메뉴의 "설정" 줄이다. 설정 v1(2026-09-28)부터 설정 첫 목록은
+                    // 다른 설정 화면처럼 상세 화면(뒤로 · 제목 머리)이고, 아래 탭은 내 정보 그대로다
                     compose.onNodeWithTag("profile-settings").performScrollTo().performClick()
                     compose.waitForIdle()
-                    assertEquals("profile settings keep header", header, bounds("main-header"))
+                    compose.onNodeWithTag("settings-goal").assertIsDisplayed()
                     assertEquals("profile settings keep navigation", bar, bounds(BOTTOM_NAV_TAG))
                     capture("${next.width}-${next.font}-${next.mode}-profile-settings")
                     pressBack()

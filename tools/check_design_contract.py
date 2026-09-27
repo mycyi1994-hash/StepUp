@@ -55,8 +55,12 @@ for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
     if 'DetailPage(' not in detail or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail chrome')
-if 'DetailPage(' not in notifications or 'ArrowBack' in notifications:
+# 알림·공지 v1: 공통 상세 머리(SecondaryHeader — DetailPage 와 같은 것) 아래에 고정 메뉴(내 알림 · 공지)와
+# 메뉴마다 스크롤 위치를 따로 둔 목록 둘이라 DetailPage 의 목록 하나 대신 머리를 직접 쓴다. 자체 뒤로 버튼은 여전히 금지.
+if not ('DetailPage(' in notifications or 'SecondaryHeader(' in notifications) or 'ArrowBack' in notifications:
     errors.append('Notifications must use the shared detail page')
+if 'markAllRead()' in notifications and 'LaunchedEffect(Unit) { viewModel.markAllRead() }' in notifications:
+    errors.append('Opening the inbox must not mark everything read')
 if 'viewModel::clearAll' in notifications:
     errors.append('Mark all read must preserve notifications, not delete them')
 notification_repo = (ROOT/'app/src/main/java/com/stepup/android/data/repo/NotificationRepository.kt').read_text(encoding='utf-8')

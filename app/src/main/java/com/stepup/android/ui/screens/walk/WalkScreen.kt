@@ -142,6 +142,7 @@ import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.components.reveal
 import com.stepup.android.ui.components.celebrate
 import kotlin.math.max
+import kotlinx.coroutines.Dispatchers
 
 /** 랩 스냅샷(누적)을 구간값으로 변환한 것 */
 private data class LapSegment(
@@ -166,7 +167,9 @@ fun RunScreen(
     autoStart: Boolean = false,
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
 ) {
-    val session by viewModel.session.collectAsStateWithLifecycle()
+    // 러닝 서비스는 끝난 러닝을 백그라운드 스레드에서 내놓는다. 화면은 그 값을 메인 스레드에서 받는다 — 기기 테스트의
+    // 즉시 실행 환경에서 결과 목록(LazyColumn)을 백그라운드 스레드에서 처음 그리다 멈췄다(Looper 없음, QA 147)
+    val session by viewModel.session.collectAsStateWithLifecycle(context = Dispatchers.Main.immediate)
     val energy by viewModel.energy.collectAsStateWithLifecycle()
     val sneakerLevel by viewModel.sneakerLevel.collectAsStateWithLifecycle()
     val equipped by viewModel.equipped.collectAsStateWithLifecycle()

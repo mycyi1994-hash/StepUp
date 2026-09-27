@@ -296,7 +296,7 @@ class ExperienceUiTest {
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
         compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
         compose.onNodeWithTag("profile-settings").performClick()
-        val settingsLabel = compose.activity.getString(R.string.settings_experience)
+        val settingsLabel = compose.activity.getString(R.string.set_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).assertIsDisplayed()

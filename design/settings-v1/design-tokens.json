@@ -1,0 +1,79 @@
+{
+  "product": "StepUp",
+  "scope": "settings",
+  "version": 1,
+  "screen": {
+    "designWidth": 390,
+    "designHeight": 844,
+    "pngScale": 3,
+    "responsive": true
+  },
+  "font": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600
+    ],
+    "languageFallbacks": [
+      "Microsoft YaHei",
+      "Yu Gothic",
+      "system sans-serif"
+    ]
+  },
+  "dark": {
+    "background": "#050912",
+    "text": "#F2F4FC",
+    "secondaryText": "#98A8C0",
+    "accent": "#A3BFFE",
+    "surface": "#0E192A",
+    "divider": "#1D2B3F"
+  },
+  "light": {
+    "background": "#F6F8FC",
+    "text": "#10203B",
+    "secondaryText": "#536580",
+    "accent": "#335EAB",
+    "surface": "#E7EDF6",
+    "divider": "#D8E0ED"
+  },
+  "controls": {
+    "primaryGradient": [
+      "#F7F8FF",
+      "#E8EDFA"
+    ],
+    "primaryText": "#10203B",
+    "dangerBackground": "#F2B3B8",
+    "dangerText": "#36151D",
+    "switchDarkOn": "#A3BFFE",
+    "switchDarkOff": "#34445C",
+    "sheetDark": "#111D2E",
+    "toastDark": "#273B55",
+    "minimumTouchTargetDp": 48,
+    "buttonHeight": 52,
+    "buttonRadius": 17,
+    "switchWidth": 52,
+    "switchHeight": 30,
+    "sheetTopRadius": 27
+  },
+  "layout": {
+    "horizontalPadding": 24,
+    "menuRowMinHeight": 58,
+    "descriptionRowMinHeight": 76,
+    "safeArea": "Use actual system insets; do not hardcode the mockup status bar"
+  },
+  "typography": {
+    "header": {
+      "size": 19,
+      "weight": 600
+    },
+    "menuTitle": {
+      "size": 17,
+      "weight": 600
+    },
+    "secondary": {
+      "size": 13,
+      "weight": 400
+    }
+  },
+  "implementation": "Use semantic theme tokens. Grow rows and sheets for font scaling and translated text. Existing preference defaults are unchanged."
+}
