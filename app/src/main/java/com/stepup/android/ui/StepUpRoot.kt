@@ -519,7 +519,7 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
-                    weatherScene = weatherPick.takeIf { it == com.stepup.android.ui.components.HomePhotos.all[homePhoto].mood },
+                    weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },
                     onPreviousBackground = {
                         homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)
                     },

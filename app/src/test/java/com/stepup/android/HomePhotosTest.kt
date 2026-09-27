@@ -4,6 +4,7 @@ import com.stepup.android.domain.WeatherScene
 import com.stepup.android.ui.components.HomePhotos
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,7 +16,8 @@ class HomePhotosTest {
         assertEquals(30, HomePhotos.all.map { it.key }.toSet().size)
         assertEquals(30, HomePhotos.all.map { it.res }.toSet().size)
         WeatherScene.entries.forEach { scene ->
-            assertTrue("$scene", HomePhotos.all.count { it.mood == scene } >= 2)
+            // 날씨로 고를 수 있는 사진이 둘 이상이어야 돌아올 때 다른 한 장을 고른다
+            assertTrue("$scene", HomePhotos.all.count { it.suits(scene) } >= 2)
         }
     }
 
@@ -39,7 +41,7 @@ class HomePhotosTest {
             WeatherScene.entries.forEach { scene ->
                 val picked = HomePhotos.shuffle(current, scene, random)
                 assertNotEquals(current, picked)
-                assertEquals(scene, HomePhotos.all[picked].mood)
+                assertTrue("$scene", HomePhotos.all[picked].suits(scene))
             }
         }
     }
@@ -50,5 +52,19 @@ class HomePhotosTest {
         assertEquals(night, HomePhotos.forWeather(WeatherScene.NIGHT, night))
         val day = HomePhotos.all.indexOfFirst { it.mood == WeatherScene.DAY }
         assertEquals(WeatherScene.RAIN, HomePhotos.all[HomePhotos.forWeather(WeatherScene.RAIN, day)].mood)
+    }
+
+    @Test
+    fun rainNeverPicksOrLabelsTheSnowPhoto() {
+        val snow = HomePhotos.all.indexOfFirst { it.key == "seoul-snow" }
+        assertFalse(HomePhotos.all[snow].suits(WeatherScene.RAIN))
+        // 눈 사진을 보고 있을 때 비가 오면 다른 사진으로 바꾼다
+        assertNotEquals(snow, HomePhotos.forWeather(WeatherScene.RAIN, snow))
+        val random = Random(11)
+        HomePhotos.all.indices.forEach { index ->
+            repeat(20) { assertNotEquals(snow, HomePhotos.forWeather(WeatherScene.RAIN, index, random)) }
+        }
+        // 화살표로는 그대로 볼 수 있다
+        assertEquals(snow, HomePhotos.next(snow - 1))
     }
 }
