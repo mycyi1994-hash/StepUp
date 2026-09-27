@@ -38,7 +38,7 @@ data class RunCheckpoint(
     /** Downtime is neither exercise time nor distance. Recovery needs an explicit resume. */
     fun pausedForRecovery(): WalkSessionState {
         check(phase == RunCheckpointPhase.RECORDING) { "Settlement needs receipt reconciliation" }
-        return state.copy(isPaused = true, gpsFix = false)
+        return state.copy(isPaused = true, gpsFix = false, gpsLost = false)
     }
 }
 

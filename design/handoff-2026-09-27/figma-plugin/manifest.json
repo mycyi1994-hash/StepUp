@@ -1,0 +1,15 @@
+{
+  "name": "StepUp · Editable UI Kit & 45 Screens",
+  "id": "stepup-editable-kit-v7",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
+}

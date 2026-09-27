@@ -41,11 +41,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 
 /** 랩 스냅샷 — km·splitSec은 랩을 찍은 시점의 "누적" 값. 구간값은 UI에서 이전 랩과의 차로 구한다. */
@@ -66,6 +68,17 @@ internal fun isMockLocation(location: Location): Boolean =
         @Suppress("DEPRECATION")
         location.isFromMockProvider
     }
+
+/**
+ * 위치 신호 끊김(시안 L04) 판단. GPS 는 6m 넘게 움직여야 새 점을 주므로, 제자리에 서 있는 것을
+ * 끊김으로 보지 않도록 "좌표가 30초 넘게 안 오는데 그동안 40걸음 넘게 걸었다"일 때만 끊김으로 본다.
+ */
+object GpsSignal {
+    const val SILENT_MS = 30_000L
+    const val MOVING_STEPS = 40
+
+    fun isLost(sinceFixMs: Long, stepsSinceFix: Int): Boolean = sinceFixMs > SILENT_MS && stepsSinceFix >= MOVING_STEPS
+}
 
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
 enum class RunSaveStatus { IDLE, SAVING, FAILED }
@@ -104,6 +117,11 @@ data class WalkSessionState(
     val track: List<TrackPoint> = emptyList(),
     /** 최근에 GPS 좌표를 받았는지 (지도 카드 GPS 배지) */
     val gpsFix: Boolean = false,
+    /**
+     * 위치 신호가 끊긴 것 같은가(시안 L04) — 한 번 잡혔던 위치가 한동안 안 오는데 걸음은 계속 늘 때.
+     * 시간 · 걸음은 계속 기록된다. 화면에 안내만 한다. 저장본에 남기지 않는다.
+     */
+    val gpsLost: Boolean = false,
     /**
      * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다.
      * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
@@ -160,6 +178,16 @@ data class WalkSessionState(
 class WalkSessionService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /** 마지막으로 좌표를 받은 때(부팅 기준 ms)와 그때의 걸음 — 신호 끊김(L04) 판단용 */
+    @Volatile private var lastFixElapsed = 0L
+    @Volatile private var stepsAtLastFix = 0
+    @Volatile private var lastKnownFixElapsed = 0L
+
+    /** GPS 가 마지막으로 고친 위치의 시각(부팅 기준 ms) — 알림 거리 필터와 상관없이 갱신된다. 없으면 0 */
+    private fun lastKnownGpsFixElapsed(): Long = runCatching {
+        val lm = locationManager ?: return@runCatching 0L
+        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.elapsedRealtimeNanos?.div(1_000_000) ?: 0L
+    }.getOrDefault(0L)
     private var stepJob: Job? = null
     private var timerJob: Job? = null
     private var locationManager: LocationManager? = null
@@ -179,6 +207,8 @@ class WalkSessionService : Service() {
             }
             val p = GeoPoint(location.latitude, location.longitude)
             val now = System.currentTimeMillis()
+            lastFixElapsed = SystemClock.elapsedRealtime()
+            stepsAtLastFix = _state.value.steps
             // GPS 가 잡혔으면 기지국 위치(대략)는 그만 받는다 — 둘을 섞으면 점이 튄다
             if (location.provider == LocationManager.GPS_PROVIDER && roughRegistered) {
                 locationManager?.removeUpdates(roughListener)
@@ -363,6 +393,7 @@ class WalkSessionService : Service() {
             ACTION_PAUSE -> setPaused(true)
             ACTION_RESUME -> setPaused(false)
             ACTION_STOP -> stopSession()
+            ACTION_DISCARD -> discardSession()
             ACTION_RECOVER -> recoverSession(intent.getBooleanExtra(EXTRA_FINISH, false))
         }
         return START_NOT_STICKY
@@ -524,10 +555,25 @@ class WalkSessionService : Service() {
                 if (!current.isActive || current.isPaused) continue
                 activeMs += delta
                 val seconds = activeMs / 1000
-                _state.update { if (it.isActive && !it.isPaused) it.copy(elapsedSec = seconds) else it }
+                // 제자리 · 러닝머신에서는 6m 를 못 움직여 좌표 알림이 오지 않는다 — GPS 가 실제로 고친
+                // 마지막 위치(알림 거리와 무관)도 본다. 그것까지 오래됐을 때만 신호가 약하다고 본다
+                if (seconds % 5 == 0L) lastKnownFixElapsed = lastKnownGpsFixElapsed()
+                val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
+                _state.update {
+                    if (!it.isActive || it.isPaused) it
+                    else it.copy(
+                        elapsedSec = seconds,
+                        gpsLost = it.gpsFix && it.locationOn && fixAt > 0 &&
+                            GpsSignal.isLost(now - fixAt, it.steps - stepsAtLastFix),
+                    )
+                }
             }
         }
-        // 5초마다 저장본을 남긴다 — 배터리 절약 · 메모리 부족으로 앱이 죽어도 러닝이 사라지지 않게
+        startCheckpointLoop()
+    }
+
+    /** 5초마다 저장본을 남긴다 — 배터리 절약 · 메모리 부족으로 앱이 죽어도 러닝이 사라지지 않게 */
+    private fun startCheckpointLoop() {
         checkpointJob = scope.launch {
             while (isActive) {
                 val current = _state.value
@@ -742,6 +788,43 @@ class WalkSessionService : Service() {
         }
     }
 
+    /**
+     * 저장 없이 끝내기(시안 R07) — 이번 러닝을 정산하지도, 기록하지도 않고 닫는다.
+     * 혼자 뛰는 러닝만. 모임 러닝은 방 · 순위가 얽혀 있어 저장하고 마친다.
+     * 이 러닝 동안 걸은 걸음은 평소 걸음처럼 오늘 걸음에 그대로 남는다(러닝 보상만 없다).
+     */
+    private fun discardSession() {
+        val current = _state.value
+        if (!canDiscard(current) || settling) return
+        if (ServiceLocator.crewRepository.party.value.isActive) return
+        settling = true
+        val saving = checkpointJob
+        scope.launch {
+            try {
+                // 저장본을 먼저 지운다 — 남기면 다음 실행이 이 러닝을 "이어 달리기"로 되살린다.
+                // 쓰는 중인 저장이 끝난 뒤에 지워야 지운 뒤 다시 생기지 않는다.
+                saving?.cancelAndJoin()
+                val cleared = runCatching {
+                    ServiceLocator.runCheckpoints.clear(current.startedAt, current.recordingOwner)
+                }.isSuccess
+                if (!cleared) {
+                    // 못 지웠으면 러닝을 그대로 두고(저장본도 다시 남긴다) 화면에 알린다
+                    startCheckpointLoop()
+                    discardFailures.value = discardFailures.value + 1
+                    return@launch
+                }
+                stepJob?.cancel()
+                timerJob?.cancel()
+                stopLocation()
+                _state.value = WalkSessionState()
+                ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            } finally {
+                settling = false
+            }
+        }
+    }
+
     override fun onDestroy() {
         stopLocation()
         scope.cancel()
@@ -837,6 +920,7 @@ class WalkSessionService : Service() {
         const val ACTION_PAUSE = "com.stepup.android.action.SESSION_PAUSE"
         const val ACTION_RESUME = "com.stepup.android.action.SESSION_RESUME"
         const val ACTION_STOP = "com.stepup.android.action.SESSION_STOP"
+        const val ACTION_DISCARD = "com.stepup.android.action.SESSION_DISCARD"
         const val ACTION_RECOVER = "com.stepup.android.action.SESSION_RECOVER"
         const val EXTRA_FINISH = "com.stepup.android.extra.FINISH"
         private const val CHECKPOINT_EVERY_MS = 5_000L
@@ -875,6 +959,17 @@ class WalkSessionService : Service() {
 
         fun resume(context: Context) {
             context.startService(intent(context, ACTION_RESUME))
+        }
+
+        /** 저장 없이 끝낼 수 있는 러닝인가 — 달리는 중(저장 전), 혼자 뛰는 러닝 */
+        fun canDiscard(state: WalkSessionState): Boolean =
+            state.isActive && state.saveStatus == RunSaveStatus.IDLE && state.partySize <= 1
+
+        /** 저장 없이 끝내기가 실패한 횟수 — 바뀌면 화면이 알린다(러닝은 그대로 이어진다) */
+        val discardFailures = MutableStateFlow(0)
+
+        fun discard(context: Context) {
+            context.startService(intent(context, ACTION_DISCARD))
         }
 
         fun stop(context: Context) {
