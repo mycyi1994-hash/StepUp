@@ -49,11 +49,10 @@ class PrivacyPermissionTest {
             }
         }
 
-        fun status(label: Int, value: Int) {
-            val labelText = context.getString(label)
-            compose.onNodeWithText(labelText).performScrollTo()
-            compose.onNode(hasText(context.getString(value)) and hasText(labelText))
-                .assertIsDisplayed()
+        // 설정 v1 개인정보 · 앱 권한 — 권한 줄은 글자로 상태를 보인다(앱 안 스위치가 아니다)
+        fun status(tag: String, value: Int) {
+            compose.onNodeWithTag(tag).performScrollTo()
+            compose.onNodeWithTag(tag).assert(hasText(context.getString(value))).assertIsDisplayed()
         }
         fun capture(name: String) {
             compose.waitForIdle()
@@ -63,8 +62,7 @@ class PrivacyPermissionTest {
             android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
                 .bufferedReader().use { it.readText() }
         fun settingsRoundTrip(grants: List<String>) {
-            compose.onNodeWithText(context.getString(R.string.cd_open_settings))
-                .performScrollTo().performClick()
+            compose.onNodeWithTag("privacy-open-settings").performScrollTo().performClick()
             // Inspect the actual external window, not a mocked Intent callback.
             val deadline = android.os.SystemClock.elapsedRealtime() + 10_000
             var settingsVisible = false
@@ -84,20 +82,20 @@ class PrivacyPermissionTest {
             compose.waitForIdle()
         }
 
-        status(R.string.privacy_perm_activity, R.string.privacy_permission_not_allowed)
-        status(R.string.privacy_perm_location, R.string.privacy_permission_not_allowed)
-        status(R.string.privacy_perm_notification, R.string.privacy_permission_not_allowed)
+        status("perm-activity", R.string.set_perm_denied)
+        status("perm-location", R.string.set_perm_denied)
+        status("perm-notifications", R.string.set_perm_denied)
         capture("denied")
 
         settingsRoundTrip(listOf(Manifest.permission.ACTIVITY_RECOGNITION,
             Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.POST_NOTIFICATIONS))
-        status(R.string.privacy_perm_activity, R.string.privacy_permission_allowed)
-        status(R.string.privacy_perm_location, R.string.privacy_location_approximate)
-        status(R.string.privacy_perm_notification, R.string.privacy_permission_allowed)
+        status("perm-activity", R.string.set_perm_allowed)
+        status("perm-location", R.string.set_perm_approximate)
+        status("perm-notifications", R.string.set_perm_allowed)
         capture("approximate")
 
         settingsRoundTrip(listOf(Manifest.permission.ACCESS_FINE_LOCATION))
-        status(R.string.privacy_perm_location, R.string.privacy_location_precise)
+        status("perm-location", R.string.set_perm_precise)
         capture("precise")
     }
 }

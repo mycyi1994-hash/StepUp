@@ -171,11 +171,10 @@ fun SettingsNavRow(
     enabled: Boolean = true,
 ) {
     val p = settingsPalette()
-    Column(modifier.fillMaxWidth()) {
+    // 누르는 곳 · 이름표(테스트 태그)는 줄 전체(구분선 포함) 한 곳에 — 합친 의미 노드가 태그를 갖는다
+    Column(modifier.fillMaxWidth().feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp)
-                .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-                .padding(vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp).padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -202,11 +201,12 @@ fun SettingsSwitchRow(
     enabled: Boolean = true,
 ) {
     val p = settingsPalette()
-    Column(modifier.fillMaxWidth()) {
+    Column(
+        modifier.fillMaxWidth()
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange),
+    ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp)
-                .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
-                .padding(vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp).padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -249,11 +249,9 @@ fun SettingsChoiceRow(
     description: String? = null,
 ) {
     val p = settingsPalette()
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onClick)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp)
-                .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-                .padding(vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp).padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -281,10 +279,9 @@ fun SettingsStatusRow(
     strong: Boolean = true,
 ) {
     val p = settingsPalette()
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp)
-                .semantics(mergeDescendants = true) {}.padding(vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = if (description != null) 76.dp else 58.dp).padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
