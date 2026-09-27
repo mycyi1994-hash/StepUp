@@ -1408,7 +1408,6 @@ StepUp と走り出そう。</string>
     <string name="home_run_time">運動時間</string>
     <string name="home_goal">今日の目標</string>
     <string name="home_goal_suffix"> / %1$s 歩</string>
-    <string name="home_shortcut_challenges">チャレンジ</string>
     <string name="home_shortcut_news">ニュース</string>
     <string name="home_energy_can">今日はあと%1$s歩分貯められます</string>
     <string name="home_energy_empty">今日の獲得上限に達しました</string>
@@ -1711,7 +1710,6 @@ StepUp と走り出そう。</string>
     <string name="home_k1_week_label">今週</string>
     <string name="home_k1_week">%1$skm・ラン%2$d回・%3$s SUP</string>
     <string name="home_k1_week_empty">今週のラン記録はまだありません</string>
-    <string name="home_k1_records">記録を見る</string>
     <string name="home_k1_records_title">詳細記録</string>
     <string name="challenge_run">このチャレンジで走る</string>
     <string name="challenge_unit_steps">歩</string>

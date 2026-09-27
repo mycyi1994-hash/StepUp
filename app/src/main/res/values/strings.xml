@@ -1409,7 +1409,6 @@ Start running with StepUp.</string>
     <string name="home_run_time">Workout time</string>
     <string name="home_goal">Today\'s goal</string>
     <string name="home_goal_suffix"> / %1$s steps</string>
-    <string name="home_shortcut_challenges">Challenges</string>
     <string name="home_shortcut_news">News</string>
     <string name="home_energy_can">You can still earn for %1$s steps today</string>
     <string name="home_energy_empty">Today\'s earning limit is used up</string>
@@ -1712,7 +1711,6 @@ Start running with StepUp.</string>
     <string name="home_k1_week_label">This week</string>
     <string name="home_k1_week">%1$s km · runs %2$d · %3$s SUP</string>
     <string name="home_k1_week_empty">No runs yet this week</string>
-    <string name="home_k1_records">Records</string>
     <string name="home_k1_records_title">Detailed records</string>
     <string name="challenge_run">Run this challenge</string>
     <string name="challenge_unit_steps">steps</string>
