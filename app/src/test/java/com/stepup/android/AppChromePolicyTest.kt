@@ -29,7 +29,8 @@ class AppChromePolicyTest {
         assertEquals(Screen.Run, AppChromePolicy.destination(Routes.RUN_NOW)?.parent)
         assertFalse(AppChromePolicy.destination(Routes.RUN_NOW)!!.showBottomBar)
         // 러닝 시작 메뉴 · 챌린지 · 지난 도전은 러닝 탭 안의 집중 화면(탭 줄 없음)
-        for (route in listOf(Routes.RUN_MENU, Routes.RUN_GOALS, Routes.RUN_GOAL_HISTORY)) {
+        for (route in listOf(Routes.RUN_MENU, Routes.RUN_GOALS, Routes.RUN_GOAL_HISTORY,
+            Routes.RUN_DIET, Routes.RUN_DIET_PLAN, Routes.RUN_DIET_EDIT)) {
             assertEquals(route, AppChromePolicy.destination(route)?.route)
             assertEquals(Screen.Run, AppChromePolicy.destination(route)?.parent)
             assertFalse(AppChromePolicy.destination(route)!!.showBottomBar)

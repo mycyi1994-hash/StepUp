@@ -100,6 +100,8 @@ class UserPrefs(
         val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
         /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
         val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
+        /** 다이어트 모드의 러닝 경험(RunExperience.key) — 이 폰에만 */
+        val RUN_EXPERIENCE = stringPreferencesKey("run_experience")
         /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
         val COURSE_RECORDING = booleanPreferencesKey("course_recording")
         /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
@@ -409,6 +411,14 @@ class UserPrefs(
             )
             it[Keys.GOAL_ATTEMPTS] = rows.joinToString("\n") { row -> row.encode() }
         }
+    }
+
+    /** 다이어트 모드에서 고른 러닝 경험 — 없으면 null */
+    val runExperience: Flow<com.stepup.android.domain.RunExperience?> =
+        store.data.map { com.stepup.android.domain.RunExperience.of(it[Keys.RUN_EXPERIENCE]) }
+
+    suspend fun setRunExperience(experience: com.stepup.android.domain.RunExperience?) {
+        store.edit { if (experience == null) it.remove(Keys.RUN_EXPERIENCE) else it[Keys.RUN_EXPERIENCE] = experience.key }
     }
 
     suspend fun clearGoalAttempts() {

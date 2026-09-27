@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.domain.DietRoutine
+import com.stepup.android.domain.DietSegment
+import com.stepup.android.domain.DietSegmentKind
 import com.stepup.android.domain.GoalAttempt
 import com.stepup.android.domain.RunPlan
 import com.stepup.android.domain.RunPlans
@@ -156,6 +159,8 @@ fun RunScreen(
     onHome: () -> Unit = onBack,
     /** 챌린지 결과의 "챌린지로 돌아가기" — 러닝 챌린지 목록 */
     onGoals: () -> Unit = onBack,
+    /** 다이어트 결과의 "같은 방법 다시 하기" */
+    onRepeat: (RunPlan) -> Unit = {},
     /** 러닝 홈의 "러닝 시작"에서 왔으면 곧바로 달리기를 시작한다 */
     autoStart: Boolean = false,
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
@@ -332,6 +337,24 @@ fun RunScreen(
     // 목표 거리는 결과(finishKm)와 같은 기준 — GPS 가 있으면 GPS 거리, 없으면 걸음 거리
     val goalKmNow = if (session.gpsKm > 0.0) session.gpsKm else distanceKm
     val goalReached = goal != null && goal.reached(session.elapsedSec, goalKmNow)
+    // 다이어트 모드(시안 D07~D13) — 구간은 운동 시간에서 계산한다
+    val diet = (plan as? RunPlan.Diet)?.let { DietRoutine.forExperience(it.experience) }
+    val dietPos = diet?.at(session.elapsedSec)
+    val dietDone = diet != null && session.isActive && diet.finished(session.elapsedSec)
+    val cues = com.stepup.android.ui.experience.LocalFeedback.current
+    LaunchedEffect(dietPos?.index) {
+        // 구간이 바뀌면 소리로도 알린다 — 화면을 보지 않고 달려도 알 수 있게
+        if (dietPos != null && dietPos.index > 0 && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Lap)
+    }
+    var dietDoneFor by rememberSaveable { mutableLongStateOf(0L) }
+    LaunchedEffect(dietDone, session.startedAt) {
+        // 루틴을 다 마치면 한 번 멈추고 완료 화면(D10)을 보인다 — 저장은 사용자가 누른다
+        if (dietDone && dietDoneFor != session.startedAt) {
+            dietDoneFor = session.startedAt
+            if (!session.isPaused) WalkSessionService.pause(context)
+            cues?.play(com.stepup.android.ui.experience.FeedbackCue.Finish)
+        }
+    }
 
     // 확인 창들 — 일시정지(R03) · 종료(R04) · 저장 없이 끝내기(R07) · 목표 달성(C01)
     var pauseDialog by rememberSaveable { mutableStateOf(false) }
@@ -388,9 +411,12 @@ fun RunScreen(
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(horizontal = RunKit.Gutter)) {
             val goalMissed = finishing && goal != null && !goal.reached(session.lastElapsedSec, finishKm(session))
+            val dietFinished = finishing && diet != null && diet.finished(session.lastElapsedSec)
+            val dietPartial = finishing && diet != null && !dietFinished
             KitHeader(
                 title = when {
-                    finishing -> stringResource(if (goalMissed) R.string.runflow_result_partial_title else R.string.runflow_result_title)
+                    dietFinished -> stringResource(R.string.diet_saved_title)
+                    finishing -> stringResource(if (goalMissed || dietPartial) R.string.runflow_result_partial_title else R.string.runflow_result_title)
                     else -> planTitle(plan)
                 },
                 onBack = if (canAskEnd) askEnd else onBack,
@@ -412,9 +438,29 @@ fun RunScreen(
                             // 금액은 서버가 확인한 값만 — 확인 전(또는 금액을 아직 못 읽었으면) "—"
                             session = session, points = lastServerPoints,
                             upload = lastUpload, balance = balance,
-                            headline = stringResource(if (goalMissed) R.string.runflow_result_partial_headline else R.string.runflow_result_headline),
-                            subtitle = stringResource(if (goalMissed) R.string.runflow_result_partial_sub else R.string.runflow_result_sub),
+                            headline = stringResource(when {
+                                dietFinished -> R.string.diet_saved_headline
+                                dietPartial -> R.string.diet_partial_headline
+                                goalMissed -> R.string.runflow_result_partial_headline
+                                else -> R.string.runflow_result_headline
+                            }),
+                            subtitle = stringResource(when {
+                                dietFinished -> R.string.diet_saved_sub
+                                dietPartial -> R.string.diet_partial_sub
+                                goalMissed -> R.string.runflow_result_partial_sub
+                                else -> R.string.runflow_result_sub
+                            }),
+                            metrics = when {
+                                diet == null -> null
+                                dietFinished -> (stringResource(R.string.diet_total_exercise) to formatDuration(diet.totalSec)) to
+                                    (stringResource(R.string.diet_run_plus_walk) to
+                                        stringResource(R.string.diet_run_plus_walk_value, minutesText(diet.totalRunSec), minutesText(diet.totalWalkSec)))
+                                else -> (stringResource(R.string.diet_total_exercise) to formatDuration(session.lastElapsedSec)) to
+                                    (stringResource(R.string.diet_done_segments) to
+                                        "${diet.completedSegments(session.lastElapsedSec)} / ${diet.segments.size}")
+                            },
                             note = when {
+                                dietPartial -> stringResource(R.string.diet_partial_note)
                                 goal == null -> stringResource(R.string.runflow_result_note_body)
                                 goalMissed -> stringResource(R.string.runflow_result_goal_partial, goalName(goal), formatDuration(session.lastElapsedSec))
                                 else -> stringResource(R.string.runflow_result_goal_done, goalName(goal), "%.2f".format(km))
@@ -429,6 +475,12 @@ fun RunScreen(
                         onClick = { viewModel.clearReward(); if (goalMissed) onGoals() else onHome() },
                         modifier = Modifier.testTag("run-result-done"),
                     )
+                    if (diet != null) {
+                        KitButton(stringResource(R.string.diet_repeat), {
+                            viewModel.clearReward()
+                            onRepeat(plan)
+                        }, tone = KitTone.Secondary, modifier = Modifier.testTag("run-result-repeat"))
+                    }
                     KitButton(stringResource(R.string.finish_share), share, tone = KitTone.Ghost,
                         modifier = Modifier.testTag("run-result-share"))
                 }
@@ -447,10 +499,23 @@ fun RunScreen(
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
                     Spacer(Modifier.height(12.dp))
-                    Text(planHeadline(plan), color = Snow, fontSize = 28.sp, fontWeight = FontWeight.SemiBold,
-                        lineHeight = 38.sp)
+                    Text(
+                        when {
+                            dietDone && diet != null -> stringResource(R.string.diet_done_headline, (diet.totalSec / 60).toInt())
+                            dietPos != null -> dietHeadline(dietPos.segment)
+                            else -> planHeadline(plan)
+                        },
+                        color = Snow, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, lineHeight = 38.sp,
+                    )
                     Spacer(Modifier.height(8.dp))
-                    Text(planSubtitle(plan), color = Silver, fontSize = 16.sp)
+                    Text(
+                        when {
+                            dietDone -> stringResource(R.string.diet_done_sub)
+                            dietPos != null && diet != null -> dietSubtitle(dietPos.segment, diet)
+                            else -> planSubtitle(plan)
+                        },
+                        color = Silver, fontSize = 16.sp,
+                    )
                     Spacer(Modifier.height(20.dp))
                     GpsStatusLine(
                         gpsFix = session.gpsFix, locationAllowed = locationAllowed,
@@ -459,6 +524,34 @@ fun RunScreen(
                     Spacer(Modifier.height(16.dp))
                     val paceText = avgPaceSec?.let { formatPace(it) } ?: "—"
                     when {
+                        diet != null && (dietDone || dietPos == null) -> {
+                            // D10 — 루틴 완료
+                            KitHero(stringResource(R.string.diet_total_time), formatDuration(diet.totalSec))
+                            Spacer(Modifier.height(24.dp))
+                            KitMetricRow(
+                                stringResource(R.string.diet_total_run) to minutesText(diet.totalRunSec),
+                                stringResource(R.string.diet_total_walk) to minutesText(diet.totalWalkSec),
+                            )
+                        }
+                        diet != null && dietPos != null -> {
+                            // D07 · D08 · D09 · D11 — 남은 구간 시간, 다음 구간 안내(버튼이 아니다)
+                            KitHero(stringResource(R.string.diet_segment_left), formatDuration(dietPos.remainingSec),
+                                dim = session.isPaused)
+                            Spacer(Modifier.height(24.dp))
+                            KitProgress(dietPos.fraction)
+                            Spacer(Modifier.height(20.dp))
+                            val upcoming = diet.next(dietPos.index)
+                            KitNotice(
+                                if (upcoming == null) stringResource(R.string.diet_next_last)
+                                else stringResource(R.string.diet_next, dietKindName(upcoming.kind), minutesText(upcoming.seconds)),
+                                stringResource(R.string.diet_next_auto),
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            KitMetricRow(
+                                stringResource(R.string.diet_total_exercise) to formatDuration(session.elapsedSec),
+                                stringResource(R.string.diet_planned) to formatDuration(diet.totalSec),
+                            )
+                        }
                         goal?.km != null -> {
                             KitHero(
                                 stringResource(R.string.runflow_distance_label), "%.2f km".format(goalKmNow),
@@ -595,6 +688,9 @@ fun RunScreen(
                                 style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth().testTag("run-save-error"))
                         }
+                        dietDone -> KitButton(stringResource(R.string.diet_save_finish), {
+                            WalkSessionService.stop(context)
+                        }, modifier = Modifier.testTag("run-primary-action"))
                         session.isActive -> {
                             KitButton(
                                 stringResource(if (running) R.string.cd_pause else R.string.runflow_resume),
@@ -695,11 +791,11 @@ fun RunScreen(
     if (pauseDialog && session.isActive && session.saveStatus == RunSaveStatus.IDLE) {
         KitDialog(
             title = stringResource(R.string.runflow_pause_title),
-            body = stringResource(R.string.runflow_pause_body),
+            body = stringResource(if (diet != null) R.string.diet_pause_body else R.string.runflow_pause_body),
             onDismiss = { pauseDialog = false },
             modifier = Modifier.testTag("run-pause-dialog"),
         ) {
-            KitButton(stringResource(R.string.runflow_resume), {
+            KitButton(stringResource(if (diet != null) R.string.diet_resume else R.string.runflow_resume), {
                 pauseDialog = false
                 WalkSessionService.resume(context)
             }, modifier = Modifier.testTag("run-pause-resume"))
@@ -1432,6 +1528,8 @@ private fun FinishCard(
     headline: String,
     subtitle: String,
     note: String,
+    /** 두 측정값을 바꿔 보일 때(다이어트 결과) — 비우면 러닝 시간 | 달린 거리 */
+    metrics: Pair<Pair<String, String>, Pair<String, String>>? = null,
 ) {
     val voided = session.lastVerdict == RunVerdict.VOID
     // 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게 — 확정은 서버 금액까지 읽었을 때만
@@ -1472,8 +1570,8 @@ private fun FinishCard(
             KitDoneMark()
             Spacer(Modifier.height(24.dp))
             KitMetricRow(
-                stringResource(R.string.runflow_time_label) to formatDuration(session.lastElapsedSec),
-                stringResource(R.string.runflow_distance_label) to "%.2f km".format(km),
+                metrics?.first ?: (stringResource(R.string.runflow_time_label) to formatDuration(session.lastElapsedSec)),
+                metrics?.second ?: (stringResource(R.string.runflow_distance_label) to "%.2f km".format(km)),
             )
             Spacer(Modifier.height(16.dp))
             KitNotice(stringResource(R.string.runflow_result_note_title), note)
@@ -1595,6 +1693,30 @@ private fun planSubtitle(plan: RunPlan): String = when (plan) {
     is RunPlan.Goal -> if (plan.goal.isDistance) stringResource(R.string.runflow_goal_dist_sub)
         else stringResource(R.string.runflow_goal_time_sub, goalName(plan.goal))
     else -> stringResource(R.string.runflow_free_sub)
+}
+
+@Composable
+private fun dietKindName(kind: DietSegmentKind): String = stringResource(when (kind) {
+    DietSegmentKind.WARMUP -> R.string.diet_seg_warmup
+    DietSegmentKind.RUN -> R.string.diet_seg_run
+    DietSegmentKind.WALK -> R.string.diet_seg_walk
+    DietSegmentKind.COOLDOWN -> R.string.diet_seg_cooldown
+})
+
+@Composable
+private fun dietHeadline(segment: DietSegment): String = stringResource(when (segment.kind) {
+    DietSegmentKind.WARMUP -> R.string.diet_head_warmup
+    DietSegmentKind.RUN -> R.string.diet_head_run
+    DietSegmentKind.WALK -> R.string.diet_head_walk
+    DietSegmentKind.COOLDOWN -> R.string.diet_head_cooldown
+})
+
+/** "준비 걷기 · 3분" · "달리기 · 1회 / 3회" */
+@Composable
+private fun dietSubtitle(segment: DietSegment, routine: DietRoutine): String = when (segment.kind) {
+    DietSegmentKind.RUN, DietSegmentKind.WALK ->
+        stringResource(R.string.diet_round_of, dietKindName(segment.kind), segment.round, routine.rounds)
+    else -> dietKindName(segment.kind) + " · " + minutesText(segment.seconds)
 }
 
 /** "3분 36초" 모양 — 남은 시간 한 줄 */

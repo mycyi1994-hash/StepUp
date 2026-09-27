@@ -190,6 +190,11 @@ object Routes {
     const val RUN_MENU = "run-start"
     const val RUN_GOALS = "run-goals"
     const val RUN_GOAL_HISTORY = "run-goals/history"
+
+    /** 다이어트 모드 — 입력(U05) · 러닝 방법(U06) · 몸 정보·경험 수정(D06) */
+    const val RUN_DIET = "run-diet"
+    const val RUN_DIET_PLAN = "run-diet/plan"
+    const val RUN_DIET_EDIT = "run-diet/edit"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
     const val ACHIEVEMENTS = "achievements"
@@ -745,10 +750,16 @@ internal fun MainScaffold(
                     onGoals = {
                         if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.popBackStack()
                     },
+                    // 같은 방법 다시 하기 — 같은 계획으로 새 러닝(3-2-1부터)
+                    onRepeat = { plan ->
+                        com.stepup.android.domain.RunPlans.set(plan)
+                        navController.navigate(Routes.RUN_NOW) { popUpTo(Routes.RUN_ROUTE) { inclusive = true } }
+                    },
                     autoStart = entry.arguments?.getBoolean("start") ?: false,
                 )
             }
             composable(Routes.RUN_MENU) {
+                val savedExperience by com.stepup.android.core.ServiceLocator.userPrefs.runExperience.collectAsState(initial = null)
                 // 새로 시작하는 러닝은 예전 챌린지 · 계획과 묶지 않는다
                 val startFresh = { plan: com.stepup.android.domain.RunPlan ->
                     com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
@@ -759,7 +770,10 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onFreeRun = { startFresh(com.stepup.android.domain.RunPlan.Free) },
                     onGoals = { navController.navigate(Routes.RUN_GOALS) },
-                    onDiet = null,
+                    onDiet = {
+                        // 러닝 경험을 이미 골랐으면 러닝 방법으로 바로, 아니면 입력부터
+                        navController.navigate(if (savedExperience != null) Routes.RUN_DIET_PLAN else Routes.RUN_DIET)
+                    },
                 )
             }
             composable(Routes.RUN_GOALS) {
@@ -771,6 +785,32 @@ internal fun MainScaffold(
                         navController.navigate(Routes.RUN_NOW)
                     },
                     onHistory = { navController.navigate(Routes.RUN_GOAL_HISTORY) },
+                )
+            }
+            composable(Routes.RUN_DIET) {
+                com.stepup.android.ui.screens.walk.DietInputScreen(
+                    onBack = { navController.popBackStack() },
+                    onNext = {
+                        navController.navigate(Routes.RUN_DIET_PLAN) { popUpTo(Routes.RUN_DIET) { inclusive = true } }
+                    },
+                )
+            }
+            composable(Routes.RUN_DIET_EDIT) {
+                com.stepup.android.ui.screens.walk.DietInputScreen(
+                    onBack = { navController.popBackStack() },
+                    onNext = { navController.popBackStack() },
+                    editing = true,
+                )
+            }
+            composable(Routes.RUN_DIET_PLAN) {
+                com.stepup.android.ui.screens.walk.DietPlanScreen(
+                    onBack = { navController.popBackStack() },
+                    onEdit = { navController.navigate(Routes.RUN_DIET_EDIT) },
+                    onStart = { experience ->
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Diet(experience))
+                        navController.navigate(Routes.RUN_NOW)
+                    },
                 )
             }
             composable(Routes.RUN_GOAL_HISTORY) {

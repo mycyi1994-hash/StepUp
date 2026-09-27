@@ -303,6 +303,27 @@
       "chrome": "Focus",
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — C03 past challenges — device-only list, expandable rows",
       "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U05 · D01 · D02 · D03 body info and running experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET_PLAN",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U06 fixed routine by experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "Routes.RUN_DIET_EDIT",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — D06 edit body info and experience",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],
   "screen_functions": [
@@ -636,6 +657,20 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
       "line": 160,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "DietInputScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 92,
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
+      "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
+    },
+    {
+      "id": "DietPlanScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 266,
+      "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "pending this PR's Experience QA (DesignReferenceTest explore group adds this scene)"
     }
   ],

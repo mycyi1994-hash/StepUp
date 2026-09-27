@@ -4,7 +4,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to neutral S2 black, made PillChip selection a white pill and AdaptiveNumber light numerals — seen in the Experience QA run 36236519563 profile/challenge/shoes captures; screens not listed as S2 keep their older layout apart from these shared parts. Earlier: shared DetailPage/FormPage primary actions and TwoWaySwitch tabs changed to S2 in PR #28; the Main header balance (SupPill) became text-only in PR #29 (home 430dp capture in Experience QA run 36234135671 reviewed); the run share bitmap became the S2 dark card in PR #29, rendered on device by ShareCardRenderTest (form-checks/share-card.png) — its first render (121a06c) showed the footer touching the time/pace values, fixed in the following commit and re-checked on the PR head run; rows not listed as S2 keep their older layout and evidence apart from those shared parts.
 
-41 registered navigation routes; 42 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
+44 registered navigation routes; 44 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -25,6 +25,9 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | Routes.RUN_MENU | Run | Focus | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U01 start menu — free run, running challenge, course (coming soon), diet (coming soon) | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 | Routes.RUN_GOALS | Run | Focus | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — U02 running challenges — 10 min / 1 km / 3 km | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 | Routes.RUN_GOAL_HISTORY | Run | Focus | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md — C03 past challenges — device-only list, expandable rows | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
+| Routes.RUN_DIET | Run | Focus | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U05 · D01 · D02 · D03 body info and running experience | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
+| Routes.RUN_DIET_PLAN | Run | Focus | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — U06 fixed routine by experience | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
+| Routes.RUN_DIET_EDIT | Run | Focus | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md — D06 edit body info and experience | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 | Routes.COURSES | Run | Detail | character-free course select/create/board visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md | Android 14/15 explore captures, including 1.6× font; save/share actions not exercised |
 | Routes.WALLET | Profile | Detail | S2 batch D (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | Routes.NOTIFICATIONS | Profile | Detail | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
@@ -94,6 +97,8 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | RunStartMenuScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:62 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 | RunGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:117 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 | RunGoalHistoryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:160 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
+| DietInputScreen | app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt:92 | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
+| DietPlanScreen | app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt:266 | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md | pending this PR's Experience QA (DesignReferenceTest explore group adds this scene) |
 
 ## Dialog / sheet / menu declarations
 

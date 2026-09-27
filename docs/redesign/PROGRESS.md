@@ -980,3 +980,12 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Run screen follows R02/U03/C04/C05: plan title, headline, large time (or distance for km goals), progress, metrics; the live map stays below. Pause opens R03, End opens R04 (run is paused first; only "계속 달리기" resumes), R07 end without saving (solo runs only; new service action clears the checkpoint and never settles), C01 goal-reached sheet, R05/C02 results with "처음 화면으로" / "챌린지로 돌아가기". Back during a run asks R04. Countdown cancel returns to the opening screen.
 - Not yet: R06 delete a saved record (needs a server delete design), S01 modal, L01–L04 and time-only runs (part B), diet mode (part C).
 - Checks: compileDebugKotlin, testDebugUnitTest (RunPlanTest, AppChromePolicyTest), lintDebug, compileDebugAndroidTestKotlin, check-strings, check_design_contract, check_experience_assets. Device evidence: pending this PR's Experience QA.
+
+## 2026-09-27 — Designer handoff, part C: diet mode
+
+- Start menu "다이어트 모드" opens U05 (height/weight number fields with an in-app keypad D01, in-place errors D02, leave confirmation D03, one running experience) or, when an experience is saved, U06 directly. D06 edits the same values.
+- Fixed routines by experience (user decision): first 15 min = 3 + (1+2)×3 + 3, sometimes 18 min (4 rounds), steady 21 min = 3 + (2+1)×5 + 3. Height/weight are device-only records and never change the routine; the plan screen says it is an example, not personal advice.
+- Run screen: segment headline, "남은 구간 시간", segment progress, next-part notice (not a button — parts switch automatically from run time, so pause/resume keeps the part), total/planned time, a sound cue at each switch. At the end the run pauses once and shows D10 "N분, 끝까지 해냈어요" with "기록 저장하고 마치기". Pause dialog D12 wording.
+- Results: finished → "기록을 저장했어요" with total and run + walk minutes; partial → D13 with completed parts "2 / 8"; "같은 방법 다시 하기" starts the same plan again.
+- Not built: D04/D05 loading/failure (the routine is local and instant — no fake loading).
+- Checks: compileDebugKotlin, testDebugUnitTest (DietRoutineTest), lintDebug, compileDebugAndroidTestKotlin, check-strings, check_design_contract, check_experience_assets. Device evidence: pending this PR's Experience QA.

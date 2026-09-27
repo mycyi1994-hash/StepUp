@@ -107,6 +107,8 @@ class DesignReferenceTest {
         COURSES, EXPLORE_MAP, RANKING,
         // 디자이너 전달본(2026-09-27) — 시작 메뉴 · 러닝 챌린지 · 목표 러닝 · 지난 도전
         RUN_MENU, RUN_GOALS, RUN_GOAL_TIME, RUN_GOAL_KM, RUN_GOAL_HISTORY,
+        // 다이어트 모드 — 입력 · 러닝 방법 · 걷기 구간(멈춤) · 루틴 완료
+        RUN_DIET_INPUT, RUN_DIET_PLAN, RUN_DIET_ACTIVE, RUN_DIET_DONE,
     }
 
     private enum class Group { PRIMARY, SECONDARY, RECORDS, EXPLORE }
@@ -248,6 +250,26 @@ class DesignReferenceTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
                 }
+                if (s == Scene.RUN_DIET_INPUT) {
+                    // 빈 입력으로 추천받기 → 칸 아래 안내(D02), 키 칸을 누르면 숫자 키패드(D01)
+                    compose.onNodeWithTag("diet-input-next").performClick()
+                    compose.waitForIdle()
+                    capture("$name-errors")
+                    compose.onNodeWithTag("diet-height").performClick()
+                    compose.onNodeWithTag("keypad-1").performClick()
+                    compose.onNodeWithTag("keypad-7").performClick()
+                    compose.onNodeWithTag("keypad-0").performClick()
+                    capture("$name-keypad")
+                    compose.onNodeWithTag("diet-input-done").performClick()
+                    compose.waitForIdle()
+                    // 적던 중 나가려 하면 한 번 묻는다(D03)
+                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("diet-leave-dialog").assertIsDisplayed()
+                    capture("$name-leave")
+                    compose.onNodeWithText(korean(R.string.diet_leave_stay)).performClick()
+                }
                 if (s == Scene.RUN_GOAL_HISTORY) {
                     compose.onNodeWithText(korean(R.string.goal_10min), substring = true).performClick()
                     capture("$name-open")
@@ -297,13 +319,32 @@ class DesignReferenceTest {
                 isActive = true, steps = 682, elapsedSec = 252, startedAt = now - 252_000,
                 gpsFix = true, track = fixtureTrack,
             )
+            // 다이어트 — 4분 32초(첫 걷기 구간), 15분(루틴 완료 · 멈춤). 표시용 값일 뿐이다
+            Scene.RUN_DIET_ACTIVE -> WalkSessionState(
+                isActive = true, isPaused = true, steps = 520, elapsedSec = 272, startedAt = now - 272_000,
+                gpsFix = true, track = fixtureTrack,
+            )
+            Scene.RUN_DIET_DONE -> WalkSessionState(
+                isActive = true, isPaused = true, steps = 1_500, elapsedSec = 900, startedAt = now - 900_000,
+                gpsFix = true, track = fixtureTrack,
+            )
             else -> WalkSessionState()
         })
         com.stepup.android.domain.RunPlans.set(when (s) {
             Scene.RUN_GOAL_TIME -> com.stepup.android.domain.RunPlan.Goal(com.stepup.android.domain.RunGoal.TEN_MIN)
             Scene.RUN_GOAL_KM -> com.stepup.android.domain.RunPlan.Goal(com.stepup.android.domain.RunGoal.ONE_KM)
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE ->
+                com.stepup.android.domain.RunPlan.Diet(com.stepup.android.domain.RunExperience.FIRST)
             else -> com.stepup.android.domain.RunPlan.Free
         })
+        if (s == Scene.RUN_DIET_INPUT) runBlocking {
+            // 빈 입력에서 시작한다 — 저장된 몸 정보를 지운다(표시용)
+            ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
+            ServiceLocator.userPrefs.setRunExperience(null)
+        }
+        if (s == Scene.RUN_DIET_PLAN) runBlocking {
+            ServiceLocator.userPrefs.setRunExperience(com.stepup.android.domain.RunExperience.FIRST)
+        }
         if (s == Scene.RUN_GOAL_HISTORY) runBlocking {
             ServiceLocator.userPrefs.clearGoalAttempts()
             ServiceLocator.userPrefs.addGoalAttempt(
@@ -340,6 +381,9 @@ class DesignReferenceTest {
             Scene.RUN_GOALS -> "run-goal-10min"
             Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> "run-hero-value"
             Scene.RUN_GOAL_HISTORY -> "run-goal-history"
+            Scene.RUN_DIET_INPUT -> "diet-input-next"
+            Scene.RUN_DIET_PLAN -> "diet-plan-start"
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> "run-hero-value"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -350,7 +394,8 @@ class DesignReferenceTest {
         }
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
-            Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY ->
+            Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
@@ -437,6 +482,9 @@ class DesignReferenceTest {
             Scene.RUN_GOALS -> MainScaffold(initialRoute = Routes.RUN_GOALS)
             Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> MainScaffold(initialRoute = Routes.RUN)
             Scene.RUN_GOAL_HISTORY -> MainScaffold(initialRoute = Routes.RUN_GOAL_HISTORY)
+            Scene.RUN_DIET_INPUT -> MainScaffold(initialRoute = Routes.RUN_DIET)
+            Scene.RUN_DIET_PLAN -> MainScaffold(initialRoute = Routes.RUN_DIET_PLAN)
+            Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> MainScaffold(initialRoute = Routes.RUN)
         }
     }
 

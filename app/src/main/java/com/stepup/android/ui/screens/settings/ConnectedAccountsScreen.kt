@@ -99,6 +99,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}) {
                                 // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
                                 ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                                 ServiceLocator.userPrefs.clearGoalAttempts()
+                                ServiceLocator.userPrefs.setRunExperience(null)
                                 confirming = false
                             } else {
                                 failed = true

@@ -132,6 +132,8 @@ fun KitScreen(
     centered: Boolean = false,
     scroll: Boolean = true,
     bottom: @Composable ColumnScope.() -> Unit = {},
+    /** 아래 버튼 밑에 화면 폭 그대로 붙는 것 — 숫자 키패드 */
+    footer: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Box(modifier.fillMaxSize().background(Night)) {
@@ -166,6 +168,7 @@ fun KitScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = bottom,
             )
+            footer?.invoke()
         }
     }
 }
