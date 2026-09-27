@@ -5,7 +5,7 @@ import { verifyTypedData } from 'viem'
 import { linkWallet, executeOp } from '../src/handlers.js'
 import { HttpError } from '../src/supabase.js'
 import { toServerEvent, indexEvents, expireOps, pauseAll, keepPaused } from '../src/indexer.js'
-import { NONCE_CLASH, nonceBackoffMs } from '../src/handlers.js'
+import { NONCE_CLASH, ALREADY_KNOWN, nonceBackoffMs } from '../src/handlers.js'
 import { walletLinkMessage, RELEASE_TYPES, releaseDomain } from '../src/typed.js'
 
 const USER = { id: 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' }
@@ -183,14 +183,22 @@ test('지갑 연결: 가스비는 계정의 첫 지갑에만 보낸다', async (
 
 test('만료: 한 작업이 실패해도 뒤의 작업은 계속 되돌린다', async () => {
   const calls = []
+  // 마진(30분)이 지난 서명 작업 — 체인 시각(safe 블록)도 기한을 넘었다
+  const deadline = new Date(Date.now() - 3_600_000).toISOString()
   const deps = {
-    clients: () => ({ addresses: { distributor: '0x1', sneakers: '0x2' }, publicClient: { readContract: async () => false } }),
+    clients: () => ({
+      addresses: { distributor: '0x1', sneakers: '0x2' },
+      publicClient: {
+        getBlock: async () => ({ number: 5n, timestamp: BigInt(Math.floor(Date.now() / 1000)) }),
+        readContract: async () => false,
+      },
+    }),
     rpc: async (_env, fn, args) => {
       calls.push([fn, args])
       if (fn === 'attester_due_ops') {
         return [
-          { op_id: 'bad', op_ref: '0x1', kind: 'SUP_WITHDRAW' },
-          { op_id: 'good', op_ref: '0x2', kind: 'SNEAKER_WITHDRAW' },
+          { op_id: 'bad', op_ref: '0x1', kind: 'SUP_WITHDRAW', status: 'SIGNED', deadline, early: false },
+          { op_id: 'good', op_ref: '0x2', kind: 'SNEAKER_WITHDRAW', status: 'SUBMITTED', deadline, early: false },
         ]
       }
       if (fn === 'attester_op_expire' && args.p_op === 'bad') throw new Error('로그인이 필요합니다')
@@ -461,10 +469,102 @@ test('만료: 기한이 지난 서명 작업은 safe 블록이 기한을 넘고 
 })
 
 test('보내기: 같은 번호(nonce) 충돌을 알아보고 흔들린 간격으로 다시 보낸다', () => {
-  for (const msg of ['nonce too low', 'replacement transaction underpriced', 'already known', 'Nonce has already been used']) {
+  for (const msg of ['nonce too low', 'replacement transaction underpriced', 'Nonce has already been used']) {
     assert.ok(NONCE_CLASH.test(msg), msg)
   }
   assert.ok(!NONCE_CLASH.test('execution reverted: PayoutCapReached'))
+  // 같은 거래를 이미 받아 둔 것 — 번호 충돌이 아니다
+  assert.ok(!NONCE_CLASH.test('already known'))
+  assert.ok(ALREADY_KNOWN.test('already known'))
   assert.equal(nonceBackoffMs(0, () => 0), 700)
   assert.equal(nonceBackoffMs(2, () => 0.999), 2100 + 599)
+})
+
+const SNEAKER_PAYLOAD = {
+  kind: 'SNEAKER_WITHDRAW',
+  op_ref: '0x' + '0'.repeat(32) + 'cd'.repeat(16),
+  wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  deadline_unix: 1790000000,
+  token_id: '7',
+  faction: 'FIRE',
+  rarity: 'EPIC',
+  variant: 1,
+  level: 5,
+  efficiency_bps: 800,
+  comfort_bps: 700,
+  durability: '90.5',
+  genesis_no: null,
+  transfer_locked: false,
+}
+
+/** 보내기가 차례로 [answers] 를 겪는 작업 실행 — { reject } 는 노드의 거절, 문자열은 거래 번호 */
+function sendingDeps(answers) {
+  const deps = fakeDeps({ payload: SNEAKER_PAYLOAD })
+  const sends = []
+  const clients = deps.clients()
+  clients.relayer.writeContract = async (x) => {
+    sends.push(x)
+    const next = answers[sends.length - 1]
+    if (next?.reject) throw Object.assign(new Error('send failed'), { details: next.reject })
+    return next
+  }
+  deps.clients = () => clients
+  return { deps, sends }
+}
+
+test('보내기: 번호 충돌은 새 번호로 다시 보내고, 성공한 거래를 제출로 적는다', async () => {
+  const { deps, sends } = sendingDeps([{ reject: 'nonce too low' }, '0x' + 'ef'.repeat(32)])
+  const out = await executeOp(req({}), env, deps, OP)
+  assert.equal(sends.length, 2)
+  assert.equal(out.tx, '0x' + 'ef'.repeat(32))
+  assert.deepEqual(deps.rpcCalls.at(-1), ['attester_op_submitted', { p_op: OP, p_tx: '0x' + 'ef'.repeat(32) }])
+})
+
+test('보내기: 노드가 이미 받아 둔 거래면 다시 보내지 않는다(되돌아갈 두 번째 거래를 만들지 않게)', async () => {
+  const { deps, sends } = sendingDeps([{ reject: 'already known' }, '0x' + 'ef'.repeat(32)])
+  await assert.rejects(executeOp(req({}), env, deps, OP), (e) => e.status === 409 && /이미 체인에 보낸/.test(e.message))
+  assert.equal(sends.length, 1)
+  assert.ok(!deps.rpcCalls.some(([fn]) => fn === 'attester_op_submitted'))
+})
+
+test('만료: 마진이 지나도 체인 시각이 기한 전이면(시퀀서가 멈춤) 서명한 작업을 되돌리지 않는다', async () => {
+  const deadline = new Date(Date.now() - 3_600_000).toISOString() // 마진(30분)보다 오래 지났다
+  const deadlineSec = BigInt(Math.ceil(Date.parse(deadline) / 1000))
+  const run = async ({ header, status = 'SIGNED' }) => {
+    const calls = []
+    const deps = {
+      clients: () => ({
+        addresses: { distributor: '0x1', sneakers: '0x2' },
+        publicClient: {
+          getBlock: async () => {
+            if (!header) throw new Error('safe block unavailable')
+            return header
+          },
+          readContract: async () => false, // 아직 체인에서 안 쓰였다
+        },
+      }),
+      rpc: async (_env, fn, args) => {
+        calls.push([fn, args])
+        if (fn === 'attester_due_ops') return [{ op_id: 'op', op_ref: '0x9', kind: 'SUP_WITHDRAW', status, deadline, early: false }]
+        return 'EXPIRED'
+      },
+    }
+    const out = await expireOps({}, deps)
+    return { out, expired: calls.filter(([fn]) => fn === 'attester_op_expire') }
+  }
+  // 체인이 기한 전 시각에 멈춰 있다 — 풀의 거래가 따라잡는 블록에 들어갈 수 있으니 기다린다
+  let r = await run({ header: { number: 9n, timestamp: deadlineSec - 600n } })
+  assert.equal(r.out.expired, 0)
+  assert.equal(r.out.waiting, 1)
+  assert.equal(r.expired.length, 0)
+  // safe 블록을 못 읽으면 되돌리지 않는다
+  r = await run({ header: null })
+  assert.equal(r.expired.length, 0)
+  // 체인 시각이 기한을 넘었다 — 되돌린다
+  r = await run({ header: { number: 9n, timestamp: deadlineSec + 1n } })
+  assert.equal(r.out.expired, 1)
+  assert.deepEqual(r.expired[0][1], { p_op: 'op', p_used_on_chain: false })
+  // 서명 전 작업은 체인에 있을 수 없다 — 체인 시각과 상관없이 되돌린다
+  r = await run({ header: null, status: 'RESERVED' })
+  assert.equal(r.out.expired, 1)
 })

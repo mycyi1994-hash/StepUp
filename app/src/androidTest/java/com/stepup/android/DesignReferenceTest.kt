@@ -367,6 +367,12 @@ class DesignReferenceTest {
     }
 
     private fun awaitScene(s: Scene) {
+        if (s == Scene.COMMUNITY) {
+            // 커뮤니티 첫 화면은 동네 이야기(목록형)다 — 이 기준 장면은 "함께 뛰기"(모임)를 찍는다
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("community-tab-together").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("community-tab-together").performClick()
+            compose.waitForIdle()
+        }
         val readyTag = when (s) {
             Scene.HOME -> "home-start-run"
             Scene.SHOES -> "shoe-equip"

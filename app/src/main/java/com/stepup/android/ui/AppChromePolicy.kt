@@ -39,6 +39,12 @@ object AppChromePolicy {
         Destination(Routes.FLASH_LOBBY, Screen.Community, Header.Detail),
         Destination(Routes.CREW_CREATE, Screen.Community, Header.Form),
         Destination(Routes.POST_COMPOSE, Screen.Community, Header.Form),
+        // 동네 이야기 — 각 화면이 자기 머리(뒤로 · 제목)를 그린다. 하단 탭 없이 댓글 입력 · 올리기가 아래에 선다
+        Destination(Routes.STORY_DETAIL, Screen.Community, Header.Form),
+        Destination(Routes.STORY_COMPOSE, Screen.Community, Header.Form),
+        Destination(Routes.STORY_MAP, Screen.Community, Header.Form),
+        Destination(Routes.STORY_LOCATION, Screen.Community, Header.Form),
+        Destination(Routes.STORY_REGION, Screen.Community, Header.Form),
         Destination(Routes.WALLET, Screen.Profile, Header.Detail),
         Destination(Routes.NOTIFICATIONS, Screen.Profile, Header.Detail),
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),

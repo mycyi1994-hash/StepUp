@@ -46,6 +46,51 @@
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
     {
+      "id": "Routes.STORY_DETAIL",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md",
+      "verification": "pending — CommunityStoriesTest device captures in Experience QA",
+      "evidence": "docs/redesign/community-list/STATUS.md",
+      "notes": "scenes 03-05, 18-23: detail, comments, own/other menu, delete, report"
+    },
+    {
+      "id": "Routes.STORY_COMPOSE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md",
+      "verification": "pending — CommunityStoriesTest device captures in Experience QA",
+      "evidence": "docs/redesign/community-list/STATUS.md",
+      "notes": "scenes 06-13, 19, 24, 31: write/edit, place search/confirm, publish states, leave-draft"
+    },
+    {
+      "id": "Routes.STORY_MAP",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md",
+      "verification": "pending — CommunityStoriesTest device captures in Experience QA",
+      "evidence": "docs/redesign/community-list/STATUS.md",
+      "notes": "scenes 14-16: map overview, place preview, place feed"
+    },
+    {
+      "id": "Routes.STORY_LOCATION",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md",
+      "verification": "pending — CommunityStoriesTest device captures in Experience QA",
+      "evidence": "docs/redesign/community-list/STATUS.md",
+      "notes": "scene 26: location guidance (real OS permission flow)"
+    },
+    {
+      "id": "Routes.STORY_REGION",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "list-style community (2026-09-27 handoff); see docs/redesign/community-list/STATUS.md",
+      "verification": "pending — CommunityStoriesTest device captures in Experience QA",
+      "evidence": "docs/redesign/community-list/STATUS.md",
+      "notes": "scene 27: manual region search without location permission"
+    },
+    {
       "id": "Routes.MAP",
       "parent": "Community",
       "chrome": "Detail",

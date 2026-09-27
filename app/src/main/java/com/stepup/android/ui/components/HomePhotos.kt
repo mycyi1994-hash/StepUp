@@ -5,8 +5,19 @@ import com.stepup.android.R
 import com.stepup.android.domain.WeatherScene
 import kotlin.random.Random
 
-/** 홈 바탕 사진 한 장 — [mood] 는 날씨 풍경을 켰을 때 고르는 기준 */
-data class HomePhoto(val key: String, @DrawableRes val res: Int, val mood: WeatherScene)
+/**
+ * 홈 바탕 사진 한 장 — [mood] 는 날씨 풍경을 켰을 때 고르는 기준(배경음도 따른다).
+ * [weatherMatch] 가 false 면 날씨로는 고르지 않고 화살표로만 본다 — 그 날씨라고 적으면 틀린 사진이다.
+ */
+data class HomePhoto(
+    val key: String,
+    @DrawableRes val res: Int,
+    val mood: WeatherScene,
+    val weatherMatch: Boolean = true,
+) {
+    /** 날씨 풍경에서 [scene] 날씨의 사진으로 고르고 "지금 날씨에 맞춘 풍경"이라 적어도 되는가 */
+    fun suits(scene: WeatherScene?): Boolean = weatherMatch && scene == mood
+}
 
 /**
  * 홈 바탕 사진 30장 — 한국 풍경(2026-09-27 사용자 결정). 모두 CC0(출처 표시 없이 쓸 수 있다).
@@ -41,7 +52,8 @@ object HomePhotos {
         HomePhoto("seoul-night-park", R.drawable.home_bg_25, WeatherScene.NIGHT),
         HomePhoto("seoul-gate-night", R.drawable.home_bg_26, WeatherScene.NIGHT),
         HomePhoto("hangang-clouds", R.drawable.home_bg_27, WeatherScene.RAIN),
-        HomePhoto("seoul-snow", R.drawable.home_bg_28, WeatherScene.RAIN),
+        // 눈 풍경 — 비 오는 날 "비"로 고르지 않는다. 날씨 분류(WeatherScenes)에 눈이 없어 화살표로만 본다.
+        HomePhoto("seoul-snow", R.drawable.home_bg_28, WeatherScene.RAIN, weatherMatch = false),
         HomePhoto("jamsil-bridge-haze", R.drawable.home_bg_29, WeatherScene.RAIN),
         HomePhoto("jeju-lighthouse-grey", R.drawable.home_bg_30, WeatherScene.RAIN),
     )
@@ -54,11 +66,11 @@ object HomePhotos {
 
     /** 다른 탭에서 돌아올 때 — 지금과 다른 한 장. [mood] 가 있으면 그 날씨의 사진 안에서 고른다. */
     fun shuffle(index: Int, mood: WeatherScene? = null, random: Random = Random.Default): Int {
-        val pool = all.indices.filter { it != index && (mood == null || all[it].mood == mood) }
+        val pool = all.indices.filter { it != index && (mood == null || all[it].suits(mood)) }
         return if (pool.isEmpty()) index else pool[random.nextInt(pool.size)]
     }
 
     /** 날씨가 정해지면 — 이미 그 날씨의 사진이면 그대로, 아니면 그 날씨의 사진 하나로 */
     fun forWeather(scene: WeatherScene, index: Int, random: Random = Random.Default): Int =
-        if (all.getOrNull(index)?.mood == scene) index else shuffle(index, scene, random)
+        if (all.getOrNull(index)?.suits(scene) == true) index else shuffle(index, scene, random)
 }

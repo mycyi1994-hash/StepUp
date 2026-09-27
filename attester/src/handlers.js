@@ -136,7 +136,12 @@ function revertName(e) {
 }
 
 /** 같은 번호(nonce)를 두 요청이 잡았을 때 노드가 내는 말 */
-export const NONCE_CLASH = /nonce too low|nonce has already been used|replacement transaction underpriced|already known|invalid nonce/i
+export const NONCE_CLASH = /nonce too low|nonce has already been used|replacement transaction underpriced|invalid nonce/i
+/**
+ * 노드가 이 거래를 이미 받아 두었다 — 번호 충돌이 아니라 같은 거래를 또 보낸 것이다(앞선 보내기가 나갔다).
+ * 새 번호로 다시 보내면 체인이 되돌릴 두 번째 거래에 가스만 쓰고, 그 거래 번호가 제출 기록으로 남는다.
+ */
+export const ALREADY_KNOWN = /already known/i
 const NONCE_RETRIES = 3
 /** 다시 보내기 전 기다림 — 늘어나는 간격에 흔들림을 더한다 */
 export const nonceBackoffMs = (attempt, rand = Math.random) => 700 * (attempt + 1) + Math.floor(rand() * 600)
@@ -167,6 +172,7 @@ async function submit(c, address, abi, functionName, args) {
       return await c.relayer.writeContract(request)
     } catch (e) {
       const msg = String(e?.details ?? e?.shortMessage ?? e?.message ?? '')
+      if (ALREADY_KNOWN.test(msg)) throw new HttpError(409, '이미 체인에 보낸 작업입니다. 확정되면 결과가 보입니다')
       if (attempt < NONCE_RETRIES && NONCE_CLASH.test(msg)) {
         await new Promise((r) => setTimeout(r, nonceBackoffMs(attempt)))
         continue

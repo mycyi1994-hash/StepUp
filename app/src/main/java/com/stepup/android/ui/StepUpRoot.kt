@@ -248,6 +248,25 @@ object Routes {
 
     fun flashDetail(postId: Long) = "flash/$postId"
 
+    // ── 동네 이야기(목록형 커뮤니티, 2026-09-27) ──
+    /** 글 상세 — 댓글 · 반응 · 내 글 관리 · 신고 */
+    const val STORY_DETAIL = "story/{postId}"
+
+    /** 글쓰기 · 고치기 — edit 가 0 이면 새 글, resume 이면 쓰다 만 글을 이어 쓴다 */
+    const val STORY_COMPOSE = "story/compose?edit={edit}&resume={resume}"
+
+    /** 내 주변 지도 — 장소와 장소마다 글 수 */
+    const val STORY_MAP = "story/map"
+
+    /** 내 주변 — 내 위치 사용 · 지역 직접 선택 */
+    const val STORY_LOCATION = "story/location"
+
+    /** 지역 직접 선택 */
+    const val STORY_REGION = "story/region"
+
+    fun storyDetail(postId: Long) = "story/$postId"
+    fun storyCompose(edit: Long = 0L, resume: Boolean = false) = "story/compose?edit=$edit&resume=$resume"
+
     fun flashLobby(postId: Long) = "flash/lobby/$postId"
 
     const val NO_CREW = "_"
@@ -530,7 +549,7 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
-                    weatherScene = weatherPick.takeIf { it == com.stepup.android.ui.components.HomePhotos.all[homePhoto].mood },
+                    weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },
                     onPreviousBackground = {
                         homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)
                     },
@@ -643,6 +662,74 @@ internal fun MainScaffold(
                     onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
                     onOpenMap = { navController.navigate(Routes.MAP) },
+                    onOpenStory = { postId -> navController.navigate(Routes.storyDetail(postId)) },
+                    onOpenStoryMap = { place ->
+                        com.stepup.android.ui.screens.community.stories.StoryMapSeed.place = place
+                        navController.navigate(Routes.STORY_MAP)
+                    },
+                    onWriteStory = { resume -> navController.navigate(Routes.storyCompose(resume = resume)) },
+                    onOpenStoryLocation = { navController.navigate(Routes.STORY_LOCATION) },
+                    onOpenStoryRegion = { navController.navigate(Routes.STORY_REGION) },
+                )
+            }
+            composable(
+                route = Routes.STORY_DETAIL,
+                arguments = listOf(navArgument("postId") { type = NavType.LongType }),
+            ) {
+                com.stepup.android.ui.screens.community.stories.StoryDetailScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPlace = { place ->
+                        com.stepup.android.ui.screens.community.stories.StoryMapSeed.place = place
+                        navController.navigate(Routes.STORY_MAP)
+                    },
+                    onEdit = { postId -> navController.navigate(Routes.storyCompose(edit = postId)) },
+                )
+            }
+            composable(
+                route = Routes.STORY_COMPOSE,
+                arguments = listOf(
+                    navArgument("edit") { type = NavType.LongType; defaultValue = 0L },
+                    navArgument("resume") { type = NavType.BoolType; defaultValue = false },
+                ),
+            ) {
+                com.stepup.android.ui.screens.community.stories.StoryComposeScreen(
+                    onBack = { navController.popBackStack() },
+                    // 올린 뒤에는 목록으로 — 고친 글이면 그 글의 상세로 돌아간다
+                    onDone = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.STORY_MAP) { entry ->
+                // 목록과 같은 뷰모델 — 범위 · 장소 필터를 함께 쓴다(커뮤니티 탭이 뒤에 있을 때)
+                val owner = remember(entry) {
+                    runCatching { navController.getBackStackEntry(Screen.Community.route) }.getOrNull() ?: entry
+                }
+                val stories: com.stepup.android.ui.screens.community.stories.StoriesViewModel =
+                    androidx.lifecycle.viewmodel.compose.viewModel(
+                        viewModelStoreOwner = owner,
+                        factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory,
+                    )
+                com.stepup.android.ui.screens.community.stories.StoryMapScreen(
+                    viewModel = stories,
+                    onBack = { navController.popBackStack() },
+                    onOpenPost = { postId -> navController.navigate(Routes.storyDetail(postId)) },
+                    onPlaceFeed = {
+                        if (!navController.popBackStack(Screen.Community.route, inclusive = false)) navController.popBackStack()
+                    },
+                )
+            }
+            composable(Routes.STORY_LOCATION) {
+                com.stepup.android.ui.screens.community.stories.StoryLocationScreen(
+                    onBack = { navController.popBackStack() },
+                    onChooseRegion = { navController.navigate(Routes.STORY_REGION) },
+                )
+            }
+            composable(Routes.STORY_REGION) {
+                com.stepup.android.ui.screens.community.stories.StoryRegionScreen(
+                    onBack = { navController.popBackStack() },
+                    // 고르면 목록으로 곧장 — 위치 안내 화면을 거쳐 왔어도 그 화면까지 닫는다
+                    onChosen = {
+                        if (!navController.popBackStack(Screen.Community.route, inclusive = false)) navController.popBackStack()
+                    },
                 )
             }
             composable(Routes.MAP) {

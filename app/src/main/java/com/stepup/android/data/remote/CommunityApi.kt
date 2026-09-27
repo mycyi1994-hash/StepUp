@@ -35,6 +35,8 @@ data class PostRow(
     val liked: Boolean = false,
     val joined: Boolean = false,
     val mine: Boolean = false,
+    /** 동네 이야기 장소의 주소(0041). 예전 서버 · 장소 없는 글은 빈 문자열 */
+    @SerialName("place_address") val placeAddress: String = "",
 )
 
 /** 댓글 한 줄 — `comment_feed`. 최상위 댓글은 parent_id 가 0 이다. */
@@ -132,6 +134,51 @@ class CommunityApi(private val server: StepUpServer) {
         },
     ) { it.trim().toLongOrNull() }
 
+    /**
+     * 동네 이야기 쓰기(0041 story_create) — 장소가 있는 전체 게시판 자유 글. 새 글 번호를 돌려받는다.
+     * [body] 는 제목 바로 뒤의 글자부터다(앞 줄바꿈 포함). 서버가 지우지 않는다.
+     */
+    suspend fun createStory(
+        title: String,
+        body: String,
+        place: String,
+        placeAddress: String,
+        lat: Double,
+        lng: Double,
+    ): ServerResult<Long> = rpc(
+        "story_create",
+        jsonBody {
+            put("p_title", title)
+            put("p_body", body)
+            put("p_place", place)
+            put("p_place_address", placeAddress)
+            put("p_lat", lat)
+            put("p_lng", lng)
+        },
+    ) { it.trim().toLongOrNull() }
+
+    /** 내 동네 이야기 고치기(0041 story_update) — 같은 글 번호라 댓글 · 좋아요가 그대로 남는다 */
+    suspend fun updateStory(
+        postId: Long,
+        title: String,
+        body: String,
+        place: String,
+        placeAddress: String,
+        lat: Double,
+        lng: Double,
+    ): ServerResult<Unit> = rpc(
+        "story_update",
+        jsonBody {
+            put("p_post", postId)
+            put("p_title", title)
+            put("p_body", body)
+            put("p_place", place)
+            put("p_place_address", placeAddress)
+            put("p_lat", lat)
+            put("p_lng", lng)
+        },
+    ) { }
+
     suspend fun deletePost(postId: Long): ServerResult<Unit> =
         rpc("post_delete", jsonBody { put("p_post", postId) }) { }
 
@@ -165,15 +212,16 @@ class CommunityApi(private val server: StepUpServer) {
      *
      * @param targetType POST · COMMENT · CREW · COURSE · USER
      * @param reason SPAM · ABUSE · SEXUAL · DANGER · FRAUD · OTHER
+     * @param note 서버 목록에 없는 사유를 OTHER 로 보낼 때 원래 사유(검토하는 사람이 본다)
      */
-    suspend fun report(targetType: String, targetId: String, reason: String): ServerResult<Unit> =
+    suspend fun report(targetType: String, targetId: String, reason: String, note: String = ""): ServerResult<Unit> =
         rpc(
             "content_report",
             jsonBody {
                 put("p_type", targetType)
                 put("p_target", targetId)
                 put("p_reason", reason)
-                put("p_note", "")
+                put("p_note", note)
             },
         ) { }
 

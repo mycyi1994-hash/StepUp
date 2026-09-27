@@ -14,7 +14,10 @@ permissions:
 
 concurrency:
   group: build-apk-${{ github.ref }}
-  cancel-in-progress: true
+  # main 은 끊지 않고 차례로 돈다. 테스트 APK 릴리스를 지우고 다시 만드는 사이에 새 푸시가 이 실행을
+  # 끊으면, 다음 빌드가 올릴 때까지(7~10분) 홈페이지 "앱 받기"와 앱의 새 버전 알림이 404 가 된다.
+  # 작업 브랜치는 전처럼 새 푸시가 앞 빌드를 끊는다.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
