@@ -181,6 +181,13 @@ class WalkSessionService : Service() {
     /** 마지막으로 좌표를 받은 때(부팅 기준 ms)와 그때의 걸음 — 신호 끊김(L04) 판단용 */
     @Volatile private var lastFixElapsed = 0L
     @Volatile private var stepsAtLastFix = 0
+    @Volatile private var lastKnownFixElapsed = 0L
+
+    /** GPS 가 마지막으로 고친 위치의 시각(부팅 기준 ms) — 알림 거리 필터와 상관없이 갱신된다. 없으면 0 */
+    private fun lastKnownGpsFixElapsed(): Long = runCatching {
+        val lm = locationManager ?: return@runCatching 0L
+        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.elapsedRealtimeNanos?.div(1_000_000) ?: 0L
+    }.getOrDefault(0L)
     private var stepJob: Job? = null
     private var timerJob: Job? = null
     private var locationManager: LocationManager? = null
@@ -548,7 +555,10 @@ class WalkSessionService : Service() {
                 if (!current.isActive || current.isPaused) continue
                 activeMs += delta
                 val seconds = activeMs / 1000
-                val fixAt = lastFixElapsed
+                // 제자리 · 러닝머신에서는 6m 를 못 움직여 좌표 알림이 오지 않는다 — GPS 가 실제로 고친
+                // 마지막 위치(알림 거리와 무관)도 본다. 그것까지 오래됐을 때만 신호가 약하다고 본다
+                if (seconds % 5 == 0L) lastKnownFixElapsed = lastKnownGpsFixElapsed()
+                val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
                 _state.update {
                     if (!it.isActive || it.isPaused) it
                     else it.copy(

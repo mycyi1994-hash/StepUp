@@ -814,6 +814,48 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
       "line": 1091,
       "verification": "pending"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 804,
+      "verification": "S01: pending this PR's Experience QA (RunSaveRecoveryTest display capture form-checks/run-save-failed-dialog.png) (S01 save failed)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 821,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R03 pause)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 837,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R04 end)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 864,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R07 end without saving)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 886,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (C01 goal reached)"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "DietInputScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
+      "line": 241,
+      "verification": "f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (D03 stop entering)"
     }
   ],
   "required_state_matrix": [

@@ -4,7 +4,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to neutral S2 black, made PillChip selection a white pill and AdaptiveNumber light numerals — seen in the Experience QA run 36236519563 profile/challenge/shoes captures; screens not listed as S2 keep their older layout apart from these shared parts. Earlier: shared DetailPage/FormPage primary actions and TwoWaySwitch tabs changed to S2 in PR #28; the Main header balance (SupPill) became text-only in PR #29 (home 430dp capture in Experience QA run 36234135671 reviewed); the run share bitmap became the S2 dark card in PR #29, rendered on device by ShareCardRenderTest (form-checks/share-card.png) — its first render (121a06c) showed the footer touching the time/pace values, fixed in the following commit and re-checked on the PR head run; rows not listed as S2 keep their older layout and evidence apart from those shared parts.
 
-44 registered navigation routes; 44 screen functions; 20 overlay declarations. These counts are different measures, not completed screens.
+44 registered navigation routes; 44 screen functions; 26 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -122,6 +122,12 @@ S2 note (2026-09-26): PR #30 moved dark card surfaces (GlowCard, 102 uses) to ne
 | RunScreen | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:408 | pending |
 | RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:445 | pending |
 | RunScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:469 | pending |
+| RunScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:804 | S01: pending this PR's Experience QA (RunSaveRecoveryTest display capture form-checks/run-save-failed-dialog.png) (S01 save failed) |
+| RunScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:821 | f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R03 pause) |
+| RunScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:837 | f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R04 end) |
+| RunScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:864 | f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (R07 end without saving) |
+| RunScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:886 | f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (C01 goal reached) |
+| DietInputScreen | KitDialog | app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt:241 | f8c207f: Experience QA run 36309869227 — shown and dismissed by tag in DesignReferenceTest/ChromeNavigationTest; dialog window not in Compose captures (D03 stop entering) |
 | SaveCourseDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:960 | pending |
 | RunRecoveryDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/StepUpRoot.kt:1055 | RunCrashRecoveryTest (finish/resume) in the CI interaction suite; physical process termination not yet run on a device |
 
