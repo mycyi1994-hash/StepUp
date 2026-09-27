@@ -18,9 +18,9 @@
     <string name="rec_minutes_seconds">%1$d분 %2$d초</string>
     <string name="rec_hours_minutes">%1$d시간 %2$d분</string>
     <string name="rec_seconds">%1$d초</string>
-    <string name="rec_loading">기록을 불러오고 있어요</string>
+    <string name="rec_loading">기록을 불러오는 중</string>
     <string name="rec_failed_title">기록을 불러오지 못했어요</string>
-    <string name="rec_failed_body">다시 불러와 주세요.</string>
+    <string name="rec_failed_body">잠시 후 다시 시도해 주세요.</string>
     <string name="rec_stale">기록을 다시 읽지 못해 앞서 불러온 내용을 보여드려요.</string>
     <string name="rec_retry">다시</string>
     <string name="rec_empty_title">아직 러닝 기록이 없어요</string>

@@ -18,9 +18,9 @@
     <string name="rec_minutes_seconds">%1$d分%2$d秒</string>
     <string name="rec_hours_minutes">%1$d時間%2$d分</string>
     <string name="rec_seconds">%1$d秒</string>
-    <string name="rec_loading">記録を読み込んでいます</string>
+    <string name="rec_loading">記録を読み込み中</string>
     <string name="rec_failed_title">記録を読み込めませんでした</string>
-    <string name="rec_failed_body">もう一度読み込んでください。</string>
+    <string name="rec_failed_body">しばらくしてからもう一度お試しください。</string>
     <string name="rec_stale">記録を再読み込みできず、前に読み込んだ内容を表示しています。</string>
     <string name="rec_retry">再試行</string>
     <string name="rec_empty_title">まだランの記録がありません</string>

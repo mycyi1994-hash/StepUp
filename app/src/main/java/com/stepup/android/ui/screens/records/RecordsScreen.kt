@@ -337,13 +337,13 @@ private fun StaleNotice(onRetry: () -> Unit) {
     }
 }
 
-/** 읽는 중 — 카드와 줄 자리만(숫자를 0으로 보이지 않는다) */
+/** 읽는 중 — 카드와 줄 자리 + "기록을 불러오는 중"(숫자를 0으로 보이지 않는다) */
 @Composable
 private fun RecordsSkeleton() {
     val p = settingsPalette()
     Column(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("records-loading")) {
         Box(Modifier.fillMaxWidth().height(134.dp).clip(RoundedCornerShape(23.dp)).background(p.skeleton.copy(alpha = 0.6f)))
-        Box(Modifier.padding(top = 30.dp).fillMaxWidth(0.4f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(p.skeleton))
+        Text(stringResource(R.string.rec_loading), color = p.secondary, fontSize = 13.sp, modifier = Modifier.padding(top = 26.dp))
         repeat(3) {
             Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(80.dp).clip(RoundedCornerShape(15.dp)).background(p.skeleton))
