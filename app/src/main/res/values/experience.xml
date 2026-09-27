@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_experience">Sound &amp; motion</string>
-    <string name="experience_intro">Fine-tune how StepUp feels during your day.</string>
+    <string name="experience_intro">Adjust StepUp to what\'s comfortable for you.</string>
     <string name="experience_sound">Sound effects</string>
-    <string name="experience_sound_desc">Short cues for controls, runs and confirmed rewards.</string>
+    <string name="experience_sound_desc">Buttons and your run status play short sounds.</string>
     <string name="experience_ambience">Scene ambience</string>
-    <string name="experience_ambience_desc">Quiet riverside and wardrobe loops. Off by default.</string>
+    <string name="experience_ambience_desc">Plays background sound on supported screens.</string>
     <string name="experience_haptic">Touch feedback</string>
-    <string name="experience_haptic_desc">Gentle vibration for actions and milestones.</string>
+    <string name="experience_haptic_desc">A light vibration when you tap buttons.</string>
     <string name="experience_motion">Reduce motion</string>
-    <string name="experience_motion_desc">Keep transitions still and turn off decorative movement.</string>
+    <string name="experience_motion_desc">Fewer screen transitions and decorative motion.</string>
     <string name="experience_preview">Preview feedback</string>
-    <string name="experience_system_note">Sound respects silent mode, Do Not Disturb and system touch-sound settings. Cues stay quiet while music is playing. System animation settings also apply.</string>
+    <string name="experience_system_note">Silent mode, Do Not Disturb and your phone settings still apply. Sound effects stay quiet while music plays.</string>
 </resources>

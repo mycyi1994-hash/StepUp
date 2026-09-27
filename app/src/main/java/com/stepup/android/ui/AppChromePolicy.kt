@@ -50,6 +50,7 @@ object AppChromePolicy {
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),
         Destination(Routes.ANALYTICS, Screen.Profile, Header.Detail),
         Destination(Routes.HISTORY_MAP, Screen.Profile, Header.Detail),
+        Destination(Routes.SETTINGS, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_NOTIFICATIONS, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_PRIVACY, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_SUPPORT, Screen.Profile, Header.Detail),

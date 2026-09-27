@@ -138,7 +138,7 @@ class ProfileRunningPathTest {
             awaitTag("profile-settings")
 
             tapTag("profile-settings")
-            awaitText(context.getString(R.string.settings_experience), scroll = true)
+            awaitText(context.getString(R.string.set_experience), scroll = true)
             compose.onAllNodesWithTag("profile-record-card").assertCountEquals(0)
             shot("06-settings")
             pressBack()

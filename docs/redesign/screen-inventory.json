@@ -187,39 +187,46 @@
       "verification": "source checks only; Android compile/capture pending; no APK requested"
     },
     {
+      "id": "Routes.SETTINGS",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md — settings first list (was the profile inner tab)",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
+    },
+    {
       "id": "Routes.SETTINGS_NOTIFICATIONS",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_PRIVACY",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_SUPPORT",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_CONNECTED",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_EXPERIENCE",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_BODY",
@@ -253,15 +260,15 @@
       "id": "Routes.SETTINGS_THEME",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SETTINGS_LANGUAGE",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "Routes.SNEAKER",
@@ -593,53 +600,62 @@
       "id": "ConnectedAccountsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
       "line": 57,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "ExperienceSettingsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ExperienceSettingsScreen.kt",
       "line": 26,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "LanguageScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/LanguageScreen.kt",
       "line": 39,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
+    },
+    {
+      "id": "SettingsHomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SettingsHomeScreen.kt",
+      "line": 60,
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA",
+      "evidence": [],
+      "notes": "three groups + 더 보기 (inbox, achievements, invite, body, mode) + 앱 정보 (demo, version, test update)"
     },
     {
       "id": "NotificationSettingsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
       "line": 44,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "PrivacyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt",
       "line": 50,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "SupportScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt",
       "line": 49,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "ThemeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ThemeScreen.kt",
       "line": 39,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending"
+      "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "id": "BodySettingsScreen",
@@ -795,24 +811,38 @@
       "verification": "pending"
     },
     {
-      "kind": "DialogPanel",
-      "owner": "GoalDialog",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
-      "line": 931,
-      "verification": "pending"
+      "kind": "SettingsSheet",
+      "owner": "DailyGoalSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SettingsHomeScreen.kt",
+      "line": 1,
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "StoredInfoSheet · ClearHistorySheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PrivacyScreen.kt",
+      "line": 1,
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "DeleteAccountSheet · DeleteUnknownSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
+      "line": 1,
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
+    },
+    {
+      "kind": "SettingsSheet",
+      "owner": "ContactSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SupportScreen.kt",
+      "line": 1,
+      "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): pending this PR's QA"
     },
     {
       "kind": "DialogPanel",
       "owner": "ProfileEditDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
       "line": 980,
-      "verification": "pending"
-    },
-    {
-      "kind": "AlertDialog",
-      "owner": "ConnectedAccountsScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/ConnectedAccountsScreen.kt",
-      "line": 67,
       "verification": "pending"
     },
     {

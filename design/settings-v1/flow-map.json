@@ -1,0 +1,286 @@
+{
+  "note": "정적 시안의 연결표. 조건을 확인해 실제 상태로 이동한다. 화면 번호는 새 라우트 수가 아니다.",
+  "entry": "existing:profile-running-path/settings",
+  "scenes": [
+    "01-settings-home",
+    "02-notifications",
+    "03-notifications-blocked",
+    "04-notification-sync-pending",
+    "05-setting-save-error",
+    "06-privacy-permissions",
+    "07-permissions-limited",
+    "08-stored-data-sheet",
+    "09-clear-notifications-confirm",
+    "10-clear-notifications-done",
+    "11-connected-accounts",
+    "12-account-not-signed-in",
+    "13-account-delete-confirm",
+    "14-account-deleting",
+    "15-account-delete-unknown",
+    "16-theme-dark",
+    "17-theme-light",
+    "18-language-korean",
+    "19-language-english",
+    "20-experience",
+    "21-support",
+    "22-faq-expanded",
+    "23-contact-sheet",
+    "24-daily-goal",
+    "25-settings-loading",
+    "26-settings-error",
+    "27-clear-notifications-error",
+    "28-contact-open-error"
+  ],
+  "transitions": [
+    {
+      "from": "01-settings-home",
+      "action": "하루 걸음 목표",
+      "to": "24-daily-goal"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "알림",
+      "to": "02-notifications"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "개인정보·앱 권한",
+      "to": "06-privacy-permissions"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "언어",
+      "to": "18-language-korean"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "화면 테마",
+      "to": "16-theme-dark"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "소리·진동·동작",
+      "to": "20-experience"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "연결된 계정",
+      "to": "11-connected-accounts"
+    },
+    {
+      "from": "01-settings-home",
+      "action": "도움말·문의",
+      "to": "21-support"
+    },
+    {
+      "from": "02-notifications",
+      "action": "OS에서 알림 차단 확인",
+      "to": "03-notifications-blocked"
+    },
+    {
+      "from": "02-notifications",
+      "action": "로컬 저장 성공, 서버 반영 미확인",
+      "to": "04-notification-sync-pending"
+    },
+    {
+      "from": "02-notifications",
+      "action": "로컬 저장 실패",
+      "to": "05-setting-save-error"
+    },
+    {
+      "from": "03-notifications-blocked",
+      "action": "휴대폰 설정 열기",
+      "to": "external:app-settings"
+    },
+    {
+      "from": "04-notification-sync-pending",
+      "action": "다시 반영하기",
+      "to": "02-notifications",
+      "condition": "서버 반영 성공을 확인한 경우. 실패하면 04 유지"
+    },
+    {
+      "from": "05-setting-save-error",
+      "action": "새로운 설정 변경",
+      "to": "02-notifications",
+      "condition": "로컬 저장 성공. 서버 반영 결과는 별도 처리"
+    },
+    {
+      "from": "06-privacy-permissions",
+      "action": "권한 변경 후 앱 복귀",
+      "to": "07-permissions-limited",
+      "condition": "대략적 위치 또는 제한된 권한을 실제로 확인한 예시"
+    },
+    {
+      "from": "06-privacy-permissions",
+      "action": "저장하는 정보",
+      "to": "08-stored-data-sheet"
+    },
+    {
+      "from": "06-privacy-permissions",
+      "action": "알림 기록 지우기",
+      "to": "09-clear-notifications-confirm"
+    },
+    {
+      "from": "09-clear-notifications-confirm",
+      "action": "지우기",
+      "to": "10-clear-notifications-done",
+      "condition": "로컬 알림 내역 삭제 완료"
+    },
+    {
+      "from": "09-clear-notifications-confirm",
+      "action": "지우기",
+      "to": "27-clear-notifications-error",
+      "condition": "로컬 알림 내역 삭제 실패"
+    },
+    {
+      "from": "09-clear-notifications-confirm",
+      "action": "취소 또는 닫기",
+      "to": "06-privacy-permissions"
+    },
+    {
+      "from": "27-clear-notifications-error",
+      "action": "다시 시도",
+      "to": "10-clear-notifications-done",
+      "condition": "삭제 완료. 실패하면 27 유지"
+    },
+    {
+      "from": "11-connected-accounts",
+      "action": "로그인 없음 확인",
+      "to": "12-account-not-signed-in"
+    },
+    {
+      "from": "11-connected-accounts",
+      "action": "계정 삭제",
+      "to": "13-account-delete-confirm",
+      "condition": "로그인 확인됨"
+    },
+    {
+      "from": "13-account-delete-confirm",
+      "action": "계정 삭제 확인",
+      "to": "14-account-deleting"
+    },
+    {
+      "from": "14-account-deleting",
+      "action": "서버 삭제 성공 확인",
+      "to": "existing:signed-out-landing"
+    },
+    {
+      "from": "14-account-deleting",
+      "action": "응답 유실 등으로 결과 미확인",
+      "to": "15-account-delete-unknown"
+    },
+    {
+      "from": "14-account-deleting",
+      "action": "명확한 미처리 실패 확인",
+      "to": "13-account-delete-confirm",
+      "condition": "오류 문구를 추가한 기존 확인 창 재사용"
+    },
+    {
+      "from": "15-account-delete-unknown",
+      "action": "문의",
+      "to": "23-contact-sheet"
+    },
+    {
+      "from": "15-account-delete-unknown",
+      "action": "닫기",
+      "to": "11-connected-accounts",
+      "condition": "다시 읽은 실제 계정 상태로 표시; 자동 삭제 재요청 금지"
+    },
+    {
+      "from": "16-theme-dark",
+      "action": "밝게 선택",
+      "to": "17-theme-light"
+    },
+    {
+      "from": "17-theme-light",
+      "action": "어둡게 선택",
+      "to": "16-theme-dark"
+    },
+    {
+      "from": "18-language-korean",
+      "action": "English 선택",
+      "to": "19-language-english"
+    },
+    {
+      "from": "19-language-english",
+      "action": "한국어 선택",
+      "to": "18-language-korean"
+    },
+    {
+      "from": "20-experience",
+      "action": "효과 미리 듣기",
+      "to": "20-experience",
+      "condition": "소리 또는 진동이 켜짐; 보상 지급 없음"
+    },
+    {
+      "from": "21-support",
+      "action": "SUP는 어떻게 모으나요?",
+      "to": "22-faq-expanded"
+    },
+    {
+      "from": "22-faq-expanded",
+      "action": "같은 질문 누르기",
+      "to": "21-support"
+    },
+    {
+      "from": "21-support",
+      "action": "앱 가이드",
+      "to": "existing:home-guide-tour"
+    },
+    {
+      "from": "21-support",
+      "action": "문의하기",
+      "to": "23-contact-sheet"
+    },
+    {
+      "from": "23-contact-sheet",
+      "action": "메일 앱 열기",
+      "to": "external:mail-compose",
+      "condition": "사용자 직접 작성·발송"
+    },
+    {
+      "from": "23-contact-sheet",
+      "action": "메일 앱 열기 실패",
+      "to": "28-contact-open-error"
+    },
+    {
+      "from": "23-contact-sheet",
+      "action": "주소 복사",
+      "to": "23-contact-sheet",
+      "condition": "클립보드 성공 후에만 복사 안내"
+    },
+    {
+      "from": "28-contact-open-error",
+      "action": "주소 복사",
+      "to": "28-contact-open-error",
+      "condition": "클립보드 성공 후에만 복사 안내"
+    },
+    {
+      "from": "24-daily-goal",
+      "action": "±500걸음",
+      "to": "24-daily-goal",
+      "condition": "3,000~20,000 범위. 실제 저장 성공 후 갱신"
+    },
+    {
+      "from": "24-daily-goal",
+      "action": "닫기",
+      "to": "01-settings-home"
+    },
+    {
+      "from": "25-settings-loading",
+      "action": "저장값 조회 성공",
+      "to": "02-notifications",
+      "condition": "시안은 알림 기준; 다른 설정도 같은 로딩 패턴 사용"
+    },
+    {
+      "from": "25-settings-loading",
+      "action": "저장값 조회 실패",
+      "to": "26-settings-error"
+    },
+    {
+      "from": "26-settings-error",
+      "action": "다시 불러오기",
+      "to": "25-settings-loading"
+    }
+  ]
+}

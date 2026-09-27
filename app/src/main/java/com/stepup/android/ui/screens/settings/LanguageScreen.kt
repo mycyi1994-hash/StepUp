@@ -1,81 +1,76 @@
 package com.stepup.android.ui.screens.settings
 
 import android.app.Activity
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.stepup.android.R
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.ui.components.DetailPage
+import com.stepup.android.ui.components.SettingsChoiceRow
+import com.stepup.android.ui.components.SettingsNote
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/** 고를 수 있는 언어 — 이름은 그 언어 자체로 적어 어느 언어에서도 알아볼 수 있게 한다 */
-private data class LanguageOption(val tag: String, val nativeName: String, val labelRes: Int)
+/** 한 가지 언어 — 저장 값(SYSTEM · en · ko · zh · ja)은 그대로. 영어 · 한국어는 제 이름, 중국어 · 일본어는 풀이와 제 이름 */
+private data class LanguageOption(val tag: String, val nativeName: String?, val labelRes: Int?)
 
 private val OPTIONS = listOf(
-    LanguageOption(AppLocale.SYSTEM, "", R.string.language_system),
-    LanguageOption("en", "English", R.string.language_en),
-    LanguageOption("ko", "한국어", R.string.language_ko),
+    LanguageOption(AppLocale.SYSTEM, null, R.string.set_theme_system),
+    LanguageOption("en", "English", null),
+    LanguageOption("ko", "한국어", null),
     LanguageOption("zh", "中文", R.string.language_zh),
     LanguageOption("ja", "日本語", R.string.language_ja),
 )
 
 /**
- * 언어 설정.
- *
- * 고르는 즉시 저장하고 화면을 새 언어로 다시 그린다.
- * Android 13 이상에서는 OS의 앱별 언어 설정에도 그대로 반영된다.
+ * 언어(설정 v1 18 · 19). 고르는 즉시 저장하고 화면을 새 언어로 다시 그린다 — Android 13 이상은 OS 의 앱별 언어 설정에도
+ * 그대로 반영된다. 저장은 화면이 다시 만들어져도 끊기지 않는 곳에서 한다(고른 뒤 이전 언어로 돌아가지 않게).
+ * 게시물 · 이름처럼 사람이 쓴 글은 번역하지 않는다.
  */
 @Composable
 fun LanguageScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     val activity = remember(context) { context as? Activity }
     var selected by remember { mutableStateOf(AppLocale.tag) }
-
-    com.stepup.android.ui.components.DetailPage(
-        title = stringResource(R.string.settings_language), onBack = onBack,
-    ) {
-        item {
-            com.stepup.android.ui.components.InformationNote(
-                text = stringResource(R.string.language_note), icon = Icons.Filled.Language,
-            )
-        }
-
-        items(OPTIONS.size) { index ->
-            val option = OPTIONS[index]
-            LanguageRow(
-                option = option,
-                checked = option.tag == selected,
-                onClick = {
-                    if (option.tag != selected) {
-                        selected = option.tag
-                        // 화면이 곧 재생성되므로 저장은 화면 수명과 무관한 스코프에서 한다
-                        CoroutineScope(Dispatchers.IO).launch {
-                            ServiceLocator.userPrefs.setLanguage(option.tag)
-                        }
-                        if (AppLocale.change(context, option.tag)) activity?.recreate()
-                    }
-                },
-            )
+    LanguageContent(selected, onBack) { tag ->
+        if (tag != selected) {
+            selected = tag
+            // 화면이 곧 재생성되므로 저장은 화면 수명과 무관한 스코프에서 한다
+            CoroutineScope(Dispatchers.IO).launch { ServiceLocator.userPrefs.setLanguage(tag) }
+            if (AppLocale.change(context, tag)) activity?.recreate()
         }
     }
 }
 
 @Composable
-private fun LanguageRow(option: LanguageOption, checked: Boolean, onClick: () -> Unit) {
-    val label = stringResource(option.labelRes)
-    com.stepup.android.ui.components.PreferenceChoice(
-        title = label,
-        description = option.nativeName.takeIf { it.isNotEmpty() && it != label },
-        selected = checked, onClick = onClick,
-    )
+fun LanguageContent(selected: String, onBack: () -> Unit = {}, onPick: (String) -> Unit = {}) {
+    DetailPage(title = stringResource(R.string.set_language), onBack = onBack) {
+        item { SettingsNote(stringResource(R.string.set_language_intro), top = true) }
+        item {
+            Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                OPTIONS.forEach { option ->
+                    val label = option.labelRes?.let { stringResource(it) } ?: option.nativeName.orEmpty()
+                    SettingsChoiceRow(
+                        label, selected = option.tag == selected, onClick = { onPick(option.tag) },
+                        description = option.nativeName?.takeIf { option.labelRes != null && it != label },
+                        modifier = Modifier.testTag("language-${option.tag.ifEmpty { "system" }}"),
+                    )
+                }
+            }
+        }
+        item { SettingsNote(stringResource(R.string.set_language_note)) }
+    }
 }

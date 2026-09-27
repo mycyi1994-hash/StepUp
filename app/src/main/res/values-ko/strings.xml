@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filter_group_faction">속성 · 수집 현황</string>
-    <string name="pref_saved_on_device">이 휴대폰에 저장했어요</string>
-    <string name="pref_sync_pending">선택은 이 휴대폰에 저장했지만 서버 반영은 확인하지 못했어요. 이전 알림 설정이 적용될 수 있어요. 로그인과 인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
-    <string name="pref_sync_retry">다시 반영하기</string>
-    <string name="pref_sync_sending">알림 설정을 반영하고 있어요…</string>
-    <string name="pref_notifications_blocked">휴대폰 설정에서 알림이 차단되어 있어요. 선택한 알림을 받으려면 StepUp 알림을 허용해 주세요.</string>
     <string name="post_like_action">좋아요</string>
     <string name="post_unlike_action">좋아요 취소</string>
     <!-- Notification -->
@@ -342,20 +337,8 @@
     <string name="stat_sessions">러닝</string>
     <string name="stat_tokens_earned">적립 토큰</string>
     <string name="profile_account">계정 및 설정</string>
-    <string name="settings_group_account">계정</string>
-    <string name="settings_group_activity">나의 활동</string>
-    <string name="settings_group_preferences">앱 설정</string>
-    <string name="settings_group_help">도움말</string>
     <string name="settings_wallet">지갑 및 토큰</string>
-    <string name="settings_notifications">알림</string>
-    <string name="settings_privacy">개인정보 및 보안</string>
-    <string name="settings_support">고객 센터</string>
-    <string name="settings_connected">연결된 계정</string>
-    <string name="goal_title">일일 목표</string>
     <string name="goal_steps_suffix">걸음</string>
-    <string name="goal_about_km">약 %1$s km</string>
-    <string name="goal_bonus_preview">달성 시 +%1$s SUP</string>
-    <string name="goal_hint">목표를 달성하면 보너스 SUP! 연속 달성하면 보너스가 커져요.</string>
     <string name="about_version">버전</string>
     <string name="about_network">네트워크</string>
     <string name="about_network_value">GIWA 체인 (준비 중)</string>
@@ -392,48 +375,16 @@
     <string name="analytics_no_runs">아직 기록된 러닝이 없어요</string>
 
     <!-- Notification settings -->
-    <string name="pref_push">푸시 알림</string>
-    <string name="pref_push_desc">세션 요약과 적립 알림</string>
-    <string name="pref_goal_reminder">목표 리마인더</string>
-    <string name="pref_goal_reminder_desc">저녁까지 목표가 남았으면 알려주기</string>
-    <string name="pref_party_invite">크루 · 파티 초대</string>
-    <string name="pref_party_invite_desc">크루원이 러닝에 부를 수 있게 하기</string>
-    <string name="pref_event_news">이벤트 소식</string>
-    <string name="pref_event_news_desc">새 캠페인과 한정 퀘스트</string>
     <string name="pref_saved">설정을 저장했어요</string>
 
     <!-- Privacy -->
-    <string name="privacy_data_title">저장하는 정보</string>
     <string name="privacy_data_body">로그인하면 러닝 기록(GPS 경로 포함)·걸음 합계·SUP 내역·글과 크루 활동이 StepUp 서버에 보관돼요. 서버가 적립을 직접 계산하고, 크루·랭킹·코스·땅따먹기를 함께 쓰기 위해서예요. 광고 식별자는 모으지 않아요. 계정은 연결된 계정 화면에서 언제든 지울 수 있어요.</string>
-    <string name="privacy_perm_title">앱 권한</string>
     <string name="privacy_perm_activity">신체 활동 — 걸음 수 집계</string>
     <string name="privacy_perm_notification">알림 — 러닝 세션 표시</string>
-    <string name="privacy_reset_title">로컬 데이터 정리</string>
-    <string name="privacy_reset_body">알림 기록만 지워요. 걸음·SUP·스니커즈는 그대로 남아요.</string>
-    <string name="privacy_reset_button">알림 기록 지우기</string>
-    <string name="privacy_reset_done">알림 기록을 지웠어요</string>
 
     <!-- Support -->
-    <string name="support_faq">자주 묻는 질문</string>
-    <string name="faq_q_earn">SUP는 어떻게 모으나요?</string>
-    <string name="faq_a_earn">홈에서 러닝을 시작하세요. 세션 중에 집계된 걸음만 적립되고, 스니커즈와 부스트에 따라 배율이 붙어요.</string>
-    <string name="faq_q_energy">적립이 왜 멈췄나요?</string>
-    <string name="faq_a_energy">에너지가 떨어졌어요. 에너지 1칸이 600걸음이고 매일 자정에 최대치로 다시 채워져요.</string>
-    <string name="faq_q_rarity">희귀도는 어떻게 정해지나요?</string>
-    <string name="faq_a_rarity">등급이 스탯 범위(효율 · 착화감)와 최대 레벨을 정해요. 뽑기 확률은 고정이에요: 일반 55%, 레어 28%, 에픽 13%, 레전더리 4%.</string>
-    <string name="faq_q_withdraw">출금은 언제 되나요?</string>
-    <string name="faq_a_withdraw">GIWA 체인 온체인 전환은 아직 개발 중이에요. 그때까지 잔액은 안전하게 보관돼요.</string>
-    <string name="support_contact">문의</string>
-    <string name="support_contact_body">질문이나 버그 제보는 프로젝트 저장소로 보내주세요.</string>
 
     <!-- Connected accounts -->
-    <string name="connected_giwa">GIWA 지갑</string>
-    <string name="connected_health">Health Connect</string>
-    <string name="connected_social">소셜 계정</string>
-    <string name="connected_status_soon">지원하지 않음</string>
-    <string name="connected_status_on">로그인됨</string>
-    <string name="connected_status_off">연결 안 됨</string>
-    <string name="connected_body">로그인 상태와 현재 버전의 외부 서비스 지원 여부를 확인하세요.</string>
 
     <!-- Wallet -->
     <string name="wallet_balance">SUP 잔액</string>
@@ -822,7 +773,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="login_offline">서버에 연결할 수 없습니다. 네트워크를 확인해 주세요.</string>
 
     <!-- Guide -->
-    <string name="settings_guide">앱 가이드</string>
     <string name="guide_heading">StepUp 사용법</string>
     <string name="guide_skip">건너뛰기</string>
     <string name="guide_next">다음</string>
@@ -931,21 +881,8 @@ StepUp과 함께 달려보세요.</string>
     <!-- Seed comments -->
 
     <!-- Language -->
-    <string name="settings_language">언어</string>
-    <string name="settings_theme">화면 테마</string>
-    <string name="theme_note">밝게 쓰든 어둡게 쓰든 파란색은 그대로입니다. 고른 값은 앱을 껐다 켜도 남습니다.</string>
-    <string name="theme_system">시스템 기본</string>
-    <string name="theme_system_note">기기 설정을 따라 바뀝니다</string>
-    <string name="theme_light">밝게</string>
-    <string name="theme_light_note">흰 바탕에 네이비 글자</string>
-    <string name="theme_dark">어둡게</string>
-    <string name="theme_dark_note">짙은 네이비 바탕에 흰 글자</string>
-    <string name="language_system">시스템 기본</string>
-    <string name="language_en">영어</string>
-    <string name="language_ko">한국어</string>
     <string name="language_zh">중국어</string>
     <string name="language_ja">일본어</string>
-    <string name="language_note">선택한 언어로 앱을 표시해요. 사용자 게시글과 이름은 원문으로 남을 수 있어요.</string>
 
     <!-- Runner titles -->
     <string name="tier_rookie">루키</string>
@@ -1000,7 +937,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="profile_avg_pace">평균 페이스</string>
     <string name="profile_badges">러너 배지</string>
     <string name="profile_edit_profile">프로필 편집</string>
-    <string name="profile_set_goal">목표 설정</string>
 
     <!-- Live run -->
     <string name="run_live">LIVE RUN</string>
@@ -1521,10 +1457,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="notification_channel_reminder">목표 알림</string>
     <string name="reminder_goal_title">오늘 목표까지 %1$d보 남았어요</string>
     <string name="reminder_goal_body">가볍게 한 바퀴 뛰고 목표를 채워 볼까요?</string>
-    <string name="account_delete_title">계정 삭제</string>
-    <string name="account_delete_body">계정과 서버에 있는 러닝 기록·GPS 경로·SUP 내역·글·댓글·코스·땅 표시가 모두 지워지고 되돌릴 수 없어요. 크루장이라면 가장 오래된 크루원이 크루장이 돼요. 이 폰에 남은 기록은 앱을 삭제하면 지워져요.</string>
-    <string name="account_delete_confirm">삭제</string>
-    <string name="account_delete_failed">지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. 계속 안 되면 support@stepupcrew.com 으로 알려 주세요.</string>
     <string name="splash_prepare_failed">앱을 준비하지 못했어요. 다시 시도해 주세요.</string>
     <string name="run_location_disabled">위치 권한 꺼짐</string>
     <string name="finish_share_activity">StepUp에서 %1$s km를 %2$s 동안 달렸어요.</string>

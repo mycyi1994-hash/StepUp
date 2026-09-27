@@ -318,8 +318,9 @@ class ScreenGalleryTest {
             Triple(3, "items-my-trades", listOf(R.string.market_tab_nft, R.string.market_section_mine)),
             Triple(3, "items-filter", listOf(R.string.filter_button_detail)),
             Triple(5, "profile-settings", listOf(R.string.profile_tab_settings)),
-            Triple(5, "profile-edit", listOf(R.string.profile_tab_settings, R.string.profile_edit_profile)),
-            Triple(5, "profile-goal", listOf(R.string.profile_tab_settings, R.string.profile_set_goal)),
+            // 설정 v1: 프로필 수정은 러닝 패스의 "수정", 걸음 목표는 설정 첫 목록의 줄(아래 시트)
+            Triple(5, "profile-edit", listOf(R.string.me_path_edit)),
+            Triple(5, "profile-goal", listOf(R.string.profile_tab_settings, R.string.set_goal)),
             Triple(7, "courses-create", listOf(R.string.courses_make)),
             Triple(7, "courses-board", listOf(R.string.courses_board)),
             Triple(9, "analytics-quarter", listOf(R.string.analytics_tab_quarter)),

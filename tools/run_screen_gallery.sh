@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -157,6 +157,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/grade-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/grade-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-grade/. screen-gallery/shoe-grade/ || status=1
+  # 설정 v1(2026-09-28) — 시안 01~28 장면(앱 셸 안의 실제 값 + 기기에서 만들 수 없는 상태)
+  run_instrumentation settings "com.stepup.android.SettingsDesignTest"
+  mkdir -p screen-gallery/settings-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/settings-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/settings-v1/. screen-gallery/settings-v1/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

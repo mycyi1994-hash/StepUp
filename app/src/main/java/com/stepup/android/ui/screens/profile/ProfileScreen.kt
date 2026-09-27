@@ -138,41 +138,19 @@ import java.util.Locale
 fun ProfileScreen(
     onOpenCustomize: () -> Unit = {},
     onOpenChallenges: () -> Unit = {},
-    onOpenGuide: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
-    onOpenAchievements: () -> Unit = {},
     onOpenAnalytics: () -> Unit = {},
-    onOpenNotificationSettings: () -> Unit = {},
-    onOpenPrivacy: () -> Unit = {},
-    onOpenSupport: () -> Unit = {},
-    onOpenConnected: () -> Unit = {},
-    onOpenLanguage: () -> Unit = {},
-    onOpenTheme: () -> Unit = {},
-    onOpenBody: () -> Unit = {},
-    onOpenMode: () -> Unit = {},
-    onOpenInvite: () -> Unit = {},
     onOpenChallengeHistory: () -> Unit = {},
-    onOpenExperience: () -> Unit = {},
-    onOpenItems: () -> Unit = {},
-    onOpenNotifications: () -> Unit = {},
-    onOpenRanking: () -> Unit = {},
+    /** 설정 첫 목록(설정 v1) — 알림 · 개인정보 · 언어 · 테마 · 계정 · 도움말과 예전 목록의 길은 모두 거기서 */
+    onOpenSettings: () -> Unit = {},
     onChangeBackground: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
-    val demo by viewModel.demoMode.collectAsStateWithLifecycle()
     // 사진과 이름을 한 창에서 고친다. 나눠 두면 "프로필 편집"을 눌렀는데
     // 이름은 못 바꾸는, 이름이 기능과 어긋나는 상태가 된다.
-    // 탭 안의 탭 — 프로필(기록)과 설정.
-    //
-    // 설정은 원래 가로로 미는 알약 줄이었다. 열한 개가 한 줄에 들어가지 않아
-    // 여섯째부터는 밀어야 보였고, 밀 수 있다는 표시도 없어서 거기 있는 줄
-    // 모르는 항목이 생겼다. 세로 목록이면 한눈에 다 보인다.
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     var showProfileEdit by rememberSaveable { mutableStateOf(false) }
-    var showGoalDialog by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = tab == 1 && !showProfileEdit && !showGoalDialog) { tab = 0 }
 
     // 갤러리 사진 선택 — 시스템 포토 피커 (권한 불필요)
     val photoPicker = rememberLauncherForActivityResult(
@@ -202,90 +180,12 @@ fun ProfileScreen(
         )
     }
 
-    if (showGoalDialog) {
-        GoalDialog(
-            goal = state.goal,
-            onGoalChange = viewModel::setGoal,
-            onDismiss = { showGoalDialog = false },
-        )
-    }
-
-    val groups = listOf(
-        SettingsGroup(R.string.settings_group_account, listOf(
-            SettingsPill(Icons.Filled.Edit, R.string.profile_edit_profile) { showProfileEdit = true },
-            SettingsPill(Icons.Filled.Flag, R.string.profile_set_goal) { showGoalDialog = true },
-            SettingsPill(Icons.Filled.MonitorWeight, R.string.settings_body, onOpenBody),
-            SettingsPill(Icons.Filled.SwapHoriz, R.string.settings_mode, onOpenMode),
-            SettingsPill(Icons.Filled.Link, R.string.settings_connected, onOpenConnected),
-            SettingsPill(Icons.Filled.Security, R.string.settings_privacy, onOpenPrivacy),
-        )),
-        SettingsGroup(R.string.settings_group_activity, listOf(
-            SettingsPill(Icons.Filled.Inbox, R.string.settings_inbox, onOpenNotifications),
-            SettingsPill(Icons.Filled.EmojiEvents, R.string.profile_achievements, onOpenAchievements),
-            SettingsPill(Icons.Filled.Leaderboard, R.string.community_ranking, onOpenRanking),
-            SettingsPill(Icons.Filled.AccountBalanceWallet, R.string.settings_wallet, onOpenWallet),
-            SettingsPill(Icons.Filled.PersonAdd, R.string.invite_title, onOpenInvite),
-            SettingsPill(Icons.AutoMirrored.Filled.DirectionsWalk, R.string.profile_my_sneakers, onOpenItems),
-        )),
-        SettingsGroup(R.string.settings_group_preferences, listOf(
-            SettingsPill(Icons.Filled.Notifications, R.string.settings_notifications, onOpenNotificationSettings),
-            SettingsPill(Icons.Filled.Language, R.string.settings_language, onOpenLanguage),
-            SettingsPill(Icons.Filled.Tune, R.string.settings_experience, onOpenExperience),
-            SettingsPill(Icons.Filled.DarkMode, R.string.settings_theme, onOpenTheme),
-        )),
-        SettingsGroup(R.string.settings_group_help, listOf(
-            SettingsPill(Icons.Filled.SupportAgent, R.string.settings_support, onOpenSupport),
-            SettingsPill(Icons.AutoMirrored.Filled.MenuBook, R.string.settings_guide, onOpenGuide),
-        )),
-    )
-
     Box(Modifier.fillMaxSize()) {
-    if (tab == 1) com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = com.stepup.android.ui.theme.StepUpDesign.Gutter, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // ── 설정 — 안쪽 화면. 돌아가는 길을 맨 위에 둔다 ──
-        if (tab == 1) {
-            item {
-                com.stepup.android.ui.components.FocusHeader(
-                    title = stringResource(R.string.profile_tab_settings),
-                    onBack = { tab = 0 },
-                )
-            }
-            groups.forEach { group ->
-                item { SectionHeader(title = stringResource(group.title)) }
-                item {
-                    Column {
-                        group.items.forEach { pill ->
-                            QuietListRow(
-                                icon = pill.icon,
-                                label = stringResource(pill.label),
-                                onClick = pill.onClick,
-                            )
-                        }
-                    }
-                }
-            }
-            // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 운영 데이터와 섞이지 않는다.
-            item { DemoModeRow(on = demo, onChange = viewModel::setDemoMode) }
-            item {
-                GlowCard(contentPadding = PaddingValues(16.dp), spacing = 9.dp) {
-                    AboutRow(
-                        label = stringResource(R.string.about_version),
-                        value = "StepUp " + com.stepup.android.core.TestUpdates.buildLabel,
-                    )
-                    if (com.stepup.android.core.TestUpdates.enabled) TestUpdateRow()
-                    AboutRow(
-                        label = stringResource(R.string.about_network),
-                        value = stringResource(R.string.about_network_value),
-                    )
-                }
-            }
-            return@LazyColumn
-        }
-
         // ── 내 정보 첫 화면 — 러닝 패스(2026-09-27 사용자 선택): 프로필 → 누적 거리 카드 → 기록 보기 → 챌린지 · 지갑 · 설정 ──
         item {
             ProfileHome(
@@ -297,21 +197,12 @@ fun ProfileScreen(
                 // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7) — 거기서 진행 중인 챌린지로 간다
                 onOpenChallenges = onOpenChallengeHistory,
                 onOpenWallet = onOpenWallet,
-                onOpenSettings = { tab = 1 },
+                onOpenSettings = onOpenSettings,
             )
         }
     }
     }
 }
-
-/** 설정 필 칩 하나 — 아이콘 + 라벨 + 탭 액션 */
-private data class SettingsPill(
-    val icon: ImageVector,
-    val label: Int,
-    val onClick: () -> Unit,
-)
-
-private data class SettingsGroup(val title: Int, val items: List<SettingsPill>)
 
 /** 초 → H:MM:SS */
 private fun formatDuration(totalSec: Long): String {
@@ -331,40 +222,7 @@ private fun weekSlots(week: List<DailyStepsEntity>): List<Pair<LocalDate, DailyS
     }
 }
 
-/** 테스트 APK 에서만 — 새 빌드를 지금 확인한다. 있으면 앱 위에 업데이트 창이 뜬다. */
-@Composable
-private fun TestUpdateRow() {
-    val state by com.stepup.android.core.TestUpdates.state.collectAsState()
-    val status = when (state) {
-        com.stepup.android.core.TestUpdates.State.Checking -> stringResource(R.string.test_update_checking)
-        com.stepup.android.core.TestUpdates.State.UpToDate -> stringResource(R.string.test_update_latest)
-        com.stepup.android.core.TestUpdates.State.CheckFailed -> stringResource(R.string.test_update_check_failed)
-        is com.stepup.android.core.TestUpdates.State.Available,
-        is com.stepup.android.core.TestUpdates.State.Dismissed,
-        is com.stepup.android.core.TestUpdates.State.Failed -> stringResource(R.string.test_update_found)
-        is com.stepup.android.core.TestUpdates.State.Downloading -> stringResource(R.string.test_update_downloading_short)
-        com.stepup.android.core.TestUpdates.State.Idle -> stringResource(R.string.test_update_check)
-    }
-    Row(
-        modifier = Modifier.fillMaxWidth().testTag("test-update-check")
-            .clickable { com.stepup.android.core.TestUpdates.startCheck(force = true) },
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(stringResource(R.string.test_update_row), style = MaterialTheme.typography.bodySmall, color = Silver)
-        Text(status, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = VoltText)
-    }
-}
 
-@Composable
-private fun AboutRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Silver)
-        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = Snow)
-    }
-}
 
 @Composable
 private fun ProfileHeader(
@@ -918,51 +776,6 @@ private fun RowScope.BadgeCell(
     }
 }
 
-/** 목표 설정 다이얼로그 — 기존 목표 카드의 슬라이더 UI를 그대로 품는다 */
-@Composable
-private fun GoalDialog(
-    goal: Int,
-    onGoalChange: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var sliderValue by remember(goal) { mutableFloatStateOf(goal.toFloat()) }
-    val steps = sliderValue.toInt()
-    val distanceKm = RewardEconomy.distanceMeters(steps) / 1000
-    com.stepup.android.ui.components.DialogPanel(
-        title = stringResource(R.string.goal_title),
-        onDismiss = onDismiss,
-        actions = {
-            VoltButton(stringResource(R.string.common_close), onDismiss, Modifier.fillMaxWidth())
-        },
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("%,d".format(steps), fontFamily = StepUpNumbers, fontSize = 44.sp,
-                fontWeight = FontWeight.Bold, color = Snow)
-            Text(stringResource(R.string.goal_steps_suffix), fontSize = 14.sp, color = Silver)
-        }
-        Text(stringResource(R.string.goal_about_km, "%.1f".format(distanceKm)),
-            style = MaterialTheme.typography.bodyLarge, color = Silver)
-        Text(stringResource(R.string.goal_bonus_preview, "%,.1f".format(RewardEconomy.goalBaseBonus(steps))),
-            style = MaterialTheme.typography.bodyMedium, color = VoltText)
-        Slider(
-            value = sliderValue,
-            onValueChange = { sliderValue = it },
-            onValueChangeFinished = { onGoalChange(sliderValue.toInt()) },
-            valueRange = UserPrefs.MIN_GOAL.toFloat()..UserPrefs.MAX_GOAL.toFloat(),
-            steps = (UserPrefs.MAX_GOAL - UserPrefs.MIN_GOAL) / 500 - 1,
-            colors = SliderDefaults.colors(
-                thumbColor = Volt, activeTrackColor = Volt,
-                inactiveTrackColor = Snow.copy(alpha = 0.10f),
-                activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
-            ),
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("%,d".format(UserPrefs.MIN_GOAL), color = Silver, fontSize = 14.sp)
-            Text("%,d".format(UserPrefs.MAX_GOAL), color = Silver, fontSize = 14.sp)
-        }
-        Text(stringResource(R.string.goal_hint), style = MaterialTheme.typography.bodyMedium, color = Silver)
-    }
-}
 
 /** Photos keep their existing immediate-save behavior; the nickname saves on confirmation. */
 @Composable
@@ -1038,12 +851,3 @@ private fun ProfileEditDialog(
 
 
 
-/** 데모 모드 스위치 — 켜면 소식 · 러너 마켓에 "예시"가 뜬다 */
-@Composable
-private fun DemoModeRow(on: Boolean, onChange: (Boolean) -> Unit) {
-    com.stepup.android.ui.components.PreferenceToggle(
-        title = stringResource(R.string.settings_demo),
-        description = stringResource(R.string.settings_demo_note),
-        icon = Icons.Filled.Tune, checked = on, onCheckedChange = onChange,
-    )
-}

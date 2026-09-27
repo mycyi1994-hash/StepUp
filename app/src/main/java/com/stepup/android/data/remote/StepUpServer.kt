@@ -65,6 +65,9 @@ data class LeaderboardRow(
 )
 
 /** 서버 호출의 결말 */
+/** 계정 삭제 결과 — 모르는 것을 성공이나 실패로 단정하지 않는다 */
+enum class AccountDeletion { Deleted, NotDeleted, Unknown }
+
 sealed interface ServerResult<out T> {
     data class Ok<T>(val value: T) : ServerResult<T>
 
@@ -178,10 +181,28 @@ class StepUpServer(
      * 계정 삭제(`account_delete`). 서버의 프로필·러닝·원장·글·코스·땅 표시가 함께
      * 지워지고 되돌릴 수 없다. 크루장이면 가장 오래된 크루원에게 넘어간다.
      */
-    suspend fun deleteAccount(): ServerResult<Unit> =
-        authed { token ->
-            http.post("$restUrl/rpc/account_delete", "{}", headers(token))
-        }.mapBody { }
+    /**
+     * 계정 삭제(account_delete). 결과를 셋으로 나눈다 — 지웠다 · 지우지 않았다(보내지 못했거나 서버가 거절) ·
+     * 모른다(보냈는데 응답을 받지 못했다 — 처리됐을 수 있다). 모를 때 자동으로 다시 보내지 않는다.
+     */
+    suspend fun deleteAccount(): AccountDeletion {
+        if (!isConfigured) return AccountDeletion.NotDeleted
+        val token = when (val t = sessions.accessToken()) {
+            is TokenResult.Ok -> t.accessToken
+            else -> return AccountDeletion.NotDeleted
+        }
+        val response = http.post("$restUrl/rpc/account_delete", "{}", headers(token))
+        return when {
+            response.status in 200..299 -> AccountDeletion.Deleted
+            // 끊김(0) · 서버 오류(5xx)는 요청이 처리됐는지 알 수 없다
+            response.status == 0 || response.status >= 500 -> AccountDeletion.Unknown
+            response.status == 401 -> {
+                sessions.markExpired(token)
+                AccountDeletion.NotDeleted
+            }
+            else -> AccountDeletion.NotDeleted
+        }
+    }
 
     /** 지금 잔고. 서버 원장의 합이다. */
     suspend fun balance(): ServerResult<Double> =

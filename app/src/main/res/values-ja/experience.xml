@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_experience">サウンドと動き</string>
-    <string name="experience_intro">毎日のランニングに合わせて操作感を調整できます。</string>
+    <string name="experience_intro">使いやすいように変えてみましょう。</string>
     <string name="experience_sound">効果音</string>
-    <string name="experience_sound_desc">操作、ランニング、確定した報酬を短い音でお知らせします。</string>
+    <string name="experience_sound_desc">ボタンやランの状態を音でお知らせします。</string>
     <string name="experience_ambience">環境音</string>
-    <string name="experience_ambience_desc">川沿いとワードローブの静かな環境音です。初期設定はオフです。</string>
+    <string name="experience_ambience_desc">対応する画面で背景音を再生します。</string>
     <string name="experience_haptic">触覚フィードバック</string>
-    <string name="experience_haptic_desc">操作や達成を軽い振動でお知らせします。</string>
+    <string name="experience_haptic_desc">ボタンを押すと軽く振動します。</string>
     <string name="experience_motion">動きを減らす</string>
-    <string name="experience_motion_desc">画面切り替えや装飾アニメーションを抑えます。</string>
+    <string name="experience_motion_desc">画面の切り替えや装飾の動きを減らします。</string>
     <string name="experience_preview">効果をプレビュー</string>
-    <string name="experience_system_note">マナーモード、おやすみモード、システムの操作音設定に従います。音楽再生中は効果音を鳴らしません。システムのアニメーション設定も適用されます。</string>
+    <string name="experience_system_note">マナーモード・おやすみモードやスマホの設定も適用されます。音楽を聴いている間は効果音を鳴らしません。</string>
 </resources>
