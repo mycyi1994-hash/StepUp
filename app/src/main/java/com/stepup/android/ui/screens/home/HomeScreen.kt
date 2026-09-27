@@ -540,8 +540,9 @@ private fun StartRunButton(label: String, onClick: () -> Unit, modifier: Modifie
         modifier
             .fillMaxWidth()
             .padding(top = 4.dp, bottom = depth + 4.dp)
-            // 번짐 그림자 + 아래로 3dp 비치는 회청색 면(시안의 두께)
-            .shadow(elevation = 6.dp, shape = shape, ambientColor = StartRunDepth, spotColor = StartRunDepth)
+            // 번짐 그림자 + 아래로 3dp 비치는 회청색 면(시안의 두께). shadow 는 기본으로 모양 밖을 잘라
+            // 버튼 아래로 나온 두께가 지워진다 — 자르기는 아래 clip(shape)가 버튼 면에만 한다.
+            .shadow(elevation = 6.dp, shape = shape, clip = false, ambientColor = StartRunDepth, spotColor = StartRunDepth)
             .drawBehind {
                 drawRoundRect(
                     color = StartRunDepth,
