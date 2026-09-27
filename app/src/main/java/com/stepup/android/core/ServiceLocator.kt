@@ -85,6 +85,18 @@ object ServiceLocator {
         communityRepository = repository
         placeSearch = places
     }
+
+    private var drawSourceForTest: com.stepup.android.ui.screens.gacha.DrawSource? = null
+
+    /** 신발 뽑기가 기대는 것 — 서버 현황(draw_status)과 한 번 뽑기 */
+    fun drawSource(): com.stepup.android.ui.screens.gacha.DrawSource =
+        drawSourceForTest ?: com.stepup.android.ui.screens.gacha.ServerDrawSource()
+
+    /** 기기 테스트가 뽑기 서버를 흉내 낸 것으로 바꾼다. null 이면 되돌린다. 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useDrawForTest(source: com.stepup.android.ui.screens.gacha.DrawSource?) {
+        drawSourceForTest = source
+    }
     lateinit var courseRepository: CourseRepository
         private set
     lateinit var eventRepository: EventRepository

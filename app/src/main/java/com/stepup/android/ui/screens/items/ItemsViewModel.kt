@@ -35,11 +35,8 @@ sealed interface ItemsMessage {
     data class Equipped(val sneaker: Sneaker) : ItemsMessage
     data object Repaired : ItemsMessage
     data object NothingToRepair : ItemsMessage
-    data object NoFreeDraws : ItemsMessage
     data object SignInRequired : ItemsMessage
     data object Offline : ItemsMessage
-    /** 뽑기는 됐는데 새 신발을 아직 못 받아 왔다 — 실패가 아니다, 다시 누르면 또 뽑힌다 */
-    data object DrawnRefreshing : ItemsMessage
     data object UpgradeLegacy : ItemsMessage
     data object UpgradeListed : ItemsMessage
 }
@@ -49,10 +46,15 @@ private fun com.stepup.android.data.repo.EconomyOutcome.toMessage(): ItemsMessag
     com.stepup.android.data.repo.EconomyOutcome.NotEnoughBalance -> ItemsMessage.NotEnoughBalance
     com.stepup.android.data.repo.EconomyOutcome.MaxLevel -> ItemsMessage.MaxLevel
     com.stepup.android.data.repo.EconomyOutcome.EnergyFull -> ItemsMessage.EnergyCapacity
-    com.stepup.android.data.repo.EconomyOutcome.NoFreeDraws -> ItemsMessage.NoFreeDraws
     com.stepup.android.data.repo.EconomyOutcome.NothingToRepair -> ItemsMessage.NothingToRepair
     com.stepup.android.data.repo.EconomyOutcome.SignInRequired -> ItemsMessage.SignInRequired
     com.stepup.android.data.repo.EconomyOutcome.Offline -> ItemsMessage.Offline
+    // 뽑기 결말은 뽑기 화면(DrawViewModel)이 따로 옮긴다 — 여기서는 나오지 않는다
+    com.stepup.android.data.repo.EconomyOutcome.NoFreeDraws,
+    com.stepup.android.data.repo.EconomyOutcome.NoPremiumDraws,
+    com.stepup.android.data.repo.EconomyOutcome.WalletRequired,
+    com.stepup.android.data.repo.EconomyOutcome.MintLimitReached,
+    com.stepup.android.data.repo.EconomyOutcome.ChainPaused,
     com.stepup.android.data.repo.EconomyOutcome.Ok,
     is com.stepup.android.data.repo.EconomyOutcome.Rejected -> ItemsMessage.SaveFailed
 }
@@ -129,9 +131,6 @@ class ItemsViewModel(
         ServiceLocator.refreshEconomyInBackground()
     }
 
-    /** 민팅 성공 시 결과 다이얼로그용 */
-    val mintResult = MutableStateFlow<Sneaker?>(null)
-
     val message = MutableStateFlow<ItemsMessage?>(null)
 
     fun equip(id: Long) {
@@ -188,30 +187,6 @@ class ItemsViewModel(
         }
     }
 
-    /** 뽑기 — 무료가 남았으면 무료로, 아니면 SUP 로. 결과는 서버가 굴린 신발이다 */
-    fun mint() {
-        // 두 번 눌러 무료 뽑기를 두 번 쓰지 않게 — 남은 횟수는 서버와 다시 맞춘 뒤에야 줄어든다
-        if (drawing) return
-        drawing = true
-        savePurchase(onDone = { drawing = false }) {
-            val (outcome, minted) = sneakerRepository.drawOnServer()
-            if (minted == null && outcome == com.stepup.android.data.repo.EconomyOutcome.Ok) {
-                ExperienceEvents.emit(FeedbackCue.Success)
-                message.value = ItemsMessage.DrawnRefreshing
-            } else if (minted == null) {
-                ExperienceEvents.emit(FeedbackCue.Error)
-                message.value = outcome.toMessage()
-            } else {
-                mintResult.value = minted
-                ExperienceEvents.emit(FeedbackCue.Success)
-            }
-        }
-    }
-
-    /** 남은 무료 뽑기 */
-    val freeDrawsLeft: StateFlow<Int> = sneakerRepository.freeDrawsLeft
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
     private fun savePurchase(onDone: () -> Unit = {}, action: suspend () -> Unit) {
         viewModelScope.launch {
             try {
@@ -228,7 +203,6 @@ class ItemsViewModel(
 
     /** 구매 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번 사지 않게 */
     private var buyingBoost = false
-    private var drawing = false
 
     fun buyBoost(type: BoostType) {
         if (buyingBoost) return
@@ -249,10 +223,6 @@ class ItemsViewModel(
 
     fun consumeMessage() {
         message.value = null
-    }
-
-    fun dismissMintResult() {
-        mintResult.value = null
     }
 
     companion object {

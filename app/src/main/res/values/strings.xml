@@ -212,11 +212,10 @@
     <string name="items_collection">Collection</string>
     <string name="items_collection_progress">%1$d / %2$d combinations</string>
     <string name="items_mint_title">Mint a new pair</string>
-    <string name="items_mint_desc">The server rolls every draw. New accounts get 10 free draws; after that each draw costs 500 SUP.</string>
-    <string name="items_free_draws">%1$d free draws left</string>
+    <string name="items_mint_desc">All draws are free: 10 to start and 3 every day, plus premium draws once you connect a wallet.</string>
     <string name="toast_sign_in_required">Sign in to use SUP and sneakers.</string>
     <string name="toast_offline">Couldn\'t reach the server. Try again in a moment.</string>
-    <string name="toast_no_free_draws">No free draws left. Tap again to draw with SUP.</string>
+    <string name="toast_no_free_draws">No free draws left. You get more tomorrow.</string>
     <string name="toast_nothing_to_repair">Durability is already full.</string>
     <string name="toast_repaired">Repaired</string>
     <string name="sneaker_action_repair">Repair · %1$s SUP</string>
@@ -225,8 +224,6 @@
     <string name="ledger_earn_course">Course reward</string>
     <string name="ledger_chain">Wallet transfer</string>
     <string name="ledger_carried_over">Earlier records (total)</string>
-    <string name="items_mint_button">MINT · %1$s SUP</string>
-    <string name="mint_result_title">New sneaker minted!</string>
     <string name="boost_energy_title">Energy Cell</string>
     <string name="boost_energy_desc">Instantly restore 2 energy</string>
     <string name="boost_shield_title">Streak Shield</string>
@@ -1549,11 +1546,7 @@ Start running with StepUp.</string>
     <string name="course_unlike_action">Remove course like</string>
     <string name="tab_draw">Draw</string>
     <string name="mystery_title">Mystery Box</string>
-    <string name="mystery_subtitle">Discover your next running shoes.</string>
-    <string name="mystery_box_description">Closed glowing mystery box</string>
-    <string name="mystery_draw_shoe">Draw sneakers</string>
     <string name="mystery_draw_outfit">Draw a tracksuit</string>
-    <string name="mystery_pending_chain">Sign in to draw. New accounts get 10 free draws.</string>
     <string name="home_previous_background">Previous background</string>
     <string name="home_next_background">Next background</string>
     <string name="home_record_title">Today’s activity</string>
@@ -1568,13 +1561,9 @@ Start running with StepUp.</string>
     <string name="shoes_market">Browse the shoe market</string>
     <string name="home_banner_message">One more step.\nIn a good direction.</string>
     <string name="mystery_guide_title">Before you draw</string>
-    <string name="mystery_guide_body">Free draws are used first. After that each draw costs 500 SUP and asks you to confirm.</string>
     <string name="toast_drawn_refreshing">Drawn! Loading your new sneaker — check your collection in a moment.</string>
     <string name="sneaker_enhance_legacy">Sneakers made on the phone before the server economy can\'t be enhanced.</string>
     <string name="sneaker_enhance_listed">Sneakers listed for sale can\'t be enhanced.</string>
-    <string name="mystery_draw_paid_confirm">Draw a sneaker for %1$s SUP?</string>
-    <string name="mystery_draw_free">Free draw (%1$d left)</string>
-    <string name="mystery_draw_paid">Draw · %1$s SUP</string>
     <string name="community_upcoming">Upcoming meetups</string>
     <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
     <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
@@ -2057,5 +2046,58 @@ Start running with StepUp.</string>
     <string name="me_path_balance">%1$s SUP</string>
     <string name="me_path_edit">Edit profile</string>
     <plurals name="me_path_runs"><item quantity="one">%1$d run logged so far.</item><item quantity="other">%1$d runs logged so far.</item></plurals>
+
+    <!-- 신발 뽑기 무료 — 2026-09-27 -->
+    <string name="draw_tab_free">Free draw</string>
+    <string name="draw_tab_premium">Premium draw</string>
+    <string name="draw_free_headline">%1$d free to start, %2$d free every day</string>
+    <string name="draw_free_headline_daily">%1$d free every day</string>
+    <string name="draw_free_left">Free draws left</string>
+    <string name="draw_count">%1$d</string>
+    <string name="draw_signup_gift">Sign-up gift</string>
+    <string name="draw_daily_chance">Free today</string>
+    <string name="draw_wallet_benefit_title">WEB3 wallet perks</string>
+    <string name="draw_wallet_benefit_body">%1$d premium + 1 every %2$s km you run</string>
+    <string name="draw_wallet_benefit_run_only">1 premium draw every %1$s km you run</string>
+    <string name="draw_premium_title">Premium draws</string>
+    <string name="draw_premium_benefit_linked">%1$d left · +1 every %2$s km you run</string>
+    <string name="draw_premium_headline_connect">Premium draws open with a wallet</string>
+    <string name="draw_premium_free_title">Premium draws are free too</string>
+    <string name="draw_premium_free_body">Connect a WEB3 wallet to use them.</string>
+    <string name="draw_premium_on_link">When you first connect a wallet</string>
+    <string name="draw_premium_per_km">Every %1$s km run after connecting</string>
+    <string name="draw_plus_one">+1</string>
+    <string name="draw_premium_connect_hint">Connect a wallet and keep running\nto collect more premium draws.</string>
+    <string name="draw_wallet_linked">Wallet connected</string>
+    <string name="draw_premium_left">Premium draws left</string>
+    <string name="draw_link_gift">First-connect gift</string>
+    <string name="draw_run_earned">Earned by running</string>
+    <string name="draw_next_premium">Until the next premium draw</string>
+    <string name="draw_km">%1$s km</string>
+    <string name="draw_progress">%1$s / %2$s km</string>
+    <string name="draw_every_km">+1 every %1$s km</string>
+    <string name="draw_run_cap_reached">You have earned today\'s maximum premium draws from running. More tomorrow.</string>
+    <string name="draw_chain_paused">Premium draws are paused for a moment. Please try again soon.</string>
+    <string name="draw_action_free">Draw once for free</string>
+    <string name="draw_action_premium">Premium draw once</string>
+    <string name="draw_action_connect">Connect a WEB3 wallet</string>
+    <string name="draw_action_sign_in">Sign in to draw</string>
+    <string name="draw_action_free_empty">No free draws left today</string>
+    <string name="draw_action_premium_empty">No premium draws left</string>
+    <string name="draw_action_paused">Premium draws paused</string>
+    <string name="draw_caption_added">Shoes you draw are added to your shoes.</string>
+    <string name="draw_caption_free_tomorrow">You get %1$d free draws again tomorrow.</string>
+    <string name="draw_caption_no_wallet">Free draws work without a wallet.</string>
+    <string name="draw_caption_premium_run">You get 1 premium draw every %1$s km you run.</string>
+    <string name="draw_caption_sign_in">New accounts get 10 free draws to start and 3 every day.</string>
+    <string name="draw_status_failed">Could not load your draws.</string>
+    <string name="draw_retry">Retry</string>
+    <string name="draw_box_description">A closed StepUp shoebox</string>
+    <string name="draw_result_title">You drew a new shoe!</string>
+    <string name="draw_result_open_shoes">See it in my shoes</string>
+    <string name="toast_no_premium_draws">No premium draws left.</string>
+    <string name="toast_wallet_required">Connect a WEB3 wallet first.</string>
+    <string name="toast_mint_limit">Today\'s premium draw limit is reached. Please try again tomorrow.</string>
+    <string name="items_open_draw">Open shoe draws · free</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

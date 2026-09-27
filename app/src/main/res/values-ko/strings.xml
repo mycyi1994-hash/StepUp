@@ -210,11 +210,10 @@
     <string name="items_collection">도감</string>
     <string name="items_collection_progress">%1$d / %2$d 조합</string>
     <string name="items_mint_title">새 스니커즈 민팅</string>
-    <string name="items_mint_desc">뽑기는 서버가 굴려요. 새로 가입하면 무료 10회, 그 뒤로는 한 번에 500 SUP예요.</string>
-    <string name="items_free_draws">무료 뽑기 %1$d회 남음</string>
+    <string name="items_mint_desc">뽑기는 모두 무료예요. 처음 10회, 매일 3회 무료로 뽑고, 지갑을 연결하면 상급 뽑기도 받아요.</string>
     <string name="toast_sign_in_required">로그인하면 SUP와 신발을 쓸 수 있어요.</string>
     <string name="toast_offline">서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.</string>
-    <string name="toast_no_free_draws">무료 뽑기를 다 썼어요. 한 번 더 누르면 SUP로 뽑아요.</string>
+    <string name="toast_no_free_draws">남은 무료 뽑기가 없어요. 내일 다시 무료 뽑기가 생겨요.</string>
     <string name="toast_nothing_to_repair">내구도가 이미 가득해요.</string>
     <string name="toast_repaired">수리했어요</string>
     <string name="sneaker_action_repair">수리 · %1$s SUP</string>
@@ -223,8 +222,6 @@
     <string name="ledger_earn_course">코스 보상</string>
     <string name="ledger_chain">지갑 옮기기</string>
     <string name="ledger_carried_over">이전 기록 합계</string>
-    <string name="items_mint_button">민팅 · %1$s SUP</string>
-    <string name="mint_result_title">새 스니커즈 획득!</string>
     <string name="boost_energy_title">에너지 셀</string>
     <string name="boost_energy_desc">에너지 2칸을 즉시 회복</string>
     <string name="boost_shield_title">스트릭 실드</string>
@@ -1547,11 +1544,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="course_unlike_action">코스 좋아요 취소</string>
     <string name="tab_draw">뽑기</string>
     <string name="mystery_title">미스터리 박스</string>
-    <string name="mystery_subtitle">새로운 신발을 만나보세요.</string>
-    <string name="mystery_box_description">푸른빛이 나는 닫힌 미스터리 박스</string>
-    <string name="mystery_draw_shoe">신발 뽑기</string>
     <string name="mystery_draw_outfit">트레이닝복 뽑기</string>
-    <string name="mystery_pending_chain">로그인하면 뽑을 수 있어요. 새로 가입하면 무료 10회예요.</string>
     <string name="home_previous_background">이전 배경</string>
     <string name="home_next_background">다음 배경</string>
     <string name="home_record_title">오늘의 기록</string>
@@ -1566,13 +1559,9 @@ StepUp과 함께 달려보세요.</string>
     <string name="shoes_market">신발 마켓 바로가기</string>
     <string name="home_banner_message">오늘도 한 걸음 더,\n좋은 방향으로.</string>
     <string name="mystery_guide_title">뽑기 이용 안내</string>
-    <string name="mystery_guide_body">무료 뽑기를 먼저 써요. 그 뒤로는 한 번에 500 SUP이고, 뽑기 전에 한 번 더 확인해요.</string>
     <string name="toast_drawn_refreshing">뽑았어요! 새 신발을 불러오는 중이에요. 잠시 뒤 보관함에서 확인해 주세요.</string>
     <string name="sneaker_enhance_legacy">서버 경제 전에 폰에서 만든 신발은 강화할 수 없어요.</string>
     <string name="sneaker_enhance_listed">판매 중인 신발은 강화할 수 없어요.</string>
-    <string name="mystery_draw_paid_confirm">%1$s SUP로 신발을 뽑을까요?</string>
-    <string name="mystery_draw_free">무료 뽑기 (%1$d회 남음)</string>
-    <string name="mystery_draw_paid">뽑기 · %1$s SUP</string>
     <string name="community_upcoming">다가오는 러닝 모임</string>
     <string name="run_route_unavailable">이 러닝에는 기록된 GPS 경로가 없어요.</string>
     <!-- 앱이 죽어 멈춘 러닝 되살리기 -->
@@ -2055,5 +2044,58 @@ StepUp과 함께 달려보세요.</string>
     <string name="me_path_balance">%1$s SUP</string>
     <string name="me_path_edit">프로필 수정</string>
     <plurals name="me_path_runs"><item quantity="other">%1$d번의 러닝을 기록했어요.</item></plurals>
+
+    <!-- 신발 뽑기 무료 — 2026-09-27 -->
+    <string name="draw_tab_free">무료 뽑기</string>
+    <string name="draw_tab_premium">상급 뽑기</string>
+    <string name="draw_free_headline">처음 %1$d회, 매일 %2$d회 무료</string>
+    <string name="draw_free_headline_daily">매일 %1$d회 무료</string>
+    <string name="draw_free_left">남은 무료 뽑기</string>
+    <string name="draw_count">%1$d회</string>
+    <string name="draw_signup_gift">첫 가입 선물</string>
+    <string name="draw_daily_chance">오늘 무료 기회</string>
+    <string name="draw_wallet_benefit_title">WEB3 지갑 연결 혜택</string>
+    <string name="draw_wallet_benefit_body">상급 %1$d회 + 러닝 %2$skm마다 1회</string>
+    <string name="draw_wallet_benefit_run_only">러닝 %1$skm마다 상급 1회</string>
+    <string name="draw_premium_title">상급 뽑기</string>
+    <string name="draw_premium_benefit_linked">남은 %1$d회 · 러닝 %2$skm마다 +1회</string>
+    <string name="draw_premium_headline_connect">지갑 연결로 열리는 상급 뽑기</string>
+    <string name="draw_premium_free_title">상급 뽑기도 무료예요</string>
+    <string name="draw_premium_free_body">WEB3 지갑을 연결하면 이용할 수 있어요.</string>
+    <string name="draw_premium_on_link">처음 지갑을 연결하면</string>
+    <string name="draw_premium_per_km">연결 후 러닝 %1$skm마다</string>
+    <string name="draw_plus_one">+1회</string>
+    <string name="draw_premium_connect_hint">지갑을 연결하고, 달리면서\n상급 뽑기 기회를 더 모아보세요.</string>
+    <string name="draw_wallet_linked">지갑 연결 완료</string>
+    <string name="draw_premium_left">남은 상급 뽑기</string>
+    <string name="draw_link_gift">첫 연결 선물</string>
+    <string name="draw_run_earned">러닝으로 받은 기회</string>
+    <string name="draw_next_premium">다음 상급 뽑기까지</string>
+    <string name="draw_km">%1$skm</string>
+    <string name="draw_progress">%1$s / %2$skm</string>
+    <string name="draw_every_km">%1$skm마다 +1회</string>
+    <string name="draw_run_cap_reached">오늘 러닝으로 받을 수 있는 상급 뽑기를 다 받았어요. 내일 다시 쌓여요.</string>
+    <string name="draw_chain_paused">지금은 상급 뽑기를 잠시 멈췄어요. 잠시 뒤 다시 해 주세요.</string>
+    <string name="draw_action_free">무료로 1회 뽑기</string>
+    <string name="draw_action_premium">상급으로 1회 뽑기</string>
+    <string name="draw_action_connect">WEB3 지갑 연결하기</string>
+    <string name="draw_action_sign_in">로그인하면 뽑을 수 있어요</string>
+    <string name="draw_action_free_empty">오늘 무료 뽑기를 다 썼어요</string>
+    <string name="draw_action_premium_empty">남은 상급 뽑기가 없어요</string>
+    <string name="draw_action_paused">상급 뽑기를 잠시 멈췄어요</string>
+    <string name="draw_caption_added">뽑은 신발은 내 보유 신발에 추가돼요.</string>
+    <string name="draw_caption_free_tomorrow">내일 다시 무료 %1$d회가 생겨요.</string>
+    <string name="draw_caption_no_wallet">무료 뽑기는 지갑 없이 이용할 수 있어요.</string>
+    <string name="draw_caption_premium_run">러닝 %1$skm마다 상급 1회가 생겨요.</string>
+    <string name="draw_caption_sign_in">새로 가입하면 처음 10회, 매일 3회를 무료로 뽑아요.</string>
+    <string name="draw_status_failed">뽑기 현황을 불러오지 못했어요.</string>
+    <string name="draw_retry">다시 시도</string>
+    <string name="draw_box_description">뚜껑이 닫힌 StepUp 신발 상자</string>
+    <string name="draw_result_title">새 신발을 뽑았어요!</string>
+    <string name="draw_result_open_shoes">내 신발에서 보기</string>
+    <string name="toast_no_premium_draws">남은 상급 뽑기가 없어요.</string>
+    <string name="toast_wallet_required">먼저 WEB3 지갑을 연결해 주세요.</string>
+    <string name="toast_mint_limit">오늘 상급 뽑기 발행 한도가 찼어요. 내일 다시 해 주세요.</string>
+    <string name="items_open_draw">신발 뽑기 열기 · 무료</string>
 </resources>
 <!-- Startup preparation failures are retryable, never presented as successful loading. -->

@@ -2576,22 +2576,30 @@ begin
   perform pg_temp.ok((select energy_max from public.my_economy()) = 10, '에너지 최대는 신발 1레벨 = 10칸');
 end $$;
 
--- 무료 뽑기 10회, 11번째는 거절
+-- 무료 뽑기(0042): 오늘 몫 3회부터, 그다음 가입 선물 10회. 14번째는 거절
 do $$
-declare i int; v_id bigint;
+declare i int; v_id bigint; r record;
 begin
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.daily_left = 3 and r.daily_total = 3 and r.signup_left = 10 and r.signup_granted = 10,
+    '처음에는 오늘 무료 3회 + 첫 가입 선물 10회');
+  for i in 1..3 loop
+    v_id := public.draw_free();
+  end loop;
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.daily_left = 0 and r.signup_left = 10, '오늘 몫부터 쓴다 — 가입 선물은 그대로');
   for i in 1..10 loop
     v_id := public.draw_free();
   end loop;
-  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'FREE_DRAW') = 10,
-    '무료 뽑기 10켤레');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'FREE_DRAW') = 13,
+    '무료 뽑기 13켤레');
   perform pg_temp.ok((select bool_and(lock_km = 50 and not can_withdraw)
                         from public.my_sneakers() where origin = 'FREE_DRAW'),
     '무료 신발은 50km 전에는 꺼낼 수 없다');
   insert into fix (k, v) select 'free_shoe', min(id)::text from public.my_sneakers() where origin = 'FREE_DRAW';
   insert into fix (k, v) select 'starter_shoe', min(id)::text from public.my_sneakers() where origin = 'STARTER';
 end $$;
-call pg_temp.must_fail($q$ select public.draw_free() $q$, '무료 뽑기는 10회까지');
+call pg_temp.must_fail($q$ select public.draw_free() $q$, '오늘 몫과 가입 선물을 다 쓰면 무료 뽑기를 못 한다');
 reset role;
 do $$ begin
   perform pg_temp.ok(not exists (
@@ -2604,7 +2612,7 @@ do $$ begin
     '뽑은 스탯은 모두 등급 범위 안이다');
 end $$;
 set role authenticated;
-call pg_temp.must_fail($q$ select public.draw_paid() $q$, 'SUP 가 없으면 유료 뽑기를 못 한다');
+call pg_temp.must_fail($q$ select public.draw_paid() $q$, '유료 뽑기는 없다 — 모든 뽑기는 무료(0042)');
 
 -- 공정성: 씨앗을 공개하면 지난 뽑기를 누구나 다시 계산할 수 있다
 do $$
@@ -2651,15 +2659,24 @@ set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 call pg_temp.must_fail($q$ select public.boost_buy('ENERGY_CELL') $q$, '에너지가 가득이면 에너지 셀을 팔지 않는다 (X9)');
 
--- 유료 뽑기 · 강화 · 착용
+-- 유료 뽑기는 없다(0042) — 잔고가 있어도 SUP 가 나가지 않는다
+do $$ begin insert into fix (k, v) select 'balance_before_paid', balance::text from public.my_economy(); end $$;
+call pg_temp.must_fail($q$ select public.draw_paid() $q$, '잔고가 있어도 유료 뽑기는 없다');
+do $$ begin
+  perform pg_temp.ok((select balance from public.my_economy()) = pg_temp.fx('balance_before_paid')::numeric,
+    '유료 뽑기를 불러도 SUP 가 나가지 않는다');
+end $$;
+-- 예전 유료 뽑기 신발(바로 꺼낼 수 있는 신발)은 서버 권한으로 만든다 — 아래 강화 · 꺼내기 검사의 준비물
+reset role;
+insert into fix (k, v) select 'paid_shoe', economy.draw_create('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'PAID_DRAW')::text;
+set role authenticated;
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+
+-- 강화 · 착용
 do $$
-declare v_id bigint; v_before numeric; v_lv int;
+declare v_id bigint := pg_temp.fx('paid_shoe')::bigint; v_before numeric; v_lv int;
 begin
-  v_before := (select balance from public.my_economy());
-  v_id := public.draw_paid();
-  perform pg_temp.ok((select balance from public.my_economy()) = v_before - 500, '유료 뽑기는 500 SUP');
   perform pg_temp.ok((select origin from public.my_sneakers() where id = v_id) = 'PAID_DRAW', '유료 뽑기 신발');
-  insert into fix (k, v) values ('paid_shoe', v_id::text);
 
   v_before := (select balance - (select upgrade_cost from public.my_sneakers() where id = v_id)
                  from public.my_economy());
@@ -3674,6 +3691,165 @@ begin
     'public.story_create(text, text, text, text, double precision, double precision)', 'execute'), '로그인 전에는 장소 글을 쓸 수 없다');
   perform pg_temp.ok(not has_function_privilege('authenticated',
     'public.story_check(text, text, text, text, double precision, double precision)', 'execute'), '검사 함수는 앱에 열지 않는다');
+end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0042 신발 뽑기 무료 — 매일 무료 · 러닝으로 받는 상급 · 상급 뽑기
+-- ══════════════════════════════════════════════════════════════════
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'draw@test', '{"full_name":"Draw Nine"}');
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$
+declare r record; i int; v_id bigint;
+begin
+  perform public.economy_bootstrap();
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.daily_left = 3 and r.signup_left = 10, '새 계정: 오늘 무료 3회 + 가입 선물 10회');
+  perform pg_temp.ok(not r.wallet_linked and r.gift_on_link = 10 and r.gift_left = 0 and r.run_left = 0,
+    '지갑 전: 연결하면 상급 10회, 지금 상급은 0');
+  perform pg_temp.ok(r.run_step_m = 1000 and r.run_daily_cap = 10, '러닝 1km 마다 상급 1회, 하루 10회까지');
+  for i in 1..2 loop
+    v_id := public.draw_free();
+  end loop;
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.daily_left = 1 and r.signup_left = 10, '두 번 뽑으면 오늘 몫이 1회 남는다');
+end $$;
+call pg_temp.must_fail($q$ select public.premium_draw() $q$, '지갑을 연결하기 전에는 상급 뽑기를 못 한다');
+
+-- 다음 날: 안 쓴 오늘 몫은 넘어가지 않고 3회가 새로 생긴다
+reset role;
+update public.draw_daily set day = day - 1 where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$
+declare r record;
+begin
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.daily_left = 3 and r.signup_left = 10, '다음 날에는 무료 3회가 새로 생긴다(넘어가지 않는다)');
+end $$;
+
+-- 지갑 연결 전의 러닝은 상급 뽑기를 주지 않는다
+reset role;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_credit_m)
+values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '2 hours', now() - interval '1 hour', 3600, 4000, 3000, 'CLEAN', 3000);
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.draw_grants
+                                  where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'RUN'),
+    '지갑이 없으면 러닝으로 상급 뽑기를 받지 않는다');
+end $$;
+
+-- 지갑 연결 — 첫 연결 선물 상급 10회(첫 번 Genesis)
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+do $$
+declare v_msg text;
+begin
+  v_msg := public.wallet_link_challenge();
+  insert into fix (k, v) values ('nonce_draw', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
+end $$;
+reset role;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+do $$ begin
+  perform pg_temp.ok(public.attester_wallet_link('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9',
+    '0x9999999999999999999999999999999999999999', pg_temp.fx('nonce_draw')), '처음 연결한 지갑');
+end $$;
+reset role;
+
+-- 연결하기 전에 시작한 러닝은 소급하지 않는다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_credit_m)
+values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '50 minutes', now() - interval '10 minutes', 2400, 3000, 2500, 'CLEAN', 2500);
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.draw_grants
+                                  where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'RUN'),
+    '지갑을 연결하기 전에 시작한 러닝은 세지 않는다');
+end $$;
+
+-- 연결 뒤 러닝: 2.5km → 상급 2회, 0.5km 는 다음으로. 무효 · 경로 없는 러닝은 세지 않는다
+update public.wallet_links set linked_at = now() - interval '1 day'
+ where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9';
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_credit_m)
+values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '20 hours', now() - interval '19 hours', 3600, 4000, 2500, 'CLEAN', 2500),
+       ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '18 hours', now() - interval '17 hours', 3600, 4000, 5000, 'VOID', 5000),
+       ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '16 hours', now() - interval '15 hours', 3600, 4000, 5000, 'CLEAN', 0);
+do $$ begin
+  perform pg_temp.ok((select granted from public.draw_grants
+                       where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'RUN') = 2,
+    '연결 뒤 2.5km → 상급 2회(무효 · 경로 없는 러닝은 세지 않는다)');
+  perform pg_temp.ok((select meters from public.premium_run_progress
+                       where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9') = 500, '남은 0.5km 는 다음 러닝으로 이어진다');
+end $$;
+-- 0.7km 더 → 0.5 + 0.7 = 1.2km → 1회, 0.2km 남음
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_credit_m)
+values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '14 hours', now() - interval '13 hours', 900, 1000, 700, 'CLEAN', 700);
+do $$ begin
+  perform pg_temp.ok((select granted from public.draw_grants
+                       where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'RUN') = 3
+                     and abs((select meters from public.premium_run_progress
+                               where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9') - 200) < 0.001,
+    '러닝마다 나머지를 모아 1km 가 되면 1회');
+end $$;
+-- 하루 한도: 한도를 4회로 낮추고 20km → 오늘 1회만 더(모두 4회), 넘은 km 는 버리고 나머지만 남는다
+update public.economy_settings set value = '4' where key = 'premium_run_daily_cap';
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, gps_credit_m)
+values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', now() - interval '12 hours', now() - interval '9 hours', 10800, 30000, 20300, 'CLEAN', 20300);
+do $$ begin
+  perform pg_temp.ok((select granted from public.draw_grants
+                       where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'RUN') = 4,
+    '하루 한도까지만 준다');
+  perform pg_temp.ok(abs((select meters from public.premium_run_progress
+                           where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9') - 500) < 0.001,
+    '한도를 넘은 km 는 버리고 1km 에 못 미친 나머지만 남는다');
+end $$;
+update public.economy_settings set value = '10' where key = 'premium_run_daily_cap';
+
+-- 상급 뽑기: 첫 연결 선물부터(첫 번 Genesis · 에픽 이상), 그다음 러닝으로 받은 기회. 모두 레어 이상
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$
+declare r record; v_first bigint; v_id bigint; i int;
+begin
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.wallet_linked and r.gift_on_link = 0 and r.gift_left = 10 and r.genesis_left = 1 and r.run_left = 4
+                     and r.run_today = 4 and abs(r.run_progress_m - 500) < 0.001,
+    format('상급: 선물 %s · 러닝 %s · 오늘 러닝으로 %s · 모은 거리 %sm', r.gift_left, r.run_left, r.run_today, r.run_progress_m));
+  v_first := public.premium_draw();
+  perform pg_temp.ok((select origin = 'BONUS_DRAW' and genesis_no is not null and rarity in ('EPIC', 'LEGENDARY')
+                        from public.my_sneakers() where id = v_first),
+    '첫 상급 뽑기는 Genesis(에픽 이상)이고 결과 신발 번호를 돌려준다');
+  perform pg_temp.ok((select count(*) from public.chain_ops where sneaker_id = v_first and kind = 'BONUS_MINT') = 1,
+    '상급 뽑기 신발은 체인 발행 작업이 하나 생긴다');
+  for i in 2..10 loop
+    v_id := public.premium_draw();
+  end loop;
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.gift_left = 0 and r.run_left = 4, '선물 10회를 먼저 다 쓴다 — 러닝으로 받은 것은 그대로');
+  for i in 1..4 loop
+    v_id := public.premium_draw();
+  end loop;
+  select * into r from public.draw_status();
+  perform pg_temp.ok(r.gift_left = 0 and r.run_left = 0, '그다음 러닝으로 받은 기회를 쓴다');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW') = 14
+                     and not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and rarity = 'COMMON'),
+    '상급 뽑기 14켤레는 모두 레어 이상');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW' and genesis_no is not null) = 1,
+    'Genesis 는 한 켤레뿐');
+end $$;
+call pg_temp.must_fail($q$ select public.premium_draw() $q$, '상급 뽑기가 남아 있지 않으면 거절');
+reset role;
+do $$ begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.premium_draw()', 'execute')
+                     and not has_function_privilege('anon', 'public.draw_status()', 'execute'),
+    '로그인 전에는 상급 뽑기 · 뽑기 현황을 부를 수 없다');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'public.draw_daily', 'update')
+                     and not has_table_privilege('authenticated', 'public.premium_run_progress', 'update'),
+    '매일 무료 · 러닝 거리 표는 앱이 고칠 수 없다');
 end $$;
 
 \echo ''

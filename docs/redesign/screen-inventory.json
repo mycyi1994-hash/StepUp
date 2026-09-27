@@ -15,10 +15,9 @@
       "id": "Routes.MYSTERY_BOX",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
-      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "implementation": "신발 뽑기 무료(2026-09-27): see docs/redesign/shoe-draw/README.md",
+      "verification": "ShoeDrawTest (Experience QA community suite, screen-gallery/shoe-draw/): mock scenes 01-03, states 04-11, in-app draw flow 20-22; server rules in supabase/tests (0042)",
+      "evidence": "docs/redesign/shoe-draw/README.md"
     },
     {
       "id": "Screen.Customize.route",
@@ -472,11 +471,10 @@
     {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 50,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
-      "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+      "line": 87,
+      "implementation": "신발 뽑기 무료(2026-09-27): see docs/redesign/shoe-draw/README.md",
+      "verification": "ShoeDrawTest (Experience QA community suite, screen-gallery/shoe-draw/): mock scenes 01-03, states 04-11, in-app draw flow 20-22; server rules in supabase/tests (0042)",
+      "evidence": "docs/redesign/shoe-draw/README.md"
     },
     {
       "id": "HomeScreen",
@@ -497,7 +495,7 @@
     {
       "id": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 91,
+      "line": 92,
       "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
       "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending; shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -763,10 +761,10 @@
     },
     {
       "kind": "DialogPanel",
-      "owner": "ItemsScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 416,
-      "verification": "pending"
+      "owner": "DrawResultDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
+      "line": 400,
+      "verification": "ShoeDrawTest 22-result (draw result moved here from the vault, 2026-09-27)"
     },
     {
       "kind": "DialogPanel",

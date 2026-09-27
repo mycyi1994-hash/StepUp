@@ -10,8 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -86,13 +86,11 @@ class MysteryDesignTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isEmpty()
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.mystery_subtitle)).assertIsDisplayed()
-        val draw = compose.onNodeWithTag("draw-shoe").assertIsDisplayed()
-        if (BuildConfig.DRAW_DAPP_URL.isNotBlank() && BuildConfig.DRAW_CONTRACT_ADDRESS.isNotBlank()) {
-            draw.assertIsEnabled()
-        } else {
-            draw.assertIsNotEnabled()
-        }
+        // 무료 정책(2026-09-27) — 무료 · 상급 두 칸, 신발 상자, 주 버튼 하나. 가격 · SUP 안내는 없다
+        compose.onNodeWithTag("draw-tab-free").assertIsSelected()
+        compose.onNodeWithTag("draw-stage").assertIsDisplayed()
+        compose.onNodeWithTag("draw-shoe").assertExists()
+        compose.onAllNodesWithText("500 SUP", substring = true).assertCountEquals(0)
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
         captureDisplay(File(out, "mystery-01-normal.png"))
 
@@ -102,7 +100,7 @@ class MysteryDesignTest {
 
         compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithText(compose.activity.getString(R.string.mystery_subtitle)).fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("draw-stage").fetchSemanticsNodes().isEmpty()
         }
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))

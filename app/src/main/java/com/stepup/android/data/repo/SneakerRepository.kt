@@ -80,20 +80,23 @@ class SneakerRepository(
     }
 
     /**
-     * 뽑기 (서버). 무료 뽑기가 남았으면 그것부터 쓰고, 없으면 SUP 로 뽑는다.
+     * 뽑기 (서버, 2026-09-27 부터 모두 무료). [kind] 칸의 기회를 한 번 쓴다 — 무료는 오늘 몫 → 가입 선물,
+     * 상급은 지갑 선물 → 러닝으로 받은 기회 순서로 서버가 고른다. SUP 는 나가지 않는다.
      * 결과 신발은 서버가 정한 것을 다시 받아 와 돌려준다. 뽑기는 됐는데 목록을 아직 못 받았으면
      * (Ok, null) — 실패가 아니다. 화면은 "뽑았어요, 불러오는 중"이라고 해야 다시 누르지 않는다.
      */
-    suspend fun drawOnServer(): Pair<EconomyOutcome, Sneaker?> {
-        val api = economy ?: return mint().let { (if (it != null) EconomyOutcome.Ok else EconomyOutcome.NotEnoughBalance) to it }
-        val free = prefs?.freeDrawsLeft?.first() ?: 0
-        val result = if (free > 0) api.drawFree() else api.drawPaid()
-        // 다른 기기에서 무료 뽑기를 다 썼으면 SUP 뽑기로 넘어가지 않는다 — 돈이 나가는 일은 한 번 더 누르게 한다
+    suspend fun drawOnServer(kind: com.stepup.android.domain.DrawKind): Pair<EconomyOutcome, Sneaker?> {
+        // 서버 없이는 뽑지 않는다 — 폰이 수를 주거나 줄이지 않는다
+        val api = economy ?: return EconomyOutcome.SignInRequired to null
+        val result = when (kind) {
+            com.stepup.android.domain.DrawKind.FREE -> api.drawFree()
+            com.stepup.android.domain.DrawKind.PREMIUM -> api.drawPremium()
+        }
         val newId = when (result) {
             is com.stepup.android.data.remote.ServerResult.Ok -> result.value
             else -> {
                 val outcome = result.toEconomyOutcome()
-                if (outcome == EconomyOutcome.NoFreeDraws || outcome == EconomyOutcome.Offline) resync()
+                if (outcome != EconomyOutcome.SignInRequired) resync()
                 return outcome to null
             }
         }
