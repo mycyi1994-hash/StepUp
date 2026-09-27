@@ -121,6 +121,13 @@ object ServiceLocator {
     lateinit var runningFeedRepository: RunningFeedRepository
         private set
 
+    /**
+     * 앱 공지(알림 › 공지) — 운영자가 서버 표에 올린 StepUp 안내. 위의 바깥 소식과 **다른 것**이다.
+     * 받은 목록은 사본으로 두고, 새로 받지 못하면 사본을 보인다.
+     */
+    lateinit var announcementRepository: com.stepup.android.data.repo.AnnouncementRepository
+        private set
+
     lateinit var claimRepository: ClaimRepository
 
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */
@@ -328,6 +335,10 @@ object ServiceLocator {
             economySync = economySync.takeIf { serverEconomy },
         )
         runningFeedRepository = RunningFeedRepository(RunningFeedApi(server))
+        announcementRepository = com.stepup.android.data.repo.AnnouncementRepository(
+            source = com.stepup.android.data.remote.AnnouncementApi(server),
+            cache = com.stepup.android.data.repo.FileAnnouncementCache(java.io.File(app.filesDir, "announcements.json")),
+        )
         newsRepository = NewsRepository(
             server = server,
             dao = database.newsDao(),

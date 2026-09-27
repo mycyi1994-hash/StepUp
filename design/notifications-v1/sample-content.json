@@ -1,0 +1,89 @@
+{
+  "purpose": "Preview-only sample data. Do not insert into live notifications or publish as real notices.",
+  "sampleNow": "2026-09-28T11:30:00+09:00",
+  "notifications": [
+    {
+      "demoId": "reply-1",
+      "type": "COMMENT_REPLY",
+      "text": "민수님이 내 댓글에 답글을 남겼어요",
+      "timestamp": "2026-09-28T11:18:00+09:00",
+      "read": false,
+      "actioned": false,
+      "actualTarget": null,
+      "previewTarget": "existing:community-comment"
+    },
+    {
+      "demoId": "shoe-2",
+      "type": "SNEAKER_MINTED",
+      "text": "새벽 강변을 받았어요",
+      "timestamp": "2026-09-28T10:30:00+09:00",
+      "read": false,
+      "actioned": false,
+      "actualSlotKey": null,
+      "previewTarget": "owned-shoes-list"
+    },
+    {
+      "demoId": "reward-3",
+      "type": "REWARD_EARNED",
+      "stepsExample": 2400,
+      "amountExample": 2.4,
+      "timestamp": "2026-09-28T09:30:00+09:00",
+      "read": false,
+      "actioned": false,
+      "policy": "Amount is not a reward formula or live grant"
+    },
+    {
+      "demoId": "invite-4",
+      "type": "CREW_INVITE",
+      "crewDisplayName": "여의도 러너스",
+      "actualCrewId": null,
+      "timestamp": "2026-09-27T19:00:00+09:00",
+      "read": true,
+      "actioned": false
+    }
+  ],
+  "announcements": [
+    {
+      "demoId": "notice-free-draw",
+      "title": "무료 뽑기 이용 안내",
+      "samplePublishedDate": "2026-09-28",
+      "body": [
+        "무료 뽑기: 처음 가입하면 10회, 매일 무료 뽑기 3회.",
+        "상급 뽑기: WEB3 지갑 연결 추가 10회, 연결한 상태에서 1km 러닝마다 1회.",
+        "현재 연결 기능이 준비 중이면 이를 안내한다."
+      ],
+      "previewAction": "existing:free-and-premium-draw"
+    },
+    {
+      "demoId": "notice-records",
+      "title": "러닝 기록을 확인하는 방법",
+      "samplePublishedDate": "2026-09-27",
+      "body": [
+        "내 정보에서 내 러닝 기록 보기를 눌러 주세요.",
+        "저장된 러닝 기록을 누르면 해당 러닝의 상세를 확인할 수 있어요."
+      ],
+      "previewAction": "existing:running-history"
+    },
+    {
+      "demoId": "notice-notifications",
+      "title": "앱 알림이 오지 않을 때",
+      "samplePublishedDate": "2026-09-26",
+      "body": [
+        "앱의 알림 설정과 휴대폰의 알림 허용 상태를 확인해 주세요.",
+        "앱 설정을 켰어도 휴대폰에서 차단했다면 알림을 받지 못할 수 있어요."
+      ],
+      "previewAction": "existing:notification-settings"
+    },
+    {
+      "demoId": "notice-location",
+      "title": "위치 권한과 러닝 경로",
+      "samplePublishedDate": "2026-09-25",
+      "body": [
+        "러닝 경로를 기록하려면 앱의 위치 권한을 확인해 주세요.",
+        "개인정보·앱 권한에서 정확한 위치 또는 대략적인 위치 허용 상태를 볼 수 있어요."
+      ],
+      "previewAction": "existing:privacy-settings"
+    }
+  ],
+  "dataSourceStatus": "App announcement repository/detail source not established in inspected code; requires implementation. Existing external NewsScreen is separate."
+}

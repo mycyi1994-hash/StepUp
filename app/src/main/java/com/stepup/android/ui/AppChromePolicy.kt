@@ -47,6 +47,7 @@ object AppChromePolicy {
         Destination(Routes.STORY_REGION, Screen.Community, Header.Form),
         Destination(Routes.WALLET, Screen.Profile, Header.Detail),
         Destination(Routes.NOTIFICATIONS, Screen.Profile, Header.Detail),
+        Destination(Routes.NOTICE, Screen.Profile, Header.Detail),
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),
         Destination(Routes.ANALYTICS, Screen.Profile, Header.Detail),
         Destination(Routes.HISTORY_MAP, Screen.Profile, Header.Detail),

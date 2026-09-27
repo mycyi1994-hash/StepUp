@@ -284,14 +284,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">通知</string>
-    <string name="notif_mark_read">すべて既読</string>
-    <string name="notif_empty_title">まだ何もありません</string>
-    <string name="notif_empty_body">報酬・クルーの招待・イベント情報がここに届きます。</string>
     <string name="notif_reward_earned">%1$s歩で %2$s SUP を獲得</string>
     <string name="notif_reward_earned_plain">%1$s歩のラン記録</string>
     <string name="notif_goal_reached">1日の目標を達成！ %1$s日連続 · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">デイリー目標達成！%1$s日連続</string>
-    <string name="notif_sneaker_minted">%1$sをミントしました</string>
+    <string name="notif_sneaker_minted">%1$sを受け取りました</string>
     <string name="notif_sneaker_upgraded">%1$sのレベルが上がりました</string>
     <string name="notif_boost_activated">ブーストを発動しました</string>
     <string name="notif_crew_joined">%1$sに参加しました</string>
@@ -605,10 +602,8 @@
     <string name="party_gps_rule">ホストから %1$dm 以上離れると自動的にパーティから外れます。</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">承認</string>
     <string name="notif_decline">辞退</string>
     <string name="notif_claim">受け取る</string>
-    <string name="notif_done">処理済み</string>
     <string name="notif_crew_invite">%1$s からクルーへの招待が届きました</string>
     <string name="notif_party_invite">%1$s からパーティランに招待されました</string>
     <string name="notif_event_reward">イベント報酬が届きました: %1$s · %2$s SUP</string>
@@ -1459,7 +1454,6 @@ StepUp と走り出そう。</string>
     <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
     <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
     <string name="finish_share_activity">StepUpで%1$s kmを%2$sで走りました。</string>
-    <string name="notif_reward_unverified">この過去の報酬通知には確認済みの支払い記録がありません。獲得できる報酬はチャレンジで確認してください。</string>
     <string name="session_sign_in_again">再ログイン</string>
     <string name="post_invalid_numbers">距離は0kmより大きく、出発までは1分以上、定員は2〜200人で入力してください。</string>
     <string name="energy_purchase_capacity">エネルギーを2以上使ってから再試行してください。保留中の購入は追加の支払いなしで再開します。</string>

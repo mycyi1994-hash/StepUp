@@ -81,6 +81,18 @@ class CommunityApi(private val server: StepUpServer) {
             )
         }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
 
+    /**
+     * 이 글을 지금 볼 수 있는가 — 지워졌거나 볼 수 없는 크루 글이면 서버(RLS)가 빈 목록을 준다.
+     * 알림이 가리키는 글이 없어졌는지, 연결이 안 된 것인지 가르는 데 쓴다.
+     */
+    suspend fun postVisible(postId: Long): ServerResult<Boolean> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=id&id=eq.$postId",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostIdRow>>(it).isNotEmpty() }
+
     /** 한 글의 댓글. 먼저 단 것이 위. */
     suspend fun comments(postId: Long): ServerResult<List<CommentRow>> =
         server.authed { token ->
@@ -238,3 +250,7 @@ class CommunityApi(private val server: StepUpServer) {
             server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
 }
+
+/** 글이 있는지만 볼 때 받는 한 줄 */
+@Serializable
+data class PostIdRow(val id: Long)

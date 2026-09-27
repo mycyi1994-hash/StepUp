@@ -550,6 +550,24 @@ interface NotificationDao {
     @Query("UPDATE notifications SET read = 1")
     suspend fun markAllRead()
 
+    /** 알림 하나를 열어 봤다 — 읽음만 바꾼다(처리 여부 · 행은 그대로) */
+    @Query("UPDATE notifications SET read = 1 WHERE id = :id")
+    suspend fun markRead(id: Long): Int
+
+    /**
+     * "모두 읽음" — 누른 때 화면에 있던 알림까지(:upToId 이하)만 읽음으로 바꾼다.
+     * 그 뒤에 들어온 알림은 새 알림으로 남는다. 처리 여부 · 행은 그대로.
+     */
+    @Query("UPDATE notifications SET read = 1 WHERE read = 0 AND id <= :upToId")
+    suspend fun markReadUpTo(upToId: Long): Int
+
+    /** 가장 최근에 들어온 알림 번호 — 목록 한도(100) 밖의 알림까지 센다 */
+    @Query("SELECT MAX(id) FROM notifications")
+    fun observeNewestId(): Flow<Long?>
+
+    @Query("SELECT * FROM notifications WHERE id = :id")
+    suspend fun byId(id: Long): NotificationEntity?
+
     @Query("UPDATE notifications SET actioned = 1, read = 1 WHERE id = :id")
     suspend fun markActioned(id: Long)
 
@@ -573,8 +591,8 @@ interface NotificationDao {
     suspend fun deleteByType(type: String)
 
     /**
-     * "모두 읽음" 청소 — 아직 처리하지 않은 액션형 알림(초대·미수령 보상)은 남긴다.
-     * 나머지는 전부 지운다.
+     * 알림 기록 지우기(설정) — 아직 처리하지 않은 액션형 알림(초대·미수령 보상)은 남긴다.
+     * 나머지는 전부 지운다. 알림함의 "모두 읽음"(markReadUpTo)은 행을 지우지 않는다.
      */
     @Query(
         """

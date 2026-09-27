@@ -197,6 +197,9 @@ object Routes {
     const val RUN_DIET_EDIT = "run-diet/edit"
     const val WALLET = "wallet"
     const val NOTIFICATIONS = "notifications"
+
+    /** 앱 공지 상세(알림·공지 v1) — 알림 화면의 "공지"에서. 바깥 소식(NEWS)과 다른 것이다 */
+    const val NOTICE = "notice/{id}"
     const val ACHIEVEMENTS = "achievements"
     const val ANALYTICS = "analytics"
     /** 설정 첫 목록(설정 v1, 2026-09-28) — 내 정보 첫 화면의 "설정"에서 */
@@ -243,6 +246,7 @@ object Routes {
     fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
         "market/$faction/$rarity/$variant?sell=$sell"
     fun lobby(crewId: String) = "lobby/$crewId"
+    fun notice(id: Long) = "notice/$id"
     fun crewBoard(crewId: String) = "crew/board/$crewId"
 
     /** crewId가 비어 있으면 전체 게시판에 쓰는 글 */
@@ -382,6 +386,14 @@ internal fun MainScaffold(
                 )
             }
         }
+    }
+
+    // 로그인이 필요해 멈췄던 초대 — 로그인하고 새로 열린 앱 화면이면 알림함에서 그 초대를 다시 보인다(자동 수락 없음)
+    val scaffoldOpenedAt = remember { android.os.SystemClock.elapsedRealtime() }
+    val reopenInvite by ServiceLocator.notificationRepository.inviteAfterSignIn.collectAsState()
+    LaunchedEffect(reopenInvite) {
+        val request = reopenInvite ?: return@LaunchedEffect
+        if (request.requestedAt < scaffoldOpenedAt) navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
     }
 
     // 초대 링크(stepupcrew.com/c/...)나 크루 알림으로 들어왔으면 그 크루 화면을 연다
@@ -901,6 +913,7 @@ internal fun MainScaffold(
                 NotificationsScreen(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onBack = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS_NOTIFICATIONS) },
                     onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
                     onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
                     // 댓글은 게시판 위에 창으로 뜬다. 어느 댓글인지는 저장소에
@@ -908,6 +921,42 @@ internal fun MainScaffold(
                     onOpenComment = { target ->
                         ServiceLocator.communityRepository.focusComment(target)
                         navController.switchTab(Screen.Community)
+                    },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    // 받은 신발은 보유 목록(신발 탭)에서 — 알림의 모델 이름으로 한 켤레를 골라 열지 않는다
+                    onOpenShoes = { navController.switchTab(Screen.Customize) },
+                    onOpenCommunity = { navController.switchTab(Screen.Community) },
+                    onOpenNotice = { id -> navController.navigate(Routes.notice(id)) },
+                    onSignIn = {
+                        scope.launch {
+                            try {
+                                com.stepup.android.ui.components.returnToSignIn(context)
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(context, R.string.feed_save_failed, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                )
+            }
+            composable(
+                route = Routes.NOTICE,
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+            ) { entry ->
+                com.stepup.android.ui.screens.notifications.NoticeDetailScreen(
+                    id = entry.arguments?.getLong("id") ?: 0L,
+                    onBack = { navController.popBackStack() },
+                    onAction = { action ->
+                        when (action) {
+                            // 신발 뽑기(무료 · 상급 두 칸)로 옮겨 갈 뿐 기회를 쓰지 않는다
+                            com.stepup.android.data.repo.NoticeAction.DRAW ->
+                                navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true }
+                            com.stepup.android.data.repo.NoticeAction.RUN_HISTORY -> navController.navigate(Routes.ANALYTICS)
+                            com.stepup.android.data.repo.NoticeAction.NOTIFICATION_SETTINGS ->
+                                navController.navigate(Routes.SETTINGS_NOTIFICATIONS)
+                            com.stepup.android.data.repo.NoticeAction.PRIVACY_SETTINGS -> navController.navigate(Routes.SETTINGS_PRIVACY)
+                        }
                     },
                 )
             }

@@ -1,0 +1,258 @@
+{
+  "entry": "existing:notifications",
+  "proposal": "notifications has inbox/announcements selection; announcement detail requires a new registered route",
+  "transitions": [
+    {
+      "from": "01-inbox",
+      "action": "공지",
+      "to": "15-announcements"
+    },
+    {
+      "from": "15-announcements",
+      "action": "내 알림",
+      "to": "01-inbox"
+    },
+    {
+      "from": "01-inbox",
+      "action": "설정",
+      "to": "existing:settings/notifications"
+    },
+    {
+      "from": "01-inbox",
+      "action": "모두 읽음",
+      "to": "02-read-all",
+      "condition": "실제 read 저장 성공; 행 삭제/actioned 변경 없음"
+    },
+    {
+      "from": "01-inbox",
+      "action": "모두 읽음 저장 실패",
+      "to": "13-read-error"
+    },
+    {
+      "from": "01-inbox",
+      "action": "답글 알림",
+      "to": "existing:community-comment",
+      "condition": "유효한 CommentTarget"
+    },
+    {
+      "from": "01-inbox",
+      "action": "답글 원본 삭제/권한 없음",
+      "to": "14-target-unavailable",
+      "condition": "실제 대상 상태 확인; 통신 오류와 구분"
+    },
+    {
+      "from": "01-inbox",
+      "action": "적립 알림",
+      "to": "03-reward-detail"
+    },
+    {
+      "from": "01-inbox",
+      "action": "신발 알림",
+      "to": "04-shoe-detail"
+    },
+    {
+      "from": "03-reward-detail",
+      "action": "지갑 보기",
+      "to": "existing:wallet"
+    },
+    {
+      "from": "04-shoe-detail",
+      "action": "보유 신발 보기",
+      "to": "existing:owned-shoes"
+    },
+    {
+      "from": "01-inbox",
+      "action": "크루 초대",
+      "to": "05-crew-invite"
+    },
+    {
+      "from": "05-crew-invite",
+      "action": "크루 보기",
+      "to": "existing:crew-board",
+      "condition": "유효한 서버 크루 ID"
+    },
+    {
+      "from": "05-crew-invite",
+      "action": "초대 수락",
+      "to": "06-membership-requested",
+      "condition": "서버 Requested 결과. Joined는 가입 완료 문구로 동일 구조 사용"
+    },
+    {
+      "from": "05-crew-invite",
+      "action": "확정 미처리 실패",
+      "to": "07-invite-error"
+    },
+    {
+      "from": "05-crew-invite",
+      "action": "로그인 필요",
+      "to": "22-login-required"
+    },
+    {
+      "from": "05-crew-invite",
+      "action": "거절",
+      "to": "21-decline-invite"
+    },
+    {
+      "from": "21-decline-invite",
+      "action": "취소",
+      "to": "05-crew-invite"
+    },
+    {
+      "from": "21-decline-invite",
+      "action": "초대 거절",
+      "to": "01-inbox",
+      "condition": "해당 초대 알림 삭제 성공 후 실제 목록 갱신"
+    },
+    {
+      "from": "06-membership-requested",
+      "action": "크루 보기",
+      "to": "existing:crew-board"
+    },
+    {
+      "from": "07-invite-error",
+      "action": "다시 수락",
+      "to": "06-membership-requested",
+      "condition": "실제 서버 결과로 Joined/Requested/실패 분기"
+    },
+    {
+      "from": "22-login-required",
+      "action": "로그인",
+      "to": "existing:sign-in",
+      "condition": "복귀 후 초대 다시 표시. 자동 수락 금지"
+    },
+    {
+      "from": "22-login-required",
+      "action": "나중에",
+      "to": "05-crew-invite"
+    },
+    {
+      "from": "08-party-invite",
+      "action": "대기실 보기",
+      "to": "existing:lobby",
+      "condition": "수락 표시 없이 보기"
+    },
+    {
+      "from": "08-party-invite",
+      "action": "수락하고 보기",
+      "to": "existing:lobby",
+      "condition": "로컬 초대 처리 후 이동. 실제 참가 완료와 별개"
+    },
+    {
+      "from": "08-party-invite",
+      "action": "거절",
+      "to": "21-decline-invite",
+      "condition": "해당 파티 초대에 맞는 문구와 ID로 재사용"
+    },
+    {
+      "from": "09-unverified-reward",
+      "action": "챌린지 보기",
+      "to": "existing:challenges",
+      "condition": "알림에서 보상 지급 안 함"
+    },
+    {
+      "from": "10-empty-inbox",
+      "action": "알림 설정 보기",
+      "to": "existing:settings/notifications"
+    },
+    {
+      "from": "11-inbox-loading",
+      "action": "목록 조회 완료",
+      "to": "01-inbox",
+      "condition": "데이터 있음"
+    },
+    {
+      "from": "11-inbox-loading",
+      "action": "목록 조회 완료",
+      "to": "10-empty-inbox",
+      "condition": "실제 빈 목록"
+    },
+    {
+      "from": "11-inbox-loading",
+      "action": "조회 실패",
+      "to": "12-inbox-error"
+    },
+    {
+      "from": "12-inbox-error",
+      "action": "다시 불러오기",
+      "to": "11-inbox-loading"
+    },
+    {
+      "from": "13-read-error",
+      "action": "모두 읽음 재시도",
+      "to": "02-read-all",
+      "condition": "저장 성공"
+    },
+    {
+      "from": "14-target-unavailable",
+      "action": "커뮤니티 보기",
+      "to": "existing:community"
+    },
+    {
+      "from": "14-target-unavailable",
+      "action": "알림으로 돌아가기",
+      "to": "01-inbox"
+    },
+    {
+      "from": "15-announcements",
+      "action": "공지 선택",
+      "to": "16-announcement-detail",
+      "condition": "예시는 무료 뽑기 공지; 실제 notice ID 사용"
+    },
+    {
+      "from": "16-announcement-detail",
+      "action": "신발 뽑기 보기",
+      "to": "existing:free-and-premium-draw",
+      "condition": "이동만 수행; 기회 사용 없음"
+    },
+    {
+      "from": "16-announcement-detail",
+      "action": "뒤로",
+      "to": "15-announcements"
+    },
+    {
+      "from": "20-announcement-loading",
+      "action": "공지 조회 완료",
+      "to": "15-announcements",
+      "condition": "내용 있음"
+    },
+    {
+      "from": "20-announcement-loading",
+      "action": "공지 조회 완료",
+      "to": "17-empty-announcements",
+      "condition": "실제 빈 목록"
+    },
+    {
+      "from": "20-announcement-loading",
+      "action": "조회 실패",
+      "to": "18-announcement-error",
+      "condition": "캐시 없음"
+    },
+    {
+      "from": "18-announcement-error",
+      "action": "다시 불러오기",
+      "to": "20-announcement-loading"
+    },
+    {
+      "from": "15-announcements",
+      "action": "선택 공지 철회/접근 불가 확인",
+      "to": "19-announcement-unavailable"
+    },
+    {
+      "from": "19-announcement-unavailable",
+      "action": "공지 목록으로",
+      "to": "15-announcements"
+    },
+    {
+      "from": "15-announcements",
+      "action": "새로 고침 실패",
+      "to": "23-cached-announcements",
+      "condition": "유효한 캐시가 있음"
+    },
+    {
+      "from": "23-cached-announcements",
+      "action": "다시",
+      "to": "15-announcements",
+      "condition": "갱신 성공; 실패하면 캐시와 안내 유지"
+    }
+  ]
+}

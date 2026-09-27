@@ -285,14 +285,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">Notifications</string>
-    <string name="notif_mark_read">Mark all read</string>
-    <string name="notif_empty_title">Nothing here yet</string>
-    <string name="notif_empty_body">Rewards, crew invites and event updates will show up here.</string>
     <string name="notif_reward_earned">Earned %2$s SUP from %1$s steps</string>
     <string name="notif_reward_earned_plain">Run recorded: %1$s steps</string>
     <string name="notif_goal_reached">Daily goal hit! %1$s day streak · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">Daily goal hit! %1$s day streak</string>
-    <string name="notif_sneaker_minted">Minted %1$s</string>
+    <string name="notif_sneaker_minted">You got %1$s</string>
     <string name="notif_sneaker_upgraded">%1$s reached a new level</string>
     <string name="notif_boost_activated">Boost activated</string>
     <string name="notif_crew_joined">You joined %1$s</string>
@@ -606,10 +603,8 @@
     <string name="party_gps_rule">Members further than %1$dm from the host are dropped automatically.</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">Accept</string>
     <string name="notif_decline">Decline</string>
     <string name="notif_claim">Claim</string>
-    <string name="notif_done">Done</string>
     <string name="notif_crew_invite">%1$s invited you to their crew</string>
     <string name="notif_party_invite">%1$s invited you to a party run</string>
     <string name="notif_event_reward">Event reward arrived: %1$s · %2$s SUP</string>
@@ -1460,7 +1455,6 @@ Start running with StepUp.</string>
     <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
     <string name="run_location_disabled">Location access off</string>
     <string name="finish_share_activity">I ran %1$s km in %2$s on StepUp.</string>
-    <string name="notif_reward_unverified">This earlier reward notice has no verified payment record. Check Challenges for available rewards.</string>
     <string name="session_sign_in_again">Sign in again</string>
     <string name="post_invalid_numbers">Enter a distance above 0 km, at least 1 minute until departure, and 2–200 people.</string>
     <string name="energy_purchase_capacity">Use at least 2 energy, then try again. Pending purchases resume without another charge.</string>

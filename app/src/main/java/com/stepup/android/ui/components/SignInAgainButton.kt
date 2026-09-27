@@ -25,11 +25,7 @@ fun SignInAgainButton(modifier: Modifier = Modifier.fillMaxWidth()) {
             busy = true
             scope.launch {
                 try {
-                    // 달리는 중이면 먼저 끝내 저장한다 — 로그인 화면으로 바뀌면 러닝을 멈출 곳이 없어 GPS 가 계속 돈다
-                    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                        com.stepup.android.service.WalkSessionService.stop(context)
-                    }
-                    ServiceLocator.userPrefs.setLoginMethod("")
+                    returnToSignIn(context)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -40,4 +36,15 @@ fun SignInAgainButton(modifier: Modifier = Modifier.fillMaxWidth()) {
             }
         },
     )
+}
+
+/**
+ * 로그인 화면으로 돌아간다 — 이 폰의 기록 · 장비 · 보상 · 알림은 지우지 않는다.
+ * 달리는 중이면 먼저 끝내 저장한다 — 로그인 화면으로 바뀌면 러닝을 멈출 곳이 없어 GPS 가 계속 돈다.
+ */
+suspend fun returnToSignIn(context: android.content.Context) {
+    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+        com.stepup.android.service.WalkSessionService.stop(context)
+    }
+    ServiceLocator.userPrefs.setLoginMethod("")
 }

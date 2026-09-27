@@ -3853,6 +3853,43 @@ do $$ begin
 end $$;
 
 \echo ''
+\echo '── 앱 공지(0043) ─────────────────────────────────────────────────'
+reset role;
+insert into public.announcements (title, body, action, visible, published_at) values
+  ('{"ko": "보이는 공지", "en": "Visible notice"}', '{"ko": "본문"}', 'DRAW', true, now() - interval '1 hour'),
+  ('{"ko": "내린 공지"}', '{"ko": "본문"}', null, false, now() - interval '2 hours'),
+  ('{"ko": "예약한 공지"}', '{"ko": "본문"}', null, true, now() + interval '1 day');
+call pg_temp.must_fail($q$ insert into public.announcements (title) values ('{}') $q$, '제목 없는 공지는 넣을 수 없다');
+call pg_temp.must_fail($q$ insert into public.announcements (title, action) values ('{"ko": "x"}', 'OPEN_URL') $q$,
+  '정해 둔 앱 안 화면 말고는 버튼을 달 수 없다');
+set role anon;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.announcements) = 1
+                     and (select title->>'ko' from public.announcements) = '보이는 공지',
+    '로그인 전에도 공개 · 게시된 공지만 읽힌다 — 내린 글 · 게시 전 글은 안 보인다');
+end $$;
+call pg_temp.must_fail($q$ insert into public.announcements (title, visible) values ('{"ko": "가짜"}', true) $q$,
+  '앱(anon)은 공지를 쓸 수 없다');
+reset role;
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.announcements) = 1, '로그인해도 같은 공지만 보인다');
+  perform pg_temp.ok((select count(*) from public.announcements
+                       where id = (select id from public.announcements where title->>'ko' = '보이는 공지')) = 1,
+    '하나만 물으면 그 공지가 온다');
+end $$;
+call pg_temp.must_fail($q$ update public.announcements set visible = true $q$, '앱(authenticated)은 공지를 고칠 수 없다');
+reset role;
+update public.announcements set visible = false where title->>'ko' = '보이는 공지';
+set role anon;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.announcements) = 0, '내리면 바로 목록에서 빠진다');
+end $$;
+reset role;
+delete from public.announcements;
+
+\echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
 \echo '════════════════════════════════════════════════════════════════'

@@ -162,8 +162,15 @@
       "id": "Routes.NOTIFICATIONS",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "알림·공지 v1(2026-09-28): see docs/redesign/notifications-v1/README.md — 내 알림 · 공지 두 메뉴, 연 알림만 읽음, 종류별 내용 시트 · 초대 단계",
+      "verification": "NotificationsDesignTest (Experience QA community suite, screen-gallery/notifications-v1/) + NotificationPersistenceTest · NotificationNavigationTest: pending this PR's QA"
+    },
+    {
+      "id": "Routes.NOTICE",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "알림·공지 v1(2026-09-28): app announcement detail (server table 0043, cached copy) — see docs/redesign/notifications-v1/README.md",
+      "verification": "AnnouncementRepositoryTest (unit) + NotificationsDesignTest scenes 16 · 16b · 19; server rules in supabase/tests (0043): pending this PR's QA"
     },
     {
       "id": "Routes.ACHIEVEMENTS",
@@ -549,12 +556,18 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "NoticeDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/notifications/NoticeDetailScreen.kt",
+      "line": 59,
+      "implementation": "알림·공지 v1(2026-09-28): announcement detail 16 · 19 — see docs/redesign/notifications-v1/README.md",
+      "verification": "NotificationsDesignTest scenes 16 · 16b · 19: pending this PR's QA"
+    },
+    {
       "id": "NotificationsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt",
-      "line": 147,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+      "line": 129,
+      "implementation": "알림·공지 v1(2026-09-28): see docs/redesign/notifications-v1/README.md — 내 알림 · 공지 두 메뉴, 연 알림만 읽음, 종류별 내용 시트 · 초대 단계",
+      "verification": "NotificationsDesignTest (Experience QA community suite, screen-gallery/notifications-v1/) + NotificationPersistenceTest · NotificationNavigationTest: pending this PR's QA"
     },
     {
       "id": "AchievementsScreen",

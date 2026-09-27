@@ -500,9 +500,12 @@ fun SettingsSheet(
     }
 }
 
-/** 짧은 알림 — "✓ 알림 기록을 지웠어요." 화면 아래에 잠깐. 실제로 끝난 일에만 띄운다 */
+/**
+ * 짧은 알림 — "✓ 알림 기록을 지웠어요." 화면 아래에 잠깐. 실제로 끝난 일에만 ✓ 를 붙인다.
+ * [success] 가 아니면(저장 실패 · 연결 확인 안내) ✓ 없이 글만.
+ */
 @Composable
-fun SettingsToast(message: String?, modifier: Modifier = Modifier) {
+fun SettingsToast(message: String?, modifier: Modifier = Modifier, success: Boolean = true) {
     val p = settingsPalette()
     val motion = LocalMotion.current
     AnimatedVisibility(
@@ -516,7 +519,7 @@ fun SettingsToast(message: String?, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = p.toastText, modifier = Modifier.size(20.dp))
+            if (success) Icon(Icons.Filled.Check, contentDescription = null, tint = p.toastText, modifier = Modifier.size(20.dp))
             Text(message.orEmpty(), color = p.toastText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
         }
     }

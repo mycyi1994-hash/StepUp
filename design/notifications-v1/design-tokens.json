@@ -1,0 +1,60 @@
+{
+  "product": "StepUp",
+  "scope": "notifications-and-announcements",
+  "version": 1,
+  "screen": {
+    "width": 390,
+    "height": 844,
+    "pngScale": 3,
+    "responsive": true
+  },
+  "font": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600
+    ],
+    "screenTitle": 19,
+    "listTitle": 16.5,
+    "announcementTitle": 18,
+    "secondary": 13
+  },
+  "colors": {
+    "background": "#050912",
+    "text": "#F2F4FC",
+    "secondary": "#98A8C0",
+    "accent": "#A3BFFE",
+    "unreadDot": "#85ABFF",
+    "surface": "#0E192A",
+    "divider": "#1D2B3F",
+    "sheet": "#111D2E",
+    "primaryGradient": [
+      "#F7F8FF",
+      "#E8EDFA"
+    ],
+    "primaryText": "#081223"
+  },
+  "layout": {
+    "sideMargin": 24,
+    "notificationIcon": 34,
+    "iconRadius": 11,
+    "notificationTextX": 74,
+    "notificationRowMinHeight": 102,
+    "announcementRowMinHeight": 94,
+    "buttonHeight": 54,
+    "buttonRadius": 17,
+    "sheetTopRadius": 27,
+    "minimumTouchDp": 48
+  },
+  "semantics": {
+    "read": "Opened information; independent of actioned",
+    "actioned": "Invitation/reward action handled according to existing service result",
+    "clearAll": "Preserves pending actionable notifications; distinct from markAllRead"
+  },
+  "motion": {
+    "sheetTransitionMs": 200,
+    "toastMs": 2000,
+    "reducedMotion": "Immediate or short opacity change; no translated motion",
+    "executableFilesIncluded": false
+  }
+}

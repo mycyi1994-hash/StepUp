@@ -283,14 +283,11 @@
 
     <!-- Notifications -->
     <string name="notif_title">通知</string>
-    <string name="notif_mark_read">全部标为已读</string>
-    <string name="notif_empty_title">这里还空着</string>
-    <string name="notif_empty_body">奖励、跑团邀请和活动更新都会出现在这里。</string>
     <string name="notif_reward_earned">%1$s 步赚到 %2$s SUP</string>
     <string name="notif_reward_earned_plain">%1$s 步跑步记录</string>
     <string name="notif_goal_reached">每日目标达成！连续 %1$s 天 · +%2$s SUP</string>
     <string name="notif_goal_reached_plain">达成每日目标！连续 %1$s 天</string>
-    <string name="notif_sneaker_minted">已铸造 %1$s</string>
+    <string name="notif_sneaker_minted">你获得了%1$s</string>
     <string name="notif_sneaker_upgraded">%1$s 升到新等级了</string>
     <string name="notif_boost_activated">加成已激活</string>
     <string name="notif_crew_joined">你加入了 %1$s</string>
@@ -604,10 +601,8 @@
     <string name="party_gps_rule">离队长超过 %1$d 米会被自动移出队伍。</string>
 
     <!-- Notification actions -->
-    <string name="notif_accept">接受</string>
     <string name="notif_decline">拒绝</string>
     <string name="notif_claim">领取</string>
-    <string name="notif_done">已处理</string>
     <string name="notif_crew_invite">%1$s 邀请你加入跑团</string>
     <string name="notif_party_invite">%1$s 邀请你参加组队跑</string>
     <string name="notif_event_reward">活动奖励已到账：%1$s · %2$s SUP</string>
@@ -1458,7 +1453,6 @@
     <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
     <string name="run_location_disabled">位置权限已关闭</string>
     <string name="finish_share_activity">我在StepUp用%2$s跑了%1$s公里。</string>
-    <string name="notif_reward_unverified">此历史奖励通知没有已验证的发放记录。请前往挑战查看可领取的奖励。</string>
     <string name="session_sign_in_again">重新登录</string>
     <string name="post_invalid_numbers">距离须大于0公里，出发时间至少为1分钟后，人数须为2至200人。</string>
     <string name="energy_purchase_capacity">请消耗至少2点能量后重试。待处理的购买不会再次扣费。</string>
