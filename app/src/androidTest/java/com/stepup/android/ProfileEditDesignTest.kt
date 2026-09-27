@@ -136,7 +136,8 @@ class ProfileEditDesignTest {
             // 12 — 저장 → 내 정보에 새 이름과 안내(실제로 저장된 뒤에만)
             tap("pe-save")
             awaitTag("profile-saved-notice")
-            compose.onNodeWithTag("profile-name").assertTextEquals("아침러너")
+            // 내 정보의 이름은 저장소에서 다시 읽는다 — 돌아온 뒤 곧 새 이름
+            compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("profile-name").assertTextEquals("아침러너") }.isSuccess }
             assertEquals("아침러너", runBlocking { prefs.nickname.first() })
             shot("12-saved-profile", settle = 300)
 

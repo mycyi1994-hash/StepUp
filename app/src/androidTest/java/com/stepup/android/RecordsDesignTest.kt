@@ -149,7 +149,9 @@ class RecordsDesignTest {
             // 01 — 이번 달. 요약 카드는 저장소의 기간 전체 합계(불러온 한 쪽의 합이 아니다)
             compose.onNodeWithTag("records-period").assertTextContains(monthLabel(month), substring = true)
             compose.onNodeWithTag("records-distance", useUnmergedTree = true).assertTextEquals(km(after.meters))
-            awaitTag("record-row-$gpsId")
+            // 이 기기에 다른 테스트가 남긴 더 새 러닝이 위에 있을 수 있다 — 아래로 읽어 넣은 줄을 찾고 맨 위로
+            scrollToRow("record-row-$gpsId")
+            compose.onNodeWithTag("records-list").performScrollToIndex(0)
             shot("01-record-list")
 
             // 03 — 기간 시트: 고른 것은 "적용"해야 목록에 들어간다. 닫으면 그대로
@@ -197,6 +199,7 @@ class RecordsDesignTest {
             compose.onNodeWithTag("records-period").assertTextContains(korean(R.string.rec_period_all), substring = true)
 
             // 11 · 12 — 상세와 경로 확대: 목록에서 고른 그 러닝
+            scrollToRow("record-row-$gpsId")
             tap("record-row-$gpsId")
             awaitTag("run-route")
             compose.onNodeWithTag("run-distance").assertTextContains("3.2", substring = true)
@@ -211,6 +214,7 @@ class RecordsDesignTest {
             awaitTag("records-list")
 
             // 13 — 거리 · 경로 없이 시간만 남은 러닝
+            scrollToRow("record-row-$timeOnlyId")
             tap("record-row-$timeOnlyId")
             awaitTag("run-no-route")
             compose.onNodeWithTag("run-time").assertTextContains("24:30", substring = true)
@@ -447,6 +451,21 @@ class RecordsDesignTest {
                 navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             )
         }
+    }
+
+    /** 목록을 아래로 읽어(다음 쪽을 이어 읽으며) 그 줄까지 간다 */
+    private fun scrollToRow(tag: String) {
+        var found = false
+        repeat(20) {
+            if (!found) {
+                found = runCatching { compose.onNodeWithTag("records-list").performScrollToNode(hasTestTag(tag)) }.isSuccess
+                if (!found) {
+                    compose.waitForIdle()
+                    Thread.sleep(300)
+                }
+            }
+        }
+        assertTrue("$tag reachable", found)
     }
 
     private fun awaitTag(tag: String) {

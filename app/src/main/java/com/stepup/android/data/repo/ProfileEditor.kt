@@ -198,7 +198,8 @@ class AvatarPhotoStore(
     /** 크기만 먼저 읽어 줄여 읽고(큰 사진도 메모리를 넘기지 않게), 방향을 세우고, 긴 변을 [maxSide] 이하로 */
     private fun decode(open: () -> InputStream?): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        open()?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        // 크기만 읽을 때 decodeStream 은 늘 null 을 돌려준다 — 열었는지는 스트림으로, 읽었는지는 크기로 본다
+        (open() ?: return null).use { BitmapFactory.decodeStream(it, null, bounds) }
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         var sample = 1
         while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxSide) sample *= 2

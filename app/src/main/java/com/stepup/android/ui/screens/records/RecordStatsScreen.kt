@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -282,7 +283,7 @@ private fun BarChart(bars: List<RunBar>, weekly: Boolean, pick: Int?, onSelect: 
                     Text(
                         if (value % 1.0 == 0.0) value.toInt().toString() else String.format(java.util.Locale.ROOT, "%.1f", value),
                         color = p.secondary, fontSize = 11.sp,
-                        modifier = Modifier.align(Alignment.TopStart).padding(top = chartHeight * (1f - fraction) - 7.dp),
+                        modifier = Modifier.align(Alignment.TopStart).offset(y = chartHeight * (1f - fraction) - 7.dp),
                     )
                 }
             }
