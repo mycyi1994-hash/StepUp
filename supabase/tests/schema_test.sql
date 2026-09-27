@@ -2945,8 +2945,9 @@ select set_config('request.jwt.claims',
 do $$ declare r record; begin
   select * into r from public.attester_op_payload(pg_temp.fx('op_exp')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 end $$;
+-- 마진 안(기한은 지났다)의 서명 작업은 아래 0040 검사가 따로 본다
 call pg_temp.must_fail(format($q$ select public.attester_op_expire('%s', false) $q$, pg_temp.fx('op_exp')),
-  '서명한 작업은 만료 마진이 지나기 전에 되돌리지 않는다');
+  '서명한 작업은 기한 전에 되돌리지 않는다');
 reset role;
 update public.chain_ops set deadline = now() - interval '2 hours' where id = pg_temp.fx('op_exp')::uuid;
 insert into fix (k, v) values ('bal_before_exp', economy.balance_of('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1')::text);
@@ -2955,8 +2956,8 @@ select set_config('request.jwt.claims',
   (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 do $$
 begin
-  perform pg_temp.ok((select count(*) from public.attester_due_ops() where op_id = pg_temp.fx('op_exp')::uuid) = 1,
-    '만료 대상 목록에 나온다');
+  perform pg_temp.ok((select count(*) from public.attester_due_ops() where op_id = pg_temp.fx('op_exp')::uuid and not early) = 1,
+    '마진이 지난 작업은 early 가 아닌 만료 대상으로 목록에 나온다');
   perform pg_temp.ok(public.attester_op_expire(pg_temp.fx('op_exp')::uuid, false) = 'EXPIRED', '체인에 없으면 만료');
   perform pg_temp.ok(public.attester_op_expire(pg_temp.fx('op_exp')::uuid, false) = 'EXPIRED', '두 번 불러도 결과가 같다');
 end $$;
