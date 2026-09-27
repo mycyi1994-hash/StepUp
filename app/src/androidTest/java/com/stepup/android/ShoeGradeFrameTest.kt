@@ -103,10 +103,10 @@ class ShoeGradeFrameTest {
             compose.onNodeWithText(seeAll).performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("shoe-list").fetchSemanticsNodes().isEmpty() }
             awaitSingle("grade-stage-common")
-            keepsRatio(compose.onNodeWithTag("grade-stage-common").fetchSemanticsNode().boundsInRoot, "vault stage")
+            keepsRatio(stageBounds("grade-stage-common"), "vault stage")
             shot("07-vault-equipped")
             // 보관함에서 세로로 넘기는 목록은 하나(DetailPage)다
-            val vault = { compose.onNode(hasScrollToIndexAction()) }
+            val vault = { compose.onNode(hasScrollToIndexAction(), useUnmergedTree = true) }
             GRADES.forEach { rarity ->
                 vault().performScrollToNode(hasTestTag("grade-thumb-${rarity.key}"))
                 thumbKeepsRatio(rarity)
@@ -116,10 +116,12 @@ class ShoeGradeFrameTest {
 
             // 09 — 상세: 레전더리 한 켤레
             vault().performScrollToNode(hasTestTag("grade-thumb-legendary"))
-            compose.onNodeWithTag("grade-thumb-legendary").performClick()
-            compose.waitUntil(10_000) { compose.onAllNodesWithTag("grade-thumb-legendary").fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithTag("grade-thumb-legendary", useUnmergedTree = true).performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithTag("grade-thumb-legendary", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+            }
             awaitSingle("grade-stage-legendary")
-            keepsRatio(compose.onNodeWithTag("grade-stage-legendary").fetchSemanticsNode().boundsInRoot, "detail stage")
+            keepsRatio(stageBounds("grade-stage-legendary"), "detail stage")
             shot("09-detail-legendary")
         } finally {
             restore(shoes)
@@ -196,7 +198,7 @@ class ShoeGradeFrameTest {
                 }
             }
             awaitSingle("grade-stage-legendary")
-            keepsRatio(compose.onNodeWithTag("grade-stage-legendary").fetchSemanticsNode().boundsInRoot, "draw result stage")
+            keepsRatio(stageBounds("grade-stage-legendary"), "draw result stage")
             compose.onNodeWithTag("draw-result-shoes").assertIsDisplayed()
             shot("15-draw-result-legendary", settle = 1_500)
         } finally {
@@ -223,10 +225,10 @@ class ShoeGradeFrameTest {
      */
     private fun stageFullyVisible(rarity: Rarity, firstView: Boolean = true) {
         awaitSingle("grade-stage-${rarity.key}")
-        if (!firstView) list().performScrollToNode(hasTestTag("grade-stage-${rarity.key}"))
+        if (!firstView) compose.onNodeWithTag("shoe-list", useUnmergedTree = true).performScrollToNode(hasTestTag("grade-stage-${rarity.key}"))
         compose.waitForIdle()
         val viewport = list().fetchSemanticsNode().boundsInRoot
-        val stage = compose.onNodeWithTag("grade-stage-${rarity.key}").fetchSemanticsNode().boundsInRoot
+        val stage = stageBounds("grade-stage-${rarity.key}")
         keepsRatio(stage, "${rarity.key} stage")
         assertTrue("${rarity.key} stage fully inside the list window: $stage in $viewport",
             stage.top >= viewport.top - 1 && stage.bottom <= viewport.bottom + 1 &&
@@ -235,12 +237,17 @@ class ShoeGradeFrameTest {
         assertTrue("${rarity.key} stage keeps the shoe large: ${stage.width}", stage.width >= minWidth)
     }
 
+    /** 목록 칸 — 눌리는 카드가 안쪽을 합치므로 합치기 전 나무에서 찾는다. 하나도 없으면 실패다 */
     private fun thumbKeepsRatio(rarity: Rarity) {
         compose.waitForIdle()
-        compose.onAllNodesWithTag("grade-thumb-${rarity.key}").fetchSemanticsNodes().forEach {
-            keepsRatio(it.boundsInRoot, "${rarity.key} thumb")
-        }
+        val thumbs = compose.onAllNodesWithTag("grade-thumb-${rarity.key}", useUnmergedTree = true).fetchSemanticsNodes()
+        assertTrue("${rarity.key} thumb is on screen", thumbs.isNotEmpty())
+        thumbs.forEach { keepsRatio(it.boundsInRoot, "${rarity.key} thumb") }
     }
+
+    /** 무대 — 보관함 착용 카드처럼 눌리는 카드 안에 있으면 카드가 합치므로 합치기 전 나무에서 잰다 */
+    private fun stageBounds(tag: String): Rect =
+        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
     private fun keepsRatio(bounds: Rect, what: String) {
         val ratio = bounds.width / bounds.height
@@ -292,9 +299,9 @@ class ShoeGradeFrameTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    /** 화면이 바뀌는 동안에는 앞뒤 화면이 함께 있다 — 하나만 남을 때까지 */
+    /** 화면이 바뀌는 동안에는 앞뒤 화면이 함께 있다 — 하나만 남을 때까지(눌리는 카드 안의 무대도 보이게 합치기 전 나무에서) */
     private fun awaitSingle(tag: String) {
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size == 1 }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().size == 1 }
     }
 
     private fun shot(name: String, settle: Long = 700) {
