@@ -1215,7 +1215,7 @@ private fun rememberFinishShare(session: WalkSessionState, points: Double?, uplo
     )
     val shareText = if (finishConfirmed(session, points, upload) && points != null) {
         stringResource(R.string.finish_share_text, "%.1f".format(km),
-            formatDuration(session.lastElapsedSec), "%,.0f".format(points))
+            formatDuration(session.lastElapsedSec), com.stepup.android.ui.components.formatSupDown(points))
     } else {
         stringResource(R.string.finish_share_activity, "%.1f".format(km), formatDuration(session.lastElapsedSec))
     }
