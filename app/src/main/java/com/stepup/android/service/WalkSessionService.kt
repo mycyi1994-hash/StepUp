@@ -640,6 +640,18 @@ class WalkSessionService : Service() {
             // 하고 뒤따르는 일을 못 한 경우까지 건너뛴다.
             val alreadySettled = resumedSettling && ServiceLocator.database.runSettlementDao()
                 .find(session.recordingOwner, session.startedAt) != null
+            // 보폭이 0.762m 보다 긴 사람은 걸음 거리로는 완주에 못 미친다 — GPS 거리와 큰 쪽.
+            val courseKm = maxOf(session.gpsKm, RewardEconomy.distanceMeters(creditedSteps) / 1000)
+            // 완주한 코스는 러닝을 저장하기 **전에** 올릴 거리에 적는다. 정산이 러닝을 저장하는 순간
+            // 이미 돌던 올리기 일꾼이 그 러닝을 먼저 가져가면, 뒤에 적은 코스 기록을 못 보고 지나가
+            // 코스 보상이 빠졌다. 러닝 시작 시각으로 적으므로 두 번 적혀도 한 줄이다.
+            if (verdict.isRewardable && !foreignOwner && !alreadySettled && !followupsAttempted) {
+                runCatching {
+                    ServiceLocator.courseRepository.finishedCourse(courseKm)?.let { course ->
+                        ServiceLocator.userPrefs.addPendingCourseRun(session.startedAt, course.encode())
+                    }
+                }
+            }
             val reward = ServiceLocator.runSettlementRepository.settle(
                 WalkSessionEntity(
                     startedAt = session.startedAt,
@@ -678,16 +690,9 @@ class WalkSessionService : Service() {
             if (verdict.isRewardable && !foreignOwner) {
                 // 코스 완주 정산 — 거리 1km당 정량 SUP. 코스 미선택이면 조용히 지나간다.
                 runCatching {
-                    // 보폭이 0.762m 보다 긴 사람은 걸음 거리로는 완주에 못 미친다 — GPS 거리와 큰 쪽.
-                    // 서버가 경로로 다시 확인한다.
-                    val finished = ServiceLocator.courseRepository.grantCompletionIfFinished(
-                        maxOf(session.gpsKm, RewardEconomy.distanceMeters(creditedSteps) / 1000),
-                    )
-                    // 완주한 코스는 러닝이 서버에 올라간 뒤 코스 기록으로 낸다
-                    // (ServerSessionRecorder). 서버가 경로로 다시 확인한다.
-                    if (finished != null) {
-                        ServiceLocator.userPrefs.addPendingCourseRun(session.startedAt, finished.encode())
-                    }
+                    // 완주 횟수 · (서버 경제가 아니면) 폰 적립. 올릴 코스 기록은 정산 전에 적어 두었다 —
+                    // 러닝이 서버에 올라간 뒤 ServerSessionRecorder 가 내고, 서버가 경로로 다시 확인한다.
+                    ServiceLocator.courseRepository.grantCompletionIfFinished(courseKm)
                 }
                 // 랭킹 재료 — 최고 속도
                 runCatching { ServiceLocator.userPrefs.recordTopSpeed(session.topSpeedKmh) }
