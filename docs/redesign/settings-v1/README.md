@@ -56,4 +56,5 @@
 
 ## 상태
 
-- 2026-09-28: 단위 테스트 · 컴파일 통과(로컬). 기기 결과는 이 PR 의 Experience QA 에서 확인한다.
+- 2026-09-28: 단위 테스트 · 컴파일 통과(로컬).
+- 2026-09-28 기기(Experience QA 147): `SettingsDesignTest` 2/2(캡처 36장), `PrivacyPermissionTest` 1/1 통과.
