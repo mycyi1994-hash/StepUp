@@ -80,4 +80,8 @@
   `IllegalStateException: Method setCurrentState must be called on the main thread`. 지역을 저장(DataStore)한 뒤
   뒤로 가기가 저장이 끝난 스레드에서 불렸다(테스트의 코루틴은 그 스레드에서 이어진다. 앱의 화면 코루틴은 메인으로
   돌아온다). `StoryLocationScreens.kt`의 `saveRegionThen`으로 저장 뒤 이동을 메인 스레드에서 한다고 못 박았다(후속 PR).
-- 후속 PR 의 Experience QA 결과(31장면 캡처)는 아래에 덧붙인다.
+- 후속 PR 의 첫 Experience QA(959f277): 지역 선택은 통과(26 · 27 · 01 · 02 · 14~17 캡처). 장소 목록(16)에서
+  "전체 장소"로 풀자 목록이 고른 장소의 글(여의나루)에 머물러 더 가까운 글이 화면 위로 가려졌다 — 줄이 글 번호로 붙어
+  있어 스크롤이 그 글을 따라간 것이다. 실제 사용자도 겪는 동작이라 **장소를 고르거나 풀면 목록을 처음부터** 보이게
+  고쳤다(`StoryListState.filterKey`, 상세에 다녀올 때는 보던 자리 그대로).
+- 그다음 실행 결과(31장면 캡처)는 아래에 덧붙인다.
