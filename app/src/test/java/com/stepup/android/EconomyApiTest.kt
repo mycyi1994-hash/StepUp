@@ -84,8 +84,8 @@ class EconomyApiTest {
     @Test fun serverRefusalsBecomeScreenMessages() = runBlocking {
         val http = Http { url ->
             when (url.substringAfterLast('/')) {
-                "draw_paid" -> HttpResponse(400, """{"message":"SUP가 부족합니다 (보유 10, 필요 500)"}""")
                 "draw_free" -> HttpResponse(400, """{"message":"무료 뽑기가 남아 있지 않습니다"}""")
+                "premium_draw" -> HttpResponse(400, """{"message":"상급 뽑기가 남아 있지 않습니다"}""")
                 "sneaker_upgrade" -> HttpResponse(400, """{"message":"최대 레벨입니다"}""")
                 "boost_buy" -> HttpResponse(400, """{"message":"에너지가 이미 충분합니다"}""")
                 "sneaker_repair" -> HttpResponse(0, "offline")
@@ -93,8 +93,8 @@ class EconomyApiTest {
             }
         }
         val api = api(http)
-        assertEquals(EconomyOutcome.NotEnoughBalance, api.drawPaid().toEconomyOutcome())
         assertEquals(EconomyOutcome.NoFreeDraws, api.drawFree().toEconomyOutcome())
+        assertEquals(EconomyOutcome.NoPremiumDraws, api.drawPremium().toEconomyOutcome())
         assertEquals(EconomyOutcome.MaxLevel, api.upgrade(1).toEconomyOutcome())
         assertEquals(EconomyOutcome.EnergyFull, api.boostBuy("ENERGY_CELL").toEconomyOutcome())
         assertEquals(EconomyOutcome.Offline, api.repair(1).toEconomyOutcome())
@@ -103,7 +103,8 @@ class EconomyApiTest {
 
     @Test fun signedOutNeverCallsTheServer() = runBlocking {
         val http = Http { HttpResponse(200, "1") }
-        assertEquals(EconomyOutcome.SignInRequired, api(http, signedIn = false).drawPaid().toEconomyOutcome())
+        assertEquals(EconomyOutcome.SignInRequired, api(http, signedIn = false).drawFree().toEconomyOutcome())
+        assertEquals(EconomyOutcome.SignInRequired, api(http, signedIn = false).drawPremium().toEconomyOutcome())
         assertTrue(http.calls.isEmpty())
     }
 
@@ -111,5 +112,38 @@ class EconomyApiTest {
         val http = Http { HttpResponse(200, "3000") }
         assertEquals(ServerResult.Ok(3000), api(http).setDailyGoal(3000))
         assertTrue(http.calls.any { it.first.endsWith("/rpc/profile_set_daily_goal") && it.second == """{"p_goal":3000}""" })
+    }
+
+    @Test fun drawStatusAndPremiumDrawGoThroughTheServer() = runBlocking {
+        val http = Http { url ->
+            when (url.substringAfterLast('/')) {
+                "draw_status" -> HttpResponse(200, """[{"daily_left":2,"daily_total":3,"signup_left":10,"signup_granted":10,
+                    "wallet_linked":true,"gift_on_link":0,"gift_left":9,"run_left":1,"genesis_left":0,
+                    "run_progress_m":600.5,"run_step_m":1000,"run_today":1,"run_daily_cap":10,"chain_paused":false}]""")
+                "premium_draw" -> HttpResponse(200, "91")
+                else -> HttpResponse(404, "{}")
+            }
+        }
+        val api = api(http)
+        val status = (api.drawStatus() as ServerResult.Ok).value
+        assertEquals(12, status.freeLeft)
+        assertEquals(10, status.premiumLeft)
+        assertEquals(600.5, status.runProgressMeters, 0.0)
+        assertTrue(status.canDraw(com.stepup.android.domain.DrawKind.PREMIUM))
+        assertEquals(ServerResult.Ok(91L), api.drawPremium())
+        assertTrue(http.calls.any { it.first.endsWith("/rpc/premium_draw") && it.second == "{}" })
+        assertTrue("no paid draw is ever called", http.calls.none { it.first.endsWith("/rpc/draw_paid") })
+    }
+
+    @Test fun premiumRefusalsBecomeTheirOwnMessages() = runBlocking {
+        val replies = mapOf(
+            "먼저 지갑을 연결해 주세요" to EconomyOutcome.WalletRequired,
+            "오늘 발행 한도가 찼습니다. 내일 다시 해 주세요" to EconomyOutcome.MintLimitReached,
+            "지금은 체인 작업을 잠시 멈췄습니다" to EconomyOutcome.ChainPaused,
+        )
+        for ((reason, expected) in replies) {
+            val http = Http { HttpResponse(400, """{"message":"$reason"}""") }
+            assertEquals(reason, expected, api(http).drawPremium().toEconomyOutcome())
+        }
     }
 }

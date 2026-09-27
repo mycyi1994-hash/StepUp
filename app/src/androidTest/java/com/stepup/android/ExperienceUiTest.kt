@@ -61,6 +61,9 @@ import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
+import com.stepup.android.domain.DrawKind
+import com.stepup.android.domain.DrawStatus
+import com.stepup.android.ui.screens.gacha.DrawScreenState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -333,23 +336,36 @@ class ExperienceUiTest {
         }
     }
 
-    @Test fun shoeDrawRespectsReadinessAndKeepsCatalogReachable() {
-        var ready by mutableStateOf(false)
+    @Test fun shoeDrawRespectsReadinessAndTabs() {
+        // 2026-09-27 무료 정책 — 가격 · 결제 확인이 없고, 무료 · 상급 두 칸에 주 버튼이 하나다
+        var state by mutableStateOf<DrawScreenState>(DrawScreenState.SignedOut)
+        var tab by mutableStateOf(DrawKind.FREE)
         var draws = 0
-        var catalogOpens = 0
-        var walletOpens = 0
+        var connects = 0
         compose.setContent { StepUpTheme { ExperienceProvider {
-            MysteryBoxScreen(shoeDrawReady = ready, onDrawShoe = { draws++ },
-                onOpenDex = { catalogOpens++ }, onOpenWallet = { walletOpens++ })
+            MysteryBoxScreen(state = state, tab = tab, onTab = { tab = it }, onDraw = { draws++ },
+                onConnectWallet = { connects++ })
         } } }
         compose.onNodeWithTag("draw-shoe").assertIsNotEnabled().performTouchInput { click() }
         compose.runOnIdle { assertEquals(0, draws) }
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
-        compose.onNodeWithTag("draw-dex").performScrollTo().performClick()
-        compose.onNodeWithTag("draw-wallet").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(1, catalogOpens); assertEquals(1, walletOpens); ready = true }
+        val fresh = DrawStatus(dailyLeft = 3, dailyTotal = 3, signupLeft = 10, signupGranted = 10, walletLinked = false,
+            giftOnLink = 10, giftLeft = 0, runLeft = 0, genesisLeft = 0, runProgressMeters = 0.0, runStepMeters = 1000,
+            runToday = 0, runDailyCap = 10, chainPaused = false)
+        compose.runOnIdle { state = DrawScreenState.Ready(fresh) }
         compose.onNodeWithTag("draw-shoe").assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals(1, draws) }
+        // 혜택 카드는 상급 칸으로 — 지갑 전이면 주 버튼이 지갑 연결이 된다
+        compose.onNodeWithTag("draw-wallet-benefit").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(DrawKind.PREMIUM, tab) }
+        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
+        compose.onNodeWithTag("draw-connect-wallet").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, connects); assertEquals(1, draws) }
+        compose.runOnIdle { state = DrawScreenState.Ready(fresh.copy(walletLinked = true, giftOnLink = 0, giftLeft = 10, genesisLeft = 1)) }
+        compose.onNodeWithTag("draw-shoe").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(2, draws) }
+        compose.onNodeWithTag("draw-tab-free").performClick()
+        compose.runOnIdle { assertEquals(DrawKind.FREE, tab) }
     }
 
     @Test fun firstGuideVisitsRunningShoesAndProfile() {

@@ -54,8 +54,12 @@ class EconomyApi(private val server: StepUpServer) {
     /** 무료 뽑기. 새 신발의 번호를 돌려준다. */
     suspend fun drawFree(): ServerResult<Long> = rpc("draw_free", "{}") { it.trim().toLongOrNull() }
 
-    /** SUP 로 뽑기. 새 신발의 번호를 돌려준다. */
-    suspend fun drawPaid(): ServerResult<Long> = rpc("draw_paid", "{}") { it.trim().toLongOrNull() }
+    /** 상급 뽑기(0042) — 지갑 첫 연결 선물부터, 그다음 러닝으로 받은 기회. 새 신발의 번호를 돌려준다. */
+    suspend fun drawPremium(): ServerResult<Long> = rpc("premium_draw", "{}") { it.trim().toLongOrNull() }
+
+    /** 뽑기 화면의 현황(0042) — 오늘 무료 · 가입 선물 · 지갑 선물 · 러닝으로 받은 상급 · 모은 거리 */
+    suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
+        rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
 
     /** 강화. 새 레벨을 돌려준다. */
     suspend fun upgrade(id: Long): ServerResult<Int> =
@@ -132,6 +136,32 @@ data class LedgerEntryRow(
 
 @Serializable
 data class DrawGrantRow(val kind: String, val granted: Int, val used: Int)
+
+/** draw_status(0042) 한 줄 — 모두 남은 수다 */
+@Serializable
+data class DrawStatusRow(
+    @SerialName("daily_left") val dailyLeft: Int = 0,
+    @SerialName("daily_total") val dailyTotal: Int = 0,
+    @SerialName("signup_left") val signupLeft: Int = 0,
+    @SerialName("signup_granted") val signupGranted: Int = 0,
+    @SerialName("wallet_linked") val walletLinked: Boolean = false,
+    @SerialName("gift_on_link") val giftOnLink: Int = 0,
+    @SerialName("gift_left") val giftLeft: Int = 0,
+    @SerialName("run_left") val runLeft: Int = 0,
+    @SerialName("genesis_left") val genesisLeft: Int = 0,
+    @SerialName("run_progress_m") val runProgressM: Double = 0.0,
+    @SerialName("run_step_m") val runStepM: Int = 1000,
+    @SerialName("run_today") val runToday: Int = 0,
+    @SerialName("run_daily_cap") val runDailyCap: Int = 0,
+    @SerialName("chain_paused") val chainPaused: Boolean = false,
+) {
+    fun toDomain() = com.stepup.android.domain.DrawStatus(
+        dailyLeft = dailyLeft, dailyTotal = dailyTotal, signupLeft = signupLeft, signupGranted = signupGranted,
+        walletLinked = walletLinked, giftOnLink = giftOnLink, giftLeft = giftLeft, runLeft = runLeft,
+        genesisLeft = genesisLeft, runProgressMeters = runProgressM, runStepMeters = runStepM,
+        runToday = runToday, runDailyCap = runDailyCap, chainPaused = chainPaused,
+    )
+}
 
 @Serializable
 data class BoostRow(

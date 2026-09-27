@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -96,6 +97,8 @@ fun ItemsScreen(
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDex: () -> Unit = {},
     onOpenMarketModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
+    /** 신발 뽑기 화면으로 — 뽑기는 모두 무료이고 그 화면에서 한다(2026-09-27) */
+    onOpenDraw: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
     marketViewModel: MarketViewModel = viewModel(factory = MarketViewModel.Factory),
 ) {
@@ -123,7 +126,6 @@ fun ItemsScreen(
     val progress by viewModel.collectionProgress.collectAsStateWithLifecycle()
     val factions by viewModel.factionProgress.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
-    val minted by viewModel.mintResult.collectAsStateWithLifecycle()
 
     val msgNoBalance = stringResource(R.string.toast_no_balance)
     val msgBoostActive = stringResource(R.string.toast_boost_active)
@@ -145,10 +147,8 @@ fun ItemsScreen(
             is ItemsMessage.Equipped -> equippedFmt.format(m.sneaker.fullLabel(context))
             ItemsMessage.Repaired -> context.getString(R.string.toast_repaired)
             ItemsMessage.NothingToRepair -> context.getString(R.string.toast_nothing_to_repair)
-            ItemsMessage.NoFreeDraws -> context.getString(R.string.toast_no_free_draws)
             ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
             ItemsMessage.Offline -> context.getString(R.string.toast_offline)
-            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
             ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
             ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
         }
@@ -333,17 +333,11 @@ fun ItemsScreen(
                         )
                     }
                 }
-                val freeDraws by viewModel.freeDrawsLeft.collectAsStateWithLifecycle()
+                // 뽑기는 모두 무료 — 수와 버튼은 뽑기 화면 한 곳에 둔다
                 VoltButton(
-                    text = if (freeDraws > 0) {
-                        stringResource(R.string.items_free_draws, freeDraws)
-                    } else {
-                        stringResource(R.string.items_mint_button, "%,.0f".format(RewardEconomy.MINT_COST))
-                    },
-                    onClick = { viewModel.mint() },
-                    // 무료 뽑기가 남았으면 잔고와 상관없이 뽑을 수 있다
-                    enabled = freeDraws > 0 || balance?.let { it >= RewardEconomy.MINT_COST } == true,
-                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.items_open_draw),
+                    onClick = onOpenDraw,
+                    modifier = Modifier.fillMaxWidth().testTag("items-open-draw"),
                 )
             }
         }
@@ -408,33 +402,6 @@ fun ItemsScreen(
                 },
                 onDismiss = { copiesFor = null },
             )
-        }
-    }
-
-    // ── 민팅 결과 ───────────────────────────────────────────
-    minted?.let { sneaker ->
-        com.stepup.android.ui.components.DialogPanel(
-            title = stringResource(R.string.mint_result_title),
-            onDismiss = { viewModel.dismissMintResult() },
-            actions = {
-                VoltButton(stringResource(R.string.common_ok), { viewModel.dismissMintResult() }, Modifier.fillMaxWidth())
-            },
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().reveal(sneaker.id).celebrate(sneaker.id),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FactionChip(sneaker.faction)
-                    RarityChip(sneaker.rarity)
-                }
-                SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(180.dp),
-                    corner = 16.dp, animate = true)
-                Text(sneaker.fullLabel(), style = MaterialTheme.typography.titleLarge,
-                    color = Snow, textAlign = TextAlign.Center)
-                Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), fontSize = 14.sp, color = Silver)
-            }
         }
     }
 

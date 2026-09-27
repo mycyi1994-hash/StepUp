@@ -79,7 +79,6 @@ fun SneakerDetailScreen(
             ItemsMessage.NothingToRepair -> context.getString(R.string.toast_nothing_to_repair)
             ItemsMessage.SignInRequired -> context.getString(R.string.toast_sign_in_required)
             ItemsMessage.Offline -> context.getString(R.string.toast_offline)
-            ItemsMessage.DrawnRefreshing -> context.getString(R.string.toast_drawn_refreshing)
             ItemsMessage.UpgradeLegacy -> context.getString(R.string.sneaker_enhance_legacy)
             ItemsMessage.UpgradeListed -> context.getString(R.string.sneaker_enhance_listed)
             else -> null

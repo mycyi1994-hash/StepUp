@@ -9,6 +9,10 @@ sealed interface EconomyOutcome {
     data object MaxLevel : EconomyOutcome
     data object EnergyFull : EconomyOutcome
     data object NoFreeDraws : EconomyOutcome
+    data object NoPremiumDraws : EconomyOutcome
+    data object WalletRequired : EconomyOutcome
+    data object MintLimitReached : EconomyOutcome
+    data object ChainPaused : EconomyOutcome
     data object NothingToRepair : EconomyOutcome
     data object SignInRequired : EconomyOutcome
     data object Offline : EconomyOutcome
@@ -28,6 +32,11 @@ fun ServerResult<*>.toEconomyOutcome(): EconomyOutcome = when (this) {
         "최대 레벨" in reason -> EconomyOutcome.MaxLevel
         "에너지가 이미" in reason -> EconomyOutcome.EnergyFull
         "무료 뽑기가 남아 있지" in reason -> EconomyOutcome.NoFreeDraws
+        // 상급 뽑기(0042 premium_draw · 0025 withdraw_gate)
+        "상급 뽑기가 남아 있지" in reason -> EconomyOutcome.NoPremiumDraws
+        "먼저 지갑을 연결" in reason -> EconomyOutcome.WalletRequired
+        "발행 한도" in reason -> EconomyOutcome.MintLimitReached
+        "체인 작업을 잠시 멈췄" in reason -> EconomyOutcome.ChainPaused
         "고칠 곳이 없" in reason -> EconomyOutcome.NothingToRepair
         else -> EconomyOutcome.Rejected(reason)
     }

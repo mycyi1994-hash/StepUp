@@ -558,72 +558,70 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.MYSTERY_BOX) {
-                // 신발 뽑기는 서버가 굴린다(draw_free · draw_paid). 결과 신발의 상세로 넘어간다.
-                val drawVm: com.stepup.android.ui.screens.items.ItemsViewModel =
-                    androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.items.ItemsViewModel.Factory)
-                val drawn by drawVm.mintResult.collectAsStateWithLifecycle()
+                // 신발 뽑기 — 모두 무료(2026-09-27). 수와 결과는 서버(draw_status · draw_free · premium_draw)가 정한다.
+                val drawVm: com.stepup.android.ui.screens.gacha.DrawViewModel =
+                    androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.gacha.DrawViewModel.Factory)
+                val drawState by drawVm.state.collectAsStateWithLifecycle()
+                val drawTab by drawVm.tab.collectAsStateWithLifecycle()
+                val drawing by drawVm.drawing.collectAsStateWithLifecycle()
+                val drawn by drawVm.result.collectAsStateWithLifecycle()
                 val drawMessage by drawVm.message.collectAsStateWithLifecycle()
-                LaunchedEffect(drawn) {
-                    val shoe = drawn ?: return@LaunchedEffect
-                    drawVm.dismissMintResult()
-                    navController.navigate(Routes.sneaker(shoe.id))
+                // 지갑 페이지에서 연결하고 돌아오면 상급 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
+                androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+                    drawVm.refresh()
+                    onPauseOrDispose { }
                 }
                 LaunchedEffect(drawMessage) {
                     val m = drawMessage ?: return@LaunchedEffect
                     val text = when (m) {
-                        com.stepup.android.ui.screens.items.ItemsMessage.NotEnoughBalance -> R.string.toast_no_balance
-                        com.stepup.android.ui.screens.items.ItemsMessage.NoFreeDraws -> R.string.toast_no_free_draws
-                        com.stepup.android.ui.screens.items.ItemsMessage.SignInRequired -> R.string.toast_sign_in_required
-                        com.stepup.android.ui.screens.items.ItemsMessage.Offline -> R.string.toast_offline
+                        com.stepup.android.ui.screens.gacha.DrawMessage.NoFreeDraws -> R.string.toast_no_free_draws
+                        com.stepup.android.ui.screens.gacha.DrawMessage.NoPremiumDraws -> R.string.toast_no_premium_draws
+                        com.stepup.android.ui.screens.gacha.DrawMessage.WalletRequired -> R.string.toast_wallet_required
+                        com.stepup.android.ui.screens.gacha.DrawMessage.MintLimit -> R.string.toast_mint_limit
+                        com.stepup.android.ui.screens.gacha.DrawMessage.ChainPaused -> R.string.draw_chain_paused
+                        com.stepup.android.ui.screens.gacha.DrawMessage.SignInRequired -> R.string.toast_sign_in_required
+                        com.stepup.android.ui.screens.gacha.DrawMessage.Offline -> R.string.toast_offline
                         // 뽑기는 됐다 — 실패라고 하면 다시 눌러 한 번 더 뽑는다
-                        com.stepup.android.ui.screens.items.ItemsMessage.DrawnRefreshing -> R.string.toast_drawn_refreshing
-                        else -> R.string.feed_save_failed
+                        com.stepup.android.ui.screens.gacha.DrawMessage.DrawnRefreshing -> R.string.toast_drawn_refreshing
+                        com.stepup.android.ui.screens.gacha.DrawMessage.Failed -> R.string.feed_save_failed
                     }
                     android.widget.Toast.makeText(context, context.getString(text), android.widget.Toast.LENGTH_SHORT).show()
                     drawVm.consumeMessage()
                 }
-                val freeDraws by drawVm.freeDrawsLeft.collectAsStateWithLifecycle()
-                val syncState by ServiceLocator.economySync.state.collectAsStateWithLifecycle()
-                var confirmPaid by remember { mutableStateOf(false) }
-                val price = "%,.0f".format(com.stepup.android.domain.RewardEconomy.MINT_COST)
-                MysteryBoxScreen(
-                    // 로그인하지 않았으면 뽑을 수 없다 — "로그인하면 뽑을 수 있어요"를 보인다
-                    shoeDrawReady = ServiceLocator.economyApi.isConfigured &&
-                        syncState != com.stepup.android.data.repo.EconomySyncState.SIGNED_OUT,
-                    onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
-                    onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    drawLabel = if (freeDraws > 0) {
-                        stringResource(R.string.mystery_draw_free, freeDraws)
-                    } else {
-                        stringResource(R.string.mystery_draw_paid, price)
-                    },
-                    // 무료는 바로, SUP 가 나가는 뽑기는 한 번 더 묻는다
-                    onDrawShoe = { if (freeDraws > 0) drawVm.mint() else confirmPaid = true },
-                    onOpenShoes = {
-                        if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
-                            navController.popBackStack()
-                            navController.switchTab(Screen.Customize)
+                val openShoes = {
+                    if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
+                        navController.popBackStack()
+                        navController.switchTab(Screen.Customize)
+                    }
+                }
+                val drawScope = rememberCoroutineScope()
+                com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
+                    state = drawState,
+                    tab = drawTab,
+                    drawing = drawing,
+                    onTab = drawVm::selectTab,
+                    onDraw = drawVm::draw,
+                    // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로
+                    onConnectWallet = {
+                        drawScope.launch {
+                            when (val link = com.stepup.android.ui.screens.rewards.openWalletPageLink()) {
+                                is com.stepup.android.ui.screens.rewards.WalletPageLink.Open ->
+                                    com.stepup.android.core.ExternalIntents.openUrl(context, link.url)
+                                com.stepup.android.ui.screens.rewards.WalletPageLink.SignIn -> android.widget.Toast.makeText(
+                                    context, context.getString(R.string.wallet_web_sign_in), android.widget.Toast.LENGTH_SHORT).show()
+                                com.stepup.android.ui.screens.rewards.WalletPageLink.Offline -> navController.navigate(Routes.WALLET)
+                            }
                         }
                     },
+                    onRetry = drawVm::refresh,
+                    onOpenShoes = openShoes,
                 )
-                if (confirmPaid) {
-                    com.stepup.android.ui.components.DialogPanel(
-                        title = stringResource(R.string.mystery_draw_shoe),
-                        onDismiss = { confirmPaid = false },
-                        actions = {
-                            com.stepup.android.ui.components.VoltButton(
-                                text = stringResource(R.string.mystery_draw_paid, price),
-                                onClick = { confirmPaid = false; drawVm.mint() },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            com.stepup.android.ui.components.GhostButton(
-                                stringResource(R.string.common_cancel), { confirmPaid = false }, Modifier.fillMaxWidth(),
-                            )
-                        },
-                    ) {
-                        Text(stringResource(R.string.mystery_draw_paid_confirm, price),
-                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = com.stepup.android.ui.theme.Snow)
-                    }
+                drawn?.let { shoe ->
+                    com.stepup.android.ui.screens.gacha.DrawResultDialog(
+                        sneaker = shoe,
+                        onOpenShoes = { drawVm.dismissResult(); openShoes() },
+                        onClose = drawVm::dismissResult,
+                    )
                 }
             }
             composable(Screen.Customize.route) {
@@ -743,6 +741,7 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
+                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
                     onOpenMarketModel = { faction, rarity, variant ->
                         navController.navigate(Routes.marketModel(faction, rarity, variant))
                     },
