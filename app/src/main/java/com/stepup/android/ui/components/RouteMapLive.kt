@@ -59,6 +59,7 @@ import kotlin.math.atan
 import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.ln
+import kotlin.math.roundToInt
 import kotlin.math.tan
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -100,6 +101,8 @@ fun LiveRouteMap(
      * 경로 전체에 맞추면 달릴수록 지도가 멀어져 지금 달리는 길이 점처럼 작아진다. 같이 뛰는 사람은 가까우면 함께 들어온다.
      */
     follow: Boolean = false,
+    /** [follow] 일 때 지금 자리를 둘 높이(위에서 0..1) — 지도 중 화면에 보이는 쪽 가운데([followAnchor]) */
+    followAt: Float = 0.5f,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
@@ -110,6 +113,7 @@ fun LiveRouteMap(
         interactive = interactive,
         controlLabels = controlLabels,
         zooms = if (follow) MapTiles.FOLLOW_ZOOMS else MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
+        anchorY = if (follow) followAt else 0.5f,
     ) { plan ->
         drawRoute(plan, points, progress)
         others.forEach { (point, name) ->
@@ -141,6 +145,22 @@ private fun mirror(point: GeoPoint, center: GeoPoint): GeoPoint {
     fun y(lat: Double) = ln(tan(PI / 4 + Math.toRadians(lat.coerceIn(-85.0, 85.0)) / 2))
     val mirrored = 2 * y(center.lat) - y(point.lat)
     return GeoPoint(lat = Math.toDegrees(2 * atan(exp(mirrored)) - PI / 2), lng = 2 * center.lng - point.lng)
+}
+
+/**
+ * 따라가는 지도에서 지금 자리를 둘 높이(위에서 0..1).
+ *
+ * 러닝 화면의 지도는 아래가 버튼 뒤로 잘린 채 보이는 일이 많다(지도 가운데가 딱 잘리는 선). 지도 중 화면에 보이는 범위
+ * [seenTop]..[seenBottom] 에서 위 · 아래가 바닥색에 녹아드는 띠를 빼고([clearTop]..[clearBottom] 만) 그 가운데에 둔다.
+ * 스크롤할 때마다 지도가 흔들리지 않게 0.05 단위로 끊는다.
+ */
+internal fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, clearBottom: Float): Float {
+    val top = seenTop.coerceIn(0f, 1f)
+    val bottom = seenBottom.coerceIn(0f, 1f)
+    val lo = maxOf(top, clearTop)
+    val hi = minOf(bottom, clearBottom)
+    val middle = if (hi > lo) (lo + hi) / 2 else (top + bottom) / 2
+    return ((middle * 20).roundToInt() / 20f).coerceIn(0.2f, 0.8f)
 }
 
 /** 경로 한 줄 — 글로우 · 본선 · 출발점 · 도착 깃발 · 진행 점 */
@@ -194,6 +214,7 @@ private fun DrawScope.drawRoute(plan: TilePlan, points: List<GeoPoint>, progress
  * @param onTap 지도를 눌렀을 때 — 누른 화면 위치와 그때의 배치 계획
  * @param onViewport 보이는 범위가 바뀔 때 — (최소 위도, 최소 경도, 최대 위도, 최대 경도)
  * @param zooms [focus] 에 맞춘 줌이 들어갈 범위 — 사용자가 확대 · 축소하기 전
+ * @param anchorY [focus] 의 가운데를 둘 높이(위에서 0..1)
  */
 @Composable
 fun StepUpMap(
@@ -205,6 +226,7 @@ fun StepUpMap(
     onViewport: ((Double, Double, Double, Double) -> Unit)? = null,
     controlLabels: MapControlLabels? = null,
     zooms: IntRange = MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
+    anchorY: Float = 0.5f,
     overlay: DrawScope.(TilePlan) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -225,9 +247,9 @@ fun StepUpMap(
         val widthPx = if (constraints.hasBoundedWidth) constraints.maxWidth else 0
         val heightPx = if (constraints.hasBoundedHeight) constraints.maxHeight else 0
 
-        val plan = remember(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms) {
+        val plan = remember(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms, anchorY) {
             if (focus.isEmpty() || widthPx <= 0 || heightPx <= 0) null
-            else TilePlan.of(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms)
+            else TilePlan.of(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms, anchorY)
         }
         val currentPlan by rememberUpdatedState(plan)
         val currentOnTap by rememberUpdatedState(onTap)
@@ -511,6 +533,7 @@ data class TilePlan(
          * @param zoomDelta 사용자가 손가락으로 더하거나 뺀 줌 단계
          * @param panX 사용자가 끌어 옮긴 거리(타일 픽셀). 화면 픽셀이 아니다.
          * @param zooms [points] 에 맞춘 줌이 들어갈 범위 — [zoomDelta] 를 더하기 전
+         * @param anchorY [points] 의 가운데를 둘 높이(위에서 0..1). 가운데가 아니면 가까운 쪽 가장자리까지 남은 높이 안에 맞춘다
          */
         fun of(
             points: List<GeoPoint>,
@@ -521,20 +544,22 @@ data class TilePlan(
             panX: Double = 0.0,
             panY: Double = 0.0,
             zooms: IntRange = MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
+            anchorY: Float = 0.5f,
         ): TilePlan {
             val scale = fitScale(widthPx, heightPx, tileScale(density))
             // 뷰포트를 타일 픽셀 단위로 환산해서 줌과 원점을 잡는다
             val viewW = (widthPx / scale).toDouble()
             val viewH = (heightPx / scale).toDouble()
 
-            val fitted = MapTiles.fitZoom(points, viewW.toInt(), viewH.toInt()).coerceIn(zooms)
+            val fitH = viewH * 2 * minOf(anchorY, 1f - anchorY).coerceIn(0.05f, 0.5f)
+            val fitted = MapTiles.fitZoom(points, viewW.toInt(), fitH.toInt()).coerceIn(zooms)
             val zoom = (fitted + zoomDelta).coerceIn(MapTiles.MIN_ZOOM, MapTiles.MAX_ZOOM)
             val xs = points.map { MapTiles.worldX(it.lng, zoom) }
             val ys = points.map { MapTiles.worldY(it.lat, zoom) }
-            // 경로의 한가운데가 화면 한가운데 오도록 원점을 잡고, 사용자가
+            // 경로의 한가운데가 화면 한가운데(세로는 [anchorY] 높이) 오도록 원점을 잡고, 사용자가
             // 끌어 옮긴 만큼 비킨다.
             val originX = (xs.min() + xs.max()) / 2 - viewW / 2 - panX
-            val originY = (ys.min() + ys.max()) / 2 - viewH / 2 - panY
+            val originY = (ys.min() + ys.max()) / 2 - viewH * anchorY - panY
 
             val maxTileIndex = (1 shl zoom) - 1
             val minTileX = floor(originX / MapTiles.TILE_SIZE).toInt()

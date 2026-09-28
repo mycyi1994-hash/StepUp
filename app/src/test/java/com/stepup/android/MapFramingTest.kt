@@ -2,6 +2,7 @@ package com.stepup.android
 
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
+import com.stepup.android.ui.components.followAnchor
 import com.stepup.android.ui.components.followFrame
 import com.stepup.android.ui.screens.community.stories.rangeSpan
 import com.stepup.android.ui.screens.profile.historyFocus
@@ -28,6 +29,16 @@ class MapFramingTest {
             assertEquals(mapY(here.lat), (mapY(frame.minOf { it.lat }) + mapY(frame.maxOf { it.lat })) / 2, 1e-12)
             assertEquals(here.lng, (frame.minOf { it.lng } + frame.maxOf { it.lng }) / 2, 1e-9)
         }
+    }
+
+    @Test fun followAnchorStaysInTheVisibleClearPart() {
+        // 위 14% · 아래 28% 가 바닥색에 녹아드는 러닝 지도
+        fun anchor(top: Float, bottom: Float) = followAnchor(top, bottom, 0.14f, 0.72f)
+        assertEquals(0.45f, anchor(0f, 1f), 0f) // 다 보이면 또렷한 띠의 가운데
+        assertEquals(0.35f, anchor(0f, 0.54f), 0f) // 390×844dp — 아래 절반이 버튼 뒤로 잘림(QA 캡처)
+        assertEquals(0.25f, anchor(0f, 0.33f), 0f) // 360×780dp — 3분의 1만 보임
+        assertEquals(0.65f, anchor(0.6f, 1f), 0f) // 아래로 넘겨 위가 잘림
+        assertEquals(0.2f, anchor(0f, 0f), 0f) // 화면 밖
     }
 
     @Test fun storyRangeSpansTheWidthOnly() {

@@ -39,10 +39,10 @@ class RouteMapFitTest {
     private val runW = 1080
     private val runH = 735
 
-    private fun assertCentered(plan: TilePlan, point: GeoPoint) {
+    private fun assertCentered(plan: TilePlan, point: GeoPoint, anchorY: Float = 0.5f) {
         val at = plan.toScreen(point)
         assertEquals(runW / 2f, at.x, 2f)
-        assertEquals(runH / 2f, at.y, 2f)
+        assertEquals(runH * anchorY, at.y, 2f)
     }
 
     @Test fun onePointOpensClose() {
@@ -72,6 +72,11 @@ class RouteMapFitTest {
         val apart = TilePlan.of(followFrame(here, listOf(far)), runW, runH, density = 2.625f, zooms = MapTiles.FOLLOW_ZOOMS)
         assertEquals(MapTiles.FOLLOW_ZOOMS.first, apart.zoom)
         assertCentered(apart, here)
+        // 지도 아래가 잘려 보이면 지금 자리를 보이는 쪽(위에서 35%)에 — 곁의 사람도 그 높이에서 들어오게 맞춘다
+        val raised = TilePlan.of(followFrame(here, listOf(near)), runW, runH, density = 2.625f, zooms = MapTiles.FOLLOW_ZOOMS, anchorY = 0.35f)
+        assertCentered(raised, here, anchorY = 0.35f)
+        val seen = raised.toScreen(near)
+        assertTrue("friend on screen: $seen", seen.x in 0f..runW.toFloat() && seen.y in 0f..runH.toFloat())
     }
 
     @Test fun mapWithinTheBudgetKeepsItsScale() {
