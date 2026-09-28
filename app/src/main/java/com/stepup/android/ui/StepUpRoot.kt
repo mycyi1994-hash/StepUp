@@ -740,6 +740,15 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     // 올린 뒤에는 목록으로 — 고친 글이면 그 글의 상세로 돌아간다
                     onDone = { navController.popBackStack() },
+                    // 쓰던 글은 저장된 뒤다. 돌아오면(뒤로) 글쓰기가 그대로 있고, 새로 열면 "작성하던 글이 있어요"로 이어 쓴다
+                    onStartRun = {
+                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            navController.navigate(Routes.RUN_NOW)
+                        } else {
+                            navController.navigate(Routes.RUN_MENU)
+                        }
+                    },
+                    onOpenRecords = { navController.navigate(Routes.RECORDS) },
                 )
             }
             composable(Routes.STORY_MAP) { entry ->

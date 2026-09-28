@@ -279,6 +279,7 @@ class UserPrefs(
 
     private fun storyDraftKey(owner: String) = stringPreferencesKey("story_draft:$owner")
     private fun storyHiddenKey(owner: String) = stringPreferencesKey("story_hidden:$owner")
+    private fun storyRecentKey(owner: String) = stringPreferencesKey("story_recent:$owner")
     private val storyRegionKey = stringPreferencesKey("story_region")
 
     fun storyDraft(owner: String): Flow<com.stepup.android.domain.StoryDraft?> =
@@ -286,7 +287,7 @@ class UserPrefs(
 
     suspend fun setStoryDraft(owner: String, draft: com.stepup.android.domain.StoryDraft?) {
         store.edit {
-            if (draft == null || draft.text.isBlank() && draft.place == null) it.remove(storyDraftKey(owner))
+            if (draft == null || draft.text.isBlank() && draft.place == null && draft.run == null) it.remove(storyDraftKey(owner))
             else it[storyDraftKey(owner)] = storyJson.encodeToString(StoryDraftJson.serializer(), StoryDraftJson.of(draft))
         }
     }
@@ -305,6 +306,20 @@ class UserPrefs(
         }
     }
 
+    /** 글에 붙였던 공개 장소 — 최근 것부터(러닝 이야기 글쓰기의 "최근 장소") */
+    fun storyRecentPlaces(owner: String): Flow<List<com.stepup.android.domain.StoryPlace>> =
+        store.data.map { prefs -> prefs[storyRecentKey(owner)]?.let(::decodeStoryPlaces).orEmpty() }
+
+    suspend fun addStoryRecentPlace(owner: String, place: com.stepup.android.domain.StoryPlace, keep: Int) {
+        store.edit {
+            val now = it[storyRecentKey(owner)]?.let(::decodeStoryPlaces).orEmpty()
+            val next = (listOf(place) + now.filterNot { saved -> saved.key == place.key }).take(keep)
+            it[storyRecentKey(owner)] = storyJson.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(StoryPlaceJson.serializer()), next.map(StoryPlaceJson::of),
+            )
+        }
+    }
+
     /** 직접 고른 지역 — null 이면 내 위치로 본다 */
     val storyRegion: Flow<com.stepup.android.domain.StoryPlace?> =
         store.data.map { prefs -> prefs[storyRegionKey]?.let(::decodeStoryPlace) }
@@ -316,11 +331,14 @@ class UserPrefs(
         }
     }
 
-    /** 계정을 지웠을 때 — 이 폰에 남은 쓰다 만 글 · 숨긴 글을 모두 지운다 */
+    /** 계정을 지웠을 때 — 이 폰에 남은 쓰다 만 글 · 숨긴 글 · 최근 장소를 모두 지운다 */
     suspend fun clearStoryData() {
         store.edit { prefs ->
             prefs.asMap().keys
-                .filter { it.name.startsWith("story_draft:") || it.name.startsWith("story_hidden:") }
+                .filter {
+                    it.name.startsWith("story_draft:") || it.name.startsWith("story_hidden:") ||
+                        it.name.startsWith("story_recent:")
+                }
                 .forEach { key -> prefs.remove(key) }
         }
     }
@@ -330,6 +348,12 @@ class UserPrefs(
 
     private fun decodeStoryPlace(raw: String): com.stepup.android.domain.StoryPlace? =
         runCatching { storyJson.decodeFromString(StoryPlaceJson.serializer(), raw).toDomain() }.getOrNull()
+
+    private fun decodeStoryPlaces(raw: String): List<com.stepup.android.domain.StoryPlace>? =
+        runCatching {
+            storyJson.decodeFromString(kotlinx.serialization.builtins.ListSerializer(StoryPlaceJson.serializer()), raw)
+                .map { it.toDomain() }
+        }.getOrNull()
 
     suspend fun clearHotPosts() {
         store.edit { prefs ->
@@ -1010,11 +1034,71 @@ private data class StoryDraftJson(
     val place: StoryPlaceJson? = null,
     val editingId: Long = 0,
     val savedAt: Long = 0,
+    val run: StoryRunJson? = null,
+    val runKept: Boolean = false,
+    val runChanged: Boolean = false,
+    val clientKey: String = "",
 ) {
-    fun toDomain() = com.stepup.android.domain.StoryDraft(text, place?.toDomain(), editingId, savedAt)
+    fun toDomain() = com.stepup.android.domain.StoryDraft(
+        text = text,
+        place = place?.toDomain(),
+        editingId = editingId,
+        savedAt = savedAt,
+        run = run?.toDomain()?.let { com.stepup.android.domain.StoryAttachment(it, kept = runKept) },
+        runChanged = runChanged,
+        clientKey = clientKey,
+    )
 
     companion object {
-        fun of(draft: com.stepup.android.domain.StoryDraft) =
-            StoryDraftJson(draft.text, draft.place?.let(StoryPlaceJson::of), draft.editingId, draft.savedAt)
+        fun of(draft: com.stepup.android.domain.StoryDraft) = StoryDraftJson(
+            text = draft.text,
+            place = draft.place?.let(StoryPlaceJson::of),
+            editingId = draft.editingId,
+            savedAt = draft.savedAt,
+            run = draft.run?.run?.let(StoryRunJson::of),
+            runKept = draft.run?.kept == true,
+            runChanged = draft.runChanged,
+            clientKey = draft.clientKey,
+        )
+    }
+}
+
+/** 붙인 러닝 — 쓰다 만 글과 함께 둔다(날짜는 끝난 날, 한국 날짜) */
+@kotlinx.serialization.Serializable
+internal data class StoryRunJson(
+    val id: Long,
+    val startedAt: Long,
+    val endedAt: Long,
+    val distanceM: Int,
+    val durationS: Int,
+    val day: String,
+    val route: String = "",
+) {
+    fun toDomain(): com.stepup.android.domain.StoryRun? {
+        val date = runCatching { java.time.LocalDate.parse(day) }.getOrNull() ?: return null
+        return com.stepup.android.domain.StoryRun(
+            id, startedAt, endedAt, distanceM, durationS, date, com.stepup.android.domain.StoryRunRules.decodeRoute(route),
+        )
+    }
+
+    companion object {
+        fun of(run: com.stepup.android.domain.StoryRun) = StoryRunJson(
+            run.id, run.startedAt, run.endedAt, run.distanceMeters, run.durationSec, run.day.toString(),
+            com.stepup.android.domain.StoryRunRules.encodeRoute(run.route),
+        )
+
+        private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+        /** 화면 저장 상태(SavedStateHandle)에 담는 글자 — 비었으면 첨부 없음 */
+        fun encode(attachment: com.stepup.android.domain.StoryAttachment?): String =
+            attachment?.let { json.encodeToString(serializer(), of(it.run)) + if (it.kept) "\nkept" else "" }.orEmpty()
+
+        fun decode(raw: String): com.stepup.android.domain.StoryAttachment? {
+            if (raw.isBlank()) return null
+            val kept = raw.endsWith("\nkept")
+            val body = if (kept) raw.removeSuffix("\nkept") else raw
+            val run = runCatching { json.decodeFromString(serializer(), body) }.getOrNull()?.toDomain() ?: return null
+            return com.stepup.android.domain.StoryAttachment(run, kept)
+        }
     }
 }

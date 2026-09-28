@@ -195,6 +195,8 @@ fun StorySheet(
     title: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 시트 바탕 — 러닝 이야기 글쓰기의 시트는 시안의 색(#111D2E) */
+    container: Color = Carbon,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -202,7 +204,7 @@ fun StorySheet(
         onDismissRequest = onDismiss,
         sheetState = state,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = Carbon,
+        containerColor = container,
         contentColor = Snow,
         modifier = modifier,
     ) {
@@ -385,8 +387,11 @@ fun StoryRow(
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                listOfNotNull(storyAuthor(post), relativeTime(post.createdAt), if (post.mine) stringResource(R.string.story_mine_tag) else null)
-                    .joinToString(" · "),
+                listOfNotNull(
+                    storyAuthor(post), relativeTime(post.createdAt),
+                    post.run?.let { stringResource(R.string.story_row_run, com.stepup.android.domain.StoryComposeRules.km(it.distanceMeters)) },
+                    if (post.mine) stringResource(R.string.story_mine_tag) else null,
+                ).joinToString(" · "),
                 color = Slate, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.weight(1f))

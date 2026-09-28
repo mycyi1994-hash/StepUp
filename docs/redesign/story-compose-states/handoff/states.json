@@ -1,0 +1,139 @@
+{
+  "scope": "Static state specification; example inputs, not live user data.",
+  "attachmentRule": "own completed run, local calendar day offset 0 through 3 inclusive",
+  "examples": [
+    {
+      "screen": "01-never-run",
+      "recordQuery": "success",
+      "allTimeCompletedCount": 0,
+      "activeRun": false,
+      "attachment": "none",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": true,
+      "actions": [
+        "first_run",
+        "select_place",
+        "edit_body",
+        "publish_story"
+      ]
+    },
+    {
+      "screen": "02-only-old-runs",
+      "recordQuery": "success",
+      "allTimeCompletedCount": 6,
+      "eligibleCount": 0,
+      "lastCompletedDate": "2026-09-24",
+      "asOf": "2026-09-28",
+      "attachment": "none",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": true,
+      "actions": [
+        "run_history",
+        "start_run",
+        "publish_story"
+      ]
+    },
+    {
+      "screen": "03-three-days-eligible",
+      "recordQuery": "success",
+      "attachedCompletedDate": "2026-09-25",
+      "asOf": "2026-09-28",
+      "attachment": "eligible_route",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": true,
+      "actions": [
+        "replace_attachment",
+        "remove_attachment",
+        "publish"
+      ]
+    },
+    {
+      "screen": "04-expired-draft",
+      "recordQuery": "success",
+      "attachedCompletedDate": "2026-09-25",
+      "asOf": "2026-09-29",
+      "attachment": "expired_route",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": false,
+      "preserve": [
+        "body",
+        "place",
+        "original_run"
+      ],
+      "actions": [
+        "replace_attachment",
+        "remove_attachment_only"
+      ]
+    },
+    {
+      "screen": "05-run-without-gps",
+      "recordQuery": "success",
+      "attachment": "eligible_summary",
+      "gpsPath": null,
+      "distanceKm": 3.24,
+      "durationSeconds": 1458,
+      "placeSelected": false,
+      "bodyPresent": true,
+      "canPost": false,
+      "actions": [
+        "choose_public_place",
+        "replace_attachment",
+        "remove_attachment"
+      ]
+    },
+    {
+      "screen": "06-record-fetch-error",
+      "recordQuery": "error",
+      "allTimeCompletedCount": null,
+      "attachment": "none",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": true,
+      "actions": [
+        "retry_records",
+        "publish_story"
+      ]
+    },
+    {
+      "screen": "07-location-unavailable",
+      "locationPermission": "denied",
+      "attachment": "eligible_summary",
+      "placeSelected": false,
+      "bodyPresent": true,
+      "canPost": false,
+      "actions": [
+        "search_place",
+        "pick_on_map",
+        "open_location_settings"
+      ]
+    },
+    {
+      "screen": "08-post-failed",
+      "postRequest": "failed",
+      "attachment": "eligible_route",
+      "placeSelected": true,
+      "bodyPresent": true,
+      "canPost": true,
+      "preserve": [
+        "attachedRunId",
+        "place",
+        "body"
+      ],
+      "actions": [
+        "retry_publish"
+      ]
+    }
+  ],
+  "alsoHandle": [
+    "initial_record_loading",
+    "active_run_not_finished",
+    "empty_recent_places",
+    "empty_selected_day_filter"
+  ],
+  "generalPostRule": "place selected AND nonblank body; no unresolved invalid attachment",
+  "existingPostsExpire": false
+}

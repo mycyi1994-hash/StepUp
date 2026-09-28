@@ -43,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
@@ -59,6 +61,7 @@ import com.stepup.android.data.repo.PlaceSearchResult
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.StoryOrigin
 import com.stepup.android.domain.StoryPlace
+import com.stepup.android.domain.StoryPlaceSource
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.storyPlace
 import com.stepup.android.ui.experience.feedbackClickable
@@ -71,6 +74,9 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.VoltText
 import kotlinx.coroutines.delay
+
+/** 기준점 · 핀 · 코스가 모두 없을 때 지도에서 고르기를 여는 자리(서울 시청) — 거리를 재는 데 쓰지 않는다 */
+private val DEFAULT_MAP_CENTER = GeoPoint(37.5663, 126.9779)
 
 /** 장소를 저장 상태에 담는다(화면을 돌려도 고르던 장소가 남게) */
 val StoryPlaceSaver: Saver<StoryPlace?, Any> = Saver(
@@ -97,13 +103,51 @@ fun rememberNearbyPlaces(origin: StoryOrigin?, limit: Int = 8): List<Pair<StoryP
     }
 }
 
-/** 장소 선택 — 이름 검색 · 가까운 장소 · 지도에서 고르기 */
+/**
+ * 장소 선택을 어디서 열었는가 — 글쓰기의 장소 줄(기본) · 내 주변 · 코스 주변 · 최근 장소 · 직접 검색.
+ * 고른 장소는 그 버튼을 고른 모습으로 보인다(장소 줄 · 지도에서 고른 것은 버튼 없이).
+ */
+enum class StoryPickMode(val source: StoryPlaceSource?) {
+    DEFAULT(null),
+    NEARBY(StoryPlaceSource.NEARBY),
+    COURSE(StoryPlaceSource.COURSE),
+    RECENT(StoryPlaceSource.RECENT),
+    SEARCH(StoryPlaceSource.SEARCH),
+}
+
+/**
+ * 붙인 코스 둘레의 장소 — 코스의 처음 · 가운데 · 끝 자리에 붙은 이름(지도 서비스)과, 그 곁(400m)에 글이 올라온
+ * 공개 장소. 찾는 동안은 null.
+ */
+@Composable
+private fun rememberCoursePlaces(course: List<GeoPoint>): List<Pair<StoryPlace, Double?>>? {
+    val posts by ServiceLocator.communityRepository.posts.collectAsState()
+    var named by remember(course) { mutableStateOf<List<StoryPlace>?>(null) }
+    LaunchedEffect(course) {
+        val probes = listOfNotNull(course.firstOrNull(), course.getOrNull(course.size / 2), course.lastOrNull()).distinct()
+        named = probes.mapNotNull { runCatching { ServiceLocator.placeSearch.nameAt(it) }.getOrNull() }
+    }
+    val found = named ?: return null
+    return remember(found, posts) {
+        val near = posts.filter { !it.isFlash && it.crewId.isEmpty() }.mapNotNull { it.storyPlace }
+            .filter { place -> course.any { haversineMeters(it, place.point) <= 400 } }
+        (found + near).distinctBy { it.name }.map { it to null }
+    }
+}
+
+/**
+ * 장소 선택 — 이름 검색 · 가까운 장소(또는 코스 주변 · 최근 장소) · 지도에서 고르기.
+ * [mode] 가 직접 검색이면 검색 칸에 바로 입력할 수 있게 연다.
+ */
 @Composable
 fun StoryPlacePicker(
     origin: StoryOrigin?,
     onBack: () -> Unit,
     onPick: (StoryPlace) -> Unit,
     onPickOnMap: () -> Unit,
+    mode: StoryPickMode = StoryPickMode.DEFAULT,
+    course: List<GeoPoint> = emptyList(),
+    recent: List<StoryPlace> = emptyList(),
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var result by remember { mutableStateOf<PlaceSearchResult?>(null) }
@@ -117,7 +161,15 @@ fun StoryPlacePicker(
         result = ServiceLocator.placeSearch.search(query, origin?.point)
         searching = false
     }
-    val nearby = rememberNearbyPlaces(origin)
+    val around = rememberNearbyPlaces(origin)
+    val coursePlaces = if (mode == StoryPickMode.COURSE) rememberCoursePlaces(course) else emptyList()
+    val nearby = when (mode) {
+        StoryPickMode.COURSE -> coursePlaces.orEmpty()
+        StoryPickMode.RECENT -> recent.map { it to origin?.let { o -> haversineMeters(o.point, it.point) } }
+        else -> around
+    }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(mode) { if (mode == StoryPickMode.SEARCH) runCatching { focus.requestFocus() } }
 
     Column(Modifier.fillMaxSize().imePadding().testTag("story-place-picker")) {
         StoryHeader(stringResource(R.string.story_place_picker_title), onBack)
@@ -127,6 +179,7 @@ fun StoryPlacePicker(
             placeholder = stringResource(R.string.story_place_search_hint),
             modifier = Modifier.padding(horizontal = StoryFormGutter),
             tag = "story-place-search",
+            focusRequester = focus,
         )
         LazyColumn(
             Modifier.fillMaxWidth().weight(1f),
@@ -137,13 +190,28 @@ fun StoryPlacePicker(
             when {
                 query.isBlank() -> {
                     item {
-                        Text(stringResource(R.string.story_place_nearby), color = Slate, fontSize = 12.sp,
-                            modifier = Modifier.padding(bottom = 4.dp))
+                        Text(
+                            stringResource(
+                                when (mode) {
+                                    StoryPickMode.COURSE -> R.string.story_place_course_heading
+                                    StoryPickMode.RECENT -> R.string.story_place_recent_heading
+                                    else -> R.string.story_place_nearby
+                                },
+                            ),
+                            color = Slate, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp),
+                        )
                     }
-                    if (nearby.isEmpty()) {
+                    if (mode == StoryPickMode.COURSE && coursePlaces == null) {
                         item {
-                            Text(stringResource(R.string.story_place_nearby_empty), color = Silver, fontSize = 13.sp,
-                                lineHeight = 20.sp, modifier = Modifier.padding(vertical = 10.dp))
+                            Text(stringResource(R.string.story_place_course_finding), color = Silver, fontSize = 13.sp,
+                                modifier = Modifier.padding(vertical = 10.dp))
+                        }
+                    } else if (nearby.isEmpty()) {
+                        item {
+                            Text(
+                                stringResource(if (mode == StoryPickMode.COURSE) R.string.story_place_course_empty else R.string.story_place_nearby_empty),
+                                color = Silver, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(vertical = 10.dp),
+                            )
                         }
                     }
                     items(nearby, key = { it.first.key }) { (place, meters) ->
@@ -202,6 +270,7 @@ fun StorySearchField(
     placeholder: String,
     modifier: Modifier = Modifier,
     tag: String = "story-search",
+    focusRequester: FocusRequester? = null,
 ) {
     val shape = RoundedCornerShape(14.dp)
     Row(
@@ -219,7 +288,8 @@ fun StorySearchField(
                 singleLine = true,
                 textStyle = TextStyle(color = Snow, fontSize = 15.sp),
                 cursorBrush = SolidColor(VoltText),
-                modifier = Modifier.fillMaxWidth().testTag(tag),
+                modifier = Modifier.fillMaxWidth().then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                    .testTag(tag),
             )
         }
         if (value.isNotEmpty()) {
@@ -272,6 +342,8 @@ fun StoryPlaceConfirm(
     origin: StoryOrigin?,
     onBack: () -> Unit,
     onChoose: (StoryPlace) -> Unit,
+    /** 기준점이 없을 때(위치 없음 · 지역 안 고름) 지도를 맞출 자리 — 붙인 코스 · 최근 장소 */
+    hint: List<GeoPoint> = emptyList(),
 ) {
     var candidate by rememberSaveable(stateSaver = StoryPlaceSaver) { mutableStateOf(initial) }
     var tapped by remember { mutableStateOf<GeoPoint?>(null) }
@@ -302,7 +374,8 @@ fun StoryPlaceConfirm(
             modifier = Modifier.fillMaxSize(),
             selectedKey = chosen?.key,
             interactive = true,
-            extraFocus = if (!pickOnMap) listOfNotNull(initial?.point) else emptyList(),
+            extraFocus = (if (!pickOnMap) listOfNotNull(initial?.point) else emptyList()) +
+                (if (origin == null && pins.isEmpty()) hint.ifEmpty { listOf(DEFAULT_MAP_CENTER) } else emptyList()),
             picked = if (pickOnMap) chosen?.point ?: tapped else null,
             onPin = { pin -> candidate = pin.place; lookupFailed = false },
             onTapMap = if (pickOnMap) { point -> tapped = point } else null,

@@ -298,7 +298,7 @@ class CommunityStoriesTest {
         tapTag("story-menu-edit")
         awaitTag("story-compose")
         awaitTextField("story-compose-text", "비 오는 날 러닝화 추천해 주세요")
-        compose.onNodeWithTag("story-compose-place").assertTextEquals("여의도공원")
+        compose.onNodeWithTag("story-compose-place", useUnmergedTree = true).assertTextEquals("여의도공원")
         shot("19-edit")
         compose.onNodeWithTag("story-compose-text").performTextReplacement("비 오는 날 러닝화 추천해 주세요\n쿠션 좋은 걸로요.")
         pressBack()
@@ -353,7 +353,7 @@ class CommunityStoriesTest {
         shot("11-place-confirm", settle = 2_000)
         tapTag("story-place-choose")
         awaitTag("story-compose")
-        compose.onNodeWithTag("story-compose-place").assertTextEquals("여의도한강공원")
+        compose.onNodeWithTag("story-compose-place", useUnmergedTree = true).assertTextEquals("여의도한강공원")
         // 장소를 고르러 다녀와도 본문은 그대로다
         awaitTextField("story-compose-text", "한강에서 저녁 러닝 같이 하실 분\n7시에 여의나루역 2번 출구 근처에서 천천히 5km 뛰어요.")
 
@@ -574,6 +574,8 @@ class CommunityStoriesTest {
                         HttpResponse(204, "")
                     }
                     "content_report" -> HttpResponse(204, "")
+                    // 러닝 이야기의 기록 칸(0046) — 이 묶음은 러닝 기록이 없는 계정으로 쓴다(상황별은 StoryComposeStatesTest)
+                    "story_runs" -> HttpResponse(200, """{"today":"2026-09-28","total":0,"voided":0,"last_ended_at":null,"runs":[]}""")
                     else -> HttpResponse(404, "")
                 }
             }

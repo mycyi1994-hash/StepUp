@@ -32,12 +32,18 @@ val Post.storyPlace: StoryPlace?
 
 /**
  * 쓰다 만 글 — 본문 · 장소 · 고치던 글 번호(새 글이면 0)를 함께 둔다. 계정마다 따로, 폰에만 남는다.
+ * 붙인 러닝도 함께 둔다 — 다시 열었을 때 기간이 지났으면 본문 · 장소는 그대로 두고 코스만 정리하게 한다.
  */
 data class StoryDraft(
     val text: String,
     val place: StoryPlace?,
     val editingId: Long,
     val savedAt: Long,
+    val run: StoryAttachment? = null,
+    /** 고치는 글에서 러닝을 바꾸거나 뺐다 — 아니면 서버의 첨부를 그대로 둔다 */
+    val runChanged: Boolean = false,
+    /** 글쓰기 요청 키 — 결과를 모른 채 저장했다가 다시 올려도 글이 두 편 생기지 않게 */
+    val clientKey: String = "",
 ) {
     val isEdit: Boolean get() = editingId > 0
 

@@ -329,6 +329,13 @@ object ServiceLocator {
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
             ownerFlow = recordingOwnerFlow(),
+            localRuns = { owner, since ->
+                val dao = database.walkSessionDao()
+                com.stepup.android.domain.StoryLocalRuns(
+                    count = dao.countFor(owner),
+                    pendingRecent = dao.pendingSince(owner, since) > 0,
+                )
+            },
         )
         placeSearch = com.stepup.android.data.repo.PlaceSearch(
             api = com.stepup.android.data.remote.PlaceSearchApi(),

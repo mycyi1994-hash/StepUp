@@ -15,6 +15,7 @@ import com.stepup.android.domain.CommentThread
 import com.stepup.android.domain.FlashMember
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
+import com.stepup.android.domain.storyPlace
 import com.stepup.android.domain.toThreads
 import com.stepup.android.core.Analytics
 import java.time.DayOfWeek
@@ -114,6 +115,12 @@ class CommunityRepository(
     /** 지금 계정의 기록 주인(account:… / guest / legacy) — 쓰다 만 글 · 숨긴 글을 계정마다 나눈다 */
     private val owner: suspend () -> String = { "" },
     private val ownerFlow: Flow<String> = kotlinx.coroutines.flow.flowOf(""),
+    /**
+     * 이 폰의 러닝(기록 주인, 기간 첫날 시작 시각) — 러닝 이야기의 기록 칸이 "처음 뛰는 사람"이라 단정하지 않게,
+     * 서버 확인을 기다리는 최근 러닝을 알아채게 쓴다
+     */
+    private val localRuns: suspend (String, Long) -> com.stepup.android.domain.StoryLocalRuns =
+        { _, _ -> com.stepup.android.domain.StoryLocalRuns() },
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -478,15 +485,26 @@ class CommunityRepository(
     /**
      * 동네 이야기 쓰기. 서버가 받아 준 뒤에만 목록에 넣는다. 목록을 다시 받지 못해도 방금 쓴 글은
      * 서버가 준 번호로 목록 맨 위에 한 번만 보인다(다시 받으면 서버 줄로 바뀐다).
+     *
+     * @param run 붙일 러닝 — 서버가 내 것 · 3일 안인지 다시 본다. 기간이 지났으면 "run_expired",
+     *   붙일 수 없는 기록이면 "run_invalid" 로 실패한다(본문 · 장소는 화면에 그대로)
+     * @param clientKey 글쓰기마다 만든 요청 키 — 결과를 모른 채 다시 올려도 두 편이 되지 않는다
      */
-    suspend fun writeStory(text: String, place: com.stepup.android.domain.StoryPlace): BoardResult {
+    suspend fun writeStory(
+        text: String,
+        place: com.stepup.android.domain.StoryPlace,
+        run: com.stepup.android.domain.StoryRun? = null,
+        clientKey: String? = null,
+    ): BoardResult {
         val clean = com.stepup.android.domain.StoryText.normalize(text)
         if (!com.stepup.android.domain.StoryText.canPost(clean)) return BoardResult.Failed("")
         val (title, body) = com.stepup.android.domain.StoryText.split(clean)
-        return when (val result = api.createStory(title, body, place.name, place.address, place.lat, place.lng)) {
+        val runId = run?.id?.takeIf { it > 0 }
+        return when (val result = api.createStory(title, body, place.name, place.address, place.lat, place.lng, runId, clientKey)) {
             is ServerResult.Ok -> {
                 Analytics.postWritten("STORY")
                 val id = result.value
+                rememberStoryPlace(place)
                 if (refresh() != BoardSyncState.Ready && _posts.value.none { it.id == id }) {
                     _posts.value = listOf(
                         Post(
@@ -494,7 +512,7 @@ class CommunityRepository(
                             body = body, createdAt = System.currentTimeMillis(), likes = 0, liked = false,
                             commentCount = 0, mine = true, place = place.name, distanceKm = 0.0, meetAt = 0L,
                             capacity = 0, joinedCount = 0, joined = false, lat = place.lat, lng = place.lng,
-                            placeAddress = place.address,
+                            placeAddress = place.address, run = run?.takeIf { runId != null }?.copy(id = 0),
                         ),
                     ) + _posts.value
                 }
@@ -505,17 +523,34 @@ class CommunityRepository(
         }
     }
 
-    /** 내 동네 이야기 고치기 — 같은 글 번호 · 댓글 · 좋아요 그대로 */
-    suspend fun editStory(id: Long, text: String, place: com.stepup.android.domain.StoryPlace): BoardResult {
+    /**
+     * 내 동네 이야기 고치기 — 같은 글 번호 · 댓글 · 좋아요 그대로.
+     * [runChange] 가 false 면 붙어 있던 러닝을 그대로 둔다(기간이 지났어도). true 면 [run] 으로 바꾸거나 null 이면 뺀다.
+     */
+    suspend fun editStory(
+        id: Long,
+        text: String,
+        place: com.stepup.android.domain.StoryPlace,
+        runChange: Boolean = false,
+        run: com.stepup.android.domain.StoryRun? = null,
+    ): BoardResult {
         val clean = com.stepup.android.domain.StoryText.normalize(text)
         if (!com.stepup.android.domain.StoryText.canPost(clean)) return BoardResult.Failed("")
         val (title, body) = com.stepup.android.domain.StoryText.split(clean)
-        return when (val result = api.updateStory(id, title, body, place.name, place.address, place.lat, place.lng)) {
+        val runId = run?.id?.takeIf { it > 0 }
+        return when (
+            val result = api.updateStory(
+                id, title, body, place.name, place.address, place.lat, place.lng,
+                runChange = runChange && (run == null || runId != null), runId = runId,
+            )
+        ) {
             is ServerResult.Ok -> {
+                rememberStoryPlace(place)
                 updatePost(id) {
                     it.copy(
                         title = title.trim(), body = body, place = place.name, placeAddress = place.address,
                         lat = place.lat, lng = place.lng,
+                        run = if (runChange) run?.copy(id = 0) else it.run,
                     )
                 }
                 _storyNotice.value = StoryNotice.Edited(id)
@@ -523,6 +558,37 @@ class CommunityRepository(
             }
             else -> result.asBoardFailure()
         }
+    }
+
+    /**
+     * 러닝 이야기의 기록 칸 — 서버(story_runs)의 오늘 · 전체 완료 수 · 붙일 수 있는 러닝과, 이 폰의 러닝.
+     * 서버에 닿지 못하면 [StoryRecords.Failed] — 기록 없음과 섞지 않는다.
+     */
+    suspend fun storyRecords(): com.stepup.android.domain.StoryRecords {
+        val options = (api.storyRuns() as? ServerResult.Ok)?.value?.toDomain()
+            ?: return com.stepup.android.domain.StoryRecords.Failed
+        val local = runCatching {
+            localRuns(owner(), com.stepup.android.domain.StoryRunRules.windowStartMillis(options.today))
+        }.getOrDefault(com.stepup.android.domain.StoryLocalRuns())
+        return com.stepup.android.domain.StoryRecords.Ready(options, local)
+    }
+
+    /**
+     * 최근 장소 — 이 계정으로 글에 붙였던 공개 장소(이 폰에 남긴 것 + 목록의 내 글), 최근 것부터 다섯.
+     * 없으면 빈 목록(글쓰기의 "최근 장소" 버튼을 빼고 빈 목록을 먼저 열지 않는다).
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val recentStoryPlaces: Flow<List<com.stepup.android.domain.StoryPlace>> =
+        combine(ownerFlow.flatMapLatest { prefs.storyRecentPlaces(it) }, posts) {
+                saved: List<com.stepup.android.domain.StoryPlace>, list: List<Post> ->
+            val mine = list.filter { it.mine && !it.isFlash && it.crewId.isEmpty() }
+                .sortedByDescending { it.createdAt }
+                .mapNotNull { it.storyPlace }
+            (saved + mine).distinctBy { it.key }.take(RECENT_PLACES)
+        }
+
+    private suspend fun rememberStoryPlace(place: com.stepup.android.domain.StoryPlace) {
+        runCatching { prefs.addStoryRecentPlace(owner(), place, RECENT_PLACES) }
     }
 
     private val likeInFlight = mutableSetOf<Long>()
@@ -607,6 +673,9 @@ class CommunityRepository(
         const val HOT_LIKE_POINTS = 5
         const val HOT_COMMENT_POINTS = 10
 
+        /** 동네 이야기 글쓰기의 최근 장소 — 보일 수 */
+        const val RECENT_PLACES = 5
+
         /** 갱신 시각 — 한국 시간 월요일 09:00 */
         private val ROTATION_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
         private val ROTATION_DAY: DayOfWeek = DayOfWeek.MONDAY
@@ -659,7 +728,48 @@ fun PostRow.toDomain(): Post = Post(
     lat = lat,
     lng = lng,
     placeAddress = placeAddress,
+    run = storyRun(),
 )
+
+/** 글에 붙인 러닝(0046). 거리 · 시간 · 끝난 시각이 모두 있어야 붙은 것으로 본다 */
+private fun PostRow.storyRun(): com.stepup.android.domain.StoryRun? {
+    val distance = runDistanceM ?: return null
+    val duration = runDurationS ?: return null
+    val ended = runEndedAt.isoToMillis().takeIf { it > 0 } ?: return null
+    return com.stepup.android.domain.StoryRun(
+        id = 0,
+        startedAt = runStartedAt.isoToMillis(),
+        endedAt = ended,
+        distanceMeters = distance,
+        durationSec = duration,
+        day = com.stepup.android.domain.StoryRunRules.dayOf(ended),
+        route = com.stepup.android.domain.StoryRunRules.decodeRoute(runRoute),
+    )
+}
+
+/** 서버의 기록 칸 → 도메인. 날짜를 못 읽는 줄은 뺀다(지어내지 않는다) */
+internal fun com.stepup.android.data.remote.StoryRunsRow.toDomain(): com.stepup.android.domain.StoryRunOptions? {
+    val todayDate = runCatching { java.time.LocalDate.parse(today) }.getOrNull() ?: return null
+    return com.stepup.android.domain.StoryRunOptions(
+        today = todayDate,
+        total = total,
+        voided = voided,
+        lastEndedAt = lastEndedAt.isoToMillis().takeIf { it > 0 },
+        runs = runs.mapNotNull { row ->
+            val day = runCatching { java.time.LocalDate.parse(row.day) }.getOrNull() ?: return@mapNotNull null
+            val ended = row.endedAt.isoToMillis().takeIf { it > 0 } ?: return@mapNotNull null
+            com.stepup.android.domain.StoryRun(
+                id = row.id,
+                startedAt = row.startedAt.isoToMillis(),
+                endedAt = ended,
+                distanceMeters = row.distanceM,
+                durationSec = row.durationS,
+                day = day,
+                route = com.stepup.android.domain.StoryRunRules.decodeRoute(row.route),
+            )
+        },
+    )
+}
 
 /** 서버 줄 → 도메인 모델 */
 fun CommentRow.toDomain(): Comment = Comment(

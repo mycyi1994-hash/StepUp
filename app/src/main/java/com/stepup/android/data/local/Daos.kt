@@ -164,6 +164,17 @@ interface WalkSessionDao {
     @Query("SELECT MIN(startedAt) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     fun observeFirstRecordAt(owner: String): Flow<Long?>
 
+    /** 러닝 이야기 — 지금 계정(+ 옛 기록)의 러닝 수. 서버가 0이어도 폰에 있으면 "처음"이라 하지 않는다 */
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
+    suspend fun countFor(owner: String): Int
+
+    /** 러닝 이야기 — 서버 확인을 기다리는(아직 올리지 못한) 지금 계정의 러닝 중 [since] 뒤에 끝난 것 */
+    @Query(
+        "SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') " +
+            "AND steps > 0 AND endedAt >= :since",
+    )
+    suspend fun pendingSince(owner: String, since: Long): Int
+
     /** 목록 썸네일용 경로 — 한 줄씩 필요할 때만 읽는다 */
     @Query("SELECT track FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy')")
     suspend fun trackOf(owner: String, id: Long): String?
