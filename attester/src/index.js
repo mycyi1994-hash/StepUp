@@ -170,13 +170,17 @@ export default {
       console.log('contracts not configured — skipping')
       return
     }
-    // 체인 기록 보내기는 따로(2분마다)
+    // 체인 기록 보내기는 따로(2분마다). 짝수 분에는 1분 작업도 같이 뜬다 — 둘이 한꺼번에 공개 RPC 를 두드리면
+    // 워커들이 함께 쓰는 나가는 주소의 수 제한("over rate limit")에 걸리므로 조금 쉬었다가 시작한다.
     if (event?.cron === JOBS_CRON) {
-      ctx.waitUntil(
-        runJobs(env, deps)
-          .then((out) => console.log(JSON.stringify({ jobs: out })))
-          .catch((e) => console.error('scheduled jobs error', e?.message)),
-      )
+      const delay = Math.max(Number(env.JOBS_START_DELAY_SEC ?? 30), 0) * 1000
+      const run = new Promise((resolve) => setTimeout(resolve, delay))
+        .then(() => runJobs(env, deps))
+        .then((out) => console.log(JSON.stringify({ jobs: out })))
+        .catch((e) => console.error('scheduled jobs error', e?.message))
+      ctx.waitUntil(run)
+      // 쉬는 동안 실행이 끝난 것으로 치지 않게 핸들러도 기다린다
+      await run
       return
     }
     // 세 일을 따로 돌린다 — 앞의 일이 실패해도 대조(키가 샜는지 보는 일)는 매번 한다

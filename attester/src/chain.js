@@ -127,9 +127,35 @@ export function chainOf(env) {
   })
 }
 
+/**
+ * RPC 가 "요청이 많다"(HTTP 429 · "over rate limit")고 하면 잠깐 쉬었다가 다시 보낸다.
+ * 워커는 다른 워커들과 같은 주소로 나가 공개 RPC 의 수 제한을 함께 쓴다 — 매분 0초 근처에 몰린다.
+ * viem 이 스스로 다시 보내는 오류 코드에 이 RPC 의 수 제한 응답은 들어 있지 않다.
+ */
+export function rpcFetch(fetchImpl = (...a) => fetch(...a), { retries = 2, delayMs = 1500, sleep } = {}) {
+  const wait = sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))
+  return async (input, init) => {
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetchImpl(input, init)
+      if (attempt >= retries || !(await rateLimited(res))) return res
+      await wait(delayMs * 2 ** attempt + Math.floor(Math.random() * 500))
+    }
+  }
+}
+
+async function rateLimited(res) {
+  if (res.status === 429) return true
+  if (!res.ok) return false
+  // 수 제한 응답은 짧다 — 긴 응답(로그 목록 등)은 읽지 않는다
+  const length = Number(res.headers.get('content-length'))
+  if (Number.isFinite(length) && length > 1024) return false
+  const text = await res.clone().text()
+  return text.length <= 1024 && /rate limit|too many requests/i.test(text)
+}
+
 export function clients(env) {
   const chain = chainOf(env)
-  const transport = http(env.RPC_URL)
+  const transport = http(env.RPC_URL, { fetchFn: rpcFetch() })
   const publicClient = createPublicClient({ chain, transport })
   const wallet = (key) => createWalletClient({ chain, transport, account: privateKeyToAccount(key) })
   return {

@@ -29,9 +29,17 @@
   서버가 받지 않은 확정(토큰 번호 어긋남)은 멈춤 신호다.
 - **몫**: 1분 작업과 따로 도는 실행이라 요청 수(무료 50) · CPU 를 나눠 쓰지 않는다. 한 번에 `CHAIN_JOBS_PER_RUN`
   (기본 3)건, 릴레이어 잔액이 `JOBS_MIN_RELAYER_WEI`(0.003 ETH) 아래면 보내지 않는다 — 꺼내기 가스비 몫.
+- **RPC 수 제한**: 워커는 다른 워커들과 같은 주소로 나가 공개 RPC 의 수 제한을 함께 쓴다. 짝수 분에 1분 작업과
+  겹치지 않게 2분 작업은 `JOBS_START_DELAY_SEC`(30초) 쉬었다 시작하고, RPC 가 "over rate limit" · 429 를 주면
+  잠깐 쉬었다 두 번까지 다시 보낸다(`rpcFetch`).
 
 로그인은 사용자가 보낸 Supabase 토큰을 Supabase 에 물어 확인한다. 워커의 DB 권한은
 `attester_*` 함수뿐이고(전용 계정 또는 `stepup_attester` 역할), service_role 은 쓰지 않는다.
+워커 자신의 로그인(전용 계정)은 한 번에 하나만 하고, 실패하면 1분(수 제한이면 5분) 동안 다시 하지 않는다 —
+Supabase 로그인 요청 수 제한(5분에 30번)을 실패한 재시도들이 계속 채우지 않게. 실패하면 로그에
+`attester login failed <상태> <오류 코드>` 가 남는다(`invalid_credentials` 면 `ATTESTER_PASSWORD` 를 다시 넣는다).
+
+실행 기록은 Actions → **Attester logs** → Run workflow 로 몇 분 받아 볼 수 있다(`.github/workflows/attester-logs.yml`).
 
 ## 키 (전부 Secret)
 

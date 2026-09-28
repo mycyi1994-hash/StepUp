@@ -1,0 +1,54 @@
+# 어테스터 워커 실행 기록 보기(손으로 돌린다).
+#
+# 배포된 워커의 1분 · 2분 작업과 요청이 무엇을 했는지 몇 분 동안 받아 요약한다 — 로그인 실패 · RPC 수 제한 ·
+# 체인 기록 보내기 결과 같은 것. 비밀은 찍지 않는다(워커가 남긴 로그 문구만 나온다).
+#   Actions → Attester logs → Run workflow (seconds: 받는 시간)
+# 필요한 것: deploy-attester.yml 과 같은 CLOUDFLARE_API_TOKEN.
+name: Attester logs
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: "몇 초 동안 받을까 (60~900)"
+        required: false
+        default: "300"
+
+permissions:
+  contents: read
+
+env:
+  WORKER_SUBDOMAIN: gana003
+
+jobs:
+  tail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: attester
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: attester/package-lock.json
+      - run: npm ci
+      - name: 실행 기록 받기
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SECONDS_TO_TAIL: ${{ github.event.inputs.seconds || '300' }}
+        run: |
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::warning::CLOUDFLARE_API_TOKEN 이 없습니다"; exit 0; }
+          api() { curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4$1"; }
+          acct=""
+          for a in $(api /accounts | jq -r '.result[].id'); do
+            sub=$(api "/accounts/$a/workers/subdomain" | jq -r '.result.subdomain // ""' || true)
+            [ "$sub" = "$WORKER_SUBDOMAIN" ] && acct="$a"
+          done
+          [ -n "$acct" ] || { echo "::error::$WORKER_SUBDOMAIN.workers.dev 계정을 찾지 못했습니다"; exit 1; }
+          secs=$(( SECONDS_TO_TAIL < 60 ? 60 : (SECONDS_TO_TAIL > 900 ? 900 : SECONDS_TO_TAIL) ))
+          CLOUDFLARE_ACCOUNT_ID="$acct" timeout "$secs" npx wrangler tail stepup-attester --format json > tail.jsonl || true
+          echo "받은 줄: $(wc -l < tail.jsonl)"
+          jq -c 'select(type=="object") | {t: (.eventTimestamp/1000|floor|todate), cron: .event.cron, path: .event.request.url, outcome, logs: [.logs[]?.message], ex: [.exceptions[]? | {name, message}]}' tail.jsonl || true

@@ -307,6 +307,74 @@ test('서버 호출: 로그인 토큰이 만료됐으면 한 번 새로 받고, 
   await assert.rejects(rpc(env, 'attester_chain_event', {}, broken), (e) => e.status === 502)
 })
 
+test('어테스터 로그인: 한꺼번에 불러도 한 번만, 실패하면 잠시 다시 하지 않는다', async () => {
+  const { rpc, resetAttesterLogin } = await import('../src/supabase.js')
+  resetAttesterLogin()
+  const env = { SUPABASE_URL: 'https://s.test', SUPABASE_ANON_KEY: 'anon', ATTESTER_EMAIL: 'a@b', ATTESTER_PASSWORD: 'p' }
+  let logins = 0
+  const failing = async (url) => {
+    if (url.includes('/auth/v1/token')) {
+      logins += 1
+      await new Promise((r) => setTimeout(r, 5))
+      return new Response('{"code":429,"error_code":"over_request_rate_limit"}', { status: 429 })
+    }
+    return new Response('"ok"')
+  }
+  const results = await Promise.allSettled(
+    ['attester_a', 'attester_b', 'attester_c', 'attester_d'].map((fn) => rpc(env, fn, {}, failing)),
+  )
+  assert.ok(results.every((r) => r.status === 'rejected' && r.reason.status === 502))
+  assert.equal(logins, 1)
+  // 실패 뒤에는 로그인 요청을 보내지 않고 바로 실패한다(제한을 계속 채우지 않게)
+  await assert.rejects(rpc(env, 'attester_e', {}, failing), (e) => e.status === 502)
+  assert.equal(logins, 1)
+  // 로그인이 되면 여러 호출이 토큰 하나를 같이 쓴다
+  resetAttesterLogin()
+  const ok = async (url) => {
+    if (url.includes('/auth/v1/token')) {
+      logins += 1
+      await new Promise((r) => setTimeout(r, 5))
+      return new Response(JSON.stringify({ access_token: 't', expires_in: 3600 }))
+    }
+    return new Response('"ok"')
+  }
+  const values = await Promise.all(['attester_a', 'attester_b', 'attester_c'].map((fn) => rpc(env, fn, {}, ok)))
+  assert.deepEqual(values, ['ok', 'ok', 'ok'])
+  assert.equal(logins, 2)
+  resetAttesterLogin()
+})
+
+test('RPC 수 제한 응답이면 잠깐 쉬었다 다시 보낸다 — 긴 응답 · 다른 오류는 그대로', async () => {
+  const { rpcFetch } = await import('../src/chain.js')
+  const waits = []
+  const answers = [
+    new Response('{"jsonrpc":"2.0","id":1,"error":{"code":-32016,"message":"over rate limit"}}'),
+    new Response('Too Many Requests', { status: 429 }),
+    new Response('{"jsonrpc":"2.0","id":1,"result":"0x1"}'),
+  ]
+  let sent = 0
+  const f = rpcFetch(async () => answers[sent++], { sleep: async (ms) => waits.push(ms) })
+  const res = await f('https://rpc.test', { method: 'POST', body: '{}' })
+  assert.equal(await res.text(), '{"jsonrpc":"2.0","id":1,"result":"0x1"}')
+  assert.equal(sent, 3)
+  assert.equal(waits.length, 2)
+  assert.ok(waits[1] > waits[0])
+  // 두 번 다시 보내도 제한이면 그 응답을 넘긴다(viem 이 오류로 올린다)
+  sent = 0
+  const always = rpcFetch(async () => (sent++, new Response('over rate limit')), { sleep: async () => {} })
+  assert.equal(await (await always('u', {})).text(), 'over rate limit')
+  assert.equal(sent, 3)
+  // 다른 오류 · 긴 정상 응답은 바로 넘긴다
+  sent = 0
+  const other = rpcFetch(async () => (sent++, new Response('{"error":{"code":-32000,"message":"execution reverted"}}')), { sleep: async () => {} })
+  await other('u', {})
+  assert.equal(sent, 1)
+  sent = 0
+  const long = rpcFetch(async () => (sent++, new Response('x'.repeat(5000) + 'rate limit')), { sleep: async () => {} })
+  await long('u', {})
+  assert.equal(sent, 1)
+})
+
 test('작업 실행: 로그인한 사용자별로도 요청 수를 센다', async () => {
   const deps = fakeDeps()
   deps.limitUser = async (_env, id) => id === USER.id
