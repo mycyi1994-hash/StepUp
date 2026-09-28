@@ -36,21 +36,51 @@ export async function getUser(env, request, fetchImpl = fetch) {
  *   없으면 어테스터 전용 계정(ATTESTER_EMAIL / ATTESTER_PASSWORD)으로 로그인한다.
  *   서버는 economy_settings.attester_user_id 에 적힌 그 계정만 통과시킨다.
  * 로그인 토큰은 만료 1분 전까지 이 워커 인스턴스 안에서 다시 쓴다.
+ *
+ * 로그인은 한 번에 하나만 한다 — 인덱서처럼 여러 일을 한꺼번에 시작하면 저마다 로그인해 Supabase 의
+ * 로그인 요청 수 제한(5분에 30번)에 걸린다. 실패하면 잠시(LOGIN_RETRY_MS, 수 제한이면 5배) 다시 로그인하지
+ * 않는다 — 실패할 때마다 모든 일이 다시 로그인하면 그 요청들이 제한을 계속 채워 영영 풀리지 않는다.
  */
+export const LOGIN_RETRY_MS = 60_000
+
 let cached = { token: null, until: 0 }
+let pending = null
+let failedUntil = 0
+
+/** 검사용 — 인스턴스에 남은 로그인 상태를 비운다 */
+export function resetAttesterLogin() {
+  cached = { token: null, until: 0 }
+  pending = null
+  failedUntil = 0
+}
 
 export async function attesterToken(env, fetchImpl = fetch) {
   if (env.ATTESTER_DB_JWT) return env.ATTESTER_DB_JWT
   const now = Date.now()
   if (cached.token && cached.until > now) return cached.token
+  if (failedUntil > now) throw new HttpError(502, '어테스터 계정으로 로그인하지 못했습니다')
+  pending ??= login(env, fetchImpl).finally(() => {
+    pending = null
+  })
+  return pending
+}
+
+async function login(env, fetchImpl) {
   const res = await fetchImpl(`${env.SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { apikey: env.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
     body: JSON.stringify({ email: env.ATTESTER_EMAIL, password: env.ATTESTER_PASSWORD }),
   })
-  if (!res.ok) throw new HttpError(502, '어테스터 계정으로 로그인하지 못했습니다')
+  if (!res.ok) {
+    // 비밀이 아닌 것만 남긴다 — 상태와 오류 코드(invalid_credentials · email_not_confirmed · over_request_rate_limit …)
+    const body = await res.json().catch(() => null)
+    console.error('attester login failed', res.status, body?.error_code ?? body?.error ?? '')
+    failedUntil = Date.now() + (res.status === 429 ? 5 : 1) * LOGIN_RETRY_MS
+    throw new HttpError(502, '어테스터 계정으로 로그인하지 못했습니다')
+  }
   const body = await res.json()
-  cached = { token: body.access_token, until: now + (Number(body.expires_in ?? 3600) - 60) * 1000 }
+  cached = { token: body.access_token, until: Date.now() + (Number(body.expires_in ?? 3600) - 60) * 1000 }
+  failedUntil = 0
   return cached.token
 }
 

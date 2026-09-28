@@ -516,7 +516,7 @@ test('두 번째 cron 은 체인 기록 보내기만 한다 — wrangler.toml �
   const fs = await import('node:fs')
   const toml = fs.readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8')
   assert.ok(toml.includes(`"${JOBS_CRON}"`))
-  const env = { DISTRIBUTOR_ADDRESS: '0x1', SNEAKERS_ADDRESS: '0x2', VAULT_ADDRESS: '0x3' }
+  const env = { DISTRIBUTOR_ADDRESS: '0x1', SNEAKERS_ADDRESS: '0x2', VAULT_ADDRESS: '0x3', JOBS_START_DELAY_SEC: '0' }
   const waits = []
   await worker.scheduled({ cron: JOBS_CRON }, env, { waitUntil: (p) => waits.push(p) })
   assert.equal(waits.length, 1)
