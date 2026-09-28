@@ -1,7 +1,5 @@
 package com.stepup.android.ui.screens.home
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.MaterialTheme
 import com.stepup.android.ui.components.AdaptiveNumber
@@ -97,6 +95,8 @@ fun HomeScreen(
     onNextBackground: () -> Unit = {},
     /** 지금 보이는 풍경이 실제 날씨로 고른 것이면 그 날씨 — 아치 아래에 한 줄로 밝힌다 */
     weatherScene: com.stepup.android.domain.WeatherScene? = null,
+    /** 시안 검사(OnboardingDesignTest)만 쓴다 — 첫 러닝 홈(시안 11)을 그려 본다. null 이면 실제 권한 · 기록으로 판단한다 */
+    firstRunPreview: Boolean? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,9 +108,8 @@ fun HomeScreen(
         mutableStateOf(StepPermissions.hasActivityRecognition(context))
     }
     var permissionDenied by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) {
+    // 누를 때만 묻는다(홈을 보는 것만으로는 묻지 않는다). 러닝 권한 안내와 같은 이력을 남겨 다음 안내가 맞게 고른다
+    val requestActivity = com.stepup.android.ui.screens.walk.rememberActivityPermissionRequest {
         hasPermission = StepPermissions.hasActivityRecognition(context)
         permissionDenied = !hasPermission
         if (hasPermission) viewModel.onPermissionGranted()
@@ -136,6 +135,11 @@ fun HomeScreen(
     val runner = runMode == com.stepup.android.domain.RunMode.RUNNER
     // 오늘 아직 아무것도 안 했으면 0걸음 · 0.0km · +0 SUP 를 따로 늘어놓지 않고 한 줄로 말한다(사용 피드백 3)
     val noActivityYet = state.loaded && state.todaySteps == 0 && (earned ?: 0.0) <= 0.0
+    // 첫 러닝 홈(시작·로그인·첫 사용 v1 시안 11) — 걸음 권한 전이고 이 계정의 기록이 하나도 없을 때만.
+    // 권한은 여기서 묻지 않는다 — 러닝 시작 → 자유 러닝을 고르면 그때 안내한다. 기록이 있는 사람에게 "첫 러닝"이라고 쓰지 않는다
+    val runCount by viewModel.runCount.collectAsStateWithLifecycle()
+    val firstHome = firstRunPreview
+        ?: com.stepup.android.domain.FirstHomeRules.applies(noActivityYet, hasPermission, runCount, state.lifetimeSteps)
     // 러닝 홈 — 지금 할 운동 + 오늘의 상태 + 이번 주 한 줄. 자세한 기록은 "더보기"(사용 피드백 1 · 2 · 4 · 5).
     // 풍경은 화면 전체 바탕(StepUpRoot)이다 — 가운데 아치를 없앴다(2026-09-26 사용자 결정).
     Box(Modifier.fillMaxSize()) {
@@ -157,6 +161,7 @@ fun HomeScreen(
             com.stepup.android.ui.components.S2Headline(
                 when {
                     !state.loaded -> " "
+                    firstHome -> stringResource(R.string.onb_home_first_title)
                     noActivityYet -> stringResource(R.string.home_k1_empty_title)
                     state.goal > 0 && state.todaySteps >= state.goal -> stringResource(R.string.home_s2_done)
                     else -> stringResource(R.string.home_k1_left_title, "%,d".format((state.goal - state.todaySteps).coerceAtLeast(0)))
@@ -164,11 +169,17 @@ fun HomeScreen(
                 Modifier.testTag("home-headline"),
             )
             Box(Modifier.height(18.dp))
-            if (!hasPermission) {
-                PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+            // 첫 러닝 홈에서는 권한 줄을 따로 두지 않는다 — 주 행동은 러닝 시작 하나(권한은 그 안에서, 수동 진입은 상세 기록 안에 그대로)
+            if (!hasPermission && !firstHome) {
+                PermissionStrip(onClick = { requestActivity() })
                 Box(Modifier.height(12.dp))
             }
-            if (noActivityYet) {
+            if (firstHome) {
+                com.stepup.android.ui.components.S2Subtitle(
+                    stringResource(R.string.onb_home_first_body),
+                    Modifier.testTag("home-first-run"),
+                )
+            } else if (noActivityYet) {
                 com.stepup.android.ui.components.S2Subtitle(
                     stringResource(R.string.home_k1_empty_body),
                     Modifier.testTag("home-empty-state"),
@@ -232,7 +243,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (!hasPermission) {
-                    PermissionStrip(onClick = { permissionLauncher.launch(StepPermissions.missingActivity(context)) })
+                    PermissionStrip(onClick = { requestActivity() })
                     if (permissionDenied) {
                         androidx.compose.material3.TextButton(onClick = {
                             com.stepup.android.core.ExternalIntents.openAppSettings(context)

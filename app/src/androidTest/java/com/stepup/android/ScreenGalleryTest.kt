@@ -371,29 +371,21 @@ class ScreenGalleryTest {
             for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_community to "community", R.string.tab_me to "profile")) {
                 try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
             }
-            reset(39)
-            capture("launch-logo-reveal")
             reset(40)
             capture("launch-preparation-error")
+            // 첫 사용 안내는 한 장(시작·로그인·첫 사용 v1 시안 02) — 탭을 옮겨 다니는 투어가 아니다
             reset(38)
-            // The launch delay uses Compose's test clock; wall-clock sleep alone does not advance it.
-            compose.mainClock.advanceTimeBy(500)
-            compose.waitForIdle()
-            compose.onNodeWithText(localized.getString(R.string.guide_next)).assertIsDisplayed()
-            for (index in GuideTour.steps.indices) {
-                try {
-                    compose.onNodeWithTag("guide-step-title")
-                        .assertTextEquals(localized.getString(GuideTour.steps[index].titleRes)).assertIsDisplayed()
-                    compose.mainClock.advanceTimeByFrame()
-                    capture("guide-${index.toString().padStart(2, '0')}")
-                    if (index < GuideTour.steps.lastIndex) tap(R.string.guide_next)
-                } catch (error: Throwable) { failures.add("guide-$index: ${error.message}"); break }
-            }
-            if (GuideTour.stepIndex == GuideTour.steps.lastIndex) {
-                tap(R.string.guide_start)
+            try {
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithText(localized.getString(R.string.onb_guide_title)).assertIsDisplayed()
+                capture("guide-first-sheet")
+                compose.onNodeWithTag("first-guide-browse").performClick()
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isEmpty() }
                 compose.onNodeWithTag("home-start-run").assertIsDisplayed()
-                org.junit.Assert.assertFalse("Guide completion returns to usable home", GuideTour.active)
+                org.junit.Assert.assertFalse("The spotlight tour no longer starts", GuideTour.active)
                 capture("guide-finished-home")
+            } catch (error: Throwable) {
+                failures.add("guide: ${error.message}")
             }
         }
         File(directory, "capture-notes.txt").writeText(failures.joinToString("\n"))
@@ -543,7 +535,6 @@ class ScreenGalleryTest {
             36 -> PartyLobbyScreen(flashPostId = 101L, onBack = {}, onRunStarted = {})
             37 -> MainScaffold()
             38 -> MainScaffold(startTour = true)
-            39 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Reveal)
             40 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Error)
         }
     }

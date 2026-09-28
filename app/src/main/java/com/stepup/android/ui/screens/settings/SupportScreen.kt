@@ -68,7 +68,7 @@ private val faqEntries = listOf(
 )
 
 /**
- * 도움말 · 문의(설정 v1 21~23 · 28). 질문은 하나씩 펼친다. 앱 사용 안내는 기존 가이드(홈 → 스포트라이트 투어)를 연다.
+ * 도움말 · 문의(설정 v1 21~23 · 28). 질문은 하나씩 펼친다. 앱 사용 안내는 한 장짜리 다시 보기(시작·로그인·첫 사용 v1 시안 20)를 연다.
  * 문의는 메일 앱 열기와 주소 복사뿐이다 — 자동으로 보내지 않고, 위치 · 계정 정보 · 기록을 붙이지 않는다.
  */
 @Composable
@@ -105,7 +105,7 @@ fun SupportContent(
         }
         item {
             SettingsNavRow(
-                stringResource(R.string.set_guide), onClick = onOpenGuide, description = stringResource(R.string.set_guide_desc),
+                stringResource(R.string.set_guide), onClick = onOpenGuide, description = stringResource(R.string.onb_guide_row_desc),
                 modifier = Modifier.padding(top = 8.dp).testTag("support-guide"),
             )
         }

@@ -1,47 +1,48 @@
 package com.stepup.android.ui.screens.splash
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.ui.components.PrimaryCta
-import com.stepup.android.ui.components.RunnerScene
+import com.stepup.android.ui.components.OnboardingPrimaryButton
+import com.stepup.android.ui.components.S2Stage
 import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.components.settingsPalette
 import com.stepup.android.ui.theme.BrandLogoRole
-import com.stepup.android.ui.theme.Night
-import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.StepUpDesign
-import com.stepup.android.ui.theme.Volt
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
-internal enum class LaunchStage { Loading, Reveal, Error }
+/** 앱 준비 중(시안 03) · 준비하지 못함(시안 04) */
+internal enum class LaunchStage { Loading, Error }
 
-/** Real readiness gates the reveal. A failed or timed-out preparation remains retryable. */
+/**
+ * 실제 준비가 끝나야 다음 화면으로 간다. 실패하거나 14초 안에 끝나지 않으면 다시 시도할 수 있게 둔다.
+ *
+ * 준비가 끝나면 곧바로 넘긴다 — 장식용 최소 대기 시간을 두지 않는다(들어가는 불투명도 전환은 StepUpRoot 가 한다).
+ */
 @Composable
 fun SplashScreen(onReady: () -> Unit) {
     var stage by remember { mutableStateOf(LaunchStage.Loading) }
     var attempt by remember { mutableIntStateOf(0) }
     val ready by rememberUpdatedState(onReady)
-    val motion = LocalMotion.current
     LaunchedEffect(attempt) {
         stage = LaunchStage.Loading
         val prepared = try {
@@ -64,29 +65,22 @@ fun SplashScreen(onReady: () -> Unit) {
         } catch (_: Exception) {
             false
         }
-        if (prepared) {
-            stage = LaunchStage.Reveal
-            delay(motion.duration(650).toLong())
-            ready()
-        } else {
-            stage = LaunchStage.Error
-        }
+        if (prepared) ready() else stage = LaunchStage.Error
     }
     LaunchScene(stage, onRetry = { attempt++ })
 }
 
-/** Also used by deterministic gallery fixtures; production state comes only from initialization. */
+/**
+ * 시작 화면 — 가운데 로고, 아래로 준비 상태 한 줄(03) 또는 준비하지 못함 · 다시 시도(04).
+ * 갤러리 · 시안 검사도 이 화면을 상태만 넣어 그린다. 실제 상태는 위의 초기화에서만 온다.
+ */
 @Composable
 internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
-    val motion = LocalMotion.current
-    val reveal by animateFloatAsState(
-        if (stage == LaunchStage.Reveal) 1f else 0f,
-        tween(motion.duration(480)), label = "launchReveal",
-    )
-    Box(Modifier.fillMaxSize().background(Night).testTag("launch-scene")) {
-        RunnerScene(Modifier.fillMaxSize().graphicsLayer { alpha = reveal * 0.65f })
+    val p = settingsPalette()
+    Box(Modifier.fillMaxSize().testTag("launch-scene")) {
+        S2Stage(Modifier.fillMaxSize())
         Column(
-            Modifier.fillMaxSize().safeDrawingPadding().padding(StepUpDesign.Gutter),
+            Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -96,20 +90,42 @@ internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Wordmark(role = BrandLogoRole.Launch)
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(40.dp))
                     when (stage) {
                         LaunchStage.Loading -> {
-                            CircularProgressIndicator(Modifier.size(28.dp).testTag("launch-loading"), color = Volt, strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                Modifier.size(24.dp).testTag("launch-loading"), color = p.accent, strokeWidth = 2.dp,
+                                trackColor = p.accent.copy(alpha = 0.2f),
+                            )
                             Spacer(Modifier.height(20.dp))
-                            Text(stringResource(R.string.splash_preparing), style = MaterialTheme.typography.bodyLarge, color = Silver, textAlign = TextAlign.Center)
+                            // 실제로 기다리는 동안만 보인다 — 스크린리더에도 준비 중임을 알린다
+                            Text(
+                                stringResource(R.string.splash_preparing), color = p.secondary, fontSize = 15.sp,
+                                textAlign = TextAlign.Center, lineHeight = 1.45.em,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
                         }
-                        LaunchStage.Error -> Text(stringResource(R.string.splash_prepare_failed), style = MaterialTheme.typography.bodyLarge, color = Silver, textAlign = TextAlign.Center)
-                        LaunchStage.Reveal -> Unit
+                        LaunchStage.Error -> {
+                            Text(
+                                stringResource(R.string.onb_launch_failed_title), color = p.text, fontSize = 22.sp,
+                                fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 1.35.em,
+                                modifier = Modifier.testTag("launch-error").semantics { heading(); liveRegion = LiveRegionMode.Polite },
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                stringResource(R.string.onb_launch_failed_body), color = p.secondary, fontSize = 15.sp,
+                                textAlign = TextAlign.Center, lineHeight = 1.45.em,
+                            )
+                        }
                     }
                 }
             }
             if (stage == LaunchStage.Error) {
-                PrimaryCta(text = stringResource(R.string.feed_retry), onClick = onRetry, modifier = Modifier.padding(bottom = 16.dp))
+                // 다시 시도 — 같은 준비 작업을 처음부터 다시 한다(성공으로 치고 넘어가지 않는다)
+                OnboardingPrimaryButton(
+                    stringResource(R.string.feed_retry), onRetry,
+                    Modifier.fillMaxWidth().padding(bottom = 16.dp).testTag("launch-retry"),
+                )
             }
         }
     }

@@ -39,6 +39,13 @@ object StepPermissions {
     fun hasLocation(context: Context): Boolean =
         granted(context, Manifest.permission.ACCESS_FINE_LOCATION) || granted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
 
+    /** 정확한 위치(FINE)까지 허용했는지 — 대략적인 위치만이면 false */
+    fun hasPreciseLocation(context: Context): Boolean = granted(context, Manifest.permission.ACCESS_FINE_LOCATION)
+
+    /** 알림 권한 — Android 13 미만은 실행 중에 묻지 않으므로 늘 true */
+    fun hasNotificationPermission(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || granted(context, Manifest.permission.POST_NOTIFICATIONS)
+
     /** 걸음 센서 사용 권한(ACTIVITY_RECOGNITION)이 허용됐는지. API 29 미만은 권한 불필요. */
     fun hasActivityRecognition(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||

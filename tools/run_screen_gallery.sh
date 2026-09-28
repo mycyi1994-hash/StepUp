@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -97,7 +97,7 @@ run_instrumentation() {
 # Character-free checkpoint: bounded interactions and 14 reference scenes x 4 viewports.
 # The full multilingual gallery remains a separately selectable test, not a default run.
 if [[ "$suite" == "redesign" ]]; then
-  run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndTabs,com.stepup.android.ExperienceUiTest#firstGuideVisitsRunningShoesAndProfile,com.stepup.android.MysteryDesignTest"
+  run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndTabs,com.stepup.android.ExperienceUiTest#firstGuideIsOneSheetAndOpensRunMenu,com.stepup.android.ExperienceUiTest#firstGuideCloseStaysHome,com.stepup.android.MysteryDesignTest"
   mkdir -p screen-gallery/redesign-interaction-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-interaction-results/ || true
   run_instrumentation redesign-reference "com.stepup.android.DesignReferenceTest#referenceViewports"
@@ -116,6 +116,12 @@ if [[ "$suite" == "secondary" ]]; then
   cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-reference-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
   pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
+  # 시작·로그인·첫 사용 v1(2026-09-28) — 시안 01~20 장면(상태를 넣어 그림, 시스템 계정 · 권한 창은 띄우지 않는다) +
+  # 앱 셸 안의 첫 안내 → 러닝 방법, 도움말 → 앱 사용 안내 다시 보기 → 뒤로 · 러닝 홈
+  run_instrumentation onboarding "com.stepup.android.OnboardingDesignTest"
+  mkdir -p screen-gallery/onboarding-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/onboarding-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/onboarding-v1/. screen-gallery/onboarding-v1/ || status=1
 fi
 if [[ "$suite" == "records" ]]; then
   run_instrumentation records-reference "com.stepup.android.DesignReferenceTest#recordViewports"

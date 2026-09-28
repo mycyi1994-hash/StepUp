@@ -306,6 +306,13 @@
       "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48)"
     },
     {
+      "id": "Routes.SETTINGS_GUIDE",
+      "parent": "Profile",
+      "chrome": "Form",
+      "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — 20 guide replay (was: restart the spotlight tour)",
+      "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending"
+    },
+    {
       "id": "Routes.SETTINGS_CONNECTED",
       "parent": "Profile",
       "chrome": "Detail",
@@ -570,7 +577,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 91,
+      "line": 89,
       "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
       "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -610,9 +617,9 @@
     {
       "id": "LoginScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
-      "line": 70,
-      "implementation": "S2 batch B (PR #29): see docs/redesign/s2/STATUS.md",
-      "verification": "121a06c: Experience QA run 36234135671 passed (Android 15); LoginPresentationTest captures 1.0×/1.3×/2.0× legal · busy · error reviewed by Claude; the real Google account picker is not exercised",
+      "line": 91,
+      "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scenes 01 · 05~10 (system account picker kept)",
+      "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; LoginPresentationTest",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -645,6 +652,13 @@
       "line": 132,
       "implementation": "알림·공지 v1(2026-09-28): see docs/redesign/notifications-v1/README.md — 내 알림 · 공지 두 메뉴, 연 알림만 읽음, 종류별 내용 시트 · 초대 단계",
       "verification": "NotificationsDesignTest (Experience QA community suite, screen-gallery/notifications-v1/) + NotificationPersistenceTest · NotificationNavigationTest: Experience QA 147 · 148 passed (PR #48)"
+    },
+    {
+      "id": "GuideReplayScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/onboarding/OnboardingScreens.kt",
+      "line": 91,
+      "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 20",
+      "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending"
     },
     {
       "id": "AchievementsScreen",
@@ -806,9 +820,9 @@
     {
       "id": "SplashScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
-      "line": 40,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "line": 42,
+      "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scenes 03 · 04 (real preparation, no decorative wait)",
+      "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -836,28 +850,28 @@
     {
       "id": "RunStartMenuScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 62,
-      "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
-      "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
+      "line": 75,
+      "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 12 + run permission sheets 13~19",
+      "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; RunStartFlowTest"
     },
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 117,
+      "line": 216,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 160,
+      "line": 259,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 162,
+      "line": 160,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -918,7 +932,7 @@
       "kind": "ModalBottomSheet",
       "owner": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 224,
+      "line": 235,
       "verification": "pending"
     },
     {
@@ -981,56 +995,56 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 786,
+      "line": 757,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 828,
+      "line": 799,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 845,
+      "line": 816,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 861,
+      "line": 832,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 888,
+      "line": 859,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 910,
+      "line": 881,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 933,
+      "line": 904,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1429,
+      "line": 1400,
       "verification": "pending"
     }
   ],

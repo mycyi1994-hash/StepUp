@@ -391,22 +391,40 @@ class ExperienceUiTest {
         compose.runOnIdle { assertEquals(DrawKind.FREE, tab) }
     }
 
-    @Test fun firstGuideVisitsRunningShoesAndProfile() {
+    /**
+     * 시작·로그인·첫 사용 v1 — 첫 안내는 한 장(시안 02). 탭을 옮겨 다니지 않고 러닝 · 신발 · 내 정보를 한 번에 설명한다.
+     * "러닝 시작"은 러닝 방법 고르기로 갈 뿐 러닝을 시작하지 않고, 홈에 돌아와도 안내가 다시 뜨지 않는다.
+     */
+    @Test fun firstGuideIsOneSheetAndOpensRunMenu() {
+        // 멈춘 러닝이 남아 있으면 그것부터 묻고 첫 안내는 미룬다 — 앞 테스트의 저장본을 비운다
+        clearAnyRunCheckpointForTest()
         compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("guide-step-title").fetchSemanticsNodes().isNotEmpty() }
-        val expected = listOf(R.string.tour3_title, R.string.tour_customize_title, R.string.tour11_title)
-        expected.forEachIndexed { index, title ->
-            compose.onNodeWithTag("guide-step-title").assertTextEquals(compose.activity.getString(title))
-            assertEquals(index, GuideTour.stepIndex)
-            // 신발 탭의 주 행동은 "신발 자세히 보기"다(보유 신발 상세 v1 — 신기는 상세 안으로 옮겼다)
-            val target = when (index) { 0 -> "home-start-run"; 1 -> "shoe-detail"; else -> "profile-settings" }
-            compose.waitUntil(5_000) { compose.onAllNodesWithTag(target).fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithText(compose.activity.getString(
-                if (index == expected.lastIndex) R.string.guide_start else R.string.guide_next)).performClick()
-        }
-        compose.waitUntil(5_000) { !GuideTour.active }
-        compose.onNodeWithTag("guide-step-title").assertDoesNotExist()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(compose.activity.getString(R.string.onb_guide_title)).assertIsDisplayed()
+        for (route in listOf("home", "customize", "profile")) compose.onNodeWithTag("guide-row-$route").assertExists()
+        // 안내 줄은 설명이다 — 누를 곳이 아니다
+        compose.onNodeWithTag("guide-row-customize").assertHasNoClickAction()
+        assertFalse(GuideTour.active)
+        compose.onNodeWithTag("first-guide-start").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("run-menu-free", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("first-guide-sheet").assertDoesNotExist()
+        assertFalse("the guide opens the run menu without starting a run", WalkSessionService.state.value.isActive)
+        // 메뉴에서 뒤로 — 러닝 홈. 이미 고른 안내는 다시 뜨지 않는다
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("first-guide-sheet").assertDoesNotExist()
+    }
+
+    /** 첫 안내를 X 로 닫아도 "먼저 둘러보기"와 같다 — 홈에 머물고 다시 열리지 않는다 */
+    @Test fun firstGuideCloseStaysHome() {
+        clearAnyRunCheckpointForTest()
+        compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("onboarding-sheet-close").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+        compose.onNodeWithTag("run-menu").assertDoesNotExist()
     }
 
     private fun capture(name: String) {

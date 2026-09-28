@@ -46,5 +46,8 @@ suspend fun returnToSignIn(context: android.content.Context) {
     if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
         com.stepup.android.service.WalkSessionService.stop(context)
     }
+    // 다시 로그인하러 간다는 이유를 남긴다 — 로그인 화면이 "다시 로그인해 주세요"(시작·로그인·첫 사용 v1 시안 09)로 알리고,
+    // 로그인에 성공하면 지운다
+    ServiceLocator.userPrefs.setSignInAgain(true)
     ServiceLocator.userPrefs.setLoginMethod("")
 }

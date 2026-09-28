@@ -384,7 +384,8 @@ class DesignReferenceTest {
             Scene.PROFILE -> "profile-settings"
             Scene.CHALLENGE -> "challenge-primary-action"
             Scene.LOGIN -> "login-google"
-            Scene.FIRST_GUIDE -> "guide-step-title"
+            // 시작·로그인·첫 사용 v1 — 첫 안내는 한 장짜리 시트(시안 02)
+            Scene.FIRST_GUIDE -> "first-guide-sheet"
             Scene.POST_COMPOSE -> "post-submit"
             Scene.CREW_CREATE -> "crew-create-submit"
             Scene.FLASH_DETAIL -> "detail-primary-action"
@@ -477,7 +478,7 @@ class DesignReferenceTest {
             Scene.COMMUNITY -> MainScaffold(initialTab = Screen.Community)
             Scene.PROFILE -> MainScaffold(initialTab = Screen.Profile)
             Scene.CHALLENGE -> MainScaffold(initialRoute = Routes.EVENTS)
-            Scene.LOGIN -> LoginContent(signingIn = false, error = null, onSignIn = {})
+            Scene.LOGIN -> LoginContent(phase = com.stepup.android.ui.screens.login.LoginPhase.Idle, notice = null, onSignIn = {})
             Scene.FIRST_GUIDE -> MainScaffold(startTour = true)
             Scene.MARKET -> MainScaffold(initialRoute = Routes.RUNNER_MARKET)
             Scene.NEWS -> MainScaffold(initialRoute = Routes.NEWS)

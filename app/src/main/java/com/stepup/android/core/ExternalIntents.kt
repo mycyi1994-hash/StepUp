@@ -115,7 +115,15 @@ object ExternalIntents {
      * 열리면 그 카드를 누른 사용자가 위험해진다.
      */
     fun openUrl(context: Context, url: String) {
-        if (!SafeUrl.looksSafe(url)) return
+        tryOpenUrl(context, url)
+    }
+
+    /**
+     * [openUrl] 과 같고, 여는 것 자체가 실패하면(열 브라우저가 없음 · 안전하지 않은 주소) false.
+     * 브라우저 안에서 페이지가 제대로 열렸는지는 앱이 알 수 없다 — 그 결과는 짐작하지 않는다.
+     */
+    fun tryOpenUrl(context: Context, url: String): Boolean {
+        if (!SafeUrl.looksSafe(url)) return false
         val uri = Uri.parse(SafeUrl.preferHttps(url))
         val tab = CustomTabsIntent.Builder()
             .setShowTitle(true)
@@ -124,11 +132,11 @@ object ExternalIntents {
         tab.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             tab.launchUrl(context, uri)
-            return
+            return true
         } catch (e: Exception) {
             // 커스텀 탭을 받아 줄 브라우저가 없는 기기가 있다.
         }
-        start(context, Intent(Intent.ACTION_VIEW, uri))
+        return start(context, Intent(Intent.ACTION_VIEW, uri))
     }
 
     private fun start(context: Context, intent: Intent): Boolean = try {
