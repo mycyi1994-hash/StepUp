@@ -4,7 +4,7 @@ Cloudflare Pages 가 이 폴더를 그대로 올린다(빌드 없음). main 에 
 
 | 경로 | 내용 |
 |---|---|
-| `/` | 소개 페이지(`index.html`, `styles.css`, `site.js`) — 홍보영상 `#film`을 먼저 보여주고 러닝 `#run` · 크루 `#crew` · 보상 `#reward` · 코스 `#course` · 시작 `#start` 순서로 이어진다. 휠·키보드·스와이프로 넘긴다. 영상은 `assets/video/`의 1080p/720p 파일을 화면 폭에 맞게 선택하며 무음 자동 재생·네이티브 컨트롤·화면 이탈 시 일시정지를 지원한다. 그림은 `assets/img/`, 공유 미리보기는 `assets/og-image.jpg`. 예시 데이터에는 화면 예시 배지를 둔다. 앱 다운로드는 출시 준비 중으로 표시한다. |
+| `/` | 소개 페이지(`index.html`, `styles.css`, `site.js`) — 홍보영상 `#film`을 먼저 보여주고 러닝 `#run` · 크루 `#crew` · 보상 `#reward` · 코스 `#course` · 시작 `#start` 순서로 이어진다. 휠·키보드·스와이프로 넘긴다. 영상은 `assets/video/`의 1080p/720p 파일을 화면 폭에 맞게 선택하며 무음 자동 재생·네이티브 컨트롤·화면 이탈 시 일시정지를 지원한다. 그림은 `assets/img/`, 공유 미리보기는 `assets/og-image.jpg`. 예시 데이터에는 화면 예시 배지를 둔다. 앱 다운로드는 출시 준비 중으로 표시한다. 머리 줄 오른쪽에는 공식 X(`x.com/GiwaStepUp`) · 텔레그램(`t.me/StepUpOfficialTG`) 로고 링크(새 창)가 소리 · 출시 준비 중 왼쪽에 선다 — 폰(≤480px)에서는 머리 줄을 줄여 한 줄로, 340px 이하에서는 누를 수 없는 "출시 준비 중"만 뺀다. |
 | `/c/<크루 id>` | 크루 초대 링크. 앱이 있으면 앱이 바로 열리고, 없으면 `invite.html`에서 앱 열기와 출시 준비 상태를 안내한다(`_redirects`). 다운로드 버튼은 비활성화되어 있다. |
 | `/.well-known/assetlinks.json` | 안드로이드 App Links 확인 파일. 앱 서명의 SHA-256 이 들어 있다 |
 | `/privacy.html`, `/terms.html` | 개인정보처리방침 · 이용약관 |
