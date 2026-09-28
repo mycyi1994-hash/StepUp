@@ -86,10 +86,9 @@ class ShoeCatalogDesignTest {
             compose.waitUntil(10_000) { compose.onAllNodesWithText("${PICKS.size} / ${ShoeCatalog.models.size}").fetchSemanticsNodes().isNotEmpty() }
             shot("05-dex-top")
             val names = PICKS.map { compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(it)!!) }
-            val scroller = { compose.onNode(hasScrollToIndexAction(), useUnmergedTree = true) }
-            scroller().performScrollToNode(hasText(names[1]))
+            dexList().performScrollToNode(hasText(names[1]))
             shot("06-dex-epic")
-            scroller().performScrollToNode(hasText(names[2]))
+            dexList().performScrollToNode(hasText(names[2]))
             shot("07-dex-legendary")
             assertEquals(70, ShoeCatalog.models.size)
         } finally {
@@ -118,6 +117,13 @@ class ShoeCatalogDesignTest {
     // ── 도우미 ─────────────────────────────────────────────────────
 
     private fun list() = compose.onNodeWithTag("shoe-list")
+
+    /** 도감의 세로 목록 — 거르개 줄(가로)도 넘길 수 있어서 가장 높은 것을 고른다 */
+    private fun dexList(): SemanticsNodeInteraction {
+        val all = compose.onAllNodes(hasScrollToIndexAction(), useUnmergedTree = true)
+        val nodes = all.fetchSemanticsNodes()
+        return all[nodes.indices.maxBy { nodes[it].boundsInRoot.height }]
+    }
 
     /** 새 도감 모델 세 켤레를 넣는다 — 레어 · 에픽 · 레전더리(레드라인) */
     private fun seed(): Map<Int, Long> = runBlocking {

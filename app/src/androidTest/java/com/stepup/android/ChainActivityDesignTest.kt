@@ -120,7 +120,9 @@ class ChainActivityDesignTest {
         // 확정된 줄만 익스플로러로 연다 — 대기 · 보내지 않음은 누를 것이 없다
         compose.onNodeWithTag("ca-row-6").assertHasClickAction()
         compose.onNodeWithTag("ca-row-5").assertHasNoClickAction()
+        compose.onNodeWithTag("ca-list").performScrollToNode(hasTestTag("ca-row-1"))
         compose.onNodeWithTag("ca-row-1").assertHasNoClickAction()
+        compose.onNodeWithTag("ca-list").performScrollToIndex(0)
         show("s02-guide", "ca-guide-sheet", chain(ready, guide = true))
         show("s03-empty", "ca-empty", chain(ChainActivityLoad.Ready(emptyList())))
         show("s04-loading", "ca-loading", chain(ChainActivityLoad.Loading))
