@@ -183,7 +183,8 @@ class OnboardingDesignTest {
             firstHome()
             FirstGuideSheet(onAction = {})
         }
-        compose.onNodeWithTag("first-guide-browse").performScrollTo().assertIsDisplayed()
+        // 버튼 줄은 시트 아래에 붙어 있어(본문만 스크롤) 큰 글씨에서도 넘기지 않고 보인다
+        compose.onNodeWithTag("first-guide-browse").assertIsDisplayed()
         compose.runOnIdle { large = false; narrow = true }
         show("s38-narrow-login", "login-caption", login(LoginPhase.Idle, null, false))
         show("s39-narrow-menu", "run-menu-free", menuWith(null))

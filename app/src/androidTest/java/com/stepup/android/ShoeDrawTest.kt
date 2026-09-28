@@ -234,6 +234,8 @@ class ShoeDrawTest {
             server.gate = gate
             compose.onNodeWithTag("draw-free-action").performClick()
             compose.waitUntil(5_000) { server.draws.get() == 1 }
+            // 10 이 그려진 뒤에 뒤로 — 그리기 전(같은 프레임)에 누르면 뽑기 화면의 뒤로가 아직 켜지지 않아 신발 탭으로 나간다
+            awaitTag("draw-requesting")
             // 10 에서 뒤로 — 요청은 그대로, 두 칸의 버튼은 "결과 확인"(26)
             back()
             awaitTag("draw-pending")

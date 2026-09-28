@@ -284,18 +284,22 @@ class ExperienceUiTest {
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        // S2 — no draw slot in the bar; the draw screen is a section inside the shoes tab.
+        // S2 — no draw slot in the bar; the draw opens from the shoes tab's section row.
+        // 신발 뽑기 v2 — 뽑기는 신발 탭의 하위 화면이다: 자기 머리("‹ 신발 뽑기")가 있고 아래 탭은 없다. 뒤로 가면 신발 탭.
         compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
         compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).performClick()
-        compose.onNodeWithTag("shoes-section-draw").performClick().assertIsSelected()
-        compose.onNodeWithTag("draw-shoe").assertIsDisplayed()
-        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).assertIsSelected()
+        compose.onNodeWithTag("shoes-section-draw").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("draw-home").assertIsDisplayed()
+        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
         capture("navigation-draw")
-        compose.onNodeWithTag("shoes-section-mine").performClick()
-        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription(compose.activity.getString(R.string.cd_back)).onFirst().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-mine").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).assertIsSelected()
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
-        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
+        compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("profile-settings").performClick()
         val settingsLabel = compose.activity.getString(R.string.set_experience)
         compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
