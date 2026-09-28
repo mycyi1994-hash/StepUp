@@ -220,6 +220,9 @@ object Routes {
     const val SETTINGS_NOTIFICATIONS = "settings/notifications"
     const val SETTINGS_PRIVACY = "settings/privacy"
     const val SETTINGS_SUPPORT = "settings/support"
+
+    /** 사용 안내 다시 보기(시작·로그인·첫 사용 v1 시안 20) — 도움말 · 문의의 "앱 사용 안내"에서 */
+    const val SETTINGS_GUIDE = "settings/guide"
     const val SETTINGS_CONNECTED = "settings/connected"
     const val SETTINGS_LANGUAGE = "settings/language"
     const val SETTINGS_EXPERIENCE = "settings/experience"
@@ -313,6 +316,8 @@ fun StepUpRoot() {
     var sessionChecked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(loginMethod) {
         if (loginMethod?.isNotEmpty() == true && !ServiceLocator.sessionHolder.isSignedIn()) {
+            // Google 로 로그인했던 사람이다 — 로그인 화면이 "다시 로그인해 주세요"(시작·로그인·첫 사용 v1 시안 09)로 알린다
+            if (loginMethod == "google") ServiceLocator.userPrefs.setSignInAgain(true)
             ServiceLocator.userPrefs.setLoginMethod("")
         }
         sessionChecked = true
@@ -328,7 +333,8 @@ fun StepUpRoot() {
             guideSeen == false && setupSeen == false -> 3
             else -> 2
         }
-        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visible ->
+        // 앱 진입은 불투명도 180ms(시작·로그인·첫 사용 v1) — 동작 줄이기에서는 바로 바뀐다
+        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(180)), label = "entryStage") { visible ->
         when (visible) {
             0 ->
                 SplashScreen(onReady = { ready = true })
@@ -356,13 +362,9 @@ internal fun MainScaffold(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 첫 실행이면 화면이 자리를 잡은 뒤 스포트라이트 투어를 시작한다
-    LaunchedEffect(startTour) {
-        if (startTour) {
-            kotlinx.coroutines.delay(450)
-            GuideTour.start()
-        }
-    }
+    // 첫 사용 안내(시작·로그인·첫 사용 v1 시안 02)는 한 장짜리 시트다 — 아래 FirstGuideSheet. 예전 스포트라이트 투어는 시작하지 않는다.
+    // 고른 뒤에는 이 화면에서 다시 열지 않는다("봤음"을 적기 전에 다시 그려져도)
+    var firstGuideClosed by rememberSaveable { mutableStateOf(false) }
     // Browsing the app never prompts for run permissions. Start passive tracking only when already allowed.
     LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
@@ -875,6 +877,10 @@ internal fun MainScaffold(
                         navController.navigate(Routes.RUN_NOW) { popUpTo(Routes.RUN_ROUTE) { inclusive = true } }
                     },
                     autoStart = entry.arguments?.getBoolean("start") ?: false,
+                    // 권한 안내의 "홈으로 돌아가기"(시안 14 · 15) — 러닝 탭 첫 화면
+                    onLeaveToHome = {
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
+                    },
                 )
             }
             composable(Routes.RUN_MENU) {
@@ -883,15 +889,21 @@ internal fun MainScaffold(
                 val startFresh = { plan: com.stepup.android.domain.RunPlan ->
                     com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
                     com.stepup.android.domain.RunPlans.set(plan)
-                    navController.navigate(Routes.RUN_NOW)
+                    // 권한 안내 콜백이 겹쳐도 러닝 화면을 두 번 쌓지 않는다
+                    navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
                 }
                 com.stepup.android.ui.screens.walk.RunStartMenuScreen(
                     onBack = { navController.popBackStack() },
+                    // 자유 러닝 — 이 메뉴 위에서 필요한 권한 안내(시안 13~19)를 마친 뒤에만 불린다
                     onFreeRun = { startFresh(com.stepup.android.domain.RunPlan.Free) },
                     onGoals = { navController.navigate(Routes.RUN_GOALS) },
                     onDiet = {
                         // 러닝 경험을 이미 골랐으면 러닝 방법으로 바로, 아니면 입력부터
                         navController.navigate(if (savedExperience != null) Routes.RUN_DIET_PLAN else Routes.RUN_DIET)
+                    },
+                    // 권한 안내의 "홈으로 돌아가기"(시안 14 · 15)
+                    onHome = {
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
                 )
             }
@@ -1076,11 +1088,15 @@ internal fun MainScaffold(
             composable(Routes.SETTINGS_SUPPORT) {
                 SupportScreen(
                     onBack = { navController.popBackStack() },
-                    // 앱 사용 안내 — 기존 가이드(러닝 탭 → 스포트라이트 투어)
-                    onOpenGuide = {
-                        navController.switchTab(Screen.Run)
-                        GuideTour.start()
-                    },
+                    // 앱 사용 안내 — 한 장짜리 다시 보기(시작·로그인·첫 사용 v1 시안 20). 뒤로 가면 여기로 돌아온다
+                    onOpenGuide = { navController.navigate(Routes.SETTINGS_GUIDE) { launchSingleTop = true } },
+                )
+            }
+            composable(Routes.SETTINGS_GUIDE) {
+                // 가이드를 "안 봄"으로 되돌리지 않는다 — 첫 안내가 다시 뜨지 않는다
+                com.stepup.android.ui.screens.onboarding.GuideReplayScreen(
+                    onBack = { navController.popBackStack() },
+                    onRunHome = { navController.switchTab(Screen.Run) },
                 )
             }
             composable(Routes.SETTINGS_CONNECTED) {
@@ -1217,17 +1233,28 @@ internal fun MainScaffold(
     // 알림에서 눌러 들어온 댓글 창. 어느 탭에 있든 여기서 연다.
     FocusedCommentSheetHost()
 
-    // 스포트라이트 가이드 오버레이 — 하단 바까지 덮는다
-    if (GuideTour.active) {
-        GuideOverlay(
-            onSwitchTab = { route ->
-                bottomTabs.firstOrNull { it.route == route }?.let { navController.switchTab(it) }
-            },
-            onFinished = {
-                scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
-                navController.switchTab(Screen.Run)
-            },
+    // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.
+    // 목적지가 있으면 그 화면을 먼저 보이고 안내는 다음에 러닝 홈에 올 때로 미룬다. 사람이 고른 뒤에만 "봤음"을 적는다.
+    val destinationPending = pendingCrew != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
+    if (com.stepup.android.domain.FirstGuideRules.shouldShow(
+            pending = startTour && !firstGuideClosed,
+            onHome = currentRoute == Screen.Run.route,
+            destinationPending = destinationPending,
+            recoveryPending = pendingRun != null && currentOwner != null,
         )
+    ) {
+        com.stepup.android.ui.screens.onboarding.FirstGuideSheet(onAction = { action ->
+            if (!firstGuideClosed) {
+                firstGuideClosed = true
+                if (com.stepup.android.domain.FirstGuideRules.savesSeen(action)) {
+                    scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
+                }
+                // 러닝 시작 — 러닝 방법 고르기(12)로. 운동 기록은 아직 시작하지 않는다
+                if (com.stepup.android.domain.FirstGuideRules.opensRunMenu(action)) {
+                    navController.navigate(Routes.RUN_MENU) { launchSingleTop = true }
+                }
+            }
+        })
     }
     }
 }

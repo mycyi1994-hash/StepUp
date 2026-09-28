@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시작·로그인·첫 사용 v1(2026-09-28 전달본, docs/redesign/onboarding-v1) — 앱 준비 · 로그인 · 첫 안내 · 러닝 방법 · 러닝 권한 안내 · 다시 보기 -->
+<resources>
+    <!-- 03 · 04 앱 준비 -->
+    <string name="onb_launch_failed_title">앱을 준비하지 못했어요</string>
+    <string name="onb_launch_failed_body">다시 시도해 주세요.</string>
+
+    <!-- 01 · 05~10 로그인 -->
+    <string name="onb_login_headline">오늘도,\n내 페이스로.</string>
+    <string name="onb_login_subtitle">달린 시간과 거리를 차곡차곡 기록해요.</string>
+    <string name="onb_login_caption">Google 계정으로 간편하게 시작하세요.</string>
+    <string name="onb_login_verifying">계정을 확인하고 있어요.</string>
+    <string name="onb_login_offline_title">연결을 확인해 주세요</string>
+    <string name="onb_login_offline_body">인터넷 연결을 확인한 뒤 다시 눌러주세요.</string>
+    <string name="onb_login_failed_title">로그인을 완료하지 못했어요</string>
+    <string name="onb_login_failed_body">아래 버튼으로 다시 시도해 주세요.</string>
+    <string name="onb_login_no_account_title">Google 계정을 찾지 못했어요</string>
+    <string name="onb_login_no_account_body">기기에 계정을 추가한 뒤 다시 시도해 주세요.</string>
+    <string name="onb_login_again_title">다시 로그인해 주세요</string>
+    <string name="onb_login_again_body">같은 계정으로 로그인하면 기록을 이어갈 수 있어요.</string>
+    <string name="onb_legal_failed_title">안내 페이지를 열지 못했어요.</string>
+    <string name="onb_legal_failed_body">인터넷 브라우저를 확인한 뒤 다시 눌러주세요.</string>
+
+    <!-- 02 첫 사용 안내 · 20 다시 보기 -->
+    <string name="onb_guide_title">이것만 알면 시작할 수 있어요</string>
+    <string name="onb_guide_subtitle">처음에는 가볍게, 러닝부터 시작해 보세요.</string>
+    <string name="onb_guide_run_body">시간과 거리를 기록하며 달려요.</string>
+    <string name="onb_guide_shoes_body">내 신발과 무료 뽑기를 확인해요.</string>
+    <string name="onb_guide_me_body">쌓인 러닝 기록을 한눈에 봐요.</string>
+    <string name="onb_guide_browse">먼저 둘러보기</string>
+    <string name="onb_guide_row_desc">러닝 · 신발 · 내 정보를 한 장으로 다시 봐요.</string>
+    <string name="onb_replay_headline">세 가지만 기억하세요</string>
+    <string name="onb_replay_subtitle">필요한 기능을 아래 탭에서 찾을 수 있어요.</string>
+    <string name="onb_replay_run_body">러닝 시작을 누르고 방법을 고르세요.</string>
+    <string name="onb_replay_shoes_body">보유 신발을 보고 무료 뽑기를 해보세요.</string>
+    <string name="onb_replay_me_body">내 기록과 지갑, 설정이 모여 있어요.</string>
+    <string name="onb_replay_permission_note">권한은 기능을 사용할 때 안내해 드려요.</string>
+    <string name="onb_replay_home">러닝 홈으로</string>
+
+    <!-- 11 첫 러닝 홈 -->
+    <string name="onb_home_first_title">오늘의 첫 러닝을\n시작해 볼까요?</string>
+    <string name="onb_home_first_body">걸음 기록은 권한을 허용하면 시작돼요.</string>
+
+    <!-- 12 러닝 방법 고르기 -->
+    <string name="onb_menu_headline">내 페이스로 시작해요</string>
+    <string name="onb_menu_subtitle">오늘은 어떻게 달려볼까요?</string>
+    <string name="onb_menu_goal_desc">작은 목표부터 하나씩</string>
+    <string name="onb_menu_course_desc">내 위치에서 달릴 곳 찾기</string>
+
+    <!-- 13~19 러닝 권한 안내 -->
+    <string name="onb_perm_activity_title">걸음 기록을 허용해 주세요</string>
+    <string name="onb_perm_activity_headline">걸음과 운동량을 기록해요</string>
+    <string name="onb_perm_activity_body">러닝을 기록하려면 신체 활동 권한이 필요해요.\n다음 창에서 허용을 눌러주세요.</string>
+    <string name="onb_perm_activity_off_title">걸음 기록이 꺼져 있어요</string>
+    <string name="onb_perm_activity_off_headline">권한을 허용하면 시작할 수 있어요</string>
+    <string name="onb_perm_activity_denied_body">걸음과 운동량을 기록하려면 허용이 필요해요.</string>
+    <string name="onb_perm_allow_again">다시 허용하기</string>
+    <string name="onb_perm_home">홈으로 돌아가기</string>
+    <string name="onb_perm_activity_settings_body">휴대폰 설정에서 신체 활동 권한을 켜주세요.</string>
+    <string name="onb_perm_location_title">달린 길도 기록할까요?</string>
+    <string name="onb_perm_location_headline">위치로 러닝 경로를 남겨요</string>
+    <string name="onb_perm_location_body">정확한 위치를 허용하면 달린 길을 기록해요.\n위치 없이도 러닝을 시작할 수 있어요.</string>
+    <string name="onb_perm_location_allow">위치 허용하기</string>
+    <string name="onb_perm_without_route">경로 없이 계속</string>
+    <string name="onb_perm_approx_title">대략적인 위치가 켜져 있어요</string>
+    <string name="onb_perm_approx_headline">달린 길은 정확하지 않을 수 있어요</string>
+    <string name="onb_perm_approx_body">설정에서 정확한 위치로 바꿀 수 있어요.\n지금 상태로 계속 진행해도 괜찮아요.</string>
+    <string name="onb_perm_continue_as_is">이대로 계속</string>
+    <string name="onb_perm_location_settings">위치 설정 열기</string>
+    <string name="onb_perm_no_location_title">경로 없이 시작할 수 있어요</string>
+    <string name="onb_perm_no_location_headline">이번 러닝은 경로를 남기지 않아요</string>
+    <string name="onb_perm_no_location_body">위치를 허용하면 달린 길도 볼 수 있어요.\n지금 상태로 계속 진행해도 괜찮아요.</string>
+    <string name="onb_perm_notification_title">러닝 소식을 받아볼까요?</string>
+    <string name="onb_perm_notification_headline">필요한 소식을 알려드려요</string>
+    <string name="onb_perm_notification_body">러닝과 커뮤니티 소식을 알림으로 받아요.\n알림을 꺼도 앱을 이용할 수 있어요.</string>
+    <string name="onb_perm_notification_allow">알림 허용하기</string>
+    <string name="onb_settings_open_failed">설정을 열지 못했어요. 휴대폰 설정에서 직접 바꿔 주세요.</string>
+</resources>

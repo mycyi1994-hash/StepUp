@@ -1,0 +1,23 @@
+{
+  "newGeneratedArtwork": false,
+  "items": [
+    {
+      "file": "assets/river-night.png",
+      "source": "stepup-stage9/app/src/main/res/drawable-nodpi/home_banner_blue_night.png",
+      "sha256": "55feb13af28b5b8ee09e48497514f935720c90388aef8f8a84026fef03c05dc7",
+      "unchanged": true
+    },
+    {
+      "file": "assets/google-g.png",
+      "source": "stepup-stage9/app/src/main/res/drawable-nodpi/google_g.png",
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a",
+      "unchanged": true
+    },
+    {
+      "file": "assets/stepup-light.png",
+      "source": "output/stepup-shoe-polished/assets/stepup-light.png",
+      "sha256": "a564de2135ad094fd347293d7a0ee292c0a11624b2f0bf960090d086e36639cb",
+      "unchanged": true
+    }
+  ]
+}

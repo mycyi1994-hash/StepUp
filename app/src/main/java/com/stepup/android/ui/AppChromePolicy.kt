@@ -62,6 +62,8 @@ object AppChromePolicy {
         Destination(Routes.SETTINGS_NOTIFICATIONS, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_PRIVACY, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_SUPPORT, Screen.Profile, Header.Detail),
+        // 사용 안내 다시 보기(시작·로그인·첫 사용 v1 시안 20) — 설정 밑, 하단 탭 없이 자기 머리와 아래 "러닝 홈으로"
+        Destination(Routes.SETTINGS_GUIDE, Screen.Profile, Header.Form),
         Destination(Routes.SETTINGS_CONNECTED, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_LANGUAGE, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_EXPERIENCE, Screen.Profile, Header.Detail),

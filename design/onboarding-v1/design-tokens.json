@@ -1,0 +1,73 @@
+{
+  "product": "StepUp",
+  "scope": "startup-login-first-use",
+  "version": 1,
+  "screen": {
+    "width": 390,
+    "height": 844,
+    "pngScale": 3,
+    "responsive": true
+  },
+  "font": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600
+    ],
+    "headline": 35,
+    "pageTitle": 19,
+    "sheetTitle": 24,
+    "body": [
+      14,
+      16
+    ],
+    "supporting": [
+      12,
+      14
+    ]
+  },
+  "colors": {
+    "background": "#050912",
+    "text": "#F2F4FC",
+    "secondary": "#98A8C0",
+    "accent": "#A3BFFE",
+    "surface": "#0E192A",
+    "divider": "#1D2B3F",
+    "sheet": "#111D2E",
+    "primaryGradient": [
+      "#F7F8FF",
+      "#E8EDFA"
+    ],
+    "primaryText": "#081223",
+    "googleButton": "#FFFFFF"
+  },
+  "layout": {
+    "sideMargin": 24,
+    "buttonHeight": 54,
+    "buttonRadius": 17,
+    "sheetTopRadius": 27,
+    "minimumTouchDp": 48,
+    "bottomSafeArea": "Use real OS insets"
+  },
+  "motion": {
+    "entryFadeMs": 180,
+    "sheetMs": 220,
+    "reducedMotion": "No translated motion; immediate or short opacity change",
+    "executableAnimationIncluded": false
+  },
+  "authentication": {
+    "provider": "Google",
+    "accountPicker": "Android Credential Manager",
+    "guestEntry": false,
+    "serverConfirmedSessionRequired": true
+  },
+  "onboarding": {
+    "firstUsePages": 1,
+    "mandatoryProfileForm": false,
+    "browseRequestsPermissions": false,
+    "removedLegacyGuideCopy": [
+      "마켓",
+      "도감"
+    ]
+  }
+}
