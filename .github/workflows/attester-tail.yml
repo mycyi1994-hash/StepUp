@@ -1,0 +1,43 @@
+# 진단용(임시) — 배포된 어테스터 워커의 실행 기록을 몇 분 받아 본다. 합치기 전에 지운다.
+name: Attester tail (diagnostic)
+
+on:
+  push:
+    branches:
+      - "claude/inspiring-ride-eso6xu"
+    paths:
+      - ".github/workflows/attester-tail.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: attester
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: attester/package-lock.json
+      - run: npm ci
+      - name: tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          api() { curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4$1"; }
+          acct=""
+          for a in $(api /accounts | jq -r '.result[].id'); do
+            sub=$(api "/accounts/$a/workers/subdomain" | jq -r '.result.subdomain // ""' || true)
+            [ "$sub" = "gana003" ] && acct="$a"
+          done
+          [ -n "$acct" ] || { echo "account not found"; exit 1; }
+          export CLOUDFLARE_ACCOUNT_ID="$acct"
+          timeout 400 npx wrangler tail stepup-attester --format json > tail.jsonl || true
+          echo "lines: $(wc -l < tail.jsonl)"
+          jq -c 'select(type=="object") | {t: (.eventTimestamp/1000|floor|todate), cron: .event.cron, outcome, logs: [.logs[]?.message], ex: [.exceptions[]? | {name, message}]}' tail.jsonl 2>/dev/null | grep -v '^$' | head -200 || cat tail.jsonl | head -100
