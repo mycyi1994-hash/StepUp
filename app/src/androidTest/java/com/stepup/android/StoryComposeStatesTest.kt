@@ -455,9 +455,8 @@ class StoryComposeStatesTest {
     }
 
     /**
-     * 태그가 보일 때까지 — 기다리는 사이 화면을 한가하게(waitForIdle) 만든다. 느린 에뮬레이터에서는 기록 칸의 결과가
-     * 화면에 반영되는 데 waitUntil 의 폴링만으로는 10초를 넘긴 적이 있다(2026-09-28 PR #59 Experience QA — 실패 순간
-     * 화면에는 기다린 칸이 떠 있었다). 못 찾으면 그때 있던 기록 칸 태그와 화면 트리를 남기고 실패한다.
+     * 태그가 보일 때까지 — 기다리는 사이 화면을 한가하게(waitForIdle) 만든다. 못 찾으면 그때 있던 기록 칸 태그와
+     * 화면 트리를 남기고 실패한다(2026-09-28 PR #59: 기록 칸 바깥 태그가 상황 태그를 덮은 것을 이 기록으로 찾았다).
      */
     private fun awaitTag(tag: String, timeout: Long = 20_000) {
         val end = android.os.SystemClock.uptimeMillis() + timeout

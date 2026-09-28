@@ -311,7 +311,8 @@ class StoryRecordActions(
 
 /**
  * 글쓰기 위 기록 칸 — 상황마다 모습만 바뀌고 자리(142dp)는 같다. 코스 없음과 불러오기 실패를 다르게 보이고,
- * 경로 없는 기록에는 코스 그림을 만들지 않는다.
+ * 경로 없는 기록에는 코스 그림을 만들지 않는다. [modifier]에는 testTag 를 붙이지 않는다 — 같은 자리에 붙는
+ * 상황 태그(story-record-never 등)를 바깥 태그가 덮는다.
  */
 @Composable
 fun StoryRecordCardView(card: StoryRecordCard, words: StoryWords, actions: StoryRecordActions, modifier: Modifier = Modifier) {

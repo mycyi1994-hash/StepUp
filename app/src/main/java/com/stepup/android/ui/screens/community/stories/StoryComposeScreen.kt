@@ -170,7 +170,6 @@ fun StoryComposeScreen(
                         onStartRun = { leaveFor(onStartRun) },
                         onHistory = { leaveFor(onOpenRecords) },
                     ),
-                    modifier = Modifier.testTag("story-record-card"),
                 )
                 Spacer(Modifier.height(15.dp))
                 StoryPlaceBlock(
