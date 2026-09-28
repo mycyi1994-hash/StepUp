@@ -10,9 +10,25 @@
 |---|---|
 | `POST /v2/wallet/link` | 지갑 서명(`wallet_link_challenge` 문장)을 확인하고 서버에 지갑을 붙인다. 새 지갑엔 테스트 가스 조금 |
 | `POST /v2/ops/:id/execute` | 서버가 예약한 SUP 꺼내기 · 신발 꺼내기 · 보너스 발행을 서명 → 대납 제출. 응답은 `SUBMITTED` (완료 아님) |
-| `GET /v2/meta/:tokenId` | 신발 NFT 메타데이터 — 체인 스탯을 읽어 이름 · 그림 · 속성을 만든다 (`tokenURI` 가 가리키는 곳) |
+| `GET /v2/meta/:tokenId` · `GET /v3/meta/:tokenId` | 신발 NFT 메타데이터 — 체인 스탯을 읽어 이름 · 그림 · 속성을 만든다 (`tokenURI` 가 가리키는 곳) |
 | `GET /health` | 설정된 주소들 |
-| 1분마다 | ① 확정 블록까지 이벤트를 읽어 서버에 반영 ② 유효 시간 + 안전 마진이 지난 작업을 체인 확인 뒤 되돌림 ③ 체인과 서버 장부 대조 — 서버가 모르는 지급이 보이면 **서버와 세 컨트랙트를 모두 정지** |
+| 1분마다 | ① 확정 블록까지 이벤트를 읽어 서버에 반영(v3 포함) ② 유효 시간 + 안전 마진이 지난 작업을 체인 확인 뒤 되돌림 ③ 체인과 서버 장부 대조 — 서버가 모르는 지급 · 발행이 보이면 **서버와 컨트랙트를 모두 정지** |
+| 2분마다(따로) | 체인 기록 보내기(`src/jobs.js`, 0044 `chain_jobs`) — 러닝 증명 · 코스 완주 · 배지(EAS), 뽑은 신발 금고 발행 · 강화 · 수리 반영(v3). v3 컨트랙트가 없으면 한 번 배포한다(`src/v3.js`) |
+
+### 체인 기록 (2분마다)
+
+서버가 줄 세운 일(`chain_jobs`)을 몇 개씩 가져가(`attester_jobs_claim`) 가스비를 대신 내 보낸다. 자세한 것은
+[`docs/온체인-활동-1-2단계.md`](../docs/온체인-활동-1-2단계.md).
+
+- **한 번만**: 서명한 거래(raw)와 번호(nonce)를 서버에 먼저 적고(`attester_jobs_signed`) 적힌 것만 보낸다.
+  끊기면 같은 거래를 다시 보낼 뿐이다. 새로 서명하는 것은 그 번호가 다른 거래로 쓰였고 이 거래의 영수증이
+  없음을 세 번 본 뒤다. v3 발행 · 갱신은 컨트랙트도 작업 번호로 한 번만 받는다.
+- **보내기 전 가스 재기**: 체인이 받지 않을 일(바뀐 것 없는 갱신 · 금고에 없는 신발 · 취소된 번호)은 거두고,
+  하루 상한 · 멈춤은 뒤로 미룬다. EAS 스키마가 없으면(`InvalidSchema`) 등록을 한 번 보낸다.
+- **확정**: 확정(safe) 블록의 영수증만 확정으로 본다. 결과(EAS 증명 번호 · v3 토큰 번호)를 서버에 적는다.
+  서버가 받지 않은 확정(토큰 번호 어긋남)은 멈춤 신호다.
+- **몫**: 1분 작업과 따로 도는 실행이라 요청 수(무료 50) · CPU 를 나눠 쓰지 않는다. 한 번에 `CHAIN_JOBS_PER_RUN`
+  (기본 3)건, 릴레이어 잔액이 `JOBS_MIN_RELAYER_WEI`(0.003 ETH) 아래면 보내지 않는다 — 꺼내기 가스비 몫.
 
 로그인은 사용자가 보낸 Supabase 토큰을 Supabase 에 물어 확인한다. 워커의 DB 권한은
 `attester_*` 함수뿐이고(전용 계정 또는 `stepup_attester` 역할), service_role 은 쓰지 않는다.
@@ -22,8 +38,8 @@
 | 이름 | 역할 | 컨트랙트 |
 |---|---|---|
 | `ATTESTER_PRIVATE_KEY` | SUP 꺼내기 서명 | `RewardDistributor.attester` |
-| `SNEAKER_SIGNER_KEY` | 신발 발행 · 반환 서명 | `StepUpSneakers.signer` |
-| `RELAYER_PRIVATE_KEY` | 가스비 대납 (역할 없음, ETH 만) | — |
+| `SNEAKER_SIGNER_KEY` | 신발 발행 · 반환 서명(v2 · v3), v3 금고 발행 · 스탯 갱신 서명 | `StepUpSneakers.signer` · `StepUpSneakersV3.signer` |
+| `RELAYER_PRIVATE_KEY` | 가스비 대납 · EAS 증명을 보내는 주소(attester) · v3 배포 · v3 도감 추가(curator) | `StepUpSneakersV3.curator` |
 | `GUARDIAN_PRIVATE_KEY` | 긴급 정지 (재개 불가) | 세 컨트랙트의 `guardian` |
 | `ATTESTER_EMAIL` · `ATTESTER_PASSWORD` | Supabase 어테스터 전용 계정 | `economy_settings.attester_user_id` |
 

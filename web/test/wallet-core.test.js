@@ -80,3 +80,14 @@ test('2단계 인증은 방금 한 것만 인정한다', async () => {
   // 앱이 새로 받은 토큰(iat 는 지금)에 남은 옛 인증은 여전히 오래된 것이다
   assert.equal(recentTotp({ aal: 'aal2', iat: now, amr: [{ method: 'totp', timestamp: now - 3600 }] }, now), false)
 })
+
+test('신발 번호로 컨트랙트를 고른다 — v3 번호(1000001~)는 v3, 나머지는 v2', async () => {
+  const { sneakerContractFor, sneakerContracts } = await import('../wallet-core.js')
+  const config = { sneakers: '0xv2', sneakersV3: '0xv3', startBlock: 10, v3StartBlock: 20 }
+  assert.equal(sneakerContractFor(5n, config), '0xv2')
+  assert.equal(sneakerContractFor(1000000n, config), '0xv2')
+  assert.equal(sneakerContractFor(1000001n, config), '0xv3')
+  assert.equal(sneakerContractFor(1000001n, { sneakers: '0xv2' }), null)
+  assert.deepEqual(sneakerContracts(config), [['0xv2', 10n], ['0xv3', 20n]])
+  assert.deepEqual(sneakerContracts({ sneakers: '0xv2', startBlock: 10 }), [['0xv2', 10n]])
+})

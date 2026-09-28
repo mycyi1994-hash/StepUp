@@ -1,0 +1,19 @@
+{
+  "_note": "StepUpSneakersV3 배포 설정. 이 파일 · 컨트랙트 소스 · 컴파일러가 같으면 주소가 같다(CREATE2). 고치면 주소가 바뀌므로 `node scripts/v3-initcode.js` 로 attester/src/v3-deploy.js 와 wrangler.toml 의 SNEAKERS_V3_ADDRESS 를 함께 바꾼다. 이미 배포한 뒤에는 고치지 않는다.",
+  "network": "giwaSepolia",
+  "chainId": 91342,
+  "proxy": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  "saltLabel": "StepUpSneakersV3:giwaSepolia:1",
+  "config": {
+    "owner": "0xe773BDc4A42c81291045b11592086C518f96CBBa",
+    "signer": "0x50F687496DC7F2E00CB6e3400DDaE4443a1b7274",
+    "guardian": "0xF573532513dd2aB201ef1Cdfe65F04AdB48c318C",
+    "curator": "0x307FD2D78cDD62eaAA61FbC3fB5FF3677F868DC8",
+    "treasury": "0x51145996b49f00a65a7FA8368Cb64B16D46101e6",
+    "maxMintsPerDay": 20000,
+    "maxReleasesPerDay": 500,
+    "maxSyncsPerDay": 20000,
+    "maxGenesisNo": 100000,
+    "baseURI": "https://stepup-attester.gana003.workers.dev/v3/meta/"
+  }
+}

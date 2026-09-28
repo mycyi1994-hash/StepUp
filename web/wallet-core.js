@@ -63,6 +63,26 @@ export function sameWallet(account, linked) {
   return Boolean(account && linked) && String(account).toLowerCase() === String(linked).toLowerCase()
 }
 
+/** v3 토큰 번호는 여기서 시작한다(contracts/StepUpSneakersV3.sol FIRST_TOKEN_ID) — v2 와 겹치지 않는다 */
+export const V3_FIRST_TOKEN_ID = 1000001n
+
+/**
+ * 이 신발 번호는 어느 컨트랙트의 것인가. 앱에서 뽑아 금고로 발행된 신발(v3)을 꺼내면 v3 번호로 지갑에 온다.
+ * v3 주소가 설정에 없으면 null — 넣을 곳을 모른다.
+ */
+export function sneakerContractFor(tokenId, config) {
+  if (BigInt(tokenId) >= V3_FIRST_TOKEN_ID) return config.sneakersV3 || null
+  return config.sneakers || null
+}
+
+/** 지갑의 신발을 찾을 컨트랙트들 — [주소, 처음 읽을 블록] */
+export function sneakerContracts(config) {
+  const out = []
+  if (config.sneakers) out.push([config.sneakers, BigInt(config.startBlock || 0)])
+  if (config.sneakersV3) out.push([config.sneakersV3, BigInt(config.v3StartBlock || config.startBlock || 0)])
+  return out
+}
+
 /** [from, to] 를 RPC 한 번에 읽을 수 있는 크기로 나눈다 (GIWA RPC 는 10,000 블록까지) */
 export function blockRanges(from, to, size = 9000n) {
   const out = []
