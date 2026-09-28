@@ -103,6 +103,11 @@ class StoryComposeStatesTest {
     }
 
     @Test fun eightSituationsAndExtraStates() {
+        // 앞 검사(같은 에뮬레이터)가 남긴 러닝 저장본이 있으면 앱이 그 러닝을 되살려 "러닝 중"이 된다 —
+        // 기록 칸이 러닝 중 칸으로 바뀌어 01 부터 어긋난다(2026-09-28 PR #59 Experience QA). 시작 전에 비운다.
+        clearAnyRunCheckpointForTest()
+        WalkSessionService.recovery.value = null
+        WalkSessionService.showStateForTest(WalkSessionState())
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setSounds(false)
@@ -147,6 +152,16 @@ class StoryComposeStatesTest {
                 StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Community) } }
             }
         }
+        try {
+            scenes { largeType = it }
+        } catch (failure: Throwable) {
+            // 실패한 순간의 화면을 남긴다 — 검사가 끝난 뒤 찍는 화면은 앱이 닫힌 뒤라 원인을 보여 주지 못한다
+            runCatching { shot("zz-failure", settle = 0) }
+            throw failure
+        }
+    }
+
+    private fun scenes(setLargeType: (Boolean) -> Unit) {
         val context = compose.activity
         awaitTag("stories-tab")
         awaitTag("stories-write")
@@ -371,13 +386,13 @@ class StoryComposeStatesTest {
 
         // ── 큰 글씨(1.3배) — 코스 카드 · 올리기가 잘리지 않는다 ─────────────────────
         server.runs = ok(runsJson("2026-09-28", total = 7, last = RUN_MAPO.ended, runs = listOf(RUN_MAPO)))
-        compose.runOnIdle { largeType = true }
+        compose.runOnIdle { setLargeType(true) }
         openCompose()
         awaitTag("story-record-attached")
         compose.onNodeWithTag("story-compose-submit").assertIsDisplayed()
         shot("14-large-font", settle = 1_500)
         leaveDiscarding()
-        compose.runOnIdle { largeType = false }
+        compose.runOnIdle { setLargeType(false) }
     }
 
     // ── 도우미 ─────────────────────────────────────────────────────
