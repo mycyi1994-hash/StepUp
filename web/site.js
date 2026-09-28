@@ -472,11 +472,6 @@ window.addEventListener('hashchange', () => {
   if (i >= 0) to(i, { force: true });
 });
 
-// 다운로드 추적
-$$('[data-dl]').forEach(a => a.addEventListener('click', () => {
-  (window.dataLayer = window.dataLayer || []).push({ event: 'apk_download', screen: SLUGS[page] });
-}));
-
 // ── 시작 ───────────────────────────────────────────────────────
 const i0 = SLUGS.indexOf(location.hash.slice(1));
 enter(0);
