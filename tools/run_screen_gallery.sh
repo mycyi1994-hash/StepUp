@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 shoe-draw-v2; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -147,7 +147,8 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/profile-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/profile-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/profile-running-path/. screen-gallery/profile-running-path/ || status=1
-  # 신발 뽑기 무료(2026-09-27) — 시안 세 장면 · 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 내 신발
+  # 신발 뽑기 규칙(v2 두 칸, 2026-09-28) — 두 칸 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 받은 신발이 골라진 내 신발,
+  # 답을 잃은 요청은 새로 뽑지 않고 확인(20 · 26), 거절은 기회를 쓰지 않았다고(19), 다시 열면 남은 요청부터
   run_instrumentation draw "com.stepup.android.ShoeDrawTest"
   mkdir -p screen-gallery/draw-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/draw-results/ || true
@@ -182,6 +183,12 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/wallet-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/wallet-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/wallet-v1/. screen-gallery/wallet-v1/ || status=1
+  # 신발 뽑기 v2 두 칸(2026-09-28) — 앱 셸 안의 실제 흐름(신발 탭 → 뽑기, 이 기기의 서버 상태 그대로) · 흉내 낸 서버로 10 → 12 → 21 ·
+  # 시안 장면 01~26(서버 값으로 가를 수 없는 07 · 09 · 25 · 27 제외) · 밝은 테마 · 큰 글씨 · 320dp
+  run_instrumentation shoe-draw-v2 "com.stepup.android.ShoeDrawV2DesignTest"
+  mkdir -p screen-gallery/shoe-draw-v2-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-draw-v2-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw-v2/. screen-gallery/shoe-draw-v2/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- シューズガチャ v2(2枠, 2026-09-28) — docs/redesign/shoe-draw-v2。回数・距離はすべてサーバーの値 -->
+<resources>
+    <string name="dv2_title">シューズガチャ</string>
+    <string name="dv2_subtitle">シューズはすべて無料で引けます。</string>
+    <string name="dv2_subtitle_loading">ガチャの回数を読み込んでいます。</string>
+    <string name="dv2_subtitle_signed_out">ログインするとシューズを無料で引けます。</string>
+    <string name="dv2_free">無料ガチャ</string>
+    <string name="dv2_premium">上級ガチャ</string>
+    <string name="dv2_free_rule">新規登録%1$d回 · 毎日%2$d回</string>
+    <string name="dv2_free_rule_daily">毎日%1$d回</string>
+    <string name="dv2_premium_rule">ウォレット連携%1$d回 · ラン%2$skmごとに1回</string>
+    <string name="dv2_premium_rule_run">連携ギフト · ラン%1$skmごとに1回</string>
+    <string name="dv2_left">残り回数</string>
+    <string name="dv2_count">%1$d回</string>
+    <string name="dv2_count_plus">+%1$d回</string>
+    <string name="dv2_history">回数の内訳を見る</string>
+    <string name="dv2_next_premium">次の1回まで%1$skm</string>
+    <string name="dv2_run_capped">今日のランニング分はすべて獲得しました</string>
+    <string name="dv2_first_link">初めて連携すると</string>
+    <string name="dv2_first_link_note">上級ガチャを無料でもらえます</string>
+    <string name="dv2_kept_premium">保有中の上級回数</string>
+    <string name="dv2_reconnect_note">ウォレットをもう一度連携してください</string>
+    <string name="dv2_paused_note">上級ガチャは一時停止中です</string>
+    <string name="dv2_pending_label">引いたシューズ</string>
+    <string name="dv2_pending_value">確認中</string>
+    <string name="dv2_pending_note">結果の準備ができたら見られます</string>
+    <string name="dv2_failed_inline">回数を読み込めませんでした</string>
+    <string name="dv2_signed_out_note">ログインすると表示されます</string>
+    <string name="dv2_action_free">無料で1回引く</string>
+    <string name="dv2_action_free_info">無料回数の案内</string>
+    <string name="dv2_action_connect">ウォレットを連携して%1$d回もらう</string>
+    <string name="dv2_action_reconnect">ウォレットを再連携</string>
+    <string name="dv2_action_premium">上級で1回引く</string>
+    <string name="dv2_action_run">ランニングで回数をもらう</string>
+    <string name="dv2_action_paused">上級ガチャ一時停止中</string>
+    <string name="dv2_action_check">結果を確認</string>
+    <string name="dv2_action_loading">読み込み中</string>
+    <string name="dv2_action_reload">再読み込み</string>
+    <string name="dv2_action_sign_in">ログインすると引けます</string>
+    <string name="dv2_rules_link">無料回数のもらい方</string>
+
+    <string name="dv2_free_sheet_title">無料ガチャの回数</string>
+    <string name="dv2_free_sheet_sub">1回引くごとに1回分を使います。</string>
+    <string name="dv2_signup_gift">新規登録ギフト</string>
+    <string name="dv2_daily">今日の無料回数</string>
+    <string name="dv2_free_now">今使える回数</string>
+    <string name="dv2_close">閉じる</string>
+
+    <string name="dv2_premium_sheet_title">上級ガチャの回数</string>
+    <string name="dv2_premium_sheet_sub">ウォレット連携後、%1$skm走るごとに1回もらえます。</string>
+    <string name="dv2_link_gift">初回連携ギフト</string>
+    <string name="dv2_run_earned">ランニングで獲得</string>
+    <string name="dv2_premium_now">残りの上級ガチャ</string>
+    <string name="dv2_progress">%1$s / %2$skm</string>
+
+    <string name="dv2_rules_title">無料回数のもらい方</string>
+    <string name="dv2_rules_signup">新規登録すると</string>
+    <string name="dv2_rules_daily">毎日</string>
+    <string name="dv2_rules_first_link">初めてWEB3ウォレットを連携すると</string>
+    <string name="dv2_rules_run">連携後 %1$skm走るごとに</string>
+    <string name="dv2_rules_note">無料ガチャと上級ガチャは別々に使えます。</string>
+    <string name="dv2_ok">OK</string>
+
+    <string name="dv2_benefit_title">上級ガチャを無料でもらう</string>
+    <string name="dv2_benefit_sub">WEB3ウォレットを連携して始めましょう。</string>
+    <string name="dv2_benefit_first">初めてウォレットを連携すると</string>
+    <string name="dv2_benefit_run">連携後 %1$skm走るごとに</string>
+    <string name="dv2_plus_one">+1回</string>
+    <string name="dv2_benefit_note">ウォレットを連携して走ると\n上級ガチャの回数をもっと集められます。</string>
+    <string name="dv2_connect">WEB3ウォレットを連携</string>
+    <string name="dv2_later">あとで</string>
+
+    <string name="dv2_linked_title">ウォレットを連携しました</string>
+    <string name="dv2_linked_body">上級ガチャの回数を受け取りました。</string>
+    <string name="dv2_to_draw">ガチャ画面へ</string>
+    <string name="dv2_relinked">ウォレットを再連携しました。</string>
+
+    <string name="dv2_free_empty_title">無料回数を使い切りました</string>
+    <string name="dv2_free_empty_head">毎日無料ガチャを%1$d回お届けします。</string>
+    <string name="dv2_free_empty_body">次の無料回数が入ったら、また引けます。</string>
+    <string name="dv2_see_premium">上級ガチャを見る</string>
+    <string name="dv2_run_title">ランニングで回数をもらう</string>
+    <string name="dv2_run_sub">連携したウォレットでランニングの回数を集められます。</string>
+    <string name="dv2_run_until">次の上級ガチャまで</string>
+    <string name="dv2_run_rule">%1$skm走るごとに上級ガチャ1回をもらえます。</string>
+    <string name="dv2_run_start">ランニング開始</string>
+    <string name="dv2_km">%1$skm</string>
+    <string name="dv2_run_reward">ランニングを反映しました · 上級ガチャ +%1$d回</string>
+
+    <string name="dv2_request_head">シューズを確認しています</string>
+    <string name="dv2_request_sub">結果が確認できたら箱が開きます。</string>
+    <string name="dv2_wait">少々お待ちください。</string>
+    <string name="dv2_opening_head">箱を開けています</string>
+    <string name="dv2_opening_sub">どんなシューズに出会えるでしょう？</string>
+    <string name="dv2_opening_note">シューズ1足が保有シューズに追加されます。</string>
+    <string name="dv2_skip">スキップ</string>
+
+    <string name="dv2_result_free">無料ガチャの結果</string>
+    <string name="dv2_result_premium">上級ガチャの結果</string>
+    <string name="dv2_result_added">保有シューズに追加されました。</string>
+    <string name="dv2_result_free_left">残りの無料ガチャ</string>
+    <string name="dv2_result_premium_left">残りの上級ガチャ</string>
+    <string name="dv2_open_shoes">マイシューズを見る</string>
+    <string name="dv2_draw_again">もう1回引く</string>
+    <string name="dv2_result_cd">%1$s、%2$sのシューズ</string>
+
+    <string name="dv2_stop_title">ガチャを開始できませんでした</string>
+    <string name="dv2_stop_unused">回数は使われていません。</string>
+    <string name="dv2_stop_network">接続状態を確認して、もう一度お試しください。</string>
+    <string name="dv2_stop_no_free">無料ガチャが残っていません。</string>
+    <string name="dv2_stop_no_premium">上級ガチャが残っていません。</string>
+    <string name="dv2_stop_wallet">先にWEB3ウォレットを連携してください。</string>
+    <string name="dv2_stop_sign_in">もう一度ログインすると引けます。</string>
+    <string name="dv2_stop_other">しばらくしてから、もう一度お試しください。</string>
+    <string name="dv2_retry_draw">もう一度引く</string>
+
+    <string name="dv2_check_header">ガチャ結果の確認</string>
+    <string name="dv2_check_head">結果を確認しています</string>
+    <string name="dv2_check_sub">完了を確認してからシューズをお見せします。</string>
+    <string name="dv2_check_note">もう一度引かずに、進行中の結果を確認します。</string>
+    <string name="dv2_check_again">結果を再確認</string>
+    <string name="dv2_check_unknown">まだ結果を確認できていません。接続状態を確認して、もう一度確認してください。</string>
+
+    <string name="dv2_load_failed_title">回数を読み込めませんでした</string>
+    <string name="dv2_load_failed_body">接続状態を確認して、もう一度お試しください。</string>
+    <string name="dv2_back_to_shoes">マイシューズに戻る</string>
+</resources>

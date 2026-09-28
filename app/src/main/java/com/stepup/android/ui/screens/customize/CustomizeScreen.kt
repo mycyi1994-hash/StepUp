@@ -52,6 +52,9 @@ fun CustomizeScreen(
     onOpenVault: () -> Unit = {},
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDraw: () -> Unit = {},
+    /** 뽑기 결과의 "내 신발 보기" — 받은 신발을 고른 채로 연다(미리 보기일 뿐, 착용은 바꾸지 않는다) */
+    focusShoeId: Long? = null,
+    onFocusShoeShown: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val loadedInventory by viewModel.selectionInventory.collectAsStateWithLifecycle()
@@ -59,6 +62,14 @@ fun CustomizeScreen(
     val ready = loadedInventory != null
     val message by viewModel.message.collectAsStateWithLifecycle()
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val shoeList = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(focusShoeId) {
+        if (focusShoeId != null) {
+            selectedId = focusShoeId
+            shoeList.scrollToItem(0)
+            onFocusShoeShown()
+        }
+    }
     val saving by viewModel.equipping.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val equipped = inventory.firstOrNull { it.equipped }
@@ -95,6 +106,7 @@ fun CustomizeScreen(
             val floorPx = with(LocalDensity.current) { previewFloor.roundToPx() }
             val fallbackPx = with(LocalDensity.current) { previewHeight.roundToPx() }
             LazyColumn(Modifier.fillMaxSize().onSizeChanged { windowPx = it.height }.testTag("shoe-list"),
+                state = shoeList,
                 contentPadding = PaddingValues(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (!ready) item {
