@@ -344,6 +344,23 @@ test('어테스터 로그인: 한꺼번에 불러도 한 번만, 실패하면 �
   resetAttesterLogin()
 })
 
+test('어테스터 로그인: 비밀 끝의 줄바꿈 · 공백은 걷어 낸다', async () => {
+  const { rpc, resetAttesterLogin } = await import('../src/supabase.js')
+  resetAttesterLogin()
+  const env = { SUPABASE_URL: 'https://s.test', SUPABASE_ANON_KEY: 'anon', ATTESTER_EMAIL: ' a@b\n', ATTESTER_PASSWORD: 'p w\r\n' }
+  let sent = null
+  const fetchImpl = async (url, init) => {
+    if (url.includes('/auth/v1/token')) {
+      sent = JSON.parse(init.body)
+      return new Response(JSON.stringify({ access_token: 't', expires_in: 3600 }))
+    }
+    return new Response('"ok"')
+  }
+  assert.equal(await rpc(env, 'attester_a', {}, fetchImpl), 'ok')
+  assert.deepEqual(sent, { email: 'a@b', password: 'p w' })
+  resetAttesterLogin()
+})
+
 test('RPC 수 제한 응답이면 잠깐 쉬었다 다시 보낸다 — 긴 응답 · 다른 오류는 그대로', async () => {
   const { rpcFetch } = await import('../src/chain.js')
   const waits = []

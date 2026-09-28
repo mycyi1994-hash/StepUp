@@ -3207,6 +3207,8 @@ declare r record;
 begin
   select * into r from public.attester_op_payload(pg_temp.fx('op_bonus')::uuid, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
   perform pg_temp.ok(r.transfer_locked, '보너스 신발은 잠긴 채로 발행된다');
+  -- 어테스터는 표를 읽지 못한다 — 도감과 맞는지는 아래에서
+  insert into fix (k, v) values ('bonus_model', r.model_id::text || ':' || r.rarity);
   perform public.attester_chain_event('0x' || repeat('e1', 32), 0, 200, 'SNEAKER_RELEASED',
     jsonb_build_object('op', r.op_ref, 'tokenId', '900'));
   perform pg_temp.ok(public.attester_chain_event('0x' || repeat('e2', 32), 0, 201, 'SNEAKER_DEPOSITED',
@@ -3219,6 +3221,15 @@ begin
     '잠긴 신발은 그 계정의 지갑에서 넣으면 받는다');
 end $$;
 reset role;
+do $$ begin
+  perform pg_temp.ok((select m.id::text || ':' || m.rarity from public.sneaker_models m
+                       where m.id = split_part(pg_temp.fx('bonus_model'), ':', 1)::int) = pg_temp.fx('bonus_model'),
+    '지갑 선물 신발은 새 도감 모델(0045) — 서명 재료에 모델 번호가 실린다(워커가 v3 로 발행)');
+  perform pg_temp.ok(not exists (select 1 from public.market_sneakers
+                                  where owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and origin = 'BONUS_DRAW'
+                                    and rarity not in ('EPIC', 'LEGENDARY')),
+    '웹 지갑의 보너스 뽑기도 상급과 같은 하한(에픽 이상)');
+end $$;
 
 -- 0029 점검 반영 — 모르는 작업 · 어긋난 작업은 멈추고, 취소는 신발을 돌려놓고, 넣기는 버림
 insert into fix (k, v)
@@ -3842,6 +3853,8 @@ begin
   perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW') = 14
                      and not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and rarity = 'COMMON'),
     '상급 뽑기 14켤레는 모두 레어 이상');
+  perform pg_temp.ok(not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and rarity not in ('EPIC', 'LEGENDARY')),
+    '상급 뽑기는 에픽 이상(0045)');
   perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW' and genesis_no is not null) = 1,
     'Genesis 는 한 켤레뿐');
 end $$;
@@ -4370,6 +4383,125 @@ end $$;
 reset role;
 delete from public.app_admins where user_id = 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5';
 select set_config('request.jwt.claims', '', false);
+
+\echo ''
+\echo '── 새 신발 도감(0045) — 70종 · 확률 · 모델 번호 ─────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$
+declare
+  i int;
+  v_r text;
+  c_common int := 0; c_rare int := 0; c_epic int := 0; c_leg int := 0;
+begin
+  perform pg_temp.ok((select count(*) from public.sneaker_models) = 70
+                     and (select count(*) from public.sneaker_models where rarity = 'RARE') = 20
+                     and (select count(*) from public.sneaker_models where rarity = 'EPIC') = 20
+                     and (select count(*) from public.sneaker_models where rarity = 'LEGENDARY') = 30
+                     and (select count(*) from public.sneaker_models where rarity = 'LEGENDARY' and series in ('REDLINE', 'FINISH')) = 20,
+    '도감 70종 — 레어 20 · 에픽 20 · 레전더리 30(레드라인 · 피니시 시리즈 포함)');
+  -- 씨앗 결과를 0..99 로 한 바퀴 굴리면 가중치 그대로 나온다
+  for i in 0..99 loop
+    v_r := economy.roll_rarity(i);
+    c_common := c_common + (v_r = 'COMMON')::int;
+    c_rare := c_rare + (v_r = 'RARE')::int;
+    c_epic := c_epic + (v_r = 'EPIC')::int;
+    c_leg := c_leg + (v_r = 'LEGENDARY')::int;
+  end loop;
+  perform pg_temp.ok(c_common = 0 and c_rare = 72 and c_epic = 22 and c_leg = 6,
+    format('무료 뽑기 확률 — 일반 %s · 레어 %s · 에픽 %s · 레전더리 %s (100 중)', c_common, c_rare, c_epic, c_leg));
+  c_epic := 0; c_leg := 0;
+  for i in 0..27 loop
+    v_r := economy.roll_rarity(i, 'EPIC');
+    c_epic := c_epic + (v_r = 'EPIC')::int;
+    c_leg := c_leg + (v_r = 'LEGENDARY')::int;
+  end loop;
+  perform pg_temp.ok(c_epic = 22 and c_leg = 6, '상급 · Genesis(에픽 이상) — 에픽 22 · 레전더리 6 (28 중)');
+  perform pg_temp.ok((economy.setting('premium_min_rarity') #>> '{}') = 'EPIC', '상급 뽑기 하한은 에픽');
+  -- 모델: 굴린 등급 안에서 번호 차례로 — 같은 등급의 모델은 모두 같은 몫
+  perform pg_temp.ok((select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 29) g) = 30
+                     and (select bool_and(m.rarity = 'LEGENDARY')
+                            from generate_series(0, 299) g
+                            join public.sneaker_models m on m.id = economy.draw_model('LEGENDARY', g)),
+    '레전더리를 굴리면 레전더리 30종 중 하나 — 한 바퀴에 모두 한 번씩');
+  perform pg_temp.ok((select count(distinct economy.draw_model('RARE', g)) from generate_series(0, 19) g) = 20
+                     and (select count(distinct economy.draw_model('EPIC', g)) from generate_series(0, 19) g) = 20,
+    '레어 · 에픽도 20종이 한 바퀴에 한 번씩');
+  perform pg_temp.ok(economy.draw_model('COMMON', 5) is null, '새 도감에 없는 등급이면 모델 없음(예전 그림)');
+end $$;
+
+-- 뽑을 수 없게 한 모델은 나오지 않는다(이미 가진 신발은 그대로)
+update public.sneaker_models set active = false where id = 1301;
+do $$ begin
+  perform pg_temp.ok((select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 99) g) = 29
+                     and not exists (select 1 from generate_series(0, 99) g where economy.draw_model('LEGENDARY', g) = 1301),
+    '뽑기에서 뺀 모델(active = false)은 나오지 않는다');
+end $$;
+update public.sneaker_models set active = true where id = 1301;
+
+-- 도감은 누구나 읽지만 고칠 수 없다
+do $$ begin
+  perform pg_temp.ok(has_table_privilege('anon', 'public.sneaker_models', 'select')
+                     and not has_table_privilege('authenticated', 'public.sneaker_models', 'insert')
+                     and not has_table_privilege('authenticated', 'public.sneaker_models', 'update'),
+    '도감은 공개(읽기만)');
+end $$;
+
+-- 새로 가입한 사람의 무료 뽑기 — 신발마다 등급이 같은 새 도감 모델, 금고 발행 일에 모델 번호
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6', 'catalog6@test', '{"full_name":"Catalog Six"}');
+set role authenticated;
+call pg_temp.login('c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6');
+do $$
+declare i int; v_id bigint;
+begin
+  perform public.economy_bootstrap();
+  for i in 1..10 loop
+    v_id := public.draw_free();
+  end loop;
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'FREE_DRAW') = 10
+                     and not exists (select 1 from public.my_sneakers() s
+                                      where s.origin = 'FREE_DRAW'
+                                        and (s.model_id is null or s.rarity = 'COMMON'
+                                             or s.rarity <> (select m.rarity from public.sneaker_models m where m.id = s.model_id))),
+    '무료 뽑기 10켤레 — 모두 레어 이상, 등급이 같은 새 도감 모델');
+  perform pg_temp.ok((select model_id is null and rarity = 'COMMON' from public.my_sneakers() where origin = 'STARTER'),
+    '첫 신발은 예전 그대로(일반 · 모델 번호 없음)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.chain_jobs
+                       where user_id = 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6' and kind = 'VAULT_MINT') = 10,
+    '뽑은 신발마다 금고 발행 일');
+end $$;
+update public.chain_jobs set next_at = now() - interval '1 second'
+ where user_id = 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6' and kind = 'VAULT_MINT';
+update public.chain_jobs set next_at = now() + interval '1 day'
+ where kind = 'VAULT_MINT' and status = 'QUEUED' and user_id <> 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6';
+create temp table claimed45 (job_id bigint, op_ref text, kind text, payload jsonb);
+grant all on claimed45 to stepup_attester;
+set role stepup_attester;
+select set_config('request.jwt.claims',
+  (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
+insert into claimed45 select * from public.attester_jobs_claim(array['VAULT_MINT'], 1);
+reset role;
+do $$
+declare r record;
+begin
+  select * into r from claimed45 limit 1;
+  perform pg_temp.ok(r.kind = 'VAULT_MINT'
+                     and (r.payload ->> 'model_id')::int = (select model_id from public.market_sneakers s
+                                                            join public.chain_jobs j on j.sneaker_id = s.id
+                                                           where j.id = r.job_id)
+                     and (select m.rarity from public.sneaker_models m where m.id = (r.payload ->> 'model_id')::int)
+                         = r.payload ->> 'rarity',
+    '금고 발행 서명 재료에 새 도감 모델 번호(등급 일치)');
+end $$;
+update public.chain_jobs set status = 'QUEUED', lease_until = null, payload = null
+ where id in (select job_id from claimed45);
+update public.chain_jobs set next_at = now()
+ where kind = 'VAULT_MINT' and status = 'QUEUED';
+drop table claimed45;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

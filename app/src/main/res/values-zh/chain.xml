@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 체인 기록(내 정보 › 지갑 › 체인 기록) · 무엇이 기록되나 — docs/온체인-거래-발생-지도.md -->
+<resources>
+    <string name="ca_title">链上记录</string>
+    <string name="ca_guide_cd">会记录什么</string>
+    <string name="ca_failed_title">无法加载链上记录</string>
+    <string name="ca_failed_body">请检查网络后重试。</string>
+    <string name="ca_signed_out_title">登录后即可查看</string>
+    <string name="ca_signed_out_body">只有已登录账户的跑步和跑鞋会记录到链上。</string>
+    <string name="ca_empty_title">还没有链上记录</string>
+    <string name="ca_empty_body">用GPS跑1公里以上或抽取跑鞋后，会显示在这里。</string>
+    <string name="ca_guide_open">查看会记录什么</string>
+    <string name="ca_summary_head">记录在 %1$s 上</string>
+    <string name="ca_summary_body">Gas 费由 StepUp 支付，无需签名。只有已确认的记录才有交易，点按即可在浏览器中查看。</string>
+    <string name="ca_count_confirmed">已记录</string>
+    <string name="ca_count_pending">等待中</string>
+    <string name="ca_status_confirmed">已记录</string>
+    <string name="ca_status_pending">等待中</string>
+    <string name="ca_status_cancelled">未发送</string>
+    <string name="ca_status_failed">失败</string>
+    <string name="ca_row_cd">%1$s，%2$s，%3$s</string>
+    <string name="ca_kind_run">跑步证明</string>
+    <string name="ca_kind_course">路线完成证明</string>
+    <string name="ca_kind_badge">徽章 · %1$s</string>
+    <string name="ca_kind_mint">跑鞋 NFT 铸造</string>
+    <string name="ca_kind_sync">跑鞋属性更新</string>
+    <string name="ca_kind_other">链上记录</string>
+    <string name="ca_badge_first_run">首次跑步</string>
+    <string name="ca_badge_distance">累计 %1$d 公里</string>
+    <string name="ca_badge_streak">连续 %1$d 天</string>
+    <string name="ca_run_detail">%1$s 公里 · %2$d 分钟</string>
+    <string name="ca_run_km">%1$s 公里</string>
+    <string name="ca_sneaker">跑鞋</string>
+    <string name="ca_guide_title">在哪里做什么会被记录</string>
+    <string name="ca_guide_intro">你实际完成的一件事最多对应一条记录。每 2 分钟集中发送一次，Gas 费由 StepUp 支付（GIWA Sepolia 测试网）。</string>
+    <string name="ca_guide_run_head">跑步证明 — 跑步页</string>
+    <string name="ca_guide_run_body">保存一次用 GPS 测得 1 公里以上的跑步即可。无效、虚拟定位和暂缓的跑步除外。每天最多 10 条。</string>
+    <string name="ca_guide_badge_head">徽章 — 随该次跑步</string>
+    <string name="ca_guide_badge_body">首次跑步，累计 10 · 50 · 100 · 300 · 500 · 1,000 公里，连续 3 · 7 · 14 · 30 · 100 天。每个徽章一次。</string>
+    <string name="ca_guide_course_head">路线完成 — 跑步页 › 推荐路线</string>
+    <string name="ca_guide_course_body">沿路线完成 1 公里以上的路线即可。每天最多 10 条。</string>
+    <string name="ca_guide_mint_head">跑鞋 NFT — 跑鞋页 › 抽取</string>
+    <string name="ca_guide_mint_body">每次免费或高级抽取，该跑鞋都会铸造到链上的 StepUp 金库中，你仍可在应用中照常穿着。</string>
+    <string name="ca_guide_sync_head">跑鞋属性 — 跑鞋页 › 我的跑鞋</string>
+    <string name="ca_guide_sync_body">强化或修理已铸造的跑鞋时，等级和耐久度也会同步到链上（以最新值同步一次）。</string>
+    <string name="ca_guide_wallet_head">钱包页面 — 取出 · 存入</string>
+    <string name="ca_guide_wallet_body">将 SUP 或跑鞋取出到钱包、或存回应用时也会产生交易。存入由你的钱包签名。</string>
+    <string name="ca_guide_foot">不记录：没有路线的步数、不足 1 公里的跑步、应用内 SUP 的获得与使用、穿鞋、跑步造成的耐久度损耗。只记录化名，不会记录位置、路线或账户。</string>
+    <string name="wl_chain_row">链上记录</string>
+    <string name="wl_chain_row_sub">跑步证明 · 跑鞋 NFT — Gas 费由 StepUp 支付</string>
+</resources>

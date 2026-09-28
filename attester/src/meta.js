@@ -1,5 +1,6 @@
 import { SNEAKERS_ABI, SNEAKERS_V3_ABI } from './chain.js'
 import { FACTIONS, RARITIES } from './typed.js'
+import { SHOE_MODELS } from './shoe-catalog.js'
 import { HttpError } from './supabase.js'
 
 /**
@@ -24,8 +25,24 @@ export const MODEL_NAMES = {
 const RARITY_LABEL = ['Common', 'Rare', 'Epic', 'Legendary']
 const THEME_LABEL = { FIRE: 'Fire', WATER: 'Water', LIGHTNING: 'Lightning', WIND: 'Wind' }
 
-/** 모델 번호(속성 × 100 + 등급 × 10 + 변형) → 도감 칸. 앱 SneakerDesigns.indexOf 와 같다. */
+/**
+ * 모델 번호 → 도감 칸.
+ *   1101~   새 도감(0045, src/shoe-catalog.js) — 이름 · 시리즈 · 그림 파일(shoe_<번호>.webp)
+ *   0~333   예전 52종(속성 × 100 + 등급 × 10 + 변형) — 앱 SneakerDesigns.indexOf 와 같다
+ */
 export function modelInfo(model) {
+  const shoe = SHOE_MODELS[model]
+  if (shoe) {
+    return {
+      faction: null,
+      series: shoe.series,
+      rarity: shoe.rarity,
+      rarityIndex: RARITIES.indexOf(shoe.rarity),
+      no: null,
+      name: shoe.en,
+      file: shoe.file,
+    }
+  }
   const faction = FACTIONS[Math.floor(model / 100)]
   const rarityIndex = Math.floor(model / 10) % 10
   const variant = model % 10
@@ -51,7 +68,9 @@ export function metadataOf(tokenId, stats, locked, imageBase) {
   const genesis = Number(stats.genesisNo)
   const attributes = [
     { trait_type: 'Rarity', value: RARITY_LABEL[m.rarityIndex] },
-    { trait_type: 'Theme', value: THEME_LABEL[m.faction] },
+    m.faction
+      ? { trait_type: 'Theme', value: THEME_LABEL[m.faction] }
+      : { trait_type: 'Series', value: m.series.charAt(0) + m.series.slice(1).toLowerCase() },
     { trait_type: 'Model', value: m.name },
     { display_type: 'number', trait_type: 'Level', value: level },
     { trait_type: 'Efficiency', value: `+${efficiency}%` },

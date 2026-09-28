@@ -16,6 +16,7 @@ import com.stepup.android.ui.components.KitNotice
 import com.stepup.android.ui.components.KitProgress
 import com.stepup.android.ui.components.KitTone
 import com.stepup.android.ui.components.RunKit
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -93,7 +94,10 @@ import com.stepup.android.R
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.service.RunSaveStatus
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Check
@@ -119,6 +123,7 @@ import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.followAnchor
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.GhostButton
@@ -649,18 +654,29 @@ fun RunScreen(
                     val others = if (together) {
                         party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } }
                     } else emptyList()
-                    Box(mapModifier) {
+                    // 지금 자리를 둘 높이 — 지도 아래가 버튼 뒤로 잘려 보이면 보이는 쪽 가운데로
+                    var followAt by remember { mutableFloatStateOf(0.45f) }
+                    Box(mapModifier.onGloballyPositioned { c ->
+                        val h = c.size.height
+                        if (h > 0) {
+                            val top = c.positionInRoot().y
+                            val seen = c.boundsInRoot()
+                            followAt = followAnchor((seen.top - top) / h, (seen.bottom - top) / h, MAP_FADE_TOP, MAP_FADE_BOTTOM)
+                        }
+                    }) {
                         val here = session.here
                         if (session.geoTrack.isNotEmpty()) {
-                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others)
+                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others,
+                                follow = true, followAt = followAt)
                         } else if (session.isActive && here != null) {
                             // GPS 가 잡히기 전 — 기지국 · 마지막으로 알던 위치로 "여기쯤"을 먼저 보인다(경로는 아직 없다)
-                            LiveRouteMap(points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others)
+                            LiveRouteMap(points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others,
+                                follow = true, followAt = followAt)
                         } else {
                             MapWaiting(Modifier.fillMaxSize())
                         }
                         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
-                            0f to Night, 0.14f to Color.Transparent, 0.72f to Color.Transparent, 1f to Night,
+                            0f to Night, MAP_FADE_TOP to Color.Transparent, MAP_FADE_BOTTOM to Color.Transparent, 1f to Night,
                         )))
                     }
                     if (together) {
@@ -1633,7 +1649,7 @@ private fun FinishCard(
             ) {
                 LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize())
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
-                    0f to Night, 0.14f to Color.Transparent, 0.72f to Color.Transparent, 1f to Night,
+                    0f to Night, MAP_FADE_TOP to Color.Transparent, MAP_FADE_BOTTOM to Color.Transparent, 1f to Night,
                 )))
             }
         } else {
@@ -1896,3 +1912,7 @@ private fun ChallengeRunStrip(focus: com.stepup.android.ui.screens.events.Challe
         Text(stringResource(R.string.challenge_run_expected), color = Slate, fontSize = 11.sp)
     }
 }
+
+/** 러닝 지도의 위 · 아래가 바닥색에 녹아드는 띠(높이 비율) — 그 사이가 또렷한 곳 */
+private const val MAP_FADE_TOP = 0.14f
+private const val MAP_FADE_BOTTOM = 0.72f

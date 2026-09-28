@@ -177,7 +177,9 @@ fun SneakerVisual(
     muted: Boolean = false,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
-    val res = sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant)
+    // 새 도감(0045) 신발은 그 모델 그림, 아니면 예전 52종 그림
+    val res = sneaker.modelId?.let(::shoeModelImageRes)
+        ?: sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant)
     if (res != null) {
         val float = if (animate && LocalMotion.current.decorative) ambientPhase(3600, reverse = true) else null
         Image(

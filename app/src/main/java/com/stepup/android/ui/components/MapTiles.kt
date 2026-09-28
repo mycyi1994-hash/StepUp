@@ -53,8 +53,16 @@ object MapTiles {
     /** 한 화면에 받을 타일 상한. 이보다 많이 필요하면 타일을 조금 크게 그려 이 안에서 화면을 덮는다([TilePlan.of]). */
     const val MAX_TILES = 24
 
-    /** 경로가 한 점뿐일 때의 기본 줌 */
-    const val DEFAULT_ZOOM = 16
+    /**
+     * 경로가 한 점뿐일 때의 기본 줌 — 폰 너비로 약 800m.
+     *
+     * 타일을 밀도의 절반 배율로 그려서([TilePlan]) 같은 줌이라도 구글 지도보다 한 단계 멀어 보인다.
+     * 16 이면 폰 너비로 1.5km 가 들어와 내 주변 길을 알아보기 어려웠다.
+     */
+    const val DEFAULT_ZOOM = 17
+
+    /** 달리는 중 지도가 지금 자리를 따라갈 때의 줌 — 같이 뛰는 사람이 멀어도 15(폰 너비 약 3km)까지만 물러난다 */
+    val FOLLOW_ZOOMS = 15..DEFAULT_ZOOM
 
     const val MIN_ZOOM = 3
     const val MAX_ZOOM = 18

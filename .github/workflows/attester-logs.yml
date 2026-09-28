@@ -7,6 +7,12 @@
 name: Attester logs
 
 on:
+  # 작업 브랜치에서 .github/attester-logs-request 를 바꿔 올려도 돈다(Claude 가 배포 뒤 확인할 때)
+  push:
+    branches:
+      - "claude/**"
+    paths:
+      - ".github/attester-logs-request"
   workflow_dispatch:
     inputs:
       seconds:

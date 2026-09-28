@@ -35,7 +35,9 @@
 
 ## 빌드 · 확인
 
-로컬에 안드로이드 SDK 가 없다. 푸시하면 CI 가 돈다.
+로컬에 안드로이드 SDK 가 없다. 푸시하면 CI 가 돈다. (클라우드 세션에 `/opt/android-sdk` 가 있으면 푸시 전에
+`ANDROID_HOME=/opt/android-sdk LC_ALL=C.UTF-8 ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:lintDebug` —
+한글 테스트 이름 때문에 UTF-8 로케일이 필요하다. 서버는 `supabase/tests/run.sh`, 워커는 `cd attester && npm test`.)
 
 - Build APK → `test-apk` 사전 배포에 `StepUp-test.apk` — **main 에 들어간 것만** 올라간다.
   작업 브랜치의 APK 는 그 실행의 Actions 아티팩트에서 받는다. 사용자가 받을 앱은 main 에 합쳐야 바뀐다.

@@ -291,6 +291,8 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
             repairCostPerPoint = repairCostPerPoint,
             genesisNo = genesisNo,
         ),
+        modelId = modelId.takeIf { it > 0 },
+        tokenId = tokenId.takeIf { it > 0 },
     )
 }
 
@@ -319,4 +321,6 @@ fun Sneaker.toEntity(): com.stepup.android.data.local.SneakerEntity =
         serverUpgradeCost = server?.upgradeCost ?: 0.0,
         repairCostPerPoint = server?.repairCostPerPoint ?: 0.0,
         genesisNo = server?.genesisNo ?: 0,
+        modelId = modelId ?: 0,
+        tokenId = tokenId ?: 0,
     )

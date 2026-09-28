@@ -35,6 +35,8 @@ end $$;
 
 -- 0025 의 attester_op_payload(uuid) 를 사용자 확인이 있는 것으로 바꾼다.
 drop function if exists public.attester_op_payload(uuid);
+-- 0045 가 돌려주는 열(model_id)을 늘렸다 — setup.sql 을 다시 붙여도 멈추지 않게 지우고 만든다(0045 가 다시 바꾼다)
+drop function if exists public.attester_op_payload(uuid, uuid);
 
 create or replace function public.attester_op_payload(p_op uuid, p_user uuid)
 returns table (

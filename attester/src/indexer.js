@@ -1,6 +1,7 @@
 import { DISTRIBUTOR_ABI, SNEAKERS_ABI, SNEAKERS_V3_ABI, VAULT_ABI } from './chain.js'
 import { parseEventLogs } from 'viem'
-import { isV3Token, weiToSup } from './typed.js'
+import { weiToSup } from './typed.js'
+import { releasesOnV3 } from './catalog.js'
 
 /**
  * 1분마다 도는 일 — 체인을 읽어 서버에 알리고, 오래된 작업을 되돌리고, 장부를 맞춰 본다.
@@ -76,8 +77,8 @@ const ABI_OF = Object.fromEntries(SOURCES)
 const startBlockOf = (source, env) =>
   BigInt((source === 'sneakersV3' ? env.SNEAKERS_V3_START_BLOCK : null) ?? env.START_BLOCK ?? '0')
 
-/** 신발 작업이 어느 컨트랙트의 것인가 — v3 토큰(1000001~)을 꺼내는 작업만 v3 */
-export const sneakerSourceOf = (op) => (op.kind === 'SNEAKER_WITHDRAW' && isV3Token(op.token_id) ? 'sneakersV3' : 'sneakers')
+/** 신발 작업이 어느 컨트랙트의 것인가 — v3 토큰(1000001~)을 꺼내는 작업 · 새 도감 모델의 첫 발행은 v3 */
+export const sneakerSourceOf = (op) => (releasesOnV3(op) ? 'sneakersV3' : 'sneakers')
 
 /** safe(없으면 finalized) 블록의 번호와 시각 — 못 읽으면 null */
 async function safeHeader(c) {

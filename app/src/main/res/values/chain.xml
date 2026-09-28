@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 체인 기록(내 정보 › 지갑 › 체인 기록) · 무엇이 기록되나 — docs/온체인-거래-발생-지도.md -->
+<resources>
+    <string name="ca_title">Chain records</string>
+    <string name="ca_guide_cd">What gets recorded</string>
+    <string name="ca_failed_title">Couldn\'t load chain records</string>
+    <string name="ca_failed_body">Check your connection and try again.</string>
+    <string name="ca_signed_out_title">Sign in to see chain records</string>
+    <string name="ca_signed_out_body">Only runs and shoes of a signed-in account are recorded on chain.</string>
+    <string name="ca_empty_title">No chain records yet</string>
+    <string name="ca_empty_body">Run 1 km or more with GPS, or draw a shoe, and it shows up here.</string>
+    <string name="ca_guide_open">What gets recorded</string>
+    <string name="ca_summary_head">Recorded on %1$s</string>
+    <string name="ca_summary_body">StepUp pays the gas and you never sign. Only confirmed records have a transaction — tap one to open it in the explorer.</string>
+    <string name="ca_count_confirmed">Recorded</string>
+    <string name="ca_count_pending">Waiting</string>
+    <string name="ca_status_confirmed">Recorded</string>
+    <string name="ca_status_pending">Waiting</string>
+    <string name="ca_status_cancelled">Not sent</string>
+    <string name="ca_status_failed">Failed</string>
+    <string name="ca_row_cd">%1$s, %2$s, %3$s</string>
+    <string name="ca_kind_run">Run proof</string>
+    <string name="ca_kind_course">Course finish proof</string>
+    <string name="ca_kind_badge">Badge · %1$s</string>
+    <string name="ca_kind_mint">Shoe NFT minted</string>
+    <string name="ca_kind_sync">Shoe stats updated</string>
+    <string name="ca_kind_other">Chain record</string>
+    <string name="ca_badge_first_run">First run</string>
+    <string name="ca_badge_distance">%1$d km total</string>
+    <string name="ca_badge_streak">%1$d-day streak</string>
+    <string name="ca_run_detail">%1$s km · %2$d min</string>
+    <string name="ca_run_km">%1$s km</string>
+    <string name="ca_sneaker">Shoe</string>
+    <string name="ca_guide_title">What gets recorded on chain</string>
+    <string name="ca_guide_intro">One thing you actually did is at most one record. StepUp sends them every 2 minutes and pays the gas (GIWA Sepolia testnet).</string>
+    <string name="ca_guide_run_head">Run proof — Running tab</string>
+    <string name="ca_guide_run_body">Save a run of 1 km or more measured by GPS. Void, mock-location and held runs are left out. Up to 10 a day.</string>
+    <string name="ca_guide_badge_head">Badge — with that run</string>
+    <string name="ca_guide_badge_body">First run, 10 · 50 · 100 · 300 · 500 · 1,000 km in total, 3 · 7 · 14 · 30 · 100 days in a row. Each badge once.</string>
+    <string name="ca_guide_course_head">Course finish — Running tab › Courses</string>
+    <string name="ca_guide_course_body">Finish a course of 1 km or more along its route. Up to 10 a day.</string>
+    <string name="ca_guide_mint_head">Shoe NFT — Shoes tab › Draw</string>
+    <string name="ca_guide_mint_body">Every free or premium draw mints that shoe into the StepUp vault on chain. You keep wearing it in the app.</string>
+    <string name="ca_guide_sync_head">Shoe stats — Shoes tab › My shoe</string>
+    <string name="ca_guide_sync_body">Upgrading or repairing a minted shoe updates its level and durability on chain, once with the latest values.</string>
+    <string name="ca_guide_wallet_head">Wallet page — take out or put in</string>
+    <string name="ca_guide_wallet_body">Moving SUP or shoes between the app and your wallet is a transaction too. Putting them back in is signed by your wallet.</string>
+    <string name="ca_guide_foot">Not recorded: steps without a route, runs under 1 km, earning or spending SUP in the app, putting shoes on, wear from running. Only a pseudonym is recorded — never your location, route or account.</string>
+    <string name="wl_chain_row">Chain records</string>
+    <string name="wl_chain_row_sub">Run proofs · shoe NFTs — StepUp pays the gas</string>
+</resources>

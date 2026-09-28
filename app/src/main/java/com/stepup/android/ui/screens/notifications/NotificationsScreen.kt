@@ -86,12 +86,14 @@ import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.repo.Announcement
 import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.NoticeBoard
+import com.stepup.android.domain.parseModelSlotKey
 import com.stepup.android.domain.parseSlotKey
 import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.components.SettingsPrimaryButton
 import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.components.StepUpIcons
 import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.shoeModelNameRes
 import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
@@ -745,6 +747,7 @@ internal fun iconFor(type: String): ImageVector = when (type) {
 /** 알림에 저장된 슬롯 키를 지금 언어의 신발 이름으로 되살린다 */
 @Composable
 private fun sneakerLabel(slotKey: String): String {
+    parseModelSlotKey(slotKey)?.let(::shoeModelNameRes)?.let { return stringResource(it) }
     val parsed = parseSlotKey(slotKey) ?: return slotKey
     val (faction, rarity, variant) = parsed
     return variantLabel(faction, rarity, variant)

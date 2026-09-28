@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -97,6 +98,7 @@ fun WalletScreen(
     onBack: () -> Unit = {},
     onOpenDraw: () -> Unit = {},
     onOpenWalletPage: () -> Unit = {},
+    onOpenChain: () -> Unit = {},
     viewModel: RewardsViewModel = viewModel(factory = RewardsViewModel.Factory),
 ) {
     val totals by viewModel.totals.collectAsStateWithLifecycle()
@@ -113,7 +115,7 @@ fun WalletScreen(
         totals = totals, history = history, filter = filter, web3 = web3, status = status,
         onBack = onBack, onFilter = viewModel::setFilter, onLoadMore = viewModel::loadMore,
         onReloadHistory = viewModel::reloadHistory, onReload = viewModel::reload, onRetryWeb3 = viewModel::refreshWeb3,
-        onOpenDraw = onOpenDraw, onOpenWalletPage = onOpenWalletPage,
+        onOpenDraw = onOpenDraw, onOpenWalletPage = onOpenWalletPage, onOpenChain = onOpenChain,
     )
 }
 
@@ -132,6 +134,7 @@ fun WalletContent(
     onRetryWeb3: () -> Unit = {},
     onOpenDraw: () -> Unit = {},
     onOpenWalletPage: () -> Unit = {},
+    onOpenChain: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
     zone: ZoneId = ZoneId.systemDefault(),
     thisYear: Int = Year.now(zone).value,
@@ -179,6 +182,7 @@ fun WalletContent(
                     onRetry = onRetryWeb3,
                 )
             }
+            item(key = "chain") { ChainLinkRow(onOpenChain) }
             item(key = "history-head") { HistoryHead(filter, onFilter) }
             when (history) {
                 HistoryLoad.Loading -> item(key = "history-loading") { HistorySkeleton() }
@@ -349,6 +353,28 @@ private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit) {
     }
 }
 
+/** 체인 기록 줄 — 내 러닝 증명 · 신발 NFT 가 체인에 어떻게 올라갔는지(서버가 확인한 것만) */
+@Composable
+private fun ChainLinkRow(onClick: () -> Unit) {
+    val p = settingsPalette()
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).feedbackClickable(role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) {}.testTag("wl-chain"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.Link, contentDescription = null, tint = p.accent, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.width(18.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.wl_chain_row), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.wl_chain_row_sub), color = p.secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.secondary)
+        }
+        Box(Modifier.padding(top = 4.dp).fillMaxWidth().height(1.dp).background(p.divider))
+    }
+}
+
 /** 이용 내역 제목 · 최근순 · 거르개(전체 · 적립 · 사용) — 고른 것만 밝은 면. 누르는 곳은 48dp */
 @Composable
 private fun HistoryHead(filter: LedgerFilter, onFilter: (LedgerFilter) -> Unit) {
@@ -440,7 +466,7 @@ private fun EmptyHistory(filter: LedgerFilter, onShowAll: () -> Unit) {
 
 /** 안내 한 덩어리 — 그림 · 제목 · 한 줄 · (있으면) 버튼 하나 */
 @Composable
-private fun WalletState(
+internal fun WalletState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String,

@@ -227,6 +227,8 @@ class EconomySync(
         serverUpgradeCost = upgradeCost,
         repairCostPerPoint = repairCostPerPoint,
         genesisNo = genesisNo ?: 0,
+        modelId = modelId ?: 0,
+        tokenId = tokenId ?: 0,
     )
 
     companion object {

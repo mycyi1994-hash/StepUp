@@ -5,6 +5,7 @@ import { ALREADY_KNOWN, revertName } from './handlers.js'
 import { pauseAll } from './indexer.js'
 import { STATS_SYNC_TYPES, VAULT_MINT_TYPES, releaseDomain, statsSyncMessage, vaultMintMessage } from './typed.js'
 import { ensureV3 } from './v3.js'
+import { ensureCatalog } from './catalog.js'
 
 /**
  * 체인 기록 보내기(0044 chain_jobs) — 러닝 증명 · 코스 완주 · 배지(EAS), 금고 발행 · 스탯 갱신(v3).
@@ -301,8 +302,10 @@ export async function runJobs(env, deps) {
     })
   const confirm = await step('confirm', () => confirmJobs(env, deps, c))
   const v3 = await step('v3', () => ensureV3(env, deps, c))
-  const kinds = [...(c.addresses.eas ? EAS_KINDS : []), ...(v3?.ready ? V3_KINDS : [])]
+  // 새 도감 모델이 v3 도감에 다 들어간 뒤에 v3 일(금고 발행 · 갱신)을 보낸다 — 없는 모델은 컨트랙트가 받지 않는다
+  const catalog = v3?.ready ? await step('catalog', () => ensureCatalog(env, deps, c)) : null
+  const kinds = [...(c.addresses.eas ? EAS_KINDS : []), ...(v3?.ready && catalog?.ready ? V3_KINDS : [])]
   const send = await step('send', () => sendJobs(env, deps, c, kinds))
-  return { confirm, v3, send }
+  return { confirm, v3, catalog, send }
 }
 

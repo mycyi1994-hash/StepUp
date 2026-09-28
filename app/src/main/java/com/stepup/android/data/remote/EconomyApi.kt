@@ -49,6 +49,10 @@ class EconomyApi(private val server: StepUpServer) {
             )
         }.mapBody { serverJson.decodeFromString<List<BoostRow>>(it) }
 
+    /** 내 체인 기록(0044) — 최근 것부터. 확정 전에는 거래 번호가 없다 */
+    suspend fun chainActivity(limit: Int = 100): ServerResult<List<ChainActivityRow>> =
+        rpc("my_chain_activity", "{\"p_limit\":$limit}") { serverJson.decodeFromString<List<ChainActivityRow>>(it) }
+
     // ── 쓰기 ────────────────────────────────────────────────────────
 
     /** 무료 뽑기. 새 신발의 번호를 돌려준다. */
@@ -123,7 +127,43 @@ data class ServerSneakerRow(
     @SerialName("can_withdraw") val canWithdraw: Boolean = false,
     @SerialName("upgrade_cost") val upgradeCost: Double = 0.0,
     @SerialName("repair_cost_per_point") val repairCostPerPoint: Double = 0.0,
+    /** 새 도감(0045) 번호 — 비어 있으면 예전 52종(속성 × 변형) */
+    @SerialName("model_id") val modelId: Int? = null,
+    /** 체인 토큰 번호 — v2(1~) · v3(1,000,001~). 아직 체인에 없으면 null */
+    @SerialName("token_id") val tokenId: Long? = null,
 )
+
+@Serializable
+data class ChainActivityRow(
+    val id: Long,
+    val kind: String,
+    val status: String,
+    @SerialName("distance_m") val distanceM: Int? = null,
+    @SerialName("duration_sec") val durationSec: Int? = null,
+    val badge: String? = null,
+    @SerialName("badge_value") val badgeValue: Int? = null,
+    @SerialName("sneaker_id") val sneakerId: Long? = null,
+    @SerialName("tx_hash") val txHash: String? = null,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("confirmed_at") val confirmedAt: String? = null,
+) {
+    fun toDomain() = com.stepup.android.domain.ChainRecord(
+        id = id,
+        kind = com.stepup.android.domain.ChainRecord.kindOf(kind),
+        status = com.stepup.android.domain.ChainRecord.statusOf(status),
+        distanceM = distanceM,
+        durationSec = durationSec,
+        badge = badge,
+        badgeValue = badgeValue,
+        sneakerId = sneakerId,
+        txHash = txHash,
+        createdAt = createdAt.isoMillis() ?: 0L,
+        confirmedAt = confirmedAt?.isoMillis(),
+    )
+}
+
+private fun String.isoMillis(): Long? =
+    runCatching { java.time.OffsetDateTime.parse(this).toInstant().toEpochMilli() }.getOrNull()
 
 @Serializable
 data class LedgerEntryRow(

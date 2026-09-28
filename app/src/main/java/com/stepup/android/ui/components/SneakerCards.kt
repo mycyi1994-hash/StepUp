@@ -162,9 +162,10 @@ fun factionNameRes(faction: Faction): Int = when (faction) {
 fun variantLabel(faction: Faction, rarity: Rarity, variant: Int): String =
     stringResource(variantNameRes(faction, rarity, variant))
 
-/** 모델명만 — "인페르노 크라운" */
+/** 모델명만 — "인페르노 크라운". 새 도감(0045) 신발은 그 모델 이름 */
 @Composable
-fun Sneaker.variantLabel(): String = variantLabel(faction, rarity, variant)
+fun Sneaker.variantLabel(): String =
+    modelId?.let(::shoeModelNameRes)?.let { stringResource(it) } ?: variantLabel(faction, rarity, variant)
 
 /**
  * 화면에 쓰는 이름 — "인페르노 크라운".
@@ -176,7 +177,8 @@ fun Sneaker.variantLabel(): String = variantLabel(faction, rarity, variant)
 fun Sneaker.fullLabel(): String = variantLabel()
 
 /** Composable 밖(토스트·알림)에서 쓰는 같은 이름 */
-fun Sneaker.fullLabel(context: Context): String = fullSneakerLabel(context, faction, rarity, variant)
+fun Sneaker.fullLabel(context: Context): String =
+    modelId?.let(::shoeModelNameRes)?.let(context::getString) ?: fullSneakerLabel(context, faction, rarity, variant)
 
 fun fullSneakerLabel(context: Context, faction: Faction, rarity: Rarity, variant: Int): String =
     context.getString(variantNameRes(faction, rarity, variant))

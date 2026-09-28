@@ -69,7 +69,8 @@ async function login(env, fetchImpl) {
   const res = await fetchImpl(`${env.SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { apikey: env.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
-    body: JSON.stringify({ email: env.ATTESTER_EMAIL, password: env.ATTESTER_PASSWORD }),
+    // 비밀을 넣을 때 끝에 줄바꿈 · 공백이 섞이면(echo … | wrangler secret put) 로그인이 invalid_credentials 로 실패한다
+    body: JSON.stringify({ email: String(env.ATTESTER_EMAIL ?? '').trim(), password: String(env.ATTESTER_PASSWORD ?? '').trim() }),
   })
   if (!res.ok) {
     // 비밀이 아닌 것만 남긴다 — 상태와 오류 코드(invalid_credentials · email_not_confirmed · over_request_rate_limit …)

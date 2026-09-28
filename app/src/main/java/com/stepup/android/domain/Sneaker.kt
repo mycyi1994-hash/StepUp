@@ -364,7 +364,14 @@ data class Sneaker(
     val acquiredAt: Long,
     /** 서버가 준 스탯. 비어 있으면(origin == "") 폰에만 있던 옛 신발이다. */
     val server: ServerStats? = null,
+    /** 새 도감(0045 · [ShoeCatalog]) 번호. null 이면 예전 52종(속성 × 변형) */
+    val modelId: Int? = null,
+    /** 체인 토큰 번호 — v2(1~) · v3 금고(1,000,001~). null 이면 아직 체인에 없다 */
+    val tokenId: Long? = null,
 ) {
+    /** 새 도감 모델 — 그림 · 이름은 이것을 따른다. 없으면 예전 도감([design]) */
+    val catalogModel: ShoeCatalog.Model? get() = ShoeCatalog.of(modelId)
+
     val silhouette: Silhouette get() = Silhouettes.of(rarity, variant)
 
     /** 이 신발이 도감의 어느 칸인지 */
@@ -373,11 +380,11 @@ data class Sneaker(
     /** 도감 번호 — "FIR-001" */
     val code: String get() = design.code
 
-    /** 모델명 — "Inferno Crown" */
-    val variantName: String get() = design.englishName
+    /** 모델명 — "Inferno Crown" (새 도감이면 그 이름) */
+    val variantName: String get() = catalogModel?.englishName ?: design.englishName
 
-    /** 전체 이름 — "Fire Apex". 알림·토스트처럼 Composable 밖에서 쓴다. */
-    val displayName: String get() = "${faction.displayName} $variantName"
+    /** 전체 이름 — "Fire Apex". 새 도감 신발은 모델명 그대로. 로그처럼 Composable 밖에서 쓴다. */
+    val displayName: String get() = catalogModel?.englishName ?: "${faction.displayName} $variantName"
 
     /**
      * 적립 보너스(%).
@@ -422,8 +429,8 @@ data class Sneaker(
     val repairCost: Double
         get() = server?.let { ((100.0 - it.durabilityPts).coerceAtLeast(0.0) * it.repairCostPerPoint) } ?: 0.0
 
-    /** 도감 슬롯 식별자 */
-    val slotKey: String get() = "${faction.id}:${rarity.id}:$variant"
+    /** 도감 슬롯 식별자 — 새 도감은 "M:1101", 예전 52종은 "FIRE:EPIC:1" */
+    val slotKey: String get() = catalogModel?.let { "M:${it.id}" } ?: "${faction.id}:${rarity.id}:$variant"
 }
 
 /** 강화할 수 없는 까닭 */
@@ -519,6 +526,10 @@ object SneakerMint {
         acquiredAt = System.currentTimeMillis(),
     )
 }
+
+/** 새 도감 슬롯 키("M:1101")의 모델 번호. 예전 키 · 모르는 번호면 null */
+fun parseModelSlotKey(key: String): Int? =
+    key.takeIf { it.startsWith("M:") }?.substring(2)?.toIntOrNull()?.takeIf { ShoeCatalog.of(it) != null }
 
 /** "fire:epic:1" 같은 슬롯 키를 되돌린다. 형식이 어긋나면 null */
 fun parseSlotKey(key: String): Triple<Faction, Rarity, Int>? {

@@ -35,6 +35,7 @@ import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.formatKm
+import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.ui.components.SecondaryHeader
@@ -118,6 +119,20 @@ class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
     }
 }
 
+/**
+ * 처음 맞출 경로들 — 가장 최근 러닝([routes] 의 처음) 둘레 [HISTORY_FOCUS_METERS] 안에서 달린 것만.
+ * 여행지 · 다른 도시에서 한 번 달린 기록까지 맞추면 지도가 나라 전체로 물러난다. 먼 기록도 그리기는 한다(축소하면 보인다).
+ */
+internal fun historyFocus(routes: List<List<GeoPoint>>): List<GeoPoint> {
+    val home = routes.firstOrNull { it.isNotEmpty() }?.middle() ?: return emptyList()
+    return routes.filter { it.isNotEmpty() && haversineMeters(home, it.middle()) <= HISTORY_FOCUS_METERS }.flatten()
+}
+
+/** 경로를 담는 사각형의 가운데 */
+private fun List<GeoPoint>.middle() = GeoPoint((minOf { it.lat } + maxOf { it.lat }) / 2, (minOf { it.lng } + maxOf { it.lng }) / 2)
+
+private const val HISTORY_FOCUS_METERS = 10_000.0
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryMapScreen(
@@ -126,7 +141,7 @@ fun HistoryMapScreen(
 ) {
     val period by viewModel.period.collectAsStateWithLifecycle()
     val map by viewModel.map.collectAsStateWithLifecycle()
-    val focus = remember(map) { map.routes.flatten() }
+    val focus = remember(map) { historyFocus(map.routes) }
 
     Column(Modifier.fillMaxSize()) {
         SecondaryHeader(
