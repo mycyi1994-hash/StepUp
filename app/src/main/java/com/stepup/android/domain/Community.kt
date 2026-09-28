@@ -56,6 +56,8 @@ data class Post(
     val lng: Double? = null,
     /** 공개 장소의 주소(동네 이야기). 모르면 빈 문자열 */
     val placeAddress: String = "",
+    /** 글에 붙인 러닝(동네 이야기, 0046) — 거리 · 시간 · 코스 그림. 없으면 null */
+    val run: StoryRun? = null,
 ) {
     val isFlash: Boolean get() = category == PostCategory.FLASH
 

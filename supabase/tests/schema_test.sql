@@ -3699,7 +3699,7 @@ reset role;
 do $$
 begin
   perform pg_temp.ok(not has_function_privilege('anon',
-    'public.story_create(text, text, text, text, double precision, double precision)', 'execute'), '로그인 전에는 장소 글을 쓸 수 없다');
+    'public.story_create(text, text, text, text, double precision, double precision, bigint, uuid)', 'execute'), '로그인 전에는 장소 글을 쓸 수 없다');
   perform pg_temp.ok(not has_function_privilege('authenticated',
     'public.story_check(text, text, text, text, double precision, double precision)', 'execute'), '검사 함수는 앱에 열지 않는다');
 end $$;
@@ -4502,6 +4502,202 @@ update public.chain_jobs set status = 'QUEUED', lease_until = null, payload = nu
 update public.chain_jobs set next_at = now()
  where kind = 'VAULT_MINT' and status = 'QUEUED';
 drop table claimed45;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0046 러닝 이야기 — 최근 러닝(오늘~3일 전, 한국 날짜)을 붙인다 · 요청 키로 두 번 올라가지 않는다
+-- ══════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 러닝 이야기(0046) ────────────────────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+-- 한국 날짜로 오늘 · 3일 전 막 넘긴 시각(경계 안) · 4일 전 끝나기 직전(경계 밖)에 끝난 러닝
+insert into fix (k, v) values
+  ('sr_today', ((economy.game_day(now()))::timestamp at time zone 'Asia/Seoul')::text);
+insert into auth.users (id, email) values ('46460000-0000-0000-0000-000000000046', 'never-ran@test');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, track)
+values
+  ('11111111-1111-1111-1111-111111111111', now() - interval '47 minutes', now() - interval '31 minutes', 960, 2600, 2104.6, 'CLEAN',
+   pg_temp.track(now() - interval '47 minutes', 900, 0.00003)),
+  ('11111111-1111-1111-1111-111111111111',
+   pg_temp.fx('sr_today')::timestamptz - interval '3 days' - interval '20 minutes',
+   pg_temp.fx('sr_today')::timestamptz - interval '3 days' + interval '10 minutes', 1458, 4200, 3240, 'FLAGGED', ''),
+  ('11111111-1111-1111-1111-111111111111',
+   pg_temp.fx('sr_today')::timestamptz - interval '3 days' - interval '40 minutes',
+   pg_temp.fx('sr_today')::timestamptz - interval '3 days' - interval '10 minutes', 1500, 4000, 3000, 'CLEAN', ''),
+  ('11111111-1111-1111-1111-111111111111', now() - interval '3 hours', now() - interval '2 hours 40 minutes', 1200, 3000, 0, 'VOID', ''),
+  ('22222222-2222-2222-2222-222222222222', now() - interval '52 minutes', now() - interval '36 minutes', 960, 2600, 2000, 'CLEAN', '');
+insert into fix (k, v)
+  select 'sr_route', id::text from public.walk_sessions
+   where user_id = '11111111-1111-1111-1111-111111111111' and ended_at = (
+     select max(ended_at) from public.walk_sessions where user_id = '11111111-1111-1111-1111-111111111111' and distance_meters = 2104.6);
+insert into fix (k, v)
+  select 'sr_nogps', id::text from public.walk_sessions
+   where user_id = '11111111-1111-1111-1111-111111111111' and distance_meters = 3240;
+insert into fix (k, v)
+  select 'sr_old', id::text from public.walk_sessions
+   where user_id = '11111111-1111-1111-1111-111111111111' and distance_meters = 3000 and duration_sec = 1500;
+insert into fix (k, v)
+  select 'sr_void', id::text from public.walk_sessions
+   where user_id = '11111111-1111-1111-1111-111111111111' and verdict = 'VOID' and ended_at > now() - interval '3 hours';
+insert into fix (k, v)
+  select 'sr_other', id::text from public.walk_sessions
+   where user_id = '22222222-2222-2222-2222-222222222222' and distance_meters = 2000 and duration_sec = 960;
+
+do $$
+declare v_route text;
+begin
+  v_route := public.story_route(pg_temp.track(now(), 600, 0.00003));
+  perform pg_temp.ok(array_length(string_to_array(v_route, ';'), 1) = 64, '코스 그림은 64점으로 줄인다');
+  perform pg_temp.ok(split_part(v_route, ';', 1) = '37.50000,127.00000' and split_part(v_route, ';', 64) = '37.51800,127.00000',
+    '처음과 끝 점을 남긴다');
+  perform pg_temp.ok(public.story_route('37.5,127.0,1;x,y,2;;37.6,127.1,3') = '37.50000,127.00000;37.60000,127.10000',
+    '읽을 수 없는 조각은 건너뛴다');
+  perform pg_temp.ok(public.story_route('37.5,127.0,1') = '' and public.story_route('') = '' and public.story_route(null) = '',
+    '점이 둘 미만이면 코스가 없다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v jsonb; v_ids bigint[]; r jsonb;
+begin
+  v := public.story_runs();
+  perform pg_temp.ok((v ->> 'today')::date = (now() at time zone 'Asia/Seoul')::date, '오늘은 한국 날짜다');
+  select array_agg((x ->> 'id')::bigint) into v_ids from jsonb_array_elements(v -> 'runs') x;
+  perform pg_temp.ok(pg_temp.fx('sr_route')::bigint = any(v_ids), '오늘 끝난 러닝은 붙일 수 있다');
+  perform pg_temp.ok(pg_temp.fx('sr_nogps')::bigint = any(v_ids), '3일 전(자정 넘어 끝난) 러닝도 붙일 수 있다');
+  perform pg_temp.ok(not pg_temp.fx('sr_old')::bigint = any(v_ids), '4일 전에 끝난 러닝은 붙일 수 없다(시작이 아니라 끝난 날)');
+  perform pg_temp.ok(not pg_temp.fx('sr_void')::bigint = any(v_ids), '무효 러닝은 붙일 수 없다');
+  perform pg_temp.ok(not pg_temp.fx('sr_other')::bigint = any(v_ids), '남의 러닝은 보이지 않는다');
+  perform pg_temp.ok((v ->> 'total')::int >= 3 and (v ->> 'voided')::int >= 1 and v ->> 'last_ended_at' is not null,
+    '전체 완료 수 · 무효 수 · 마지막 완료 시각을 함께 준다');
+  select x into r from jsonb_array_elements(v -> 'runs') x where (x ->> 'id')::bigint = pg_temp.fx('sr_route')::bigint;
+  perform pg_temp.ok((r ->> 'distance_m')::int = 2105 and (r ->> 'duration_s')::int = 960
+                     and array_length(string_to_array(r ->> 'route', ';'), 1) = 64, '거리 · 시간 · 코스 그림은 서버 기록의 값');
+  select x into r from jsonb_array_elements(v -> 'runs') x where (x ->> 'id')::bigint = pg_temp.fx('sr_nogps')::bigint;
+  perform pg_temp.ok(r ->> 'route' = '' and (r ->> 'day')::date = (now() at time zone 'Asia/Seoul')::date - 3,
+    '경로 없는 러닝은 코스 그림 없이 거리 · 시간만');
+end $$;
+
+call pg_temp.login('46460000-0000-0000-0000-000000000046');
+do $$
+declare v jsonb;
+begin
+  v := public.story_runs();
+  perform pg_temp.ok((v ->> 'total')::int = 0 and v -> 'last_ended_at' = 'null'::jsonb and jsonb_array_length(v -> 'runs') = 0,
+    '한 번도 달리지 않았으면 전체 완료 0 · 첨부할 기록 없음');
+end $$;
+
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_post bigint; r record;
+begin
+  v_post := public.story_create('오늘 여의도에서 2.10km 달렸어요.', '', '여의도공원', '서울 영등포구 여의공원로', 37.5260, 126.9245,
+                                pg_temp.fx('sr_route')::bigint, 'aaaaaaaa-0000-0000-0000-000000000046');
+  insert into fix (k, v) values ('sr_post', v_post::text);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.run_distance_m = 2105 and r.run_duration_s = 960 and r.run_started_at is not null
+                     and array_length(string_to_array(r.run_route, ';'), 1) = 64, '붙인 러닝이 글에 옮겨 적힌다');
+  perform pg_temp.ok(public.story_create('오늘 여의도에서 2.10km 달렸어요.', '', '여의도공원', '', 37.5260, 126.9245,
+                                         pg_temp.fx('sr_route')::bigint, 'aaaaaaaa-0000-0000-0000-000000000046') = v_post,
+    '같은 요청 키로 다시 올리면 같은 글 번호(두 편이 생기지 않는다)');
+  perform pg_temp.ok((select count(*) from public.posts where client_key = 'aaaaaaaa-0000-0000-0000-000000000046') = 1,
+    '요청 키마다 글은 한 편');
+  v_post := public.story_create('3.24km 달렸어요.', '', '마포대교', '', 37.53, 126.93, pg_temp.fx('sr_nogps')::bigint);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.run_distance_m = 3240 and r.run_duration_s = 1458 and r.run_route = '',
+    '경로 없는 러닝은 거리 · 시간만 붙는다(가짜 코스 없음)');
+  v_post := public.story_create('코스 없이 쓰는 글', '', '여의도공원', '', 37.5260, 126.9245);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.run_distance_m is null and r.run_route = '', '러닝 없이도 글을 쓸 수 있다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.story_create('글', '', '여의도공원', '', 37.5, 126.9, %s) $q$, pg_temp.fx('sr_old')),
+  '4일 전 기록은 새로 붙일 수 없다');
+call pg_temp.must_fail(format($q$ select public.story_create('글', '', '여의도공원', '', 37.5, 126.9, %s) $q$, pg_temp.fx('sr_void')),
+  '무효 러닝은 붙일 수 없다');
+call pg_temp.must_fail(format($q$ select public.story_create('글', '', '여의도공원', '', 37.5, 126.9, %s) $q$, pg_temp.fx('sr_other')),
+  '남의 러닝은 붙일 수 없다');
+do $$
+begin
+  begin
+    perform public.story_create('글', '', '여의도공원', '', 37.5, 126.9, pg_temp.fx('sr_old')::bigint);
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'run_expired', '기간이 지난 기록은 run_expired 로 알린다(앱이 코스만 정리하게)');
+  end;
+  begin
+    perform public.story_create('글', '', '여의도공원', '', 37.5, 126.9, pg_temp.fx('sr_other')::bigint);
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'run_invalid', '붙일 수 없는 기록은 run_invalid 로 알린다');
+  end;
+end $$;
+
+do $$
+declare r record; v_post bigint := pg_temp.fx('sr_post')::bigint;
+begin
+  -- 고쳐도 러닝을 건드리지 않으면 그대로
+  perform public.story_update(v_post, '오늘 여의도에서 2.10km 달렸어요!', '', '여의나루', '', 37.5271, 126.9326);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.title = '오늘 여의도에서 2.10km 달렸어요!' and r.run_distance_m = 2105, '고쳐도 붙인 러닝은 그대로');
+  perform public.story_update(v_post, r.title, '', '여의나루', '', 37.5271, 126.9326, pg_temp.fx('sr_nogps')::bigint, true);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.run_distance_m = 3240 and r.run_route = '', '다른 기록으로 바꿀 수 있다');
+  perform public.story_update(v_post, r.title, '', '여의나루', '', 37.5271, 126.9326, null, true);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.run_distance_m is null and r.run_started_at is null and r.run_route = '', '코스만 뺄 수 있다(글 · 장소는 그대로)');
+end $$;
+call pg_temp.must_fail(format($q$ select public.story_update(%s, '글', '', '여의나루', '', 37.52, 126.93, %s, true) $q$,
+  pg_temp.fx('sr_post'), pg_temp.fx('sr_old')), '고칠 때도 4일 전 기록을 새로 붙일 수 없다');
+
+-- 이미 붙어 있던 기록은 기간이 지나도 숨기거나 지우지 않고, 같은 기록으로 고치면 그대로 둔다
+reset role;
+update public.posts
+   set run_session = pg_temp.fx('sr_old')::bigint, run_distance_m = 3000, run_duration_s = 1500, run_route = '',
+       run_started_at = now() - interval '4 days', run_ended_at = now() - interval '4 days'
+ where id = pg_temp.fx('sr_post')::bigint;
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare r record; v_post bigint := pg_temp.fx('sr_post')::bigint;
+begin
+  perform public.story_update(v_post, '4일 전 이야기', '', '여의나루', '', 37.5271, 126.9326, pg_temp.fx('sr_old')::bigint, true);
+  select * into r from public.post_feed where id = v_post;
+  perform pg_temp.ok(r.title = '4일 전 이야기' and r.run_distance_m = 3000, '기간이 지난 첨부도 같은 기록이면 그대로 남는다');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+call pg_temp.must_fail(format($q$ select public.story_update(%s, '남의 글', '', '여의나루', '', 37.52, 126.93, null, true) $q$,
+  pg_temp.fx('sr_post')), '남의 글의 러닝은 뺄 수 없다');
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.story_runs(integer)', 'execute'), '로그인 전에는 기록 칸을 볼 수 없다');
+  perform pg_temp.ok(has_function_privilege('authenticated', 'public.story_runs(integer)', 'execute'), '앱은 기록 칸을 부를 수 있다');
+  perform pg_temp.ok(not has_function_privilege('authenticated', 'public.story_attachable_run(bigint, uuid)', 'execute'),
+    '첨부 검사 함수는 앱에 열지 않는다(남의 러닝을 들여다보지 못하게)');
+  perform pg_temp.ok(not has_function_privilege('anon',
+    'public.story_update(bigint, text, text, text, text, double precision, double precision, bigint, boolean)', 'execute'),
+    '로그인 전에는 고칠 수 없다');
+end $$;
+
+-- 계정을 지우면 러닝과 러닝이 붙은 글이 함께 지워진다(서로 가리켜도 멈추지 않는다)
+insert into auth.users (id, email) values ('46464646-4646-4646-4646-464646464646', 'story-runs@test');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, track)
+values ('46464646-4646-4646-4646-464646464646', now() - interval '30 minutes', now() - interval '10 minutes', 1200, 3000, 2500, 'CLEAN', '');
+set role authenticated;
+call pg_temp.login('46464646-4646-4646-4646-464646464646');
+do $$
+begin
+  perform public.story_create('지울 글', '', '여의도공원', '', 37.5, 126.9,
+    (select id from public.walk_sessions where user_id = '46464646-4646-4646-4646-464646464646'));
+  perform public.account_delete();
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.posts where author_id = '46464646-4646-4646-4646-464646464646')
+                     and not exists (select 1 from public.walk_sessions where user_id = '46464646-4646-4646-4646-464646464646'),
+    '계정 삭제는 러닝이 붙은 글도 함께 지운다');
+end $$;
+select set_config('request.jwt.claims', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

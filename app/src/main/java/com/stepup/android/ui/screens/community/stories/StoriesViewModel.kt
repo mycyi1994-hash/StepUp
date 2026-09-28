@@ -232,13 +232,11 @@ class StoriesViewModel(
         }
     }
 
-    /** 새 글에 미리 붙일 장소 — 고른 장소가 있으면 그곳, 없으면 기준점 300m 안의 가장 가까운 글 장소 */
-    fun suggestedPlace(): StoryPlace? {
-        placeFilter.value?.let { return it }
-        val from = origin.value ?: return null
-        return list.value.pins.filter { (it.meters ?: Double.MAX_VALUE) <= 300 }.minByOrNull { it.meters ?: Double.MAX_VALUE }?.place
-            ?.takeIf { haversineMeters(from.point, it.point) <= 300 }
-    }
+    /**
+     * 새 글에 미리 붙일 장소 — 목록에서 직접 고른 장소를 보고 있을 때만 그곳. 위치로 가까운 장소를 저절로
+     * 고르지 않는다(쉬운 글쓰기 상황별 지시서 2026-09-28: 위치를 동의 없이 자동으로 선택하지 않는다).
+     */
+    fun suggestedPlace(): StoryPlace? = placeFilter.value
 
     companion object {
         private const val KEY_RANGE = "story_range"

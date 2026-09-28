@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -148,6 +148,16 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/community-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/community-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/community-stories/. screen-gallery/community-stories/ || status=1
+  # 러닝 이야기 글쓰기(쉬운 글쓰기 상황별, 2026-09-28) — 시안 8개 상황 + 불러오는 중 · 확인 중 · 러닝 중 · 기록 고르기 ·
+  # 상세의 러닝 카드 · 큰 글씨. 위치 권한을 거둔 채라 "내 주변"이 위치 없이 장소 고르기(07)로 이어진다
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for permission in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION; do
+    timeout 20s adb shell pm revoke com.stepup.android "android.permission.$permission" || true
+  done
+  run_instrumentation story-compose "com.stepup.android.StoryComposeStatesTest"
+  mkdir -p screen-gallery/story-compose-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/story-compose-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/story-compose/. screen-gallery/story-compose/ || status=1
   # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
   run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
   mkdir -p screen-gallery/profile-results

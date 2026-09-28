@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "counts": {
+    "01-screens": {
+      "png": 8,
+      "svg": 8
+    },
+    "02-boards": {
+      "png": 4,
+      "svg": 4
+    },
+    "03-components": {
+      "png": 8,
+      "svg": 8
+    }
+  },
+  "checks": [
+    "PNG dimensions and decode",
+    "SVG XML, IDs and references",
+    "JSON and local links",
+    "3-day calendar boundary",
+    "Post eligibility examples"
+  ],
+  "visualReview": "All four boards reviewed; shortened the date-boundary board subtitle and kept draft body identical across eligible/expired scenes.",
+  "scope": "Static examples only. Actual API, permissions, accessibility, keyboard and responsive behavior need app verification.",
+  "errors": []
+}

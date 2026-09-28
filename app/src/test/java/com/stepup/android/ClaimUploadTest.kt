@@ -80,6 +80,10 @@ class ClaimUploadTest {
         override fun observeFirstRecordAt(owner: String): Flow<Long?> = flowOf(rows.values.minOfOrNull { it.startedAt })
         override suspend fun trackOf(owner: String, id: Long): String? = rows[id]?.track
         override suspend fun deleteRecord(owner: String, id: Long): Int = if (rows.remove(id) != null) 1 else 0
+        override suspend fun countFor(owner: String): Int = rows.values.count { it.recordingOwner == owner || it.recordingOwner == "legacy" }
+        override suspend fun pendingSince(owner: String, since: Long): Int = rows.values.count {
+            it.recordingOwner == owner && it.uploadState in setOf("PENDING", "FAILED") && it.steps > 0 && it.endedAt >= since
+        }
 
         override suspend fun crewDistances(fromMillis: Long): List<CrewDistance> =
             rows.values

@@ -37,6 +37,36 @@ data class PostRow(
     val mine: Boolean = false,
     /** 동네 이야기 장소의 주소(0041). 예전 서버 · 장소 없는 글은 빈 문자열 */
     @SerialName("place_address") val placeAddress: String = "",
+    /** 글에 붙인 러닝(0046) — 서버 기록에서 옮겨 적은 값. 첨부가 없거나 예전 서버면 null */
+    @SerialName("run_started_at") val runStartedAt: String? = null,
+    @SerialName("run_ended_at") val runEndedAt: String? = null,
+    @SerialName("run_distance_m") val runDistanceM: Int? = null,
+    @SerialName("run_duration_s") val runDurationS: Int? = null,
+    /** 코스 그림 "위도,경도;…" — 경로 없는 러닝이면 빈 문자열 */
+    @SerialName("run_route") val runRoute: String? = null,
+)
+
+/** 글쓰기에 붙일 수 있는 러닝 한 줄 — `story_runs` 의 runs */
+@Serializable
+data class StoryRunRow(
+    val id: Long,
+    @SerialName("started_at") val startedAt: String,
+    @SerialName("ended_at") val endedAt: String,
+    @SerialName("distance_m") val distanceM: Int = 0,
+    @SerialName("duration_s") val durationS: Int = 0,
+    /** 끝난 날(한국 날짜, yyyy-MM-dd) */
+    val day: String,
+    val route: String = "",
+)
+
+/** 글쓰기 기록 칸(0046 `story_runs`) — 오늘(한국 날짜) · 전체 완료 수 · 마지막 완료 시각 · 붙일 수 있는 러닝 */
+@Serializable
+data class StoryRunsRow(
+    val today: String,
+    val total: Int = 0,
+    val voided: Int = 0,
+    @SerialName("last_ended_at") val lastEndedAt: String? = null,
+    val runs: List<StoryRunRow> = emptyList(),
 )
 
 /** 댓글 한 줄 — `comment_feed`. 최상위 댓글은 parent_id 가 0 이다. */
@@ -147,8 +177,11 @@ class CommunityApi(private val server: StepUpServer) {
     ) { it.trim().toLongOrNull() }
 
     /**
-     * 동네 이야기 쓰기(0041 story_create) — 장소가 있는 전체 게시판 자유 글. 새 글 번호를 돌려받는다.
+     * 동네 이야기 쓰기(0041 story_create, 0046 러닝 첨부) — 장소가 있는 전체 게시판 자유 글. 새 글 번호를 돌려받는다.
      * [body] 는 제목 바로 뒤의 글자부터다(앞 줄바꿈 포함). 서버가 지우지 않는다.
+     *
+     * @param runId 붙일 러닝(서버 번호). 서버가 내 것 · 3일 안인지 다시 보고, 거리 · 시간은 서버 기록에서 옮긴다
+     * @param clientKey 글쓰기마다 만든 요청 키 — 응답을 못 받고 다시 올려도 같은 글 번호가 온다
      */
     suspend fun createStory(
         title: String,
@@ -157,19 +190,25 @@ class CommunityApi(private val server: StepUpServer) {
         placeAddress: String,
         lat: Double,
         lng: Double,
-    ): ServerResult<Long> = rpc(
-        "story_create",
-        jsonBody {
-            put("p_title", title)
-            put("p_body", body)
-            put("p_place", place)
-            put("p_place_address", placeAddress)
-            put("p_lat", lat)
-            put("p_lng", lng)
-        },
-    ) { it.trim().toLongOrNull() }
+        runId: Long? = null,
+        clientKey: String? = null,
+    ): ServerResult<Long> {
+        val result = rpc("story_create", storyBody(title, body, place, placeAddress, lat, lng) {
+            if (runId != null) put("p_run", runId)
+            if (!clientKey.isNullOrBlank()) put("p_client_key", clientKey)
+        }) { it.trim().toLongOrNull() }
+        // 서버에 0046 이 아직 없다 — 러닝 없는 글은 예전 모양으로 한 번 더(요청 키 없이) 보낸다
+        if (runId == null && !clientKey.isNullOrBlank() && result.isMissingFunction()) {
+            return rpc("story_create", storyBody(title, body, place, placeAddress, lat, lng) { }) { it.trim().toLongOrNull() }
+        }
+        return result
+    }
 
-    /** 내 동네 이야기 고치기(0041 story_update) — 같은 글 번호라 댓글 · 좋아요가 그대로 남는다 */
+    /**
+     * 내 동네 이야기 고치기(0041 story_update) — 같은 글 번호라 댓글 · 좋아요가 그대로 남는다.
+     * [runChange] 가 false 면 붙어 있던 러닝을 그대로 둔다(예전 서버와 같은 모양으로 보낸다). true 면 [runId] 로
+     * 바꾸거나(null 이면 뺀다).
+     */
     suspend fun updateStory(
         postId: Long,
         title: String,
@@ -178,18 +217,40 @@ class CommunityApi(private val server: StepUpServer) {
         placeAddress: String,
         lat: Double,
         lng: Double,
+        runChange: Boolean = false,
+        runId: Long? = null,
     ): ServerResult<Unit> = rpc(
         "story_update",
-        jsonBody {
+        storyBody(title, body, place, placeAddress, lat, lng) {
             put("p_post", postId)
-            put("p_title", title)
-            put("p_body", body)
-            put("p_place", place)
-            put("p_place_address", placeAddress)
-            put("p_lat", lat)
-            put("p_lng", lng)
+            if (runChange) {
+                put("p_run", runId ?: JsonNull)
+                put("p_run_change", true)
+            }
         },
     ) { }
+
+    /** 글쓰기 기록 칸(0046 story_runs) */
+    suspend fun storyRuns(): ServerResult<StoryRunsRow> =
+        rpc("story_runs", "{}") { serverJson.decodeFromString<StoryRunsRow>(it) }
+
+    private fun storyBody(
+        title: String,
+        body: String,
+        place: String,
+        placeAddress: String,
+        lat: Double,
+        lng: Double,
+        extra: MutableMap<String, Any>.() -> Unit,
+    ): String = jsonBody {
+        extra()
+        put("p_title", title)
+        put("p_body", body)
+        put("p_place", place)
+        put("p_place_address", placeAddress)
+        put("p_lat", lat)
+        put("p_lng", lng)
+    }
 
     suspend fun deletePost(postId: Long): ServerResult<Unit> =
         rpc("post_delete", jsonBody { put("p_post", postId) }) { }
@@ -250,6 +311,10 @@ class CommunityApi(private val server: StepUpServer) {
             server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
 }
+
+/** PostgREST 가 이름에 맞는 서버 함수를 못 찾았다(서버에 새 함수가 아직 없다) */
+private fun ServerResult<*>.isMissingFunction(): Boolean =
+    this is ServerResult.Rejected && "Could not find the function" in reason
 
 /** 글이 있는지만 볼 때 받는 한 줄 */
 @Serializable

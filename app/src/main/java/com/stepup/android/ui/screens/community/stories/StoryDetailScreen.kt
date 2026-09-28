@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.CallMade
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -165,8 +166,12 @@ fun StoryDetailScreen(
                         Spacer(Modifier.height(10.dp))
                         Text(body, color = Silver, fontSize = 15.sp, lineHeight = 23.sp)
                     }
-                    if (place != null) {
+                    current.run?.let { run ->
                         Spacer(Modifier.height(18.dp))
+                        StoryRunCard(run)
+                    }
+                    if (place != null) {
+                        Spacer(Modifier.height(if (current.run != null) 10.dp else 18.dp))
                         StoryPlaceCard(place, distanceFrom(origin, place.point), onClick = { onOpenPlace(place) })
                     }
                     Spacer(Modifier.height(8.dp))
@@ -307,6 +312,43 @@ private fun StoryPlaceCard(place: com.stepup.android.domain.StoryPlace, distance
             )
         }
         Icon(Icons.AutoMirrored.Filled.CallMade, contentDescription = null, tint = Silver, modifier = Modifier.size(15.dp))
+    }
+}
+
+/**
+ * 글에 붙은 러닝 — 코스 그림(경로가 있을 때) · 날짜 · 거리 · 시간. 경로 없는 러닝은 그림 없이 "코스 없이 기록만".
+ * 이미 올라간 글의 첨부는 기간이 지나도 그대로 보인다.
+ */
+@Composable
+private fun StoryRunCard(run: com.stepup.android.domain.StoryRun) {
+    val words = rememberStoryWords()
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier.fillMaxWidth().clip(shape).background(Carbon).border(1.dp, Edge, shape).padding(10.dp)
+            .testTag("story-run-card"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (run.hasRoute) {
+            StoryRouteThumb(run.route, Modifier.size(width = 70.dp, height = 63.dp), seed = run.endedAt.hashCode(), radius = 10.dp)
+        } else {
+            Box(Modifier.size(width = 70.dp, height = 63.dp).clip(RoundedCornerShape(10.dp)).background(CarbonHigh),
+                contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Outlined.DirectionsRun, contentDescription = null, tint = Silver, modifier = Modifier.size(22.dp))
+            }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.story_run_card_title, words.date(run.day)), color = Snow, fontSize = 15.sp,
+                fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(3.dp))
+            Text(
+                listOf("${com.stepup.android.domain.StoryComposeRules.km(run.distanceMeters)}km", words.detail(run)).joinToString(" · "),
+                color = Slate, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            if (!run.hasRoute) {
+                Text(stringResource(R.string.story_run_card_no_route), color = Slate, fontSize = 11.sp)
+            }
+        }
     }
 }
 
