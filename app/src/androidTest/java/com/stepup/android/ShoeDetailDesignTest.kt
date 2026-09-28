@@ -33,10 +33,11 @@ import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.CommerceBackdrop
 import com.stepup.android.ui.components.S2ShoesSections
+import com.stepup.android.ui.components.ShoeSection
 import com.stepup.android.ui.components.fullSneakerLabel
 import com.stepup.android.ui.components.shoeModelNameRes
 import com.stepup.android.ui.experience.ExperienceProvider
-import com.stepup.android.ui.screens.customize.ShoeTabContent
+import com.stepup.android.ui.screens.customize.MyShoesContent
 import com.stepup.android.ui.screens.items.EquipFailure
 import com.stepup.android.ui.screens.items.EquipResult
 import com.stepup.android.ui.screens.items.OwnedLoad
@@ -50,13 +51,15 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 /**
  * 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 장면 번호는 시안의 01~18 그대로.
+ * 신발 탭 첫 화면은 신발 화면 확정안(2026-09-28)의 내 신발이다 — 켤레마다 한 칸, 관리(⋯)로 상세에 들어간다(상세 보기 글 링크 없음).
  *
- * [wearFlowInTheApp] 은 앱 셸 안에서 실제로 걷는다: 신발 탭 → 칸 고르기(착용 그대로) → 같은 모델 두 켤레 시트 → 신발 자세히 보기 →
+ * [wearFlowInTheApp] 은 앱 셸 안에서 실제로 걷는다: 신발 탭 → 칸 고르기(착용 그대로) → 같은 모델 두 켤레(각자 한 칸) → 관리(⋯) →
  * 능력치 자세히 · 능력치 설명(시스템 뒤로 가기는 능력치로) → 신발 정보(체인 줄) → ⋯ 이 신발 관리(옮긴 강화 · 수리 · 판매) →
  * 이 신발 신기 → 저장된 착용이 바뀐 뒤 완료 알림 → 뒤로(목록의 체크가 같은 id 로). 새 도감(70종) 신발 세 켤레를 넣고,
  * 끝나면 지우고 원래 신던 신발을 다시 신긴다.
@@ -91,35 +94,36 @@ class ShoeDetailDesignTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoe-list")
-            awaitTag("shoe-art")
-            // 01 — 처음 보는 신발은 신고 있는 켤레
-            assertUnmergedText("shoe-kicker", string(R.string.sdv_kicker_wearing))
+            awaitTag("my-shoes")
+            awaitTag("shoe-hero")
+            // 01 — 처음 보는 신발은 신고 있는 켤레("착용 중")
+            assertMetaWearing(true)
             shot("01a-in-app-wearing")
 
             // 01 — 칸을 누르면 보는 신발만 바뀐다. 착용은 그대로
             pick(seeded.single)
             compose.waitUntil(10_000) {
-                runCatching { assertUnmergedText("shoe-hero-name", modelName(1107)) }.isSuccess
+                runCatching {
+                    compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(modelName(1107), substring = true)
+                }.isSuccess
             }
-            assertUnmergedText("shoe-kicker", string(R.string.sdv_kicker_selected))
+            assertMetaWearing(false)
             assertEquals("Picking a tile must not change the stored equipment", original, runBlocking { dao.equippedNow()?.id })
             shot("01b-in-app-picked")
 
-            // 07 — 같은 모델 두 켤레: 신발 번호로 구분. 여는 것만으로 착용은 그대로
-            showInRow("shoe-copies-M:1201")
-            tap("shoe-copies-M:1201")
-            awaitTag("shoe-copies-sheet")
-            awaitTag("shoe-copy-${seeded.pairA}")
-            awaitTag("shoe-copy-${seeded.pairB}")
-            shot("07-in-app-copies")
-            back()
-            awaitGone("shoe-copies-sheet")
+            // 07 — 같은 모델 두 켤레는 각자 한 칸(소유 id) — 번호로 구분. 고르는 것만으로 착용은 그대로
+            pick(seeded.pairA)
+            val numberA = metaText()
+            pick(seeded.pairB)
+            val numberB = metaText()
+            assertTrue("the two pairs of 1201 show their own numbers: $numberA / $numberB", numberA != numberB)
+            compose.onNodeWithTag("shoe-choice-${seeded.pairA}").assertIsNotSelected()
+            shot("07-in-app-pairs")
             assertEquals(original, runBlocking { dao.equippedNow()?.id })
 
-            // 02 — 신발 자세히 보기: 고른 켤레(소유 id)의 상세
-            list().performScrollToIndex(0)
-            tap("shoe-detail")
+            // 02 — 관리(⋯): 고른 켤레(소유 id)의 상세
+            pick(seeded.single)
+            tap("shoe-manage")
             awaitWearEnabled()
             awaitTag("shoe-art")
             assertUnmergedText("shoe-name", modelName(1107))
@@ -170,13 +174,11 @@ class ShoeDetailDesignTest {
             assertUnmergedText("shoe-status", string(R.string.sdv_status_wearing))
             assertEquals(1, runBlocking { dao.allNow().count { it.equipped } })
 
-            // 12 — 뒤로: 목록의 체크가 같은 id 로 옮겨 가고, 보던 켤레는 그대로
+            // 12 — 뒤로: 목록의 체크가 같은 id 로 옮겨 가고, 보던 켤레는 그대로("착용 중")
             back()
-            awaitTag("shoe-list")
-            compose.waitUntil(10_000) {
-                runCatching { assertUnmergedText("shoe-kicker", string(R.string.sdv_kicker_wearing)) }.isSuccess
-            }
-            assertUnmergedText("shoe-hero-name", modelName(1107))
+            awaitTag("my-shoes")
+            compose.waitUntil(10_000) { runCatching { assertMetaWearing(true) }.isSuccess }
+            compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(modelName(1107), substring = true)
             showTile(seeded.single)
             compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${seeded.single}")),
                 useUnmergedTree = true).assertExists()
@@ -220,27 +222,26 @@ class ShoeDetailDesignTest {
         ): @Composable () -> Unit = {
             ShoeDetailContent(state = state, equipping = equipping, result = result, zone = SEOUL, initialSheet = sheet)
         }
-        fun tab(load: OwnedLoad, selected: Long?, copies: String? = null): @Composable () -> Unit = {
+        fun tab(load: OwnedLoad, selected: Long?): @Composable () -> Unit = {
             Column(Modifier.fillMaxSize()) {
-                S2ShoesSections(drawSelected = false, onShoes = {}, onDraw = {})
-                ShoeTabContent(
-                    load = load, selectedId = selected, onSelect = {}, onOpenSneaker = {}, onOpenDraw = {}, onOpenVault = {},
-                    onOpenDex = {}, onOpenMarket = {}, onReload = {}, modifier = Modifier.weight(1f), zone = SEOUL,
-                    initialCopiesFor = copies,
+                S2ShoesSections(ShoeSection.MINE, onSelect = {})
+                MyShoesContent(
+                    load = load, selectedId = selected, onSelect = {}, onOpenSneaker = {}, onOpenDraw = {}, onReload = {},
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
         val worn = legacyName()
 
-        // 01 — 보는 신발(파란 밑줄) · 신고 있는 신발(작은 체크)을 가른다. 켤레 수는 4
-        show("s01-owned-entry", "shoe-art", tab(OwnedLoad.Ready(all), PAIR_A.id))
-        assertUnmergedText("shoe-kicker", string(R.string.sdv_kicker_selected))
-        compose.onNodeWithTag("shoe-owned-count", useUnmergedTree = true)
-            .assertTextEquals(compose.activity.resources.getQuantityString(R.plurals.sdv_pairs, 4, 4))
+        // 01 — 보는 신발(칸 테두리) · 신고 있는 신발(작은 체크)을 가른다. 켤레 수는 4 — 같은 모델 두 켤레도 각자 한 칸
+        show("s01-owned-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
+        assertMetaWearing(false)
+        compose.onNodeWithTag("shoe-owned-count", useUnmergedTree = true).assertTextEquals("4")
         compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${WORN.id}")), useUnmergedTree = true)
             .assertExists()
-        // 1201 두 켤레는 한 칸 — 칸 이름표는 대표 켤레(신고 있는 켤레가 없으면 레벨 · 번호가 큰 #0004)의 id, 보는 중은 #0002
-        compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
+        compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsSelected()
+        compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsNotSelected()
+        compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
         assertUnmergedText("shoe-status", string(R.string.sdv_status_owned))
@@ -269,12 +270,11 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.sdv_chain_vault, 1_000_003L))
         show("s06c-shoe-information-legacy", "shoe-info-sheet", detail(ready(WORN), sheet = "Info"))
         compose.onNodeWithTag("shoe-info-faction").assertExists()
-        // 07 — 같은 모델 여러 켤레: 보는 중 · 신고 있음은 따로
-        show("s07-owned-copies", "shoe-copies-sheet", tab(OwnedLoad.Ready(all), PAIR_A.id, copies = "M:1201"))
-        compose.onNode(hasTestTag("shoe-copy-viewing") and hasAnyAncestor(hasTestTag("shoe-copy-${PAIR_A.id}")), useUnmergedTree = true)
-            .assertExists()
-        compose.onNodeWithTag("shoe-copy-${PAIR_A.id}").assertIsSelected()
-        compose.onNodeWithTag("shoe-copy-${PAIR_B.id}").assertIsNotSelected()
+        // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
+        show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
+        compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true).assertTextContains("#0004", substring = true)
+        compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
+        compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
         show("s08-another-copy", "shoe-art", detail(ready(PAIR_B)))
         compose.onNodeWithTag("shoe-key-energy").assertTextContains("6.0%")
@@ -297,8 +297,8 @@ class ShoeDetailDesignTest {
             detail(ready(PAIR_A, all.map { it.copy(equipped = false) }), result = EquipResult.NotWorn(PAIR_A.id, EquipFailure.REJECTED, null, confirmed = true)))
         compose.onNodeWithTag("shoe-error-kept").assertTextEquals(string(R.string.sdv_error_none))
         // 12 — 돌아온 목록: 체크가 같은 id 로
-        show("s12-inventory-after-equip", "shoe-art", tab(OwnedLoad.Ready(after), PAIR_A.id))
-        assertUnmergedText("shoe-kicker", string(R.string.sdv_kicker_wearing))
+        show("s12-inventory-after-equip", "shoe-hero", tab(OwnedLoad.Ready(after), PAIR_A.id))
+        assertMetaWearing(true)
         compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${PAIR_A.id}")), useUnmergedTree = true)
             .assertExists()
         // 13 · 14 · 15 — 조회 중(임시 값 없음) · 조회 실패 · 없는 신발
@@ -336,16 +336,16 @@ class ShoeDetailDesignTest {
 
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
-        show("s30-light-entry", "shoe-art", tab(OwnedLoad.Ready(all), PAIR_A.id))
+        show("s30-light-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         show("s30b-light-detail", "shoe-art", detail(ready(PAIR_A)))
         show("s30c-light-stats", "shoe-stats-sheet", detail(ready(WORN), sheet = "Stats"))
         compose.runOnIdle { light = false; large = true }
         show("s31-large-font-detail", "shoe-art", detail(ready(SPIKE)))
-        show("s31b-large-font-entry", "shoe-art", tab(OwnedLoad.Ready(all), SPIKE.id))
+        show("s31b-large-font-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s31c-large-font-info", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Info"))
         compose.runOnIdle { large = false; narrow = true }
         show("s32-narrow-detail", "shoe-art", detail(ready(SPIKE)))
-        show("s32b-narrow-entry", "shoe-art", tab(OwnedLoad.Ready(all), SPIKE.id))
+        show("s32b-narrow-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s32c-narrow-error", "shoe-equip-error",
             detail(ready(SPIKE), result = EquipResult.NotWorn(SPIKE.id, EquipFailure.SIGN_IN, WORN.id, confirmed = true)))
     }
@@ -376,21 +376,26 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(text)
     }
 
-    private fun list() = compose.onNodeWithTag("shoe-list")
-
-    /** 가로 목록 안의 것을 보이게 — 세로 목록을 목록 줄까지, 가로 목록을 그것까지 */
-    private fun showInRow(tag: String) {
-        list().performScrollToNode(hasTestTag("shoe-owned-row"))
-        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag(tag))
+    /** 가로 목록 안의 칸을 보이게 — 내 신발은 세로로 끌지 않는다 */
+    private fun showTile(id: Long) {
+        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
     }
 
-    private fun showTile(id: Long) = showInRow("shoe-choice-$id")
-
-    /** 보유 칸을 눌러 미리 보기로 고르고, 맨 위(무대)로 돌아간다 */
+    /** 보유 칸을 눌러 미리 보기로 고른다(무대 · 이름 · 능력치가 그 켤레로) */
     private fun pick(id: Long) {
         showTile(id)
         compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
-        list().performScrollToIndex(0)
+        compose.waitForIdle()
+    }
+
+    /** 이름 아래 줄 — "Lv. 1 · #0002 · 착용 중" */
+    private fun metaText(): String =
+        compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true).fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.Text].joinToString { it.text }
+
+    private fun assertMetaWearing(wearing: Boolean) {
+        val text = metaText()
+        assertEquals("meta line \"$text\" wearing=$wearing", wearing, text.contains(string(R.string.my_shoes_wearing)))
     }
 
     /** 상세의 주 버튼이 읽기(확인 중…)를 마치고 눌릴 수 있게 될 때까지 */

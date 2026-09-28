@@ -13,9 +13,9 @@
     },
     {
       "id": "Routes.MYSTERY_BOX",
-      "parent": "Customize",
-      "chrome": "Form",
-      "implementation": "신발 뽑기 v2 두 칸(2026-09-28 전달본): 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26 — 수 · 연결 상태 · 결과는 서버 값만(07 · 09 · 25 · 27 은 앱이 알 수 없어 만들지 않음) — see docs/redesign/shoe-draw-v2/README.md",
+      "parent": "Draw",
+      "chrome": "Main",
+      "implementation": "하단 가운데 뽑기 탭(신발 화면 확정안 2026-09-28) — 신발 뽑기 v2 두 칸: 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26(흐름 동안은 공통 머리 · 하단 탭을 걷는다 — AppChromePolicy.immersive) — 수 · 연결 상태 · 결과는 서버 값만 — see docs/redesign/shoe-draw-v2/README.md",
       "verification": "ShoeDrawV2DesignTest (Experience QA community suite, screen-gallery/shoe-draw-v2/: in-app real state, in-app example server 10→12→21, scenes 01-26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v2/README.md"
     },
@@ -23,8 +23,8 @@
       "id": "Screen.Customize.route",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — shoe tab 01 · 07 · 12 · 13 · 18: plinth stage, owned row grouped by model, copies sheet; wear moved into the detail",
-      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
+      "implementation": "신발 화면 확정안(2026-09-28): see docs/redesign/shoes-ui-2026-09-28/README.md — 위 글자 탭 내 신발 · 신발 보관함. 내 신발: 이름 끝 둥근 등급 배지 · Lv · 번호 · 착용 상태 · 등급 프레임 무대 · 능력치 막대 셋(서버 최대 · 상한 기준) · 켤레마다 한 칸의 보유 목록(세로 스크롤 없음). 신발 보관함: 보유 수 · 정렬 · 갈래 거르기(실제 수) · 2열 격자 · 착용 체크 한 켤레. 상세 보기 글 링크 없음(관리 ⋯ → 신발 상세)",
+      "verification": "MyShoesDesignTest (Experience QA community suite, screen-gallery/my-shoes/: app shell at 360×800 · 390×844 · 412×915 dp, scroll range 0, six tiers, vault, large font, light + states) + ShoeDetailDesignTest + ShoeGradeFrameTest + MyShoesModelTest (unit); local compile only — emulator run pending CI",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -528,9 +528,9 @@
     {
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 108,
-      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — shoe tab (ShoeTabContent)",
-      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
+      "line": 132,
+      "implementation": "신발 화면 확정안(2026-09-28): see docs/redesign/shoes-ui-2026-09-28/README.md — MyShoesContent · ShoeVaultContent",
+      "verification": "MyShoesDesignTest + ShoeDetailDesignTest (Experience QA community suite) + MyShoesModelTest (unit): device run pending",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },

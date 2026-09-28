@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -210,6 +210,12 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-draw-v2-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-draw-v2-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw-v2/. screen-gallery/shoe-draw-v2/ || status=1
+  # 신발 화면 확정안(2026-09-28) — 앱 셸 안의 내 신발 · 신발 보관함을 360×800 · 390×844 · 412×915(dp)로(세로 스크롤 거리 0 확인),
+  # 여섯 갈래 무대 · 배지, 막대 기준, 관리(⋯), 거르기 · 정렬, 큰 글씨 · 밝은 테마 + 읽는 중 · 실패 · 빈 목록 · 긴 이름 장면
+  run_instrumentation my-shoes "com.stepup.android.MyShoesDesignTest"
+  mkdir -p screen-gallery/my-shoes-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/my-shoes-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/my-shoes/. screen-gallery/my-shoes/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

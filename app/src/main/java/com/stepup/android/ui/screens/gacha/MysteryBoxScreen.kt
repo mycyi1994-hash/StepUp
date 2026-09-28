@@ -62,7 +62,6 @@ import com.stepup.android.domain.DrawDistance
 import com.stepup.android.domain.DrawKind
 import com.stepup.android.domain.DrawStatus
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
@@ -74,7 +73,7 @@ import kotlinx.coroutines.launch
 /** 화면에서 누르는 것 — 앱 셸(StepUpRoot)이 서버 · 이동과 잇는다 */
 @Stable
 class DrawActions(
-    /** 두 칸의 뒤로 — 들어온 곳(보통 신발 탭의 내 신발)으로 */
+    /** 불러오기 실패 시트의 "내 신발로 돌아가기" — 신발 탭(내 신발)으로 */
     val onBack: () -> Unit = {},
     val onDraw: (DrawKind) -> Unit = {},
     /** 기존 웹 지갑 페이지(서명 · 2단계 인증)에서 연결한다. 앱이 아는 것은 돌아와 읽은 서버의 연결 여부뿐이다 */
@@ -95,7 +94,8 @@ class DrawActions(
 enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances }
 
 /**
- * 신발 뽑기 v2(2026-09-28 전달본, docs/redesign/shoe-draw-v2) — 신발 탭의 "뽑기"에서 들어오는 화면.
+ * 신발 뽑기 v2(2026-09-28 전달본, docs/redesign/shoe-draw-v2) — 하단 가운데 "뽑기" 탭(신발 화면 확정안 2026-09-28).
+ * 두 칸은 앱 셸의 공통 머리(로고 · 잔액)와 하단 탭 사이에 선다. 요청 · 상자 열기 · 결과 · 확인은 셸을 걷고 화면을 다 쓴다.
  *
  * 위아래 두 칸(무료 · 상급)에 칸마다 제목 · 지급 조건 · 남은 기회 · 내역 링크 · 버튼 하나. 칸 바탕은 누르는 곳이 아니다.
  * 버튼을 누르면 결과 확인 중(10) → 서버가 결과를 확인한 뒤에만 상자 열기(11) → 결과(12 · 13 · 14). 답을 받지 못하면
@@ -267,14 +267,16 @@ private fun DrawHome(
     val p = drawPalette()
     val status = (state as? DrawScreenState.Ready)?.status
     Column(Modifier.fillMaxSize()) {
-        SecondaryHeader(
-            onBack = actions.onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.dv2_title),
-            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
-        )
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = StepUpDesign.Gutter).testTag("draw-home"),
         ) {
+            // 하단 탭의 첫 화면 — 뒤로 버튼 없이 제목만(로고 · 잔액은 셸의 공통 머리가 그린다)
+            Text(
+                stringResource(R.string.dv2_title), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp).semantics { heading() }.testTag("draw-title"),
+            )
             Text(
                 stringResource(
                     when (state) {

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 화면 확정안(2026-09-28, docs/redesign/shoes-ui-2026-09-28) — 등급 배지 여섯 · 내 신발 · 신발 보관함 -->
+<resources>
+    <!-- 등급 배지 — 보이는 갈래 여섯. 서버 · 보상 · 확률의 등급은 넷 그대로다 -->
+    <string name="shoe_tier_common">コモン</string>
+    <string name="shoe_tier_rare">レア</string>
+    <string name="shoe_tier_epic">エピック</string>
+    <string name="shoe_tier_legendary">レジェンダリー</string>
+    <string name="shoe_tier_redline">レッドライン</string>
+    <string name="shoe_tier_finish">フィニッシュ</string>
+
+    <!-- 신발 탭 위의 글자 탭(내 신발 · 신발 보관함) -->
+    <string name="shoes_section_vault">シューズ保管庫</string>
+
+    <!-- 내 신발 — 이름 · Lv · 번호 · 착용 상태, 능력치 막대 셋, 보유 목록 -->
+    <string name="my_shoes_wearing">着用中</string>
+    <string name="my_shoes_manage">このシューズを管理</string>
+    <string name="my_shoes_stats">能力値</string>
+    <string name="my_shoes_stat_efficiency">効率</string>
+    <string name="my_shoes_stat_cd">%1$s(%2$s) %3$s。バーの最大 %4$s</string>
+    <string name="my_shoes_owned">所持シューズ</string>
+
+    <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
+    <string name="my_shoes_basis_open">バーの基準</string>
+    <string name="my_shoes_basis_intro">3本のバーはすべてのシューズで同じ基準です。シューズ同士を比べられます。</string>
+    <string name="my_shoes_basis_efficiency">効率(SUP獲得ボーナス): バーの最大 %1$s — シューズが到達できる最高値(レジェンダリー Lv.%2$d)</string>
+    <string name="my_shoes_basis_comfort">履き心地(エネルギー節約): バーの最大 %1$s — サーバーの上限</string>
+    <string name="my_shoes_basis_durability">耐久度: バーの最大 %1$d</string>
+    <string name="my_shoes_basis_note">効率はボーナスの割合で、金額ではありません。実際に受け取るSUPはラン終了後にサーバーが確定します。</string>
+
+    <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->
+    <string name="vault_sort_title">並び替え</string>
+    <string name="vault_sort_cd">並び替え: %1$s</string>
+    <string name="vault_filter_all">すべて</string>
+    <string name="vault_filter_cd">%1$s %2$s</string>
+</resources>

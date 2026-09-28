@@ -1269,7 +1269,6 @@ Start running with StepUp.</string>
     <string name="customize_equip">Equip</string>
     <string name="customize_wearing">Equipped</string>
     <string name="customize_open_market">Runner Market</string>
-    <string name="customize_open_vault">Shoe vault</string>
     <string name="customize_shoe_detail">View this shoe ›</string>
     <string name="customize_no_shoes">No shoes yet</string>
     <string name="customize_no_shoes_hint">Find some in the Runner Market, or mint a new pair in the shoe vault.</string>

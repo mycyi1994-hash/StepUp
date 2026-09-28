@@ -81,13 +81,12 @@ fun formatPercent(percent: Double): String = trimmedDecimal(percent) + "%"
 /** 행운 · 착화감 — 도감 표처럼 두 자리("1.08") */
 fun formatStat(value: Double): String = String.format(Locale.ROOT, "%.2f", value)
 
-/**
- * 내구도 "100 / 100" — 100 기준. 서버 값(소수)은 내려서 쓴다: 99.6 을 100 으로 올려 보이면 수리할 곳이 가려진다.
- */
-fun formatDurability(shoe: Sneaker): String {
-    val points = shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability
-    return "${points.coerceAtLeast(0)} / 100"
-}
+/** 내구도 점수(100 기준). 서버 값(소수)은 내려서 쓴다: 99.6 을 100 으로 올려 보이면 수리할 곳이 가려진다 */
+fun durabilityPoints(shoe: Sneaker): Int =
+    (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceAtLeast(0)
+
+/** 내구도 "100 / 100" */
+fun formatDurability(shoe: Sneaker): String = "${durabilityPoints(shoe)} / 100"
 
 // ── 체인 ───────────────────────────────────────────────────────
 

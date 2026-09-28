@@ -2,20 +2,10 @@
 <!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
 <resources>
     <!-- 신발 탭(01 · 12 · 18) -->
-    <string name="sdv_kicker_selected">選択中のシューズ</string>
-    <string name="sdv_kicker_wearing">いま履いているシューズ</string>
     <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
     <string name="sdv_level_no_cd">レベル%1$d、シューズ番号%2$04d</string>
-    <string name="sdv_open_detail">シューズの詳細を見る</string>
-    <string name="sdv_owned_title">持っているシューズ</string>
     <plurals name="sdv_pairs">
         <item quantity="other">%d足</item>
-    </plurals>
-    <plurals name="sdv_see_copies">
-        <item quantity="other">%d足を見る</item>
-    </plurals>
-    <plurals name="sdv_see_copies_cd">
-        <item quantity="other">%1$sの%2$d足を見る</item>
     </plurals>
     <string name="sdv_state_viewing">表示中</string>
     <string name="sdv_state_wearing">着用中</string>
@@ -24,15 +14,6 @@
     <string name="sdv_empty_title">まだシューズがありません</string>
     <string name="sdv_empty_body">無料ガチャで最初のシューズに出会いましょう。</string>
     <string name="sdv_empty_action">シューズを引く</string>
-
-    <!-- 같은 모델 여러 켤레(07) -->
-    <plurals name="sdv_copies_title">
-        <item quantity="other">%1$s %2$d足</item>
-    </plurals>
-    <string name="sdv_copies_intro">詳しく見るシューズを選んでください。</string>
-    <string name="sdv_copy_energy">エネルギー節約 %1$s</string>
-    <string name="sdv_copy_received">受け取った日 %1$s</string>
-    <string name="sdv_copies_note">選ぶだけでは履いているシューズは変わりません。</string>
 
     <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
     <string name="sdv_title">シューズの詳細</string>

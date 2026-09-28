@@ -1268,7 +1268,6 @@ StepUp と走り出そう。</string>
     <string name="customize_equip">装備する</string>
     <string name="customize_wearing">装備中</string>
     <string name="customize_open_market">マーケットを見る</string>
-    <string name="customize_open_vault">シューズ保管庫</string>
     <string name="customize_shoe_detail">この靴の詳細 ›</string>
     <string name="customize_no_shoes">まだ靴がありません</string>
     <string name="customize_no_shoes_hint">ランナーマーケットで探すか、シューズ保管庫で新しくミントできます。</string>

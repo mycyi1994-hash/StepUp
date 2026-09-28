@@ -57,16 +57,16 @@ assert not list((RES / 'drawable-nodpi').glob('avatar_*'))
 assert not list((RES / 'drawable-nodpi').glob('outfit_*'))
 assert not list((RES / 'drawable-nodpi').glob('run_frame_*'))
 assert not list((RES / 'drawable-nodpi').glob('scene_*'))
-# 신발 등급 프레임 v8 — 앱의 네 등급만(레드라인 · 피니시는 확장 콘셉트라 앱에 넣지 않는다). tools/build_shoe_grade_frames.py
+# 신발 등급 프레임 v8 — 보이는 갈래 여섯(domain/ShoeTier.kt). 레드라인 · 피니시는 새 도감 레전더리의 시리즈 그림일 뿐
+# 서버 등급 · 확률은 넷 그대로다(2026-09-28 신발 화면 확정안). tools/build_shoe_grade_frames.py
 grade = {p.stem: p for p in (RES / 'drawable-nodpi').glob('shoe_grade_*.webp')}
-tiers = ('common', 'rare', 'epic', 'legendary')
-expected = {f'shoe_grade_{t}_{layer}' for t in tiers for layer in ('back', 'frame', 'frame_small')}
-expected |= {f'shoe_grade_{t}_front' for t in tiers if t != 'common'}
+tiers = ('common', 'rare', 'epic', 'legendary', 'redline', 'finish')
+expected = {f'shoe_grade_{t}_{layer}' for t in tiers for layer in ('back', 'back_small', 'frame', 'frame_small')}
+expected |= {f'shoe_grade_{t}_{layer}' for t in tiers if t != 'common' for layer in ('front', 'front_small')}
 assert set(grade) == expected, sorted(set(grade) ^ expected)
 for stem, path in grade.items():
     assert webp_has_alpha(path.read_bytes()[:30]), stem
     with Image.open(path) as im:
         assert im.size == ((440, 418) if stem.endswith('_small') else (880, 836)), (stem, im.size)
-assert not [p for p in RES.glob('drawable*/*') if 'redline' in p.name or ('grade' in p.name and 'finish' in p.name)]
 print('PASS: existing sound/font/localization checks; 52 alpha shoe assets; 2 independent landscape banners; '
-      'retired images absent; 15 grade-frame layers for the four app grades only')
+      'retired images absent; 34 grade-frame layers (2x and 1x) for the six visual tiers')

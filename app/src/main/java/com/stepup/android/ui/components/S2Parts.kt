@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +53,7 @@ import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpColors
+import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.StepUpSans
 import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltText
@@ -386,24 +390,54 @@ fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Mo
 }
 
 
+/** 신발 탭 위의 글자 탭 둘 — 내 신발 · 신발 보관함(신발 화면 확정안 2026-09-28). 뽑기는 하단 가운데 탭으로 옮겼다 */
+enum class ShoeSection { MINE, VAULT }
+
 /**
- * 신발 탭 안의 글자 탭 — 내 신발 · 뽑기.
- *
- * 하단 탭은 넷(러닝 · 신발 · 같이 뛰기 · 내 정보)이고 뽑기는 신발 안쪽에 있다.
- * 내 신발 맨 위의 줄이다 — "뽑기"를 누르면 신발 뽑기(v2, 자기 머리 ‹ 신발 뽑기)로 들어가고 뒤로 가면 돌아온다.
+ * 내 신발 · 신발 보관함 — 고른 탭은 밝은 글자와 글자 폭만큼의 파란 밑줄, 아래에 옅은 선 하나(시안 01 · 02).
+ * 두 탭 모두 같은 굵기로 그려 고를 때 글자 폭이 흔들리지 않는다.
  */
 @Composable
-fun S2ShoesSections(drawSelected: Boolean, onShoes: () -> Unit, onDraw: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
-        S2TextTab(
-            androidx.compose.ui.res.stringResource(R.string.shoes_section_mine), !drawSelected,
-            onClick = { if (drawSelected) onShoes() },
-            modifier = Modifier.testTag("shoes-section-mine"),
+fun S2ShoesSections(section: ShoeSection, onSelect: (ShoeSection) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter),
+            horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
+        ) {
+            ShoeSectionTab(
+                androidx.compose.ui.res.stringResource(R.string.shoes_section_mine), section == ShoeSection.MINE,
+                onClick = { onSelect(ShoeSection.MINE) }, modifier = Modifier.testTag("shoes-section-mine"),
+            )
+            ShoeSectionTab(
+                androidx.compose.ui.res.stringResource(R.string.shoes_section_vault), section == ShoeSection.VAULT,
+                onClick = { onSelect(ShoeSection.VAULT) }, modifier = Modifier.testTag("shoes-section-vault"),
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(StepUpColors.edge.copy(alpha = 0.55f)))
+    }
+}
+
+@Composable
+private fun ShoeSectionTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .width(IntrinsicSize.Max)
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .feedbackClickable(role = Role.Tab, onClick = onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom,
+    ) {
+        Text(
+            label, color = if (selected) Snow else Silver, maxLines = 1,
+            style = TextStyle(fontFamily = StepUpSans, fontSize = 16.sp, lineHeight = 1.3.em, fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.padding(top = 10.dp, bottom = 9.dp),
         )
-        S2TextTab(
-            androidx.compose.ui.res.stringResource(R.string.tab_draw), drawSelected,
-            onClick = { if (!drawSelected) onDraw() },
-            modifier = Modifier.testTag("shoes-section-draw"),
+        Box(
+            Modifier.fillMaxWidth().height(3.dp)
+                .background(if (selected) Volt else Color.Transparent, RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)),
         )
     }
 }

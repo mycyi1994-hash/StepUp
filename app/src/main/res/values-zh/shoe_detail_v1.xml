@@ -2,20 +2,10 @@
 <!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
 <resources>
     <!-- 신발 탭(01 · 12 · 18) -->
-    <string name="sdv_kicker_selected">已选鞋子</string>
-    <string name="sdv_kicker_wearing">正在穿的鞋</string>
     <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
     <string name="sdv_level_no_cd">等级 %1$d，鞋子编号 %2$04d</string>
-    <string name="sdv_open_detail">查看鞋子详情</string>
-    <string name="sdv_owned_title">我的鞋子</string>
     <plurals name="sdv_pairs">
         <item quantity="other">%d双</item>
-    </plurals>
-    <plurals name="sdv_see_copies">
-        <item quantity="other">查看%d双</item>
-    </plurals>
-    <plurals name="sdv_see_copies_cd">
-        <item quantity="other">查看%1$s的全部%2$d双</item>
     </plurals>
     <string name="sdv_state_viewing">正在查看</string>
     <string name="sdv_state_wearing">穿着中</string>
@@ -24,15 +14,6 @@
     <string name="sdv_empty_title">还没有鞋子</string>
     <string name="sdv_empty_body">通过免费抽取遇见你的第一双鞋。</string>
     <string name="sdv_empty_action">抽鞋子</string>
-
-    <!-- 같은 모델 여러 켤레(07) -->
-    <plurals name="sdv_copies_title">
-        <item quantity="other">%1$s %2$d双</item>
-    </plurals>
-    <string name="sdv_copies_intro">请选择要查看详情的鞋子。</string>
-    <string name="sdv_copy_energy">能量节省 %1$s</string>
-    <string name="sdv_copy_received">获得日期 %1$s</string>
-    <string name="sdv_copies_note">仅选择不会更换正在穿的鞋。</string>
 
     <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
     <string name="sdv_title">鞋子详情</string>

@@ -75,7 +75,8 @@ class ChromeNavigationTest {
             val logo = bounds("brand-wordmark")
             val bar = bounds(BOTTOM_NAV_TAG)
             val token = bounds("sup-balance")
-            val tabRoutes = listOf("home", "customize", "community", "profile")
+            // 하단 탭 다섯 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28)
+            val tabRoutes = listOf("home", "customize", "mystery-box", "community", "profile")
             assertEquals("icons stay on one baseline $next", 1,
                 tabRoutes.map { bounds("nav-icon-$it").top }.distinct().size)
             assertEquals("labels stay on one baseline $next", 1,
@@ -93,7 +94,7 @@ class ChromeNavigationTest {
             }
             capture("${next.width}-${next.font}-${next.mode}-home")
             compose.onNodeWithTag("home-start-run").assertIsDisplayed().assertHasClickAction()
-            listOf(R.string.tab_customize, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->
+            listOf(R.string.tab_customize, R.string.tab_draw, R.string.tab_community, R.string.tab_me, R.string.tab_run).forEach { tab ->
                 compose.onNode(hasText(compose.activity.getString(tab)) and hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
                     .performClick()
                 compose.waitForIdle()

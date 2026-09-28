@@ -7,8 +7,32 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppChromePolicyTest {
-    @Test fun `tab order stays running wardrobe community profile`() {
-        assertEquals(listOf("home", "customize", "community", "profile"), AppChromePolicy.tabs.map { it.route })
+    @Test fun `five tabs - running shoes draw community profile`() {
+        // 신발 화면 확정안(2026-09-28) — 뽑기는 가운데 독립 탭. 길은 예전 하위 화면의 "mystery-box" 그대로
+        assertEquals(listOf("home", "customize", "mystery-box", "community", "profile"), AppChromePolicy.tabs.map { it.route })
+        assertEquals(Screen.Draw.route, Routes.MYSTERY_BOX)
+    }
+
+    @Test fun `draw is its own tab with the shared header and tabs`() {
+        val draw = requireNotNull(AppChromePolicy.destination(Routes.MYSTERY_BOX))
+        assertEquals(Screen.Draw, draw.parent)
+        assertEquals(AppChromePolicy.Header.Main, draw.header)
+        assertTrue(draw.showBottomBar)
+        // 신발 탭 밑의 화면은 그대로 신발
+        assertEquals(Screen.Customize, AppChromePolicy.destination(Routes.SNEAKER)?.parent)
+    }
+
+    @Test fun `the draw flow folds the shell only on the draw tab`() {
+        try {
+            AppChromePolicy.immersive = true
+            assertTrue(AppChromePolicy.immersiveAt(Routes.MYSTERY_BOX))
+            assertFalse(AppChromePolicy.immersiveAt(Screen.Customize.route))
+            assertFalse(AppChromePolicy.immersiveAt(Screen.Run.route))
+            AppChromePolicy.immersive = false
+            assertFalse(AppChromePolicy.immersiveAt(Routes.MYSTERY_BOX))
+        } finally {
+            AppChromePolicy.immersive = false
+        }
     }
 
     @Test fun `concrete routes and restored templates have the same chrome`() {

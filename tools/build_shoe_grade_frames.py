@@ -3,12 +3,15 @@
 원본은 design/shoe-grade-frames-v8/build.py 의 좌표(440 × 418) 그대로다. Chromium 으로 투명 배경에 그려
 app/src/main/res/drawable-nodpi/shoe_grade_*.webp 를 만든다.
 
-  뒤 효과(back)   비교판 카드의 등급색 오라 + back-effect — 2배(880 × 836)
-  앞 효과(front)  front-effect — 2배. 일반(01)은 비어 있어 만들지 않는다
+  뒤 효과(back)   비교판 카드의 등급색 오라 + back-effect — 2배(880 × 836), 그리고 격자 칸용 1배(back_small)
+  앞 효과(front)  front-effect — 2배와 1배(front_small). 일반(01)은 비어 있어 만들지 않는다
   프레임(frame)   frame — 2배, 그리고 목록 칸용 1배(frame_small)
 
-앱에는 현재 등급 넷(일반 · 레어 · 에픽 · 레전더리 = 01–04)만 넣는다. 레드라인 · 피니시(05 · 06)는 확장 콘셉트라
---preview 로 문서용 합성 그림만 만든다(실제 신발 52종 중 몇 켤레를 얹은 것 — 앱 캡처가 아니다).
+1배 그림은 폭이 좁은 자리(보관함 2열 격자 · 보유 목록 칸)가 쓴다 — 칸마다 2배 그림을 풀면 메모리를 네 배 쓴다.
+
+앱에는 보이는 갈래 여섯(일반 · 레어 · 에픽 · 레전더리 · 레드라인 · 피니시 = 01–06, domain/ShoeTier.kt)을 넣는다.
+레드라인 · 피니시는 새 도감 레전더리 시리즈의 그림일 뿐 서버 등급 · 확률은 그대로다(2026-09-28 신발 화면 확정안).
+--preview 는 문서용 합성 그림(실제 신발 몇 켤레를 얹은 것 — 앱 캡처가 아니다).
 
     python3 tools/build_shoe_grade_frames.py            # 앱 그림
     python3 tools/build_shoe_grade_frames.py --preview  # 문서 미리 보기(01–04 · 05–06)
@@ -27,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'design/shoe-grade-frames-v8/build.py'
 RES = ROOT / 'app/src/main/res/drawable-nodpi'
 DOCS = ROOT / 'docs/redesign/shoe-grade-frames'
-APP_TIERS = {0: 'common', 1: 'rare', 2: 'epic', 3: 'legendary'}
+APP_TIERS = {0: 'common', 1: 'rare', 2: 'epic', 3: 'legendary', 4: 'redline', 5: 'finish'}
 # 앱과 같은 자리 — SneakerImage.kt 의 SneakerGradeStage / SneakerGradeThumb
 STAGE_SLOT = (61, 58, 320)
 THUMB_SLOT = (69, 69, 296)
@@ -82,7 +85,7 @@ def layers(g, work):
     for i in range(6):
         for kind in ('back', 'front', 'frame'):
             out[kind, i, 2] = render(g, kind, i, 2, work)
-        out['frame', i, 1] = render(g, 'frame', i, 1, work)
+            out[kind, i, 1] = render(g, kind, i, 1, work)
     return out
 
 
@@ -90,10 +93,11 @@ def write_app(art):
     for old in RES.glob('shoe_grade_*.webp'):
         old.unlink()
     for i, name in APP_TIERS.items():
-        files = {f'shoe_grade_{name}_back': art['back', i, 2], f'shoe_grade_{name}_frame': art['frame', i, 2],
-                 f'shoe_grade_{name}_frame_small': art['frame', i, 1]}
+        files = {f'shoe_grade_{name}_back': art['back', i, 2], f'shoe_grade_{name}_back_small': art['back', i, 1],
+                 f'shoe_grade_{name}_frame': art['frame', i, 2], f'shoe_grade_{name}_frame_small': art['frame', i, 1]}
         if art['front', i, 2].getbbox():
             files[f'shoe_grade_{name}_front'] = art['front', i, 2]
+            files[f'shoe_grade_{name}_front_small'] = art['front', i, 1]
         for stem, im in files.items():
             im.save(RES / f'{stem}.webp', 'WEBP', lossless=True, quality=100, method=6)
             print(stem, (RES / f'{stem}.webp').stat().st_size)
@@ -131,7 +135,7 @@ def write_preview(art):
     # 01–04: 앱에 들어간 등급 — 실제 신발 네 켤레를 같은 자리에(앱 캡처가 아니라 그림 확인용)
     sheet([compose(art, i, shoe) for shoe in shoes[:2] for i in range(4)], 4).save(
         DOCS / 'preview-01-04-real-shoes.webp', 'WEBP', quality=88, method=6)
-    # 05–06: 확장 콘셉트 — 앱 · 도메인 · NFT · 드롭률 · 보상에 넣지 않는다
+    # 05–06: 레드라인 · 피니시 — 새 도감 레전더리 시리즈의 그림(앱에 들어간다). 서버 등급 · NFT · 드롭률 · 보상은 그대로
     sheet([compose(art, i, shoe) for shoe in shoes[:2] for i in (4, 5)], 2).save(
         DOCS / 'preview-05-06-concept.webp', 'WEBP', quality=88, method=6)
     print('previews →', DOCS)
