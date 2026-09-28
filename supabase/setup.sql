@@ -12364,6 +12364,53 @@ begin
 end $$;
 revoke all on function economy.draw_create(uuid, text, text, boolean) from public;
 
+-- 웹 지갑 페이지의 보너스 뽑기(지갑 선물, 0025) — 앱의 상급 뽑기와 같은 지갑 선물 횟수를 쓰므로 같은 하한(에픽 이상).
+-- 그 밖에는 0025 그대로: 첫 번이 Genesis, 지갑으로 바로 발행(새 도감 신발이면 워커가 v3 release 로), 50km 전 잠금.
+create or replace function public.bonus_draw_request()
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v_genesis boolean;
+  v_min text := nullif(economy.setting('premium_min_rarity') #>> '{}', '');
+  v_id bigint;
+  v_op uuid := gen_random_uuid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, false);
+
+  if economy.mints_today('BONUS_MINT') >= economy.setting_num('bonus_mint_global_daily') then
+    raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  select g.genesis_used < g.genesis_granted into v_genesis
+    from public.draw_grants g where g.user_id = v_user and g.kind = 'BONUS';
+
+  update public.draw_grants
+     set used = used + 1,
+         genesis_used = genesis_used + case when v_genesis then 1 else 0 end
+   where user_id = v_user and kind = 'BONUS' and used < granted;
+  if not found then
+    raise exception '보너스 뽑기가 남아 있지 않습니다' using errcode = '23514';
+  end if;
+
+  v_id := economy.draw_create(v_user, 'BONUS_DRAW',
+                              case when v_genesis then 'EPIC' else v_min end, coalesce(v_genesis, false));
+  update public.market_sneakers set chain_state = 'WITHDRAWING' where id = v_id;
+
+  insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+  values (v_op, v_user, 'BONUS_MINT', v_wallet, v_id, economy.op_deadline());
+  return v_op;
+end $$;
+revoke all on function public.bonus_draw_request() from public, anon;
+grant execute on function public.bonus_draw_request() to authenticated;
+
 -- ══════════════════════════════════════════════════════════════════
 -- 앱 · 워커가 받는 값에 도감 번호
 -- ══════════════════════════════════════════════════════════════════

@@ -3225,6 +3225,10 @@ do $$ begin
   perform pg_temp.ok((select m.id::text || ':' || m.rarity from public.sneaker_models m
                        where m.id = split_part(pg_temp.fx('bonus_model'), ':', 1)::int) = pg_temp.fx('bonus_model'),
     '지갑 선물 신발은 새 도감 모델(0045) — 서명 재료에 모델 번호가 실린다(워커가 v3 로 발행)');
+  perform pg_temp.ok(not exists (select 1 from public.market_sneakers
+                                  where owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and origin = 'BONUS_DRAW'
+                                    and rarity not in ('EPIC', 'LEGENDARY')),
+    '웹 지갑의 보너스 뽑기도 상급과 같은 하한(에픽 이상)');
 end $$;
 
 -- 0029 점검 반영 — 모르는 작업 · 어긋난 작업은 멈추고, 취소는 신발을 돌려놓고, 넣기는 버림
