@@ -1,0 +1,142 @@
+[
+  {
+    "id": "01-login",
+    "title": "Google 로그인",
+    "description": "기존 강변 이미지와 큰 버튼 하나",
+    "png": "01-screens/01-login.png",
+    "svg": "01-screens/01-login.svg"
+  },
+  {
+    "id": "02-first-guide",
+    "title": "첫 사용 안내",
+    "description": "한 장에서 끝나는 짧은 설명",
+    "png": "01-screens/02-first-guide.png",
+    "svg": "01-screens/02-first-guide.svg"
+  },
+  {
+    "id": "03-launch-loading",
+    "title": "앱 준비 중",
+    "description": "실제 초기화가 끝나면 다음 화면으로",
+    "png": "01-screens/03-launch-loading.png",
+    "svg": "01-screens/03-launch-loading.svg"
+  },
+  {
+    "id": "04-launch-error",
+    "title": "앱 준비 실패",
+    "description": "재시도 가능한 시작 화면",
+    "png": "01-screens/04-launch-error.png",
+    "svg": "01-screens/04-launch-error.svg"
+  },
+  {
+    "id": "05-signing-in",
+    "title": "로그인 중",
+    "description": "중복 탭을 막고 결과를 기다림",
+    "png": "01-screens/05-signing-in.png",
+    "svg": "01-screens/05-signing-in.svg"
+  },
+  {
+    "id": "06-offline",
+    "title": "연결 실패",
+    "description": "로그인 상태를 바꾸지 않고 재시도",
+    "png": "01-screens/06-offline.png",
+    "svg": "01-screens/06-offline.svg"
+  },
+  {
+    "id": "07-login-failed",
+    "title": "로그인 실패",
+    "description": "버튼 위치를 유지한 복구 안내",
+    "png": "01-screens/07-login-failed.png",
+    "svg": "01-screens/07-login-failed.svg"
+  },
+  {
+    "id": "08-no-account",
+    "title": "Google 계정 없음",
+    "description": "기기 계정 추가 후 다시 시도",
+    "png": "01-screens/08-no-account.png",
+    "svg": "01-screens/08-no-account.svg"
+  },
+  {
+    "id": "09-session-expired",
+    "title": "다시 로그인",
+    "description": "기존 기록을 이어서 쓰는 진입",
+    "png": "01-screens/09-session-expired.png",
+    "svg": "01-screens/09-session-expired.svg"
+  },
+  {
+    "id": "10-legal-link-error",
+    "title": "약관 링크 열기 실패",
+    "description": "기존 로그인 화면에서 다시 열기",
+    "png": "01-screens/10-legal-link-error.png",
+    "svg": "01-screens/10-legal-link-error.svg"
+  },
+  {
+    "id": "11-first-home",
+    "title": "첫 러닝 홈",
+    "description": "권한을 받기 전의 홈 표현",
+    "png": "01-screens/11-first-home.png",
+    "svg": "01-screens/11-first-home.svg"
+  },
+  {
+    "id": "12-running-menu",
+    "title": "러닝 방법 선택",
+    "description": "기존 네 가지 러닝 진입 유지",
+    "png": "01-screens/12-running-menu.png",
+    "svg": "01-screens/12-running-menu.svg"
+  },
+  {
+    "id": "13-activity-rationale",
+    "title": "걸음 권한 안내",
+    "description": "자유 러닝을 누른 다음 안내",
+    "png": "01-screens/13-activity-rationale.png",
+    "svg": "01-screens/13-activity-rationale.svg"
+  },
+  {
+    "id": "14-activity-denied",
+    "title": "걸음 권한 거절",
+    "description": "러닝 시작 전 상태에서 다시 허용",
+    "png": "01-screens/14-activity-denied.png",
+    "svg": "01-screens/14-activity-denied.svg"
+  },
+  {
+    "id": "15-activity-settings",
+    "title": "설정에서 권한 허용",
+    "description": "시스템 창을 다시 띄울 수 없는 경우",
+    "png": "01-screens/15-activity-settings.png",
+    "svg": "01-screens/15-activity-settings.svg"
+  },
+  {
+    "id": "16-location-rationale",
+    "title": "위치 권한 안내",
+    "description": "경로 기록은 선택해서 사용",
+    "png": "01-screens/16-location-rationale.png",
+    "svg": "01-screens/16-location-rationale.svg"
+  },
+  {
+    "id": "17-approximate-location",
+    "title": "대략적인 위치",
+    "description": "허용 상태를 존중하며 계속 진행",
+    "png": "01-screens/17-approximate-location.png",
+    "svg": "01-screens/17-approximate-location.svg"
+  },
+  {
+    "id": "18-without-location",
+    "title": "위치 권한 거절",
+    "description": "경로 없이 러닝으로 이어짐",
+    "png": "01-screens/18-without-location.png",
+    "svg": "01-screens/18-without-location.svg"
+  },
+  {
+    "id": "19-notification-rationale",
+    "title": "알림 권한 안내",
+    "description": "거절해도 러닝은 계속할 수 있음",
+    "png": "01-screens/19-notification-rationale.png",
+    "svg": "01-screens/19-notification-rationale.svg"
+  },
+  {
+    "id": "20-guide-replay",
+    "title": "사용 안내 다시 보기",
+    "description": "설정의 앱 사용 안내에서 진입",
+    "png": "01-screens/20-guide-replay.png",
+    "svg": "01-screens/20-guide-replay.svg"
+  }
+]

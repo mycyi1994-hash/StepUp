@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 鞋子抽取 v2(两栏, 2026-09-28) — docs/redesign/shoe-draw-v2。次数和距离都来自服务器 -->
+<resources>
+    <string name="dv2_title">鞋子抽取</string>
+    <string name="dv2_subtitle">所有鞋子都可以免费抽取。</string>
+    <string name="dv2_subtitle_loading">正在加载抽取机会。</string>
+    <string name="dv2_subtitle_signed_out">登录后即可免费抽取鞋子。</string>
+    <string name="dv2_free">免费抽取</string>
+    <string name="dv2_premium">高级抽取</string>
+    <string name="dv2_free_rule">首次注册%1$d次 · 每天%2$d次</string>
+    <string name="dv2_free_rule_daily">每天%1$d次</string>
+    <string name="dv2_premium_rule">连接钱包%1$d次 · 每跑%2$s公里1次</string>
+    <string name="dv2_premium_rule_run">连接钱包礼物 · 每跑%1$s公里1次</string>
+    <string name="dv2_left">剩余机会</string>
+    <string name="dv2_count">%1$d次</string>
+    <string name="dv2_count_plus">+%1$d次</string>
+    <string name="dv2_history">查看机会明细</string>
+    <string name="dv2_next_premium">距离下1次还有%1$s公里</string>
+    <string name="dv2_run_capped">今天的跑步机会已全部领取</string>
+    <string name="dv2_first_link">首次连接时</string>
+    <string name="dv2_first_link_note">可免费获得高级抽取</string>
+    <string name="dv2_kept_premium">持有的高级机会</string>
+    <string name="dv2_reconnect_note">请重新连接钱包</string>
+    <string name="dv2_paused_note">高级抽取暂时停止</string>
+    <string name="dv2_pending_label">抽到的鞋子</string>
+    <string name="dv2_pending_value">确认中</string>
+    <string name="dv2_pending_note">结果准备好后即可查看</string>
+    <string name="dv2_failed_inline">无法加载机会</string>
+    <string name="dv2_signed_out_note">登录后可查看</string>
+    <string name="dv2_action_free">免费抽取1次</string>
+    <string name="dv2_action_free_info">免费机会说明</string>
+    <string name="dv2_action_connect">连接钱包领取%1$d次</string>
+    <string name="dv2_action_reconnect">重新连接钱包</string>
+    <string name="dv2_action_premium">高级抽取1次</string>
+    <string name="dv2_action_run">跑步获取机会</string>
+    <string name="dv2_action_paused">高级抽取暂停中</string>
+    <string name="dv2_action_check">查看结果</string>
+    <string name="dv2_action_loading">加载中</string>
+    <string name="dv2_action_reload">重新加载</string>
+    <string name="dv2_action_sign_in">登录后即可抽取</string>
+    <string name="dv2_rules_link">如何获得免费机会</string>
+
+    <string name="dv2_free_sheet_title">免费抽取机会</string>
+    <string name="dv2_free_sheet_sub">每抽取一次使用1次机会。</string>
+    <string name="dv2_signup_gift">注册礼物</string>
+    <string name="dv2_daily">今日免费机会</string>
+    <string name="dv2_free_now">现在可用的机会</string>
+    <string name="dv2_close">关闭</string>
+
+    <string name="dv2_premium_sheet_title">高级抽取机会</string>
+    <string name="dv2_premium_sheet_sub">连接钱包后每跑%1$s公里获得1次。</string>
+    <string name="dv2_link_gift">首次连接礼物</string>
+    <string name="dv2_run_earned">跑步获得的机会</string>
+    <string name="dv2_premium_now">剩余高级抽取</string>
+    <string name="dv2_progress">%1$s / %2$s公里</string>
+
+    <string name="dv2_rules_title">如何获得免费机会</string>
+    <string name="dv2_rules_signup">首次注册</string>
+    <string name="dv2_rules_daily">每天</string>
+    <string name="dv2_rules_first_link">首次连接 WEB3 钱包</string>
+    <string name="dv2_rules_run">连接钱包后每跑%1$s公里</string>
+    <string name="dv2_rules_note">免费抽取和高级抽取分开使用。</string>
+    <string name="dv2_ok">确定</string>
+
+    <string name="dv2_benefit_title">免费获得高级抽取</string>
+    <string name="dv2_benefit_sub">连接 WEB3 钱包即可开始。</string>
+    <string name="dv2_benefit_first">首次连接钱包</string>
+    <string name="dv2_benefit_run">连接后每跑%1$s公里</string>
+    <string name="dv2_plus_one">+1次</string>
+    <string name="dv2_benefit_note">连接钱包后跑步，\n可以收集更多高级抽取机会。</string>
+    <string name="dv2_connect">连接 WEB3 钱包</string>
+    <string name="dv2_later">以后再说</string>
+
+    <string name="dv2_linked_title">钱包已连接</string>
+    <string name="dv2_linked_body">已获得高级抽取机会。</string>
+    <string name="dv2_to_draw">返回抽取页面</string>
+    <string name="dv2_relinked">钱包已重新连接。</string>
+
+    <string name="dv2_free_empty_title">免费机会已用完</string>
+    <string name="dv2_free_empty_head">每天赠送%1$d次免费抽取。</string>
+    <string name="dv2_free_empty_body">有新的免费机会后可以再次抽取。</string>
+    <string name="dv2_see_premium">查看高级抽取</string>
+    <string name="dv2_run_title">通过跑步获得机会</string>
+    <string name="dv2_run_sub">用已连接的钱包收集跑步机会。</string>
+    <string name="dv2_run_until">距离下次高级抽取</string>
+    <string name="dv2_run_rule">每跑%1$s公里获得1次高级抽取。</string>
+    <string name="dv2_run_start">开始跑步</string>
+    <string name="dv2_km">%1$s公里</string>
+    <string name="dv2_run_reward">跑步已计入 · 高级抽取 +%1$d次</string>
+
+    <string name="dv2_request_head">正在确认鞋子</string>
+    <string name="dv2_request_sub">结果确认后鞋盒就会打开。</string>
+    <string name="dv2_wait">请稍候。</string>
+    <string name="dv2_opening_head">正在打开鞋盒</string>
+    <string name="dv2_opening_sub">会遇到什么样的鞋子呢？</string>
+    <string name="dv2_opening_note">一双鞋子将加入你的鞋子。</string>
+    <string name="dv2_skip">跳过</string>
+
+    <string name="dv2_result_free">免费抽取结果</string>
+    <string name="dv2_result_premium">高级抽取结果</string>
+    <string name="dv2_result_added">已加入你的鞋子。</string>
+    <string name="dv2_result_free_left">剩余免费抽取</string>
+    <string name="dv2_result_premium_left">剩余高级抽取</string>
+    <string name="dv2_open_shoes">查看我的鞋子</string>
+    <string name="dv2_draw_again">再抽一次</string>
+    <string name="dv2_result_cd">%1$s，%2$s鞋子</string>
+
+    <string name="dv2_stop_title">无法开始抽取</string>
+    <string name="dv2_stop_unused">机会没有被使用。</string>
+    <string name="dv2_stop_network">请检查网络连接后重试。</string>
+    <string name="dv2_stop_no_free">没有剩余的免费抽取。</string>
+    <string name="dv2_stop_no_premium">没有剩余的高级抽取。</string>
+    <string name="dv2_stop_wallet">请先连接 WEB3 钱包。</string>
+    <string name="dv2_stop_sign_in">请重新登录后再抽取。</string>
+    <string name="dv2_stop_other">请稍后再试。</string>
+    <string name="dv2_retry_draw">再次抽取</string>
+
+    <string name="dv2_check_header">确认抽取结果</string>
+    <string name="dv2_check_head">正在确认结果</string>
+    <string name="dv2_check_sub">确认完成后会给你看鞋子。</string>
+    <string name="dv2_check_note">不会重新抽取，只确认进行中的结果。</string>
+    <string name="dv2_check_again">再次确认结果</string>
+    <string name="dv2_check_unknown">暂时无法确认结果。请检查网络连接后再次确认。</string>
+
+    <string name="dv2_load_failed_title">无法加载机会</string>
+    <string name="dv2_load_failed_body">请检查网络连接后重试。</string>
+    <string name="dv2_back_to_shoes">返回我的鞋子</string>
+</resources>

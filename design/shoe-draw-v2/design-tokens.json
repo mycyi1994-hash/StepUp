@@ -1,0 +1,75 @@
+{
+  "canvas": {
+    "w": 390,
+    "h": 844
+  },
+  "colors": {
+    "background": "#050912",
+    "freeSurface": "#0c1625",
+    "premiumSurface": "#102036",
+    "sheet": "#101b2b",
+    "primary": "#f2f4fc",
+    "muted": "#98a8c0",
+    "accent": "#a3bffe",
+    "divider": "#253248"
+  },
+  "typography": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600,
+      700
+    ],
+    "screenTitle": 17,
+    "compartmentTitle": 22,
+    "count": 36,
+    "sheetTitle": 24,
+    "body": 14,
+    "button": 16,
+    "metadata": 13
+  },
+  "spacing": {
+    "page": 24,
+    "cardInside": 20,
+    "cardGap": 18
+  },
+  "radii": {
+    "compartment": 24,
+    "sheet": 28,
+    "button": 17
+  },
+  "compartment": {
+    "w": 342,
+    "h": 282
+  },
+  "buttons": {
+    "card": {
+      "w": 302,
+      "h": 50
+    },
+    "sheet": {
+      "w": 342,
+      "h": 56
+    },
+    "minHitSize": 44
+  },
+  "motion": {
+    "pressMs": 120,
+    "sheetMs": 240,
+    "fadeMs": 200,
+    "enterCurve": [
+      0.23,
+      1,
+      0.32,
+      1
+    ],
+    "sheetCurve": [
+      0.32,
+      0.72,
+      0,
+      1
+    ],
+    "unboxingAsset": "04-motion/unboxing.json",
+    "reducedAsset": "04-motion/unboxing-reduced.json"
+  }
+}

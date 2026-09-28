@@ -390,7 +390,7 @@ fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Mo
  * 신발 탭 안의 글자 탭 — 내 신발 · 뽑기.
  *
  * 하단 탭은 넷(러닝 · 신발 · 같이 뛰기 · 내 정보)이고 뽑기는 신발 안쪽에 있다.
- * 두 화면 맨 위에 같은 줄을 두어 어느 쪽에서든 한 번에 오간다.
+ * 내 신발 맨 위의 줄이다 — "뽑기"를 누르면 신발 뽑기(v2, 자기 머리 ‹ 신발 뽑기)로 들어가고 뒤로 가면 돌아온다.
  */
 @Composable
 fun S2ShoesSections(drawSelected: Boolean, onShoes: () -> Unit, onDraw: () -> Unit, modifier: Modifier = Modifier) {

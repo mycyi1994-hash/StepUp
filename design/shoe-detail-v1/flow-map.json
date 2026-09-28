@@ -1,0 +1,177 @@
+{
+  "note": "정적 시안 연결표. 샘플 ID로 초기화하지 말고 실제 소유 ID/상태를 전달한다.",
+  "entry": "existing:shoes-selected-item",
+  "route": "sneaker/{id}",
+  "transitions": [
+    {
+      "from": "01-owned-shoes-entry",
+      "action": "썸네일 선택",
+      "to": "01-owned-shoes-entry",
+      "condition": "선택 ID만 변경; 착용 유지"
+    },
+    {
+      "from": "01-owned-shoes-entry",
+      "action": "신발 자세히 보기",
+      "to": "13-detail-loading"
+    },
+    {
+      "from": "13-detail-loading",
+      "action": "소유 데이터 조회 성공",
+      "to": "02-shoe-detail",
+      "condition": "선택 ID 존재, 아직 착용하지 않음"
+    },
+    {
+      "from": "13-detail-loading",
+      "action": "소유 데이터 조회 성공",
+      "to": "03-equipped-detail",
+      "condition": "선택 ID가 실제 착용 ID"
+    },
+    {
+      "from": "13-detail-loading",
+      "action": "데이터 조회 실패",
+      "to": "14-detail-load-error"
+    },
+    {
+      "from": "13-detail-loading",
+      "action": "조회 완료 후 대상 ID 없음",
+      "to": "15-shoe-not-found"
+    },
+    {
+      "from": "01-owned-shoes-entry",
+      "action": "2켤레 보기",
+      "to": "07-owned-copies"
+    },
+    {
+      "from": "07-owned-copies",
+      "action": "#0004 선택",
+      "to": "08-another-copy",
+      "condition": "예시. 실제 선택된 소유 ID로 상세 진입"
+    },
+    {
+      "from": "07-owned-copies",
+      "action": "닫기",
+      "to": "01-owned-shoes-entry"
+    },
+    {
+      "from": "02-shoe-detail",
+      "action": "능력치 자세히",
+      "to": "04-all-stats"
+    },
+    {
+      "from": "04-all-stats",
+      "action": "능력치가 궁금해요",
+      "to": "05-stat-explanation"
+    },
+    {
+      "from": "05-stat-explanation",
+      "action": "능력치로 돌아가기 또는 시스템 뒤로",
+      "to": "04-all-stats"
+    },
+    {
+      "from": "05-stat-explanation",
+      "action": "X 또는 배경 누르기",
+      "to": "02-shoe-detail",
+      "condition": "시트 전체 닫기"
+    },
+    {
+      "from": "04-all-stats",
+      "action": "확인/X/뒤로",
+      "to": "02-shoe-detail"
+    },
+    {
+      "from": "02-shoe-detail",
+      "action": "신발 정보",
+      "to": "06-shoe-information"
+    },
+    {
+      "from": "06-shoe-information",
+      "action": "확인/X/뒤로",
+      "to": "02-shoe-detail"
+    },
+    {
+      "from": "02-shoe-detail",
+      "action": "이 신발 신기",
+      "to": "09-equipping",
+      "condition": "실제 선택한 소유 ID 저장. 시안 09는 #0002 예시"
+    },
+    {
+      "from": "08-another-copy",
+      "action": "이 신발 신기",
+      "to": "09-equipping",
+      "condition": "실제 선택한 소유 ID 저장. 시안 09는 #0002 예시"
+    },
+    {
+      "from": "17-first-equipment",
+      "action": "이 신발 신기",
+      "to": "09-equipping",
+      "condition": "실제 선택한 소유 ID 저장. 시안 09는 #0002 예시"
+    },
+    {
+      "from": "09-equipping",
+      "action": "착용 저장 성공 확인",
+      "to": "10-equipped-success"
+    },
+    {
+      "from": "09-equipping",
+      "action": "착용 저장 실패",
+      "to": "11-equip-error"
+    },
+    {
+      "from": "11-equip-error",
+      "action": "다시 신기",
+      "to": "09-equipping",
+      "condition": "대상 ID 소유를 재검증"
+    },
+    {
+      "from": "11-equip-error",
+      "action": "닫기",
+      "to": "02-shoe-detail",
+      "condition": "조회한 실제 착용 상태로 표시"
+    },
+    {
+      "from": "10-equipped-success",
+      "action": "뒤로 또는 신발 탭",
+      "to": "12-inventory-after-equip"
+    },
+    {
+      "from": "14-detail-load-error",
+      "action": "다시 불러오기",
+      "to": "13-detail-loading"
+    },
+    {
+      "from": "14-detail-load-error",
+      "action": "보유 신발로 돌아가기",
+      "to": "01-owned-shoes-entry",
+      "condition": "최신 목록 표시"
+    },
+    {
+      "from": "15-shoe-not-found",
+      "action": "보유 신발로 돌아가기",
+      "to": "01-owned-shoes-entry",
+      "condition": "최신 목록 표시"
+    },
+    {
+      "from": "02-shoe-detail",
+      "action": "이미지 로딩만 실패",
+      "to": "16-art-load-error"
+    },
+    {
+      "from": "16-art-load-error",
+      "action": "이미지 다시 불러오기",
+      "to": "02-shoe-detail",
+      "condition": "이미지 재시도 성공"
+    },
+    {
+      "from": "16-art-load-error",
+      "action": "이 신발 신기",
+      "to": "09-equipping",
+      "condition": "데이터/소유 ID 유효; 이미지 오류와 분리"
+    },
+    {
+      "from": "18-empty-inventory",
+      "action": "신발 뽑기",
+      "to": "existing:free-and-premium-draw-home",
+      "condition": "최신 무료 뽑기 전달본 사용; SUP 차감 없음"
+    }
+  ]
+}

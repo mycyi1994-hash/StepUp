@@ -80,6 +80,11 @@ class HomeViewModel(
         .map<Double, Double?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 이 계정의 러닝 수(전체) — 첫 러닝 홈(시작·로그인·첫 사용 v1 시안 11)인지 가린다. 읽기 전에는 null */
+    val runCount: StateFlow<Int?> = stepRepository.observeSessionCount()
+        .map<Int, Int?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
     val todayRunSec: StateFlow<Long> = today.flatMapLatest { stepRepository.observeDurationSince(startOf(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)

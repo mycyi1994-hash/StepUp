@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
+<resources>
+    <!-- 신발 탭(01 · 12 · 18) -->
+    <string name="sdv_kicker_selected">선택한 신발</string>
+    <string name="sdv_kicker_wearing">지금 신고 있는 신발</string>
+    <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
+    <string name="sdv_level_no_cd">레벨 %1$d, 신발 번호 %2$04d</string>
+    <string name="sdv_open_detail">신발 자세히 보기</string>
+    <string name="sdv_owned_title">보유 신발</string>
+    <plurals name="sdv_pairs">
+        <item quantity="other">%d켤레</item>
+    </plurals>
+    <plurals name="sdv_see_copies">
+        <item quantity="other">%d켤레 보기</item>
+    </plurals>
+    <plurals name="sdv_see_copies_cd">
+        <item quantity="other">%1$s %2$d켤레 보기</item>
+    </plurals>
+    <string name="sdv_state_viewing">보는 중</string>
+    <string name="sdv_state_wearing">신고 있음</string>
+    <string name="sdv_loading">신발을 불러오고 있어요.</string>
+    <string name="sdv_checking">확인 중…</string>
+    <string name="sdv_empty_title">보유 신발이 없어요</string>
+    <string name="sdv_empty_body">무료 뽑기로 첫 신발을 만나보세요.</string>
+    <string name="sdv_empty_action">신발 뽑기</string>
+
+    <!-- 같은 모델 여러 켤레(07) -->
+    <plurals name="sdv_copies_title">
+        <item quantity="other">%1$s %2$d켤레</item>
+    </plurals>
+    <string name="sdv_copies_intro">자세히 볼 신발을 골라주세요.</string>
+    <string name="sdv_copy_energy">에너지 절감 %1$s</string>
+    <string name="sdv_copy_received">받은 날 %1$s</string>
+    <string name="sdv_copies_note">고르기만 해서는 착용이 바뀌지 않아요.</string>
+
+    <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
+    <string name="sdv_title">신발 상세</string>
+    <string name="sdv_status_owned">보유 중</string>
+    <string name="sdv_status_wearing">지금 신고 있어요</string>
+    <string name="sdv_status_none">아직 신고 있는 신발이 없어요</string>
+    <string name="sdv_stat_bonus">SUP 적립 보너스</string>
+    <string name="sdv_stat_energy">에너지 절감</string>
+    <string name="sdv_stat_luck">행운</string>
+    <string name="sdv_stat_comfort">착화감</string>
+    <string name="sdv_stat_durability">내구도</string>
+    <string name="sdv_row_stats">능력치 자세히</string>
+    <string name="sdv_row_info">신발 정보</string>
+    <string name="sdv_wear">이 신발 신기</string>
+    <string name="sdv_wear_busy">신발 바꾸는 중…</string>
+    <!-- %1$s 에는 목적격 조사가 붙은 이름이 온다("새벽 강변을") -->
+    <string name="sdv_worn_toast">%1$s 신었어요.</string>
+    <string name="sdv_more">이 신발 더 보기</string>
+
+    <!-- 능력치(04 · 05) -->
+    <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>
+    <string name="sdv_stats_help">능력치가 궁금해요</string>
+    <string name="sdv_ok">확인</string>
+    <string name="sdv_explain_title">능력치는 이런 뜻이에요</string>
+    <string name="sdv_explain_bonus">기본 적립에 더해지는 신발 보너스예요. 최종 적립량은 실제 활동 결과에 따라 달라져요.</string>
+    <string name="sdv_explain_energy">같은 활동에서 에너지를 덜 쓰는 비율이에요.</string>
+    <string name="sdv_explain_luck">신발에 저장된 행운 수치예요.</string>
+    <string name="sdv_explain_comfort">에너지 절감 비율을 계산하는 수치예요.</string>
+    <string name="sdv_explain_durability">신발에 기록된 내구도예요.</string>
+    <string name="sdv_explain_back">능력치로 돌아가기</string>
+
+    <!-- 신발 정보(06) -->
+    <string name="sdv_info_name">이름</string>
+    <string name="sdv_info_number">신발 번호</string>
+    <string name="sdv_info_rarity">등급</string>
+    <string name="sdv_info_faction">속성</string>
+    <string name="sdv_info_level">레벨</string>
+    <string name="sdv_info_received">받은 날짜</string>
+    <string name="sdv_info_chain">체인</string>
+    <string name="sdv_chain_token">체인 NFT · 토큰 #%1$d</string>
+    <string name="sdv_chain_vault">StepUp 금고에 발행됨 · 토큰 #%1$d</string>
+    <string name="sdv_chain_none">아직 체인에 없음</string>
+    <string name="sdv_chain_none_note">발행을 기다리는 중일 수 있어요. 내 정보 › 지갑 › 체인 기록에서 확인할 수 있어요.</string>
+    <string name="sdv_info_note">같은 모델도 신발 번호로 구분해요.</string>
+    <string name="sdv_date_pattern">yyyy.MM.dd</string>
+    <string name="sdv_unknown_model">신발 모델 %1$d</string>
+
+    <!-- 착용 변경 실패(11) -->
+    <string name="sdv_error_title">신발을 바꾸지 못했어요</string>
+    <string name="sdv_error_unknown_title">신발을 바꿨는지 확인하지 못했어요</string>
+    <!-- %1$s 에는 목적격 조사가 붙은 이름이 온다("시티 스프린트를") -->
+    <string name="sdv_error_kept">%1$s 계속 신고 있어요.</string>
+    <string name="sdv_error_none">아직 신고 있는 신발이 없어요.</string>
+    <string name="sdv_error_unknown_body">결과를 확인하지 못했어요. 다시 신거나, 이 창을 닫고 잠시 뒤 다시 확인해 주세요.</string>
+    <string name="sdv_error_hint">다시 시도하거나 이 창을 닫을 수 있어요.</string>
+    <string name="sdv_retry_wear">다시 신기</string>
+
+    <!-- 조회 실패 · 없는 신발 · 이미지 실패(14 · 15 · 16) -->
+    <string name="sdv_load_failed_title">신발을 불러오지 못했어요</string>
+    <string name="sdv_load_failed_body">잠시 후 다시 불러와 주세요.</string>
+    <string name="sdv_reload">다시 불러오기</string>
+    <string name="sdv_back_to_owned">보유 신발로 돌아가기</string>
+    <string name="sdv_missing_title">이 신발을 찾을 수 없어요</string>
+    <string name="sdv_missing_body">보유 목록에서 다른 신발을 골라주세요.</string>
+    <string name="sdv_art_failed">이미지를 불러오지 못했어요</string>
+    <string name="sdv_art_retry">이미지 다시 불러오기</string>
+
+    <!-- 옮긴 기존 행동(⋯) -->
+    <string name="sdv_manage_title">이 신발 관리</string>
+    <string name="sdv_enhance_desc">Lv. %1$d → %2$d · %3$s SUP</string>
+    <string name="sdv_sell_desc">거래소에서 판매 등록을 해요. 그곳에서 확정해야 올라가요.</string>
+</resources>

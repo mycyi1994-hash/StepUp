@@ -222,6 +222,9 @@ object Routes {
     const val SETTINGS_NOTIFICATIONS = "settings/notifications"
     const val SETTINGS_PRIVACY = "settings/privacy"
     const val SETTINGS_SUPPORT = "settings/support"
+
+    /** 사용 안내 다시 보기(시작·로그인·첫 사용 v1 시안 20) — 도움말 · 문의의 "앱 사용 안내"에서 */
+    const val SETTINGS_GUIDE = "settings/guide"
     const val SETTINGS_CONNECTED = "settings/connected"
     const val SETTINGS_LANGUAGE = "settings/language"
     const val SETTINGS_EXPERIENCE = "settings/experience"
@@ -315,6 +318,8 @@ fun StepUpRoot() {
     var sessionChecked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(loginMethod) {
         if (loginMethod?.isNotEmpty() == true && !ServiceLocator.sessionHolder.isSignedIn()) {
+            // Google 로 로그인했던 사람이다 — 로그인 화면이 "다시 로그인해 주세요"(시작·로그인·첫 사용 v1 시안 09)로 알린다
+            if (loginMethod == "google") ServiceLocator.userPrefs.setSignInAgain(true)
             ServiceLocator.userPrefs.setLoginMethod("")
         }
         sessionChecked = true
@@ -330,7 +335,8 @@ fun StepUpRoot() {
             guideSeen == false && setupSeen == false -> 3
             else -> 2
         }
-        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(220)), label = "entryStage") { visible ->
+        // 앱 진입은 불투명도 180ms(시작·로그인·첫 사용 v1) — 동작 줄이기에서는 바로 바뀐다
+        Crossfade(stage, animationSpec = tween(LocalMotion.current.duration(180)), label = "entryStage") { visible ->
         when (visible) {
             0 ->
                 SplashScreen(onReady = { ready = true })
@@ -358,13 +364,9 @@ internal fun MainScaffold(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 첫 실행이면 화면이 자리를 잡은 뒤 스포트라이트 투어를 시작한다
-    LaunchedEffect(startTour) {
-        if (startTour) {
-            kotlinx.coroutines.delay(450)
-            GuideTour.start()
-        }
-    }
+    // 첫 사용 안내(시작·로그인·첫 사용 v1 시안 02)는 한 장짜리 시트다 — 아래 FirstGuideSheet. 예전 스포트라이트 투어는 시작하지 않는다.
+    // 고른 뒤에는 이 화면에서 다시 열지 않는다("봤음"을 적기 전에 다시 그려져도)
+    var firstGuideClosed by rememberSaveable { mutableStateOf(false) }
     // Browsing the app never prompts for run permissions. Start passive tracking only when already allowed.
     LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
@@ -590,64 +592,75 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.MYSTERY_BOX) {
-                // 신발 뽑기 — 모두 무료(2026-09-27). 수와 결과는 서버(draw_status · draw_free · premium_draw)가 정한다.
+                // 신발 뽑기 v2(두 칸, 2026-09-28 전달본) — 모두 무료. 수 · 연결 상태 · 결과는 서버(draw_status · draw_free ·
+                // premium_draw)가 정한다. 신발 탭 안의 하위 화면이라 자기 머리(‹ 신발 뽑기)를 그리고 아래 탭은 없다.
                 val drawVm: com.stepup.android.ui.screens.gacha.DrawViewModel =
                     androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.gacha.DrawViewModel.Factory)
                 val drawState by drawVm.state.collectAsStateWithLifecycle()
-                val drawTab by drawVm.tab.collectAsStateWithLifecycle()
-                val drawing by drawVm.drawing.collectAsStateWithLifecycle()
-                val drawn by drawVm.result.collectAsStateWithLifecycle()
-                val drawMessage by drawVm.message.collectAsStateWithLifecycle()
-                // 지갑 페이지에서 연결하고 돌아오면 상급 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
+                val drawFlow by drawVm.flow.collectAsStateWithLifecycle()
+                val drawPending by drawVm.pending.collectAsStateWithLifecycle()
+                val drawNotice by drawVm.notice.collectAsStateWithLifecycle()
+                // 지갑 페이지에서 연결하고 오거나 러닝을 마치고 오면 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
                 androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
                     drawVm.refresh()
                     onPauseOrDispose { }
                 }
-                LaunchedEffect(drawMessage) {
-                    val m = drawMessage ?: return@LaunchedEffect
-                    val text = when (m) {
-                        com.stepup.android.ui.screens.gacha.DrawMessage.NoFreeDraws -> R.string.toast_no_free_draws
-                        com.stepup.android.ui.screens.gacha.DrawMessage.NoPremiumDraws -> R.string.toast_no_premium_draws
-                        com.stepup.android.ui.screens.gacha.DrawMessage.WalletRequired -> R.string.toast_wallet_required
-                        com.stepup.android.ui.screens.gacha.DrawMessage.MintLimit -> R.string.toast_mint_limit
-                        com.stepup.android.ui.screens.gacha.DrawMessage.ChainPaused -> R.string.draw_chain_paused
-                        com.stepup.android.ui.screens.gacha.DrawMessage.SignInRequired -> R.string.toast_sign_in_required
-                        com.stepup.android.ui.screens.gacha.DrawMessage.Offline -> R.string.toast_offline
-                        // 뽑기는 됐다 — 실패라고 하면 다시 눌러 한 번 더 뽑는다
-                        com.stepup.android.ui.screens.gacha.DrawMessage.DrawnRefreshing -> R.string.toast_drawn_refreshing
-                        com.stepup.android.ui.screens.gacha.DrawMessage.Failed -> R.string.feed_save_failed
-                    }
-                    android.widget.Toast.makeText(context, context.getString(text), android.widget.Toast.LENGTH_SHORT).show()
-                    drawVm.consumeMessage()
-                }
-                val openShoes = {
+                // 21 — 신발 탭(내 신발)으로. 받은 신발이 있으면 그 신발을 고른 채로(착용은 바꾸지 않는다)
+                val openShoes: (Long?) -> Unit = { shoeId ->
                     if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
                         navController.popBackStack()
                         navController.switchTab(Screen.Customize)
+                    }
+                    if (shoeId != null) {
+                        runCatching { navController.getBackStackEntry(Screen.Customize.route) }.getOrNull()
+                            ?.savedStateHandle?.set(RECEIVED_SHOE_KEY, shoeId)
                     }
                 }
                 val drawScope = rememberCoroutineScope()
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
                     state = drawState,
-                    tab = drawTab,
-                    drawing = drawing,
-                    onTab = drawVm::selectTab,
-                    onDraw = drawVm::draw,
-                    // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로
-                    onConnectWallet = { drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) } },
-                    onRetry = drawVm::refresh,
-                    onOpenShoes = openShoes,
+                    flow = drawFlow,
+                    pending = drawPending,
+                    notice = drawNotice,
+                    actions = remember(drawVm) {
+                        com.stepup.android.ui.screens.gacha.DrawActions(
+                            onBack = { navController.popBackStack() },
+                            onDraw = drawVm::draw,
+                            // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로.
+                            // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
+                            onConnectWallet = {
+                                drawVm.watchWalletLink()
+                                drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) }
+                            },
+                            onRetry = drawVm::refresh,
+                            onCheckPending = drawVm::checkPending,
+                            onLeaveFlow = drawVm::leaveFlow,
+                            onFinishOpening = drawVm::finishOpening,
+                            onCloseResult = drawVm::closeResult,
+                            onOpenShoes = { shoeId ->
+                                drawVm.closeResult()
+                                openShoes(shoeId)
+                            },
+                            // 17 "러닝 시작" — 기존 자유 러닝 시작(러닝 중이면 그 러닝으로)
+                            onStartRun = {
+                                if (!com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                                    com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                                    com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                                }
+                                navController.navigate(Routes.RUN_NOW)
+                            },
+                            onNoticeDone = drawVm::consumeNotice,
+                        )
+                    },
                 )
-                drawn?.let { shoe ->
-                    com.stepup.android.ui.screens.gacha.DrawResultDialog(
-                        sneaker = shoe,
-                        onOpenShoes = { drawVm.dismissResult(); openShoes() },
-                        onClose = drawVm::dismissResult,
-                    )
-                }
             }
-            composable(Screen.Customize.route) {
+            composable(Screen.Customize.route) { entry ->
+                // 뽑기 결과의 "내 신발 보기"(21) — 받은 신발을 고른 채로 연다. 한 번 고르면 비운다
+                val receivedShoe by entry.savedStateHandle.getStateFlow<Long?>(RECEIVED_SHOE_KEY, null)
+                    .collectAsStateWithLifecycle()
                 CustomizeScreen(
+                    focusShoeId = receivedShoe,
+                    onFocusShoeShown = { entry.savedStateHandle[RECEIVED_SHOE_KEY] = null },
                     onBack = { navController.switchTab(Screen.Run) },
                     onChangeBackground = {
                         wardrobeSetting = com.stepup.android.ui.components.WardrobeBackgrounds.next(wardrobeScene)
@@ -877,6 +890,10 @@ internal fun MainScaffold(
                         navController.navigate(Routes.RUN_NOW) { popUpTo(Routes.RUN_ROUTE) { inclusive = true } }
                     },
                     autoStart = entry.arguments?.getBoolean("start") ?: false,
+                    // 권한 안내의 "홈으로 돌아가기"(시안 14 · 15) — 러닝 탭 첫 화면
+                    onLeaveToHome = {
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
+                    },
                 )
             }
             composable(Routes.RUN_MENU) {
@@ -885,15 +902,21 @@ internal fun MainScaffold(
                 val startFresh = { plan: com.stepup.android.domain.RunPlan ->
                     com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
                     com.stepup.android.domain.RunPlans.set(plan)
-                    navController.navigate(Routes.RUN_NOW)
+                    // 권한 안내 콜백이 겹쳐도 러닝 화면을 두 번 쌓지 않는다
+                    navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
                 }
                 com.stepup.android.ui.screens.walk.RunStartMenuScreen(
                     onBack = { navController.popBackStack() },
+                    // 자유 러닝 — 이 메뉴 위에서 필요한 권한 안내(시안 13~19)를 마친 뒤에만 불린다
                     onFreeRun = { startFresh(com.stepup.android.domain.RunPlan.Free) },
                     onGoals = { navController.navigate(Routes.RUN_GOALS) },
                     onDiet = {
                         // 러닝 경험을 이미 골랐으면 러닝 방법으로 바로, 아니면 입력부터
                         navController.navigate(if (savedExperience != null) Routes.RUN_DIET_PLAN else Routes.RUN_DIET)
+                    },
+                    // 권한 안내의 "홈으로 돌아가기"(시안 14 · 15)
+                    onHome = {
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
                 )
             }
@@ -1082,11 +1105,15 @@ internal fun MainScaffold(
             composable(Routes.SETTINGS_SUPPORT) {
                 SupportScreen(
                     onBack = { navController.popBackStack() },
-                    // 앱 사용 안내 — 기존 가이드(러닝 탭 → 스포트라이트 투어)
-                    onOpenGuide = {
-                        navController.switchTab(Screen.Run)
-                        GuideTour.start()
-                    },
+                    // 앱 사용 안내 — 한 장짜리 다시 보기(시작·로그인·첫 사용 v1 시안 20). 뒤로 가면 여기로 돌아온다
+                    onOpenGuide = { navController.navigate(Routes.SETTINGS_GUIDE) { launchSingleTop = true } },
+                )
+            }
+            composable(Routes.SETTINGS_GUIDE) {
+                // 가이드를 "안 봄"으로 되돌리지 않는다 — 첫 안내가 다시 뜨지 않는다
+                com.stepup.android.ui.screens.onboarding.GuideReplayScreen(
+                    onBack = { navController.popBackStack() },
+                    onRunHome = { navController.switchTab(Screen.Run) },
                 )
             }
             composable(Routes.SETTINGS_CONNECTED) {
@@ -1131,6 +1158,13 @@ internal fun MainScaffold(
                         navController.navigate(
                             Routes.marketModel(faction, rarity, variant, localId),
                         )
+                    },
+                    // 보유 신발 상세 v1 — 조회 실패(14) · 없는 신발(15)에서 "보유 신발로 돌아가기": 신발 탭의 최신 목록으로
+                    onOpenOwned = {
+                        if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
+                            navController.popBackStack()
+                            navController.switchTab(Screen.Customize)
+                        }
                     },
                 )
             }
@@ -1223,17 +1257,28 @@ internal fun MainScaffold(
     // 알림에서 눌러 들어온 댓글 창. 어느 탭에 있든 여기서 연다.
     FocusedCommentSheetHost()
 
-    // 스포트라이트 가이드 오버레이 — 하단 바까지 덮는다
-    if (GuideTour.active) {
-        GuideOverlay(
-            onSwitchTab = { route ->
-                bottomTabs.firstOrNull { it.route == route }?.let { navController.switchTab(it) }
-            },
-            onFinished = {
-                scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
-                navController.switchTab(Screen.Run)
-            },
+    // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.
+    // 목적지가 있으면 그 화면을 먼저 보이고 안내는 다음에 러닝 홈에 올 때로 미룬다. 사람이 고른 뒤에만 "봤음"을 적는다.
+    val destinationPending = pendingCrew != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
+    if (com.stepup.android.domain.FirstGuideRules.shouldShow(
+            pending = startTour && !firstGuideClosed,
+            onHome = currentRoute == Screen.Run.route,
+            destinationPending = destinationPending,
+            recoveryPending = pendingRun != null && currentOwner != null,
         )
+    ) {
+        com.stepup.android.ui.screens.onboarding.FirstGuideSheet(onAction = { action ->
+            if (!firstGuideClosed) {
+                firstGuideClosed = true
+                if (com.stepup.android.domain.FirstGuideRules.savesSeen(action)) {
+                    scope.launch { ServiceLocator.userPrefs.setGuideSeen() }
+                }
+                // 러닝 시작 — 러닝 방법 고르기(12)로. 운동 기록은 아직 시작하지 않는다
+                if (com.stepup.android.domain.FirstGuideRules.opensRunMenu(action)) {
+                    navController.navigate(Routes.RUN_MENU) { launchSingleTop = true }
+                }
+            }
+        })
     }
     }
 }
@@ -1249,6 +1294,9 @@ private fun NavHostController.switchTab(screen: Screen) {
 
 /** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
 const val BOTTOM_NAV_TAG = "bottom-nav"
+
+/** 뽑기 결과에서 신발 탭으로 넘기는 받은 신발 번호(신발 탭 항목의 SavedStateHandle) */
+private const val RECEIVED_SHOE_KEY = "draw_received_shoe"
 
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {

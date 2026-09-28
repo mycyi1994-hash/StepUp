@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -97,7 +97,7 @@ run_instrumentation() {
 # Character-free checkpoint: bounded interactions and 14 reference scenes x 4 viewports.
 # The full multilingual gallery remains a separately selectable test, not a default run.
 if [[ "$suite" == "redesign" ]]; then
-  run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndTabs,com.stepup.android.ExperienceUiTest#firstGuideVisitsRunningShoesAndProfile,com.stepup.android.MysteryDesignTest"
+  run_instrumentation redesign-interaction "com.stepup.android.ExperienceUiTest#mainNavigationAndSettingsAreReachable,com.stepup.android.ExperienceUiTest#shoePreviewOnlyEquipsAfterConfirmation,com.stepup.android.ExperienceUiTest#shoeDrawRespectsReadinessAndTabs,com.stepup.android.ExperienceUiTest#firstGuideIsOneSheetAndOpensRunMenu,com.stepup.android.ExperienceUiTest#firstGuideCloseStaysHome,com.stepup.android.MysteryDesignTest"
   mkdir -p screen-gallery/redesign-interaction-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/redesign-interaction-results/ || true
   run_instrumentation redesign-reference "com.stepup.android.DesignReferenceTest#referenceViewports"
@@ -116,6 +116,12 @@ if [[ "$suite" == "secondary" ]]; then
   cp -R app/build/outputs/androidTest-results/. screen-gallery/secondary-reference-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/experience-qa/. screen-gallery/experience-qa/ || status=1
   pull_captures /sdcard/Android/data/com.stepup.android/files/form-checks/. screen-gallery/forms/ || status=1
+  # 시작·로그인·첫 사용 v1(2026-09-28) — 시안 01~20 장면(상태를 넣어 그림, 시스템 계정 · 권한 창은 띄우지 않는다) +
+  # 앱 셸 안의 첫 안내 → 러닝 방법, 도움말 → 앱 사용 안내 다시 보기 → 뒤로 · 러닝 홈
+  run_instrumentation onboarding "com.stepup.android.OnboardingDesignTest"
+  mkdir -p screen-gallery/onboarding-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/onboarding-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/onboarding-v1/. screen-gallery/onboarding-v1/ || status=1
 fi
 if [[ "$suite" == "records" ]]; then
   run_instrumentation records-reference "com.stepup.android.DesignReferenceTest#recordViewports"
@@ -147,7 +153,8 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/profile-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/profile-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/profile-running-path/. screen-gallery/profile-running-path/ || status=1
-  # 신발 뽑기 무료(2026-09-27) — 시안 세 장면 · 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 내 신발
+  # 신발 뽑기 규칙(v2 두 칸, 2026-09-28) — 두 칸 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 받은 신발이 골라진 내 신발,
+  # 답을 잃은 요청은 새로 뽑지 않고 확인(20 · 26), 거절은 기회를 쓰지 않았다고(19), 다시 열면 남은 요청부터
   run_instrumentation draw "com.stepup.android.ShoeDrawTest"
   mkdir -p screen-gallery/draw-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/draw-results/ || true
@@ -192,6 +199,17 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-catalog-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-catalog-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-catalog/. screen-gallery/shoe-catalog/ || status=1
+  # 보유 신발 상세 v1(2026-09-28) — 앱 셸 안의 고르기 · 상세 · 시트 · 신기 · 복귀 + 시안 01~18 장면(조회 중 · 실패 · 없는 신발 · 그림 실패 등)
+  run_instrumentation shoe-detail "com.stepup.android.ShoeDetailDesignTest"
+  mkdir -p screen-gallery/shoe-detail-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-detail-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || status=1
+  # 신발 뽑기 v2 두 칸(2026-09-28) — 앱 셸 안의 실제 흐름(신발 탭 → 뽑기, 이 기기의 서버 상태 그대로) · 흉내 낸 서버로 10 → 12 → 21 ·
+  # 시안 장면 01~26(서버 값으로 가를 수 없는 07 · 09 · 25 · 27 제외) · 밝은 테마 · 큰 글씨 · 320dp
+  run_instrumentation shoe-draw-v2 "com.stepup.android.ShoeDrawV2DesignTest"
+  mkdir -p screen-gallery/shoe-draw-v2-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-draw-v2-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw-v2/. screen-gallery/shoe-draw-v2/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

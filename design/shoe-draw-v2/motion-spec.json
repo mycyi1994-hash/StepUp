@@ -1,0 +1,50 @@
+{
+  "fps": 60,
+  "artSize": [
+    390,
+    420
+  ],
+  "durationMs": 2000,
+  "curves": {
+    "enter": [
+      0.23,
+      1,
+      0.32,
+      1
+    ],
+    "move": [
+      0.77,
+      0,
+      0.175,
+      1
+    ]
+  },
+  "lid": [
+    140,
+    610
+  ],
+  "emerge": [
+    420,
+    1050
+  ],
+  "boxExit": [
+    900,
+    1500
+  ],
+  "landing": [
+    1110,
+    1760
+  ],
+  "resultCopy": [
+    1670,
+    1900
+  ],
+  "reducedMotionMs": 200,
+  "shoeResultAsset": "img_4",
+  "ownershipIsSample": true,
+  "productionAppModified": false,
+  "lidExit": [
+    420,
+    780
+  ]
+}

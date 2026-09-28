@@ -63,6 +63,7 @@ import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
 import com.stepup.android.domain.DrawKind
 import com.stepup.android.domain.DrawStatus
+import com.stepup.android.ui.screens.gacha.DrawActions
 import com.stepup.android.ui.screens.gacha.DrawScreenState
 import org.junit.Before
 import org.junit.Rule
@@ -303,30 +304,53 @@ class ExperienceUiTest {
         capture("navigation-experience")
     }
 
+    /**
+     * 보유 신발 상세 v1 — 신발 탭에서 고르기(칸 · 같은 모델 켤레 시트)와 상세를 여는 것은 미리 보기이고,
+     * 착용은 상세의 "이 신발 신기"를 눌러 저장이 끝난 뒤에만 바뀐다. 같은 모델의 다른 켤레는 소유 id 로 고른다.
+     */
     @Test fun shoePreviewOnlyEquipsAfterConfirmation() {
         val dao = ServiceLocator.database.sneakerDao()
         val original = runBlocking { requireNotNull(dao.equippedNow()) }
+        // 신고 있는 켤레와 같은 모델의 다른 켤레 — 한 칸에 묶이고 "2켤레 보기" 시트에서 번호로 고른다
         val candidateId = runBlocking {
             dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
                 equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0))
         }
-        var detailId: Long? = null
+        val slot = runBlocking { ServiceLocator.sneakerRepository.inventory.first().first { it.id == original.id }.slotKey }
+        var detailId by mutableStateOf<Long?>(null)
         try {
             compose.setContent { StepUpTheme { ExperienceProvider {
-                CustomizeScreen(onOpenSneaker = { detailId = it })
+                val opened = detailId
+                if (opened == null) CustomizeScreen(onOpenSneaker = { detailId = it })
+                else SneakerDetailScreen(opened, onBack = { detailId = null })
             } } }
-            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-equip").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
-            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
-            compose.onNodeWithTag("shoe-choice-$candidateId").performClick().assertIsSelected()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-owned-row").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("shoe-list").performScrollToNode(hasTestTag("shoe-owned-row"))
+            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-copies-$slot"))
+            compose.onNodeWithTag("shoe-copies-$slot").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-copy-$candidateId").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals("Opening the copies sheet must not change the stored equipment", original.id,
+                runBlocking { dao.equippedNow()?.id })
+            compose.onNodeWithTag("shoe-copy-$candidateId").performClick()
+            compose.runOnIdle { assertEquals(candidateId, detailId) }
+            // 상세 — 아직 신지 않은 켤레라 주 버튼이 살아 있다(읽는 동안은 "확인 중…"으로 막혀 있다). 여는 것만으로 착용은 그대로
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsEnabled() }.isSuccess
+            }
             assertEquals("Preview must not change the stored equipment", original.id,
                 runBlocking { dao.equippedNow()?.id })
-            compose.onNodeWithTag("shoe-equip").assertIsEnabled().performClick()
+            compose.onNodeWithTag("detail-primary-action").performClick()
             compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
-            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
-            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-detail"))
-            compose.onNodeWithTag("shoe-detail").performClick()
-            compose.runOnIdle { assertEquals(candidateId, detailId) }
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
+            }
+            // 뒤로 — 신발 탭의 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로)
+            compose.runOnIdle { detailId = null }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithTag("shoe-kicker", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("shoe-kicker", useUnmergedTree = true)
+                .assertTextEquals(compose.activity.getString(R.string.sdv_kicker_wearing))
         } finally {
             // Remove only this test's new copy and restore the previous pair.
             runBlocking {
@@ -337,52 +361,71 @@ class ExperienceUiTest {
     }
 
     @Test fun shoeDrawRespectsReadinessAndTabs() {
-        // 2026-09-27 무료 정책 — 가격 · 결제 확인이 없고, 무료 · 상급 두 칸에 주 버튼이 하나다
+        // 2026-09-28 두 칸(v2) — 가격 · 결제 확인이 없고, 무료 · 상급 칸마다 버튼이 하나다. 위의 두 탭은 없다
         var state by mutableStateOf<DrawScreenState>(DrawScreenState.SignedOut)
-        var tab by mutableStateOf(DrawKind.FREE)
-        var draws = 0
+        val draws = mutableListOf<DrawKind>()
         var connects = 0
         compose.setContent { StepUpTheme { ExperienceProvider {
-            MysteryBoxScreen(state = state, tab = tab, onTab = { tab = it }, onDraw = { draws++ },
-                onConnectWallet = { connects++ })
+            MysteryBoxScreen(state = state, actions = DrawActions(onDraw = { draws += it }, onConnectWallet = { connects++ }))
         } } }
-        compose.onNodeWithTag("draw-shoe").assertIsNotEnabled().performTouchInput { click() }
-        compose.runOnIdle { assertEquals(0, draws) }
+        compose.onNodeWithTag("draw-free-action").assertIsNotEnabled().performTouchInput { click() }
+        compose.onNodeWithTag("draw-premium-action").assertIsNotEnabled()
+        compose.runOnIdle { assertTrue(draws.isEmpty()) }
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
+        compose.onNodeWithTag("draw-tab-free").assertDoesNotExist()
         val fresh = DrawStatus(dailyLeft = 3, dailyTotal = 3, signupLeft = 10, signupGranted = 10, walletLinked = false,
             giftOnLink = 10, giftLeft = 0, runLeft = 0, genesisLeft = 0, runProgressMeters = 0.0, runStepMeters = 1000,
             runToday = 0, runDailyCap = 10, chainPaused = false)
         compose.runOnIdle { state = DrawScreenState.Ready(fresh) }
-        compose.onNodeWithTag("draw-shoe").assertIsEnabled().performClick()
-        compose.runOnIdle { assertEquals(1, draws) }
-        // 혜택 카드는 상급 칸으로 — 지갑 전이면 주 버튼이 지갑 연결이 된다
-        compose.onNodeWithTag("draw-wallet-benefit").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(DrawKind.PREMIUM, tab) }
-        compose.onNodeWithTag("draw-shoe").assertDoesNotExist()
-        compose.onNodeWithTag("draw-connect-wallet").assertIsEnabled().performClick()
-        compose.runOnIdle { assertEquals(1, connects); assertEquals(1, draws) }
+        compose.onNodeWithTag("draw-free-action").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(listOf(DrawKind.FREE), draws) }
+        // 상급 칸 — 지갑 전이면 버튼은 연결 혜택(06), 그 안의 "WEB3 지갑 연결하기"가 지갑 페이지다. 연결만으로 뽑지 않는다
+        compose.onNodeWithTag("draw-premium-action").performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-connect").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("draw-sheet-connect").performClick()
+        compose.runOnIdle { assertEquals(1, connects); assertEquals(listOf(DrawKind.FREE), draws) }
         compose.runOnIdle { state = DrawScreenState.Ready(fresh.copy(walletLinked = true, giftOnLink = 0, giftLeft = 10, genesisLeft = 1)) }
-        compose.onNodeWithTag("draw-shoe").assertIsEnabled().performClick()
-        compose.runOnIdle { assertEquals(2, draws) }
-        compose.onNodeWithTag("draw-tab-free").performClick()
-        compose.runOnIdle { assertEquals(DrawKind.FREE, tab) }
+        compose.onNodeWithTag("draw-premium-action").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(listOf(DrawKind.FREE, DrawKind.PREMIUM), draws) }
+        // 칸 바탕은 누르는 곳이 아니다
+        compose.onNodeWithTag("draw-free").assertHasNoClickAction()
+        compose.onNodeWithTag("draw-premium").assertHasNoClickAction()
     }
 
-    @Test fun firstGuideVisitsRunningShoesAndProfile() {
+    /**
+     * 시작·로그인·첫 사용 v1 — 첫 안내는 한 장(시안 02). 탭을 옮겨 다니지 않고 러닝 · 신발 · 내 정보를 한 번에 설명한다.
+     * "러닝 시작"은 러닝 방법 고르기로 갈 뿐 러닝을 시작하지 않고, 홈에 돌아와도 안내가 다시 뜨지 않는다.
+     */
+    @Test fun firstGuideIsOneSheetAndOpensRunMenu() {
+        // 멈춘 러닝이 남아 있으면 그것부터 묻고 첫 안내는 미룬다 — 앞 테스트의 저장본을 비운다
+        clearAnyRunCheckpointForTest()
         compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("guide-step-title").fetchSemanticsNodes().isNotEmpty() }
-        val expected = listOf(R.string.tour3_title, R.string.tour_customize_title, R.string.tour11_title)
-        expected.forEachIndexed { index, title ->
-            compose.onNodeWithTag("guide-step-title").assertTextEquals(compose.activity.getString(title))
-            assertEquals(index, GuideTour.stepIndex)
-            val target = when (index) { 0 -> "home-start-run"; 1 -> "shoe-equip"; else -> "profile-settings" }
-            compose.waitUntil(5_000) { compose.onAllNodesWithTag(target).fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithText(compose.activity.getString(
-                if (index == expected.lastIndex) R.string.guide_start else R.string.guide_next)).performClick()
-        }
-        compose.waitUntil(5_000) { !GuideTour.active }
-        compose.onNodeWithTag("guide-step-title").assertDoesNotExist()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(compose.activity.getString(R.string.onb_guide_title)).assertIsDisplayed()
+        for (route in listOf("home", "customize", "profile")) compose.onNodeWithTag("guide-row-$route").assertExists()
+        // 안내 줄은 설명이다 — 누를 곳이 아니다
+        compose.onNodeWithTag("guide-row-customize").assertHasNoClickAction()
+        assertFalse(GuideTour.active)
+        compose.onNodeWithTag("first-guide-start").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("run-menu-free", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("first-guide-sheet").assertDoesNotExist()
+        assertFalse("the guide opens the run menu without starting a run", WalkSessionService.state.value.isActive)
+        // 메뉴에서 뒤로 — 러닝 홈. 이미 고른 안내는 다시 뜨지 않는다
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("first-guide-sheet").assertDoesNotExist()
+    }
+
+    /** 첫 안내를 X 로 닫아도 "먼저 둘러보기"와 같다 — 홈에 머물고 다시 열리지 않는다 */
+    @Test fun firstGuideCloseStaysHome() {
+        clearAnyRunCheckpointForTest()
+        compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("onboarding-sheet-close").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("home-start-run").assertIsDisplayed()
+        compose.onNodeWithTag("run-menu").assertDoesNotExist()
     }
 
     private fun capture(name: String) {

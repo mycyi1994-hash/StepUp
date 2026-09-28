@@ -21,7 +21,6 @@ import com.stepup.android.ui.screens.items.SneakerDexScreen
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
-import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -31,8 +30,8 @@ import org.junit.Test
 /**
  * 새 신발 도감 70종(2026-09-28, stepup-grade-70) — 뽑기에서 나오는 새 그림이 실제 화면에 어떻게 서는지 찍는다.
  *
- * 등급은 그림 폴더 그대로(grade-1 레어 · grade-2 에픽 · grade-3 레전더리). 신발 탭 무대(등급 프레임 v8) · 보유 칸 ·
- * 도감(70칸, 가진 것만 제 색) · 뽑기 결과. 이 테스트가 넣은 신발은 끝나면 지우고 원래 신던 신발을 다시 신긴다.
+ * 등급은 그림 폴더 그대로(grade-1 레어 · grade-2 에픽 · grade-3 레전더리). 신발 탭 받침 무대(보유 신발 상세 v1) · 보유 칸 ·
+ * 도감(70칸, 가진 것만 제 색) · 뽑기 결과(등급 프레임 v8). 이 테스트가 넣은 신발은 끝나면 지우고 원래 신던 신발을 다시 신긴다.
  */
 class ShoeCatalogDesignTest {
     @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
@@ -54,7 +53,10 @@ class ShoeCatalogDesignTest {
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "shoe-catalog").apply { mkdirs() }
     private var originalEquipped: Long? = null
 
-    /** 신발 탭(앱 셸 안) — 새 도감 세 등급을 차례로 골라 무대에 세우고, 보유 칸 · 도감으로 */
+    /**
+     * 신발 탭(앱 셸 안) — 새 도감 세 등급을 차례로 골라 받침 무대(보유 신발 상세 v1)에 세우고, 보유 칸 · 도감으로.
+     * 무대에는 그 모델 번호의 그림 · 이름이 선다(예전 속성 그림으로 채우지 않는다).
+     */
     @Test fun newShoesInTheShoesTab() {
         val shoes = seed()
         try {
@@ -63,14 +65,17 @@ class ShoeCatalogDesignTest {
             awaitTag("shoe-list")
             PICKS.forEachIndexed { index, model ->
                 val id = shoes.getValue(model)
-                list().performScrollToNode(hasTestTag("shoe-choice-$id"))
+                showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
                 list().performScrollToIndex(0)
-                val rarity = ShoeCatalog.of(model)!!.rarity
-                awaitSingle("grade-stage-${rarity.name.lowercase(Locale.ROOT)}")
+                val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
+                compose.waitUntil(10_000) {
+                    runCatching { compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextEquals(name) }.isSuccess
+                }
+                awaitSingle("shoe-art")
                 shot("0${index + 1}-stage-$model")
             }
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(PICKS.last())}"))
+            showTile(shoes.getValue(PICKS.last()))
             shot("04-owned-row")
         } finally {
             restore(shoes)
@@ -123,6 +128,12 @@ class ShoeCatalogDesignTest {
         val all = compose.onAllNodes(hasScrollToIndexAction(), useUnmergedTree = true)
         val nodes = all.fetchSemanticsNodes()
         return all[nodes.indices.maxBy { nodes[it].boundsInRoot.height }]
+    }
+
+    /** 보유 칸(가로 목록)을 보이게 — 세로 목록을 목록 줄까지, 가로 목록을 그 칸까지 */
+    private fun showTile(id: Long) {
+        list().performScrollToNode(hasTestTag("shoe-owned-row"))
+        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
     }
 
     /** 새 도감 모델 세 켤레를 넣는다 — 레어 · 에픽 · 레전더리(레드라인) */
