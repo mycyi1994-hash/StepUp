@@ -1,0 +1,170 @@
+[
+  {
+    "id": "01-home-unconnected",
+    "title": "두 칸으로 보는 뽑기",
+    "png": "01-screens/01-home-unconnected.png",
+    "svg": "01-screens/01-home-unconnected.svg"
+  },
+  {
+    "id": "02-home-connected",
+    "title": "지갑 연결 후",
+    "png": "01-screens/02-home-connected.png",
+    "svg": "01-screens/02-home-connected.svg"
+  },
+  {
+    "id": "00-owned-shoes-entry",
+    "title": "내 신발에서 진입",
+    "png": "01-screens/00-owned-shoes-entry.png",
+    "svg": "01-screens/00-owned-shoes-entry.svg"
+  },
+  {
+    "id": "03-free-chances-sheet",
+    "title": "무료 기회 내역",
+    "png": "01-screens/03-free-chances-sheet.png",
+    "svg": "01-screens/03-free-chances-sheet.svg"
+  },
+  {
+    "id": "04-premium-chances-sheet",
+    "title": "상급 기회와 러닝 진행",
+    "png": "01-screens/04-premium-chances-sheet.png",
+    "svg": "01-screens/04-premium-chances-sheet.svg"
+  },
+  {
+    "id": "05-reward-rules-sheet",
+    "title": "무료 기회 받는 방법",
+    "png": "01-screens/05-reward-rules-sheet.png",
+    "svg": "01-screens/05-reward-rules-sheet.svg"
+  },
+  {
+    "id": "06-wallet-benefit-sheet",
+    "title": "지갑 연결 안내",
+    "png": "01-screens/06-wallet-benefit-sheet.png",
+    "svg": "01-screens/06-wallet-benefit-sheet.svg"
+  },
+  {
+    "id": "07-wallet-connecting",
+    "title": "지갑에서 연결 중",
+    "png": "01-screens/07-wallet-connecting.png",
+    "svg": "01-screens/07-wallet-connecting.svg"
+  },
+  {
+    "id": "08-wallet-connected",
+    "title": "연결 완료 · 상급 10회",
+    "png": "01-screens/08-wallet-connected.png",
+    "svg": "01-screens/08-wallet-connected.svg"
+  },
+  {
+    "id": "09-wallet-connect-failed",
+    "title": "지갑 연결 실패",
+    "png": "01-screens/09-wallet-connect-failed.png",
+    "svg": "01-screens/09-wallet-connect-failed.svg"
+  },
+  {
+    "id": "10-draw-request",
+    "title": "뽑기 결과 확인 중",
+    "png": "01-screens/10-draw-request.png",
+    "svg": "01-screens/10-draw-request.svg"
+  },
+  {
+    "id": "11-draw-opening",
+    "title": "상자 열기",
+    "png": "01-screens/11-draw-opening.png",
+    "svg": "01-screens/11-draw-opening.svg"
+  },
+  {
+    "id": "12-free-draw-result",
+    "title": "무료 뽑기 결과",
+    "png": "01-screens/12-free-draw-result.png",
+    "svg": "01-screens/12-free-draw-result.svg"
+  },
+  {
+    "id": "13-premium-draw-result",
+    "title": "상급 뽑기 결과",
+    "png": "01-screens/13-premium-draw-result.png",
+    "svg": "01-screens/13-premium-draw-result.svg"
+  },
+  {
+    "id": "14-last-chance-result",
+    "title": "마지막 기회 사용 후",
+    "png": "01-screens/14-last-chance-result.png",
+    "svg": "01-screens/14-last-chance-result.svg"
+  },
+  {
+    "id": "15-home-no-chances",
+    "title": "두 기회를 모두 사용한 상태",
+    "png": "01-screens/15-home-no-chances.png",
+    "svg": "01-screens/15-home-no-chances.svg"
+  },
+  {
+    "id": "16-free-no-chances",
+    "title": "무료 기회 소진 안내",
+    "png": "01-screens/16-free-no-chances.png",
+    "svg": "01-screens/16-free-no-chances.svg"
+  },
+  {
+    "id": "17-premium-no-chances",
+    "title": "러닝으로 상급 기회 받기",
+    "png": "01-screens/17-premium-no-chances.png",
+    "svg": "01-screens/17-premium-no-chances.svg"
+  },
+  {
+    "id": "18-running-reward",
+    "title": "러닝 반영 · 상급 1회 추가",
+    "png": "01-screens/18-running-reward.png",
+    "svg": "01-screens/18-running-reward.svg"
+  },
+  {
+    "id": "19-draw-not-started",
+    "title": "뽑기 시작 실패 · 미사용 확인",
+    "png": "01-screens/19-draw-not-started.png",
+    "svg": "01-screens/19-draw-not-started.svg"
+  },
+  {
+    "id": "20-draw-reconcile",
+    "title": "결과 확인 지연",
+    "png": "01-screens/20-draw-reconcile.png",
+    "svg": "01-screens/20-draw-reconcile.svg"
+  },
+  {
+    "id": "21-owned-shoes-result",
+    "title": "받은 신발을 보유 목록에서 보기",
+    "png": "01-screens/21-owned-shoes-result.png",
+    "svg": "01-screens/21-owned-shoes-result.svg"
+  },
+  {
+    "id": "22-home-loading",
+    "title": "횟수 불러오는 중",
+    "png": "01-screens/22-home-loading.png",
+    "svg": "01-screens/22-home-loading.svg"
+  },
+  {
+    "id": "23-home-load-error",
+    "title": "횟수 불러오기 실패",
+    "png": "01-screens/23-home-load-error.png",
+    "svg": "01-screens/23-home-load-error.svg"
+  },
+  {
+    "id": "24-wallet-reconnect",
+    "title": "기존 지갑 연결 해제 상태",
+    "png": "01-screens/24-wallet-reconnect.png",
+    "svg": "01-screens/24-wallet-reconnect.svg"
+  },
+  {
+    "id": "25-wallet-reward-pending",
+    "title": "연결 성공 · 선물 확인 중",
+    "png": "01-screens/25-wallet-reward-pending.png",
+    "svg": "01-screens/25-wallet-reward-pending.svg"
+  },
+  {
+    "id": "26-home-pending-result",
+    "title": "진행 중인 결과로 돌아가기",
+    "png": "01-screens/26-home-pending-result.png",
+    "svg": "01-screens/26-home-pending-result.svg"
+  },
+  {
+    "id": "27-home-grant-pending",
+    "title": "연결 선물 확인 중인 첫 화면",
+    "png": "01-screens/27-home-grant-pending.png",
+    "svg": "01-screens/27-home-grant-pending.svg"
+  }
+]

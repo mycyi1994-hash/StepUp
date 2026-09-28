@@ -377,7 +377,8 @@ class DesignReferenceTest {
             Scene.HOME -> "home-start-run"
             // 보유 신발 상세 v1 — 신발 탭의 주 행동은 "신발 자세히 보기"(신기는 상세 안으로)
             Scene.SHOES -> "shoe-detail"
-            Scene.DRAW -> "draw-shoe"
+            // 신발 뽑기 v2 — 두 칸, 칸마다 버튼 하나(로그인 전 기기에서는 누를 수 없다)
+            Scene.DRAW -> "draw-free-action"
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
             Scene.COMMUNITY -> "community-featured-title"
@@ -414,7 +415,9 @@ class DesignReferenceTest {
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
             Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
-            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST ->
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST,
+            // 신발 뽑기 v2 는 신발 탭 안의 하위 화면 — 자기 머리(‹ 신발 뽑기), 아래 탭 없음(시안)
+            Scene.DRAW ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }

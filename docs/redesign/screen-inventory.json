@@ -14,10 +14,10 @@
     {
       "id": "Routes.MYSTERY_BOX",
       "parent": "Customize",
-      "chrome": "Main",
-      "implementation": "신발 뽑기 무료(2026-09-27): see docs/redesign/shoe-draw/README.md",
-      "verification": "ShoeDrawTest (Experience QA community suite, screen-gallery/shoe-draw/): mock scenes 01-03, states 04-11, in-app draw flow 20-22; server rules in supabase/tests (0042)",
-      "evidence": "docs/redesign/shoe-draw/README.md"
+      "chrome": "Form",
+      "implementation": "신발 뽑기 v2 두 칸(2026-09-28 전달본): 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26 — 수 · 연결 상태 · 결과는 서버 값만(07 · 09 · 25 · 27 은 앱이 알 수 없어 만들지 않음) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest (Experience QA community suite, screen-gallery/shoe-draw-v2/: in-app real state, in-app example server 10→12→21, scenes 01-26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v2/README.md"
     },
     {
       "id": "Screen.Customize.route",
@@ -218,8 +218,8 @@
       "id": "Routes.CHAIN_ACTIVITY",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "체인 기록(2026-09-28): 내 정보 › 지갑 › 체인 기록 — 서버 my_chain_activity() 그대로(대기 중 · 기록됨 · 보내지 않음), ⓘ 어디서 무엇을 하면 기록되나 — see docs/온체인-거래-발생-지도.md",
+      "verification": "ChainActivityDesignTest (Experience QA secondary suite, screen-gallery/chain-activity/): Experience QA run 36367461885 (ff924fd) passed (PR #55); captures reviewed by Claude"
     },
     {
       "id": "Routes.NOTIFICATIONS",
@@ -567,12 +567,40 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "DrawRequestScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
+      "line": 75,
+      "implementation": "신발 뽑기 v2 — 10 결과 확인 중(버튼 없음, 뒤로 가면 26) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+    },
+    {
+      "id": "DrawOpeningScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
+      "line": 101,
+      "implementation": "신발 뽑기 v2 — 11 상자 열기(전달본 unboxing.json 수치를 Compose 로, 결과를 받은 뒤에만 · 건너뛰기 · 동작 줄이기 0.2초) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+    },
+    {
+      "id": "DrawResultScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
+      "line": 142,
+      "implementation": "신발 뽑기 v2 — 12 · 13 · 14 결과(서버가 준 신발, 등급 프레임 v8 무대, 뽑은 뒤 서버에서 다시 읽은 남은 수) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+    },
+    {
+      "id": "DrawCheckScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
+      "line": 222,
+      "implementation": "신발 뽑기 v2 — 20 결과 확인 지연(새로 뽑지 않고 서버 목록 · 현황을 다시 읽는다) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+    },
+    {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 91,
-      "implementation": "신발 뽑기 무료(2026-09-27): see docs/redesign/shoe-draw/README.md",
-      "verification": "ShoeDrawTest (Experience QA community suite, screen-gallery/shoe-draw/): mock scenes 01-03, states 04-11, in-app draw flow 20-22; server rules in supabase/tests (0042)",
-      "evidence": "docs/redesign/shoe-draw/README.md"
+      "line": 109,
+      "implementation": "신발 뽑기 v2 두 칸(2026-09-28 전달본): 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26 — 수 · 연결 상태 · 결과는 서버 값만(07 · 09 · 25 · 27 은 앱이 알 수 없어 만들지 않음) — see docs/redesign/shoe-draw-v2/README.md",
+      "verification": "ShoeDrawV2DesignTest (Experience QA community suite, screen-gallery/shoe-draw-v2/: in-app real state, in-app example server 10→12→21, scenes 01-26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v2/README.md"
     },
     {
       "id": "HomeScreen",
@@ -732,8 +760,8 @@
       "id": "ChainActivityScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/ChainActivityScreen.kt",
       "line": 141,
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "체인 기록(2026-09-28): see docs/온체인-거래-발생-지도.md",
+      "verification": "ChainActivityDesignTest: Experience QA run 36367461885 (ff924fd) passed (PR #55)"
     },
     {
       "id": "WalletScreen",
@@ -919,13 +947,6 @@
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
       "line": 418,
-      "verification": "pending"
-    },
-    {
-      "kind": "DialogPanel",
-      "owner": "DrawResultDialog",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 419,
       "verification": "pending"
     },
     {

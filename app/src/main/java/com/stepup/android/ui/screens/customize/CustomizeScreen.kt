@@ -115,11 +115,20 @@ fun CustomizeScreen(
     onOpenVault: () -> Unit = {},
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDraw: () -> Unit = {},
+    /** 뽑기 결과의 "내 신발 보기" — 받은 신발을 고른 채로 연다(미리 보기일 뿐, 착용은 바꾸지 않는다) */
+    focusShoeId: Long? = null,
+    onFocusShoeShown: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val owned by viewModel.owned.collectAsStateWithLifecycle()
     // 보는 신발 — 소유 id. 없거나 사라졌으면 신고 있는 켤레(resolveSelection)
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    LaunchedEffect(focusShoeId) {
+        if (focusShoeId != null) {
+            selectedId = focusShoeId
+            onFocusShoeShown()
+        }
+    }
     Column(Modifier.fillMaxSize().padding(bottom = 4.dp)) {
         S2ShoesSections(drawSelected = false, onShoes = {}, onDraw = onOpenDraw, modifier = Modifier.padding(horizontal = StepUpDesign.Gutter))
         ShoeTabContent(

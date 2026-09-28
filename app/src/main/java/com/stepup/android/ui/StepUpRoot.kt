@@ -592,64 +592,75 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.MYSTERY_BOX) {
-                // 신발 뽑기 — 모두 무료(2026-09-27). 수와 결과는 서버(draw_status · draw_free · premium_draw)가 정한다.
+                // 신발 뽑기 v2(두 칸, 2026-09-28 전달본) — 모두 무료. 수 · 연결 상태 · 결과는 서버(draw_status · draw_free ·
+                // premium_draw)가 정한다. 신발 탭 안의 하위 화면이라 자기 머리(‹ 신발 뽑기)를 그리고 아래 탭은 없다.
                 val drawVm: com.stepup.android.ui.screens.gacha.DrawViewModel =
                     androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.gacha.DrawViewModel.Factory)
                 val drawState by drawVm.state.collectAsStateWithLifecycle()
-                val drawTab by drawVm.tab.collectAsStateWithLifecycle()
-                val drawing by drawVm.drawing.collectAsStateWithLifecycle()
-                val drawn by drawVm.result.collectAsStateWithLifecycle()
-                val drawMessage by drawVm.message.collectAsStateWithLifecycle()
-                // 지갑 페이지에서 연결하고 돌아오면 상급 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
+                val drawFlow by drawVm.flow.collectAsStateWithLifecycle()
+                val drawPending by drawVm.pending.collectAsStateWithLifecycle()
+                val drawNotice by drawVm.notice.collectAsStateWithLifecycle()
+                // 지갑 페이지에서 연결하고 오거나 러닝을 마치고 오면 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
                 androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
                     drawVm.refresh()
                     onPauseOrDispose { }
                 }
-                LaunchedEffect(drawMessage) {
-                    val m = drawMessage ?: return@LaunchedEffect
-                    val text = when (m) {
-                        com.stepup.android.ui.screens.gacha.DrawMessage.NoFreeDraws -> R.string.toast_no_free_draws
-                        com.stepup.android.ui.screens.gacha.DrawMessage.NoPremiumDraws -> R.string.toast_no_premium_draws
-                        com.stepup.android.ui.screens.gacha.DrawMessage.WalletRequired -> R.string.toast_wallet_required
-                        com.stepup.android.ui.screens.gacha.DrawMessage.MintLimit -> R.string.toast_mint_limit
-                        com.stepup.android.ui.screens.gacha.DrawMessage.ChainPaused -> R.string.draw_chain_paused
-                        com.stepup.android.ui.screens.gacha.DrawMessage.SignInRequired -> R.string.toast_sign_in_required
-                        com.stepup.android.ui.screens.gacha.DrawMessage.Offline -> R.string.toast_offline
-                        // 뽑기는 됐다 — 실패라고 하면 다시 눌러 한 번 더 뽑는다
-                        com.stepup.android.ui.screens.gacha.DrawMessage.DrawnRefreshing -> R.string.toast_drawn_refreshing
-                        com.stepup.android.ui.screens.gacha.DrawMessage.Failed -> R.string.feed_save_failed
-                    }
-                    android.widget.Toast.makeText(context, context.getString(text), android.widget.Toast.LENGTH_SHORT).show()
-                    drawVm.consumeMessage()
-                }
-                val openShoes = {
+                // 21 — 신발 탭(내 신발)으로. 받은 신발이 있으면 그 신발을 고른 채로(착용은 바꾸지 않는다)
+                val openShoes: (Long?) -> Unit = { shoeId ->
                     if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
                         navController.popBackStack()
                         navController.switchTab(Screen.Customize)
+                    }
+                    if (shoeId != null) {
+                        runCatching { navController.getBackStackEntry(Screen.Customize.route) }.getOrNull()
+                            ?.savedStateHandle?.set(RECEIVED_SHOE_KEY, shoeId)
                     }
                 }
                 val drawScope = rememberCoroutineScope()
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
                     state = drawState,
-                    tab = drawTab,
-                    drawing = drawing,
-                    onTab = drawVm::selectTab,
-                    onDraw = drawVm::draw,
-                    // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로
-                    onConnectWallet = { drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) } },
-                    onRetry = drawVm::refresh,
-                    onOpenShoes = openShoes,
+                    flow = drawFlow,
+                    pending = drawPending,
+                    notice = drawNotice,
+                    actions = remember(drawVm) {
+                        com.stepup.android.ui.screens.gacha.DrawActions(
+                            onBack = { navController.popBackStack() },
+                            onDraw = drawVm::draw,
+                            // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로.
+                            // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
+                            onConnectWallet = {
+                                drawVm.watchWalletLink()
+                                drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) }
+                            },
+                            onRetry = drawVm::refresh,
+                            onCheckPending = drawVm::checkPending,
+                            onLeaveFlow = drawVm::leaveFlow,
+                            onFinishOpening = drawVm::finishOpening,
+                            onCloseResult = drawVm::closeResult,
+                            onOpenShoes = { shoeId ->
+                                drawVm.closeResult()
+                                openShoes(shoeId)
+                            },
+                            // 17 "러닝 시작" — 기존 자유 러닝 시작(러닝 중이면 그 러닝으로)
+                            onStartRun = {
+                                if (!com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                                    com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                                    com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                                }
+                                navController.navigate(Routes.RUN_NOW)
+                            },
+                            onNoticeDone = drawVm::consumeNotice,
+                        )
+                    },
                 )
-                drawn?.let { shoe ->
-                    com.stepup.android.ui.screens.gacha.DrawResultDialog(
-                        sneaker = shoe,
-                        onOpenShoes = { drawVm.dismissResult(); openShoes() },
-                        onClose = drawVm::dismissResult,
-                    )
-                }
             }
-            composable(Screen.Customize.route) {
+            composable(Screen.Customize.route) { entry ->
+                // 뽑기 결과의 "내 신발 보기"(21) — 받은 신발을 고른 채로 연다. 한 번 고르면 비운다
+                val receivedShoe by entry.savedStateHandle.getStateFlow<Long?>(RECEIVED_SHOE_KEY, null)
+                    .collectAsStateWithLifecycle()
                 CustomizeScreen(
+                    focusShoeId = receivedShoe,
+                    onFocusShoeShown = { entry.savedStateHandle[RECEIVED_SHOE_KEY] = null },
                     onBack = { navController.switchTab(Screen.Run) },
                     onChangeBackground = {
                         wardrobeSetting = com.stepup.android.ui.components.WardrobeBackgrounds.next(wardrobeScene)
@@ -1283,6 +1294,9 @@ private fun NavHostController.switchTab(screen: Screen) {
 
 /** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
 const val BOTTOM_NAV_TAG = "bottom-nav"
+
+/** 뽑기 결과에서 신발 탭으로 넘기는 받은 신발 번호(신발 탭 항목의 SavedStateHandle) */
+private const val RECEIVED_SHOE_KEY = "draw_received_shoe"
 
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {
