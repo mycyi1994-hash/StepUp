@@ -93,8 +93,12 @@ fun CrewDetailScreen(actions: CrewDetailActions, viewModel: CrewScreenViewModel)
             op.op == CrewOp.REPORT && op.done -> { sheet = ""; viewModel.consumeOp(); actions.onReported() }
             op.op == CrewOp.APPLY && op.done -> {
                 viewModel.consumeOp()
-                if (op.applied() == CrewApplied.Member) actions.onJoinedNow()
-                else (op.applied() as? CrewApplied.Pending)?.let { actions.onOpenApplication(it.applicationId) }
+                when (val applied = op.applied()) {
+                    CrewApplied.Member -> actions.onJoinedNow()
+                    is CrewApplied.Pending -> actions.onOpenApplication(applied.applicationId)
+                    is CrewApplied.Declined -> actions.onOpenResult(applied.applicationId)
+                    CrewApplied.Canceled, null -> Unit
+                }
             }
         }
     }

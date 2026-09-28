@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -529,7 +530,10 @@ internal fun CrewSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val ink = crewInk()
-    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { dismissible || it != androidx.compose.material3.SheetValue.Hidden })
+    // confirmValueChange 는 시트 상태를 기억하는 열쇠다 — 보내는 중(dismissible)이 바뀔 때 새 상태로 다시 떠오르지 않게 한 번만 만든다
+    val canDismiss by rememberUpdatedState(dismissible)
+    val confirm = remember { { value: androidx.compose.material3.SheetValue -> canDismiss || value != androidx.compose.material3.SheetValue.Hidden } }
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = confirm)
     ModalBottomSheet(
         onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = state,

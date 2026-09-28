@@ -45,6 +45,7 @@ fun CrewJoinScreen(
     onBack: () -> Unit,
     onPending: (Long) -> Unit,
     onJoinedNow: () -> Unit,
+    onDecided: (Long) -> Unit,
     onShowCurrent: () -> Unit,
 ) {
     val ink = crewInk()
@@ -65,7 +66,8 @@ fun CrewJoinScreen(
                 when (val applied = op.applied()) {
                     is CrewApplied.Pending -> onPending(applied.applicationId)
                     CrewApplied.Member -> onJoinedNow()
-                    null -> Unit
+                    is CrewApplied.Declined -> onDecided(applied.applicationId)
+                    CrewApplied.Canceled, null -> Unit
                 }
             }
             op.problem == CrewProblem.CREW_CLOSED || op.problem == CrewProblem.CREW_FULL || op.problem == CrewProblem.CREW_MISSING ->

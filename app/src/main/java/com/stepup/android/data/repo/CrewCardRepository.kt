@@ -41,6 +41,26 @@ sealed interface CrewApplied {
 
     /** 바로 멤버가 됐다(예전 바로 가입 크루) · 이미 멤버였다 */
     data object Member : CrewApplied
+
+    /** 같은 요청 키로 보낸 신청이 그사이 미승인됐다(응답을 잃고 다시 보낸 경우) — 결과(19)로 */
+    data class Declined(val applicationId: Long) : CrewApplied
+
+    /** 같은 요청 키로 보낸 신청이 그사이 취소됐다 — 새 요청 키로 다시 보낸다 */
+    data object Canceled : CrewApplied
+
+    companion object {
+        /**
+         * crew_apply 의 답 — 같은 요청 키의 신청이 이미 있으면 서버는 그 신청의 지금 상태를 돌려준다
+         * (PENDING · MEMBER · DECLINED · CANCELED). 번호가 있어야 하는데 없으면 null.
+         */
+        fun of(result: String?, applicationId: Long?): CrewApplied? = when (result) {
+            "MEMBER" -> Member
+            "CANCELED" -> Canceled
+            "DECLINED" -> applicationId?.let(::Declined)
+            "PENDING" -> applicationId?.let(::Pending)
+            else -> null
+        }
+    }
 }
 
 /**
@@ -102,11 +122,8 @@ class CrewCardRepository(
 
     suspend fun apply(crewId: String, phrases: List<CrewPhrase>, message: String, clientKey: String): CrewOutcome<CrewApplied> {
         val outcome = when (val result = api.apply(crewId, phrases.map { it.name }, CrewRules.message(message), clientKey)) {
-            is ServerResult.Ok -> {
-                val id = result.value.applicationId
-                if (result.value.result == "PENDING" && id != null) CrewOutcome.Ok(CrewApplied.Pending(id))
-                else CrewOutcome.Ok(CrewApplied.Member)
-            }
+            is ServerResult.Ok -> CrewApplied.of(result.value.result, result.value.applicationId)
+                ?.let { CrewOutcome.Ok(it) } ?: CrewOutcome.Failed(CrewProblem.OTHER)
             else -> CrewOutcome.Failed(result.problem())
         }
         // 성공이든 모집 상태가 바뀌었든 — 지금 상태를 다시 읽는다
@@ -348,10 +365,12 @@ class CrewCardRepository(
         runCatching { prefs.setCrewDraft(owner(), draft.key, draft.copy(savedAt = System.currentTimeMillis())) }
     }
 
-    /** 초안을 지운다 — 초안이 쓰던 사진 파일도 함께 */
+    /** 초안을 지운다 — 초안이 쓰던 사진 파일도 함께(이 폰에 남겨 둔 같은 자리의 초안이 다른 사진을 썼으면 그것도) */
     suspend fun deleteDraft(draft: CrewDraft) {
+        val stored = storedDraft(draft.key)
         runCatching { prefs.setCrewDraft(owner(), draft.key, null) }
-        (draft.image as? CrewImageChoice.Photo)?.let { runCatching { File(it.path).delete() } }
+        listOfNotNull(draft.image, stored?.image).mapNotNull { (it as? CrewImageChoice.Photo)?.path }.distinct()
+            .forEach { path -> runCatching { File(path).delete() } }
     }
 
     /** 초안 사진 파일 — 자를 때마다 새 이름(되돌리기 · 두 초안이 같은 파일을 쓰지 않게) */

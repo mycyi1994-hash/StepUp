@@ -703,7 +703,11 @@ internal fun MainScaffold(
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenRanking = { navController.navigate(Routes.RANKING) },
                     onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
-                    onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
+                    onCreateCrew = { resume ->
+                        navController.navigate(
+                            com.stepup.android.ui.screens.community.crew.CrewRoutes.draft(com.stepup.android.domain.CrewDraftMode.CREATE, resume = resume),
+                        )
+                    },
                     onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
                     onOpenMap = { navController.navigate(Routes.MAP) },
@@ -1215,8 +1219,8 @@ internal fun MainScaffold(
                 RankingScreen(onBack = { navController.popBackStack() })
             }
             // 예전 "모임 만들기" 길 — 크루 명함형의 만들기(1 / 3 · 크루 소개)를 연다
-            composable(Routes.CREW_CREATE) {
-                com.stepup.android.ui.screens.community.crew.CrewDraftRoute(navController, Routes.CREW_CREATE)
+            composable(Routes.CREW_CREATE) { entry ->
+                com.stepup.android.ui.screens.community.crew.CrewDraftRoute(navController, Routes.CREW_CREATE, entry)
             }
             // 크루 명함형(확정 2번) — 상세 · 가입 신청 · 멤버 · 주간 목표 · 만들기 · 관리
             crewGraph(

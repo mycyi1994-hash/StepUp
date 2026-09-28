@@ -1,12 +1,15 @@
 package com.stepup.android.ui.screens.community.crew
 
 import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -95,7 +98,11 @@ object CrewListFocus {
 fun NavHostController.toCrewList(communityRoute: String) {
     CrewListFocus.requested = true
     if (!popBackStack(communityRoute, inclusive = false)) {
-        navigate(communityRoute) { launchSingleTop = true }
+        // 다른 탭(알림 · 초대 링크)에서 연 크루 — 그 탭에 쌓인 크루 화면은 남기지 않고 커뮤니티 탭을 새로 연다
+        navigate(communityRoute) {
+            popUpTo(graph.findStartDestination().id)
+            launchSingleTop = true
+        }
     }
 }
 
@@ -223,6 +230,9 @@ fun NavGraphBuilder.crewGraph(
                 navController.navigate(CrewRoutes.application(id, applicationId)) { popUpTo(CrewRoutes.JOIN) { inclusive = true } }
             },
             onJoinedNow = { navController.navigate(CrewRoutes.joined(id)) { popUpTo(CrewRoutes.JOIN) { inclusive = true } } },
+            onDecided = { applicationId ->
+                navController.navigate(CrewRoutes.result(id, applicationId)) { popUpTo(CrewRoutes.JOIN) { inclusive = true } }
+            },
             onShowCurrent = { navController.showCrew(id, CrewRoutes.JOIN) },
         )
     }
@@ -292,7 +302,10 @@ fun NavGraphBuilder.crewGraph(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onOpen = { applicationId -> navController.navigate(CrewRoutes.review(id, applicationId)) },
             onManage = {
-                if (!navController.popBackStack(CrewRoutes.manage(id), inclusive = false)) {
+                // 만든 직후(77)의 관리 화면은 created=true 로 올라가 있다 — 둘 다 찾아 돌아간다
+                if (!navController.popBackStack(CrewRoutes.manage(id), inclusive = false) &&
+                    !navController.popBackStack(CrewRoutes.manage(id, created = true), inclusive = false)
+                ) {
                     navController.navigate(CrewRoutes.manage(id)) { popUpTo(CrewRoutes.REQUESTS) { inclusive = true } }
                 }
             },
@@ -390,8 +403,8 @@ fun NavGraphBuilder.crewGraph(
             navArgument("crewId") { type = NavType.StringType; defaultValue = "" },
             navArgument("resume") { type = NavType.BoolType; defaultValue = false },
         ),
-    ) {
-        CrewDraftRoute(navController, CrewRoutes.DRAFT)
+    ) { entry ->
+        CrewDraftRoute(navController, CrewRoutes.DRAFT, entry)
     }
     composable(CrewRoutes.RECRUIT) {
         CrewRecruitEntryScreen(
@@ -431,14 +444,26 @@ fun NavGraphBuilder.crewGraph(
 
 /** 만들기 · 수정 초안 화면 — 예전 "모임 만들기" 길도 같은 화면(만들기)을 연다. [route] 는 이 화면이 올라간 길 */
 @androidx.compose.runtime.Composable
-fun CrewDraftRoute(navController: NavHostController, route: String) {
+fun CrewDraftRoute(navController: NavHostController, route: String, entry: NavBackStackEntry) {
     val vm: CrewDraftViewModel = viewModel(factory = CrewDraftViewModel.Factory)
+    // 지역 검색(03)이 이 길에 남긴 결과를 초안에 넣는다
+    LaunchedEffect(entry) {
+        entry.savedStateHandle.getStateFlow(CrewDraftViewModel.PICK_REGION, "").collect { raw ->
+            if (raw.isNotEmpty()) {
+                vm.pickArea(raw)
+                entry.savedStateHandle[CrewDraftViewModel.PICK_REGION] = ""
+            }
+        }
+    }
     CrewDraftScreen(
         vm,
         CrewDraftActions(
             onBack = { navController.popBackStack() },
             onPickRegion = { navController.navigate(CrewRoutes.region(CrewRegionTarget.DRAFT)) },
-            onGoalEdit = { navController.navigate(CrewRoutes.goalEdit(vm.draft.value.crewId)) },
+            onGoalEdit = {
+                vm.beginGoalEdit()
+                navController.navigate(CrewRoutes.goalEdit(vm.draft.value.crewId))
+            },
             onCreated = { crewId -> navController.navigate(CrewRoutes.created(crewId)) { popUpTo(route) { inclusive = true } } },
             onSaved = { navController.popBackStack() },
         ),

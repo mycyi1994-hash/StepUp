@@ -11,6 +11,7 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import com.stepup.android.data.repo.CrewApplied
 import com.stepup.android.data.repo.toCard
 import com.stepup.android.domain.CrewApplicationStatus
 import com.stepup.android.domain.CrewArea
@@ -194,6 +195,15 @@ class CrewCardsTest {
             """{"p_crew":"c1","p_phrases":["BEGINNER","EASY"],"p_message":"퇴근 후 함께 뛰고 싶어요.","p_client_key":"key-1"}""",
             http.lastBody,
         )
+    }
+
+    @Test fun `같은 요청 키로 다시 보낸 신청 — 미승인 · 취소를 가입으로 보지 않는다`() {
+        assertEquals(CrewApplied.Pending(7), CrewApplied.of("PENDING", 7))
+        assertEquals(CrewApplied.Member, CrewApplied.of("MEMBER", null))
+        assertEquals(CrewApplied.Declined(7), CrewApplied.of("DECLINED", 7))
+        assertEquals(CrewApplied.Canceled, CrewApplied.of("CANCELED", 7))
+        assertNull(CrewApplied.of("PENDING", null))
+        assertNull(CrewApplied.of("", 7))
     }
 
     @Test fun `목표를 비우면 null 로 보낸다`() = runBlocking {

@@ -52,8 +52,13 @@ import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.ui.components.TwoWaySwitch
 import com.stepup.android.ui.components.PrimaryCta
+import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.Crew
 import com.stepup.android.data.repo.CrewJoinPolicy
+import com.stepup.android.domain.CrewDraft
+import com.stepup.android.ui.screens.community.crew.CrewStartSheets
+import com.stepup.android.ui.screens.community.crew.SHEET_DRAFT_DISCARD
+import com.stepup.android.ui.screens.community.crew.SHEET_DRAFT_RESUME
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
@@ -89,7 +94,8 @@ fun CommunityScreen(
     onOpenNotifications: () -> Unit = {},
     onOpenRanking: () -> Unit = {},
     onOpenCrew: (String) -> Unit = {},
-    onCreateCrew: () -> Unit = {},
+    /** 크루 만들기 — resume 이면 이 폰에 남겨 둔 만들기 초안을 이어 쓴다 */
+    onCreateCrew: (resume: Boolean) -> Unit = {},
     onWritePost: (String) -> Unit = {},
     onOpenFlash: (Long) -> Unit = {},
     onOpenMap: () -> Unit = {},
@@ -496,11 +502,14 @@ private fun CrewTab(
     viewModel: CommunityViewModel,
     onOpenLobby: (String) -> Unit,
     onOpenCrew: (String) -> Unit,
-    onCreateCrew: () -> Unit,
+    onCreateCrew: (resume: Boolean) -> Unit,
 ) {
     val crews by viewModel.crews.collectAsStateWithLifecycle()
     val sync by viewModel.crewSync.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
+    // 남겨 둔 만들기 초안이 있으면 크루 모집 목록과 같이 이어 쓸지 먼저 묻는다(39 · 78)
+    val draft by remember { ServiceLocator.crewCards.draft(CrewDraft.KEY_CREATE) }.collectAsStateWithLifecycle(null)
+    var draftSheet by rememberSaveable { mutableStateOf("") }
 
     CrewNoticeToast(viewModel)
 
@@ -515,7 +524,7 @@ private fun CrewTab(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
-        item { CreateCrewCard(onClick = onCreateCrew) }
+        item { CreateCrewCard(onClick = { if (draft != null) draftSheet = SHEET_DRAFT_RESUME else onCreateCrew(false) }) }
 
         if (crews.isEmpty()) {
             item { CrewSyncCard(sync, onRetry = viewModel::refreshCrews) }
@@ -573,6 +582,9 @@ private fun CrewTab(
                 onOpenBoard = { onOpenCrew(crew.id) },
             )
         }
+    }
+    if (draftSheet.isNotEmpty()) {
+        CrewStartSheets(draft, discard = draftSheet == SHEET_DRAFT_DISCARD, onStep = { draftSheet = it }, onCreate = onCreateCrew)
     }
 }
 

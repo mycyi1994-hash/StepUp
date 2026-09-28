@@ -104,12 +104,20 @@ class CrewListViewModel(
 
     private var nameJob: Job? = null
 
+    private var refreshedAt = 0L
+
     init {
         refresh()
     }
 
     fun refresh() {
+        refreshedAt = android.os.SystemClock.elapsedRealtime()
         viewModelScope.launch { repo.refresh() }
+    }
+
+    /** 목록으로 돌아왔다 — 방금 읽었으면(30초 안) 다시 읽지 않는다 */
+    fun refreshOnResume() {
+        if (android.os.SystemClock.elapsedRealtime() - refreshedAt > RESUME_REFRESH_MS) refresh()
     }
 
     /** 화면이 받은 내 위치 — 조금 움직인 것으로는 목록을 다시 세지 않는다 */
@@ -141,6 +149,8 @@ class CrewListViewModel(
     }
 
     companion object {
+        private const val RESUME_REFRESH_MS = 30_000L
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer { CrewListViewModel(ServiceLocator.crewCards, ServiceLocator.placeSearch) }
         }
@@ -256,13 +266,22 @@ class CrewScreenViewModel(
 
     /** 신청 보내기 · 다시 신청 보내기 — 같은 입력과 같은 요청 키로 */
     fun apply() = run(CrewOp.APPLY) {
-        val key = saved.get<String>(KEY_APPLY) ?: UUID.randomUUID().toString().also { saved[KEY_APPLY] = it }
-        val result = repo.apply(crewId, phrases.value.mapNotNull(CrewPhrase::of), message.value, key)
+        var result = send()
+        if ((result as? CrewOutcome.Ok)?.value == CrewApplied.Canceled) {
+            // 이 요청 키의 신청은 그사이 취소됐다 — 지금 누른 신청은 새 요청 키로 보낸다
+            saved[KEY_APPLY] = null
+            result = send()
+        }
         if (result is CrewOutcome.Ok) {
             // 보낸 신청서는 남기지 않는다 — 다음 신청은 새 요청 키
             saved[KEY_APPLY] = null
         }
         result
+    }
+
+    private suspend fun send(): CrewOutcome<CrewApplied> {
+        val key = saved.get<String>(KEY_APPLY) ?: UUID.randomUUID().toString().also { saved[KEY_APPLY] = it }
+        return repo.apply(crewId, phrases.value.mapNotNull(CrewPhrase::of), message.value, key)
     }
 
     fun cancel(applicationId: Long) = run(CrewOp.CANCEL) { repo.cancel(crewId, applicationId) }
@@ -369,36 +388,15 @@ class CrewDraftViewModel(
     private val _save = MutableStateFlow<CrewSave>(CrewSave.Idle)
     val save: StateFlow<CrewSave> = _save
 
+    /** 수정할 크루를 읽지 못했다 — 빈 칸으로 저장하지 않게, 다시 읽을 때까지 칸을 열지 않는다 */
+    private val _startFailed = MutableStateFlow(false)
+    val startFailed: StateFlow<Boolean> = _startFailed
+
     /** 크루장이 보는 크루(수정 · 정원 검사) */
     val card: StateFlow<CrewCard?> = repo.card(crewId).stateIn(viewModelScope, SharingStarted.Eagerly, repo.cardNow(crewId))
 
     init {
         if (!_ready.value) viewModelScope.launch { start() }
-        // 다른 화면(지역 검색 · 사진 자르기 · 기본 이미지)이 돌려준 값
-        viewModelScope.launch {
-            saved.getStateFlow(PICK_REGION, "").collect { raw ->
-                if (raw.isNotEmpty()) {
-                    CrewDraftCodec.decodeArea(raw)?.let { area -> update { it.copy(area = area) } }
-                    saved[PICK_REGION] = ""
-                }
-            }
-        }
-        viewModelScope.launch {
-            saved.getStateFlow(PICK_PHOTO, "").collect { path ->
-                if (path.isNotEmpty()) {
-                    update { it.copy(image = CrewImageChoice.Photo(path)) }
-                    saved[PICK_PHOTO] = ""
-                }
-            }
-        }
-        viewModelScope.launch {
-            saved.getStateFlow(PICK_NAMED, -1).collect { bg ->
-                if (bg >= 0) {
-                    update { it.copy(image = CrewImageChoice.Named(bg)) }
-                    saved[PICK_NAMED] = -1
-                }
-            }
-        }
         // 모집 설정(43)의 "직접 입력"은 주간 목표 수정(46)에서 바로 바뀐다 — 돌아오면 이 화면의 목표도 서버 값으로
         if (mode == CrewDraftMode.EDIT_RECRUIT) {
             viewModelScope.launch {
@@ -407,15 +405,27 @@ class CrewDraftViewModel(
         }
     }
 
+    /**
+     * 서버의 목표가 바뀌었다 — 되돌릴 기준을 서버 값으로 옮긴다. 이 화면에서 목표를 건드리지 않았거나 "직접 입력"(46)에서
+     * 바꾸고 돌아왔으면 이 화면의 목표도 서버 값이 된다(저장할 때 46 의 값을 이 화면에서 먼저 고른 값으로 덮지 않는다).
+     */
     private fun syncGoal(km: Int?) {
         val base = initial.value ?: return
         if (base.goal.km == km) return
         val fresh: CrewGoalChoice = km?.let { CrewGoalChoice.Km(it, custom = it !in CrewRules.CREATE_GOALS) } ?: CrewGoalChoice.None
-        val untouched = _draft.value.goal.km == base.goal.km
+        val adopt = _draft.value.goal.km == base.goal.km || saved.get<Boolean>(KEY_GOAL_EDIT) == true
         val nextBase = base.copy(goal = fresh)
         initial.value = nextBase
         saved[KEY_INITIAL] = CrewDraftCodec.encode(nextBase)
-        if (untouched) write(_draft.value.copy(goal = fresh))
+        if (adopt) {
+            saved[KEY_GOAL_EDIT] = false
+            write(_draft.value.copy(goal = fresh))
+        }
+    }
+
+    /** 43 "직접 입력" — 주간 목표 수정(46)으로 간다. 거기서 바뀐 목표가 돌아오면 이 화면의 목표로 받는다 */
+    fun beginGoalEdit() {
+        saved[KEY_GOAL_EDIT] = true
     }
 
     // ── 대표 사진(27 → OS 사진 선택 → 28) ──
@@ -487,7 +497,11 @@ class CrewDraftViewModel(
             }
             else -> {
                 val card = repo.cardNow(crewId) ?: (repo.load(crewId) as? CrewOutcome.Ok)?.value
-                val base = card?.let { CrewDraft.edit(mode, it) } ?: CrewDraft(mode = mode, crewId = crewId)
+                if (card == null) {
+                    _startFailed.value = true
+                    return
+                }
+                val base = CrewDraft.edit(mode, card)
                 saved[KEY_INITIAL] = CrewDraftCodec.encode(base)
                 initial.value = base
                 val stored = repo.storedDraft(base.key)
@@ -506,6 +520,18 @@ class CrewDraftViewModel(
         write(start)
         saved[KEY_READY] = true
         _ready.value = true
+    }
+
+    /** 수정할 크루를 다시 읽는다 */
+    fun retryStart() {
+        if (_ready.value) return
+        _startFailed.value = false
+        viewModelScope.launch { start() }
+    }
+
+    /** 지역 검색(03)에서 고른 활동 지역 */
+    fun pickArea(raw: String) {
+        CrewDraftCodec.decodeArea(raw)?.let { area -> update { it.copy(area = area) } }
     }
 
     fun update(change: (CrewDraft) -> CrewDraft) {
@@ -576,15 +602,13 @@ class CrewDraftViewModel(
         private const val KEY_INITIAL = "crew_draft_initial"
         private const val KEY_READY = "crew_draft_ready"
         private const val KEY_RESTORED = "crew_draft_restored"
+        private const val KEY_GOAL_EDIT = "crew_draft_goal_edit"
 
-        /** 지역 검색이 돌려주는 값(인코딩한 CrewArea) */
+        /**
+         * 지역 검색이 돌려주는 값(인코딩한 CrewArea). 이 화면이 올라간 길(NavBackStackEntry)의 savedStateHandle 에 온다 —
+         * 뷰모델의 SavedStateHandle 과는 다른 곳이라 화면([CrewDraftRoute])이 받아 [pickArea] 로 넘긴다.
+         */
         const val PICK_REGION = "crew_pick_region"
-
-        /** 자르기가 돌려주는 사진 파일 경로 */
-        const val PICK_PHOTO = "crew_pick_photo"
-
-        /** 기본 이미지 고르기가 돌려주는 바탕 */
-        const val PICK_NAMED = "crew_pick_named"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer { CrewDraftViewModel(ServiceLocator.crewCards, createSavedStateHandle()) }

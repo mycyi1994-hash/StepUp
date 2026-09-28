@@ -36,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -170,7 +171,7 @@ private fun CrewOwnedRow(crew: CrewCard, onClick: () -> Unit) {
 class CrewDraftActions(
     /** 초안을 정한 뒤 나간다(38 을 거쳤거나 바뀐 것이 없다) */
     val onBack: () -> Unit,
-    /** 03 활동 지역 선택 — 고른 곳은 [CrewDraftViewModel.PICK_REGION] 으로 돌아온다 */
+    /** 03 활동 지역 선택 — 고른 곳은 이 길의 [CrewDraftViewModel.PICK_REGION] 으로 돌아온다 */
     val onPickRegion: () -> Unit,
     /** 43 "직접 입력" — 운영 중인 크루의 목표는 주간 목표 수정(46)에서 바로 바꾼다 */
     val onGoalEdit: () -> Unit,
@@ -213,6 +214,7 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
     val words = rememberCrewWords()
     val draft by viewModel.draft.collectAsStateWithLifecycle()
     val ready by viewModel.ready.collectAsStateWithLifecycle()
+    val startFailed by viewModel.startFailed.collectAsStateWithLifecycle()
     val restored by viewModel.restored.collectAsStateWithLifecycle()
     val save by viewModel.save.collectAsStateWithLifecycle()
     val photo by viewModel.photo.collectAsStateWithLifecycle()
@@ -354,7 +356,14 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
                 CrewRestoredLine(onRevert = viewModel::revert)
                 Spacer(Modifier.height(18.dp))
             }
-            if (!ready) {
+            if (!ready && startFailed) {
+                CrewEmptyState(
+                    icon = { Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+                    title = stringResource(R.string.crew_detail_error_title),
+                    body = stringResource(R.string.crew_list_error_body),
+                    modifier = Modifier.padding(top = 60.dp).testTag("crew-draft-error"),
+                ) { CrewButton(stringResource(R.string.crew_list_reload), viewModel::retryStart, Modifier.testTag("crew-draft-retry")) }
+            } else if (!ready) {
                 CrewSkeletonBox(Modifier.fillMaxWidth().height(180.dp), 18.dp)
             } else {
                 when (page) {

@@ -100,6 +100,11 @@ fun CrewListTab(
     val draft by viewModel.createDraft.collectAsStateWithLifecycle()
     val here = rememberCurrentLocation()
     LaunchedEffect(here) { viewModel.setHere(here) }
+    // 다른 화면 · 다른 앱에서 돌아오면 다시 읽는다 — 그사이 난 가입 결과(01 알림 줄)와 인원이 보이게
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        viewModel.refreshOnResume()
+        onPauseOrDispose {}
+    }
 
     var sheet by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
