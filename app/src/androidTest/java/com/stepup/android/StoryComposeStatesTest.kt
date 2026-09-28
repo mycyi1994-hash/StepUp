@@ -300,7 +300,9 @@ class StoryComposeStatesTest {
         leaveDiscarding()
 
         // ── 06 기록을 불러오지 못한 사람 — 기록 없음으로 처리하지 않고 재시도 ──────────────
+        // 이 폰에도 러닝이 없는 사람이다 — 앞 장면(05)의 이 폰 기록 8개가 남으면 다시 불러온 뒤 '기록 없음'이 아니다
         server.runs = HttpResponse(503, "busy")
+        local = StoryLocalRuns()
         openCompose()
         awaitTag("story-record-error")
         awaitTag("story-phrases-BEGINNER")
@@ -357,6 +359,7 @@ class StoryComposeStatesTest {
         awaitTag("stories-tab")
 
         // ── 11 불러오는 중 — 처음 · 오래 쉼으로 나누지 않고 문구 버튼은 빈 자리 ────────────
+        local = StoryLocalRuns()
         val gate = CompletableDeferred<HttpResponse>()
         server.runsGate = gate
         openCompose()
