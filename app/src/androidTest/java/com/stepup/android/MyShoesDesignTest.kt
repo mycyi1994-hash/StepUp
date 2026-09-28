@@ -171,7 +171,9 @@ class MyShoesDesignTest {
             shot("07-vault-sort-sheet", whole = true)
             compose.onNodeWithText(string(R.string.items_sort_rarity)).performClick()
             compose.waitForIdle()
-            val firstId = cards().first().config[SemanticsProperties.TestTag].removePrefix("vault-card-").toLong()
+            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 가장 높은 등급
+            val first = cards().minWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
+            val firstId = first.config[SemanticsProperties.TestTag].removePrefix("vault-card-").toLong()
             assertEquals("highest rarity first", Rarity.LEGENDARY.id, runBlocking { dao.byId(firstId)?.rarity })
             shot("08-vault-sorted-rarity")
 
@@ -268,7 +270,7 @@ class MyShoesDesignTest {
         show("s06-stat-basis", "shoe-basis-sheet", mine(OwnedLoad.Ready(SAMPLES), SAMPLES.first().id, basis = true))
         show("s07-vault", "vault-grid", vault(OwnedLoad.Ready(SAMPLES)))
         assertEquals("${SAMPLES.size}", text("vault-count"))
-        show("s08-vault-filter-legendary", "vault-grid", vault(OwnedLoad.Ready(SAMPLES), filter = ShoeTier.FINISH.key))
+        show("s08-vault-filter-finish", "vault-grid", vault(OwnedLoad.Ready(SAMPLES), filter = ShoeTier.FINISH.key))
         assertEquals(1, cards().size)
         show("s09-vault-empty", "vault-empty", vault(OwnedLoad.Ready(emptyList())))
         show("s10-vault-loading", "vault-loading", vault(OwnedLoad.Loading))
@@ -329,9 +331,11 @@ class MyShoesDesignTest {
             abs(stage.width / stage.height - 440f / 418f) < 0.03f)
     }
 
+    /** 무대 위 이름 — 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다. 그 안의 글에 [name] 이 있다(끝에 배지 대체 글) */
     private fun assertName(name: String) {
         compose.waitUntil(10_000) {
-            runCatching { compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(name, substring = true) }.isSuccess
+            compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
         }
     }
 
@@ -369,10 +373,11 @@ class MyShoesDesignTest {
             useUnmergedTree = true).fetchSemanticsNodes().size <= 1)
     }
 
+    /** 격자에 놓인 칸 — 미리 만들어 두고 아직 놓지 않은 칸(넘길 때의 준비분)은 빼고 */
     private fun cards() = compose.onAllNodes(
         SemanticsMatcher("vault card") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("vault-card-") == true },
         useUnmergedTree = true,
-    ).fetchSemanticsNodes()
+    ).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
 
     private fun pick(id: Long) {
         compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))

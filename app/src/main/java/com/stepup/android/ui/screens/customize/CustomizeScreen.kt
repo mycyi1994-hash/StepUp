@@ -344,7 +344,9 @@ private fun NameBlock(shoe: Sneaker, compact: Boolean, onManage: () -> Unit) {
                 name = shoe.shoeName(), tier = shoe.tier,
                 style = TextStyle(color = p.text, fontSize = if (compact) 19.sp else 21.sp, fontWeight = FontWeight.SemiBold,
                     lineHeight = 1.28.em, letterSpacing = (-0.02).em),
-                modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-hero-name"),
+                // 이름 글과 배지의 대체 글(" 레어")을 한 덩어리로 — 읽기 도구가 이름을 제목으로 읽는다(감싸는 칸에만 제목을 달면
+                // 그 칸은 글이 없어 읽기 도구가 머물지 않는다)
+                modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) { heading() }.testTag("shoe-hero-name"),
             )
             Spacer(Modifier.height(3.dp))
             ShoeMeta(shoe, fontSize = 13.5f, modifier = Modifier.testTag("shoe-hero-meta"))
@@ -679,9 +681,15 @@ private fun VaultReady(
     val shown = remember(shoes, filter, sort) { vaultShown(shoes, filter, sort) }
     val chosen = remember(shoes, selectedId) { resolvePair(shoes, selectedId)?.id }
     var sortSheet by rememberSaveable { mutableStateOf(initialSortSheet) }
+    // 정렬 · 거르기를 바꾸면 새 순서의 첫 켤레부터 보인다 — 격자는 맨 위에 있던 켤레를 키로 따라가서(그 켤레가 뒤로 가면
+    // 격자 가운데가 보인다) 바꾸는 그 자리에서 맨 위를 요청한다. 상세에서 돌아올 때는 보던 자리를 그대로 둔다
+    val showFromTop = { gridState.requestScrollToItem(0) }
     Column(modifier.fillMaxWidth()) {
         VaultHeader(shoes.size, sort, onSortClick = { sortSheet = true })
-        VaultFilters(counts, filter, onFilter = { onFilter(it?.key) })
+        VaultFilters(counts, filter, onFilter = {
+            onFilter(it?.key)
+            showFromTop()
+        })
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             state = gridState,
@@ -702,7 +710,10 @@ private fun VaultReady(
             options = VaultSorts,
             selected = sort,
             label = { stringResource(itemSortRes(it)) },
-            onPick = onSort,
+            onPick = {
+                onSort(it)
+                showFromTop()
+            },
             onDismiss = { sortSheet = false },
         )
     }

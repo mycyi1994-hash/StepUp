@@ -68,10 +68,10 @@ class ShoeCatalogDesignTest {
                 showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
                 val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
+                // 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다 — 그 안의 글을 본다
                 compose.waitUntil(10_000) {
-                    runCatching {
-                        compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(name, substring = true)
-                    }.isSuccess
+                    compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")),
+                        useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
                 }
                 awaitSingle("grade-stage-${TIERS[index]}")
                 shot("0${index + 1}-stage-$model")

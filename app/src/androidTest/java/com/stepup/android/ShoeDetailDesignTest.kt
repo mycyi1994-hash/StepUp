@@ -102,11 +102,7 @@ class ShoeDetailDesignTest {
 
             // 01 — 칸을 누르면 보는 신발만 바뀐다. 착용은 그대로
             pick(seeded.single)
-            compose.waitUntil(10_000) {
-                runCatching {
-                    compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(modelName(1107), substring = true)
-                }.isSuccess
-            }
+            compose.waitUntil(10_000) { heroNameShows(modelName(1107)) }
             assertMetaWearing(false)
             assertEquals("Picking a tile must not change the stored equipment", original, runBlocking { dao.equippedNow()?.id })
             shot("01b-in-app-picked")
@@ -178,7 +174,7 @@ class ShoeDetailDesignTest {
             back()
             awaitTag("my-shoes")
             compose.waitUntil(10_000) { runCatching { assertMetaWearing(true) }.isSuccess }
-            compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextContains(modelName(1107), substring = true)
+            assertTrue("the stage still shows ${modelName(1107)}", heroNameShows(modelName(1107)))
             showTile(seeded.single)
             compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${seeded.single}")),
                 useUnmergedTree = true).assertExists()
@@ -387,6 +383,14 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
         compose.waitForIdle()
     }
+
+    /**
+     * 무대 위 이름에 [name] 이 있다 — 이름 칸(제목 한 덩어리)은 글 · 배지를 감싸므로 그 안의 글을 본다
+     * (글 끝에는 배지 자리의 대체 글 " 레어"가 붙는다)
+     */
+    private fun heroNameShows(name: String): Boolean = compose.onAllNodes(
+        hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")), useUnmergedTree = true,
+    ).fetchSemanticsNodes().isNotEmpty()
 
     /** 이름 아래 줄 — "Lv. 1 · #0002 · 착용 중" */
     private fun metaText(): String =
