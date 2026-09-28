@@ -12,7 +12,8 @@ catalog.json 이 원본이다. 모델 번호는 서버(sneaker_models) · 체인
        java/.../ui/components/ShoeCatalogRes.kt      번호 → 그림 · 이름 리소스
   서버 supabase/migrations/0045_shoe_catalog.sql     '-- 도감 시작' ~ '-- 도감 끝' 사이
   워커 attester/src/shoe-catalog.js                  메타데이터 이름 · 그림 · v3 도감 추가
-  웹   web/assets/sneakers/shoe_<번호>.webp          NFT 메타데이터 그림(앱 그림과 같은 파일)
+  웹   web/assets/sneakers/shoe_<번호>.webp          NFT 메타데이터 · 지갑 페이지 그림(앱 그림과 같은 파일)
+       web/shoe-catalog.js                         지갑 페이지의 신발 이름
 그림은 tools/matte_shoes.py 로 원본에서 바탕을 걷어 만든다.
 """
 import argparse
@@ -30,6 +31,7 @@ UI_RES = ROOT / 'app/src/main/java/com/stepup/android/ui/components/ShoeCatalogR
 SQL = ROOT / 'supabase/migrations/0045_shoe_catalog.sql'
 WORKER = ROOT / 'attester/src/shoe-catalog.js'
 WEB = ROOT / 'web/assets/sneakers'
+WEB_JS = ROOT / 'web/shoe-catalog.js'
 RARITIES = ('COMMON', 'RARE', 'EPIC', 'LEGENDARY')
 GENERATED = 'tools/gen_shoe_catalog.py 가 design/shoes-2026-09/catalog.json 으로 만든 파일 — 손으로 고치지 않는다.'
 
@@ -196,6 +198,19 @@ def worker(models):
     ]))
 
 
+def web(models):
+    rows = [f"  {m['id']}: {js(m['ko'])}," for m in models]
+    write(WEB_JS, '\n'.join([
+        f'// {GENERATED}',
+        '',
+        '/** 새 신발 도감(2026-09-28) 이름 — 지갑 페이지의 신발 줄. 그림은 assets/sneakers/shoe_<번호>.webp */',
+        'export const SHOE_NAMES_KO = Object.freeze({',
+        *rows,
+        '})',
+        '',
+    ]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--images', type=Path, help='누끼 딴 webp 폴더(tools/matte_shoes.py 결과)')
@@ -206,6 +221,7 @@ def main():
     kotlin(models)
     server(models)
     worker(models)
+    web(models)
     print(f'{len(models)} models')
 
 

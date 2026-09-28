@@ -3,6 +3,7 @@ import {
   parseAbi, parseAbiItem, parseSignature, stringToHex,
 } from 'viem'
 import { createEVMClient } from '@metamask/connect-evm'
+import { SHOE_NAMES_KO } from './shoe-catalog.js'
 import {
   accountRef, blockRanges, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, recentTotp, sameWallet,
   sneakerContractFor, sneakerContracts, tokenFromHash,
@@ -276,7 +277,11 @@ async function renderWallet(userId) {
     }, 'SUP 꺼내기')),
     withdrawable.length
       ? el('ul', { class: 'list' }, withdrawable.map((s) => el('li', {},
-          el('span', {}, `${RARITY_KO[s.rarity] ?? s.rarity} Lv${s.level}${Number.isFinite(s.efficiency_bps) ? ` · 효율성 +${(s.efficiency_bps / 100).toFixed(1)}%` : ''} · 내구도 ${Math.round(s.durability)}${s.genesis_no ? ` · Genesis #${s.genesis_no}` : ''}`),
+          // 새 도감(0045) 신발은 이름 · 그림까지 — 어느 신발을 꺼내는지 보이게
+          SHOE_NAMES_KO[s.model_id]
+            ? el('img', { class: 'shoe', src: `assets/sneakers/shoe_${Number(s.model_id)}.webp`, alt: '', width: 44, height: 44 })
+            : null,
+          el('span', {}, `${SHOE_NAMES_KO[s.model_id] ? `${SHOE_NAMES_KO[s.model_id]} · ` : ''}${RARITY_KO[s.rarity] ?? s.rarity} Lv${s.level}${Number.isFinite(s.efficiency_bps) ? ` · 효율성 +${(s.efficiency_bps / 100).toFixed(1)}%` : ''} · 내구도 ${Math.round(s.durability)}${s.genesis_no ? ` · Genesis #${s.genesis_no}` : ''}`),
           el('button', {
             class: 'secondary small',
             onclick: (e) => guard(e.target, async () => runOp(await api.rpc('sneaker_withdraw_request', { p_sneaker_id: s.id }), '신발 꺼내기')),
