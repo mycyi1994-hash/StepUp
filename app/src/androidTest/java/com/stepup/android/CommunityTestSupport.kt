@@ -1,10 +1,14 @@
 package com.stepup.android
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 
 /**
  * 커뮤니티 › 크루 모집 › 목록 끝 "번개 모임 · 같이 달리기" — 예전 "함께 뛰기" 글자 탭(번개 모임 · 내 크루)은
@@ -16,6 +20,8 @@ fun ComposeTestRule.openCommunityMeetups() {
     waitForIdle()
     waitUntil(10_000) { onAllNodes(hasTestTag("crew-list-scroll")).fetchSemanticsNodes().isNotEmpty() }
     onNodeWithTag("crew-list-scroll").performScrollToNode(hasTestTag("crew-list-meetups"))
-    onNodeWithTag("crew-list-meetups").performClick()
+    // 오른쪽 아래에 떠 있는 "크루 모집하기"가 큰 글씨에서는 넓어져 이 줄의 가운데를 덮을 수 있다(목록이 조금만 넘쳐
+    // 끝까지 올리지 않은 채 보일 때) — 글자가 있는 왼쪽을 누른다
+    onNodeWithTag("crew-list-meetups").performTouchInput { click(centerLeft + Offset(24.dp.toPx(), 0f)) }
     waitForIdle()
 }
