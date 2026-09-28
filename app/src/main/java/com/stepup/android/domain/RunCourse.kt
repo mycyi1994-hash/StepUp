@@ -1,5 +1,7 @@
 package com.stepup.android.domain
 
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.math.floor
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -110,6 +112,14 @@ fun List<GeoPoint>.normalizedTrack(): List<Pair<Float, Float>> {
         x.toFloat().coerceIn(0f, 1f) to y.toFloat().coerceIn(0f, 1f)
     }
 }
+
+/**
+ * 소수 둘째 자리(약 1km)로 뭉갠 좌표 — 남에게 보일 자리가 서 있던 곳(대개 집)을 가리키지 않게.
+ * 서버의 크루 좌표(`crew_coarse`, 0047)와 같은 크기다.
+ */
+fun GeoPoint.coarse(): GeoPoint = GeoPoint(coarse(lat), coarse(lng))
+
+private fun coarse(value: Double): Double = BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).toDouble()
 
 /** 좌표 사이 실제 거리(m) — 하버사인 */
 fun haversineMeters(a: GeoPoint, b: GeoPoint): Double {

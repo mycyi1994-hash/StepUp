@@ -147,9 +147,10 @@ class CrewFormTest {
         }
         // Each font size gets a fresh rule-owned Activity. Replacing a focused
         // editor in-place races its pending IME hide against the next editor's show.
+        // 크루 명함형 만들기 1 / 3 · 크루 소개(예전 "모임 만들기" 길) — 이름이 있어야 "다음"을 누를 수 있다.
         run {
-            compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsNotEnabled()
-            val name = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_name))
+            compose.onNodeWithTag("crew-draft-primary").assertIsDisplayed().assertIsNotEnabled()
+            val name = compose.onNodeWithTag("crew-draft-name")
             name.performScrollTo().performClick()
             try {
                 compose.waitUntil(timeoutMillis = 5_000) {
@@ -166,14 +167,14 @@ class CrewFormTest {
                 capture("$font-keyboard-wait")
             }
             name.assertIsDisplayed()
-            compose.onNodeWithTag("crew-create-submit").assertIsDisplayed().assertIsEnabled()
-            val area = compose.onNodeWithContentDescription(compose.activity.getString(R.string.crew_field_area))
-            area.performScrollTo().performClick().performTextInput("Seoul")
-            compose.onNodeWithTag("crew-create-submit").assertIsDisplayed()
+            compose.onNodeWithTag("crew-draft-primary").assertIsDisplayed().assertIsEnabled()
+            val tagline = compose.onNodeWithTag("crew-draft-tagline")
+            tagline.performScrollTo().performClick().performTextInput("Easy laps after work")
+            compose.onNodeWithTag("crew-draft-primary").assertIsDisplayed()
             compose.onNodeWithTag("main-header").assertDoesNotExist()
             capture("$font-input")
             name.performScrollTo().performTextClearance()
-            compose.onNodeWithTag("crew-create-submit").assertIsNotEnabled()
+            compose.onNodeWithTag("crew-draft-primary").assertIsNotEnabled()
         }
     }
 

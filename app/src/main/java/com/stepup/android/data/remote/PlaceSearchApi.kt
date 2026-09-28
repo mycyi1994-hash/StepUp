@@ -3,6 +3,7 @@ package com.stepup.android.data.remote
 import com.stepup.android.BuildConfig
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.StoryPlace
+import com.stepup.android.domain.coarse
 import com.stepup.android.domain.haversineMeters
 import java.net.HttpURLConnection
 import java.net.URL
@@ -77,12 +78,20 @@ class PlaceSearchApi(
     }
 
     /** 이 좌표의 동네 이름 — 목록 위 "여의도동 주변". 못 찾으면 null */
-    suspend fun areaName(point: GeoPoint, language: String): String? {
+    suspend fun areaName(point: GeoPoint, language: String): String? = area(point, language)?.name
+
+    /**
+     * 이 좌표가 속한 동네 — 이름과 그 동네의 중심점. 남에게 보일 자리(크루 활동 지역)는 폰이 있던 자리가 아니라
+     * 이 중심점을 쓴다. 중심점이 없으면 약 1km 크기로 뭉갠다([coarse]). 이름을 못 찾으면 null.
+     */
+    suspend fun area(point: GeoPoint, language: String): StoryPlace? {
         if (!isConfigured) return null
         val url = "https://api.maptiler.com/geocoding/${coordinate(point.lng)},${coordinate(point.lat)}.json?key=$key&language=$language"
         val features = fetch(url)?.let(::parse) ?: return null
-        return AREA_TYPES.firstNotNullOfOrNull { type -> features.firstOrNull { it.kind == type }?.text?.trim() }
-            ?.takeIf { it.isNotEmpty() }
+        val feature = AREA_TYPES.firstNotNullOfOrNull { type -> features.firstOrNull { it.kind == type } } ?: return null
+        val name = feature.text.trim().takeIf { it.isNotEmpty() } ?: return null
+        val center = feature.centerPoint() ?: point.coarse()
+        return StoryPlace(name, "", center.lat, center.lng)
     }
 
     companion object {

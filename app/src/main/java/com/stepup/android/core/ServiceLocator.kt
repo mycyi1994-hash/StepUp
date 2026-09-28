@@ -69,6 +69,16 @@ object ServiceLocator {
         private set
     lateinit var crewRepository: CrewRepository
         private set
+
+    /** 크루 명함형 — 목록 · 상세 · 가입 신청 · 크루장 관리 · 만들기(2026-09-28) */
+    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository
+        private set
+
+    /** 기기 검사용 — 크루 화면을 흉내 낸 서버로 돌린다(CrewCardsTest). 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository) {
+        crewCards = repository
+    }
     /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
         private set
@@ -305,8 +315,9 @@ object ServiceLocator {
             economy = economyApi.takeIf { serverEconomy },
             sync = economySync.takeIf { serverEconomy },
         )
+        val crewApi = CrewApi(server)
         crewRepository = CrewRepository(
-            api = CrewApi(server),
+            api = crewApi,
             crewDao = database.crewDao(),
             crewInfoDao = database.crewInfoDao(),
             walkSessionDao = database.walkSessionDao(),
@@ -320,6 +331,18 @@ object ServiceLocator {
                 }
             },
             shareByDefault = { userPrefs.partyShareLocation.first() },
+        )
+        crewCards = com.stepup.android.data.repo.CrewCardRepository(
+            api = crewApi,
+            crews = crewRepository,
+            images = com.stepup.android.data.repo.CrewImageStore(
+                fetch = crewApi::image,
+                dir = java.io.File(app.cacheDir, "crew_images"),
+            ),
+            prefs = userPrefs,
+            owner = { sessionHolder.recordingOwner() },
+            ownerFlow = recordingOwnerFlow(),
+            draftDir = java.io.File(app.filesDir, "crew_drafts"),
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),

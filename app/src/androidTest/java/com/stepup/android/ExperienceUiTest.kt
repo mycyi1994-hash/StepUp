@@ -193,7 +193,7 @@ class ExperienceUiTest {
             15 -> ConnectedAccountsScreen()
             16 -> LanguageScreen()
             17 -> RankingScreen()
-            18 -> CrewCreateScreen()
+            18 -> MainScaffold(initialRoute = Routes.CREW_CREATE)
             19 -> PostComposeScreen()
             20 -> SneakerDetailScreen(sneakerId)
             21 -> CrewBoardScreen(crewId)

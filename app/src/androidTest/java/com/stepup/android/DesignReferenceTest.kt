@@ -368,10 +368,8 @@ class DesignReferenceTest {
 
     private fun awaitScene(s: Scene) {
         if (s == Scene.COMMUNITY) {
-            // 커뮤니티 첫 화면은 동네 이야기(목록형)다 — 이 기준 장면은 "함께 뛰기"(모임)를 찍는다
-            compose.waitUntil(10_000) { compose.onAllNodesWithTag("community-tab-together").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("community-tab-together").performClick()
-            compose.waitForIdle()
+            // 커뮤니티 첫 화면은 러닝 이야기다 — 이 기준 장면은 번개 모임(예전 "함께 뛰기", 크루 모집 목록 끝 안쪽)을 찍는다
+            compose.openCommunityMeetups()
         }
         val readyTag = when (s) {
             Scene.HOME -> "home-start-run"
@@ -388,7 +386,8 @@ class DesignReferenceTest {
             // 시작·로그인·첫 사용 v1 — 첫 안내는 한 장짜리 시트(시안 02)
             Scene.FIRST_GUIDE -> "first-guide-sheet"
             Scene.POST_COMPOSE -> "post-submit"
-            Scene.CREW_CREATE -> "crew-create-submit"
+            // 크루 명함형 만들기 1 / 3 · 크루 소개(예전 "모임 만들기" 길)
+            Scene.CREW_CREATE -> "crew-draft-primary"
             Scene.FLASH_DETAIL -> "detail-primary-action"
             Scene.ANALYTICS -> "bottom-nav"
             Scene.HISTORY_MAP -> "bottom-nav"

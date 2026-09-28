@@ -394,11 +394,10 @@ call pg_temp.must_fail(
       values ('11111111-1111-1111-1111-111111111111', 'FREE', '남의 이름으로') $q$,
   '남의 이름으로 글을 쓸 수 없다');
 
--- 가입하면 보인다
+-- 가입하면 보인다(앱처럼 가입 함수로 — 표에 직접 쓰는 길은 0047 이 막았다)
 do $$
 begin
-  insert into public.crew_members (crew_id, user_id)
-  values (pg_temp.fx('crew')::uuid, '22222222-2222-2222-2222-222222222222');
+  perform pg_temp.ok(public.crew_join(pg_temp.fx('crew')::uuid) = 'JOINED', '자유 가입 크루에는 바로 들어간다');
   perform pg_temp.ok(
     (select count(*) from public.post_feed
       where id = pg_temp.fx('post_crew')::bigint) = 1,
@@ -4697,6 +4696,420 @@ begin
                      and not exists (select 1 from public.walk_sessions where user_id = '46464646-4646-4646-4646-464646464646'),
     '계정 삭제는 러닝이 붙은 글도 함께 지운다');
 end $$;
+select set_config('request.jwt.claims', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+-- 0047 크루 명함형 — 명함 칸 · 가입 신청서(문구 · 한마디 · 승인/미승인/취소) · 정원 · 모집 쉼 · 주간 목표 · 크루장 넘기기
+\echo ''
+\echo '── 크루 명함형(0047) ────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('47000000-0000-0000-0000-000000000001', 'leader47@test', '{"full_name":"준호"}'),
+  ('47000000-0000-0000-0000-000000000002', 'minsu47@test', '{"full_name":"민수"}'),
+  ('47000000-0000-0000-0000-000000000003', 'doyun47@test', '{"full_name":"도윤"}'),
+  ('47000000-0000-0000-0000-000000000004', 'jiyeon47@test', '{"full_name":"지연"}'),
+  ('47000000-0000-0000-0000-000000000005', 'seoyeon47@test', '{"full_name":"서연"}');
+-- 크루장에게 푸시를 받을 폰이 있다(가입 신청 푸시 확인용)
+insert into public.push_tokens (token, user_id) values
+  ('leader47-token-0000000000000000', '47000000-0000-0000-0000-000000000001');
+delete from public.push_outbox;
+
+do $$
+begin
+  perform pg_temp.ok(to_regclass('public.crew_join_requests') is null,
+    '예전 가입 신청 표는 새 신청서 표로 옮기고 지웠다');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'public.crews', 'UPDATE'),
+    '크루 표는 앱이 직접 고칠 수 없다(레벨 · 정원은 함수로만)');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'public.crew_applications', 'INSERT')
+                     and not has_table_privilege('authenticated', 'public.crew_images', 'INSERT'),
+    '신청서 · 대표 사진 표에 직접 쓰지 못한다');
+  perform pg_temp.ok(not has_any_column_privilege('authenticated', 'public.crew_members', 'INSERT'),
+    '크루 가입은 함수로만 — 멤버 표에 직접 넣어 모집 쉼 · 정원을 건너뛰지 못한다');
+  perform pg_temp.ok(
+    not has_function_privilege('anon', 'public.crew_apply(uuid, text[], text, uuid)', 'execute')
+    and not has_function_privilege('anon', 'public.crew_create_card(text, text, text, integer, text, text, double precision, double precision, integer, integer, text, text[], integer, boolean, integer, uuid)', 'execute')
+    and not has_function_privilege('anon', 'public.crew_application_decide(bigint, boolean)', 'execute'),
+    '로그인 전에는 만들기 · 신청 · 승인을 못 부른다');
+  perform pg_temp.ok(
+    has_function_privilege('authenticated', 'public.crew_apply(uuid, text[], text, uuid)', 'execute')
+    and has_function_privilege('authenticated', 'public.crew_roster(uuid)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_check_profile(text, text, text, integer)', 'execute'),
+    '앱은 크루 함수를 부르고, 안쪽 검사 함수는 부르지 못한다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+
+do $$
+declare v_crew uuid; v_again uuid;
+begin
+  -- 화·목(2+8) 19:30, 3–5km, 천천히 · 처음도 환영(같은 분위기를 두 번 골라도 한 번), 정원 3, 목표 160km
+  v_crew := public.crew_create_card('퇴근런', '퇴근 후 가볍게 한 바퀴', '빨리보다, 꾸준히 달려요.', 1,
+    '/9j/4AAQSkZJRgABAQ==', '공덕동', 37.5443, 126.9515, 10, 1170, 'D3_5', array['EASY', 'BEGINNER', 'EASY'],
+    3, true, 160, 'aaaaaaaa-0000-0000-0000-000000000047');
+  insert into fix (k, v) values ('cc', v_crew::text);
+  v_again := public.crew_create_card('퇴근런', '', '', null, null, '', null, null, 0, null, null, '{}', 3, true, null,
+    'aaaaaaaa-0000-0000-0000-000000000047');
+  perform pg_temp.ok(v_again = v_crew
+                     and (select count(*) from public.crews where name = '퇴근런') = 1,
+    '같은 요청 키로 다시 만들어도 크루는 하나다');
+  perform pg_temp.ok(
+    (select leader_name = '준호' and leader_note = '빨리보다, 꾸준히 달려요.' and image_bg = 1 and has_image
+            and image_ver = 1 and meet_days = 10 and meet_time = 1170 and run_distance = 'D3_5'
+            and moods = array['EASY', 'BEGINNER'] and capacity = 3 and recruiting and weekly_goal_km = 160
+            and level is null and join_policy = 'APPROVAL' and member_count = 1 and owned and area = '공덕동'
+       from public.crew_feed where id = v_crew),
+    '만든 크루가 명함 칸을 모두 가진다 · 가입은 크루장 확인 · 레벨은 비어 있다(새 크루)');
+  perform pg_temp.ok((select lat = 37.54 and lng = 126.95 from public.crews where id = v_crew),
+    '활동 지역 좌표는 동네 크기(약 1km)로만 남는다 — 보낸 자리 그대로가 아니다');
+  perform pg_temp.ok((select data from public.crew_images where crew_id = v_crew) = '/9j/4AAQSkZJRgABAQ==',
+    '대표 사진이 크루와 함께 저장된다');
+  perform pg_temp.ok(
+    (select count(*) from public.crew_members where crew_id = v_crew) = 1,
+    '새 크루는 만든 사람 한 명부터 시작한다');
+end $$;
+
+call pg_temp.must_fail(
+  $q$ select public.crew_create_card('정원 없음', '', '', null, null, '', null, null, 0, null, null, '{}', 0) $q$,
+  '정원 0명으로는 만들 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.crew_create_card('시간만', '', '', null, null, '', null, null, 0, 600, null, '{}', 5) $q$,
+  '요일 없이 시간만 정할 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.crew_create_card('빠른 크루', '', '', null, null, '', null, null, 0, null, null, array['FAST'], 5) $q$,
+  '없는 분위기는 고를 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.crew_create_card('사진 오류', '', '', null, 'hello world, not an image', '', null, null, 0, null, null, '{}', 5) $q$,
+  '사진이 아닌 값은 대표 사진이 될 수 없다');
+call pg_temp.must_fail(
+  $q$ select public.crew_create_card('   ', '', '', null, null, '', null, null, 0, null, null, '{}', 5) $q$,
+  '이름 없이는 만들 수 없다');
+call pg_temp.must_fail(
+  format($q$ update public.crews set level = 9 where id = '%s' $q$, pg_temp.fx('cc')),
+  '크루장도 레벨을 직접 적을 수 없다');
+
+-- 민수가 신청한다 — 문구 두 개 · 두 줄 한마디(끝 줄바꿈은 떨어진다)
+call pg_temp.login('47000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb; r2 jsonb; r3 jsonb; v_app jsonb;
+begin
+  r := public.crew_apply(v_crew, array['AFTERWORK', 'EASY'], E'퇴근 후 함께 뛰고 싶어요.\n천천히, 꾸준히 같이 달려요.\n',
+    'bbbbbbbb-0000-0000-0000-000000000047');
+  perform pg_temp.ok(r->>'result' = 'PENDING' and (r->>'application_id') is not null, '승인제 크루에 신청하면 대기 신청서가 생긴다');
+  insert into fix (k, v) values ('cc_minsu', r->>'application_id');
+  v_app := public.crew_application((r->>'application_id')::bigint);
+  perform pg_temp.ok(v_app->>'message' = E'퇴근 후 함께 뛰고 싶어요.\n천천히, 꾸준히 같이 달려요.'
+                     and v_app->'phrases' = '["AFTERWORK", "EASY"]'::jsonb and v_app->>'status' = 'PENDING',
+    '고른 문구와 직접 쓴 한마디가 따로 그대로 남는다');
+  r2 := public.crew_apply(v_crew, '{}', '다른 한마디', null);
+  perform pg_temp.ok(r2->>'application_id' = r->>'application_id' and (r2->>'duplicate')::boolean,
+    '기다리는 신청이 있으면 두 번 신청하지 않는다');
+  r3 := public.crew_apply(v_crew, '{}', '', 'bbbbbbbb-0000-0000-0000-000000000047');
+  perform pg_temp.ok(r3->>'application_id' = r->>'application_id', '같은 요청 키는 같은 신청서다');
+  perform pg_temp.ok(
+    (select requested and not joined and my_application_status = 'PENDING' and member_count = 1 and pending_count = 0
+       from public.crew_feed where id = v_crew),
+    '신청한 사람에게는 대기로 보이고 인원은 늘지 않는다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select * from public.crew_pending_applications('%s') $q$, pg_temp.fx('cc')),
+  '크루장이 아니면 신청 목록을 못 본다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_application_decide(%s, true) $q$, pg_temp.fx('cc_minsu')),
+  '신청한 사람이 스스로 승인할 수 없다');
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'CREW_REQUEST' and args->>'name' = '민수' and args->>'crew' = '퇴근런'
+                                      and link = 'crew/' || pg_temp.fx('cc'))
+       from public.push_outbox where user_id = '47000000-0000-0000-0000-000000000001'),
+    '가입 신청이 들어오면 크루장에게 가던 푸시가 그대로 간다');
+end $$;
+set role authenticated;
+
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb;
+begin
+  perform pg_temp.ok(
+    (select pending_count from public.crew_feed where id = v_crew) = 1
+    and (select name = '민수' and phrases = array['AFTERWORK', 'EASY'] and message like '퇴근 후 함께%'
+           from public.crew_pending_applications(v_crew)),
+    '크루장은 기다리는 신청의 문구와 한마디를 본다');
+  r := public.crew_application_decide(pg_temp.fx('cc_minsu')::bigint, true);
+  perform pg_temp.ok(r->>'status' = 'APPROVED' and (r->>'member_count')::int = 2 and (r->>'pending_count')::int = 0,
+    '승인하면 인원이 한 번 늘고 신청은 목록에서 빠진다(1 → 2명)');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_application_decide(%s, true) $q$, pg_temp.fx('cc_minsu')),
+  '같은 신청을 두 번 승인할 수 없다');
+
+-- 도윤: 신청 → 취소 → 다시 신청(새 신청서)
+call pg_temp.login('47000000-0000-0000-0000-000000000003');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb; c jsonb; r2 jsonb;
+begin
+  r := public.crew_apply(v_crew, array['BEGINNER'], '', null);
+  c := public.crew_application_cancel((r->>'application_id')::bigint);
+  perform pg_temp.ok(c->>'status' = 'CANCELED'
+                     and (select not requested and my_application_status = 'CANCELED' from public.crew_feed where id = v_crew),
+    '신청을 취소하면 방문자로 돌아간다');
+  r2 := public.crew_apply(v_crew, '{}', '다시 신청해요', null);
+  perform pg_temp.ok(r2->>'result' = 'PENDING' and r2->>'application_id' <> r->>'application_id',
+    '취소한 뒤 다시 신청하면 새 신청서다');
+  insert into fix (k, v) values ('cc_doyun', r2->>'application_id');
+end $$;
+
+-- 지연: 신청 → 미승인 → 결과 확인
+call pg_temp.login('47000000-0000-0000-0000-000000000004');
+do $$
+declare r jsonb;
+begin
+  r := public.crew_apply(pg_temp.fx('cc')::uuid, '{}', '러닝이 처음인데 같이 시작하고 싶어요.', null);
+  insert into fix (k, v) values ('cc_jiyeon', r->>'application_id');
+end $$;
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+do $$
+declare r jsonb;
+begin
+  r := public.crew_application_decide(pg_temp.fx('cc_jiyeon')::bigint, false);
+  perform pg_temp.ok(r->>'status' = 'DECLINED' and (r->>'member_count')::int = 2,
+    '미승인하면 인원은 그대로다(2명)');
+end $$;
+call pg_temp.login('47000000-0000-0000-0000-000000000004');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid;
+begin
+  perform pg_temp.ok(
+    (select my_application_status = 'DECLINED' and not my_application_seen and not joined from public.crew_feed where id = v_crew),
+    '신청한 사람은 앱 안에서 미승인 결과를 다시 읽는다');
+  perform public.crew_application_seen(pg_temp.fx('cc_jiyeon')::bigint);
+  perform pg_temp.ok((select my_application_seen from public.crew_feed where id = v_crew),
+    '결과를 봤다고 적으면 같은 결과 화면을 다시 띄우지 않는다');
+  perform pg_temp.ok(
+    (select count(*) from public.crew_applications where user_id = '47000000-0000-0000-0000-000000000003') = 0,
+    '남의 신청서는 보이지 않는다');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_application_cancel(%s) $q$, pg_temp.fx('cc_doyun')),
+  '남의 신청은 취소할 수 없다');
+
+-- 서연이 신청해 둔다 — 크루장에게만 신청자로 보인다
+call pg_temp.login('47000000-0000-0000-0000-000000000005');
+do $$
+declare r jsonb;
+begin
+  r := public.crew_apply(pg_temp.fx('cc')::uuid, array['STEADY'], '', null);
+  insert into fix (k, v) values ('cc_seoyeon', r->>'application_id');
+end $$;
+call pg_temp.login('47000000-0000-0000-0000-000000000002');
+do $$
+begin
+  perform pg_temp.ok(
+    public.crew_person(pg_temp.fx('cc')::uuid, '47000000-0000-0000-0000-000000000005')->>'role' = 'NONE'
+    and public.crew_person(pg_temp.fx('cc')::uuid, '47000000-0000-0000-0000-000000000001')->>'role' = 'OWNER',
+    '멤버에게 신청자는 멤버로도 신청자로도 보이지 않는다');
+end $$;
+
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; p jsonb; r jsonb;
+begin
+  p := public.crew_person(v_crew, '47000000-0000-0000-0000-000000000005');
+  perform pg_temp.ok(p->>'role' = 'APPLICANT' and p->'application'->'phrases' = '["STEADY"]'::jsonb,
+    '크루장은 신청자를 멤버가 아닌 신청자로 본다');
+  -- 정원 3: 준호 · 민수 + 도윤 승인 → 3/3
+  r := public.crew_application_decide(pg_temp.fx('cc_doyun')::bigint, true);
+  perform pg_temp.ok((r->>'member_count')::int = 3 and (r->>'capacity')::int = 3, '승인하면 2/3 → 3/3');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_application_decide(%s, true) $q$, pg_temp.fx('cc_seoyeon')),
+  '정원이 찼으면 승인 직전에 막힌다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_update_recruit('%s', 2, true) $q$, pg_temp.fx('cc')),
+  '정원을 지금 인원보다 작게 정할 수 없다');
+
+call pg_temp.login('47000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail(
+  format($q$ select public.crew_apply('%s', '{}', '다시요', null) $q$, pg_temp.fx('cc')),
+  '정원이 찬 크루에는 신청할 수 없다');
+
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb; v_before timestamptz;
+begin
+  perform pg_temp.ok(
+    (select status from public.crew_applications where id = pg_temp.fx('cc_seoyeon')::bigint) = 'PENDING',
+    '정원 때문에 막힌 신청은 기다리는 채로 남는다');
+  r := public.crew_update_recruit(v_crew, 4, true);
+  perform pg_temp.ok((r->>'capacity')::int = 4, '정원을 늘린다');
+  r := public.crew_application_decide(pg_temp.fx('cc_seoyeon')::bigint, true);
+  perform pg_temp.ok((r->>'member_count')::int = 4, '늘린 정원 안에서 승인된다(4/4)');
+
+  -- 모집 멈춤 → 크루장 · 멤버는 그대로
+  select recruit_changed_at into v_before from public.crews where id = v_crew;
+  r := public.crew_set_recruiting(v_crew, false);
+  perform pg_temp.ok(
+    (select not recruiting and owned and member_count = 4 from public.crew_feed where id = v_crew),
+    '모집을 멈춰도 크루장은 관리하고 멤버 수는 그대로다');
+  perform public.crew_set_recruiting(v_crew, true);
+  perform pg_temp.ok((select recruiting and recruit_changed_at >= v_before from public.crew_feed where id = v_crew),
+    '모집을 다시 시작한다');
+  perform public.crew_set_recruiting(v_crew, false);
+end $$;
+
+call pg_temp.login('47000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail(
+  format($q$ select public.crew_apply('%s', '{}', '', null) $q$, pg_temp.fx('cc')),
+  '모집을 쉬는 크루에는 신청할 수 없다');
+call pg_temp.must_fail(
+  format($q$ insert into public.crew_members (crew_id, user_id, role)
+             values ('%s', '47000000-0000-0000-0000-000000000004', 'MEMBER') $q$, pg_temp.fx('cc')),
+  '멤버 표에 직접 넣어서도 들어갈 수 없다');
+
+-- 이번 주 크루 러닝: 민수 12.6km · 도윤 5km. 무효 · 지난주 · 멤버 아닌 사람 · 크루로 안 달린 러닝은 세지 않는다
+reset role;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+select u, greatest(public.crew_week_start(), now() - interval '10 minutes') + (n || ' seconds')::interval,
+       greatest(public.crew_week_start(), now() - interval '10 minutes') + (n + 60 || ' seconds')::interval,
+       60, 100, m, v, c
+  from (values
+    ('47000000-0000-0000-0000-000000000002'::uuid, 1, 12600::double precision, 'CLEAN', pg_temp.fx('cc')::uuid),
+    ('47000000-0000-0000-0000-000000000003'::uuid, 2, 5000, 'CLEAN', pg_temp.fx('cc')::uuid),
+    ('47000000-0000-0000-0000-000000000002'::uuid, 3, 10000, 'VOID', pg_temp.fx('cc')::uuid),
+    ('47000000-0000-0000-0000-000000000004'::uuid, 4, 3000, 'CLEAN', pg_temp.fx('cc')::uuid),
+    ('47000000-0000-0000-0000-000000000005'::uuid, 5, 7000, 'CLEAN', null::uuid)
+  ) as t(u, n, m, v, c);
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+values ('47000000-0000-0000-0000-000000000002', public.crew_week_start() - interval '1 day',
+        public.crew_week_start() - interval '1 day' + interval '30 minutes', 1800, 3000, 9000, 'CLEAN', pg_temp.fx('cc')::uuid);
+set role authenticated;
+
+call pg_temp.login('47000000-0000-0000-0000-000000000003');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; l jsonb;
+begin
+  perform pg_temp.ok(
+    (select abs(week_km - 17.6) < 0.001 and week_runners = 2 from public.crew_feed where id = v_crew),
+    '이번 주 목표 거리는 지금 멤버의 크루 러닝만 센다(12.6 + 5 = 17.6km, 2명)');
+  l := public.crew_level(v_crew);
+  perform pg_temp.ok(l->'level' = 'null'::jsonb and abs((l->>'week_km')::float - 17.6) < 0.001
+                     and (l->>'week_runners')::int = 2 and (l->>'member_count')::int = 4,
+    '레벨 안내는 레벨(없음)과 이번 주 활동을 따로 읽는다');
+  perform pg_temp.ok(
+    (select array_agg(name order by ord) = array['준호', '민수', '도윤', '서연']
+       from (select name, row_number() over () as ord from public.crew_roster(v_crew)) x)
+    and (select abs(week_km - 12.6) < 0.001 from public.crew_roster(v_crew) where name = '민수'),
+    '멤버 목록은 크루장이 먼저, 멤버마다 이번 주 크루 러닝 거리를 준다');
+end $$;
+
+call pg_temp.login('47000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; g jsonb;
+begin
+  g := public.crew_set_goal(v_crew, 200);
+  perform pg_temp.ok((g->>'weekly_goal_km')::int = 200 and abs((g->>'week_km')::float - 17.6) < 0.001,
+    '목표를 바꿔도 이미 달린 거리는 그대로다');
+  g := public.crew_set_goal(v_crew, null);
+  perform pg_temp.ok((select weekly_goal_km is null from public.crew_feed where id = v_crew), '목표를 비울 수 있다');
+  perform public.crew_set_goal(v_crew, 160);
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_set_goal('%s', 0) $q$, pg_temp.fx('cc')),
+  '목표는 1km 이상이다');
+
+-- 소개 · 모임 고치기 — 사진 바꾸기 · 지우기는 버전을 올린다
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb;
+begin
+  r := public.crew_update_profile(v_crew, '퇴근런', '퇴근 후 한 바퀴', '처음이어도 편하게 함께해요.', 2, 'REMOVE', null);
+  perform pg_temp.ok((r->>'image_ver')::int = 2 and not (r->>'has_image')::boolean
+                     and not exists (select 1 from public.crew_images where crew_id = v_crew),
+    '사진을 지우면 이름 이미지로 돌아가고 버전이 오른다');
+  r := public.crew_update_profile(v_crew, '퇴근런', '퇴근 후 한 바퀴', '처음이어도 편하게 함께해요.', 2, 'SET', 'iVBORw0KGgoAAAANSUhEUg==');
+  perform pg_temp.ok((r->>'image_ver')::int = 3 and (r->>'has_image')::boolean, '새 사진을 넣는다');
+  perform public.crew_update_running(v_crew, '도화동', 37.5401, 126.9496, 0, null, null, '{}');
+  perform pg_temp.ok(
+    (select area = '도화동' and meet_days = 0 and meet_time is null and run_distance is null and moods = '{}'
+            and tagline = '퇴근 후 한 바퀴' and image_bg = 2 from public.crew_feed where id = v_crew),
+    '정기 일정 없음 · 분위기 없음으로도 저장된다');
+  perform pg_temp.ok((select lat = 37.54 and lng = 126.95 from public.crews where id = v_crew),
+    '지역을 고쳐도 좌표는 동네 크기로 남는다');
+end $$;
+
+-- 크루장 넘기기 — 민수가 크루장, 준호는 일반 멤버로 남는다
+call pg_temp.must_fail(
+  format($q$ select public.crew_transfer_owner('%s', '47000000-0000-0000-0000-000000000004') $q$, pg_temp.fx('cc')),
+  '멤버가 아닌 사람(미승인 신청자)에게는 넘길 수 없다');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb;
+begin
+  r := public.crew_transfer_owner(v_crew, '47000000-0000-0000-0000-000000000002');
+  perform pg_temp.ok(r->>'leader_name' = '민수'
+                     and (select not owned and joined and leader_name = '민수' from public.crew_feed where id = v_crew)
+                     and (select role from public.crew_members where crew_id = v_crew
+                           and user_id = '47000000-0000-0000-0000-000000000001') = 'MEMBER',
+    '크루장을 넘기면 나는 일반 멤버가 된다');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_set_recruiting('%s', true) $q$, pg_temp.fx('cc')),
+  '넘긴 뒤에는 모집을 관리할 수 없다');
+call pg_temp.must_fail(
+  format($q$ select * from public.crew_pending_applications('%s') $q$, pg_temp.fx('cc')),
+  '넘긴 뒤에는 신청을 볼 수 없다');
+
+call pg_temp.login('47000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid; r jsonb;
+begin
+  perform pg_temp.ok((select owned from public.crew_feed where id = v_crew), '새 크루장이 관리한다');
+  r := public.crew_member_remove(v_crew, '47000000-0000-0000-0000-000000000003');
+  perform pg_temp.ok((r->>'member_count')::int = 3, '멤버를 내보내면 인원이 줄어든다(4 → 3)');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_member_remove('%s', '47000000-0000-0000-0000-000000000002') $q$, pg_temp.fx('cc')),
+  '크루장 자신은 내보낼 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_leave('%s') $q$, pg_temp.fx('cc')),
+  '크루장은 넘기기 전에 나갈 수 없다');
+
+call pg_temp.login('47000000-0000-0000-0000-000000000005');
+do $$
+begin
+  perform public.crew_leave(pg_temp.fx('cc')::uuid);
+  perform pg_temp.ok((select not joined and member_count = 2 from public.crew_feed where id = pg_temp.fx('cc')::uuid),
+    '멤버가 나가면 인원이 줄고 방문자로 보인다');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_dissolve('%s') $q$, pg_temp.fx('cc')),
+  '크루장이 아니면 해산할 수 없다');
+
+call pg_temp.login('47000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('cc')::uuid;
+begin
+  perform public.crew_dissolve(v_crew);
+  perform pg_temp.ok(not exists (select 1 from public.crew_feed where id = v_crew)
+                     and not exists (select 1 from public.crew_applications where crew_id = v_crew),
+    '해산하면 목록에서 사라지고 신청서도 함께 지워진다');
+end $$;
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.crew_images where crew_id = pg_temp.fx('cc')::uuid),
+    '해산한 크루의 대표 사진도 지워진다');
+end $$;
+delete from public.push_tokens where token = 'leader47-token-0000000000000000';
 select set_config('request.jwt.claims', '', false);
 
 \echo ''
