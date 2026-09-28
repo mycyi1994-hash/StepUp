@@ -11,6 +11,17 @@ root = (UI/'StepUpRoot.kt').read_text(encoding='utf-8')
 policy = (UI/'AppChromePolicy.kt').read_text(encoding='utf-8')
 registered = set(re.findall(r'composable\(\s*(?:route\s*=\s*)?((?:Routes\.[A-Z_]+)|(?:Screen\.\w+\.route))', root))
 declared = re.findall(r'Destination\(([^,]+), Screen\.\w+, Header\.\w+\)', policy)
+# 크루 명함형은 따로 된 길 묶음(crewGraph)에 오르고, 정책은 CrewRoutes.ALL 을 한꺼번에 준다 — 묶음에 올린 길이
+# 모두 CrewRoutes.ALL 에 있어야(또 그 반대) 모든 크루 화면이 머리 · 탭 규칙을 받는다
+if 'CrewRoutes.ALL.map' in policy:
+    crew_graph = (UI/'screens/community/crew/CrewNavGraph.kt').read_text(encoding='utf-8')
+    crew_registered = set(re.findall(r'composable\(\s*(CrewRoutes\.[A-Z_]+)', crew_graph))
+    crew_all = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', crew_graph)
+    crew_listed = {f'CrewRoutes.{name.strip()}' for name in crew_all.group(1).split(',') if name.strip()} if crew_all else set()
+    if not crew_registered or crew_registered != crew_listed:
+        errors.append(f'Crew route policy mismatch: missing={crew_registered-crew_listed}, stale={crew_listed-crew_registered}')
+    if 'it' in declared:
+        declared.remove('it')
 if registered != set(declared):
     errors.append(f'Route policy mismatch: missing={registered-set(declared)}, stale={set(declared)-registered}')
 if len(declared) != len(set(declared)):

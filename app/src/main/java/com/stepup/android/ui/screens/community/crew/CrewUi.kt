@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -70,6 +69,7 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewGoalProgress
 import com.stepup.android.domain.CrewRules
+import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
@@ -406,34 +406,25 @@ internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
 
 // ── 머리 · 줄 · 시트 ───────────────────────────────────────────
 
-/** 위 줄 — 뒤로 · 가운데 제목 · (있으면) 더보기 */
+/** 크루 화면 머리 — 앱 공통 하위 화면 머리(뒤로 · 가운데 제목 · 오른쪽 보조 행동 하나) */
 @Composable
 internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, onMore: (() -> Unit)? = null) {
     val ink = crewInk()
-    Row(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier.size(StepUpDesign.TouchTarget).clip(CircleShape)
-                .feedbackClickable(role = Role.Button, cue = FeedbackCue.Back, onClick = onBack).testTag("crew-back"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = ink.text, modifier = Modifier.size(22.dp))
-        }
-        Text(
-            title, color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-        )
-        if (onMore != null) {
-            Box(
-                Modifier.size(width = 56.dp, height = StepUpDesign.TouchTarget).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onMore).testTag("crew-more"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("•••", color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    SecondaryHeader(
+        onBack = onBack, balance = null, onOpenWallet = null, title = title,
+        modifier = modifier.padding(horizontal = 8.dp),
+        trailing = onMore?.let { more ->
+            {
+                Box(
+                    Modifier.size(width = 56.dp, height = StepUpDesign.TouchTarget).clip(RoundedCornerShape(12.dp))
+                        .feedbackClickable(role = Role.Button, onClick = more).testTag("crew-more"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("•••", color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
-        } else {
-            Spacer(Modifier.size(StepUpDesign.TouchTarget))
-        }
-    }
+        },
+    )
 }
 
 /** 설정 줄 — 이름, 오른쪽 값(푸른 정보색), 꺾쇠, 아래 선 */
