@@ -652,10 +652,10 @@ fun RunScreen(
                     Box(mapModifier) {
                         val here = session.here
                         if (session.geoTrack.isNotEmpty()) {
-                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others)
+                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize(), progress = 1f, others = others, follow = true)
                         } else if (session.isActive && here != null) {
                             // GPS 가 잡히기 전 — 기지국 · 마지막으로 알던 위치로 "여기쯤"을 먼저 보인다(경로는 아직 없다)
-                            LiveRouteMap(points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others)
+                            LiveRouteMap(points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others, follow = true)
                         } else {
                             MapWaiting(Modifier.fillMaxSize())
                         }

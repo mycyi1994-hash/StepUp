@@ -110,7 +110,7 @@ fun MapScreen(
         flashes.map { Pin.Flash(it) } + courses.map { Pin.Course(it) }
     }
 
-    // 처음 맞출 범위 — 내 자리 둘레 약 3km. 자리를 모르면 핀들, 그것도 없으면 서울 시청.
+    // 처음 맞출 범위 — 내 자리 둘레 약 1km(폰에서 화면 너비 약 1.4km). 자리를 모르면 첫 핀, 그것도 없으면 서울 시청.
     // 좌표를 0.01도로 반올림해 두어, GPS 가 조금 흔들릴 때마다 지도가 다시 맞춰지지 않게 한다.
     val focus = remember(here?.let { round(it.lat * 100) }, here?.let { round(it.lng * 100) }, pins.isEmpty()) {
         val center = here ?: pins.firstOrNull()?.at ?: GeoPoint(37.5665, 126.9780)
@@ -205,8 +205,11 @@ fun MapScreen(
     }
 }
 
-/** 처음 보여 줄 범위의 반폭(도). 0.015도 ≈ 1.6km */
-private const val FOCUS_SPAN = 0.015
+/**
+ * 처음 보여 줄 범위의 반폭(도). 0.005도 ≈ 550m — 폰에서 줌 16으로 열린다.
+ * 예전 0.015도(1.6km)는 줌 14로 열려 화면 너비로 5km 넘게 보였다. 더 넓게는 손가락 · − 버튼으로 본다.
+ */
+private const val FOCUS_SPAN = 0.005
 
 private fun nearestPin(pins: List<Pin>, at: Offset, plan: TilePlan, radiusPx: Float): Pin? =
     pins.minByOrNull { (plan.toScreen(it.at) - at).getDistance() }

@@ -25,14 +25,14 @@ import kotlin.math.cos
 /** 지도 위 장소 하나 — 그곳에 올라온(지금 보이는) 글 수 */
 data class StoryPin(val place: StoryPlace, val count: Int, val meters: Double?)
 
-/** [center] 둘레 [meters] 거리의 네 점 — 지도가 범위를 다 담게 맞출 때 쓴다 */
-fun rangeBox(center: GeoPoint, meters: Int): List<GeoPoint> {
-    val dLat = meters / 111_320.0
+/**
+ * [center] 에서 동서로 [meters] 떨어진 두 점 — 지도가 범위를 가로로 다 담게 맞출 때 쓴다.
+ * 남북까지 넣으면 가로로 긴 지도(동네 이야기 위 띠)가 높이에 맞춰 물러나 1km 범위가 화면 너비 6km 로 열렸다.
+ * 세로로 긴 전체 화면 지도는 어차피 너비에 맞춰지므로 그대로다.
+ */
+fun rangeSpan(center: GeoPoint, meters: Int): List<GeoPoint> {
     val dLng = meters / (111_320.0 * cos(Math.toRadians(center.lat)).coerceAtLeast(0.01))
-    return listOf(
-        GeoPoint(center.lat + dLat, center.lng), GeoPoint(center.lat - dLat, center.lng),
-        GeoPoint(center.lat, center.lng + dLng), GeoPoint(center.lat, center.lng - dLng),
-    )
+    return listOf(GeoPoint(center.lat, center.lng + dLng), GeoPoint(center.lat, center.lng - dLng))
 }
 
 /**
@@ -50,6 +50,11 @@ fun StoryPinsMap(
     selectedKey: String? = null,
     interactive: Boolean = false,
     rangeMeters: Int? = null,
+    /**
+     * 핀도 다 들어오게 맞출지. 가로로 긴 띠 지도는 끈다 — 범위 남북 끝의 핀까지 맞추면 다시 멀어진다.
+     * 꺼도 고른 핀은 맞추고, 기준점이 없으면 핀에 맞춘다.
+     */
+    fitPins: Boolean = true,
     extraFocus: List<GeoPoint> = emptyList(),
     picked: GeoPoint? = null,
     dotSeparator: Boolean = false,
@@ -61,8 +66,9 @@ fun StoryPinsMap(
     val hitBoxes = remember { mutableListOf<Pair<Rect, StoryPin>>() }
     val focus = buildList {
         origin?.let { add(it) }
-        if (origin != null && rangeMeters != null) addAll(rangeBox(origin, rangeMeters))
-        addAll(pins.map { it.place.point })
+        if (origin != null && rangeMeters != null) addAll(rangeSpan(origin, rangeMeters))
+        if (fitPins || origin == null) addAll(pins.map { it.place.point })
+        else pins.firstOrNull { it.place.key == selectedKey }?.let { add(it.place.point) }
         addAll(extraFocus)
         // 지도에서 고른 자리는 맞춤에 넣지 않는다 — 누를 때마다 지도가 다시 맞춰 흔들리지 않게
     }.ifEmpty { listOfNotNull(picked) }

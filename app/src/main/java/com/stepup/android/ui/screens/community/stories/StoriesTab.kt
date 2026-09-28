@@ -284,6 +284,7 @@ private fun StoryListBody(
                     modifier = Modifier.fillMaxSize().testTag("stories-map"),
                     selectedKey = filter?.key,
                     rangeMeters = range.meters,
+                    fitPins = false,
                     onPin = onPin,
                 )
                 // 위아래를 바닥색으로 눌러 글자가 읽히게
