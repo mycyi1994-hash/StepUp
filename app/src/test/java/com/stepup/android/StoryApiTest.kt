@@ -16,6 +16,7 @@ import com.stepup.android.data.repo.PlaceSearchResult
 import com.stepup.android.data.repo.toDomain
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.StoryPlace
+import com.stepup.android.domain.coarse
 import com.stepup.android.domain.storyPlace
 import java.util.Locale
 import kotlinx.coroutines.runBlocking
@@ -177,6 +178,19 @@ class StoryApiTest {
             {"id":"county.4","text":"영등포구","place_type":["county"],"center":[126.9,37.52]},
             {"id":"place.2","text":"여의도동","place_type":["place"],"center":[126.9238,37.5267]}]}"""
         assertEquals("여의도동", PlaceSearchApi(key = "k", fetch = { reverse }).areaName(GeoPoint(37.53, 126.93), "ko"))
+    }
+
+    @Test fun `크루 활동 지역의 좌표는 폰이 있던 자리가 아니라 동네 중심점이다`() = runBlocking {
+        val reverse = """{"features":[
+            {"id":"poi.9","text":"편의점","place_type":["poi"],"center":[126.930117,37.530341]},
+            {"id":"place.2","text":"여의도동","place_type":["place"],"center":[126.9238,37.5267]}]}"""
+        val here = GeoPoint(37.530341, 126.930117)
+        assertEquals(StoryPlace("여의도동", "", 37.5267, 126.9238), PlaceSearchApi(key = "k", fetch = { reverse }).area(here, "ko"))
+        // 동네 중심점을 모르면 약 1km 크기로 뭉갠다(서버 crew_coarse 와 같은 반올림)
+        val noCenter = """{"features":[{"id":"place.2","text":"여의도동","place_type":["place"]}]}"""
+        assertEquals(StoryPlace("여의도동", "", 37.53, 126.93), PlaceSearchApi(key = "k", fetch = { noCenter }).area(here, "ko"))
+        assertEquals(GeoPoint(37.55, 126.96), GeoPoint(37.545, 126.955).coarse())
+        assertNull(PlaceSearchApi(key = "k", fetch = { """{"features":[]}""" }).area(here, "ko"))
     }
 
     @Test fun `지도 키가 없으면 묻지 않는다`() = runBlocking {

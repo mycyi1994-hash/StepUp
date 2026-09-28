@@ -13096,6 +13096,10 @@ comment on column public.crews.level is '크루 레벨. 계산식이 정해지�
 -- 레벨 · 정원 같은 칸을 크루장이 표에 직접 고치지 못하게 한다. 고치는 일은 아래 함수로만.
 revoke update on public.crews from anon, authenticated;
 
+-- 가입도 함수로만(crew_join · crew_apply → 승인). 0035 가 남긴 직접 가입(자유 가입 크루)은 모집 쉼 · 정원을
+-- 보지 않아, 정원 2명인 크루에 3명이 들어갔다. 앱은 표에 직접 쓰지 않는다(CrewApi 는 함수만 부른다).
+revoke insert on public.crew_members from anon, authenticated;
+
 -- ────────────────────────────────────────────────────────────────────
 --  대표 사진 — 앱이 정사각형으로 자른 JPEG(base64). 크루마다 하나
 -- ────────────────────────────────────────────────────────────────────
@@ -13385,6 +13389,20 @@ begin
 end;
 $$;
 
+-- 활동 지역 좌표는 동네 크기(소수 둘째 자리, 약 1km)로만 남긴다. 크루 목록은 로그인한 누구나 본다 —
+-- "현재 위치"로 정한 크루의 좌표가 크루장이 서 있던 자리(대개 집)가 되지 않게. 앱도 동네 중심점을 보낸다.
+-- 거리 범위(1 · 3 · 5km)와 가까운 순을 가르기에는 이 크기로 충분하다.
+create or replace function public.crew_coarse(p double precision)
+returns double precision
+language sql
+immutable
+as $$ select round(p::numeric, 2)::double precision $$;
+
+-- 예전에 들어간 좌표도 같은 크기로(다시 올려도 바뀌는 행이 없다)
+update public.crews
+   set lat = public.crew_coarse(lat), lng = public.crew_coarse(lng)
+ where lat is distinct from public.crew_coarse(lat) or lng is distinct from public.crew_coarse(lng);
+
 -- 같은 분위기를 두 번 골라도 한 번. 순서는 고른 차례를 지킨다
 create or replace function public.crew_distinct(p_values text[])
 returns text[]
@@ -13471,7 +13489,7 @@ begin
   )
   values (
     v_user, btrim(p_name), public.crew_monogram(p_name), btrim(coalesce(p_tagline, '')),
-    btrim(coalesce(p_area, '')), p_lat, p_lng, 'APPROVAL',
+    btrim(coalesce(p_area, '')), public.crew_coarse(p_lat), public.crew_coarse(p_lng), 'APPROVAL',
     btrim(coalesce(p_leader_note, '')), p_image_bg, case when p_image is null then 0 else 1 end,
     coalesce(p_meet_days, 0), p_meet_time, p_distance, public.crew_distinct(p_moods),
     p_capacity, coalesce(p_recruiting, true), now(), p_goal_km, p_client_key
@@ -13565,8 +13583,8 @@ begin
   perform public.crew_check_running(p_area, p_lat, p_lng, p_meet_days, p_meet_time, p_distance, p_moods);
   update public.crews
      set area = btrim(coalesce(p_area, '')),
-         lat = p_lat,
-         lng = p_lng,
+         lat = public.crew_coarse(p_lat),
+         lng = public.crew_coarse(p_lng),
          meet_days = coalesce(p_meet_days, 0),
          meet_time = p_meet_time,
          run_distance = p_distance,
@@ -13952,6 +13970,8 @@ begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
+  -- 크루장 넘기기와 겹치지 않게 크루를 먼저 잠근다 — 넘겨받는 사람이 그 사이 나가면 멤버가 아닌 크루장이 남는다
+  perform 1 from public.crews c where c.id = p_crew for update;
   if exists (
     select 1 from public.crew_members m
      where m.crew_id = p_crew and m.user_id = v_user and m.role = 'OWNER'
@@ -14160,6 +14180,27 @@ begin
 end;
 $$;
 
+-- 크루를 잠근 뒤 크루장인지 본다(crew_assert_owner 는 잠그기 전에 본다). 같은 크루를 두 번 동시에 넘기면
+-- 뒤에 온 쪽은 앞의 것이 끝날 때까지 기다렸다가, 이미 크루장이 아니어서 멈춘다 — 크루장이 둘 남지 않게.
+create or replace function public.crew_lock_owner(p_crew uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid;
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  select c.owner_id into v_owner from public.crews c where c.id = p_crew for update;
+  if v_owner is distinct from auth.uid() then
+    raise exception '크루장만 할 수 있습니다' using errcode = '42501';
+  end if;
+end;
+$$;
+
 -- 멤버 내보내기 — 크루장만, 크루장 자신은 대상이 아니다
 create or replace function public.crew_member_remove(p_crew uuid, p_user uuid)
 returns jsonb
@@ -14170,7 +14211,7 @@ as $$
 declare
   v_role text;
 begin
-  perform public.crew_assert_owner(p_crew);
+  perform public.crew_lock_owner(p_crew);
   select m.role into v_role from public.crew_members m where m.crew_id = p_crew and m.user_id = p_user for update;
   if not found then
     raise exception 'target_not_member' using errcode = '22023', detail = '이 크루의 멤버가 아닙니다';
@@ -14193,17 +14234,20 @@ as $$
 declare
   v_me uuid := auth.uid();
 begin
-  perform public.crew_assert_owner(p_crew);
-  perform 1 from public.crews c where c.id = p_crew for update;
-  if p_user is null or p_user = v_me or not exists (
-    select 1 from public.crew_members m where m.crew_id = p_crew and m.user_id = p_user
-  ) then
+  perform public.crew_lock_owner(p_crew);
+  if p_user is null or p_user = v_me then
+    raise exception 'target_not_member' using errcode = '22023', detail = '이 크루의 멤버에게만 넘길 수 있습니다';
+  end if;
+  -- 넘겨받을 사람의 가입 행도 잠근다 — 그 사이 나가거나(표에서 바로 지우기 포함) 내보내지지 않게
+  perform 1 from public.crew_members m where m.crew_id = p_crew and m.user_id = p_user for update;
+  if not found then
     raise exception 'target_not_member' using errcode = '22023', detail = '이 크루의 멤버에게만 넘길 수 있습니다';
   end if;
   update public.crews set owner_id = p_user where id = p_crew;
+  -- 크루장은 한 사람 — 넘겨받는 사람만 OWNER, 남아 있던 OWNER 행은 모두 MEMBER
   update public.crew_members
      set role = case when user_id = p_user then 'OWNER' else 'MEMBER' end
-   where crew_id = p_crew and user_id in (p_user, v_me);
+   where crew_id = p_crew and (user_id = p_user or role = 'OWNER');
   return jsonb_build_object(
     'owner_id', p_user,
     'leader_name', (select coalesce(pr.display_name, '러너') from public.profiles pr where pr.id = p_user));
@@ -14235,6 +14279,8 @@ revoke execute on function public.crew_check_running(text, double precision, dou
   from public, anon, authenticated;
 revoke execute on function public.crew_distinct(text[]) from public, anon, authenticated;
 revoke execute on function public.crew_monogram(text) from public, anon, authenticated;
+revoke execute on function public.crew_coarse(double precision) from public, anon, authenticated;
+revoke execute on function public.crew_lock_owner(uuid) from public, anon, authenticated;
 revoke execute on function public.push_on_crew_request() from public, anon, authenticated;
 
 revoke execute on function public.crew_create_card(text, text, text, int, text, text, double precision, double precision,

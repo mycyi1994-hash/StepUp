@@ -65,6 +65,9 @@ class PlaceSearch(
     /** 목록 위의 동네 이름 */
     suspend fun areaName(point: GeoPoint): String? = api.areaName(point, language())
 
+    /** 이 좌표가 속한 동네의 이름과 중심점 — 크루 활동 지역처럼 남에게 보일 자리 */
+    suspend fun area(point: GeoPoint): StoryPlace? = api.area(point, language())
+
     private fun List<StoryPlace>.distinctPlaces(): List<StoryPlace> {
         val kept = mutableListOf<StoryPlace>()
         for (place in this) {

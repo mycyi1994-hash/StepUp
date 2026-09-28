@@ -661,9 +661,12 @@ class CrewRegionViewModel(private val places: PlaceSearch) : ViewModel() {
         }
     }
 
-    /** 현재 위치의 동네 — 이름을 못 찾으면 null(좌표를 이름처럼 적지 않는다) */
+    /**
+     * 현재 위치의 동네 — 이름을 못 찾으면 null(좌표를 이름처럼 적지 않는다). 좌표는 폰이 있던 자리가 아니라 그 동네의
+     * 중심점이다: 크루 목록은 누구나 보므로, 크루장이 서 있던 자리(대개 집)를 크루 위치로 남기지 않는다.
+     */
     suspend fun areaAt(point: GeoPoint): CrewArea? =
-        runCatching { places.areaName(point) }.getOrNull()?.let { CrewArea(it.take(CrewRules.AREA_MAX), "", point.lat, point.lng) }
+        runCatching { places.area(point) }.getOrNull()?.let { CrewArea(it.name.take(CrewRules.AREA_MAX), "", it.lat, it.lng) }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

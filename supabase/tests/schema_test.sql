@@ -394,11 +394,10 @@ call pg_temp.must_fail(
       values ('11111111-1111-1111-1111-111111111111', 'FREE', '남의 이름으로') $q$,
   '남의 이름으로 글을 쓸 수 없다');
 
--- 가입하면 보인다
+-- 가입하면 보인다(앱처럼 가입 함수로 — 표에 직접 쓰는 길은 0047 이 막았다)
 do $$
 begin
-  insert into public.crew_members (crew_id, user_id)
-  values (pg_temp.fx('crew')::uuid, '22222222-2222-2222-2222-222222222222');
+  perform pg_temp.ok(public.crew_join(pg_temp.fx('crew')::uuid) = 'JOINED', '자유 가입 크루에는 바로 들어간다');
   perform pg_temp.ok(
     (select count(*) from public.post_feed
       where id = pg_temp.fx('post_crew')::bigint) = 1,
@@ -4726,6 +4725,8 @@ begin
   perform pg_temp.ok(not has_table_privilege('authenticated', 'public.crew_applications', 'INSERT')
                      and not has_table_privilege('authenticated', 'public.crew_images', 'INSERT'),
     '신청서 · 대표 사진 표에 직접 쓰지 못한다');
+  perform pg_temp.ok(not has_any_column_privilege('authenticated', 'public.crew_members', 'INSERT'),
+    '크루 가입은 함수로만 — 멤버 표에 직접 넣어 모집 쉼 · 정원을 건너뛰지 못한다');
   perform pg_temp.ok(
     not has_function_privilege('anon', 'public.crew_apply(uuid, text[], text, uuid)', 'execute')
     and not has_function_privilege('anon', 'public.crew_create_card(text, text, text, integer, text, text, double precision, double precision, integer, integer, text, text[], integer, boolean, integer, uuid)', 'execute')
@@ -4761,6 +4762,8 @@ begin
             and level is null and join_policy = 'APPROVAL' and member_count = 1 and owned and area = '공덕동'
        from public.crew_feed where id = v_crew),
     '만든 크루가 명함 칸을 모두 가진다 · 가입은 크루장 확인 · 레벨은 비어 있다(새 크루)');
+  perform pg_temp.ok((select lat = 37.54 and lng = 126.95 from public.crews where id = v_crew),
+    '활동 지역 좌표는 동네 크기(약 1km)로만 남는다 — 보낸 자리 그대로가 아니다');
   perform pg_temp.ok((select data from public.crew_images where crew_id = v_crew) = '/9j/4AAQSkZJRgABAQ==',
     '대표 사진이 크루와 함께 저장된다');
   perform pg_temp.ok(
@@ -4967,6 +4970,10 @@ call pg_temp.login('47000000-0000-0000-0000-000000000004');
 call pg_temp.must_fail(
   format($q$ select public.crew_apply('%s', '{}', '', null) $q$, pg_temp.fx('cc')),
   '모집을 쉬는 크루에는 신청할 수 없다');
+call pg_temp.must_fail(
+  format($q$ insert into public.crew_members (crew_id, user_id, role)
+             values ('%s', '47000000-0000-0000-0000-000000000004', 'MEMBER') $q$, pg_temp.fx('cc')),
+  '멤버 표에 직접 넣어서도 들어갈 수 없다');
 
 -- 이번 주 크루 러닝: 민수 12.6km · 도윤 5km. 무효 · 지난주 · 멤버 아닌 사람 · 크루로 안 달린 러닝은 세지 않는다
 reset role;
@@ -5035,6 +5042,8 @@ begin
     (select area = '도화동' and meet_days = 0 and meet_time is null and run_distance is null and moods = '{}'
             and tagline = '퇴근 후 한 바퀴' and image_bg = 2 from public.crew_feed where id = v_crew),
     '정기 일정 없음 · 분위기 없음으로도 저장된다');
+  perform pg_temp.ok((select lat = 37.54 and lng = 126.95 from public.crews where id = v_crew),
+    '지역을 고쳐도 좌표는 동네 크기로 남는다');
 end $$;
 
 -- 크루장 넘기기 — 민수가 크루장, 준호는 일반 멤버로 남는다
