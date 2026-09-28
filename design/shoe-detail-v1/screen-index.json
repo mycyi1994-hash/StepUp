@@ -1,0 +1,128 @@
+[
+  {
+    "id": "01-owned-shoes-entry",
+    "title": "보유 목록에서 진입",
+    "description": "선택과 착용을 구분하고 상세로",
+    "png": "01-screens/01-owned-shoes-entry.png",
+    "svg": "01-screens/01-owned-shoes-entry.svg"
+  },
+  {
+    "id": "02-shoe-detail",
+    "title": "선택한 신발 상세",
+    "description": "신발·주요 능력치·착용 버튼",
+    "png": "01-screens/02-shoe-detail.png",
+    "svg": "01-screens/02-shoe-detail.svg"
+  },
+  {
+    "id": "03-equipped-detail",
+    "title": "착용 중인 신발",
+    "description": "현재 상태를 분명하게 표시",
+    "png": "01-screens/03-equipped-detail.png",
+    "svg": "01-screens/03-equipped-detail.svg"
+  },
+  {
+    "id": "04-all-stats",
+    "title": "전체 능력치",
+    "description": "다섯 가지 수치를 목록으로",
+    "png": "01-screens/04-all-stats.png",
+    "svg": "01-screens/04-all-stats.svg"
+  },
+  {
+    "id": "05-stat-explanation",
+    "title": "능력치 설명",
+    "description": "어려운 말은 눌러서 확인",
+    "png": "01-screens/05-stat-explanation.png",
+    "svg": "01-screens/05-stat-explanation.svg"
+  },
+  {
+    "id": "06-shoe-information",
+    "title": "신발 정보",
+    "description": "번호·등급·속성과 받은 날짜",
+    "png": "01-screens/06-shoe-information.png",
+    "svg": "01-screens/06-shoe-information.svg"
+  },
+  {
+    "id": "07-owned-copies",
+    "title": "같은 모델이 여러 켤레",
+    "description": "신발 번호로 구분해서 선택",
+    "png": "01-screens/07-owned-copies.png",
+    "svg": "01-screens/07-owned-copies.svg"
+  },
+  {
+    "id": "08-another-copy",
+    "title": "다른 사본의 상세",
+    "description": "같은 외형이라도 개별 능력치 표시",
+    "png": "01-screens/08-another-copy.png",
+    "svg": "01-screens/08-another-copy.svg"
+  },
+  {
+    "id": "09-equipping",
+    "title": "착용 변경 중",
+    "description": "중복 실행 없이 결과 확인",
+    "png": "01-screens/09-equipping.png",
+    "svg": "01-screens/09-equipping.svg"
+  },
+  {
+    "id": "10-equipped-success",
+    "title": "착용 변경 완료",
+    "description": "실제 저장 후 착용 표시 갱신",
+    "png": "01-screens/10-equipped-success.png",
+    "svg": "01-screens/10-equipped-success.svg"
+  },
+  {
+    "id": "11-equip-error",
+    "title": "착용 변경 실패",
+    "description": "기존 착용을 유지하며 재시도",
+    "png": "01-screens/11-equip-error.png",
+    "svg": "01-screens/11-equip-error.svg"
+  },
+  {
+    "id": "12-inventory-after-equip",
+    "title": "보유 목록으로 복귀",
+    "description": "착용 체크가 새 신발로 이동",
+    "png": "01-screens/12-inventory-after-equip.png",
+    "svg": "01-screens/12-inventory-after-equip.svg"
+  },
+  {
+    "id": "13-detail-loading",
+    "title": "신발 조회 중",
+    "description": "임시 능력치·착용 상태를 숨김",
+    "png": "01-screens/13-detail-loading.png",
+    "svg": "01-screens/13-detail-loading.svg"
+  },
+  {
+    "id": "14-detail-load-error",
+    "title": "신발 조회 실패",
+    "description": "다시 불러오기 또는 목록 복귀",
+    "png": "01-screens/14-detail-load-error.png",
+    "svg": "01-screens/14-detail-load-error.svg"
+  },
+  {
+    "id": "15-shoe-not-found",
+    "title": "없는 신발로 진입",
+    "description": "최신 보유 목록으로 돌아가기",
+    "png": "01-screens/15-shoe-not-found.png",
+    "svg": "01-screens/15-shoe-not-found.svg"
+  },
+  {
+    "id": "16-art-load-error",
+    "title": "이미지 조회 실패",
+    "description": "신발 정보와 착용 기능은 유지",
+    "png": "01-screens/16-art-load-error.png",
+    "svg": "01-screens/16-art-load-error.svg"
+  },
+  {
+    "id": "17-first-equipment",
+    "title": "아직 착용 신발 없음",
+    "description": "보유 신발을 처음 신는 경우",
+    "png": "01-screens/17-first-equipment.png",
+    "svg": "01-screens/17-first-equipment.svg"
+  },
+  {
+    "id": "18-empty-inventory",
+    "title": "실제 보유 목록이 비었을 때",
+    "description": "무료 뽑기로 자연스럽게 연결",
+    "png": "01-screens/18-empty-inventory.png",
+    "svg": "01-screens/18-empty-inventory.svg"
+  }
+]

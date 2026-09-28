@@ -282,8 +282,11 @@ class ScreenGalleryTest {
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
                 val shoe = before.first { it.id == sneakerId }
                 if (shoe.canUpgrade) {
-                    compose.onNodeWithText(localized.getString(R.string.sneaker_action_enhance))
-                        .performClick()
+                    // 보유 신발 상세 v1 — 강화는 위쪽 ⋯(이 신발 관리) 안으로 옮겼다. 확인 창 · 비용은 그대로
+                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-more").fetchSemanticsNodes().isNotEmpty() }
+                    compose.onNodeWithTag("shoe-more").performClick()
+                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-manage-enhance").fetchSemanticsNodes().isNotEmpty() }
+                    compose.onNodeWithTag("shoe-manage-enhance").performClick()
                     val costNode = compose.onNodeWithText(localized.getString(
                         R.string.items_upgrade_cost, "%,.0f".format(shoe.upgradeCost),
                     ))

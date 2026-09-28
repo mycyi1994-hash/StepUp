@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -192,6 +192,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-catalog-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-catalog-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-catalog/. screen-gallery/shoe-catalog/ || status=1
+  # 보유 신발 상세 v1(2026-09-28) — 앱 셸 안의 고르기 · 상세 · 시트 · 신기 · 복귀 + 시안 01~18 장면(조회 중 · 실패 · 없는 신발 · 그림 실패 등)
+  run_instrumentation shoe-detail "com.stepup.android.ShoeDetailDesignTest"
+  mkdir -p screen-gallery/shoe-detail-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-detail-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

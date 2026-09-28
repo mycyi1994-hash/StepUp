@@ -375,7 +375,8 @@ class DesignReferenceTest {
         }
         val readyTag = when (s) {
             Scene.HOME -> "home-start-run"
-            Scene.SHOES -> "shoe-equip"
+            // 보유 신발 상세 v1 — 신발 탭의 주 행동은 "신발 자세히 보기"(신기는 상세 안으로)
+            Scene.SHOES -> "shoe-detail"
             Scene.DRAW -> "draw-shoe"
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
@@ -416,7 +417,10 @@ class DesignReferenceTest {
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
-        if (s == Scene.SHOES) compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
+        // 처음 보는 신발은 신고 있는 켤레다 — 고르기 전에는 "지금 신고 있는 신발"(예전: 원형 신기 버튼이 꺼져 있음)
+        if (s == Scene.SHOES) {
+            compose.onNodeWithTag("shoe-kicker", useUnmergedTree = true).assertTextEquals(korean(R.string.sdv_kicker_wearing))
+        }
         if (s == Scene.RUN_NO_GPS) compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
         if (s == Scene.RUN_FINISH) {
             compose.onNode(hasText("—") and hasAnyAncestor(hasTestTag("run-result-reward"))).assertExists()

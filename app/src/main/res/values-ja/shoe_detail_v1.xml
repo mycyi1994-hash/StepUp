@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
+<resources>
+    <!-- 신발 탭(01 · 12 · 18) -->
+    <string name="sdv_kicker_selected">選択中のシューズ</string>
+    <string name="sdv_kicker_wearing">いま履いているシューズ</string>
+    <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
+    <string name="sdv_level_no_cd">レベル%1$d、シューズ番号%2$04d</string>
+    <string name="sdv_open_detail">シューズの詳細を見る</string>
+    <string name="sdv_owned_title">持っているシューズ</string>
+    <plurals name="sdv_pairs">
+        <item quantity="other">%d足</item>
+    </plurals>
+    <plurals name="sdv_see_copies">
+        <item quantity="other">%d足を見る</item>
+    </plurals>
+    <plurals name="sdv_see_copies_cd">
+        <item quantity="other">%1$sの%2$d足を見る</item>
+    </plurals>
+    <string name="sdv_state_viewing">表示中</string>
+    <string name="sdv_state_wearing">着用中</string>
+    <string name="sdv_loading">シューズを読み込んでいます。</string>
+    <string name="sdv_checking">確認中…</string>
+    <string name="sdv_empty_title">まだシューズがありません</string>
+    <string name="sdv_empty_body">無料ガチャで最初のシューズに出会いましょう。</string>
+    <string name="sdv_empty_action">シューズを引く</string>
+
+    <!-- 같은 모델 여러 켤레(07) -->
+    <plurals name="sdv_copies_title">
+        <item quantity="other">%1$s %2$d足</item>
+    </plurals>
+    <string name="sdv_copies_intro">詳しく見るシューズを選んでください。</string>
+    <string name="sdv_copy_energy">エネルギー節約 %1$s</string>
+    <string name="sdv_copy_received">受け取った日 %1$s</string>
+    <string name="sdv_copies_note">選ぶだけでは履いているシューズは変わりません。</string>
+
+    <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
+    <string name="sdv_title">シューズの詳細</string>
+    <string name="sdv_status_owned">所持中</string>
+    <string name="sdv_status_wearing">いま履いています</string>
+    <string name="sdv_status_none">まだ履いているシューズがありません</string>
+    <string name="sdv_stat_bonus">SUP獲得ボーナス</string>
+    <string name="sdv_stat_energy">エネルギー節約</string>
+    <string name="sdv_stat_luck">運</string>
+    <string name="sdv_stat_comfort">履き心地</string>
+    <string name="sdv_stat_durability">耐久度</string>
+    <string name="sdv_row_stats">能力値の詳細</string>
+    <string name="sdv_row_info">シューズ情報</string>
+    <string name="sdv_wear">このシューズを履く</string>
+    <string name="sdv_wear_busy">履き替え中…</string>
+    <string name="sdv_worn_toast">%1$sを履きました。</string>
+    <string name="sdv_more">このシューズのその他</string>
+
+    <!-- 능력치(04 · 05) -->
+    <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>
+    <string name="sdv_stats_help">能力値について</string>
+    <string name="sdv_ok">確認</string>
+    <string name="sdv_explain_title">能力値の意味</string>
+    <string name="sdv_explain_bonus">基本の獲得に上乗せされるシューズのボーナスです。最終的な獲得量は実際の活動結果によって変わります。</string>
+    <string name="sdv_explain_energy">同じ活動で使うエネルギーを減らす割合です。</string>
+    <string name="sdv_explain_luck">シューズに保存された運の値です。</string>
+    <string name="sdv_explain_comfort">エネルギー節約の割合を計算する値です。</string>
+    <string name="sdv_explain_durability">シューズに記録された耐久度です。</string>
+    <string name="sdv_explain_back">能力値に戻る</string>
+
+    <!-- 신발 정보(06) -->
+    <string name="sdv_info_name">名前</string>
+    <string name="sdv_info_number">シューズ番号</string>
+    <string name="sdv_info_rarity">等級</string>
+    <string name="sdv_info_faction">属性</string>
+    <string name="sdv_info_level">レベル</string>
+    <string name="sdv_info_received">受け取った日</string>
+    <string name="sdv_info_chain">チェーン</string>
+    <string name="sdv_chain_token">チェーンNFT · トークン #%1$d</string>
+    <string name="sdv_chain_vault">StepUp金庫に発行済み · トークン #%1$d</string>
+    <string name="sdv_chain_none">まだチェーンにありません</string>
+    <string name="sdv_chain_none_note">発行を待っている可能性があります。マイ › ウォレット › チェーン記録で確認できます。</string>
+    <string name="sdv_info_note">同じモデルでもシューズ番号で区別します。</string>
+    <string name="sdv_date_pattern">yyyy.MM.dd</string>
+    <string name="sdv_unknown_model">シューズモデル %1$d</string>
+
+    <!-- 착용 변경 실패(11) -->
+    <string name="sdv_error_title">シューズを履き替えられませんでした</string>
+    <string name="sdv_error_unknown_title">履き替えたか確認できませんでした</string>
+    <string name="sdv_error_kept">%1$sをそのまま履いています。</string>
+    <string name="sdv_error_none">まだ履いているシューズがありません。</string>
+    <string name="sdv_error_unknown_body">結果を確認できませんでした。もう一度履くか、この画面を閉じてしばらくしてから確認してください。</string>
+    <string name="sdv_error_hint">もう一度試すか、この画面を閉じることができます。</string>
+    <string name="sdv_retry_wear">もう一度履く</string>
+
+    <!-- 조회 실패 · 없는 신발 · 이미지 실패(14 · 15 · 16) -->
+    <string name="sdv_load_failed_title">シューズを読み込めませんでした</string>
+    <string name="sdv_load_failed_body">しばらくしてからもう一度読み込んでください。</string>
+    <string name="sdv_reload">再読み込み</string>
+    <string name="sdv_back_to_owned">持っているシューズに戻る</string>
+    <string name="sdv_missing_title">このシューズが見つかりません</string>
+    <string name="sdv_missing_body">持っているシューズから別のシューズを選んでください。</string>
+    <string name="sdv_art_failed">画像を読み込めませんでした</string>
+    <string name="sdv_art_retry">画像を再読み込み</string>
+
+    <!-- 옮긴 기존 행동(⋯) -->
+    <string name="sdv_manage_title">このシューズの管理</string>
+    <string name="sdv_enhance_desc">Lv. %1$d → %2$d · %3$s SUP</string>
+    <string name="sdv_sell_desc">取引所で出品します。そこで確定するまで出品されません。</string>
+</resources>

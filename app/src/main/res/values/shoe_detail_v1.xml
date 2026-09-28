@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
+<resources>
+    <!-- 신발 탭(01 · 12 · 18) -->
+    <string name="sdv_kicker_selected">Selected pair</string>
+    <string name="sdv_kicker_wearing">Wearing now</string>
+    <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
+    <string name="sdv_level_no_cd">Level %1$d, shoe number %2$04d</string>
+    <string name="sdv_open_detail">See shoe details</string>
+    <string name="sdv_owned_title">My shoes</string>
+    <plurals name="sdv_pairs">
+        <item quantity="one">%d pair</item>
+        <item quantity="other">%d pairs</item>
+    </plurals>
+    <plurals name="sdv_see_copies">
+        <item quantity="one">See %d pair</item>
+        <item quantity="other">See %d pairs</item>
+    </plurals>
+    <plurals name="sdv_see_copies_cd">
+        <item quantity="one">See %2$d pair of %1$s</item>
+        <item quantity="other">See all %2$d pairs of %1$s</item>
+    </plurals>
+    <string name="sdv_state_viewing">Viewing</string>
+    <string name="sdv_state_wearing">Wearing</string>
+    <string name="sdv_loading">Loading your shoes.</string>
+    <string name="sdv_checking">Checking…</string>
+    <string name="sdv_empty_title">No shoes yet</string>
+    <string name="sdv_empty_body">Meet your first pair with a free draw.</string>
+    <string name="sdv_empty_action">Draw shoes</string>
+
+    <!-- 같은 모델 여러 켤레(07) -->
+    <plurals name="sdv_copies_title">
+        <item quantity="one">%1$s · %2$d pair</item>
+        <item quantity="other">%1$s · %2$d pairs</item>
+    </plurals>
+    <string name="sdv_copies_intro">Choose a pair to see in detail.</string>
+    <string name="sdv_copy_energy">Energy saving %1$s</string>
+    <string name="sdv_copy_received">Received %1$s</string>
+    <string name="sdv_copies_note">Choosing a pair doesn\'t change the pair you\'re wearing.</string>
+
+    <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
+    <string name="sdv_title">Shoe details</string>
+    <string name="sdv_status_owned">In your collection</string>
+    <string name="sdv_status_wearing">You\'re wearing this pair</string>
+    <string name="sdv_status_none">You\'re not wearing any pair yet</string>
+    <string name="sdv_stat_bonus">SUP earning bonus</string>
+    <string name="sdv_stat_energy">Energy saving</string>
+    <string name="sdv_stat_luck">Luck</string>
+    <string name="sdv_stat_comfort">Comfort</string>
+    <string name="sdv_stat_durability">Durability</string>
+    <string name="sdv_row_stats">Stats in detail</string>
+    <string name="sdv_row_info">Shoe info</string>
+    <string name="sdv_wear">Wear this pair</string>
+    <string name="sdv_wear_busy">Switching shoes…</string>
+    <string name="sdv_worn_toast">You\'re now wearing %1$s.</string>
+    <string name="sdv_more">More for this pair</string>
+
+    <!-- 능력치(04 · 05) -->
+    <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>
+    <string name="sdv_stats_help">What do the stats mean?</string>
+    <string name="sdv_ok">OK</string>
+    <string name="sdv_explain_title">What the stats mean</string>
+    <string name="sdv_explain_bonus">A shoe bonus added to your base earnings. What you actually earn depends on your real activity.</string>
+    <string name="sdv_explain_energy">How much less energy you use for the same activity.</string>
+    <string name="sdv_explain_luck">The luck value stored on this shoe.</string>
+    <string name="sdv_explain_comfort">The value used to work out the energy saving.</string>
+    <string name="sdv_explain_durability">The durability recorded on this shoe.</string>
+    <string name="sdv_explain_back">Back to stats</string>
+
+    <!-- 신발 정보(06) -->
+    <string name="sdv_info_name">Name</string>
+    <string name="sdv_info_number">Shoe number</string>
+    <string name="sdv_info_rarity">Grade</string>
+    <string name="sdv_info_faction">Element</string>
+    <string name="sdv_info_level">Level</string>
+    <string name="sdv_info_received">Received on</string>
+    <string name="sdv_info_chain">Chain</string>
+    <string name="sdv_chain_token">Chain NFT · token #%1$d</string>
+    <string name="sdv_chain_vault">Minted to the StepUp vault · token #%1$d</string>
+    <string name="sdv_chain_none">Not on chain yet</string>
+    <string name="sdv_chain_none_note">It may be waiting to be minted. You can check in Me › Wallet › Chain records.</string>
+    <string name="sdv_info_note">Pairs of the same model are told apart by shoe number.</string>
+    <string name="sdv_date_pattern">yyyy.MM.dd</string>
+    <string name="sdv_unknown_model">Shoe model %1$d</string>
+
+    <!-- 착용 변경 실패(11) -->
+    <string name="sdv_error_title">Couldn\'t switch shoes</string>
+    <string name="sdv_error_unknown_title">Couldn\'t confirm the switch</string>
+    <string name="sdv_error_kept">You\'re still wearing %1$s.</string>
+    <string name="sdv_error_none">You\'re not wearing any pair yet.</string>
+    <string name="sdv_error_unknown_body">We couldn\'t check the result. Try again, or close this and check again in a moment.</string>
+    <string name="sdv_error_hint">You can try again or close this.</string>
+    <string name="sdv_retry_wear">Wear again</string>
+
+    <!-- 조회 실패 · 없는 신발 · 이미지 실패(14 · 15 · 16) -->
+    <string name="sdv_load_failed_title">Couldn\'t load your shoe</string>
+    <string name="sdv_load_failed_body">Please load it again in a moment.</string>
+    <string name="sdv_reload">Load again</string>
+    <string name="sdv_back_to_owned">Back to my shoes</string>
+    <string name="sdv_missing_title">We can\'t find this shoe</string>
+    <string name="sdv_missing_body">Choose another pair from your shoes.</string>
+    <string name="sdv_art_failed">Couldn\'t load the image</string>
+    <string name="sdv_art_retry">Load image again</string>
+
+    <!-- 옮긴 기존 행동(⋯) -->
+    <string name="sdv_manage_title">Manage this pair</string>
+    <string name="sdv_enhance_desc">Lv. %1$d → %2$d · %3$s SUP</string>
+    <string name="sdv_sell_desc">List it on the market. It isn\'t listed until you confirm there.</string>
+</resources>

@@ -1132,6 +1132,13 @@ internal fun MainScaffold(
                             Routes.marketModel(faction, rarity, variant, localId),
                         )
                     },
+                    // 보유 신발 상세 v1 — 조회 실패(14) · 없는 신발(15)에서 "보유 신발로 돌아가기": 신발 탭의 최신 목록으로
+                    onOpenOwned = {
+                        if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
+                            navController.popBackStack()
+                            navController.switchTab(Screen.Customize)
+                        }
+                    },
                 )
             }
             composable(
