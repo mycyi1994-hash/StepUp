@@ -6,8 +6,8 @@
       "id": "Screen.Run.route",
       "parent": "Run",
       "chrome": "Main",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
+      "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -23,8 +23,8 @@
       "id": "Screen.Customize.route",
       "parent": "Customize",
       "chrome": "Main",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — shoe tab 01 · 07 · 12 · 13 · 18: plinth stage, owned row grouped by model, copies sheet; wear moved into the detail",
+      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -32,15 +32,15 @@
       "id": "Routes.RUNNER_MARKET",
       "parent": "Customize",
       "chrome": "Detail",
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device"
     },
     {
       "id": "Screen.Community.route",
       "parent": "Community",
       "chrome": "Main",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md; 2026-09-27: first screen is the list-style stories (map + list), 함께 뛰기 moved to the second segment — docs/redesign/community-list/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -93,23 +93,23 @@
       "id": "Routes.MAP",
       "parent": "Community",
       "chrome": "Detail",
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed; S2 map tabs not in the reviewed capture set; GPS/tiles unverified"
     },
     {
       "id": "Routes.ITEMS",
       "parent": "Customize",
       "chrome": "Detail",
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "Routes.MARKET_MODEL",
       "parent": "Customize",
       "chrome": "Detail",
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device"
     },
     {
       "id": "Routes.NEWS",
@@ -123,7 +123,7 @@
       "parent": "Run",
       "chrome": "Detail",
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -131,7 +131,7 @@
       "id": "Screen.Profile.route",
       "parent": "Profile",
       "chrome": "Main",
-      "implementation": "내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md (settings tab unchanged)",
+      "implementation": "내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md (settings tab unchanged from S2 batch 1)",
       "verification": "ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태",
       "evidence": "docs/redesign/profile-running-path/README.md"
     },
@@ -153,8 +153,8 @@
       "id": "Routes.RUN_ROUTE",
       "parent": "Run",
       "chrome": "Focus",
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
+      "verification": "f131c7b: Experience QA run 36229289268 passed (Android 15); home/shoes/profile/run-paused/result-pending 430dp 1.0× dark captures reviewed by Claude; light theme and large font covered only by automated layout checks",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed. Handoff part A (PR #41): plan-specific run layout, pause/end/discard/goal-reached dialogs, result/partial result; device check pending this PR."
     },
@@ -204,8 +204,8 @@
       "id": "Routes.COURSES",
       "parent": "Run",
       "chrome": "Detail",
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested"
+      "implementation": "character-free course select/create/board visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md",
+      "verification": "Android 14/15 explore captures, including 1.6× font; save/share actions not exercised"
     },
     {
       "id": "Routes.WALLET",
@@ -239,8 +239,8 @@
       "id": "Routes.ACHIEVEMENTS",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits"
     },
     {
       "id": "Routes.RECORDS",
@@ -274,15 +274,15 @@
       "id": "Routes.ANALYTICS",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits"
     },
     {
       "id": "Routes.HISTORY_MAP",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits"
     },
     {
       "id": "Routes.SETTINGS_NOTIFICATIONS",
@@ -323,29 +323,29 @@
       "id": "Routes.SETTINGS_BODY",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "S2 batch G (PR #32): body info & goal settings; same steps as the first-run setup",
+      "verification": "S2SetupTest renders the setup flow (form-checks/setup-*.png); this settings route itself not in the capture set"
     },
     {
       "id": "Routes.CHALLENGE_HISTORY",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "K2 (user feedback 7): completed challenge rewards from the ledger (goal bonus · challenge rewards), link to current challenges",
+      "verification": "new; see PR evidence"
     },
     {
       "id": "Routes.INVITE",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "S2 batch I (PR #32): invite code, share, invitees, code entry; reward wording only when the server amount > 0",
+      "verification": "InviteScreenTest renders the content with reward 0 and 5 (form-checks/invite-*.png); live server calls not exercised on device"
     },
     {
       "id": "Routes.SETTINGS_MODE",
       "parent": "Profile",
       "chrome": "Detail",
-      "implementation": "pending",
-      "verification": "pending"
+      "implementation": "S2 batch G (PR #32): Lite/Runner mode picker",
+      "verification": "S2SetupTest covers the mode step (form-checks/setup-3-mode.png); this settings route itself not in the capture set"
     },
     {
       "id": "Routes.SETTINGS_THEME",
@@ -365,36 +365,36 @@
       "id": "Routes.SNEAKER",
       "parent": "Customize",
       "chrome": "Detail",
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested"
+      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail 02–17: key stats, stats/explain/info sheets, wear button, states; enhance · repair · sell moved into ⋯",
+      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending"
     },
     {
       "id": "Routes.LOBBY",
       "parent": "Community",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
+      "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed"
     },
     {
       "id": "Routes.SNEAKER_DEX",
       "parent": "Customize",
       "chrome": "Detail",
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested"
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device"
     },
     {
       "id": "Routes.RANKING",
       "parent": "Community",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "character-free all/week/crew visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md; 5단계(1): faction board removed — four boards (speed/time/SUP/crew)",
+      "verification": "Android 14/15 explore captures; guest/empty states only, server ranking unverified; compile + unit tests local; Android gallery `ranking-factions` scenario removed, captures from PR #20 Experience QA run"
     },
     {
       "id": "Routes.CREW_CREATE",
       "parent": "Community",
       "chrome": "Form",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude"
     },
     {
       "id": "Routes.CREW_BOARD",
@@ -407,22 +407,22 @@
       "id": "Routes.FLASH_DETAIL",
       "parent": "Community",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed; no capture with a real meetup/lobby (guest test data) — populated S2 layout not visually verified"
     },
     {
       "id": "Routes.FLASH_LOBBY",
       "parent": "Community",
       "chrome": "Detail",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
+      "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed"
     },
     {
       "id": "Routes.POST_COMPOSE",
       "parent": "Community",
       "chrome": "Form",
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending; no APK requested"
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude"
     }
   ],
   "screen_functions": [
@@ -430,8 +430,8 @@
       "id": "CommunityScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
       "line": 87,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -447,40 +447,40 @@
       "id": "CrewCreateScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
       "line": 36,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "FlashRunDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt",
       "line": 88,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed; no capture with a real meetup/lobby (guest test data) — populated S2 layout not visually verified",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
       "line": 84,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
+      "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "PostComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
       "line": 34,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "RankingScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt",
       "line": 72,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "character-free visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md; 5단계(1): faction board removed — four boards",
+      "verification": "Android 14/15 all/week/crew captures; live ranking unverified; PR #20 Experience QA captures",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -521,9 +521,9 @@
     {
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 45,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "line": 108,
+      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — shoe tab (ShoeTabContent)",
+      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -531,8 +531,8 @@
       "id": "RunnerMarketScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt",
       "line": 93,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -547,7 +547,7 @@
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
       "line": 82,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -571,8 +571,8 @@
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
       "line": 91,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
+      "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -587,32 +587,32 @@
       "id": "ItemsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
       "line": 92,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared dialog finish added; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md; native verification pending; shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 46,
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
+      "line": 117,
+      "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail (ShoeDetailContent)",
+      "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "SneakerDexScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
       "line": 73,
-      "implementation": "home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested",
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "LoginScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
       "line": 70,
-      "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "implementation": "S2 batch B (PR #29): see docs/redesign/s2/STATUS.md",
+      "verification": "121a06c: Experience QA run 36234135671 passed (Android 15); LoginPresentationTest captures 1.0×/1.3×/2.0× legal · busy · error reviewed by Claude; the real Google account picker is not exercised",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     },
@@ -620,16 +620,16 @@
       "id": "MapScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt",
       "line": 93,
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
+      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
+      "verification": "871f4fd: Experience QA passed; S2 map not in the reviewed capture set",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "MarketModelScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
       "line": 68,
-      "implementation": "detail/dialog source finish; see DETAIL-DIALOG-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/theme verification pending; no APK requested",
+      "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
+      "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -650,24 +650,24 @@
       "id": "AchievementsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
       "line": 179,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "AnalyticsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt",
       "line": 139,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
       "id": "HistoryMapScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt",
-      "line": 123,
-      "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/capture pending",
+      "line": 138,
+      "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
+      "verification": "Android 14/15 record captures on final source; see stage 8 report for limits",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -815,8 +815,8 @@
       "id": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
       "line": 84,
-      "implementation": "run/map/course source finish; see RUN-MAP-COURSE-FINISH-2026-09-24-KO.md",
-      "verification": "source checks only; Android compile/runtime/IME/font/map interaction verification pending; no APK requested",
+      "implementation": "character-free course card/tabs visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md",
+      "verification": "Android 14/15 three-state captures; save/share interaction unverified",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -857,9 +857,9 @@
     {
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 157,
+      "line": 162,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
-      "verification": "source checks passed; stage 3 device-test expectations updated; Android compile, execution and visual acceptance pending stage 4",
+      "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
     }
@@ -939,7 +939,7 @@
       "kind": "DialogPanel",
       "owner": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 288,
+      "line": 180,
       "verification": "pending"
     },
     {
@@ -981,21 +981,14 @@
       "kind": "ModalBottomSheet",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 770,
+      "line": 786,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 812,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 829,
+      "line": 828,
       "verification": "pending"
     },
     {
@@ -1009,28 +1002,35 @@
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 872,
+      "line": 861,
       "verification": "pending"
     },
     {
       "kind": "KitDialog",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 894,
+      "line": 888,
+      "verification": "pending"
+    },
+    {
+      "kind": "KitDialog",
+      "owner": "RunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 910,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 917,
+      "line": 933,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1413,
+      "line": 1429,
       "verification": "pending"
     }
   ],

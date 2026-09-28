@@ -303,30 +303,53 @@ class ExperienceUiTest {
         capture("navigation-experience")
     }
 
+    /**
+     * 보유 신발 상세 v1 — 신발 탭에서 고르기(칸 · 같은 모델 켤레 시트)와 상세를 여는 것은 미리 보기이고,
+     * 착용은 상세의 "이 신발 신기"를 눌러 저장이 끝난 뒤에만 바뀐다. 같은 모델의 다른 켤레는 소유 id 로 고른다.
+     */
     @Test fun shoePreviewOnlyEquipsAfterConfirmation() {
         val dao = ServiceLocator.database.sneakerDao()
         val original = runBlocking { requireNotNull(dao.equippedNow()) }
+        // 신고 있는 켤레와 같은 모델의 다른 켤레 — 한 칸에 묶이고 "2켤레 보기" 시트에서 번호로 고른다
         val candidateId = runBlocking {
             dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
                 equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0))
         }
-        var detailId: Long? = null
+        val slot = runBlocking { ServiceLocator.sneakerRepository.inventory.first().first { it.id == original.id }.slotKey }
+        var detailId by mutableStateOf<Long?>(null)
         try {
             compose.setContent { StepUpTheme { ExperienceProvider {
-                CustomizeScreen(onOpenSneaker = { detailId = it })
+                val opened = detailId
+                if (opened == null) CustomizeScreen(onOpenSneaker = { detailId = it })
+                else SneakerDetailScreen(opened, onBack = { detailId = null })
             } } }
-            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-equip").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
-            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
-            compose.onNodeWithTag("shoe-choice-$candidateId").performClick().assertIsSelected()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-owned-row").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("shoe-list").performScrollToNode(hasTestTag("shoe-owned-row"))
+            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-copies-$slot"))
+            compose.onNodeWithTag("shoe-copies-$slot").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-copy-$candidateId").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals("Opening the copies sheet must not change the stored equipment", original.id,
+                runBlocking { dao.equippedNow()?.id })
+            compose.onNodeWithTag("shoe-copy-$candidateId").performClick()
+            compose.runOnIdle { assertEquals(candidateId, detailId) }
+            // 상세 — 아직 신지 않은 켤레라 주 버튼이 살아 있다(읽는 동안은 "확인 중…"으로 막혀 있다). 여는 것만으로 착용은 그대로
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsEnabled() }.isSuccess
+            }
             assertEquals("Preview must not change the stored equipment", original.id,
                 runBlocking { dao.equippedNow()?.id })
-            compose.onNodeWithTag("shoe-equip").assertIsEnabled().performClick()
+            compose.onNodeWithTag("detail-primary-action").performClick()
             compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
-            compose.onNodeWithTag("shoe-equip").assertIsNotEnabled()
-            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("shoe-detail"))
-            compose.onNodeWithTag("shoe-detail").performClick()
-            compose.runOnIdle { assertEquals(candidateId, detailId) }
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
+            }
+            // 뒤로 — 신발 탭의 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로)
+            compose.runOnIdle { detailId = null }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithTag("shoe-kicker", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("shoe-kicker", useUnmergedTree = true)
+                .assertTextEquals(compose.activity.getString(R.string.sdv_kicker_wearing))
         } finally {
             // Remove only this test's new copy and restore the previous pair.
             runBlocking {
@@ -375,7 +398,8 @@ class ExperienceUiTest {
         expected.forEachIndexed { index, title ->
             compose.onNodeWithTag("guide-step-title").assertTextEquals(compose.activity.getString(title))
             assertEquals(index, GuideTour.stepIndex)
-            val target = when (index) { 0 -> "home-start-run"; 1 -> "shoe-equip"; else -> "profile-settings" }
+            // 신발 탭의 주 행동은 "신발 자세히 보기"다(보유 신발 상세 v1 — 신기는 상세 안으로 옮겼다)
+            val target = when (index) { 0 -> "home-start-run"; 1 -> "shoe-detail"; else -> "profile-settings" }
             compose.waitUntil(5_000) { compose.onAllNodesWithTag(target).fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithText(compose.activity.getString(
                 if (index == expected.lastIndex) R.string.guide_start else R.string.guide_next)).performClick()

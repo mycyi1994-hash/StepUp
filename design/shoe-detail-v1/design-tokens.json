@@ -1,0 +1,94 @@
+{
+  "product": "StepUp",
+  "scope": "owned-shoe-detail",
+  "version": 1,
+  "screen": {
+    "width": 390,
+    "height": 844,
+    "pngScale": 3,
+    "responsive": true
+  },
+  "colors": {
+    "background": "#050912",
+    "text": "#F2F4FC",
+    "secondary": "#98A8C0",
+    "accent": "#A3BFFE",
+    "surface": "#0E192A",
+    "divider": "#1D2B3F",
+    "sheet": "#111D2E",
+    "primaryGradient": [
+      "#F7F8FF",
+      "#E8EDFA"
+    ],
+    "primaryText": "#081223"
+  },
+  "font": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600
+    ],
+    "shoeName": 29,
+    "screenTitle": 18,
+    "row": 16,
+    "secondary": 13,
+    "keyNumber": 27
+  },
+  "layout": {
+    "sideMargin": 24,
+    "primaryButtonHeight": 54,
+    "primaryButtonRadius": 17,
+    "sheetTopRadius": 27,
+    "minimumTouchTargetDp": 48,
+    "systemInsets": "Use actual insets and scrollable body"
+  },
+  "art": {
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "boundsAre": [
+      "left",
+      "top",
+      "right",
+      "bottom"
+    ],
+    "bounds": {
+      "shoe-city.png": [
+        26,
+        305,
+        1236,
+        979
+      ],
+      "shoe-river.png": [
+        26,
+        335,
+        1228,
+        925
+      ],
+      "shoe-night.png": [
+        26,
+        170,
+        1230,
+        1035
+      ]
+    },
+    "fitRule": "Use visible alpha bounds, preserve aspect ratio, align visible bottom to plinth contact shadow",
+    "layers": [
+      "ambient light",
+      "plinth shadow",
+      "plinth front",
+      "plinth top",
+      "contact shadow",
+      "shoe"
+    ]
+  },
+  "motionGuidance": {
+    "shoeChangeFadeMs": 120,
+    "sheetOpenMs": 220,
+    "successNoticeMs": 2000,
+    "reducedMotion": "Immediate image update; no translated sheet movement",
+    "executableMotionFilesIncluded": false
+  },
+  "lightTheme": "Use existing semantic light palette; this package previews the selected dark theme"
+}

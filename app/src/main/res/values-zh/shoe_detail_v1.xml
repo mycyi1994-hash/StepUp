@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
+<resources>
+    <!-- 신발 탭(01 · 12 · 18) -->
+    <string name="sdv_kicker_selected">已选鞋子</string>
+    <string name="sdv_kicker_wearing">正在穿的鞋</string>
+    <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
+    <string name="sdv_level_no_cd">等级 %1$d，鞋子编号 %2$04d</string>
+    <string name="sdv_open_detail">查看鞋子详情</string>
+    <string name="sdv_owned_title">我的鞋子</string>
+    <plurals name="sdv_pairs">
+        <item quantity="other">%d双</item>
+    </plurals>
+    <plurals name="sdv_see_copies">
+        <item quantity="other">查看%d双</item>
+    </plurals>
+    <plurals name="sdv_see_copies_cd">
+        <item quantity="other">查看%1$s的全部%2$d双</item>
+    </plurals>
+    <string name="sdv_state_viewing">正在查看</string>
+    <string name="sdv_state_wearing">穿着中</string>
+    <string name="sdv_loading">正在加载鞋子。</string>
+    <string name="sdv_checking">确认中…</string>
+    <string name="sdv_empty_title">还没有鞋子</string>
+    <string name="sdv_empty_body">通过免费抽取遇见你的第一双鞋。</string>
+    <string name="sdv_empty_action">抽鞋子</string>
+
+    <!-- 같은 모델 여러 켤레(07) -->
+    <plurals name="sdv_copies_title">
+        <item quantity="other">%1$s %2$d双</item>
+    </plurals>
+    <string name="sdv_copies_intro">请选择要查看详情的鞋子。</string>
+    <string name="sdv_copy_energy">能量节省 %1$s</string>
+    <string name="sdv_copy_received">获得日期 %1$s</string>
+    <string name="sdv_copies_note">仅选择不会更换正在穿的鞋。</string>
+
+    <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
+    <string name="sdv_title">鞋子详情</string>
+    <string name="sdv_status_owned">已拥有</string>
+    <string name="sdv_status_wearing">正在穿着</string>
+    <string name="sdv_status_none">还没有正在穿的鞋</string>
+    <string name="sdv_stat_bonus">SUP 获取加成</string>
+    <string name="sdv_stat_energy">能量节省</string>
+    <string name="sdv_stat_luck">幸运</string>
+    <string name="sdv_stat_comfort">舒适度</string>
+    <string name="sdv_stat_durability">耐久度</string>
+    <string name="sdv_row_stats">能力值详情</string>
+    <string name="sdv_row_info">鞋子信息</string>
+    <string name="sdv_wear">穿这双鞋</string>
+    <string name="sdv_wear_busy">正在更换…</string>
+    <string name="sdv_worn_toast">已换上%1$s。</string>
+    <string name="sdv_more">更多操作</string>
+
+    <!-- 능력치(04 · 05) -->
+    <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>
+    <string name="sdv_stats_help">能力值是什么意思？</string>
+    <string name="sdv_ok">确定</string>
+    <string name="sdv_explain_title">能力值的含义</string>
+    <string name="sdv_explain_bonus">在基础获取之上额外增加的鞋子加成。最终获取量取决于实际活动结果。</string>
+    <string name="sdv_explain_energy">同样的活动中少消耗能量的比例。</string>
+    <string name="sdv_explain_luck">鞋子上记录的幸运值。</string>
+    <string name="sdv_explain_comfort">用于计算能量节省比例的数值。</string>
+    <string name="sdv_explain_durability">鞋子上记录的耐久度。</string>
+    <string name="sdv_explain_back">返回能力值</string>
+
+    <!-- 신발 정보(06) -->
+    <string name="sdv_info_name">名称</string>
+    <string name="sdv_info_number">鞋子编号</string>
+    <string name="sdv_info_rarity">稀有度</string>
+    <string name="sdv_info_faction">属性</string>
+    <string name="sdv_info_level">等级</string>
+    <string name="sdv_info_received">获得日期</string>
+    <string name="sdv_info_chain">链上</string>
+    <string name="sdv_chain_token">链上 NFT · 代币 #%1$d</string>
+    <string name="sdv_chain_vault">已发行到 StepUp 金库 · 代币 #%1$d</string>
+    <string name="sdv_chain_none">尚未上链</string>
+    <string name="sdv_chain_none_note">可能正在等待发行。可在 我的 › 钱包 › 链上记录 中查看。</string>
+    <string name="sdv_info_note">同一款鞋也用鞋子编号区分。</string>
+    <string name="sdv_date_pattern">yyyy.MM.dd</string>
+    <string name="sdv_unknown_model">鞋款 %1$d</string>
+
+    <!-- 착용 변경 실패(11) -->
+    <string name="sdv_error_title">未能更换鞋子</string>
+    <string name="sdv_error_unknown_title">无法确认是否已更换</string>
+    <string name="sdv_error_kept">你仍在穿%1$s。</string>
+    <string name="sdv_error_none">还没有正在穿的鞋。</string>
+    <string name="sdv_error_unknown_body">无法确认结果。请再穿一次，或关闭此窗口，稍后再确认。</string>
+    <string name="sdv_error_hint">你可以重试或关闭此窗口。</string>
+    <string name="sdv_retry_wear">再穿一次</string>
+
+    <!-- 조회 실패 · 없는 신발 · 이미지 실패(14 · 15 · 16) -->
+    <string name="sdv_load_failed_title">无法加载鞋子</string>
+    <string name="sdv_load_failed_body">请稍后重新加载。</string>
+    <string name="sdv_reload">重新加载</string>
+    <string name="sdv_back_to_owned">返回我的鞋子</string>
+    <string name="sdv_missing_title">找不到这双鞋</string>
+    <string name="sdv_missing_body">请从我的鞋子中选择其他鞋子。</string>
+    <string name="sdv_art_failed">无法加载图片</string>
+    <string name="sdv_art_retry">重新加载图片</string>
+
+    <!-- 옮긴 기존 행동(⋯) -->
+    <string name="sdv_manage_title">管理这双鞋</string>
+    <string name="sdv_enhance_desc">Lv. %1$d → %2$d · %3$s SUP</string>
+    <string name="sdv_sell_desc">前往交易所挂单。在那里确认后才会上架。</string>
+</resources>
