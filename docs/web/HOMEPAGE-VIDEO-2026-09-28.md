@@ -37,6 +37,7 @@ Existing illustrative data remains marked as a screen example. Legal pages and a
 - Existing course carousel still advances and updates its title and details.
 - Automated design warnings concern the incumbent scene effects, card styling and CTA palette; the added film section does not replace that established design.
 - Physical mobile devices, reduced-motion playback, manual-pause preservation and media-error recovery were not independently exercised.
+- The first production check exposed a returning-browser cache mismatch: updated HTML loaded the older stylesheet and script. Versioned homepage asset URLs invalidate those cached files, and revalidation headers keep future updates synchronized.
 
 ## Finish review
 

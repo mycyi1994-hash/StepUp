@@ -23,3 +23,13 @@
 # 지갑 페이지 스크립트 — 파일 이름이 늘 같으므로, 고친 것이 바로 닿게 매번 새로 확인한다
 /assets/wallet.js
   Cache-Control: no-cache
+
+# 같은 이름으로 갱신되는 홈페이지 파일은 다시 방문할 때 최신 버전을 확인한다.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/styles.css
+  Cache-Control: no-cache
+/site.js
+  Cache-Control: no-cache
