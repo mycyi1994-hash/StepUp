@@ -58,6 +58,7 @@ import com.stepup.android.ui.components.shoeModelNameRes
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.customize.MyShoesContent
 import com.stepup.android.ui.screens.customize.ShoeVaultContent
+import com.stepup.android.ui.screens.customize.vaultSorted
 import com.stepup.android.ui.screens.items.ItemSort
 import com.stepup.android.ui.screens.items.OwnedLoad
 import com.stepup.android.ui.theme.StepUpTheme
@@ -65,6 +66,7 @@ import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -166,14 +168,17 @@ class MyShoesDesignTest {
             assertEquals("epic filter shows every epic pair and nothing else", epicOwned, epicCards.size)
             shot("06-vault-filter-epic")
             compose.onNodeWithTag("vault-filter-all").performScrollTo().performClick().assertIsSelected()
+            compose.waitForIdle()
+            // 거르기를 바꾸면 격자는 맨 위(새 목록의 첫 켤레)부터
+            assertEquals("back to all starts at the first pair", firstOf(ItemSort.RECENT), topLeftCard())
             compose.onNodeWithTag("vault-sort").performClick()
             compose.waitForIdle()
             shot("07-vault-sort-sheet", whole = true)
             compose.onNodeWithText(string(R.string.items_sort_rarity)).performClick()
             compose.waitForIdle()
-            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 가장 높은 등급
-            val first = cards().minWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
-            val firstId = first.config[SemanticsProperties.TestTag].removePrefix("vault-card-").toLong()
+            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 등급 높은순의 첫 켤레(레전더리)
+            val firstId = topLeftCard()
+            assertEquals("the grid starts at the first pair of the new order", firstOf(ItemSort.RARITY), firstId)
             assertEquals("highest rarity first", Rarity.LEGENDARY.id, runBlocking { dao.byId(firstId)?.rarity })
             shot("08-vault-sorted-rarity")
 
@@ -378,6 +383,16 @@ class MyShoesDesignTest {
         SemanticsMatcher("vault card") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("vault-card-") == true },
         useUnmergedTree = true,
     ).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
+
+    /** 격자 왼쪽 위(보이는 첫 칸)의 켤레 id */
+    private fun topLeftCard(): Long =
+        cards().minWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
+            .config[SemanticsProperties.TestTag].removePrefix("vault-card-").toLong()
+
+    /** 이 기기의 보유 신발을 [sort] 로 늘어놓았을 때의 첫 켤레 — 앱과 같은 정렬(vaultSorted) */
+    private fun firstOf(sort: String): Long = runBlocking {
+        vaultSorted(ServiceLocator.sneakerRepository.inventory.first(), sort).first().id
+    }
 
     private fun pick(id: Long) {
         compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))

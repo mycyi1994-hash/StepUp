@@ -268,8 +268,9 @@ private fun MyShoesReady(
             viewport = viewport,
             compact = compact,
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag("my-shoes"),
-            header = { NameBlock(shown, compact, onManage = { onOpenSneaker(shown.id) }) },
-            stage = { StageBlock(shown, onOpen = { onOpenSneaker(shown.id) }) },
+            // 관리(⋯) · 무대는 고른 켤레의 관리로 — 방금 고른 칸의 그림을 읽는 동안(무대가 아직 앞 켤레)에 눌러도 고른 켤레다
+            header = { NameBlock(shown, compact, onManage = { onOpenSneaker(selected.id) }) },
+            stage = { StageBlock(shown, onOpen = { onOpenSneaker(selected.id) }) },
             stats = { StatsBlock(shown, compact, onExplain = { basisOpen = true }) },
             owned = { OwnedBlock(row, compact, selectedId = selected.id, state = rowState, onPick = onSelect) },
         )
@@ -681,22 +682,26 @@ private fun VaultReady(
     val shown = remember(shoes, filter, sort) { vaultShown(shoes, filter, sort) }
     val chosen = remember(shoes, selectedId) { resolvePair(shoes, selectedId)?.id }
     var sortSheet by rememberSaveable { mutableStateOf(initialSortSheet) }
-    // 정렬 · 거르기를 바꾸면 새 순서의 첫 켤레부터 보인다 — 격자는 맨 위에 있던 켤레를 키로 따라가서(그 켤레가 뒤로 가면
-    // 격자 가운데가 보인다) 바꾸는 그 자리에서 맨 위를 요청한다. 상세에서 돌아올 때는 보던 자리를 그대로 둔다
-    val showFromTop = { gridState.requestScrollToItem(0) }
+    // 정렬 · 거르기가 바뀌면 새 순서의 첫 켤레부터 보인다. 격자는 맨 위에 있던 켤레를 키로 따라가므로(그 켤레가 뒤로 가면 격자
+    // 가운데가 보인다) 새 순서를 그리는 이 조합에서 맨 위를 요청한다 — 누르는 순간에 요청하면 새 순서를 그리기 전의 배치가 그 요청을
+    // 먼저 써 버려 한 줄 내려간 채 남았다(2026-09-28 기기 캡처). 처음 그릴 때(상세에서 돌아올 때)는 보던 자리 그대로다
+    val order = sort to filter
+    val drawnOrder = remember { DrawnOrder(order) }
+    if (drawnOrder.value != order) {
+        drawnOrder.value = order
+        gridState.requestScrollToItem(0)
+    }
     Column(modifier.fillMaxWidth()) {
         VaultHeader(shoes.size, sort, onSortClick = { sortSheet = true })
-        VaultFilters(counts, filter, onFilter = {
-            onFilter(it?.key)
-            showFromTop()
-        })
+        VaultFilters(counts, filter, onFilter = { onFilter(it?.key) })
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             state = gridState,
             modifier = Modifier.fillMaxWidth().weight(1f).testTag("vault-grid"),
             contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 14.dp, bottom = 18.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            // 칸 사이 18dp = 칸 안 아래 여백 10dp(VaultCard) + 8dp
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(shown, key = { it.id }) { shoe ->
                 VaultCard(shoe, selected = shoe.id == chosen, onClick = { onOpen(shoe.id) })
@@ -710,14 +715,14 @@ private fun VaultReady(
             options = VaultSorts,
             selected = sort,
             label = { stringResource(itemSortRes(it)) },
-            onPick = {
-                onSort(it)
-                showFromTop()
-            },
+            onPick = onSort,
             onDismiss = { sortSheet = false },
         )
     }
 }
+
+/** 격자가 마지막으로 그린 정렬 · 거르기 — 바뀌었는지 가르는 데만 쓴다(그리기를 다시 부르는 상태가 아니다) */
+private class DrawnOrder(var value: Pair<String, ShoeTier?>)
 
 /** "보유 신발 3" · 오른쪽 정렬("최근 획득순 ⌄") */
 @Composable
@@ -853,6 +858,8 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
         )
         Spacer(Modifier.height(2.dp))
         ShoeMeta(shoe, fontSize = 12.5f, modifier = Modifier.padding(horizontal = 2.dp))
+        // 눌림 자리(둥근 18dp)의 아래 모서리 곡선이 마지막 줄 첫 글자("Lv."의 L)를 자르지 않게 — 2026-09-28 기기 캡처
+        Spacer(Modifier.height(10.dp))
     }
 }
 
