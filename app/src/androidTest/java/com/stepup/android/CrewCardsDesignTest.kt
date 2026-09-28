@@ -901,7 +901,10 @@ class CrewCardsDesignTest {
 
         fun crew(id: String, change: Crew.() -> Unit) { crews.getValue(id).change() }
 
-        /** 둘러보기 — 퇴근런(사진 · Lv.7 · 24/30 · 126/160km) · 해뜨런(사진 · Lv.12) · 천천히 걸음(레벨 · 목표 없음 → 새 크루) */
+        /**
+         * 둘러보기 — 퇴근런(사진 · Lv.7 · 24/30 · 126/160km) · 해뜨런(사진 · Lv.12) · 천천히 걸음(레벨 · 목표 없음 → 새 크루).
+         * 도화동에서 가까운 순으로 0.6 · 2.0 · 2.4km — 시안 01 처럼 퇴근런 다음이 해뜨런이다(작은 화면에서도 둘째 카드가 보인다).
+         */
         fun seedBrowse() {
             crews.clear(); rosters.clear(); applications.clear()
             crews["afterwork"] = Crew(
@@ -919,7 +922,7 @@ class CrewCardsDesignTest {
             )
             crews["slowsteps"] = Crew(
                 id = "slowsteps", name = "천천히 걸음", tagline = "걷다가 뛰다가", leader = "하린", leaderId = "u-harin", bg = 0,
-                area = "마포", lat = 37.5470, lng = 126.9410, days = 0b1000000, time = 8 * 60, distance = "D1_3",
+                area = "마포", lat = 37.5530, lng = 126.9290, days = 0b1000000, time = 8 * 60, distance = "D1_3",
                 moods = listOf("WALK_FIRST", "BEGINNER"), members = 3, capacity = 10, changedAt = "2026-09-25T09:00:00Z",
             )
             rosters["afterwork"] = mutableListOf(

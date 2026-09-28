@@ -158,11 +158,14 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/story-compose-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/story-compose-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/story-compose/. screen-gallery/story-compose/ || status=1
-  # 크루 명함형(확정 2번, 2026-09-28) — 목록 · 상세 · 가입 신청 · 만들기 · 관리 시안 번호별 장면. 가짜 서버로 찍는다
+  # 크루 명함형(확정 2번, 2026-09-28) — 목록 · 상세 · 가입 신청 · 만들기 · 관리 시안 번호별 장면. 가짜 서버로 찍는다.
+  # 장면이 90개 가까이라 한 번(9분)에 몰지 않고 검사 함수마다 나눠 돌린다
   timeout 20s adb shell am force-stop com.stepup.android || true
-  run_instrumentation crew-cards "com.stepup.android.CrewCardsDesignTest"
-  mkdir -p screen-gallery/crew-cards-results
-  cp -R app/build/outputs/androidTest-results/. screen-gallery/crew-cards-results/ || true
+  for part in listDetailAndJoin listStates createCrew manageCrew; do
+    run_instrumentation "crew-cards-$part" "com.stepup.android.CrewCardsDesignTest#$part"
+    mkdir -p "screen-gallery/crew-cards-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/crew-cards-results/$part/" || true
+  done
   pull_captures /sdcard/Android/data/com.stepup.android/files/crew-cards/. screen-gallery/crew-cards/ || status=1
   # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
   run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
