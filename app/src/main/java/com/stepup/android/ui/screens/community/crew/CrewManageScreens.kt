@@ -239,7 +239,10 @@ fun CrewReviewScreen(
                     CrewSentMessage(app, words, label = stringResource(R.string.crew_review_message_label))
                     Spacer(Modifier.height(20.dp))
                     CrewRow(stringResource(R.string.crew_review_profile), { onApplicantProfile(app.userId) }, Modifier.testTag("crew-review-profile"))
-                    Spacer(Modifier.height(60.dp))
+                    Spacer(Modifier.height(24.dp))
+                }
+                CrewBottomBar {
+                    // 승인하면 몇 명이 되는지 — 작은 화면에서도 보이게 버튼 바로 위에
                     Text(
                         when {
                             decided -> stringResource(R.string.crew_review_decided)
@@ -248,11 +251,8 @@ fun CrewReviewScreen(
                             else -> ""
                         },
                         color = if (decided || crew?.full == true) ink.warn else ink.secondary, fontSize = 13.sp,
-                        modifier = Modifier.testTag("crew-review-note"),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp).testTag("crew-review-note"),
                     )
-                    Spacer(Modifier.height(24.dp))
-                }
-                CrewBottomBar {
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         CrewButton(
                             stringResource(R.string.crew_review_decline), { sheet = SHEET_DECLINE }, Modifier.weight(1f).testTag("crew-review-decline"),

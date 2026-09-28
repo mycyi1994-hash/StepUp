@@ -112,16 +112,17 @@ fun CrewJoinScreen(
                     if (once != null) Text(once, color = ink.secondary, fontSize = 13.5.sp, lineHeight = 25.sp)
                 }
             }
-            if (failed) {
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    stringResource(if (op.problem == CrewProblem.SIGN_IN) R.string.crew_problem_signin else R.string.crew_join_failed),
-                    color = ink.warn, fontSize = 13.5.sp, lineHeight = 25.sp, modifier = Modifier.testTag("crew-join-error"),
-                )
-            }
             Spacer(Modifier.height(24.dp))
         }
         CrewBottomBar {
+            // 17 보내지 못함 — 작은 화면에서도 보이게 본문 끝이 아니라 버튼 바로 위에 둔다
+            if (failed) {
+                Text(
+                    stringResource(if (op.problem == CrewProblem.SIGN_IN) R.string.crew_problem_signin else R.string.crew_join_failed),
+                    color = ink.warn, fontSize = 13.5.sp, lineHeight = 21.sp,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).testTag("crew-join-error"),
+                )
+            }
             CrewButton(
                 stringResource(if (failed) R.string.crew_join_retry else R.string.crew_join_send),
                 { viewModel.apply() },

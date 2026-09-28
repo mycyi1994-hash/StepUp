@@ -183,6 +183,19 @@ data class CrewListQuery(
 )
 
 object CrewRules {
+    /**
+     * 이름 이미지의 글자 — 이름 그대로. 띄어쓰기가 있는 긴 이름은 가운데에 가까운 빈칸에서 두 줄로 나눈다
+     * (글자 중간에서 끊겨 "공덕 한바 / 퀴"가 되지 않게). 빈 이름은 가운뎃점.
+     */
+    fun nameImageText(name: String): String {
+        val label = name.trim().replace(Regex("\\s+"), " ")
+        if (label.isEmpty()) return "·"
+        if (label.length <= 4) return label
+        val middle = label.length / 2.0
+        val cut = label.indices.filter { label[it] == ' ' }.minByOrNull { abs(it - middle) } ?: return label
+        return label.substring(0, cut) + "\n" + label.substring(cut + 1)
+    }
+
     const val NAME_MAX = 40
     const val TAGLINE_MAX = 120
     const val NOTE_MAX = 300

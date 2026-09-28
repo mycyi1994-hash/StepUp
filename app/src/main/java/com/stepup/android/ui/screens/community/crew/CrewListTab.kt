@@ -193,8 +193,10 @@ fun CrewListTab(
             }
         }
 
-        // + 크루 모집하기 — 운영 중인 크루가 있으면 고르는 단계(25), 없으면 바로 만들기(26 · 초안이 있으면 39)
-        Row(
+        // + 크루 모집하기 — 운영 중인 크루가 있으면 고르는 단계(25), 없으면 바로 만들기(26 · 초안이 있으면 39).
+        // 빈 목록(05) · 불러오기 실패(07)는 가운데에 "크루 만들기"가 있어 띄우지 않는다(한 화면에 만들기 하나)
+        val bare = !signIn && !loading && (failed || visible.isEmpty())
+        if (!bare) Row(
             Modifier.align(Alignment.BottomEnd).padding(end = CrewGutter, bottom = 16.dp).heightIn(min = 44.dp)
                 .clip(RoundedCornerShape(22.dp)).background(ink.primaryFace)
                 .feedbackClickable(role = Role.Button) {

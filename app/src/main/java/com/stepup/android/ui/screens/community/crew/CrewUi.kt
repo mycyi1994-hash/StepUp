@@ -189,14 +189,15 @@ internal fun CrewImageFace(
     }
 }
 
-/** 이름 이미지의 글자 — 이름 그대로, 길면 두 줄 · 작게 */
+/** 이름 이미지의 글자 — 이름 그대로, 길면 빈칸에서 두 줄 · 긴 줄에 맞춰 작게 */
 @Composable
 private fun CrewNameText(name: String, size: Dp, textSize: TextUnit?) {
-    val label = name.trim().ifEmpty { "·" }
+    val label = CrewRules.nameImageText(name)
+    val longest = label.lines().maxOf { it.length }
     val base = textSize ?: (size.value * 0.24f).sp
     val scaled = when {
-        label.length <= 4 -> base
-        label.length <= 6 -> base * 0.82f
+        longest <= 4 -> base
+        longest <= 6 -> base * 0.82f
         else -> base * 0.66f
     }
     Text(

@@ -197,6 +197,16 @@ class CrewCardsTest {
         )
     }
 
+    @Test fun `이름 이미지는 빈칸에서 두 줄로 나누고 글자 중간에서 끊지 않는다`() {
+        assertEquals("공덕\n한바퀴", CrewRules.nameImageText("공덕 한바퀴"))
+        assertEquals("한강 새벽\n러닝 크루", CrewRules.nameImageText("  한강  새벽 러닝 크루 "))
+        assertEquals("퇴근런", CrewRules.nameImageText("퇴근런"))
+        assertEquals("새벽\n러닝", CrewRules.nameImageText("새벽 러닝"))
+        assertEquals("A B", CrewRules.nameImageText("A B"))
+        assertEquals("천천히걸음모임", CrewRules.nameImageText("천천히걸음모임"))
+        assertEquals("·", CrewRules.nameImageText("  "))
+    }
+
     @Test fun `같은 요청 키로 다시 보낸 신청 — 미승인 · 취소를 가입으로 보지 않는다`() {
         assertEquals(CrewApplied.Pending(7), CrewApplied.of("PENDING", 7))
         assertEquals(CrewApplied.Member, CrewApplied.of("MEMBER", null))
