@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -362,25 +363,25 @@ fun StoryRecordCardView(card: StoryRecordCard, words: StoryWords, actions: Story
             title = stringResource(R.string.story_card_error_title),
             sub = stringResource(R.string.story_card_error_body), modifier = base.testTag("story-record-error"),
         ) {
-            CardButton(stringResource(R.string.story_card_reload), actions.onRetry, Modifier.widthIn(min = 154.dp).testTag("story-record-retry"))
+            CardButton(stringResource(R.string.story_card_reload), actions.onRetry, SingleCardButton.testTag("story-record-retry"))
         }
         StoryRecordCard.ActiveRun -> TextCard(
             title = stringResource(R.string.story_card_active_title),
             sub = stringResource(R.string.story_card_active_body), modifier = base.testTag("story-record-active"),
         ) {
-            CardButton(stringResource(R.string.story_card_back_to_run), actions.onStartRun, Modifier.widthIn(min = 154.dp).testTag("story-record-start-run"))
+            CardButton(stringResource(R.string.story_card_back_to_run), actions.onStartRun, SingleCardButton.testTag("story-record-start-run"))
         }
         StoryRecordCard.Pending -> TextCard(
             title = stringResource(R.string.story_card_pending_title),
             sub = stringResource(R.string.story_card_pending_body), modifier = base.testTag("story-record-pending"),
         ) {
-            CardButton(stringResource(R.string.story_card_reload), actions.onRetry, Modifier.widthIn(min = 154.dp).testTag("story-record-retry"))
+            CardButton(stringResource(R.string.story_card_reload), actions.onRetry, SingleCardButton.testTag("story-record-retry"))
         }
         is StoryRecordCard.Available -> TextCard(
             title = stringResource(R.string.story_card_available_title),
             sub = stringResource(R.string.story_card_available_body), modifier = base.testTag("story-record-available"),
         ) {
-            CardButton(stringResource(R.string.story_card_pick), actions.onPick, Modifier.widthIn(min = 154.dp).testTag("story-record-pick"))
+            CardButton(stringResource(R.string.story_card_pick), actions.onPick, SingleCardButton.testTag("story-record-pick"))
         }
         is StoryRecordCard.Old -> TextCard(
             title = stringResource(R.string.story_card_old_title),
@@ -394,7 +395,7 @@ fun StoryRecordCardView(card: StoryRecordCard, words: StoryWords, actions: Story
             title = stringResource(R.string.story_card_never_title),
             sub = stringResource(R.string.story_card_never_body), modifier = base.testTag("story-record-never"),
         ) {
-            CardButton(stringResource(R.string.story_card_first_run), actions.onStartRun, Modifier.widthIn(min = 154.dp).testTag("story-record-start-run"))
+            CardButton(stringResource(R.string.story_card_first_run), actions.onStartRun, SingleCardButton.testTag("story-record-start-run"))
         }
         StoryRecordCard.Neutral -> TextCard(
             title = stringResource(R.string.story_card_old_title),
@@ -427,6 +428,12 @@ private fun TextCard(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically, content = buttons)
     }
 }
+
+/**
+ * 버튼이 하나뿐인 카드(첫 러닝 시작 · 다시 불러오기 …)의 버튼 — 시안처럼 왼쪽에 154dp. 글자가 길면(다른 언어) 글자만큼 넓어진다.
+ * 버튼 면이 폭을 채우므로 최소 폭만 주면 카드 끝까지 늘어난다 — 글자의 폭(IntrinsicSize.Max)으로 잡는다.
+ */
+private val SingleCardButton = Modifier.widthIn(min = 154.dp).width(IntrinsicSize.Max)
 
 @Composable
 private fun CardButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
