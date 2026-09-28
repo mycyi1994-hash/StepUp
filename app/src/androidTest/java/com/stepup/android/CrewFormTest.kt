@@ -60,7 +60,18 @@ class CrewFormTest {
                     compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(description))
                 }.isSuccess && compose.onAllNodes(hasContentDescription(description)).fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithContentDescription(description).performClick()
+            // 키보드 창이 바뀌는 순간에는 터치 주입이 거절될 수 있다("Failed to inject touch input",
+            // 2026-09-28 PR #59 Experience QA). 화면이 한가해진 뒤 두 번까지 다시 누른다.
+            for (attempt in 1..3) {
+                val clicked = runCatching { compose.onNodeWithContentDescription(description).performClick() }
+                if (clicked.isSuccess) break
+                if (attempt == 3) throw clicked.exceptionOrNull()!!
+                compose.waitForIdle()
+                Thread.sleep(500)
+            }
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithContentDescription(description).assertIsFocused() }.isSuccess
+            }
             compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
