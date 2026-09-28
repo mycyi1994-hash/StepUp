@@ -87,9 +87,9 @@ import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.screens.community.CommunityScreen
 import com.stepup.android.ui.screens.community.CrewBoardScreen
+import com.stepup.android.ui.screens.community.crew.crewGraph
 import com.stepup.android.ui.screens.community.FlashRunDetailScreen
 import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
-import com.stepup.android.ui.screens.community.CrewCreateScreen
 import com.stepup.android.ui.screens.community.PartyLobbyScreen
 import com.stepup.android.ui.screens.community.PostComposeScreen
 import com.stepup.android.ui.screens.community.RankingScreen
@@ -426,7 +426,8 @@ internal fun MainScaffold(
     val pendingCrew by InviteLinks.pendingCrew.collectAsState()
     LaunchedEffect(pendingCrew) {
         val crewId = pendingCrew ?: return@LaunchedEffect
-        navController.navigate(Routes.crewBoard(crewId))
+        // 크루 명함형(2026-09-28) — 크루의 첫 화면은 상세(게시판 · 같이 달리기는 상세 안에서)
+        navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId))
         InviteLinks.consume()
     }
 
@@ -714,6 +715,7 @@ internal fun MainScaffold(
                     onWriteStory = { resume -> navController.navigate(Routes.storyCompose(resume = resume)) },
                     onOpenStoryLocation = { navController.navigate(Routes.STORY_LOCATION) },
                     onOpenStoryRegion = { navController.navigate(Routes.STORY_REGION) },
+                    crewActions = com.stepup.android.ui.screens.community.crew.crewListActions(navController),
                 )
             }
             composable(
@@ -1008,7 +1010,7 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS_NOTIFICATIONS) },
                     onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
-                    onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
+                    onOpenCrew = { crewId -> navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId)) },
                     // 댓글은 게시판 위에 창으로 뜬다. 어느 댓글인지는 저장소에
                     // 남겨 두고 커뮤니티 탭으로 보내면, 게시판이 그 창을 연다.
                     onOpenComment = { target ->
@@ -1212,15 +1214,17 @@ internal fun MainScaffold(
             composable(Routes.RANKING) {
                 RankingScreen(onBack = { navController.popBackStack() })
             }
+            // 예전 "모임 만들기" 길 — 크루 명함형의 만들기(1 / 3 · 크루 소개)를 연다
             composable(Routes.CREW_CREATE) {
-                CrewCreateScreen(
-                    onBack = { navController.popBackStack() },
-                    onCreated = { crewId ->
-                        navController.popBackStack()
-                        navController.navigate(Routes.crewBoard(crewId))
-                    },
-                )
+                com.stepup.android.ui.screens.community.crew.CrewDraftRoute(navController, Routes.CREW_CREATE)
             }
+            // 크루 명함형(확정 2번) — 상세 · 가입 신청 · 멤버 · 주간 목표 · 만들기 · 관리
+            crewGraph(
+                navController,
+                communityRoute = Screen.Community.route,
+                boardRoute = { crewId -> Routes.crewBoard(crewId) },
+                lobbyRoute = { crewId -> Routes.lobby(crewId) },
+            )
             composable(
                 route = Routes.CREW_BOARD,
                 arguments = listOf(navArgument("crewId") { type = NavType.StringType }),

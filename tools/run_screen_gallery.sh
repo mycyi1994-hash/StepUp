@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -158,6 +158,12 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/story-compose-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/story-compose-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/story-compose/. screen-gallery/story-compose/ || status=1
+  # 크루 명함형(확정 2번, 2026-09-28) — 목록 · 상세 · 가입 신청 · 만들기 · 관리 시안 번호별 장면. 가짜 서버로 찍는다
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  run_instrumentation crew-cards "com.stepup.android.CrewCardsDesignTest"
+  mkdir -p screen-gallery/crew-cards-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/crew-cards-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/crew-cards/. screen-gallery/crew-cards/ || status=1
   # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
   run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
   mkdir -p screen-gallery/profile-results

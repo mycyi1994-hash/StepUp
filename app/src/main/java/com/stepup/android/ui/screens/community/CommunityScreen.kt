@@ -98,25 +98,40 @@ fun CommunityScreen(
     onWriteStory: (resume: Boolean) -> Unit = {},
     onOpenStoryLocation: () -> Unit = {},
     onOpenStoryRegion: () -> Unit = {},
+    /** 크루 모집(확정 2번 명함 목록)에서 나가는 곳 — 없으면 누르는 곳이 아무 데도 가지 않는다(화면 검사용) */
+    crewActions: com.stepup.android.ui.screens.community.crew.CrewListActions? = null,
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
     storiesViewModel: com.stepup.android.ui.screens.community.stories.StoriesViewModel =
         viewModel(factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
-    // 첫 화면은 동네 이야기(위에 지도, 아래에 글 목록 — 2026-09-27 사용자 결정). 모임 · 크루는 "함께 뛰기"
-    var together by rememberSaveable { mutableStateOf(false) }
-    val stories = !together
+    // 글자 탭 둘 — 러닝 이야기(첫 화면) · 크루 모집(2026-09-28 크루 명함형). 예전 "함께 뛰기"(번개 모임 · 내 크루)는
+    // 지우지 않고 크루 모집 목록 끝의 "번개 모임" 줄 안쪽으로 옮겼다.
+    var crews by rememberSaveable { mutableStateOf(false) }
+    var meetups by rememberSaveable { mutableStateOf(false) }
     var allMeetups by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(GuideTour.active) {
-        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); together = false; allMeetups = false }
+        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); crews = false; meetups = false; allMeetups = false }
     }
-    BackHandler(enabled = tab == CommunityTab.CREW || allMeetups) {
-        viewModel.selectTab(CommunityTab.BOARD)
-        allMeetups = false
+    // 크루 화면에서 "크루 목록 보기" · "다른 크루 보기"로 돌아왔다
+    val listRequested = com.stepup.android.ui.screens.community.crew.CrewListFocus.requested
+    LaunchedEffect(listRequested) {
+        if (listRequested) {
+            viewModel.selectTab(CommunityTab.BOARD)
+            crews = true; meetups = false; allMeetups = false
+            com.stepup.android.ui.screens.community.crew.CrewListFocus.requested = false
+        }
+    }
+    BackHandler(enabled = tab == CommunityTab.CREW || meetups) {
+        when {
+            tab == CommunityTab.CREW -> viewModel.selectTab(CommunityTab.BOARD)
+            allMeetups -> allMeetups = false
+            else -> meetups = false
+        }
     }
     val segments = listOf(
         stringResource(R.string.community_stories),
-        stringResource(R.string.community_together),
+        stringResource(R.string.crew_recruit_tab),
     )
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
@@ -127,64 +142,74 @@ fun CommunityScreen(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (tab == CommunityTab.CREW) {
-                com.stepup.android.ui.components.FocusHeader(
+            when {
+                tab == CommunityTab.CREW -> com.stepup.android.ui.components.FocusHeader(
                     stringResource(R.string.community_tab_my_crew),
                     onBack = { viewModel.selectTab(CommunityTab.BOARD) },
                 )
-            } else {
-              // S2 — 위는 글자 탭 두 개와 지도 · 내 크루 아이콘. 큰 제목은 두지 않는다.
-              Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    Modifier.weight(1f).guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
+                // 번개 모임(예전 함께 뛰기) — 지도 · 내 크루 아이콘은 여기 그대로
+                meetups -> com.stepup.android.ui.components.FocusHeader(
+                    stringResource(R.string.community_together),
+                    onBack = { if (allMeetups) allMeetups = false else meetups = false },
+                ) {
+                    Row {
+                        DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
+                        DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
+                            onClick = { viewModel.selectTab(CommunityTab.CREW) })
+                    }
+                }
+                // S2 — 위는 글자 탭 두 개. 큰 제목은 두지 않는다.
+                else -> Row(
+                    Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     segments.forEachIndexed { index, label ->
                         com.stepup.android.ui.components.S2TextTab(
                             label = label,
-                            selected = (if (together) 1 else 0) == index,
-                            onClick = { together = index == 1; allMeetups = false },
-                            modifier = Modifier.testTag(if (index == 0) "community-tab-stories" else "community-tab-together"),
+                            selected = (if (crews) 1 else 0) == index,
+                            onClick = { crews = index == 1 },
+                            modifier = Modifier.testTag(if (index == 0) "community-tab-stories" else "community-tab-crews"),
                         )
                     }
                 }
-                // 동네 이야기는 지도를 안에 품는다 — 지도 · 내 크루 아이콘은 함께 뛰기에서만
-                if (together) {
-                    DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
-                    DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
-                        onClick = { viewModel.selectTab(CommunityTab.CREW) })
-                }
-              }
             }
         }
 
-        when (tab) {
-            CommunityTab.BOARD -> if (stories && !allMeetups) com.stepup.android.ui.screens.community.stories.StoriesTab(
-                viewModel = storiesViewModel,
-                onOpenPost = onOpenStory,
-                onOpenMap = onOpenStoryMap,
-                onWrite = onWriteStory,
-                onOpenLocation = onOpenStoryLocation,
-                onOpenRegion = onOpenStoryRegion,
-            ) else if (!allMeetups) TogetherTab(
-                viewModel = viewModel, onOpenFlash = onOpenFlash,
-                onWritePost = { onWritePost("") }, onAllMeetups = { allMeetups = true },
-                onOpenCrews = { viewModel.selectTab(CommunityTab.CREW) },
-            ) else BoardTab(
+        when {
+            tab == CommunityTab.CREW -> CrewTab(
                 viewModel = viewModel,
-                // 동네 이야기가 따로 있으므로 여기는 "다른 모임 보기"(번개만)다
+                onOpenLobby = onOpenLobby,
+                onOpenCrew = onOpenCrew,
+                onCreateCrew = onCreateCrew,
+            )
+            meetups && allMeetups -> BoardTab(
+                viewModel = viewModel,
+                // 러닝 이야기가 따로 있으므로 여기는 "다른 모임 보기"(번개만)다
                 onlyFlash = true,
                 onOpenRanking = onOpenRanking,
                 onWritePost = { onWritePost("") },
                 onOpenFlash = onOpenFlash,
                 onOpenMap = onOpenMap,
             )
-
-            CommunityTab.CREW -> CrewTab(
-                viewModel = viewModel,
-                onOpenLobby = onOpenLobby,
-                onOpenCrew = onOpenCrew,
-                onCreateCrew = onCreateCrew,
+            meetups -> TogetherTab(
+                viewModel = viewModel, onOpenFlash = onOpenFlash,
+                onWritePost = { onWritePost("") }, onAllMeetups = { allMeetups = true },
+                onOpenCrews = { viewModel.selectTab(CommunityTab.CREW) },
+            )
+            crews -> com.stepup.android.ui.screens.community.crew.CrewListTab(
+                actions = crewActions ?: com.stepup.android.ui.screens.community.crew.CrewListActions(
+                    onOpenCrew = {}, onOpenImage = {}, onOpenMembers = {}, onOpenLeader = { _, _ -> }, onOpenGoal = {},
+                    onOpenResult = { _, _ -> }, onRecruitEntry = {}, onCreate = {}, onOpenRegion = {},
+                ),
+                onOpenMeetups = { meetups = true; allMeetups = false },
+            )
+            else -> com.stepup.android.ui.screens.community.stories.StoriesTab(
+                viewModel = storiesViewModel,
+                onOpenPost = onOpenStory,
+                onOpenMap = onOpenStoryMap,
+                onWrite = onWriteStory,
+                onOpenLocation = onOpenStoryLocation,
+                onOpenRegion = onOpenStoryRegion,
             )
         }
     }

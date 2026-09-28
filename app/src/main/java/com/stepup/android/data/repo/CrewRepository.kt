@@ -231,6 +231,10 @@ class CrewRepository(
     private val _crews = MutableStateFlow<List<Crew>>(emptyList())
     val crews: StateFlow<List<Crew>> = _crews
 
+    /** 크루 명함(목록 · 상세) — 같은 crew_feed 한 번으로 [crews] 와 함께 채운다 */
+    private val _cards = MutableStateFlow<List<com.stepup.android.domain.CrewCard>>(emptyList())
+    val cards: StateFlow<List<com.stepup.android.domain.CrewCard>> = _cards
+
     val joinedCrewIds: StateFlow<Set<String>> = _crews
         .map { list -> list.filter { it.joined }.map { it.id }.toSet() }
         .stateIn(scope, SharingStarted.Eagerly, emptySet())
@@ -261,6 +265,7 @@ class CrewRepository(
                 val list = result.value.map { it.toDomain() }
                 announceApprovals(list)
                 _crews.value = list
+                _cards.value = result.value.map { it.toCard() }
                 CrewSyncState.Ready
             }
             is ServerResult.SignInRequired -> CrewSyncState.SignInRequired
@@ -377,6 +382,22 @@ class CrewRepository(
     fun showForTest(list: List<Crew>) {
         _crews.value = list
         _sync.value = CrewSyncState.Ready
+    }
+
+    /** 한 크루를 다시 읽었다 — 목록의 같은 크루를 바꾼다(목록에 없으면 그대로) */
+    fun patchCard(card: com.stepup.android.domain.CrewCard) {
+        if (_cards.value.any { it.id == card.id }) _cards.value = _cards.value.map { if (it.id == card.id) card else it }
+    }
+
+    /** 해산 · 접근 불가 — 목록에서 뺀다 */
+    fun dropCrew(crewId: String) {
+        _cards.value = _cards.value.filterNot { it.id == crewId }
+        _crews.value = _crews.value.filterNot { it.id == crewId }
+    }
+
+    /** 로그아웃 · 계정 바꿈 — 앞 계정의 가입 상태가 남지 않게 */
+    fun clearCards() {
+        _cards.value = emptyList()
     }
 
     // ── 파티런 로비 ──────────────────────────────────────────
@@ -770,6 +791,42 @@ fun CrewRow.toDomain(): Crew = Crew(
 )
 
 private fun CrewRequestRow.toDomain() = CrewJoinRequest(userId, name, requestedAt)
+
+/** 서버 줄 → 크루 명함 */
+fun CrewRow.toCard(): com.stepup.android.domain.CrewCard = com.stepup.android.domain.CrewCard(
+    id = id,
+    name = name,
+    tagline = tagline,
+    leaderNote = leaderNote,
+    leaderId = ownerId,
+    leaderName = leaderName.ifBlank { roster.firstOrNull().orEmpty() },
+    imageBg = imageBg,
+    imageVer = imageVer,
+    hasImage = hasImage,
+    area = area,
+    lat = lat,
+    lng = lng,
+    schedule = com.stepup.android.domain.CrewSchedule(meetDays, meetTime).normalized,
+    distance = com.stepup.android.domain.CrewDistance.of(runDistance),
+    moods = moods.mapNotNull(com.stepup.android.domain.CrewMood::of),
+    memberCount = memberCount,
+    capacity = capacity,
+    recruiting = recruiting,
+    recruitChangedAt = recruitChangedAt.ifBlank { createdAt }.isoToMillis(),
+    createdAt = createdAt.isoToMillis(),
+    goalKm = weeklyGoalKm,
+    level = level,
+    weekKm = weekKm,
+    weekRunners = weekRunners,
+    joined = joined,
+    requested = requested,
+    owned = owned,
+    pendingCount = pendingCount,
+    openJoin = joinPolicy == "OPEN",
+    myApplicationId = myApplicationId,
+    myApplicationStatus = com.stepup.android.domain.CrewApplicationStatus.of(myApplicationStatus),
+    myApplicationSeen = myApplicationSeen,
+)
 
 /** 방에 들어가거나 무언가를 하다 막힌 까닭 */
 private fun ServerResult<*>.asPartyProblem(): PartyProblem = when (this) {

@@ -60,6 +60,10 @@ object AppChromePolicy {
         Destination(Routes.STORY_MAP, Screen.Community, Header.Form),
         Destination(Routes.STORY_LOCATION, Screen.Community, Header.Form),
         Destination(Routes.STORY_REGION, Screen.Community, Header.Form),
+    ) + com.stepup.android.ui.screens.community.crew.CrewRoutes.ALL.map {
+        // 크루 명함형(확정 2번) — 상세 · 신청 · 멤버 · 목표 · 만들기 · 관리는 자기 머리(뒤로 · 제목)와 아래 큰 버튼 하나
+        Destination(it, Screen.Community, Header.Form)
+    } + listOf(
         Destination(Routes.WALLET, Screen.Profile, Header.Detail),
         Destination(Routes.CHAIN_ACTIVITY, Screen.Profile, Header.Detail),
         Destination(Routes.NOTIFICATIONS, Screen.Profile, Header.Detail),

@@ -343,6 +343,57 @@ class UserPrefs(
         }
     }
 
+    // ── 크루 명함형(2026-09-28) — 만들기 · 수정 초안(계정마다), 목록의 지역 · 범위 · 정렬 ──
+
+    private fun crewDraftKey(owner: String, key: String) = stringPreferencesKey("crew_draft:$owner:$key")
+    private val crewRegionKey = stringPreferencesKey("crew_region")
+    private val crewRadiusKey = intPreferencesKey("crew_radius")
+    private val crewSortKey = stringPreferencesKey("crew_sort")
+
+    fun crewDraft(owner: String, key: String): Flow<com.stepup.android.domain.CrewDraft?> =
+        store.data.map { prefs -> prefs[crewDraftKey(owner, key)]?.let(::decodeCrewDraft) }
+
+    suspend fun setCrewDraft(owner: String, key: String, draft: com.stepup.android.domain.CrewDraft?) {
+        store.edit {
+            if (draft == null) it.remove(crewDraftKey(owner, key))
+            else it[crewDraftKey(owner, key)] = CrewDraftCodec.encode(draft)
+        }
+    }
+
+    /** 목록을 볼 지역(직접 고른 곳). 없으면 내 위치 · 전체 */
+    val crewRegion: Flow<com.stepup.android.domain.CrewArea?> =
+        store.data.map { prefs -> prefs[crewRegionKey]?.let(::decodeCrewArea) }
+
+    suspend fun setCrewRegion(area: com.stepup.android.domain.CrewArea?) {
+        store.edit {
+            if (area == null) it.remove(crewRegionKey)
+            else it[crewRegionKey] = CrewDraftCodec.encodeArea(area)
+        }
+    }
+
+    val crewRadius: Flow<Int> = store.data.map { prefs -> prefs[crewRadiusKey] ?: 3 }
+
+    suspend fun setCrewRadius(km: Int) {
+        store.edit { it[crewRadiusKey] = km }
+    }
+
+    val crewSort: Flow<String> = store.data.map { prefs -> prefs[crewSortKey].orEmpty() }
+
+    suspend fun setCrewSort(sort: String) {
+        store.edit { it[crewSortKey] = sort }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 크루 초안을 지운다 */
+    suspend fun clearCrewData() {
+        store.edit { prefs ->
+            prefs.asMap().keys.filter { it.name.startsWith("crew_draft:") }.forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    private fun decodeCrewDraft(raw: String): com.stepup.android.domain.CrewDraft? = CrewDraftCodec.decode(raw)
+
+    private fun decodeCrewArea(raw: String): com.stepup.android.domain.CrewArea? = CrewDraftCodec.decodeArea(raw)
+
     private fun decodeStoryDraft(raw: String): com.stepup.android.domain.StoryDraft? =
         runCatching { storyJson.decodeFromString(StoryDraftJson.serializer(), raw).toDomain() }.getOrNull()
 
@@ -1102,3 +1153,5 @@ internal data class StoryRunJson(
         }
     }
 }
+
+
