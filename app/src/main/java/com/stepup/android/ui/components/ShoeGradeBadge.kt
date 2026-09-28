@@ -2,7 +2,6 @@ package com.stepup.android.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalTextStyle
@@ -24,6 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -41,11 +41,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.ShoeTier
+import kotlin.math.roundToInt
 
 /*
  * 신발 이름 끝의 작은 둥근 등급 배지(2026-09-28 신발 화면 확정안 — design/shoes-ui-handoff-2026-09-28/badges).
@@ -122,10 +124,22 @@ fun ShoeTier.label(): String = stringResource(
     },
 )
 
-/** 배지 크기 — 보이는 높이 24dp, 글자 11.5sp, 양옆은 장식이 들어갈 만큼 */
+/**
+ * 배지 크기 — 보이는 높이 24dp(글자가 커지면 글자 + 위아래 3dp), 글자 11.5sp. 양옆 16dp 는 끝 둥근 곳의 장식이 글자와 2dp 넘게
+ * 떨어져 들어갈 자리다 — 11dp 였을 때는 광점 · 파동 · 체커가 글자 끝을 덮어 "레전더리"가 "레전더라"처럼 보였다(2026-09-28 기기 캡처).
+ * 장식은 높이에 비례해 커지므로 양옆도 높이에 비례해 넓힌다(큰 글씨에서도 겹치지 않게).
+ */
 private val BadgeHeight = 24.dp
-private val BadgeSidePadding = 11.dp
+private val BadgeSidePadding = 16.dp
+private val BadgeLabelInset = 3.dp
 private val BadgeLabelSize = 11.5.sp
+
+/** 글자 높이 [labelHeight] 에 맞는 배지 높이(px) */
+private fun Density.badgeHeightPx(labelHeight: Int): Int =
+    maxOf(BadgeHeight.roundToPx(), labelHeight + BadgeLabelInset.roundToPx() * 2)
+
+/** 배지 높이 [height] 에 맞는 양옆(px) — 24dp 일 때 16dp */
+private fun Density.badgeSidePx(height: Int): Int = (BadgeSidePadding.toPx() * height / BadgeHeight.toPx()).roundToInt()
 
 /** 이름과 배지 사이 */
 private val BadgeGap = 6.dp
@@ -143,14 +157,24 @@ fun ShoeGradeBadge(tier: ShoeTier, modifier: Modifier = Modifier, decorative: Bo
     val tag = "tier-badge-${tier.key}"
     Box(
         modifier
-            .heightIn(min = BadgeHeight)
             .drawBehind { drawTierBadge(tier, colors) }
             .then(if (decorative) Modifier.clearAndSetSemantics { testTag = tag } else Modifier.testTag(tag))
-            .padding(horizontal = BadgeSidePadding, vertical = 3.dp),
+            .badgeLayout(),
         contentAlignment = Alignment.Center,
     ) {
         Text(tier.label(), style = LocalTextStyle.current.merge(badgeLabelStyle(colors)), maxLines = 1, softWrap = false)
     }
+}
+
+/**
+ * 배지 칸 — 글자를 재서 높이([badgeHeightPx]) · 양옆([badgeSidePx])을 정하고 글자를 가운데에 둔다.
+ * 부르는 쪽이 크기를 정해 두면(이름 끝 자리 — 같은 계산으로 잰 크기) 그 안 가운데에 둔다.
+ */
+private fun Modifier.badgeLayout(): Modifier = layout { measurable, constraints ->
+    val label = measurable.measure(Constraints())
+    val height = if (constraints.hasFixedHeight) constraints.maxHeight else badgeHeightPx(label.height)
+    val width = if (constraints.hasFixedWidth) constraints.maxWidth else label.width + badgeSidePx(height) * 2
+    layout(width, height) { label.place((width - label.width) / 2, (height - label.height) / 2) }
 }
 
 /**
@@ -176,8 +200,13 @@ fun ShoeNameWithBadge(
     val labelStyle = remember(base, colors) { base.merge(badgeLabelStyle(colors)) }
     BoxWithConstraints(modifier) {
         val labelSize = remember(label, labelStyle, density) { measurer.measure(label, labelStyle).size }
-        val badgeWidth = with(density) { labelSize.width.toDp() } + BadgeSidePadding * 2
-        val badgeHeight = maxOf(BadgeHeight, with(density) { labelSize.height.toDp() } + 6.dp)
+        // 배지 칸(badgeLayout)과 같은 계산 — 글자가 커지면 높이 · 양옆이 함께 커진다
+        val (badgeWidth, badgeHeight) = remember(labelSize, density) {
+            with(density) {
+                val height = badgeHeightPx(labelSize.height)
+                (labelSize.width + badgeSidePx(height) * 2).toDp() to height.toDp()
+            }
+        }
         val placeholder = with(density) {
             Placeholder(
                 width = (badgeWidth + BadgeGap).toSp(), height = badgeHeight.toSp(),
@@ -249,7 +278,7 @@ private fun DrawScope.capsule(inset: Float) = RoundRect(
 private fun Path.addCapsule(rect: RoundRect) = apply { addRoundRect(rect) }
 
 /**
- * 바깥 번짐 → 캡슐 안 → 금속 테두리 → 안쪽 가는 선 → 갈래 장식. 장식은 양 끝(글자 밖)에만 둔다.
+ * 바깥 번짐 → 캡슐 안 → 금속 테두리 → 안쪽 가는 선 → 갈래 장식. 장식은 양 끝 둥근 곳(끝에서 4 ~ 14u, 글자는 16u 부터)에만 둔다.
  * 단위 u 는 높이 24dp 기준 1dp — 글자가 커져 배지가 높아지면 장식도 같이 커진다.
  */
 private fun DrawScope.drawTierBadge(tier: ShoeTier, c: TierColors) {
@@ -261,68 +290,67 @@ private fun DrawScope.drawTierBadge(tier: ShoeTier, c: TierColors) {
     drawPath(Path().addCapsule(capsule(2.9f * u)), c.rim[1].copy(alpha = 0.35f), style = Stroke(width = 0.6f * u))
     val h = size.height
     val w = size.width
-    val r = h / 2
+    val m = h / 2
     when (tier) {
         ShoeTier.COMMON -> {
-            // 짧은 각인 두 줄 — 양 끝
-            for (side in listOf(1f, -1f)) {
-                val x0 = if (side > 0) r * 0.62f else w - r * 0.62f
-                for (y in listOf(0.42f, 0.58f)) {
-                    drawLine(c.motif.copy(alpha = 0.75f), Offset(x0, h * y), Offset(x0 + side * 3.2f * u, h * y - 0.6f * u),
-                        strokeWidth = 1f * u, cap = StrokeCap.Round)
-                }
+            // 짧은 각인 두 줄(=) — 양 끝, 가운데 높이
+            listOf(-1.5f to 5.4f, 1.5f to 6.2f).forEach { (dy, from) ->
+                val y = m + dy * u
+                drawLine(c.motif.copy(alpha = 0.8f), Offset(from * u, y), Offset(10.2f * u, y), strokeWidth = 1f * u, cap = StrokeCap.Round)
+                drawLine(c.motif.copy(alpha = 0.8f), Offset(w - from * u, y), Offset(w - 10.2f * u, y), strokeWidth = 1f * u, cap = StrokeCap.Round)
             }
         }
         ShoeTier.RARE -> {
-            // 왼쪽 비스듬한 속도선 둘 · 오른쪽 가속 눈금 셋
+            // 왼쪽 비스듬한 속도선 둘(//) · 오른쪽 끝으로 갈수록 짧아지는 가속선 셋
             for (k in 0..1) {
-                val dx = k * 2.6f * u
-                drawLine(c.motif.copy(alpha = 0.9f - k * 0.3f), Offset(r * 0.48f + dx, h * 0.74f), Offset(r * 1.02f + dx, h * 0.30f),
-                    strokeWidth = 1.1f * u, cap = StrokeCap.Round)
+                val dx = k * 2.7f * u
+                drawLine(c.motif.copy(alpha = 0.95f - k * 0.3f), Offset(5.2f * u + dx, m + 4.2f * u), Offset(10.2f * u + dx, m - 3.8f * u),
+                    strokeWidth = 1.15f * u, cap = StrokeCap.Round)
             }
-            listOf(0.36f to 4.2f, 0.5f to 3.2f, 0.64f to 2.2f).forEach { (y, len) ->
-                drawLine(c.motif.copy(alpha = 0.75f), Offset(w - r * 0.55f - len * u, h * y), Offset(w - r * 0.55f, h * y),
+            listOf(-2.9f to 5.6f, 0f to 4.4f, 2.9f to 3.0f).forEach { (dy, len) ->
+                val y = m + dy * u
+                drawLine(c.motif.copy(alpha = 0.8f), Offset(w - (5.4f + len) * u, y), Offset(w - 5.4f * u, y),
                     strokeWidth = 1f * u, cap = StrokeCap.Round)
             }
         }
         ShoeTier.EPIC -> {
-            // 양 끝의 프리즘 면 · 오른쪽 아래 빗금
-            for (side in listOf(1f, -1f)) {
-                val tip = if (side > 0) r * 0.34f else w - r * 0.34f
-                val base = if (side > 0) r * 0.98f else w - r * 0.98f
+            // 양 끝의 프리즘 면 · 오른쪽 아래 빗금 셋
+            for (left in listOf(true, false)) {
+                val tip = if (left) 4.3f * u else w - 4.3f * u
+                val base = if (left) 10.6f * u else w - 10.6f * u
                 val facet = Path().apply {
-                    moveTo(tip, h / 2); lineTo(base, h * 0.27f); lineTo(base, h * 0.73f); close()
+                    moveTo(tip, m); lineTo(base, m - 5.4f * u); lineTo(base, m + 5.4f * u); close()
                 }
-                drawPath(facet, Brush.linearGradient(listOf(c.motif.copy(alpha = 0.55f), c.rim[0].copy(alpha = 0.15f)),
-                    start = Offset(tip, h * 0.3f), end = Offset(base, h * 0.7f)))
-                drawLine(c.label.copy(alpha = 0.65f), Offset(tip, h / 2), Offset(base, h * 0.27f), strokeWidth = 0.7f * u)
+                drawPath(facet, Brush.linearGradient(listOf(c.motif.copy(alpha = 0.6f), c.rim[0].copy(alpha = 0.15f)),
+                    start = Offset(tip, m - 4f * u), end = Offset(base, m + 4f * u)))
+                drawLine(c.label.copy(alpha = 0.7f), Offset(tip, m), Offset(base, m - 5.4f * u), strokeWidth = 0.7f * u)
             }
-            for (k in 0..3) {
-                val x = w - r * 2.2f + k * 1.6f * u
-                drawLine(c.motif.copy(alpha = 0.7f), Offset(x, h - 2.4f * u), Offset(x + 1.2f * u, h - 4.2f * u),
+            for (k in 0..2) {
+                val x = w - 14.2f * u + k * 1.5f * u
+                drawLine(c.motif.copy(alpha = 0.75f), Offset(x, h - 3.8f * u), Offset(x + 1.1f * u, h - 5.4f * u),
                     strokeWidth = 0.8f * u, cap = StrokeCap.Round)
             }
         }
         ShoeTier.LEGENDARY -> {
-            // 위 테두리 가운데 꺾쇠 · 오른쪽 안 작은 광점
+            // 위 테두리 가운데 꺾쇠 · 오른쪽 끝 안의 광점
             val cx = w / 2
             drawLine(c.motif, Offset(cx - 2.6f * u, 1.3f * u), Offset(cx, 3.5f * u), strokeWidth = 1f * u, cap = StrokeCap.Round)
             drawLine(c.motif, Offset(cx + 2.6f * u, 1.3f * u), Offset(cx, 3.5f * u), strokeWidth = 1f * u, cap = StrokeCap.Round)
-            sparkle(Offset(w - r * 0.85f, h / 2), 2.4f * u, c.label)
+            sparkle(Offset(w - 9.2f * u, m), 2.6f * u, c.label)
         }
         ShoeTier.REDLINE -> {
-            // 왼쪽 가속선 둘 · 오른쪽 곡선 열기 파동 둘
-            for (y in listOf(0.42f, 0.58f)) {
+            // 왼쪽 가속선 둘(끝 쪽으로 옅게) · 오른쪽 끝 둥근 곳을 따라 도는 열기 파동 둘
+            for (dy in listOf(-1.9f, 1.9f)) {
                 drawLine(
-                    Brush.horizontalGradient(listOf(c.motif.copy(alpha = 0f), c.motif), startX = r * 0.35f, endX = r * 1.25f),
-                    Offset(r * 0.35f, h * y), Offset(r * 1.25f, h * y), strokeWidth = 1.1f * u, cap = StrokeCap.Round,
+                    Brush.horizontalGradient(listOf(c.motif.copy(alpha = 0.15f), c.motif), startX = 4.6f * u, endX = 12.6f * u),
+                    Offset(4.6f * u, m + dy * u), Offset(12.6f * u, m + dy * u), strokeWidth = 1.1f * u, cap = StrokeCap.Round,
                 )
             }
-            for ((k, radius) in listOf(3.6f, 5.8f).withIndex()) {
-                val center = Offset(w - r * 1.45f, h / 2)
+            val center = Offset(w - 12f * u, m)
+            for ((k, radius) in listOf(4.6f, 6.8f).withIndex()) {
                 drawArc(
                     color = c.motif.copy(alpha = 0.95f - k * 0.3f),
-                    startAngle = -48f, sweepAngle = 96f, useCenter = false,
+                    startAngle = -50f, sweepAngle = 100f, useCenter = false,
                     topLeft = Offset(center.x - radius * u, center.y - radius * u),
                     size = Size(radius * 2 * u, radius * 2 * u),
                     style = Stroke(width = 1.1f * u, cap = StrokeCap.Round),
@@ -335,8 +363,8 @@ private fun DrawScope.drawTierBadge(tier: ShoeTier, c: TierColors) {
                 Brush.horizontalGradient(listOf(c.accent.copy(alpha = 0.0f), c.accent.copy(alpha = 0.45f), c.motif.copy(alpha = 0.0f))),
                 style = Stroke(width = 0.6f * u))
             val cell = 1.5f * u
-            val left = w - r * 0.7f - cell * 4
-            val top = h / 2 - cell
+            val left = w - 12.6f * u
+            val top = m - cell
             for (row in 0..1) for (col in 0..3) {
                 if ((row + col) % 2 == 0) {
                     drawRect(if (col % 2 == 0) c.accent else c.motif, Offset(left + col * cell, top + row * cell), Size(cell, cell))

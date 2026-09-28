@@ -487,6 +487,7 @@ class MyShoesDesignTest {
         compose.waitForIdle()
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
         Thread.sleep(settle)
+        awaitFrameOnScreen(compose.activity)
         val file = File(directory, "$name.png")
         val frame = if (whole) null else runCatching { bounds(VIEWPORT) }.getOrNull()
         if (frame == null) {

@@ -331,6 +331,7 @@ class ShoeGradeFrameTest {
         compose.waitForIdle()
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
         Thread.sleep(settle)
+        awaitFrameOnScreen(compose.activity)
         captureDisplay(File(directory, "$name.png"))
     }
 
