@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 체인 기록(내 정보 › 지갑 › 체인 기록) · 무엇이 기록되나 — docs/온체인-거래-발생-지도.md -->
+<resources>
+    <string name="ca_title">チェーン記録</string>
+    <string name="ca_guide_cd">記録される内容</string>
+    <string name="ca_failed_title">チェーン記録を読み込めませんでした</string>
+    <string name="ca_failed_body">接続を確認して、もう一度お試しください。</string>
+    <string name="ca_signed_out_title">ログインすると表示されます</string>
+    <string name="ca_signed_out_body">チェーンに記録されるのは、ログインしたアカウントのランと靴だけです。</string>
+    <string name="ca_empty_title">まだチェーン記録がありません</string>
+    <string name="ca_empty_body">GPSで1km以上走るか、靴を引くとここに表示されます。</string>
+    <string name="ca_guide_open">記録される内容を見る</string>
+    <string name="ca_summary_head">%1$s に残る記録</string>
+    <string name="ca_summary_body">ガス代はStepUpが支払い、署名は不要です。確定した記録だけに取引があり、タップするとエクスプローラーで開きます。</string>
+    <string name="ca_count_confirmed">記録済み</string>
+    <string name="ca_count_pending">待機</string>
+    <string name="ca_status_confirmed">記録済み</string>
+    <string name="ca_status_pending">待機中</string>
+    <string name="ca_status_cancelled">送信なし</string>
+    <string name="ca_status_failed">失敗</string>
+    <string name="ca_row_cd">%1$s、%2$s、%3$s</string>
+    <string name="ca_kind_run">ラン証明</string>
+    <string name="ca_kind_course">コース完走証明</string>
+    <string name="ca_kind_badge">バッジ · %1$s</string>
+    <string name="ca_kind_mint">靴のNFTを発行</string>
+    <string name="ca_kind_sync">靴のステータス更新</string>
+    <string name="ca_kind_other">チェーン記録</string>
+    <string name="ca_badge_first_run">初ラン</string>
+    <string name="ca_badge_distance">累計 %1$dkm</string>
+    <string name="ca_badge_streak">%1$d日連続</string>
+    <string name="ca_run_detail">%1$skm · %2$d分</string>
+    <string name="ca_run_km">%1$skm</string>
+    <string name="ca_sneaker">靴</string>
+    <string name="ca_guide_title">どこで何をすると記録されるか</string>
+    <string name="ca_guide_intro">実際に行ったこと1つにつき記録は最大1つです。2分ごとにまとめて送信し、ガス代はStepUpが支払います（GIWA Sepolia テストネット）。</string>
+    <string name="ca_guide_run_head">ラン証明 — ランタブ</string>
+    <string name="ca_guide_run_body">GPSで1km以上走って保存すると記録されます。無効・偽の位置・保留中のランは除きます。1日10件まで。</string>
+    <string name="ca_guide_badge_head">バッジ — そのランと一緒に</string>
+    <string name="ca_guide_badge_body">初ラン、累計10・50・100・300・500・1,000km、3・7・14・30・100日連続。各バッジ1回ずつ。</string>
+    <string name="ca_guide_course_head">コース完走 — ランタブ › おすすめコース</string>
+    <string name="ca_guide_course_body">1km以上のコースをルートどおりに完走すると記録されます。1日10件まで。</string>
+    <string name="ca_guide_mint_head">靴のNFT — 靴タブ › ガチャ</string>
+    <string name="ca_guide_mint_body">無料・上級ガチャのたびに、その靴がチェーン上のStepUp金庫に発行されます。アプリではそのまま履けます。</string>
+    <string name="ca_guide_sync_head">靴のステータス — 靴タブ › マイシューズ</string>
+    <string name="ca_guide_sync_body">発行済みの靴を強化・修理すると、レベルと耐久度がチェーンにも反映されます（最新の値で1回）。</string>
+    <string name="ca_guide_wallet_head">ウォレットページ — 引き出し・預け入れ</string>
+    <string name="ca_guide_wallet_body">SUPや靴をウォレットに引き出したりアプリに預け入れたりするときも取引が発生します。預け入れはご自身のウォレットで署名します。</string>
+    <string name="ca_guide_foot">記録しないもの：ルートのない歩数、1km未満のラン、アプリ内のSUP獲得・使用、靴の装着、走行による耐久度の減少。記録するのは仮名だけで、位置・ルート・アカウントは記録しません。</string>
+    <string name="wl_chain_row">チェーン記録</string>
+    <string name="wl_chain_row_sub">ラン証明・靴のNFT — ガス代はStepUpが支払います</string>
+</resources>

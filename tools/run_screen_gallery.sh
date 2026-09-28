@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -182,6 +182,16 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/wallet-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/wallet-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/wallet-v1/. screen-gallery/wallet-v1/ || status=1
+  # 체인 기록(2026-09-28) — 지갑 › 체인 기록(앱 셸 안의 실제 상태) · 기록 목록 · 무엇이 기록되나 · 빈 · 읽는 중 · 실패 · 로그인 전
+  run_instrumentation chain "com.stepup.android.ChainActivityDesignTest"
+  mkdir -p screen-gallery/chain-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/chain-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/chain-activity/. screen-gallery/chain-activity/ || status=1
+  # 새 신발 도감 70종(2026-09-28) — 신발 탭 무대 · 보유 칸 · 도감 70칸 · 뽑기 결과
+  run_instrumentation shoe-catalog "com.stepup.android.ShoeCatalogDesignTest"
+  mkdir -p screen-gallery/shoe-catalog-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-catalog-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-catalog/. screen-gallery/shoe-catalog/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

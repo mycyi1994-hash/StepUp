@@ -67,6 +67,20 @@ npm run new-key -- GUARDIAN_PRIVATE_KEY
 그 id 를 `supabase/migrations/0027_attester_account.sql` 에 적는다(main 에 합치면 서버에 올라간다).
 그 다음 `npx wrangler secret put ATTESTER_EMAIL` · `npx wrangler secret put ATTESTER_PASSWORD`.
 
+**로그에 `attester login failed 400 invalid_credentials` 가 보이면**(Attester logs) 워커 Secret 의 이메일 · 비밀번호가 그 계정과
+다르다 — 워커의 모든 일(인덱서 · 만료 · 대조 · 체인 기록)이 멈춘다. 비밀번호를 새로 정해 두 곳에 같이 넣는다:
+
+1. Supabase 대시보드 → SQL Editor(`새비밀번호` 는 길게 새로):
+   ```sql
+   update auth.users
+      set encrypted_password = extensions.crypt('새비밀번호', extensions.gen_salt('bf')),
+          email_confirmed_at = coalesce(email_confirmed_at, now())
+    where id = '389719d5-735c-4242-8e86-e26a2373d1d8';   -- 0027 의 계정
+   select email from auth.users where id = '389719d5-735c-4242-8e86-e26a2373d1d8';
+   ```
+2. `cd attester` → `npx wrangler login` → `npx wrangler secret put ATTESTER_EMAIL`(위 이메일) →
+   `npx wrangler secret put ATTESTER_PASSWORD`(위 비밀번호). 넣으면 워커가 새 버전으로 바뀌고 다음 1분 작업부터 로그인한다.
+
 ## 배포
 
 배포는 늘 `npm run deploy` 로 한다 — 워커가 도는 계정(`gana003.workers.dev`)을 찾아 그 계정으로만 올린다

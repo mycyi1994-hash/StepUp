@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 체인 기록(내 정보 › 지갑 › 체인 기록) · 무엇이 기록되나 — docs/온체인-거래-발생-지도.md -->
+<resources>
+    <string name="ca_title">체인 기록</string>
+    <string name="ca_guide_cd">무엇이 기록되나</string>
+    <string name="ca_failed_title">체인 기록을 불러오지 못했어요</string>
+    <string name="ca_failed_body">연결을 확인하고 다시 불러와 주세요.</string>
+    <string name="ca_signed_out_title">로그인하면 볼 수 있어요</string>
+    <string name="ca_signed_out_body">로그인한 계정의 러닝 · 신발만 체인에 기록돼요.</string>
+    <string name="ca_empty_title">아직 체인 기록이 없어요</string>
+    <string name="ca_empty_body">GPS로 1km 이상 달리거나 신발을 뽑으면 여기에 쌓여요.</string>
+    <string name="ca_guide_open">무엇이 기록되나 보기</string>
+    <string name="ca_summary_head">%1$s에 남는 기록</string>
+    <string name="ca_summary_body">가스비는 StepUp이 내고, 서명할 것은 없어요. 확정된 기록만 거래가 있고, 누르면 익스플로러에서 열려요.</string>
+    <string name="ca_count_confirmed">기록됨</string>
+    <string name="ca_count_pending">대기</string>
+    <string name="ca_status_confirmed">기록됨</string>
+    <string name="ca_status_pending">대기 중</string>
+    <string name="ca_status_cancelled">보내지 않음</string>
+    <string name="ca_status_failed">실패</string>
+    <string name="ca_row_cd">%1$s, %2$s, %3$s</string>
+    <string name="ca_kind_run">러닝 증명</string>
+    <string name="ca_kind_course">코스 완주 증명</string>
+    <string name="ca_kind_badge">배지 · %1$s</string>
+    <string name="ca_kind_mint">신발 NFT 발행</string>
+    <string name="ca_kind_sync">신발 스탯 갱신</string>
+    <string name="ca_kind_other">체인 기록</string>
+    <string name="ca_badge_first_run">첫 러닝</string>
+    <string name="ca_badge_distance">누적 %1$dkm</string>
+    <string name="ca_badge_streak">%1$d일 연속</string>
+    <string name="ca_run_detail">%1$skm · %2$d분</string>
+    <string name="ca_run_km">%1$skm</string>
+    <string name="ca_sneaker">신발</string>
+    <string name="ca_guide_title">어디서 무엇을 하면 기록되나</string>
+    <string name="ca_guide_intro">실제로 한 일 하나가 기록 최대 하나예요. 2분마다 모아서 보내고, 가스비는 StepUp이 내요(GIWA Sepolia 테스트넷).</string>
+    <string name="ca_guide_run_head">러닝 증명 — 러닝 탭</string>
+    <string name="ca_guide_run_body">GPS 경로로 1km 이상 달리고 저장하면. 무효 · 가짜 위치 · 적립 보류 러닝은 빼요. 하루 10건까지.</string>
+    <string name="ca_guide_badge_head">배지 — 그 러닝과 함께</string>
+    <string name="ca_guide_badge_body">첫 러닝, 누적 10 · 50 · 100 · 300 · 500 · 1,000km, 3 · 7 · 14 · 30 · 100일 연속. 배지마다 한 번.</string>
+    <string name="ca_guide_course_head">코스 완주 — 러닝 탭 › 추천 코스</string>
+    <string name="ca_guide_course_body">1km 이상 코스를 경로대로 완주하면. 하루 10건까지.</string>
+    <string name="ca_guide_mint_head">신발 NFT — 신발 탭 › 뽑기</string>
+    <string name="ca_guide_mint_body">무료 · 상급 뽑기마다 그 신발이 체인의 StepUp 금고에 발행돼요. 앱에서는 그대로 신어요.</string>
+    <string name="ca_guide_sync_head">신발 스탯 — 신발 탭 › 내 신발</string>
+    <string name="ca_guide_sync_body">발행된 신발을 강화 · 수리하면 레벨 · 내구도가 체인에도 반영돼요(마지막 값으로 한 번).</string>
+    <string name="ca_guide_wallet_head">지갑 페이지 — 꺼내기 · 넣기</string>
+    <string name="ca_guide_wallet_body">SUP · 신발을 지갑으로 꺼내거나 앱으로 넣을 때도 거래가 생겨요. 넣기는 내 지갑이 서명해요.</string>
+    <string name="ca_guide_foot">기록하지 않는 것: 경로 없는 걸음, 1km 미만 러닝, 앱 안의 SUP 적립 · 사용, 신발 신기, 달려서 닳는 내구도. 가명만 올리고 위치 · 경로 · 계정은 올리지 않아요.</string>
+    <string name="wl_chain_row">체인 기록</string>
+    <string name="wl_chain_row_sub">러닝 증명 · 신발 NFT — 가스비는 StepUp이 내요</string>
+</resources>

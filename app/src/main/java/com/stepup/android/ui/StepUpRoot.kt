@@ -196,6 +196,8 @@ object Routes {
     const val RUN_DIET_PLAN = "run-diet/plan"
     const val RUN_DIET_EDIT = "run-diet/edit"
     const val WALLET = "wallet"
+    /** 내 정보 › 지갑 › 체인 기록 */
+    const val CHAIN_ACTIVITY = "wallet/chain"
     const val NOTIFICATIONS = "notifications"
 
     /** 앱 공지 상세(알림·공지 v1) — 알림 화면의 "공지"에서. 바깥 소식(NEWS)과 다른 것이다 */
@@ -942,6 +944,7 @@ internal fun MainScaffold(
                 val walletScope = rememberCoroutineScope()
                 WalletScreen(
                     onBack = { navController.popBackStack() },
+                    onOpenChain = { navController.navigate(Routes.CHAIN_ACTIVITY) { launchSingleTop = true } },
                     // 연결 상태 → 기존 두 칸 뽑기(자동으로 뽑지 않는다)
                     onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
                     // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
@@ -951,6 +954,9 @@ internal fun MainScaffold(
                         }
                     },
                 )
+            }
+            composable(Routes.CHAIN_ACTIVITY) {
+                com.stepup.android.ui.screens.rewards.ChainActivityScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(
