@@ -2,23 +2,11 @@
 <!-- 보유 신발 상세 v1(2026-09-28 전달본, docs/redesign/shoe-detail-v1) — 신발 탭 목록 · 상세 · 능력치 · 신발 정보 · 착용 결말 -->
 <resources>
     <!-- 신발 탭(01 · 12 · 18) -->
-    <string name="sdv_kicker_selected">Selected pair</string>
-    <string name="sdv_kicker_wearing">Wearing now</string>
     <string name="sdv_level_no">Lv. %1$d · #%2$04d</string>
     <string name="sdv_level_no_cd">Level %1$d, shoe number %2$04d</string>
-    <string name="sdv_open_detail">See shoe details</string>
-    <string name="sdv_owned_title">My shoes</string>
     <plurals name="sdv_pairs">
         <item quantity="one">%d pair</item>
         <item quantity="other">%d pairs</item>
-    </plurals>
-    <plurals name="sdv_see_copies">
-        <item quantity="one">See %d pair</item>
-        <item quantity="other">See %d pairs</item>
-    </plurals>
-    <plurals name="sdv_see_copies_cd">
-        <item quantity="one">See %2$d pair of %1$s</item>
-        <item quantity="other">See all %2$d pairs of %1$s</item>
     </plurals>
     <string name="sdv_state_viewing">Viewing</string>
     <string name="sdv_state_wearing">Wearing</string>
@@ -27,16 +15,6 @@
     <string name="sdv_empty_title">No shoes yet</string>
     <string name="sdv_empty_body">Meet your first pair with a free draw.</string>
     <string name="sdv_empty_action">Draw shoes</string>
-
-    <!-- 같은 모델 여러 켤레(07) -->
-    <plurals name="sdv_copies_title">
-        <item quantity="one">%1$s · %2$d pair</item>
-        <item quantity="other">%1$s · %2$d pairs</item>
-    </plurals>
-    <string name="sdv_copies_intro">Choose a pair to see in detail.</string>
-    <string name="sdv_copy_energy">Energy saving %1$s</string>
-    <string name="sdv_copy_received">Received %1$s</string>
-    <string name="sdv_copies_note">Choosing a pair doesn\'t change the pair you\'re wearing.</string>
 
     <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
     <string name="sdv_title">Shoe details</string>

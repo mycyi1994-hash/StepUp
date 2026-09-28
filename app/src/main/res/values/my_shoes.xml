@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 화면 확정안(2026-09-28, docs/redesign/shoes-ui-2026-09-28) — 등급 배지 여섯 · 내 신발 · 신발 보관함 -->
+<resources>
+    <!-- 등급 배지 — 보이는 갈래 여섯. 서버 · 보상 · 확률의 등급은 넷 그대로다 -->
+    <string name="shoe_tier_common">Common</string>
+    <string name="shoe_tier_rare">Rare</string>
+    <string name="shoe_tier_epic">Epic</string>
+    <string name="shoe_tier_legendary">Legendary</string>
+    <string name="shoe_tier_redline">Redline</string>
+    <string name="shoe_tier_finish">Finish</string>
+
+    <!-- 신발 탭 위의 글자 탭(내 신발 · 신발 보관함) -->
+    <string name="shoes_section_vault">Shoe vault</string>
+
+    <!-- 내 신발 — 이름 · Lv · 번호 · 착용 상태, 능력치 막대 셋, 보유 목록 -->
+    <string name="my_shoes_wearing">Wearing</string>
+    <string name="my_shoes_manage">Manage this pair</string>
+    <string name="my_shoes_stats">Stats</string>
+    <string name="my_shoes_stat_efficiency">Efficiency</string>
+    <string name="my_shoes_stat_cd">%1$s (%2$s) %3$s. Full bar is %4$s.</string>
+    <string name="my_shoes_owned">Owned</string>
+
+    <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
+    <string name="my_shoes_basis_open">How the bars are scaled</string>
+    <string name="my_shoes_basis_intro">All shoes use the same scale, so you can compare pairs.</string>
+    <string name="my_shoes_basis_efficiency">Efficiency (SUP earning bonus): full bar %1$s, the highest a shoe can reach (Legendary, level %2$d).</string>
+    <string name="my_shoes_basis_comfort">Comfort (energy saving): full bar %1$s, the server cap.</string>
+    <string name="my_shoes_basis_durability">Durability: full bar %1$d.</string>
+    <string name="my_shoes_basis_note">Efficiency is a bonus rate, not an amount. The SUP you actually receive is confirmed by the server after each run.</string>
+
+    <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->
+    <string name="vault_sort_title">Sort</string>
+    <string name="vault_sort_cd">Sort: %1$s</string>
+    <string name="vault_filter_all">All</string>
+    <string name="vault_filter_cd">%1$s, %2$s</string>
+</resources>

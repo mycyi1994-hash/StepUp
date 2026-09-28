@@ -159,7 +159,7 @@ class ShoeDrawTest {
         state("10-light-theme") { actionInside("draw-free-action") }
     }
 
-    /** 앱 셸 안에서: 신발 탭 → 뽑기 → 한 번 뽑기(두 번 눌러도 한 번) → 결과 → 내 신발(그 신발이 골라져 있다) */
+    /** 앱 셸 안에서: 신발 탭 → 하단 뽑기 탭 → 한 번 뽑기(두 번 눌러도 한 번) → 결과 → 내 신발(그 신발이 골라져 있다) */
     @Test fun drawFlowUsesTheServerResult() {
         prepare()
         val shoe = DrawSamples.addShoe()
@@ -169,8 +169,7 @@ class ShoeDrawTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoes-section-draw")
-            compose.onNodeWithTag("shoes-section-draw").performClick()
+            openDrawTab()
             awaitTag("draw-free-left")
             compose.waitUntil(10_000) { runCatching { text("draw-free-left", "13회") }.isSuccess }
             shot("20-in-app-free")
@@ -194,16 +193,16 @@ class ShoeDrawTest {
             compose.onNodeWithTag("draw-result-name", useUnmergedTree = true).assertExists()
             shot("22-result", settle = 1_500)
             compose.onNodeWithTag("draw-result-shoes").performClick()
-            awaitTag("shoe-list")
-            compose.onNodeWithTag("shoe-list").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
+            awaitTag("my-shoes")
+            compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
+            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
             compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("shoe-choice-${shoe.id}").assertIsSelected() }.isSuccess }
-            compose.onNodeWithTag("shoe-list").performScrollToIndex(0)
             assertEquals("seeing the new shoe does not equip it", equipped, DrawSamples.equippedId())
             shot("23-my-shoes-with-the-new-shoe")
 
             // 상급 칸(지갑 연결 뒤)으로 한 번 더 — 결과에서 뒤로 가면 두 칸
             server.linked = true
-            compose.onNodeWithTag("shoes-section-draw").performClick()
+            openDrawTab()
             awaitTag("draw-premium-left")
             compose.onNodeWithTag("draw-premium-action").performScrollTo().performClick()
             awaitTag("draw-result")
@@ -226,8 +225,7 @@ class ShoeDrawTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoes-section-draw")
-            compose.onNodeWithTag("shoes-section-draw").performClick()
+            openDrawTab()
             awaitTag("draw-free-left")
             server.nextReply = DrawReply.Unknown
             val gate = CompletableDeferred<Unit>()
@@ -263,8 +261,7 @@ class ShoeDrawTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoes-section-draw")
-            compose.onNodeWithTag("shoes-section-draw").performClick()
+            openDrawTab()
             awaitTag("draw-free-left")
             server.nextReply = DrawReply.Refused(EconomyOutcome.NoFreeDraws)
             compose.onNodeWithTag("draw-free-action").performClick()
@@ -298,8 +295,7 @@ class ShoeDrawTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoes-section-draw")
-            compose.onNodeWithTag("shoes-section-draw").performClick()
+            openDrawTab()
             awaitTag("draw-pending")
             compose.waitUntil(10_000) { server.checks.get() >= 1 }
             compose.onNodeWithTag("draw-free-action").performClick()
@@ -312,6 +308,13 @@ class ShoeDrawTest {
     }
 
     // ── 도우미 ─────────────────────────────────────────────────────
+
+    /** 하단 가운데 뽑기 탭(신발 화면 확정안 2026-09-28) */
+    private fun openDrawTab() {
+        awaitTag("nav-label-${Screen.Draw.route}")
+        compose.onNodeWithTag("nav-label-${Screen.Draw.route}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+    }
 
     private fun prepare() = runBlocking {
         ServiceLocator.userPrefs.setReducedMotion(true)

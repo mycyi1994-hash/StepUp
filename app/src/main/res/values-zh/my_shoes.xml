@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 화면 확정안(2026-09-28, docs/redesign/shoes-ui-2026-09-28) — 등급 배지 여섯 · 내 신발 · 신발 보관함 -->
+<resources>
+    <!-- 등급 배지 — 보이는 갈래 여섯. 서버 · 보상 · 확률의 등급은 넷 그대로다 -->
+    <string name="shoe_tier_common">普通</string>
+    <string name="shoe_tier_rare">稀有</string>
+    <string name="shoe_tier_epic">史诗</string>
+    <string name="shoe_tier_legendary">传说</string>
+    <string name="shoe_tier_redline">Redline</string>
+    <string name="shoe_tier_finish">Finish</string>
+
+    <!-- 신발 탭 위의 글자 탭(내 신발 · 신발 보관함) -->
+    <string name="shoes_section_vault">鞋子仓库</string>
+
+    <!-- 내 신발 — 이름 · Lv · 번호 · 착용 상태, 능력치 막대 셋, 보유 목록 -->
+    <string name="my_shoes_wearing">穿着中</string>
+    <string name="my_shoes_manage">管理这双鞋</string>
+    <string name="my_shoes_stats">能力值</string>
+    <string name="my_shoes_stat_efficiency">效率</string>
+    <string name="my_shoes_stat_cd">%1$s（%2$s）%3$s。满格 %4$s</string>
+    <string name="my_shoes_owned">已拥有</string>
+
+    <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
+    <string name="my_shoes_basis_open">进度条标准</string>
+    <string name="my_shoes_basis_intro">三条进度条对所有鞋子使用相同标准，方便互相比较。</string>
+    <string name="my_shoes_basis_efficiency">效率（SUP 获取加成）：满格 %1$s — 鞋子可达到的最高值（传说 %2$d 级）</string>
+    <string name="my_shoes_basis_comfort">舒适度（能量节省）：满格 %1$s — 服务器上限</string>
+    <string name="my_shoes_basis_durability">耐久度：满格 %1$d</string>
+    <string name="my_shoes_basis_note">效率是加成比例，不是数量。实际获得的 SUP 在跑步结束后由服务器确认。</string>
+
+    <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->
+    <string name="vault_sort_title">排序</string>
+    <string name="vault_sort_cd">排序：%1$s</string>
+    <string name="vault_filter_all">全部</string>
+    <string name="vault_filter_cd">%1$s %2$s</string>
+</resources>

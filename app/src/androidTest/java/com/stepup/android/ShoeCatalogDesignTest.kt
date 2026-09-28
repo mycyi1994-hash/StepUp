@@ -54,25 +54,26 @@ class ShoeCatalogDesignTest {
     private var originalEquipped: Long? = null
 
     /**
-     * 신발 탭(앱 셸 안) — 새 도감 세 등급을 차례로 골라 받침 무대(보유 신발 상세 v1)에 세우고, 보유 칸 · 도감으로.
-     * 무대에는 그 모델 번호의 그림 · 이름이 선다(예전 속성 그림으로 채우지 않는다).
+     * 신발 탭(앱 셸 안) — 새 도감 세 등급을 차례로 골라 내 신발의 등급 프레임 무대(신발 화면 확정안 2026-09-28)에 세운다.
+     * 무대에는 그 모델 번호의 그림 · 이름이 서고, 프레임은 보이는 갈래(레어 · 에픽 · 레드라인)를 따른다.
      */
     @Test fun newShoesInTheShoesTab() {
         val shoes = seed()
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            awaitTag("shoe-list")
+            awaitTag("my-shoes")
             PICKS.forEachIndexed { index, model ->
                 val id = shoes.getValue(model)
                 showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
-                list().performScrollToIndex(0)
                 val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
+                // 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다 — 그 안의 글을 본다
                 compose.waitUntil(10_000) {
-                    runCatching { compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextEquals(name) }.isSuccess
+                    compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")),
+                        useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
                 }
-                awaitSingle("shoe-art")
+                awaitSingle("grade-stage-${TIERS[index]}")
                 shot("0${index + 1}-stage-$model")
             }
             showTile(shoes.getValue(PICKS.last()))
@@ -112,7 +113,8 @@ class ShoeCatalogDesignTest {
                     ExperienceProvider { Box(Modifier.fillMaxSize()) { S2Stage(Modifier.fillMaxSize()); DrawResultDialog(shoe, onOpenShoes = {}, onClose = {}) } }
                 }
             }
-            awaitSingle("grade-stage-legendary")
+            // 레드라인 시리즈 — 서버 등급은 레전더리 그대로, 프레임 · 효과만 05(레드라인)
+            awaitSingle("grade-stage-redline")
             shot("08-draw-result-${PICKS.last()}", settle = 1_500)
         } finally {
             restore(shoes)
@@ -121,8 +123,6 @@ class ShoeCatalogDesignTest {
 
     // ── 도우미 ─────────────────────────────────────────────────────
 
-    private fun list() = compose.onNodeWithTag("shoe-list")
-
     /** 도감의 세로 목록 — 거르개 줄(가로)도 넘길 수 있어서 가장 높은 것을 고른다 */
     private fun dexList(): SemanticsNodeInteraction {
         val all = compose.onAllNodes(hasScrollToIndexAction(), useUnmergedTree = true)
@@ -130,9 +130,8 @@ class ShoeCatalogDesignTest {
         return all[nodes.indices.maxBy { nodes[it].boundsInRoot.height }]
     }
 
-    /** 보유 칸(가로 목록)을 보이게 — 세로 목록을 목록 줄까지, 가로 목록을 그 칸까지 */
+    /** 보유 칸(가로 목록)을 보이게 — 내 신발은 세로로 끌지 않는다. 가로 목록만 그 칸까지 */
     private fun showTile(id: Long) {
-        list().performScrollToNode(hasTestTag("shoe-owned-row"))
         compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
     }
 
@@ -192,5 +191,8 @@ class ShoeCatalogDesignTest {
     private companion object {
         /** 레어 스플릿 힐 로드 러너 · 에픽 니트 랩 러너 · 레전더리 레드라인 100m 스프린트 스파이크 */
         val PICKS = listOf(1107, 1201, 1311)
+
+        /** 그 셋의 보이는 갈래 — 시리즈 REDLINE 이 먼저(domain/ShoeTier.kt) */
+        val TIERS = listOf("rare", "epic", "redline")
     }
 }

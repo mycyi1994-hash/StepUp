@@ -1,5 +1,9 @@
 package com.stepup.android.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 /** The only source of tab ownership and shared-chrome visibility. */
 object AppChromePolicy {
     enum class Header { Main, Detail, Focus, Form }
@@ -8,15 +12,25 @@ object AppChromePolicy {
         val showBottomBar: Boolean get() = header == Header.Main || header == Header.Detail
     }
 
-    val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile)
+    /** 하단 탭 다섯 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28). 뽑기는 가운데 독립 탭 */
+    val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Draw, Screen.Community, Screen.Profile)
+
+    /**
+     * 화면이 잠깐 공통 머리 · 하단 탭을 걷는 중 — 뽑기 탭의 요청 · 상자 열기 · 결과 · 확인(신발 뽑기 v2 시안은 화면을 다 쓴다).
+     * 뽑기 화면이 그 흐름에 들어갈 때 켜고, 두 칸으로 돌아오거나 화면을 떠나면 끈다. 뽑기 길([Routes.MYSTERY_BOX])에서만 읽는다.
+     */
+    var immersive by mutableStateOf(false)
+
+    /** 지금 길에서 공통 머리 · 하단 탭을 걷는가 */
+    fun immersiveAt(route: String?): Boolean = immersive && destination(route)?.parent == Screen.Draw
 
     val destinations: List<Destination> = listOf(
         Destination(Screen.Run.route, Screen.Run, Header.Main),
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
-        // 신발 뽑기 v2 — 신발 탭 안의 하위 화면. 자기 머리(‹ 신발 뽑기)를 그리고, 두 칸 · 상자 열기 · 결과가 화면을 다 쓴다(아래 탭 없음)
-        Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Form),
+        // 신발 뽑기 v2 — 하단 가운데 뽑기 탭의 첫 화면(두 칸). 요청 · 상자 열기 · 결과 · 확인 동안은 [immersive] 로 화면을 다 쓴다
+        Destination(Routes.MYSTERY_BOX, Screen.Draw, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),

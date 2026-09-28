@@ -78,20 +78,21 @@ class ShoeDrawV2DesignTest {
         prepare()
         edgeToEdge()
         compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-        awaitTag("shoes-section-draw")
+        awaitTag("shoes-section-mine")
         shot("00-owned-shoes-entry")
-        tap("shoes-section-draw")
+        // 하단 가운데 뽑기 탭(신발 화면 확정안 2026-09-28) — 공통 머리 · 하단 탭 아래 두 칸
+        openDrawTab()
         awaitTag("draw-home")
         // 이 기기의 실제 상태 — 읽는 동안은 자리만, 로그인 전이면 로그인 안내(0 을 임시로 보이지 않는다)
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("draw-skeleton", useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
-        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
+        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertIsDisplayed()
         compose.onNodeWithTag("draw-free-action").assertExists()
         compose.onNodeWithTag("draw-premium-action").assertExists()
         shot("a01-in-app-real-state")
-        // 서버를 읽지 못한 기기면 23 시트가 떠 있다 — 뒤로는 먼저 시트만 닫는다
+        // 서버를 읽지 못한 기기면 23 시트가 떠 있다 — 먼저 시트만 닫는다
         if (compose.onAllNodesWithTag("draw-sheet-load-failed", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) back()
-        back()
-        awaitTag("shoes-section-draw")
+        compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
+        awaitTag("shoes-section-mine")
         shot("a02-back-to-my-shoes")
     }
 
@@ -103,7 +104,7 @@ class ShoeDrawV2DesignTest {
         try {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
-            tap("shoes-section-draw")
+            openDrawTab()
             awaitTag("draw-free-left")
             compose.waitUntil(10_000) {
                 runCatching { compose.onNodeWithTag("draw-free-left", useUnmergedTree = true).assert(hasText("13회")) }.isSuccess
@@ -121,10 +122,9 @@ class ShoeDrawV2DesignTest {
             }
             shot("b12-in-app-result", settle = 1_200)
             tap("draw-result-shoes")
-            awaitTag("shoe-list")
-            compose.onNodeWithTag("shoe-list").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
+            awaitTag("my-shoes")
+            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
             compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("shoe-choice-${shoe.id}").assertIsSelected() }.isSuccess }
-            compose.onNodeWithTag("shoe-list").performScrollToIndex(0)
             shot("b21-in-app-owned-shoes")
             assertEquals(1, server.draws.get())
         } finally {
@@ -264,6 +264,13 @@ class ShoeDrawV2DesignTest {
         ServiceLocator.userPrefs.setHaptics(false)
         ServiceLocator.userPrefs.setGuideSeen()
         ServiceLocator.sneakerRepository.ensureStarter()
+    }
+
+    /** 하단 가운데 뽑기 탭 */
+    private fun openDrawTab() {
+        awaitTag("nav-label-${Screen.Draw.route}")
+        compose.onNodeWithTag("nav-label-${Screen.Draw.route}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
     }
 
     private fun tap(tag: String) {

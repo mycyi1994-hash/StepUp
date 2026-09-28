@@ -375,9 +375,9 @@ class DesignReferenceTest {
         }
         val readyTag = when (s) {
             Scene.HOME -> "home-start-run"
-            // 보유 신발 상세 v1 — 신발 탭의 주 행동은 "신발 자세히 보기"(신기는 상세 안으로)
-            Scene.SHOES -> "shoe-detail"
-            // 신발 뽑기 v2 — 두 칸, 칸마다 버튼 하나(로그인 전 기기에서는 누를 수 없다)
+            // 신발 화면 확정안(2026-09-28) — 내 신발: 등급 프레임 무대 · 능력치 막대 · 보유 목록(상세 보기 링크 없음)
+            Scene.SHOES -> "shoe-owned-row"
+            // 신발 뽑기 v2 — 하단 가운데 뽑기 탭의 두 칸, 칸마다 버튼 하나(로그인 전 기기에서는 누를 수 없다)
             Scene.DRAW -> "draw-free-action"
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
@@ -415,15 +415,16 @@ class DesignReferenceTest {
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
             Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
-            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST,
-            // 신발 뽑기 v2 는 신발 탭 안의 하위 화면 — 자기 머리(‹ 신발 뽑기), 아래 탭 없음(시안)
-            Scene.DRAW ->
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
-        // 처음 보는 신발은 신고 있는 켤레다 — 고르기 전에는 "지금 신고 있는 신발"(예전: 원형 신기 버튼이 꺼져 있음)
+        // 처음 보는 신발은 신고 있는 켤레다 — 이름 아래 줄에 "착용 중". 상세 보기 글 링크는 없다
         if (s == Scene.SHOES) {
-            compose.onNodeWithTag("shoe-kicker", useUnmergedTree = true).assertTextEquals(korean(R.string.sdv_kicker_wearing))
+            compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true)
+                .assertTextContains(korean(R.string.my_shoes_wearing), substring = true)
+            compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
+            compose.onNodeWithTag("shoes-section-vault").assertExists()
         }
         if (s == Scene.RUN_NO_GPS) compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
         if (s == Scene.RUN_FINISH) {
@@ -441,9 +442,9 @@ class DesignReferenceTest {
     /** Guard the visible regressions from the independent visual review. */
     private fun assertReviewedLayout(scene: Scene, enlarged: Boolean) {
         if (scene == Scene.HOME) {
-            // S2 — four destinations, draw lives inside the shoes tab.
+            // 다섯 목적지 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28)
             compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
-            val nodes = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile).map {
+            val nodes = listOf(Screen.Run, Screen.Customize, Screen.Draw, Screen.Community, Screen.Profile).map {
                 compose.onNodeWithTag("nav-label-${it.route}", useUnmergedTree = true).fetchSemanticsNode()
             }
             compose.runOnIdle {

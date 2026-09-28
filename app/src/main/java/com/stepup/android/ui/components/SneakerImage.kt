@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,9 +29,10 @@ import androidx.compose.ui.unit.dp
 import com.stepup.android.R
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
+import com.stepup.android.domain.ShoeTier
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.tier
 import com.stepup.android.domain.SneakerDesigns
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -216,7 +220,8 @@ fun SneakerVisual(
 //
 // 시안의 세 레이어(뒤 효과 · 앞 효과 · 프레임)는 모두 440 × 418 한 좌표계에 그려져 있다. 화면에서는
 // 무대 면 → 뒤 효과 → 실제 신발 → 앞 효과 → 프레임 순서로 겹치고, 등급 글자 · 숫자 · 버튼은 이 밖의
-// Compose 가 그린다. 앱에는 현재 등급 넷만 있다 — 레드라인 · 피니시(05 · 06)는 확장 콘셉트라 넣지 않았다.
+// Compose 가 그린다. 그림은 보이는 갈래 여섯(ShoeTier — 레드라인 · 피니시는 새 도감 레전더리의 시리즈)을 따른다.
+// 서버 등급 · 확률은 그대로 넷이다(2026-09-28 신발 화면 확정안).
 
 private const val GradeArtWidth = 440f
 private const val GradeArtHeight = 418f
@@ -230,32 +235,51 @@ private val GradeStageFill = Color(0xFF081320)
 /** 목록 칸의 면 — 모바일 시안의 보유 신발 칸 색 */
 private val GradeThumbFill = Color(0xFF101E32)
 
+/** 2배(880 × 836) 그림과 좁은 자리용 1배(440 × 418) 그림 — 격자 칸마다 2배 그림을 풀지 않게 */
 private class GradeArt(
     @DrawableRes val back: Int,
+    @DrawableRes val backSmall: Int,
     @DrawableRes val front: Int?,
+    @DrawableRes val frontSmall: Int?,
     @DrawableRes val frame: Int,
     @DrawableRes val frameSmall: Int,
 )
 
-/** 일반 01 CARBON · 레어 02 VELOCITY · 에픽 03 PRISM · 레전더리 04 PODIUM. 일반은 앞 효과가 없다 */
-private fun gradeArt(rarity: Rarity): GradeArt = when (rarity) {
-    Rarity.COMMON -> GradeArt(
-        R.drawable.shoe_grade_common_back, null,
+/** 일반 01 CARBON · 레어 02 VELOCITY · 에픽 03 PRISM · 레전더리 04 PODIUM · 레드라인 05 · 피니시 06. 일반은 앞 효과가 없다 */
+private fun gradeArt(tier: ShoeTier): GradeArt = when (tier) {
+    ShoeTier.COMMON -> GradeArt(
+        R.drawable.shoe_grade_common_back, R.drawable.shoe_grade_common_back_small, null, null,
         R.drawable.shoe_grade_common_frame, R.drawable.shoe_grade_common_frame_small,
     )
-    Rarity.RARE -> GradeArt(
-        R.drawable.shoe_grade_rare_back, R.drawable.shoe_grade_rare_front,
+    ShoeTier.RARE -> GradeArt(
+        R.drawable.shoe_grade_rare_back, R.drawable.shoe_grade_rare_back_small,
+        R.drawable.shoe_grade_rare_front, R.drawable.shoe_grade_rare_front_small,
         R.drawable.shoe_grade_rare_frame, R.drawable.shoe_grade_rare_frame_small,
     )
-    Rarity.EPIC -> GradeArt(
-        R.drawable.shoe_grade_epic_back, R.drawable.shoe_grade_epic_front,
+    ShoeTier.EPIC -> GradeArt(
+        R.drawable.shoe_grade_epic_back, R.drawable.shoe_grade_epic_back_small,
+        R.drawable.shoe_grade_epic_front, R.drawable.shoe_grade_epic_front_small,
         R.drawable.shoe_grade_epic_frame, R.drawable.shoe_grade_epic_frame_small,
     )
-    Rarity.LEGENDARY -> GradeArt(
-        R.drawable.shoe_grade_legendary_back, R.drawable.shoe_grade_legendary_front,
+    ShoeTier.LEGENDARY -> GradeArt(
+        R.drawable.shoe_grade_legendary_back, R.drawable.shoe_grade_legendary_back_small,
+        R.drawable.shoe_grade_legendary_front, R.drawable.shoe_grade_legendary_front_small,
         R.drawable.shoe_grade_legendary_frame, R.drawable.shoe_grade_legendary_frame_small,
     )
+    ShoeTier.REDLINE -> GradeArt(
+        R.drawable.shoe_grade_redline_back, R.drawable.shoe_grade_redline_back_small,
+        R.drawable.shoe_grade_redline_front, R.drawable.shoe_grade_redline_front_small,
+        R.drawable.shoe_grade_redline_frame, R.drawable.shoe_grade_redline_frame_small,
+    )
+    ShoeTier.FINISH -> GradeArt(
+        R.drawable.shoe_grade_finish_back, R.drawable.shoe_grade_finish_back_small,
+        R.drawable.shoe_grade_finish_front, R.drawable.shoe_grade_finish_front_small,
+        R.drawable.shoe_grade_finish_frame, R.drawable.shoe_grade_finish_frame_small,
+    )
 }
+
+/** 1배 그림으로 충분한 폭(px) — 1배(440px)보다 1.3배 넓어지면 2배 그림을 쓴다(흐리지 않게) */
+private const val GradeSmallMaxPx = GradeArtWidth * 1.3f
 
 /** 프레임 바깥 팔각형 — 무대 면을 이 모양으로 깔면 프레임 띠가 그 가장자리를 덮는다 */
 private val GradeOctagon = GenericShape { size, _ ->
@@ -306,13 +330,16 @@ private fun GradeLayer(@DrawableRes res: Int) {
  */
 @Composable
 fun SneakerGradeStage(sneaker: Sneaker, modifier: Modifier = Modifier, animate: Boolean = false) {
-    val art = gradeArt(sneaker.rarity)
-    Box(modifier.aspectRatio(GradeArtRatio).testTag("grade-stage-" + sneaker.rarity.name.lowercase(Locale.ROOT))) {
+    val tier = sneaker.tier
+    val art = gradeArt(tier)
+    BoxWithConstraints(modifier.aspectRatio(GradeArtRatio).testTag("grade-stage-" + tier.key)) {
+        // 보관함 격자처럼 좁은 자리는 같은 그림의 1배 판 — 효과는 그대로, 풀어 두는 메모리는 1/4
+        val small = constraints.maxWidth <= GradeSmallMaxPx
         Box(Modifier.fillMaxSize().background(GradeStageFill, GradeOctagon))
-        GradeLayer(art.back)
-        SneakerVisual(sneaker, Modifier.fillMaxSize().gradeSlot(61f, 58f, 320f), animate = animate)
-        art.front?.let { GradeLayer(it) }
-        GradeLayer(art.frame)
+        GradeLayer(if (small) art.backSmall else art.back)
+        GradeShoe(sneaker, Modifier.fillMaxSize().gradeSlot(61f, 58f, 320f), animate = animate)
+        (if (small) art.frontSmall else art.front)?.let { GradeLayer(it) }
+        GradeLayer(if (small) art.frameSmall else art.frame)
     }
 }
 
@@ -322,11 +349,28 @@ fun SneakerGradeStage(sneaker: Sneaker, modifier: Modifier = Modifier, animate: 
  */
 @Composable
 fun SneakerGradeThumb(sneaker: Sneaker, modifier: Modifier = Modifier) {
-    val art = gradeArt(sneaker.rarity)
-    BoxWithConstraints(modifier.aspectRatio(GradeArtRatio).testTag("grade-thumb-" + sneaker.rarity.name.lowercase(Locale.ROOT))) {
-        val wide = constraints.maxWidth > GradeArtWidth * 1.3f
+    val tier = sneaker.tier
+    val art = gradeArt(tier)
+    BoxWithConstraints(modifier.aspectRatio(GradeArtRatio).testTag("grade-thumb-" + tier.key)) {
+        val wide = constraints.maxWidth > GradeSmallMaxPx
         Box(Modifier.fillMaxSize().background(GradeThumbFill, GradeOctagon))
-        SneakerVisual(sneaker, Modifier.fillMaxSize().gradeSlot(69f, 69f, 296f))
+        GradeShoe(sneaker, Modifier.fillMaxSize().gradeSlot(69f, 69f, 296f))
         GradeLayer(if (wide) art.frame else art.frameSmall)
+    }
+}
+
+/**
+ * 프레임 속 신발 층. 이 앱에 그림이 없는 새 모델 번호면 다른 신발 그림(예전 52종 · 그린 신발)으로 채우지 않고
+ * 빈 그림 표시만 둔다 — 보유 신발 상세 v1 시안 16과 같은 규칙.
+ */
+@Composable
+private fun GradeShoe(sneaker: Sneaker, modifier: Modifier, animate: Boolean = false) {
+    val model = sneaker.modelId
+    if (model != null && shoeModelImageRes(model) == null) {
+        Box(modifier.testTag("grade-art-missing"), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Image, contentDescription = null, tint = Color(0xFF7E8FA8), modifier = Modifier.fillMaxSize(0.26f))
+        }
+    } else {
+        SneakerVisual(sneaker, modifier, animate = animate)
     }
 }

@@ -79,9 +79,8 @@ class MysteryDesignTest {
         }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
         val out = File(compose.activity.getExternalFilesDir(null), "screen-gallery").apply { mkdirs() }
-        compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-draw").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("shoes-section-draw").performClick()
+        // 하단 가운데 뽑기 탭(신발 화면 확정안 2026-09-28)
+        compose.onNodeWithTag("nav-label-${Screen.Draw.route}", useUnmergedTree = true).performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty()
         }
@@ -98,16 +97,14 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-02-large-type.png"))
 
-        // 신발 탭 안의 하위 화면 — 뒤로 가면 내 신발, 거기서 러닝 탭으로
+        // 하단 탭 — 뽑기 탭에서 러닝 탭으로(뒤로 쌓이지 않는다)
         compose.runOnIdle { largeType = false }
-        // 서버를 읽지 못한 기기면 불러오기 실패 시트가 떠 있다 — 뒤로는 먼저 시트만 닫는다
+        // 서버를 읽지 못한 기기면 불러오기 실패 시트가 떠 있다 — 먼저 시트만 닫는다
         if (compose.onAllNodesWithTag("draw-sheet-load-failed", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
             compose.waitForIdle()
         }
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-draw").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
+        compose.onNodeWithTag("nav-label-${Screen.Run.route}", useUnmergedTree = true).performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isEmpty()
         }

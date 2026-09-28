@@ -368,7 +368,8 @@ class ScreenGalleryTest {
             capture("extra-customize-female")
             reset(37)
             capture("navigation-home")
-            for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_community to "community", R.string.tab_me to "profile")) {
+            for ((id, name) in listOf(R.string.tab_customize to "customize", R.string.tab_draw to "draw",
+                    R.string.tab_community to "community", R.string.tab_me to "profile")) {
                 try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
             }
             reset(40)

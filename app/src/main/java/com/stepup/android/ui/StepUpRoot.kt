@@ -133,8 +133,14 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
      */
     data object Run : Screen("home", R.string.tab_run, Icons.AutoMirrored.Filled.DirectionsRun)
 
-    /** 꾸미기 — 캐릭터에 의상과 신발을 입히는 곳. 러너 마켓은 이 안에 있다. */
+    /** 신발 — 내 신발 · 신발 보관함(신발 화면 확정안 2026-09-28). 러너 마켓 · 도감은 보관함 아래 작은 줄로 들어간다. */
     data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shoe)
+
+    /**
+     * 뽑기 — 하단 가운데 탭. 기존 신발 뽑기(v2 두 칸 — 무료 · 상급)를 그대로 연다.
+     * 길은 예전 하위 화면의 "mystery-box" 그대로라 알림 · 지갑 · 공지에서 오는 이동이 같은 자리로 온다.
+     */
+    data object Draw : Screen(Routes.MYSTERY_BOX, R.string.tab_draw, StepUpIcons.DrawBox)
 
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
@@ -143,8 +149,8 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 }
 
 /**
- * 하단 목적지 탭은 넷이다 — 러닝 / 신발 / 같이 뛰기 / 내 정보(S2).
- * 뽑기는 신발 탭 안쪽 글자 탭(내 신발 · 뽑기)으로 들어간다.
+ * 하단 목적지 탭은 다섯이다 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28).
+ * 뽑기는 가운데 독립 탭이고, 신발 탭 위의 글자 탭은 내 신발 · 신발 보관함이다.
  *
  * 예전의 뉴스 · 마켓 · 이벤트 탭은 없어진 것이 아니라 자리를 옮겼다.
  *
@@ -427,7 +433,9 @@ internal fun MainScaffold(
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val chrome = AppChromePolicy.destination(currentRoute)
-    val showBar = chrome?.showBottomBar == true
+    // 뽑기 요청 · 상자 열기 · 결과 · 확인은 화면을 다 쓴다 — 그동안만 공통 머리 · 하단 탭을 걷는다
+    val immersive = AppChromePolicy.immersiveAt(currentRoute)
+    val showBar = chrome?.showBottomBar == true && !immersive
     val balanceFlow = remember { ServiceLocator.rewardRepository.balance.map<Double, Double?> { it } }
     val balance by balanceFlow.collectAsState(initial = null)
     var wardrobeSetting by rememberSaveable {
@@ -459,7 +467,7 @@ internal fun MainScaffold(
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
             if (currentRoute == Screen.Run.route && previousRoute in listOf(
-                    Screen.Customize.route, Screen.Community.route, Screen.Profile.route,
+                    Screen.Customize.route, Screen.Draw.route, Screen.Community.route, Screen.Profile.route,
                 )) {
                 homePhoto = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
             }
@@ -541,7 +549,7 @@ internal fun MainScaffold(
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            if (chrome?.header == AppChromePolicy.Header.Main) {
+            if (chrome?.header == AppChromePolicy.Header.Main && !immersive) {
                 MainHeader(
                     balance = balance,
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -593,13 +601,19 @@ internal fun MainScaffold(
             }
             composable(Routes.MYSTERY_BOX) {
                 // 신발 뽑기 v2(두 칸, 2026-09-28 전달본) — 모두 무료. 수 · 연결 상태 · 결과는 서버(draw_status · draw_free ·
-                // premium_draw)가 정한다. 신발 탭 안의 하위 화면이라 자기 머리(‹ 신발 뽑기)를 그리고 아래 탭은 없다.
+                // premium_draw)가 정한다. 하단 가운데 뽑기 탭의 첫 화면이라 공통 머리(로고 · 잔액) · 하단 탭 아래에 두 칸을 둔다.
                 val drawVm: com.stepup.android.ui.screens.gacha.DrawViewModel =
                     androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.gacha.DrawViewModel.Factory)
                 val drawState by drawVm.state.collectAsStateWithLifecycle()
                 val drawFlow by drawVm.flow.collectAsStateWithLifecycle()
                 val drawPending by drawVm.pending.collectAsStateWithLifecycle()
                 val drawNotice by drawVm.notice.collectAsStateWithLifecycle()
+                // 요청 · 상자 열기 · 결과 · 확인은 v2 시안처럼 화면을 다 쓴다 — 두 칸으로 돌아오거나 탭을 떠나면 공통 머리 · 하단 탭이 돌아온다
+                val drawImmersive = drawFlow != com.stepup.android.ui.screens.gacha.DrawFlow.Home
+                DisposableEffect(drawImmersive) {
+                    AppChromePolicy.immersive = drawImmersive
+                    onDispose { AppChromePolicy.immersive = false }
+                }
                 // 지갑 페이지에서 연결하고 오거나 러닝을 마치고 오면 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
                 androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
                     drawVm.refresh()
@@ -607,10 +621,7 @@ internal fun MainScaffold(
                 }
                 // 21 — 신발 탭(내 신발)으로. 받은 신발이 있으면 그 신발을 고른 채로(착용은 바꾸지 않는다)
                 val openShoes: (Long?) -> Unit = { shoeId ->
-                    if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
-                        navController.popBackStack()
-                        navController.switchTab(Screen.Customize)
-                    }
+                    navController.switchTab(Screen.Customize)
                     if (shoeId != null) {
                         runCatching { navController.getBackStackEntry(Screen.Customize.route) }.getOrNull()
                             ?.savedStateHandle?.set(RECEIVED_SHOE_KEY, shoeId)
@@ -624,7 +635,8 @@ internal fun MainScaffold(
                     notice = drawNotice,
                     actions = remember(drawVm) {
                         com.stepup.android.ui.screens.gacha.DrawActions(
-                            onBack = { navController.popBackStack() },
+                            // 불러오기 실패 시트의 "내 신발로 돌아가기" — 신발 탭으로(뽑기는 이제 하단 탭이라 뒤로 쌓이지 않는다)
+                            onBack = { navController.switchTab(Screen.Customize) },
                             onDraw = drawVm::draw,
                             // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로.
                             // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
@@ -671,7 +683,7 @@ internal fun MainScaffold(
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
-                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
+                    onOpenDraw = { navController.switchTab(Screen.Draw) },
                 )
             }
             composable(Routes.RUNNER_MARKET) {
@@ -776,7 +788,7 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
-                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
+                    onOpenDraw = { navController.switchTab(Screen.Draw) },
                     onOpenMarketModel = { faction, rarity, variant ->
                         navController.navigate(Routes.marketModel(faction, rarity, variant))
                     },
@@ -968,8 +980,8 @@ internal fun MainScaffold(
                 WalletScreen(
                     onBack = { navController.popBackStack() },
                     onOpenChain = { navController.navigate(Routes.CHAIN_ACTIVITY) { launchSingleTop = true } },
-                    // 연결 상태 → 기존 두 칸 뽑기(자동으로 뽑지 않는다)
-                    onOpenDraw = { navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true } },
+                    // 연결 상태 → 기존 두 칸 뽑기 탭(자동으로 뽑지 않는다)
+                    onOpenDraw = { navController.switchTab(Screen.Draw) },
                     // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
                     onOpenWalletPage = {
                         walletScope.openWalletPage(context) {
@@ -1022,8 +1034,7 @@ internal fun MainScaffold(
                     onAction = { action ->
                         when (action) {
                             // 신발 뽑기(무료 · 상급 두 칸)로 옮겨 갈 뿐 기회를 쓰지 않는다
-                            com.stepup.android.data.repo.NoticeAction.DRAW ->
-                                navController.navigate(Routes.MYSTERY_BOX) { launchSingleTop = true }
+                            com.stepup.android.data.repo.NoticeAction.DRAW -> navController.switchTab(Screen.Draw)
                             com.stepup.android.data.repo.NoticeAction.RUN_HISTORY -> navController.navigate(Routes.RECORDS)
                             com.stepup.android.data.repo.NoticeAction.NOTIFICATION_SETTINGS ->
                                 navController.navigate(Routes.SETTINGS_NOTIFICATIONS)

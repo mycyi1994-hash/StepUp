@@ -1,6 +1,7 @@
 package com.stepup.android.ui.components
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
@@ -11,6 +12,7 @@ import androidx.compose.ui.unit.dp
  *
  * 꾸미기 탭은 티셔츠 모양이어야 "옷을 입히는 곳"으로 읽힌다. 옷걸이는
  * 옷장이나 세탁으로 읽히고, 붓은 사진 편집으로 읽힌다.
+ * 뽑기 탭은 뚜껑 덮인 상자(신발 화면 확정안 2026-09-28의 하단 탭) — 선물 리본은 구매 · 선물로 읽혀 넣지 않는다.
  */
 object StepUpIcons {
     val Shoe: ImageVector by lazy {
@@ -54,6 +56,36 @@ object StepUpIcons {
                 curveTo(4.8f, 10.6f, 4.2f, 10.4f, 4.0f, 9.9f)
                 lineTo(2.7f, 7.0f)
                 curveTo(2.4f, 6.3f, 2.7f, 5.5f, 3.4f, 5.2f)
+                close()
+            }
+        }.build()
+    }
+
+    /** 뽑기 — 뚜껑 · 몸통 · 가운데 걸쇠 자리(비움) */
+    val DrawBox: ImageVector by lazy {
+        ImageVector.Builder(name = "StepUpDrawBox", defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(4.2f, 4.2f); lineTo(19.8f, 4.2f)
+                curveTo(20.9f, 4.2f, 21.6f, 4.9f, 21.6f, 6.0f)
+                lineTo(21.6f, 7.6f)
+                curveTo(21.6f, 8.7f, 20.9f, 9.4f, 19.8f, 9.4f)
+                lineTo(4.2f, 9.4f)
+                curveTo(3.1f, 9.4f, 2.4f, 8.7f, 2.4f, 7.6f)
+                lineTo(2.4f, 6.0f)
+                curveTo(2.4f, 4.9f, 3.1f, 4.2f, 4.2f, 4.2f)
+                close()
+            }
+            path(fill = SolidColor(Color.Black), pathFillType = PathFillType.EvenOdd) {
+                moveTo(3.6f, 10.8f); lineTo(20.4f, 10.8f); lineTo(20.4f, 18.6f)
+                curveTo(20.4f, 19.9f, 19.5f, 20.8f, 18.2f, 20.8f)
+                lineTo(5.8f, 20.8f)
+                curveTo(4.5f, 20.8f, 3.6f, 19.9f, 3.6f, 18.6f)
+                close()
+                moveTo(9.4f, 12.4f); lineTo(14.6f, 12.4f); lineTo(14.6f, 14.2f)
+                curveTo(14.6f, 14.8f, 14.2f, 15.2f, 13.6f, 15.2f)
+                lineTo(10.4f, 15.2f)
+                curveTo(9.8f, 15.2f, 9.4f, 14.8f, 9.4f, 14.2f)
                 close()
             }
         }.build()

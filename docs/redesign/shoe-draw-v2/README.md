@@ -4,8 +4,9 @@
 `design/shoe-draw-v2/`(Claude-전달용 · 먼저-보기 · interaction-map · design-tokens · screen-index · motion-spec), 비교 보드 7장은
 이 폴더의 `reference-*.webp`. 두 탭 시안(v1, `docs/redesign/shoe-draw/`)을 대체한다 — 정책 · 서버 기본값(0042)은 그대로다.
 
-경로는 그대로 `Routes.MYSTERY_BOX`(신발 탭 안, 부모 탭 Customize). 시안대로 자기 머리 "‹ 신발 뽑기"를 그리고 아래 탭은 없다(`Header.Form`) —
-v1 의 앱 셸 머리(로고 · SUP) + "내 신발 · 뽑기" 글자 탭 대신이다. 뒤로 가면 들어온 곳(보통 내 신발)이다.
+경로는 그대로 `Routes.MYSTERY_BOX`. 2026-09-28 신발 화면 확정안(docs/redesign/shoes-ui-2026-09-28)부터 하단 가운데 **뽑기 탭**(`Screen.Draw`, `Header.Main`)이다 —
+두 칸은 공통 머리(로고 · 잔액) · 하단 탭 아래에 제목 "신발 뽑기"(뒤로 버튼 없음)와 함께 서고, 요청 · 상자 열기 · 결과 · 확인 동안은 `AppChromePolicy.immersive` 로 셸을 걷어 화면을 다 쓴다.
+(그 전에는 신발 탭 안의 하위 화면으로 자기 머리 "‹ 신발 뽑기"를 그리고 아래 탭이 없었다.)
 
 ## 화면
 

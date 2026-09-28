@@ -273,31 +273,30 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        // Four tab roles; draw is a section inside the shoes tab.
-        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
+        // Five tab roles — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28). 뽑기는 가운데 독립 탭.
+        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_draw, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
             hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
-        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 4 }
+        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 5 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        // S2 — no draw slot in the bar; the draw opens from the shoes tab's section row.
-        // 신발 뽑기 v2 — 뽑기는 신발 탭의 하위 화면이다: 자기 머리("‹ 신발 뽑기")가 있고 아래 탭은 없다. 뒤로 가면 신발 탭.
-        compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
-        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).performClick()
-        compose.onNodeWithTag("shoes-section-draw").performClick()
+        // 뽑기 탭 — 공통 머리 · 하단 탭 아래의 두 칸(뒤로 버튼 없음). 신발 탭 위에는 뽑기가 없다(내 신발 · 신발 보관함)
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_draw)) and tabRole).performClick().assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("draw-home").assertIsDisplayed()
-        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
+        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertIsDisplayed()
+        compose.onNodeWithTag("main-header").assertIsDisplayed()
         capture("navigation-draw")
-        compose.onAllNodesWithContentDescription(compose.activity.getString(R.string.cd_back)).onFirst().performClick()
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).performClick().assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-mine").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
-        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).assertIsSelected()
+        compose.onNodeWithTag("shoes-section-vault").assertIsNotSelected()
+        compose.onNodeWithTag("shoes-section-draw").assertDoesNotExist()
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("profile-settings").performClick()
@@ -309,18 +308,17 @@ class ExperienceUiTest {
     }
 
     /**
-     * 보유 신발 상세 v1 — 신발 탭에서 고르기(칸 · 같은 모델 켤레 시트)와 상세를 여는 것은 미리 보기이고,
-     * 착용은 상세의 "이 신발 신기"를 눌러 저장이 끝난 뒤에만 바뀐다. 같은 모델의 다른 켤레는 소유 id 로 고른다.
+     * 내 신발(신발 화면 확정안 2026-09-28) — 보유 목록의 칸 고르기와 관리(⋯ → 신발 상세)를 여는 것은 미리 보기이고,
+     * 착용은 상세의 "이 신발 신기"를 눌러 저장이 끝난 뒤에만 바뀐다. 같은 모델의 다른 켤레도 자기 칸(소유 id)으로 고른다.
      */
     @Test fun shoePreviewOnlyEquipsAfterConfirmation() {
         val dao = ServiceLocator.database.sneakerDao()
         val original = runBlocking { requireNotNull(dao.equippedNow()) }
-        // 신고 있는 켤레와 같은 모델의 다른 켤레 — 한 칸에 묶이고 "2켤레 보기" 시트에서 번호로 고른다
+        // 신고 있는 켤레와 같은 모델의 다른 켤레 — 목록에서 따로 한 칸(소유 id)
         val candidateId = runBlocking {
             dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
                 equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0))
         }
-        val slot = runBlocking { ServiceLocator.sneakerRepository.inventory.first().first { it.id == original.id }.slotKey }
         var detailId by mutableStateOf<Long?>(null)
         try {
             compose.setContent { StepUpTheme { ExperienceProvider {
@@ -329,13 +327,12 @@ class ExperienceUiTest {
                 else SneakerDetailScreen(opened, onBack = { detailId = null })
             } } }
             compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-owned-row").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("shoe-list").performScrollToNode(hasTestTag("shoe-owned-row"))
-            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-copies-$slot"))
-            compose.onNodeWithTag("shoe-copies-$slot").performClick()
-            compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-copy-$candidateId").fetchSemanticsNodes().isNotEmpty() }
-            assertEquals("Opening the copies sheet must not change the stored equipment", original.id,
+            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
+            compose.onNodeWithTag("shoe-choice-$candidateId").performClick().assertIsSelected()
+            assertEquals("Picking a pair must not change the stored equipment", original.id,
                 runBlocking { dao.equippedNow()?.id })
-            compose.onNodeWithTag("shoe-copy-$candidateId").performClick()
+            compose.onNodeWithTag("shoe-choice-${original.id}").assertIsNotSelected()
+            compose.onNodeWithTag("shoe-manage").performClick()
             compose.runOnIdle { assertEquals(candidateId, detailId) }
             // 상세 — 아직 신지 않은 켤레라 주 버튼이 살아 있다(읽는 동안은 "확인 중…"으로 막혀 있다). 여는 것만으로 착용은 그대로
             compose.waitUntil(5_000) {
@@ -348,13 +345,14 @@ class ExperienceUiTest {
             compose.waitUntil(5_000) {
                 runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
             }
-            // 뒤로 — 신발 탭의 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로)
+            // 뒤로 — 착용 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로 — "착용 중")
             compose.runOnIdle { detailId = null }
             compose.waitUntil(5_000) {
-                compose.onAllNodesWithTag("shoe-kicker", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodes(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-$candidateId")),
+                    useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithTag("shoe-kicker", useUnmergedTree = true)
-                .assertTextEquals(compose.activity.getString(R.string.sdv_kicker_wearing))
+            compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true)
+                .assertTextContains(compose.activity.getString(R.string.my_shoes_wearing), substring = true)
         } finally {
             // Remove only this test's new copy and restore the previous pair.
             runBlocking {
