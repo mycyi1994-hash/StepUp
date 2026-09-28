@@ -28,6 +28,7 @@ p{font-size:15px;line-height:1.7;color:#dfe8ff;margin:0 0 28px;word-break:keep-a
 .button{display:flex;justify-content:center;align-items:center;min-height:54px;border-radius:30px;font-size:16px;font-weight:700;text-decoration:none;margin-bottom:10px}
 .primary{background:#fff;color:#173cac;box-shadow:0 10px 26px #051a5c30}
 .secondary{border:1px solid #ffffff66;color:#fff}
+.button:disabled{width:100%;font-family:inherit;background:transparent;color:#dfe8ff;cursor:default}
 .note{font-size:12px;color:#c6d8ff;margin:18px 0 0}
 </style>
 </head>
@@ -37,8 +38,8 @@ p{font-size:15px;line-height:1.7;color:#dfe8ff;margin:0 0 28px;word-break:keep-a
   <h1>크루에서 당신을<br>기다리고 있어요 👟</h1>
   <p>StepUp 앱에서 크루 화면이 열려요.<br>들어와서 같이 달려요.</p>
   <a class="button primary" id="open-app" href="/">StepUp 앱에서 열기</a>
-  <a class="button secondary" href="https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk/StepUp-test.apk">앱이 없으면 · Android 앱 받기</a>
-  <p class="note">Android 8.0 이상 · 테스트 버전이에요. iPhone은 아직 지원하지 않아요.</p>
+  <button class="button secondary" type="button" disabled>앱 출시 준비 중</button>
+  <p class="note">Android와 iPhone 버전을 준비하고 있어요.</p>
 </main>
 <script>
 (() => {
