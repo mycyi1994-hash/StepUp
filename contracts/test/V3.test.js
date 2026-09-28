@@ -350,6 +350,39 @@ describe("StepUpSneakersV3 — roles, pause, interfaces", () => {
   });
 });
 
+describe("StepUpSneakersV3 — new shoe catalog (0045, 70 models)", () => {
+  it("the curator adds the whole catalog in one transaction, then a drawn new model mints and releases by its number", async () => {
+    const ctx = await deploy();
+    const { SHOE_MODELS } = await import("../../attester/src/shoe-catalog.js");
+    const ids = Object.keys(SHOE_MODELS).map(Number);
+    const rarities = ids.map((id) => ["COMMON", "RARE", "EPIC", "LEGENDARY"].indexOf(SHOE_MODELS[id].rarity));
+    await ctx.sneakers.connect(ctx.curator).addModels(ids, rarities);
+    expect(await ctx.sneakers.modelCount()).to.equal(2n + BigInt(ids.length));
+    expect(await ctx.sneakers.modelExists(1330)).to.equal(true);
+
+    // a free draw that rolled LEGENDARY · model 1317 (Redline) — the vault mint carries the catalog number
+    const mint = await vaultMint(ctx, { op_ref: op(45), model_id: 1317, rarity: "LEGENDARY", efficiency_bps: 1100, comfort_bps: 1000 });
+    await expect(mint.tx()).to.emit(ctx.sneakers, "VaultMinted");
+    expect((await ctx.sneakers.statsOf(FIRST)).model).to.equal(1317n);
+
+    // the model's rarity is fixed on chain — a payload with another rarity is refused before signing
+    await expect(mintPayload({ model_id: 1317, rarity: "EPIC" }).then((p) => typed.vaultMintMessage(p))).to.be.rejectedWith(/등급/);
+
+    // a gift (bonus) draw of a new model is minted straight to the wallet by release (token 0)
+    const gift = await releaseArgs(ctx, {
+      kind: "BONUS_MINT",
+      op_ref: op(46),
+      token_id: null,
+      model_id: 1210,
+      rarity: "EPIC",
+      transfer_locked: true,
+    });
+    await expect(gift.tx()).to.emit(ctx.sneakers, "Released");
+    expect(await ctx.sneakers.ownerOf(FIRST + 1n)).to.equal(ctx.runner.address);
+    expect((await ctx.sneakers.statsOf(FIRST + 1n)).model).to.equal(1210n);
+  });
+});
+
 describe("StepUpSneakersV3 — deterministic deployment", () => {
   // Nick's CREATE2 deployer — a preinstall on OP Stack chains (GIWA included)
   const PROXY = "0x4e59b44847b379578588920cA78FbF26c0B4956C";

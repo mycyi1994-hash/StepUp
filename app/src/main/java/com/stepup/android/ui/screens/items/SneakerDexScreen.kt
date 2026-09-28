@@ -42,7 +42,7 @@ import com.stepup.android.R
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.domain.TOTAL_COLLECTION
+import com.stepup.android.domain.ShoeCatalog
 import com.stepup.android.ui.components.BarMeter
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
@@ -59,7 +59,8 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 
 /**
- * NFT 도감 — 52칸 전부를 보여준다.
+ * NFT 도감 — 지금 뽑기에서 나오는 새 도감(0045) 70칸 전부를 보여준다.
+ * (예전 52종 · 첫 신발은 도감에서 빠졌고, 가진 것은 보관함에 그대로 있다.)
  *
  * 보유한 신발만 보여주는 보관함과 반대다. **아직 없는 것까지 보여주는 것이
  * 도감의 일**이다. 무엇이 비어 있는지 알아야 다음에 무엇을 노릴지 정할 수 있고,
@@ -76,7 +77,6 @@ fun SneakerDexScreen(
 ) {
     val inventory by viewModel.inventory.collectAsStateWithLifecycle()
 
-    var factionFilter by rememberSaveable { mutableStateOf<String?>(null) }
     var rarityFilter by rememberSaveable { mutableStateOf<String?>(null) }
     // "가진 것만" / "없는 것만" — 도감에서 가장 자주 하는 질문이다.
     var ownedFilter by rememberSaveable { mutableStateOf<Boolean?>(null) }
@@ -87,15 +87,15 @@ fun SneakerDexScreen(
         inventory.groupBy { it.slotKey }.mapValues { (_, list) -> list.maxBy { it.level } }
     }
 
-    val slots = remember(owned, factionFilter, rarityFilter, ownedFilter) {
+    val slots = remember(owned, rarityFilter, ownedFilter) {
         dexSlots().filter { slot ->
-            (factionFilter == null || slot.faction.id == factionFilter) &&
-                (rarityFilter == null || slot.rarity.id == rarityFilter) &&
+            (rarityFilter == null || slot.rarity.id == rarityFilter) &&
                 (ownedFilter == null || owned.containsKey(slot.key) == ownedFilter)
         }
     }
 
-    val ownedCount = owned.keys.size
+    val ownedCount = dexSlots().count { owned.containsKey(it.key) }
+    val total = dexSlots().size
     val columns = if (LocalDensity.current.fontScale > 1.5f) 1 else 2
 
     DetailPage(title = stringResource(R.string.dex_title), onBack = onBack) {
@@ -104,10 +104,10 @@ fun SneakerDexScreen(
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 com.stepup.android.ui.components.S2Kicker(stringResource(R.string.dex_progress))
                 com.stepup.android.ui.components.S2Number(
-                    "$ownedCount / $TOTAL_COLLECTION", 56.sp, Modifier.padding(vertical = 8.dp),
+                    "$ownedCount / $total", 56.sp, Modifier.padding(vertical = 8.dp),
                 )
                 BarMeter(
-                    fraction = ownedCount.toFloat() / TOTAL_COLLECTION.coerceAtLeast(1),
+                    fraction = ownedCount.toFloat() / total.coerceAtLeast(1),
                     height = 4.dp,
                 )
             }
@@ -119,9 +119,8 @@ fun SneakerDexScreen(
                 item {
                     PillChip(
                         text = stringResource(R.string.dex_filter_all),
-                        selected = factionFilter == null && rarityFilter == null && ownedFilter == null,
+                        selected = rarityFilter == null && ownedFilter == null,
                         onClick = {
-                            factionFilter = null
                             rarityFilter = null
                             ownedFilter = null
                         },
@@ -146,21 +145,7 @@ fun SneakerDexScreen(
 
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(Faction.entries.toList()) { faction ->
-                    PillChip(
-                        text = faction.label(),
-                        selected = factionFilter == faction.id,
-                        onClick = {
-                            factionFilter = if (factionFilter == faction.id) null else faction.id
-                        },
-                    )
-                }
-            }
-        }
-
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(Rarity.entries.toList()) { rarity ->
+                items(DexRarities) { rarity ->
                     PillChip(
                         text = rarity.label(),
                         selected = rarityFilter == rarity.id,
@@ -207,21 +192,17 @@ fun SneakerDexScreen(
     }
 }
 
-/** 도감 한 칸이 가리키는 조합 */
-private data class DexSlot(
-    val faction: Faction,
-    val rarity: Rarity,
-    val variant: Int,
-) {
-    val key: String get() = "${faction.id}:${rarity.id}:$variant"
+/** 도감 한 칸 — 새 도감의 모델 하나 */
+private data class DexSlot(val model: ShoeCatalog.Model) {
+    val key: String get() = "M:${model.id}"
+    val rarity: Rarity get() = model.rarity
 }
 
-/** 52칸 전체 — 속성 4 × 등급별 변형(2+3+4+4) */
-private fun dexSlots(): List<DexSlot> = Faction.entries.flatMap { faction ->
-    Rarity.entries.flatMap { rarity ->
-        (0 until rarity.variantCount).map { variant -> DexSlot(faction, rarity, variant) }
-    }
-}
+/** 새 도감에 있는 등급 — 레어 · 에픽 · 레전더리(일반은 첫 신발뿐이라 도감에 없다) */
+private val DexRarities: List<Rarity> = ShoeCatalog.models.map { it.rarity }.distinct().sortedBy { it.ordinal }
+
+/** 70칸 전체 — 번호 차례(레어 → 에픽 → 레전더리) */
+private fun dexSlots(): List<DexSlot> = ShoeCatalog.models.map(::DexSlot)
 
 /**
  * 도감 한 칸.
@@ -240,9 +221,10 @@ private fun DexCell(
     val sample = remember(slot, sneaker) {
         sneaker ?: Sneaker(
             id = -1,
-            faction = slot.faction,
+            // 속성 · 변형은 쓰지 않는다 — 그림 · 이름은 모델 번호로 고른다
+            faction = Faction.WIND,
             rarity = slot.rarity,
-            variant = slot.variant,
+            variant = 0,
             level = 1,
             mintNumber = 0,
             luck = 1.0,
@@ -250,6 +232,7 @@ private fun DexCell(
             durability = 100,
             equipped = false,
             acquiredAt = 0,
+            modelId = slot.model.id,
         )
     }
 
@@ -259,7 +242,7 @@ private fun DexCell(
             .background(CarbonHigh)
             .border(
                 width = if (hasIt) 1.dp else 1.dp,
-                color = if (hasIt) slot.faction.tint().copy(alpha = 0.55f) else Edge,
+                color = if (hasIt) slot.rarity.tint().copy(alpha = 0.55f) else Edge,
                 shape = RoundedCornerShape(16.dp),
             )
             .then(if (hasIt) Modifier.quietClickable(onClick) else Modifier)
@@ -294,10 +277,13 @@ private fun DexCell(
         }
 
         Text(
-            text = variantLabel(slot.faction, slot.rarity, slot.variant),
+            text = sample.variantLabel(),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = if (hasIt) Snow else Silver,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            minLines = 2,
         )
         Text(
             text = if (hasIt) {
@@ -306,7 +292,7 @@ private fun DexCell(
                 slot.rarity.label()
             },
             fontSize = 14.sp,
-            color = if (hasIt) slot.faction.tint() else Silver,
+            color = if (hasIt) slot.rarity.tint() else Silver,
         )
     }
 }

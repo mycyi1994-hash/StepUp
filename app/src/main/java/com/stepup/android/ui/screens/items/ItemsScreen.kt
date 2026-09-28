@@ -158,7 +158,8 @@ fun ItemsScreen(
 
     val filteredGroups = groups.filter { group ->
         (rarityFilter == null || group.representative.rarity.id == rarityFilter) &&
-            (factionFilter == null || group.representative.faction.id == factionFilter) &&
+            // 속성은 예전 52종에만 있다 — 속성을 고르면 새 도감 신발은 빠진다
+            (factionFilter == null || (group.representative.catalogModel == null && group.representative.faction.id == factionFilter)) &&
             (equipFilter == EquipFilter.ALL ||
                 group.copies.any { it.equipped } == (equipFilter == EquipFilter.ON))
     }.let { list ->

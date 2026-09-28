@@ -194,6 +194,10 @@ data class SneakerEntity(
     /** 내구도 1점 수리 비용 */
     @ColumnInfo(defaultValue = "0") val repairCostPerPoint: Double = 0.0,
     @ColumnInfo(defaultValue = "0") val genesisNo: Int = 0,
+    /** 새 도감(0045) 번호. 0 이면 예전 52종(속성 × 변형)의 그림 · 이름 */
+    @ColumnInfo(defaultValue = "0") val modelId: Int = 0,
+    /** 체인 토큰 번호 — v2(1~) · v3 금고(1,000,001~). 0 이면 아직 체인에 없다 */
+    @ColumnInfo(defaultValue = "0") val tokenId: Long = 0,
 )
 
 /**

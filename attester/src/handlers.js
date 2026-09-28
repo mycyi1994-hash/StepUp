@@ -1,6 +1,7 @@
 import { verifyMessage, isAddress } from 'viem'
 import { DISTRIBUTOR_ABI, SNEAKERS_ABI, SNEAKERS_V3_ABI } from './chain.js'
 import { HttpError } from './supabase.js'
+import { releasesOnV3 } from './catalog.js'
 import {
   CLAIM_TYPES,
   RELEASE_TYPES,
@@ -9,7 +10,6 @@ import {
   claimMessage,
   releaseMessage,
   walletLinkMessage,
-  isV3Token,
 } from './typed.js'
 
 /**
@@ -94,8 +94,9 @@ export async function executeOp(request, env, deps, opId) {
     })
     tx = await submit(c, c.addresses.distributor, DISTRIBUTOR_ABI, 'claim', [message, signature])
   } else {
-    // 금고로 발행된 v3 신발(토큰 1000001~)을 꺼내는 작업만 v3 로. 처음 꺼내는 신발 · 보너스 발행은 v2 로 발행한다
-    const v3 = p.kind === 'SNEAKER_WITHDRAW' && isV3Token(p.token_id)
+    // v3 로: 금고로 발행된 v3 신발(토큰 1000001~)을 꺼낼 때, 새 도감 모델(0045 — v2 도감에 없다)을 처음 꺼내거나
+    // 지갑 선물로 발행할 때. 예전 52종을 처음 꺼내는 신발 · 보너스 발행은 그대로 v2 로 발행한다
+    const v3 = releasesOnV3(p)
     if (v3 && !c.addresses.sneakersV3) throw new HttpError(503, '아직 준비 중입니다')
     const address = v3 ? c.addresses.sneakersV3 : c.addresses.sneakers
     const message = releaseMessage(p)

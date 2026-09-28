@@ -6,6 +6,7 @@ import com.stepup.android.data.local.AppDatabase
 import androidx.room.withTransaction
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.domain.ShoeCatalog
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.SneakerMint
 import com.stepup.android.domain.TOTAL_COLLECTION
@@ -171,15 +172,15 @@ class SneakerRepository(
         minted.copy(id = newId)
     }
 
-    /** 도감 진행도 — 보유한 (속성 × 등급 × 변형) 조합 수 */
+    /** 도감 진행도 — 지금 뽑기에서 나오는 새 도감(0045, 70종) 중 가진 모델 수 */
     val collectionProgress: Flow<Pair<Int, Int>> = inventory.map { list ->
-        list.map { it.slotKey }.toSet().size to TOTAL_COLLECTION
+        list.mapNotNull { it.catalogModel?.id }.toSet().size to ShoeCatalog.models.size
     }
 
-    /** 속성별 수집 현황 — 도감 탭에서 "불 3/11" 처럼 쓴다 */
+    /** 속성별 수집 현황 — "불 3/13". 속성은 예전 52종에만 있다(새 도감 신발은 세지 않는다) */
     val factionProgress: Flow<Map<Faction, Int>> = inventory.map { list ->
         Faction.entries.associateWith { f ->
-            list.filter { it.faction == f }.map { it.slotKey }.toSet().size
+            list.filter { it.catalogModel == null && it.faction == f }.map { it.slotKey }.toSet().size
         }
     }
 }

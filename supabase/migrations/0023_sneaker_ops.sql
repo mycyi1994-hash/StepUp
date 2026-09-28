@@ -435,6 +435,8 @@ grant execute on function public.sneaker_repair(bigint, numeric) to authenticate
 grant execute on function public.sneaker_equip(bigint) to authenticated;
 
 -- 내 신발 — 화면에 필요한 실효 스탯까지
+-- 0045 가 돌려주는 열(model_id)을 늘렸다 — setup.sql 을 다시 붙여도 멈추지 않게 지우고 만든다(0045 가 다시 바꾼다)
+drop function if exists public.my_sneakers();
 create or replace function public.my_sneakers()
 returns table (
   id bigint, faction text, rarity text, variant int, level int, max_level int,

@@ -6,10 +6,27 @@
  * 어긋나면 그 검사가 깨진다.
  */
 
+import { SHOE_MODELS } from './shoe-catalog.js'
+
 // ── 신발 도감 — contracts/scripts/lib/catalog.js · 서버(0022)와 같은 표 ──
 export const FACTIONS = ['FIRE', 'WATER', 'LIGHTNING', 'WIND']
 export const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY']
 export const VARIANTS = [4, 4, 3, 2]
+
+/**
+ * 신발의 체인 모델 번호. 새 도감(0045, model_id 1101~)이면 그 번호 — 등급이 도감과 같아야 한다.
+ * 아니면 예전 52종의 속성 × 100 + 등급 × 10 + 변형.
+ */
+export function sneakerModel(p) {
+  if (p.model_id != null) {
+    const model = Number(p.model_id)
+    const shoe = SHOE_MODELS[model]
+    if (!shoe) throw new Error(`알 수 없는 모델: ${p.model_id}`)
+    if (shoe.rarity !== p.rarity) throw new Error(`모델 ${model} 의 등급이 다릅니다: ${p.rarity}`)
+    return model
+  }
+  return modelId(p.faction, p.rarity, p.variant)
+}
 
 export function modelId(faction, rarity, variant) {
   const f = FACTIONS.indexOf(faction)
@@ -147,7 +164,7 @@ export function releaseMessage(p) {
     opId: p.op_ref,
     to: p.wallet,
     tokenId: p.token_id == null ? 0n : BigInt(p.token_id),
-    model: modelId(p.faction, p.rarity, p.variant),
+    model: sneakerModel(p),
     rarity: RARITIES.indexOf(p.rarity),
     level: Number(p.level),
     efficiencyBps: Number(p.efficiency_bps),
@@ -168,7 +185,7 @@ export function vaultMintMessage(p) {
   return {
     opId: p.op_ref,
     account: p.account,
-    model: modelId(p.faction, p.rarity, p.variant),
+    model: sneakerModel(p),
     rarity: RARITIES.indexOf(p.rarity),
     level: Number(p.level),
     efficiencyBps: Number(p.efficiency_bps),

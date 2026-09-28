@@ -123,6 +123,10 @@ data class ServerSneakerRow(
     @SerialName("can_withdraw") val canWithdraw: Boolean = false,
     @SerialName("upgrade_cost") val upgradeCost: Double = 0.0,
     @SerialName("repair_cost_per_point") val repairCostPerPoint: Double = 0.0,
+    /** 새 도감(0045) 번호 — 비어 있으면 예전 52종(속성 × 변형) */
+    @SerialName("model_id") val modelId: Int? = null,
+    /** 체인 토큰 번호 — v2(1~) · v3(1,000,001~). 아직 체인에 없으면 null */
+    @SerialName("token_id") val tokenId: Long? = null,
 )
 
 @Serializable
