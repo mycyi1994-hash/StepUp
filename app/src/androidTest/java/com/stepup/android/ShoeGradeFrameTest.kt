@@ -27,6 +27,7 @@ import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.GradeArtRatio
 import com.stepup.android.ui.components.S2Stage
+import com.stepup.android.ui.components.ShoeStageRatio
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.gacha.DrawResultDialog
 import com.stepup.android.ui.theme.StepUpTheme
@@ -43,9 +44,10 @@ import org.junit.Test
 /**
  * 신발 등급 프레임 v8(docs/redesign/shoe-grade-frames) — 앱의 네 등급(일반 · 레어 · 에픽 · 레전더리)을 실제 화면에서 찍는다.
  *
- * 신발 탭(앱 셸 안)에서 네 등급을 차례로 골라 큰 무대가 첫 화면 안에 온전히 · 그림 비율(440:418) 그대로 보이는지,
- * 보유 칸 · 보관함 착용 카드 · 상세 · 뽑기 결과, 밝은 테마 · 좁은 폭 · 큰 글씨를 본다. 신발은 기존 52종 그림이고,
- * 이 테스트가 넣은 신발은 끝나면 지우고 원래 신던 신발을 다시 신긴다.
+ * 보유 신발 상세 v1(2026-09-28, docs/redesign/shoe-detail-v1)부터 신발 탭 첫 화면과 상세는 낮은 받침 무대(ShoeStage)다 —
+ * 신발 탭에서 네 등급을 차례로 골라 큰 받침 무대가 첫 화면 안에 온전히 · 비율 그대로 · 한 변 180dp 이상인지, 보유 칸이 비율 그대로인지,
+ * 등급 프레임이 남은 보관함 착용 카드 · 컬렉션 칸 · 뽑기 결과와 받침 무대의 상세, 밝은 테마 · 좁은 폭 · 큰 글씨를 본다.
+ * 신발은 기존 52종 그림이고, 이 테스트가 넣은 신발은 끝나면 지우고 원래 신던 신발을 다시 신긴다.
  */
 class ShoeGradeFrameTest {
     @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
@@ -67,7 +69,7 @@ class ShoeGradeFrameTest {
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "shoe-grade").apply { mkdirs() }
     private var originalEquipped: Long? = null
 
-    /** 앱 셸 안의 신발 탭 → 보관함 → 상세: 네 등급의 무대와 목록 칸 */
+    /** 앱 셸 안의 신발 탭 → 보관함 → 상세: 네 등급의 무대(신발 탭은 받침 · 보관함은 등급 프레임)와 목록 칸 */
     @Test fun gradeFramesInTheShoesTab() {
         val shoes = seedGrades()
         try {
@@ -81,26 +83,26 @@ class ShoeGradeFrameTest {
             // 01–04 — 일반(신고 있는 신발) → 레어 → 에픽 → 레전더리. 고르는 것은 미리 보기라 신발은 바뀌지 않는다
             GRADES.forEachIndexed { index, rarity ->
                 if (index > 0) pick(shoes.getValue(rarity))
-                stageFullyVisible(rarity)
+                stageFullyVisible()
                 shot("0${index + 1}-${rarity.key}")
             }
             list().performScrollToNode(hasTestTag("shoe-detail"))
             compose.onNodeWithTag("shoe-detail").assertIsDisplayed()
-            // 05 · 06 — 보유 신발 칸: 프레임만(효과 없이), 비율 그대로
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(Rarity.COMMON)}"))
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(Rarity.LEGENDARY)}"))
-            thumbKeepsRatio(Rarity.COMMON)
-            thumbKeepsRatio(Rarity.LEGENDARY)
+            // 05 · 06 — 보유 신발 칸(가로 목록): 칸 비율 그대로
+            showTile(shoes.getValue(Rarity.COMMON))
+            tileKeepsRatio(shoes.getValue(Rarity.COMMON))
             shot("05-owned-first-row")
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(Rarity.RARE)}"))
-            thumbKeepsRatio(Rarity.EPIC)
-            thumbKeepsRatio(Rarity.RARE)
+            showTile(shoes.getValue(Rarity.LEGENDARY))
+            tileKeepsRatio(shoes.getValue(Rarity.LEGENDARY))
+            showTile(shoes.getValue(Rarity.EPIC))
+            tileKeepsRatio(shoes.getValue(Rarity.EPIC))
+            showTile(shoes.getValue(Rarity.RARE))
+            tileKeepsRatio(shoes.getValue(Rarity.RARE))
             shot("06-owned-second-row")
 
-            // 07 · 08 — 보관함: 착용 카드(큰 무대)와 컬렉션 칸
-            val seeAll = compose.activity.getString(R.string.me_see_all)
-            list().performScrollToNode(hasText(seeAll))
-            compose.onNodeWithText(seeAll).performClick()
+            // 07 · 08 — 보관함(목록 아래 작은 줄): 착용 카드(등급 무대)와 컬렉션 칸
+            list().performScrollToNode(hasTestTag("shoe-open-vault"))
+            compose.onNodeWithTag("shoe-open-vault").performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("shoe-list").fetchSemanticsNodes().isEmpty() }
             awaitSingle("grade-stage-common")
             keepsRatio(stageBounds("grade-stage-common"), "vault stage")
@@ -114,14 +116,15 @@ class ShoeGradeFrameTest {
             vault().performScrollToNode(hasTestTag("grade-thumb-epic"))
             shot("08-vault-collection")
 
-            // 09 — 상세: 레전더리 한 켤레
+            // 09 — 상세: 레전더리 한 켤레(보유 신발 상세 v1 — 받침 무대, 비율 그대로, 실제 신발 그림)
             vault().performScrollToNode(hasTestTag("grade-thumb-legendary"))
             compose.onNodeWithTag("grade-thumb-legendary", useUnmergedTree = true).performClick()
             compose.waitUntil(10_000) {
                 compose.onAllNodesWithTag("grade-thumb-legendary", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
             }
-            awaitSingle("grade-stage-legendary")
-            keepsRatio(stageBounds("grade-stage-legendary"), "detail stage")
+            awaitSingle("shoe-stage")
+            awaitSingle("shoe-art")
+            keepsRatio(stageBounds("shoe-stage"), "detail stage", ShoeStageRatio)
             shot("09-detail-legendary")
         } finally {
             restore(shoes)
@@ -152,27 +155,26 @@ class ShoeGradeFrameTest {
                 }
             }
             awaitTag("shoe-list")
-            stageFullyVisible(Rarity.LEGENDARY)
+            stageFullyVisible()
             shot("10-light-legendary")
             pick(shoes.getValue(Rarity.EPIC))
-            stageFullyVisible(Rarity.EPIC)
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(Rarity.RARE)}"))
-            thumbKeepsRatio(Rarity.RARE)
+            stageFullyVisible()
+            showTile(shoes.getValue(Rarity.RARE))
+            tileKeepsRatio(shoes.getValue(Rarity.RARE))
             shot("11-light-owned")
 
             compose.runOnIdle { light = false; narrow = true }
             list().performScrollToIndex(0)
-            stageFullyVisible(Rarity.EPIC)
+            stageFullyVisible()
             shot("12-narrow-320")
 
-            // 큰 글씨 — 글자가 커진 만큼 첫 화면이 모자라면 무대를 한 변 190dp 아래로 줄이지 않고 넘겨 보게 한다
+            // 큰 글씨 — 글자가 커진 만큼 첫 화면이 모자라면 무대를 220dp 아래로 줄이지 않고 넘겨 보게 한다
             compose.runOnIdle { narrow = false; large = true }
             list().performScrollToIndex(0)
-            stageFullyVisible(Rarity.EPIC, firstView = false)
+            stageFullyVisible(firstView = false)
             shot("13-large-font")
-            // 큰 글씨에서는 한 줄 칸 — 넓어진 칸은 2배 프레임을 쓴다
-            list().performScrollToNode(hasTestTag("shoe-choice-${shoes.getValue(Rarity.LEGENDARY)}"))
-            thumbKeepsRatio(Rarity.LEGENDARY)
+            showTile(shoes.getValue(Rarity.LEGENDARY))
+            tileKeepsRatio(shoes.getValue(Rarity.LEGENDARY))
             shot("14-large-font-owned")
         } finally {
             restore(shoes)
@@ -212,38 +214,52 @@ class ShoeGradeFrameTest {
 
     private fun list() = compose.onNodeWithTag("shoe-list")
 
+    /** 보유 칸(가로 목록)을 보이게 — 세로 목록을 목록 줄까지, 가로 목록을 그 칸까지 */
+    private fun showTile(id: Long) {
+        list().performScrollToNode(hasTestTag("shoe-owned-row"))
+        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
+    }
+
     /** 보유 칸을 눌러 미리 보기로 고르고, 맨 위(무대)로 돌아간다 */
     private fun pick(id: Long) {
-        list().performScrollToNode(hasTestTag("shoe-choice-$id"))
+        showTile(id)
         compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
         list().performScrollToIndex(0)
     }
 
     /**
-     * 큰 무대 — 그 등급의 무대 하나가 목록 창 안에 온전히(잘리지 않게), 440:418 그대로, 한 변 180dp 이상.
+     * 큰 무대(받침) — 신발 탭의 무대가 목록 창 안에 온전히(잘리지 않게), 비율 그대로, 한 변 180dp 이상이고 실제 신발이 올라 있다.
      * [firstView] 면 넘기지 않은 첫 화면에서 본다(보통 글씨). 아니면 무대까지 넘긴 뒤에 본다(큰 글씨).
      */
-    private fun stageFullyVisible(rarity: Rarity, firstView: Boolean = true) {
-        awaitSingle("grade-stage-${rarity.key}")
-        if (!firstView) compose.onNodeWithTag("shoe-list", useUnmergedTree = true).performScrollToNode(hasTestTag("grade-stage-${rarity.key}"))
+    private fun stageFullyVisible(firstView: Boolean = true) {
+        awaitSingle("shoe-hero")
+        if (!firstView) compose.onNodeWithTag("shoe-list", useUnmergedTree = true).performScrollToNode(hasTestTag("shoe-hero"))
         compose.waitForIdle()
-        // 신발 목록 · 뽑기 칸의 비동기 값이 들어오며 한 번 더 자리를 잡을 수 있다 — 무대가 제 비율로 설 때까지 조금 기다리고,
+        // 신발 목록의 비동기 값이 들어오며 한 번 더 자리를 잡을 수 있다 — 무대가 제 비율로 설 때까지 조금 기다리고,
         // 끝내 서지 않으면 그 순간의 화면을 남긴 뒤 아래 검사가 실패한다
         val settled = runCatching {
             compose.waitUntil(5_000) {
-                val b = stageBounds("grade-stage-${rarity.key}")
-                abs(b.width / b.height - GradeArtRatio) / GradeArtRatio < 0.02f
+                val b = stageBounds("shoe-hero")
+                abs(b.width / b.height - ShoeStageRatio) / ShoeStageRatio < 0.02f
             }
         }.isSuccess
-        if (!settled) shot("00-unsettled-${rarity.key}", settle = 0)
+        if (!settled) shot("00-unsettled-hero", settle = 0)
+        awaitSingle("shoe-art")
         val viewport = list().fetchSemanticsNode().boundsInRoot
-        val stage = stageBounds("grade-stage-${rarity.key}")
-        keepsRatio(stage, "${rarity.key} stage")
-        assertTrue("${rarity.key} stage fully inside the list window: $stage in $viewport",
+        val stage = stageBounds("shoe-hero")
+        keepsRatio(stage, "hero stage", ShoeStageRatio)
+        assertTrue("hero stage fully inside the list window: $stage in $viewport",
             stage.top >= viewport.top - 1 && stage.bottom <= viewport.bottom + 1 &&
                 stage.left >= viewport.left - 1 && stage.right <= viewport.right + 1)
         val minWidth = with(compose.density) { 180.dp.toPx() }
-        assertTrue("${rarity.key} stage keeps the shoe large: ${stage.width}", stage.width >= minWidth)
+        assertTrue("hero stage keeps the shoe large: ${stage.width}", stage.width >= minWidth)
+    }
+
+    /** 신발 탭 보유 칸 — 칸 면이 시안 비율(106:87) 그대로 */
+    private fun tileKeepsRatio(id: Long) {
+        compose.waitForIdle()
+        val tile = compose.onNodeWithTag("shoe-tile-$id", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        keepsRatio(tile, "tile $id", 106f / 87f)
     }
 
     /** 목록 칸 — 눌리는 카드가 안쪽을 합치므로 합치기 전 나무에서 찾는다. 하나도 없으면 실패다 */
@@ -258,9 +274,9 @@ class ShoeGradeFrameTest {
     private fun stageBounds(tag: String): Rect =
         compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
-    private fun keepsRatio(bounds: Rect, what: String) {
+    private fun keepsRatio(bounds: Rect, what: String, expected: Float = GradeArtRatio) {
         val ratio = bounds.width / bounds.height
-        assertTrue("$what keeps 440:418 — ${bounds.width} × ${bounds.height}", abs(ratio - GradeArtRatio) / GradeArtRatio < 0.02f)
+        assertTrue("$what keeps $expected — ${bounds.width} × ${bounds.height}", abs(ratio - expected) / expected < 0.02f)
     }
 
     /** 앱 신발 창고에 네 등급 한 켤레씩 — 일반은 신고 있는 신발(없으면 새로), 나머지는 새로 넣는다 */

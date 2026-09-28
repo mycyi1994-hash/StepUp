@@ -18,8 +18,6 @@ import com.stepup.android.ui.components.KitTone
 import com.stepup.android.ui.components.RunKit
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -170,6 +168,8 @@ fun RunScreen(
     onRepeat: (RunPlan) -> Unit = {},
     /** 러닝 홈의 "러닝 시작"에서 왔으면 곧바로 달리기를 시작한다 */
     autoStart: Boolean = false,
+    /** 권한 안내의 "홈으로 돌아가기"(시작·로그인·첫 사용 v1 시안 14 · 15) — 러닝 탭 첫 화면 */
+    onLeaveToHome: () -> Unit = onHome,
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
 ) {
     // 러닝 서비스는 끝난 러닝을 백그라운드 스레드에서 내놓는다. 화면은 그 값을 메인 스레드에서 받는다 — 기기 테스트의
@@ -201,39 +201,16 @@ fun RunScreen(
     val recordedTrack by viewModel.lastTrack.collectAsStateWithLifecycle()
     val readyToSaveCourse = recordingCourse && !session.isActive && recordedTrack.size >= 2
 
-    var permissionDenied by rememberSaveable { mutableStateOf(false) }
-    var showPrimer by rememberSaveable { mutableStateOf(false) }
     var countingDown by rememberSaveable { mutableStateOf(false) }
+    // 한 번 고른 러닝 — 권한 안내(시작·로그인·첫 사용 v1 시안 13~19)를 활동 → 위치 → 알림 차례로 지나 3-2-1(R01)로 간다.
+    // 안내를 닫으면 아무것도 시작하지 않는다. 필요한 권한이 이미 있으면 안내 없이 바로 3-2-1 이다.
+    var startPending by rememberSaveable { mutableStateOf(false) }
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         locationAllowed = StepPermissions.hasLocation(context)
-        if (StepPermissions.hasActivityRecognition(context)) permissionDenied = false
         onPauseOrDispose { }
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        permissionDenied = !StepPermissions.hasActivityRecognition(context)
-        locationAllowed = StepPermissions.hasLocation(context)
-        if (!permissionDenied) {
-            countingDown = true
-        }
-    }
-    // S2 — 시작 전에 권한 안내(시안 23), 이어서 3-2-1(시안 24). 둘 다 이 화면 위에 덮인다.
-    val primerSeen by viewModel.permissionPrimerSeen.collectAsStateWithLifecycle()
-    val requestStartWith = { seen: Boolean ->
-        val missing = StepPermissions.missing(context)
-        when {
-            missing.isEmpty() -> countingDown = true
-            // 걸음 권한이 없으면 매번, 나머지(위치 · 알림)만 없으면 처음 한 번만 설명한다
-            !StepPermissions.hasActivityRecognition(context) || !seen -> {
-                showPrimer = true
-                viewModel.markPermissionPrimerSeen()
-            }
-            else -> permissionLauncher.launch(missing)
-        }
-    }
-    val requestStart = { requestStartWith(primerSeen) }
+    val requestStart = { if (!startPending && !countingDown) startPending = true }
 
     // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
     // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
@@ -243,8 +220,7 @@ fun RunScreen(
             autoStartDone = true
             if (!WalkSessionService.state.value.isActive) {
                 viewModel.clearReward()
-                // 화면이 막 열려 저장된 "안내 봤음"을 아직 못 읽었을 수 있다 — 읽은 뒤에 정한다
-                requestStartWith(viewModel.permissionPrimerSeenNow())
+                requestStart()
             }
         }
     }
@@ -497,13 +473,6 @@ fun RunScreen(
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 ) {
-                    if (permissionDenied && !session.isActive) {
-                        Text(stringResource(R.string.perm_body), color = Silver,
-                            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                        TextButton(onClick = {
-                            ExternalIntents.openAppSettings(context)
-                        }) { Text(stringResource(R.string.cd_open_settings)) }
-                    }
                     if (recordingCourse && !readyToSaveCourse) {
                         CourseRecordingStrip(running = session.isActive, onCancel = viewModel::cancelRecording)
                     }
@@ -745,19 +714,21 @@ fun RunScreen(
                 }
             }
         }
-        if (showPrimer && !session.isActive) {
-            RunPermissionPrimer(
-                items = rememberRunPermissionItems(showPrimer),
-                onAllow = {
-                    showPrimer = false
-                    val missing = StepPermissions.missing(context)
-                    if (missing.isEmpty()) countingDown = true else permissionLauncher.launch(missing)
+        if (startPending && !session.isActive) {
+            RunPermissionFlow(
+                onReady = {
+                    startPending = false
+                    locationAllowed = StepPermissions.hasLocation(context)
+                    countingDown = true
                 },
-                onLater = {
-                    showPrimer = false
-                    // 걸음 권한만 있으면 경로 없이도 달릴 수 있다
-                    if (StepPermissions.hasActivityRecognition(context)) countingDown = true
-                    else permissionDenied = true
+                // 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴 · 챌린지 · 다이어트)에서 왔으면 그리로
+                onCancel = {
+                    startPending = false
+                    if (autoStart) onBack()
+                },
+                onHome = {
+                    startPending = false
+                    onLeaveToHome()
                 },
             )
         }

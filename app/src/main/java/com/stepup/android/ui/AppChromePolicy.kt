@@ -15,7 +15,8 @@ object AppChromePolicy {
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
-        Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
+        // 신발 뽑기 v2 — 신발 탭 안의 하위 화면. 자기 머리(‹ 신발 뽑기)를 그리고, 두 칸 · 상자 열기 · 결과가 화면을 다 쓴다(아래 탭 없음)
+        Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Form),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),
@@ -63,6 +64,8 @@ object AppChromePolicy {
         Destination(Routes.SETTINGS_NOTIFICATIONS, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_PRIVACY, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_SUPPORT, Screen.Profile, Header.Detail),
+        // 사용 안내 다시 보기(시작·로그인·첫 사용 v1 시안 20) — 설정 밑, 하단 탭 없이 자기 머리와 아래 "러닝 홈으로"
+        Destination(Routes.SETTINGS_GUIDE, Screen.Profile, Header.Form),
         Destination(Routes.SETTINGS_CONNECTED, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_LANGUAGE, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_EXPERIENCE, Screen.Profile, Header.Detail),

@@ -84,6 +84,12 @@ class UserPrefs(
         val LOGIN_METHOD = stringPreferencesKey("login_method")
         val GUIDE_SEEN = intPreferencesKey("guide_seen")
         val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
+        // 시작·로그인·첫 사용 v1 — 권한 허용 여부가 아니라 "물어봤다 · 골랐다"만 적는다(허용은 늘 OS 에서 읽는다)
+        val RUN_ACTIVITY_HISTORY = stringPreferencesKey("run_activity_request_history")
+        val RUN_LOCATION_CHOSEN = booleanPreferencesKey("run_location_chosen")
+        val RUN_NOTIFICATION_CHOSEN = booleanPreferencesKey("run_notification_chosen")
+        /** 로그인했던 사람이 다시 로그인해야 해서 로그인 화면에 왔다(시안 09) — 로그인에 성공하면 지운다 */
+        val SIGN_IN_AGAIN = booleanPreferencesKey("sign_in_again")
         val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
         val WEATHER_BACKGROUND = booleanPreferencesKey("weather_background")
         val PARTY_SHARE_LOCATION = booleanPreferencesKey("party_share_location")
@@ -622,6 +628,44 @@ class UserPrefs(
 
     suspend fun setRunPermissionPrimerSeen() {
         store.edit { it[Keys.RUN_PERMISSION_PRIMER_SEEN] = true }
+    }
+
+    /** 걸음 권한 시스템 창을 띄운 이력(시작·로그인·첫 사용 v1) — "처음 묻기도 전에 설정으로" 보내지 않으려고 둔다 */
+    val runActivityHistory: Flow<com.stepup.android.domain.ActivityRequestHistory> = store.data.map { prefs ->
+        com.stepup.android.domain.ActivityRequestHistory.entries.firstOrNull { it.name == prefs[Keys.RUN_ACTIVITY_HISTORY] }
+            ?: com.stepup.android.domain.ActivityRequestHistory.NEVER
+    }
+
+    suspend fun setRunActivityHistory(value: com.stepup.android.domain.ActivityRequestHistory) {
+        store.edit { it[Keys.RUN_ACTIVITY_HISTORY] = value.name }
+    }
+
+    /**
+     * 러닝 위치 안내(시안 16)에서 이미 골랐는지 — 허용 · 거절 · 경로 없이 계속. 예전 러닝 권한 안내(S2 시안 23)를 본 사람도
+     * 그때 골랐으므로 다시 묻지 않는다.
+     */
+    val runLocationChosen: Flow<Boolean> = store.data.map {
+        (it[Keys.RUN_LOCATION_CHOSEN] ?: false) || (it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false)
+    }
+
+    suspend fun setRunLocationChosen() {
+        store.edit { it[Keys.RUN_LOCATION_CHOSEN] = true }
+    }
+
+    /** 러닝 알림 안내(시안 19)에서 이미 골랐는지 — 허용 · 거절 · 나중에. 나중에는 설정에서 바꾼다 */
+    val runNotificationChosen: Flow<Boolean> = store.data.map {
+        (it[Keys.RUN_NOTIFICATION_CHOSEN] ?: false) || (it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false)
+    }
+
+    suspend fun setRunNotificationChosen() {
+        store.edit { it[Keys.RUN_NOTIFICATION_CHOSEN] = true }
+    }
+
+    /** 다시 로그인해야 해서 로그인 화면에 왔는지(시안 09) — 이유를 모르면 false 로 두고 일반 로그인 화면을 쓴다 */
+    val signInAgain: Flow<Boolean> = store.data.map { it[Keys.SIGN_IN_AGAIN] ?: false }
+
+    suspend fun setSignInAgain(value: Boolean) {
+        store.edit { it[Keys.SIGN_IN_AGAIN] = value }
     }
 
     /** S2 첫 설정(신체 정보 · 목표 · 모드)을 끝냈거나 건너뛰었는지 — 새로 가입한 사람에게만 한 번 보인다 */

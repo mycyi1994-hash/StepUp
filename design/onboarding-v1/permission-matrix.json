@@ -1,0 +1,38 @@
+{
+  "browse": {
+    "request": false
+  },
+  "run": [
+    {
+      "permission": "ACTIVITY_RECOGNITION",
+      "requiredForCurrentRunFlow": true,
+      "skip": "API <29 or granted",
+      "first": "13-activity-rationale",
+      "deniedRetry": "14-activity-denied",
+      "deniedBlocked": "15-activity-settings",
+      "dismiss": "Cancel pending run; menu",
+      "systemSettingsReturn": "Recheck OS and pending intent; never assume success"
+    },
+    {
+      "permission": "LOCATION",
+      "requiredForFreeRun": false,
+      "precise": "Continue; await actual GPS fix",
+      "approximate": "17-approximate-location",
+      "denied": "18-without-location",
+      "skip": "Existing choice respected",
+      "withoutLocation": "Existing time-focused running presentation; no fabricated GPS distance/pace",
+      "recommendedCourses": "Existing dedicated L01 flow, not the free-run optional rule"
+    },
+    {
+      "permission": "POST_NOTIFICATIONS",
+      "requiredForRun": false,
+      "skip": "API <33, already granted or explicitly deferred",
+      "first": "19-notification-rationale",
+      "deny": "Continue pending run",
+      "later": "Continue and remember choice",
+      "dismiss": "Cancel pending run; menu",
+      "appPreferences": "Preserve independently from OS permission"
+    }
+  ],
+  "classification": "Never infer permanent denial from shouldShowRequestPermissionRationale=false alone; check actual request history."
+}

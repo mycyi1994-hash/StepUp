@@ -122,6 +122,15 @@ fun sneakerImageRes(faction: Faction, rarity: Rarity, variant: Int): Int? {
     return list.getOrNull(index - 1)
 }
 
+/**
+ * 이 켤레의 그림 — 새 도감(0045) 신발은 그 모델 그림, 예전 52종은 속성 × 변형 그림([SneakerVisual] 과 같은 고르기).
+ * 이 앱에 그림이 없는 새 모델이면 null — 보유 신발 상세 v1 은 다른 신발 그림으로 채우지 않고 "이미지를 불러오지 못했어요"(시안 16)를 보인다.
+ */
+@DrawableRes
+fun sneakerArtRes(sneaker: Sneaker): Int? =
+    sneaker.modelId?.let(::shoeModelImageRes)
+        ?: if (sneaker.modelId == null) sneakerImageRes(sneaker.faction, sneaker.rarity, sneaker.variant) else null
+
 /** 이미지가 있는 모든 도감 슬롯 — 스플래시 로테이션 등에 쓴다 */
 val AllSneakerImages: List<Int> by lazy {
     buildList {

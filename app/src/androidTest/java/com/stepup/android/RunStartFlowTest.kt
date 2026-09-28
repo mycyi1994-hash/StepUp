@@ -6,23 +6,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.ui.experience.ExperienceProvider
+import com.stepup.android.domain.RunPermissionSheet
 import com.stepup.android.ui.screens.walk.RunCountdown
-import com.stepup.android.ui.screens.walk.RunPermissionItem
-import com.stepup.android.ui.screens.walk.RunPermissionPrimer
+import com.stepup.android.ui.screens.walk.RunPermissionSheetView
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
@@ -32,7 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * S2 러닝 시작 전 화면 — 권한 안내(시안 23)와 3-2-1(시안 24).
+ * S2 러닝 시작 전 화면 — 권한 안내(시작·로그인·첫 사용 v1 시안 13~19)와 3-2-1(시안 24).
  * 러닝 서비스를 실제로 켜지 않도록 부품을 직접 그리고, 시작 콜백 횟수만 센다.
  */
 @RunWith(AndroidJUnit4::class)
@@ -94,31 +91,43 @@ class RunStartFlowTest {
         capture(name)
     }
 
-    @Test fun primerExplainsEachPermissionAndHandsOff() {
-        var allowed = 0
-        var later = 0
+    /**
+     * 러닝 권한 안내(시작·로그인·첫 사용 v1 시안 13~19) — 장면마다 주 버튼 · 보조 버튼 · 닫기가 각각 한 번씩만 불린다.
+     * 시스템 권한 창을 띄우지 않도록 안내 부품만 그린다(차례 · 건너뛰기 판단은 단위 테스트 OnboardingRulesTest).
+     */
+    @Test fun permissionSheetsHandOffEachChoiceOnce() {
+        var sheet by mutableStateOf(RunPermissionSheet.ActivityRationale)
+        var primary = 0
+        var secondary = 0
+        var dismissed = 0
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                RunPermissionPrimer(
-                    items = listOf(
-                        RunPermissionItem(Icons.Filled.DirectionsRun, R.string.run_perm_activity,
-                            R.string.run_perm_activity_body, R.string.run_perm_required, granted = true),
-                        RunPermissionItem(Icons.Filled.LocationOn, R.string.run_perm_location,
-                            R.string.run_perm_location_body, R.string.run_perm_recommended, granted = false),
-                        RunPermissionItem(Icons.Filled.Notifications, R.string.run_perm_notification,
-                            R.string.run_perm_notification_body, R.string.run_perm_optional, granted = false),
-                    ),
-                    onAllow = { allowed++ }, onLater = { later++ },
-                )
+                androidx.compose.runtime.key(sheet) {
+                    RunPermissionSheetView(sheet, onPrimary = { primary++ }, onSecondary = { secondary++ }, onDismiss = { dismissed++ })
+                }
             } }
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.run_perm_location)).assertIsDisplayed()
-        compose.onNodeWithText("1/3").assertIsDisplayed()
-        capture("run-permission-primer.png")
-        compose.onNodeWithTag("run-permission-allow").performClick()
-        compose.onNodeWithTag("run-permission-later").performClick()
-        assertEquals(1, allowed)
-        assertEquals(1, later)
+        val tags = mapOf(
+            RunPermissionSheet.ActivityRationale to "perm-sheet-activity",
+            RunPermissionSheet.ActivityDenied to "perm-sheet-activity-denied",
+            RunPermissionSheet.ActivitySettings to "perm-sheet-activity-settings",
+            RunPermissionSheet.LocationRationale to "perm-sheet-location",
+            RunPermissionSheet.ApproximateLocation to "perm-sheet-location-approximate",
+            RunPermissionSheet.WithoutLocation to "perm-sheet-location-off",
+            RunPermissionSheet.NotificationRationale to "perm-sheet-notification",
+        )
+        RunPermissionSheet.entries.forEachIndexed { index, next ->
+            compose.runOnIdle { sheet = next }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag(tags.getValue(next)).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("perm-primary").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("perm-secondary").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("onboarding-sheet-close").performClick()
+            compose.runOnIdle {
+                assertEquals(index + 1, primary)
+                assertEquals(index + 1, secondary)
+                assertEquals(index + 1, dismissed)
+            }
+        }
     }
 
     @Test fun togetherRankingOrdersSharedDistanceAndHidesTheRest() {

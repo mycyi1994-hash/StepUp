@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -84,12 +83,13 @@ class MysteryDesignTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-draw").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("shoes-section-draw").performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty()
         }
-        // 무료 정책(2026-09-27) — 무료 · 상급 두 칸, 신발 상자, 주 버튼 하나. 가격 · SUP 안내는 없다
-        compose.onNodeWithTag("draw-tab-free").assertIsSelected()
-        compose.onNodeWithTag("draw-stage").assertIsDisplayed()
-        compose.onNodeWithTag("draw-shoe").assertExists()
+        // 두 칸(v2, 2026-09-28) — 무료 · 상급 칸이 위아래, 칸마다 버튼 하나. 가격 · SUP 안내 · 위의 두 탭은 없다
+        compose.onNodeWithTag("draw-free").assertIsDisplayed()
+        compose.onNodeWithTag("draw-free-action").assertExists()
+        compose.onNodeWithTag("draw-premium-action").assertExists()
+        compose.onNodeWithTag("draw-tab-free").assertDoesNotExist()
         compose.onAllNodesWithText("500 SUP", substring = true).assertCountEquals(0)
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
         captureDisplay(File(out, "mystery-01-normal.png"))
@@ -98,9 +98,18 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-02-large-type.png"))
 
+        // 신발 탭 안의 하위 화면 — 뒤로 가면 내 신발, 거기서 러닝 탭으로
+        compose.runOnIdle { largeType = false }
+        // 서버를 읽지 못한 기기면 불러오기 실패 시트가 떠 있다 — 뒤로는 먼저 시트만 닫는다
+        if (compose.onAllNodesWithTag("draw-sheet-load-failed", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+            compose.waitForIdle()
+        }
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-draw").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(compose.activity.getString(R.string.tab_run)).performClick()
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithTag("draw-stage").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isEmpty()
         }
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))

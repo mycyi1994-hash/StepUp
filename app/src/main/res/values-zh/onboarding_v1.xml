@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시작·로그인·첫 사용 v1(2026-09-28 전달본, docs/redesign/onboarding-v1) — 앱 준비 · 로그인 · 첫 안내 · 러닝 방법 · 러닝 권한 안내 · 다시 보기 -->
+<resources>
+    <!-- 03 · 04 앱 준비 -->
+    <string name="onb_launch_failed_title">未能完成应用准备</string>
+    <string name="onb_launch_failed_body">请重试。</string>
+
+    <!-- 01 · 05~10 로그인 -->
+    <string name="onb_login_headline">今天也，\n按自己的节奏。</string>
+    <string name="onb_login_subtitle">一点一滴记录你跑过的时间和距离。</string>
+    <string name="onb_login_caption">使用 Google 账号轻松开始。</string>
+    <string name="onb_login_verifying">正在确认账号。</string>
+    <string name="onb_login_offline_title">请检查网络连接</string>
+    <string name="onb_login_offline_body">请检查网络连接后再点一次。</string>
+    <string name="onb_login_failed_title">未能完成登录</string>
+    <string name="onb_login_failed_body">请用下方按钮重试。</string>
+    <string name="onb_login_no_account_title">未找到 Google 账号</string>
+    <string name="onb_login_no_account_body">请在设备上添加账号后重试。</string>
+    <string name="onb_login_again_title">请重新登录</string>
+    <string name="onb_login_again_body">使用同一账号登录即可继续你的记录。</string>
+    <string name="onb_legal_failed_title">无法打开页面。</string>
+    <string name="onb_legal_failed_body">请检查浏览器后再点一次。</string>
+
+    <!-- 02 첫 사용 안내 · 20 다시 보기 -->
+    <string name="onb_guide_title">了解这些就能开始</string>
+    <string name="onb_guide_subtitle">先轻松一点，从跑步开始吧。</string>
+    <string name="onb_guide_run_body">边跑边记录时间和距离。</string>
+    <string name="onb_guide_shoes_body">查看我的跑鞋和免费抽取。</string>
+    <string name="onb_guide_me_body">一眼看到积累的跑步记录。</string>
+    <string name="onb_guide_browse">先随便看看</string>
+    <string name="onb_guide_row_desc">在一页中再次查看跑步、跑鞋和我的。</string>
+    <string name="onb_replay_headline">记住这三点就好</string>
+    <string name="onb_replay_subtitle">需要的功能都在下方标签里。</string>
+    <string name="onb_replay_run_body">点“开始跑步”，再选择跑法。</string>
+    <string name="onb_replay_shoes_body">看看拥有的跑鞋，试试免费抽取。</string>
+    <string name="onb_replay_me_body">你的记录、钱包和设置都在这里。</string>
+    <string name="onb_replay_permission_note">使用功能时我们会说明所需权限。</string>
+    <string name="onb_replay_home">回到跑步首页</string>
+
+    <!-- 11 첫 러닝 홈 -->
+    <string name="onb_home_first_title">要开始\n今天的第一次跑步吗？</string>
+    <string name="onb_home_first_body">允许权限后开始记录步数。</string>
+
+    <!-- 12 러닝 방법 고르기 -->
+    <string name="onb_menu_headline">按自己的节奏开始</string>
+    <string name="onb_menu_subtitle">今天想怎么跑？</string>
+    <string name="onb_menu_goal_desc">从小目标开始，一个一个来</string>
+    <string name="onb_menu_course_desc">在我附近找跑步的地方</string>
+
+    <!-- 13~19 러닝 권한 안내 -->
+    <string name="onb_perm_activity_title">请允许记录步数</string>
+    <string name="onb_perm_activity_headline">记录步数和运动量</string>
+    <string name="onb_perm_activity_body">记录跑步需要“身体活动”权限。\n请在下一个窗口中点“允许”。</string>
+    <string name="onb_perm_activity_off_title">步数记录已关闭</string>
+    <string name="onb_perm_activity_off_headline">允许权限后即可开始</string>
+    <string name="onb_perm_activity_denied_body">需要允许才能记录步数和运动量。</string>
+    <string name="onb_perm_allow_again">再次允许</string>
+    <string name="onb_perm_home">返回首页</string>
+    <string name="onb_perm_activity_settings_body">请在手机设置中开启“身体活动”权限。</string>
+    <string name="onb_perm_location_title">也记录跑过的路线吗？</string>
+    <string name="onb_perm_location_headline">用位置记录跑步路线</string>
+    <string name="onb_perm_location_body">允许精确位置即可记录跑过的路线。\n不开启位置也能开始跑步。</string>
+    <string name="onb_perm_location_allow">允许位置</string>
+    <string name="onb_perm_without_route">不记录路线，继续</string>
+    <string name="onb_perm_approx_title">已开启大致位置</string>
+    <string name="onb_perm_approx_headline">路线可能不够准确</string>
+    <string name="onb_perm_approx_body">可以在设置中改为精确位置。\n保持现状继续也没关系。</string>
+    <string name="onb_perm_continue_as_is">就这样继续</string>
+    <string name="onb_perm_location_settings">打开位置设置</string>
+    <string name="onb_perm_no_location_title">可以不记录路线开始</string>
+    <string name="onb_perm_no_location_headline">本次跑步不记录路线</string>
+    <string name="onb_perm_no_location_body">允许位置后也能看到跑过的路线。\n保持现状继续也没关系。</string>
+    <string name="onb_perm_notification_title">要接收跑步消息吗？</string>
+    <string name="onb_perm_notification_headline">为你推送需要的消息</string>
+    <string name="onb_perm_notification_body">以通知接收跑步和社区消息。\n关闭通知也能使用应用。</string>
+    <string name="onb_perm_notification_allow">允许通知</string>
+    <string name="onb_settings_open_failed">无法打开设置，请在手机设置中手动更改。</string>
+</resources>

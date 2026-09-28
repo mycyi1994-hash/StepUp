@@ -1,0 +1,401 @@
+{
+  "entry": "03-launch-loading",
+  "transitions": [
+    {
+      "from": "03-launch-loading",
+      "action": "준비 완료",
+      "to": "01-login",
+      "condition": "인증 정보 없음"
+    },
+    {
+      "from": "03-launch-loading",
+      "action": "준비 완료",
+      "to": "existing:home",
+      "condition": "세션 유효, guideSeen=true"
+    },
+    {
+      "from": "03-launch-loading",
+      "action": "준비 완료",
+      "to": "02-first-guide",
+      "condition": "세션 유효, guideSeen=false, 정상 홈 진입"
+    },
+    {
+      "from": "03-launch-loading",
+      "action": "실패 또는 초기화 시간 초과",
+      "to": "04-launch-error"
+    },
+    {
+      "from": "04-launch-error",
+      "action": "다시 시도",
+      "to": "03-launch-loading"
+    },
+    {
+      "from": "01-login",
+      "action": "Google로 계속하기",
+      "to": "system:Google-Credential-Manager"
+    },
+    {
+      "from": "system:Google-Credential-Manager",
+      "action": "계정 선택",
+      "to": "05-signing-in"
+    },
+    {
+      "from": "system:Google-Credential-Manager",
+      "action": "취소",
+      "to": "01-login",
+      "condition": "오류 없이 로딩 해제"
+    },
+    {
+      "from": "system:Google-Credential-Manager",
+      "action": "사용 가능 계정 없음",
+      "to": "08-no-account"
+    },
+    {
+      "from": "system:Google-Credential-Manager",
+      "action": "자격 증명 실패",
+      "to": "07-login-failed"
+    },
+    {
+      "from": "05-signing-in",
+      "action": "서버 로그인 성공",
+      "to": "02-first-guide",
+      "condition": "처음 사용, 완료되지 않은 가이드, 외부 복귀 목적지 없음"
+    },
+    {
+      "from": "05-signing-in",
+      "action": "서버 로그인 성공",
+      "to": "existing:return-destination",
+      "condition": "재인증 또는 처리할 외부 목적지; 자동 동작 실행 금지"
+    },
+    {
+      "from": "05-signing-in",
+      "action": "서버 연결 불가",
+      "to": "06-offline"
+    },
+    {
+      "from": "05-signing-in",
+      "action": "인증 거절 또는 실패",
+      "to": "07-login-failed"
+    },
+    {
+      "from": "06-offline",
+      "action": "Google로 계속하기",
+      "to": "system:Google-Credential-Manager"
+    },
+    {
+      "from": "07-login-failed",
+      "action": "Google로 계속하기",
+      "to": "system:Google-Credential-Manager"
+    },
+    {
+      "from": "08-no-account",
+      "action": "Google로 계속하기",
+      "to": "system:Google-Credential-Manager"
+    },
+    {
+      "from": "09-session-expired",
+      "action": "Google로 계속하기",
+      "to": "system:Google-Credential-Manager"
+    },
+    {
+      "from": "existing:session",
+      "action": "재인증이 실제로 필요",
+      "to": "09-session-expired",
+      "condition": "명시적 재인증 사유를 알고 있을 때"
+    },
+    {
+      "from": "01-login",
+      "action": "이용약관 / 개인정보처리방침",
+      "to": "external:legal-browser"
+    },
+    {
+      "from": "external:legal-browser",
+      "action": "정상 복귀",
+      "to": "01-login",
+      "condition": "로그인 화면의 기존 상태 보존"
+    },
+    {
+      "from": "01-login",
+      "action": "외부 문서 열기 실패",
+      "to": "10-legal-link-error",
+      "condition": "열기 호출 자체 실패만 감지"
+    },
+    {
+      "from": "10-legal-link-error",
+      "action": "안내 종료",
+      "to": "01-login"
+    },
+    {
+      "from": "10-legal-link-error",
+      "action": "문서 링크 다시 누름",
+      "to": "external:legal-browser"
+    },
+    {
+      "from": "02-first-guide",
+      "action": "러닝 시작",
+      "to": "12-running-menu",
+      "condition": "guideSeen 저장; 세션 시작 아님"
+    },
+    {
+      "from": "02-first-guide",
+      "action": "먼저 둘러보기 / X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "11-first-home",
+      "condition": "guideSeen 저장"
+    },
+    {
+      "from": "11-first-home",
+      "action": "러닝 시작",
+      "to": "12-running-menu"
+    },
+    {
+      "from": "11-first-home",
+      "action": "알림",
+      "to": "existing:notifications"
+    },
+    {
+      "from": "11-first-home",
+      "action": "하단 탭",
+      "to": "existing:selected-main-tab"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "뒤로",
+      "to": "11-first-home"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "자유 러닝",
+      "to": "13-activity-rationale",
+      "condition": "활동 권한 필요. 이미 허용된 단계는 건너뜀"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "자유 러닝",
+      "to": "dispatcher:run-permission-next",
+      "condition": "활동 권한 있음"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "러닝 챌린지",
+      "to": "existing:challenge-list"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "추천 코스",
+      "to": "existing:nearby-course-permission-L01"
+    },
+    {
+      "from": "12-running-menu",
+      "action": "다이어트 모드",
+      "to": "existing:diet-input"
+    },
+    {
+      "from": "13-activity-rationale",
+      "action": "권한 허용하기",
+      "to": "system:activity-permission"
+    },
+    {
+      "from": "system:activity-permission",
+      "action": "허용",
+      "to": "dispatcher:run-permission-next"
+    },
+    {
+      "from": "system:activity-permission",
+      "action": "거절, 다시 요청 가능",
+      "to": "14-activity-denied"
+    },
+    {
+      "from": "system:activity-permission",
+      "action": "거절, 다시 요청 불가",
+      "to": "15-activity-settings",
+      "condition": "실제 요청 이력과 OS 상태 확인"
+    },
+    {
+      "from": "13-activity-rationale",
+      "action": "나중에",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소"
+    },
+    {
+      "from": "14-activity-denied",
+      "action": "다시 허용하기",
+      "to": "system:activity-permission"
+    },
+    {
+      "from": "15-activity-settings",
+      "action": "설정 열기",
+      "to": "system:app-settings-activity"
+    },
+    {
+      "from": "system:app-settings-activity",
+      "action": "복귀",
+      "to": "dispatcher:recheck-activity",
+      "condition": "pendingRun 유효 여부 확인; 허용 시 다음, 미허용 시 15"
+    },
+    {
+      "from": "14-activity-denied",
+      "action": "홈으로 돌아가기",
+      "to": "11-first-home",
+      "condition": "pendingRun 취소"
+    },
+    {
+      "from": "15-activity-settings",
+      "action": "홈으로 돌아가기",
+      "to": "11-first-home",
+      "condition": "pendingRun 취소"
+    },
+    {
+      "from": "dispatcher:run-permission-next",
+      "action": "활동 허용 + 위치 최초 안내 필요",
+      "to": "16-location-rationale"
+    },
+    {
+      "from": "dispatcher:run-permission-next",
+      "action": "위치 선택 완료 + 알림 최초 안내 필요",
+      "to": "19-notification-rationale"
+    },
+    {
+      "from": "dispatcher:run-permission-next",
+      "action": "필수 권한 충족 + 선택 단계 완료",
+      "to": "reused:R01",
+      "condition": "진행 가능한 run intent를 한 번만 시작"
+    },
+    {
+      "from": "16-location-rationale",
+      "action": "위치 허용하기",
+      "to": "system:location-permission"
+    },
+    {
+      "from": "system:location-permission",
+      "action": "정확한 위치 허용",
+      "to": "dispatcher:run-permission-next",
+      "condition": "GPS fix와 구별"
+    },
+    {
+      "from": "system:location-permission",
+      "action": "대략적 위치 허용",
+      "to": "17-approximate-location",
+      "condition": "최초 선택 결과 안내"
+    },
+    {
+      "from": "system:location-permission",
+      "action": "거절",
+      "to": "18-without-location"
+    },
+    {
+      "from": "16-location-rationale",
+      "action": "경로 없이 계속",
+      "to": "dispatcher:run-permission-next",
+      "condition": "18 재표시 없음; 경로 사용 안 함"
+    },
+    {
+      "from": "17-approximate-location",
+      "action": "이대로 계속",
+      "to": "dispatcher:run-permission-next"
+    },
+    {
+      "from": "18-without-location",
+      "action": "경로 없이 계속",
+      "to": "dispatcher:run-permission-next"
+    },
+    {
+      "from": "17-approximate-location",
+      "action": "위치 설정 열기",
+      "to": "system:app-settings-location"
+    },
+    {
+      "from": "18-without-location",
+      "action": "위치 설정 열기",
+      "to": "system:app-settings-location"
+    },
+    {
+      "from": "system:app-settings-location",
+      "action": "복귀",
+      "to": "dispatcher:recheck-location",
+      "condition": "OS 재조회, 이전 run intent 유효한 경우만 이어감"
+    },
+    {
+      "from": "19-notification-rationale",
+      "action": "알림 허용하기",
+      "to": "system:notification-permission"
+    },
+    {
+      "from": "system:notification-permission",
+      "action": "허용 또는 거절",
+      "to": "dispatcher:run-permission-next",
+      "condition": "선택 권한 결과; 러닝 차단 없음"
+    },
+    {
+      "from": "19-notification-rationale",
+      "action": "나중에",
+      "to": "dispatcher:run-permission-next",
+      "condition": "선택 기록 후 앞으로 반복 요청하지 않음"
+    },
+    {
+      "from": "13-activity-rationale",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "14-activity-denied",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "15-activity-settings",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "16-location-rationale",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "17-approximate-location",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "18-without-location",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "19-notification-rationale",
+      "action": "X / 뒤로 / 바깥 / 아래로 닫기",
+      "to": "12-running-menu",
+      "condition": "pendingRun 취소; 닫기로 러닝 자동 시작 안 함"
+    },
+    {
+      "from": "reused:R01",
+      "action": "시작 완료",
+      "to": "reused:R02",
+      "condition": "기존 러닝 흐름의 위치·센서 상태에 따라 R02_TIME/L03으로 분기"
+    },
+    {
+      "from": "existing:settings-support",
+      "action": "앱 사용 안내",
+      "to": "20-guide-replay"
+    },
+    {
+      "from": "20-guide-replay",
+      "action": "뒤로",
+      "to": "existing:settings-support"
+    },
+    {
+      "from": "20-guide-replay",
+      "action": "러닝 홈으로",
+      "to": "existing:home"
+    }
+  ],
+  "systemScreensAreNative": true,
+  "dispatcher": "State transitions, not additional UI screens",
+  "deepLinkPrecedence": "Preserve return destination; do not auto-open guide over it"
+}

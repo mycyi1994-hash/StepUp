@@ -1,0 +1,516 @@
+{
+  "version": 1,
+  "canvas": {
+    "width": 390,
+    "height": 844
+  },
+  "screenIndex": "screen-index.json",
+  "mockupOnly": true,
+  "policy": {
+    "allDrawsFree": true,
+    "signupFree": 10,
+    "dailyFree": 3,
+    "walletFirstConnectPremium": 10,
+    "premiumPerEligibleKm": 1
+  },
+  "commonActions": {
+    "modalDismiss": "현재 모달만 닫고 실제 호출 상태로 복귀. 미완료 요청/지급 확인 상태는 유지.",
+    "screenBack": "신발 뽑기 메인은 내 신발로 복귀. 진행 중 뽑기는 요청 보존 후 26으로.",
+    "zeroChance": "draw 요청 금지. 해당 기회 소진 안내로.",
+    "unknownChance": "0으로 표시하지 않음. 조회/재조회.",
+    "pendingRequest": "새 뽑기를 막고 기존 결과 확인만 허용."
+  },
+  "hitAreas": {
+    "freeButton": [
+      44,
+      348,
+      302,
+      50
+    ],
+    "premiumButton": [
+      44,
+      648,
+      302,
+      50
+    ],
+    "freeDetails": [
+      40,
+      288,
+      162,
+      44
+    ],
+    "premiumDetails": [
+      40,
+      588,
+      172,
+      44
+    ],
+    "rules": [
+      70,
+      738,
+      250,
+      44
+    ],
+    "back": [
+      8,
+      42,
+      44,
+      44
+    ],
+    "sheetPrimary": [
+      24,
+      724,
+      342,
+      56
+    ],
+    "sheetSecondary": [
+      66,
+      783,
+      258,
+      44
+    ]
+  },
+  "transitions": [
+    {
+      "from": "00-owned-shoes-entry",
+      "event": "신발 뽑기",
+      "to": "22-home-loading",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "01-home-unconnected",
+      "event": "무료로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "무료 잔여 기회 > 0, 미완료 요청 없음",
+      "effect": "request_free_draw"
+    },
+    {
+      "from": "01-home-unconnected",
+      "event": "기회 내역 보기",
+      "to": "03-free-chances-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "01-home-unconnected",
+      "event": "무료 기회 받는 방법",
+      "to": "05-reward-rules-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "02-home-connected",
+      "event": "무료로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "무료 잔여 기회 > 0, 미완료 요청 없음",
+      "effect": "request_free_draw"
+    },
+    {
+      "from": "02-home-connected",
+      "event": "기회 내역 보기",
+      "to": "03-free-chances-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "02-home-connected",
+      "event": "무료 기회 받는 방법",
+      "to": "05-reward-rules-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "01-home-unconnected",
+      "event": "지갑 연결하고 10회 받기",
+      "to": "06-wallet-benefit-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "06-wallet-benefit-sheet",
+      "event": "WEB3 지갑 연결하기",
+      "to": "external:wallet-connect-sdk",
+      "condition": "",
+      "effect": "connect_wallet"
+    },
+    {
+      "from": "06-wallet-benefit-sheet",
+      "event": "나중에",
+      "to": "01-home-unconnected",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "지갑 다시 열기",
+      "to": "external:wallet-connect-sdk",
+      "condition": "현재 연결 요청 재개",
+      "effect": "resume_connection"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "취소",
+      "to": "01-home-unconnected",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "연결 및 선물 지급 확인",
+      "to": "08-wallet-connected",
+      "condition": "최초 연결 선물 지급 확인",
+      "effect": "none"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "연결 실패",
+      "to": "09-wallet-connect-failed",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "연결 성공, 선물 지급 미확인",
+      "to": "25-wallet-reward-pending",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "07-wallet-connecting",
+      "event": "기존 회원 재연결 성공",
+      "to": "02-home-connected",
+      "condition": "최초 연결 선물 이미 지급됨",
+      "effect": "none"
+    },
+    {
+      "from": "09-wallet-connect-failed",
+      "event": "다시 연결하기",
+      "to": "external:wallet-connect-sdk",
+      "condition": "",
+      "effect": "connect_wallet"
+    },
+    {
+      "from": "09-wallet-connect-failed",
+      "event": "나중에",
+      "to": "01-home-unconnected",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "08-wallet-connected",
+      "event": "상급으로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "상급 잔여 기회 > 0",
+      "effect": "request_premium_draw"
+    },
+    {
+      "from": "08-wallet-connected",
+      "event": "뽑기 화면으로",
+      "to": "02-home-connected",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "02-home-connected",
+      "event": "상급으로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "지갑 연결 확인, 상급 잔여 > 0, 미완료 요청 없음",
+      "effect": "request_premium_draw"
+    },
+    {
+      "from": "02-home-connected",
+      "event": "다음 1회까지 거리",
+      "to": "04-premium-chances-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "03-free-chances-sheet",
+      "event": "무료로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "무료 잔여 > 0",
+      "effect": "request_free_draw"
+    },
+    {
+      "from": "04-premium-chances-sheet",
+      "event": "상급으로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "지갑 연결 확인, 상급 잔여 > 0",
+      "effect": "request_premium_draw"
+    },
+    {
+      "from": "10-draw-request",
+      "event": "서비스 결과 및 지급 확인",
+      "to": "11-draw-opening",
+      "condition": "",
+      "effect": "show_confirmed_result_animation"
+    },
+    {
+      "from": "10-draw-request",
+      "event": "미처리·미차감 확인",
+      "to": "19-draw-not-started",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "10-draw-request",
+      "event": "처리 여부 불명확 또는 확인 지연",
+      "to": "20-draw-reconcile",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "10-draw-request",
+      "event": "뒤로가기",
+      "to": "26-home-pending-result",
+      "condition": "진행 요청 보존",
+      "effect": "none"
+    },
+    {
+      "from": "11-draw-opening",
+      "event": "연출 종료 또는 건너뛰기",
+      "to": "12-free-draw-result",
+      "condition": "무료, 남은 기회 > 0",
+      "effect": "none"
+    },
+    {
+      "from": "11-draw-opening",
+      "event": "연출 종료 또는 건너뛰기",
+      "to": "13-premium-draw-result",
+      "condition": "상급, 남은 기회 > 0",
+      "effect": "none"
+    },
+    {
+      "from": "11-draw-opening",
+      "event": "연출 종료 또는 건너뛰기",
+      "to": "14-last-chance-result",
+      "condition": "해당 종류 남은 기회 = 0",
+      "effect": "none"
+    },
+    {
+      "from": "12-free-draw-result",
+      "event": "내 신발 보기",
+      "to": "21-owned-shoes-result",
+      "condition": "",
+      "effect": "refresh_ownership_keep_equipped"
+    },
+    {
+      "from": "13-premium-draw-result",
+      "event": "내 신발 보기",
+      "to": "21-owned-shoes-result",
+      "condition": "",
+      "effect": "refresh_ownership_keep_equipped"
+    },
+    {
+      "from": "14-last-chance-result",
+      "event": "내 신발 보기",
+      "to": "21-owned-shoes-result",
+      "condition": "",
+      "effect": "refresh_ownership_keep_equipped"
+    },
+    {
+      "from": "12-free-draw-result",
+      "event": "한 번 더 뽑기",
+      "to": "10-draw-request",
+      "condition": "동일 종류 잔여 > 0, 최신 상태 확인",
+      "effect": "request_same_kind_new_draw"
+    },
+    {
+      "from": "13-premium-draw-result",
+      "event": "한 번 더 뽑기",
+      "to": "10-draw-request",
+      "condition": "동일 종류 잔여 > 0, 최신 상태 확인",
+      "effect": "request_same_kind_new_draw"
+    },
+    {
+      "from": "14-last-chance-result",
+      "event": "뽑기 화면으로",
+      "to": "15-home-no-chances",
+      "condition": "예시: 두 종류 모두 0회",
+      "effect": "none"
+    },
+    {
+      "from": "21-owned-shoes-result",
+      "event": "신발 뽑기",
+      "to": "22-home-loading",
+      "condition": "최신 횟수 재조회",
+      "effect": "none"
+    },
+    {
+      "from": "15-home-no-chances",
+      "event": "무료 기회 안내",
+      "to": "16-free-no-chances",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "15-home-no-chances",
+      "event": "러닝하고 기회 받기",
+      "to": "17-premium-no-chances",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "15-home-no-chances",
+      "event": "기회 내역 보기",
+      "to": "16-free-no-chances",
+      "condition": "무료 잔여 기회가 없을 때",
+      "effect": "none"
+    },
+    {
+      "from": "15-home-no-chances",
+      "event": "다음 1회까지 거리",
+      "to": "17-premium-no-chances",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "15-home-no-chances",
+      "event": "무료 기회 받는 방법",
+      "to": "05-reward-rules-sheet",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "16-free-no-chances",
+      "event": "확인",
+      "to": "15-home-no-chances",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "16-free-no-chances",
+      "event": "상급 뽑기 보기",
+      "to": "15-home-no-chances",
+      "condition": "상급 칸으로 초점 이동",
+      "effect": "none"
+    },
+    {
+      "from": "17-premium-no-chances",
+      "event": "러닝 시작",
+      "to": "external:existing-free-run",
+      "condition": "",
+      "effect": "start_running"
+    },
+    {
+      "from": "18-running-reward",
+      "event": "상급으로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "실제 적립 확인, 잔여 > 0",
+      "effect": "request_premium_draw"
+    },
+    {
+      "from": "19-draw-not-started",
+      "event": "다시 뽑기",
+      "to": "10-draw-request",
+      "condition": "이전 요청이 미처리·미차감으로 확정됨",
+      "effect": "request_same_kind_new_draw"
+    },
+    {
+      "from": "20-draw-reconcile",
+      "event": "결과 다시 확인",
+      "to": "20-draw-reconcile",
+      "condition": "기존 요청 조회, 새 요청 금지",
+      "effect": "reconcile_existing_request"
+    },
+    {
+      "from": "20-draw-reconcile",
+      "event": "기존 결과 확인 완료",
+      "to": "12-free-draw-result",
+      "condition": "무료 결과 예시, 종류/잔여에 따라 13/14",
+      "effect": "none"
+    },
+    {
+      "from": "20-draw-reconcile",
+      "event": "미처리 확인 완료",
+      "to": "19-draw-not-started",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "20-draw-reconcile",
+      "event": "뽑기 화면으로",
+      "to": "26-home-pending-result",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "26-home-pending-result",
+      "event": "결과 확인",
+      "to": "20-draw-reconcile",
+      "condition": "",
+      "effect": "reconcile_existing_request"
+    },
+    {
+      "from": "22-home-loading",
+      "event": "조회 성공",
+      "to": "01-home-unconnected",
+      "condition": "지갑 미연결 예시, 실제 상태에 따라 메인 변형",
+      "effect": "none"
+    },
+    {
+      "from": "22-home-loading",
+      "event": "조회 실패",
+      "to": "23-home-load-error",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "23-home-load-error",
+      "event": "다시 불러오기",
+      "to": "22-home-loading",
+      "condition": "",
+      "effect": "reload_entitlements"
+    },
+    {
+      "from": "23-home-load-error",
+      "event": "내 신발로 돌아가기",
+      "to": "00-owned-shoes-entry",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "24-wallet-reconnect",
+      "event": "지갑 다시 연결하기",
+      "to": "external:wallet-connect-sdk",
+      "condition": "연결 선물 중복 지급 없음",
+      "effect": "reconnect_wallet"
+    },
+    {
+      "from": "25-wallet-reward-pending",
+      "event": "지급 상태 확인",
+      "to": "25-wallet-reward-pending",
+      "condition": "같은 선물의 지급 조회",
+      "effect": "reconcile_wallet_grant"
+    },
+    {
+      "from": "25-wallet-reward-pending",
+      "event": "선물 지급 확인 완료",
+      "to": "08-wallet-connected",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "25-wallet-reward-pending",
+      "event": "뽑기 화면으로",
+      "to": "27-home-grant-pending",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "27-home-grant-pending",
+      "event": "지급 상태 확인",
+      "to": "25-wallet-reward-pending",
+      "condition": "",
+      "effect": "none"
+    },
+    {
+      "from": "27-home-grant-pending",
+      "event": "무료로 1회 뽑기",
+      "to": "10-draw-request",
+      "condition": "무료 기회는 별도 이용 가능",
+      "effect": "request_free_draw"
+    }
+  ]
+}
