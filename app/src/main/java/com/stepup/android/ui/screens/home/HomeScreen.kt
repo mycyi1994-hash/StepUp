@@ -158,28 +158,33 @@ fun HomeScreen(
     val largeText = LocalDensity.current.fontScale > 1.2f
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // 일반 폰 높이에서는 한 화면 — 신발 그림이 남는 높이를 쓴다. 아주 낮은 화면 · 큰 글씨면 그림 높이를 두고 넘긴다
+        // 일반 폰 높이에서는 한 화면 — 신발 그림이 남는 높이를 쓴다. 아주 낮은 화면 · 큰 글씨면 그림 높이를 두고
+        // 걸음 · 신발 카드만 넘긴다. 러닝 시작(주 행동)과 기록 보기 · 코스 찾기는 넘기지 않고 늘 아래에 보인다
         val scroll = largeText || maxHeight < 480.dp
         val short = maxHeight < 560.dp
         Column(
             Modifier.fillMaxSize()
-                .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(horizontal = StepUpDesign.Gutter)
                 .padding(top = if (short) 4.dp else 14.dp, bottom = 12.dp)
                 .testTag("home-content"),
         ) {
-            StepsBlock(
-                todaySteps = state.todaySteps, goal = state.goal, loaded = state.loaded,
-                hasPermission = hasPermission, firstHome = firstHome,
-                onRequestPermission = { requestActivity() },
-                onOpenDetails = { showDetails = true },
-            )
-            Spacer(Modifier.height(if (short) 12.dp else 18.dp))
-            HomeShoeCard(
-                shoe = state.equipped, loaded = state.loaded, onOpen = onOpenCustomize,
-                modifier = if (scroll) Modifier else Modifier.weight(1f),
-                imageHeight = if (scroll) 150.dp else null,
-            )
+            Column(
+                Modifier.fillMaxWidth().weight(1f)
+                    .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+            ) {
+                StepsBlock(
+                    todaySteps = state.todaySteps, goal = state.goal, loaded = state.loaded,
+                    hasPermission = hasPermission, firstHome = firstHome,
+                    onRequestPermission = { requestActivity() },
+                    onOpenDetails = { showDetails = true },
+                )
+                Spacer(Modifier.height(if (short) 12.dp else 18.dp))
+                HomeShoeCard(
+                    shoe = state.equipped, loaded = state.loaded, onOpen = onOpenCustomize,
+                    modifier = if (scroll) Modifier else Modifier.weight(1f),
+                    imageHeight = if (scroll) 150.dp else null,
+                )
+            }
             Spacer(Modifier.height(if (short) 12.dp else 16.dp))
             // 이 화면의 주 행동 — 가로로 넓은 러닝 시작(시안: 파란 면 · 흰 글자 · 오른쪽 ▶)
             StartRunButton(
