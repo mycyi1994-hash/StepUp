@@ -84,11 +84,12 @@ class MysteryDesignTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty()
         }
-        // 두 칸(v2, 2026-09-28) — 무료 · 상급 칸이 위아래, 칸마다 버튼 하나. 가격 · SUP 안내 · 위의 두 탭은 없다
+        // 뽑기 디자인 26장(2026-09-28) — 위 무료 · 상급 글자 탭, 고른 탭의 상자 무대와 실행 버튼 하나. 가격 · SUP 안내는 없다
+        compose.onNodeWithTag("draw-tab-free").assertIsDisplayed()
+        compose.onNodeWithTag("draw-tab-premium").assertIsDisplayed()
         compose.onNodeWithTag("draw-free").assertIsDisplayed()
         compose.onNodeWithTag("draw-free-action").assertExists()
-        compose.onNodeWithTag("draw-premium-action").assertExists()
-        compose.onNodeWithTag("draw-tab-free").assertDoesNotExist()
+        compose.onNodeWithTag("draw-premium-action").assertDoesNotExist()
         compose.onAllNodesWithText("500 SUP", substring = true).assertCountEquals(0)
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
         captureDisplay(File(out, "mystery-01-normal.png"))

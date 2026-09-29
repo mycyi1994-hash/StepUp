@@ -15,9 +15,9 @@
       "id": "Routes.MYSTERY_BOX",
       "parent": "Draw",
       "chrome": "Main",
-      "implementation": "하단 가운데 뽑기 탭(신발 화면 확정안 2026-09-28) — 신발 뽑기 v2 두 칸: 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26(흐름 동안은 공통 머리 · 하단 탭을 걷는다 — AppChromePolicy.immersive) — 수 · 연결 상태 · 결과는 서버 값만 — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest (Experience QA community suite, screen-gallery/shoe-draw-v2/: in-app real state, in-app example server 10→12→21, scenes 01-26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
-      "evidence": "docs/redesign/shoe-draw-v2/README.md"
+      "implementation": "하단 가운데 뽑기 탭 — 신발 뽑기 디자인 26장(2026-09-28 전달본): 제목 · ⓘ → 무료 / 상급 글자 탭 → 고른 탭의 상자 무대 · 남은 횟수 한 줄 · 실행 버튼 하나(01-03 · 09 · 12 · 20-23), ⓘ 안내창 15 · 16 · 17, 안내창 10 · 11 · 13 · 14 · 18 · 21 · 24 · 25, 흐름 04 · 05 · 06-08 · 19(흐름 동안은 하단 탭만 걷고 로고 · 잔액 머리는 둔다 — AppChromePolicy.immersive), 알림 26 — 수 · 연결 상태 · 결과는 서버 값만, 모르는 수는 \"—\" — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (Experience QA community suite, screen-gallery/shoe-draw-v3/: in-app example server 03→01→15→17→09→10→02→16→04→06, 12 · 23 · 13 · 14 · 26 · 20, 22→21, device sizes 360×800 · 390×844 · 412×915 · font 1.3 · light with zero-scroll checks, direct scenes 05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawHomeTest · ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "Screen.Customize.route",
@@ -877,7 +877,7 @@
     {
       "id": "ChatRoomScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatRoomScreen.kt",
-      "line": 113,
+      "line": 114,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1198,38 +1198,42 @@
     {
       "id": "DrawRequestScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 75,
-      "implementation": "신발 뽑기 v2 — 10 결과 확인 중(버튼 없음, 뒤로 가면 26) — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+      "line": 185,
+      "implementation": "신발 뽑기 디자인 — 04 결과 확인 중(머리 아래 \"← 뽑기 결과 확인\", 닫힌 상자 · 막대 도는 표시, 버튼 없음, 뒤로 가면 20) — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "DrawOpeningScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 101,
-      "implementation": "신발 뽑기 v2 — 11 상자 열기(전달본 unboxing.json 수치를 Compose 로, 결과를 받은 뒤에만 · 건너뛰기 · 동작 줄이기 0.2초) — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+      "line": 204,
+      "implementation": "신발 뽑기 디자인 — 05 상자 열기(결과를 받은 뒤에만 · 제목 줄의 건너뛰기 · 뚜껑 색 무료 라벤더 / 상급 오프화이트 · 동작 줄이기 0.2초) — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "DrawResultScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 142,
-      "implementation": "신발 뽑기 v2 — 12 · 13 · 14 결과(서버가 준 신발, 등급 프레임 v8 무대, 뽑은 뒤 서버에서 다시 읽은 남은 수) — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+      "line": 238,
+      "implementation": "신발 뽑기 디자인 — 06 · 07 · 08 결과(서버가 준 신발, 등급 프레임 무대는 남은 높이만큼, 이름 끝 작은 등급 배지, 뽑은 뒤 서버에서 다시 읽은 남은 수) — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "DrawCheckScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 222,
-      "implementation": "신발 뽑기 v2 — 20 결과 확인 지연(새로 뽑지 않고 서버 목록 · 현황을 다시 읽는다) — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest scenes (screen-gallery/shoe-draw-v2/) + ShoeDrawTest; emulator run pending CI"
+      "line": 330,
+      "implementation": "신발 뽑기 디자인 — 19 결과 확인 지연(시계 배지, 새로 뽑지 않고 서버 목록 · 현황을 다시 읽는다) — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 109,
-      "implementation": "신발 뽑기 v2 두 칸(2026-09-28 전달본): 무료 · 상급 칸 위아래, 시트 03-06 · 08 · 16 · 17 · 19 · 23, 흐름 10 · 11 · 12-14 · 20 · 26 — 수 · 연결 상태 · 결과는 서버 값만(07 · 09 · 25 · 27 은 앱이 알 수 없어 만들지 않음) — see docs/redesign/shoe-draw-v2/README.md",
-      "verification": "ShoeDrawV2DesignTest (Experience QA community suite, screen-gallery/shoe-draw-v2/: in-app real state, in-app example server 10→12→21, scenes 01-26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
-      "evidence": "docs/redesign/shoe-draw-v2/README.md"
+      "line": 69,
+      "implementation": "신발 뽑기 디자인 26장(2026-09-28 전달본): 무료 · 상급 글자 탭 하나씩의 메인(DrawHome.kt), 안내창(DrawSheets.kt), 흐름(DrawFlowScreens.kt), 하단 탭 위 짧은 알림 — 수 · 연결 상태 · 결과는 서버 값만(v2 규칙 그대로) — see docs/redesign/shoe-draw-v3/README.md",
+      "verification": "ShoeDrawTabsDesignTest (Experience QA community suite, screen-gallery/shoe-draw-v3/: in-app example server 03→01→15→17→09→10→02→16→04→06, 12 · 23 · 13 · 14 · 26 · 20, 22→21, device sizes 360×800 · 390×844 · 412×915 · font 1.3 · light with zero-scroll checks, direct scenes 05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawHomeTest · ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
+      "evidence": "docs/redesign/shoe-draw-v3/README.md"
     },
     {
       "id": "HomeScreen",

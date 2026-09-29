@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards crew-chat crew-home; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -190,8 +190,8 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/profile-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/profile-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/profile-running-path/. screen-gallery/profile-running-path/ || status=1
-  # 신발 뽑기 규칙(v2 두 칸, 2026-09-28) — 두 칸 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 받은 신발이 골라진 내 신발,
-  # 답을 잃은 요청은 새로 뽑지 않고 확인(20 · 26), 거절은 기회를 쓰지 않았다고(19), 다시 열면 남은 요청부터
+  # 신발 뽑기 규칙(v2 규칙 · 26장 화면, 2026-09-28) — 탭마다의 상태, 앱 셸 안에서 한 번 뽑기 → 결과 → 받은 신발이 골라진 내 신발,
+  # 답을 잃은 요청은 새로 뽑지 않고 확인(19 · 20), 거절은 기회를 쓰지 않았다고(18), 다시 열면 남은 요청부터
   run_instrumentation draw "com.stepup.android.ShoeDrawTest"
   mkdir -p screen-gallery/draw-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/draw-results/ || true
@@ -241,12 +241,17 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-detail-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-detail-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || status=1
-  # 신발 뽑기 v2 두 칸(2026-09-28) — 앱 셸 안의 실제 흐름(신발 탭 → 뽑기, 이 기기의 서버 상태 그대로) · 흉내 낸 서버로 10 → 12 → 21 ·
-  # 시안 장면 01~26(서버 값으로 가를 수 없는 07 · 09 · 25 · 27 제외) · 밝은 테마 · 큰 글씨 · 320dp
-  run_instrumentation shoe-draw-v2 "com.stepup.android.ShoeDrawV2DesignTest"
-  mkdir -p screen-gallery/shoe-draw-v2-results
-  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-draw-v2-results/ || true
-  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw-v2/. screen-gallery/shoe-draw-v2/ || status=1
+  # 신발 뽑기 디자인 26장(2026-09-28) — 위 무료 · 상급 글자 탭 한 화면. 앱 셸 안의 흉내 낸 서버로 03 → 01 → 15 → 17 → 09 → 10 → 02 →
+  # 16 → 04 → 06 → 내 신발, 12 · 23 · 13 · 14 · 26 · 20, 22 → 21, 기기 크기(360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마)에서
+  # 스크롤 없이 버튼이 하단 탭 위 + 상태를 바로 넣은 장면(05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26) · 밝은 테마 · 큰 글씨 · 320dp.
+  # 검사 함수마다 나눠 돌린다(한 곳이 멈춰도 나머지 장면은 남게)
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for part in inTheApp inTheAppStates signedOutThenLoadFailedInTheApp fitsAtDeviceSizes scenes; do
+    run_instrumentation "shoe-draw-v3-$part" "com.stepup.android.ShoeDrawTabsDesignTest#$part"
+    mkdir -p "screen-gallery/shoe-draw-v3-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/shoe-draw-v3-results/$part/" || true
+  done
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-draw-v3/. screen-gallery/shoe-draw-v3/ || status=1
   # 신발 화면 확정안(2026-09-28) — 앱 셸 안의 내 신발 · 신발 보관함을 360×800 · 390×844 · 412×915(dp)로(세로 스크롤 거리 0 확인),
   # 여섯 갈래 무대 · 배지, 막대 기준, 관리(⋯), 거르기 · 정렬, 큰 글씨 · 밝은 테마 + 읽는 중 · 실패 · 빈 목록 · 긴 이름 장면
   run_instrumentation my-shoes "com.stepup.android.MyShoesDesignTest"

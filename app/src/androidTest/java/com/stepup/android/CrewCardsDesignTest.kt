@@ -88,6 +88,7 @@ class CrewCardsDesignTest {
     private val notes = CopyOnWriteArrayList<String>()
     private lateinit var originalCards: CrewCardRepository
     private lateinit var originalPlaces: PlaceSearch
+    private lateinit var originalHome: com.stepup.android.data.repo.CrewHomeRepository
     private val server = FakeCrewServer()
 
     @After fun restore() {
@@ -95,6 +96,7 @@ class CrewCardsDesignTest {
         CrewPhotoPickerForTest.unavailable = false
         if (::originalCards.isInitialized) ServiceLocator.useCrewCardsForTest(originalCards)
         if (::originalPlaces.isInitialized) ServiceLocator.useCommunityForTest(ServiceLocator.communityRepository, originalPlaces)
+        if (::originalHome.isInitialized) ServiceLocator.useCrewHomeForTest(originalHome)
         runBlocking { ServiceLocator.userPrefs.clearCrewData() }
         runCatching { File(directory, "capture-notes-${System.currentTimeMillis()}.txt").writeText(notes.joinToString("\n")) }
     }
@@ -461,10 +463,13 @@ class CrewCardsDesignTest {
         server.seedOwner()
         launch()
         guard {
-            openCrew("afterwork")
-            awaitText("크루 정보와 모집을 관리할 수 있어요.")
-            shot("76-owner-detail")
-            tapTag("crew-detail-primary")
+            // 가입한 크루(크루장 포함)는 목록에서 내 크루 홈(확정 4번, #62)으로 열린다 — 크루 관리는 홈 더보기 안
+            awaitTag("crew-list")
+            tapIn("crew-card-afterwork", "crew-card-open")
+            awaitTag("home-masthead")
+            shot("76-owner-home")
+            tapTag("crew-more")
+            tapTag("home-menu-manage")
             awaitTag("crew-manage")
             shot("40-manage")
 
@@ -656,6 +661,13 @@ class CrewCardsDesignTest {
         originalCards = ServiceLocator.crewCards
         originalPlaces = ServiceLocator.placeSearch
         ServiceLocator.useCrewCardsForTest(repository)
+        // 가입한 크루는 목록에서 내 크루 홈(#62)으로 열린다 — 홈도 같은 흉내 서버(crew_home)에서 읽게 한다
+        originalHome = ServiceLocator.crewHome
+        ServiceLocator.useCrewHomeForTest(
+            com.stepup.android.data.repo.CrewHomeRepository(
+                com.stepup.android.data.remote.CrewHomeApi(stepUp), owner = { OWNER }, onEnded = { ServiceLocator.crewChat.forget(it) },
+            ),
+        )
         ServiceLocator.useCommunityForTest(
             ServiceLocator.communityRepository,
             PlaceSearch(PlaceSearchApi(key = "test", fetch = ::geocoding), platform = null, language = { "ko" }),
@@ -1109,6 +1121,15 @@ class CrewCardsDesignTest {
                     rosters[c.id]?.removeAll { it.id == text("p_user") }
                     c.members -= 1
                     HttpResponse(204, "")
+                }
+                // 내 크루 홈(0049) — 가입한 크루만. 모임 · 공지 없이 이 검사에 필요한 만큼
+                "crew_home" -> {
+                    val c = crewArg() ?: return HttpResponse(400, """{"message":"crew_missing"}""")
+                    if (!c.joined || c.id in gone) return HttpResponse(403, """{"message":"crew_not_member"}""")
+                    ok(buildJsonObject {
+                        put("crew_id", c.id); put("role", if (c.owned) "OWNER" else "MEMBER"); put("owner_id", c.leaderId)
+                        put("member_count", c.members); put("unread", 0)
+                    })
                 }
                 "crew_leave" -> { crewArg()?.apply { joined = false; members -= 1 }; HttpResponse(204, "") }
                 "crew_dissolve" -> { gone += text("p_crew"); HttpResponse(204, "") }

@@ -6,13 +6,13 @@ import com.stepup.android.domain.DrawStatus
 import com.stepup.android.domain.Sneaker
 
 /*
- * 신발 뽑기 v2(두 칸, 2026-09-28 전달본, docs/redesign/shoe-draw-v2) — 화면이 서버 값에서 고르는 규칙.
+ * 신발 뽑기 — 규칙은 v2 전달본(2026-09-28, docs/redesign/shoe-draw-v2), 화면은 26장 디자인(docs/redesign/shoe-draw-v3). 화면이 서버 값에서 고르는 규칙.
  *
  * 모든 수 · 연결 상태는 서버(draw_status)가 준 것이다. 여기서는 그 값으로 "어느 장면인가"만 고른다 —
  * 폰이 기회를 주거나 줄이거나, 결과 신발을 정하지 않는다. 앱이 알 수 없는 상태(지갑에서 연결 중 · 연결 실패)는 만들지 않는다.
  */
 
-/** 상급 칸의 모습 — 회원 상태별 행동(전달서 "메인 두 칸") 중 서버 값으로 가를 수 있는 것 */
+/** 상급 탭의 모습 — 회원 상태별 행동(v2 전달서 "메인 두 칸") 중 서버 값으로 가를 수 있는 것 */
 enum class PremiumMode {
     /** 01 — 지갑을 연결한 적이 없다(첫 연결 선물이 남아 있다). "지갑 연결하고 N회 받기" */
     Connect,
@@ -127,3 +127,152 @@ data class LinkWatch(val linked: Boolean, val giftLeft: Int)
 fun linkedGift(before: LinkWatch?, now: DrawStatus): Int? =
     if (before == null || before.linked || !now.walletLinked) null
     else (now.giftLeft - before.giftLeft).coerceAtLeast(0)
+
+// ── 메인 한 탭의 모습(01 · 02 · 03 · 09 · 12 · 20 · 21 · 22 · 23) ─────────────────────────────
+//
+// 뽑기 디자인(26장) — 위 글자 탭(무료 · 상급) 하나를 고르면 그 탭의 상자 무대 · 남은 횟수 한 줄 · 실행 버튼 하나.
+// 모르는 수(불러오는 중 · 실패 · 로그인 전)는 "—"로 두고 0 으로 보이지 않는다. 결과를 모르는 요청이 있으면 두 탭 모두
+// 새 뽑기 대신 "결과 확인"이다.
+
+/** 무대 제목 */
+enum class DrawCardTitle { DailyFree, Free, Premium, Pending, SignedOut }
+
+/** 무대 제목 아래 한 줄 — 상급 탭의 지갑 · 서비스 상태 */
+enum class DrawCardSub { Linked, WalletNeeded, Paused }
+
+/** 무대 오른쪽 위 */
+sealed interface DrawChip {
+    data class Count(val value: Int) : DrawChip
+
+    /** 20 — 결과 확인 중 */
+    data object Checking : DrawChip
+
+    /** 09 — 지갑을 연결한 적이 없다(수 대신 지갑 그림) */
+    data object Wallet : DrawChip
+
+    /** 모르는 수 — "—" */
+    data object Unknown : DrawChip
+
+    data object None : DrawChip
+}
+
+/** 남은 횟수 줄의 이름 */
+enum class DrawRowLabel { FreeLeft, PremiumLeft, PremiumKept, Result }
+
+/** 무대 아래 한 줄 — 남은 횟수 · 모르는 수 · 결과 확인 중 · 첫 연결 선물 */
+sealed interface DrawRow {
+    data class Count(val label: DrawRowLabel, val value: Int) : DrawRow
+    data class Unknown(val label: DrawRowLabel) : DrawRow
+    data object Pending : DrawRow
+
+    /** 09 — 받을 수 있는 첫 연결 선물(이미 가진 횟수가 아니다) */
+    data class Gift(val value: Int) : DrawRow
+}
+
+/** 실행 버튼 하나 */
+enum class DrawCardAction {
+    /** 무료로 1회 뽑기 · 상급으로 1회 뽑기 */
+    Draw,
+
+    /** 13 — 무료 기회를 모두 썼다(버튼은 안내를 연다) */
+    FreeInfo,
+
+    /** 14 — 연결됨 · 상급 기회 없음(러닝하고 기회 받기) */
+    RunInfo,
+
+    /** 09 → 10 — 지갑 연결하고 N회 받기 */
+    Connect,
+
+    /** 12 — 지갑 다시 연결하기(선물은 다시 주지 않는다) */
+    Reconnect,
+
+    /** 23 — 상급 뽑기를 잠시 멈췄다(누를 수 없다) */
+    Paused,
+
+    /** 20 — 결과 확인(새 뽑기는 막는다) */
+    Check,
+
+    /** 03 — 불러오는 중(누를 수 없다) */
+    Loading,
+
+    /** 21 — 다시 불러오기 */
+    Reload,
+
+    /** 22 — 로그인 화면으로 */
+    SignIn,
+}
+
+data class DrawHomeCard(
+    val kind: DrawKind,
+    val title: DrawCardTitle,
+    val sub: DrawCardSub?,
+    val chip: DrawChip,
+    val row: DrawRow,
+    val action: DrawCardAction,
+    /** 불러오는 중 · 실패 — 상자를 흐리게 */
+    val dim: Boolean = false,
+    /** 불러오는 중 — 상자 위에 돌아가는 표시 */
+    val loading: Boolean = false,
+)
+
+private fun DrawKind.leftLabel(): DrawRowLabel = if (this == DrawKind.FREE) DrawRowLabel.FreeLeft else DrawRowLabel.PremiumLeft
+
+private fun DrawKind.plainTitle(): DrawCardTitle = if (this == DrawKind.FREE) DrawCardTitle.Free else DrawCardTitle.Premium
+
+/**
+ * 고른 탭 [tab] 의 모습. [status] 가 없으면 [loading] · [signedOut] 으로 가른다(둘 다 아니면 불러오기 실패).
+ * 결과를 모르는 요청 [pending] 이 그 종류면 "뽑은 신발 · 확인 중", 다른 종류여도 버튼은 "결과 확인"이다.
+ */
+fun drawHomeCard(status: DrawStatus?, tab: DrawKind, pendingKind: DrawKind?, loading: Boolean, signedOut: Boolean): DrawHomeCard {
+    if (status == null) {
+        return when {
+            signedOut -> DrawHomeCard(tab, DrawCardTitle.SignedOut, null, DrawChip.None, DrawRow.Unknown(tab.leftLabel()), DrawCardAction.SignIn)
+            loading -> DrawHomeCard(
+                tab, tab.plainTitle(), null, DrawChip.Unknown, DrawRow.Unknown(tab.leftLabel()), DrawCardAction.Loading,
+                dim = true, loading = true,
+            )
+            else -> DrawHomeCard(tab, tab.plainTitle(), null, DrawChip.Unknown, DrawRow.Unknown(tab.leftLabel()), DrawCardAction.Reload, dim = true)
+        }
+    }
+    if (pendingKind == tab) {
+        return DrawHomeCard(tab, DrawCardTitle.Pending, null, DrawChip.Checking, DrawRow.Pending, DrawCardAction.Check)
+    }
+    val card = if (tab == DrawKind.FREE) {
+        DrawHomeCard(
+            tab, if (status.dailyTotal > 0) DrawCardTitle.DailyFree else DrawCardTitle.Free, null,
+            DrawChip.Count(status.freeLeft), DrawRow.Count(DrawRowLabel.FreeLeft, status.freeLeft),
+            if (status.freeLeft > 0) DrawCardAction.Draw else DrawCardAction.FreeInfo,
+        )
+    } else {
+        when (status.premiumMode()) {
+            PremiumMode.Connect -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, DrawCardSub.WalletNeeded, DrawChip.Wallet, DrawRow.Gift(status.giftOnLink), DrawCardAction.Connect,
+            )
+            PremiumMode.Reconnect -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, DrawCardSub.WalletNeeded, DrawChip.Count(status.premiumLeft),
+                DrawRow.Count(DrawRowLabel.PremiumKept, status.premiumLeft), DrawCardAction.Reconnect,
+            )
+            PremiumMode.Paused -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, DrawCardSub.Paused, DrawChip.Count(status.premiumLeft),
+                DrawRow.Count(DrawRowLabel.PremiumLeft, status.premiumLeft), DrawCardAction.Paused,
+            )
+            PremiumMode.Ready -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, DrawCardSub.Linked, DrawChip.Count(status.premiumLeft),
+                DrawRow.Count(DrawRowLabel.PremiumLeft, status.premiumLeft), DrawCardAction.Draw,
+            )
+            PremiumMode.Empty -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, DrawCardSub.Linked, DrawChip.Count(status.premiumLeft),
+                DrawRow.Count(DrawRowLabel.PremiumLeft, status.premiumLeft), DrawCardAction.RunInfo,
+            )
+        }
+    }
+    // 다른 종류의 결과를 아직 모른다 — 이 탭의 수는 보이되 버튼은 결과 확인(새 뽑기는 막는다)
+    return if (pendingKind != null) card.copy(action = DrawCardAction.Check) else card
+}
+
+/** ⓘ 가 여는 안내 — 무료 탭은 무료 기회(15), 상급 탭은 상급 기회 · 러닝(16 · 24), 지갑을 연결한 적이 없으면 받는 방법(17) */
+fun drawInfoSheet(status: DrawStatus, tab: DrawKind): DrawSheet = when {
+    tab == DrawKind.FREE -> DrawSheet.FreeChances
+    status.premiumMode() == PremiumMode.Connect -> DrawSheet.Rules
+    else -> DrawSheet.PremiumChances
+}

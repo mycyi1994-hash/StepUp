@@ -22,7 +22,7 @@ class AppChromePolicyTest {
         assertEquals(Screen.Customize, AppChromePolicy.destination(Routes.SNEAKER)?.parent)
     }
 
-    @Test fun `the draw flow folds the shell only on the draw tab`() {
+    @Test fun `the draw flow hides the tabs only on the draw tab`() {
         try {
             AppChromePolicy.immersive = true
             assertTrue(AppChromePolicy.immersiveAt(Routes.MYSTERY_BOX))

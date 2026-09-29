@@ -3,31 +3,15 @@
 <resources>
     <!-- 두 칸(01 · 02 · 15 · 22 · 23 · 24 · 26) -->
     <string name="dv2_title">신발 뽑기</string>
-    <string name="dv2_subtitle">신발은 모두 무료로 뽑을 수 있어요.</string>
-    <string name="dv2_subtitle_loading">뽑기 기회를 불러오고 있어요.</string>
-    <string name="dv2_subtitle_signed_out">로그인하면 신발을 무료로 뽑을 수 있어요.</string>
     <string name="dv2_free">무료 뽑기</string>
     <string name="dv2_premium">상급 뽑기</string>
-    <string name="dv2_free_rule">첫 가입 %1$d회 · 매일 %2$d회</string>
-    <string name="dv2_free_rule_daily">매일 %1$d회</string>
-    <string name="dv2_premium_rule">지갑 연결 %1$d회 · 러닝 %2$skm당 1회</string>
-    <string name="dv2_premium_rule_run">지갑 연결 선물 · 러닝 %1$skm당 1회</string>
-    <string name="dv2_left">남은 기회</string>
     <string name="dv2_count">%1$d회</string>
     <string name="dv2_count_plus">+%1$d회</string>
-    <string name="dv2_history">기회 내역 보기</string>
     <string name="dv2_next_premium">다음 1회까지 %1$skm</string>
     <string name="dv2_run_capped">오늘 러닝 기회를 모두 받았어요</string>
-    <string name="dv2_first_link">처음 연결하면</string>
-    <string name="dv2_first_link_note">상급 뽑기를 무료로 받아요</string>
     <string name="dv2_kept_premium">보유한 상급 기회</string>
-    <string name="dv2_reconnect_note">지갑을 다시 연결해주세요</string>
-    <string name="dv2_paused_note">지금은 상급 뽑기를 잠시 멈췄어요</string>
     <string name="dv2_pending_label">뽑은 신발</string>
     <string name="dv2_pending_value">확인 중</string>
-    <string name="dv2_pending_note">결과가 준비되면 볼 수 있어요</string>
-    <string name="dv2_failed_inline">기회를 불러오지 못했어요</string>
-    <string name="dv2_signed_out_note">로그인하면 볼 수 있어요</string>
     <string name="dv2_action_free">무료로 1회 뽑기</string>
     <string name="dv2_action_free_info">무료 기회 안내</string>
     <string name="dv2_action_connect">지갑 연결하고 %1$d회 받기</string>
@@ -39,7 +23,6 @@
     <string name="dv2_action_loading">불러오는 중</string>
     <string name="dv2_action_reload">다시 불러오기</string>
     <string name="dv2_action_sign_in">로그인하면 뽑을 수 있어요</string>
-    <string name="dv2_rules_link">무료 기회 받는 방법</string>
 
     <!-- 03 무료 내역 -->
     <string name="dv2_free_sheet_title">무료 뽑기 기회</string>
@@ -51,28 +34,26 @@
 
     <!-- 04 상급 내역 · 러닝 진행 -->
     <string name="dv2_premium_sheet_title">상급 뽑기 기회</string>
-    <string name="dv2_premium_sheet_sub">지갑 연결 후 러닝 %1$skm마다 1회를 받아요.</string>
     <string name="dv2_link_gift">첫 연결 선물</string>
     <string name="dv2_run_earned">러닝으로 받은 기회</string>
     <string name="dv2_premium_now">남은 상급 뽑기</string>
     <string name="dv2_progress">%1$s / %2$skm</string>
 
     <!-- 05 받는 방법 -->
-    <string name="dv2_rules_title">무료 기회 받는 방법</string>
-    <string name="dv2_rules_signup">처음 가입하면</string>
+    <string name="dv2_rules_title">기회 받는 방법</string>
+    <string name="dv2_rules_signup">처음 가입</string>
     <string name="dv2_rules_daily">매일</string>
-    <string name="dv2_rules_first_link">처음 WEB3 지갑을 연결하면</string>
-    <string name="dv2_rules_run">지갑 연결 후 러닝 %1$skm마다</string>
+    <string name="dv2_rules_first_link">처음 WEB3 지갑 연결</string>
+    <string name="dv2_rules_run">연결 후 러닝 %1$skm마다</string>
     <string name="dv2_rules_note">무료 뽑기와 상급 뽑기는 따로 사용할 수 있어요.</string>
     <string name="dv2_ok">확인</string>
 
     <!-- 06 연결 혜택 -->
     <string name="dv2_benefit_title">상급 뽑기 무료로 받기</string>
     <string name="dv2_benefit_sub">WEB3 지갑을 연결하고 시작해보세요.</string>
-    <string name="dv2_benefit_first">처음 지갑을 연결하면</string>
+    <string name="dv2_benefit_first">처음 지갑 연결</string>
     <string name="dv2_benefit_run">연결 후 러닝 %1$skm마다</string>
     <string name="dv2_plus_one">+1회</string>
-    <string name="dv2_benefit_note">지갑을 연결한 뒤 달리면\n상급 뽑기 기회를 더 모을 수 있어요.</string>
     <string name="dv2_connect">WEB3 지갑 연결하기</string>
     <string name="dv2_later">나중에</string>
 
@@ -83,25 +64,17 @@
     <string name="dv2_relinked">지갑이 다시 연결됐어요.</string>
 
     <!-- 16 무료 소진 · 17 러닝으로 받기 · 18 러닝 반영 -->
-    <string name="dv2_free_empty_title">무료 기회를 모두 썼어요</string>
-    <string name="dv2_free_empty_head">매일 무료 뽑기 %1$d회를 드려요.</string>
+    <string name="dv2_free_empty_title">무료 기회를 모두 사용했어요.</string>
     <string name="dv2_free_empty_body">다음 무료 기회가 생기면 다시 뽑을 수 있어요.</string>
     <string name="dv2_see_premium">상급 뽑기 보기</string>
-    <string name="dv2_run_title">러닝으로 기회를 받아요</string>
-    <string name="dv2_run_sub">연결된 지갑으로 러닝 기회를 모을 수 있어요.</string>
+    <string name="dv2_run_title">러닝으로 기회 받기</string>
     <string name="dv2_run_until">다음 상급 뽑기까지</string>
-    <string name="dv2_run_rule">러닝 %1$skm마다 상급 뽑기 1회를 받아요.</string>
     <string name="dv2_run_start">러닝 시작</string>
     <string name="dv2_km">%1$skm</string>
     <string name="dv2_run_reward">러닝이 반영됐어요 · 상급 뽑기 +%1$d회</string>
 
     <!-- 10 결과 확인 중 · 11 상자 열기 -->
-    <string name="dv2_request_head">신발을 확인하고 있어요</string>
-    <string name="dv2_request_sub">결과가 확인되면 상자가 열려요.</string>
     <string name="dv2_wait">잠시만 기다려주세요.</string>
-    <string name="dv2_opening_head">상자를 열고 있어요</string>
-    <string name="dv2_opening_sub">어떤 신발을 만나게 될까요?</string>
-    <string name="dv2_opening_note">신발 한 켤레가 내 보유 신발에 추가돼요.</string>
     <string name="dv2_skip">건너뛰기</string>
 
     <!-- 12 · 13 · 14 결과 -->
@@ -115,7 +88,7 @@
     <string name="dv2_result_cd">%1$s, %2$s 등급 신발</string>
 
     <!-- 19 시작 실패(기회를 쓰지 않은 것이 확실할 때만) -->
-    <string name="dv2_stop_title">뽑기를 시작하지 못했어요</string>
+    <string name="dv2_stop_title">뽑기를 시작하지 못했어요.</string>
     <string name="dv2_stop_unused">기회는 사용되지 않았어요.</string>
     <string name="dv2_stop_network">연결 상태를 확인하고 다시 시도해주세요.</string>
     <string name="dv2_stop_no_free">남은 무료 뽑기가 없어요.</string>
@@ -127,14 +100,29 @@
 
     <!-- 20 결과 확인 지연(처리 여부가 불명확할 때 — 새로 뽑지 않는다) -->
     <string name="dv2_check_header">뽑기 결과 확인</string>
-    <string name="dv2_check_head">결과를 확인하고 있어요</string>
-    <string name="dv2_check_sub">완료 여부를 확인한 뒤 신발을 보여드릴게요.</string>
+    <string name="dv2_check_head">결과를 확인하고 있어요.</string>
     <string name="dv2_check_note">다시 뽑지 않고, 진행 중인 결과를 확인해요.</string>
     <string name="dv2_check_again">결과 다시 확인</string>
-    <string name="dv2_check_unknown">아직 결과를 확인하지 못했어요. 연결 상태를 확인하고 다시 확인해주세요.</string>
 
     <!-- 23 불러오기 실패(소진과 다르다) -->
-    <string name="dv2_load_failed_title">기회를 불러오지 못했어요</string>
+    <string name="dv2_load_failed_title">기회를 불러오지 못했어요.</string>
     <string name="dv2_load_failed_body">연결 상태를 확인하고 다시 시도해주세요.</string>
     <string name="dv2_back_to_shoes">내 신발로 돌아가기</string>
+
+    <!-- 신발 뽑기 디자인(2026-09-28, 26장) — docs/redesign/shoe-draw-v3 -->
+    <string name="dv3_info_cd">뽑기 기회 안내</string>
+    <string name="dv3_stage_daily_free">매일 %1$d회 무료</string>
+    <string name="dv3_signed_out_title">로그인하면 볼 수 있어요.</string>
+    <string name="dv3_state_linked">지갑 연결 완료</string>
+    <string name="dv3_state_wallet_needed">지갑 연결 필요</string>
+    <string name="dv3_state_paused">일시 중단</string>
+    <string name="dv3_pending_row">뽑기 결과</string>
+    <string name="dv3_gift_available">처음 연결 선물 · 받을 수 있어요</string>
+    <string name="dv3_action_sign_in">로그인하고 뽑기</string>
+    <string name="dv3_daily_free">매일 무료 뽑기</string>
+    <string name="dv3_run_capped_sub">내일 다시 쌓을 수 있어요.</string>
+    <string name="dv3_stop_title_blocked">지금은 뽑을 수 없어요.</string>
+    <string name="dv3_opening_met">새로운 신발을 만났어요.</string>
+    <string name="dv3_result_head">새 신발을 받았어요.</string>
+    <string name="dv3_check_unknown_head">아직 결과를 확인하지 못했어요.</string>
 </resources>

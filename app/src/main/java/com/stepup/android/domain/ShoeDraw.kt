@@ -4,7 +4,7 @@ import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.floor
 
-/** 뽑기 종류 — 뽑기 화면 위의 두 칸(무료 · 상급). 2026-09-27 무료 정책(서버 0042) */
+/** 뽑기 종류 — 뽑기 화면 위의 글자 탭(무료 · 상급). 2026-09-27 무료 정책(서버 0042) */
 enum class DrawKind { FREE, PREMIUM }
 
 /**

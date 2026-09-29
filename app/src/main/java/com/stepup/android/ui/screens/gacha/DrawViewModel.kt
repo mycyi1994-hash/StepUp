@@ -31,7 +31,7 @@ sealed interface DrawScreenState {
     data object Failed : DrawScreenState
 }
 
-/** 지금 보이는 장면 — 두 칸(01 · 02 …) · 결과 확인 중(10) · 상자 열기(11) · 결과(12 · 13 · 14) · 결과 확인 지연(20) */
+/** 지금 보이는 장면(번호는 v2 전달본) — 메인(01 · 02 …) · 결과 확인 중(10) · 상자 열기(11) · 결과(12 · 13 · 14) · 결과 확인 지연(20) */
 sealed interface DrawFlow {
     data object Home : DrawFlow
     data class Requesting(val kind: DrawKind) : DrawFlow
@@ -42,7 +42,7 @@ sealed interface DrawFlow {
     data class Checking(val kind: DrawKind, val busy: Boolean, val tried: Boolean = false) : DrawFlow
 }
 
-/** 결과를 아직 보지 않은 요청(26) — 두 칸의 버튼이 "결과 확인"이 되고 새 뽑기는 막힌다. [ready] 면 결과를 이미 받았다 */
+/** 결과를 아직 보지 않은 요청(26) — 메인의 버튼이(두 탭 모두) "결과 확인"이 되고 새 뽑기는 막힌다. [ready] 면 결과를 이미 받았다 */
 data class DrawPending(val kind: DrawKind, val ready: Boolean)
 
 /** 한 번 보여 줄 안내 — 시트(19 · 08 · 23) 또는 짧은 알림(18 · 다시 연결) */
@@ -94,7 +94,7 @@ interface DrawSource {
 }
 
 /**
- * 신발 뽑기 v2(두 칸, 2026-09-28 전달본). 수 · 연결 상태 · 결과 신발은 모두 서버가 정한다.
+ * 신발 뽑기 — 규칙은 v2 전달본(2026-09-28, 번호도 그 전달본), 화면은 26장 디자인(docs/redesign/shoe-draw-v3). 수 · 연결 상태 · 결과 신발은 모두 서버가 정한다.
  *
  * 한 번 누르면 결과를 확인할 때까지 새 뽑기를 받지 않는다(10). 보내기 직전에 서버의 신발 번호를 기준으로 적어 두고(보내지 못하면
  * 기회를 쓰지 않은 것이 확실하다 — 19), 서버가 거절하면 19, 답을 받지 못하면 서버 목록 · 현황을 다시 읽어 확인한다(20).
@@ -178,7 +178,7 @@ class DrawViewModel(
         startCheck()
     }
 
-    /** 10 · 20 에서 뒤로 — 요청은 그대로 두고 두 칸으로(26) */
+    /** 10 · 20 에서 뒤로 — 요청은 그대로 두고 메인으로(26) */
     fun leaveFlow() {
         if (_flow.value is DrawFlow.Requesting || _flow.value is DrawFlow.Checking) _flow.value = DrawFlow.Home
     }
@@ -189,7 +189,7 @@ class DrawViewModel(
         _flow.value = DrawFlow.Result(opening.result)
     }
 
-    /** 결과에서 뒤로 · "뽑기 화면으로" · "내 신발 보기" — 두 칸은 최신 수로 */
+    /** 결과에서 뒤로 · "뽑기 화면으로" · "내 신발 보기" — 메인은 최신 수로 */
     fun closeResult() {
         when (val current = _flow.value) {
             is DrawFlow.Opening -> _flow.value = DrawFlow.Result(current.result)
@@ -271,7 +271,7 @@ class DrawViewModel(
                 _pending.value = DrawPending(result.kind, ready = true)
             }
         }
-        // 뽑은 뒤의 수 — 결과의 "남은 N회"와 두 칸. 읽지 못하면 결과에 수를 두지 않는다
+        // 뽑은 뒤의 수 — 결과의 "남은 N회"와 메인. 읽지 못하면 결과에 수를 두지 않는다
         val status = fresh ?: load()
         if (status != null) withLeft(result.shoe.id, status.left(result.kind))
     }

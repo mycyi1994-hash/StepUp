@@ -13,7 +13,7 @@ An atmospheric running world: dimensional RUNO/LUMI, faithful equipment, riversi
 
 ## Fixed chrome
 
-- One root navigation shell. Exactly five destinations in this order: 러닝, 신발, 뽑기, 커뮤니티, 내 정보 (2026-09-28 — 뽑기는 가운데 독립 탭, 신발 탭 위는 내 신발 · 신발 보관함; docs/redesign/shoes-ui-2026-09-28). The draw flow (request · opening · result · check) folds the shell full-screen while it runs, through `AppChromePolicy.immersive`.
+- One root navigation shell. Exactly five destinations in this order: 러닝, 신발, 뽑기, 커뮤니티, 내 정보 (2026-09-28 — 뽑기는 가운데 독립 탭, 신발 탭 위는 내 신발 · 신발 보관함; docs/redesign/shoes-ui-2026-09-28). The draw flow (request · opening · result · check) hides the bottom bar while it runs, through `AppChromePolicy.immersive`; the logo · balance header stays (shoe-draw design 2026-09-28, docs/redesign/shoe-draw-v3).
 - Header, wordmark, balance pill, back button, primary button and navigation dimensions are owned by shared components and `StepUpDesign` tokens.
 - Screens supply content, callbacks, selection and data. Screens cannot choose logo dimensions, button colors/radii or recreate chrome.
 - Wordmark presets: Header (26 dp high, original aspect ratio); Launch (52 dp high, constrained to available width). Both use the existing original transparent assets. No text imitation or regenerated logo.

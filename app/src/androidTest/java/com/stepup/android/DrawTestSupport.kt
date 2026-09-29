@@ -64,6 +64,8 @@ object DrawSamples {
 /**
  * 뽑기 서버 흉내 — 수는 서버처럼 뽑을 때마다 줄고, [gate] 가 있으면 뽑기 답을 붙잡는다.
  * [nextReply] 로 한 번의 답을 바꾼다(답을 잃음 · 거절). 결과 신발은 [shoe] 하나다(서버가 정한 신발 흉내).
+ * 현황 읽기는 [statusGate] 로 붙잡고(불러오는 중), [statusFails] 면 실패, [statusOverride] 가 있으면 그 값을 그대로 준다.
+ * [signedIn] 이 false 면 로그인 전이다.
  */
 class FakeDrawSource(private val shoe: Sneaker) : DrawSource {
     val draws = AtomicInteger(0)
@@ -75,13 +77,20 @@ class FakeDrawSource(private val shoe: Sneaker) : DrawSource {
     @Volatile var free = 13
     @Volatile var premium = 10
     @Volatile var nextReply: DrawReply? = null
+    @Volatile var signedIn = true
+    @Volatile var statusGate: CompletableDeferred<Unit>? = null
+    @Volatile var statusFails = false
+    @Volatile var statusOverride: DrawStatus? = null
     @Volatile private var drawnOnServer = false
     override val memory = InMemoryDrawMemory()
 
-    override fun ready() = true
+    override fun ready() = signedIn
 
     override suspend fun status(): ServerResult<DrawStatus> {
         statusReads.incrementAndGet()
+        statusGate?.await()
+        if (statusFails) return ServerResult.Retry("test")
+        statusOverride?.let { return ServerResult.Ok(it) }
         val daily = (free - 10).coerceAtLeast(0)
         return ServerResult.Ok(
             (if (linked) DrawSamples.LINKED else DrawSamples.FRESH).copy(
