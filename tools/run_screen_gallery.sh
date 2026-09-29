@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -258,6 +258,15 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/my-shoes-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/my-shoes-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/my-shoes/. screen-gallery/my-shoes/ || status=1
+  # 러닝 홈 · 러닝 중 · 러닝 완료 + 공통 등급 배지(2026-09-29) — 홈(알림 종 · 오늘의 걸음 · 신발 카드 · 채운 배지) → 러닝 중(속도 측정 오류 ·
+  # 현재 속도 | 내구도 · 일시정지 | 종료) → 러닝 완료(예상 보상 · 정산 대기), 기기 크기(360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마), 배지 여섯
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for part in screens fitsAtDeviceSizes badges; do
+    run_instrumentation "run-journey-$part" "com.stepup.android.RunJourneyDesignTest#$part"
+    mkdir -p "screen-gallery/run-journey-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/$part/" || true
+  done
+  pull_captures /sdcard/Android/data/com.stepup.android/files/run-journey/. screen-gallery/run-journey/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

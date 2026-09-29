@@ -202,6 +202,38 @@ fun KitHeader(
     }
 }
 
+/**
+ * 가운데 제목 한 줄 — 왼쪽 뒤로(있을 때) · 오른쪽 행동(있을 때). 러닝 중 · 러닝 완료(2026-09-29 전달본):
+ * 달리는 동안에는 뒤로 대신 시스템 뒤로 가기가 종료를 묻는다.
+ */
+@Composable
+fun KitCenterHeader(
+    title: String,
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Box(modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp)) {
+        if (onBack != null) {
+            Box(
+                Modifier.align(Alignment.CenterStart).size(48.dp).clip(CircleShape)
+                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag("kit-back"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = Snow,
+                    modifier = Modifier.size(22.dp))
+            }
+        }
+        Text(
+            title, style = kitText(18.sp, FontWeight.SemiBold), color = Snow, maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp).semantics { heading() }
+                .testTag("kit-title"),
+        )
+        if (action != null) Box(Modifier.align(Alignment.CenterEnd)) { action() }
+    }
+}
+
 /** 시작 메뉴 카드 — 제목 · 설명 · 오른쪽 아이콘. 강조(흰 면) 한 장과 어두운 면. */
 @Composable
 fun KitActionCard(

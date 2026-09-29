@@ -122,7 +122,11 @@ class ShoeDetailDesignTest {
             tap("shoe-manage")
             awaitWearEnabled()
             awaitTag("shoe-art")
-            assertUnmergedText("shoe-name", modelName(1107))
+            // 이름 끝에 공통 등급 배지(2026-09-29) — 이름 글 뒤에 배지 자리(" 레어")가 붙는다
+            compose.onNode(hasText(modelName(1107), substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertExists()
+            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertExists()
             assertUnmergedText("shoe-status", string(R.string.sdv_status_owned))
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
             shot("02-in-app-detail")

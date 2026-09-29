@@ -139,6 +139,11 @@ data class WalkSessionState(
     val validSegments: Int = 0,
     /** 속도 상한을 넘겨 버려진 구간 수 */
     val flaggedSegments: Int = 0,
+    /**
+     * 마지막으로 구간이 버려진 때(ms) — 러닝 중 "현재 속도"를 모른다고 보이는 근거(화면 표시용).
+     * 그 뒤로 사람 속도의 점이 들어오면 다시 속도를 보인다. 저장본에 남기지 않는다.
+     */
+    val lastFlaggedAt: Long = 0L,
     /** 마지막 세션의 판정 (종료 직후 화면 표시용) */
     val lastVerdict: RunVerdict = RunVerdict.CLEAN,
     val lastTopSpeedKmh: Double = 0.0,
@@ -236,6 +241,7 @@ class WalkSessionService : Service() {
                         gpsFix = true,
                         here = p,
                         flaggedSegments = current.flaggedSegments + 1,
+                        lastFlaggedAt = now,
                     )
                 }
                 val track = current.track

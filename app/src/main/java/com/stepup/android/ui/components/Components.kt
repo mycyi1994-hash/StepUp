@@ -247,6 +247,7 @@ fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Mo
     val logoHeight = when (role) {
         BrandLogoRole.Header -> StepUpDesign.HeaderLogoHeight
         BrandLogoRole.Launch -> StepUpDesign.LaunchLogoHeight
+        BrandLogoRole.Card -> StepUpDesign.CardLogoHeight
     }
     // "STEP"은 바닥과 반대여야 읽힌다 — 밝은 바탕에서는 네이비, 어두운
     // 바탕에서는 흰색. "UP"은 두 벌 모두 같은 블루다.
@@ -254,11 +255,21 @@ fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Mo
     Image(
         painter = painterResource(asset),
         contentDescription = "STEPUP",
-        modifier = modifier.size(width = logoHeight * StepUpDesign.LogoAspectRatio, height = logoHeight).testTag("brand-wordmark"),
+        modifier = modifier.size(width = logoHeight * StepUpDesign.LogoAspectRatio, height = logoHeight)
+            .testTag(if (role == BrandLogoRole.Card) "brand-wordmark-card" else "brand-wordmark"),
         contentScale = ContentScale.Fit,
         // weight(1f)로 늘어난 헤더에서도 로고는 왼쪽에 붙어 있게 한다
         alignment = Alignment.CenterStart,
     )
+}
+
+/**
+ * 러닝 완료 기록 카드의 로고(2026-09-29 전달본 03) — 카드 왼쪽 위, 날짜와 한 줄.
+ * 화면이 로고를 직접 그리지 않도록 공통 워드마크의 카드 역할만 연다.
+ */
+@Composable
+fun ResultCardBrand(modifier: Modifier = Modifier) {
+    Wordmark(BrandLogoRole.Card, modifier)
 }
 
 /** 섹션 헤더 (제목 + 우측 액션) */

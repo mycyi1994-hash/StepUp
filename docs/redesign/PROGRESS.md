@@ -1,5 +1,13 @@
 # Redesign progress
 
+## 2026-09-29 — run home, active run and run summary (refined) + one filled grade badge everywhere
+
+- Home (`Screen.Run`): notification bell in the shared header, today's steps · goal · percent bar, the worn shoe card (name + filled badge, Lv, efficiency / comfort / durability bars in #3988FF / #A18AF5 / #46C5AC), one Start run button, Records | Find courses. Distance / workout time removed; the other home items moved into the details sheet opened from the steps block.
+- Active run (`Routes.RUN`): full-bleed map, top panel run time | distance (GPS-first, same as the result), bottom panel current speed (from the last 20 s of track points; "—" + amber warning when the latest reading was discarded) | durability, Pause · Stop. Amber "speed reading error · checking" banner when segments were discarded (red void banner for mock location). Average pace and estimated reward left the active screen (estimate stays in ⋯ run details).
+- Run summary: one record card (brand wordmark card role, date, distance, map sized to the remaining height, time / avg pace / avg speed, shoe + badge + durability, reward) with Save image | Share and Done. Before server confirmation the reward reads "Estimated reward · Pending" (phone estimate); "Credited" only when the server confirmed and the amount was read. Save image writes the share picture to Pictures/StepUp (WRITE_EXTERNAL_STORAGE only up to API 28).
+- Grade badge: flat filled pill, white label, 24dp, six colours (common #596777, rare #165DDF, epic #7941C6, legendary #A96710, redline #C74143, finish #128071) at every shoe name (home, shoes tab, draw result, shoe detail + info sheet, dex, market rows, run summary). Korean epic label unified to 에픽.
+- Evidence: compile, unit tests (`RunJourneyTest` new), lint, string/asset/design checks locally; `RunJourneyDesignTest` device run pending CI. Details: docs/redesign/run-journey-2026-09-29/README.md.
+
 ## 2026-09-29 — shoe draw design (26 screens) applied
 
 - Draw tab (`Routes.MYSTERY_BOX`) now follows the 26-screen draw design (docs/redesign/shoe-draw-v3/README.md): title + ⓘ, 무료 / 상급 text tabs, one closed-box stage, one remaining-count row and one normal-size action per tab. Unknown counts are "—"; a pending result blocks new draws on both tabs; server rules (0042) and the v2 draw/check logic are unchanged.

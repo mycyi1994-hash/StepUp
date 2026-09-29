@@ -13,16 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -50,66 +41,28 @@ import com.stepup.android.domain.ShoeTier
 import kotlin.math.roundToInt
 
 /*
- * 신발 이름 끝의 작은 둥근 등급 배지(2026-09-28 신발 화면 확정안 — design/shoes-ui-handoff-2026-09-28/badges).
- *
- * 전달받은 배지 PNG(2172 × 724, 한국어 글자가 들어간 원본)는 디자인 기준이다. 3:1 캔버스를 짧은 글자에 억지로 쓰면 이름 자리를
- * 너무 먹고, 언어를 바꿀 수 없다. 그래서 캡슐 · 이중 테두리 · 갈래마다 다른 장식(속도선 · 프리즘 · 금속광 · 열기 파동 · 체커)을
- * 그리고, 글자는 기기 글꼴로 얹는다 — 글자 확대 · 다국어가 그대로 된다. 누르는 곳이 아니다(표시일 뿐).
+ * 신발 이름 끝의 등급 배지 — 색을 채운 둥근 알약 + 흰 글씨(2026-09-29 전달본 "채운 등급 배지 6", design/grade-badges-2026-09-29).
+ * 일반 · 레어 · 에픽 · 레전더리 · 레드라인 · 피니시 여섯 갈래가 모두 같은 모양이고 색만 다르다. 테두리 · 광택 · 번짐 · 장식은 두지 않는다.
+ * 전달 PNG 는 시안 기준이다 — 앱은 글자를 기기 글꼴로 얹어 그린다(글자 확대 · 다국어가 그대로 된다). 누르는 곳이 아니다(표시일 뿐).
+ * 내 신발 · 신발 보관함 · 메인 · 러닝 결과 · 뽑기 결과 모두 이 한 부품을 이름 끝에 붙인다(배지 전용 줄을 따로 두지 않는다).
  */
 
-/** 배지 · 막대 · 선택 테두리가 함께 쓰는 갈래 색 */
+/** 갈래 색 — 배지 바탕(흰 글씨가 올라가는 채움색) */
 @Immutable
 class TierColors(
-    /** 테두리 금속 — 가로로 흐르는 광 */
-    val rim: List<Color>,
-    /** 캡슐 안 — 위에서 아래로 */
-    val fill: List<Color>,
-    val label: Color,
-    /** 바깥 번짐(일반은 없음) */
-    val glow: Color?,
-    /** 장식 선 */
-    val motif: Color,
-    /** 막대 · 선택 표시에 쓰는 대표색 */
-    val accent: Color,
+    /** 배지 채움 */
+    val fill: Color,
+    /** 배지 글자 */
+    val label: Color = Color.White,
 )
 
 fun tierColors(tier: ShoeTier): TierColors = when (tier) {
-    // CARBON — 브러시드 실버, 번짐 없음
-    ShoeTier.COMMON -> TierColors(
-        rim = listOf(Color(0xFF6B7A90), Color(0xFFD9E1EE), Color(0xFF8C9AB0), Color(0xFFD9E1EE), Color(0xFF6B7A90)),
-        fill = listOf(Color(0xFF1B2230), Color(0xFF10151F)),
-        label = Color(0xFFDCE3EE), glow = null, motif = Color(0xFFA9B6CA), accent = Color(0xFF91A1B8),
-    )
-    // VELOCITY — 블루 · 아이스
-    ShoeTier.RARE -> TierColors(
-        rim = listOf(Color(0xFF2F7FE0), Color(0xFFA8DCFF), Color(0xFF4A9FF0), Color(0xFFA8DCFF), Color(0xFF2F7FE0)),
-        fill = listOf(Color(0xFF0A1C44), Color(0xFF041030)),
-        label = Color(0xFFABDCFF), glow = Color(0xFF4A9FF0), motif = Color(0xFF7CC4FF), accent = Color(0xFF4A9FF0),
-    )
-    // PRISM — 퍼플 · 라벤더
-    ShoeTier.EPIC -> TierColors(
-        rim = listOf(Color(0xFF7A4FD0), Color(0xFFE6D2FF), Color(0xFFA778E6), Color(0xFFE6D2FF), Color(0xFF7A4FD0)),
-        fill = listOf(Color(0xFF251849), Color(0xFF150D33)),
-        label = Color(0xFFE8DAFF), glow = Color(0xFFA778E6), motif = Color(0xFFCDB2FF), accent = Color(0xFFA778E6),
-    )
-    // PODIUM — 골드 · 샴페인
-    ShoeTier.LEGENDARY -> TierColors(
-        rim = listOf(Color(0xFFB8862E), Color(0xFFFFE6A8), Color(0xFFE2AE52), Color(0xFFFFE6A8), Color(0xFFB8862E)),
-        fill = listOf(Color(0xFF231B12), Color(0xFF16110C)),
-        label = Color(0xFFF4D48F), glow = Color(0xFFE2AE52), motif = Color(0xFFFFE0A0), accent = Color(0xFFE2AE52),
-    )
-    // REDLINE — 코럴 → 앰버 열기
-    ShoeTier.REDLINE -> TierColors(
-        rim = listOf(Color(0xFFE8432E), Color(0xFFFFC267), Color(0xFFFF654D), Color(0xFFFFC267), Color(0xFFE8432E)),
-        fill = listOf(Color(0xFF300E13), Color(0xFF1C0709)),
-        label = Color(0xFFFFD2C4), glow = Color(0xFFFF654D), motif = Color(0xFFFFB067), accent = Color(0xFFFF6F55),
-    )
-    // FINISH — 민트 · 보라 · 아이스화이트
-    ShoeTier.FINISH -> TierColors(
-        rim = listOf(Color(0xFF5DE9DE), Color(0xFFA99BFF), Color(0xFFF1FBFF), Color(0xFF8EF1E8), Color(0xFF5DE9DE)),
-        fill = listOf(Color(0xFF08323B), Color(0xFF041C24)),
-        label = Color(0xFFD0FCF7), glow = Color(0xFF5DE9DE), motif = Color(0xFFB9A8FF), accent = Color(0xFF5DE9DE),
-    )
+    ShoeTier.COMMON -> TierColors(Color(0xFF596777))
+    ShoeTier.RARE -> TierColors(Color(0xFF165DDF))
+    ShoeTier.EPIC -> TierColors(Color(0xFF7941C6))
+    ShoeTier.LEGENDARY -> TierColors(Color(0xFFA96710))
+    ShoeTier.REDLINE -> TierColors(Color(0xFFC74143))
+    ShoeTier.FINISH -> TierColors(Color(0xFF128071))
 }
 
 @Composable
@@ -125,24 +78,23 @@ fun ShoeTier.label(): String = stringResource(
 )
 
 /**
- * 배지 크기 — 보이는 높이 24dp(글자가 커지면 글자 + 위아래 3dp), 글자 11.5sp. 양옆 16dp 는 끝 둥근 곳의 장식이 글자와 2dp 넘게
- * 떨어져 들어갈 자리다 — 11dp 였을 때는 광점 · 파동 · 체커가 글자 끝을 덮어 "레전더리"가 "레전더라"처럼 보였다(2026-09-28 기기 캡처).
- * 장식은 높이에 비례해 커지므로 양옆도 높이에 비례해 넓힌다(큰 글씨에서도 겹치지 않게).
+ * 배지 크기 — 보이는 높이 24dp(글자가 커지면 글자 + 위아래 3dp), 글자 12sp, 양옆 10dp(전달 지침: 높이 24–28dp · 글자 11–12sp ·
+ * 좌우 8–10dp). 양옆은 높이에 비례해 넓힌다 — 큰 글씨에서도 글자가 둥근 끝에 붙지 않게.
  */
 private val BadgeHeight = 24.dp
-private val BadgeSidePadding = 16.dp
+private val BadgeSidePadding = 10.dp
 private val BadgeLabelInset = 3.dp
-private val BadgeLabelSize = 11.5.sp
+private val BadgeLabelSize = 12.sp
 
 /** 글자 높이 [labelHeight] 에 맞는 배지 높이(px) */
 private fun Density.badgeHeightPx(labelHeight: Int): Int =
     maxOf(BadgeHeight.roundToPx(), labelHeight + BadgeLabelInset.roundToPx() * 2)
 
-/** 배지 높이 [height] 에 맞는 양옆(px) — 24dp 일 때 16dp */
+/** 배지 높이 [height] 에 맞는 양옆(px) — 24dp 일 때 10dp */
 private fun Density.badgeSidePx(height: Int): Int = (BadgeSidePadding.toPx() * height / BadgeHeight.toPx()).roundToInt()
 
 /** 이름과 배지 사이 */
-private val BadgeGap = 6.dp
+private val BadgeGap = 8.dp
 
 private fun badgeLabelStyle(colors: TierColors) =
     TextStyle(color = colors.label, fontSize = BadgeLabelSize, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
@@ -157,7 +109,7 @@ fun ShoeGradeBadge(tier: ShoeTier, modifier: Modifier = Modifier, decorative: Bo
     val tag = "tier-badge-${tier.key}"
     Box(
         modifier
-            .drawBehind { drawTierBadge(tier, colors) }
+            .drawBehind { drawRoundRect(colors.fill, cornerRadius = CornerRadius(size.height / 2f)) }
             .then(if (decorative) Modifier.clearAndSetSemantics { testTag = tag } else Modifier.testTag(tag))
             .badgeLayout(),
         contentAlignment = Alignment.Center,
@@ -267,137 +219,6 @@ private fun fittedName(
     }
     return build(name.take(lo).trimEnd() + "…")
 }
-
-// ── 그리기 ──────────────────────────────────────────────────────
-
-private fun DrawScope.capsule(inset: Float) = RoundRect(
-    Rect(inset, inset, size.width - inset, size.height - inset),
-    CornerRadius((size.height - inset * 2) / 2),
-)
-
-private fun Path.addCapsule(rect: RoundRect) = apply { addRoundRect(rect) }
-
-/**
- * 바깥 번짐 → 캡슐 안 → 금속 테두리 → 안쪽 가는 선 → 갈래 장식. 장식은 양 끝 둥근 곳(끝에서 4 ~ 14u, 글자는 16u 부터)에만 둔다.
- * 단위 u 는 높이 24dp 기준 1dp — 글자가 커져 배지가 높아지면 장식도 같이 커진다.
- */
-private fun DrawScope.drawTierBadge(tier: ShoeTier, c: TierColors) {
-    val u = size.height / 24f
-    val outer = capsule(0.9f * u)
-    colorsGlow(c, outer, u)
-    drawPath(Path().addCapsule(outer), Brush.verticalGradient(c.fill))
-    drawPath(Path().addCapsule(outer), Brush.horizontalGradient(c.rim), style = Stroke(width = 1.35f * u))
-    drawPath(Path().addCapsule(capsule(2.9f * u)), c.rim[1].copy(alpha = 0.35f), style = Stroke(width = 0.6f * u))
-    val h = size.height
-    val w = size.width
-    val m = h / 2
-    when (tier) {
-        ShoeTier.COMMON -> {
-            // 짧은 각인 두 줄(=) — 양 끝, 가운데 높이
-            listOf(-1.5f to 5.4f, 1.5f to 6.2f).forEach { (dy, from) ->
-                val y = m + dy * u
-                drawLine(c.motif.copy(alpha = 0.8f), Offset(from * u, y), Offset(10.2f * u, y), strokeWidth = 1f * u, cap = StrokeCap.Round)
-                drawLine(c.motif.copy(alpha = 0.8f), Offset(w - from * u, y), Offset(w - 10.2f * u, y), strokeWidth = 1f * u, cap = StrokeCap.Round)
-            }
-        }
-        ShoeTier.RARE -> {
-            // 왼쪽 비스듬한 속도선 둘(//) · 오른쪽 끝으로 갈수록 짧아지는 가속선 셋
-            for (k in 0..1) {
-                val dx = k * 2.7f * u
-                drawLine(c.motif.copy(alpha = 0.95f - k * 0.3f), Offset(5.2f * u + dx, m + 4.2f * u), Offset(10.2f * u + dx, m - 3.8f * u),
-                    strokeWidth = 1.15f * u, cap = StrokeCap.Round)
-            }
-            listOf(-2.9f to 5.6f, 0f to 4.4f, 2.9f to 3.0f).forEach { (dy, len) ->
-                val y = m + dy * u
-                drawLine(c.motif.copy(alpha = 0.8f), Offset(w - (5.4f + len) * u, y), Offset(w - 5.4f * u, y),
-                    strokeWidth = 1f * u, cap = StrokeCap.Round)
-            }
-        }
-        ShoeTier.EPIC -> {
-            // 양 끝의 프리즘 면 · 오른쪽 아래 빗금 셋
-            for (left in listOf(true, false)) {
-                val tip = if (left) 4.3f * u else w - 4.3f * u
-                val base = if (left) 10.6f * u else w - 10.6f * u
-                val facet = Path().apply {
-                    moveTo(tip, m); lineTo(base, m - 5.4f * u); lineTo(base, m + 5.4f * u); close()
-                }
-                drawPath(facet, Brush.linearGradient(listOf(c.motif.copy(alpha = 0.6f), c.rim[0].copy(alpha = 0.15f)),
-                    start = Offset(tip, m - 4f * u), end = Offset(base, m + 4f * u)))
-                drawLine(c.label.copy(alpha = 0.7f), Offset(tip, m), Offset(base, m - 5.4f * u), strokeWidth = 0.7f * u)
-            }
-            for (k in 0..2) {
-                val x = w - 14.2f * u + k * 1.5f * u
-                drawLine(c.motif.copy(alpha = 0.75f), Offset(x, h - 3.8f * u), Offset(x + 1.1f * u, h - 5.4f * u),
-                    strokeWidth = 0.8f * u, cap = StrokeCap.Round)
-            }
-        }
-        ShoeTier.LEGENDARY -> {
-            // 위 테두리 가운데 꺾쇠 · 오른쪽 끝 안의 광점
-            val cx = w / 2
-            drawLine(c.motif, Offset(cx - 2.6f * u, 1.3f * u), Offset(cx, 3.5f * u), strokeWidth = 1f * u, cap = StrokeCap.Round)
-            drawLine(c.motif, Offset(cx + 2.6f * u, 1.3f * u), Offset(cx, 3.5f * u), strokeWidth = 1f * u, cap = StrokeCap.Round)
-            sparkle(Offset(w - 9.2f * u, m), 2.6f * u, c.label)
-        }
-        ShoeTier.REDLINE -> {
-            // 왼쪽 가속선 둘(끝 쪽으로 옅게) · 오른쪽 끝 둥근 곳을 따라 도는 열기 파동 둘
-            for (dy in listOf(-1.9f, 1.9f)) {
-                drawLine(
-                    Brush.horizontalGradient(listOf(c.motif.copy(alpha = 0.15f), c.motif), startX = 4.6f * u, endX = 12.6f * u),
-                    Offset(4.6f * u, m + dy * u), Offset(12.6f * u, m + dy * u), strokeWidth = 1.1f * u, cap = StrokeCap.Round,
-                )
-            }
-            val center = Offset(w - 12f * u, m)
-            for ((k, radius) in listOf(4.6f, 6.8f).withIndex()) {
-                drawArc(
-                    color = c.motif.copy(alpha = 0.95f - k * 0.3f),
-                    startAngle = -50f, sweepAngle = 100f, useCenter = false,
-                    topLeft = Offset(center.x - radius * u, center.y - radius * u),
-                    size = Size(radius * 2 * u, radius * 2 * u),
-                    style = Stroke(width = 1.1f * u, cap = StrokeCap.Round),
-                )
-            }
-        }
-        ShoeTier.FINISH -> {
-            // 안쪽 궤도선 · 오른쪽 끝의 체커 결승 테이프(2줄 × 4칸)
-            drawPath(Path().addCapsule(capsule(4.2f * u)),
-                Brush.horizontalGradient(listOf(c.accent.copy(alpha = 0.0f), c.accent.copy(alpha = 0.45f), c.motif.copy(alpha = 0.0f))),
-                style = Stroke(width = 0.6f * u))
-            val cell = 1.5f * u
-            val left = w - 12.6f * u
-            val top = m - cell
-            for (row in 0..1) for (col in 0..3) {
-                if ((row + col) % 2 == 0) {
-                    drawRect(if (col % 2 == 0) c.accent else c.motif, Offset(left + col * cell, top + row * cell), Size(cell, cell))
-                } else {
-                    drawRect(c.label.copy(alpha = 0.25f), Offset(left + col * cell, top + row * cell), Size(cell, cell))
-                }
-            }
-        }
-    }
-}
-
-/** 바깥 번짐 — 흐림 대신 옅은 굵은 선 두 겹(작은 크기에서도 번지지 않고 또렷하게) */
-private fun DrawScope.colorsGlow(c: TierColors, outer: RoundRect, u: Float) {
-    val glow = c.glow ?: return
-    drawPath(Path().addCapsule(outer), glow.copy(alpha = 0.14f), style = Stroke(width = 3.2f * u))
-    drawPath(Path().addCapsule(outer), glow.copy(alpha = 0.22f), style = Stroke(width = 2.0f * u))
-}
-
-/** 네 갈래 광점 */
-private fun DrawScope.sparkle(center: Offset, arm: Float, color: Color) {
-    val path = Path().apply {
-        moveTo(center.x, center.y - arm)
-        quadraticTo(center.x, center.y, center.x + arm, center.y)
-        quadraticTo(center.x, center.y, center.x, center.y + arm)
-        quadraticTo(center.x, center.y, center.x - arm, center.y)
-        quadraticTo(center.x, center.y, center.x, center.y - arm)
-        close()
-    }
-    drawPath(path, color)
-}
-
-/** 갈래 대표색 — 선택 테두리 · 능력치 막대 */
-fun ShoeTier.accent(): Color = tierColors(this).accent
 
 /** 배지 높이 — 이름 줄 높이를 맞출 때 */
 val ShoeGradeBadgeHeight: Dp = BadgeHeight

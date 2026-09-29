@@ -246,7 +246,8 @@ internal fun DrawResultScreen(
     val feedback = LocalFeedback.current
     LaunchedEffect(result.shoe.id) { feedback?.play(result.shoe.rarity.revealCue()) }
     val name = result.shoe.variantLabel()
-    val grade = result.shoe.rarity.label()
+    // 읽기 도구가 읽는 등급 — 이름 끝 배지와 같은 이름(레드라인 · 피니시 포함)
+    val grade = result.shoe.tier.label()
     Column(Modifier.fillMaxSize().testTag("draw-result")) {
         FlowTitle(stringResource(if (result.kind == DrawKind.FREE) R.string.dv2_result_free else R.string.dv2_result_premium)) {
             val closeLabel = stringResource(R.string.dv2_close)

@@ -17,6 +17,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -115,6 +117,10 @@ class MysteryDesignTest {
         val before = HomePhotos.all.first { photo ->
             compose.onAllNodesWithTag("home-scene-${photo.key}").fetchSemanticsNodes().isNotEmpty()
         }
+        // 러닝 홈(2026-09-29 전달본 02) — 풍경 바꾸기는 걸음 칸을 누르면 여는 상세 기록 시트 안에 있다
+        compose.onNodeWithTag("home-steps").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-background-next").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("home-details").performScrollToNode(hasTestTag("home-background-next"))
         compose.onNodeWithTag("home-background-next").assertIsDisplayed().performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("home-scene-${before.key}").fetchSemanticsNodes().isEmpty()

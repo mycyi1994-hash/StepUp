@@ -27,6 +27,7 @@ import com.stepup.android.R
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.variantNameRes
@@ -185,10 +186,15 @@ fun QuoteRowCard(
 ) {
     Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CarbonHigh).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            SneakerFrame(previewSneaker(faction, rarity, variant), modifier = Modifier.size(80.dp), corner = 14.dp)
+            val preview = previewSneaker(faction, rarity, variant)
+            SneakerFrame(preview, modifier = Modifier.size(80.dp), corner = 14.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(modelName(faction, rarity, variant), style = MaterialTheme.typography.titleMedium, color = Snow)
-                Text(Rarity.of(rarity).label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
+                // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 따로 한 줄로 쓰지 않는다
+                com.stepup.android.ui.components.ShoeNameWithBadge(
+                    name = modelName(faction, rarity, variant), tier = preview.tier,
+                    style = MaterialTheme.typography.titleMedium.copy(color = Snow), maxLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(stringResource(R.string.market_supply, supply), style = MaterialTheme.typography.bodyMedium, color = Silver)
             }
         }

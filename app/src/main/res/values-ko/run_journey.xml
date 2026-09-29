@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 홈 · 러닝 중 · 러닝 완료(2026-09-29 전달본, design/run-journey-2026-09-29) — 수는 모두 실제 기록 값을 넣는다 -->
+<resources>
+    <string name="cd_notifications_unread">읽지 않은 알림 %1$d개</string>
+    <string name="home_today_steps">오늘의 걸음</string>
+    <string name="home_steps_unit">걸음</string>
+    <string name="home_goal_short">목표 %1$s</string>
+    <string name="home_open_details">오늘 기록 자세히 보기</string>
+    <string name="home_shoe_open">신발 탭에서 보기</string>
+    <string name="home_no_shoe_title">신고 있는 신발이 없어요</string>
+    <string name="home_no_shoe_body">신발 탭에서 신발을 골라 신어 보세요.</string>
+    <string name="home_open_records">기록 보기</string>
+    <string name="home_find_courses">코스 찾기</string>
+    <string name="home_background">배경 사진</string>
+    <string name="run_speed_error">속도 측정 오류 · 확인 중</string>
+    <string name="run_void_banner">세션 무효 · 기록되지 않아요</string>
+    <string name="run_current_speed">현재 속도</string>
+    <string name="run_speed_unit">km/h</string>
+    <string name="run_speed_unknown">현재 속도를 알 수 없어요</string>
+    <string name="run_details">러닝 정보</string>
+    <string name="result_estimated_reward">예상 보상</string>
+    <string name="result_reward">보상</string>
+    <string name="result_settle_pending">정산 대기</string>
+    <string name="result_settle_done">적립 완료</string>
+    <string name="result_settle_void">무효</string>
+    <string name="result_settle_rejected">지급 안 됨</string>
+    <string name="result_save_image">이미지 저장</string>
+    <string name="result_share">공유하기</string>
+    <string name="result_saved">사진에 저장했어요</string>
+    <string name="result_save_failed">이미지를 저장하지 못했어요</string>
+    <string name="result_date_pattern">yyyy. M. d. (E) HH:mm</string>
+</resources>

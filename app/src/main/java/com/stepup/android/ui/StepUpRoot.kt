@@ -552,6 +552,9 @@ internal fun MainScaffold(
     } else if (currentRoute == Routes.MYSTERY_BOX) {
         // 신발 뽑기 디자인(2026-09-28) — 짙은 남색 바탕과 위 가운데의 은은한 빛(뽑기 탭에서만)
         com.stepup.android.ui.screens.gacha.DrawBackdrop(Modifier.fillMaxSize())
+    } else if (currentRoute == Routes.RUN_ROUTE) {
+        // 러닝 중 · 러닝 완료(2026-09-29 전달본) — 상태 막대 밑까지 짙은 남색(지도 · 기록 카드가 그 위에)
+        Box(Modifier.fillMaxSize().background(com.stepup.android.ui.screens.walk.runPalette().screen))
     } else if (currentRoute == Routes.COURSES) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
@@ -563,6 +566,8 @@ internal fun MainScaffold(
     } else {
         com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     }
+    val unreadNotifications by ServiceLocator.notificationRepository.unreadCount
+        .collectAsStateWithLifecycle(initialValue = 0)
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -573,6 +578,9 @@ internal fun MainScaffold(
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     modifier = Modifier.statusBarsPadding().padding(horizontal = StepUpDesign.Gutter),
                     balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
+                    // 알림 종(2026-09-29 메인 시안) — 다섯 탭 모두 같은 자리. 알림함은 내 정보 아래 화면이다
+                    unread = unreadNotifications,
+                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                 )
             }
         },
@@ -608,6 +616,9 @@ internal fun MainScaffold(
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenNews = { navController.navigate(Routes.NEWS) },
                     onOpenCustomize = { navController.switchTab(Screen.Customize) },
+                    // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
+                    onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
                     weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },
                     onPreviousBackground = {
                         homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)

@@ -219,7 +219,12 @@ class ChromeNavigationTest {
             )
             compose.waitForIdle()
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().assertHasClickAction()
-            compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("—")
+            // 러닝 완료(2026-09-29 전달본 03) — 서버 확인 전에는 이 폰이 셈한 값을 "예상 보상 · 정산 대기"로만 보인다
+            compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("+4.0")
+            compose.onNodeWithTag("run-result-reward-label", useUnmergedTree = true)
+                .assertTextEquals(compose.activity.getString(R.string.result_estimated_reward))
+            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
+            compose.onAllNodesWithTag("run-result-settle-done", useUnmergedTree = true).assertCountEquals(0)
             capture("${next.width}-${next.font}-${next.mode}-result-pending")
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
@@ -229,6 +234,7 @@ class ChromeNavigationTest {
             )
             compose.waitForIdle()
             compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("0")
+            compose.onNodeWithTag("run-result-settle-void", useUnmergedTree = true).assertExists()
             capture("${next.width}-${next.font}-${next.mode}-result-void")
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().performClick()
             compose.waitForIdle()
@@ -254,7 +260,8 @@ class ChromeNavigationTest {
             compose.waitForIdle()
             assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
             com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
-            compose.onNodeWithTag("home-week").performClick()
+            // 러닝 홈(2026-09-29 전달본 02) — 오늘 기록 자세히는 걸음 칸을 누르면 여는 시트 안에
+            compose.onNodeWithTag("home-steps").performClick()
             compose.waitForIdle()
             compose.onNodeWithText(compose.activity.getString(R.string.home_today_earned)).assertIsDisplayed()
             pressBack()

@@ -408,7 +408,7 @@ class DesignReferenceTest {
         // Clickable cards merge child text for accessibility; readiness may target that child.
         compose.waitUntil(10_000) { compose.onAllNodesWithTag(readyTag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         if (s == Scene.HOME) {
-            // S2 홈은 걸음 수를 문장 안에 쓴다("오늘 12,840걸음 걸었어요")
+            // 러닝 홈(2026-09-29 전달본 02)은 오늘의 걸음을 큰 수로 쓴다("12,840 걸음")
             compose.waitUntil(5_000) { compose.onAllNodesWithText("12,840", substring = true).fetchSemanticsNodes().isNotEmpty() }
         }
         when (s) {
@@ -427,7 +427,9 @@ class DesignReferenceTest {
         }
         if (s == Scene.RUN_NO_GPS) compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
         if (s == Scene.RUN_FINISH) {
-            compose.onNode(hasText("—") and hasAnyAncestor(hasTestTag("run-result-reward"))).assertExists()
+            // 서버 확인 전 — 이 폰이 셈한 값을 "예상 보상 · 정산 대기"로(적립 완료라고 쓰지 않는다)
+            compose.onNode(hasText("+4.0") and hasAnyAncestor(hasTestTag("run-result-reward"))).assertExists()
+            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
         }
     }
 
@@ -456,7 +458,7 @@ class DesignReferenceTest {
             }
         }
         if (scene == Scene.RUN_ACTIVE && !enlarged) {
-            // 디자이너 전달본 — 큰 시간이 먼저, 지도는 그 아래(스크롤). 큰 시간은 고정 버튼 위에 온전히 보인다
+            // 러닝 중(2026-09-29 전달본 01) — 위 판의 러닝 시간은 지도 위, 고정 버튼보다 위에 온전히 보인다
             val hero = compose.onNodeWithTag("run-hero-value").getUnclippedBoundsInRoot()
             val action = compose.onNodeWithTag("run-primary-action").getUnclippedBoundsInRoot()
             assertTrue("Run time must be above the pinned action: time=${hero.bottom}, action=${action.top}", hero.bottom <= action.top)

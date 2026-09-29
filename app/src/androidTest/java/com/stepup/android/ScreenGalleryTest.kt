@@ -309,8 +309,8 @@ class ScreenGalleryTest {
             }
         }
         val variations = listOf(
-            // 상세 기록은 "이번 주" 줄을 눌러 연다(시작 버튼 위 "기록 더보기"는 뺐다)
-            Triple(0, "home-details", listOf(R.string.home_k1_week_label)),
+            // 상세 기록은 "오늘의 걸음" 칸을 눌러 연다(러닝 홈 2026-09-29 전달본 02 — 거리 · 운동 시간 줄은 뺐다)
+            Triple(0, "home-details", listOf(R.string.home_today_steps)),
             Triple(2, "community-crews", listOf(R.string.crew_recruit_tab)),
             Triple(2, "community-stories", listOf(R.string.community_stories)),
             Triple(2, "community-meetups", listOf(R.string.crew_recruit_tab, R.string.crew_list_meetups, R.string.community_other_meetups)),

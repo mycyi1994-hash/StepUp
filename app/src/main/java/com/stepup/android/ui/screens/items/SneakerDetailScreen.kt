@@ -69,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GhostButton
@@ -77,6 +78,8 @@ import com.stepup.android.ui.components.SettingsNote
 import com.stepup.android.ui.components.SettingsPrimaryButton
 import com.stepup.android.ui.components.SettingsSecondaryButton
 import com.stepup.android.ui.components.SettingsSheet
+import com.stepup.android.ui.components.ShoeGradeBadge
+import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.ShoeStage
 import com.stepup.android.ui.components.ShoeStageErrorAlignment
 import com.stepup.android.ui.components.ShoeStageMessageAlignment
@@ -377,10 +380,15 @@ private fun DetailBody(
             Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("shoe-detail-head"),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                shoe.shoeName(), color = p.text, fontSize = 29.sp, fontWeight = FontWeight.SemiBold,
-                lineHeight = 1.24.em, letterSpacing = (-0.025).em, textAlign = TextAlign.Center, maxLines = 2,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-name"),
+            // 이름 끝에 등급 배지(공통 채운 배지 — 2026-09-29 전달본). 길면 이름을 줄이고 배지는 남긴다
+            ShoeNameWithBadge(
+                name = shoe.shoeName(), tier = shoe.tier,
+                style = androidx.compose.ui.text.TextStyle(
+                    color = p.text, fontSize = 29.sp, fontWeight = FontWeight.SemiBold,
+                    lineHeight = 1.24.em, letterSpacing = (-0.025).em,
+                ),
+                maxLines = 2, textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-name"),
             )
             Spacer(Modifier.height(8.dp))
             Text(
@@ -676,7 +684,10 @@ private fun InfoSheet(shoe: Sneaker, zone: ZoneId, onClose: () -> Unit) {
         Column {
             InfoRow(stringResource(R.string.sdv_info_name), shoe.shoeName(), "shoe-info-name")
             InfoRow(stringResource(R.string.sdv_info_number), "#%04d".format(shoe.mintNumber), "shoe-info-number")
-            InfoRow(stringResource(R.string.sdv_info_rarity), shoe.rarity.label(), "shoe-info-rarity")
+            // 등급은 글 대신 공통 배지 — 신발 정보가 있는 곳마다 같은 모양
+            InfoRow(stringResource(R.string.sdv_info_rarity), shoe.tier.label(), "shoe-info-rarity") {
+                ShoeGradeBadge(shoe.tier, decorative = true)
+            }
             // 속성은 예전 52종에만 있다 — 새 도감 신발에 자리 값을 보이지 않는다
             if (shoe.modelId == null) InfoRow(stringResource(R.string.sdv_info_faction), shoe.faction.label(), "shoe-info-faction")
             InfoRow(stringResource(R.string.sdv_info_level), stringResource(R.string.level_chip, shoe.level), "shoe-info-level")
@@ -700,13 +711,28 @@ private fun InfoSheet(shoe: Sneaker, zone: ZoneId, onClose: () -> Unit) {
 
 /** 정보 한 줄 — 이름 왼쪽, 값 오른쪽. 값 · 날짜는 필요한 만큼 줄을 바꾼다 */
 @Composable
-private fun InfoRow(label: String, value: String, tag: String, note: String? = null) {
+private fun InfoRow(
+    label: String,
+    value: String,
+    tag: String,
+    note: String? = null,
+    /** 값 자리에 글 대신 둘 것(등급 배지) — [value] 는 읽기 도구가 읽는다 */
+    valueContent: (@Composable () -> Unit)? = null,
+) {
     val p = settingsPalette()
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp).semantics(mergeDescendants = true) {}.testTag(tag)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp)
+            .semantics(mergeDescendants = true) { if (valueContent != null) contentDescription = "$label $value" }
+            .testTag(tag),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = if (valueContent != null) Alignment.CenterVertically else Alignment.Top) {
             Text(label, color = p.secondary, fontSize = 14.sp, lineHeight = 1.45.em, modifier = Modifier.padding(end = 16.dp))
-            Text(value, color = p.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 1.4.em,
-                textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            if (valueContent != null) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) { valueContent() }
+            } else {
+                Text(value, color = p.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 1.4.em,
+                    textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            }
         }
         if (note != null) {
             Text(note, color = p.secondary, fontSize = 13.sp, lineHeight = 1.45.em, textAlign = TextAlign.End,
