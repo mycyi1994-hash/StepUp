@@ -339,9 +339,16 @@ class CrewChatRepository(
         body: String,
         pinned: Boolean,
         clientKey: String?,
+        /** 이을 모임(4번) — [meetingChange] 가 참일 때만 서버가 바꾼다 */
+        meetingId: Long? = null,
+        meetingChange: Boolean = false,
     ): ChatOutcome<ChatNotice> =
-        api.noticeSave(crewId, noticeId, title.trim(), body.trim(), pinned, clientKey).chat().map { it.toDomain() }
+        api.noticeSave(crewId, noticeId, title.trim(), body.trim(), pinned, clientKey, meetingId, meetingChange).chat().map { it.toDomain() }
             .also { if (it is ChatOutcome.Ended) forget(crewId) }
+
+    /** 공지 하나(20) — 지워졌으면 Rejected(notice_missing) */
+    suspend fun notice(crewId: String, noticeId: Long): ChatOutcome<ChatNotice> =
+        api.notice(noticeId).chat().map { it.toDomain() }.also { if (it is ChatOutcome.Ended) forget(crewId) }
 
     suspend fun deleteNotice(crewId: String, noticeId: Long): ChatOutcome<Unit> =
         api.noticeDelete(noticeId).chat().also { if (it is ChatOutcome.Ended) forget(crewId) }

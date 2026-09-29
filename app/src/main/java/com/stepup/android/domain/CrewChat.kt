@@ -98,10 +98,15 @@ data class ChatNotice(
     val authorName: String,
     val createdAt: Long,
     val updatedAt: Long,
+    /** 이은 모임(크루 홈 4번) — 없으면 공지에서 모임 버튼을 숨긴다 */
+    val meeting: ChatNoticeMeeting? = null,
 ) {
     /** 목록 · 모아보기에 보일 한 줄 — 내용의 첫 줄(비었으면 없음) */
     val preview: String get() = body.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }.orEmpty()
 }
+
+/** 공지에 이은 모임 — 이 크루의 번개러닝 글. 지워지면 서버가 비운다 */
+data class ChatNoticeMeeting(val id: Long, val title: String, val place: String, val meetAt: Long?)
 
 /** 크루원의 읽은 위치 — 가입한 때보다 먼저 온 메시지는 그 사람의 미확인으로 세지 않는다 */
 data class ChatRead(val userId: String, val seq: Long, val joinedAt: Long)
@@ -202,6 +207,9 @@ data class ChatNoticeDraft(
     val body: String,
     val pinned: Boolean,
     val savedAt: Long = 0L,
+    /** 이은 모임(4번) — [meetingChanged] 가 참일 때만 초안의 값을 쓴다(아니면 공지의 지금 모임) */
+    val meeting: ChatNoticeMeeting? = null,
+    val meetingChanged: Boolean = false,
 ) {
     val key: String get() = ChatRules.noticeDraftKey(crewId, noticeId)
 

@@ -32,6 +32,16 @@ if 'ChatRoutes.ALL.map' in policy:
         errors.append(f'Chat route policy mismatch: missing={chat_registered-chat_listed}, stale={chat_listed-chat_registered}')
     if 'it' in declared:
         declared.remove('it')
+# 내 크루 홈(확정 4번)도 같은 방식(crewHomeGraph · CrewHomeRoutes.ALL)
+if 'CrewHomeRoutes.ALL.map' in policy:
+    home_graph = (UI/'screens/community/home/CrewHomeNavGraph.kt').read_text(encoding='utf-8')
+    home_registered = set(re.findall(r'composable\(\s*(CrewHomeRoutes\.[A-Z_]+)', home_graph))
+    home_all = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', home_graph)
+    home_listed = {f'CrewHomeRoutes.{name.strip()}' for name in home_all.group(1).split(',') if name.strip()} if home_all else set()
+    if not home_registered or home_registered != home_listed:
+        errors.append(f'Crew home route policy mismatch: missing={home_registered-home_listed}, stale={home_listed-home_registered}')
+    if 'it' in declared:
+        declared.remove('it')
 if registered != set(declared):
     errors.append(f'Route policy mismatch: missing={registered-set(declared)}, stale={set(declared)-registered}')
 if len(declared) != len(set(declared)):

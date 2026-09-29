@@ -20,6 +20,7 @@ import com.stepup.android.domain.ChatDelivery
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatNotice
 import com.stepup.android.domain.ChatNoticeDraft
+import com.stepup.android.domain.ChatNoticeMeeting
 import com.stepup.android.domain.ChatReportReason
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRules
@@ -792,8 +793,11 @@ data class ChatNoticeForm(
     val pinned: Boolean = true,
     /** 처음 연 값(바뀌었는지 — 나갈 때 44) */
     val original: Triple<String, String, Boolean> = Triple("", "", true),
+    /** 이은 모임(4번) — 이 크루의 앞으로의 모임 하나 또는 없음 */
+    val meeting: ChatNoticeMeeting? = null,
+    val originalMeeting: Long? = null,
 ) {
-    val changed: Boolean get() = Triple(title, body, pinned) != original
+    val changed: Boolean get() = Triple(title, body, pinned) != original || meeting?.id != originalMeeting
     val ready: Boolean get() = ChatRules.noticeReady(title, body)
 }
 
@@ -817,6 +821,9 @@ class ChatNoticeEditViewModel(
     val load = MutableStateFlow<ChatLoad<Unit>>(ChatLoad.Loading)
     val saving = MutableStateFlow(false)
     val sheet = MutableStateFlow<ChatNoticeSheet?>(null)
+
+    /** 모임 고르기 시트 — null 이면 닫힘. 앞으로의 이 크루 모임(서버) */
+    val meetings = MutableStateFlow<ChatLoad<List<com.stepup.android.domain.CrewMeeting>>?>(null)
 
     private val _done = MutableStateFlow(false)
 
@@ -842,7 +849,7 @@ class ChatNoticeEditViewModel(
                     load.value = ChatLoad.Ready(Unit)
                 }
                 noticeId == null -> {
-                    form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, Triple("", "", true)) } ?: ChatNoticeForm()
+                    form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, Triple("", "", true), meeting = it.meeting) } ?: ChatNoticeForm()
                     load.value = ChatLoad.Ready(Unit)
                 }
                 else -> {
@@ -853,9 +860,11 @@ class ChatNoticeEditViewModel(
                                 load.value = ChatLoad.Failed
                             } else {
                                 val original = Triple(notice.title, notice.body, notice.pinned)
+                                val linked = notice.meeting
                                 // 이 공지를 고치다 남긴 초안이 있으면 그것으로(공지 내용을 생성 예시로 덮지 않는다)
-                                form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, original) }
-                                    ?: ChatNoticeForm(notice.title, notice.body, notice.pinned, original)
+                                form.value = draft?.let {
+                                    ChatNoticeForm(it.title, it.body, it.pinned, original, if (it.meetingChanged) it.meeting else linked, linked?.id)
+                                } ?: ChatNoticeForm(notice.title, notice.body, notice.pinned, original, linked, linked?.id)
                                 load.value = ChatLoad.Ready(Unit)
                             }
                         }
@@ -871,6 +880,30 @@ class ChatNoticeEditViewModel(
     fun setBody(text: String) = form.update { it.copy(body = text.take(ChatRules.NOTICE_BODY_MAX)) }
     fun setPinned(on: Boolean) = form.update { it.copy(pinned = on) }
 
+    /** 모임 고르기(4번) — 앞으로의 이 크루 모임을 서버에서 읽는다 */
+    fun openMeetings() {
+        meetings.value = ChatLoad.Loading
+        viewModelScope.launch {
+            meetings.value = when (val outcome = ServiceLocator.crewHome.upcoming(crewId)) {
+                is com.stepup.android.data.repo.HomeOutcome.Ok -> ChatLoad.Ready(outcome.value)
+                com.stepup.android.data.repo.HomeOutcome.Ended -> {
+                    _ended.value = true
+                    null
+                }
+                else -> ChatLoad.Failed
+            }
+        }
+    }
+
+    fun closeMeetings() {
+        meetings.value = null
+    }
+
+    fun pickMeeting(meeting: com.stepup.android.domain.CrewMeeting?) {
+        form.update { it.copy(meeting = meeting?.let { m -> ChatNoticeMeeting(m.id, m.title, m.place, m.meetAt) }) }
+        meetings.value = null
+    }
+
     /** 공지 올리기 · 수정 저장 — 서버가 받은 뒤에만 돌아간다. 실패하면 쓴 내용 · 기존 공지 그대로(43) */
     fun save() {
         val current = form.value
@@ -878,7 +911,10 @@ class ChatNoticeEditViewModel(
         saving.value = true
         if (sheet.value is ChatNoticeSheet.SaveFailed) sheet.value = ChatNoticeSheet.SaveFailed(busy = true)
         viewModelScope.launch {
-            val outcome = repo.saveNotice(crewId, noticeId, current.title, current.body, current.pinned, clientKey.takeIf { noticeId == null })
+            val outcome = repo.saveNotice(
+                crewId, noticeId, current.title, current.body, current.pinned, clientKey.takeIf { noticeId == null },
+                meetingId = current.meeting?.id, meetingChange = true,
+            )
             saving.value = false
             when (outcome) {
                 is ChatOutcome.Ok -> {
@@ -906,7 +942,13 @@ class ChatNoticeEditViewModel(
     fun keepDraft(onLeave: () -> Unit) {
         val current = form.value
         viewModelScope.launch {
-            repo.saveNoticeDraft(ChatNoticeDraft(crewId, noticeId, current.title, current.body, current.pinned), crewId, noticeId)
+            repo.saveNoticeDraft(
+                ChatNoticeDraft(
+                    crewId, noticeId, current.title, current.body, current.pinned,
+                    meeting = current.meeting, meetingChanged = current.meeting?.id != current.originalMeeting,
+                ),
+                crewId, noticeId,
+            )
             sheet.value = null
             onLeave()
         }

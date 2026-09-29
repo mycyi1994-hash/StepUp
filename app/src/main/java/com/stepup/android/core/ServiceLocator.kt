@@ -89,6 +89,16 @@ object ServiceLocator {
     fun useCrewChatForTest(repository: com.stepup.android.data.repo.CrewChatRepository) {
         crewChat = repository
     }
+
+    /** 내 크루 홈(확정 4번) — 홈 · 모임 · 참석 · 주간 기록 · 러닝 기록(2026-09-29) */
+    lateinit var crewHome: com.stepup.android.data.repo.CrewHomeRepository
+        private set
+
+    /** 기기 검사용 — 크루 홈 화면을 흉내 낸 서버로 돌린다(CrewHomeDesignTest). 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useCrewHomeForTest(repository: com.stepup.android.data.repo.CrewHomeRepository) {
+        crewHome = repository
+    }
     /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
         private set
@@ -360,6 +370,12 @@ object ServiceLocator {
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
             photoDir = java.io.File(app.cacheDir, "chat_photos"),
+        )
+        crewHome = com.stepup.android.data.repo.CrewHomeRepository(
+            api = com.stepup.android.data.remote.CrewHomeApi(server),
+            owner = { sessionHolder.recordingOwner() },
+            // 홈이 접근 종료를 알면 같은 크루의 채팅 캐시도 지운다(대화 · 보내던 메시지 · 사진)
+            onEnded = { crewId -> crewChat.forget(crewId) },
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),

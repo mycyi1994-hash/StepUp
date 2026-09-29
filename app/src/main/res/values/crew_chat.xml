@@ -161,10 +161,9 @@
     <string name="chat_remove_confirm">Remove</string>
 
     <string name="chat_notice_bar">Notice</string>
-    <string name="chat_notice_pinned_note">This notice is pinned to the top of the chat.</string>
     <string name="chat_notice_meta">%1$s · %2$s</string>
     <string name="chat_notice_date_pattern">MMM d</string>
-    <string name="chat_notices_bar">All notices</string>
+    <string name="chat_notices_bar">Crew notices</string>
     <string name="chat_notices_heading">Notices of %1$s</string>
     <string name="chat_notices_pinned">Pinned</string>
     <string name="chat_notices_empty">No notices yet.</string>

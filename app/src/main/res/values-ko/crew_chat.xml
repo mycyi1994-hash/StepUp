@@ -170,10 +170,9 @@
 
     <!-- 08 공지 · 09 공지 모아보기 · 10 · 11 등록/수정 · 12 삭제 · 43 저장 실패 · 44 초안 -->
     <string name="chat_notice_bar">공지</string>
-    <string name="chat_notice_pinned_note">채팅방 상단에 고정된 공지예요.</string>
     <string name="chat_notice_meta">%1$s · %2$s</string>
     <string name="chat_notice_date_pattern">M월 d일</string>
-    <string name="chat_notices_bar">공지 모아보기</string>
+    <string name="chat_notices_bar">크루 공지</string>
     <string name="chat_notices_heading">%1$s의 공지</string>
     <string name="chat_notices_pinned">상단 고정</string>
     <string name="chat_notices_empty">아직 공지가 없어요.</string>

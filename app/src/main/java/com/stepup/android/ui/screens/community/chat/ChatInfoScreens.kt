@@ -74,6 +74,8 @@ class ChatInfoActions(
     val onCrew: () -> Unit,
     val onWriteNotice: () -> Unit,
     val onEnded: () -> Unit,
+    /** 크루장의 크루원 보기 · 멤버 관리(기존 55) — 없으면 [onMembers] */
+    val onManageMembers: (() -> Unit)? = null,
 )
 
 /**
@@ -215,7 +217,11 @@ private fun ChatInfoContent(room: ChatRoomMeta, actions: ChatInfoActions, onNoti
         }
         Spacer(Modifier.height(34.dp))
         CrewRow(stringResource(R.string.chat_info_notices), actions.onNotices, Modifier.testTag("chat-info-notices"), value = stringResource(R.string.chat_info_notice_count, room.noticeCount))
-        CrewRow(stringResource(R.string.chat_info_members), actions.onMembers, Modifier.testTag("chat-info-members"), value = stringResource(R.string.chat_info_member_count, room.memberCount))
+        val manage = actions.onManageMembers ?: actions.onMembers
+        CrewRow(
+            stringResource(R.string.chat_info_members), if (room.owner) manage else actions.onMembers, Modifier.testTag("chat-info-members"),
+            value = stringResource(R.string.chat_info_member_count, room.memberCount),
+        )
         CrewRow(
             stringResource(R.string.chat_info_notify), onNotify, Modifier.testTag("chat-info-notify"),
             value = stringResource(if (room.notify) R.string.chat_notify_on else R.string.chat_notify_off),
@@ -227,7 +233,7 @@ private fun ChatInfoContent(room: ChatRoomMeta, actions: ChatInfoActions, onNoti
             Text(stringResource(R.string.chat_info_owner_section), color = ink.info, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             CrewRow(stringResource(R.string.chat_info_write_notice), actions.onWriteNotice, Modifier.testTag("chat-info-write"))
-            CrewRow(stringResource(R.string.chat_info_manage_members), actions.onMembers, Modifier.testTag("chat-info-manage"))
+            CrewRow(stringResource(R.string.chat_info_manage_members), manage, Modifier.testTag("chat-info-manage"))
         } else {
             Spacer(Modifier.height(64.dp))
             Column(Modifier.fillMaxWidth()) {

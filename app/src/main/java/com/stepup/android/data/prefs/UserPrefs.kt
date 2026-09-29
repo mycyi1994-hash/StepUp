@@ -1192,14 +1192,29 @@ internal object ChatNoticeDraftCodec {
         val body: String = "",
         val pinned: Boolean = true,
         val savedAt: Long = 0L,
+        val meetingId: Long? = null,
+        val meetingTitle: String = "",
+        val meetingPlace: String = "",
+        val meetingAt: Long? = null,
+        val meetingChanged: Boolean = false,
     )
 
     fun encode(draft: com.stepup.android.domain.ChatNoticeDraft): String =
-        json.encodeToString(Row.serializer(), Row(draft.crewId, draft.noticeId, draft.title, draft.body, draft.pinned, draft.savedAt))
+        json.encodeToString(
+            Row.serializer(),
+            Row(
+                draft.crewId, draft.noticeId, draft.title, draft.body, draft.pinned, draft.savedAt,
+                draft.meeting?.id, draft.meeting?.title.orEmpty(), draft.meeting?.place.orEmpty(), draft.meeting?.meetAt, draft.meetingChanged,
+            ),
+        )
 
     fun decode(raw: String): com.stepup.android.domain.ChatNoticeDraft? = runCatching {
         json.decodeFromString(Row.serializer(), raw).let {
-            com.stepup.android.domain.ChatNoticeDraft(it.crewId, it.noticeId, it.title, it.body, it.pinned, it.savedAt)
+            com.stepup.android.domain.ChatNoticeDraft(
+                it.crewId, it.noticeId, it.title, it.body, it.pinned, it.savedAt,
+                meeting = it.meetingId?.let { id -> com.stepup.android.domain.ChatNoticeMeeting(id, it.meetingTitle, it.meetingPlace, it.meetingAt) },
+                meetingChanged = it.meetingChanged,
+            )
         }
     }.getOrNull()
 }

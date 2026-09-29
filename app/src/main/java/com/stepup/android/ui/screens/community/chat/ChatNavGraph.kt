@@ -13,6 +13,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.stepup.android.domain.CrewDraftMode
 import com.stepup.android.ui.screens.community.crew.CrewRoutes
+import com.stepup.android.ui.screens.community.home.CrewHomeRoutes
+import com.stepup.android.ui.screens.community.home.crewManageMembersRoute
+import com.stepup.android.ui.screens.community.home.openCrewHome
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -176,11 +179,13 @@ fun NavGraphBuilder.chatGraph(
             ChatInfoActions(
                 onBack = back,
                 onNotices = { navController.navigate(ChatRoutes.notices(id)) },
-                onMembers = { navController.navigate(ChatRoutes.members(id)) },
+                // 내 크루 홈(4번) — 크루원 보기는 홈의 크루원(04), 크루장은 기존 멤버 관리(55), 크루 상세 보기는 홈(00)
+                onMembers = { navController.navigate(CrewHomeRoutes.members(id)) },
                 onSearch = { navController.navigate(ChatRoutes.search(id)) },
-                onCrew = { navController.navigate(CrewRoutes.detail(id)) },
+                onCrew = { navController.openCrewHome(id) },
                 onWriteNotice = { navController.navigate(ChatRoutes.noticeEdit(id)) },
                 onEnded = ended,
+                onManageMembers = { navController.navigate(crewManageMembersRoute(id)) },
             ),
         )
     }
@@ -222,6 +227,8 @@ fun NavGraphBuilder.chatGraph(
             onRoom = { navController.backToRoom(id) },
             onEdit = { noticeId -> navController.navigate(ChatRoutes.noticeEdit(id, noticeId)) },
             onEnded = ended,
+            // 공지에 이은 모임(4번 20) — 모임 상세에서 뒤로 가면 이 공지
+            onMeeting = { meetingId -> navController.navigate(CrewHomeRoutes.meeting(id, meetingId)) },
         )
     }
     composable(
