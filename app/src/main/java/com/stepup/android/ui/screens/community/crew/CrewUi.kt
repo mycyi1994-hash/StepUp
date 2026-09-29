@@ -599,6 +599,9 @@ internal fun CrewResultPage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     info: Boolean = false,
+    /** 큰 버튼 아래의 보조 버튼 하나(예: 크루 채팅 열기) */
+    secondary: String? = null,
+    onSecondary: (() -> Unit)? = null,
 ) {
     val ink = crewInk()
     Column(modifier.fillMaxSize().background(ink.canvas)) {
@@ -616,7 +619,15 @@ internal fun CrewResultPage(
             Spacer(Modifier.height(16.dp))
             Text(body, color = ink.secondary, fontSize = 14.sp, lineHeight = 26.sp, textAlign = TextAlign.Center)
         }
-        CrewButton(button, onButton, Modifier.padding(horizontal = CrewGutter).padding(bottom = 24.dp).navigationBarsPadding().testTag("crew-result-button"))
+        if (secondary != null && onSecondary != null) {
+            Column(Modifier.padding(horizontal = CrewGutter).padding(bottom = 24.dp).navigationBarsPadding()) {
+                CrewButton(button, onButton, Modifier.testTag("crew-result-button"))
+                Spacer(Modifier.height(12.dp))
+                CrewButton(secondary, onSecondary, Modifier.testTag("crew-result-secondary"), CrewButtonKind.SECONDARY)
+            }
+        } else {
+            CrewButton(button, onButton, Modifier.padding(horizontal = CrewGutter).padding(bottom = 24.dp).navigationBarsPadding().testTag("crew-result-button"))
+        }
     }
 }
 

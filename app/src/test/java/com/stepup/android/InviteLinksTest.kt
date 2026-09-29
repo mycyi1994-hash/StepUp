@@ -42,4 +42,14 @@ class InviteLinksTest {
         assertEquals(id, InviteLinks.crewIdOfPush("crew/$id"))
         assertNull(InviteLinks.crewIdOfPush("post/$id"))
     }
+
+    @Test
+    fun `크루 채팅 알림은 방 링크로만 읽는다`() {
+        assertEquals(id, InviteLinks.chatIdOfPush("crew-chat/$id"))
+        assertNull(InviteLinks.chatIdOfPush("crew/$id"))
+        assertNull(InviteLinks.chatIdOfPush("crew-chat/not-a-crew"))
+        assertNull(InviteLinks.chatIdOfPush("crew-chat/$id/extra"))
+        // 채팅 링크는 크루 상세로 새지 않는다
+        assertNull(InviteLinks.crewIdOfPush("crew-chat/$id"))
+    }
 }

@@ -25,6 +25,11 @@ object InviteLinks {
     /** 열어야 할 크루. 화면이 열고 나면 [consume] 한다. */
     val pendingCrew: StateFlow<String?> = _pendingCrew
 
+    private val _pendingChat = MutableStateFlow<String?>(null)
+
+    /** 열어야 할 크루 채팅 방(크루 id). 화면이 열고 나면 [consumeChat] 한다. */
+    val pendingChat: StateFlow<String?> = _pendingChat
+
     /** 이 크루로 초대하는 링크 */
     fun crewLink(crewId: String): String = "https://$HOST/c/$crewId"
 
@@ -49,9 +54,21 @@ object InviteLinks {
         return parts[1].takeIf { UUID.matches(it) }?.lowercase()
     }
 
-    /** 앱을 연 인텐트를 본다. 초대 링크나 크루 알림이면 그 크루를 연다. */
+    /** 크루 채팅 알림이 싣고 온 앱 안 링크(`crew-chat/<id>`)에서 크루 id 를 꺼낸다. */
+    fun chatIdOfPush(link: String?): String? {
+        val parts = link.orEmpty().trim('/').split('/')
+        if (parts.size != 2 || parts[0] != "crew-chat") return null
+        return parts[1].takeIf { UUID.matches(it) }?.lowercase()
+    }
+
+    /** 앱을 연 인텐트를 본다. 초대 링크나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을 연다. */
     fun handle(intent: Intent?) {
         intent ?: return
+        val chatId = chatIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK)) ?: chatIdOfPush(intent.getStringExtra("link"))
+        if (chatId != null) {
+            _pendingChat.value = chatId
+            return
+        }
         val crewId = crewIdOf(intent.dataString)
             // 앱이 켜져 있을 때 받은 알림은 PushService 가 이 이름으로 싣는다
             ?: crewIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK))
@@ -63,5 +80,9 @@ object InviteLinks {
 
     fun consume() {
         _pendingCrew.value = null
+    }
+
+    fun consumeChat() {
+        _pendingChat.value = null
     }
 }

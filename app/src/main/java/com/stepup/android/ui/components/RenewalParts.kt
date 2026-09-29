@@ -211,6 +211,8 @@ fun SecondaryHeader(
     title: String? = null,
     /** 오른쪽 자리 — 글 메뉴(⋯)처럼 그 화면의 보조 행동 하나. 지갑 자리와 함께 쓰지 않는다 */
     trailing: (@Composable () -> Unit)? = null,
+    /** 가운데 대신 쓸 제목 자리(예: 크루 채팅 방 — 대표 이미지 · 이름 · 인원). 있으면 [title] 은 쓰지 않는다 */
+    titleContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -220,9 +222,13 @@ fun SecondaryHeader(
     ) {
         DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
             cue = FeedbackCue.Back)
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            if (title == null) Wordmark() else Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Box(Modifier.weight(1f), contentAlignment = if (titleContent != null) Alignment.CenterStart else Alignment.Center) {
+            when {
+                titleContent != null -> titleContent()
+                title == null -> Wordmark()
+                else -> Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
         }
         // Wallet-enabled headers keep the same slot while the balance is loading.
         if (trailing != null) trailing()

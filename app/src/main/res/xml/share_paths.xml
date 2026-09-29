@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 공유 카드 그림을 다른 앱(카톡·인스타)에 넘길 때 여는 폴더. 캐시의 shared/ 만 연다.
+<!-- 공유 카드 그림을 다른 앱(카톡·인스타)에 넘길 때 여는 폴더. 캐시의 shared/ 만 연다(camera/ 는 채팅 사진 촬영).
      updates/ 는 테스트 APK 가 받은 새 버전을 안드로이드 설치 화면에 넘길 때만 쓴다. -->
 <paths>
     <cache-path name="shared" path="shared/" />
     <cache-path name="updates" path="updates/" />
+    <!-- 크루 채팅 사진 촬영 — 카메라 앱이 찍은 사진을 앱 캐시의 camera/ 에 넣는다(보내기 전 확인 뒤 올린다) -->
+    <cache-path name="camera" path="camera/" />
 </paths>
