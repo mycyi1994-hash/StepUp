@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-09-29 — shared map clipped to its bounds (community stories "지도 보기")
+
+- Bug: in Community › 러닝 이야기, switching from "글 더 보기" back to "지도 보기" drew map tiles outside the map box, covering the text tabs above and overlapping. `StepUpMap` draws whole 256px tiles on a `Canvas`, and Compose does not clip drawing to bounds (worst while the map height animates up from 0).
+- Fix: `StepUpMap` (`ui/components/RouteMapLive.kt`) clips to its bounds. Affects every `StepUpMap` user (run, course hub, community stories/map, profile, map screens); those already inside clipped cards or full-screen should look unchanged. No routes changed, so the route inventory is unchanged.
+- Evidence: PR #70 CI green on 890ae8c (build, android-experience). Not yet checked on a device capture of the stories map toggle — verify on the next test APK.
+
 ## 2026-09-29 — run home, active run and run summary (refined) + one filled grade badge everywhere
 
 - Home (`Screen.Run`): notification bell in the shared header, today's steps · goal · percent bar, the worn shoe card (name + filled badge, Lv, efficiency / comfort / durability bars in #3988FF / #A18AF5 / #46C5AC), one Start run button, Records | Find courses. Distance / workout time removed; the other home items moved into the details sheet opened from the steps block.
