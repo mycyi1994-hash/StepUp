@@ -119,6 +119,14 @@ $('.waitlist-open').addEventListener('click', () => {
 });
 $('.waitlist-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+const termsDialog = $('.waitlist-terms');
+$('.waitlist-terms-open').addEventListener('click', event => {
+  // The link sits inside the consent label; open the summary without toggling the checkbox.
+  event.preventDefault();
+  termsDialog.showModal();
+});
+$('.waitlist-terms-close').addEventListener('click', () => termsDialog.close());
+termsDialog.addEventListener('click', event => { if (event.target === termsDialog) termsDialog.close(); });
 $('.waitlist-change-email').addEventListener('click', () => {
   if (busy) return;
   saveReceipt('');
