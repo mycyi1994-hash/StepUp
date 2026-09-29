@@ -88,6 +88,7 @@ class CrewChatDesignTest {
     private val notes = CopyOnWriteArrayList<String>()
     private lateinit var originalCards: CrewCardRepository
     private lateinit var originalChat: CrewChatRepository
+    private lateinit var originalHome: com.stepup.android.data.repo.CrewHomeRepository
     private val server = FakeChatServer()
 
     @After fun restore() {
@@ -96,6 +97,7 @@ class CrewChatDesignTest {
         ChatDeviceNotificationsForTest.enabled = null
         if (::originalCards.isInitialized) ServiceLocator.useCrewCardsForTest(originalCards)
         if (::originalChat.isInitialized) ServiceLocator.useCrewChatForTest(originalChat)
+        if (::originalHome.isInitialized) ServiceLocator.useCrewHomeForTest(originalHome)
         runCatching { File(directory, "capture-notes-${System.currentTimeMillis()}.txt").writeText(notes.joinToString("\n")) }
     }
 
@@ -301,24 +303,32 @@ class CrewChatDesignTest {
             tapTag("chat-os-later")
             awaitGone("chat-os")
 
+            // 06 크루원 — 내 크루 홈(4번)부터 채팅방 정보의 크루원 보기는 홈의 크루원(04)
             tapTag("chat-info-members")
-            awaitTag("chat-members")
-            awaitTag("chat-member-$MINSU")
+            awaitTag("home-members-page")
+            awaitTag("home-member-$MINSU")
             shot("06-members")
-            tapTag("chat-member-$MINSU")
+            pressBack()
+            awaitTag("chat-info")
+            // 07 크루원 프로필 — 대화에서 민수의 얼굴을 누르면
+            pressBack()
+            server.post(MINSU, "민수", "저도 7시 반에 갈게요.")
+            awaitText("저도 7시 반에 갈게요.")
+            tapFace("민")
             awaitTag("chat-member")
             awaitTag("chat-member-public")
             assertNone("chat-member-remove")
             shot("07-member-profile")
             pressBack()
-            pressBack()
+            tapTag("chat-room-more")
+            awaitTag("chat-info")
 
             tapTag("chat-info-notices")
             awaitTag("chat-notices-pinned")
             shot("09-notices")
             tapTag("chat-notices-pinned")
             awaitTag("chat-notice-title")
-            awaitTag("chat-notice-pinned-note")
+            awaitTag("chat-notice-body")
             shot("08-notice-detail")
             pressBack()
             pressBack()
@@ -449,10 +459,13 @@ class CrewChatDesignTest {
             tapTag("chat-notice-keep")
             awaitTag("chat-info-owner")
 
-            // 33 → 34 → 35 크루원 내보내기 — 25명에서 24명, 대화에 한 줄
-            tapTag("chat-info-members")
-            awaitTag("chat-member-$MINSU")
-            tapTag("chat-member-$MINSU")
+            // 33 → 34 → 35 크루원 내보내기 — 대화에서 민수의 얼굴을 누르면. 25명에서 24명, 대화에 한 줄
+            // (채팅방 정보의 크루원 보기 · 멤버 관리는 4번부터 기존 멤버 관리(55)로 간다)
+            pressBack()
+            awaitTag("chat-room-owner")
+            server.post(MINSU, "민수", "저 오늘은 조금 늦어요.")
+            awaitText("저 오늘은 조금 늦어요.")
+            tapFace("민")
             awaitTag("chat-member-owner")
             awaitTag("chat-member-remove")
             shot("33-owner-profile")
@@ -508,8 +521,13 @@ class CrewChatDesignTest {
         )
         originalCards = ServiceLocator.crewCards
         originalChat = ServiceLocator.crewChat
+        originalHome = ServiceLocator.crewHome
         ServiceLocator.useCrewCardsForTest(cards)
         ServiceLocator.useCrewChatForTest(chat)
+        // 채팅방 정보의 크루원 보기(4번 홈의 크루원) — "나"를 이 검사의 사람으로
+        ServiceLocator.useCrewHomeForTest(
+            com.stepup.android.data.repo.CrewHomeRepository(com.stepup.android.data.remote.CrewHomeApi(stepUp), owner = { owner }),
+        )
         server.images["afterwork"] = asset64("crew/afterwork.png")
         compose.activityRule.scenario.onActivity {
             it.enableEdgeToEdge(
@@ -546,6 +564,19 @@ class CrewChatDesignTest {
     private fun longPress(text: String) {
         awaitText(text)
         compose.onAllNodesWithText(text, substring = true).onFirst().performTouchInput { longClick() }
+        compose.waitForIdle()
+    }
+
+    /** 대화의 얼굴(첫 글자)을 누른다 — 가장 아래(최근) 것 */
+    private fun tapFace(initial: String) {
+        val matcher = hasTestTag("chat-face") and hasText(initial)
+        val end = android.os.SystemClock.uptimeMillis() + 20_000
+        while (compose.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()) {
+            if (android.os.SystemClock.uptimeMillis() > end) throw AssertionError("face '$initial' did not appear")
+            compose.waitForIdle()
+            Thread.sleep(40)
+        }
+        compose.onAllNodes(matcher).onLast().performClick()
         compose.waitForIdle()
     }
 
