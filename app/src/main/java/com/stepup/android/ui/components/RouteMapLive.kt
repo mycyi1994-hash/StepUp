@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -243,7 +244,9 @@ fun StepUpMap(
     var pinch by remember { mutableFloatStateOf(1f) }
     val moved = zoomDelta != 0 || panX != 0.0 || panY != 0.0
 
-    BoxWithConstraints(modifier) {
+    // 타일은 256px 통째로 그려 칸 밖(위아래 · 좌우)으로 넘친다. Compose 는 그리기를 칸에 자르지 않으므로
+    // 여기서 자른다 — 안 자르면 지도가 위의 글자 탭 · 머리를 덮는다(러닝 이야기 "지도 보기").
+    BoxWithConstraints(modifier.clipToBounds()) {
         val widthPx = if (constraints.hasBoundedWidth) constraints.maxWidth else 0
         val heightPx = if (constraints.hasBoundedHeight) constraints.maxHeight else 0
 
