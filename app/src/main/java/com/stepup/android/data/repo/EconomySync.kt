@@ -50,6 +50,15 @@ class EconomySync(
     val state: StateFlow<EconomySyncState> = _state
 
     /**
+     * 기기 검사만 쓴다 — 로그인 전인 CI 에뮬레이터에서 로그인한 사람의 화면(러닝 완료의 정산 대기 등)을 그려 보려고
+     * 상태 표시만 바꾼다. 서버 · 원장에는 아무것도 하지 않는다. 앱 코드에서는 부르지 않는다.
+     */
+    @androidx.annotation.VisibleForTesting
+    fun showStateForTest(value: EconomySyncState) {
+        _state.value = value
+    }
+
+    /**
      * 마지막으로 성공한 동기화가 **시작된** 시각. 이보다 뒤에 서버가 확인한 적립은 아직 폰의 원장에
      * 없을 수 있다(러닝 결과 화면이 서버가 돌려준 잔고를 쓸지 정하는 데 쓴다). 끝난 시각이 아니라
      * 시작 시각인 것은, 받아 오는 도중에 확인된 적립은 받아 온 원장에 없을 수 있어서다.

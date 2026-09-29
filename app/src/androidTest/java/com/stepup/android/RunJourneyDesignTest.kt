@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.data.repo.EconomySyncState
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunVerdict
 import com.stepup.android.domain.ShoeCatalog
@@ -100,6 +101,8 @@ class RunJourneyDesignTest {
     }
 
     private var viewport by mutableStateOf(Viewport(390, 844))
+    /** 검사 전 서버 동기화 표시([seed] 가 읽는다) — 끝나면 되돌린다 */
+    private var syncBefore: EconomySyncState? = null
     private var originalEquipped: Long? = null
     private var added: Long? = null
 
@@ -164,9 +167,10 @@ class RunJourneyDesignTest {
             awaitTag("run-gps-status")
             shot("j02e-run-no-gps")
 
-            // 03 러닝 완료 — 서버 확인 전: 예상 보상 +2.4 SUP · 정산 대기(적립 완료라고 쓰지 않는다)
+            // 03 러닝 완료 — 로그인한 사람의 서버 확인 전(시안): 예상 보상 +2.4 SUP · 정산 대기(적립 완료라고 쓰지 않는다)
             WalkSessionService.showStateForTest(finished(now))
             awaitTag("run-result-card")
+            signedIn()
             compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("3.24")
             compose.onNodeWithTag("run-result-reward-label", useUnmergedTree = true).assertTextEquals(label(R.string.result_estimated_reward))
             compose.onNode(hasText("+2.4") and hasAnyAncestor(hasTestTag("run-result-reward")), useUnmergedTree = true).assertExists()
@@ -185,8 +189,20 @@ class RunJourneyDesignTest {
             awaitTag("run-result-settle-void")
             compose.onNode(hasText("0") and hasAnyAncestor(hasTestTag("run-result-reward")), useUnmergedTree = true).assertExists()
             shot("j03b-result-void", settle = 1_200)
+
+            // 로그인이 풀린 채 끝난 러닝 — 정산 대기 아래에 까닭 · 다시 로그인(카드가 길어져 넘길 수 있다). 완료는 화면 안
+            ServiceLocator.economySync.showStateForTest(EconomySyncState.SIGNED_OUT)
+            WalkSessionService.showStateForTest(finished(now))
+            awaitTag("run-result-reward-note")
+            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
+            compose.onNode(hasText(label(R.string.session_sign_in_again)) and hasAnyAncestor(hasTestTag("run-result-card")))
+                .assertHasClickAction()
+            assertResultFits("390x844", strict = false)
+            compose.onNodeWithTag("run-result-reward-note", useUnmergedTree = true).performScrollTo()
+            shot("j03c-result-signed-out", settle = 1_200)
         } finally {
             WalkSessionService.showStateForTest(WalkSessionState())
+            syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
             restore()
         }
     }
@@ -210,11 +226,13 @@ class RunJourneyDesignTest {
                 shot("f-${next.label}-run")
                 WalkSessionService.showStateForTest(finished(now))
                 awaitTag("run-result-card")
+                signedIn()
                 assertResultFits(next.label, strict = next.font == 1f && next.height >= 844)
                 shot("f-${next.label}-result", settle = 1_200)
             }
         } finally {
             WalkSessionService.showStateForTest(WalkSessionState())
+            syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
             restore()
         }
     }
@@ -311,11 +329,19 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 러닝 완료 — 완료 버튼이 화면 안. [strict] 면 카드가 한 화면(스크롤 0) */
+    /**
+     * 러닝 완료 — 완료 버튼이 화면 안, 지도는 최소 높이 이상. [strict] 면 카드가 한 화면(스크롤 0) — 시안 상태(로그인 · 정산 대기)에서 본다.
+     * 보상 줄 아래 까닭 · 다시 로그인이 붙는 모습(로그인이 풀림 · j03c)은 그만큼 길어져 넘길 수 있다.
+     */
     private fun assertResultFits(where: String, strict: Boolean = true) {
         compose.waitForIdle()
         val done = bounds("run-result-done")
         assertTrue("done inside the screen at $where: $done / ${frameBottom()}", done.bottom <= frameBottom() + 1)
+        if (exists("run-result-map")) {
+            val dpPx = bounds(FRAME).height / viewport.height
+            val map = bounds("run-result-map")
+            assertTrue("the map keeps its minimum at $where: $map", map.height >= 139f * dpPx)
+        }
         if (strict) {
             val scroll = compose.onNodeWithTag("run-result-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
             assertEquals("the run result must not scroll at $where", 0f, scroll.maxValue(), 1f)
@@ -341,6 +367,7 @@ class RunJourneyDesignTest {
 
     /** 신고 있는 신발을 레어 새 도감 신발(1107 · 내구도 92)로 — 끝나면 원래 신발로 되돌리고 지운다 */
     private fun seed() = runBlocking {
+        syncBefore = ServiceLocator.economySync.state.value
         ServiceLocator.userPrefs.setReducedMotion(true)
         ServiceLocator.userPrefs.setSounds(false)
         ServiceLocator.userPrefs.setHaptics(false)
@@ -368,6 +395,18 @@ class RunJourneyDesignTest {
     }
 
     private fun label(id: Int): String = compose.activity.getString(id)
+
+    /**
+     * CI 에뮬레이터는 로그인 전이라 러닝 완료에 "다시 로그인"이 붙는다 — 시안(로그인한 사람의 정산 대기)을 보려고 동기화 표시만 바꾼다.
+     * 뒤에서 도는 동기화가 되돌려 놓을 수 있어 까닭 줄이 사라질 때까지 다시 둔다.
+     */
+    private fun signedIn() {
+        eventually {
+            ServiceLocator.economySync.showStateForTest(EconomySyncState.SYNCED)
+            compose.waitForIdle()
+            compose.onAllNodesWithTag("run-result-reward-note", useUnmergedTree = true).assertCountEquals(0)
+        }
+    }
 
     private fun frameBottom(): Float = bounds(FRAME).bottom
 

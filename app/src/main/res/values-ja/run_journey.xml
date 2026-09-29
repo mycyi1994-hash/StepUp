@@ -13,7 +13,7 @@
     <string name="home_find_courses">コースを探す</string>
     <string name="home_background">背景写真</string>
     <string name="run_speed_error">速度の測定エラー · 確認中</string>
-    <string name="run_void_banner">セッション無効 · 記録されません</string>
+    <string name="run_void_banner">セッション無効 · 報酬なし</string>
     <string name="run_current_speed">現在の速度</string>
     <string name="run_speed_unit">km/h</string>
     <string name="run_speed_unknown">現在の速度が分かりません</string>

@@ -13,7 +13,7 @@
     <string name="home_find_courses">코스 찾기</string>
     <string name="home_background">배경 사진</string>
     <string name="run_speed_error">속도 측정 오류 · 확인 중</string>
-    <string name="run_void_banner">세션 무효 · 기록되지 않아요</string>
+    <string name="run_void_banner">세션 무효 · 적립되지 않아요</string>
     <string name="run_current_speed">현재 속도</string>
     <string name="run_speed_unit">km/h</string>
     <string name="run_speed_unknown">현재 속도를 알 수 없어요</string>

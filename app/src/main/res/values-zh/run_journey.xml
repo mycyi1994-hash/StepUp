@@ -13,7 +13,7 @@
     <string name="home_find_courses">查找路线</string>
     <string name="home_background">背景照片</string>
     <string name="run_speed_error">速度测量异常 · 确认中</string>
-    <string name="run_void_banner">本次无效 · 不会记录</string>
+    <string name="run_void_banner">本次无效 · 不计奖励</string>
     <string name="run_current_speed">当前速度</string>
     <string name="run_speed_unit">km/h</string>
     <string name="run_speed_unknown">无法获取当前速度</string>

@@ -92,9 +92,10 @@ class ShoeCatalogDesignTest {
             compose.waitUntil(10_000) { compose.onAllNodesWithText("${PICKS.size} / ${ShoeCatalog.models.size}").fetchSemanticsNodes().isNotEmpty() }
             shot("05-dex-top")
             val names = PICKS.map { compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(it)!!) }
-            dexList().performScrollToNode(hasText(names[1]))
+            // 이름 끝에 등급 배지가 붙는다 — 이름 글에 배지의 대체 글(" 에픽")이 이어지므로 이름을 포함하는 칸을 찾는다
+            dexList().performScrollToNode(hasText(names[1], substring = true))
             shot("06-dex-epic")
-            dexList().performScrollToNode(hasText(names[2]))
+            dexList().performScrollToNode(hasText(names[2], substring = true))
             shot("07-dex-legendary")
             assertEquals(70, ShoeCatalog.models.size)
         } finally {
