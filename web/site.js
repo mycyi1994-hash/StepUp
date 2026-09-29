@@ -425,6 +425,7 @@ const go = d => to(page + d);
 // 휠: 누적 임계값 + 트랙패드 관성 무시(잠금이 풀린 뒤에도 180ms 안쪽으로 이어지는 입력은 버린다)
 let acc = 0, lastWheel = 0, inertia = false, accReset = null;
 window.addEventListener('wheel', e => {
+  if ($('.waitlist-dialog')?.open) return;
   if (e.ctrlKey) return; // 핀치 확대는 브라우저에 맡긴다
   e.preventDefault();
   const now = performance.now(), gap = now - lastWheel;
@@ -438,6 +439,7 @@ window.addEventListener('wheel', e => {
 }, { passive: false });
 
 window.addEventListener('keydown', e => {
+  if ($('.waitlist-dialog')?.open) return;
   if (e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.target.closest?.('video,input,textarea,select')) return;
   const onControl = e.target.closest && e.target.closest('a,button,input,textarea,select');
@@ -448,9 +450,11 @@ window.addEventListener('keydown', e => {
 
 let touchY = null;
 window.addEventListener('touchstart', e => {
+  if ($('.waitlist-dialog')?.open) { touchY = null; return; }
   touchY = e.touches.length === 1 && !e.target.closest?.('video') ? e.touches[0].clientY : null;
 }, { passive: true });
 window.addEventListener('touchend', e => {
+  if ($('.waitlist-dialog')?.open) return;
   if (touchY === null) return;
   const dy = touchY - e.changedTouches[0].clientY;
   touchY = null;

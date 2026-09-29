@@ -72,7 +72,49 @@ $$;
 create temp table fix (k text primary key, v text);
 -- 앱 권한(authenticated)으로 바꿔 검사하는 동안에도 준비물은 읽어야 한다.
 -- 앱 권한(authenticated)으로 바꿔 검사하는 동안에도 준비물은 읽어야 한다.
-grant all on fix to authenticated;
+grant all on fix to authenticated, anon;
+
+-- 홈페이지 대기 명단은 두 공개 함수만 허용한다.
+do $$
+begin
+  perform pg_temp.ok(
+    (select relrowsecurity from pg_class where oid = 'public.waitlist_entries'::regclass)
+    and (select relrowsecurity from pg_class where oid = 'public.waitlist_share_claims'::regclass),
+    '대기 명단과 공유 신청 표에 RLS가 켜져 있다');
+  perform pg_temp.ok(
+    not has_table_privilege('anon', 'public.waitlist_entries', 'SELECT')
+    and not has_table_privilege('anon', 'public.waitlist_entries', 'INSERT')
+    and not has_table_privilege('anon', 'public.waitlist_share_claims', 'SELECT')
+    and not has_table_privilege('anon', 'public.waitlist_share_claims', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.waitlist_entries', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.waitlist_entries', 'INSERT'),
+    '방문자와 로그인 사용자는 대기 명단을 직접 읽거나 쓰지 못한다');
+  perform pg_temp.ok(
+    has_table_privilege('service_role', 'public.waitlist_entries', 'SELECT')
+    and has_table_privilege('service_role', 'public.waitlist_share_claims', 'INSERT'),
+    '서버 역할은 대기 명단에 접근할 수 있다');
+end $$;
+set role anon;
+insert into fix (k, v)
+select 'waitlist-receipt', public.waitlist_register('Waitlist@Test.Example', true, '')->>'receipt';
+do $$
+begin
+  call pg_temp.must_fail('select * from public.waitlist_entries', '공개 역할은 이메일 목록을 읽지 못한다');
+  call pg_temp.must_fail(
+    'select public.waitlist_submit_share(''' || pg_temp.fx('waitlist-receipt') || ''', ''x'', ''https://evil.example/post'')',
+    '다른 도메인의 공유 주소는 거부한다');
+  perform pg_temp.ok(
+    (public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'x', 'https://x.com/stepup/status/123456')->>'status') = 'submitted',
+    '등록 영수증으로 X 공유 게시물 링크를 접수한다');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select email from public.waitlist_entries where email = 'waitlist@test.example') = 'waitlist@test.example',
+    '이메일은 소문자로 정규화해 저장한다');
+  perform pg_temp.ok((select count(*) from public.waitlist_share_claims where platform = 'x') = 1,
+    '공유 신청을 플랫폼별로 따로 저장한다');
+end $$;
 
 -- ════════════════════════════════════════════════════════════════════
 \echo ''

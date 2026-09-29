@@ -37,7 +37,11 @@ do $$ begin
   create role authenticated nologin;
 exception when duplicate_object then null; end $$;
 
-grant usage on schema public to anon, authenticated;
+do $$ begin
+  create role service_role nologin;
+exception when duplicate_object then null; end $$;
+
+grant usage on schema public to anon, authenticated, service_role;
 grant usage on schema auth to anon, authenticated;
 grant select on auth.users to authenticated;
 
