@@ -1,2 +1,0 @@
-[functions.waitlist-register]
-verify_jwt = false

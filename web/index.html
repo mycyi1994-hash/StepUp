@@ -25,10 +25,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="./styles.css?v=20260930-waitlist">
+<link rel="stylesheet" href="./styles.css?v=20260930-waitlist2">
 <script type="module" src="./site.js?v=20260928-ready2"></script>
-<script src="./waitlist-config.js" defer></script>
-<script type="module" src="./waitlist.js?v=20260930"></script>
+<script type="module" src="./waitlist.js?v=20260930-live"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -268,19 +267,40 @@
   </main>
 </div>
 <dialog class="waitlist-dialog" aria-labelledby="waitlist-title">
+  <button class="waitlist-close" type="button" aria-label="닫기">×</button>
   <form class="waitlist-form">
-    <button class="waitlist-close" type="button" aria-label="닫기">×</button>
     <p class="waitlist-kicker">StepUp 사전 등록</p>
     <h2 id="waitlist-title">출시 소식을 먼저 받아보세요.</h2>
-    <p class="waitlist-intro">이메일을 남기면 StepUp 출시 소식을 보내드릴게요. 등록한 이메일로 나중에 구글 로그인하면 사전 등록 혜택 대상인지 확인할 수 있습니다. 혜택 내용은 확정 후 안내합니다.</p>
+    <p class="waitlist-intro">이메일을 남기면 대기 명단에 등록돼요. 출시 후 같은 이메일로 구글 로그인하면 사전 등록 혜택 대상을 확인합니다. 혜택 내용은 추후 안내할게요.</p>
     <label class="waitlist-label" for="waitlist-email">이메일 주소</label>
     <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required>
+    <label class="waitlist-honeypot" aria-hidden="true">이 칸은 비워두세요 <input name="website" tabindex="-1" autocomplete="off"></label>
     <label class="waitlist-consent"><input type="checkbox" name="consent" required><span>출시 안내를 위한 이메일 수집·이용에 동의합니다. <a href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침 ↗</a></span></label>
-    <div class="waitlist-turnstile" aria-label="자동 등록 방지 확인"></div>
     <p class="waitlist-feedback" role="status" aria-live="polite"></p>
-    <button class="waitlist-submit" type="submit">확인 메일 받기</button>
-    <p class="waitlist-fineprint">확인 메일의 링크를 눌러야 대기 명단 등록이 완료됩니다.</p>
+    <button class="waitlist-submit" type="submit">대기 명단 등록</button>
+    <p class="waitlist-fineprint">확인 메일 없이 바로 등록됩니다. 이메일 소유권은 추후 구글 로그인으로 확인합니다.</p>
   </form>
+  <section class="waitlist-share" hidden aria-labelledby="waitlist-share-title">
+    <p class="waitlist-kicker">등록 완료</p>
+    <h2 id="waitlist-share-title">이제 친구에게 알려주세요.</h2>
+    <p class="waitlist-intro">X·인스타그램·스레드에 StepUp을 공유하고 게시물 링크를 남기면, 추가 혜택 후보로 기록해둘게요. 혜택 내용은 출시 후 안내합니다.</p>
+    <div class="waitlist-share-platforms" aria-label="공유할 플랫폼">
+      <button type="button" data-platform="x">𝕏 <span>X에 공유</span> ↗</button>
+      <button type="button" data-platform="instagram">◎ <span>인스타그램에 공유</span> ↗</button>
+      <button type="button" data-platform="threads">＠ <span>스레드에 공유</span> ↗</button>
+    </div>
+    <p class="waitlist-share-action-feedback" role="status" aria-live="polite"></p>
+    <p class="waitlist-share-tip">인스타그램·스레드는 공유 문구와 링크를 복사한 뒤 앱을 엽니다. 인스타그램에 올릴 <a href="./assets/img/waitlist-share-card.png" download="stepup-share.png">공유 이미지 다운로드 ↧</a></p>
+    <form class="waitlist-share-form" hidden>
+      <label class="waitlist-label" for="waitlist-post-url">공유한 게시물 링크</label>
+      <input id="waitlist-post-url" name="postUrl" type="url" inputmode="url" placeholder="https://..." maxlength="2048" required>
+      <p class="waitlist-share-help">게시물·릴스의 주소를 붙여넣어 주세요. 인스타그램 스토리는 링크가 없어 기록 대상에서 제외됩니다.</p>
+      <p class="waitlist-share-feedback" role="status" aria-live="polite"></p>
+      <button class="waitlist-submit" type="submit">공유 기록 남기기</button>
+    </form>
+    <p class="waitlist-share-note">공유 기록은 지급 확정이 아닙니다. 게시물 확인과 혜택 기준은 출시 후 안내합니다.</p>
+    <button class="waitlist-change-email" type="button">다른 이메일 등록하기</button>
+  </section>
 </dialog>
 </body>
 </html>

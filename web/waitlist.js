@@ -1,101 +1,160 @@
-const config = window.STEPUP_WAITLIST_CONFIG || {};
+const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
+const SHARE_URL = 'https://stepupcrew.com/';
+const SHARE_TEXT = 'StepUp 출시 대기 명단에 등록했어요. 함께 걷고 달릴 준비, 지금 시작해요!';
+const RECEIPT_KEY = 'stepup.waitlist.receipt';
+
 const dialog = document.querySelector('.waitlist-dialog');
-const form = document.querySelector('.waitlist-form');
-const openButton = document.querySelector('.waitlist-open');
-const closeButton = document.querySelector('.waitlist-close');
-const feedback = document.querySelector('.waitlist-feedback');
-const submit = document.querySelector('.waitlist-submit');
-const turnstileSlot = document.querySelector('.waitlist-turnstile');
-let widgetId;
-let challengeToken = '';
-let challengeScript;
+const registerForm = document.querySelector('.waitlist-form');
+const shareSection = document.querySelector('.waitlist-share');
+const shareForm = document.querySelector('.waitlist-share-form');
+const registerFeedback = document.querySelector('.waitlist-feedback');
+const shareFeedback = document.querySelector('.waitlist-share-feedback');
+const actionFeedback = document.querySelector('.waitlist-share-action-feedback');
+const registerSubmit = document.querySelector('.waitlist-form .waitlist-submit');
+const shareSubmit = document.querySelector('.waitlist-share-form .waitlist-submit');
+let receipt = sessionStorage.getItem(RECEIPT_KEY) || '';
+let platform = '';
 
-function message(value, error = false) {
-  feedback.textContent = value;
-  feedback.classList.toggle('is-error', error);
+function feedback(element, message, isError = false) {
+  element.textContent = message;
+  element.classList.toggle('is-error', isError);
 }
 
-function loadChallenge() {
-  if (!config.siteKey || widgetId !== undefined || challengeScript) return;
-  challengeScript = document.createElement('script');
-  challengeScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-  challengeScript.async = true;
-  challengeScript.onload = () => {
-    if (!window.turnstile || widgetId !== undefined) return;
-    widgetId = window.turnstile.render(turnstileSlot, {
-      sitekey: config.siteKey,
-      action: 'waitlist',
-      theme: 'dark',
-      callback: token => {
-        challengeToken = token;
-        if (feedback.textContent.includes('자동 등록 방지')) message('');
-      },
-      'expired-callback': () => { challengeToken = ''; message('자동 등록 방지 확인이 만료됐어요. 다시 확인해주세요.', true); },
-      'error-callback': () => { challengeToken = ''; message('자동 등록 방지 확인을 불러오지 못했어요. 다시 시도해주세요.', true); },
-    });
-  };
-  challengeScript.onerror = () => {
-    challengeScript.remove();
-    challengeScript = undefined;
-    message('자동 등록 방지 확인을 불러오지 못했어요. 잠시 후 다시 시도해주세요.', true);
-  };
-  document.head.append(challengeScript);
-}
-
-openButton.addEventListener('click', () => {
-  form.reset();
-  challengeToken = '';
-  submit.disabled = false;
-  submit.textContent = '확인 메일 받기';
-  message('');
-  dialog.showModal();
-  loadChallenge();
-  if (widgetId !== undefined && window.turnstile) window.turnstile.reset(widgetId);
-  form.elements.email.focus();
-});
-closeButton.addEventListener('click', () => dialog.close());
-dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-dialog.addEventListener('close', () => {
-  if (!dialog.open) challengeToken = '';
-});
-
-form.addEventListener('submit', async event => {
-  event.preventDefault();
-  if (!form.reportValidity()) return;
-  if (!config.endpoint || !config.siteKey) {
-    message('대기 명단 접수를 준비 중입니다. 잠시 후 다시 시도해주세요.', true);
-    return;
-  }
-  if (!challengeToken) {
-    message('자동 등록 방지 확인을 마쳐주세요.', true);
-    return;
-  }
-
-  submit.disabled = true;
-  message('확인 메일을 준비하고 있어요…');
+async function callWaitlist(name, body) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(config.endpoint, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'register',
-        email: form.elements.email.value.trim(),
-        consent: form.elements.consent.checked,
-        turnstileToken: challengeToken,
-      }),
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY },
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`waitlist ${response.status}`);
-    message('신청을 확인했어요. 확인이 필요한 경우 메일함의 링크를 눌러 등록을 마쳐주세요.');
-    submit.textContent = '메일을 확인해주세요';
-  } catch (_) {
-    message('접수하지 못했어요. 잠시 후 다시 시도해주세요.', true);
-    submit.disabled = false;
-    if (widgetId !== undefined && window.turnstile) window.turnstile.reset(widgetId);
-    challengeToken = '';
+    if (!response.ok) throw new Error(`Waitlist request failed: ${response.status}`);
+    const result = await response.json();
+    if (!result?.ok) throw new Error('Waitlist request was not accepted');
+    return result;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function showStage(stage) {
+  const sharing = stage === 'share';
+  registerForm.hidden = sharing;
+  shareSection.hidden = !sharing;
+  shareForm.hidden = true;
+  platform = '';
+  dialog.setAttribute('aria-labelledby', sharing ? 'waitlist-share-title' : 'waitlist-title');
+  feedback(registerFeedback, '');
+  feedback(shareFeedback, '');
+  feedback(actionFeedback, '');
+}
+
+document.querySelector('.waitlist-open').addEventListener('click', () => {
+  showStage(receipt ? 'share' : 'register');
+  dialog.showModal();
+  if (!receipt) registerForm.elements.email.focus();
+});
+document.querySelector('.waitlist-close').addEventListener('click', () => dialog.close());
+dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+document.querySelector('.waitlist-change-email').addEventListener('click', () => {
+  receipt = '';
+  sessionStorage.removeItem(RECEIPT_KEY);
+  registerForm.reset();
+  showStage('register');
+  registerForm.elements.email.focus();
+});
+
+registerForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!registerForm.reportValidity()) return;
+  registerSubmit.disabled = true;
+  feedback(registerFeedback, '대기 명단에 등록하고 있어요…');
+  try {
+    const result = await callWaitlist('waitlist_register', {
+      p_email: registerForm.elements.email.value.trim(),
+      p_consent: registerForm.elements.consent.checked,
+      p_trap: registerForm.elements.website.value,
+    });
+    if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
+    receipt = result.receipt;
+    sessionStorage.setItem(RECEIPT_KEY, receipt);
+    showStage('share');
+  } catch (_) {
+    feedback(registerFeedback, '등록하지 못했어요. 잠시 후 다시 시도해주세요.', true);
+  } finally {
+    registerSubmit.disabled = false;
+  }
+});
+
+const targets = {
+  instagram: 'https://www.instagram.com/',
+  threads: 'https://www.threads.com/',
+};
+const labels = { x: 'X', instagram: '인스타그램', threads: '스레드' };
+
+document.querySelectorAll('.waitlist-share-platforms button').forEach(button => {
+  button.addEventListener('click', async () => {
+    platform = button.dataset.platform;
+    shareForm.hidden = false;
+    shareForm.reset();
+    feedback(shareFeedback, '');
+    const copied = `${SHARE_TEXT}\n${SHARE_URL}`;
+    if (platform === 'x') {
+      const url = `https://x.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      feedback(actionFeedback, 'X 글 작성 화면을 열었어요. 게시 후 글 주소를 아래에 붙여넣어 주세요.');
+    } else {
+      const copy = navigator.clipboard?.writeText(copied);
+      window.open(targets[platform], '_blank', 'noopener,noreferrer');
+      try {
+        if (!copy) throw new Error('Clipboard unavailable');
+        await copy;
+        feedback(actionFeedback, `${labels[platform]}에 붙여넣을 문구와 링크를 복사했어요. 게시 후 글 주소를 아래에 붙여넣어 주세요.`);
+      } catch (_) {
+        feedback(actionFeedback, '자동 복사가 안 됐어요. stepupcrew.com 링크를 게시물에 넣어주세요.', true);
+      }
+    }
+    shareForm.elements.postUrl.focus();
+  });
+});
+
+function validPostUrl(value, selectedPlatform) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return false;
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    if (selectedPlatform === 'x') return ['x.com', 'twitter.com'].includes(host) && /^\/[^/]+\/status\/\d+\/?$/.test(url.pathname);
+    if (selectedPlatform === 'instagram') return host === 'instagram.com' && /^\/(p|reel)\/[^/]+\/?$/.test(url.pathname);
+    if (selectedPlatform === 'threads') return ['threads.com', 'threads.net'].includes(host) && /^\/@[^/]+\/post\/[^/]+\/?$/.test(url.pathname);
+  } catch (_) { /* Invalid URL. */ }
+  return false;
+}
+
+shareForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!shareForm.reportValidity() || !platform) return;
+  const url = shareForm.elements.postUrl.value.trim();
+  if (!validPostUrl(url, platform)) {
+    feedback(shareFeedback, `${labels[platform]} 게시물 주소를 확인해주세요.`, true);
+    return;
+  }
+  shareSubmit.disabled = true;
+  feedback(shareFeedback, '공유 기록을 저장하고 있어요…');
+  try {
+    await callWaitlist('waitlist_submit_share', {
+      p_receipt: receipt,
+      p_platform: platform,
+      p_post_url: url,
+    });
+    feedback(shareFeedback, `${labels[platform]} 공유 신청을 기록했어요. 게시 확인 후 추가 혜택 대상으로 검토합니다.`);
+    const button = document.querySelector(`.waitlist-share-platforms [data-platform="${platform}"]`);
+    button.classList.add('is-submitted');
+  } catch (_) {
+    feedback(shareFeedback, '공유 기록을 저장하지 못했어요. 잠시 후 다시 시도해주세요.', true);
+  } finally {
+    shareSubmit.disabled = false;
   }
 });
