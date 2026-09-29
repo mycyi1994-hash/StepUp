@@ -567,6 +567,9 @@ private fun ResultFitColumn(
 internal val ResultCardMargin = 12.dp
 internal val ResultCardPadding = 16.dp
 
+/** 결과 카드 지도의 가장 낮은 높이 — 이보다 좁으면 카드가 넘기기로 바뀐다 */
+internal val ResultMapMin = 88.dp
+
 /**
  * 러닝 완료 카드(전달본 03) — 로고 · 날짜 / 큰 거리 / 지도 / 러닝 시간 · 평균 페이스 · 평균 속도 / 신발(이름 끝 등급 배지 · 내구도) / 보상.
  * [viewport] 는 카드가 쓸 수 있는 높이(px) — 지도가 남는 높이를 채운다.
@@ -591,7 +594,8 @@ internal fun RunResultCard(
     val hasRoute = track.isNotEmpty()
     ResultFitColumn(
         viewport = viewport,
-        minStage = if (hasRoute) 140.dp else 56.dp,
+        // 작은 화면(360×780 · 360×800)에서는 지도가 88dp 까지 줄어 보상 줄까지 카드가 한 화면에 든다
+        minStage = if (hasRoute) ResultMapMin else 56.dp,
         maxStage = if (hasRoute) 260.dp else 56.dp,
         gap = 12.dp,
         modifier = modifier.fillMaxWidth().clip(shape).background(p.card, shape).border(1.dp, p.cardEdge, shape)
