@@ -311,12 +311,20 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 러닝 완료 — 완료 버튼이 화면 안. [strict] 면 카드가 한 화면(스크롤 0) */
+    /**
+     * 러닝 완료 — 완료 버튼이 화면 안. [strict] 면 카드가 한 화면(스크롤 0).
+     * 보상 줄 아래 까닭 · 다시 로그인이 붙으면(로그인 전 기기 — CI 에뮬레이터) 카드가 그만큼 길어져 넘치는 것이 맞다 — 그때는 지도 높이만 본다.
+     */
     private fun assertResultFits(where: String, strict: Boolean = true) {
         compose.waitForIdle()
         val done = bounds("run-result-done")
         assertTrue("done inside the screen at $where: $done / ${frameBottom()}", done.bottom <= frameBottom() + 1)
-        if (strict) {
+        if (exists("run-result-map")) {
+            val dpPx = bounds(FRAME).height / viewport.height
+            val map = bounds("run-result-map")
+            assertTrue("the map keeps its minimum at $where: $map", map.height >= 139f * dpPx)
+        }
+        if (strict && !exists("run-result-reward-note")) {
             val scroll = compose.onNodeWithTag("run-result-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
             assertEquals("the run result must not scroll at $where", 0f, scroll.maxValue(), 1f)
         }

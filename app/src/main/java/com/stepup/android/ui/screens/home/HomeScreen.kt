@@ -195,6 +195,8 @@ fun HomeScreen(
     if (showDetails) {
         androidx.compose.material3.ModalBottomSheet(
             onDismissRequest = { showDetails = false },
+            // 항목이 많다 — 반만 열리면 아래쪽(에너지 · 풍경 바꾸기)이 화면 밖에 남는다. 처음부터 다 연다
+            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = com.stepup.android.ui.theme.Night,
         ) {
             Column(
@@ -330,7 +332,8 @@ private fun StepsBlock(
         .feedbackClickable(role = Role.Button, onClick = onOpenDetails)
         .semantics { onClick(label = detailsLabel) { onOpenDetails(); true } }
     if (firstHome) {
-        Column(Modifier.fillMaxWidth().then(clickable).padding(vertical = 4.dp).testTag("home-steps")) {
+        // 첫 러닝 홈의 두 줄은 설명이라 누를 곳이 없다(시작·로그인·첫 사용 v1 시안 11) — 걸음이 생기면 걸음 칸이 상세 기록을 연다
+        Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("home-steps")) {
             Text(
                 stringResource(R.string.onb_home_first_title), color = p.text, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
                 lineHeight = 36.sp, modifier = Modifier.testTag("home-headline"),

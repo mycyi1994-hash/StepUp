@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -56,7 +57,10 @@ class MysteryDesignTest {
             }
         }
     }
-    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+    // 걸음 권한이 있어야 러닝 홈의 걸음 칸이 상세 기록을 연다(권한 전에는 첫 러닝 안내 · 권한 줄이 그 자리에 있다)
+    @get:Rule(order = 1) val permissions: androidx.test.rule.GrantPermissionRule =
+        androidx.test.rule.GrantPermissionRule.grant(android.Manifest.permission.ACTIVITY_RECOGNITION)
+    @get:Rule(order = 2) val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun drawScreenAndBackgroundSwitch() {
         runBlocking {
@@ -118,7 +122,7 @@ class MysteryDesignTest {
             compose.onAllNodesWithTag("home-scene-${photo.key}").fetchSemanticsNodes().isNotEmpty()
         }
         // 러닝 홈(2026-09-29 전달본 02) — 풍경 바꾸기는 걸음 칸을 누르면 여는 상세 기록 시트 안에 있다
-        compose.onNodeWithTag("home-steps").performClick()
+        compose.onNodeWithTag("home-steps").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-background-next").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("home-details").performScrollToNode(hasTestTag("home-background-next"))
         compose.onNodeWithTag("home-background-next").assertIsDisplayed().performClick()

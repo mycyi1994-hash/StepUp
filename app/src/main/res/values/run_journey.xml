@@ -13,7 +13,7 @@
     <string name="home_find_courses">Find courses</string>
     <string name="home_background">Background photo</string>
     <string name="run_speed_error">Speed reading error · checking</string>
-    <string name="run_void_banner">Session void · not recorded</string>
+    <string name="run_void_banner">Session void · no reward</string>
     <string name="run_current_speed">Current speed</string>
     <string name="run_speed_unit">km/h</string>
     <string name="run_speed_unknown">Current speed unknown</string>
