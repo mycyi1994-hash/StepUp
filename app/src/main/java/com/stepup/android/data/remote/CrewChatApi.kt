@@ -149,9 +149,6 @@ class CrewChatApi(private val server: StepUpServer) {
             },
         ) { serverJson.decodeFromString<ChatNoticeRow>(it) }
 
-    /** 공지 하나(20) — 크루 홈 · 공지 목록에서 id 로 연다 */
-    suspend fun notice(noticeId: Long): ServerResult<ChatNoticeRow> =
-        rpc("crew_chat_notice", jsonBody { put("p_notice", noticeId) }) { serverJson.decodeFromString<ChatNoticeRow>(it) }
 
     suspend fun noticeDelete(noticeId: Long): ServerResult<Unit> =
         rpc("crew_chat_notice_delete", jsonBody { put("p_notice", noticeId) }) { }
