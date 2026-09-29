@@ -53,6 +53,7 @@ import com.stepup.android.ui.Routes
 import com.stepup.android.ui.components.ShoeGradeBadge
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.experience.ExperienceProvider
+import com.stepup.android.ui.screens.walk.ResultMapMin
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
@@ -207,7 +208,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 러닝 중은 스크롤 없이 두 버튼이 화면 안, 결과는 완료 버튼이 화면 안 */
+    /** 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 러닝 중은 스크롤 없이 두 버튼이 화면 안, 결과는 보통 글씨면 한 화면(큰 글씨는 완료 버튼이 화면 안) */
     @Test fun fitsAtDeviceSizes() {
         seed()
         try {
@@ -227,7 +228,7 @@ class RunJourneyDesignTest {
                 WalkSessionService.showStateForTest(finished(now))
                 awaitTag("run-result-card")
                 signedIn()
-                assertResultFits(next.label, strict = next.font == 1f && next.height >= 844)
+                assertResultFits(next.label, strict = next.font == 1f)
                 shot("f-${next.label}-result", settle = 1_200)
             }
         } finally {
@@ -340,7 +341,7 @@ class RunJourneyDesignTest {
         if (exists("run-result-map")) {
             val dpPx = bounds(FRAME).height / viewport.height
             val map = bounds("run-result-map")
-            assertTrue("the map keeps its minimum at $where: $map", map.height >= 139f * dpPx)
+            assertTrue("the map keeps its minimum at $where: $map", map.height >= (ResultMapMin.value - 1f) * dpPx)
         }
         if (strict) {
             val scroll = compose.onNodeWithTag("run-result-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
