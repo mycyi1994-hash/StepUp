@@ -74,7 +74,7 @@ create temp table fix (k text primary key, v text);
 -- 앱 권한(authenticated)으로 바꿔 검사하는 동안에도 준비물은 읽어야 한다.
 grant all on fix to authenticated, anon;
 
--- 홈페이지 대기 명단은 두 공개 함수만 허용한다.
+-- 홈페이지 대기 명단은 제한된 공개 함수만 허용한다.
 do $$
 begin
   perform pg_temp.ok(
@@ -106,6 +106,24 @@ begin
   perform pg_temp.ok(
     (public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'x', 'https://x.com/stepup/status/123456')->>'status') = 'submitted',
     '등록 영수증으로 X 공유 게시물 링크를 접수한다');
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'instagram', 'https://instagram.com/reel/First_post/?igsh=test');
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'threads', 'https://www.threads.com/@stepup/post/Thread_1');
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'youtube', 'https://youtube.com/watch?feature=shared&v=Abcdef123_-');
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'tiktok', 'https://vm.tiktok.com/Z123abc/');
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'reels', 'https://www.instagram.com/reel/Creator_post/');
+  perform pg_temp.ok(jsonb_array_length(public.waitlist_status(pg_temp.fx('waitlist-receipt'))->'claims') = 6,
+    '여섯 채널을 저장하고 영수증으로 진행 상황을 복원한다');
+  perform pg_temp.ok(not (public.waitlist_status(pg_temp.fx('waitlist-receipt'))::text ~ 'post_url|email|waitlist_id'),
+    '진행 상황 응답에 이메일과 게시물 주소를 노출하지 않는다');
+  call pg_temp.must_fail('select * from public.waitlist_bonus_candidates', '공개 역할은 보너스 대상 목록을 읽지 못한다');
+  call pg_temp.must_fail('select public.waitlist_status(repeat(''0'', 64))', '다른 영수증은 상태를 읽지 못한다');
+  call pg_temp.must_fail('select public.waitlist_status(null)', '빈 영수증은 거부한다');
+  call pg_temp.must_fail(
+    'select public.waitlist_submit_share(''' || pg_temp.fx('waitlist-receipt') || ''', ''reels'', ''https://www.instagram.com/reel/First_post?igsh=changed'')',
+    '추적 쿼리를 바꿔도 일반 공유와 크리에이터에 같은 게시물을 중복 제출할 수 없다');
+  call pg_temp.must_fail(
+    'select public.waitlist_submit_share(''' || pg_temp.fx('waitlist-receipt') || ''', ''youtube'', ''https://youtube.com.evil.test/watch?v=Abcdef123_-'')',
+    '위장 도메인은 서버에서도 거부한다');
 end $$;
 reset role;
 do $$
@@ -114,6 +132,15 @@ begin
     '이메일은 소문자로 정규화해 저장한다');
   perform pg_temp.ok((select count(*) from public.waitlist_share_claims where platform = 'x') = 1,
     '공유 신청을 플랫폼별로 따로 저장한다');
+  perform pg_temp.ok((select all_three_submitted and creator_submitted and not all_three_verified
+    from public.waitlist_bonus_candidates where email = 'waitlist@test.example'),
+    '일반 공유 3개와 크리에이터 참여는 기록되지만 검증 완료가 되지는 않는다');
+  perform pg_temp.ok((select post_url = 'https://www.youtube.com/watch?v=Abcdef123_-'
+    from public.waitlist_share_claims where platform = 'youtube'), '유튜브 영상 ID를 보존해 주소를 정규화한다');
+  update public.waitlist_share_claims set status = 'verified' where platform = 'youtube';
+  perform public.waitlist_submit_share(pg_temp.fx('waitlist-receipt'), 'youtube', 'https://youtu.be/Zbcdef123_-');
+  perform pg_temp.ok((select post_url = 'https://www.youtube.com/watch?v=Abcdef123_-' and status = 'verified'
+    from public.waitlist_share_claims where platform = 'youtube'), '검증된 영상은 공개 제출로 바뀌지 않는다');
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
