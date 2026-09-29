@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 홈 · 러닝 중 · 러닝 완료(2026-09-29 전달본, design/run-journey-2026-09-29) — 수는 모두 실제 기록 값을 넣는다 -->
+<resources>
+    <string name="cd_notifications_unread">%1$d unread</string>
+    <string name="home_today_steps">Today\'s steps</string>
+    <string name="home_steps_unit">steps</string>
+    <string name="home_goal_short">Goal %1$s</string>
+    <string name="home_open_details">See today\'s details</string>
+    <string name="home_shoe_open">Open in Shoes</string>
+    <string name="home_no_shoe_title">No shoes on yet</string>
+    <string name="home_no_shoe_body">Pick a pair in the Shoes tab.</string>
+    <string name="home_open_records">Records</string>
+    <string name="home_find_courses">Find courses</string>
+    <string name="home_background">Background photo</string>
+    <string name="run_speed_error">Speed reading error · checking</string>
+    <string name="run_void_banner">Session void · not recorded</string>
+    <string name="run_current_speed">Current speed</string>
+    <string name="run_speed_unit">km/h</string>
+    <string name="run_speed_unknown">Current speed unknown</string>
+    <string name="run_details">Run details</string>
+    <string name="result_estimated_reward">Estimated reward</string>
+    <string name="result_reward">Reward</string>
+    <string name="result_settle_pending">Pending</string>
+    <string name="result_settle_done">Credited</string>
+    <string name="result_settle_void">Void</string>
+    <string name="result_settle_rejected">Not paid</string>
+    <string name="result_save_image">Save image</string>
+    <string name="result_share">Share</string>
+    <string name="result_saved">Saved to Photos</string>
+    <string name="result_save_failed">Couldn\'t save the image</string>
+    <string name="result_date_pattern">MMM d, yyyy (E) HH:mm</string>
+</resources>

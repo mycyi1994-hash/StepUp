@@ -239,7 +239,7 @@
     <string name="sneaker_about_body" formatted="false">모든 스니커즈는 네 가지 속성과 등급을 가집니다. 부스트는 등급당 +1% 정도로 작게 잡았어요. 수집의 재미는 성능이 아니라 외형과 도감 완성에 있습니다.</string>
     <string name="rarity_common">일반</string>
     <string name="rarity_rare">레어</string>
-    <string name="rarity_epic">희귀</string>
+    <string name="rarity_epic">에픽</string>
     <string name="rarity_legendary">레전더리</string>
 
     <!-- Events -->

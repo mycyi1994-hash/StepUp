@@ -16,6 +16,8 @@ object StepUpDesign {
     val ControlRadius = 24.dp
     val HeaderLogoHeight = 26.dp
     val LaunchLogoHeight = 52.dp
+    /** 러닝 완료 기록 카드 왼쪽 위(2026-09-29 전달본 03) — 공유 이미지처럼 카드 안에 둔다 */
+    val CardLogoHeight = 20.dp
     const val LogoAspectRatio = 5.76f
     val BalanceHeight = 48.dp
     val BalanceAmount = 16.sp
@@ -44,4 +46,4 @@ object StepUpDesign {
 }
 
 /** Only sanctioned logo roles. No per-screen numeric size API. */
-enum class BrandLogoRole { Header, Launch }
+enum class BrandLogoRole { Header, Launch, Card }

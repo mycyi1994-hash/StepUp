@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 홈 · 러닝 중 · 러닝 완료(2026-09-29 전달본, design/run-journey-2026-09-29) — 수는 모두 실제 기록 값을 넣는다 -->
+<resources>
+    <string name="cd_notifications_unread">未読 %1$d件</string>
+    <string name="home_today_steps">今日の歩数</string>
+    <string name="home_steps_unit">歩</string>
+    <string name="home_goal_short">目標 %1$s</string>
+    <string name="home_open_details">今日の記録を詳しく見る</string>
+    <string name="home_shoe_open">シューズタブで見る</string>
+    <string name="home_no_shoe_title">履いているシューズがありません</string>
+    <string name="home_no_shoe_body">シューズタブでシューズを選んで履いてください。</string>
+    <string name="home_open_records">記録を見る</string>
+    <string name="home_find_courses">コースを探す</string>
+    <string name="home_background">背景写真</string>
+    <string name="run_speed_error">速度の測定エラー · 確認中</string>
+    <string name="run_void_banner">セッション無効 · 記録されません</string>
+    <string name="run_current_speed">現在の速度</string>
+    <string name="run_speed_unit">km/h</string>
+    <string name="run_speed_unknown">現在の速度が分かりません</string>
+    <string name="run_details">ランニング情報</string>
+    <string name="result_estimated_reward">予想報酬</string>
+    <string name="result_reward">報酬</string>
+    <string name="result_settle_pending">精算待ち</string>
+    <string name="result_settle_done">付与済み</string>
+    <string name="result_settle_void">無効</string>
+    <string name="result_settle_rejected">支給なし</string>
+    <string name="result_save_image">画像を保存</string>
+    <string name="result_share">共有</string>
+    <string name="result_saved">写真に保存しました</string>
+    <string name="result_save_failed">画像を保存できませんでした</string>
+    <string name="result_date_pattern">yyyy/M/d (E) HH:mm</string>
+</resources>

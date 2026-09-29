@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.Faction
@@ -32,6 +33,7 @@ import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.RunnerTitle
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.SneakerDesigns
+import com.stepup.android.domain.tier
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.Edge
@@ -258,8 +260,13 @@ fun SneakerCollectionCard(
     ) {
         // 등급 프레임 v8 — 목록 칸은 프레임만(효과 없이), 비율은 그림 그대로 440:418
         SneakerGradeThumb(sneaker, Modifier.fillMaxWidth())
-        Text(sneaker.variantLabel(), style = MaterialTheme.typography.titleMedium, color = Snow)
-        Text(sneaker.rarity.label() + " · " + sneaker.faction.label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 글로 한 번 더 쓰지 않는다
+        ShoeNameWithBadge(
+            name = sneaker.variantLabel(), tier = sneaker.tier,
+            style = MaterialTheme.typography.titleMedium.copy(color = Snow), maxLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(sneaker.faction.label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
         if (sneaker.equipped) Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
         if (count > 1) Text("×$count", style = MaterialTheme.typography.bodyMedium, color = Snow)
         Text(stringResource(R.string.level_chip, sneaker.level) + " · +%.1f%%".format(sneaker.boostPercent), style = MaterialTheme.typography.bodyMedium, color = Snow)
@@ -336,14 +343,22 @@ fun EquippedSneakerCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    // S2 — 착용 중 · 등급 → 이름 → 민팅 번호 · 레벨 → 등급 무대(프레임 v8) 위 신발 → 능력치 한 줄
+    // S2 — 착용 중 → 이름(끝에 공통 등급 배지) → 민팅 번호 · 레벨 → 등급 무대(프레임 v8) 위 신발 → 능력치 한 줄
     androidx.compose.foundation.layout.Column(
         modifier.fillMaxWidth().quietClickable(onClick).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        S2Kicker(stringResource(R.string.items_equipped) + " · " + sneaker.rarity.label())
+        S2Kicker(stringResource(R.string.items_equipped))
         androidx.compose.foundation.layout.Spacer(Modifier.height(10.dp))
-        S2Headline(sneaker.fullLabel())
+        ShoeNameWithBadge(
+            name = sneaker.fullLabel(), tier = sneaker.tier,
+            style = androidx.compose.ui.text.TextStyle(
+                color = Snow, fontFamily = com.stepup.android.ui.theme.StepUpSans, fontWeight = FontWeight.SemiBold,
+                fontSize = 29.sp, lineHeight = 1.24.em, letterSpacing = (-0.025).em,
+            ),
+            maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
         androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
         S2Subtitle(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber) + " · " +
             stringResource(R.string.level_chip, sneaker.level))

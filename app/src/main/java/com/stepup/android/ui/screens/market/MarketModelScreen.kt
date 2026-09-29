@@ -26,8 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.stepup.android.domain.tier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.data.local.SneakerEntity
@@ -110,11 +112,20 @@ fun MarketModelScreen(
         item {
             val preview = previewSneaker(faction, rarity, variant)
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                com.stepup.android.ui.components.S2Kicker(
-                    preview.faction.label() + " · " + preview.rarity.label(),
-                )
+                com.stepup.android.ui.components.S2Kicker(preview.faction.label())
                 Spacer(Modifier.height(10.dp))
-                com.stepup.android.ui.components.S2Headline(modelName(faction, rarity, variant))
+                // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 위 한 줄에 글로 쓰지 않는다
+                com.stepup.android.ui.components.ShoeNameWithBadge(
+                    name = modelName(faction, rarity, variant),
+                    tier = preview.tier,
+                    style = androidx.compose.ui.text.TextStyle(
+                        color = Snow, fontFamily = com.stepup.android.ui.theme.StepUpSans,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 29.sp,
+                        lineHeight = 1.24.em, letterSpacing = (-0.025).em,
+                    ),
+                    maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(Modifier.height(16.dp))
                 com.stepup.android.ui.components.S2ShoeStage(preview, Modifier.fillMaxWidth(0.86f))
             }

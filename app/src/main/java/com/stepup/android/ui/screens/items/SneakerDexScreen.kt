@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -43,7 +44,9 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.ShoeCatalog
+import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.BarMeter
+import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.PillChip
@@ -276,21 +279,19 @@ private fun DexCell(
             }
         }
 
+        // 이름 끝에 공통 등급 배지(2026-09-29) — 없는 칸도 같은 배지로 등급을 보인다. 두 줄 높이로 칸을 맞춘다
+        Box(Modifier.fillMaxWidth().heightIn(min = with(LocalDensity.current) { (14.sp * 1.45f * 2).toDp() })) {
+            ShoeNameWithBadge(
+                name = sample.variantLabel(), tier = sample.tier,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (hasIt) Snow else Silver,
+                ),
+                maxLines = 2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Text(
-            text = sample.variantLabel(),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (hasIt) Snow else Silver,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            minLines = 2,
-        )
-        Text(
-            text = if (hasIt) {
-                stringResource(R.string.level_chip, sneaker.level)
-            } else {
-                slot.rarity.label()
-            },
+            // 없는 칸은 빈 줄 — 등급은 배지가 이미 알린다
+            text = if (hasIt) stringResource(R.string.level_chip, sneaker.level) else " ",
             fontSize = 14.sp,
             color = if (hasIt) slot.rarity.tint() else Silver,
         )

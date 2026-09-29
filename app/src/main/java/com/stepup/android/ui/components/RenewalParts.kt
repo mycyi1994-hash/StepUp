@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -174,7 +177,8 @@ fun SubHeader(
 }
 
 /**
- * 탭 첫 화면의 머리글 — 왼쪽 로고, 오른쪽 보유 SUP. 시안의 네 탭이 모두 이 모양이다.
+ * 탭 첫 화면의 머리글 — 왼쪽 로고, 오른쪽 보유 SUP · 알림 종(2026-09-29 메인 시안). 다섯 탭이 모두 이 모양이다 —
+ * 종을 한 탭에만 두면 보유 SUP 자리가 탭마다 달라진다.
  */
 @Composable
 fun MainHeader(
@@ -182,6 +186,10 @@ fun MainHeader(
     onOpenWallet: (() -> Unit)?,
     modifier: Modifier = Modifier,
     balanceModifier: Modifier = Modifier,
+    /** 읽지 않은 알림 수 — 0 보다 크면 종에 작은 점 */
+    unread: Int = 0,
+    /** 알림함 — null 이면 종을 두지 않는다 */
+    onOpenNotifications: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -193,6 +201,29 @@ fun MainHeader(
         Wordmark(modifier = Modifier.weight(1f, fill = false))
         Spacer(Modifier.weight(1f))
         SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
+        if (onOpenNotifications != null) NotificationBell(unread, onOpenNotifications)
+    }
+}
+
+/** 머리글의 알림 종 — 48dp 터치, 읽지 않은 알림이 있으면 오른쪽 위 작은 파란 점(수는 알림함에서) */
+@Composable
+private fun NotificationBell(unread: Int, onClick: () -> Unit) {
+    val label = stringResource(R.string.cd_notifications) +
+        if (unread > 0) " · " + stringResource(R.string.cd_notifications_unread, unread) else ""
+    Box(
+        Modifier.size(StepUpDesign.TouchTarget).clip(CircleShape)
+            .feedbackClickable(onClick = onClick)
+            .semantics { contentDescription = label }
+            .testTag("header-notifications"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Outlined.Notifications, contentDescription = null, tint = Snow, modifier = Modifier.size(24.dp))
+        if (unread > 0) {
+            Box(
+                Modifier.align(Alignment.Center).offset(x = 7.dp, y = (-8).dp).size(8.dp).clip(CircleShape)
+                    .background(Color(0xFF3988FF)).testTag("header-notifications-dot"),
+            )
+        }
     }
 }
 

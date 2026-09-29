@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 홈 · 러닝 중 · 러닝 완료(2026-09-29 전달본, design/run-journey-2026-09-29) — 수는 모두 실제 기록 값을 넣는다 -->
+<resources>
+    <string name="cd_notifications_unread">%1$d 条未读</string>
+    <string name="home_today_steps">今日步数</string>
+    <string name="home_steps_unit">步</string>
+    <string name="home_goal_short">目标 %1$s</string>
+    <string name="home_open_details">查看今日详细记录</string>
+    <string name="home_shoe_open">在鞋子页查看</string>
+    <string name="home_no_shoe_title">还没有穿上鞋子</string>
+    <string name="home_no_shoe_body">请在鞋子页选择一双穿上。</string>
+    <string name="home_open_records">查看记录</string>
+    <string name="home_find_courses">查找路线</string>
+    <string name="home_background">背景照片</string>
+    <string name="run_speed_error">速度测量异常 · 确认中</string>
+    <string name="run_void_banner">本次无效 · 不会记录</string>
+    <string name="run_current_speed">当前速度</string>
+    <string name="run_speed_unit">km/h</string>
+    <string name="run_speed_unknown">无法获取当前速度</string>
+    <string name="run_details">跑步信息</string>
+    <string name="result_estimated_reward">预计奖励</string>
+    <string name="result_reward">奖励</string>
+    <string name="result_settle_pending">待结算</string>
+    <string name="result_settle_done">已入账</string>
+    <string name="result_settle_void">无效</string>
+    <string name="result_settle_rejected">未发放</string>
+    <string name="result_save_image">保存图片</string>
+    <string name="result_share">分享</string>
+    <string name="result_saved">已保存到相册</string>
+    <string name="result_save_failed">无法保存图片</string>
+    <string name="result_date_pattern">yyyy/M/d (E) HH:mm</string>
+</resources>
