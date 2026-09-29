@@ -533,7 +533,8 @@ class ShoeDrawTabsDesignTest {
     private fun show(name: String, readyTag: String, content: @Composable () -> Unit) {
         compose.runOnIdle { scene = { key(name) { content() } } }
         awaitTag(readyTag)
-        shot(name)
+        // 결과 무대는 등급 틀 · 신발 그림이 커서 처음 그릴 때 화면에 늦게 올라온다(QA 36524498482 의 d07 은 앞 장면이 찍혔다)
+        shot(name, settle = if (readyTag == "draw-result") 1_800 else 700)
     }
 
     private fun show(next: Viewport) {
