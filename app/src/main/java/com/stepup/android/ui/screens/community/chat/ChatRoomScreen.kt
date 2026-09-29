@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -169,7 +170,12 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
             // 카메라로 찍은 원본은 보낼 모양으로 옮긴 뒤 지운다(캐시에 쌓이지 않게)
             taken?.delete()
             when (loaded) {
-                is CrewPhotos.Loaded.Ok -> actions.onPhoto()
+                is CrewPhotos.Loaded.Ok -> {
+                    // 첨부 시트 창이 닫히는 프레임이 지난 뒤에 26 으로 — 닫히는 창과 새 화면이 한 프레임에 겹치지 않게
+                    withFrameNanos { }
+                    withFrameNanos { }
+                    actions.onPhoto()
+                }
                 CrewPhotos.Loaded.Broken -> photoProblem = PROBLEM_BROKEN
                 CrewPhotos.Loaded.Denied -> photoProblem = PROBLEM_DENIED
             }

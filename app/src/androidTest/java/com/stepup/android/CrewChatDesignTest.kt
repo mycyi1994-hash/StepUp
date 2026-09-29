@@ -210,8 +210,8 @@ class CrewChatDesignTest {
             awaitGone("chat-new-messages")
             awaitText("5분 늦어요, 먼저 출발해 주세요.")
 
-            // 보낸 답장 — 원문 참조가 남는다
-            longPress("오늘은 공덕역 2번 출구에서")
+            // 보낸 답장 — 원문 참조가 남는다(새 메시지를 본 뒤 화면에 있는 크루장의 메시지에)
+            longPress("저는 벌써 출발했어요.")
             tapTag("chat-menu-reply")
             typeInto("chat-input", "네, 2번 출구에서 뵐게요.")
             tapTag("chat-send")
