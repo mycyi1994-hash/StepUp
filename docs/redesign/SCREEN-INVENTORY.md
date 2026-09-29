@@ -255,6 +255,14 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 ## State review
 
+### Website waitlist (2026-09-30)
+
+| Surface | Source | States and validation |
+| --- | --- | --- |
+| Email registration dialog | `web/index.html`, `web/styles.css`, `web/waitlist.js` | Light redesign; consent, validation, saving, error, success; desktop/mobile browser capture |
+| General sharing + creator participation | Same dialog; `web/waitlist-core.mjs` | Six platforms; selectable link form, retry, submitted/verified/rejected, receipt restoration; 320/390/1440px browser verification |
+| Bonus candidate summary | `0052_waitlist_creators.sql` | Operator-only derived flags; no automatic verification or payment; SQL CI required |
+
 For every route: initializing, ready/data, empty, loading, error/retry, permission denied, signed out, signed in, offline/reconnect, restore/back/relaunch, large font, light/dark.
 Mark genuinely inapplicable states with a reason during review. Source detection is not runtime evidence.
 
