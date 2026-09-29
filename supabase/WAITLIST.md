@@ -9,6 +9,7 @@
 - 운영자 전용 `waitlist_bonus_candidates`에서 `social_submitted`, `all_three_submitted`, `creator_submitted`, `all_three_verified`를 조회할 수 있습니다. 실제 지급 원장은 아니며, 이메일별 현재 신청 상태를 저장된 링크에서 계산합니다.
 - 나중에 Google 로그인 이메일과 대기 명단 이메일이 일치하는지 서버에서 확인해야 합니다. 보너스 종류·수량·지급 조건과 중복 지급 방지는 별도 구현입니다.
 - 공유 게시물은 운영자가 확인한 뒤 `verified` 또는 `rejected`로 바꿀 수 있습니다. 공개 홈페이지에서는 상태 변경 권한이 없습니다.
+- `0053_waitlist_referrals.sql`: 등록자마다 공개 추천 코드(8자)를 주고, 홈페이지 공유 링크는 `stepupcrew.com/?ref=코드`가 됩니다. 그 링크로 **처음** 등록한 사람의 `referred_by`에 추천인을 남깁니다(자기 코드·틀린 코드는 무시, 재등록해도 바뀌지 않음). 운영자 전용 `waitlist_referral_counts`에서 추천 수를 봅니다. 보상 규칙은 없습니다(2026-09-29 사용자 결정: 기록만). 추천인이 삭제되면 `referred_by`만 비워집니다.
 - 철회 요청은 `stepupofficial@stepupcrew.com`에서 받아 해당 이메일 행을 삭제합니다. 공유 신청은 외래 키의 `on delete cascade`로 함께 삭제됩니다.
 
 `setup.sql`은 `main`에 합쳐질 때 `deploy-sql.yml`이 운영 Supabase에 적용합니다. `SUPABASE_DB_URL` 비밀이 없어 건너뛰면 SQL Editor에서 직접 적용해야 합니다. 출시일이 정해지면 GitHub Actions 변수 `WAITLIST_LAUNCH_DATE=YYYY-MM-DD`를 설정합니다. `purge-waitlist.yml`이 출시 후 90일 이내에 기록을 삭제합니다.

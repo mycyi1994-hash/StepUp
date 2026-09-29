@@ -142,6 +142,37 @@ begin
   perform pg_temp.ok((select post_url = 'https://www.youtube.com/watch?v=Abcdef123_-' and status = 'verified'
     from public.waitlist_share_claims where platform = 'youtube'), '검증된 영상은 공개 제출로 바뀌지 않는다');
 end $$;
+set role anon;
+insert into fix (k, v)
+select 'waitlist-ref', public.waitlist_register('Referrer@Test.Example', true, '')->>'referral_code';
+do $$
+declare v_other text;
+begin
+  perform pg_temp.ok(pg_temp.fx('waitlist-ref') ~ '^[A-HJ-NP-Z2-9]{8}$', '등록하면 공개 추천 코드를 받는다');
+  perform pg_temp.ok((public.waitlist_register('Friend@Test.Example', true, '', lower(pg_temp.fx('waitlist-ref')))->>'ok')::boolean,
+    '추천 코드로 등록한다(대소문자 무관)');
+  v_other := public.waitlist_register('Other@Test.Example', true, '')->>'referral_code';
+  perform public.waitlist_register('Friend@Test.Example', true, '', v_other);
+  perform public.waitlist_register('Referrer@Test.Example', true, '', pg_temp.fx('waitlist-ref'));
+  perform pg_temp.ok((public.waitlist_register('Stranger@Test.Example', true, '', 'NOTACODE!')->>'ok')::boolean,
+    '틀린 추천 코드는 등록을 막지 않는다');
+  call pg_temp.must_fail('select * from public.waitlist_referral_counts', '공개 역할은 추천 기록을 읽지 못한다');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select r.referral_code = pg_temp.fx('waitlist-ref') from public.waitlist_entries f
+    join public.waitlist_entries r on r.id = f.referred_by where f.email = 'friend@test.example'),
+    '추천 링크로 등록한 사람의 추천인을 기록하고, 다시 등록해도 바뀌지 않는다');
+  perform pg_temp.ok((select referred_by is null from public.waitlist_entries where email = 'referrer@test.example'),
+    '자기 추천 코드는 기록하지 않는다');
+  perform pg_temp.ok((select referral_code = pg_temp.fx('waitlist-ref') from public.waitlist_entries where email = 'referrer@test.example'),
+    '다시 등록해도 추천 코드는 그대로다');
+  perform pg_temp.ok((select referred_count = 1 from public.waitlist_referral_counts where email = 'referrer@test.example'),
+    '운영자 보기에서 추천 수를 센다');
+  perform pg_temp.ok((public.waitlist_status(pg_temp.fx('waitlist-receipt')) ? 'referral_code'),
+    '영수증으로 내 추천 코드를 다시 받는다');
+end $$;
 
 -- ════════════════════════════════════════════════════════════════════
 \echo ''
