@@ -15,6 +15,16 @@ const registerSubmit = document.querySelector('.waitlist-form .waitlist-submit')
 const shareSubmit = document.querySelector('.waitlist-share-form .waitlist-submit');
 let receipt = sessionStorage.getItem(RECEIPT_KEY) || '';
 let platform = '';
+let cardFile;
+let cardLoading;
+
+function prepareShareCard() {
+  if (cardLoading) return;
+  cardLoading = fetch('./assets/img/waitlist-share-card.png')
+    .then(response => response.ok ? response.blob() : Promise.reject(new Error('Share card unavailable')))
+    .then(blob => { cardFile = new File([blob], 'stepup-share.png', { type: 'image/png' }); })
+    .catch(() => {});
+}
 
 function feedback(element, message, isError = false) {
   element.textContent = message;
@@ -55,6 +65,7 @@ function showStage(stage) {
 document.querySelector('.waitlist-open').addEventListener('click', () => {
   showStage(receipt ? 'share' : 'register');
   dialog.showModal();
+  prepareShareCard();
   if (!receipt) registerForm.elements.email.focus();
 });
 document.querySelector('.waitlist-close').addEventListener('click', () => dialog.close());
@@ -107,6 +118,22 @@ document.querySelectorAll('.waitlist-share-platforms button').forEach(button => 
       window.open(url, '_blank', 'noopener,noreferrer');
       feedback(actionFeedback, 'X 글 작성 화면을 열었어요. 게시 후 글 주소를 아래에 붙여넣어 주세요.');
     } else {
+      if (navigator.share && (platform === 'threads' || (cardFile && navigator.canShare?.({ files: [cardFile] })))) {
+        try {
+          const data = platform === 'instagram'
+            ? { files: [cardFile], title: 'StepUp', text: SHARE_TEXT }
+            : { title: 'StepUp', text: SHARE_TEXT, url: SHARE_URL };
+          await navigator.share(data);
+          feedback(actionFeedback, `공유 메뉴에서 ${labels[platform]}을 선택해 게시해주세요. 게시 후 글 주소를 아래에 붙여넣어 주세요.`);
+          shareForm.elements.postUrl.focus();
+          return;
+        } catch (error) {
+          if (error?.name === 'AbortError') {
+            feedback(actionFeedback, '공유를 취소했어요. 다시 눌러 시도할 수 있어요.');
+            return;
+          }
+        }
+      }
       const copy = navigator.clipboard?.writeText(copied);
       window.open(targets[platform], '_blank', 'noopener,noreferrer');
       try {
