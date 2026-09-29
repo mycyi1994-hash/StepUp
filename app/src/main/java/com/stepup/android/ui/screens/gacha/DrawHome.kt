@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
@@ -76,6 +77,8 @@ private val StageMin = 150.dp
 /** 메인 한 화면 — [tab] 은 고른 글자 탭. 수 · 연결 상태는 서버 값([status])만 */
 @Composable
 internal fun DrawHome(
+    /** 아래에 비울 자리 — 짧은 알림(26)이 보이는 동안 */
+    bottomInset: Dp,
     status: DrawStatus?,
     loading: Boolean,
     signedOut: Boolean,
@@ -86,7 +89,7 @@ internal fun DrawHome(
     onSheet: (DrawSheet) -> Unit,
 ) {
     val card = drawHomeCard(status, tab, pending?.kind, loading, signedOut)
-    BoxWithConstraints(Modifier.fillMaxSize().testTag("draw-home")) {
+    BoxWithConstraints(Modifier.fillMaxSize().padding(bottom = bottomInset).testTag("draw-home")) {
         val viewport = constraints.maxHeight
         DrawFitLayout(
             viewport = viewport,

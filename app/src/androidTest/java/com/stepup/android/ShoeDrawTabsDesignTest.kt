@@ -266,6 +266,10 @@ class ShoeDrawTabsDesignTest {
             leaveAndReturn()
             awaitTag("draw-toast")
             compose.onNodeWithText(label(R.string.dv2_run_reward, 1)).assertExists()
+            // 알림은 실행 버튼을 가리지 않는다 — 버튼이 알림 위로 올라간다
+            compose.waitForIdle()
+            val action = if (exists("draw-premium-action")) "draw-premium-action" else "draw-free-action"
+            assertTrue("the notice sits below the action", bounds("draw-toast").top >= bounds(action).bottom - 1)
             shot("d26-running-notice", settle = 300)
             compose.mainClock.advanceTimeBy(4_000)
             awaitGone("draw-toast")

@@ -2,6 +2,7 @@ package com.stepup.android.ui.screens.gacha
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,6 +54,9 @@ class DrawActions(
     val onSignIn: (() -> Unit)? = null,
 )
 
+/** 짧은 알림(26)이 보이는 동안 메인 아래에 비우는 자리 — 알림 48dp + 하단 탭과의 틈 12dp */
+private val ToastRoom = 60.dp
+
 /** 메인 위에서 여닫는 안내창 — 여닫아도 기회를 쓰지 않는다(10 · 13 · 14 · 15 · 16 · 17) */
 enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances }
 
@@ -102,6 +106,17 @@ fun MysteryBoxScreen(
         }
     }
 
+    // 26 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐(하단 탭 위). 보이는 동안은 메인 아래에 자리를 비워
+    // 상자 무대가 그만큼 줄고 실행 버튼이 알림 위로 올라간다(알림이 버튼을 가리지 않게 — 시안 26)
+    val toast = when (notice) {
+        is DrawNotice.RunReward -> stringResource(R.string.dv2_run_reward, notice.added)
+        DrawNotice.Relinked -> stringResource(R.string.dv2_relinked)
+        else -> null
+    }
+    val toastRoom by animateDpAsState(
+        if (toast != null) ToastRoom else 0.dp, tween(motion.duration(200)), label = "drawToastRoom",
+    )
+
     // 바탕은 앱 셸의 공통 바탕이 상태 막대 밑까지 깐다
     Box(modifier.fillMaxSize()) {
         AnimatedContent(
@@ -112,6 +127,7 @@ fun MysteryBoxScreen(
         ) { current ->
             when (current) {
                 DrawFlow.Home -> DrawHome(
+                    bottomInset = toastRoom,
                     status = status,
                     loading = state == DrawScreenState.Loading,
                     signedOut = state == DrawScreenState.SignedOut,
@@ -134,12 +150,6 @@ fun MysteryBoxScreen(
                 is DrawFlow.Checking -> DrawCheckScreen(current, onCheck = actions.onCheckPending, onBack = actions.onLeaveFlow)
             }
         }
-        // 26 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐(하단 탭 위)
-        val toast = when (notice) {
-            is DrawNotice.RunReward -> stringResource(R.string.dv2_run_reward, notice.added)
-            DrawNotice.Relinked -> stringResource(R.string.dv2_relinked)
-            else -> null
-        }
         LaunchedEffect(notice) {
             if (notice is DrawNotice.RunReward || notice == DrawNotice.Relinked) {
                 delay(3_200)
@@ -148,7 +158,7 @@ fun MysteryBoxScreen(
         }
         DrawToast(
             toast,
-            Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp).testTag("draw-toast"),
+            Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpDesign.Gutter).padding(bottom = 12.dp).testTag("draw-toast"),
         )
     }
 
