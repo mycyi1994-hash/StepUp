@@ -4,7 +4,7 @@
 delete from public.waitlist_entries
 where status = 'pending' and confirmation_expires_at < now();
 
--- 출시일을 설정하면 출시 90일 후 모든 대기 명단 기록을 지운다.
+-- 하루 단위 예약 실행 지연을 고려해 출시 89일 뒤 지워 90일 이내를 지킨다.
 delete from public.waitlist_entries
 where nullif(:'launch_date', '')::date is not null
-  and now() >= nullif(:'launch_date', '')::date + interval '90 days';
+  and now() >= nullif(:'launch_date', '')::date + interval '89 days';

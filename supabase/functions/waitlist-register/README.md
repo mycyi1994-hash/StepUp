@@ -26,6 +26,6 @@
 3. 같은 이메일 재등록, 잘못된 이메일, 만료·재사용 확인 링크, Turnstile 실패를 확인합니다. 중복 신청 응답은 기존 등록 여부를 드러내지 않습니다.
 4. DB와 함수가 준비된 뒤 홈페이지를 배포합니다. `siteKey`가 비어 있으면 홈페이지 폼은 안내 메시지만 보여주고 제출하지 않습니다.
 
-매일 실행되는 `purge-waitlist.yml`이 확인 링크가 만료된 미확인 기록을 지웁니다. 앱 출시일이 정해지면 GitHub Actions 변수 `WAITLIST_LAUNCH_DATE`를 `YYYY-MM-DD`로 설정하세요. 그러면 출시 90일 후 모든 대기 명단 기록이 삭제됩니다. 철회 요청은 `support@stepupcrew.com`에서 받아 해당 이메일 행을 즉시 삭제합니다.
+매일 실행되는 `purge-waitlist.yml`이 확인 링크가 만료된 미확인 기록을 지웁니다. 앱 출시일이 정해지면 GitHub Actions 변수 `WAITLIST_LAUNCH_DATE`를 `YYYY-MM-DD`로 설정하세요. 그러면 출시 후 90일 이내에 모든 대기 명단 기록이 삭제됩니다. 철회 요청은 `support@stepupcrew.com`에서 받아 해당 이메일 행을 즉시 삭제합니다.
 
 출시 후 보너스의 종류·수량·지급 규칙은 별도 결정입니다. 그때는 `confirmed` 이메일과 인증된 Google 계정 이메일을 서버에서 비교하고, 별도 1회 지급 기록을 추가합니다.
