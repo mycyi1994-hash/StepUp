@@ -172,12 +172,15 @@ registerForm.addEventListener('submit', async event => {
   registerSubmit.disabled = true;
   feedback(registerFeedback, '등록하고 있어요…');
   try {
-    const result = await callWaitlist('waitlist_register', {
+    const body = {
       p_email: registerForm.elements.email.value.trim(),
       p_consent: registerForm.elements.consent.checked,
       p_trap: registerForm.elements.website.value,
-      ...(invitedBy && { p_ref: invitedBy }),
-    });
+    };
+    // A referral must never block registration, e.g. before the server knows p_ref.
+    const result = invitedBy
+      ? await callWaitlist('waitlist_register', { ...body, p_ref: invitedBy }).catch(() => callWaitlist('waitlist_register', body))
+      : await callWaitlist('waitlist_register', body);
     if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt);
     setMyCode(result.referral_code);
