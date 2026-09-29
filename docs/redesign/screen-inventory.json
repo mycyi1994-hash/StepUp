@@ -430,13 +430,335 @@
       "chrome": "Form",
       "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
       "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude"
+    },
+    {
+      "id": "ChatRoutes.ROOM",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.INFO",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.MEMBERS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.MEMBER",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.NOTICES",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.NOTICE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.NOTICE_EDIT",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.SEARCH",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.PHOTO",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.VIEWER",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.REPORTED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "ChatRoutes.ENDED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md",
+      "verification": "CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review"
+    },
+    {
+      "id": "CrewRoutes.DETAIL",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.IMAGE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.LEADER",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.MEMBERS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.PERSON",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.GOAL",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.GOAL_EDIT",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.JOIN",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.APPLICATION",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.RESULT",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.JOINED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.REPORTED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.MANAGE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.REQUESTS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.REVIEW",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.DECIDED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.SETTINGS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.TRANSFER",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.CREATED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.DRAFT",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.RECRUIT",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewRoutes.REGION",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "크루 명함형(확정 2번, 2026-09-28 전달본) — 상세 · 가입 신청 · 멤버 · 목표 · 만들기 · 크루장 관리: see docs/redesign/crew-cards/README.md",
+      "verification": "CrewCardsDesignTest (Experience QA community suite, screen-gallery/crew-cards/ 91장) — PR #60 Experience QA on 1aa7276 passed; captures reviewed by Claude"
+    },
+    {
+      "id": "CrewHomeRoutes.HOME",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.INTRO",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.LEVEL",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.MEMBERS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.PERSON",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.MEETING",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.ATTENDEES",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.PLACE",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.WEEK",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.RUNS",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.RUN",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
+    },
+    {
+      "id": "CrewHomeRoutes.ENDED",
+      "parent": "Community",
+      "chrome": "Form",
+      "implementation": "내 크루 홈(확정 4번, 2026-09-29 전달본) — 홈 · 소개 · 레벨 · 크루원 · 프로필 · 모임 · 참석자 · 장소 · 주간 · 참여 기록 · 러닝 기록 · 접근 종료: see docs/redesign/crew-home/README.md",
+      "verification": "CrewHomeDesignTest (screen-gallery/crew-home/, 시안 00–31) + CrewHomeTest (unit); local compile/unit/lint only — device run pending CI (PR #62)"
     }
   ],
   "screen_functions": [
     {
       "id": "CommunityScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
-      "line": 87,
+      "line": 92,
       "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
       "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -448,14 +770,6 @@
       "line": 51,
       "implementation": "stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md",
       "verification": "source checks only; Android compile/capture pending",
-      "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
-    },
-    {
-      "id": "CrewCreateScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/community/CrewCreateScreen.kt",
-      "line": 36,
-      "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
-      "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
@@ -491,16 +805,331 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "ChatInfoScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt",
+      "line": 86,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatMembersScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt",
+      "line": 265,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatMemberScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt",
+      "line": 339,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatNoticesScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatNoticeScreens.kt",
+      "line": 79,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatNoticeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatNoticeScreens.kt",
+      "line": 169,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatNoticeEditScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatNoticeScreens.kt",
+      "line": 295,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatPhotoScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt",
+      "line": 59,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatViewerScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt",
+      "line": 127,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatReportedScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt",
+      "line": 180,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatEndedScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt",
+      "line": 196,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatRoomScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatRoomScreen.kt",
+      "line": 113,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "ChatSearchScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatSearchScreen.kt",
+      "line": 69,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRecruitEntryScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt",
+      "line": 103,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewDraftScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt",
+      "line": 211,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewCreatedScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt",
+      "line": 1065,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewDetailScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewDetailScreen.kt",
+      "line": 85,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewGoalScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewGoalScreens.kt",
+      "line": 41,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewGoalEditScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewGoalScreens.kt",
+      "line": 112,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewJoinScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt",
+      "line": 43,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewPendingScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt",
+      "line": 153,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewResultScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt",
+      "line": 259,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewJoinedNowScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt",
+      "line": 310,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewReportedScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt",
+      "line": 326,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewManageScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewManageScreens.kt",
+      "line": 64,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRequestsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewManageScreens.kt",
+      "line": 126,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewReviewScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewManageScreens.kt",
+      "line": 196,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewDecidedScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewManageScreens.kt",
+      "line": 321,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewSettingsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewManageScreens.kt",
+      "line": 370,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewImageScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
+      "line": 45,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewLeaderScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
+      "line": 72,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewPersonScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
+      "line": 136,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRosterScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
+      "line": 242,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewTransferScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
+      "line": 341,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRegionScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewRegionScreen.kt",
+      "line": 75,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewIntroScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
+      "line": 70,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewLevelScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
+      "line": 139,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewMembersHomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
+      "line": 221,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewPersonHomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
+      "line": 337,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewHomeScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeScreen.kt",
+      "line": 92,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewMeetingScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt",
+      "line": 87,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewAttendeesScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt",
+      "line": 360,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewPlaceScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt",
+      "line": 452,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewWeekScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewWeekScreens.kt",
+      "line": 120,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRunsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewWeekScreens.kt",
+      "line": 273,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRunScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewWeekScreens.kt",
+      "line": 436,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "StoryComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryComposeScreen.kt",
-      "line": 68,
+      "line": 60,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "StoryDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryDetailScreen.kt",
-      "line": 83,
+      "line": 84,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -930,16 +1559,23 @@
     },
     {
       "kind": "ModalBottomSheet",
+      "owner": "CrewSheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewUi.kt",
+      "line": 529,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
       "owner": "StorySheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryParts.kt",
-      "line": 201,
+      "line": 203,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "StoryConfirmDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryParts.kt",
-      "line": 240,
+      "line": 242,
       "verification": "pending"
     },
     {

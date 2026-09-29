@@ -383,10 +383,12 @@ class UserPrefs(
         store.edit { it[crewSortKey] = sort }
     }
 
-    /** 계정을 지웠을 때 — 이 폰에 남은 크루 초안을 지운다 */
+    /** 계정을 지웠을 때 — 이 폰에 남은 크루 초안과 크루 채팅의 쓰다 만 공지를 지운다 */
     suspend fun clearCrewData() {
         store.edit { prefs ->
-            prefs.asMap().keys.filter { it.name.startsWith("crew_draft:") }.forEach { key -> prefs.remove(key) }
+            prefs.asMap().keys
+                .filter { it.name.startsWith("crew_draft:") || it.name.startsWith("chat_notice_draft:") }
+                .forEach { key -> prefs.remove(key) }
         }
     }
 
@@ -404,13 +406,23 @@ class UserPrefs(
         }
     }
 
-    /** 이 방에 참여할 수 없게 됐다 · 계정을 지웠다 — 그 방(없으면 모든 방)의 쓰다 만 공지를 지운다 */
-    suspend fun clearChatNoticeDrafts(crewId: String? = null) {
+    /**
+     * 이 방에 참여할 수 없게 됐다 — 그 계정([owner])의 그 방 쓰다 만 공지를 지운다. 같은 폰의 다른 계정 초안은 그대로 둔다
+     * (그 사람은 아직 멤버일 수 있다). [owner] · [crewId] 가 없으면 넓혀서 지운다.
+     */
+    suspend fun clearChatNoticeDrafts(crewId: String? = null, owner: String? = null) {
         store.edit { prefs ->
             prefs.asMap().keys
                 .filter { key ->
-                    // 열쇠는 chat_notice_draft:<계정>:<크루 id>:new|edit:<공지> — 계정 칸에도 ':' 가 있어 크루 id 로 찾는다
-                    key.name.startsWith("chat_notice_draft:") && (crewId == null || key.name.contains(":$crewId:"))
+                    // 열쇠는 chat_notice_draft:<계정>:<크루 id>:new|edit:<공지> — 계정 칸에도 ':' 가 있어 계정을 모르면 크루 id 로 찾는다
+                    val name = key.name
+                    when {
+                        !name.startsWith("chat_notice_draft:") -> false
+                        owner != null && crewId != null -> name.startsWith("chat_notice_draft:$owner:$crewId:")
+                        owner != null -> name.startsWith("chat_notice_draft:$owner:")
+                        crewId != null -> name.contains(":$crewId:")
+                        else -> true
+                    }
                 }
                 .forEach { key -> prefs.remove(key) }
         }

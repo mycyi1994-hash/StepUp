@@ -15,6 +15,22 @@ def build():
     entries = {}
     for route, parent, header in re.findall(r'Destination\(([^,]+), Screen\.(\w+), Header\.(\w+)\)', policy):
         entries[route] = {'parent': parent, 'chrome': header}
+    # 기능별 길 묶음(CrewRoutes · ChatRoutes · CrewHomeRoutes …) — 각 NavGraph 파일의 ALL 목록과 정책의 "<묶음>.ALL.map { Destination(it, …) }"
+    groups = {}
+    for group, parent, header in re.findall(r'(\w+Routes)\.ALL\.map \{[^}]*?Destination\(it, Screen\.(\w+), Header\.(\w+)\)', policy, re.S):
+        groups[group] = {'parent': parent, 'chrome': header}
+    for path in sorted((UI/'screens').rglob('*NavGraph.kt')):
+        text = path.read_text(encoding='utf-8')
+        for obj in re.finditer(r'^object (\w+Routes) \{', text, re.M):
+            body = text[obj.end():]
+            listed = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', body)
+            if not listed:
+                continue
+            for name in re.findall(r'[A-Z_]+', listed.group(1)):
+                route = f'{obj.group(1)}.{name}'
+                routes.append(route)
+                if obj.group(1) in groups:
+                    entries[route] = dict(groups[obj.group(1)])
     screens, overlays = [], []
     for path in sorted((UI/'screens').rglob('*.kt')):
         text = path.read_text(encoding='utf-8')

@@ -5934,6 +5934,106 @@ begin
                                   where p.crew_id = pg_temp.fx('hc')::uuid),
     '해산하면 모임과 응답이 함께 지워진다');
 end $$;
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 크루 채팅 알림 정리(0050) ────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('50000000-0000-0000-0000-000000000001', 'leader50@test', '{"full_name":"준호"}'),
+  ('50000000-0000-0000-0000-000000000002', 'doyun50@test', '{"full_name":"도윤"}'),
+  ('50000000-0000-0000-0000-000000000003', 'minsu50@test', '{"full_name":"민수"}');
+insert into public.push_tokens (token, user_id) values
+  ('minsu50-token-00000000000000000', '50000000-0000-0000-0000-000000000003');
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000001');
+do $$
+begin
+  insert into fix (k, v) values
+    ('pc', public.crew_create_card('알림크루', '', '', null, null, '공덕동', null, null, 0, null, null, '{}', 30)::text);
+end $$;
+reset role;
+insert into public.crew_members (crew_id, user_id, role) values
+  (pg_temp.fx('pc')::uuid, '50000000-0000-0000-0000-000000000002', 'MEMBER'),
+  (pg_temp.fx('pc')::uuid, '50000000-0000-0000-0000-000000000003', 'MEMBER');
+delete from public.push_outbox;
+set role authenticated;
+
+-- 도윤이 보낸 말 — 민수의 알림 줄에 그 메시지가 적힌다. 도윤이 지우면 아직 안 나간 알림 줄도 지운다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+declare v_id bigint;
+begin
+  v_id := (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000001', '지울 말')->>'id')::bigint;
+  insert into fix (k, v) values ('pm1', v_id::text);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select args->>'msg' from public.push_outbox where user_id = '50000000-0000-0000-0000-000000000003'
+                       and kind = 'CREW_CHAT') = pg_temp.fx('pm1'),
+    '채팅 알림 줄에 어느 메시지인지 적힌다');
+end $$;
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$ begin perform public.crew_chat_delete(pg_temp.fx('pm1')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'CREW_CHAT'
+                                  and user_id = '50000000-0000-0000-0000-000000000003'),
+    '지운 메시지의 아직 안 나간 알림은 지운다(지운 글이 알림으로 나가지 않는다)');
+end $$;
+set role authenticated;
+
+-- 크루장이 가린 메시지도 같다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('pm2',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000002', '가릴 말')->>'id'));
+end $$;
+call pg_temp.login('50000000-0000-0000-0000-000000000001');
+do $$ begin perform public.crew_chat_hide(pg_temp.fx('pm2')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'CREW_CHAT'
+                                  and user_id = '50000000-0000-0000-0000-000000000003'),
+    '크루장이 가린 메시지의 아직 안 나간 알림은 지운다');
+end $$;
+set role authenticated;
+
+-- 더 새 메시지로 바뀐 알림 줄은 앞의 메시지를 지워도 그대로, 이미 가져간(보내는 중인) 줄은 건드리지 않는다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('pm3',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000003', '먼저 한 말')->>'id'));
+  insert into fix (k, v) values ('pm4',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000004', '나중 한 말')->>'id'));
+  perform public.crew_chat_delete(pg_temp.fx('pm3')::bigint);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.push_outbox where kind = 'CREW_CHAT'
+                       and user_id = '50000000-0000-0000-0000-000000000003') = 1
+                     and (select args->>'text' from public.push_outbox where kind = 'CREW_CHAT'
+                            and user_id = '50000000-0000-0000-0000-000000000003') = '나중 한 말',
+    '더 새 메시지로 바뀐 알림 줄은 앞의 메시지를 지워도 남는다');
+end $$;
+update public.push_outbox set claimed_at = now() where kind = 'CREW_CHAT' and user_id = '50000000-0000-0000-0000-000000000003';
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$ begin perform public.crew_chat_delete(pg_temp.fx('pm4')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.push_outbox where kind = 'CREW_CHAT'
+                       and user_id = '50000000-0000-0000-0000-000000000003' and claimed_at is not null) = 1,
+    '이미 가져간 알림 줄은 보내는 쪽에 맡긴다');
+end $$;
 select set_config('request.jwt.claims', '', false);
 
 \echo ''

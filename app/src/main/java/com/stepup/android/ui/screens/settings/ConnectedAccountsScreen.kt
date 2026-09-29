@@ -117,9 +117,11 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                         ServiceLocator.economySync.clearLocal()
                         // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
                         ServiceLocator.userPrefs.clearStoryData()
-                        // 쓰다 둔 크루 만들기 초안(사진 파일 포함)도 지운다
+                        // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다
                         ServiceLocator.userPrefs.clearCrewData()
                         runCatching { java.io.File(context.filesDir, "crew_drafts").deleteRecursively() }
+                        // 이 폰에 들고 있던 크루 채팅 대화 · 받은 사진도 지운다
+                        runCatching { ServiceLocator.crewChat.clearAll() }
                         // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
                         ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                         ServiceLocator.userPrefs.clearGoalAttempts()

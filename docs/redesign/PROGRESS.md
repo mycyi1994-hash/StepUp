@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-09-29 — crew cards (2), crew chat and my crew home (4); inventory covers feature route groups
+
+- Route inventory: `tools/ui_inventory.py` now also reads the feature route groups (`CrewRoutes`, `ChatRoutes`, `CrewHomeRoutes`) from their NavGraph files and their `…ALL.map { Destination(…) }` policy — 104 routes (was 58, the groups were missing). Each group row links its design README and test evidence.
+- Crew cards (PR #60, merged): Experience QA on 1aa7276 passed, `CrewCardsDesignTest` 91 captures reviewed.
+- Crew chat (PR #61, merged at 593c14e): the final Experience QA run 36515416305 was still in the device stage at merge — the earlier run on 7c00073 failed only 4 chat tests, fixed in 593c14e; the final device result still needs review. Server 0048 deployed (Deploy server schema run 36516404782). Push text for chat is not live until `supabase/functions/push-send` is redeployed manually. Review follow-ups: notice drafts are removed on account deletion and scoped to the account when a room is forgotten; `0050` drops a not-yet-claimed chat push when its message is deleted or hidden.
+- My crew home (PR #62): server 0049 (+ review fixes: hidden/blocked meetings excluded like `post_feed`, newly linked notice meetings must be upcoming) passes `supabase/tests/run.sh`; app compile, unit tests (`CrewHomeTest` 15) and lint pass locally; `CrewHomeDesignTest` (design 00–31) device run pending CI.
+
 ## 2026-09-25 — interrupted-run recovery connected (PR #22)
 
 - The service now writes `RunCheckpointStore` (`noBackupFilesDir/run-checkpoint.bin`, format 2 adds the fake-location flag and the party crew) every 5 s while recording, writes the SETTLING boundary before settlement and clears the matching checkpoint after durable completion. Settlement does not start if the SETTLING boundary cannot be written (FAILED/Retry instead).

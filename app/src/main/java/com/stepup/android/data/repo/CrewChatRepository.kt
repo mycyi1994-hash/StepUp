@@ -402,7 +402,8 @@ class CrewChatRepository(
         (_rooms.value as? ChatRoomsState.Ready)?.let { ready ->
             _rooms.value = ChatRoomsState.Ready(ready.rooms.filterNot { it.crewId == crewId })
         }
-        runCatching { prefs.clearChatNoticeDrafts(crewId) }
+        // 이 계정의 그 방 초안만 — 같은 폰의 다른 계정은 아직 멤버일 수 있다
+        runCatching { prefs.clearChatNoticeDrafts(crewId, owner = ownerNow()) }
     }
 
     /** 계정을 바꿨다 · 지웠다 — 다른 사람의 대화가 남지 않게 모두 지운다 */
