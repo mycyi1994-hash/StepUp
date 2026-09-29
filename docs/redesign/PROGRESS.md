@@ -1105,3 +1105,9 @@ Complete the whole StepUp application and all its screens/states for GASOK submi
 - Applied the user-requested bright registration and sharing design, general sharing progress and branded creator channels. Added square and wide generated sharing artwork and richer copy.
 - Six platform link submissions and receipt-based status restoration are implemented. Operator-only candidate flags support later rewards; no payment or automatic verification is claimed.
 - Browser checks passed at 1440, 390 and 320px, including six submissions, invalid URL rejection, retry, restoration and no overflow/page errors. All 13 web tests, design contract and string checks passed. SQL CI and live deployment verification follow the PR. See [implementation report](../web/WAITLIST-CREATORS-2026-09-30.md).
+
+## 2026-09-29 — Website waitlist consent summary modal
+
+- The consent "자세히" link opened the full app privacy policy in a new tab. It now opens a small modal over the registration form with only the waitlist items from `privacy.html`: collected items (incl. the referral code and referral relationship from #72), purpose, retention, storage location, the right to refuse and the withdrawal contact, plus a link to the full policy. Registration requests are unchanged.
+- Contact address changed to `stepupofficial@stepupcrew.com` across the web pages, the app contact sheet (`support_email`) and ops docs (user-provided).
+- Checks: 14 web tests, `check-strings.py`, Playwright capture at 390 and 1280px on the merged revision (modal opens, consent not toggled, Esc returns to the form). APK build passed on the contact-address change (PR #71).
