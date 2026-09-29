@@ -6,69 +6,30 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.domain.DrawDistance
 import com.stepup.android.domain.DrawKind
-import com.stepup.android.domain.DrawStatus
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.theme.StepUpDesign
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /** 화면에서 누르는 것 — 앱 셸(StepUpRoot)이 서버 · 이동과 잇는다 */
 @Stable
@@ -88,23 +49,22 @@ class DrawActions(
     /** 기존 자유 러닝 시작 흐름 */
     val onStartRun: () -> Unit = {},
     val onNoticeDone: () -> Unit = {},
+    /** 22 로그인 전 — 로그인 화면으로. 로그인할 수 없는 빌드(서버 설정 없음)면 null(버튼을 누를 수 없다) */
+    val onSignIn: (() -> Unit)? = null,
 )
 
-/** 두 칸 위에서 여닫는 시트 — 여닫아도 기회를 쓰지 않는다(03 · 04 · 05 · 06 · 16 · 17) */
+/** 메인 위에서 여닫는 안내창 — 여닫아도 기회를 쓰지 않는다(10 · 13 · 14 · 15 · 16 · 17) */
 enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances }
 
 /**
- * 신발 뽑기 v2(2026-09-28 전달본, docs/redesign/shoe-draw-v2) — 하단 가운데 "뽑기" 탭(신발 화면 확정안 2026-09-28).
- * 두 칸은 앱 셸의 공통 머리(로고 · 잔액)와 하단 탭 사이에 선다. 요청 · 상자 열기 · 결과 · 확인은 셸을 걷고 화면을 다 쓴다.
+ * 신발 뽑기(2026-09-28 전달본 "신발 뽑기 디자인" 26장, docs/redesign/shoe-draw-v3) — 하단 가운데 "뽑기" 탭.
+ * 위에 무료 뽑기 / 상급 뽑기 글자 탭, 고른 탭의 상자 무대 · 남은 횟수 · 일반 크기 실행 버튼 하나. 로고 · 잔액 머리와 하단 탭은
+ * 앱 셸이 그린다. 뽑기를 누르면 결과 확인 중(04) → 서버가 결과를 확인한 뒤에만 상자 열기(05) → 결과(06 · 07 · 08) —
+ * 이 동안은 하단 탭을 걷는다. 답을 받지 못하면 새로 뽑지 않고 확인한다(19), 뒤로 가면 "결과 확인"이 남는다(20).
+ * 수 · 연결 상태 · 신발은 모두 서버 값이다 — 가격 · SUP 결제 · 확률 · 나올 수 있는 신발 목록은 없다.
  *
- * 위아래 두 칸(무료 · 상급)에 칸마다 제목 · 지급 조건 · 남은 기회 · 내역 링크 · 버튼 하나. 칸 바탕은 누르는 곳이 아니다.
- * 버튼을 누르면 결과 확인 중(10) → 서버가 결과를 확인한 뒤에만 상자 열기(11) → 결과(12 · 13 · 14). 답을 받지 못하면
- * 새로 뽑지 않고 확인한다(20), 뒤로 가면 "결과 확인"이 남는다(26). 수 · 연결 상태 · 신발은 모두 서버 값이다 — 가격 · SUP ·
- * 확률 · 나올 수 있는 신발 목록은 없다.
- *
- * [initialSheet] · [openingAt] 는 기기 검사가 한 장면을 바로 찍을 때만 쓴다.
+ * [initialSheet] · [initialTab] · [openingAt] 는 기기 검사가 한 장면을 바로 찍을 때만 쓴다.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MysteryBoxScreen(
     state: DrawScreenState,
@@ -114,6 +74,7 @@ fun MysteryBoxScreen(
     notice: DrawNotice? = null,
     actions: DrawActions = DrawActions(),
     initialSheet: DrawSheet? = null,
+    initialTab: DrawKind? = null,
     openingAt: Float? = null,
 ) {
     val feedback = LocalFeedback.current
@@ -121,9 +82,16 @@ fun MysteryBoxScreen(
     val motion = LocalMotion.current
     val status = (state as? DrawScreenState.Ready)?.status
     var sheet by rememberSaveable { mutableStateOf(initialSheet) }
-    val premiumFocus = remember { FocusRequester() }
-    val premiumInView = remember { BringIntoViewRequester() }
-    val scope = rememberCoroutineScope()
+    var tab by rememberSaveable { mutableStateOf(initialTab ?: pending?.kind ?: DrawKind.FREE) }
+    // 결과를 모르는 요청 · 시작 실패 · 지갑 연결 확인은 그 종류의 탭에서 보인다
+    LaunchedEffect(pending?.kind) { pending?.kind?.let { tab = it } }
+    LaunchedEffect(notice) {
+        when (notice) {
+            is DrawNotice.NotStarted -> tab = notice.kind
+            is DrawNotice.Linked -> tab = DrawKind.PREMIUM
+            else -> Unit
+        }
+    }
 
     BackHandler(enabled = flow !is DrawFlow.Home) {
         when (flow) {
@@ -134,7 +102,7 @@ fun MysteryBoxScreen(
         }
     }
 
-    // 바탕은 앱 셸의 공통 바탕(CommerceBackdrop — 짙은 남색, 오른쪽 위가 밝다)이 상태 막대 밑까지 깐다
+    // 바탕은 앱 셸의 공통 바탕이 상태 막대 밑까지 깐다
     Box(modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = flow,
@@ -144,8 +112,14 @@ fun MysteryBoxScreen(
         ) { current ->
             when (current) {
                 DrawFlow.Home -> DrawHome(
-                    state = state, pending = pending, actions = actions, onSheet = { sheet = it },
-                    premiumFocus = premiumFocus, premiumInView = premiumInView,
+                    status = status,
+                    loading = state == DrawScreenState.Loading,
+                    signedOut = state == DrawScreenState.SignedOut,
+                    tab = tab,
+                    pending = pending,
+                    actions = actions,
+                    onTab = { tab = it },
+                    onSheet = { sheet = it },
                 )
                 is DrawFlow.Requesting -> DrawRequestScreen(current.kind, onBack = actions.onLeaveFlow)
                 is DrawFlow.Opening -> DrawOpeningScreen(current.result, onFinish = actions.onFinishOpening, frozenAt = openingAt)
@@ -160,7 +134,7 @@ fun MysteryBoxScreen(
                 is DrawFlow.Checking -> DrawCheckScreen(current, onCheck = actions.onCheckPending, onBack = actions.onLeaveFlow)
             }
         }
-        // 18 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐
+        // 26 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐(하단 탭 위)
         val toast = when (notice) {
             is DrawNotice.RunReward -> stringResource(R.string.dv2_run_reward, notice.added)
             DrawNotice.Relinked -> stringResource(R.string.dv2_relinked)
@@ -172,14 +146,13 @@ fun MysteryBoxScreen(
                 actions.onNoticeDone()
             }
         }
-        SettingsToast(
+        DrawToast(
             toast,
-            Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
-                .padding(horizontal = StepUpDesign.Gutter, vertical = 16.dp).testTag("draw-toast"),
+            Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp).testTag("draw-toast"),
         )
     }
 
-    // ── 시트 — 두 칸 위에서만 ─────────────────────────────────────────
+    // ── 안내창 — 메인 위에서만 ─────────────────────────────────────────
     if (flow != DrawFlow.Home) return
     val close = { sheet = null }
     when (notice) {
@@ -227,285 +200,18 @@ fun MysteryBoxScreen(
     if (status == null) return
     val canFree = pending == null && status.canDraw(DrawKind.FREE)
     val canPremium = pending == null && status.canDraw(DrawKind.PREMIUM)
+    val toRules = { sheet = DrawSheet.Rules }
     when (sheet) {
-        DrawSheet.FreeChances -> FreeChancesSheet(status, canFree, onDraw = { close(); actions.onDraw(DrawKind.FREE) }, onClose = close)
+        DrawSheet.FreeChances -> FreeChancesSheet(status, canFree, onDraw = { close(); actions.onDraw(DrawKind.FREE) }, onRules = toRules, onClose = close)
         DrawSheet.PremiumChances -> PremiumChancesSheet(
-            status, canPremium, onDraw = { close(); actions.onDraw(DrawKind.PREMIUM) }, onClose = close,
+            status, canPremium, onDraw = { close(); actions.onDraw(DrawKind.PREMIUM) }, onRules = toRules, onClose = close,
         )
         DrawSheet.Rules -> RulesSheet(status, onClose = close)
         DrawSheet.WalletBenefit -> WalletBenefitSheet(status, onConnect = { close(); actions.onConnectWallet() }, onClose = close)
-        DrawSheet.FreeEmpty -> FreeEmptySheet(
-            status,
-            onSeePremium = {
-                close()
-                // 16 → 상급 칸으로 초점을 옮긴다
-                scope.launch {
-                    delay(250)
-                    premiumInView.bringIntoView()
-                    runCatching { premiumFocus.requestFocus() }
-                }
-            },
-            onClose = close,
-        )
+        // 13 → "상급 뽑기 보기"는 상급 탭으로
+        DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); tab = DrawKind.PREMIUM }, onClose = close)
         DrawSheet.RunChances -> RunChancesSheet(status, onStartRun = { close(); actions.onStartRun() }, onClose = close)
         null -> Unit
-    }
-}
-
-// ── 두 칸(01 · 02 · 15 · 22 · 23 · 24 · 26) ───────────────────────────
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun DrawHome(
-    state: DrawScreenState,
-    pending: DrawPending?,
-    actions: DrawActions,
-    onSheet: (DrawSheet) -> Unit,
-    premiumFocus: FocusRequester,
-    premiumInView: BringIntoViewRequester,
-) {
-    val p = drawPalette()
-    val status = (state as? DrawScreenState.Ready)?.status
-    Column(Modifier.fillMaxSize()) {
-        Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                .padding(horizontal = StepUpDesign.Gutter).testTag("draw-home"),
-        ) {
-            // 하단 탭의 첫 화면 — 뒤로 버튼 없이 제목만(로고 · 잔액은 셸의 공통 머리가 그린다)
-            Text(
-                stringResource(R.string.dv2_title), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp).semantics { heading() }.testTag("draw-title"),
-            )
-            Text(
-                stringResource(
-                    when (state) {
-                        DrawScreenState.Loading -> R.string.dv2_subtitle_loading
-                        DrawScreenState.SignedOut -> R.string.dv2_subtitle_signed_out
-                        else -> R.string.dv2_subtitle
-                    },
-                ),
-                color = p.secondary, fontSize = 14.sp, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 16.dp).testTag("draw-subtitle"),
-            )
-            FreeCompartment(state, status, pending, actions, onSheet)
-            Spacer(Modifier.height(18.dp))
-            PremiumCompartment(
-                state, status, pending, actions, onSheet,
-                Modifier.bringIntoViewRequester(premiumInView), Modifier.focusRequester(premiumFocus),
-            )
-            if (status != null) {
-                DrawLink(
-                    stringResource(R.string.dv2_rules_link), onClick = { onSheet(DrawSheet.Rules) },
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 14.dp).testTag("draw-rules"),
-                    fontSize = 15f,
-                )
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
-}
-
-/** 무료 칸 — 첫 가입 · 매일 무료. 지갑이 필요 없다 */
-@Composable
-private fun FreeCompartment(
-    state: DrawScreenState,
-    status: DrawStatus?,
-    pending: DrawPending?,
-    actions: DrawActions,
-    onSheet: (DrawSheet) -> Unit,
-) {
-    val p = drawPalette()
-    val rule = status?.let {
-        when {
-            it.signupGranted > 0 -> stringResource(R.string.dv2_free_rule, it.signupGranted, it.dailyTotal)
-            it.dailyTotal > 0 -> stringResource(R.string.dv2_free_rule_daily, it.dailyTotal)
-            else -> null
-        }
-    }
-    Compartment(
-        title = stringResource(R.string.dv2_free), rule = rule, surface = p.freeSurface, tag = "draw-free",
-        body = {
-            when {
-                state == DrawScreenState.Loading -> CountSkeleton()
-                state == DrawScreenState.SignedOut -> Note(stringResource(R.string.dv2_signed_out_note))
-                state == DrawScreenState.Failed || status == null -> Note(stringResource(R.string.dv2_failed_inline), tag = "draw-free-failed")
-                pending?.kind == DrawKind.FREE -> PendingCount()
-                else -> {
-                    Count(stringResource(R.string.dv2_left), stringResource(R.string.dv2_count, status.freeLeft), "draw-free-left")
-                    DrawLink(
-                        stringResource(R.string.dv2_history), chevron = true,
-                        onClick = { onSheet(if (status.freeLeft > 0) DrawSheet.FreeChances else DrawSheet.FreeEmpty) },
-                        modifier = Modifier.testTag("draw-free-history"),
-                    )
-                }
-            }
-        },
-        action = {
-            val tag = Modifier.testTag("draw-free-action")
-            when {
-                state == DrawScreenState.Loading -> DrawButton(stringResource(R.string.dv2_action_loading), {}, tag, DrawButtonStyle.Idle)
-                state == DrawScreenState.SignedOut -> DrawButton(stringResource(R.string.dv2_action_sign_in), {}, tag, DrawButtonStyle.Idle)
-                state == DrawScreenState.Failed || status == null ->
-                    DrawButton(stringResource(R.string.dv2_action_reload), actions.onRetry, tag, DrawButtonStyle.Quiet)
-                pending != null -> DrawButton(stringResource(R.string.dv2_action_check), actions.onCheckPending, tag, DrawButtonStyle.Quiet)
-                status.freeLeft > 0 -> DrawButton(stringResource(R.string.dv2_action_free), { actions.onDraw(DrawKind.FREE) }, tag)
-                else -> DrawButton(stringResource(R.string.dv2_action_free_info), { onSheet(DrawSheet.FreeEmpty) }, tag, DrawButtonStyle.Quiet)
-            }
-        },
-    )
-}
-
-/** 상급 칸 — 지갑 연결 상태(서버 값)에 맞는 행동 하나 */
-@Composable
-private fun PremiumCompartment(
-    state: DrawScreenState,
-    status: DrawStatus?,
-    pending: DrawPending?,
-    actions: DrawActions,
-    onSheet: (DrawSheet) -> Unit,
-    modifier: Modifier,
-    actionModifier: Modifier,
-) {
-    val p = drawPalette()
-    val step = status?.let { DrawDistance.stepKm(it.runStepMeters) }
-    val rule = status?.let {
-        if (it.giftOnLink > 0) stringResource(R.string.dv2_premium_rule, it.giftOnLink, step.orEmpty())
-        else stringResource(R.string.dv2_premium_rule_run, step.orEmpty())
-    }
-    val mode = status?.premiumMode()
-    Compartment(
-        title = stringResource(R.string.dv2_premium), rule = rule, surface = p.premiumSurface, tag = "draw-premium",
-        modifier = modifier,
-        body = {
-            when {
-                state == DrawScreenState.Loading -> CountSkeleton()
-                state == DrawScreenState.SignedOut -> Note(stringResource(R.string.dv2_signed_out_note))
-                state == DrawScreenState.Failed || status == null ->
-                    Note(stringResource(R.string.dv2_failed_inline), tag = "draw-premium-failed")
-                pending?.kind == DrawKind.PREMIUM -> PendingCount()
-                mode == PremiumMode.Connect -> {
-                    Count(stringResource(R.string.dv2_first_link), stringResource(R.string.dv2_count_plus, status.giftOnLink), "draw-premium-gift")
-                    Note(stringResource(R.string.dv2_first_link_note))
-                }
-                mode == PremiumMode.Reconnect -> {
-                    Count(stringResource(R.string.dv2_kept_premium), stringResource(R.string.dv2_count, status.premiumLeft), "draw-premium-left")
-                    Note(stringResource(R.string.dv2_reconnect_note))
-                }
-                mode == PremiumMode.Paused -> {
-                    Count(stringResource(R.string.dv2_left), stringResource(R.string.dv2_count, status.premiumLeft), "draw-premium-left")
-                    Note(stringResource(R.string.dv2_paused_note))
-                }
-                else -> {
-                    Count(stringResource(R.string.dv2_left), stringResource(R.string.dv2_count, status.premiumLeft), "draw-premium-left")
-                    DrawLink(
-                        if (status.runCapReached) stringResource(R.string.dv2_run_capped)
-                        else stringResource(R.string.dv2_next_premium, DrawDistance.remainingKm(status.metersToNextPremium)),
-                        chevron = true,
-                        onClick = { onSheet(if (mode == PremiumMode.Ready) DrawSheet.PremiumChances else DrawSheet.RunChances) },
-                        modifier = Modifier.testTag("draw-premium-next"),
-                    )
-                }
-            }
-        },
-        action = {
-            val tag = actionModifier.testTag("draw-premium-action")
-            when {
-                state == DrawScreenState.Loading -> DrawButton(stringResource(R.string.dv2_action_loading), {}, tag, DrawButtonStyle.Idle)
-                state == DrawScreenState.SignedOut -> DrawButton(stringResource(R.string.dv2_action_sign_in), {}, tag, DrawButtonStyle.Idle)
-                state == DrawScreenState.Failed || status == null ->
-                    DrawButton(stringResource(R.string.dv2_action_reload), actions.onRetry, tag, DrawButtonStyle.Quiet)
-                pending != null -> DrawButton(stringResource(R.string.dv2_action_check), actions.onCheckPending, tag, DrawButtonStyle.Quiet)
-                mode == PremiumMode.Connect ->
-                    DrawButton(stringResource(R.string.dv2_action_connect, status.giftOnLink), { onSheet(DrawSheet.WalletBenefit) }, tag)
-                // 24 — 선물은 다시 주지 않는다. 연결은 기존 웹 지갑 페이지에서
-                mode == PremiumMode.Reconnect -> DrawButton(stringResource(R.string.dv2_action_reconnect), actions.onConnectWallet, tag)
-                mode == PremiumMode.Paused -> DrawButton(stringResource(R.string.dv2_action_paused), {}, tag, DrawButtonStyle.Idle)
-                mode == PremiumMode.Ready -> DrawButton(stringResource(R.string.dv2_action_premium), { actions.onDraw(DrawKind.PREMIUM) }, tag)
-                else -> DrawButton(stringResource(R.string.dv2_action_run), { onSheet(DrawSheet.RunChances) }, tag, DrawButtonStyle.Quiet)
-            }
-        },
-    )
-}
-
-/** 칸 한 개 — 바탕은 누르는 곳이 아니다. 제목 → 조건 → 남은 기회 → 버튼 순서로 읽힌다 */
-@Composable
-private fun Compartment(
-    title: String,
-    rule: String?,
-    surface: Color,
-    tag: String,
-    modifier: Modifier = Modifier,
-    body: @Composable ColumnScope.() -> Unit,
-    action: @Composable () -> Unit,
-) {
-    val p = drawPalette()
-    val largeText = LocalDensity.current.fontScale > 1.3f
-    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(surface).padding(20.dp).testTag(tag)) {
-        Text(
-            title, color = p.text, fontSize = 22.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.semantics { heading() },
-        )
-        if (rule != null) {
-            Text(rule, color = p.secondary, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
-        }
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 14.dp)) {
-            // 좁은 폭 · 큰 글씨에서는 상자 그림을 빼고 수에 폭을 다 준다
-            val showArt = !largeText && maxWidth >= 250.dp
-            val artWidth = min(maxWidth * 0.42f, 138.dp)
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), content = body)
-                if (showArt) {
-                    Image(
-                        painterResource(R.drawable.draw_shoebox_stage), contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.width(artWidth).aspectRatio(1170f / 1028f),
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        action()
-    }
-}
-
-/** 남은 기회 — 작은 이름과 큰 수를 한 번에 읽는다 */
-@Composable
-private fun Count(label: String, value: String, tag: String) {
-    val p = drawPalette()
-    Column(Modifier.semantics(mergeDescendants = true) {}) {
-        Text(label, color = p.secondary, fontSize = 13.sp)
-        Text(
-            value, color = p.text, fontSize = 36.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp,
-            maxLines = 1, modifier = Modifier.padding(top = 2.dp).testTag(tag),
-        )
-    }
-}
-
-/** 26 — 뽑은 신발 확인 중(결과가 준비되면 "결과 확인"으로 본다) */
-@Composable
-private fun PendingCount() {
-    Count(stringResource(R.string.dv2_pending_label), stringResource(R.string.dv2_pending_value), "draw-pending")
-    Note(stringResource(R.string.dv2_pending_note))
-}
-
-@Composable
-private fun Note(text: String, tag: String? = null) {
-    val p = drawPalette()
-    Text(
-        text, color = p.secondary, fontSize = 13.sp,
-        modifier = Modifier.padding(top = 6.dp).then(if (tag != null) Modifier.testTag(tag) else Modifier),
-    )
-}
-
-/** 22 — 불러오는 동안은 자리만(0 을 임시로 보이지 않는다) */
-@Composable
-private fun CountSkeleton() {
-    val p = drawPalette()
-    Column(Modifier.testTag("draw-skeleton")) {
-        Box(Modifier.size(width = 80.dp, height = 16.dp).clip(RoundedCornerShape(8.dp)).background(p.skeleton))
-        Spacer(Modifier.height(18.dp))
-        Box(Modifier.size(width = 92.dp, height = 38.dp).clip(RoundedCornerShape(12.dp)).background(p.skeleton))
     }
 }
 

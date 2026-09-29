@@ -58,8 +58,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -140,7 +142,7 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
     data object Customize : Screen("customize", R.string.tab_customize, StepUpIcons.Shoe)
 
     /**
-     * 뽑기 — 하단 가운데 탭. 기존 신발 뽑기(v2 두 칸 — 무료 · 상급)를 그대로 연다.
+     * 뽑기 — 하단 가운데 탭. 신발 뽑기(무료 · 상급 글자 탭)를 연다.
      * 길은 예전 하위 화면의 "mystery-box" 그대로라 알림 · 지갑 · 공지에서 오는 이동이 같은 자리로 온다.
      */
     data object Draw : Screen(Routes.MYSTERY_BOX, R.string.tab_draw, StepUpIcons.DrawBox)
@@ -547,6 +549,9 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     } else if (currentRoute == Routes.POST_COMPOSE) {
         com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+    } else if (currentRoute == Routes.MYSTERY_BOX) {
+        // 신발 뽑기 디자인(2026-09-28) — 짙은 남색 바탕과 위 가운데의 은은한 빛(뽑기 탭에서만)
+        com.stepup.android.ui.screens.gacha.DrawBackdrop(Modifier.fillMaxSize())
     } else if (currentRoute == Routes.COURSES) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
@@ -561,7 +566,8 @@ internal fun MainScaffold(
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            if (chrome?.header == AppChromePolicy.Header.Main && !immersive) {
+            // 뽑기의 결과 확인 · 상자 열기 · 결과 동안(immersive)도 로고 · 잔액 머리는 둔다 — 하단 탭만 걷는다(신발 뽑기 디자인 04–08 · 19)
+            if (chrome?.header == AppChromePolicy.Header.Main) {
                 MainHeader(
                     balance = balance,
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -612,15 +618,16 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.MYSTERY_BOX) {
-                // 신발 뽑기 v2(두 칸, 2026-09-28 전달본) — 모두 무료. 수 · 연결 상태 · 결과는 서버(draw_status · draw_free ·
-                // premium_draw)가 정한다. 하단 가운데 뽑기 탭의 첫 화면이라 공통 머리(로고 · 잔액) · 하단 탭 아래에 두 칸을 둔다.
+                // 신발 뽑기(2026-09-28 전달본 "신발 뽑기 디자인" 26장) — 모두 무료. 수 · 연결 상태 · 결과는 서버(draw_status · draw_free ·
+                // premium_draw)가 정한다. 하단 가운데 뽑기 탭의 첫 화면이라 공통 머리(로고 · 잔액) · 하단 탭 아래에 무료 · 상급 글자 탭을 둔다.
                 val drawVm: com.stepup.android.ui.screens.gacha.DrawViewModel =
                     androidx.lifecycle.viewmodel.compose.viewModel(factory = com.stepup.android.ui.screens.gacha.DrawViewModel.Factory)
                 val drawState by drawVm.state.collectAsStateWithLifecycle()
                 val drawFlow by drawVm.flow.collectAsStateWithLifecycle()
                 val drawPending by drawVm.pending.collectAsStateWithLifecycle()
                 val drawNotice by drawVm.notice.collectAsStateWithLifecycle()
-                // 요청 · 상자 열기 · 결과 · 확인은 v2 시안처럼 화면을 다 쓴다 — 두 칸으로 돌아오거나 탭을 떠나면 공통 머리 · 하단 탭이 돌아온다
+                // 결과 확인 중 · 상자 열기 · 결과 · 지연 확인 동안은 하단 탭을 걷는다(로고 · 잔액 머리는 그대로) — 메인으로 돌아오거나
+                // 탭을 떠나면 하단 탭이 돌아온다
                 val drawImmersive = drawFlow != com.stepup.android.ui.screens.gacha.DrawFlow.Home
                 DisposableEffect(drawImmersive) {
                     AppChromePolicy.immersive = drawImmersive
@@ -674,6 +681,18 @@ internal fun MainScaffold(
                                 navController.navigate(Routes.RUN_NOW)
                             },
                             onNoticeDone = drawVm::consumeNotice,
+                            // 22 로그인 전 — 로그인 화면으로. 서버 설정이 없는 빌드는 로그인할 수 없어 누를 수 없는 버튼(null)
+                            onSignIn = if (!ServiceLocator.economyApi.isConfigured) null else ({
+                                drawScope.launch {
+                                    try {
+                                        com.stepup.android.ui.components.returnToSignIn(context)
+                                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        android.widget.Toast.makeText(context, R.string.feed_save_failed, android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }),
                         )
                     },
                 )
@@ -1007,7 +1026,7 @@ internal fun MainScaffold(
                 WalletScreen(
                     onBack = { navController.popBackStack() },
                     onOpenChain = { navController.navigate(Routes.CHAIN_ACTIVITY) { launchSingleTop = true } },
-                    // 연결 상태 → 기존 두 칸 뽑기 탭(자동으로 뽑지 않는다)
+                    // 연결 상태 → 뽑기 탭(자동으로 뽑지 않는다)
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
                     // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
                     onOpenWalletPage = {
@@ -1060,7 +1079,7 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onAction = { action ->
                         when (action) {
-                            // 신발 뽑기(무료 · 상급 두 칸)로 옮겨 갈 뿐 기회를 쓰지 않는다
+                            // 신발 뽑기(무료 · 상급)로 옮겨 갈 뿐 기회를 쓰지 않는다
                             com.stepup.android.data.repo.NoticeAction.DRAW -> navController.switchTab(Screen.Draw)
                             com.stepup.android.data.repo.NoticeAction.RUN_HISTORY -> navController.navigate(Routes.RECORDS)
                             com.stepup.android.data.repo.NoticeAction.NOTIFICATION_SETTINGS ->
@@ -1440,13 +1459,15 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
+    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자(다른 탭은 S2 그대로)
+    val drawTile = selected && screen == Screen.Draw
     val tint by animateColorAsState(
         // S2 — 선택한 탭은 밝은 글자, 아래 짧은 파란 선이 자리를 알린다
-        targetValue = if (selected) com.stepup.android.ui.theme.Snow else Slate,
+        targetValue = if (drawTile) Color.White else if (selected) com.stepup.android.ui.theme.Snow else Slate,
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
+        targetValue = if (selected && !drawTile) 1f else 0f,
         label = "navTabDot",
     )
     Column(
@@ -1454,6 +1475,21 @@ private fun RowScope.NavTab(
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
+            .drawBehind {
+                if (drawTile) {
+                    // 선택 타일 72 × 70(자리보다 넓으면 자리에 맞춘다) — 아이콘을 키운다고 타일까지 키우지 않는다
+                    val w = minOf(72.dp.toPx(), size.width)
+                    val h = minOf(70.dp.toPx(), size.height)
+                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
+                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
+                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
+                    drawRoundRect(Color(0xFF5037F0), topLeft, tileSize, radius)
+                    drawRoundRect(
+                        Color(0xFF7377F3), topLeft, tileSize, radius,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()),
+                    )
+                }
+            }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
             .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -1464,7 +1500,16 @@ private fun RowScope.NavTab(
             imageVector = screen.icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(StepUpDesign.NavigationIcon).testTag("nav-icon-${screen.route}"),
+            // 뽑기 아이콘만 그림을 1.04배 — 자리(24dp)는 그대로라 탭 줄 높이 · 글자 기준선이 바뀌지 않는다.
+            // 태그는 키우기 층 바깥에 둔다(검사가 재는 아이콘 자리가 다섯 탭 모두 같은 줄)
+            modifier = Modifier.size(StepUpDesign.NavigationIcon)
+                .testTag("nav-icon-${screen.route}")
+                .graphicsLayer {
+                    if (screen == Screen.Draw) {
+                        scaleX = StepUpDesign.DrawNavigationIconScale
+                        scaleY = StepUpDesign.DrawNavigationIconScale
+                    }
+                },
         )
         Text(
             text = stringResource(screen.labelRes),

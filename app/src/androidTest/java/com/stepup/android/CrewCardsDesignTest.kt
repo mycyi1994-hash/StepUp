@@ -461,10 +461,13 @@ class CrewCardsDesignTest {
         server.seedOwner()
         launch()
         guard {
-            openCrew("afterwork")
-            awaitText("크루 정보와 모집을 관리할 수 있어요.")
-            shot("76-owner-detail")
-            tapTag("crew-detail-primary")
+            // 가입한 크루(크루장 포함)는 목록에서 내 크루 홈(확정 4번, #62)으로 열린다 — 크루 관리는 홈 더보기 안
+            awaitTag("crew-list")
+            tapIn("crew-card-afterwork", "crew-card-open")
+            awaitTag("home-masthead")
+            shot("76-owner-home")
+            tapTag("crew-more")
+            tapTag("home-menu-manage")
             awaitTag("crew-manage")
             shot("40-manage")
 
@@ -1109,6 +1112,15 @@ class CrewCardsDesignTest {
                     rosters[c.id]?.removeAll { it.id == text("p_user") }
                     c.members -= 1
                     HttpResponse(204, "")
+                }
+                // 내 크루 홈(0049) — 가입한 크루만. 모임 · 공지 없이 이 검사에 필요한 만큼
+                "crew_home" -> {
+                    val c = crewArg() ?: return HttpResponse(400, """{"message":"crew_missing"}""")
+                    if (!c.joined || c.id in gone) return HttpResponse(403, """{"message":"crew_not_member"}""")
+                    ok(buildJsonObject {
+                        put("crew_id", c.id); put("role", if (c.owned) "OWNER" else "MEMBER"); put("owner_id", c.leaderId)
+                        put("member_count", c.members); put("unread", 0)
+                    })
                 }
                 "crew_leave" -> { crewArg()?.apply { joined = false; members -= 1 }; HttpResponse(204, "") }
                 "crew_dissolve" -> { gone += text("p_crew"); HttpResponse(204, "") }

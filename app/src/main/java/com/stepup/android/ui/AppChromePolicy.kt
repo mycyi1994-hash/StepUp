@@ -16,12 +16,13 @@ object AppChromePolicy {
     val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Draw, Screen.Community, Screen.Profile)
 
     /**
-     * 화면이 잠깐 공통 머리 · 하단 탭을 걷는 중 — 뽑기 탭의 요청 · 상자 열기 · 결과 · 확인(신발 뽑기 v2 시안은 화면을 다 쓴다).
-     * 뽑기 화면이 그 흐름에 들어갈 때 켜고, 두 칸으로 돌아오거나 화면을 떠나면 끈다. 뽑기 길([Routes.MYSTERY_BOX])에서만 읽는다.
+     * 화면이 잠깐 하단 탭을 걷는 중 — 뽑기 탭의 결과 확인 중 · 상자 열기 · 결과 · 지연 확인(신발 뽑기 디자인 04–08 · 19,
+     * 로고 · 잔액 머리는 그대로 둔다). 뽑기 화면이 그 흐름에 들어갈 때 켜고, 메인으로 돌아오거나 화면을 떠나면 끈다.
+     * 뽑기 길([Routes.MYSTERY_BOX])에서만 읽는다.
      */
     var immersive by mutableStateOf(false)
 
-    /** 지금 길에서 공통 머리 · 하단 탭을 걷는가 */
+    /** 지금 길에서 하단 탭을 걷는가 */
     fun immersiveAt(route: String?): Boolean = immersive && destination(route)?.parent == Screen.Draw
 
     val destinations: List<Destination> = listOf(
@@ -29,7 +30,7 @@ object AppChromePolicy {
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
-        // 신발 뽑기 v2 — 하단 가운데 뽑기 탭의 첫 화면(두 칸). 요청 · 상자 열기 · 결과 · 확인 동안은 [immersive] 로 화면을 다 쓴다
+        // 신발 뽑기 — 하단 가운데 뽑기 탭의 첫 화면(무료 · 상급 글자 탭). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
         Destination(Routes.MYSTERY_BOX, Screen.Draw, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),

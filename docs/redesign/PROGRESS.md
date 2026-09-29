@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-09-29 — shoe draw design (26 screens) applied
+
+- Draw tab (`Routes.MYSTERY_BOX`) now follows the 26-screen draw design (docs/redesign/shoe-draw-v3/README.md): title + ⓘ, 무료 / 상급 text tabs, one closed-box stage, one remaining-count row and one normal-size action per tab. Unknown counts are "—"; a pending result blocks new draws on both tabs; server rules (0042) and the v2 draw/check logic are unchanged.
+- User decisions (defaults, "진행해"): ⓘ opens the selected tab's info (15 / 16, 17 before a wallet link), bottom draw icon ×1.04 with the 72 × 70dp selected tile, signed-out button opens sign-in (disabled without server config), 17 is titled "기회 받는 방법".
+- Flow screens (04 · 05 · 06–08 · 19) keep the logo · balance header and only hide the bottom bar; the result stage takes the remaining height so the name, count and both buttons fit on small phones.
+- Evidence: compile, unit tests (`ShoeDrawHomeTest` new), lint, string/asset/design checks locally; `ShoeDrawTabsDesignTest` (d01–d26, device-size fit checks, light · large font · 320dp) device run pending CI.
+
 ## 2026-09-29 — crew cards (2), crew chat and my crew home (4); inventory covers feature route groups
 
 - Route inventory: `tools/ui_inventory.py` now also reads the feature route groups (`CrewRoutes`, `ChatRoutes`, `CrewHomeRoutes`) from their NavGraph files and their `…ALL.map { Destination(…) }` policy — 104 routes (was 58, the groups were missing). Each group row links its design README and test evidence.

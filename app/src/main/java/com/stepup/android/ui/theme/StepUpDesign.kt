@@ -29,6 +29,12 @@ object StepUpDesign {
     val NavigationItemHeight = 68.dp
     val NavigationLabel = 13.sp
     val NavigationIcon = 24.dp
+
+    /**
+     * 하단 가운데 뽑기 아이콘만 이전 크기(24dp) 대비 가로 · 세로 1.04배(신발 뽑기 디자인 2026-09-28 — 사용자가 말한 3~5% 중 4%).
+     * 그림만 키우고 자리(24dp) · 선택 타일 · 글자는 그대로 둔다. 한 번만 적용한다.
+     */
+    const val DrawNavigationIconScale = 1.04f
     val NavigationIndicator = 4.dp
     // Wardrobe reference: a full-body stage above a quiet, image-led inventory.
     const val WardrobePreviewFraction = 0.56f

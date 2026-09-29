@@ -43,14 +43,14 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * 신발 뽑기 v2(두 칸, 2026-09-28) — 뽑기 규칙. 서버는 흉내 낸 DrawSource 다(서버 규칙 자체는 supabase/tests 의 0042 검사).
+ * 신발 뽑기(규칙 v2 · 화면 26장 디자인, 2026-09-28) — 뽑기 규칙. 서버는 흉내 낸 DrawSource 다(서버 규칙 자체는 supabase/tests 의 0042 검사).
  *
- * - 두 칸의 상태(값 · 소진 · 로그인 전 · 불러오는 중 · 실패 · 큰 글씨 · 좁은 폭 · 밝은 테마) — 0 을 임시로 보이지 않고 가격이 없다
- * - 앱 셸 안: 한 번 누르면 한 번만 뽑고(10 에는 버튼이 없다), 서버 결과로만 결과 화면, 뒤에 수를 다시 읽는다, 내 신발에서 그 신발이 골라져 있다
- * - 답을 잃은 요청은 새로 뽑지 않고 확인한다(20 → 결과), 뒤로 가도(26) 새 뽑기는 막힌다
- * - 서버가 거절하면 기회를 쓰지 않았다고 말한다(19), 다시 열면 남은 요청부터 확인한다
+ * - 메인 한 탭씩의 상태(값 · 소진 · 로그인 전 · 불러오는 중 · 실패 · 큰 글씨 · 좁은 폭 · 밝은 테마) — 0 을 임시로 보이지 않고 가격이 없다
+ * - 앱 셸 안: 한 번 누르면 한 번만 뽑고(04 에는 버튼이 없다), 서버 결과로만 결과 화면, 뒤에 수를 다시 읽는다, 내 신발에서 그 신발이 골라져 있다
+ * - 답을 잃은 요청은 새로 뽑지 않고 확인한다(19 → 결과), 뒤로 가도(20) 두 탭 모두 새 뽑기는 막힌다
+ * - 서버가 거절하면 기회를 쓰지 않았다고 말한다(18), 다시 열면 남은 요청부터 확인한다
  *
- * 시안 장면 캡처는 [ShoeDrawV2DesignTest].
+ * 시안 장면 캡처는 [ShoeDrawTabsDesignTest].
  */
 class ShoeDrawTest {
     @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
@@ -99,64 +99,84 @@ class ShoeDrawTest {
         val context = compose.activity
         fun label(id: Int, vararg args: Any) = context.getString(id, *args)
 
-        // 01 — 처음 가입한 날: 가입 선물 10 + 오늘 3 = 13, 상급은 지갑 연결 안내
-        state("01-two-compartments") {
+        // 01 — 처음 가입한 날(무료 탭): 가입 선물 10 + 오늘 3 = 13, 버튼은 고른 탭의 것 하나
+        state("01-free-tab") {
             text("draw-free-left", "13회")
-            compose.onNodeWithText(label(R.string.dv2_free_rule, 10, 3)).assertExists()
+            compose.onNodeWithTag("draw-stage-title", useUnmergedTree = true).assert(hasText(label(R.string.dv3_stage_daily_free, 3)))
             compose.onNodeWithTag("draw-free-action").assertIsEnabled().assertTextContains(label(R.string.dv2_action_free))
-            compose.onNodeWithTag("draw-premium-action").performScrollTo().assertTextContains(label(R.string.dv2_action_connect, 10))
-            text("draw-premium-gift", "+10회")
+            compose.onAllNodesWithTag("draw-premium-action").assertCountEquals(0)
             noPrice()
         }
-        // 02 — 지갑 연결 뒤: 선물 10 · 0.6 / 1km
+        // 09 — 상급 탭 · 지갑 전: 수 대신 받을 수 있는 첫 연결 선물, 연결 안내 버튼
+        compose.onNodeWithTag("draw-tab-premium").performClick().assertIsSelected()
+        state("02-premium-tab-wallet") {
+            text("draw-premium-gift", "10회", unmerged = false)
+            compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_connect, 10))
+            compose.onAllNodesWithTag("draw-free-action").assertCountEquals(0)
+        }
+        // 02 — 지갑 연결 뒤: 남은 상급 10회 · 상급으로 1회 뽑기. 러닝 진행 거리는 메인이 아니라 ⓘ 안내창에
         compose.runOnIdle { state = DrawScreenState.Ready(DrawSamples.LINKED) }
-        state("02-connected") {
-            compose.onNodeWithTag("draw-premium-left", useUnmergedTree = true).performScrollTo()
+        state("03-connected") {
             text("draw-premium-left", "10회")
-            compose.onNodeWithText(label(R.string.dv2_next_premium, "0.4")).assertExists()
+            compose.onAllNodesWithText(label(R.string.dv2_next_premium, "0.4")).assertCountEquals(0)
             compose.onNodeWithTag("draw-premium-action").assertIsEnabled().assertTextContains(label(R.string.dv2_action_premium))
         }
-        // 03 — 오늘 러닝 한도를 채웠다: 다음 1회까지 거리 대신 한도 안내
+        compose.onNodeWithTag("draw-info").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-premium").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(label(R.string.dv2_next_premium, "0.4")).assertExists()
+        compose.onNodeWithTag("draw-sheet-close").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-premium").fetchSemanticsNodes().isEmpty() }
+        // 24 — 오늘 러닝 한도를 채웠다: 남은 수는 그대로, 한도 안내는 ⓘ 안내창에
         compose.runOnIdle { state = DrawScreenState.Ready(DrawSamples.LINKED.copy(runLeft = 10, runToday = 10, runProgressMeters = 300.0)) }
-        state("03-run-cap") {
-            compose.onNodeWithText(label(R.string.dv2_run_capped)).performScrollTo().assertExists()
+        state("04-run-cap") {
             text("draw-premium-left", "20회")
+            compose.onNodeWithTag("draw-info").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-run-cap").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("draw-sheet-close").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-premium").fetchSemanticsNodes().isEmpty() }
         }
-        // 04 — 둘 다 소진: 누를 수 있지만 뽑지 않는 안내 버튼(무료 기회 안내 · 러닝하고 기회 받기)
+        // 13 · 14 — 둘 다 소진: 누를 수 있지만 뽑지 않는 안내 버튼(러닝하고 기회 받기 · 무료 기회 안내)
         compose.runOnIdle { state = DrawScreenState.Ready(DrawSamples.EMPTY) }
-        state("04-used-up") {
+        state("05-used-up-premium") {
+            text("draw-premium-left", "0회")
+            compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_run))
+        }
+        compose.onNodeWithTag("draw-tab-free").performClick().assertIsSelected()
+        state("06-used-up-free") {
             text("draw-free-left", "0회")
             compose.onNodeWithTag("draw-free-action").assertTextContains(label(R.string.dv2_action_free_info))
-            compose.onNodeWithTag("draw-premium-action").performScrollTo().assertTextContains(label(R.string.dv2_action_run))
         }
-        // 05 — 로그인 전: 누를 수 없고 수가 없다
+        // 22 — 로그인 전: 수가 없고("—"), 로그인할 수 없는 빌드면 누를 수 없다
         compose.runOnIdle { state = DrawScreenState.SignedOut }
-        state("05-signed-out") {
+        state("07-signed-out") {
             compose.onNodeWithTag("draw-free-action").assertIsNotEnabled()
+            compose.onNodeWithTag("draw-left-unknown", useUnmergedTree = true).assertExists()
             compose.onAllNodesWithText("0회").assertCountEquals(0)
         }
-        // 06 — 읽는 중: 0회가 아니라 자리만
+        // 03 — 읽는 중: 0회가 아니라 "—", 누를 수 없다
         compose.runOnIdle { state = DrawScreenState.Loading }
-        state("06-loading") {
-            compose.onAllNodesWithTag("draw-skeleton").assertCountEquals(2)
+        state("08-loading") {
+            compose.onNodeWithTag("draw-left-unknown", useUnmergedTree = true).assertExists()
             compose.onAllNodesWithText("0회").assertCountEquals(0)
             compose.onNodeWithTag("draw-free-action").assertIsNotEnabled()
         }
-        // 07 — 못 읽었다: 소진과 다르다. 칸에 설명과 다시 불러오기
+        // 21 — 못 읽었다: 소진과 다르다. "—"와 다시 불러오기
         compose.runOnIdle { state = DrawScreenState.Failed }
-        state("07-failed") {
-            compose.onNodeWithTag("draw-free-failed", useUnmergedTree = true).assertExists()
+        state("09-failed") {
+            compose.onNodeWithTag("draw-left-unknown", useUnmergedTree = true).assertExists()
             compose.onAllNodesWithText("0회").assertCountEquals(0)
-            compose.onNodeWithTag("draw-free-action").performClick()
+            compose.onNodeWithTag("draw-free-action").assertTextContains(label(R.string.dv2_action_reload)).performClick()
             compose.runOnIdle { assertEquals(1, retries) }
         }
-        // 08 · 09 · 10 — 큰 글씨 · 좁은 폭 · 밝은 테마: 칸의 버튼이 화면 안에 온전히 있다
+        // 큰 글씨 · 좁은 폭 · 밝은 테마: 고른 탭의 버튼이 화면 안에 온전히 있다
         compose.runOnIdle { state = DrawScreenState.Ready(DrawSamples.FRESH); large = true }
-        state("08-large-font") { actionInside("draw-free-action") }
+        state("10-large-font") { actionInside("draw-free-action") }
         compose.runOnIdle { large = false; narrow = true; state = DrawScreenState.Ready(DrawSamples.LINKED) }
-        state("09-narrow-320") { actionInside("draw-free-action") }
+        compose.onNodeWithTag("draw-tab-premium").performClick()
+        state("11-narrow-320") { actionInside("draw-premium-action") }
         compose.runOnIdle { narrow = false; light = true; state = DrawScreenState.Ready(DrawSamples.FRESH) }
-        state("10-light-theme") { actionInside("draw-free-action") }
+        compose.onNodeWithTag("draw-tab-free").performClick()
+        state("12-light-theme") { actionInside("draw-free-action") }
     }
 
     /** 앱 셸 안에서: 신발 탭 → 하단 뽑기 탭 → 한 번 뽑기(두 번 눌러도 한 번) → 결과 → 내 신발(그 신발이 골라져 있다) */
@@ -174,7 +194,7 @@ class ShoeDrawTest {
             compose.waitUntil(10_000) { runCatching { text("draw-free-left", "13회") }.isSuccess }
             shot("20-in-app-free")
 
-            // 서버가 답을 붙잡고 있는 동안(10): 뽑기 버튼이 없다 — 두 번 뽑을 수 없다
+            // 서버가 답을 붙잡고 있는 동안(04): 뽑기 버튼이 없다 — 두 번 뽑을 수 없다
             val gate = CompletableDeferred<Unit>()
             server.gate = gate
             compose.onNodeWithTag("draw-free-action").performClick()
@@ -200,9 +220,11 @@ class ShoeDrawTest {
             assertEquals("seeing the new shoe does not equip it", equipped, DrawSamples.equippedId())
             shot("23-my-shoes-with-the-new-shoe")
 
-            // 상급 칸(지갑 연결 뒤)으로 한 번 더 — 결과에서 뒤로 가면 두 칸
+            // 상급 탭(지갑 연결 뒤)으로 한 번 더 — 결과에서 뒤로 가면 메인
             server.linked = true
             openDrawTab()
+            awaitTag("draw-tab-premium")
+            compose.onNodeWithTag("draw-tab-premium").performClick()
             awaitTag("draw-premium-left")
             compose.onNodeWithTag("draw-premium-action").performScrollTo().performClick()
             awaitTag("draw-result")
@@ -216,7 +238,7 @@ class ShoeDrawTest {
         }
     }
 
-    /** 답을 잃었다(20) — 새로 뽑지 않고 확인해서 결과로. 뒤로 가도(26) 새 뽑기는 막힌다 */
+    /** 답을 잃었다(19) — 새로 뽑지 않고 확인해서 결과로. 뒤로 가도(20) 두 탭 모두 새 뽑기는 막힌다 */
     @Test fun unknownAnswerNeverDrawsTwice() {
         prepare()
         val shoe = DrawSamples.shoe()
@@ -232,14 +254,15 @@ class ShoeDrawTest {
             server.gate = gate
             compose.onNodeWithTag("draw-free-action").performClick()
             compose.waitUntil(5_000) { server.draws.get() == 1 }
-            // 10 이 그려진 뒤에 뒤로 — 그리기 전(같은 프레임)에 누르면 뽑기 화면의 뒤로가 아직 켜지지 않아 신발 탭으로 나간다
+            // 04 가 그려진 뒤에 뒤로 — 그리기 전(같은 프레임)에 누르면 뽑기 화면의 뒤로가 아직 켜지지 않아 신발 탭으로 나간다
             awaitTag("draw-requesting")
-            // 10 에서 뒤로 — 요청은 그대로, 두 칸의 버튼은 "결과 확인"(26)
+            // 04 에서 뒤로 — 요청은 그대로, 두 탭 모두 버튼은 "결과 확인"(20)
             back()
             awaitTag("draw-pending")
             compose.onNodeWithTag("draw-free-action").assertTextContains(compose.activity.getString(R.string.dv2_action_check))
-            compose.onNodeWithTag("draw-premium-action").performScrollTo()
-                .assertTextContains(compose.activity.getString(R.string.dv2_action_check))
+            compose.onNodeWithTag("draw-tab-premium").performClick()
+            compose.onNodeWithTag("draw-premium-action").assertTextContains(compose.activity.getString(R.string.dv2_action_check))
+            compose.onNodeWithTag("draw-tab-free").performClick()
             shot("30-pending-home")
             gate.complete(Unit)
             // 답을 잃었다 — 잠시 뒤 서버 목록을 다시 읽어 확인한다(새로 뽑지 않는다)
@@ -253,7 +276,7 @@ class ShoeDrawTest {
         }
     }
 
-    /** 서버가 거절했다(19) — 기회를 쓰지 않았다고 말한다. 다시 눌러도 같은 까닭이면 "다시 뽑기"를 두지 않는다 */
+    /** 서버가 거절했다(18) — 기회를 쓰지 않았다고 말한다. 다시 눌러도 같은 까닭이면 "다시 뽑기"를 두지 않는다 */
     @Test fun refusedDrawSaysNoChanceWasUsed() {
         prepare()
         val server = FakeDrawSource(DrawSamples.shoe())
@@ -330,8 +353,8 @@ class ShoeDrawTest {
         shot(name)
     }
 
-    private fun text(tag: String, value: String) {
-        compose.onNodeWithTag(tag, useUnmergedTree = true).assert(hasText(value, substring = true))
+    private fun text(tag: String, value: String, unmerged: Boolean = true) {
+        compose.onNodeWithTag(tag, useUnmergedTree = unmerged).assert(hasText(value, substring = true))
     }
 
     /** 가격 · 결제 문구가 없다 — 모든 뽑기는 무료 */
@@ -339,7 +362,7 @@ class ShoeDrawTest {
         compose.onAllNodesWithText("SUP", substring = true).assertCountEquals(0)
     }
 
-    /** 칸의 버튼이 화면 안에 온전히 있다(큰 글씨 · 좁은 폭에서 잘리지 않는다) */
+    /** 고른 탭의 버튼이 화면 안에 온전히 있다(큰 글씨 · 좁은 폭에서 잘리지 않는다) */
     private fun actionInside(tag: String) {
         compose.onNodeWithTag(tag).performScrollTo()
         compose.waitForIdle()

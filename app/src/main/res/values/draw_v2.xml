@@ -3,31 +3,15 @@
 <resources>
     <!-- Two compartments (01 · 02 · 15 · 22 · 23 · 24 · 26) -->
     <string name="dv2_title">Shoe draw</string>
-    <string name="dv2_subtitle">Every shoe draw is free.</string>
-    <string name="dv2_subtitle_loading">Loading your draw chances.</string>
-    <string name="dv2_subtitle_signed_out">Sign in to draw shoes for free.</string>
     <string name="dv2_free">Free draw</string>
     <string name="dv2_premium">Premium draw</string>
-    <string name="dv2_free_rule">%1$d on sign-up · %2$d every day</string>
-    <string name="dv2_free_rule_daily">%1$d every day</string>
-    <string name="dv2_premium_rule">%1$d for a wallet · 1 per %2$s km run</string>
-    <string name="dv2_premium_rule_run">Wallet gift · 1 per %1$s km run</string>
-    <string name="dv2_left">Chances left</string>
     <string name="dv2_count">%1$d</string>
     <string name="dv2_count_plus">+%1$d</string>
-    <string name="dv2_history">See your chances</string>
     <string name="dv2_next_premium">%1$s km to the next one</string>
     <string name="dv2_run_capped">Today\'s running chances are all earned</string>
-    <string name="dv2_first_link">When you first connect</string>
-    <string name="dv2_first_link_note">you get premium draws for free</string>
     <string name="dv2_kept_premium">Premium chances kept</string>
-    <string name="dv2_reconnect_note">Connect your wallet again</string>
-    <string name="dv2_paused_note">Premium draws are paused for now</string>
     <string name="dv2_pending_label">Your shoe</string>
     <string name="dv2_pending_value">Checking</string>
-    <string name="dv2_pending_note">You can see it when the result is ready</string>
-    <string name="dv2_failed_inline">Could not load your chances</string>
-    <string name="dv2_signed_out_note">Sign in to see your chances</string>
     <string name="dv2_action_free">Draw once for free</string>
     <string name="dv2_action_free_info">About free chances</string>
     <string name="dv2_action_connect">Connect a wallet and get %1$d</string>
@@ -39,7 +23,6 @@
     <string name="dv2_action_loading">Loading</string>
     <string name="dv2_action_reload">Load again</string>
     <string name="dv2_action_sign_in">Sign in to draw</string>
-    <string name="dv2_rules_link">How to get free chances</string>
 
     <!-- 03 Free chances -->
     <string name="dv2_free_sheet_title">Free draw chances</string>
@@ -51,14 +34,13 @@
 
     <!-- 04 Premium chances · running progress -->
     <string name="dv2_premium_sheet_title">Premium draw chances</string>
-    <string name="dv2_premium_sheet_sub">With a connected wallet, get 1 every %1$s km you run.</string>
     <string name="dv2_link_gift">First-connect gift</string>
     <string name="dv2_run_earned">Earned by running</string>
     <string name="dv2_premium_now">Premium draws left</string>
     <string name="dv2_progress">%1$s / %2$s km</string>
 
     <!-- 05 How to get chances -->
-    <string name="dv2_rules_title">How to get free chances</string>
+    <string name="dv2_rules_title">How to get chances</string>
     <string name="dv2_rules_signup">When you sign up</string>
     <string name="dv2_rules_daily">Every day</string>
     <string name="dv2_rules_first_link">When you first connect a WEB3 wallet</string>
@@ -72,7 +54,6 @@
     <string name="dv2_benefit_first">When you first connect a wallet</string>
     <string name="dv2_benefit_run">Every %1$s km run after connecting</string>
     <string name="dv2_plus_one">+1</string>
-    <string name="dv2_benefit_note">Run after connecting your wallet\nto collect more premium draws.</string>
     <string name="dv2_connect">Connect a WEB3 wallet</string>
     <string name="dv2_later">Later</string>
 
@@ -84,24 +65,16 @@
 
     <!-- 16 Free used up · 17 Earn by running · 18 Run counted -->
     <string name="dv2_free_empty_title">You used all your free chances</string>
-    <string name="dv2_free_empty_head">You get %1$d free draws every day.</string>
     <string name="dv2_free_empty_body">You can draw again when new free chances arrive.</string>
     <string name="dv2_see_premium">See premium draws</string>
     <string name="dv2_run_title">Earn chances by running</string>
-    <string name="dv2_run_sub">Collect chances by running with your connected wallet.</string>
     <string name="dv2_run_until">Until the next premium draw</string>
-    <string name="dv2_run_rule">Get 1 premium draw every %1$s km you run.</string>
     <string name="dv2_run_start">Start running</string>
     <string name="dv2_km">%1$s km</string>
     <string name="dv2_run_reward">Run counted · premium draws +%1$d</string>
 
     <!-- 10 Checking · 11 Opening -->
-    <string name="dv2_request_head">Checking your shoe</string>
-    <string name="dv2_request_sub">The box opens once the result is confirmed.</string>
     <string name="dv2_wait">Just a moment.</string>
-    <string name="dv2_opening_head">Opening the box</string>
-    <string name="dv2_opening_sub">Which shoe will it be?</string>
-    <string name="dv2_opening_note">One pair is added to your shoes.</string>
     <string name="dv2_skip">Skip</string>
 
     <!-- 12 · 13 · 14 Result -->
@@ -127,14 +100,29 @@
 
     <!-- 20 Result delayed (unclear whether it went through — never draws again) -->
     <string name="dv2_check_header">Draw result</string>
-    <string name="dv2_check_head">Checking the result</string>
-    <string name="dv2_check_sub">We\'ll show your shoe once it is confirmed.</string>
+    <string name="dv2_check_head">Checking the result.</string>
     <string name="dv2_check_note">This checks the draw in progress without drawing again.</string>
     <string name="dv2_check_again">Check again</string>
-    <string name="dv2_check_unknown">We could not confirm the result yet. Check your connection and try again.</string>
 
     <!-- 23 Could not load (not the same as used up) -->
     <string name="dv2_load_failed_title">Could not load your chances</string>
     <string name="dv2_load_failed_body">Check your connection and try again.</string>
     <string name="dv2_back_to_shoes">Back to my shoes</string>
+
+    <!-- 신발 뽑기 디자인(2026-09-28, 26장) — docs/redesign/shoe-draw-v3 -->
+    <string name="dv3_info_cd">Draw chances info</string>
+    <string name="dv3_stage_daily_free">%1$d free a day</string>
+    <string name="dv3_signed_out_title">Sign in to see it.</string>
+    <string name="dv3_state_linked">Wallet linked</string>
+    <string name="dv3_state_wallet_needed">Wallet needed</string>
+    <string name="dv3_state_paused">Paused</string>
+    <string name="dv3_pending_row">Draw result</string>
+    <string name="dv3_gift_available">First-link gift · available</string>
+    <string name="dv3_action_sign_in">Sign in to draw</string>
+    <string name="dv3_daily_free">Daily free draws</string>
+    <string name="dv3_run_capped_sub">You can earn more tomorrow.</string>
+    <string name="dv3_stop_title_blocked">You can\'t draw right now</string>
+    <string name="dv3_opening_met">You met a new shoe.</string>
+    <string name="dv3_result_head">You got a new shoe.</string>
+    <string name="dv3_check_unknown_head">We couldn\'t confirm the result yet.</string>
 </resources>
