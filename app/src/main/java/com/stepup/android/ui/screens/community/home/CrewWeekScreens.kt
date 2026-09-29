@@ -294,7 +294,8 @@ fun CrewRunsScreen(viewModel: CrewRunsViewModel, onBack: () -> Unit, onRun: (Cre
             Modifier.weight(1f).fillMaxWidth().testTag("home-runs-list"), state = listState,
             contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp),
         ) {
-            item(key = "head") { RunsHead(scope, week, viewModel.name) { viewModel.sheet.value = true } }
+            // 주 목록이 오기 전에는 누르지 않는다 — 눌러 둔 것이 나중에 저절로 열리지 않게
+            item(key = "head") { RunsHead(scope, week, viewModel.name) { if (!week?.weeks.isNullOrEmpty()) viewModel.sheet.value = true } }
             when (val state = runs) {
                 is HomeLoad.Ready -> {
                     if (state.value.isEmpty()) {
@@ -302,13 +303,14 @@ fun CrewRunsScreen(viewModel: CrewRunsViewModel, onBack: () -> Unit, onRun: (Cre
                             Text(stringResource(R.string.crewhome_runs_empty), color = ink.secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 36.dp).testTag("home-runs-empty"))
                         }
                     }
-                    // 날짜별 소제목 — 한 날만 고른 경우에는 제목이 그 날이라 두지 않는다
+                    // 날짜별 소제목 — 서버의 요일 · 날 고르기와 같은 기준(시작한 때, 한국 시간). 한 날만 고른 경우에는 제목이 그 날이라 두지 않는다.
+                    // 끝난 순으로 늘어서 있어 자정을 넘긴 러닝이 끼면 같은 날이 다시 나올 수 있다 — 소제목 키에 첫 기록 id 를 붙인다
                     var lastDay: LocalDate? = null
                     state.value.forEach { run ->
-                        val day = localDay(run.endedAt)
+                        val day = localDay(run.startedAt, CrewHomeRules.KST)
                         if (scope.day == null && day != lastDay) {
                             val header = day
-                            item(key = "day-${header}") {
+                            item(key = "day-$header-${run.id}") {
                                 Text(
                                     homeDateWeekday(header), color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(top = 22.dp, bottom = 4.dp),

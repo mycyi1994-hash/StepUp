@@ -27,6 +27,7 @@ import com.stepup.android.ui.screens.community.home.CrewHomeRoutes
 import com.stepup.android.ui.screens.community.home.endsWithConsonant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -64,7 +65,7 @@ class CrewHomeTest {
         override suspend fun clear() = Unit
     }
 
-    private fun server(http: Router) = StepUpServer(
+    private fun server(http: HttpPoster) = StepUpServer(
         baseUrl = "https://test.supabase.co",
         apiKey = "sb_publishable_test",
         sessions = SessionHolder(auth = SupabaseAuth("https://test.supabase.co", "sb_publishable_test", http), store = LoggedIn(), now = { 1_000L }),
@@ -216,6 +217,41 @@ class CrewHomeTest {
         http.answers["crew_meeting_respond"] = HttpResponse(400, """{"message":"meeting_missing"}""")
         assertEquals(HomeOutcome.Missing, repo.respond("c1", 501, attend = false))
         assertNull(repo.homeNow("c1")?.meeting)
+    }
+
+    @Test
+    fun `참석 저장 전에 시작한 모임 읽기가 늦게 와도 저장된 응답과 인원을 되돌리지 않는다`() = runBlocking {
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val http = object : HttpPoster {
+            val router = Router()
+            override suspend fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                // 모임 읽기는 참석 저장이 끝날 때까지 붙잡아 둔다 — 저장 전의 값(8명 · 미응답)을 늦게 돌려준다
+                if (url.endsWith("/crew_meeting")) gate.await()
+                return router.post(url, body, headers)
+            }
+            override suspend fun get(url: String, headers: Map<String, String>) = post(url, "", headers)
+        }
+        http.router.answers["crew_home"] = HttpResponse(200, homeJson(meetingJson(8, null)))
+        http.router.answers["crew_meeting"] = HttpResponse(200, meetingJson(8, null))
+        http.router.answers["crew_meeting_respond"] = HttpResponse(200, meetingJson(9, "YES"))
+        val repo = CrewHomeRepository(CrewHomeApi(server(http)), owner = { "account:u-doyun" })
+        assertTrue(repo.loadHome("c1") is HomeOutcome.Ok)
+
+        val slowRead = async { repo.meeting("c1", 501) }
+        kotlinx.coroutines.yield()
+        assertTrue(repo.respond("c1", 501, attend = true) is HomeOutcome.Ok)
+        gate.complete(Unit)
+        val read = slowRead.await()
+
+        assertEquals(9, (read as HomeOutcome.Ok).value.attendees)
+        assertEquals(MeetingResponse.YES, read.value.myResponse)
+        assertEquals(9, repo.homeNow("c1")?.meeting?.attendees)
+        assertEquals(MeetingResponse.YES, repo.homeNow("c1")?.meeting?.myResponse)
+
+        // 저장 뒤에 시작한 읽기는 서버 값 그대로(다른 사람이 참석해 10명)
+        http.router.answers["crew_meeting"] = HttpResponse(200, meetingJson(10, "YES"))
+        assertEquals(10, (repo.meeting("c1", 501) as HomeOutcome.Ok).value.attendees)
+        assertEquals(10, repo.homeNow("c1")?.meeting?.attendees)
     }
 
     @Test

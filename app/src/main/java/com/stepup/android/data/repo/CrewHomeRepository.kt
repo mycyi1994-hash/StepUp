@@ -60,6 +60,9 @@ class CrewHomeRepository(
     /** 들고 있는 홈의 주인 — 계정이 바뀌면 앞사람의 홈을 지운다 */
     @Volatile private var holder: String? = null
 
+    /** 모임마다 저장이 끝난 참석 응답 수와 마지막으로 서버가 돌려준 모임 — 그 전에 시작한 읽기가 늦게 와도 되돌리지 않는다 */
+    private val saved = java.util.concurrent.ConcurrentHashMap<Long, Pair<Int, CrewMeeting>>()
+
     private suspend fun ownerNow() {
         val now = owner()
         val before = holder
@@ -84,20 +87,28 @@ class CrewHomeRepository(
         }
     }
 
-    suspend fun meeting(crewId: String, meetingId: Long): HomeOutcome<CrewMeeting> =
-        api.meeting(meetingId).home(crewId) { it.toDomain() }.also { outcome ->
-            when (outcome) {
-                is HomeOutcome.Ok -> patchMeeting(outcome.value)
-                HomeOutcome.Missing -> dropMeeting(crewId, meetingId)
-                else -> Unit
-            }
+    suspend fun meeting(crewId: String, meetingId: Long): HomeOutcome<CrewMeeting> {
+        val before = saved[meetingId]?.first ?: 0
+        val outcome = api.meeting(meetingId).home(crewId) { it.toDomain() }
+        // 읽는 사이에 응답 저장이 끝났다 — 이 읽기는 저장 전의 값일 수 있으니 서버가 저장 뒤에 준 모임을 쓴다
+        val newer = saved[meetingId]?.takeIf { it.first != before }?.second
+        if (outcome is HomeOutcome.Ok && newer != null) return HomeOutcome.Ok(newer)
+        when (outcome) {
+            is HomeOutcome.Ok -> patchMeeting(outcome.value)
+            HomeOutcome.Missing -> dropMeeting(crewId, meetingId)
+            else -> Unit
         }
+        return outcome
+    }
 
     /** 참석(true) · 불참(false) — 서버가 받은 뒤의 모임. 실패하면 앞의 응답 · 인원을 그대로 둔다 */
     suspend fun respond(crewId: String, meetingId: Long, attend: Boolean): HomeOutcome<CrewMeeting> =
         api.respond(meetingId, attend).home(crewId) { it.toDomain() }.also { outcome ->
             when (outcome) {
-                is HomeOutcome.Ok -> patchMeeting(outcome.value)
+                is HomeOutcome.Ok -> {
+                    saved.compute(meetingId) { _, last -> ((last?.first ?: 0) + 1) to outcome.value }
+                    patchMeeting(outcome.value)
+                }
                 HomeOutcome.Missing -> dropMeeting(crewId, meetingId)
                 else -> Unit
             }
@@ -166,6 +177,9 @@ class CrewHomeRepository(
 
     companion object {
         const val PAGE = 30
+
+        /** 한 번에 읽는 가장 많은 줄(서버 crew_runs 의 한도) */
+        const val MAX_PAGE = 100
     }
 }
 

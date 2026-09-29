@@ -130,6 +130,7 @@ fun NavGraphBuilder.crewHomeGraph(
     }
     composable(CrewHomeRoutes.INTRO, arguments = listOf(crewIdArg)) { entry ->
         val id = entry.arguments?.getString("crewId").orEmpty()
+        HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewIntroScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
             onBack = back,
@@ -140,10 +141,12 @@ fun NavGraphBuilder.crewHomeGraph(
     }
     composable(CrewHomeRoutes.LEVEL, arguments = listOf(crewIdArg)) { entry ->
         val id = entry.arguments?.getString("crewId").orEmpty()
+        HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewLevelScreen(viewModel(factory = CrewScreenViewModel.Factory), onBack = back, onWeekly = { navController.navigate(CrewHomeRoutes.week(id)) })
     }
     composable(CrewHomeRoutes.MEMBERS, arguments = listOf(crewIdArg)) { entry ->
         val id = entry.arguments?.getString("crewId").orEmpty()
+        HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewMembersHomeScreen(
             viewModel(factory = CrewHomeMembersViewModel.Factory),
             onBack = back,

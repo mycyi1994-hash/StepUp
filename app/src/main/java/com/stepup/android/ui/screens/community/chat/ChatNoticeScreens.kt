@@ -394,7 +394,11 @@ fun ChatNoticeEditScreen(
             stringResource(R.string.chat_notice_error_title), viewModel::closeSheet, Modifier.testTag("chat-notice-failed"), dismissible = !current.busy,
         ) {
             Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.chat_notice_error_body), color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
+            Text(
+                stringResource(if (current.meetingGone) R.string.chat_notice_meeting_gone else R.string.chat_notice_error_body),
+                color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp,
+                modifier = if (current.meetingGone) Modifier.testTag("chat-notice-meeting-gone") else Modifier,
+            )
             Spacer(Modifier.height(96.dp))
             CrewButton(stringResource(R.string.chat_notice_retry), viewModel::save, Modifier.testTag("chat-notice-retry"), busy = current.busy || saving)
         }

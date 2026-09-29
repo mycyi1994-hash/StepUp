@@ -174,4 +174,5 @@
     <string name="chat_notice_meeting_empty">No upcoming runs.\nOpen a flash run on the crew board to pick it here.</string>
     <string name="chat_notice_meeting_note">The linked run shows as a button under the notice.</string>
     <string name="chat_notice_meeting_error">Couldn\'t load runs</string>
+    <string name="chat_notice_meeting_gone">The meeting you linked was removed or has already started, so the link was cleared.\nSave again, or pick another meeting.</string>
 </resources>

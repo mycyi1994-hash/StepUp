@@ -185,4 +185,5 @@
     <string name="chat_notice_meeting_empty">앞으로 예정된 모임이 없어요.\n크루 게시판에서 번개러닝을 열면 여기서 고를 수 있어요.</string>
     <string name="chat_notice_meeting_note">고른 모임은 공지 아래에 버튼으로 보여요.</string>
     <string name="chat_notice_meeting_error">모임을 불러오지 못했어요</string>
+    <string name="chat_notice_meeting_gone">이으려던 모임이 지워졌거나 이미 시작해서 연결을 풀었어요.\n다시 저장하거나 다른 모임을 골라 주세요.</string>
 </resources>

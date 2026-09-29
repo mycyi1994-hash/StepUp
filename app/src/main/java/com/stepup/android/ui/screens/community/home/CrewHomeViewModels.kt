@@ -147,6 +147,35 @@ class CrewHomeViewModel(
 }
 
 // ─────────────────────────────────────────────────────────────
+// 01 소개 · 03 레벨 · 04 크루원 — 공개 값(명함 · 명단)만 읽는 화면도 보일 때마다 지금의 가입 여부를 본다
+// ─────────────────────────────────────────────────────────────
+
+class CrewHomeAccessViewModel(
+    private val repo: CrewHomeRepository,
+    saved: SavedStateHandle,
+) : ViewModel() {
+    val crewId: String = saved.crewId()
+
+    private val _ended = MutableStateFlow(false)
+
+    /** 탈퇴 · 내보내기 · 해산 — 접근 종료로 */
+    val ended: StateFlow<Boolean> = _ended
+
+    /** 홈 한 번 읽기(crew_home)로 확인한다 — 받은 홈은 돌아갈 홈의 값도 새로 한다. 연결 실패는 그대로 둔다 */
+    fun check() {
+        viewModelScope.launch {
+            if (repo.loadHome(crewId) == HomeOutcome.Ended) _ended.value = true
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer { CrewHomeAccessViewModel(ServiceLocator.crewHome, createSavedStateHandle()) }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
 // 04 크루원 · 27 이름 검색
 // ─────────────────────────────────────────────────────────────
 
@@ -259,9 +288,15 @@ class CrewMeetingViewModel(
     private val _ended = MutableStateFlow(false)
     val ended: StateFlow<Boolean> = _ended
 
+    /** 응답을 보낸 횟수 — 그보다 먼저 시작한 읽기가 늦게 와도 저장된 응답을 덮지 않는다 */
+    private var responses = 0
+
     fun load() {
+        val asked = responses
         viewModelScope.launch {
-            when (val outcome = repo.meeting(crewId, meetingId)) {
+            val outcome = repo.meeting(crewId, meetingId)
+            if (asked != responses) return@launch
+            when (outcome) {
                 is HomeOutcome.Ok -> meeting.value = HomeLoad.Ready(outcome.value)
                 HomeOutcome.Missing -> meeting.value = HomeLoad.Missing
                 HomeOutcome.Ended -> _ended.value = true
@@ -273,6 +308,7 @@ class CrewMeetingViewModel(
     /** 참석 · 불참 — 서버가 받은 뒤에만 바뀐다. 같은 응답을 다시 골라도 서버가 그대로 둔다 */
     fun respond(attend: Boolean) {
         if (saving.value != null || meeting.value !is HomeLoad.Ready) return
+        responses++
         saving.value = if (attend) MeetingResponse.YES else MeetingResponse.NO
         error.value = null
         viewModelScope.launch {
@@ -379,9 +415,9 @@ class CrewWeekViewModel(
             when (val outcome = repo.week(crewId, start)) {
                 is HomeOutcome.Ok -> if (selected.value.day() == start) week.value = HomeLoad.Ready(outcome.value)
                 HomeOutcome.Ended -> _ended.value = true
-                else -> {
+                else -> if (selected.value.day() == start) {
                     val shown = (week.value as? HomeLoad.Ready)?.value
-                    // 읽기 오류를 0km 로 보이지 않는다 — 고른 주의 값이 없으면 실패 화면
+                    // 읽기 오류를 0km 로 보이지 않는다 — 고른 주의 값이 없으면 실패 화면(다른 주를 읽던 늦은 실패는 버린다)
                     if (shown == null || (start != null && shown.start != start)) week.value = HomeLoad.Failed
                 }
             }
@@ -449,11 +485,14 @@ class CrewRunsViewModel(
                 else -> Unit
             }
         }
+        // 다시 보일 때(러닝 기록에서 돌아옴)는 보이던 만큼 한 번에 다시 읽는다 — 첫 장으로 줄어 보던 자리를 잃지 않게
+        val shown = (runs.value as? HomeLoad.Ready)?.value?.size ?: 0
+        val limit = shown.coerceIn(CrewHomeRepository.PAGE, CrewHomeRepository.MAX_PAGE)
         viewModelScope.launch {
-            when (val outcome = repo.runs(crewId, scope, after = null)) {
+            when (val outcome = repo.runs(crewId, scope, after = null, limit = limit)) {
                 is HomeOutcome.Ok -> if (_scope.value == scope) {
                     runs.value = HomeLoad.Ready(outcome.value)
-                    more.value = outcome.value.size >= CrewHomeRepository.PAGE
+                    more.value = outcome.value.size >= limit
                 }
                 HomeOutcome.Ended -> _ended.value = true
                 else -> if (_scope.value == scope && runs.value !is HomeLoad.Ready) runs.value = HomeLoad.Failed

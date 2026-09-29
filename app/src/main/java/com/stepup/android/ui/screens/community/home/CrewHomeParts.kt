@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
 import com.stepup.android.domain.CrewHomeRules
 import com.stepup.android.domain.CrewRules
@@ -338,4 +342,15 @@ internal fun HomeSearchField(value: String, onValueChange: (String) -> Unit, pla
             }
         },
     )
+}
+
+/** 공개 값만 읽는 홈 화면(소개 · 레벨 · 크루원)의 가입 확인 — 보일 때마다 확인하고, 접근이 사라졌으면 접근 종료로 */
+@Composable
+internal fun HomeAccessGuard(viewModel: CrewHomeAccessViewModel, onEnded: () -> Unit) {
+    val ended by viewModel.ended.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.check()
+        onPauseOrDispose {}
+    }
+    LaunchedEffect(ended) { if (ended) onEnded() }
 }

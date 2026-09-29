@@ -15323,7 +15323,7 @@ as $$
           select f.user_id, coalesce(pr.display_name, '러너') as name, f.joined_at, f.user_id = p_post.author_id as host
             from public.flash_participants f
             left join public.profiles pr on pr.id = f.user_id
-           where f.post_id = p_post.id
+           where f.post_id = p_post.id and not public.is_blocked(f.user_id)
            order by (f.user_id = p_post.author_id) desc, f.joined_at
            limit 3
         ) x), '[]'::jsonb),
@@ -15349,6 +15349,7 @@ begin
   select * into v_post
     from public.posts p
    where p.crew_id = p_crew and p.category = 'FLASH' and p.meet_at is not null and p.meet_at >= now()
+     and not public.is_hidden('POST', p.id::text) and not public.is_blocked(p.author_id)
    order by p.meet_at, p.id
    limit 1;
   if not found then
@@ -15374,6 +15375,10 @@ begin
     raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
   end if;
   perform public.crew_home_member(v_post.crew_id);
+  -- 신고로 가려졌거나 내가 차단한 사람의 모임은 게시판(post_feed)처럼 없는 것으로
+  if public.is_hidden('POST', v_post.id::text) or public.is_blocked(v_post.author_id) then
+    raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
+  end if;
   return public.crew_meeting_json(v_post, auth.uid());
 end;
 $$;
@@ -15402,6 +15407,9 @@ begin
     raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
   end if;
   perform public.crew_home_member(v_post.crew_id);
+  if public.is_hidden('POST', v_post.id::text) or public.is_blocked(v_post.author_id) then
+    raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
+  end if;
   if v_post.meet_at is not null and v_post.meet_at < now() then
     raise exception 'meeting_closed' using errcode = '23514', detail = '이미 시작한 모임입니다';
   end if;
@@ -15434,6 +15442,9 @@ begin
     raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
   end if;
   perform public.crew_home_member(v_post.crew_id);
+  if public.is_hidden('POST', v_post.id::text) or public.is_blocked(v_post.author_id) then
+    raise exception 'meeting_missing' using errcode = '22023', detail = '모임을 찾을 수 없습니다';
+  end if;
   select c.owner_id into v_owner from public.crews c where c.id = v_post.crew_id;
   return coalesce((
     select jsonb_agg(jsonb_build_object(
@@ -15444,7 +15455,7 @@ begin
            order by (f.user_id = v_post.author_id) desc, f.joined_at)
       from public.flash_participants f
       left join public.profiles pr on pr.id = f.user_id
-     where f.post_id = p_post), '[]'::jsonb);
+     where f.post_id = p_post and not public.is_blocked(f.user_id)), '[]'::jsonb);
 end;
 $$;
 
@@ -15464,6 +15475,7 @@ begin
      where p.id in (
        select x.id from public.posts x
         where x.crew_id = p_crew and x.category = 'FLASH' and x.meet_at is not null and x.meet_at >= now()
+          and not public.is_hidden('POST', x.id::text) and not public.is_blocked(x.author_id)
         order by x.meet_at, x.id
         limit 20)), '[]'::jsonb);
 end;
@@ -15766,13 +15778,35 @@ as $$
     'meeting', (
       select jsonb_build_object('id', p.id, 'title', p.title, 'place', p.place, 'meet_at', p.meet_at)
         from public.posts p
-       where p.id = p_notice.meeting_post and p.crew_id = p_notice.crew_id and p.category = 'FLASH'))
+       where p.id = p_notice.meeting_post and p.crew_id = p_notice.crew_id and p.category = 'FLASH'
+         and not public.is_hidden('POST', p.id::text) and not public.is_blocked(p.author_id)))
 $$;
 
--- 공지 저장 — 0048 과 같고 이을 모임(p_meeting)만 더했다. 이 크루의 번개가 아니면 invalid:meeting.
--- 고칠 때는 p_meeting_change 가 참일 때만 이은 모임을 바꾼다(목표 거리 p_goal_change 와 같은 방식) —
--- 모임을 모르는 예전 앱이 공지를 고쳐도 이어 둔 모임이 풀리지 않는다
+-- 공지 저장 — 0048 과 같고 이을 모임(p_meeting)만 더했다. 새로 잇는 모임은 이 크루의 앞으로의 번개여야 한다
+-- (지워졌거나 · 가려졌거나 · 이미 시작했으면 invalid:meeting). 고칠 때는 p_meeting_change 가 참일 때만 이은 모임을
+-- 바꾸고 그때만 확인한다(목표 거리 p_goal_change 와 같은 방식) — 모임을 모르는 예전 앱이 공지를 고쳐도 이어 둔 모임이
+-- 풀리지 않고, 이어 둔 모임이 시작한 뒤에 글만 고쳐도 막히지 않는다. 같은 요청 키로 다시 보내면 확인 전에 먼저 돌려준다
 drop function if exists public.crew_chat_notice_save(uuid, bigint, text, text, boolean, uuid);
+
+-- 공지에 새로 잇는 모임 확인 — 없으면(연결 안 함) 통과. 이 크루의 번개 · 가려지지 않음 · 차단하지 않은 사람 · 아직 시작 전
+create or replace function public.crew_chat_notice_meeting_check(p_crew uuid, p_meeting bigint)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if p_meeting is not null and not exists (
+    select 1 from public.posts p
+     where p.id = p_meeting and p.crew_id = p_crew and p.category = 'FLASH'
+       and p.meet_at is not null and p.meet_at >= now()
+       and not public.is_hidden('POST', p.id::text) and not public.is_blocked(p.author_id)
+  ) then
+    raise exception 'invalid:meeting' using errcode = '22023', detail = '이 크루의 앞으로의 모임만 이을 수 있습니다';
+  end if;
+end;
+$$;
 create or replace function public.crew_chat_notice_save(
   p_crew uuid,
   p_notice bigint,
@@ -15803,11 +15837,6 @@ begin
   if length(v_body) > 2000 then
     raise exception 'invalid:body' using errcode = '22023', detail = '공지 내용은 2000자까지입니다';
   end if;
-  if p_meeting is not null and not exists (
-    select 1 from public.posts p where p.id = p_meeting and p.crew_id = p_crew and p.category = 'FLASH'
-  ) then
-    raise exception 'invalid:meeting' using errcode = '22023', detail = '이 크루의 모임만 이을 수 있습니다';
-  end if;
 
   if p_notice is null then
     if p_client_key is not null then
@@ -15816,6 +15845,7 @@ begin
         return public.crew_chat_notice_json(v_row);
       end if;
     end if;
+    perform public.crew_chat_notice_meeting_check(p_crew, p_meeting);
     if coalesce(p_pinned, false) then
       update public.crew_chat_notices set pinned = false where crew_id = p_crew and pinned;
     end if;
@@ -15829,6 +15859,9 @@ begin
     select * into v_row from public.crew_chat_notices n where n.id = p_notice and n.crew_id = p_crew for update;
     if not found then
       raise exception 'notice_missing' using errcode = '22023', detail = '공지를 찾을 수 없습니다';
+    end if;
+    if coalesce(p_meeting_change, false) then
+      perform public.crew_chat_notice_meeting_check(p_crew, p_meeting);
     end if;
     if coalesce(p_pinned, false) then
       update public.crew_chat_notices set pinned = false where crew_id = p_crew and pinned and id <> p_notice;
@@ -15872,6 +15905,7 @@ revoke all on function public.crew_home_member(uuid) from public, anon, authenti
 revoke all on function public.crew_meeting_json(public.posts, uuid) from public, anon, authenticated;
 revoke all on function public.crew_week_bounds(date) from public, anon, authenticated;
 revoke all on function public.crew_run_route(text) from public, anon, authenticated;
+revoke all on function public.crew_chat_notice_meeting_check(uuid, bigint) from public, anon, authenticated;
 
 revoke all on function public.crew_home(uuid) from public, anon;
 revoke all on function public.crew_meeting_next(uuid) from public, anon;

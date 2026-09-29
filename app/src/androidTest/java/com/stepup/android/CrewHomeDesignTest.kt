@@ -602,13 +602,14 @@ class CrewHomeDesignTest {
             responses[JUNHO] = "YES"
             listOf(JIYEON, MINSU, "u-10", "u-11", "u-12", "u-13", "u-14").forEach { responses[it] = "YES" }
             noticeMeetings[61] = MEETING_ID
+            // 앱은 참여 기록의 날을 서버처럼 한국 시간의 시작한 날로 묶는다 — 검사 기기(UTC)의 오늘과 한국 날짜가 같은 낮 시간으로
             val today = LocalDate.now(zone)
-            runs += Run(RUN_JIYEON, JIYEON, "지연", 5200.0, 2184, today.atTime(18, 15))
-            runs += Run(72, JUNHO, "준호", 4800.0, 2016, today.atTime(18, 0))
-            runs += Run(73, MINSU, "민수", 3400.0, 1500, today.atTime(17, 40))
-            runs += Run(74, "u-11", "현우", 6000.0, 2280, today.atTime(17, 20))
-            runs += Run(75, "u-10", "서연", 4200.0, 1860, today.atTime(16, 50))
-            runs += Run(76, "u-12", "유진", 5600.0, 2340, today.atTime(16, 15))
+            runs += Run(RUN_JIYEON, JIYEON, "지연", 5200.0, 2184, today.atTime(12, 15))
+            runs += Run(72, JUNHO, "준호", 4800.0, 2016, today.atTime(12, 0))
+            runs += Run(73, MINSU, "민수", 3400.0, 1500, today.atTime(11, 40))
+            runs += Run(74, "u-11", "현우", 6000.0, 2280, today.atTime(11, 20))
+            runs += Run(75, "u-10", "서연", 4200.0, 1860, today.atTime(10, 50))
+            runs += Run(76, "u-12", "유진", 5600.0, 2340, today.atTime(10, 15))
             runs += Run(77, JIYEON, "지연", 6000.0, 2400, monday.minusDays(1).atTime(7, 10))
         }
 

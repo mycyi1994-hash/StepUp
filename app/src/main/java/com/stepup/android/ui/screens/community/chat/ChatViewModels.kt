@@ -802,7 +802,8 @@ data class ChatNoticeForm(
 }
 
 sealed interface ChatNoticeSheet {
-    data class SaveFailed(val busy: Boolean = false) : ChatNoticeSheet
+    /** [meetingGone] — 이으려던 모임이 지워졌거나 · 가려졌거나 · 이미 시작했다(연결을 풀어 두었다) */
+    data class SaveFailed(val busy: Boolean = false, val meetingGone: Boolean = false) : ChatNoticeSheet
     data object KeepDraft : ChatNoticeSheet
     data class Delete(val state: ChatConfirm = ChatConfirm()) : ChatNoticeSheet
 }
@@ -880,10 +881,14 @@ class ChatNoticeEditViewModel(
     fun setBody(text: String) = form.update { it.copy(body = text.take(ChatRules.NOTICE_BODY_MAX)) }
     fun setPinned(on: Boolean) = form.update { it.copy(pinned = on) }
 
+    /** 모임 목록 읽기 — 시트를 닫거나 다시 열면 앞의 읽기를 버린다(닫은 시트가 늦게 다시 뜨지 않게) */
+    private var meetingsJob: kotlinx.coroutines.Job? = null
+
     /** 모임 고르기(4번) — 앞으로의 이 크루 모임을 서버에서 읽는다 */
     fun openMeetings() {
+        meetingsJob?.cancel()
         meetings.value = ChatLoad.Loading
-        viewModelScope.launch {
+        meetingsJob = viewModelScope.launch {
             meetings.value = when (val outcome = ServiceLocator.crewHome.upcoming(crewId)) {
                 is com.stepup.android.data.repo.HomeOutcome.Ok -> ChatLoad.Ready(outcome.value)
                 com.stepup.android.data.repo.HomeOutcome.Ended -> {
@@ -896,10 +901,12 @@ class ChatNoticeEditViewModel(
     }
 
     fun closeMeetings() {
+        meetingsJob?.cancel()
         meetings.value = null
     }
 
     fun pickMeeting(meeting: com.stepup.android.domain.CrewMeeting?) {
+        meetingsJob?.cancel()
         form.update { it.copy(meeting = meeting?.let { m -> ChatNoticeMeeting(m.id, m.title, m.place, m.meetAt) }) }
         meetings.value = null
     }
@@ -909,11 +916,14 @@ class ChatNoticeEditViewModel(
         val current = form.value
         if (!current.ready || saving.value) return
         saving.value = true
-        if (sheet.value is ChatNoticeSheet.SaveFailed) sheet.value = ChatNoticeSheet.SaveFailed(busy = true)
+        (sheet.value as? ChatNoticeSheet.SaveFailed)?.let { sheet.value = it.copy(busy = true) }
+        // 모임은 바꾼 경우에만 보낸다 — 그대로 둔 연결은 서버가 그대로 두고(이어 둔 모임이 그새 시작했어도 글은 고쳐진다),
+        // 새 공지는 고른 모임이 있을 때만
+        val meetingChange = current.meeting?.id != current.originalMeeting
         viewModelScope.launch {
             val outcome = repo.saveNotice(
                 crewId, noticeId, current.title, current.body, current.pinned, clientKey.takeIf { noticeId == null },
-                meetingId = current.meeting?.id, meetingChange = true,
+                meetingId = current.meeting?.id.takeIf { meetingChange }, meetingChange = meetingChange,
             )
             saving.value = false
             when (outcome) {
@@ -926,6 +936,13 @@ class ChatNoticeEditViewModel(
                 is ChatOutcome.NotOwner -> {
                     repo.saveNoticeDraft(null, crewId, noticeId)
                     _ownerLost.value = true
+                }
+                // 이으려던 모임이 없어졌다(지워짐 · 가려짐 · 시작함) — 연결을 풀고 알린다. 다시 저장하면 모임 없이, 또는 새로 고른 모임으로
+                is ChatOutcome.Rejected -> if (outcome.reason.contains("invalid:meeting")) {
+                    form.update { it.copy(meeting = null) }
+                    sheet.value = ChatNoticeSheet.SaveFailed(meetingGone = true)
+                } else {
+                    sheet.value = ChatNoticeSheet.SaveFailed()
                 }
                 else -> sheet.value = ChatNoticeSheet.SaveFailed()
             }

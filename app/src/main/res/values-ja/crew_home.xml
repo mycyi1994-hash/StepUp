@@ -174,4 +174,5 @@
     <string name="chat_notice_meeting_empty">予定された集まりはありません。\nクルー掲示板でフラッシュランを開くとここで選べます。</string>
     <string name="chat_notice_meeting_note">選んだ集まりはお知らせの下にボタンで表示されます。</string>
     <string name="chat_notice_meeting_error">集まりを読み込めませんでした</string>
+    <string name="chat_notice_meeting_gone">つなごうとした集まりが削除されたか、すでに始まったため、つながりを外しました。\nもう一度保存するか、別の集まりを選んでください。</string>
 </resources>

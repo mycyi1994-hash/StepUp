@@ -5780,6 +5780,99 @@ begin
   perform pg_temp.ok((public.crew_home(v_crew)->>'unread')::int = 0, '채팅을 읽고 돌아오면 홈의 미확인은 0');
 end $$;
 
+-- 공지에 새로 잇는 모임은 앞으로의 모임만 — 같은 요청 키로 다시 보내면 확인 전에 먼저 돌려주고,
+-- 이어 둔 모임이 시작한 뒤에 글만 고쳐도 막히지 않는다
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '지난 모임 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mpast')),
+  '이미 시작한 모임은 공지에 새로 이을 수 없다');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; n jsonb; v_key uuid := 'c4900000-0000-0000-0000-0000000000a1';
+begin
+  n := public.crew_chat_notice_save(v_crew, null, '모임 공지', '곧 만나요', false, v_key, pg_temp.fx('mb')::bigint);
+  insert into fix (k, v) values ('n3', n->>'id');
+end $$;
+reset role;
+update public.posts set meet_at = now() - interval '1 minute' where id = pg_temp.fx('mb')::bigint;
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; n jsonb;
+begin
+  n := public.crew_chat_notice_save(v_crew, null, '모임 공지', '곧 만나요', false, 'c4900000-0000-0000-0000-0000000000a1', pg_temp.fx('mb')::bigint);
+  perform pg_temp.ok(n->>'id' = pg_temp.fx('n3'), '같은 요청 키로 다시 보내면 모임이 시작한 뒤라도 처음 공지를 그대로 돌려준다');
+  n := public.crew_chat_notice_save(v_crew, pg_temp.fx('n3')::bigint, '모임 공지', '늦으면 채팅으로', false, null,
+                                    pg_temp.fx('mb')::bigint, false);
+  perform pg_temp.ok(n->>'body' = '늦으면 채팅으로' and n->'meeting'->>'id' = pg_temp.fx('mb'),
+    '이어 둔 모임이 시작한 뒤에도 모임을 바꾸지 않고 글만 고칠 수 있다');
+  n := public.crew_chat_notice_save(v_crew, pg_temp.fx('n3')::bigint, '모임 공지', '늦으면 채팅으로', false, null, null, true);
+  perform pg_temp.ok(n->'meeting' = 'null'::jsonb, '연결 안 함으로 바꾸면 모임이 풀린다');
+  perform public.crew_chat_notice_delete(pg_temp.fx('n3')::bigint);
+end $$;
+reset role;
+update public.posts set meet_at = now() + interval '2 days' where id = pg_temp.fx('mb')::bigint;
+
+-- 신고로 가려진 모임(5건) · 내가 차단한 사람의 모임은 게시판처럼 홈 · 모임 · 공지에서 빠진다
+insert into public.content_reports (reporter_id, target_type, target_id, reason)
+select u, 'POST', pg_temp.fx('mb'), 'SPAM'
+  from unnest(array['4a000000-0000-0000-0000-000000000001', '4a000000-0000-0000-0000-000000000002',
+                    '4a000000-0000-0000-0000-000000000003', '4a000000-0000-0000-0000-000000000004',
+                    '4a000000-0000-0000-0000-000000000005']::uuid[]) u;
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; u jsonb;
+begin
+  u := public.crew_meetings_upcoming(v_crew);
+  perform pg_temp.ok(jsonb_array_length(u) = 1 and u->0->>'id' = pg_temp.fx('ma'), '가려진 모임은 공지에 이을 모임 목록에서 빠진다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('mb')), '가려진 모임은 열리지 않는다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_respond(%s, false) $q$, pg_temp.fx('mb')), '가려진 모임에는 응답할 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_attendees(%s) $q$, pg_temp.fx('mb')), '가려진 모임의 참석자는 볼 수 없다');
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '가려진 모임 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mb')),
+  '가려진 모임은 공지에 이을 수 없다');
+reset role;
+delete from public.content_reports where target_type = 'POST' and target_id = pg_temp.fx('mb');
+insert into public.user_blocks (blocker_id, blocked_id)
+values ('4a000000-0000-0000-0000-000000000002', '4a000000-0000-0000-0000-000000000001');
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; h jsonb;
+begin
+  h := public.crew_home(v_crew);
+  perform pg_temp.ok(h->'meeting' = 'null'::jsonb and h->'notice'->'meeting' = 'null'::jsonb
+                     and jsonb_array_length(public.crew_meetings_upcoming(v_crew)) = 0,
+    '차단한 사람이 연 모임은 다음 러닝 · 공지의 모임 · 모임 목록에서 빠진다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('ma')), '차단한 사람이 연 모임은 열리지 않는다');
+call pg_temp.login('4a000000-0000-0000-0000-000000000003');
+do $$
+declare m jsonb := public.crew_meeting(pg_temp.fx('ma')::bigint);
+begin
+  perform pg_temp.ok(m->>'id' = pg_temp.fx('ma') and public.crew_home(pg_temp.fx('hc')::uuid)->'meeting'->>'id' = pg_temp.fx('ma'),
+    '차단하지 않은 크루원에게는 그대로 보인다');
+end $$;
+reset role;
+delete from public.user_blocks where blocker_id = '4a000000-0000-0000-0000-000000000002';
+-- 준호가 도윤을 차단하면 준호가 보는 참석자 · 얼굴에서 도윤이 빠진다(인원 수는 서버가 센 그대로)
+insert into public.user_blocks (blocker_id, blocked_id)
+values ('4a000000-0000-0000-0000-000000000001', '4a000000-0000-0000-0000-000000000002');
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare m jsonb := public.crew_meeting(pg_temp.fx('ma')::bigint); a jsonb := public.crew_meeting_attendees(pg_temp.fx('ma')::bigint);
+begin
+  perform pg_temp.ok((m->>'attendees')::int = 2 and jsonb_array_length(m->'faces') = 1 and jsonb_array_length(a) = 1
+                     and a->0->>'name' = '준호',
+    '차단한 사람은 참석자 명단 · 얼굴에서 빠지고 인원 수는 그대로');
+end $$;
+reset role;
+delete from public.user_blocks where blocker_id = '4a000000-0000-0000-0000-000000000001';
+set role authenticated;
+
 -- 모임이 취소(글 삭제)되면 공지의 모임이 비고, 홈은 다음 유효 모임 → 없으면 빈 상태(주간 기록은 그대로)
 call pg_temp.login('4a000000-0000-0000-0000-000000000001');
 do $$

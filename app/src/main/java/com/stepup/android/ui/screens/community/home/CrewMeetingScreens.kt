@@ -424,6 +424,13 @@ fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, o
                     Spacer(Modifier.height(14.dp))
                 }
             }
+            // 모임이 취소(삭제)됐다 — 다시 불러와도 같으니 취소 안내
+            HomeLoad.Missing -> CrewEmptyState(
+                icon = { Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+                title = stringResource(R.string.crewhome_meeting_cancelled_title),
+                body = stringResource(R.string.crewhome_meeting_cancelled_body),
+                modifier = Modifier.padding(top = 150.dp).testTag("home-attendees-cancelled"),
+            ) { CrewButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-attendees-back")) }
             else -> ChatRetryState(
                 title = stringResource(R.string.crewhome_attendees_error),
                 body = stringResource(R.string.crewhome_error_body),
@@ -458,6 +465,36 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
             delay(2400)
             toast = null
         }
+    }
+    // 공지에서 바로 온 모임처럼 홈이 들고 있지 않은 모임은 읽기 결과를 그대로 — 취소됐으면 취소, 못 읽었으면 다시 불러오기
+    when (meeting) {
+        HomeLoad.Missing -> {
+            CrewPage(Modifier.testTag("home-place-cancelled")) {
+                CrewTopBar(stringResource(R.string.crewhome_place_bar), onBack)
+                CrewEmptyState(
+                    icon = { Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+                    title = stringResource(R.string.crewhome_meeting_cancelled_title),
+                    body = stringResource(R.string.crewhome_meeting_cancelled_body),
+                    modifier = Modifier.padding(top = 150.dp),
+                ) { CrewButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-place-back")) }
+            }
+            return
+        }
+        HomeLoad.Failed -> {
+            CrewPage(Modifier.testTag("home-place-error")) {
+                CrewTopBar(stringResource(R.string.crewhome_place_bar), onBack)
+                ChatRetryState(
+                    title = stringResource(R.string.crewhome_meeting_load_error),
+                    body = stringResource(R.string.crewhome_error_body),
+                    button = stringResource(R.string.crewhome_error_retry),
+                    onRetry = viewModel::load,
+                    modifier = Modifier.padding(top = 150.dp),
+                    tag = "home-place-load",
+                )
+            }
+            return
+        }
+        else -> Unit
     }
     val noApp = stringResource(R.string.crewhome_place_no_app)
     Box {

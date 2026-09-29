@@ -174,4 +174,5 @@
     <string name="chat_notice_meeting_empty">没有即将进行的聚会。\n在跑团留言板发起快闪跑后可在这里选择。</string>
     <string name="chat_notice_meeting_note">选择的聚会会以按钮形式显示在公告下方。</string>
     <string name="chat_notice_meeting_error">无法加载聚会</string>
+    <string name="chat_notice_meeting_gone">要关联的聚会已被删除或已经开始，已解除关联。\n请重新保存，或选择其他聚会。</string>
 </resources>
