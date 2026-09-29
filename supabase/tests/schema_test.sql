@@ -99,8 +99,8 @@ insert into fix (k, v)
 select 'waitlist-receipt', public.waitlist_register('Waitlist@Test.Example', true, '')->>'receipt';
 do $$
 begin
-  perform pg_temp.must_fail('select * from public.waitlist_entries', '공개 역할은 이메일 목록을 읽지 못한다');
-  perform pg_temp.must_fail(
+  call pg_temp.must_fail('select * from public.waitlist_entries', '공개 역할은 이메일 목록을 읽지 못한다');
+  call pg_temp.must_fail(
     'select public.waitlist_submit_share(''' || pg_temp.fx('waitlist-receipt') || ''', ''x'', ''https://evil.example/post'')',
     '다른 도메인의 공유 주소는 거부한다');
   perform pg_temp.ok(
