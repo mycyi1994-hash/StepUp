@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -544,7 +543,8 @@ private fun ShortcutHalf(
 ) {
     val p = homePalette()
     Row(
-        modifier.fillMaxHeight().heightIn(min = 52.dp).feedbackClickable(role = Role.Button, onClick = onClick)
+        // 줄 높이는 칸이 정한다 — fillMaxHeight 를 쓰면 한 화면 홈(Column)에서 이 줄이 남은 높이를 다 먹어 신발 카드가 사라진다
+        modifier.heightIn(min = 52.dp).feedbackClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
