@@ -5112,6 +5112,358 @@ end $$;
 delete from public.push_tokens where token = 'leader47-token-0000000000000000';
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+-- 0048 크루 채팅 — 크루마다 방 하나 · 지금 멤버만 · 요청 키로 한 번 · 삭제/숨김이 인용 · 검색 · 사진에도 · 공지 고정 하나
+\echo ''
+\echo '── 크루 채팅(0048) ──────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('49000000-0000-0000-0000-000000000001', 'leader48@test', '{"full_name":"준호"}'),
+  ('49000000-0000-0000-0000-000000000002', 'doyun48@test', '{"full_name":"도윤"}'),
+  ('49000000-0000-0000-0000-000000000003', 'minsu48@test', '{"full_name":"민수"}'),
+  ('49000000-0000-0000-0000-000000000004', 'jiyeon48@test', '{"full_name":"지연"}');
+-- 도윤 · 민수는 푸시를 받을 폰이 있다
+insert into public.push_tokens (token, user_id) values
+  ('doyun48-token-00000000000000000', '49000000-0000-0000-0000-000000000002'),
+  ('minsu48-token-00000000000000000', '49000000-0000-0000-0000-000000000003');
+delete from public.push_outbox;
+
+do $$
+begin
+  perform pg_temp.ok(
+    not has_table_privilege('authenticated', 'public.crew_chat_messages', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.crew_chat_messages', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.crew_chat_notices', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.crew_chat_images', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.crew_chat_reads', 'UPDATE'),
+    '채팅 표는 앱이 직접 읽고 쓰지 못한다(함수로만)');
+  perform pg_temp.ok(
+    not has_function_privilege('anon', 'public.crew_chat_send(uuid, uuid, text, bigint, text)', 'execute')
+    and not has_function_privilege('anon', 'public.crew_chat_sync(uuid, bigint)', 'execute')
+    and has_function_privilege('authenticated', 'public.crew_chat_send(uuid, uuid, text, bigint, text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_chat_next_rev(uuid)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_chat_member(uuid, boolean)', 'execute'),
+    '로그인 전에는 채팅 함수를 못 부르고, 안쪽 도움 함수는 앱이 부르지 못한다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid;
+begin
+  v_crew := public.crew_create_card('퇴근런', '퇴근 후 한 바퀴', '', null, null, '공덕동', null, null, 0, null, null, '{}', 30);
+  insert into fix (k, v) values ('ch', v_crew::text);
+end $$;
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(exists (select 1 from public.crew_chat_rooms r where r.crew_id = pg_temp.fx('ch')::uuid),
+    '크루를 만들면 방이 함께 생긴다');
+end $$;
+insert into public.crew_members (crew_id, user_id, role) values
+  (pg_temp.fx('ch')::uuid, '49000000-0000-0000-0000-000000000002', 'MEMBER'),
+  (pg_temp.fx('ch')::uuid, '49000000-0000-0000-0000-000000000003', 'MEMBER');
+set role authenticated;
+
+-- 크루장만 있던 방 — 혼자여도 인사를 남길 수 있다
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; r jsonb; s jsonb; v_rooms jsonb;
+begin
+  s := public.crew_chat_sync(v_crew, null);
+  perform pg_temp.ok((s->>'reset')::boolean and jsonb_array_length(s->'messages') = 0
+                     and s->'room'->>'role' = 'OWNER' and (s->'room'->>'member_count')::int = 3
+                     and s->'room'->>'name' = '퇴근런' and (s->'room'->>'notify')::boolean,
+    '처음 열면 방 정보(이름 · 크루장 · 지금 인원 3명 · 내 알림 켜짐)와 빈 대화');
+  r := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000001', E'  오늘은 공덕역 2번 출구에서\n만나요. 7시 30분에 출발해요!  ');
+  insert into fix (k, v) values ('m1', r->>'id');
+  perform pg_temp.ok(r->>'body' = E'오늘은 공덕역 2번 출구에서\n만나요. 7시 30분에 출발해요!'
+                     and r->>'state' = 'VISIBLE' and r->>'kind' = 'TEXT'
+                     and r->>'client_id' = 'c0000000-0000-0000-0000-000000000001'
+                     and (r->>'can_delete')::boolean,
+    '보낸 글은 앞뒤 공백을 떼고 여러 줄을 지킨다 · 내 요청 키와 삭제 가능 여부가 온다');
+  s := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000001', '다른 글');
+  perform pg_temp.ok(s->>'id' = r->>'id'
+                     and jsonb_array_length(public.crew_chat_sync(v_crew, null)->'messages') = 1,
+    '같은 요청 키로 다시 보내면 처음 메시지 하나다(재전송 중복 없음)');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_send('%s', 'c0000000-0000-0000-0000-0000000000ff', E'  \n ') $q$, pg_temp.fx('ch')),
+  '공백만 있으면 보낼 수 없다');
+
+-- 도윤(크루원)
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; r jsonb; s jsonb; v_rooms jsonb; v_room jsonb;
+begin
+  v_rooms := public.crew_chat_rooms();
+  v_room := v_rooms->0;
+  perform pg_temp.ok(jsonb_array_length(v_rooms) = 1 and v_room->>'crew_id' = v_crew::text
+                     and v_room->>'role' = 'MEMBER' and (v_room->>'member_count')::int = 3,
+    '대화 목록에는 내가 가입한 크루만 보인다(내 역할 · 지금 인원)');
+  s := public.crew_chat_sync(v_crew, null);
+  perform pg_temp.ok(jsonb_array_length(s->'messages') = 1 and s->'messages'->0->>'client_id' is null
+                     and not (s->'messages'->0->>'can_delete')::boolean
+                     and s->'room'->>'owner_id' = '49000000-0000-0000-0000-000000000001',
+    '남의 메시지에는 요청 키 · 삭제 가능이 오지 않는다 · 크루장 표시는 방 정보의 크루장으로');
+  insert into fix (k, v) values ('rev_a', s->>'last_rev');
+  r := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000002', '좋아요! 저는 5분 정도 먼저 가 있을게요.');
+  insert into fix (k, v) values ('m2', r->>'id');
+  s := public.crew_chat_sync(v_crew, pg_temp.fx('rev_a')::bigint);
+  perform pg_temp.ok(not (s->>'reset')::boolean and jsonb_array_length(s->'messages') = 1
+                     and s->'messages'->0->>'id' = r->>'id',
+    '따라오기는 마지막 변경 번호 뒤의 것만 준다');
+end $$;
+
+-- 민수가 도윤의 글에 답장
+call pg_temp.login('49000000-0000-0000-0000-000000000003');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; r jsonb;
+begin
+  r := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000003', '네, 2번 출구에서 뵐게요.', pg_temp.fx('m2')::bigint);
+  insert into fix (k, v) values ('m3', r->>'id');
+  perform pg_temp.ok(r->'reply'->>'id' = pg_temp.fx('m2') and r->'reply'->>'author_name' = '도윤'
+                     and r->'reply'->>'body' = '좋아요! 저는 5분 정도 먼저 가 있을게요.' and r->'reply'->>'state' = 'VISIBLE',
+    '답장은 원문(보낸 사람 · 내용 일부)을 함께 싣는다');
+  r := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000004', '공덕역에서 출발하나요? 100%_확실?');
+  insert into fix (k, v) values ('m4', r->>'id');
+end $$;
+
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_delete(%s) $q$, pg_temp.fx('m2')),
+  '남의 메시지는 지울 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_hide(%s) $q$, pg_temp.fx('m2')),
+  '크루원은 메시지를 숨길 수 없다(크루장만)');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '몰래 공지', '', true) $q$, pg_temp.fx('ch')),
+  '크루원은 공지를 올릴 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_report(%s, 'SPAM') $q$, pg_temp.fx('m3')),
+  '내 메시지는 신고하지 않는다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_report(%s, 'NOPE') $q$, pg_temp.fx('m2')),
+  '정해진 신고 사유만 받는다');
+
+do $$
+begin
+  perform public.crew_chat_report(pg_temp.fx('m2')::bigint, 'ABUSE');
+  perform public.crew_chat_report(pg_temp.fx('m2')::bigint, 'ABUSE');
+  perform pg_temp.ok(
+    (select count(*) from public.crew_chat_search(pg_temp.fx('ch')::uuid, '100%_') x) = 1
+    and jsonb_array_length(public.crew_chat_search(pg_temp.fx('ch')::uuid, '100%_')) = 1
+    and jsonb_array_length(public.crew_chat_search(pg_temp.fx('ch')::uuid, '0%')) = 1
+    and jsonb_array_length(public.crew_chat_search(pg_temp.fx('ch')::uuid, '공덕역')) = 2
+    and jsonb_array_length(public.crew_chat_search(pg_temp.fx('ch')::uuid, '내일 아침')) = 0,
+    '대화 검색은 이 방의 글에서 찾고(%, _ 는 글자 그대로), 없으면 빈 결과');
+end $$;
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.content_reports r
+                       where r.target_type = 'CHAT' and r.target_id = pg_temp.fx('m2') and r.reason = 'ABUSE') = 1,
+    '채팅 신고는 신고함에 한 건으로 쌓인다');
+end $$;
+set role authenticated;
+
+-- 도윤이 내 메시지를 지운다 → 민수의 답장 인용도 삭제 상태로 바뀐다
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; r jsonb; s jsonb; v_reply jsonb; v_before bigint;
+begin
+  v_before := (public.crew_chat_sync(v_crew, null)->>'last_rev')::bigint;
+  r := public.crew_chat_delete(pg_temp.fx('m2')::bigint);
+  perform pg_temp.ok(r->>'state' = 'DELETED' and r->>'body' is null and not (r->>'can_delete')::boolean
+                     and (r->>'seq')::bigint < v_before,
+    '내 메시지를 지우면 내용 대신 삭제 표시(순서 · 시간은 그대로)');
+  s := public.crew_chat_sync(v_crew, v_before);
+  select m into v_reply from jsonb_array_elements(s->'messages') m where m->>'id' = pg_temp.fx('m3');
+  perform pg_temp.ok(v_reply is not null and v_reply->'reply'->>'state' = 'DELETED' and v_reply->'reply'->>'body' is null,
+    '지운 원문을 인용한 답장도 다시 내려오고, 인용 내용은 보이지 않는다');
+  perform pg_temp.ok(jsonb_array_length(public.crew_chat_search(v_crew, '5분 정도')) = 0,
+    '지운 메시지는 검색에서도 빠진다');
+end $$;
+
+-- 사진 — 방에 들어갈 수 있는 사람만 크게 본다
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; r jsonb;
+begin
+  r := public.crew_chat_send(v_crew, 'c0000000-0000-0000-0000-000000000005', '크루 사진 이걸로 어때요?', null, '/9j/4AAQSkZJRgABAQ==');
+  insert into fix (k, v) values ('m5', r->>'id');
+  perform pg_temp.ok(r->>'kind' = 'IMAGE' and (r->>'has_image')::boolean and r->>'body' = '크루 사진 이걸로 어때요?'
+                     and public.crew_chat_image((r->>'id')::bigint) = '/9j/4AAQSkZJRgABAQ==',
+    '사진과 설명은 한 메시지 · 크루원은 원본을 받는다');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_send('%s', 'c0000000-0000-0000-0000-000000000006', '', null, 'not-an-image') $q$, pg_temp.fx('ch')),
+  '사진이 아닌 값은 보낼 수 없다');
+
+-- 지연(방 밖의 사람)
+call pg_temp.login('49000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail(format($q$ select public.crew_chat_sync('%s', null) $q$, pg_temp.fx('ch')), '멤버가 아니면 대화를 읽을 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_send('%s', 'c0000000-0000-0000-0000-000000000007', '안녕하세요') $q$, pg_temp.fx('ch')), '멤버가 아니면 보낼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_image(%s) $q$, pg_temp.fx('m5')), '멤버가 아니면 사진을 받을 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_search('%s', '공덕') $q$, pg_temp.fx('ch')), '멤버가 아니면 검색할 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_notices('%s') $q$, pg_temp.fx('ch')), '멤버가 아니면 공지를 볼 수 없다');
+do $$
+begin
+  perform pg_temp.ok(jsonb_array_length(public.crew_chat_rooms()) = 0, '가입한 크루가 없으면 대화 목록이 비어 있다');
+end $$;
+
+-- 크루장 · 공지와 숨김
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; n1 jsonb; n2 jsonb; again jsonb; r jsonb; s jsonb; v_line bigint;
+begin
+  n1 := public.crew_chat_notice_save(v_crew, null, '오늘 같이 달려요', E'오늘 저녁 7시 30분에 출발해요.\n\n공덕역 2번 출구에서 만나요.', true,
+    'd0000000-0000-0000-0000-000000000001');
+  again := public.crew_chat_notice_save(v_crew, null, '오늘 같이 달려요', '', true, 'd0000000-0000-0000-0000-000000000001');
+  perform pg_temp.ok(again->>'id' = n1->>'id'
+                     and (select count(*) from jsonb_array_elements(public.crew_chat_sync(v_crew, null)->'messages') m
+                           where m->>'event' = 'NOTICE_CREATED') = 1,
+    '같은 요청 키로 다시 올려도 공지 하나 · 대화의 등록 안내도 한 줄');
+  s := public.crew_chat_sync(v_crew, null);
+  perform pg_temp.ok(s->'room'->'pinned'->>'id' = n1->>'id' and (s->'room'->>'notice_count')::int = 1
+                     and exists (select 1 from jsonb_array_elements(s->'messages') m
+                                  where m->>'kind' = 'SYSTEM' and m->>'event' = 'NOTICE_CREATED' and m->>'event_name' = '준호'),
+    '고정 공지가 방 위에 오고, 대화에 "준호 님이 새 공지를 등록했어요." 한 줄');
+  n2 := public.crew_chat_notice_save(v_crew, null, '오늘은 러닝을 쉬어요', '오늘은 비가 와서 러닝을 쉬어요.', true);
+  perform pg_temp.ok((select not (x->>'pinned')::boolean from jsonb_array_elements(public.crew_chat_notices(v_crew)) x
+                        where x->>'id' = n1->>'id')
+                     and (n2->>'pinned')::boolean
+                     and jsonb_array_length(public.crew_chat_notices(v_crew)) = 2,
+    '새 공지를 고정하면 이전 고정은 풀리고 이전 공지는 목록에 남는다');
+  r := public.crew_chat_notice_save(v_crew, (n1->>'id')::bigint, '오늘 같이 달려요', '7시 30분 출발', false);
+  perform pg_temp.ok(r->>'body' = '7시 30분 출발' and not (r->>'pinned')::boolean
+                     and (select (x->>'pinned')::boolean from jsonb_array_elements(public.crew_chat_notices(v_crew)) x
+                           where x->>'id' = n2->>'id'),
+    '공지를 고쳐도 다른 공지의 고정은 그대로다');
+  perform pg_temp.ok((public.crew_chat_notices(v_crew)->0->>'id') = n2->>'id',
+    '공지 모아보기는 고정 공지가 먼저');
+  perform public.crew_chat_notice_delete((n2->>'id')::bigint);
+  s := public.crew_chat_sync(v_crew, null);
+  perform pg_temp.ok(s->'room'->'pinned' = 'null'::jsonb and (s->'room'->>'notice_count')::int = 1
+                     and (select count(*) from jsonb_array_elements(s->'messages') m where m->>'kind' <> 'SYSTEM') = 5,
+    '공지를 지우면 공지와 고정만 사라지고 대화는 그대로다');
+
+  -- 숨기기 — 민수의 메시지만, 민수는 그대로 멤버
+  r := public.crew_chat_hide(pg_temp.fx('m4')::bigint);
+  perform pg_temp.ok(r->>'state' = 'HIDDEN' and r->>'body' is null
+                     and exists (select 1 from public.crew_members where crew_id = v_crew and user_id = '49000000-0000-0000-0000-000000000003'),
+    '크루장이 숨기면 내용은 누구에게도 보내지 않고, 작성자의 소속은 그대로다');
+  perform pg_temp.ok(jsonb_array_length(public.crew_chat_search(v_crew, '100%_')) = 0,
+    '숨긴 메시지는 검색에서도 빠진다');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_hide(%s) $q$, pg_temp.fx('m1')),
+  '크루장은 자기 메시지를 숨기지 않는다(삭제로 지운다)');
+
+-- 알림 — 도윤은 이 방 알림을 끈다. 같은 방의 아직 안 나간 알림은 한 줄로 합친다
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+begin
+  perform public.crew_chat_notify_set(pg_temp.fx('ch')::uuid, false);
+  perform pg_temp.ok(not (public.crew_chat_sync(pg_temp.fx('ch')::uuid, null)->'room'->>'notify')::boolean,
+    '내 채팅 알림을 끈다');
+end $$;
+reset role;
+delete from public.push_outbox;
+set role authenticated;
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+begin
+  perform public.crew_chat_send(pg_temp.fx('ch')::uuid, 'c0000000-0000-0000-0000-000000000011', '천천히 오세요.');
+  perform public.crew_chat_send(pg_temp.fx('ch')::uuid, 'c0000000-0000-0000-0000-000000000012', '같이 출발해요.');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox where user_id = '49000000-0000-0000-0000-000000000002') = 0
+    and (select count(*) from public.push_outbox where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT') = 1
+    and (select args->>'text' from public.push_outbox where user_id = '49000000-0000-0000-0000-000000000003') = '같이 출발해요.'
+    and (select link from public.push_outbox where user_id = '49000000-0000-0000-0000-000000000003') = 'crew-chat/' || pg_temp.fx('ch'),
+    '알림을 끈 사람에게는 가지 않고, 켠 사람에게는 같은 방 알림이 최신 한 줄로 합쳐진다');
+end $$;
+set role authenticated;
+
+-- 읽음 — 민수가 끝까지 읽으면 목록의 미확인 수가 0
+call pg_temp.login('49000000-0000-0000-0000-000000000003');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; v_room jsonb; v_last bigint;
+begin
+  v_room := public.crew_chat_rooms()->0;
+  perform pg_temp.ok((v_room->>'unread')::int = 3 and v_room->'last'->>'body' = '같이 출발해요.',
+    '목록의 미확인 수는 내가 읽지 않은 남의 메시지만(내 메시지 · 알림 줄 · 삭제 · 숨김은 빼고)');
+  v_last := (public.crew_chat_sync(v_crew, null)->>'last_rev')::bigint;
+  perform public.crew_chat_read(v_crew, v_last + 100);
+  v_room := public.crew_chat_rooms()->0;
+  perform pg_temp.ok((v_room->>'unread')::int = 0
+                     and (public.crew_chat_sync(v_crew, null)->'room'->>'my_read_seq')::bigint = v_last,
+    '읽은 위치는 방의 마지막을 넘지 않고, 다 읽으면 미확인 0');
+  perform pg_temp.ok(jsonb_array_length(public.crew_chat_confirm(v_crew,
+                       array['c0000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-0000000000ee']::uuid[])) = 1,
+    '연결이 끊겼을 때 보내던 메시지는 서버가 받은 것만 확인된다');
+end $$;
+
+-- 크루장이 민수를 내보낸다 → 대화에 한 줄, 민수는 바로 참여 종료
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('ch')::uuid; s jsonb;
+begin
+  perform public.crew_member_remove(v_crew, '49000000-0000-0000-0000-000000000003');
+  s := public.crew_chat_sync(v_crew, null);
+  perform pg_temp.ok((s->'room'->>'member_count')::int = 2
+                     and s->'messages'->-1->>'event' = 'MEMBER_LEFT' and s->'messages'->-1->>'event_name' = '민수',
+    '내보내면 인원이 줄고 대화에 "민수 님이 크루에서 나갔어요." 한 줄');
+end $$;
+call pg_temp.login('49000000-0000-0000-0000-000000000003');
+call pg_temp.must_fail(format($q$ select public.crew_chat_sync('%s', null) $q$, pg_temp.fx('ch')), '내보내진 사람은 바로 대화를 읽을 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_image(%s) $q$, pg_temp.fx('m5')), '내보내진 사람은 사진도 받을 수 없다');
+do $$
+begin
+  perform pg_temp.ok(jsonb_array_length(public.crew_chat_rooms()) = 0, '내보내진 사람의 대화 목록에서 방이 빠진다');
+end $$;
+
+-- 크루장을 넘기면 숨기기 · 공지는 새 크루장만
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+begin
+  perform public.crew_transfer_owner(pg_temp.fx('ch')::uuid, '49000000-0000-0000-0000-000000000002');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '넘긴 뒤 공지', '', false) $q$, pg_temp.fx('ch')),
+  '크루장을 넘긴 뒤에는 공지를 올릴 수 없다(크루원으로 돌아간다)');
+do $$
+begin
+  perform pg_temp.ok((public.crew_chat_sync(pg_temp.fx('ch')::uuid, null)->'room'->>'role') = 'MEMBER',
+    '넘긴 사람은 크루원으로 계속 대화한다');
+end $$;
+
+-- 해산하면 방과 대화 · 공지 · 사진이 함께 사라진다
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+begin
+  perform public.crew_dissolve(pg_temp.fx('ch')::uuid);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    not exists (select 1 from public.crew_chat_rooms where crew_id = pg_temp.fx('ch')::uuid)
+    and not exists (select 1 from public.crew_chat_messages where crew_id = pg_temp.fx('ch')::uuid)
+    and not exists (select 1 from public.crew_chat_images where message_id = pg_temp.fx('m5')::bigint),
+    '해산하면 방 · 대화 · 사진이 함께 지워진다');
+end $$;
+delete from public.push_tokens where token in ('doyun48-token-00000000000000000', 'minsu48-token-00000000000000000');
+delete from public.push_outbox;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

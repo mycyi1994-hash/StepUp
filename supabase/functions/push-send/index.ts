@@ -34,6 +34,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_REQUEST: (a) => ["가입 신청", `${a.name}님이 ${a.crew} 크루에 가입을 신청했어요`],
     PARTY_OPEN: (a) => ["파티런 로비가 열렸어요 🏃", `${a.name}님이 ${a.crew} 파티런을 열었어요. 같이 달려요!`],
     CREW_FLASH: (a) => ["크루 번개 ⚡", `${a.name}: ${a.title}`],
+    CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 사진을 보냈어요` : `${a.name}: ${a.text}`],
   },
   en: {
     WALLET_LINKED: (a) => ["Wallet linked 🔐", `Wallet ${a.address} was linked to your account. If this wasn't you, contact support now`],
@@ -42,6 +43,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_REQUEST: (a) => ["Join request", `${a.name} wants to join ${a.crew}`],
     PARTY_OPEN: (a) => ["Party run lobby is open 🏃", `${a.name} opened a ${a.crew} party run. Join in!`],
     CREW_FLASH: (a) => ["Crew flash run ⚡", `${a.name}: ${a.title}`],
+    CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: sent a photo` : `${a.name}: ${a.text}`],
   },
   ja: {
     WALLET_LINKED: (a) => ["ウォレットを連携しました 🔐", `ウォレット ${a.address} がアカウントに連携されました。心当たりがない場合はすぐにサポートへご連絡ください`],
@@ -50,6 +52,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_REQUEST: (a) => ["参加申請", `${a.name}さんが${a.crew}への参加を申請しました`],
     PARTY_OPEN: (a) => ["パーティーランのロビーが開きました 🏃", `${a.name}さんが${a.crew}のパーティーランを開きました`],
     CREW_FLASH: (a) => ["クルーのフラッシュラン ⚡", `${a.name}: ${a.title}`],
+    CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 写真を送りました` : `${a.name}: ${a.text}`],
   },
   zh: {
     WALLET_LINKED: (a) => ["钱包已绑定 🔐", `钱包 ${a.address} 已绑定到你的账户。如非本人操作，请立即联系客服`],
@@ -58,6 +61,7 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_REQUEST: (a) => ["加入申请", `${a.name} 申请加入 ${a.crew}`],
     PARTY_OPEN: (a) => ["组队跑大厅已开启 🏃", `${a.name} 开启了 ${a.crew} 组队跑，一起来吧！`],
     CREW_FLASH: (a) => ["跑团闪电跑 ⚡", `${a.name}: ${a.title}`],
+    CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 发送了一张照片` : `${a.name}: ${a.text}`],
   },
 };
 
@@ -135,7 +139,10 @@ async function send(
         notification: { title, body },
         // 앱이 켜져 있을 때는 PushService 가 이 값으로 띄우고, 누르면 link 로 간다
         data: { title, body, link },
-        android: { notification: { channel_id: "community" } },
+        // 크루 채팅은 방마다 알림 하나 — 같은 방의 새 알림이 앞의 것을 바꾼다
+        android: {
+          notification: { channel_id: "community", ...(link.startsWith("crew-chat/") ? { tag: link } : {}) },
+        },
       },
     }),
   });
