@@ -328,15 +328,13 @@ class CrewHomeDesignTest {
             tapTag("crew-sheet-close")
             awaitGone("home-leave")
 
-            // 내보내졌다 — 다시 읽으면 접근 종료(기존 66)
+            // 내보내졌다 — 다음 읽기(주간 기록)에서 접근 종료(기존 66), 이 폰의 그 크루 홈 · 채팅은 지운다
             server.kick(DOYUN)
-            pressBack()
-            pressBack()
-            pressBack()
-            awaitTag("crew-card-afterwork")
-            tapTag("crew-card-afterwork")
+            tapTag("home-week")
             awaitTag("crew-missing")
             shot("32-access-ended")
+            assertTrue(ServiceLocator.crewHome.homeNow("afterwork") == null)
+            assertTrue(ServiceLocator.crewChat.snapshot("afterwork") == null)
         }
     }
 
