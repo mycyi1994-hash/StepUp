@@ -18,6 +18,11 @@ Bright, simple Toss-inspired registration; larger-bonus and all-three special-be
 - Browser checks at 1440×1100, 390×844 and 320×740: all six submissions, client URL rejection, failed save + retry, 3/3 state, refresh restore, zero page errors and horizontal overflow. Separate captures cover registration, sharing and completion.
 - Design contract (104 routes), string-resource check, JS syntax and diff whitespace checks passed.
 - SQL tests added for six platforms, privacy, invalid receipts, duplicate URLs, normalization, candidate flags and verified-claim immutability. CI applies the full schema twice.
+- PR #69: server schema CI passed (run 36600695790), web/contract/attester CI passed (run 36600695949), Cloudflare preview deployment passed. Native image-share payload, Threads intent and creator copy were also checked with browser API stubs.
 - Native OS share sheets and actual social account posting require the visitor's device/account; tested through browser fallbacks and request boundaries, not by publishing to user accounts. Link preview rendering can depend on platform cache.
 
 Local browser evidence: `output/stepup-waitlist-implementation/creator-{desktop,mobile,small}-{register,share,completed}.png` in the chat workspace.
+
+## Deployment tracking
+
+PR #69 merged as `e0cffc9`. The merge did not start a production deployment, so the existing server deploy workflow was dispatched on `main` (run 36601450090). This documentation commit also provides a normal Git push to resume the hosting integration. Live verification is performed after the deployments finish.
