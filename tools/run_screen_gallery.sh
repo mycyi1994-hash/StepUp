@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards crew-chat; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -167,6 +167,15 @@ if [[ "$suite" == "community" ]]; then
     cp -R app/build/outputs/androidTest-results/. "screen-gallery/crew-cards-results/$part/" || true
   done
   pull_captures /sdcard/Android/data/com.stepup.android/files/crew-cards/. screen-gallery/crew-cards/ || status=1
+  # 크루 채팅(2026-09-29) — 커뮤니티 세 번째 탭 · 대화(크루원 도윤 · 크루장 준호 시점) · 정보 · 공지 · 검색 · 사진 · 관리의
+  # 시안 번호별 장면(01~44). 가짜 서버로 찍고, 검사 함수마다 나눠 돌린다
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for part in memberRoom memberPhotoAndReport memberInfo memberEnded ownerRoom; do
+    run_instrumentation "crew-chat-$part" "com.stepup.android.CrewChatDesignTest#$part"
+    mkdir -p "screen-gallery/crew-chat-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/crew-chat-results/$part/" || true
+  done
+  pull_captures /sdcard/Android/data/com.stepup.android/files/crew-chat/. screen-gallery/crew-chat/ || status=1
   # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
   run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
   mkdir -p screen-gallery/profile-results

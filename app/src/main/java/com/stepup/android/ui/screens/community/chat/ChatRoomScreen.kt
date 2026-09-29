@@ -163,9 +163,12 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
     }
 
     // 고른 사진 → 보낼 모양으로 → 26 확인. 읽을 수 없거나 접근이 막혔으면 안내(글 대화는 그대로)
-    fun handlePicked(uri: Uri) {
+    fun handlePicked(uri: Uri, taken: File? = null) {
         scope.launch {
-            when (prepareChatPhoto(context, crewId, uri)) {
+            val loaded = prepareChatPhoto(context, crewId, uri)
+            // 카메라로 찍은 원본은 보낼 모양으로 옮긴 뒤 지운다(캐시에 쌓이지 않게)
+            taken?.delete()
+            when (loaded) {
                 is CrewPhotos.Loaded.Ok -> actions.onPhoto()
                 CrewPhotos.Loaded.Broken -> photoProblem = PROBLEM_BROKEN
                 CrewPhotos.Loaded.Denied -> photoProblem = PROBLEM_DENIED
@@ -177,10 +180,10 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
         if (uri != null) handlePicked(uri)
     }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val path = cameraPath
-        if (ok && path != null) {
-            runCatching { FileProvider.getUriForFile(context, "${context.packageName}.share", File(path)) }.getOrNull()?.let(::handlePicked)
-        }
+        val file = cameraPath?.let(::File)
+        cameraPath = null
+        val uri = if (ok && file != null) runCatching { FileProvider.getUriForFile(context, "${context.packageName}.share", file) }.getOrNull() else null
+        if (uri != null) handlePicked(uri, taken = file) else file?.delete()
     }
     val cameraMissing = stringResource(R.string.chat_camera_missing)
     val pickPhoto: () -> Unit = {
@@ -413,22 +416,21 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
     }
 }
 
-/** 30 머리 — 가운데 크루 이름, 오른쪽 "정보" */
+/** 30 머리 — 가운데 크루 이름, 오른쪽 "정보"(공통 머리) */
 @Composable
 private fun ChatSoloHeader(name: String, onBack: () -> Unit, onInfo: () -> Unit) {
     val ink = crewInk()
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        ChatBackButton(onBack)
-        Text(
-            name, color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-        )
-        Box(
-            Modifier.size(width = 56.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(role = Role.Button, onClick = onInfo)
-                .testTag("chat-solo-info"),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.chat_solo_info), color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-    }
+    com.stepup.android.ui.components.SecondaryHeader(
+        onBack = onBack, balance = null, onOpenWallet = null, title = name,
+        modifier = Modifier.padding(horizontal = 8.dp),
+        trailing = {
+            Box(
+                Modifier.size(width = 56.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(role = Role.Button, onClick = onInfo)
+                    .testTag("chat-solo-info"),
+                contentAlignment = Alignment.Center,
+            ) { Text(stringResource(R.string.chat_solo_info), color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+        },
+    )
 }
 
 /** 30 혼자 있는 새 크루 — 첫 인사를 남길 수 있다. 크루장에게만 "크루 모집하기"(기존 모집 설정) */

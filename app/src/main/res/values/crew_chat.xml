@@ -20,7 +20,6 @@
 
     <string name="chat_members_count">%1$d members</string>
     <string name="chat_more">Chat info</string>
-    <string name="chat_back_list">Chat list</string>
     <string name="chat_notice_label">Notice</string>
     <string name="chat_notice_manage">Manage</string>
     <string name="chat_day_pattern">EEEE, MMMM d</string>
@@ -85,7 +84,6 @@
     <string name="chat_selected">Selected</string>
     <string name="chat_report_send">Report</string>
     <string name="chat_report_error">Couldn\'t send the report. Please try again.</string>
-    <string name="chat_report_sent_bar">Notice</string>
     <string name="chat_report_sent_title">Report received</string>
     <string name="chat_report_sent_body">We\'ll review the message and reason.</string>
     <string name="chat_back_to_room">Back to chat</string>
@@ -148,7 +146,6 @@
     <string name="chat_member_owner">Leader</string>
     <string name="chat_member_me">Me</string>
     <string name="chat_member_member">Running member</string>
-    <string name="chat_members_more">Scroll down to see more members.</string>
     <string name="chat_members_error">Couldn\'t load members</string>
     <string name="chat_profile_bar">Member profile</string>
     <string name="chat_profile_role">%1$s %2$s</string>

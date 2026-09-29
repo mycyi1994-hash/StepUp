@@ -22,6 +22,16 @@ if 'CrewRoutes.ALL.map' in policy:
         errors.append(f'Crew route policy mismatch: missing={crew_registered-crew_listed}, stale={crew_listed-crew_registered}')
     if 'it' in declared:
         declared.remove('it')
+# 크루 채팅도 같은 방식(chatGraph · ChatRoutes.ALL)
+if 'ChatRoutes.ALL.map' in policy:
+    chat_graph = (UI/'screens/community/chat/ChatNavGraph.kt').read_text(encoding='utf-8')
+    chat_registered = set(re.findall(r'composable\(\s*(ChatRoutes\.[A-Z_]+)', chat_graph))
+    chat_all = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', chat_graph)
+    chat_listed = {f'ChatRoutes.{name.strip()}' for name in chat_all.group(1).split(',') if name.strip()} if chat_all else set()
+    if not chat_registered or chat_registered != chat_listed:
+        errors.append(f'Chat route policy mismatch: missing={chat_registered-chat_listed}, stale={chat_listed-chat_registered}')
+    if 'it' in declared:
+        declared.remove('it')
 if registered != set(declared):
     errors.append(f'Route policy mismatch: missing={registered-set(declared)}, stale={set(declared)-registered}')
 if len(declared) != len(set(declared)):

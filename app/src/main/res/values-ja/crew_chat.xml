@@ -20,7 +20,6 @@
 
     <string name="chat_members_count">メンバー%1$d人</string>
     <string name="chat_more">トークルーム情報</string>
-    <string name="chat_back_list">トーク一覧</string>
     <string name="chat_notice_label">お知らせ</string>
     <string name="chat_notice_manage">管理</string>
     <string name="chat_day_pattern">M月d日 EEEE</string>
@@ -85,7 +84,6 @@
     <string name="chat_selected">選択中</string>
     <string name="chat_report_send">報告する</string>
     <string name="chat_report_error">報告を送れませんでした。もう一度お試しください。</string>
-    <string name="chat_report_sent_bar">お知らせ</string>
     <string name="chat_report_sent_title">報告を受け付けました</string>
     <string name="chat_report_sent_body">選択したメッセージと理由を確認します。</string>
     <string name="chat_back_to_room">トークに戻る</string>
@@ -148,7 +146,6 @@
     <string name="chat_member_owner">リーダー</string>
     <string name="chat_member_me">自分</string>
     <string name="chat_member_member">一緒に走るメンバー</string>
-    <string name="chat_members_more">下にスクロールすると他のメンバーが見られます。</string>
     <string name="chat_members_error">メンバーを読み込めませんでした</string>
     <string name="chat_profile_bar">メンバーのプロフィール</string>
     <string name="chat_profile_role">%1$s %2$s</string>

@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
@@ -80,13 +79,13 @@ import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRules
 import com.stepup.android.domain.ChatState
 import com.stepup.android.domain.CrewCard
+import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.crew.CrewGutter
 import com.stepup.android.ui.screens.community.crew.CrewImage
 import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.theme.StepUpColors
-import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.StepUpSans
 import java.time.Instant
 import java.time.LocalDate
@@ -159,57 +158,47 @@ internal val ChatGutter = 16.dp
 
 // ── 머리 ─────────────────────────────────────────────────────
 
-/** 02 · 03 머리 — 뒤로 · 크루 이미지 · 이름 · "크루원 25명"(지금 크루원 수) · 더보기(04 · 05) */
+/** 02 · 03 머리 — 뒤로(공통 머리) · 크루 이미지 · 이름 · "크루원 25명"(지금 크루원 수) · 더보기(04 · 05) */
 @Composable
 internal fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Unit, onInfo: (() -> Unit)?) {
     val ink = crewInk()
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight).padding(start = 8.dp, end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ChatBackButton(onBack)
-        Row(
-            Modifier.weight(1f).heightIn(min = 58.dp).clip(RoundedCornerShape(12.dp))
-                .feedbackClickable(enabled = onInfo != null, role = Role.Button) { onInfo?.invoke() }
-                .padding(horizontal = 2.dp, vertical = 6.dp).testTag("chat-room-title"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (card != null) CrewImage(card, 42.dp, 11.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(card?.name.orEmpty(), color = ink.text, fontSize = 20.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (memberCount != null) {
-                    Text(
-                        stringResource(R.string.chat_members_count, memberCount), color = ink.secondary, fontSize = 11.sp,
-                        maxLines = 1, modifier = Modifier.testTag("chat-room-count"),
-                    )
+    val label = stringResource(R.string.chat_more)
+    SecondaryHeader(
+        onBack = onBack, balance = null, onOpenWallet = null,
+        modifier = Modifier.padding(horizontal = 8.dp),
+        titleContent = {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 58.dp).clip(RoundedCornerShape(12.dp))
+                    .feedbackClickable(enabled = onInfo != null, role = Role.Button) { onInfo?.invoke() }
+                    .padding(horizontal = 2.dp, vertical = 6.dp).testTag("chat-room-title"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (card != null) CrewImage(card, 42.dp, 11.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(card?.name.orEmpty(), color = ink.text, fontSize = 20.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (memberCount != null) {
+                        Text(
+                            stringResource(R.string.chat_members_count, memberCount), color = ink.secondary, fontSize = 11.sp,
+                            maxLines = 1, modifier = Modifier.testTag("chat-room-count"),
+                        )
+                    }
                 }
             }
-        }
-        if (onInfo != null) {
-            val label = stringResource(R.string.chat_more)
-            Box(
-                Modifier.size(width = 44.dp, height = 49.dp).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onInfo).semantics { contentDescription = label }
-                    .testTag("chat-room-more"),
-                contentAlignment = Alignment.Center,
-            ) { MoreDots(ink.text) }
-        } else {
-            Spacer(Modifier.size(44.dp))
-        }
-    }
-}
-
-@Composable
-internal fun ChatBackButton(onBack: () -> Unit) {
-    val ink = crewInk()
-    Box(
-        Modifier.size(width = 44.dp, height = 48.dp).clip(RoundedCornerShape(12.dp))
-            .feedbackClickable(role = Role.Button, cue = FeedbackCue.Back, onClick = onBack).testTag("chat-back"),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = ink.text, modifier = Modifier.size(22.dp))
-    }
+        },
+        trailing = {
+            if (onInfo != null) {
+                Box(
+                    Modifier.size(width = 44.dp, height = 49.dp).clip(RoundedCornerShape(12.dp))
+                        .feedbackClickable(role = Role.Button, onClick = onInfo).semantics { contentDescription = label }
+                        .testTag("chat-room-more"),
+                    contentAlignment = Alignment.Center,
+                ) { MoreDots(ink.text) }
+            } else {
+                Spacer(Modifier.size(44.dp))
+            }
+        },
+    )
 }
 
 /** 가로 점 셋(시안의 •••) */

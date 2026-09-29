@@ -20,7 +20,6 @@
 
     <string name="chat_members_count">成员%1$d人</string>
     <string name="chat_more">聊天室信息</string>
-    <string name="chat_back_list">聊天列表</string>
     <string name="chat_notice_label">公告</string>
     <string name="chat_notice_manage">管理</string>
     <string name="chat_day_pattern">M月d日 EEEE</string>
@@ -85,7 +84,6 @@
     <string name="chat_selected">已选择</string>
     <string name="chat_report_send">举报</string>
     <string name="chat_report_error">未能发送举报，请重试。</string>
-    <string name="chat_report_sent_bar">通知</string>
     <string name="chat_report_sent_title">举报已受理</string>
     <string name="chat_report_sent_body">我们会核实所选消息和理由。</string>
     <string name="chat_back_to_room">返回聊天</string>
@@ -148,7 +146,6 @@
     <string name="chat_member_owner">团长</string>
     <string name="chat_member_me">我</string>
     <string name="chat_member_member">一起跑步的成员</string>
-    <string name="chat_members_more">向下滑动可以查看其他成员。</string>
     <string name="chat_members_error">无法加载成员</string>
     <string name="chat_profile_bar">成员资料</string>
     <string name="chat_profile_role">%1$s %2$s</string>

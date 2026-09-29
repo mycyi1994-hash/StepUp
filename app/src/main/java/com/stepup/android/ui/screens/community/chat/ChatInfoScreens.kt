@@ -135,7 +135,8 @@ fun ChatInfoScreen(viewModel: ChatInfoViewModel, actions: ChatInfoActions) {
                 {
                     viewModel.applyNotify { on ->
                         // 방 알림을 켰는데 기기 알림이 꺼져 있으면 37 — 이 화면이 기기 권한을 바꾸지는 않는다
-                        if (on && !NotificationManagerCompat.from(context).areNotificationsEnabled()) osSheet = true
+                        val device = ChatDeviceNotificationsForTest.enabled ?: NotificationManagerCompat.from(context).areNotificationsEnabled()
+                        if (on && !device) osSheet = true
                     }
                 },
                 Modifier.testTag("chat-notify-apply"),
@@ -174,6 +175,11 @@ fun ChatInfoScreen(viewModel: ChatInfoViewModel, actions: ChatInfoActions) {
             error = leave.error?.let { chatConfirmErrorText(it) },
         )
     }
+}
+
+/** 기기 검사 — 기기 알림 권한(검사가 바꿀 수 없다) 대신 쓸 값. 앱에서는 늘 null */
+object ChatDeviceNotificationsForTest {
+    @Volatile var enabled: Boolean? = null
 }
 
 /** 기기의 StepUp 알림 설정 — 없으면 앱 정보 */
