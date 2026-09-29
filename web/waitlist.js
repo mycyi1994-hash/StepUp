@@ -33,12 +33,26 @@ function saveReceipt(value) {
   } catch { /* The current page still works without session storage. */ }
 }
 
-function prepareShareCard() {
-  if (cardLoading) return;
-  cardLoading = fetch('./assets/img/waitlist-share-v2.png')
-    .then(response => response.ok ? response.blob() : Promise.reject(new Error('Share card unavailable')))
-    .then(blob => { cardFile = new File([blob], 'stepup-share.png', { type: 'image/png' }); })
-    .catch(() => {});
+// Instagram gets the homepage promo film; the square card stays as the fallback.
+const SHARE_MEDIA = [
+  { src: './assets/video/stepup-promo-v5.1-mobile.mp4', name: 'stepup-promo.mp4', type: 'video/mp4' },
+  { src: './assets/img/waitlist-share-v2.png', name: 'stepup-share.png', type: 'image/png' },
+];
+// Desktop share sheets do not list Instagram, so only phones use the system share menu.
+const touchDevice = () => window.matchMedia?.('(pointer: coarse)').matches;
+
+function prepareShareMedia() {
+  if (cardLoading || !touchDevice() || !navigator.canShare) return;
+  cardLoading = (async () => {
+    for (const media of SHARE_MEDIA) {
+      try {
+        const response = await fetch(media.src);
+        if (!response.ok) continue;
+        const file = new File([await response.blob()], media.name, { type: media.type });
+        if (navigator.canShare({ files: [file] })) { cardFile = file; return; }
+      } catch { /* Try the next format. */ }
+    }
+  })();
 }
 
 function feedback(element, message, isError = false) {
@@ -113,7 +127,6 @@ $('.waitlist-open').addEventListener('click', () => {
   // Closing a dialog does not cancel a request; preserve the in-flight form.
   if (!busy) showStage(receipt ? 'share' : 'register');
   dialog.showModal();
-  prepareShareCard();
   if (!busy && receipt) restoreClaims();
   if (!receipt) registerForm.elements.email.focus();
 });
@@ -165,6 +178,7 @@ for (const button of platformButtons) {
     if (busy) return;
     platform = button.dataset.platform;
     const config = PLATFORMS[platform];
+    if (platform === 'instagram') prepareShareMedia();
     for (const other of platformButtons) other.setAttribute('aria-pressed', String(other === button));
     $(config.creator ? '.waitlist-creator-form-slot' : '.waitlist-social-form-slot').append(shareForm);
     shareForm.hidden = false;
@@ -189,7 +203,7 @@ async function copyText(text, element) {
     await navigator.clipboard.writeText(text);
     feedback(element, '문구와 홈페이지 링크를 복사했어요.');
   } catch {
-    feedback(element, '자동 복사가 안 됐어요. ‘공유 이미지와 소개 문구’를 열고 문구를 직접 복사해주세요.', true);
+    feedback(element, '자동 복사가 안 됐어요. ‘공유 영상·이미지와 소개 문구’를 열고 문구를 직접 복사해주세요.', true);
   }
 }
 document.querySelectorAll('.waitlist-copy').forEach(button => button.addEventListener('click', () => {
@@ -203,14 +217,18 @@ $('.waitlist-publish').addEventListener('click', async () => {
   const config = PLATFORMS[selected];
   const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${SHARE_URL}`;
   // File sharing must start in the click handler, before awaiting any work.
-  if (selected === 'instagram' && cardFile && navigator.canShare?.({ files: [cardFile] })) {
+  if (selected === 'instagram' && cardFile && touchDevice()) {
+    // Instagram drops shared text, so put the caption on the clipboard and share the file alone.
+    const copied = navigator.clipboard?.writeText(message).then(() => true, () => false);
     try {
-      await navigator.share({ files: [cardFile], title: 'StepUp 사전 등록', text: message });
-      if (platform === selected) feedback(actionFeedback, '공유한 게시물의 링크를 아래에 남겨주세요.');
+      await navigator.share({ files: [cardFile] });
+      if (platform === selected) feedback(actionFeedback, await copied
+        ? '소개 문구를 복사했어요. 게시할 때 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.'
+        : '공유한 게시물의 링크를 아래에 남겨주세요. 소개 문구는 ‘문구 복사’로 복사할 수 있어요.');
     } catch (error) {
       if (platform === selected) feedback(actionFeedback, error.name === 'AbortError'
         ? '공유를 취소했어요. 다시 눌러 시도할 수 있어요.'
-        : '공유 메뉴를 열지 못했어요. 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
+        : '공유 메뉴를 열지 못했어요. 홍보 영상이나 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
     }
     return;
   }
@@ -219,7 +237,7 @@ $('.waitlist-publish').addEventListener('click', async () => {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator
       ? '영상 업로드 화면을 열고 소개 문구를 복사했어요. 게시 후 링크를 남겨주세요.'
-      : '인스타그램을 열고 문구를 복사했어요. 위의 공유 이미지를 저장해 게시해주세요.');
+      : '인스타그램을 열고 문구를 복사했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상이나 이미지를 저장해 게시해주세요.');
   } else feedback(actionFeedback, '글 작성 화면을 열었어요. 게시한 뒤 링크를 남겨주세요.');
 });
 
