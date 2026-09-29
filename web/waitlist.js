@@ -1,8 +1,9 @@
-import { SHARE_URL, SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget } from './waitlist-core.mjs?v=20260930-creator';
+import { SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl } from './waitlist-core.mjs?v=20260930-share';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
+const REF_KEY = 'stepup.waitlist.ref';
 const $ = selector => document.querySelector(selector);
 const dialog = $('.waitlist-dialog');
 const registerForm = $('.waitlist-form');
@@ -23,7 +24,21 @@ let cardFile;
 let cardLoading;
 let busy = false;
 let claimsRevision = 0;
-$('.waitlist-share-copy').textContent = `${SHARE_TEXT}\n${SHARE_URL}`;
+// The code from a friend's link (?ref=) that brought this visitor here.
+let invitedBy = referralCode(new URLSearchParams(location.search).get('ref'));
+try {
+  if (invitedBy) sessionStorage.setItem(REF_KEY, invitedBy);
+  else invitedBy = referralCode(sessionStorage.getItem(REF_KEY));
+} catch { /* Storage can be disabled. */ }
+// This visitor's own code, used in the links they share.
+let myCode = '';
+const shareLink = () => shareUrl(myCode);
+
+function setMyCode(value) {
+  myCode = referralCode(value);
+  $('.waitlist-share-copy').textContent = `${SHARE_TEXT}\n${shareLink()}`;
+}
+setMyCode('');
 
 function saveReceipt(value) {
   receipt = value;
@@ -33,12 +48,26 @@ function saveReceipt(value) {
   } catch { /* The current page still works without session storage. */ }
 }
 
-function prepareShareCard() {
-  if (cardLoading) return;
-  cardLoading = fetch('./assets/img/waitlist-share-v2.png')
-    .then(response => response.ok ? response.blob() : Promise.reject(new Error('Share card unavailable')))
-    .then(blob => { cardFile = new File([blob], 'stepup-share.png', { type: 'image/png' }); })
-    .catch(() => {});
+// Instagram gets the homepage promo film; the square card stays as the fallback.
+const SHARE_MEDIA = [
+  { src: './assets/video/stepup-promo-v5.1-mobile.mp4', name: 'stepup-promo.mp4', type: 'video/mp4' },
+  { src: './assets/img/waitlist-share-v2.png', name: 'stepup-share.png', type: 'image/png' },
+];
+// Desktop share sheets do not list Instagram, so only phones use the system share menu.
+const touchDevice = () => window.matchMedia?.('(pointer: coarse)').matches;
+
+function prepareShareMedia() {
+  if (cardLoading || !touchDevice() || !navigator.canShare) return;
+  cardLoading = (async () => {
+    for (const media of SHARE_MEDIA) {
+      try {
+        const response = await fetch(media.src);
+        if (!response.ok) continue;
+        const file = new File([await response.blob()], media.name, { type: media.type });
+        if (navigator.canShare({ files: [file] })) { cardFile = file; return; }
+      } catch { /* Try the next format. */ }
+    }
+  })();
 }
 
 function feedback(element, message, isError = false) {
@@ -81,7 +110,9 @@ async function restoreClaims() {
   const revision = claimsRevision;
   try {
     const result = await callWaitlist('waitlist_status', { p_receipt: currentReceipt });
-    if (receipt === currentReceipt && revision === claimsRevision) renderClaims(result.claims || []);
+    if (receipt !== currentReceipt) return;
+    setMyCode(result.referral_code);
+    if (revision === claimsRevision) renderClaims(result.claims || []);
   } catch (error) {
     if (receipt !== currentReceipt || revision !== claimsRevision) return;
     if (error.message.includes('invalid waitlist receipt')) {
@@ -113,7 +144,6 @@ $('.waitlist-open').addEventListener('click', () => {
   // Closing a dialog does not cancel a request; preserve the in-flight form.
   if (!busy) showStage(receipt ? 'share' : 'register');
   dialog.showModal();
-  prepareShareCard();
   if (!busy && receipt) restoreClaims();
   if (!receipt) registerForm.elements.email.focus();
 });
@@ -122,6 +152,7 @@ dialog.addEventListener('click', event => { if (event.target === dialog) dialog.
 $('.waitlist-change-email').addEventListener('click', () => {
   if (busy) return;
   saveReceipt('');
+  setMyCode('');
   renderClaims([]);
   registerForm.reset();
   showStage('register');
@@ -141,13 +172,18 @@ registerForm.addEventListener('submit', async event => {
   registerSubmit.disabled = true;
   feedback(registerFeedback, '등록하고 있어요…');
   try {
-    const result = await callWaitlist('waitlist_register', {
+    const body = {
       p_email: registerForm.elements.email.value.trim(),
       p_consent: registerForm.elements.consent.checked,
       p_trap: registerForm.elements.website.value,
-    });
+    };
+    // A referral must never block registration, e.g. before the server knows p_ref.
+    const result = invitedBy
+      ? await callWaitlist('waitlist_register', { ...body, p_ref: invitedBy }).catch(() => callWaitlist('waitlist_register', body))
+      : await callWaitlist('waitlist_register', body);
     if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt);
+    setMyCode(result.referral_code);
     renderClaims([]);
     showStage('share');
     $('#waitlist-share-title').focus({ preventScroll: true });
@@ -165,6 +201,7 @@ for (const button of platformButtons) {
     if (busy) return;
     platform = button.dataset.platform;
     const config = PLATFORMS[platform];
+    if (platform === 'instagram') prepareShareMedia();
     for (const other of platformButtons) other.setAttribute('aria-pressed', String(other === button));
     $(config.creator ? '.waitlist-creator-form-slot' : '.waitlist-social-form-slot').append(shareForm);
     shareForm.hidden = false;
@@ -189,37 +226,41 @@ async function copyText(text, element) {
     await navigator.clipboard.writeText(text);
     feedback(element, '문구와 홈페이지 링크를 복사했어요.');
   } catch {
-    feedback(element, '자동 복사가 안 됐어요. ‘공유 이미지와 소개 문구’를 열고 문구를 직접 복사해주세요.', true);
+    feedback(element, '자동 복사가 안 됐어요. ‘공유 영상·이미지와 소개 문구’를 열고 문구를 직접 복사해주세요.', true);
   }
 }
 document.querySelectorAll('.waitlist-copy').forEach(button => button.addEventListener('click', () => {
   const creator = shareForm.contains(button) && PLATFORMS[platform]?.creator;
-  copyText(`${creator ? CREATOR_TEXT : SHARE_TEXT}\n${SHARE_URL}`, shareForm.contains(button) ? actionFeedback : $('.waitlist-copy-feedback'));
+  copyText(`${creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`, shareForm.contains(button) ? actionFeedback : $('.waitlist-copy-feedback'));
 }));
 
 $('.waitlist-publish').addEventListener('click', async () => {
   const selected = platform;
   if (!selected) return;
   const config = PLATFORMS[selected];
-  const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${SHARE_URL}`;
+  const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`;
   // File sharing must start in the click handler, before awaiting any work.
-  if (selected === 'instagram' && cardFile && navigator.canShare?.({ files: [cardFile] })) {
+  if (selected === 'instagram' && cardFile && touchDevice()) {
+    // Instagram drops shared text, so put the caption on the clipboard and share the file alone.
+    const copied = navigator.clipboard?.writeText(message).then(() => true, () => false);
     try {
-      await navigator.share({ files: [cardFile], title: 'StepUp 사전 등록', text: message });
-      if (platform === selected) feedback(actionFeedback, '공유한 게시물의 링크를 아래에 남겨주세요.');
+      await navigator.share({ files: [cardFile] });
+      if (platform === selected) feedback(actionFeedback, await copied
+        ? '소개 문구를 복사했어요. 게시할 때 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.'
+        : '공유한 게시물의 링크를 아래에 남겨주세요. 소개 문구는 ‘문구 복사’로 복사할 수 있어요.');
     } catch (error) {
       if (platform === selected) feedback(actionFeedback, error.name === 'AbortError'
         ? '공유를 취소했어요. 다시 눌러 시도할 수 있어요.'
-        : '공유 메뉴를 열지 못했어요. 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
+        : '공유 메뉴를 열지 못했어요. 홍보 영상이나 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
     }
     return;
   }
-  window.open(shareTarget(selected), '_blank', 'noopener,noreferrer');
+  window.open(shareTarget(selected, shareLink()), '_blank', 'noopener,noreferrer');
   if (selected === 'instagram' || config.creator) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator
       ? '영상 업로드 화면을 열고 소개 문구를 복사했어요. 게시 후 링크를 남겨주세요.'
-      : '인스타그램을 열고 문구를 복사했어요. 위의 공유 이미지를 저장해 게시해주세요.');
+      : '인스타그램을 열고 문구를 복사했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상이나 이미지를 저장해 게시해주세요.');
   } else feedback(actionFeedback, '글 작성 화면을 열었어요. 게시한 뒤 링크를 남겨주세요.');
 });
 

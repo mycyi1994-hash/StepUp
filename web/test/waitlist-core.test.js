@@ -31,3 +31,13 @@ test('share intents preserve richer copy and the public homepage link', async ()
   assert.equal(x.searchParams.get('url'), SHARE_URL);
   assert.ok(new URL(shareTarget('threads')).searchParams.get('text').includes(SHARE_URL));
 });
+
+test('referral links carry only a valid public code', async () => {
+  const { referralCode, shareUrl, shareTarget, SHARE_URL } = await core;
+  assert.equal(referralCode(' ab2cdefg '), 'AB2CDEFG');
+  for (const bad of ['', 'ABCDEFG', 'ABCDEFGHJ', 'ABCDEFG0', 'ABCDEFGI', 'ABC<EFG>', null]) assert.equal(referralCode(bad), '', String(bad));
+  assert.equal(shareUrl('AB2CDEFG'), `${SHARE_URL}?ref=AB2CDEFG`);
+  assert.equal(shareUrl('bad code'), SHARE_URL);
+  assert.equal(new URL(shareTarget('x', shareUrl('AB2CDEFG'))).searchParams.get('url'), `${SHARE_URL}?ref=AB2CDEFG`);
+  assert.ok(new URL(shareTarget('threads', shareUrl('AB2CDEFG'))).searchParams.get('text').endsWith('?ref=AB2CDEFG'));
+});
