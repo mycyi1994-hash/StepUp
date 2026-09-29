@@ -1,8 +1,9 @@
-import { SHARE_URL, SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget } from './waitlist-core.mjs?v=20260930-creator';
+import { SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl } from './waitlist-core.mjs?v=20260930-share';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
+const REF_KEY = 'stepup.waitlist.ref';
 const $ = selector => document.querySelector(selector);
 const dialog = $('.waitlist-dialog');
 const registerForm = $('.waitlist-form');
@@ -23,7 +24,21 @@ let cardFile;
 let cardLoading;
 let busy = false;
 let claimsRevision = 0;
-$('.waitlist-share-copy').textContent = `${SHARE_TEXT}\n${SHARE_URL}`;
+// The code from a friend's link (?ref=) that brought this visitor here.
+let invitedBy = referralCode(new URLSearchParams(location.search).get('ref'));
+try {
+  if (invitedBy) sessionStorage.setItem(REF_KEY, invitedBy);
+  else invitedBy = referralCode(sessionStorage.getItem(REF_KEY));
+} catch { /* Storage can be disabled. */ }
+// This visitor's own code, used in the links they share.
+let myCode = '';
+const shareLink = () => shareUrl(myCode);
+
+function setMyCode(value) {
+  myCode = referralCode(value);
+  $('.waitlist-share-copy').textContent = `${SHARE_TEXT}\n${shareLink()}`;
+}
+setMyCode('');
 
 function saveReceipt(value) {
   receipt = value;
@@ -95,7 +110,9 @@ async function restoreClaims() {
   const revision = claimsRevision;
   try {
     const result = await callWaitlist('waitlist_status', { p_receipt: currentReceipt });
-    if (receipt === currentReceipt && revision === claimsRevision) renderClaims(result.claims || []);
+    if (receipt !== currentReceipt) return;
+    setMyCode(result.referral_code);
+    if (revision === claimsRevision) renderClaims(result.claims || []);
   } catch (error) {
     if (receipt !== currentReceipt || revision !== claimsRevision) return;
     if (error.message.includes('invalid waitlist receipt')) {
@@ -135,6 +152,7 @@ dialog.addEventListener('click', event => { if (event.target === dialog) dialog.
 $('.waitlist-change-email').addEventListener('click', () => {
   if (busy) return;
   saveReceipt('');
+  setMyCode('');
   renderClaims([]);
   registerForm.reset();
   showStage('register');
@@ -158,9 +176,11 @@ registerForm.addEventListener('submit', async event => {
       p_email: registerForm.elements.email.value.trim(),
       p_consent: registerForm.elements.consent.checked,
       p_trap: registerForm.elements.website.value,
+      ...(invitedBy && { p_ref: invitedBy }),
     });
     if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt);
+    setMyCode(result.referral_code);
     renderClaims([]);
     showStage('share');
     $('#waitlist-share-title').focus({ preventScroll: true });
@@ -208,14 +228,14 @@ async function copyText(text, element) {
 }
 document.querySelectorAll('.waitlist-copy').forEach(button => button.addEventListener('click', () => {
   const creator = shareForm.contains(button) && PLATFORMS[platform]?.creator;
-  copyText(`${creator ? CREATOR_TEXT : SHARE_TEXT}\n${SHARE_URL}`, shareForm.contains(button) ? actionFeedback : $('.waitlist-copy-feedback'));
+  copyText(`${creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`, shareForm.contains(button) ? actionFeedback : $('.waitlist-copy-feedback'));
 }));
 
 $('.waitlist-publish').addEventListener('click', async () => {
   const selected = platform;
   if (!selected) return;
   const config = PLATFORMS[selected];
-  const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${SHARE_URL}`;
+  const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`;
   // File sharing must start in the click handler, before awaiting any work.
   if (selected === 'instagram' && cardFile && touchDevice()) {
     // Instagram drops shared text, so put the caption on the clipboard and share the file alone.
@@ -232,7 +252,7 @@ $('.waitlist-publish').addEventListener('click', async () => {
     }
     return;
   }
-  window.open(shareTarget(selected), '_blank', 'noopener,noreferrer');
+  window.open(shareTarget(selected, shareLink()), '_blank', 'noopener,noreferrer');
   if (selected === 'instagram' || config.creator) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator

@@ -35,8 +35,19 @@ export function validPostUrl(value, platform) {
   return false;
 }
 
-export function shareTarget(platform) {
-  if (platform === 'x') return `https://x.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}`;
-  if (platform === 'threads') return `https://www.threads.com/intent/post?text=${encodeURIComponent(`${SHARE_TEXT}\n${SHARE_URL}`)}`;
+// Public referral codes: 8 characters without the easily confused I, O, 0 and 1.
+export function referralCode(value) {
+  const code = String(value || '').trim().toUpperCase();
+  return /^[A-HJ-NP-Z2-9]{8}$/.test(code) ? code : '';
+}
+
+export function shareUrl(code) {
+  const valid = referralCode(code);
+  return valid ? `${SHARE_URL}?ref=${valid}` : SHARE_URL;
+}
+
+export function shareTarget(platform, url = SHARE_URL) {
+  if (platform === 'x') return `https://x.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(url)}`;
+  if (platform === 'threads') return `https://www.threads.com/intent/post?text=${encodeURIComponent(`${SHARE_TEXT}\n${url}`)}`;
   return PLATFORMS[platform]?.target || 'https://www.instagram.com/';
 }
