@@ -79,6 +79,16 @@ object ServiceLocator {
     fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository) {
         crewCards = repository
     }
+
+    /** 크루 채팅 — 크루마다 크루원 전용 방 하나(2026-09-29) */
+    lateinit var crewChat: com.stepup.android.data.repo.CrewChatRepository
+        private set
+
+    /** 기기 검사용 — 채팅 화면을 흉내 낸 서버로 돌린다(CrewChatDesignTest). 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useCrewChatForTest(repository: com.stepup.android.data.repo.CrewChatRepository) {
+        crewChat = repository
+    }
     /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
         private set
@@ -343,6 +353,13 @@ object ServiceLocator {
             owner = { sessionHolder.recordingOwner() },
             ownerFlow = recordingOwnerFlow(),
             draftDir = java.io.File(app.filesDir, "crew_drafts"),
+        )
+        crewChat = com.stepup.android.data.repo.CrewChatRepository(
+            api = com.stepup.android.data.remote.CrewChatApi(server),
+            crewApi = crewApi,
+            prefs = userPrefs,
+            owner = { sessionHolder.recordingOwner() },
+            photoDir = java.io.File(app.cacheDir, "chat_photos"),
         )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),

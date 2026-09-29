@@ -262,6 +262,8 @@ fun CrewResultScreen(
     onBack: () -> Unit,
     onOpenCrew: () -> Unit,
     onOtherCrews: () -> Unit,
+    /** 승인된 뒤에만 — 그 크루의 채팅방(신청 대기자는 들어가지 않는다) */
+    onOpenChat: () -> Unit = {},
 ) {
     val card by viewModel.card.collectAsStateWithLifecycle()
     val application by viewModel.application.collectAsStateWithLifecycle()
@@ -288,6 +290,8 @@ fun CrewResultScreen(
             onButton = onOpenCrew,
             onBack = onBack,
             modifier = Modifier.testTag("crew-result-approved"),
+            secondary = stringResource(R.string.chat_open),
+            onSecondary = onOpenChat,
         )
         else -> CrewPage(Modifier.testTag("crew-result-loading")) {
             CrewTopBar(stringResource(R.string.crew_notice_title), onBack)
@@ -303,7 +307,7 @@ fun CrewResultScreen(
 
 /** 바로 가입 크루에 들어갔다 — 18 과 같은 모양 */
 @Composable
-fun CrewJoinedNowScreen(card: CrewCard?, onBack: () -> Unit, onOpenCrew: () -> Unit) {
+fun CrewJoinedNowScreen(card: CrewCard?, onBack: () -> Unit, onOpenCrew: () -> Unit, onOpenChat: () -> Unit = {}) {
     val name = card?.name.orEmpty()
     CrewResultPage(
         title = stringResource(R.string.crew_approved_title, withParticle(name, "과", "와")),
@@ -312,6 +316,8 @@ fun CrewJoinedNowScreen(card: CrewCard?, onBack: () -> Unit, onOpenCrew: () -> U
         onButton = onOpenCrew,
         onBack = onBack,
         modifier = Modifier.testTag("crew-result-joined"),
+        secondary = stringResource(R.string.chat_open),
+        onSecondary = onOpenChat,
     )
 }
 

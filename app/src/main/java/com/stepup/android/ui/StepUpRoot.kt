@@ -88,6 +88,8 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.screens.community.CommunityScreen
 import com.stepup.android.ui.screens.community.CrewBoardScreen
 import com.stepup.android.ui.screens.community.crew.crewGraph
+import com.stepup.android.ui.screens.community.chat.chatGraph
+import com.stepup.android.ui.screens.community.chat.openChatRoom
 import com.stepup.android.ui.screens.community.FlashRunDetailScreen
 import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
 import com.stepup.android.ui.screens.community.PartyLobbyScreen
@@ -422,6 +424,14 @@ internal fun MainScaffold(
         if (request.requestedAt < scaffoldOpenedAt) navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
     }
 
+    // 크루 채팅 알림(crew-chat/<id>)으로 들어왔으면 그 방을 연다 — 지금 멤버가 아니면 방이 32 로 넘긴다
+    val pendingChat by InviteLinks.pendingChat.collectAsState()
+    LaunchedEffect(pendingChat) {
+        val crewId = pendingChat ?: return@LaunchedEffect
+        navController.openChatRoom(crewId)
+        InviteLinks.consumeChat()
+    }
+
     // 초대 링크(stepupcrew.com/c/...)나 크루 알림으로 들어왔으면 그 크루 화면을 연다
     val pendingCrew by InviteLinks.pendingCrew.collectAsState()
     LaunchedEffect(pendingCrew) {
@@ -720,6 +730,7 @@ internal fun MainScaffold(
                     onOpenStoryLocation = { navController.navigate(Routes.STORY_LOCATION) },
                     onOpenStoryRegion = { navController.navigate(Routes.STORY_REGION) },
                     crewActions = com.stepup.android.ui.screens.community.crew.crewListActions(navController),
+                    onOpenChat = { crewId -> navController.openChatRoom(crewId) },
                 )
             }
             composable(
@@ -1229,6 +1240,12 @@ internal fun MainScaffold(
                 boardRoute = { crewId -> Routes.crewBoard(crewId) },
                 lobbyRoute = { crewId -> Routes.lobby(crewId) },
             )
+            // 크루 채팅(2026-09-29) — 크루마다 크루원 전용 방 하나. 크루원 목록의 "나"는 내 정보 탭
+            chatGraph(
+                navController,
+                communityRoute = Screen.Community.route,
+                onMyProfile = { navController.switchTab(Screen.Profile) },
+            )
             composable(
                 route = Routes.CREW_BOARD,
                 arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
@@ -1287,7 +1304,7 @@ internal fun MainScaffold(
 
     // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.
     // 목적지가 있으면 그 화면을 먼저 보이고 안내는 다음에 러닝 홈에 올 때로 미룬다. 사람이 고른 뒤에만 "봤음"을 적는다.
-    val destinationPending = pendingCrew != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
+    val destinationPending = pendingCrew != null || pendingChat != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
     if (com.stepup.android.domain.FirstGuideRules.shouldShow(
             pending = startTour && !firstGuideClosed,
             onHome = currentRoute == Screen.Run.route,

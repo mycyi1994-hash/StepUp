@@ -33,7 +33,11 @@ class PushService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: message.data["title"] ?: return
         val body = message.notification?.body ?: message.data["body"].orEmpty()
-        show(this, title, body, message.data["link"].orEmpty())
+        val link = message.data["link"].orEmpty()
+        // 지금 화면에 보이는 크루 채팅 방의 새 메시지는 띄우지 않는다(방이 이미 따라오고 있다)
+        val visible = com.stepup.android.ui.screens.community.chat.ChatVisibility.crewId
+        if (visible != null && link == "crew-chat/$visible") return
+        show(this, title, body, link)
     }
 
     companion object {
@@ -76,7 +80,9 @@ class PushService : FirebaseMessagingService() {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
                 PackageManager.PERMISSION_GRANTED
             if (allowed) {
-                NotificationManagerCompat.from(context).notify((title + body).hashCode(), notification)
+                // 크루 채팅은 방마다 알림 하나(새 메시지가 오면 바꿔 단다) — 쌓이지 않게
+                val id = if (link.startsWith("crew-chat/")) link.hashCode() else (title + body).hashCode()
+                NotificationManagerCompat.from(context).notify(id, notification)
             }
         }
 

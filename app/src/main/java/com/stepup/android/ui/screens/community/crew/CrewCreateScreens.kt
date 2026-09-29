@@ -1062,7 +1062,7 @@ private fun CrewCustomGoalSheet(initial: Int?, onApply: (Int) -> Unit, onDismiss
 
 /** 35 크루를 만들었다 — 크루장으로 관리 화면(77)으로 이어진다 */
 @Composable
-fun CrewCreatedScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onManage: () -> Unit) {
+fun CrewCreatedScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onManage: () -> Unit, onOpenChat: () -> Unit = {}) {
     val card by viewModel.card.collectAsStateWithLifecycle()
     val name = card?.name.orEmpty()
     CrewResultPage(
@@ -1072,5 +1072,8 @@ fun CrewCreatedScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onMana
         onButton = onManage,
         onBack = onBack,
         modifier = Modifier.testTag("crew-created"),
+        // 만든 사람은 처음부터 채팅방에 들어갈 수 있다 — 혼자 있는 새 크루(크루 채팅 30)
+        secondary = stringResource(R.string.chat_open),
+        onSecondary = onOpenChat,
     )
 }

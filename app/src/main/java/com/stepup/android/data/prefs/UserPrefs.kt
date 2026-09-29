@@ -390,6 +390,32 @@ class UserPrefs(
         }
     }
 
+    // ── 크루 채팅(2026-09-29) — 쓰다 만 공지(계정 · 방 · 새 공지/수정마다) ──
+
+    private fun chatNoticeDraftKey(owner: String, key: String) = stringPreferencesKey("chat_notice_draft:$owner:$key")
+
+    suspend fun chatNoticeDraft(owner: String, key: String): com.stepup.android.domain.ChatNoticeDraft? =
+        store.data.first()[chatNoticeDraftKey(owner, key)]?.let(ChatNoticeDraftCodec::decode)
+
+    suspend fun setChatNoticeDraft(owner: String, key: String, draft: com.stepup.android.domain.ChatNoticeDraft?) {
+        store.edit {
+            if (draft == null || draft.empty) it.remove(chatNoticeDraftKey(owner, key))
+            else it[chatNoticeDraftKey(owner, key)] = ChatNoticeDraftCodec.encode(draft)
+        }
+    }
+
+    /** 이 방에 참여할 수 없게 됐다 · 계정을 지웠다 — 그 방(없으면 모든 방)의 쓰다 만 공지를 지운다 */
+    suspend fun clearChatNoticeDrafts(crewId: String? = null) {
+        store.edit { prefs ->
+            prefs.asMap().keys
+                .filter { key ->
+                    // 열쇠는 chat_notice_draft:<계정>:<크루 id>:new|edit:<공지> — 계정 칸에도 ':' 가 있어 크루 id 로 찾는다
+                    key.name.startsWith("chat_notice_draft:") && (crewId == null || key.name.contains(":$crewId:"))
+                }
+                .forEach { key -> prefs.remove(key) }
+        }
+    }
+
     private fun decodeCrewDraft(raw: String): com.stepup.android.domain.CrewDraft? = CrewDraftCodec.decode(raw)
 
     private fun decodeCrewArea(raw: String): com.stepup.android.domain.CrewArea? = CrewDraftCodec.decodeArea(raw)
@@ -1154,4 +1180,26 @@ internal data class StoryRunJson(
     }
 }
 
+/** 쓰다 만 공지를 글자로 */
+internal object ChatNoticeDraftCodec {
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
 
+    @kotlinx.serialization.Serializable
+    private data class Row(
+        val crewId: String,
+        val noticeId: Long? = null,
+        val title: String = "",
+        val body: String = "",
+        val pinned: Boolean = true,
+        val savedAt: Long = 0L,
+    )
+
+    fun encode(draft: com.stepup.android.domain.ChatNoticeDraft): String =
+        json.encodeToString(Row.serializer(), Row(draft.crewId, draft.noticeId, draft.title, draft.body, draft.pinned, draft.savedAt))
+
+    fun decode(raw: String): com.stepup.android.domain.ChatNoticeDraft? = runCatching {
+        json.decodeFromString(Row.serializer(), raw).let {
+            com.stepup.android.domain.ChatNoticeDraft(it.crewId, it.noticeId, it.title, it.body, it.pinned, it.savedAt)
+        }
+    }.getOrNull()
+}

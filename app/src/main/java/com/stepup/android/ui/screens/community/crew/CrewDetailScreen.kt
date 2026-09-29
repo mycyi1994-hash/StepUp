@@ -73,6 +73,8 @@ class CrewDetailActions(
     val onOpenLobby: () -> Unit,
     /** 66 → 목록 */
     val onList: () -> Unit,
+    /** 크루 채팅(2026-09-29) — 멤버 · 크루장만(87 새 멤버 상세에서도) */
+    val onOpenChat: () -> Unit = {},
 )
 
 /**
@@ -283,6 +285,7 @@ private fun CrewDetailContent(
             // 멤버에게는 기존 크루 게시판 · 같이 달리기(크루 러닝으로 달린 거리가 이번 주 목표에 들어간다)
             if (card.role == CrewRole.MEMBER || card.role == CrewRole.OWNER) {
                 Spacer(Modifier.height(8.dp))
+                CrewRow(stringResource(R.string.chat_row_crew_chat), actions.onOpenChat, Modifier.testTag("crew-detail-chat"))
                 CrewRow(stringResource(R.string.crew_detail_lobby), actions.onOpenLobby, Modifier.testTag("crew-detail-lobby"), value = stringResource(R.string.crew_detail_lobby_hint))
                 CrewRow(stringResource(R.string.crew_detail_board), actions.onOpenBoard, Modifier.testTag("crew-detail-board"))
             }

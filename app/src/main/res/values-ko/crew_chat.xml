@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 채팅(2026-09-29 크루 채팅 패키지) — 커뮤니티 세 번째 글자 탭 -->
+<resources>
+    <string name="chat_tab">크루 채팅</string>
+
+    <!-- 01 내 크루 대화 · 31 가입한 크루가 없는 상태 -->
+    <string name="chat_list_title">내 크루 대화</string>
+    <string name="chat_list_sub">가입한 크루원끼리 이야기해요.</string>
+    <string name="chat_list_role_member">크루원 · %1$d명</string>
+    <string name="chat_list_role_owner">크루장 · %1$d명</string>
+    <string name="chat_list_new">새 크루</string>
+    <string name="chat_list_empty_line">아직 대화가 없어요. 첫 인사를 남겨보세요.</string>
+    <string name="chat_list_footer">크루의 대표 이미지와 이름으로 채팅방을 찾아요.</string>
+    <string name="chat_list_error">대화 목록을 불러오지 못했어요</string>
+    <string name="chat_preview_text">%1$s: %2$s</string>
+    <string name="chat_preview_photo">%1$s: 사진</string>
+    <string name="chat_none_title">함께 달릴 크루를 찾아보세요</string>
+    <string name="chat_none_body">크루에 가입하면 크루 채팅이 열려요.\n모임 약속도, 달린 이야기도 함께 나눠요.</string>
+    <string name="chat_none_find">크루 찾아보기</string>
+    <string name="chat_none_create">내 크루 만들기</string>
+
+    <!-- 02 · 03 대화 -->
+    <string name="chat_members_count">크루원 %1$d명</string>
+    <string name="chat_more">채팅방 정보</string>
+    <string name="chat_back_list">채팅 목록</string>
+    <string name="chat_notice_label">공지</string>
+    <string name="chat_notice_manage">관리</string>
+    <string name="chat_day_pattern">M월 d일 EEEE</string>
+    <string name="chat_me">나</string>
+    <string name="chat_owner_badge">크루장</string>
+    <string name="chat_deleted">삭제된 메시지예요.</string>
+    <string name="chat_hidden">크루장이 숨긴 메시지예요.</string>
+    <string name="chat_reply_to">%1$s에게 답장</string>
+    <string name="chat_photo">사진</string>
+    <string name="chat_send_failed">전송 실패</string>
+    <string name="chat_send_pending">전송 대기</string>
+    <string name="chat_retry">재전송</string>
+    <string name="chat_discard">지우기</string>
+    <string name="chat_line_notice">%1$s 님이 새 공지를 등록했어요.</string>
+    <string name="chat_line_left">%1$s 님이 크루에서 나갔어요.</string>
+    <string name="chat_unknown_name">알 수 없음</string>
+    <string name="chat_input_hint">메시지 입력</string>
+    <string name="chat_input_offline_hint">연결되면 보낼 수 있어요</string>
+    <string name="chat_attach">사진 첨부</string>
+    <string name="chat_send">메시지 보내기</string>
+    <string name="chat_reply_cancel">답장 취소</string>
+    <string name="chat_reconnecting">다시 연결하고 있어요. 입력 내용은 남아 있어요.</string>
+    <string name="chat_new_messages">새 메시지 %1$d개</string>
+    <string name="chat_copied">메시지를 복사했어요</string>
+
+    <!-- 30 혼자 있는 새 크루 · 36 대화 불러오기 실패 · 32 채팅 참여 종료 -->
+    <string name="chat_solo_info">정보</string>
+    <string name="chat_solo_title">우리 크루의 첫 대화</string>
+    <string name="chat_solo_body">아직은 나 혼자예요.\n먼저 인사를 남겨보세요.</string>
+    <string name="chat_solo_recruit">크루 모집하기</string>
+    <string name="chat_error_title">대화를 불러오지 못했어요</string>
+    <string name="chat_error_body">연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="chat_error_retry">다시 불러오기</string>
+    <string name="chat_ended_bar">크루 채팅</string>
+    <string name="chat_ended_title">이 채팅방에 참여할 수 없어요</string>
+    <string name="chat_ended_body">크루 소속이 바뀌었거나\n크루가 해산되어 참여가 종료됐어요.</string>
+    <string name="chat_ended_button">채팅 목록으로</string>
+
+    <!-- 14 · 15 · 38 메시지 메뉴 · 17 삭제 · 39 숨기기 -->
+    <string name="chat_menu_title">메시지</string>
+    <string name="chat_menu_mine_title">내 메시지</string>
+    <string name="chat_menu_owner_title">메시지 관리</string>
+    <string name="chat_menu_reply">답장하기</string>
+    <string name="chat_menu_copy">복사하기</string>
+    <string name="chat_menu_report">메시지 신고</string>
+    <string name="chat_menu_delete">모두에게 삭제</string>
+    <string name="chat_menu_notice">공지로 등록</string>
+    <string name="chat_menu_hide">메시지 숨기기</string>
+    <string name="chat_cancel">취소</string>
+    <string name="chat_delete_title">이 메시지를 삭제할까요?</string>
+    <string name="chat_delete_body">모든 크루원에게 내용 대신\n삭제된 메시지로 표시돼요.</string>
+    <string name="chat_delete_confirm">메시지 삭제</string>
+    <string name="chat_hide_title">이 메시지를 숨길까요?</string>
+    <string name="chat_hide_body">모든 크루원에게 내용이 보이지 않아요.\n작성자의 크루 소속은 유지돼요.</string>
+    <string name="chat_hide_confirm">메시지 숨기기</string>
+    <string name="chat_action_error">처리하지 못했어요. 연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="chat_action_gone">이미 처리된 메시지예요.</string>
+    <string name="chat_owner_lost">크루장 권한이 바뀌어 크루원으로 돌아왔어요.</string>
+
+    <!-- 28 신고 · 29 신고 접수 완료 -->
+    <string name="chat_report_title">메시지 신고</string>
+    <string name="chat_report_abuse">욕설 또는 괴롭힘</string>
+    <string name="chat_report_spam">광고 또는 도배</string>
+    <string name="chat_report_content">부적절한 내용</string>
+    <string name="chat_selected">선택됨</string>
+    <string name="chat_report_send">신고하기</string>
+    <string name="chat_report_error">신고를 보내지 못했어요. 다시 시도해 주세요.</string>
+    <string name="chat_report_sent_bar">알림</string>
+    <string name="chat_report_sent_title">신고를 접수했어요</string>
+    <string name="chat_report_sent_body">선택한 메시지와 사유를 확인할게요.</string>
+    <string name="chat_back_to_room">대화로 돌아가기</string>
+
+    <!-- 25 사진 첨부 · 26 사진 미리보기 · 42 사진 전송 실패 · 41 받은 사진 -->
+    <string name="chat_attach_title">사진 보내기</string>
+    <string name="chat_attach_pick">사진에서 선택</string>
+    <string name="chat_attach_camera">사진 촬영</string>
+    <string name="chat_attach_note">선택한 사진을 확인한 뒤 보낼 수 있어요.</string>
+    <string name="chat_camera_missing">사진을 찍을 수 있는 앱이 없어요.</string>
+    <string name="chat_photo_broken_title">사진을 읽을 수 없어요</string>
+    <string name="chat_photo_broken_body">다른 사진을 골라 주세요.\n글로 하는 대화는 그대로 할 수 있어요.</string>
+    <string name="chat_photo_denied_title">사진에 접근할 수 없어요</string>
+    <string name="chat_photo_denied_body">기기 설정에서 StepUp의 사진 접근을 허용해 주세요.\n글로 하는 대화는 그대로 할 수 있어요.</string>
+    <string name="chat_photo_settings">기기 설정 열기</string>
+    <string name="chat_photo_other">다른 사진 고르기</string>
+    <string name="chat_preview_bar">사진 미리보기</string>
+    <string name="chat_preview_count">선택한 사진 1장</string>
+    <string name="chat_preview_caption">사진과 함께 보낼 말 · 선택</string>
+    <string name="chat_preview_caption_hint">사진과 함께 보낼 말</string>
+    <string name="chat_preview_send">사진 보내기</string>
+    <string name="chat_photo_error_title">사진을 보내지 못했어요</string>
+    <string name="chat_photo_error_body">선택한 사진과 적은 설명은 남아 있어요.\n연결을 확인한 뒤 다시 보내주세요.</string>
+    <string name="chat_photo_retry">사진 다시 보내기</string>
+    <string name="chat_photo_back">선택한 사진으로 돌아가기</string>
+    <string name="chat_viewer_bar">사진</string>
+    <string name="chat_viewer_meta">%1$s · %2$s</string>
+    <string name="chat_viewer_gone">이 사진은 지금 볼 수 없어요.</string>
+
+    <!-- 04 · 05 채팅방 정보 · 24 채팅 알림 · 37 기기 알림 권한 -->
+    <string name="chat_info_bar">채팅방 정보</string>
+    <string name="chat_info_sub">크루원 %1$d명 · %2$s</string>
+    <string name="chat_role_member">크루원</string>
+    <string name="chat_role_owner">크루장</string>
+    <string name="chat_info_notices">공지</string>
+    <string name="chat_info_notice_count">%1$d개</string>
+    <string name="chat_info_members">크루원 보기</string>
+    <string name="chat_info_member_count">%1$d명</string>
+    <string name="chat_info_notify">채팅 알림</string>
+    <string name="chat_notify_on">켜짐</string>
+    <string name="chat_notify_off">꺼짐</string>
+    <string name="chat_info_search">대화 검색</string>
+    <string name="chat_info_crew">크루 상세 보기</string>
+    <string name="chat_info_leave_sub">채팅 참여도 함께 종료돼요.</string>
+    <string name="chat_info_owner_section">크루장 전용</string>
+    <string name="chat_info_write_notice">공지 등록</string>
+    <string name="chat_info_manage_members">멤버 관리</string>
+    <string name="chat_notify_title">채팅 알림</string>
+    <string name="chat_notify_on_row">알림 받기</string>
+    <string name="chat_notify_off_row">알림 끄기</string>
+    <string name="chat_notify_note">나의 알림만 바뀌어요. 다른 크루원은 그대로예요.</string>
+    <string name="chat_notify_apply">적용</string>
+    <string name="chat_notify_error">저장하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="chat_os_title">기기 알림이 꺼져 있어요</string>
+    <string name="chat_os_body">알림을 받으려면 기기 설정에서\nStepUp 알림을 켜주세요.</string>
+    <string name="chat_os_settings">기기 설정 열기</string>
+    <string name="chat_os_later">나중에</string>
+
+    <!-- 06 크루원 · 07 · 33 크루원 프로필 · 34 내보내기 -->
+    <string name="chat_members_bar">크루원</string>
+    <string name="chat_members_heading">함께 대화하는 %1$d명</string>
+    <string name="chat_members_sub">%1$s의 크루원만 참여해요.</string>
+    <string name="chat_member_owner">크루장</string>
+    <string name="chat_member_me">나</string>
+    <string name="chat_member_member">함께 달리는 멤버</string>
+    <string name="chat_members_more">아래로 내려 다른 크루원을 볼 수 있어요.</string>
+    <string name="chat_members_error">크루원을 불러오지 못했어요</string>
+    <string name="chat_profile_bar">크루원 프로필</string>
+    <string name="chat_profile_role">%1$s %2$s</string>
+    <string name="chat_profile_since">%1$s부터 함께해요</string>
+    <string name="chat_profile_since_pattern">M월 d일</string>
+    <string name="chat_profile_week">이번 주 크루 러닝 %1$skm</string>
+    <string name="chat_profile_week_none">이번 주에는 아직 크루 러닝이 없어요.</string>
+    <string name="chat_profile_public">공개 프로필 보기</string>
+    <string name="chat_profile_remove">크루에서 내보내기</string>
+    <string name="chat_profile_gone">지금은 이 크루의 멤버가 아니에요.</string>
+    <string name="chat_remove_title">%1$s 님을 내보낼까요?</string>
+    <string name="chat_remove_body">%1$s의 크루원에서 제외돼요.\n채팅방에서도 대화할 수 없게 돼요.</string>
+    <string name="chat_remove_confirm">내보내기</string>
+
+    <!-- 08 공지 · 09 공지 모아보기 · 10 · 11 등록/수정 · 12 삭제 · 43 저장 실패 · 44 초안 -->
+    <string name="chat_notice_bar">공지</string>
+    <string name="chat_notice_pinned_note">채팅방 상단에 고정된 공지예요.</string>
+    <string name="chat_notice_meta">%1$s · %2$s</string>
+    <string name="chat_notice_date_pattern">M월 d일</string>
+    <string name="chat_notices_bar">공지 모아보기</string>
+    <string name="chat_notices_heading">%1$s의 공지</string>
+    <string name="chat_notices_pinned">상단 고정</string>
+    <string name="chat_notices_empty">아직 공지가 없어요.</string>
+    <string name="chat_notices_error">공지를 불러오지 못했어요</string>
+    <string name="chat_write_bar">공지 등록</string>
+    <string name="chat_edit_bar">공지 수정</string>
+    <string name="chat_notice_title_label">제목</string>
+    <string name="chat_notice_body_label">내용</string>
+    <string name="chat_notice_title_hint">공지 제목</string>
+    <string name="chat_notice_body_hint">크루원에게 알릴 내용을 적어 주세요.</string>
+    <string name="chat_notice_pin">채팅방 상단에 고정</string>
+    <string name="chat_notice_pin_note">새 공지를 고정하면 이전 고정은 해제돼요.</string>
+    <string name="chat_notice_delete">공지 삭제</string>
+    <string name="chat_notice_publish">공지 올리기</string>
+    <string name="chat_notice_save">수정 저장</string>
+    <string name="chat_notice_delete_title">이 공지를 삭제할까요?</string>
+    <string name="chat_notice_delete_body">공지 목록과 채팅방 상단에서 사라져요.\n이전 대화 메시지는 그대로 남아요.</string>
+    <string name="chat_notice_error_title">공지를 올리지 못했어요</string>
+    <string name="chat_notice_error_body">작성한 내용은 그대로 남아 있어요.\n기존 공지는 바뀌지 않았어요.</string>
+    <string name="chat_notice_retry">다시 저장</string>
+    <string name="chat_notice_draft_title">작성 중인 공지를 남길까요?</string>
+    <string name="chat_notice_draft_body">아직 채팅방에는 올라가지 않았어요.\n초안으로 남겨 다음에 이어 쓸 수 있어요.</string>
+    <string name="chat_notice_continue">계속 작성</string>
+    <string name="chat_notice_keep">저장 후 나가기</string>
+    <string name="chat_notice_missing">이 공지는 지금 볼 수 없어요.</string>
+
+    <!-- 22 · 23 대화 검색 -->
+    <string name="chat_search_bar">대화 검색</string>
+    <string name="chat_search_hint">검색어 입력</string>
+    <string name="chat_search_count">검색 결과 %1$d개</string>
+    <string name="chat_search_empty_title">찾는 대화가 없어요</string>
+    <string name="chat_search_empty_body">다른 단어로 검색해 보세요.</string>
+    <string name="chat_search_change">검색어 바꾸기</string>
+    <string name="chat_search_error">검색하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="chat_search_gone">이 메시지는 지금 볼 수 없어요.</string>
+
+    <!-- 크루 명함형 화면에서 채팅으로(18 승인 · 35 만든 뒤 · 87 멤버 상세 · 77 관리) -->
+    <string name="chat_signin_title">로그인하면 크루 채팅을 볼 수 있어요</string>
+    <string name="chat_signin_body">가입한 크루의 대화는 로그인한 뒤에 열려요.</string>
+
+    <string name="chat_open">크루 채팅 열기</string>
+    <string name="chat_row_crew_chat">크루 채팅</string>
+</resources>

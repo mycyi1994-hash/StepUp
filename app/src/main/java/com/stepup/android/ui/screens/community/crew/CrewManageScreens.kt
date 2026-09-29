@@ -53,6 +53,8 @@ class CrewManageActions(
     val onGoal: () -> Unit,
     val onSettings: () -> Unit,
     val onList: () -> Unit,
+    /** 77 만든 직후 — 혼자 있는 채팅방(크루 채팅 30)으로 */
+    val onOpenChat: () -> Unit = {},
 )
 
 /**
@@ -101,6 +103,7 @@ fun CrewManageScreen(viewModel: CrewScreenViewModel, created: Boolean, actions: 
                 value = crew.goalKm?.let { stringResource(R.string.crew_km_value, it.toString()) } ?: stringResource(R.string.crew_goal_set),
             )
             if (!created) CrewRow(stringResource(R.string.crew_manage_settings), actions.onSettings, Modifier.testTag("crew-manage-settings"))
+            if (created) CrewRow(stringResource(R.string.chat_row_crew_chat), actions.onOpenChat, Modifier.testTag("crew-manage-chat"))
             Spacer(Modifier.height(24.dp))
         }
         if (created) CrewBottomBar { CrewButton(stringResource(R.string.crew_to_list_short), actions.onList, Modifier.testTag("crew-manage-list")) }

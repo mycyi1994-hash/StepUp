@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.CrewDraftCodec
 import com.stepup.android.domain.CrewDraftMode
+import com.stepup.android.ui.screens.community.chat.openChatRoom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,6 +141,8 @@ fun NavGraphBuilder.crewGraph(
 ) {
     val back: () -> Unit = { navController.popBackStack() }
     val toList: () -> Unit = { navController.toCrewList(communityRoute) }
+    // 크루 채팅(2026-09-29) — 방에 들어갈 수 있는지는 방이 서버에 다시 묻는다(아니면 32)
+    val openChat: (String) -> Unit = { id -> navController.openChatRoom(id) }
 
     composable(CrewRoutes.DETAIL, arguments = listOf(crewIdArg)) { entry ->
         val id = entry.arguments?.getString("crewId").orEmpty()
@@ -161,6 +164,7 @@ fun NavGraphBuilder.crewGraph(
                 onOpenBoard = { navController.navigate(boardRoute(id)) },
                 onOpenLobby = { navController.navigate(lobbyRoute(id)) },
                 onList = toList,
+                onOpenChat = { openChat(id) },
             ),
             vm,
         )
@@ -262,13 +266,14 @@ fun NavGraphBuilder.crewGraph(
             onBack = back,
             onOpenCrew = { navController.showCrew(id, CrewRoutes.RESULT) },
             onOtherCrews = toList,
+            onOpenChat = { openChat(id) },
         )
     }
     composable(CrewRoutes.JOINED, arguments = listOf(crewIdArg)) { entry ->
         val id = entry.arguments?.getString("crewId").orEmpty()
         val vm: CrewScreenViewModel = viewModel(factory = CrewScreenViewModel.Factory)
         val card by vm.card.collectAsStateWithLifecycle()
-        CrewJoinedNowScreen(card, onBack = back, onOpenCrew = { navController.showCrew(id, CrewRoutes.JOINED) })
+        CrewJoinedNowScreen(card, onBack = back, onOpenCrew = { navController.showCrew(id, CrewRoutes.JOINED) }, onOpenChat = { openChat(id) })
     }
     composable(CrewRoutes.REPORTED, arguments = listOf(crewIdArg)) {
         CrewReportedScreen(onBack = back, onDone = back)
@@ -293,6 +298,7 @@ fun NavGraphBuilder.crewGraph(
                 onGoal = { navController.navigate(CrewRoutes.goalEdit(id)) },
                 onSettings = { navController.navigate(CrewRoutes.settings(id)) },
                 onList = toList,
+                onOpenChat = { openChat(id) },
             ),
         )
     }
@@ -394,6 +400,7 @@ fun NavGraphBuilder.crewGraph(
             viewModel(factory = CrewScreenViewModel.Factory),
             onBack = toList,
             onManage = { navController.navigate(CrewRoutes.manage(id, created = true)) { popUpTo(CrewRoutes.CREATED) { inclusive = true } } },
+            onOpenChat = { openChat(id) },
         )
     }
     composable(

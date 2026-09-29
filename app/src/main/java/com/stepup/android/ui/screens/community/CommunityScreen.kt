@@ -106,26 +106,38 @@ fun CommunityScreen(
     onOpenStoryRegion: () -> Unit = {},
     /** 크루 모집(확정 2번 명함 목록)에서 나가는 곳 — 없으면 누르는 곳이 아무 데도 가지 않는다(화면 검사용) */
     crewActions: com.stepup.android.ui.screens.community.crew.CrewListActions? = null,
+    /** 크루 채팅(세 번째 글자 탭) — 방 열기 */
+    onOpenChat: (String) -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
     storiesViewModel: com.stepup.android.ui.screens.community.stories.StoriesViewModel =
         viewModel(factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
-    // 글자 탭 둘 — 러닝 이야기(첫 화면) · 크루 모집(2026-09-28 크루 명함형). 예전 "함께 뛰기"(번개 모임 · 내 크루)는
-    // 지우지 않고 크루 모집 목록 끝의 "번개 모임" 줄 안쪽으로 옮겼다.
-    var crews by rememberSaveable { mutableStateOf(false) }
+    // 글자 탭 셋 — 러닝 이야기(첫 화면) · 크루 모집(2026-09-28 크루 명함형) · 크루 채팅(2026-09-29). 예전 "함께 뛰기"
+    // (번개 모임 · 내 크루)는 지우지 않고 크루 모집 목록 끝의 "번개 모임" 줄 안쪽으로 옮겼다.
+    var segment by rememberSaveable { mutableStateOf(SEGMENT_STORIES) }
+    val crews = segment == SEGMENT_CREWS
     var meetups by rememberSaveable { mutableStateOf(false) }
     var allMeetups by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(GuideTour.active) {
-        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); crews = false; meetups = false; allMeetups = false }
+        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); segment = SEGMENT_STORIES; meetups = false; allMeetups = false }
     }
     // 크루 화면에서 "크루 목록 보기" · "다른 크루 보기"로 돌아왔다
     val listRequested = com.stepup.android.ui.screens.community.crew.CrewListFocus.requested
     LaunchedEffect(listRequested) {
         if (listRequested) {
             viewModel.selectTab(CommunityTab.BOARD)
-            crews = true; meetups = false; allMeetups = false
+            segment = SEGMENT_CREWS; meetups = false; allMeetups = false
             com.stepup.android.ui.screens.community.crew.CrewListFocus.requested = false
+        }
+    }
+    // 채팅 화면에서 "채팅 목록으로" · 참여 종료(32)로 돌아왔다
+    val chatRequested = com.stepup.android.ui.screens.community.chat.ChatListFocus.requested
+    LaunchedEffect(chatRequested) {
+        if (chatRequested) {
+            viewModel.selectTab(CommunityTab.BOARD)
+            segment = SEGMENT_CHAT; meetups = false; allMeetups = false
+            com.stepup.android.ui.screens.community.chat.ChatListFocus.requested = false
         }
     }
     BackHandler(enabled = tab == CommunityTab.CREW || meetups) {
@@ -138,6 +150,7 @@ fun CommunityScreen(
     val segments = listOf(
         stringResource(R.string.community_stories),
         stringResource(R.string.crew_recruit_tab),
+        stringResource(R.string.chat_tab),
     )
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
@@ -164,17 +177,24 @@ fun CommunityScreen(
                             onClick = { viewModel.selectTab(CommunityTab.CREW) })
                     }
                 }
-                // S2 — 위는 글자 탭 두 개. 큰 제목은 두지 않는다.
+                // S2 — 위는 글자 탭 세 개(러닝 이야기 / 크루 모집 / 크루 채팅). 큰 제목은 두지 않는다.
                 else -> Row(
                     Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    // 시안(크루 채팅 01) — 세 탭이 좌우 끝까지 고르게
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     segments.forEachIndexed { index, label ->
                         com.stepup.android.ui.components.S2TextTab(
                             label = label,
-                            selected = (if (crews) 1 else 0) == index,
-                            onClick = { crews = index == 1 },
-                            modifier = Modifier.testTag(if (index == 0) "community-tab-stories" else "community-tab-crews"),
+                            selected = segment == index,
+                            onClick = { segment = index },
+                            modifier = Modifier.testTag(
+                                when (index) {
+                                    SEGMENT_STORIES -> "community-tab-stories"
+                                    SEGMENT_CREWS -> "community-tab-crews"
+                                    else -> "community-tab-chat"
+                                },
+                            ),
                         )
                     }
                 }
@@ -208,6 +228,13 @@ fun CommunityScreen(
                     onOpenResult = { _, _ -> }, onRecruitEntry = {}, onCreate = {}, onOpenRegion = {},
                 ),
                 onOpenMeetups = { meetups = true; allMeetups = false },
+            )
+            segment == SEGMENT_CHAT -> com.stepup.android.ui.screens.community.chat.ChatListTab(
+                com.stepup.android.ui.screens.community.chat.ChatListActions(
+                    onOpenRoom = onOpenChat,
+                    onFindCrews = { segment = SEGMENT_CREWS },
+                    onCreate = { resume -> (crewActions?.onCreate ?: onCreateCrew)(resume) },
+                ),
             )
             else -> com.stepup.android.ui.screens.community.stories.StoriesTab(
                 viewModel = storiesViewModel,
@@ -817,3 +844,8 @@ private fun MapEntryCard(onClick: () -> Unit) {
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)
     }
 }
+
+/** 커뮤니티 위 글자 탭 — 러닝 이야기 / 크루 모집 / 크루 채팅 */
+private const val SEGMENT_STORIES = 0
+private const val SEGMENT_CREWS = 1
+private const val SEGMENT_CHAT = 2

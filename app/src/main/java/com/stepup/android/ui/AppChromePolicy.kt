@@ -63,6 +63,9 @@ object AppChromePolicy {
     ) + com.stepup.android.ui.screens.community.crew.CrewRoutes.ALL.map {
         // 크루 명함형(확정 2번) — 상세 · 신청 · 멤버 · 목표 · 만들기 · 관리는 자기 머리(뒤로 · 제목)와 아래 큰 버튼 하나
         Destination(it, Screen.Community, Header.Form)
+    } + com.stepup.android.ui.screens.community.chat.ChatRoutes.ALL.map {
+        // 크루 채팅 — 대화는 본문과 입력창을 넓게 쓰도록 하단 탭을 숨기고, 뒤로 가면 대화 목록(또는 들어온 곳)
+        Destination(it, Screen.Community, Header.Form)
     } + listOf(
         Destination(Routes.WALLET, Screen.Profile, Header.Detail),
         Destination(Routes.CHAIN_ACTIVITY, Screen.Profile, Header.Detail),

@@ -303,9 +303,10 @@ class CrewScreenViewModel(
 
     fun transfer(userId: String) = run(CrewOp.TRANSFER) { repo.transfer(crewId, userId) }
 
-    fun leave() = run(CrewOp.LEAVE) { repo.leave(crewId) }
+    // 크루를 나가거나 해산하면 이 폰에 남은 그 크루의 채팅(대화 · 사진 · 입력 글)도 지운다 — 다시 보이지 않게
+    fun leave() = run(CrewOp.LEAVE) { repo.leave(crewId).also { if (it is CrewOutcome.Ok) ServiceLocator.crewChat.forget(crewId) } }
 
-    fun dissolve() = run(CrewOp.DISSOLVE) { repo.dissolve(crewId) }
+    fun dissolve() = run(CrewOp.DISSOLVE) { repo.dissolve(crewId).also { if (it is CrewOutcome.Ok) ServiceLocator.crewChat.forget(crewId) } }
 
     fun report(reason: String, note: String) = run(CrewOp.REPORT) { repo.report(crewId, reason, note) }
 
