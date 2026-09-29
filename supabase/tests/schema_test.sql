@@ -74,6 +74,24 @@ create temp table fix (k text primary key, v text);
 -- 앱 권한(authenticated)으로 바꿔 검사하는 동안에도 준비물은 읽어야 한다.
 grant all on fix to authenticated;
 
+-- 홈페이지 대기 명단은 공개 요청이 직접 DB에 닿지 않고 서버 함수만 사용한다.
+do $$
+begin
+  perform pg_temp.ok(
+    (select relrowsecurity from pg_class where oid = 'public.waitlist_entries'::regclass),
+    '대기 명단 표에 RLS가 켜져 있다');
+  perform pg_temp.ok(
+    not has_table_privilege('anon', 'public.waitlist_entries', 'SELECT')
+    and not has_table_privilege('anon', 'public.waitlist_entries', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.waitlist_entries', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.waitlist_entries', 'INSERT'),
+    '방문자와 로그인 사용자는 대기 명단을 직접 읽거나 쓰지 못한다');
+  perform pg_temp.ok(
+    has_table_privilege('service_role', 'public.waitlist_entries', 'SELECT')
+    and has_table_privilege('service_role', 'public.waitlist_entries', 'INSERT'),
+    '서버 함수 역할은 대기 명단에 접근할 수 있다');
+end $$;
+
 -- ════════════════════════════════════════════════════════════════════
 \echo ''
 \echo '── 준비 ─────────────────────────────────────────────────────────'

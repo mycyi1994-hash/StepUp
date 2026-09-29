@@ -25,8 +25,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="./styles.css?v=20260928-social">
+<link rel="stylesheet" href="./styles.css?v=20260930-waitlist">
 <script type="module" src="./site.js?v=20260928-ready2"></script>
+<script src="./waitlist-config.js" defer></script>
+<script type="module" src="./waitlist.js?v=20260930"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -58,6 +60,14 @@
 
     <section class="page page-film is-active" id="film" aria-labelledby="film-title">
       <div class="film-card">
+        <div class="waitlist-banner">
+          <span class="waitlist-accent" aria-hidden="true"></span>
+          <div class="waitlist-banner-copy">
+            <strong>StepUp의 첫 소식을 기다리고 있나요?</strong>
+            <span>이메일을 남기면 출시 소식을 가장 먼저 알려드릴게요.</span>
+          </div>
+          <button class="waitlist-open" type="button">대기 명단 등록 <span aria-hidden="true">↗</span></button>
+        </div>
         <div class="film-media">
           <video class="promo-film" controls autoplay muted playsinline loop preload="metadata" width="1920" height="1080" poster="./assets/video/stepup-promo-v5.1-poster.jpg" aria-label="StepUp 홍보영상. 재생과 소리는 영상 컨트롤에서 조절할 수 있어요.">
             <source src="./assets/video/stepup-promo-v5.1-mobile.mp4" type="video/mp4" media="(max-width: 740px)">
@@ -257,5 +267,20 @@
     </section>
   </main>
 </div>
+<dialog class="waitlist-dialog" aria-labelledby="waitlist-title">
+  <form class="waitlist-form">
+    <button class="waitlist-close" type="button" aria-label="닫기">×</button>
+    <p class="waitlist-kicker">StepUp 사전 등록</p>
+    <h2 id="waitlist-title">출시 소식을 먼저 받아보세요.</h2>
+    <p class="waitlist-intro">이메일을 남기면 StepUp 출시 소식을 보내드릴게요. 등록한 이메일로 나중에 구글 로그인하면 사전 등록 혜택 대상인지 확인할 수 있습니다. 혜택 내용은 확정 후 안내합니다.</p>
+    <label class="waitlist-label" for="waitlist-email">이메일 주소</label>
+    <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required>
+    <label class="waitlist-consent"><input type="checkbox" name="consent" required><span>출시 안내를 위한 이메일 수집·이용에 동의합니다. <a href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침 ↗</a></span></label>
+    <div class="waitlist-turnstile" aria-label="자동 등록 방지 확인"></div>
+    <p class="waitlist-feedback" role="status" aria-live="polite"></p>
+    <button class="waitlist-submit" type="submit">확인 메일 받기</button>
+    <p class="waitlist-fineprint">확인 메일의 링크를 눌러야 대기 명단 등록이 완료됩니다.</p>
+  </form>
+</dialog>
 </body>
 </html>
