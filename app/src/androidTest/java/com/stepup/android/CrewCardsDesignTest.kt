@@ -88,6 +88,7 @@ class CrewCardsDesignTest {
     private val notes = CopyOnWriteArrayList<String>()
     private lateinit var originalCards: CrewCardRepository
     private lateinit var originalPlaces: PlaceSearch
+    private lateinit var originalHome: com.stepup.android.data.repo.CrewHomeRepository
     private val server = FakeCrewServer()
 
     @After fun restore() {
@@ -95,6 +96,7 @@ class CrewCardsDesignTest {
         CrewPhotoPickerForTest.unavailable = false
         if (::originalCards.isInitialized) ServiceLocator.useCrewCardsForTest(originalCards)
         if (::originalPlaces.isInitialized) ServiceLocator.useCommunityForTest(ServiceLocator.communityRepository, originalPlaces)
+        if (::originalHome.isInitialized) ServiceLocator.useCrewHomeForTest(originalHome)
         runBlocking { ServiceLocator.userPrefs.clearCrewData() }
         runCatching { File(directory, "capture-notes-${System.currentTimeMillis()}.txt").writeText(notes.joinToString("\n")) }
     }
@@ -659,6 +661,13 @@ class CrewCardsDesignTest {
         originalCards = ServiceLocator.crewCards
         originalPlaces = ServiceLocator.placeSearch
         ServiceLocator.useCrewCardsForTest(repository)
+        // 가입한 크루는 목록에서 내 크루 홈(#62)으로 열린다 — 홈도 같은 흉내 서버(crew_home)에서 읽게 한다
+        originalHome = ServiceLocator.crewHome
+        ServiceLocator.useCrewHomeForTest(
+            com.stepup.android.data.repo.CrewHomeRepository(
+                com.stepup.android.data.remote.CrewHomeApi(stepUp), owner = { OWNER }, onEnded = { ServiceLocator.crewChat.forget(it) },
+            ),
+        )
         ServiceLocator.useCommunityForTest(
             ServiceLocator.communityRepository,
             PlaceSearch(PlaceSearchApi(key = "test", fetch = ::geocoding), platform = null, language = { "ko" }),
