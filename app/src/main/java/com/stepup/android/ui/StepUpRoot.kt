@@ -89,6 +89,7 @@ import com.stepup.android.ui.screens.community.CommunityScreen
 import com.stepup.android.ui.screens.community.CrewBoardScreen
 import com.stepup.android.ui.screens.community.crew.crewGraph
 import com.stepup.android.ui.screens.community.chat.chatGraph
+import com.stepup.android.ui.screens.community.home.crewHomeGraph
 import com.stepup.android.ui.screens.community.chat.openChatRoom
 import com.stepup.android.ui.screens.community.FlashRunDetailScreen
 import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
@@ -1235,6 +1236,13 @@ internal fun MainScaffold(
             }
             // 크루 명함형(확정 2번) — 상세 · 가입 신청 · 멤버 · 주간 목표 · 만들기 · 관리
             crewGraph(
+                navController,
+                communityRoute = Screen.Community.route,
+                boardRoute = { crewId -> Routes.crewBoard(crewId) },
+                lobbyRoute = { crewId -> Routes.lobby(crewId) },
+            )
+            // 내 크루 홈(확정 4번, 2026-09-29) — 가입한 크루의 홈 · 소개 · 레벨 · 크루원 · 모임 · 참석 · 주간 기록
+            crewHomeGraph(
                 navController,
                 communityRoute = Screen.Community.route,
                 boardRoute = { crewId -> Routes.crewBoard(crewId) },

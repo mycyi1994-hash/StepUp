@@ -19,6 +19,7 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.CrewDraftCodec
 import com.stepup.android.domain.CrewDraftMode
 import com.stepup.android.ui.screens.community.chat.openChatRoom
+import com.stepup.android.ui.screens.community.home.openCrewHome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,7 +117,15 @@ private fun NavHostController.showCrew(crewId: String, replacing: String) {
 
 /** 커뮤니티 · 크루 모집 목록에서 나가는 곳 */
 fun crewListActions(navController: NavHostController): CrewListActions = CrewListActions(
-    onOpenCrew = { id -> navController.navigate(CrewRoutes.detail(id)) },
+    // 가입한 크루(크루원 · 크루장)는 내 크루 홈(4번), 그 밖은 크루 명함 상세
+    onOpenCrew = { id ->
+        val role = ServiceLocator.crewCards.cardNow(id)?.role
+        if (role == com.stepup.android.domain.CrewRole.MEMBER || role == com.stepup.android.domain.CrewRole.OWNER) {
+            navController.openCrewHome(id)
+        } else {
+            navController.navigate(CrewRoutes.detail(id))
+        }
+    },
     onOpenImage = { id -> navController.navigate(CrewRoutes.image(id)) },
     onOpenMembers = { id -> navController.navigate(CrewRoutes.members(id)) },
     onOpenLeader = { id, _ -> navController.navigate(CrewRoutes.leader(id)) },

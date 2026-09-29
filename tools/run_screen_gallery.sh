@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards crew-chat; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v2 my-shoes crew-cards crew-chat crew-home; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -176,6 +176,15 @@ if [[ "$suite" == "community" ]]; then
     cp -R app/build/outputs/androidTest-results/. "screen-gallery/crew-chat-results/$part/" || true
   done
   pull_captures /sdcard/Android/data/com.stepup.android/files/crew-chat/. screen-gallery/crew-chat/ || status=1
+  # 내 크루 홈(확정 4번, 2026-09-29) — 홈과 소개 · 레벨 · 크루원 · 크루장 · 채팅 · 다음 러닝(참석 · 실패) · 주간 기록 · 공지의
+  # 시안 번호별 장면(00~31). 가짜 서버로 크루원 도윤 · 크루장 준호 시점을 찍고, 검사 함수마다 나눠 돌린다
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  for part in memberHome memberStates ownerHome; do
+    run_instrumentation "crew-home-$part" "com.stepup.android.CrewHomeDesignTest#$part"
+    mkdir -p "screen-gallery/crew-home-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/crew-home-results/$part/" || true
+  done
+  pull_captures /sdcard/Android/data/com.stepup.android/files/crew-home/. screen-gallery/crew-home/ || status=1
   # 내 정보 러닝 패스(2026-09-27) — 버튼마다 이동 · 카드 상태
   run_instrumentation profile "com.stepup.android.ProfileRunningPathTest"
   mkdir -p screen-gallery/profile-results

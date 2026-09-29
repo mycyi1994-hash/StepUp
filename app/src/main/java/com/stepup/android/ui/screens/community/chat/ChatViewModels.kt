@@ -20,6 +20,7 @@ import com.stepup.android.domain.ChatDelivery
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatNotice
 import com.stepup.android.domain.ChatNoticeDraft
+import com.stepup.android.domain.ChatNoticeMeeting
 import com.stepup.android.domain.ChatReportReason
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRules
@@ -792,13 +793,17 @@ data class ChatNoticeForm(
     val pinned: Boolean = true,
     /** 처음 연 값(바뀌었는지 — 나갈 때 44) */
     val original: Triple<String, String, Boolean> = Triple("", "", true),
+    /** 이은 모임(4번) — 이 크루의 앞으로의 모임 하나 또는 없음 */
+    val meeting: ChatNoticeMeeting? = null,
+    val originalMeeting: Long? = null,
 ) {
-    val changed: Boolean get() = Triple(title, body, pinned) != original
+    val changed: Boolean get() = Triple(title, body, pinned) != original || meeting?.id != originalMeeting
     val ready: Boolean get() = ChatRules.noticeReady(title, body)
 }
 
 sealed interface ChatNoticeSheet {
-    data class SaveFailed(val busy: Boolean = false) : ChatNoticeSheet
+    /** [meetingGone] — 이으려던 모임이 지워졌거나 · 가려졌거나 · 이미 시작했다(연결을 풀어 두었다) */
+    data class SaveFailed(val busy: Boolean = false, val meetingGone: Boolean = false) : ChatNoticeSheet
     data object KeepDraft : ChatNoticeSheet
     data class Delete(val state: ChatConfirm = ChatConfirm()) : ChatNoticeSheet
 }
@@ -817,6 +822,9 @@ class ChatNoticeEditViewModel(
     val load = MutableStateFlow<ChatLoad<Unit>>(ChatLoad.Loading)
     val saving = MutableStateFlow(false)
     val sheet = MutableStateFlow<ChatNoticeSheet?>(null)
+
+    /** 모임 고르기 시트 — null 이면 닫힘. 앞으로의 이 크루 모임(서버) */
+    val meetings = MutableStateFlow<ChatLoad<List<com.stepup.android.domain.CrewMeeting>>?>(null)
 
     private val _done = MutableStateFlow(false)
 
@@ -842,7 +850,7 @@ class ChatNoticeEditViewModel(
                     load.value = ChatLoad.Ready(Unit)
                 }
                 noticeId == null -> {
-                    form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, Triple("", "", true)) } ?: ChatNoticeForm()
+                    form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, Triple("", "", true), meeting = it.meeting) } ?: ChatNoticeForm()
                     load.value = ChatLoad.Ready(Unit)
                 }
                 else -> {
@@ -853,9 +861,11 @@ class ChatNoticeEditViewModel(
                                 load.value = ChatLoad.Failed
                             } else {
                                 val original = Triple(notice.title, notice.body, notice.pinned)
+                                val linked = notice.meeting
                                 // 이 공지를 고치다 남긴 초안이 있으면 그것으로(공지 내용을 생성 예시로 덮지 않는다)
-                                form.value = draft?.let { ChatNoticeForm(it.title, it.body, it.pinned, original) }
-                                    ?: ChatNoticeForm(notice.title, notice.body, notice.pinned, original)
+                                form.value = draft?.let {
+                                    ChatNoticeForm(it.title, it.body, it.pinned, original, if (it.meetingChanged) it.meeting else linked, linked?.id)
+                                } ?: ChatNoticeForm(notice.title, notice.body, notice.pinned, original, linked, linked?.id)
                                 load.value = ChatLoad.Ready(Unit)
                             }
                         }
@@ -871,14 +881,50 @@ class ChatNoticeEditViewModel(
     fun setBody(text: String) = form.update { it.copy(body = text.take(ChatRules.NOTICE_BODY_MAX)) }
     fun setPinned(on: Boolean) = form.update { it.copy(pinned = on) }
 
+    /** 모임 목록 읽기 — 시트를 닫거나 다시 열면 앞의 읽기를 버린다(닫은 시트가 늦게 다시 뜨지 않게) */
+    private var meetingsJob: kotlinx.coroutines.Job? = null
+
+    /** 모임 고르기(4번) — 앞으로의 이 크루 모임을 서버에서 읽는다 */
+    fun openMeetings() {
+        meetingsJob?.cancel()
+        meetings.value = ChatLoad.Loading
+        meetingsJob = viewModelScope.launch {
+            meetings.value = when (val outcome = ServiceLocator.crewHome.upcoming(crewId)) {
+                is com.stepup.android.data.repo.HomeOutcome.Ok -> ChatLoad.Ready(outcome.value)
+                com.stepup.android.data.repo.HomeOutcome.Ended -> {
+                    _ended.value = true
+                    null
+                }
+                else -> ChatLoad.Failed
+            }
+        }
+    }
+
+    fun closeMeetings() {
+        meetingsJob?.cancel()
+        meetings.value = null
+    }
+
+    fun pickMeeting(meeting: com.stepup.android.domain.CrewMeeting?) {
+        meetingsJob?.cancel()
+        form.update { it.copy(meeting = meeting?.let { m -> ChatNoticeMeeting(m.id, m.title, m.place, m.meetAt) }) }
+        meetings.value = null
+    }
+
     /** 공지 올리기 · 수정 저장 — 서버가 받은 뒤에만 돌아간다. 실패하면 쓴 내용 · 기존 공지 그대로(43) */
     fun save() {
         val current = form.value
         if (!current.ready || saving.value) return
         saving.value = true
-        if (sheet.value is ChatNoticeSheet.SaveFailed) sheet.value = ChatNoticeSheet.SaveFailed(busy = true)
+        (sheet.value as? ChatNoticeSheet.SaveFailed)?.let { sheet.value = it.copy(busy = true) }
+        // 모임은 바꾼 경우에만 보낸다 — 그대로 둔 연결은 서버가 그대로 두고(이어 둔 모임이 그새 시작했어도 글은 고쳐진다),
+        // 새 공지는 고른 모임이 있을 때만
+        val meetingChange = current.meeting?.id != current.originalMeeting
         viewModelScope.launch {
-            val outcome = repo.saveNotice(crewId, noticeId, current.title, current.body, current.pinned, clientKey.takeIf { noticeId == null })
+            val outcome = repo.saveNotice(
+                crewId, noticeId, current.title, current.body, current.pinned, clientKey.takeIf { noticeId == null },
+                meetingId = current.meeting?.id.takeIf { meetingChange }, meetingChange = meetingChange,
+            )
             saving.value = false
             when (outcome) {
                 is ChatOutcome.Ok -> {
@@ -890,6 +936,13 @@ class ChatNoticeEditViewModel(
                 is ChatOutcome.NotOwner -> {
                     repo.saveNoticeDraft(null, crewId, noticeId)
                     _ownerLost.value = true
+                }
+                // 이으려던 모임이 없어졌다(지워짐 · 가려짐 · 시작함) — 연결을 풀고 알린다. 다시 저장하면 모임 없이, 또는 새로 고른 모임으로
+                is ChatOutcome.Rejected -> if (outcome.reason.contains("invalid:meeting")) {
+                    form.update { it.copy(meeting = null) }
+                    sheet.value = ChatNoticeSheet.SaveFailed(meetingGone = true)
+                } else {
+                    sheet.value = ChatNoticeSheet.SaveFailed()
                 }
                 else -> sheet.value = ChatNoticeSheet.SaveFailed()
             }
@@ -906,7 +959,13 @@ class ChatNoticeEditViewModel(
     fun keepDraft(onLeave: () -> Unit) {
         val current = form.value
         viewModelScope.launch {
-            repo.saveNoticeDraft(ChatNoticeDraft(crewId, noticeId, current.title, current.body, current.pinned), crewId, noticeId)
+            repo.saveNoticeDraft(
+                ChatNoticeDraft(
+                    crewId, noticeId, current.title, current.body, current.pinned,
+                    meeting = current.meeting, meetingChanged = current.meeting?.id != current.originalMeeting,
+                ),
+                crewId, noticeId,
+            )
             sheet.value = null
             onLeave()
         }

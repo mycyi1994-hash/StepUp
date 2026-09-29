@@ -32,12 +32,26 @@ if 'ChatRoutes.ALL.map' in policy:
         errors.append(f'Chat route policy mismatch: missing={chat_registered-chat_listed}, stale={chat_listed-chat_registered}')
     if 'it' in declared:
         declared.remove('it')
+# 내 크루 홈(확정 4번)도 같은 방식(crewHomeGraph · CrewHomeRoutes.ALL)
+if 'CrewHomeRoutes.ALL.map' in policy:
+    home_graph = (UI/'screens/community/home/CrewHomeNavGraph.kt').read_text(encoding='utf-8')
+    home_registered = set(re.findall(r'composable\(\s*(CrewHomeRoutes\.[A-Z_]+)', home_graph))
+    home_all = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', home_graph)
+    home_listed = {f'CrewHomeRoutes.{name.strip()}' for name in home_all.group(1).split(',') if name.strip()} if home_all else set()
+    if not home_registered or home_registered != home_listed:
+        errors.append(f'Crew home route policy mismatch: missing={home_registered-home_listed}, stale={home_listed-home_registered}')
+    if 'it' in declared:
+        declared.remove('it')
 if registered != set(declared):
     errors.append(f'Route policy mismatch: missing={registered-set(declared)}, stale={set(declared)-registered}')
 if len(declared) != len(set(declared)):
     errors.append('Duplicate route policies')
 inventory = json.loads((ROOT/'docs/redesign/screen-inventory.json').read_text(encoding='utf-8'))
-if {row['id'] for row in inventory['routes']} != registered:
+# 목록에는 뿌리 길과 함께 기능별 길 묶음(크루 명함 · 크루 채팅 · 내 크루 홈)도 오른다
+grouped = set()
+for name in ('crew_registered', 'chat_registered', 'home_registered'):
+    grouped |= globals().get(name, set())
+if {row['id'] for row in inventory['routes']} != registered | grouped:
     errors.append('Screen inventory routes are stale; run tools/ui_inventory.py')
 
 for path in UI.rglob('*.kt'):
@@ -114,5 +128,5 @@ if 'barHiddenRoutes' in root:
 if errors:
     print('\n'.join(errors))
     sys.exit(1)
-print(f'Design contract: {len(registered)} routes covered; shared main header/nav and fixed logo roles verified.')
+print(f'Design contract: {len(registered | grouped)} routes covered; shared main header/nav and fixed logo roles verified.')
 print('This is source validation only. Native visual/interaction validation remains required.')

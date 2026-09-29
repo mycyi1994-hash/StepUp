@@ -129,6 +129,9 @@ class CrewChatApi(private val server: StepUpServer) {
         body: String,
         pinned: Boolean,
         clientKey: String?,
+        /** 이을 모임(4번) — [meetingChange] 가 참일 때만 서버가 바꾼다(모르는 예전 앱이 고쳐도 풀리지 않게) */
+        meetingId: Long? = null,
+        meetingChange: Boolean = false,
     ): ServerResult<ChatNoticeRow> =
         rpc(
             "crew_chat_notice_save",
@@ -139,8 +142,13 @@ class CrewChatApi(private val server: StepUpServer) {
                 put("p_body", body)
                 put("p_pinned", pinned)
                 put("p_client_key", clientKey ?: JsonNull)
+                if (meetingChange || meetingId != null) {
+                    put("p_meeting", meetingId ?: JsonNull)
+                    put("p_meeting_change", meetingChange)
+                }
             },
         ) { serverJson.decodeFromString<ChatNoticeRow>(it) }
+
 
     suspend fun noticeDelete(noticeId: Long): ServerResult<Unit> =
         rpc("crew_chat_notice_delete", jsonBody { put("p_notice", noticeId) }) { }
@@ -215,10 +223,25 @@ data class ChatNoticeRow(
     @SerialName("author_name") val authorName: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
+    val meeting: ChatNoticeMeetingRow? = null,
 ) {
     fun toDomain() = ChatNotice(
         id = id, crewId = crewId, title = title, body = body, pinned = pinned, authorId = authorId,
         authorName = authorName.orEmpty(), createdAt = createdAt.chatMillis(), updatedAt = updatedAt.chatMillis(),
+        meeting = meeting?.toDomain(),
+    )
+}
+
+/** 공지에 이은 모임(0049) */
+@Serializable
+data class ChatNoticeMeetingRow(
+    val id: Long,
+    val title: String? = null,
+    val place: String? = null,
+    @SerialName("meet_at") val meetAt: String? = null,
+) {
+    fun toDomain() = com.stepup.android.domain.ChatNoticeMeeting(
+        id = id, title = title.orEmpty(), place = place.orEmpty(), meetAt = meetAt?.chatMillis()?.takeIf { it > 0 },
     )
 }
 

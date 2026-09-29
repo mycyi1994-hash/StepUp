@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 내 크루 홈(확정 4번, 2026-09-29) — 가입한 크루의 홈과 거기서 여는 상세 -->
+<resources>
+    <!-- 00 홈 · 23 모임 없음 · 26 불러오기 실패 · 28 · 29 응답 뒤 -->
+    <string name="crewhome_bar">내 크루</string>
+    <string name="crewhome_chat">크루 채팅</string>
+    <string name="crewhome_chat_new">새 메시지가 있어요</string>
+    <string name="crewhome_chat_quiet">크루원과 이야기해요</string>
+    <string name="crewhome_next">다음 러닝</string>
+    <string name="crewhome_today">오늘</string>
+    <string name="crewhome_tomorrow">내일</string>
+    <string name="crewhome_place_km">%1$s · %2$skm</string>
+    <string name="crewhome_attendees">%1$d명 참석</string>
+    <string name="crewhome_rsvp">참석 여부</string>
+    <string name="crewhome_rsvp_yes">참석 예정</string>
+    <string name="crewhome_rsvp_no">불참 예정</string>
+    <string name="crewhome_rsvp_closed">접수 마감</string>
+    <string name="crewhome_no_meeting_title">아직 예정된 러닝이 없어요</string>
+    <string name="crewhome_no_meeting_body">새 모임이 생기면 이곳에서 알려드려요.\n채팅에서 함께 일정을 이야기해 보세요.</string>
+    <string name="crewhome_week">이번 주 함께</string>
+    <string name="crewhome_week_runners">%1$d명 참여</string>
+    <string name="crewhome_week_of">%1$s / %2$dkm</string>
+    <string name="crewhome_week_km">%1$skm</string>
+    <string name="crewhome_week_waiting">이번 주 첫 러닝을 기다리고 있어요.</string>
+    <string name="crewhome_notice_owner">크루장 %1$s의 공지</string>
+    <string name="crewhome_notice_member">%1$s의 공지</string>
+    <string name="crewhome_error_title">크루 정보를 불러오지 못했어요</string>
+    <string name="crewhome_error_body">연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="crewhome_error_retry">다시 불러오기</string>
+    <string name="crewhome_stale">최신 정보를 불러오지 못했어요. 눌러서 다시 불러와요.</string>
+    <string name="crewhome_menu_intro">크루 소개</string>
+    <string name="crewhome_menu_members">크루원 보기</string>
+    <string name="crewhome_menu_count">%1$d명</string>
+    <string name="crewhome_menu_notices">공지 모아보기</string>
+    <string name="crewhome_menu_board">크루 게시판</string>
+    <string name="crewhome_menu_lobby">같이 달리기</string>
+    <string name="crewhome_menu_manage">크루 관리</string>
+    <string name="crewhome_left">크루에서 나갔어요</string>
+
+    <!-- 01 크루 소개 -->
+    <string name="crewhome_intro_bar">크루 소개</string>
+    <string name="crewhome_intro_area">활동 지역</string>
+    <string name="crewhome_intro_schedule">정기 러닝</string>
+    <string name="crewhome_intro_pace">거리와 속도</string>
+    <string name="crewhome_intro_members">크루원 %1$d명 보기</string>
+
+    <!-- 03 크루 레벨 -->
+    <string name="crewhome_level_bar">크루 레벨</string>
+    <string name="crewhome_level_sub">함께 쌓아가는 크루의 활동</string>
+    <string name="crewhome_level_now">현재 레벨</string>
+    <string name="crewhome_level_next">다음 레벨</string>
+    <string name="crewhome_level_pending">승급 기준 준비 중</string>
+    <string name="crewhome_level_pending_body">기준이 공개되면 여기서 확인할 수 있어요.</string>
+    <string name="crewhome_level_week">이번 주 크루 활동</string>
+    <string name="crewhome_level_week_km">함께 달린 거리</string>
+    <string name="crewhome_level_week_runners">참여한 크루원</string>
+    <string name="crewhome_level_runners_value">%1$d명</string>
+    <string name="crewhome_level_weekly">주간 기록 보기</string>
+
+    <!-- 04 크루원 · 27 이름 검색 -->
+    <string name="crewhome_members_bar">크루원</string>
+    <string name="crewhome_members_title">함께하는 %1$d명</string>
+    <string name="crewhome_members_sub">%1$s · 정원 %2$d명</string>
+    <string name="crewhome_members_search">이름으로 찾기</string>
+    <string name="crewhome_members_owner">크루장</string>
+    <string name="crewhome_members_member">크루원</string>
+    <string name="crewhome_members_me">나 · %1$s</string>
+    <string name="crewhome_members_found">검색 결과 %1$d명</string>
+    <string name="crewhome_members_found_sub">%1$s %2$s</string>
+    <string name="crewhome_members_none_title">찾는 크루원이 없어요</string>
+    <string name="crewhome_members_none_body">다른 이름으로 검색해 보세요</string>
+    <string name="crewhome_members_error">크루원을 불러오지 못했어요</string>
+
+    <!-- 05 크루장 · 06 크루원 프로필 -->
+    <string name="crewhome_person_leader_bar">크루장 프로필</string>
+    <string name="crewhome_person_member_bar">크루원 프로필</string>
+    <string name="crewhome_person_leader_of">%1$s 크루장</string>
+    <string name="crewhome_person_member_of">%1$s 크루원</string>
+    <string name="crewhome_person_since">%1$s부터 함께해요</string>
+    <string name="crewhome_person_runs">공개한 러닝 기록</string>
+    <string name="crewhome_person_runs_none">공개한 러닝 기록이 없어요</string>
+    <string name="crewhome_person_run">%1$s %2$skm</string>
+    <string name="crewhome_person_run_sub">%1$s · %2$s</string>
+    <string name="crewhome_person_error">프로필을 불러오지 못했어요</string>
+    <string name="crewhome_person_gone">지금 이 크루의 크루원이 아니에요</string>
+    <string name="crewhome_duration_min">%1$d분 %2$d초</string>
+    <string name="crewhome_duration_hour">%1$d시간 %2$d분</string>
+
+    <!-- 09 다음 러닝 · 10 참석 여부 변경 · 11 · 12 응답 뒤 · 25 저장 실패 -->
+    <string name="crewhome_meeting_bar">다음 러닝</string>
+    <string name="crewhome_meeting_past_bar">러닝 모임</string>
+    <string name="crewhome_meeting_distance">달릴 거리</string>
+    <string name="crewhome_meeting_capacity">모임 정원</string>
+    <string name="crewhome_meeting_capacity_value">%1$d명</string>
+    <string name="crewhome_meeting_attendees">%1$d명 참석</string>
+    <string name="crewhome_meeting_yes">참석할게요</string>
+    <string name="crewhome_meeting_no">이번엔 어려워요</string>
+    <string name="crewhome_meeting_saving">저장 중…</string>
+    <string name="crewhome_meeting_change">참석 여부 변경</string>
+    <string name="crewhome_meeting_state_yes">참석 예정 ✓</string>
+    <string name="crewhome_meeting_state_no">불참 예정</string>
+    <string name="crewhome_meeting_closed">참석 접수가 끝난 모임이에요</string>
+    <string name="crewhome_meeting_full">모임 정원이 모두 찼어요</string>
+    <string name="crewhome_meeting_sheet_note">선택하면 참석 여부가 바로 저장돼요.</string>
+    <string name="crewhome_meeting_error">저장하지 못했어요. 현재 응답은 그대로예요.\n연결을 확인하고 다시 눌러주세요.</string>
+    <string name="crewhome_meeting_error_full">정원이 찼어요. 현재 응답은 그대로예요.</string>
+    <string name="crewhome_meeting_error_closed">이미 시작한 모임이라 응답을 바꿀 수 없어요.</string>
+    <string name="crewhome_meeting_load_error">모임을 불러오지 못했어요</string>
+    <string name="crewhome_meeting_cancelled_title">모임이 취소됐어요</string>
+    <string name="crewhome_meeting_cancelled_body">진행자가 모임을 지웠어요.\n크루 채팅에서 일정을 확인해 보세요.</string>
+    <string name="crewhome_meeting_to_chat">크루 채팅</string>
+    <string name="crewhome_meeting_when">%1$s %2$s</string>
+    <string name="crewhome_meeting_when_place">%1$s · %2$s</string>
+
+    <!-- 13 참석자 -->
+    <string name="crewhome_attendees_bar">참석자</string>
+    <string name="crewhome_attendees_title">함께 달릴 %1$d명</string>
+    <string name="crewhome_attendees_host_owner">크루장 · 모임 진행</string>
+    <string name="crewhome_attendees_host">모임 진행</string>
+    <string name="crewhome_attendees_going">참석 예정</string>
+    <string name="crewhome_attendees_empty">아직 참석하기로 한 크루원이 없어요</string>
+    <string name="crewhome_attendees_error">참석자를 불러오지 못했어요</string>
+
+    <!-- 14 모이는 장소 -->
+    <string name="crewhome_place_bar">모이는 장소</string>
+    <string name="crewhome_place_open">지도 앱에서 열기</string>
+    <string name="crewhome_place_back">모임으로 돌아가기</string>
+    <string name="crewhome_place_no_point">등록된 좌표가 없는 모임이에요.\n지도 앱에서 장소 이름으로 찾아요.</string>
+    <string name="crewhome_place_no_app">지도를 열 수 있는 앱이 없어요</string>
+
+    <!-- 15 주간 기록 · 16 주간 선택 · 17 지난주 · 24 기록 없음 -->
+    <string name="crewhome_week_bar">주간 기록</string>
+    <string name="crewhome_week_range">%1$s – %2$s</string>
+    <string name="crewhome_week_heading_c">%1$s이 함께 달린 거리</string>
+    <string name="crewhome_week_heading_v">%1$s가 함께 달린 거리</string>
+    <string name="crewhome_week_goal">목표 %1$dkm</string>
+    <string name="crewhome_week_left">목표까지 %1$skm</string>
+    <string name="crewhome_week_reached">목표를 달성했어요</string>
+    <string name="crewhome_week_first">첫 기록을 기다리고 있어요.</string>
+    <string name="crewhome_week_days">요일별 거리</string>
+    <string name="crewhome_week_members">함께 달린 크루원</string>
+    <string name="crewhome_week_members_note">기록은 크루에 공개한 내용만 보여요.</string>
+    <string name="crewhome_week_member_last">%1$s %2$skm · %3$s</string>
+    <string name="crewhome_week_member_last_day">%1$s %2$skm</string>
+    <string name="crewhome_week_all">참여 기록 모두 보기</string>
+    <string name="crewhome_week_empty_body">이번 주 첫 러닝을 남겨보세요.\n러닝을 마치면 기록이 여기에 모여요.</string>
+    <string name="crewhome_week_empty_past">이 주에는 크루 러닝 기록이 없어요.</string>
+    <string name="crewhome_week_to_home">크루 홈으로</string>
+    <string name="crewhome_week_error">주간 기록을 불러오지 못했어요</string>
+    <string name="crewhome_week_select">주간 선택</string>
+    <string name="crewhome_week_this">이번 주</string>
+    <string name="crewhome_week_last">지난주</string>
+
+    <!-- 18 참여 기록 · 19 러닝 기록 -->
+    <string name="crewhome_runs_bar">참여 기록</string>
+    <string name="crewhome_runs_sub">%1$s %2$skm · %3$s %4$skm</string>
+    <string name="crewhome_runs_week_sub">%1$s %2$skm · %3$d명 참여</string>
+    <string name="crewhome_runs_scope_week">%1$s 전체 기록</string>
+    <string name="crewhome_runs_scope_day">%1$s 기록</string>
+    <string name="crewhome_runs_scope_user">%1$s의 기록</string>
+    <string name="crewhome_runs_row_sub">%1$s %2$s</string>
+    <string name="crewhome_runs_more">아래로 내려 나머지 기록을 볼 수 있어요.</string>
+    <string name="crewhome_runs_empty">이 기간에 크루 러닝 기록이 없어요.</string>
+    <string name="crewhome_runs_error">참여 기록을 불러오지 못했어요</string>
+    <string name="crewhome_yesterday">어제</string>
+    <string name="crewhome_week_of_date">%1$s 주</string>
+    <string name="crewhome_run_bar">러닝 기록</string>
+    <string name="crewhome_run_done">%1$s · %2$s 완료</string>
+    <string name="crewhome_run_time">러닝 시간</string>
+    <string name="crewhome_run_pace">평균 페이스 / km</string>
+    <string name="crewhome_run_shared">크루에 공개한 기록이에요.</string>
+    <string name="crewhome_run_back">참여 기록으로</string>
+    <string name="crewhome_run_missing_title">볼 수 없는 기록이에요</string>
+    <string name="crewhome_run_missing_body">기록이 무효 처리됐거나\n크루에서 나간 러너의 기록이에요.</string>
+    <string name="crewhome_run_error">러닝 기록을 불러오지 못했어요</string>
+
+    <!-- 20 공지 · 공지에 이은 모임 -->
+    <string name="chat_notice_meeting_label">모임 안내</string>
+    <string name="chat_notice_meeting_cta">모임 확인하고 참석 알려주기</string>
+    <string name="chat_notice_author_owner">크루장 %1$s</string>
+    <string name="chat_notice_to_chat">크루 채팅</string>
+    <string name="chat_notice_meeting">모임 연결</string>
+    <string name="chat_notice_meeting_none">연결 안 함</string>
+    <string name="chat_notice_meeting_pick">공지에 이을 모임</string>
+    <string name="chat_notice_meeting_empty">앞으로 예정된 모임이 없어요.\n크루 게시판에서 번개러닝을 열면 여기서 고를 수 있어요.</string>
+    <string name="chat_notice_meeting_note">고른 모임은 공지 아래에 버튼으로 보여요.</string>
+    <string name="chat_notice_meeting_error">모임을 불러오지 못했어요</string>
+    <string name="chat_notice_meeting_gone">이으려던 모임이 지워졌거나 이미 시작해서 연결을 풀었어요.\n다시 저장하거나 다른 모임을 골라 주세요.</string>
+</resources>

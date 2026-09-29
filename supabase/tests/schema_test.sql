@@ -5464,6 +5464,578 @@ delete from public.push_tokens where token in ('doyun48-token-00000000000000000'
 delete from public.push_outbox;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 크루 홈(0049) ────────────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('4a000000-0000-0000-0000-000000000001', 'leader49@test', '{"full_name":"준호"}'),
+  ('4a000000-0000-0000-0000-000000000002', 'doyun49@test', '{"full_name":"도윤"}'),
+  ('4a000000-0000-0000-0000-000000000003', 'minsu49@test', '{"full_name":"민수"}'),
+  ('4a000000-0000-0000-0000-000000000004', 'jiyeon49@test', '{"full_name":"지연"}'),
+  ('4a000000-0000-0000-0000-000000000005', 'outside49@test', '{"full_name":"바깥"}');
+
+do $$
+begin
+  perform pg_temp.ok(
+    not has_table_privilege('authenticated', 'public.flash_declines', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.flash_declines', 'INSERT'),
+    '불참 표는 앱이 직접 읽고 쓰지 못한다(함수로만)');
+  perform pg_temp.ok(
+    not has_function_privilege('anon', 'public.crew_home(uuid)', 'execute')
+    and not has_function_privilege('anon', 'public.crew_meeting_respond(bigint, boolean)', 'execute')
+    and has_function_privilege('authenticated', 'public.crew_week(uuid, date)', 'execute')
+    and has_function_privilege('authenticated', 'public.crew_meeting_respond(bigint, boolean)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_home_member(uuid)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_meeting_json(public.posts, uuid)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_week_bounds(date)', 'execute')
+    and not has_function_privilege('authenticated', 'public.crew_run_route(text)', 'execute'),
+    '로그인 전에는 크루 홈 함수를 못 부르고, 안쪽 도움 함수는 앱이 부르지 못한다');
+end $$;
+
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid; v_a bigint; v_b bigint; v_free bigint;
+begin
+  v_crew := public.crew_create_card('퇴근런', '퇴근 후 가볍게 한 바퀴', '천천히 같이 달려요', null, null, '공덕동', null, null, 0, null, null,
+                                    '{}', 30, true, 160);
+  insert into fix (k, v) values ('hc', v_crew::text);
+  -- 다음 러닝(3시간 뒤) · 그다음(이틀 뒤, 정원 2) · 크루 자유글
+  v_a := public.post_create('FLASH', v_crew, '퇴근 후, 가볍게 3km', '처음 오셔도 괜찮아요.', '공덕역 2번 출구', 3,
+                            now() + interval '3 hours', 10, 37.5446, 126.9515);
+  v_b := public.post_create('FLASH', v_crew, '주말 한강 5km', '', '마포대교 남단', 5, now() + interval '2 days', 2, null, null);
+  v_free := public.post_create('FREE', v_crew, '오늘 날씨 좋네요', '', null, null, null, null, null, null);
+  insert into fix (k, v) values ('ma', v_a::text), ('mb', v_b::text), ('mfree', v_free::text);
+end $$;
+
+reset role;
+insert into public.crew_members (crew_id, user_id, role) values
+  (pg_temp.fx('hc')::uuid, '4a000000-0000-0000-0000-000000000002', 'MEMBER'),
+  (pg_temp.fx('hc')::uuid, '4a000000-0000-0000-0000-000000000003', 'MEMBER'),
+  (pg_temp.fx('hc')::uuid, '4a000000-0000-0000-0000-000000000004', 'MEMBER');
+-- 이미 지난 크루 번개 하나와 크루 밖(전체 게시판) 번개 하나
+with p as (
+  insert into public.posts (author_id, category, crew_id, title, place, meet_at, capacity)
+  values ('4a000000-0000-0000-0000-000000000001', 'FLASH', pg_temp.fx('hc')::uuid, '어제 달리기', '공덕역', now() - interval '1 hour', 10)
+  returning id)
+insert into fix (k, v) select 'mpast', id::text from p;
+with p as (
+  insert into public.posts (author_id, category, crew_id, title, place, meet_at, capacity)
+  values ('4a000000-0000-0000-0000-000000000005', 'FLASH', null, '동네 번개', '공원', now() + interval '1 hour', 10)
+  returning id)
+insert into fix (k, v) select 'mglobal', id::text from p;
+set role authenticated;
+
+-- 바깥 사람의 크루와 그 번개(다른 크루의 모임)
+call pg_temp.login('4a000000-0000-0000-0000-000000000005');
+do $$
+declare v_crew uuid;
+begin
+  v_crew := public.crew_create_card('다른크루', '', '', null, null, '', null, null, 0, null, null, '{}', 10);
+  insert into fix (k, v) values ('oc', v_crew::text),
+    ('mother', public.post_create('FLASH', v_crew, '다른 크루 번개', '', '역', 3, now() + interval '5 hours', 10, null, null)::text);
+end $$;
+
+-- 도윤(크루원) — 홈 · 모임 · 참석 응답
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; h jsonb; m jsonb; a jsonb;
+begin
+  h := public.crew_home(v_crew);
+  perform pg_temp.ok(h->>'role' = 'MEMBER' and (h->>'member_count')::int = 4 and (h->>'unread')::int = 0
+                     and h->'notice' = 'null'::jsonb
+                     and (h->'week'->>'goal_km')::int = 160 and (h->'week'->>'km')::numeric = 0,
+    '홈 — 내 역할 · 지금 인원 · 채팅 미확인 · 목표(지금 값) · 공지 없음');
+  m := h->'meeting';
+  perform pg_temp.ok(m->>'id' = pg_temp.fx('ma') and m->>'place' = '공덕역 2번 출구'
+                     and (m->>'lat')::numeric = 37.5446 and (m->>'distance_km')::numeric = 3
+                     and (m->>'attendees')::int = 1 and m->'my_response' = 'null'::jsonb
+                     and m->'faces'->0->>'name' = '준호' and (m->>'host_owner')::boolean and (m->>'open')::boolean,
+    '다음 러닝은 아직 시작하지 않은 가장 이른 크루 번개(지난 모임 · 자유글 · 다른 게시판은 빼고), 진행자가 첫 참석자');
+
+  m := public.crew_meeting_respond(pg_temp.fx('ma')::bigint, true);
+  perform pg_temp.ok((m->>'attendees')::int = 2 and m->>'my_response' = 'YES', '참석하면 서버가 센 인원이 하나 늘고 내 응답은 참석');
+  m := public.crew_meeting_respond(pg_temp.fx('ma')::bigint, true);
+  perform pg_temp.ok((m->>'attendees')::int = 2 and m->>'my_response' = 'YES', '같은 응답을 다시 보내도 인원은 그대로');
+  m := public.crew_meeting_respond(pg_temp.fx('ma')::bigint, false);
+  perform pg_temp.ok((m->>'attendees')::int = 1 and m->>'my_response' = 'NO', '참석 → 불참이면 인원이 돌아가고 응답은 불참 하나');
+  m := public.crew_meeting_respond(pg_temp.fx('ma')::bigint, false);
+  perform pg_temp.ok((m->>'attendees')::int = 1 and m->>'my_response' = 'NO', '불참을 다시 보내도 그대로');
+  m := public.crew_meeting_respond(pg_temp.fx('ma')::bigint, true);
+  perform pg_temp.ok((m->>'attendees')::int = 2 and m->>'my_response' = 'YES'
+                     and (public.crew_meeting(pg_temp.fx('ma')::bigint)->>'my_response') = 'YES',
+    '불참 → 참석으로 다시 바꿀 수 있다');
+
+  a := public.crew_meeting_attendees(pg_temp.fx('ma')::bigint);
+  perform pg_temp.ok(jsonb_array_length(a) = 2 and a->0->>'name' = '준호' and (a->0->>'host')::boolean and (a->0->>'owner')::boolean
+                     and a->1->>'name' = '도윤' and not (a->1->>'host')::boolean,
+    '참석자는 진행자(크루장) 먼저, 참석한 순서대로');
+  perform pg_temp.ok(jsonb_array_length(public.crew_meetings_upcoming(v_crew)) = 2
+                     and public.crew_meetings_upcoming(v_crew)->0->>'id' = pg_temp.fx('ma'),
+    '앞으로의 크루 모임은 가까운 순(지난 모임은 빼고)');
+  perform pg_temp.ok(not (public.crew_meeting(pg_temp.fx('mpast')::bigint)->>'open')::boolean,
+    '지난 모임도 상세는 열리지만 접수는 닫혀 있다');
+end $$;
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.flash_declines where post_id = pg_temp.fx('ma')::bigint
+                                   and user_id = '4a000000-0000-0000-0000-000000000002')
+                     and (select count(*) from public.flash_participants where post_id = pg_temp.fx('ma')::bigint
+                            and user_id = '4a000000-0000-0000-0000-000000000002') = 1,
+    '사람마다 응답은 하나 — 참석하면 불참 기록이 지워진다');
+end $$;
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+
+call pg_temp.must_fail(format($q$ select public.crew_meeting_respond(%s, true) $q$, pg_temp.fx('mpast')), '이미 시작한 모임에는 응답할 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('mglobal')), '크루 밖 번개는 크루 모임으로 열리지 않는다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('mfree')), '자유글은 모임이 아니다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('mother')), '다른 크루의 모임은 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_respond(%s, null) $q$, pg_temp.fx('ma')), '응답은 참석 · 불참 둘 중 하나');
+
+-- 정원 2 — 민수 불참, 도윤 참석으로 다 찬 뒤 민수가 참석을 누르면 실패하고 불참이 그대로 남는다
+call pg_temp.login('4a000000-0000-0000-0000-000000000003');
+do $$
+begin
+  perform public.crew_meeting_respond(pg_temp.fx('mb')::bigint, false);
+end $$;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+begin
+  perform public.crew_meeting_respond(pg_temp.fx('mb')::bigint, true);
+end $$;
+call pg_temp.login('4a000000-0000-0000-0000-000000000003');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_respond(%s, true) $q$, pg_temp.fx('mb')), '정원이 찬 모임에는 참석할 수 없다(기존 참가 규칙)');
+do $$
+declare m jsonb := public.crew_meeting(pg_temp.fx('mb')::bigint);
+begin
+  perform pg_temp.ok(m->>'my_response' = 'NO' and (m->>'attendees')::int = 2 and (m->>'capacity')::int = 2,
+    '저장에 실패하면 이전 응답(불참)과 인원이 그대로다');
+end $$;
+
+-- 주간 기록 — 지연 · 준호가 이번 주에, 민수가 지난주에 달렸다
+reset role;
+do $$
+declare
+  ws timestamptz := public.crew_week_start();
+  span interval := now() - public.crew_week_start();
+  v_crew uuid := pg_temp.fx('hc')::uuid;
+  v_id bigint;
+begin
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id, track)
+  values ('4a000000-0000-0000-0000-000000000004', ws + span * 0.25, ws + span * 0.5, 2184, 6000, 5200, 'CLEAN', v_crew,
+          pg_temp.track(ws + span * 0.25, 600, 0.00003))
+  returning id into v_id;
+  insert into fix (k, v) values ('w1', v_id::text);
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+  values ('4a000000-0000-0000-0000-000000000001', ws + span * 0.75, ws + span * 0.9, 1080, 3500, 3000, 'CLEAN', v_crew)
+  returning id into v_id;
+  insert into fix (k, v) values ('w2', v_id::text);
+  -- 무효 판정 · 크루 밖 사람 · 크루 없이 달린 것은 세지 않는다
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+  values ('4a000000-0000-0000-0000-000000000004', ws + span * 0.3, ws + span * 0.35, 600, 900, 9999, 'VOID', v_crew)
+  returning id into v_id;
+  insert into fix (k, v) values ('wvoid', v_id::text);
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+  values ('4a000000-0000-0000-0000-000000000005', ws + span * 0.3, ws + span * 0.35, 600, 900, 8888, 'CLEAN', v_crew)
+  returning id into v_id;
+  insert into fix (k, v) values ('wout', v_id::text);
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+  values ('4a000000-0000-0000-0000-000000000004', ws + span * 0.4, ws + span * 0.45, 600, 900, 7777, 'CLEAN', null)
+  returning id into v_id;
+  insert into fix (k, v) values ('wsolo', v_id::text);
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id)
+  values ('4a000000-0000-0000-0000-000000000003', ws - interval '1 day', ws - interval '1 day' + interval '40 minutes', 2400, 8000, 7000, 'CLEAN', v_crew);
+end $$;
+set role authenticated;
+
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare
+  v_crew uuid := pg_temp.fx('hc')::uuid;
+  v_this date := (public.crew_week_start() at time zone 'Asia/Seoul')::date;
+  v_today int := (now() at time zone 'Asia/Seoul')::date - (public.crew_week_start() at time zone 'Asia/Seoul')::date;
+  w jsonb; p jsonb; r jsonb; v_day date;
+begin
+  w := public.crew_week(v_crew);
+  perform pg_temp.ok((w->>'this_week')::boolean and (w->>'week_start')::date = v_this
+                     and abs((w->>'km')::numeric - 8.2) < 0.0001 and (w->>'runners')::int = 2 and (w->>'goal_km')::int = 160,
+    '이번 주 함께 — 지금 멤버가 이 크루로 달린 거리만(무효 · 크루 밖 사람 · 크루 없이 달린 것 제외)');
+  perform pg_temp.ok(jsonb_array_length(w->'days') = 7
+                     and (select count(*) from jsonb_array_elements(w->'days') d where d = 'null'::jsonb) = 6 - v_today
+                     and (select count(*) from jsonb_array_elements(w->'days') with ordinality d(v, i) where i - 1 <= v_today and v = 'null'::jsonb) = 0
+                     and abs((select sum(v::text::numeric) from jsonb_array_elements(w->'days') d(v) where v <> 'null'::jsonb) - 8.2) < 0.0001,
+    '요일별 거리는 월 → 일, 아직 오지 않은 요일은 null(0km 와 다르다), 지난 요일의 합이 총거리');
+  perform pg_temp.ok(jsonb_array_length(w->'members') = 2 and w->'members'->0->>'name' = '지연'
+                     and abs((w->'members'->0->>'km')::numeric - 5.2) < 0.0001 and (w->'members'->0->>'runs')::int = 1
+                     and w->'members'->1->>'name' = '준호',
+    '크루원 활동은 많이 달린 순');
+  perform pg_temp.ok(jsonb_array_length(w->'weeks') = 3 and (w->'weeks'->>0)::date = v_this and (w->'weeks'->>1)::date = v_this - 7,
+    '고를 수 있는 주는 이번 주 · 지난주 · 2주 전');
+
+  p := public.crew_week(v_crew, v_this - 7);
+  perform pg_temp.ok(not (p->>'this_week')::boolean and abs((p->>'km')::numeric - 7) < 0.0001 and (p->>'runners')::int = 1
+                     and (select count(*) from jsonb_array_elements(p->'days') d where d = 'null'::jsonb) = 0
+                     and abs((p->'days'->>6)::numeric - 7) < 0.0001,
+    '지난주는 끝난 한 주 — 모든 요일에 값이 있고(달리지 않은 날은 0), 일요일 7km');
+
+  r := public.crew_runs(v_crew);
+  perform pg_temp.ok(jsonb_array_length(r) = 2 and r->0->>'id' = pg_temp.fx('w2') and r->1->>'id' = pg_temp.fx('w1')
+                     and r->1->>'name' = '지연' and (r->1->>'distance_m')::numeric = 5200 and (r->1->>'duration_s')::int = 2184,
+    '참여 기록은 이번 주 전체를 늦게 끝난 순으로');
+  perform pg_temp.ok(jsonb_array_length(public.crew_runs(v_crew, null, null, '4a000000-0000-0000-0000-000000000004')) = 1
+                     and jsonb_array_length(public.crew_runs(v_crew, v_this - 7)) = 1,
+    '사람 · 주를 고르면 그 기록만');
+  v_day := (select (s.started_at at time zone 'Asia/Seoul')::date from public.crew_runs(v_crew, null, null, null, null, null, 1) x
+              cross join lateral (select (x->0->>'started_at')::timestamptz as started_at) s);
+  perform pg_temp.ok(exists (select 1 from jsonb_array_elements(public.crew_runs(v_crew, null, v_day)) e where e->>'id' = pg_temp.fx('w2'))
+                     and not exists (select 1 from jsonb_array_elements(public.crew_runs(v_crew, null, v_day)) e
+                                      where ((e->>'started_at')::timestamptz at time zone 'Asia/Seoul')::date <> v_day),
+    '요일을 고르면 그날(한국 시간) 기록만');
+  r := public.crew_runs(v_crew, null, null, null, null, null, 1);
+  perform pg_temp.ok(jsonb_array_length(r) = 1 and r->0->>'id' = pg_temp.fx('w2')
+                     and public.crew_runs(v_crew, null, null, null, (r->0->>'ended_at')::timestamptz, (r->0->>'id')::bigint, 1)->0->>'id'
+                         = pg_temp.fx('w1'),
+    '이어 읽기는 마지막 줄 다음부터(겹치거나 빠지지 않는다)');
+
+  perform pg_temp.ok(public.crew_member_last_run(v_crew, '4a000000-0000-0000-0000-000000000004')->>'id' = pg_temp.fx('w1')
+                     and public.crew_member_last_run(v_crew, '4a000000-0000-0000-0000-000000000002') is null,
+    '크루원의 최근 크루 러닝(무효 제외) · 없으면 비어 있다');
+  r := public.crew_run(pg_temp.fx('w1')::bigint);
+  perform pg_temp.ok(r->>'name' = '지연' and (r->>'distance_m')::numeric = 5200
+                     and array_length(string_to_array(r->>'route', ';'), 1) = 64
+                     and split_part(split_part(r->>'route', ';', 1), ',', 1)::numeric between 37.5026 and 37.5028
+                     and split_part(split_part(r->>'route', ';', 64), ',', 1)::numeric between 37.5152 and 37.5154,
+    '크루 러닝 한 건 — 코스는 처음과 끝 300m 를 떼고 64점까지');
+  perform pg_temp.ok((public.crew_home(v_crew)->'week'->>'km')::numeric between 8.1999 and 8.2001,
+    '홈의 이번 주 함께도 같은 셈');
+end $$;
+
+call pg_temp.must_fail(format($q$ select public.crew_week('%s', '%s'::date + 1) $q$, pg_temp.fx('hc'),
+  (public.crew_week_start() at time zone 'Asia/Seoul')::date), '주는 월요일로만 고른다');
+call pg_temp.must_fail(format($q$ select public.crew_week('%s', '%s'::date + 7) $q$, pg_temp.fx('hc'),
+  (public.crew_week_start() at time zone 'Asia/Seoul')::date), '오지 않은 주는 고를 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_week('%s', '%s'::date - 84) $q$, pg_temp.fx('hc'),
+  (public.crew_week_start() at time zone 'Asia/Seoul')::date), '12주보다 전은 고를 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_runs('%s', null, '%s'::date + 7) $q$, pg_temp.fx('hc'),
+  (public.crew_week_start() at time zone 'Asia/Seoul')::date), '고른 주 밖의 날은 고를 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_run(%s) $q$, pg_temp.fx('wvoid')), '무효 판정 러닝은 크루 기록으로 열리지 않는다');
+call pg_temp.must_fail(format($q$ select public.crew_run(%s) $q$, pg_temp.fx('wout')), '크루원이 아닌 사람의 러닝은 열리지 않는다');
+call pg_temp.must_fail(format($q$ select public.crew_run(%s) $q$, pg_temp.fx('wsolo')), '크루 없이 달린 러닝은 열리지 않는다');
+
+reset role;
+do $$
+begin
+  perform pg_temp.ok(public.crew_run_route(pg_temp.track(now(), 100, 0.00003)) = '' and public.crew_run_route('') = ''
+                     and public.crew_run_route('x,y;1,2') = '',
+    '600m 가 안 되는 코스는 보이지 않는다(출발 · 도착이 드러나지 않게)');
+end $$;
+set role authenticated;
+
+-- 크루장 — 공지에 모임 잇기 · 채팅 미확인
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; n jsonb; n2 jsonb;
+begin
+  n := public.crew_chat_notice_save(v_crew, null, '오늘도 천천히 3km 함께 달려요', '오늘 저녁 7시 30분에 만나요.', true, null,
+                                    pg_temp.fx('ma')::bigint);
+  perform pg_temp.ok(n->'meeting'->>'id' = pg_temp.fx('ma') and n->'meeting'->>'place' = '공덕역 2번 출구'
+                     and n->'meeting'->>'title' = '퇴근 후, 가볍게 3km',
+    '공지에 이 크루의 모임을 이을 수 있다');
+  n2 := public.crew_chat_notice_save(v_crew, null, '처음 오시는 분들께', '만나는 장소와 준비물을 확인해 주세요.', false);
+  perform pg_temp.ok(n2->'meeting' = 'null'::jsonb, '모임을 잇지 않은 공지는 모임이 비어 있다(앱이 버튼을 숨긴다)');
+  insert into fix (k, v) values ('n1', n->>'id'), ('n2', n2->>'id');
+  n := public.crew_chat_notice_save(v_crew, (n->>'id')::bigint, '오늘도 천천히 3km 함께 달려요', '7시 30분 출발', true);
+  perform pg_temp.ok(n->'meeting'->>'id' = pg_temp.fx('ma'),
+    '모임을 모르는 예전 앱이 고쳐도 이어 둔 모임은 그대로');
+  perform public.crew_chat_send(v_crew, 'c4900000-0000-0000-0000-000000000001', '오늘 비 온대요. 우산 챙기세요.');
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '자유글 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mfree')),
+  '자유글은 모임으로 이을 수 없다');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '남의 모임 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mother')),
+  '다른 크루의 모임은 이을 수 없다');
+
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; h jsonb; v_last bigint;
+begin
+  h := public.crew_home(v_crew);
+  perform pg_temp.ok(h->'notice'->>'id' = pg_temp.fx('n1') and h->'notice'->>'author_name' = '준호'
+                     and h->'notice'->'meeting'->>'id' = pg_temp.fx('ma') and (h->>'unread')::int = 1,
+    '홈의 공지는 고정 공지(없으면 최근), 채팅 미확인은 목록과 같은 셈');
+  perform pg_temp.ok(public.crew_chat_notice(pg_temp.fx('n2')::bigint)->>'title' = '처음 오시는 분들께'
+                     and public.crew_chat_notice(pg_temp.fx('n2')::bigint)->'meeting' = 'null'::jsonb
+                     and public.crew_chat_notice(pg_temp.fx('n1')::bigint)->'meeting'->>'id' = pg_temp.fx('ma'),
+    '공지는 각자의 id 로 열린다');
+  perform pg_temp.ok(public.crew_chat_sync(v_crew, null)->'room'->'pinned'->'meeting'->>'id' = pg_temp.fx('ma'),
+    '채팅방 위 고정 공지에도 이은 모임이 실린다');
+  v_last := (public.crew_chat_sync(v_crew, null)->>'last_rev')::bigint;
+  perform public.crew_chat_read(v_crew, v_last);
+  perform pg_temp.ok((public.crew_home(v_crew)->>'unread')::int = 0, '채팅을 읽고 돌아오면 홈의 미확인은 0');
+end $$;
+
+-- 공지에 새로 잇는 모임은 앞으로의 모임만 — 같은 요청 키로 다시 보내면 확인 전에 먼저 돌려주고,
+-- 이어 둔 모임이 시작한 뒤에 글만 고쳐도 막히지 않는다
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '지난 모임 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mpast')),
+  '이미 시작한 모임은 공지에 새로 이을 수 없다');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; n jsonb; v_key uuid := 'c4900000-0000-0000-0000-0000000000a1';
+begin
+  n := public.crew_chat_notice_save(v_crew, null, '모임 공지', '곧 만나요', false, v_key, pg_temp.fx('mb')::bigint);
+  insert into fix (k, v) values ('n3', n->>'id');
+end $$;
+reset role;
+update public.posts set meet_at = now() - interval '1 minute' where id = pg_temp.fx('mb')::bigint;
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; n jsonb;
+begin
+  n := public.crew_chat_notice_save(v_crew, null, '모임 공지', '곧 만나요', false, 'c4900000-0000-0000-0000-0000000000a1', pg_temp.fx('mb')::bigint);
+  perform pg_temp.ok(n->>'id' = pg_temp.fx('n3'), '같은 요청 키로 다시 보내면 모임이 시작한 뒤라도 처음 공지를 그대로 돌려준다');
+  n := public.crew_chat_notice_save(v_crew, pg_temp.fx('n3')::bigint, '모임 공지', '늦으면 채팅으로', false, null,
+                                    pg_temp.fx('mb')::bigint, false);
+  perform pg_temp.ok(n->>'body' = '늦으면 채팅으로' and n->'meeting'->>'id' = pg_temp.fx('mb'),
+    '이어 둔 모임이 시작한 뒤에도 모임을 바꾸지 않고 글만 고칠 수 있다');
+  n := public.crew_chat_notice_save(v_crew, pg_temp.fx('n3')::bigint, '모임 공지', '늦으면 채팅으로', false, null, null, true);
+  perform pg_temp.ok(n->'meeting' = 'null'::jsonb, '연결 안 함으로 바꾸면 모임이 풀린다');
+  perform public.crew_chat_notice_delete(pg_temp.fx('n3')::bigint);
+end $$;
+reset role;
+update public.posts set meet_at = now() + interval '2 days' where id = pg_temp.fx('mb')::bigint;
+
+-- 신고로 가려진 모임(5건) · 내가 차단한 사람의 모임은 게시판처럼 홈 · 모임 · 공지에서 빠진다
+insert into public.content_reports (reporter_id, target_type, target_id, reason)
+select u, 'POST', pg_temp.fx('mb'), 'SPAM'
+  from unnest(array['4a000000-0000-0000-0000-000000000001', '4a000000-0000-0000-0000-000000000002',
+                    '4a000000-0000-0000-0000-000000000003', '4a000000-0000-0000-0000-000000000004',
+                    '4a000000-0000-0000-0000-000000000005']::uuid[]) u;
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; u jsonb;
+begin
+  u := public.crew_meetings_upcoming(v_crew);
+  perform pg_temp.ok(jsonb_array_length(u) = 1 and u->0->>'id' = pg_temp.fx('ma'), '가려진 모임은 공지에 이을 모임 목록에서 빠진다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('mb')), '가려진 모임은 열리지 않는다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_respond(%s, false) $q$, pg_temp.fx('mb')), '가려진 모임에는 응답할 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_meeting_attendees(%s) $q$, pg_temp.fx('mb')), '가려진 모임의 참석자는 볼 수 없다');
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(
+  format($q$ select public.crew_chat_notice_save('%s', null, '가려진 모임 잇기', '', false, null, %s) $q$, pg_temp.fx('hc'), pg_temp.fx('mb')),
+  '가려진 모임은 공지에 이을 수 없다');
+reset role;
+delete from public.content_reports where target_type = 'POST' and target_id = pg_temp.fx('mb');
+insert into public.user_blocks (blocker_id, blocked_id)
+values ('4a000000-0000-0000-0000-000000000002', '4a000000-0000-0000-0000-000000000001');
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; h jsonb;
+begin
+  h := public.crew_home(v_crew);
+  perform pg_temp.ok(h->'meeting' = 'null'::jsonb and h->'notice'->'meeting' = 'null'::jsonb
+                     and jsonb_array_length(public.crew_meetings_upcoming(v_crew)) = 0,
+    '차단한 사람이 연 모임은 다음 러닝 · 공지의 모임 · 모임 목록에서 빠진다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('ma')), '차단한 사람이 연 모임은 열리지 않는다');
+call pg_temp.login('4a000000-0000-0000-0000-000000000003');
+do $$
+declare m jsonb := public.crew_meeting(pg_temp.fx('ma')::bigint);
+begin
+  perform pg_temp.ok(m->>'id' = pg_temp.fx('ma') and public.crew_home(pg_temp.fx('hc')::uuid)->'meeting'->>'id' = pg_temp.fx('ma'),
+    '차단하지 않은 크루원에게는 그대로 보인다');
+end $$;
+reset role;
+delete from public.user_blocks where blocker_id = '4a000000-0000-0000-0000-000000000002';
+-- 준호가 도윤을 차단하면 준호가 보는 참석자 · 얼굴에서 도윤이 빠진다(인원 수는 서버가 센 그대로)
+insert into public.user_blocks (blocker_id, blocked_id)
+values ('4a000000-0000-0000-0000-000000000001', '4a000000-0000-0000-0000-000000000002');
+set role authenticated;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare m jsonb := public.crew_meeting(pg_temp.fx('ma')::bigint); a jsonb := public.crew_meeting_attendees(pg_temp.fx('ma')::bigint);
+begin
+  perform pg_temp.ok((m->>'attendees')::int = 2 and jsonb_array_length(m->'faces') = 1 and jsonb_array_length(a) = 1
+                     and a->0->>'name' = '준호',
+    '차단한 사람은 참석자 명단 · 얼굴에서 빠지고 인원 수는 그대로');
+end $$;
+reset role;
+delete from public.user_blocks where blocker_id = '4a000000-0000-0000-0000-000000000001';
+set role authenticated;
+
+-- 모임이 취소(글 삭제)되면 공지의 모임이 비고, 홈은 다음 유효 모임 → 없으면 빈 상태(주간 기록은 그대로)
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('hc')::uuid; h jsonb;
+begin
+  perform public.post_delete(pg_temp.fx('ma')::bigint);
+  perform pg_temp.ok(public.crew_chat_notice(pg_temp.fx('n1')::bigint)->'meeting' = 'null'::jsonb,
+    '이은 모임이 지워지면 공지의 모임이 빈다');
+  perform pg_temp.ok(public.crew_home(v_crew)->'meeting'->>'id' = pg_temp.fx('mb'), '지운 모임 다음의 유효 모임이 다음 러닝');
+  perform public.post_delete(pg_temp.fx('mb')::bigint);
+  h := public.crew_home(v_crew);
+  perform pg_temp.ok(h->'meeting' = 'null'::jsonb and (h->'week'->>'km')::numeric between 8.1999 and 8.2001,
+    '예정된 모임이 없으면 모임만 비고 주간 기록은 그대로');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_meeting(%s) $q$, pg_temp.fx('ma')), '지워진 모임은 열리지 않는다');
+
+-- 크루 밖 사람 · 떠난 사람
+call pg_temp.login('4a000000-0000-0000-0000-000000000005');
+call pg_temp.must_fail(format($q$ select public.crew_home('%s') $q$, pg_temp.fx('hc')), '크루원이 아니면 홈을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_week('%s') $q$, pg_temp.fx('hc')), '크루원이 아니면 주간 기록을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_runs('%s') $q$, pg_temp.fx('hc')), '크루원이 아니면 참여 기록을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_run(%s) $q$, pg_temp.fx('w1')), '크루원이 아니면 러닝 기록을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_member_last_run('%s', '4a000000-0000-0000-0000-000000000004') $q$, pg_temp.fx('hc')),
+  '크루원이 아니면 크루원의 기록을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_meetings_upcoming('%s') $q$, pg_temp.fx('hc')), '크루원이 아니면 모임 목록을 볼 수 없다');
+call pg_temp.must_fail(format($q$ select public.crew_chat_notice(%s) $q$, pg_temp.fx('n2')), '크루원이 아니면 공지를 볼 수 없다');
+
+call pg_temp.login('4a000000-0000-0000-0000-000000000003');
+do $$
+begin
+  perform public.crew_leave(pg_temp.fx('hc')::uuid);
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_home('%s') $q$, pg_temp.fx('hc')), '크루를 떠나면 바로 홈을 볼 수 없다');
+do $$
+begin
+  begin
+    perform public.crew_home(pg_temp.fx('hc')::uuid);
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'crew_not_member' and sqlstate = '42501', '접근이 사라지면 crew_not_member(앱은 접근 종료 화면으로)');
+    return;
+  end;
+  perform pg_temp.ok(false, '접근이 사라지면 crew_not_member');
+end $$;
+
+call pg_temp.login('4a000000-0000-0000-0000-000000000005');
+do $$
+begin
+  perform public.crew_dissolve(pg_temp.fx('oc')::uuid);
+end $$;
+call pg_temp.login('4a000000-0000-0000-0000-000000000001');
+do $$
+begin
+  perform public.crew_dissolve(pg_temp.fx('hc')::uuid);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.flash_declines d join public.posts p on p.id = d.post_id
+                                  where p.crew_id = pg_temp.fx('hc')::uuid),
+    '해산하면 모임과 응답이 함께 지워진다');
+end $$;
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 크루 채팅 알림 정리(0050) ────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('50000000-0000-0000-0000-000000000001', 'leader50@test', '{"full_name":"준호"}'),
+  ('50000000-0000-0000-0000-000000000002', 'doyun50@test', '{"full_name":"도윤"}'),
+  ('50000000-0000-0000-0000-000000000003', 'minsu50@test', '{"full_name":"민수"}');
+insert into public.push_tokens (token, user_id) values
+  ('minsu50-token-00000000000000000', '50000000-0000-0000-0000-000000000003');
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000001');
+do $$
+begin
+  insert into fix (k, v) values
+    ('pc', public.crew_create_card('알림크루', '', '', null, null, '공덕동', null, null, 0, null, null, '{}', 30)::text);
+end $$;
+reset role;
+insert into public.crew_members (crew_id, user_id, role) values
+  (pg_temp.fx('pc')::uuid, '50000000-0000-0000-0000-000000000002', 'MEMBER'),
+  (pg_temp.fx('pc')::uuid, '50000000-0000-0000-0000-000000000003', 'MEMBER');
+delete from public.push_outbox;
+set role authenticated;
+
+-- 도윤이 보낸 말 — 민수의 알림 줄에 그 메시지가 적힌다. 도윤이 지우면 아직 안 나간 알림 줄도 지운다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+declare v_id bigint;
+begin
+  v_id := (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000001', '지울 말')->>'id')::bigint;
+  insert into fix (k, v) values ('pm1', v_id::text);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select args->>'msg' from public.push_outbox where user_id = '50000000-0000-0000-0000-000000000003'
+                       and kind = 'CREW_CHAT') = pg_temp.fx('pm1'),
+    '채팅 알림 줄에 어느 메시지인지 적힌다');
+end $$;
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$ begin perform public.crew_chat_delete(pg_temp.fx('pm1')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'CREW_CHAT'
+                                  and user_id = '50000000-0000-0000-0000-000000000003'),
+    '지운 메시지의 아직 안 나간 알림은 지운다(지운 글이 알림으로 나가지 않는다)');
+end $$;
+set role authenticated;
+
+-- 크루장이 가린 메시지도 같다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('pm2',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000002', '가릴 말')->>'id'));
+end $$;
+call pg_temp.login('50000000-0000-0000-0000-000000000001');
+do $$ begin perform public.crew_chat_hide(pg_temp.fx('pm2')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'CREW_CHAT'
+                                  and user_id = '50000000-0000-0000-0000-000000000003'),
+    '크루장이 가린 메시지의 아직 안 나간 알림은 지운다');
+end $$;
+set role authenticated;
+
+-- 더 새 메시지로 바뀐 알림 줄은 앞의 메시지를 지워도 그대로, 이미 가져간(보내는 중인) 줄은 건드리지 않는다
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('pm3',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000003', '먼저 한 말')->>'id'));
+  insert into fix (k, v) values ('pm4',
+    (public.crew_chat_send(pg_temp.fx('pc')::uuid, 'c5000000-0000-0000-0000-000000000004', '나중 한 말')->>'id'));
+  perform public.crew_chat_delete(pg_temp.fx('pm3')::bigint);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.push_outbox where kind = 'CREW_CHAT'
+                       and user_id = '50000000-0000-0000-0000-000000000003') = 1
+                     and (select args->>'text' from public.push_outbox where kind = 'CREW_CHAT'
+                            and user_id = '50000000-0000-0000-0000-000000000003') = '나중 한 말',
+    '더 새 메시지로 바뀐 알림 줄은 앞의 메시지를 지워도 남는다');
+end $$;
+update public.push_outbox set claimed_at = now() where kind = 'CREW_CHAT' and user_id = '50000000-0000-0000-0000-000000000003';
+set role authenticated;
+call pg_temp.login('50000000-0000-0000-0000-000000000002');
+do $$ begin perform public.crew_chat_delete(pg_temp.fx('pm4')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from public.push_outbox where kind = 'CREW_CHAT'
+                       and user_id = '50000000-0000-0000-0000-000000000003' and claimed_at is not null) = 1,
+    '이미 가져간 알림 줄은 보내는 쪽에 맡긴다');
+end $$;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

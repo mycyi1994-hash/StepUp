@@ -339,9 +339,13 @@ class CrewChatRepository(
         body: String,
         pinned: Boolean,
         clientKey: String?,
+        /** 이을 모임(4번) — [meetingChange] 가 참일 때만 서버가 바꾼다 */
+        meetingId: Long? = null,
+        meetingChange: Boolean = false,
     ): ChatOutcome<ChatNotice> =
-        api.noticeSave(crewId, noticeId, title.trim(), body.trim(), pinned, clientKey).chat().map { it.toDomain() }
+        api.noticeSave(crewId, noticeId, title.trim(), body.trim(), pinned, clientKey, meetingId, meetingChange).chat().map { it.toDomain() }
             .also { if (it is ChatOutcome.Ended) forget(crewId) }
+
 
     suspend fun deleteNotice(crewId: String, noticeId: Long): ChatOutcome<Unit> =
         api.noticeDelete(noticeId).chat().also { if (it is ChatOutcome.Ended) forget(crewId) }
@@ -398,7 +402,8 @@ class CrewChatRepository(
         (_rooms.value as? ChatRoomsState.Ready)?.let { ready ->
             _rooms.value = ChatRoomsState.Ready(ready.rooms.filterNot { it.crewId == crewId })
         }
-        runCatching { prefs.clearChatNoticeDrafts(crewId) }
+        // 이 계정의 그 방 초안만 — 같은 폰의 다른 계정은 아직 멤버일 수 있다
+        runCatching { prefs.clearChatNoticeDrafts(crewId, owner = ownerNow()) }
     }
 
     /** 계정을 바꿨다 · 지웠다 — 다른 사람의 대화가 남지 않게 모두 지운다 */
