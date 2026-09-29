@@ -183,7 +183,7 @@ class SettingsDesignTest {
             shot("22-faq-expanded")
             tap("support-contact")
             awaitTag("contact-sheet")
-            compose.onNodeWithTag("contact-address", useUnmergedTree = true).assertTextEquals("support@stepupcrew.com")
+            compose.onNodeWithTag("contact-address", useUnmergedTree = true).assertTextEquals("stepupofficial@stepupcrew.com")
             shot("23-contact-sheet")
             back()
             compose.waitUntil(5_000) { compose.onAllNodesWithTag("contact-sheet").fetchSemanticsNodes().isEmpty() }
