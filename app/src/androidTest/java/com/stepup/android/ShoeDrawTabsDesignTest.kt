@@ -370,11 +370,12 @@ class ShoeDrawTabsDesignTest {
                 show(next)
                 openDrawTab()
                 awaitText("draw-free-left", "${server.free}회")
-                assertMainFits("draw-free-action", "${next.label} free")
+                val dpPx = frameDpPx(next)
+                assertMainFits("draw-free-action", "${next.label} free", dpPx)
                 shot("f-${next.label}-free")
                 tap("draw-tab-premium")
                 awaitText("draw-premium-left", "${server.premium}회")
-                assertMainFits("draw-premium-action", "${next.label} premium")
+                assertMainFits("draw-premium-action", "${next.label} premium", dpPx)
                 shot("f-${next.label}-premium")
             }
             // 결과 — 작은 폭 · 큰 글씨에서도 신발 · 이름 · 남은 수 · 두 버튼이 한 화면에(가운데를 넘기지 않는다)
@@ -385,7 +386,7 @@ class ShoeDrawTabsDesignTest {
                 tap("draw-free-action")
                 awaitTag("draw-result")
                 awaitText("draw-result-left", "${server.free}회", unmerged = false)
-                assertResultFits(next.label)
+                assertResultFits(next.label, frameDpPx(next))
                 shot("f-${next.label}-result", settle = 1_200)
                 tap("draw-result-close")
                 awaitTag("draw-home")
@@ -584,19 +585,18 @@ class ShoeDrawTabsDesignTest {
      * 메인이 한 화면 — 스크롤 거리 0, 남은 횟수 줄과 실행 버튼이 화면 안에 온전히(하단 탭이 있으면 그 위).
      * 시안: 메인 내용 · 실행 버튼 · 하단 탭이 함께 보인다.
      */
-    private fun assertMainFits(action: String, where: String) {
+    private fun assertMainFits(action: String, where: String, dpPx: Float = compose.density.density) {
         compose.waitForIdle()
         val scroll = compose.onNodeWithTag("draw-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
         assertEquals("the draw main must not scroll at $where", 0f, scroll.maxValue(), 1f)
         val button = bounds(action)
         val limit = if (exists(BOTTOM_NAV_TAG)) bounds(BOTTOM_NAV_TAG).top else frameBottom()
         assertTrue("$action above the bottom tabs at $where: $button / $limit", button.bottom <= limit + 1)
-        val minHeight = with(compose.density) { 49.dp.toPx() }
-        assertTrue("$action keeps its height at $where: $button", button.height >= minHeight)
+        assertTrue("$action keeps its height at $where: $button", button.height >= 49f * dpPx)
     }
 
     /** 결과가 한 화면 — 가운데를 넘기지 않고, 신발 이름이 고정된 남은 수 칸 위에 보인다 */
-    private fun assertResultFits(where: String) {
+    private fun assertResultFits(where: String, dpPx: Float = compose.density.density) {
         compose.waitForIdle()
         val scroll = compose.onNodeWithTag("draw-result-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
         assertEquals("the draw result must not scroll at $where", 0f, scroll.maxValue(), 1f)
@@ -604,8 +604,7 @@ class ShoeDrawTabsDesignTest {
         val left = bounds("draw-result-left")
         assertTrue("the shoe name sits above the count at $where: $name / $left", name.bottom <= left.top + 1)
         val stage = bounds("draw-result-stage")
-        val minStage = with(compose.density) { 140.dp.toPx() }
-        assertTrue("the shoe stays large enough at $where: $stage", stage.height >= minStage)
+        assertTrue("the shoe stays large enough at $where: $stage", stage.height >= 140f * dpPx)
     }
 
     /** 버튼이 화면 안에 온전히 있다(큰 글씨 · 좁은 폭에서 잘리지 않는다) — 넘치면 스크롤해서 */
@@ -620,6 +619,9 @@ class ShoeDrawTabsDesignTest {
             action.left >= frame.left - 1 && action.right <= frame.right + 1 && action.bottom <= frame.bottom + 1 && action.height >= minHeight,
         )
     }
+
+    /** 기기 크기 틀은 화면 밀도를 바꾼다 — 그 틀의 1dp 가 몇 px 인가 */
+    private fun frameDpPx(v: Viewport): Float = bounds(FRAME).height / v.height
 
     private fun frameBottom(): Float = if (exists(FRAME)) bounds(FRAME).bottom else compose.onRoot().fetchSemanticsNode().boundsInRoot.bottom
 
