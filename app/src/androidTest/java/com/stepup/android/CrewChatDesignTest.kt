@@ -260,8 +260,8 @@ class CrewChatDesignTest {
             tapTag("chat-viewer-room")
             awaitTag("chat-room")
 
-            // 28 → 29 신고 — 사유를 골라야 보낸다
-            longPress("저도 오늘 함께할게요!")
+            // 28 → 29 신고 — 사유를 골라야 보낸다(사진을 보낸 뒤에도 화면에 있는 크루장의 메시지)
+            longPress("천천히 오세요. 같이 출발해요.")
             tapTag("chat-menu-report")
             awaitTag("chat-report")
             tapTag("chat-report-abuse")
@@ -526,7 +526,7 @@ class CrewChatDesignTest {
     private fun openRoom(id: String) {
         awaitTag("chat-row-$id")
         tapTag("chat-row-$id")
-        awaitTag("chat-room")
+        // 크루원 방은 chat-room, 크루장 방은 chat-room-owner — 둘 다 대화 목록이 있다
         awaitTag("chat-messages", 20_000)
         awaitText("천천히 오세요. 같이 출발해요.")
     }
@@ -714,7 +714,8 @@ class CrewChatDesignTest {
             this.me = me
             rooms.clear(); reports.clear()
             val afterwork = Room("afterwork", "퇴근런", JUNHO, bg = 1, hasImage = true)
-            val names = listOf("서연", "현우", "지우", "하린", "유진", "태오", "수아", "민재", "예린", "도현", "시우", "서아", "준서", "하은", "지호", "채원", "건우", "다은", "은우", "소윤")
+            // 시안의 퇴근런 25명 — 준호 · 도윤 · 민수 · 지연과 21명
+            val names = listOf("서연", "현우", "지우", "하린", "유진", "태오", "수아", "민재", "예린", "도현", "시우", "서아", "준서", "하은", "지호", "채원", "건우", "다은", "은우", "소윤", "지안")
             afterwork.members += Person(JUNHO, "준호", 104, joinedAt = "2026-08-01T01:00:00Z", weekKm = 24.0)
             afterwork.members += Person(DOYUN, "도윤", if (me == DOYUN) 30 else 104, weekKm = 8.2)
             afterwork.members += Person(MINSU, "민수", 30, weekKm = 12.4)
@@ -768,7 +769,9 @@ class CrewChatDesignTest {
             rooms[hanbakwi.id] = hanbakwi
         }
 
-        fun sentBy(user: String, body: String): Int = rooms.values.sumOf { room -> room.messages.count { it.authorId == user && it.body == body } }
+        /** 보이는(지우지 않은) 메시지 중 이 사람이 보낸 같은 글 — 재전송이 두 개가 되지 않았는지 */
+        fun sentBy(user: String, body: String): Int =
+            rooms.values.sumOf { room -> room.messages.count { it.authorId == user && it.body == body && it.state == "VISIBLE" } }
 
         fun pinnedTitle(crew: String): String? = rooms[crew]?.notices?.firstOrNull { it.pinned }?.title
 

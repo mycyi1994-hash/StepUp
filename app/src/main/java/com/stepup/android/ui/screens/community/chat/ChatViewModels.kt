@@ -970,13 +970,28 @@ class ChatSearchViewModel(
     private val _ended = MutableStateFlow(false)
     val ended: StateFlow<Boolean> = _ended
     private var job: Job? = null
+    private var pause: Job? = null
 
+    /** 쓰다 멈추면(0.35초) 찾는다 — 검색 버튼으로도. 기다림은 뷰모델에서(화면이 다시 그려져도 한 번) */
     fun setQuery(text: String) {
-        query.value = text.replace('\n', ' ').take(ChatRules.SEARCH_MAX)
+        val next = text.replace('\n', ' ').take(ChatRules.SEARCH_MAX)
+        if (next == query.value) return
+        query.value = next
+        pause?.cancel()
+        if (next.isBlank()) {
+            job?.cancel()
+            state.value = ChatSearchState.Idle
+            return
+        }
+        pause = viewModelScope.launch {
+            delay(SEARCH_PAUSE_MS)
+            search()
+        }
     }
 
     fun search() {
         val text = query.value.trim()
+        pause?.cancel()
         job?.cancel()
         if (text.isEmpty()) {
             state.value = ChatSearchState.Idle
@@ -993,6 +1008,8 @@ class ChatSearchViewModel(
     }
 
     companion object {
+        private const val SEARCH_PAUSE_MS = 350L
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer { ChatSearchViewModel(ServiceLocator.crewChat, createSavedStateHandle()) }
         }

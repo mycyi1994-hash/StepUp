@@ -60,7 +60,6 @@ import com.stepup.android.ui.screens.community.crew.CrewPage
 import com.stepup.android.ui.screens.community.crew.CrewTopBar
 import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.theme.StepUpSans
-import kotlinx.coroutines.delay
 
 /**
  * 22 대화 검색 · 23 결과 없음 — 이 방에서 지금 볼 수 있는 메시지만(지웠거나 숨긴 것 · 참여 전 방은 서버가 빼고 준다).
@@ -78,12 +77,6 @@ fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen:
     var field by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
     LaunchedEffect(ended) { if (ended) onEnded() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-    // 쓰다 멈추면 찾는다(검색 버튼으로도)
-    LaunchedEffect(query) {
-        if (query.isBlank()) return@LaunchedEffect
-        delay(350)
-        viewModel.search()
-    }
 
     CrewPage(Modifier.imePadding().testTag("chat-search")) {
         CrewTopBar(stringResource(R.string.chat_search_bar), onBack)
