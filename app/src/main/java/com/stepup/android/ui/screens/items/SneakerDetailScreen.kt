@@ -383,7 +383,7 @@ private fun DetailBody(
     val failed = art == ShoeArtLoad.Failed
     // 작은 화면은 무대부터 줄인다 — 이름 · 네 칸 · 버튼이 한 화면에 들도록. 그래도 모자라면 목록이 넘어간다
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val stageMaxHeight = (screenHeight - 470.dp).coerceAtLeast(190.dp)
+    val stageMaxHeight = (screenHeight - 500.dp).coerceAtLeast(190.dp)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         // 무대 — 기존 등급 무대(무대 면 → 뒤 효과 → 신발 → 앞 효과 → 프레임). 완료 알림(10)은 무대 위쪽에
         Box(
@@ -485,7 +485,7 @@ private fun ArtFailed(onRetry: () -> Unit, modifier: Modifier) {
 private fun DetailLoading() {
     val p = settingsPalette()
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val stageMaxHeight = (screenHeight - 470.dp).coerceAtLeast(190.dp)
+    val stageMaxHeight = (screenHeight - 500.dp).coerceAtLeast(190.dp)
     Column(Modifier.fillMaxWidth().testTag("shoe-detail-loading"), horizontalAlignment = Alignment.CenterHorizontally) {
         ShoeStage(
             sneaker = null,
