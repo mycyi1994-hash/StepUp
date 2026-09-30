@@ -245,7 +245,7 @@ private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
     val startX = bar.left + barCut + 3.dp.toPx()
     val endX = minOf(bar.left + width * 0.42f, startX + 22.dp.toPx(), bar.right - barCut - 2.dp.toPx())
     if (endX - startX >= line) {
-        val y = bar.top + bar.height * 0.30f
+        val y = bar.top + bar.height * 0.17f + line / 2f
         drawLine(Color.White.copy(alpha = 0.9f), Offset(startX, y), Offset(endX, y), strokeWidth = line, cap = StrokeCap.Round)
     }
 }
