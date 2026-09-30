@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-09-30 — shoe detail: cartoon 3D stat cells (user-approved option 1)
+
+- Shoe detail (`SneakerDetailScreen`) body is now grade stage → name · grade badge · `No. 0007` on one line → four steel-blue cells (level · efficiency · comfort · durability), each `label · cartoon 3D bar · value` on one line → wear button. Bars are drawn as paths (`CartoonStatBar`), values come from the selected owned pair (`detailStatRows`, `formatShoeNumber`). Details: docs/redesign/shoe-detail-cartoon-2026-09-30/README.md.
+- Removed from the body: the SUP bonus / energy saving key stats, the "stats details" and "shoe info" rows, the owned/wearing status line. Stats details and shoe info moved into ⋯ (manage) — not deleted. Enhance / repair / sell / wear flows unchanged.
+- Evidence: compile, unit tests (`ShoeDetailModelTest` +3), lint, string/asset/design-contract checks locally; `ShoeDetailDesignTest` device captures from CI on the same revision.
+
 ## 2026-09-29 — shared map clipped to its bounds (community stories "지도 보기")
 
 - Bug: in Community › 러닝 이야기, switching from "글 더 보기" back to "지도 보기" drew map tiles outside the map box, covering the text tabs above and overlapping. `StepUpMap` draws whole 256px tiles on a `Canvas`, and Compose does not clip drawing to bounds (worst while the map height animates up from 0).

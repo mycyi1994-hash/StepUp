@@ -17,9 +17,7 @@
 
     <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
     <string name="sdv_title">シューズの詳細</string>
-    <string name="sdv_status_owned">所持中</string>
     <string name="sdv_status_wearing">いま履いています</string>
-    <string name="sdv_status_none">まだ履いているシューズがありません</string>
     <string name="sdv_stat_bonus">SUP獲得ボーナス</string>
     <string name="sdv_stat_energy">エネルギー節約</string>
     <string name="sdv_stat_luck">運</string>
@@ -31,6 +29,8 @@
     <string name="sdv_wear_busy">履き替え中…</string>
     <string name="sdv_worn_toast">%1$sを履きました。</string>
     <string name="sdv_more">このシューズのその他</string>
+    <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
+    <string name="sdv_bar_cd">%1$s %2$s。バーの上限 %3$s</string>
 
     <!-- 능력치(04 · 05) -->
     <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>

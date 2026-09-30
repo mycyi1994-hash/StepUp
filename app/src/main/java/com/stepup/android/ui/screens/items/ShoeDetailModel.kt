@@ -88,6 +88,35 @@ fun durabilityPoints(shoe: Sneaker): Int =
 /** 내구도 "100 / 100" */
 fun formatDurability(shoe: Sneaker): String = "${durabilityPoints(shoe)} / 100"
 
+// ── 상세 본문의 네 줄(카툰 입체형, 2026-09-30 확정) ──────────────
+
+enum class DetailStat { LEVEL, EFFICIENCY, COMFORT, DURABILITY }
+
+/** 상세 본문 한 줄 — 보이는 값("5 / 15")과 막대 길이(0 ~ 1) */
+data class DetailStatRow(val stat: DetailStat, val value: String, val fraction: Float)
+
+/**
+ * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
+ * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 27.5% · 착화감 20% · 내구도 100). 행운 · 원시 착화감은 넣지 않는다.
+ */
+fun detailStatRows(shoe: Sneaker): List<DetailStatRow> {
+    val level = DetailStatRow(
+        DetailStat.LEVEL, "${shoe.level} / ${shoe.maxLevel}",
+        com.stepup.android.ui.screens.customize.barFraction(shoe.level.toDouble(), shoe.maxLevel.toDouble()),
+    )
+    return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe).map { bar ->
+        val stat = when (bar.stat) {
+            com.stepup.android.ui.screens.customize.BarStat.EFFICIENCY -> DetailStat.EFFICIENCY
+            com.stepup.android.ui.screens.customize.BarStat.COMFORT -> DetailStat.COMFORT
+            com.stepup.android.ui.screens.customize.BarStat.DURABILITY -> DetailStat.DURABILITY
+        }
+        DetailStatRow(stat, bar.value, bar.fraction)
+    }
+}
+
+/** 신발 번호 "No. 0007" — 소유 켤레의 민팅 번호. 네 자리보다 짧으면 앞을 0 으로, 길면 자르지 않는다 */
+fun formatShoeNumber(mintNumber: Int): String = "No. " + String.format(Locale.ROOT, "%04d", mintNumber)
+
 // ── 체인 ───────────────────────────────────────────────────────
 
 /** 신발 정보 시트(06)의 체인 줄 — 서버가 준 토큰 번호만. 번호를 꾸미지 않는다 */
