@@ -127,11 +127,16 @@ class ShoeDetailDesignTest {
                 .assertExists()
             compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
                 .assertExists()
-            assertUnmergedText("shoe-status", string(R.string.sdv_status_owned))
+            // 카툰 입체형 네 칸 — 실제 켤레의 값(레벨 1 / 15 · 번호는 이 켤레의 민팅 번호)
+            compose.onNodeWithTag("shoe-cell-level-value", useUnmergedTree = true).assertTextEquals("1 / 15")
+            val mint = runBlocking { dao.byId(seeded.single)?.mintNumber }
+            assertNameHas(String.format(java.util.Locale.ROOT, "No. %04d", mint))
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
             shot("02-in-app-detail")
 
-            // 04 → 05 → 시스템 뒤로(04) → 확인
+            // 04 → 05 → 시스템 뒤로(04) → 확인 — 능력치 자세히 · 신발 정보는 ⋯ 안에서
+            tap("shoe-more")
+            awaitTag("shoe-manage-sheet")
             tap("shoe-row-stats")
             awaitTag("shoe-stats-sheet")
             shot("04-in-app-stats")
@@ -144,6 +149,8 @@ class ShoeDetailDesignTest {
             awaitGone("shoe-stats-sheet")
 
             // 06 — 신발 정보: 신발 번호 · 받은 날짜 · 체인 줄(이 기기에서 넣은 신발이라 아직 체인에 없음)
+            tap("shoe-more")
+            awaitTag("shoe-manage-sheet")
             tap("shoe-row-info")
             awaitTag("shoe-info-sheet")
             compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.sdv_chain_none))
@@ -171,7 +178,6 @@ class ShoeDetailDesignTest {
                 runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
             }
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_status_wearing))
-            assertUnmergedText("shoe-status", string(R.string.sdv_status_wearing))
             assertEquals(1, runBlocking { dao.allNow().count { it.equipped } })
 
             // 12 — 뒤로: 목록의 체크가 같은 id 로 옮겨 가고, 보던 켤레는 그대로("착용 중")
@@ -244,13 +250,37 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
-        assertUnmergedText("shoe-status", string(R.string.sdv_status_owned))
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
-        compose.onNodeWithTag("shoe-key-bonus").assertTextContains("+0.45%")
-        compose.onNodeWithTag("shoe-key-energy").assertTextContains("7.5%")
+        assertCell("efficiency", "+0.45%")
+        assertCell("comfort", "7.5%")
+        assertCell("durability", "100 / 100")
+        assertCell("level", "1 / 15")
+        // 설명 문구 · 예전 두 칸 · 본문 링크가 없다(능력치 자세히 · 신발 정보는 ⋯ 안)
+        compose.onAllNodesWithTag("shoe-key-bonus").assertCountEquals(0)
+        compose.onAllNodesWithTag("shoe-row-stats").assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.sdv_stat_bonus), substring = true).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.sdv_stat_luck), substring = true).assertCountEquals(0)
+        // 네 막대는 시작점 · 끝점이 같다
+        assertBarsAligned()
+        // 카툰 입체형 확정안(approved.png)과 같은 예시 — 레어 1107 · Lv 5 / 15 · No. 0007 · +8.0% · 5.8% · 92 / 100.
+        // 이 값은 이 테스트 화면에만 있는 예시다(계정 데이터가 아니다)
+        show("s00-cartoon-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
+        assertCell("level", "5 / 15")
+        assertCell("efficiency", "+8.0%")
+        assertCell("comfort", "5.8%")
+        assertCell("durability", "92 / 100")
+        assertNameHas("No. 0007")
+        assertBarsAligned()
+        // 막대 끝값 — 0% · 아주 작은 양수 · 100% · 레벨 끝(레전더리 30) · 긴 번호
+        show("s00b-cartoon-edges", "shoe-art", detail(ready(EDGES, all + EDGES)))
+        assertCell("level", "30 / 30")
+        assertCell("efficiency", "+0.0%")
+        assertCell("comfort", "0.1%")
+        assertCell("durability", "100 / 100")
+        assertNameHas("No. 12345")
+        assertBarsAligned()
         // 03 — 신고 있는 신발: 버튼은 강화가 아니라 "지금 신고 있어요"(누를 수 없음)
         show("s03-equipped-detail", "shoe-art", detail(ready(WORN)))
-        assertUnmergedText("shoe-status", string(R.string.sdv_status_wearing))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_status_wearing))
         // 04 — 서버 신발(새 도감)은 있는 값 세 줄 · 예전 신발은 다섯 줄
         show("s04-all-stats", "shoe-stats-sheet", detail(ready(PAIR_A), sheet = "Stats"))
@@ -277,7 +307,7 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
         show("s08-another-copy", "shoe-art", detail(ready(PAIR_B)))
-        compose.onNodeWithTag("shoe-key-energy").assertTextContains("6.0%")
+        assertCell("comfort", "6.0%")
         // 09 — 바꾸는 중: 다시 누를 수 없다
         show("s09-equipping", "shoe-art", detail(ready(PAIR_A), equipping = true))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_wear_busy))
@@ -304,7 +334,7 @@ class ShoeDetailDesignTest {
         // 13 · 14 · 15 — 조회 중(임시 값 없음) · 조회 실패 · 없는 신발
         show("s13-detail-loading", "shoe-detail-loading", detail(ShoeDetailState.Loading))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_checking))
-        compose.onAllNodesWithTag("shoe-key-bonus").assertCountEquals(0)
+        compose.onAllNodesWithTag("shoe-stat-cells").assertCountEquals(0)
         show("s14-detail-load-error", "shoe-detail-failed", detail(ShoeDetailState.Failed))
         compose.onNodeWithTag("shoe-state-primary").assertTextEquals(string(R.string.sdv_reload))
         compose.onNodeWithTag("shoe-state-secondary").assertTextEquals(string(R.string.sdv_back_to_owned))
@@ -320,7 +350,6 @@ class ShoeDetailDesignTest {
         // 17 — 아직 착용 없음: 같은 버튼으로 처음 신는다
         val nobody = all.map { it.copy(equipped = false) }
         show("s17-first-equipment", "shoe-art", detail(ready(nobody.first { it.id == PAIR_A.id }, nobody)))
-        assertUnmergedText("shoe-status", string(R.string.sdv_status_none))
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled()
         // 18 — 읽기가 끝났고 정말 비었을 때: 무료 뽑기로
         show("s18-empty-inventory", "shoe-tab-empty", tab(OwnedLoad.Ready(emptyList()), null))
@@ -333,6 +362,8 @@ class ShoeDetailDesignTest {
         show("s19-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
         compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
         compose.onNodeWithTag("shoe-manage-enhance").assertIsEnabled()
+        compose.onNodeWithTag("shoe-row-stats").assertHasClickAction()
+        compose.onNodeWithTag("shoe-row-info").assertHasClickAction()
 
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
@@ -341,10 +372,24 @@ class ShoeDetailDesignTest {
         show("s30c-light-stats", "shoe-stats-sheet", detail(ready(WORN), sheet = "Stats"))
         compose.runOnIdle { light = false; large = true }
         show("s31-large-font-detail", "shoe-art", detail(ready(SPIKE)))
+        assertBarsAligned()
+        show("s31d-large-font-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
+        assertBarsAligned()
         show("s31b-large-font-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s31c-large-font-info", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Info"))
         compose.runOnIdle { large = false; narrow = true }
         show("s32-narrow-detail", "shoe-art", detail(ready(SPIKE)))
+        assertBarsAligned()
+        show("s32d-narrow-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
+        assertBarsAligned()
+        // 320dp + 큰 글씨 함께 — 막대가 사라지지 않는다(너무 좁으면 글 아래 줄로)
+        compose.runOnIdle { large = true }
+        show("s33-narrow-large-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
+        assertBarsAligned()
+        listOf("level", "efficiency", "comfort", "durability").forEach { stat ->
+            val width = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().size.width
+            assertTrue("$stat bar keeps a visible width: $width", width > 100)
+        }
         show("s32b-narrow-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s32c-narrow-error", "shoe-equip-error",
             detail(ready(SPIKE), result = EquipResult.NotWorn(SPIKE.id, EquipFailure.SIGN_IN, WORN.id, confirmed = true)))
@@ -371,6 +416,31 @@ class ShoeDetailDesignTest {
 
     /** 예시 착용 신발(예전 52종 — 바람 일반 0)의 현지화 이름 */
     private fun legacyName(): String = fullSneakerLabel(compose.activity, Faction.WIND, Rarity.COMMON, 0)
+
+    /** 이름 줄(이름 · 배지 · 번호 한 덩어리)의 글에 [part] 가 있다 — 배지 · 번호 자리의 대체 글까지 */
+    private fun assertNameHas(part: String) {
+        compose.onNode(hasText(part, substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+            .assertExists()
+    }
+
+    /** 네 칸 중 한 칸의 값 */
+    private fun assertCell(stat: String, value: String) {
+        compose.onNodeWithTag("shoe-cell-$stat-value", useUnmergedTree = true).assertTextEquals(value)
+    }
+
+    /** 네 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
+     *  큰 글씨에선 아래 칸이 화면 밖일 수 있어 잘리지 않은 위치 · 크기로 잰다 */
+    private fun assertBarsAligned() {
+        val spans = listOf("level", "efficiency", "comfort", "durability").map { stat ->
+            val node = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode()
+            node.positionInRoot.x to node.positionInRoot.x + node.size.width
+        }
+        val first = spans.first()
+        spans.forEach {
+            assertEquals("bar left", first.first, it.first, 1f)
+            assertEquals("bar right", first.second, it.second, 1f)
+        }
+    }
 
     private fun assertUnmergedText(tag: String, text: String) {
         compose.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(text)
@@ -490,8 +560,8 @@ class ShoeDetailDesignTest {
 
         fun at(y: Int, m: Int, d: Int): Long = LocalDateTime.of(y, m, d, 9, 30).atZone(SEOUL).toInstant().toEpochMilli()
 
-        fun server(efficiencyBps: Int, comfortBps: Int) = ServerStats(
-            origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = 100.0, maxLevel = 15,
+        fun server(efficiencyBps: Int, comfortBps: Int, durability: Double = 100.0, maxLevel: Int = 15) = ServerStats(
+            origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = durability, maxLevel = maxLevel,
             status = "OWNED", chainState = "APP", canWithdraw = true, upgradeCost = 120.0, repairCostPerPoint = 0.0, genesisNo = 0,
         )
 
@@ -510,6 +580,20 @@ class ShoeDetailDesignTest {
             luck = 1.0, comfort = 1.06, durability = 100, equipped = false, acquiredAt = at(2026, 9, 27),
             server = server(55, 600), modelId = 1311, tokenId = 1_000_003,
         )
+        /** 확정 시안(approved.png)의 예시 — 레어 1107 · Lv 5 / 15 · No. 0007 · +8.0% · 5.8% · 92 / 100 */
+        val APPROVED = Sneaker(
+            id = 9007, faction = Faction.WIND, rarity = Rarity.RARE, variant = 0, level = 5, mintNumber = 7,
+            luck = 1.0, comfort = 1.058, durability = 92, equipped = false, acquiredAt = at(2026, 9, 29),
+            server = server(800, 580, durability = 92.0), modelId = 1107,
+        )
+
+        /** 막대 끝값 — 효율 0 · 착화감 0.1% · 내구도 100 · 레벨 30 / 30 · 다섯 자리 번호 */
+        val EDGES = Sneaker(
+            id = 9008, faction = Faction.WIND, rarity = Rarity.LEGENDARY, variant = 0, level = 30, mintNumber = 12_345,
+            luck = 1.0, comfort = 1.001, durability = 100, equipped = false, acquiredAt = at(2026, 9, 29),
+            server = server(0, 10, maxLevel = 30), modelId = 1311,
+        )
+
         val PAIR_B = Sneaker(
             id = 9004, faction = Faction.WIND, rarity = Rarity.EPIC, variant = 0, level = 1, mintNumber = 4,
             luck = 1.0, comfort = 1.06, durability = 100, equipped = false, acquiredAt = at(2026, 9, 28),

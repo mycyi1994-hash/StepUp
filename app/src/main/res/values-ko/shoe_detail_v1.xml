@@ -17,9 +17,7 @@
 
     <!-- 상세(02 · 03 · 08 · 09 · 10 · 17) -->
     <string name="sdv_title">신발 상세</string>
-    <string name="sdv_status_owned">보유 중</string>
     <string name="sdv_status_wearing">지금 신고 있어요</string>
-    <string name="sdv_status_none">아직 신고 있는 신발이 없어요</string>
     <string name="sdv_stat_bonus">SUP 적립 보너스</string>
     <string name="sdv_stat_energy">에너지 절감</string>
     <string name="sdv_stat_luck">행운</string>
@@ -32,6 +30,8 @@
     <!-- %1$s 에는 목적격 조사가 붙은 이름이 온다("새벽 강변을") -->
     <string name="sdv_worn_toast">%1$s 신었어요.</string>
     <string name="sdv_more">이 신발 더 보기</string>
+    <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
+    <string name="sdv_bar_cd">%1$s %2$s. 막대 끝 %3$s</string>
 
     <!-- 능력치(04 · 05) -->
     <string name="sdv_stats_subtitle">%1$s · Lv. %2$d</string>

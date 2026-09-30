@@ -329,7 +329,13 @@ private fun GradeLayer(@DrawableRes res: Int) {
  * 무대 면 → 뒤 효과(바닥 그림자 · 바닥광 · 후광 · 스포트라이트) → 실제 신발 → 앞 효과(광점 · 반사광) → 프레임.
  */
 @Composable
-fun SneakerGradeStage(sneaker: Sneaker, modifier: Modifier = Modifier, animate: Boolean = false) {
+fun SneakerGradeStage(
+    sneaker: Sneaker,
+    modifier: Modifier = Modifier,
+    animate: Boolean = false,
+    /** 신발 층을 그릴지 — 신발 상세가 그림을 읽지 못했을 때(다시 불러오기 안내를 둘 자리) 끈다. 무대 · 프레임은 그대로 */
+    showShoe: Boolean = true,
+) {
     val tier = sneaker.tier
     val art = gradeArt(tier)
     BoxWithConstraints(modifier.aspectRatio(GradeArtRatio).testTag("grade-stage-" + tier.key)) {
@@ -337,7 +343,7 @@ fun SneakerGradeStage(sneaker: Sneaker, modifier: Modifier = Modifier, animate: 
         val small = constraints.maxWidth <= GradeSmallMaxPx
         Box(Modifier.fillMaxSize().background(GradeStageFill, GradeOctagon))
         GradeLayer(if (small) art.backSmall else art.back)
-        GradeShoe(sneaker, Modifier.fillMaxSize().gradeSlot(61f, 58f, 320f), animate = animate)
+        if (showShoe) GradeShoe(sneaker, Modifier.fillMaxSize().gradeSlot(61f, 58f, 320f), animate = animate)
         (if (small) art.frontSmall else art.front)?.let { GradeLayer(it) }
         GradeLayer(if (small) art.frameSmall else art.frame)
     }

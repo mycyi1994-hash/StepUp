@@ -12,11 +12,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,7 +50,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -60,7 +60,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -81,7 +80,11 @@ import com.stepup.android.ui.components.SettingsSheet
 import com.stepup.android.ui.components.ShoeGradeBadge
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.ShoeStage
-import com.stepup.android.ui.components.ShoeStageErrorAlignment
+import com.stepup.android.ui.components.GradeArtRatio
+import com.stepup.android.ui.components.ShoeArtFull
+import com.stepup.android.ui.components.ShoeArtLoad
+import com.stepup.android.ui.components.SneakerGradeStage
+import com.stepup.android.ui.components.rememberShoeArt
 import com.stepup.android.ui.components.ShoeStageMessageAlignment
 import com.stepup.android.ui.components.SneakerFrame
 import com.stepup.android.ui.components.VoltButton
@@ -107,7 +110,9 @@ private enum class DetailSheet { None, Stats, Explain, Info, Manage }
 /**
  * 신발 상세(보유 신발 상세 v1, 2026-09-28 전달본 — docs/redesign/shoe-detail-v1, 시안 02 ~ 17).
  *
- * 신발 → 주요 능력치(SUP 적립 보너스 · 에너지 절감) → 능력치 자세히 · 신발 정보 → "이 신발 신기" 하나. 신고 있으면 버튼은
+ * 본문(2026-09-30 카툰 입체형 확정안 — docs/redesign/shoe-detail-cartoon-2026-09-30): 등급 무대 → 이름 · 등급 배지 · No. 번호 한 줄 →
+ * 레벨 · 효율 · 착화감 · 내구도 네 칸(스틸 블루, 카툰 입체 막대) → "이 신발 신기" 하나. 설명 문구는 두지 않는다.
+ * 능력치 자세히 · 신발 정보는 지우지 않고 ⋯(이 신발 관리) 안으로 옮겼다. 신고 있으면 버튼은
  * "지금 신고 있어요"(누를 수 없음) — 예전처럼 강화 버튼으로 바뀌지 않는다. 대상은 늘 소유 id 한 켤레다(같은 모델 묶음이 아니다).
  *
  * 착용은 기존 길 그대로([ItemsViewModel.equip] → 저장소 equipOnServer). 누르면 "신발 바꾸는 중…"(09)으로 막고, 화면이 보는
@@ -319,8 +324,6 @@ fun ShoeDetailContent(
                         forgetShoeArt(state.shoe)
                         artAttempt += 1
                     },
-                    onOpenStats = { sheet = DetailSheet.Stats },
-                    onOpenInfo = { sheet = DetailSheet.Info },
                 )
             }
         }
@@ -340,6 +343,8 @@ fun ShoeDetailContent(
                 onEnhance = { sheet = DetailSheet.None; onEnhance() },
                 onRepair = { sheet = DetailSheet.None; onRepair() },
                 onSell = { sheet = DetailSheet.None; onSell(shoe) },
+                onOpenStats = { sheet = DetailSheet.Stats },
+                onOpenInfo = { sheet = DetailSheet.Info },
             )
             DetailSheet.None -> Unit
         }
@@ -368,119 +373,48 @@ private fun DetailBody(
     toast: String?,
     artAttempt: Int,
     onRetryArt: () -> Unit,
-    onOpenStats: () -> Unit,
-    onOpenInfo: () -> Unit,
 ) {
     val p = settingsPalette()
     val shoe = state.shoe
-    Column(Modifier.fillMaxWidth()) {
-        // 머리 — 이름 · Lv · 번호 · 상태를 한 번에 읽는다
-        val levelNoCd = stringResource(R.string.sdv_level_no_cd, shoe.level, shoe.mintNumber)
-        Column(
-            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("shoe-detail-head"),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    // 어두운 테마는 확정안의 글자색, 밝은 테마는 설정 v1 의 글자색(흰 글자가 밝은 바닥에 묻히지 않게)
+    val nameColor = if (StepUpColors.dark) CartoonColors.Text else p.text
+    val numberColor = if (StepUpColors.dark) CartoonColors.Number else p.secondary
+    val art by rememberShoeArt(shoe, ShoeArtFull, artAttempt)
+    val failed = art == ShoeArtLoad.Failed
+    // 작은 화면은 무대부터 줄인다 — 이름 · 네 칸 · 버튼이 한 화면에 들도록. 그래도 모자라면 목록이 넘어간다
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val stageMaxHeight = (screenHeight - 500.dp).coerceAtLeast(190.dp)
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        // 무대 — 기존 등급 무대(무대 면 → 뒤 효과 → 신발 → 앞 효과 → 프레임). 완료 알림(10)은 무대 위쪽에
+        Box(
+            Modifier.widthIn(max = stageMaxHeight * GradeArtRatio).fillMaxWidth().aspectRatio(GradeArtRatio)
+                .then(if (art is ShoeArtLoad.Ready) Modifier.testTag("shoe-art") else Modifier),
         ) {
-            // 이름 끝에 등급 배지(공통 채운 배지 — 2026-09-29 전달본). 길면 이름을 줄이고 배지는 남긴다
-            ShoeNameWithBadge(
-                name = shoe.shoeName(), tier = shoe.tier,
-                style = androidx.compose.ui.text.TextStyle(
-                    color = p.text, fontSize = 29.sp, fontWeight = FontWeight.SemiBold,
-                    lineHeight = 1.24.em, letterSpacing = (-0.025).em,
-                ),
-                maxLines = 2, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-name"),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.sdv_level_no, shoe.level, shoe.mintNumber), color = p.secondary, fontSize = 13.sp,
-                modifier = Modifier.semantics { contentDescription = levelNoCd },
-            )
-            Spacer(Modifier.height(10.dp))
-            WearStatus(shoe, nothingWorn = state.wearing == null)
-        }
-        // 무대 — 조명이 위 글자 뒤로 번지게 먼저 그린다. 완료 알림(10)은 무대 위쪽 빈 곳에
-        Box(Modifier.fillMaxWidth().padding(top = 6.dp).zIndex(-1f)) {
-            ShoeStage(
-                sneaker = shoe,
-                modifier = Modifier.fillMaxWidth(),
-                artAttempt = artAttempt,
-                artFailed = { ArtFailed(onRetryArt, Modifier.align(ShoeStageErrorAlignment)) },
-            )
-            WornToast(toast, Modifier.align(Alignment.TopCenter).offset(y = (-4).dp))
-        }
-        KeyStats(shoe)
-        Spacer(Modifier.height(12.dp))
-        DetailRow(stringResource(R.string.sdv_row_stats), Icons.Outlined.Info, onOpenStats, "shoe-row-stats")
-        DetailRow(stringResource(R.string.sdv_row_info), Icons.AutoMirrored.Filled.KeyboardArrowRight, onOpenInfo, "shoe-row-info")
-    }
-}
-
-/** 보유 중(02) · ✓ 지금 신고 있어요(03 · 10) · 아직 신고 있는 신발이 없어요(17) */
-@Composable
-private fun WearStatus(shoe: Sneaker, nothingWorn: Boolean) {
-    val p = settingsPalette()
-    val tag = Modifier.testTag("shoe-status")
-    Row(Modifier.heightIn(min = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-        when {
-            shoe.equipped -> {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.sdv_status_wearing), color = p.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = tag)
+            SneakerGradeStage(shoe, Modifier.fillMaxSize(), showShoe = !failed)
+            if (failed) {
+                Box(Modifier.fillMaxSize().testTag("shoe-art-failed")) {
+                    ArtFailed(onRetryArt, Modifier.align(Alignment.Center))
+                }
             }
-            nothingWorn -> Text(stringResource(R.string.sdv_status_none), color = p.secondary, fontSize = 13.sp,
-                textAlign = TextAlign.Center, modifier = tag)
-            else -> Text(stringResource(R.string.sdv_status_owned), color = p.secondary, fontSize = 13.sp, modifier = tag)
+            WornToast(toast, Modifier.align(Alignment.TopCenter).padding(top = 10.dp))
         }
-    }
-}
-
-/** SUP 적립 보너스 · 에너지 절감 — 두 칸 왼쪽 정렬. 큰 글씨면 위아래로(숫자와 % 를 떼어 자르지 않게) */
-@Composable
-private fun KeyStats(shoe: Sneaker) {
-    val stacked = LocalDensity.current.fontScale > 1.3f
-    val bonus: @Composable (Modifier) -> Unit = { m ->
-        KeyStat(stringResource(R.string.sdv_stat_bonus), formatBonus(bonusPercent(shoe)), m.testTag("shoe-key-bonus"))
-    }
-    val energy: @Composable (Modifier) -> Unit = { m ->
-        KeyStat(stringResource(R.string.sdv_stat_energy), formatPercent(energySavingPercent(shoe)), m.testTag("shoe-key-energy"))
-    }
-    if (stacked) {
-        Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            bonus(Modifier.fillMaxWidth())
-            energy(Modifier.fillMaxWidth())
-        }
-    } else {
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            bonus(Modifier.weight(1f))
-            energy(Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun KeyStat(label: String, value: String, modifier: Modifier) {
-    val p = settingsPalette()
-    Column(modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, color = p.secondary, fontSize = 13.sp, lineHeight = 1.35.em)
-        Text(value, color = p.text, fontSize = 27.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.026).em,
-            maxLines = 1, softWrap = false)
-    }
-}
-
-/** 능력치 자세히 · 신발 정보 — 줄 전체를 누른다(아이콘만 작은 누를 곳으로 만들지 않는다) */
-@Composable
-private fun DetailRow(title: String, icon: ImageVector, onClick: () -> Unit, tag: String) {
-    val p = settingsPalette()
-    Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag(tag)) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(title, color = p.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Icon(icon, contentDescription = null, tint = p.secondary, modifier = Modifier.size(22.dp))
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
+        Spacer(Modifier.height(16.dp))
+        // 이름 → 등급 배지 → No. 번호 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다
+        ShoeNameWithBadge(
+            name = shoe.shoeName(), tier = shoe.tier,
+            style = androidx.compose.ui.text.TextStyle(
+                color = nameColor, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
+                lineHeight = 1.24.em, letterSpacing = (-0.02).em,
+            ),
+            maxLines = 2,
+            suffix = formatShoeNumber(shoe.mintNumber),
+            suffixStyle = androidx.compose.ui.text.TextStyle(
+                color = numberColor, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum",
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
+        )
+        Spacer(Modifier.height(12.dp))
+        ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
     }
 }
 
@@ -494,7 +428,7 @@ private fun WearButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(17.dp)
     val face = if (enabled) p.primaryFace else SolidColor(if (StepUpColors.dark) Color(0xFF152137) else p.surface)
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape).background(face, shape)
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(face, shape)
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 12.dp)
             .testTag("detail-primary-action"),
@@ -546,35 +480,29 @@ private fun ArtFailed(onRetry: () -> Unit, modifier: Modifier) {
     }
 }
 
-/** 13 — 임시 이름 · 능력치 · 착용 상태를 보이지 않고 자리만 */
+/** 13 — 임시 이름 · 능력치 · 착용 상태를 보이지 않고 자리만(무대 · 이름 줄 · 네 칸의 자리) */
 @Composable
 private fun DetailLoading() {
     val p = settingsPalette()
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val stageMaxHeight = (screenHeight - 500.dp).coerceAtLeast(190.dp)
     Column(Modifier.fillMaxWidth().testTag("shoe-detail-loading"), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.padding(top = 6.dp).size(width = 148.dp, height = 23.dp).clip(RoundedCornerShape(6.dp)).background(p.skeleton))
-        Spacer(Modifier.height(18.dp))
-        Box(Modifier.size(width = 104.dp, height = 11.dp).clip(RoundedCornerShape(4.dp)).background(p.skeleton))
-        Spacer(Modifier.height(24.dp))
         ShoeStage(
             sneaker = null,
-            modifier = Modifier.fillMaxWidth().zIndex(-1f),
+            modifier = Modifier.widthIn(max = stageMaxHeight * GradeArtRatio).fillMaxWidth().zIndex(-1f),
             overlay = {
                 Text(stringResource(R.string.sdv_loading), color = p.secondary, fontSize = 15.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(ShoeStageMessageAlignment).semantics { liveRegion = LiveRegionMode.Polite })
             },
         )
-        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            repeat(2) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(width = 116.dp, height = 12.dp).clip(RoundedCornerShape(4.dp)).background(p.skeleton))
-                    Box(Modifier.size(width = 93.dp, height = 25.dp).clip(RoundedCornerShape(5.dp)).background(p.skeleton))
-                }
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.size(width = 196.dp, height = 26.dp).clip(RoundedCornerShape(6.dp)).background(p.skeleton))
+        Spacer(Modifier.height(16.dp))
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            repeat(4) {
+                Box(Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(14.dp)).background(p.skeleton))
             }
         }
-        Spacer(Modifier.height(30.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
-        Spacer(Modifier.height(50.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
     }
 }
 
@@ -752,6 +680,8 @@ private fun ManageSheet(
     onEnhance: () -> Unit,
     onRepair: () -> Unit,
     onSell: () -> Unit,
+    onOpenStats: () -> Unit,
+    onOpenInfo: () -> Unit,
 ) {
     SettingsSheet(
         title = stringResource(R.string.sdv_manage_title),
@@ -794,6 +724,9 @@ private fun ManageSheet(
             onClick = onSell,
             tag = "shoe-manage-sell",
         )
+        // 본문에서 옮긴 능력치 자세히 · 신발 정보(2026-09-30 — 본문은 네 칸만)
+        ManageRow(stringResource(R.string.sdv_row_stats), null, enabled = true, onClick = onOpenStats, tag = "shoe-row-stats")
+        ManageRow(stringResource(R.string.sdv_row_info), null, enabled = true, onClick = onOpenInfo, tag = "shoe-row-info")
         // 이 NFT 정보(이전 상세의 설명 칸) — 네 속성 이야기라 예전 52종에만
         if (shoe.modelId == null) {
             SettingsGroupLabel(stringResource(R.string.sneaker_about))

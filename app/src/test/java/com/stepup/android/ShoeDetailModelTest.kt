@@ -15,7 +15,10 @@ import com.stepup.android.ui.screens.items.ShoeStat
 import com.stepup.android.ui.screens.items.bonusPercent
 import com.stepup.android.ui.screens.items.chainMarkOf
 import com.stepup.android.ui.screens.items.classifyEquip
+import com.stepup.android.ui.screens.items.DetailStat
+import com.stepup.android.ui.screens.items.detailStatRows
 import com.stepup.android.ui.screens.items.detailStateOf
+import com.stepup.android.ui.screens.items.formatShoeNumber
 import com.stepup.android.ui.screens.items.energySavingPercent
 import com.stepup.android.ui.screens.items.formatBonus
 import com.stepup.android.ui.screens.items.formatDurability
@@ -225,6 +228,44 @@ class ShoeDetailModelTest {
         assertNull(sneakerArtRes(legacy().copy(modelId = 1999)))
         // 예전 52종 — 속성 × 변형(바람 일반 0 = WND-010)
         assertEquals(R.drawable.sneaker_wind_10, sneakerArtRes(legacy()))
+    }
+
+    // ── 상세 본문 네 줄(카툰 입체형) ─────────────────────────────
+
+    @Test
+    fun `상세 네 줄은 레벨 · 효율 · 착화감 · 내구도 순서, 실제 값과 막대 길이`() {
+        val shoe = server(efficiencyBps = 800, comfortBps = 580, durability = 92.6).copy(level = 5)
+        val rows = detailStatRows(shoe)
+        assertEquals(listOf(DetailStat.LEVEL, DetailStat.EFFICIENCY, DetailStat.COMFORT, DetailStat.DURABILITY), rows.map { it.stat })
+        // 레벨 상한은 서버의 양수 상한(여기서는 10)
+        assertEquals("5 / 10", rows[0].value)
+        assertEquals(0.5f, rows[0].fraction, 0.0001f)
+        assertEquals("+8.0%", rows[1].value)
+        assertEquals((8.0 / 27.5).toFloat(), rows[1].fraction, 0.0001f)
+        assertEquals(formatPercent(energySavingPercent(shoe)), rows[2].value)
+        assertEquals((energySavingPercent(shoe) / 20.0).toFloat(), rows[2].fraction, 0.0001f)
+        // 서버 내구도는 내려서 — 92.6 은 92
+        assertEquals("92 / 100", rows[3].value)
+        assertEquals(0.92f, rows[3].fraction, 0.0001f)
+    }
+
+    @Test
+    fun `서버 상한이 없으면 등급 기본 레벨 상한, 막대는 0 에서 1 사이`() {
+        val rare = legacy(rarity = Rarity.RARE, level = 5)
+        assertEquals("5 / 15", detailStatRows(rare)[0].value)
+        assertEquals(5f / 15f, detailStatRows(rare)[0].fraction, 0.0001f)
+        assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].value)
+        assertEquals(1f, detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].fraction, 0f)
+        // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다
+        assertEquals(1f, detailStatRows(server(efficiencyBps = 4_000))[1].fraction, 0f)
+        assertEquals(0f, detailStatRows(server(durability = -3.0))[3].fraction, 0f)
+    }
+
+    @Test
+    fun `신발 번호는 네 자리까지 0 을 채우고 길면 자르지 않는다`() {
+        assertEquals("No. 0007", formatShoeNumber(7))
+        assertEquals("No. 0123", formatShoeNumber(123))
+        assertEquals("No. 12345", formatShoeNumber(12_345))
     }
 
     @Test

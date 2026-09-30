@@ -2,6 +2,7 @@ package com.stepup.android.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalTextStyle
@@ -96,6 +97,9 @@ private fun Density.badgeSidePx(height: Int): Int = (BadgeSidePadding.toPx() * h
 /** 이름과 배지 사이 */
 private val BadgeGap = 8.dp
 
+/** 배지와 뒤에 붙는 글(번호) 사이 */
+private val SuffixGap = 10.dp
+
 private fun badgeLabelStyle(colors: TierColors) =
     TextStyle(color = colors.label, fontSize = BadgeLabelSize, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
 
@@ -132,6 +136,7 @@ private fun Modifier.badgeLayout(): Modifier = layout { measurable, constraints 
 /**
  * 이름 + 끝의 배지 — 배지는 이름의 **마지막 줄 끝**에 같은 줄로 붙는다(따로 한 줄을 차지하지 않는다).
  * 이름은 [maxLines] 줄까지. 넘치면 이름을 줄여 "…"를 붙이고 배지는 그대로 둔다 — 배지가 잘려 사라지지 않게.
+ * [suffix] 가 있으면(신발 상세의 "No. 0007") 배지 바로 오른쪽에 붙여 배지와 한 덩어리로 둔다 — 번호만 다음 줄로 떨어지지 않는다.
  */
 @Composable
 fun ShoeNameWithBadge(
@@ -141,6 +146,8 @@ fun ShoeNameWithBadge(
     modifier: Modifier = Modifier,
     maxLines: Int = 2,
     textAlign: TextAlign = TextAlign.Start,
+    suffix: String? = null,
+    suffixStyle: TextStyle = TextStyle.Default,
 ) {
     val density = LocalDensity.current
     val colors = remember(tier) { tierColors(tier) }
@@ -152,6 +159,12 @@ fun ShoeNameWithBadge(
     val labelStyle = remember(base, colors) { base.merge(badgeLabelStyle(colors)) }
     BoxWithConstraints(modifier) {
         val labelSize = remember(label, labelStyle, density) { measurer.measure(label, labelStyle).size }
+        val tailStyle = remember(base, suffixStyle) { base.merge(suffixStyle) }
+        val suffixSize = remember(suffix, tailStyle, density) {
+            suffix?.let { measurer.measure(it, tailStyle, softWrap = false).size }
+        }
+        val suffixWidth = with(density) { suffixSize?.let { (it.width + 1).toDp() } ?: 0.dp }
+        val suffixHeight = with(density) { suffixSize?.height?.toDp() ?: 0.dp }
         // 배지 칸(badgeLayout)과 같은 계산 — 글자가 커지면 높이 · 양옆이 함께 커진다
         val (badgeWidth, badgeHeight) = remember(labelSize, density) {
             with(density) {
@@ -161,15 +174,18 @@ fun ShoeNameWithBadge(
         }
         val placeholder = with(density) {
             Placeholder(
-                width = (badgeWidth + BadgeGap).toSp(), height = badgeHeight.toSp(),
+                width = (badgeWidth + BadgeGap + if (suffix != null) SuffixGap + suffixWidth else 0.dp).toSp(),
+                height = maxOf(badgeHeight, suffixHeight).toSp(),
                 placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
             )
         }
         val widthPx = constraints.maxWidth
-        val text = remember(name, label, nameStyle, widthPx, placeholder, maxLines) {
-            fittedName(name, label, widthPx) { candidate ->
+        // 대체 글 — 배지 자리가 읽히는 말(" 레어", 번호가 있으면 " 레어 No. 0007")
+        val alt = if (suffix != null) "$label $suffix" else label
+        val text = remember(name, alt, nameStyle, widthPx, placeholder, maxLines) {
+            fittedName(name, alt, widthPx) { candidate ->
                 measurer.measure(candidate, nameStyle, maxLines = maxLines, constraints = Constraints(maxWidth = widthPx),
-                    placeholders = listOf(AnnotatedString.Range(placeholder, candidate.length - badgeAltLength(label), candidate.length)))
+                    placeholders = listOf(AnnotatedString.Range(placeholder, candidate.length - badgeAltLength(alt), candidate.length)))
                     .hasVisualOverflow
             }
         }
@@ -180,9 +196,13 @@ fun ShoeNameWithBadge(
             overflow = TextOverflow.Clip,
             inlineContent = mapOf(
                 BadgeInlineId to InlineTextContent(placeholder) {
-                    Box(Modifier.padding(start = BadgeGap), contentAlignment = Alignment.CenterStart) {
+                    Row(Modifier.padding(start = BadgeGap), verticalAlignment = Alignment.CenterVertically) {
                         // 글의 대체 글(" 레어")이 등급을 이미 읽어 준다
                         ShoeGradeBadge(tier, Modifier.size(width = badgeWidth, height = badgeHeight), decorative = true)
+                        if (suffix != null) {
+                            Text(suffix, style = tailStyle, maxLines = 1, softWrap = false,
+                                modifier = Modifier.padding(start = SuffixGap).clearAndSetSemantics { testTag = "shoe-name-suffix" })
+                        }
                     }
                 },
             ),
