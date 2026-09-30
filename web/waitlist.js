@@ -1,4 +1,4 @@
-import { SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl } from './waitlist-core.mjs?v=20260930-share';
+import { SHARE_TEXT, CREATOR_TEXT, PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl } from './waitlist-core.mjs?v=20260930-youtube';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';

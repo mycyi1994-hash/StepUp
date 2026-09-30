@@ -24,12 +24,14 @@ test('rejects profiles, disguised hosts, malformed video ids and wrong channels'
 });
 
 test('share intents preserve richer copy and the public homepage link', async () => {
-  const { shareTarget, SHARE_TEXT, SHARE_URL } = await core;
+  const { shareTarget, SHARE_TEXT, SHARE_URL, PROMO_VIDEO_URL } = await core;
   const x = new URL(shareTarget('x'));
   assert.equal(x.hostname, 'x.com');
-  assert.equal(x.searchParams.get('text'), SHARE_TEXT);
-  assert.equal(x.searchParams.get('url'), SHARE_URL);
-  assert.ok(new URL(shareTarget('threads')).searchParams.get('text').includes(SHARE_URL));
+  assert.equal(x.searchParams.get('text'), `${SHARE_TEXT}\n${SHARE_URL}`);
+  // The video link goes last so X and Threads show a playable preview.
+  assert.equal(x.searchParams.get('url'), PROMO_VIDEO_URL);
+  const threads = new URL(shareTarget('threads')).searchParams.get('text');
+  assert.ok(threads.includes(SHARE_URL) && threads.endsWith(PROMO_VIDEO_URL));
 });
 
 test('referral links carry only a valid public code', async () => {
@@ -38,6 +40,6 @@ test('referral links carry only a valid public code', async () => {
   for (const bad of ['', 'ABCDEFG', 'ABCDEFGHJ', 'ABCDEFG0', 'ABCDEFGI', 'ABC<EFG>', null]) assert.equal(referralCode(bad), '', String(bad));
   assert.equal(shareUrl('AB2CDEFG'), `${SHARE_URL}?ref=AB2CDEFG`);
   assert.equal(shareUrl('bad code'), SHARE_URL);
-  assert.equal(new URL(shareTarget('x', shareUrl('AB2CDEFG'))).searchParams.get('url'), `${SHARE_URL}?ref=AB2CDEFG`);
-  assert.ok(new URL(shareTarget('threads', shareUrl('AB2CDEFG'))).searchParams.get('text').endsWith('?ref=AB2CDEFG'));
+  assert.ok(new URL(shareTarget('x', shareUrl('AB2CDEFG'))).searchParams.get('text').endsWith(`${SHARE_URL}?ref=AB2CDEFG`));
+  assert.ok(new URL(shareTarget('threads', shareUrl('AB2CDEFG'))).searchParams.get('text').includes('?ref=AB2CDEFG\n'));
 });
