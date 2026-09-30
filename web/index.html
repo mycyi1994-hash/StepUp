@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="./styles.css?v=20260930-tap">
+<link rel="stylesheet" href="./styles.css?v=20260930-caption">
 <script type="module" src="./site.js?v=20260930-youtube"></script>
-<script type="module" src="./waitlist.js?v=20260930-image"></script>
+<script type="module" src="./waitlist.js?v=20260930-caption"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -290,6 +290,14 @@
       <div><strong>3개를 모두 완료하면, 특전이 기다려요</strong><span> X · 인스타그램 · 스레드에 각각 공유해주세요.</span></div>
       <span class="waitlist-progress" aria-label="일반 공유 제출 현황">0 / 3</span>
     </div>
+    <details class="waitlist-materials" open>
+      <summary>공유 영상·이미지와 소개 문구 <span aria-hidden="true">＋</span></summary>
+      <div class="waitlist-materials-body">
+        <img src="./assets/img/waitlist-share-v2.png" width="1254" height="1254" alt="오늘의 한 걸음, 함께라서 더 멀리. 한강을 함께 달리는 친구들과 StepUp 사전 등록 안내">
+        <div><p class="waitlist-share-copy"></p><div class="waitlist-material-actions"><a href="./assets/video/stepup-promo-v5.1-mobile.mp4" download="stepup-promo.mp4">영상 저장 ↓</a><button class="waitlist-copy-image" type="button">이미지 복사</button><a href="./assets/img/waitlist-share-v2.png" download="stepup-share.png">이미지 저장 ↓</a><button class="waitlist-copy" type="button">문구 복사</button></div></div>
+      </div>
+      <p class="waitlist-copy-feedback" role="status"></p>
+    </details>
     <div class="waitlist-share-platforms" aria-label="일반 공유 채널">
       <button type="button" data-platform="x" aria-pressed="false"><span class="platform-icon icon-x" aria-hidden="true">𝕏</span><strong>X</strong><span class="platform-status">공유하기</span></button>
       <button type="button" data-platform="instagram" aria-pressed="false"><span class="platform-icon icon-instagram" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><strong>인스타그램</strong><span class="platform-status">공유하기</span></button>
@@ -297,13 +305,6 @@
     </div>
     <div class="waitlist-social-form-slot"></div>
     <p class="waitlist-status-feedback" role="status"></p>
-    <details class="waitlist-materials">
-      <summary>공유 영상·이미지와 소개 문구 <span aria-hidden="true">＋</span></summary>
-      <div class="waitlist-materials-body">
-        <img src="./assets/img/waitlist-share-v2.png" width="1254" height="1254" loading="lazy" alt="오늘의 한 걸음, 함께라서 더 멀리. 한강을 함께 달리는 친구들과 StepUp 사전 등록 안내">
-        <div><p class="waitlist-share-copy"></p><div class="waitlist-material-actions"><a href="./assets/video/stepup-promo-v5.1-mobile.mp4" download="stepup-promo.mp4">영상 저장 ↓</a><a href="./assets/img/waitlist-share-v2.png" download="stepup-share.png">이미지 저장 ↓</a><button class="waitlist-copy" type="button">문구 복사</button></div></div>
-      </div>
-    </details>
     <section class="waitlist-creator" aria-labelledby="waitlist-creator-title">
       <span class="waitlist-creator-badge">크리에이터 전용</span>
       <h3 id="waitlist-creator-title">당신의 콘텐츠로 함께해요</h3>
@@ -318,6 +319,7 @@
     <form class="waitlist-share-form" hidden>
       <div class="waitlist-share-form-heading"><strong class="waitlist-platform-title"></strong><button class="waitlist-share-form-close" type="button" aria-label="링크 제출 영역 닫기">×</button></div>
       <p class="waitlist-share-help" id="waitlist-post-help"></p>
+      <p class="waitlist-form-caption" hidden></p>
       <div class="waitlist-publish-actions"><button class="waitlist-publish" type="button"></button><button class="waitlist-copy" type="button">소개 문구 복사</button></div>
       <p class="waitlist-share-action-feedback" role="status" aria-live="polite"></p>
       <p class="waitlist-creator-guide" hidden>나의 러닝 루틴, 함께 달리고 싶은 이유, 기대하는 StepUp 기능을 담아보세요. 영상이나 설명에 stepupcrew.com과 보너스를 받을 수 있는 이벤트 참여 콘텐츠라는 점을 표시해주세요.</p>
@@ -326,7 +328,6 @@
       <p class="waitlist-share-feedback" role="status" aria-live="polite"></p>
       <button class="waitlist-submit" type="submit">링크 제출하기</button>
     </form>
-    <p class="waitlist-copy-feedback" role="status"></p>
     <p class="waitlist-share-note">보너스의 종류·수량과 특전은 출시 후 안내해요.<br>제출한 게시물을 확인한 뒤 혜택을 드려요. 같은 게시물은 한 번만 인정돼요.</p>
     <button class="waitlist-change-email" type="button">다른 이메일 등록하기</button>
   </section>

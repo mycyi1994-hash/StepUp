@@ -226,6 +226,10 @@ for (const button of platformButtons) {
     $('.waitlist-creator-guide').hidden = !config.creator;
     $('.waitlist-publish').textContent = config.creator ? `${config.label}에 영상 올리기 ↗` : `${config.label}에 다시 공유하기 ↗`;
     shareForm.elements.postUrl.placeholder = config.placeholder;
+    // Instagram ignores shared text, so show the caption right in its form to copy.
+    const caption = $('.waitlist-form-caption');
+    caption.hidden = platform !== 'instagram';
+    caption.textContent = platform === 'instagram' ? `${SHARE_TEXT}\n${shareLink()}` : '';
     const verified = claims.some(item => item.platform === platform && item.status === 'verified');
     shareSubmit.disabled = verified;
     shareForm.elements.postUrl.disabled = verified;
@@ -272,9 +276,7 @@ async function publish() {
       await navigator.share({ files: [cardFile] });
       // Instagram drops shared text, so offer the caption separately.
       const copied = await navigator.clipboard?.writeText(message).then(() => true, () => false);
-      if (platform === selected) feedback(actionFeedback, copied
-        ? '소개 문구를 복사했어요. 게시할 때 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.'
-        : '게시할 때 ‘소개 문구 복사’를 눌러 문구를 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.');
+      if (platform === selected) feedback(actionFeedback, copied ? '소개 문구를 복사했어요. 게시할 때 붙여넣어 주세요.' : '');
     } catch (error) {
       if (platform === selected) feedback(actionFeedback, error.name === 'AbortError'
         ? '공유를 취소했어요. 다시 눌러 시도할 수 있어요.'
@@ -282,18 +284,10 @@ async function publish() {
     }
     return;
   }
-  if (selected === 'instagram' && !touchDevice()) {
-    // Instagram on a computer has no share link: save the card, open Instagram and copy the caption.
-    const save = document.createElement('a');
-    save.href = SHARE_MEDIA[0].src;
-    save.download = SHARE_MEDIA[0].name;
-    save.click();
-  }
   window.open(shareTarget(selected, shareLink()), '_blank', 'noopener,noreferrer');
   if (selected === 'instagram' && !touchDevice()) {
+    // Instagram on a computer has no share link: open it and copy the caption shown in the form.
     await copyText(message, actionFeedback);
-    if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback,
-      '공유 이미지를 내려받고 인스타그램을 열었어요. 새 게시물에 이미지를 올리고 복사된 문구를 붙여넣은 뒤, 게시물 링크를 아래에 남겨주세요.');
   } else if (selected === 'instagram' || config.creator) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator
@@ -302,6 +296,17 @@ async function publish() {
   } else feedback(actionFeedback, '글 작성 화면을 열었어요. 게시한 뒤 링크를 남겨주세요.');
 }
 $('.waitlist-publish').addEventListener('click', publish);
+$('.waitlist-copy-image').addEventListener('click', async () => {
+  const element = $('.waitlist-copy-feedback');
+  try {
+    // Pass a pending blob so Safari keeps the tap that allows the clipboard write.
+    const image = fetch(SHARE_MEDIA[0].src).then(response => response.blob());
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': image })]);
+    feedback(element, '공유 이미지를 복사했어요. 게시물을 만들 때 붙여넣어 주세요.');
+  } catch {
+    feedback(element, '이미지를 복사하지 못했어요. ‘이미지 저장’으로 내려받아 올려주세요.', true);
+  }
+});
 
 shareForm.addEventListener('submit', async event => {
   event.preventDefault();
