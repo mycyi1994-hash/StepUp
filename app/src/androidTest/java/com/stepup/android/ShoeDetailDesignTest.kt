@@ -382,6 +382,14 @@ class ShoeDetailDesignTest {
         assertBarsAligned()
         show("s32d-narrow-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertBarsAligned()
+        // 320dp + 큰 글씨 함께 — 막대가 사라지지 않는다(너무 좁으면 글 아래 줄로)
+        compose.runOnIdle { large = true }
+        show("s33-narrow-large-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
+        assertBarsAligned()
+        listOf("level", "efficiency", "comfort", "durability").forEach { stat ->
+            val bar = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertTrue("$stat bar keeps a visible width: ${bar.width}", bar.width > 100f)
+        }
         show("s32b-narrow-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s32c-narrow-error", "shoe-equip-error",
             detail(ready(SPIKE), result = EquipResult.NotWorn(SPIKE.id, EquipFailure.SIGN_IN, WORN.id, confirmed = true)))

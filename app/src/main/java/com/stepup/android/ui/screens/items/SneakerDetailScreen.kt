@@ -387,7 +387,7 @@ private fun DetailBody(
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         // 무대 — 기존 등급 무대(무대 면 → 뒤 효과 → 신발 → 앞 효과 → 프레임). 완료 알림(10)은 무대 위쪽에
         Box(
-            Modifier.fillMaxWidth().widthIn(max = stageMaxHeight * GradeArtRatio).aspectRatio(GradeArtRatio)
+            Modifier.widthIn(max = stageMaxHeight * GradeArtRatio).fillMaxWidth().aspectRatio(GradeArtRatio)
                 .then(if (art is ShoeArtLoad.Ready) Modifier.testTag("shoe-art") else Modifier),
         ) {
             SneakerGradeStage(shoe, Modifier.fillMaxSize(), showShoe = !failed)
@@ -489,7 +489,7 @@ private fun DetailLoading() {
     Column(Modifier.fillMaxWidth().testTag("shoe-detail-loading"), horizontalAlignment = Alignment.CenterHorizontally) {
         ShoeStage(
             sneaker = null,
-            modifier = Modifier.fillMaxWidth().widthIn(max = stageMaxHeight * GradeArtRatio).zIndex(-1f),
+            modifier = Modifier.widthIn(max = stageMaxHeight * GradeArtRatio).fillMaxWidth().zIndex(-1f),
             overlay = {
                 Text(stringResource(R.string.sdv_loading), color = p.secondary, fontSize = 15.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(ShoeStageMessageAlignment).semantics { liveRegion = LiveRegionMode.Polite })

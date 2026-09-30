@@ -2,8 +2,8 @@ package com.stepup.android.ui.screens.items
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -83,6 +83,10 @@ private val CellShape = RoundedCornerShape(14.dp)
 private val LabelMin = 52.dp
 private val ValueMin = 64.dp
 private val ColumnGap = 8.dp
+private val CellPadding = 12.dp
+
+/** 한 줄 배치를 지키는 막대의 가장 짧은 폭 — 이보다 좁아지면 막대를 글 아래로 내린다 */
+private val BarMin = 56.dp
 private val LabelStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
 
 /** 값은 고정폭 숫자 — "5 / 15" 와 "92 / 100" 의 숫자 폭이 같게 */
@@ -108,7 +112,9 @@ fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
         maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(rows.map { it.value }, valueStyle))
     }
     val levelMax = shoe.maxLevel.toString()
-    Box(modifier.fillMaxWidth()) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
+        val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             rows.forEachIndexed { index, row ->
                 val full = when (row.stat) {
@@ -120,6 +126,7 @@ fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
                 StatCell(
                     label = labels[index], value = row.value, fraction = row.fraction, fill = fillOf(row.stat),
                     labelWidth = labelWidth, valueWidth = valueWidth, labelStyle = labelStyle, valueStyle = valueStyle,
+                    stacked = stacked,
                     description = stringResource(R.string.sdv_bar_cd, labels[index], row.value, full),
                     tag = "shoe-cell-" + row.stat.name.lowercase(),
                 )
@@ -150,14 +157,25 @@ private fun StatCell(
     valueStyle: TextStyle,
     description: String,
     tag: String,
+    stacked: Boolean,
 ) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
-            .semantics(mergeDescendants = true) { contentDescription = description }
-            .testTag(tag)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val cell = Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
+        .semantics(mergeDescendants = true) { contentDescription = description }
+        .testTag(tag)
+        .padding(horizontal = CellPadding, vertical = 6.dp)
+    if (stacked) {
+        Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = labelStyle, color = CartoonColors.Text, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(ColumnGap))
+                Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
+                    modifier = Modifier.testTag("$tag-value"))
+            }
+            CartoonStatBar(fraction, fill, Modifier.fillMaxWidth().height(30.dp).testTag("$tag-bar"))
+        }
+        return
+    }
+    Row(cell, verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = labelStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
             modifier = Modifier.width(labelWidth))
         Spacer(Modifier.width(ColumnGap))
