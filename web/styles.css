@@ -102,6 +102,20 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-required{color:#3182f6}.waitlist-consent a{text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .waitlist-feedback,.waitlist-share-feedback,.waitlist-share-action-feedback,.waitlist-status-feedback,.waitlist-copy-feedback{margin:0;color:#1b64da;font-size:13px;line-height:1.6;word-break:keep-all}
 .waitlist-dialog p:empty{display:none}
+.waitlist-terms{width:min(420px,calc(100% - 40px));max-height:88dvh;padding:0;border:0;border-radius:24px;background:#fff;color:#191f28;box-shadow:0 24px 80px #0006;overscroll-behavior:contain;color-scheme:light}
+.waitlist-terms::backdrop{background:#10182866}
+.waitlist-terms-body{display:flex;flex-direction:column;gap:16px;max-height:88dvh;overflow-y:auto;padding:30px 26px 22px}
+.waitlist-terms h2{margin:0;font-size:21px;line-height:1.4;letter-spacing:-.03em}
+.waitlist-terms dl{display:flex;flex-direction:column;gap:12px;margin:0;padding:16px;border-radius:16px;background:#f7f8fa}
+.waitlist-terms dl div{display:grid;grid-template-columns:68px 1fr;gap:10px;font-size:14px;line-height:1.55}
+.waitlist-terms dt{color:#6b7684;font-weight:600}
+.waitlist-terms dd{margin:0;color:#333d4b;word-break:keep-all}
+.waitlist-terms dd span{color:#6b7684;font-size:13px}
+.waitlist-terms p{margin:0;color:#6b7684;font-size:13px;line-height:1.6;word-break:keep-all}
+.waitlist-terms a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.waitlist-terms :focus-visible{outline:3px solid #3182f6;outline-offset:3px}
+.waitlist-terms .waitlist-submit{margin-top:2px}
+.waitlist-terms .waitlist-terms-full{align-self:center;color:#8b95a1;font-size:13px}
 .waitlist-dialog .is-error{color:#c93636}
 .waitlist-submit{min-height:56px;padding:14px 18px;border:0;border-radius:13px;background:#3182f6;color:#fff;font-size:16px;font-weight:800;transition:background .2s,transform .15s}
 .waitlist-form>.waitlist-submit{margin-top:8px}.waitlist-submit:disabled{cursor:default;opacity:.55}

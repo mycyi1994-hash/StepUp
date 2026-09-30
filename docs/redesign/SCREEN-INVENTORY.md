@@ -262,6 +262,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Email registration dialog | `web/index.html`, `web/styles.css`, `web/waitlist.js` | Light redesign; consent, validation, saving, error, success; desktop/mobile browser capture |
 | General sharing + creator participation | Same dialog; `web/waitlist-core.mjs` | Six platforms; selectable link form, retry, submitted/verified/rejected, receipt restoration; 320/390/1440px browser verification |
 | Bonus candidate summary | `0052_waitlist_creators.sql` | Operator-only derived flags; no automatic verification or payment; SQL CI passed in PR #69 |
+| Consent summary modal | `web/index.html` (`.waitlist-terms`), `web/styles.css`, `web/waitlist.js` | Nested dialog over the registration form (2026-09-29, PR #71): only the waitlist collection items (incl. referral code/relationship from #72), purpose, retention, storage, refusal, withdrawal contact; full policy link. Opens without toggling consent; Esc/confirm/backdrop return to the form; 390/1280px browser capture |
 
 For every route: initializing, ready/data, empty, loading, error/retry, permission denied, signed out, signed in, offline/reconnect, restore/back/relaunch, large font, light/dark.
 Mark genuinely inapplicable states with a reason during review. Source detection is not runtime evidence.

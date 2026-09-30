@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="./styles.css?v=20260930-creator">
+<link rel="stylesheet" href="./styles.css?v=20260930-terms">
 <script type="module" src="./site.js?v=20260928-ready2"></script>
-<script type="module" src="./waitlist.js?v=20260930-share"></script>
+<script type="module" src="./waitlist.js?v=20260930-share-terms"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -280,7 +280,7 @@
     <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@gmail.com" aria-describedby="waitlist-email-help" required>
     <p id="waitlist-email-help" class="waitlist-field-help">출시 후 구글 로그인에 사용할 이메일로 등록해주세요.</p>
     <label class="waitlist-honeypot" aria-hidden="true">이 칸은 비워두세요 <input name="website" tabindex="-1" autocomplete="off"></label>
-    <label class="waitlist-consent"><input type="checkbox" name="consent" required><span><span class="waitlist-required">[필수]</span> 출시 안내와 혜택 확인을 위한 개인정보 수집·이용 동의 <a href="./privacy.html" target="_blank" rel="noopener">자세히 ↗</a></span></label>
+    <label class="waitlist-consent"><input type="checkbox" name="consent" required><span><span class="waitlist-required">[필수]</span> 출시 안내와 혜택 확인을 위한 개인정보 수집·이용 동의 <a class="waitlist-terms-open" href="./privacy.html" target="_blank" rel="noopener" aria-haspopup="dialog">자세히</a></span></label>
     <p class="waitlist-feedback" role="status" aria-live="polite"></p>
     <button class="waitlist-submit" type="submit">사전 등록하기</button>
     <p class="waitlist-fineprint">같은 이메일로 구글 로그인하면 혜택 대상을 확인해요.<br>보너스의 종류와 수량은 출시 후 안내할게요.</p>
@@ -334,6 +334,20 @@
     <p class="waitlist-share-note">보너스의 종류·수량과 특전은 출시 후 안내해요.<br>제출한 게시물을 확인한 뒤 혜택을 드려요. 같은 게시물은 한 번만 인정돼요.</p>
     <button class="waitlist-change-email" type="button">다른 이메일 등록하기</button>
   </section>
+  </div>
+</dialog>
+<dialog class="waitlist-terms" aria-labelledby="waitlist-terms-title">
+  <div class="waitlist-terms-body">
+    <h2 id="waitlist-terms-title">개인정보 수집·이용 동의</h2>
+    <dl>
+      <div><dt>수집 항목</dt><dd>이메일, 동의·등록 시각, 공유 링크용 추천 코드, 다른 등록자의 추천 링크로 등록한 경우 그 추천 관계<br><span>선택: 제출한 공유 게시물·영상 주소</span></dd></div>
+      <div><dt>이용 목적</dt><dd>출시 안내, 같은 이메일로 구글 로그인한 계정의 사전 등록 혜택 확인</dd></div>
+      <div><dt>보관 기간</dt><dd>철회 시 즉시, 늦어도 앱 출시 후 90일 이내 삭제</dd></div>
+      <div><dt>보관 위치</dt><dd>Supabase 서버(싱가포르)</dd></div>
+    </dl>
+    <p>동의하지 않을 수 있지만, 이 경우 사전 등록을 할 수 없어요. 철회·삭제는 <a href="mailto:stepupofficial@stepupcrew.com">stepupofficial@stepupcrew.com</a>으로 요청해주세요.</p>
+    <button class="waitlist-submit waitlist-terms-close" type="button">확인</button>
+    <a class="waitlist-terms-full" href="./privacy.html" target="_blank" rel="noopener">전체 개인정보처리방침 보기 ↗</a>
   </div>
 </dialog>
 </body>

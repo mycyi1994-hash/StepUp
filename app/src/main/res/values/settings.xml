@@ -2,7 +2,7 @@
 <!-- 설정 v1(2026-09-28 전달본, docs/redesign/settings-v1) — 설정 첫 목록 · 알림 · 개인정보 · 계정 · 테마 · 언어 · 도움말 · 목표 -->
 <resources>
     <!-- 문의 주소 — 앱의 계정 삭제 안내에 이미 쓰던 주소. 수신 운영 여부는 서비스가 확인한다 -->
-    <string name="support_email" translatable="false">support@stepupcrew.com</string>
+    <string name="support_email" translatable="false">stepupofficial@stepupcrew.com</string>
     <string name="set_group_running">Running &amp; notifications</string>
     <string name="set_group_app">Using the app</string>
     <string name="set_group_account">Account &amp; help</string>
