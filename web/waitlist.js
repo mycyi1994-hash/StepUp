@@ -55,18 +55,23 @@ const SHARE_MEDIA = [
 ];
 // Desktop share sheets do not list Instagram, so only phones use the system share menu.
 const touchDevice = () => window.matchMedia?.('(pointer: coarse)').matches;
+// In-app browsers (KakaoTalk, Instagram, Naver…) cannot hand files to other apps.
+const inAppBrowser = /KAKAOTALK|Instagram|FBAN|FBAV|NAVER|Line\/|; wv\)/i.test(navigator.userAgent);
+let mediaReady = false;
 
 function prepareShareMedia() {
-  if (cardLoading || !touchDevice() || !navigator.canShare) return;
+  if (cardLoading) return;
+  if (!touchDevice() || !navigator.canShare) { mediaReady = true; return; }
   cardLoading = (async () => {
     for (const media of SHARE_MEDIA) {
       try {
         const response = await fetch(media.src);
         if (!response.ok) continue;
         const file = new File([await response.blob()], media.name, { type: media.type });
-        if (navigator.canShare({ files: [file] })) { cardFile = file; return; }
+        if (navigator.canShare({ files: [file] })) { cardFile = file; break; }
       } catch { /* Try the next format. */ }
     }
+    mediaReady = true;
   })();
 }
 
@@ -131,6 +136,7 @@ function closeShareForm() {
 
 function showStage(stage) {
   const sharing = stage === 'share';
+  if (sharing) prepareShareMedia();
   registerForm.hidden = sharing;
   shareSection.hidden = !sharing;
   dialog.classList.toggle('is-sharing', sharing);
@@ -247,19 +253,30 @@ $('.waitlist-publish').addEventListener('click', async () => {
   if (!selected) return;
   const config = PLATFORMS[selected];
   const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`;
+  if (selected === 'instagram' && touchDevice() && inAppBrowser) {
+    feedback(actionFeedback, '이 앱 안의 브라우저에서는 영상을 인스타그램으로 넘길 수 없어요. 오른쪽 위 메뉴에서 ‘다른 브라우저로 열기’(크롬·사파리)를 누른 뒤 다시 공유해주세요.', true);
+    return;
+  }
+  if (selected === 'instagram' && touchDevice() && !mediaReady) {
+    prepareShareMedia();
+    feedback(actionFeedback, '공유할 홍보 영상을 불러오고 있어요. 잠시 후 다시 눌러주세요.');
+    return;
+  }
   // File sharing must start in the click handler, before awaiting any work.
   if (selected === 'instagram' && cardFile && touchDevice()) {
-    // Instagram drops shared text, so put the caption on the clipboard and share the file alone.
-    const copied = navigator.clipboard?.writeText(message).then(() => true, () => false);
+    feedback(actionFeedback, '공유 메뉴를 여는 중이에요…');
     try {
+      // Share first: a clipboard write before it can use up the tap that the share menu needs (iOS).
       await navigator.share({ files: [cardFile] });
-      if (platform === selected) feedback(actionFeedback, await copied
+      // Instagram drops shared text, so offer the caption separately.
+      const copied = await navigator.clipboard?.writeText(message).then(() => true, () => false);
+      if (platform === selected) feedback(actionFeedback, copied
         ? '소개 문구를 복사했어요. 게시할 때 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.'
-        : '공유한 게시물의 링크를 아래에 남겨주세요. 소개 문구는 ‘문구 복사’로 복사할 수 있어요.');
+        : '게시할 때 ‘소개 문구 복사’를 눌러 문구를 붙여넣고, 올린 게시물의 링크를 아래에 남겨주세요.');
     } catch (error) {
       if (platform === selected) feedback(actionFeedback, error.name === 'AbortError'
         ? '공유를 취소했어요. 다시 눌러 시도할 수 있어요.'
-        : '공유 메뉴를 열지 못했어요. 홍보 영상이나 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
+        : '공유 메뉴를 열지 못했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상을 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
     }
     return;
   }
