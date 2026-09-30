@@ -1,4 +1,6 @@
 export const SHARE_URL = 'https://stepupcrew.com/';
+// The homepage promo film on YouTube. X and Threads preview the last link, so it goes last to show a playable video.
+export const PROMO_VIDEO_URL = 'https://youtu.be/5dfGSfGdBPo';
 export const SHARE_TEXT = '오늘의 한 걸음, 함께라서 더 멀리. 🏃\n러닝 기록부터 크루와 보상까지, StepUp에서 함께 달릴 날을 기다려요.\n저는 사전 등록했어요. 같이 시작해요!\n#StepUp #스텝업 #러닝크루';
 export const CREATOR_TEXT = '오늘의 한 걸음, 함께라서 더 멀리. 🏃\n나의 러닝 루틴과 함께 소개하는 StepUp! 러닝 기록부터 크루와 보상까지, 함께 달리는 즐거움을 준비하고 있어요.\n지금 사전 등록하고 함께 시작해요.\n#StepUp #스텝업 #러닝 #러닝크루\n※ StepUp 사전 등록 공유 이벤트 참여 콘텐츠로, 출시 후 보너스를 받을 수 있습니다.';
 export const PLATFORMS = {
@@ -47,7 +49,7 @@ export function shareUrl(code) {
 }
 
 export function shareTarget(platform, url = SHARE_URL) {
-  if (platform === 'x') return `https://x.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(url)}`;
-  if (platform === 'threads') return `https://www.threads.com/intent/post?text=${encodeURIComponent(`${SHARE_TEXT}\n${url}`)}`;
+  if (platform === 'x') return `https://x.com/intent/tweet?text=${encodeURIComponent(`${SHARE_TEXT}\n${url}`)}&url=${encodeURIComponent(PROMO_VIDEO_URL)}`;
+  if (platform === 'threads') return `https://www.threads.com/intent/post?text=${encodeURIComponent(`${SHARE_TEXT}\n${url}\n${PROMO_VIDEO_URL}`)}`;
   return PLATFORMS[platform]?.target || 'https://www.instagram.com/';
 }

@@ -79,50 +79,77 @@ function snd(type) {
   if (type === 'whoosh') noise(0.45, 0.25, 900);
 }
 const soundBtn = $('.sound');
-const film = $('.promo-film');
+// 홍보영상은 유튜브 임베드다. 소리 버튼·페이지 이동은 유튜브 플레이어 API 로 조절한다.
+const filmFrame = $('.promo-film');
 const filmStatus = $('.film-status');
 let resumeFilm = !reduceMotion.matches;
+let film; // 유튜브 플레이어. API 가 준비되기 전에는 없다.
 function updateSound() {
   soundBtn.setAttribute('aria-pressed', String(soundOn));
   soundBtn.setAttribute('aria-label', soundOn ? '소리 끄기' : '소리 켜기');
   $('.sound-label', soundBtn).textContent = soundOn ? '소리 끄기' : '소리 켜기';
 }
+function applyFilmSound() {
+  if (!film) return;
+  if (soundOn) {
+    film.unMute();
+    if (film.getVolume() === 0) film.setVolume(100);
+  } else film.mute();
+}
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
-  film.muted = !soundOn;
-  if (soundOn && film.volume === 0) film.volume = 1;
+  applyFilmSound();
   if (soundOn && page !== 0) audio();
   updateSound();
 });
-film.addEventListener('volumechange', () => {
-  soundOn = !film.muted && film.volume > 0;
-  updateSound();
-});
-film.addEventListener('play', () => { resumeFilm = true; filmStatus.hidden = true; });
-film.addEventListener('pause', () => {
-  if (page === 0 && !document.hidden) resumeFilm = false;
-});
+let playCheck;
 function syncFilm() {
-  if (page !== 0 || document.hidden || !resumeFilm) { film.pause(); return; }
-  film.play().catch(() => {
-    if (page !== 0 || document.hidden) return;
+  if (!film) return;
+  clearTimeout(playCheck);
+  if (page !== 0 || document.hidden || !resumeFilm) { film.pauseVideo(); return; }
+  film.playVideo();
+  // 자동 재생이 막히면 재생 상태가 되지 않는다.
+  playCheck = setTimeout(() => {
+    if (!film || page !== 0 || document.hidden || film.getPlayerState() === YT.PlayerState.PLAYING) return;
     filmStatus.textContent = '재생 버튼을 누르면 영상이 시작돼요.';
     filmStatus.hidden = false;
-  });
+  }, 2500);
 }
-film.addEventListener('error', () => {
+function filmStateChange({ data }) {
+  if (data === YT.PlayerState.PLAYING) {
+    resumeFilm = true;
+    filmStatus.hidden = true;
+    // 유튜브 컨트롤에서 바꾼 소리 상태를 소리 버튼에 맞춘다.
+    soundOn = !film.isMuted() && film.getVolume() > 0;
+    updateSound();
+  } else if (data === YT.PlayerState.PAUSED && page === 0 && !document.hidden) resumeFilm = false;
+}
+function filmError() {
   filmStatus.replaceChildren('영상을 불러오지 못했어요. ');
-  const retry = document.createElement('button');
-  retry.type = 'button';
-  retry.className = 'film-retry';
-  retry.textContent = '다시 재생하기';
-  retry.addEventListener('click', () => { resumeFilm = true; film.load(); syncFilm(); });
-  filmStatus.append(retry);
+  const link = document.createElement('a');
+  link.className = 'film-retry';
+  link.href = 'https://youtu.be/5dfGSfGdBPo';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = '유튜브에서 보기';
+  filmStatus.append(link);
   filmStatus.hidden = false;
-});
+}
+window.onYouTubeIframeAPIReady = () => {
+  const player = new YT.Player(filmFrame, {
+    events: {
+      onReady: () => { film = player; applyFilmSound(); syncFilm(); },
+      onStateChange: filmStateChange,
+      onError: filmError,
+    },
+  });
+};
+const filmApi = document.createElement('script');
+filmApi.src = 'https://www.youtube.com/iframe_api';
+document.head.append(filmApi);
 document.addEventListener('visibilitychange', syncFilm);
 reduceMotion.addEventListener('change', () => {
-  if (reduceMotion.matches) { resumeFilm = false; film.pause(); }
+  if (reduceMotion.matches) { resumeFilm = false; film?.pauseVideo(); }
 });
 
 // ── 01 러닝: 스톱워치 ─────────────────────────────────────────
