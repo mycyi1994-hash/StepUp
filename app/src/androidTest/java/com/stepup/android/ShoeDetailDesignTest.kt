@@ -387,8 +387,8 @@ class ShoeDetailDesignTest {
         show("s33-narrow-large-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertBarsAligned()
         listOf("level", "efficiency", "comfort", "durability").forEach { stat ->
-            val bar = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-            assertTrue("$stat bar keeps a visible width: ${bar.width}", bar.width > 100f)
+            val width = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().size.width
+            assertTrue("$stat bar keeps a visible width: $width", width > 100)
         }
         show("s32b-narrow-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
         show("s32c-narrow-error", "shoe-equip-error",
@@ -428,15 +428,17 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-cell-$stat-value", useUnmergedTree = true).assertTextEquals(value)
     }
 
-    /** 네 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다) */
+    /** 네 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
+     *  큰 글씨에선 아래 칸이 화면 밖일 수 있어 잘리지 않은 위치 · 크기로 잰다 */
     private fun assertBarsAligned() {
-        val bounds = listOf("level", "efficiency", "comfort", "durability").map { stat ->
-            compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val spans = listOf("level", "efficiency", "comfort", "durability").map { stat ->
+            val node = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode()
+            node.positionInRoot.x to node.positionInRoot.x + node.size.width
         }
-        val first = bounds.first()
-        bounds.forEach {
-            assertEquals("bar left", first.left, it.left, 1f)
-            assertEquals("bar right", first.right, it.right, 1f)
+        val first = spans.first()
+        spans.forEach {
+            assertEquals("bar left", first.first, it.first, 1f)
+            assertEquals("bar right", first.second, it.second, 1f)
         }
     }
 
