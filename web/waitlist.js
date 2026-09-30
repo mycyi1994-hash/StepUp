@@ -225,13 +225,15 @@ for (const button of platformButtons) {
     $('.waitlist-platform-title').textContent = `${config.label} ${config.creator ? '크리에이터 참여' : '공유'}`;
     $('.waitlist-share-help').textContent = config.help;
     $('.waitlist-creator-guide').hidden = !config.creator;
-    $('.waitlist-publish').textContent = config.creator ? `${config.label}에 영상 올리기 ↗` : `${config.label}에 공유하기 ↗`;
+    $('.waitlist-publish').textContent = config.creator ? `${config.label}에 영상 올리기 ↗` : `${config.label}에 다시 공유하기 ↗`;
     shareForm.elements.postUrl.placeholder = config.placeholder;
     const verified = claims.some(item => item.platform === platform && item.status === 'verified');
     shareSubmit.disabled = verified;
     shareForm.elements.postUrl.disabled = verified;
     if (verified) feedback(shareFeedback, '이미 확인이 끝난 게시물이에요. 다시 제출하지 않아도 돼요.');
     shareForm.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    // X · Instagram · Threads share on the first tap; the form below takes the post link.
+    if (!config.creator) publish();
   });
 }
 
@@ -248,7 +250,8 @@ document.querySelectorAll('.waitlist-copy').forEach(button => button.addEventLis
   copyText(`${creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`, shareForm.contains(button) ? actionFeedback : $('.waitlist-copy-feedback'));
 }));
 
-$('.waitlist-publish').addEventListener('click', async () => {
+// Opens the channel's share flow. Runs straight from a tap, so file sharing keeps the tap it needs.
+async function publish() {
   const selected = platform;
   if (!selected) return;
   const config = PLATFORMS[selected];
@@ -280,14 +283,26 @@ $('.waitlist-publish').addEventListener('click', async () => {
     }
     return;
   }
+  if (selected === 'instagram' && !touchDevice()) {
+    // Instagram on a computer has no share link: save the film, open Instagram and copy the caption.
+    const save = document.createElement('a');
+    save.href = SHARE_MEDIA[0].src;
+    save.download = SHARE_MEDIA[0].name;
+    save.click();
+  }
   window.open(shareTarget(selected, shareLink()), '_blank', 'noopener,noreferrer');
-  if (selected === 'instagram' || config.creator) {
+  if (selected === 'instagram' && !touchDevice()) {
+    await copyText(message, actionFeedback);
+    if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback,
+      '홍보 영상을 내려받고 인스타그램을 열었어요. 새 게시물에 영상을 올리고 복사된 문구를 붙여넣은 뒤, 게시물 링크를 아래에 남겨주세요.');
+  } else if (selected === 'instagram' || config.creator) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator
       ? '영상 업로드 화면을 열고 소개 문구를 복사했어요. 게시 후 링크를 남겨주세요.'
       : '인스타그램을 열고 문구를 복사했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상이나 이미지를 저장해 게시해주세요.');
   } else feedback(actionFeedback, '글 작성 화면을 열었어요. 게시한 뒤 링크를 남겨주세요.');
-});
+}
+$('.waitlist-publish').addEventListener('click', publish);
 
 shareForm.addEventListener('submit', async event => {
   event.preventDefault();
