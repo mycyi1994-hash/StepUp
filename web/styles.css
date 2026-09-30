@@ -137,6 +137,15 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .platform-icon svg{width:26px;height:26px}.icon-instagram{color:#cf337d}.icon-threads{font-family:Arial,sans-serif;font-weight:800}
 .platform-status{font-size:12px;line-height:1.4;color:#6b7684;white-space:nowrap}
 .waitlist-share-platforms button.is-submitted .platform-status{color:#087f5b;font-weight:700}
+.waitlist-share-platforms:not(.creator-platforms) button{color:#fff}
+.waitlist-share-platforms button[data-platform=x]{background:#0f1419}
+.waitlist-share-platforms button[data-platform=instagram]{background:linear-gradient(45deg,#f9a13b 0%,#ee3a61 45%,#c1318e 72%,#7a3fc4 100%)}
+.waitlist-share-platforms button[data-platform=threads]{background:#fff;border-color:#191f28;color:#191f28}
+.waitlist-share-platforms button[data-platform=x]:hover,.waitlist-share-platforms button[data-platform=instagram]:hover{filter:brightness(1.1)}
+.waitlist-share-platforms button[data-platform=threads]:hover{background:#f2f4f6}
+.waitlist-share-platforms:not(.creator-platforms) button[aria-pressed=true]{outline:3px solid #3182f6;outline-offset:3px}
+.waitlist-share-platforms button[data-platform=x] .platform-status,.waitlist-share-platforms button[data-platform=instagram] .platform-status,.waitlist-share-platforms button[data-platform=x].is-submitted .platform-status,.waitlist-share-platforms button[data-platform=instagram].is-submitted .platform-status{color:#fff}
+.waitlist-share-platforms button[data-platform=instagram] .icon-instagram{color:#fff}
 .waitlist-social-form-slot:empty,.waitlist-creator-form-slot:empty{display:none}
 .waitlist-materials{border-bottom:1px solid #e5e8eb;padding:0 0 18px}
 .waitlist-materials summary{display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer;list-style:none;font-size:14px;color:#6b7684}
