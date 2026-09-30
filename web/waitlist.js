@@ -48,9 +48,8 @@ function saveReceipt(value) {
   } catch { /* The current page still works without session storage. */ }
 }
 
-// Instagram gets the homepage promo film; the square card stays as the fallback.
+// Instagram gets the square share card (2026-09-30 user choice: lighter than the promo film).
 const SHARE_MEDIA = [
-  { src: './assets/video/stepup-promo-v5.1-mobile.mp4', name: 'stepup-promo.mp4', type: 'video/mp4' },
   { src: './assets/img/waitlist-share-v2.png', name: 'stepup-share.png', type: 'image/png' },
 ];
 // Desktop share sheets do not list Instagram, so only phones use the system share menu.
@@ -257,12 +256,12 @@ async function publish() {
   const config = PLATFORMS[selected];
   const message = `${config.creator ? CREATOR_TEXT : SHARE_TEXT}\n${shareLink()}`;
   if (selected === 'instagram' && touchDevice() && inAppBrowser) {
-    feedback(actionFeedback, '이 앱 안의 브라우저에서는 영상을 인스타그램으로 넘길 수 없어요. 오른쪽 위 메뉴에서 ‘다른 브라우저로 열기’(크롬·사파리)를 누른 뒤 다시 공유해주세요.', true);
+    feedback(actionFeedback, '이 앱 안의 브라우저에서는 이미지를 인스타그램으로 넘길 수 없어요. 오른쪽 위 메뉴에서 ‘다른 브라우저로 열기’(크롬·사파리)를 누른 뒤 다시 공유해주세요.', true);
     return;
   }
   if (selected === 'instagram' && touchDevice() && !mediaReady) {
     prepareShareMedia();
-    feedback(actionFeedback, '공유할 홍보 영상을 불러오고 있어요. 잠시 후 다시 눌러주세요.');
+    feedback(actionFeedback, '공유할 이미지를 불러오고 있어요. 잠시 후 다시 눌러주세요.');
     return;
   }
   // File sharing must start in the click handler, before awaiting any work.
@@ -279,12 +278,12 @@ async function publish() {
     } catch (error) {
       if (platform === selected) feedback(actionFeedback, error.name === 'AbortError'
         ? '공유를 취소했어요. 다시 눌러 시도할 수 있어요.'
-        : '공유 메뉴를 열지 못했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상을 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
+        : '공유 메뉴를 열지 못했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 공유 이미지를 저장한 뒤 인스타그램에서 올려주세요.', error.name !== 'AbortError');
     }
     return;
   }
   if (selected === 'instagram' && !touchDevice()) {
-    // Instagram on a computer has no share link: save the film, open Instagram and copy the caption.
+    // Instagram on a computer has no share link: save the card, open Instagram and copy the caption.
     const save = document.createElement('a');
     save.href = SHARE_MEDIA[0].src;
     save.download = SHARE_MEDIA[0].name;
@@ -294,12 +293,12 @@ async function publish() {
   if (selected === 'instagram' && !touchDevice()) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback,
-      '홍보 영상을 내려받고 인스타그램을 열었어요. 새 게시물에 영상을 올리고 복사된 문구를 붙여넣은 뒤, 게시물 링크를 아래에 남겨주세요.');
+      '공유 이미지를 내려받고 인스타그램을 열었어요. 새 게시물에 이미지를 올리고 복사된 문구를 붙여넣은 뒤, 게시물 링크를 아래에 남겨주세요.');
   } else if (selected === 'instagram' || config.creator) {
     await copyText(message, actionFeedback);
     if (platform === selected && !actionFeedback.classList.contains('is-error')) feedback(actionFeedback, config.creator
       ? '영상 업로드 화면을 열고 소개 문구를 복사했어요. 게시 후 링크를 남겨주세요.'
-      : '인스타그램을 열고 문구를 복사했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 홍보 영상이나 이미지를 저장해 게시해주세요.');
+      : '인스타그램을 열고 문구를 복사했어요. 위 ‘공유 영상·이미지와 소개 문구’에서 공유 이미지를 저장해 게시해주세요.');
   } else feedback(actionFeedback, '글 작성 화면을 열었어요. 게시한 뒤 링크를 남겨주세요.');
 }
 $('.waitlist-publish').addEventListener('click', publish);
