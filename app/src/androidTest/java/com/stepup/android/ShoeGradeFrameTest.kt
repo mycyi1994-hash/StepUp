@@ -29,7 +29,6 @@ import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.GradeArtRatio
 import com.stepup.android.ui.components.S2Stage
-import com.stepup.android.ui.components.ShoeStageRatio
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.gacha.DrawResultDialog
 import com.stepup.android.ui.theme.StepUpTheme
@@ -115,14 +114,14 @@ class ShoeGradeFrameTest {
             assertTrue("two columns: ${cards[0]} · ${cards[1]}", abs(cards[0].top - cards[1].top) < 2f && cards[1].left > cards[0].right)
             shot("07-vault-grid")
 
-            // 09 — 레전더리 칸 → 상세(보유 신발 상세 v1 — 받침 무대, 비율 그대로, 실제 신발 그림)
+            // 09 — 레전더리 칸 → 상세(카툰 입체형 확정안 — 등급 무대, 비율 그대로, 실제 신발 그림)
             val legendary = shoes.getValue(Rarity.LEGENDARY)
             grid().performScrollToNode(hasTestTag("vault-card-$legendary"))
             compose.onNodeWithTag("vault-card-$legendary").performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("vault-grid").fetchSemanticsNodes().isEmpty() }
-            awaitSingle("shoe-stage")
+            awaitSingle("grade-stage-legendary")
             awaitSingle("shoe-art")
-            keepsRatio(stageBounds("shoe-stage"), "detail stage", ShoeStageRatio)
+            keepsRatio(stageBounds("grade-stage-legendary"), "detail stage")
             shot("09-detail-legendary")
         } finally {
             restore(shoes)
