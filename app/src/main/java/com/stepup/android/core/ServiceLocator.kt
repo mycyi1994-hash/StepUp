@@ -63,6 +63,10 @@ object ServiceLocator {
         private set
     lateinit var sneakerRepository: SneakerRepository
         private set
+
+    /** 신발 강화(0054) — 재료 신발 3개 · 확률. 서버 경제가 없으면 강화하지 않는다 */
+    lateinit var forgeRepository: com.stepup.android.data.repo.ForgeRepository
+        private set
     lateinit var avatarRepository: AvatarRepository
         private set
     lateinit var boostRepository: BoostRepository
@@ -328,6 +332,11 @@ object ServiceLocator {
             economy = economyApi.takeIf { serverEconomy },
             sync = economySync.takeIf { serverEconomy },
             prefs = userPrefs,
+        )
+        forgeRepository = com.stepup.android.data.repo.ForgeRepository(
+            server = economyApi.takeIf { serverEconomy },
+            pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(userPrefs),
+            resync = { economySync.refresh() },
         )
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
         boostRepository = BoostRepository(

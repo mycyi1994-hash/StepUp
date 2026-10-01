@@ -245,6 +245,9 @@ object Routes {
     const val INVITE = "invite"
     const val CHALLENGE_HISTORY = "challenge-history"
     const val SNEAKER = "sneaker/{id}"
+
+    /** 신발 강화(지시서 v6) — 상세의 강화하기 · ⋯ 강화가 같은 화면으로. 뒤로는 상세로 */
+    const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade"
     const val LOBBY = "lobby/{crewId}"
     const val RANKING = "ranking"
     const val CREW_CREATE = "crew/create"
@@ -271,6 +274,7 @@ object Routes {
     const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}"
 
     fun sneaker(id: Long) = "sneaker/$id"
+    fun sneakerUpgrade(id: Long) = "sneaker/$id/upgrade"
 
     fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
         "market/$faction/$rarity/$variant?sell=$sell"
@@ -544,7 +548,7 @@ internal fun MainScaffold(
         )
     } else if (currentRoute in listOf(
             Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
-            Routes.SNEAKER, Routes.MARKET_MODEL,
+            Routes.SNEAKER, Routes.SNEAKER_UPGRADE, Routes.MARKET_MODEL,
         )) {
         com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
     } else if (currentRoute == Routes.POST_COMPOSE) {
@@ -1228,6 +1232,24 @@ internal fun MainScaffold(
                         )
                     },
                     // 보유 신발 상세 v1 — 조회 실패(14) · 없는 신발(15)에서 "보유 신발로 돌아가기": 신발 탭의 최신 목록으로
+                    onOpenOwned = {
+                        if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
+                            navController.popBackStack()
+                            navController.switchTab(Screen.Customize)
+                        }
+                    },
+                    onUpgrade = { id -> navController.navigate(Routes.sneakerUpgrade(id)) },
+                )
+            }
+            composable(
+                route = Routes.SNEAKER_UPGRADE,
+                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+            ) { entry ->
+                val upgradeId = entry.arguments?.getLong("id") ?: 0L
+                com.stepup.android.ui.screens.items.ShoeUpgradeScreen(
+                    sneakerId = upgradeId,
+                    onBack = { navController.popBackStack() },
+                    // 17 · 18 다른 신발 · 보유 신발 보기 — 신발 탭의 최신 목록으로
                     onOpenOwned = {
                         if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
                             navController.popBackStack()

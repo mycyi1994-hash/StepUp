@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-10-01 — shoe upgrade: burn three lower-grade shoes (user handoff v6, 17 screens)
+
+- New independent upgrade screen (`ShoeUpgradeScreen`, route `sneaker/{id}/upgrade`) opened from the detail's new 강화하기 button and from ⋯ 이 신발 관리 › 강화 (same screen; the old SUP enhance dialog is gone from the detail). Material picker and final confirm are bottom sheets. No screen 16 / help icon / "기본 + 보정" formula text. Details: docs/redesign/shoe-upgrade-2026-10-01/README.md.
+- Server: migration `0054_shoe_forge.sql` — `forge_materials` · `forge_quote` · `forge_start` (idempotent request key, roll + burn + level-up + record in one transaction) · `forge_result`. Burned shoes are `status = 'BURNED'`, owner cleared. On-chain shoes cannot be materials (the contract has no burn).
+- App: `ForgeRepository` saves the request key before sending and only re-asks the same key when the result is unknown (15). Detail shows 강화 결과 확인 while a request is unresolved.
+- Evidence: SQL tests, `ShoeForgeTest`, compile/lint/check scripts locally; `ShoeUpgradeDesignTest` device captures from CI.
+
 ## 2026-09-30 — shoe detail: cartoon 3D stat cells (user-approved option 1)
 
 - Shoe detail (`SneakerDetailScreen`) body is now grade stage → name · grade badge · `No. 0007` on one line → four steel-blue cells (level · efficiency · comfort · durability), each `label · cartoon 3D bar · value` on one line → wear button. Bars are drawn as paths (`CartoonStatBar`), values come from the selected owned pair (`detailStatRows`, `formatShoeNumber`). Details: docs/redesign/shoe-detail-cartoon-2026-09-30/README.md.

@@ -193,8 +193,18 @@ private fun StatCell(
  * [fraction] 은 프레임을 뺀 안쪽 트랙 폭에 적용한다. 0 이면 채움 · 하이라이트를 그리지 않는다. 읽기 도구는 칸이 읽는다.
  */
 @Composable
-fun CartoonStatBar(fraction: Float, fill: CartoonFill, modifier: Modifier = Modifier) {
-    Canvas(modifier) { drawCartoonBar(fraction.coerceIn(0f, 1f).takeUnless { it.isNaN() } ?: 0f, fill) }
+fun CartoonStatBar(
+    fraction: Float,
+    fill: CartoonFill,
+    modifier: Modifier = Modifier,
+    /** 강화 미리보기의 증가 예정 끝(0 ~ 1). 현재 채움 뒤에 옅은 색으로만 잇는다 — 실패 · 최대 레벨 · 결과 미확인에는 넘기지 않는다 */
+    next: Float? = null,
+) {
+    Canvas(modifier) {
+        val now = fraction.coerceIn(0f, 1f).takeUnless { it.isNaN() } ?: 0f
+        val ahead = next?.coerceIn(0f, 1f)?.takeUnless { it.isNaN() }?.takeIf { it > now }
+        drawCartoonBar(now, fill, ahead)
+    }
 }
 
 /** 모서리를 짧게 잘라낸 사각형 — [cut] 은 모서리 사선의 깊이 */
@@ -215,7 +225,7 @@ private fun chamfered(rect: Rect, cut: Float): Path {
 
 private fun Rect.inset(by: Float) = Rect(left + by, top + by, right - by, bottom - by)
 
-private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
+private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill, next: Float? = null) {
     val drop = 2.5.dp.toPx()
     val ink = 1.75.dp.toPx()
     val body = Rect(0f, 0f, size.width, size.height - drop)
@@ -244,6 +254,16 @@ private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
     drawPath(chamfered(track, trackCut - 0.5.dp.toPx()), CartoonColors.Track)
     // 5 ~ 7 채움 — 트랙 안쪽 전체 폭이 100%
     val lane = track.inset(1.5.dp.toPx())
+    // 증가 예정 구간 — 현재 채움 뒤를 옅은 윗면 색으로. 채움이 그 위를 덮는다
+    if (next != null) {
+        val aheadWidth = lane.width * next
+        if (aheadWidth >= 0.5f) {
+            val ahead = Rect(lane.left, lane.top, lane.left + aheadWidth, lane.bottom)
+            val aheadPath = chamfered(ahead, minOf(3.dp.toPx(), aheadWidth / 2f, ahead.height / 2f))
+            drawPath(aheadPath, fill.top.copy(alpha = 0.55f))
+            drawPath(aheadPath, CartoonColors.Ink, style = Stroke(width = 1.dp.toPx()))
+        }
+    }
     val width = lane.width * fraction
     if (fraction <= 0f || width < 0.5f) return
     val bar = Rect(lane.left, lane.top, lane.left + width, lane.bottom)

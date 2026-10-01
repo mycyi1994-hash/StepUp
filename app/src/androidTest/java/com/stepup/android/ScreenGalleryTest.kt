@@ -280,32 +280,19 @@ class ScreenGalleryTest {
             if (index == 20) {
                 compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
-                val shoe = before.first { it.id == sneakerId }
-                if (shoe.canUpgrade) {
-                    // 보유 신발 상세 v1 — 강화는 위쪽 ⋯(이 신발 관리) 안으로 옮겼다. 확인 창 · 비용은 그대로
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-more").fetchSemanticsNodes().isNotEmpty() }
-                    compose.onNodeWithTag("shoe-more").performClick()
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-manage-enhance").fetchSemanticsNodes().isNotEmpty() }
-                    compose.onNodeWithTag("shoe-manage-enhance").performClick()
-                    val costNode = compose.onNodeWithText(localized.getString(
-                        R.string.items_upgrade_cost, "%,.0f".format(shoe.upgradeCost),
-                    ))
-                    // A dialog owns a separate Android window. Compose idleness alone
-                    // does not establish that WindowManager has laid out that window.
-                    try {
-                        compose.waitUntil(timeoutMillis = 5_000) { costNode.isDisplayed() }
-                    } finally {
-                        capture("extra-sneaker-upgrade-confirm")
-                        File(directory, "sneaker-upgrade-semantics.txt").writeText(
-                            compose.onAllNodes(isRoot()).printToString(),
-                        )
-                    }
-                    costNode.assertIsDisplayed()
-                    compose.onNodeWithText(localized.getString(R.string.common_cancel)).performClick()
-                    org.junit.Assert.assertEquals(before,
-                        runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
-                    compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
-                }
+                check(before.any { it.id == sneakerId })
+                // 신발 강화 v6 — 상세의 강화하기 · ⋯ 강화가 같은 강화 화면으로. 여는 것만으로 보유 신발은 바뀌지 않는다
+                compose.onNodeWithTag("detail-upgrade").assertIsDisplayed()
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-more").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("shoe-more").performClick()
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-manage-enhance").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("shoe-manage-enhance").performClick()
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag("upgrade-screen").fetchSemanticsNodes().isNotEmpty() }
+                capture("extra-sneaker-upgrade")
+                org.junit.Assert.assertEquals(before, runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
+                InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
             }
         }
         val variations = listOf(
