@@ -121,6 +121,9 @@ class ShoeUpgradeDesignTest {
             selection = MaterialSelection(applied, draft), sheet = sheet, candidates = candidates, quote = quote,
         )
 
+        // 첫 장면은 창이 처음 그려질 때라 한 번 그려 두고 다시 찍는다(첫 캡처가 빈 화면으로 남지 않게)
+        show("s01-ready-empty", "upgrade-screen", editing(emptyList()), settle = 2_000)
+
         // 01 — 재료 선택 전: 슬롯 셋 비어 있음 · 0 / 3 · 현재 예상 성공률 70.0% · 버튼은 누를 수 없음
         show("s01-ready-empty", "upgrade-screen", editing(emptyList()))
         compose.onNodeWithTag("upgrade-count", useUnmergedTree = true).assertTextEquals("0 / 3")
@@ -213,12 +216,12 @@ class ShoeUpgradeDesignTest {
         narrow = false
     }
 
-    private fun show(name: String, readyTag: String, state: ShoeUpgradeState) {
+    private fun show(name: String, readyTag: String, state: ShoeUpgradeState, settle: Long = 700) {
         compose.runOnIdle { scene = { key(name) { ShoeUpgradeContent(state, UpgradeActions()) } } }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag(readyTag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         compose.waitForIdle()
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-        Thread.sleep(700)
+        Thread.sleep(settle)
         captureDisplay(File(directory, "$name.png"))
     }
 

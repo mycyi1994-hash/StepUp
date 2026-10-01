@@ -5,7 +5,7 @@
     <string name="upg_action">Upgrade</string>
     <string name="upg_action_check">Check upgrade result</string>
     <string name="upg_manage_desc">Use 3 lower-grade shoes. Materials burn even if it fails.</string>
-    <string name="upg_level">Lv. %1$d</string>
+    <string name="upg_level">Lv. %1$d</string>
     <string name="upg_level_of">Lv. %1$d / %2$d</string>
     <string name="upg_materials">Materials</string>
     <string name="upg_materials_rule">3 lower-grade shoes</string>
@@ -13,7 +13,7 @@
     <string name="upg_add">Add shoe</string>
     <string name="upg_add_cd">Add material shoe %1$d</string>
     <string name="upg_remove_cd">Remove %1$s</string>
-    <string name="upg_lv_no">Lv. %1$d · No. %2$04d</string>
+    <string name="upg_lv_no">Lv. %1$d · No. %2$04d</string>
     <string name="upg_changes">On success</string>
     <string name="upg_stat_level">Level</string>
     <string name="upg_stat_efficiency">Efficiency</string>

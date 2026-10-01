@@ -549,6 +549,7 @@ private fun MaterialCards(materials: List<ForgeMaterial>, locked: Boolean, showN
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MaterialCardBody(material: ForgeMaterial, compact: Boolean, locked: Boolean, showName: Boolean = false, showBonus: Boolean = true) {
     val shoe = material.shoe
@@ -567,11 +568,12 @@ private fun MaterialCardBody(material: ForgeMaterial, compact: Boolean, locked: 
         if (showName) {
             Text(name, color = UpgradeColors.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, lineHeight = 1.25.em)
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            ShoeGradeBadge(shoe.tier, decorative = true)
-            Column {
-                Text(stringResource(R.string.upg_level, shoe.level), color = UpgradeColors.Text, fontSize = 12.sp, maxLines = 1)
-                Text(formatShoeNumber(shoe.mintNumber), color = UpgradeColors.Secondary, fontSize = 11.sp, maxLines = 1)
+        // 좁은 칸 · 큰 글씨에서는 배지 아래로 내려간다(레벨 · 번호가 잘리지 않게)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            ShoeGradeBadge(shoe.tier, decorative = true, modifier = Modifier.align(Alignment.CenterVertically))
+            Column(Modifier.align(Alignment.CenterVertically)) {
+                Text(stringResource(R.string.upg_level, shoe.level), color = UpgradeColors.Text, fontSize = 12.sp, softWrap = false)
+                Text(formatShoeNumber(shoe.mintNumber), color = UpgradeColors.Secondary, fontSize = 11.sp, softWrap = false)
             }
         }
         if (showBonus) {

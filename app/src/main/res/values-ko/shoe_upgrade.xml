@@ -5,7 +5,7 @@
     <string name="upg_action">강화하기</string>
     <string name="upg_action_check">강화 결과 확인</string>
     <string name="upg_manage_desc">하위 등급 신발 3개를 사용해요. 실패해도 재료는 소각돼요.</string>
-    <string name="upg_level">Lv. %1$d</string>
+    <string name="upg_level">Lv. %1$d</string>
     <string name="upg_level_of">Lv. %1$d / %2$d</string>
     <string name="upg_materials">강화 재료</string>
     <string name="upg_materials_rule">하위 등급 신발 3개</string>
@@ -13,7 +13,7 @@
     <string name="upg_add">신발 추가</string>
     <string name="upg_add_cd">재료 신발 %1$d 추가</string>
     <string name="upg_remove_cd">%1$s 빼기</string>
-    <string name="upg_lv_no">Lv. %1$d · No. %2$04d</string>
+    <string name="upg_lv_no">Lv. %1$d · No. %2$04d</string>
     <string name="upg_changes">성공 시 변화</string>
     <string name="upg_stat_level">레벨</string>
     <string name="upg_stat_efficiency">효율</string>
