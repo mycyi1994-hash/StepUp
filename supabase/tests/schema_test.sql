@@ -6136,6 +6136,182 @@ begin
 end $$;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════
+--  신발 강화 — 재료 신발 3개 · 확률(0054)
+-- ════════════════════════════════════════════════════════════════
+reset role;
+insert into auth.users (id, email) values
+  ('f0f0f0f0-0000-0000-0000-000000000001', 'forge1@test'),
+  ('f0f0f0f0-0000-0000-0000-000000000002', 'forge2@test')
+on conflict do nothing;
+create or replace function pg_temp.shoe(p_user uuid, p_rarity text, p_level int, p_extra text default '')
+returns bigint language plpgsql security definer as $$
+declare v bigint;
+begin
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin,
+                                      efficiency_bps, comfort_bps)
+  values (p_user, 'WIND', p_rarity, 0, p_level, 100, 'PAID_DRAW',
+          case p_rarity when 'LEGENDARY' then 1350 - 50 * 9 else 400 end, 900 - 20 * 9)
+  returning id into v;
+  if p_extra <> '' then execute format('update public.market_sneakers set %s where id = %s', p_extra, v); end if;
+  return v;
+end $$;
+-- 예시: 레전더리 Lv10 + 에픽 Lv10 · 레어 Lv10 · 에픽 Lv1 = 70 + 5.6 + 2.8 + 2.0 = 80.4%
+insert into fix (k, v) values
+  ('fg_t', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'LEGENDARY', 10)::text),
+  ('fg_a', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 10)::text),
+  ('fg_b', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 10)::text),
+  ('fg_c', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 1)::text),
+  ('fg_same', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'LEGENDARY', 1)::text),
+  ('fg_worn', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 3, 'equipped = true')::text),
+  ('fg_chain', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 3, 'token_id = 1000123')::text),
+  ('fg_listed', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 3, $x$status = 'LISTED'$x$)::text),
+  ('fg_c1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text),
+  ('fg_c2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 20)::text),
+  ('fg_c3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 20)::text),
+  ('fg_low', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 5)::text),
+  ('fg_max', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 20)::text),
+  ('fg_over', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'LEGENDARY', 25)::text),
+  ('fg_vault', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 15, 'token_id = 1000456')::text),
+  ('fg_other', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000002', 'EPIC', 5)::text);
+set role authenticated;
+call pg_temp.login('f0f0f0f0-0000-0000-0000-000000000001');
+
+do $$
+declare
+  v jsonb;
+  v_blocks jsonb;
+begin
+  v := public.forge_materials(pg_temp.fx('fg_t')::bigint);
+  perform pg_temp.ok((v -> 'target' ->> 'base_permille')::int = 700 and (v -> 'target' ->> 'max_level')::int = 20
+                     and v -> 'target' ->> 'block' is null, '레전더리 Lv10 — 기본 70.0%, 최대 20');
+  select jsonb_object_agg(e ->> 'id', coalesce(e ->> 'block', 'OK')) into v_blocks from jsonb_array_elements(v -> 'materials') e;
+  perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_a') = 'OK' and v_blocks ->> pg_temp.fx('fg_b') = 'OK'
+                     and v_blocks ->> pg_temp.fx('fg_c') = 'OK', '하위 등급 내 신발은 재료 후보');
+  perform pg_temp.ok(not v_blocks ? pg_temp.fx('fg_same') and not v_blocks ? pg_temp.fx('fg_t')
+                     and not v_blocks ? pg_temp.fx('fg_other'), '같은 등급 · 대상 자신 · 남의 신발은 후보에 없다');
+  perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_worn') = 'EQUIPPED' and v_blocks ->> pg_temp.fx('fg_chain') = 'ON_CHAIN'
+                     and v_blocks ->> pg_temp.fx('fg_listed') = 'LISTED', '신는 · 체인 · 판매 중 신발은 까닭과 함께 쓸 수 없다');
+  perform pg_temp.ok((select (e ->> 'bonus_permille')::int from jsonb_array_elements(v -> 'materials') e
+                      where e ->> 'id' = pg_temp.fx('fg_b')) = 28, '레어 Lv10(2단계 아래) +2.8%p');
+
+  v := public.forge_quote(pg_temp.fx('fg_t')::bigint,
+         array[pg_temp.fx('fg_a'), pg_temp.fx('fg_b'), pg_temp.fx('fg_c')]::bigint[]);
+  perform pg_temp.ok((v ->> 'rate_permille')::int = 804, '예시 세 재료의 최종 성공률은 80.4%');
+  perform pg_temp.ok((v -> 'after' ->> 'level')::int = 11
+                     and (v -> 'after' ->> 'efficiency_bps')::int = (v -> 'before' ->> 'efficiency_bps')::int + 50
+                     and (v -> 'after' ->> 'comfort_bps')::int = (v -> 'before' ->> 'comfort_bps')::int + 20,
+    '성공 시 레벨 +1 · 효율 +0.5%p · 착화감 +0.2%p');
+  v := public.forge_quote(pg_temp.fx('fg_t')::bigint,
+         array[pg_temp.fx('fg_a'), pg_temp.fx('fg_a'), pg_temp.fx('fg_c')]::bigint[]);
+  perform pg_temp.ok(v ->> 'error' = 'MATERIALS_INVALID', '같은 신발을 두 번 넣을 수 없다');
+  v := public.forge_quote(pg_temp.fx('fg_t')::bigint, array[pg_temp.fx('fg_a'), pg_temp.fx('fg_b')]::bigint[]);
+  perform pg_temp.ok(v ->> 'error' = 'MATERIALS_INVALID', '재료는 꼭 3개');
+  v := public.forge_quote(pg_temp.fx('fg_t')::bigint,
+         array[pg_temp.fx('fg_a'), pg_temp.fx('fg_same'), pg_temp.fx('fg_other')]::bigint[]);
+  perform pg_temp.ok(v ->> 'error' = 'MATERIAL_UNAVAILABLE' and jsonb_array_length(v -> 'unavailable') = 2,
+    '같은 등급 · 남의 신발은 재료가 되지 않고 그 둘만 알려 준다');
+  v := public.forge_quote(pg_temp.fx('fg_low')::bigint,
+         array[pg_temp.fx('fg_a'), pg_temp.fx('fg_b'), pg_temp.fx('fg_c')]::bigint[]);
+  perform pg_temp.ok(v ->> 'error' = 'LOWEST_GRADE', '일반 신발은 아래 등급이 없어 강화할 수 없다');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_max')::bigint) -> 'target' ->> 'block' = 'MAX_LEVEL',
+    'Lv20 은 강화할 수 없다');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_over')::bigint) -> 'target' ->> 'level' = '25'
+                     and public.forge_materials(pg_temp.fx('fg_over')::bigint) -> 'target' ->> 'block' = 'MAX_LEVEL',
+    '예전에 20을 넘은 신발은 레벨을 그대로 두고 강화만 막는다');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_vault')::bigint) -> 'target' ->> 'max_level' = '15',
+    '금고(v3) 레어는 컨트랙트 상한 15');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_other')::bigint) -> 'target' ->> 'block' = 'TARGET_GONE',
+    '남의 신발은 강화 대상이 아니다');
+  -- 100% 상한: 레전더리 Lv1(97%) + 일반 Lv1 0.5 · 일반 Lv20 2.4 · 레어 Lv20 4.8 = 104.7 → 100%
+  v := public.forge_quote(pg_temp.fx('fg_same')::bigint,
+         array[pg_temp.fx('fg_c1'), pg_temp.fx('fg_c2'), pg_temp.fx('fg_c3')]::bigint[]);
+  perform pg_temp.ok((v ->> 'rate_permille')::int = 1000, '합이 100% 를 넘으면 100%');
+end $$;
+
+-- 실행: 견적 버전이 다르면 아무것도 태우지 않는다 → 맞으면 판정 · 소각 · 기록. 같은 키는 같은 결과
+do $$
+declare
+  v_q jsonb;
+  v jsonb;
+  v_again jsonb;
+  v_mats bigint[] := array[pg_temp.fx('fg_a'), pg_temp.fx('fg_b'), pg_temp.fx('fg_c')]::bigint[];
+  v_key uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+begin
+  v := public.forge_start(v_key, pg_temp.fx('fg_t')::bigint, v_mats, 'stale');
+  perform pg_temp.ok(v ->> 'error' = 'QUOTE_CHANGED' and (v -> 'quote' ->> 'rate_permille')::int = 804,
+    '확인한 견적과 다르면 실행하지 않고 새 견적을 준다');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where id = any(v_mats)) = 3, '견적이 바뀌면 재료는 그대로');
+  v_q := public.forge_quote(pg_temp.fx('fg_t')::bigint, v_mats);
+  v := public.forge_start(v_key, pg_temp.fx('fg_t')::bigint, v_mats, v_q ->> 'quote_version');
+  perform pg_temp.ok(v ->> 'status' in ('SUCCESS', 'FAILED'), '실행하면 성공 또는 실패로 확정된다');
+  perform pg_temp.ok((select count(*) from public.my_sneakers() where id = any(v_mats)) = 0, '성공 · 실패 모두 재료 3개가 내 신발에서 빠진다');
+  perform pg_temp.ok((select level from public.my_sneakers() where id = pg_temp.fx('fg_t')::bigint)
+                     = case when v ->> 'status' = 'SUCCESS' then 11 else 10 end
+                     and (v -> 'target' ->> 'level')::int = (v ->> 'level_after')::int,
+    '성공이면 레벨 11, 실패면 10 그대로 — 응답의 대상 값과 같다');
+  v_again := public.forge_start(v_key, pg_temp.fx('fg_t')::bigint, v_mats, v_q ->> 'quote_version');
+  perform pg_temp.ok(v_again ->> 'status' = v ->> 'status' and v_again ->> 'level_after' = v ->> 'level_after',
+    '같은 요청 키로 다시 보내면 같은 결과, 다시 태우지 않는다');
+  perform pg_temp.ok(public.forge_result(v_key) ->> 'status' = v ->> 'status', '결과 조회도 같은 결과');
+  v_again := public.forge_start(v_key, pg_temp.fx('fg_t')::bigint,
+               array[pg_temp.fx('fg_c1'), pg_temp.fx('fg_c2'), pg_temp.fx('fg_c3')]::bigint[], 'x');
+  perform pg_temp.ok(v_again ->> 'error' = 'KEY_REUSED', '같은 키로 다른 재료를 보내면 거절');
+  v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000002', pg_temp.fx('fg_t')::bigint, v_mats, v_q ->> 'quote_version');
+  perform pg_temp.ok(v ->> 'error' = 'MATERIAL_UNAVAILABLE', '이미 태운 재료로 새 요청을 보낼 수 없다');
+  -- 결과 조회가 먼저 오면 그 키는 막힌다 — 늦게 온 같은 키의 요청은 아무것도 하지 않는다
+  v := public.forge_result('aaaaaaaa-0000-0000-0000-000000000003');
+  perform pg_temp.ok(v ->> 'status' = 'NOT_ACCEPTED', '기록 없는 키는 접수 안 됨으로 확정');
+  v_q := public.forge_quote(pg_temp.fx('fg_a')::bigint,
+           array[pg_temp.fx('fg_c1'), pg_temp.fx('fg_c2'), pg_temp.fx('fg_c3')]::bigint[]);
+  v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000003', pg_temp.fx('fg_a')::bigint,
+         array[pg_temp.fx('fg_c1'), pg_temp.fx('fg_c2'), pg_temp.fx('fg_c3')]::bigint[], v_q ->> 'quote_version');
+  perform pg_temp.ok(v ->> 'status' = 'NOT_ACCEPTED'
+                     and (select count(*) from public.my_sneakers()
+                           where id in (pg_temp.fx('fg_c1')::bigint, pg_temp.fx('fg_c2')::bigint, pg_temp.fx('fg_c3')::bigint)) = 3,
+    '막힌 키로 늦게 온 요청은 재료를 태우지 않는다');
+end $$;
+
+-- 100% 는 실패가 없다 · Lv19 → 20
+reset role;
+insert into fix (k, v) values
+  ('fg_e', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 19)::text),
+  ('fg_e1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text),
+  ('fg_e2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text),
+  ('fg_e3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text);
+set role authenticated;
+call pg_temp.login('f0f0f0f0-0000-0000-0000-000000000001');
+do $$
+declare v_q jsonb; v jsonb;
+  v_mats bigint[] := array[pg_temp.fx('fg_c1'), pg_temp.fx('fg_c2'), pg_temp.fx('fg_c3')]::bigint[];
+  v_e bigint[] := array[pg_temp.fx('fg_e1'), pg_temp.fx('fg_e2'), pg_temp.fx('fg_e3')]::bigint[];
+begin
+  v_q := public.forge_quote(pg_temp.fx('fg_same')::bigint, v_mats);
+  v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000004', pg_temp.fx('fg_same')::bigint, v_mats, v_q ->> 'quote_version');
+  perform pg_temp.ok(v ->> 'status' = 'SUCCESS' and (v ->> 'level_after')::int = 2, '100% 면 반드시 성공');
+  v_q := public.forge_quote(pg_temp.fx('fg_e')::bigint, v_e);
+  perform pg_temp.ok((v_q ->> 'rate_permille')::int = 430 + 60, 'Lv19 기본 43% + 레어 Lv1 2.0%p × 3 = 49%');
+  v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000005', pg_temp.fx('fg_e')::bigint, v_e, v_q ->> 'quote_version');
+  perform pg_temp.ok(case when v ->> 'status' = 'SUCCESS'
+                       then (public.forge_materials(pg_temp.fx('fg_e')::bigint) -> 'target' ->> 'block') = 'MAX_LEVEL'
+                       else (public.forge_materials(pg_temp.fx('fg_e')::bigint) -> 'target' ->> 'level') = '19' end,
+    'Lv19 → 20 이 되면 더는 강화할 수 없다(실패면 19 그대로)');
+end $$;
+call pg_temp.must_fail($q$ select * from public.forge_requests $q$, '강화 기록 표는 직접 읽지 못한다');
+call pg_temp.login('f0f0f0f0-0000-0000-0000-000000000002');
+do $$ begin
+  perform pg_temp.ok(public.forge_result('aaaaaaaa-0000-0000-0000-000000000001') ->> 'status' = 'NOT_ACCEPTED',
+    '남의 요청 키는 내 키가 아니다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.market_sneakers
+                       where id in (pg_temp.fx('fg_a')::bigint, pg_temp.fx('fg_b')::bigint, pg_temp.fx('fg_c')::bigint)
+                         and owner_id is null and status = 'BURNED' and not equipped) = 3,
+    '태운 재료는 주인이 비고 BURNED 로 남는다');
+end $$;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
