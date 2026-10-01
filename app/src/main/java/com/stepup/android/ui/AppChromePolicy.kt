@@ -46,6 +46,7 @@ object AppChromePolicy {
         Destination(Routes.ITEMS, Screen.Customize, Header.Detail),
         Destination(Routes.SNEAKER_DEX, Screen.Customize, Header.Detail),
         Destination(Routes.SNEAKER, Screen.Customize, Header.Detail),
+        Destination(Routes.SNEAKER_UPGRADE, Screen.Customize, Header.Detail),
         Destination(Routes.MARKET_MODEL, Screen.Customize, Header.Detail),
         Destination(Routes.MAP, Screen.Community, Header.Detail),
         Destination(Routes.RANKING, Screen.Community, Header.Detail),

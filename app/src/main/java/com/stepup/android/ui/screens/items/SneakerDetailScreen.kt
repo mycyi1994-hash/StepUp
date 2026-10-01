@@ -71,7 +71,6 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.SettingsGroupLabel
 import com.stepup.android.ui.components.SettingsNote
 import com.stepup.android.ui.components.SettingsPrimaryButton
@@ -86,8 +85,6 @@ import com.stepup.android.ui.components.ShoeArtLoad
 import com.stepup.android.ui.components.SneakerGradeStage
 import com.stepup.android.ui.components.rememberShoeArt
 import com.stepup.android.ui.components.ShoeStageMessageAlignment
-import com.stepup.android.ui.components.SneakerFrame
-import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.forgetShoeArt
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.settingsPalette
@@ -130,18 +127,23 @@ fun SneakerDetailScreen(
         { _, _, _, _ -> },
     /** 14 · 15 "보유 신발로 돌아가기" — 앱 셸에서는 신발 탭의 최신 목록으로 */
     onOpenOwned: () -> Unit = onBack,
+    /** 강화하기 · ⋯ 강화 — 독립된 강화 화면(ShoeUpgradeScreen)으로. 강화는 거기서만 한다 */
+    onUpgrade: (Long) -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val context = LocalContext.current
     val owned by viewModel.owned.collectAsStateWithLifecycle()
     val equipping by viewModel.equipping.collectAsStateWithLifecycle()
     val result by viewModel.equipResult.collectAsStateWithLifecycle()
-    val balance by viewModel.balance.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val state = detailStateOf(owned, sneakerId)
 
-    // Opening the confirmation never spends SUP; the confirmed repository write is atomic.
-    var enhanceOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
+    // 결과를 아직 모르는 강화 요청이 이 신발이면 "강화 결과 확인"(05 · 15 의 나중에 확인)
+    val forgePending by remember {
+        runCatching { com.stepup.android.core.ServiceLocator.userPrefs.forgePendingFlow }
+            .getOrElse { kotlinx.coroutines.flow.flowOf(null) }
+    }.collectAsStateWithLifecycle(initialValue = null)
+    val upgradePending = forgePending?.split('|')?.getOrNull(2)?.toLongOrNull() == sneakerId
 
     val msgNoBalance = stringResource(R.string.toast_no_balance)
     val msgMaxLevel = stringResource(R.string.toast_max_level)
@@ -176,46 +178,11 @@ fun SneakerDetailScreen(
         onReload = viewModel::reloadOwned,
         onWear = { viewModel.equip(sneakerId) },
         onResultShown = viewModel::consumeEquipResult,
-        onEnhance = { enhanceOpen = true },
+        onEnhance = { onUpgrade(sneakerId) },
+        upgradePending = upgradePending,
         onRepair = { viewModel.repair(sneakerId) },
         onSell = { shoe -> onSell(shoe.faction.id, shoe.rarity.id, shoe.variant, shoe.id) },
     )
-
-    val sneaker = (state as? ShoeDetailState.Ready)?.shoe
-    if (enhanceOpen && sneaker != null && sneaker.canUpgrade) {
-        val cost = sneaker.upgradeCost
-        val currentBalance = balance
-        com.stepup.android.ui.components.DialogPanel(
-            title = stringResource(R.string.sneaker_action_enhance),
-            onDismiss = { enhanceOpen = false },
-            actions = {
-                VoltButton(
-                    text = stringResource(R.string.sneaker_action_enhance),
-                    enabled = currentBalance?.let { it >= cost } == true,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        enhanceOpen = false
-                        viewModel.upgrade(sneaker.id)
-                    },
-                )
-                GhostButton(
-                    stringResource(R.string.common_cancel), { enhanceOpen = false }, Modifier.fillMaxWidth(),
-                )
-            },
-        ) {
-            SneakerFrame(sneaker = sneaker, modifier = Modifier.fillMaxWidth().height(144.dp))
-            Text(stringResource(R.string.level_chip, sneaker.level) + " → " +
-                stringResource(R.string.level_chip, sneaker.level + 1),
-                style = MaterialTheme.typography.headlineSmall, color = Snow)
-            Text(stringResource(R.string.items_upgrade_cost, "%,.0f".format(cost)),
-                style = MaterialTheme.typography.bodyLarge, color = com.stepup.android.ui.theme.VoltText)
-            if (currentBalance == null) {
-                Text(stringResource(R.string.feed_loading), color = Silver)
-            } else if (currentBalance < cost) {
-                Text(msgNoBalance, color = Silver)
-            }
-        }
-    }
 }
 
 /**
@@ -234,6 +201,8 @@ fun ShoeDetailContent(
     onEnhance: () -> Unit = {},
     onRepair: () -> Unit = {},
     onSell: (Sneaker) -> Unit = {},
+    /** 이 신발의 강화 요청 결과를 아직 모른다 — 강화하기 대신 "강화 결과 확인" */
+    upgradePending: Boolean = false,
     zone: ZoneId = ZoneId.systemDefault(),
     initialSheet: String? = null,
 ) {
@@ -274,7 +243,15 @@ fun ShoeDetailContent(
             worn -> stringResource(R.string.sdv_status_wearing)
             else -> stringResource(R.string.sdv_wear)
         }
-        WearButton(label, enabled = !equipping && !worn, onClick = onWear)
+        // 강화하기는 상세에서 바로(지시서 v6) — 주 행동(신기)은 흰 면 그대로, 강화는 옆의 어두운 면
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            UpgradeEntryButton(
+                label = stringResource(if (upgradePending) R.string.upg_action_check else R.string.upg_action),
+                onClick = onEnhance,
+                modifier = Modifier.weight(1f),
+            )
+            WearButton(label, enabled = !equipping && !worn, onClick = onWear, modifier = Modifier.weight(1.4f))
+        }
     }
 
     DetailPage(
@@ -423,12 +400,12 @@ private fun DetailBody(
  * 밝은 테마는 설정 v1 의 주 버튼(남색 면) · 옅은 면.
  */
 @Composable
-private fun WearButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun WearButton(label: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth()) {
     val p = settingsPalette()
     val shape = RoundedCornerShape(17.dp)
     val face = if (enabled) p.primaryFace else SolidColor(if (StepUpColors.dark) Color(0xFF152137) else p.surface)
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(face, shape)
+        modifier.heightIn(min = 56.dp).clip(shape).background(face, shape)
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 12.dp)
             .testTag("detail-primary-action"),
@@ -436,6 +413,24 @@ private fun WearButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     ) {
         Text(label, color = if (enabled) p.primaryText else p.secondary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center)
+    }
+}
+
+/** 강화하기 · 강화 결과 확인 — 신기 옆의 보조 버튼(남색 면 · 옅은 테두리) */
+@Composable
+private fun UpgradeEntryButton(label: String, onClick: () -> Unit, modifier: Modifier) {
+    val p = settingsPalette()
+    val shape = RoundedCornerShape(17.dp)
+    Box(
+        modifier.heightIn(min = 56.dp).clip(shape)
+            .background(SolidColor(if (StepUpColors.dark) Color(0xFF1B3550) else p.surface), shape)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .testTag("detail-upgrade"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = if (StepUpColors.dark) Color.White else p.primaryText, fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
     }
 }
 
@@ -688,21 +683,11 @@ private fun ManageSheet(
         onDismiss = onClose,
         modifier = Modifier.testTag("shoe-manage-sheet"),
     ) {
-        val block = shoe.upgradeBlock
+        // 강화는 상세의 강화하기와 같은 화면으로(SUP 강화 확인 창은 쓰지 않는다). 할 수 없는 까닭은 그 화면이 말한다(13 · 17 · 18)
         ManageRow(
             title = stringResource(R.string.sneaker_action_enhance),
-            description = if (block == null) {
-                stringResource(R.string.sdv_enhance_desc, shoe.level, shoe.level + 1, "%,.0f".format(shoe.upgradeCost))
-            } else {
-                stringResource(
-                    when (block) {
-                        com.stepup.android.domain.UpgradeBlock.MAX_LEVEL -> R.string.sneaker_enhance_max
-                        com.stepup.android.domain.UpgradeBlock.LEGACY -> R.string.sneaker_enhance_legacy
-                        com.stepup.android.domain.UpgradeBlock.LISTED -> R.string.sneaker_enhance_listed
-                    },
-                )
-            },
-            enabled = block == null,
+            description = stringResource(R.string.upg_manage_desc),
+            enabled = true,
             onClick = onEnhance,
             tag = "shoe-manage-enhance",
         )
