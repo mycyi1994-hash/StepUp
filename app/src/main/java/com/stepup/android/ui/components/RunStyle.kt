@@ -533,6 +533,8 @@ fun RunTopBar(
     modifier: Modifier = Modifier,
     crumb: String? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** 뒤로 버튼 꼬리표 — 권한 안내처럼 닫기와 같은 뜻이면 그 이름으로 */
+    backTag: String = "kit-back",
 ) {
     val t = runTone()
     Row(
@@ -542,7 +544,7 @@ fun RunTopBar(
         if (onBack != null) {
             Box(
                 Modifier.size(48.dp).clip(CircleShape)
-                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag("kit-back"),
+                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag(backTag),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -657,12 +659,13 @@ fun RunPage(
     contentPadding: PaddingValues = PaddingValues(horizontal = RunSpec.Gutter),
     bottom: (@Composable ColumnScope.() -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
+    backTag: String = "kit-back",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(modifier.fillMaxSize()) {
         RunBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            RunTopBar(onBack = onBack, crumb = crumb, trailing = trailing)
+            RunTopBar(onBack = onBack, crumb = crumb, trailing = trailing, backTag = backTag)
             Column(
                 Modifier.weight(1f).fillMaxWidth()
                     .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
@@ -1297,6 +1300,7 @@ fun RunSheet(
     modifier: Modifier = Modifier,
     showClose: Boolean = true,
     dismissible: Boolean = true,
+    closeTag: String = "run-sheet-close",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val t = runTone()
@@ -1316,6 +1320,7 @@ fun RunSheet(
         RunSheetPanel(
             onClose = if (showClose && dismissible) onDismiss else null,
             modifier = modifier,
+            closeTag = closeTag,
             content = content,
         )
     }
@@ -1326,6 +1331,7 @@ fun RunSheet(
 fun RunSheetPanel(
     onClose: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    closeTag: String = "run-sheet-close",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val t = runTone()
@@ -1350,7 +1356,7 @@ fun RunSheetPanel(
                 Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 10.dp).size(48.dp).clip(CircleShape)
                     .feedbackClickable(cue = FeedbackCue.Back, onClick = onClose)
                     .semantics { contentDescription = label }
-                    .testTag("run-sheet-close"),
+                    .testTag(closeTag),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.Close, contentDescription = null, tint = t.text, modifier = Modifier.size(26.dp))
@@ -1520,6 +1526,8 @@ fun RunTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     tagPrefix: String = "run-tab",
+    /** 칸마다 꼬리표를 따로 줄 때(통계의 주간 · 월간) — 없으면 "[tagPrefix]-번호" */
+    tags: List<String>? = null,
 ) {
     val t = runTone()
     val shape = RoundedCornerShape(14.dp)
@@ -1540,7 +1548,7 @@ fun RunTabs(
                     )
                     .feedbackClickable(role = Role.Tab, cue = FeedbackCue.Select) { onSelect(i) }
                     .semantics { this.selected = on }
-                    .testTag("$tagPrefix-$i"),
+                    .testTag(tags?.getOrNull(i) ?: "$tagPrefix-$i"),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

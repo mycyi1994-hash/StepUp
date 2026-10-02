@@ -116,6 +116,8 @@ fun LiveRouteMap(
     /** 타일 색 — 러닝 화면은 [RunTone.mapFilter](남색 시안, [LocalMapTone]). null 이면 앱 테마의 지도 색 */
     tileFilter: ColorFilter? = LocalMapTone.current.filter,
     tileShade: Float = LocalMapTone.current.shade,
+    /** 출발 · 도착 점 옆 작은 이름표("시작" · "도착", 지난 기록의 경로 확대 H12) — null 이면 두지 않는다 */
+    endpointLabels: Pair<String, String>? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
@@ -132,6 +134,14 @@ fun LiveRouteMap(
     ) { plan ->
         if (course.size >= 2) drawCourseGuide(plan, course)
         drawRoute(plan, points, progress, routeColor, breaks, live)
+        if (endpointLabels != null && points.size >= 2) {
+            val start = plan.toScreen(points.first())
+            val end = plan.toScreen(points.last())
+            drawEndpointChip(measurer, start, endpointLabels.first, Color(0xFF48D9FA), below = true)
+            // 한 바퀴 돌아 같은 자리에서 끝나면 도착 이름표는 위로 — 시작 이름표와 겹치지 않게
+            drawEndpointChip(measurer, end, endpointLabels.second, Color(0xFFFF5C6B), below = false,
+                above = (end - start).getDistance() < 36.dp.toPx())
+        }
         others.forEach { (point, name) ->
             val at = plan.toScreen(point)
             drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
@@ -245,6 +255,47 @@ private fun DrawScope.drawRoute(
         drawCircle(color, radius = 4.5f.dp.toPx(), center = at)
         drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
     }
+}
+
+/** 출발 · 도착 이름표 — 짙은 남색 면 · 색 테두리 · 흰 글자. 지도 밖으로 나가지 않게 안쪽으로 당긴다 */
+private fun DrawScope.drawEndpointChip(
+    measurer: androidx.compose.ui.text.TextMeasurer,
+    at: Offset,
+    text: String,
+    edge: Color,
+    below: Boolean,
+    above: Boolean = false,
+) {
+    val label = measurer.measure(
+        text,
+        androidx.compose.ui.text.TextStyle(
+            color = Color.White, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        ),
+    )
+    val padX = 8.dp.toPx()
+    val padY = 3.dp.toPx()
+    val w = label.size.width + padX * 2
+    val h = label.size.height + padY * 2
+    val gap = 12.dp.toPx()
+    val margin = 4.dp.toPx()
+    var x: Float
+    var y: Float
+    when {
+        below -> { x = at.x - w / 2; y = at.y + gap }
+        above -> { x = at.x - w / 2; y = at.y - gap - h }
+        else -> {
+            x = at.x + gap
+            y = at.y - h / 2
+            if (x + w > size.width - margin) x = at.x - gap - w
+        }
+    }
+    x = x.coerceIn(margin, (size.width - w - margin).coerceAtLeast(margin))
+    y = y.coerceIn(margin, (size.height - h - margin).coerceAtLeast(margin))
+    val radius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+    val box = androidx.compose.ui.geometry.Size(w, h)
+    drawRoundRect(Color(0xE6071C38), topLeft = Offset(x, y), size = box, cornerRadius = radius)
+    drawRoundRect(edge, topLeft = Offset(x, y), size = box, cornerRadius = radius, style = Stroke(1.5.dp.toPx()))
+    drawText(label, topLeft = Offset(x + padX, y + padY))
 }
 
 /** 지금 자리 — 흰 테 두른 파란 점과 옅은 빛 */

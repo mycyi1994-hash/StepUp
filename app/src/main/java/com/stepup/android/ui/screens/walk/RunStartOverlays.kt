@@ -27,6 +27,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import androidx.compose.foundation.background
@@ -192,4 +194,52 @@ internal fun RunCountdownStage(
             }
         }
     }
+}
+
+/**
+ * 휴대폰 위치 기능 꺼짐(시안 E07) — 위치 권한은 있는데 기기의 위치 기능이 꺼져 있다(앱 권한 거절 L02 와 다른 원인).
+ * 위치 설정 열기(돌아오면 다시 읽는다) · 시간만 기록하기(R01 → R02_TIME). 위치가 없으니 지도는 그리지 않는다.
+ */
+@Composable
+internal fun RunLocationOffContent(
+    title: String,
+    onBack: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onTimeOnly: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val t = runTone()
+    com.stepup.android.ui.components.RunPage(
+        onBack = onBack, modifier = modifier.testTag("run-location-off-gate"), title = title.ifBlank { null },
+        bottom = {
+            RunButton(stringResource(R.string.run_loc_off_open), onOpenSettings, Modifier.testTag("run-location-off-open"), hero = true)
+            RunButton(stringResource(R.string.run_loc_off_time_only), onTimeOnly, Modifier.testTag("run-location-off-time"),
+                kind = RunButtonKind.Secondary)
+        },
+    ) {
+        Spacer(Modifier.height(24.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            SlashedArt(androidx.compose.material.icons.Icons.Filled.LocationOn, size = 180.dp)
+        }
+        Spacer(Modifier.height(30.dp))
+        Text(
+            stringResource(R.string.run_loc_off_title),
+            style = androidx.compose.ui.text.TextStyle(
+                fontFamily = com.stepup.android.ui.theme.StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp,
+                letterSpacing = (-0.03).em, color = t.text,
+            ),
+            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.run_loc_off_body), style = runTextStyle(17.sp, t.label, FontWeight.Medium),
+            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** 휴대폰 위치 기능이 켜져 있는가 — 알 수 없으면 켜진 것으로 본다(막지 않는다) */
+internal fun locationServicesOn(context: android.content.Context): Boolean {
+    val lm = androidx.core.content.ContextCompat.getSystemService(context, android.location.LocationManager::class.java)
+    return lm == null || runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
 }

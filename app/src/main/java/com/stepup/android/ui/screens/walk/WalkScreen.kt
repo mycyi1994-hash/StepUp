@@ -214,6 +214,8 @@ fun RunScreen(
     // 한 번 고른 러닝 — 권한 안내(시작·로그인·첫 사용 v1 시안 13~19)를 활동 → 위치 → 알림 차례로 지나 3-2-1(R01)로 간다.
     // 안내를 닫으면 아무것도 시작하지 않는다. 필요한 권한이 이미 있으면 안내 없이 바로 3-2-1 이다.
     var startPending by rememberSaveable { mutableStateOf(false) }
+    // E07 — 위치 권한은 있는데 휴대폰 위치 기능이 꺼져 있어 시작 전에 묻는 중
+    var locationOffGate by rememberSaveable { mutableStateOf(false) }
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         locationAllowed = StepPermissions.hasLocation(context)
@@ -744,7 +746,8 @@ fun RunScreen(
                 onReady = {
                     startPending = false
                     locationAllowed = StepPermissions.hasLocation(context)
-                    countingDown = true
+                    // 권한은 있는데 휴대폰 위치 기능이 꺼져 있으면(E07) 시작 전에 묻는다 — 앱 권한 거절(L02)과 다른 원인
+                    if (locationAllowed && !locationServicesOn(context)) locationOffGate = true else countingDown = true
                 },
                 // 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴 · 챌린지 · 다이어트)에서 왔으면 그리로
                 onCancel = {
@@ -757,16 +760,36 @@ fun RunScreen(
                 },
             )
         }
-        if (countingDown && !session.isActive) {
-            // 권한이 있어도 휴대폰 위치가 꺼져 있으면 위치가 오지 않는다 — 시작 전에 미리 알린다
-            val locationServicesOn = remember {
-                val lm = androidx.core.content.ContextCompat.getSystemService(context, android.location.LocationManager::class.java)
-                lm == null || runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
+        if (locationOffGate && !session.isActive) {
+            // 위치 설정에서 돌아와 켜져 있으면 바로 3-2-1. 시간만 기록하기는 위치 없이 3-2-1(R02_TIME)
+            androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (locationServicesOn(context)) {
+                    locationOffGate = false
+                    countingDown = true
+                }
             }
+            val leave = {
+                locationOffGate = false
+                if (autoStart) onBack()
+            }
+            androidx.activity.compose.BackHandler { leave() }
+            RunLocationOffContent(
+                title = planTitle(plan),
+                onBack = leave,
+                onOpenSettings = { ExternalIntents.openLocationSettings(context) },
+                onTimeOnly = {
+                    locationOffGate = false
+                    countingDown = true
+                },
+            )
+        }
+        if (countingDown && !session.isActive) {
+            // 권한이 있어도 휴대폰 위치가 꺼져 있으면 위치가 오지 않는다 — 시간만 기록으로 고른 경우 3-2-1 에도 알린다
+            val servicesOn = remember { locationServicesOn(context) }
             RunCountdown(
                 courseName = course?.name,
                 locationAllowed = locationAllowed,
-                locationServicesOn = locationServicesOn,
+                locationServicesOn = servicesOn,
                 title = planTitle(plan),
                 onGo = {
                     countingDown = false

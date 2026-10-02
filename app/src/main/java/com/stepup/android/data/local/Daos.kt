@@ -156,7 +156,7 @@ interface WalkSessionDao {
 
     /** 기간 안 러닝의 시작 시각 · 거리 — 주간 · 월간 막대 */
     @Query(
-        "SELECT startedAt, distanceMeters AS meters FROM walk_sessions " +
+        "SELECT id, startedAt, distanceMeters AS meters FROM walk_sessions " +
             "WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until",
     )
     fun observeRunMarks(owner: String, from: Long, until: Long): Flow<List<com.stepup.android.domain.RunMark>>

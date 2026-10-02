@@ -119,7 +119,8 @@ class ProfileRunningPathTest {
 
             // 내 러닝 기록(2026-09-28 전달본) — 이번 달 목록. 예전 기록 · 분석은 통계 안쪽 링크로
             tapTag("profile-records")
-            awaitTag("records-period")
+            // 기록이 없는 기기는 첫 기록 안내(H07) — 기간 알약이 없다. 화면 자체를 기다린다
+            awaitTag("records-screen")
             shot("03-records")
             pressBack()
             awaitTag("profile-challenges")

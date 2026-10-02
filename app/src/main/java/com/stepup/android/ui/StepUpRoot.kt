@@ -563,6 +563,9 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
         )
+    } else if (currentRoute in listOf(Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP)) {
+        // 내 러닝 기록(러닝 리메이크 H01–H16) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), runSetting,
@@ -1177,16 +1180,8 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onOpenStats = { month -> navController.navigate(Routes.recordStats(month)) },
                     onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
-                    // 기록이 하나도 없을 때(07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 기존 자유 러닝 시작
-                    onStartRun = {
-                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                            navController.navigate(Routes.RUN_NOW)
-                        } else {
-                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
-                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
-                            navController.navigate(Routes.RUN_NOW)
-                        }
-                    },
+                    // 러닝 시작하기(H01 · H07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 러닝 방법 고르기(U01)
+                    onStartRun = { startRunFromRecords(navController) },
                 )
             }
             composable(
@@ -1199,6 +1194,9 @@ internal fun MainScaffold(
                     start = month,
                     onBack = { navController.popBackStack() },
                     onOpenStepStats = { navController.navigate(Routes.ANALYTICS) },
+                    // 통계 없음(H15)의 러닝 시작 · 고른 날짜의 기록(H05 → H11 · H13)
+                    onStartRun = { startRunFromRecords(navController) },
+                    onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
                 )
             }
             composable(
@@ -1431,6 +1429,18 @@ internal fun MainScaffold(
             }
         })
     }
+    }
+}
+
+/**
+ * 기록 · 통계의 "러닝 시작하기"(H01 · H07 · H15 → U01) — 달리던 러닝이 있으면 그 러닝으로 돌아가고,
+ * 아니면 러닝 방법 고르기(시작 메뉴). 러닝을 바로 시작하지는 않는다.
+ */
+private fun startRunFromRecords(navController: NavHostController) {
+    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+        navController.navigate(Routes.RUN_NOW)
+    } else {
+        navController.navigate(Routes.RUN_MENU) { launchSingleTop = true }
     }
 }
 

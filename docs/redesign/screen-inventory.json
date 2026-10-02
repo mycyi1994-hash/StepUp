@@ -210,7 +210,7 @@
     {
       "id": "Routes.COURSES",
       "parent": "Run",
-      "chrome": "Detail",
+      "chrome": "Focus",
       "implementation": "character-free course select/create/board visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md",
       "verification": "Android 14/15 explore captures, including 1.6× font; save/share actions not exercised"
     },
@@ -1371,28 +1371,28 @@
     {
       "id": "RecordStatsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RecordStatsScreen.kt",
-      "line": 76,
+      "line": 94,
       "implementation": "내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — see docs/redesign/running-records/README.md",
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RecordsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RecordsScreen.kt",
-      "line": 87,
+      "line": 102,
       "implementation": "내 러닝 기록(2026-09-28 전달본): list 01 · 02 · 03 · 07–10 — see docs/redesign/running-records/README.md",
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RunRecordScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt",
-      "line": 75,
+      "line": 69,
       "implementation": "내 러닝 기록(2026-09-28 전달본): detail 11 · 13 · 14 · 16 — see docs/redesign/running-records/README.md",
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
     {
       "id": "RunRouteMapScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/records/RunRouteMapScreen.kt",
-      "line": 46,
+      "line": 55,
       "implementation": "내 러닝 기록(2026-09-28 전달본): route 12 (map fit for large viewports fixed after that run: RouteMapFitTest) — see docs/redesign/running-records/README.md",
       "verification": "RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
@@ -1496,7 +1496,7 @@
     {
       "id": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 84,
+      "line": 103,
       "implementation": "character-free course card/tabs visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md",
       "verification": "Android 14/15 three-state captures; save/share interaction unverified",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1504,14 +1504,14 @@
     {
       "id": "DietInputScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 151,
+      "line": 153,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "DietPlanScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 501,
+      "line": 502,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
@@ -1532,14 +1532,14 @@
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 175,
+      "line": 180,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 230,
+      "line": 235,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
@@ -1555,7 +1555,7 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1876,
+      "line": 1938,
       "implementation": "pending",
       "verification": "pending"
     }
@@ -1646,24 +1646,10 @@
       "verification": "pending"
     },
     {
-      "kind": "DialogPanel",
-      "owner": "CourseHubScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 255,
-      "verification": "pending"
-    },
-    {
-      "kind": "DialogPanel",
-      "owner": "CourseRankingDialog",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
-      "line": 593,
-      "verification": "pending"
-    },
-    {
-      "kind": "DialogPanel",
-      "owner": "SaveCourseDialog",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1646,
+      "kind": "Dialog",
+      "owner": "RunPermissionSheetView",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt",
+      "line": 404,
       "verification": "pending"
     }
   ],

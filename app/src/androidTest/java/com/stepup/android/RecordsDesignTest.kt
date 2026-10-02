@@ -32,6 +32,7 @@ import com.stepup.android.domain.RecordPeriod
 import com.stepup.android.domain.RunMark
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.TrackPoint
+import com.stepup.android.domain.bestDay
 import com.stepup.android.domain.monthBars
 import com.stepup.android.domain.range
 import com.stepup.android.domain.weekBars
@@ -206,7 +207,7 @@ class RecordsDesignTest {
             shot("11-run-detail")
             tap("run-route")
             awaitTag("route-map")
-            compose.onNodeWithTag("route-summary").assertTextContains("3.2 km", substring = true)
+            compose.onNodeWithTag("route-summary").assertTextContains("3.20", substring = true)
             shot("12-route-expanded")
             tap("route-back")
             awaitTag("run-route")
@@ -218,7 +219,7 @@ class RecordsDesignTest {
             tap("record-row-$timeOnlyId")
             awaitTag("run-no-route")
             compose.onNodeWithTag("run-time").assertTextContains("24:30", substring = true)
-            compose.onNodeWithTag("run-distance").assertTextContains("—", substring = true)
+            compose.onNodeWithTag("run-distance", useUnmergedTree = true).assertTextEquals("—")
             shot("13-no-gps-detail")
 
             // 14 · 16 — 삭제 확인, 못 지우면 기록을 두고 알린다(저장소 실패를 넣어 실제로 막는다)
@@ -234,15 +235,15 @@ class RecordsDesignTest {
                 tap("run-delete-confirm")
                 awaitTag("run-delete-notice")
                 compose.waitUntil(10_000) {
-                    compose.onAllNodesWithText(korean(R.string.rec_delete_failed_toast), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+                    compose.onAllNodesWithText(korean(R.string.run_rec_delete_failed_title), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
                 }
                 assertTrue(runBlocking { dao.observeRecord("legacy", timeOnlyId).first() } != null)
                 shot("16-delete-error")
             } finally {
                 db.execSQL("DROP TRIGGER IF EXISTS fail_record_delete")
             }
-            // 다시 삭제 → 목록으로, 그 줄과 합계에서 빠진다
-            tap("run-delete")
+            // 다시 삭제(H16 의 주 버튼 → H14) → 목록으로, 그 줄과 합계에서 빠진다
+            tap("run-delete-retry")
             tap("run-delete-confirm")
             awaitTag("records-list")
             awaitGone("record-row-$timeOnlyId")
@@ -291,14 +292,15 @@ class RecordsDesignTest {
 
         show("s01-record-list", "records-list", records(list))
         compose.onNodeWithTag("records-distance", useUnmergedTree = true).assertTextEquals("34.2")
-        compose.onNodeWithTag("records-runs", useUnmergedTree = true).assertTextEquals("8번의 러닝")
+        compose.onNodeWithTag("records-runs", useUnmergedTree = true).assertTextEquals("8")
         show("s02-all-records", "records-list", records(list.copy(period = RecordPeriod.All), RecordPeriod.All))
         show("s03-period-sheet", "period-sheet") {
             RecordsContent(list, RecordPeriod.Month(september), route = routeOf, zone = SEOUL, today = TODAY)
-            PeriodSheet(RecordPeriod.Month(september), september, 2026, onApply = {}, onDismiss = {})
+            PeriodSheet(RecordPeriod.Month(september), september, YearMonth.of(2026, 7), onApply = {}, onDismiss = {})
         }
-        // 아직 오지 않은 달은 고를 수 없다
-        compose.onNodeWithTag("period-month-10").assertIsNotEnabled()
+        // 이번 달부터 첫 기록의 달까지 — 아직 오지 않은 달은 목록에 없다
+        compose.onNodeWithTag("period-month-2026-09").assertIsSelected()
+        compose.onAllNodesWithTag("period-month-2026-10").assertCountEquals(0)
         show("s07-first-empty", "records-empty",
             records(RecordsLoad.Ready(RecordPeriod.Month(september), totals(emptyList()), emptyList(), anyRecords = false, more = false)))
         show("s08-period-empty", "records-period-empty",
@@ -310,23 +312,38 @@ class RecordsDesignTest {
         show("s10b-stale", "records-stale", records(list.copy(stale = true)))
 
         // 통계 — 주는 9월 21일 ~ 27일, 달은 9월(오늘 2026-09-28: 29 · 30일은 아직 오지 않아 막대가 없다)
-        val marks = SAMPLE.map { RunMark(it.startedAt, it.meters) }
+        val marks = SAMPLE.mapIndexed { i, s -> RunMark(s.startedAt, s.meters, i + 1L) }
         val monday = LocalDate.of(2026, 9, 21)
-        val weekRuns = SAMPLE.filter { java.time.Instant.ofEpochMilli(it.startedAt).atZone(SEOUL).toLocalDate() in monday..monday.plusDays(6) }
-        val week = StatsUi(StatWindow.Week(monday), totals(weekRuns), weekBars(monday, marks, TODAY, SEOUL), canGoNext = true, thisMonth = september)
+        fun inWeek(at: Long) = java.time.Instant.ofEpochMilli(at).atZone(SEOUL).toLocalDate() in monday..monday.plusDays(6)
+        val weekRuns = SAMPLE.filter { inWeek(it.startedAt) }
+        val weekMarks = marks.filter { inWeek(it.startedAt) }
+        val week = StatsUi(StatWindow.Week(monday), totals(weekRuns), weekBars(monday, marks, TODAY, SEOUL), canGoNext = true, thisMonth = september,
+            marks = weekMarks, best = bestDay(weekMarks, SEOUL))
         val monthUi = StatsUi(StatWindow.Month(september), monthTotals, monthBars(september, marks, TODAY, SEOUL), canGoNext = false,
-            thisMonth = september)
-        show("s04-week-statistics", "stats-chart") { RecordStatsContent(week) }
+            thisMonth = september, marks = marks, best = bestDay(marks, SEOUL))
+        show("s04-week-statistics", "stats-chart") { RecordStatsContent(week, zone = SEOUL) }
+        // 가장 많이 달린 날 — 그 주의 9월 25일 5.0km
+        compose.onNodeWithTag("stats-best").assertTextContains("9월 25일", substring = true)
         compose.onNodeWithTag("stats-distance").assertTextEquals("15.2")
         compose.onNodeWithTag("stats-time").assertTextContains("1시간 43분", substring = true)
         compose.onNodeWithTag("stats-pace").assertTextContains("6'49\" /km", substring = true)
-        show("s05-week-selected-day", "stats-tip") { RecordStatsContent(week, initialSelection = 4) }
-        compose.onNodeWithTag("stats-tip", useUnmergedTree = true).assertTextContains("5.0km", substring = true)
-        show("s06-month-statistics", "stats-chart") { RecordStatsContent(monthUi) }
+        show("s05-week-selected-day", "stats-tip") { RecordStatsContent(week, initialSelection = 4, zone = SEOUL) }
+        compose.onNodeWithTag("stats-tip", useUnmergedTree = true).assertTextEquals("5.0")
+        // 고른 날짜의 카드 — 그 날 러닝 하나면 카드가 그 기록(H11)으로 간다
+        compose.onNodeWithTag("stats-day").assertTextContains("9월 25일 금요일", substring = true)
+        compose.onNodeWithTag("stats-day-card").assertHasClickAction()
+        show("s06-month-statistics", "stats-chart") { RecordStatsContent(monthUi, zone = SEOUL) }
         compose.onNodeWithTag("stats-distance").assertTextEquals("34.2")
         // 29 · 30일 칸은 아직 오지 않은 날 — 누를 수 없다
         compose.onNodeWithTag("stats-bar-4").assertIsNotEnabled()
         show("s15-statistics-empty", "stats-empty") {
+            RecordStatsContent(StatsUi(StatWindow.Week(LocalDate.of(2026, 9, 21)), totals(emptyList()),
+                weekBars(LocalDate.of(2026, 9, 21), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september, anyRecords = false))
+        }
+        // 기록이 하나도 없으면 "—" 와 빈 축, 러닝 시작(U01)
+        compose.onNodeWithTag("stats-distance").assertTextEquals("—")
+        compose.onNodeWithTag("stats-start-run").assertIsDisplayed()
+        show("s15b-statistics-empty-period", "stats-empty") {
             RecordStatsContent(StatsUi(StatWindow.Month(YearMonth.of(2026, 8)), totals(emptyList()),
                 monthBars(YearMonth.of(2026, 8), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september))
         }
@@ -341,17 +358,19 @@ class RecordsDesignTest {
             RunRecordContent(lookup, points, delete, zone = SEOUL)
         }
         show("s11-run-detail", "run-route", detail(DeleteState.Closed))
-        compose.onNodeWithTag("run-date").assertTextEquals("2026년 9월 27일 일요일")
-        compose.onNodeWithTag("run-pace").assertTextContains("7'00\" /km", substring = true)
+        compose.onNodeWithTag("run-date").assertTextEquals("2026.09.27 · 오전 7:12")
+        compose.onNodeWithTag("run-pace", useUnmergedTree = true).assertTextEquals("7'00\"")
+        compose.onNodeWithTag("run-speed", useUnmergedTree = true).assertTextEquals("8.6")
         show("s12-route-expanded", "route-map") { RunRouteMapContent(found, path, zone = SEOUL) }
         val timeOnly = RecordLookup.Found(session.copy(distanceMeters = 0.0))
         show("s13-no-gps-detail", "run-no-route", detail(DeleteState.Closed, timeOnly, emptyList()))
         compose.onNodeWithTag("run-time").assertTextContains("22:24", substring = true)
         show("s14-delete-confirm", "run-delete-sheet", detail(DeleteState.Confirm))
-        compose.onNodeWithTag("run-delete-subject", useUnmergedTree = true).assertTextEquals("9월 27일 · 3.2km")
+        compose.onNodeWithTag("run-delete-subject", useUnmergedTree = true).assertTextEquals("9월 27일 · 3.20km · 22분 24초")
         show("s14b-deleting", "run-delete-sheet", detail(DeleteState.Deleting))
         show("s16-delete-error", "run-delete-notice", detail(DeleteState.Failed))
         compose.onNodeWithTag("run-back-to-list").assertIsDisplayed()
+        compose.onNodeWithTag("run-delete-retry").assertIsDisplayed()
         show("s16b-delete-uploading", "run-delete-notice", detail(DeleteState.Uploading))
         show("s18-record-missing", "run-missing", detail(DeleteState.Closed, RecordLookup.Missing))
 
@@ -361,11 +380,11 @@ class RecordsDesignTest {
         show("s31-light-detail", "run-route", detail(DeleteState.Closed))
         compose.runOnIdle { light = false; large = true }
         show("s32-large-font-list", "records-list", records(list))
-        show("s33-large-font-stats", "stats-chart") { RecordStatsContent(week, initialSelection = 4) }
+        show("s33-large-font-stats", "stats-chart") { RecordStatsContent(week, initialSelection = 4, zone = SEOUL) }
         show("s34-large-font-detail", "run-route", detail(DeleteState.Closed))
         compose.runOnIdle { large = false; narrow = true }
         show("s35-narrow-list", "records-list", records(list))
-        show("s36-narrow-stats", "stats-chart") { RecordStatsContent(week) }
+        show("s36-narrow-stats", "stats-chart") { RecordStatsContent(week, zone = SEOUL) }
         // 7열 막대가 좁은 폭에서도 칸마다 48dp 높이 이상 누를 곳을 가진다
         compose.onNodeWithTag("stats-bar-0").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected))
     }
