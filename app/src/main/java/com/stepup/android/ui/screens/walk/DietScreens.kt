@@ -82,8 +82,10 @@ import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.runNumberStyle
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** 몸 정보 입력칸 하나의 확인 결과 — 비었으면 EMPTY, 범위를 벗어나면 RANGE */
 internal enum class BodyInputError { EMPTY, RANGE }
@@ -205,12 +207,15 @@ fun DietInputScreen(
                 prefs.setBodyProfile(body.copy(heightCm = cm, weightKg = BodyMath.round1(kg)))
                 prefs.setRunExperience(chosen)
             }.isSuccess
-            if (saved) {
-                dirty = false
-                phase = DietPhase.Input
-                onNext(chosen)
-            } else {
-                phase = DietPhase.Failed
+            // 저장은 다른 스레드에서 끝날 수 있다 — 화면 상태 · 다음 화면 이동은 메인에서
+            withContext(Dispatchers.Main.immediate) {
+                if (saved) {
+                    dirty = false
+                    phase = DietPhase.Input
+                    onNext(chosen)
+                } else {
+                    phase = DietPhase.Failed
+                }
             }
         }
     }

@@ -454,6 +454,8 @@ fun RunScreen(
         session.gpsLost -> GpsBadge.Weak
         session.gpsFix && !session.precise -> GpsBadge.Approx
         session.gpsFix -> GpsBadge.Connected
+        // GPS 전에 지도에 먼저 보인 자리는 대략적인 위치라고 알린다
+        session.isActive && session.here != null -> GpsBadge.Rough
         else -> GpsBadge.Searching
     }
     val distanceStat = RunStat(stringResource(R.string.run_label_distance), liveKmText, "km", caption = distanceCaption, tag = "run-distance-value")
@@ -1018,16 +1020,19 @@ fun RunScreen(
                             records.idForStart(session.lastStartedAt)?.let { records.delete(it) }
                                 ?: com.stepup.android.data.repo.RecordDeletion.Missing
                         }.getOrNull()
-                        deleting = false
-                        deleteSheet = false
-                        when (outcome) {
-                            com.stepup.android.data.repo.RecordDeletion.Deleted,
-                            com.stepup.android.data.repo.RecordDeletion.Missing -> {
-                                viewModel.clearReward()
-                                onOpenRecords()
+                        // 지우기는 다른 스레드에서 끝날 수 있다 — 화면 상태 · 기록 화면 이동은 메인에서
+                        kotlinx.coroutines.withContext(Dispatchers.Main.immediate) {
+                            deleting = false
+                            deleteSheet = false
+                            when (outcome) {
+                                com.stepup.android.data.repo.RecordDeletion.Deleted,
+                                com.stepup.android.data.repo.RecordDeletion.Missing -> {
+                                    viewModel.clearReward()
+                                    onOpenRecords()
+                                }
+                                com.stepup.android.data.repo.RecordDeletion.Uploading -> deleteFailed = uploadingText
+                                null -> deleteFailed = keptText
                             }
-                            com.stepup.android.data.repo.RecordDeletion.Uploading -> deleteFailed = uploadingText
-                            null -> deleteFailed = keptText
                         }
                     }
                 },
@@ -1868,7 +1873,9 @@ private fun rememberCardSave(card: android.graphics.Bitmap?, name: String): () -
             val saved = bitmap != null && kotlinx.coroutines.withContext(Dispatchers.IO) {
                 runCatching { RunImageStore.save(context, bitmap, name) }.getOrDefault(false)
             }
-            android.widget.Toast.makeText(context, if (saved) savedText else failedText, android.widget.Toast.LENGTH_SHORT).show()
+            kotlinx.coroutines.withContext(Dispatchers.Main.immediate) {
+                android.widget.Toast.makeText(context, if (saved) savedText else failedText, android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
     val permission = androidx.activity.compose.rememberLauncherForActivityResult(

@@ -277,17 +277,7 @@ fun CourseHubScreen(
                         if (board.isEmpty() && !failed && boardSync !is BoardSyncState.Loading) {
                             item {
                                 if (query.isBlank()) {
-                                    // K17 — 아직 공유된 코스가 없어요
-                                    Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        RunEmptyState(
-                                            Icons.Outlined.Map, stringResource(R.string.run_course_board_empty_title),
-                                            body = stringResource(R.string.run_course_board_empty_body),
-                                            modifier = Modifier.testTag("courses-board-empty"),
-                                        )
-                                        Spacer(Modifier.height(20.dp))
-                                        RunButton(stringResource(R.string.run_course_upload), { uploadPicker = true }, hero = true,
-                                            modifier = Modifier.testTag("courses-board-empty-upload"))
-                                    }
+                                    BoardEmpty(onUpload = { uploadPicker = true })
                                 } else {
                                     Text(stringResource(R.string.courses_search_empty), style = runTextStyle(15.sp, runTone().label),
                                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
@@ -570,9 +560,24 @@ private fun UploadChip(onClick: () -> Unit) {
     }
 }
 
+/** K17 — 아직 공유된 코스가 없어요. 내 코스를 올리는 것이 이 자리의 큰 행동 */
+@Composable
+internal fun BoardEmpty(onUpload: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        RunEmptyState(
+            Icons.Outlined.Map, stringResource(R.string.run_course_board_empty_title),
+            body = stringResource(R.string.run_course_board_empty_body),
+            modifier = Modifier.testTag("courses-board-empty"),
+        )
+        Spacer(Modifier.height(20.dp))
+        RunButton(stringResource(R.string.run_course_upload), onUpload, hero = true,
+            modifier = Modifier.testTag("courses-board-empty-upload"))
+    }
+}
+
 /** K18 — 코스를 불러오지 못했어요. 저장한 내 코스는 볼 수 있다 */
 @Composable
-private fun BoardFailed(signIn: Boolean, onRetry: () -> Unit, onMine: () -> Unit) {
+internal fun BoardFailed(signIn: Boolean, onRetry: () -> Unit, onMine: () -> Unit) {
     val t = runTone()
     Column(Modifier.fillMaxWidth().padding(top = 12.dp).testTag("courses-board-failed"), horizontalAlignment = Alignment.CenterHorizontally) {
         RunEmptyState(

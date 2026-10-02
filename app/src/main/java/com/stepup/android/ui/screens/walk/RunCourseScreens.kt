@@ -60,8 +60,10 @@ import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import kotlinx.coroutines.delay
 
-/** 추천 코스 화면의 상태 — 찾는 중(K01) · 찾음(U04 · K02) · 없음(K03) · 위치 권한 없음 */
+/** 추천 코스 화면의 상태 — 자리 확인 중(L03) · 찾는 중(K01) · 찾음(U04 · K02) · 없음(K03) · 위치 권한 없음 */
 internal sealed interface CourseRecUi {
+    /** 지금 자리를 아직 모른다(L03) — 자리를 모르면 지도에 아무 자리도 그리지 않는다 */
+    data object Locating : CourseRecUi
     data object Finding : CourseRecUi
     data class Found(val pick: CourseRecommendations.Pick, val minutes: Int, val order: Int, val count: Int) : CourseRecUi
     data object None : CourseRecUi
@@ -123,7 +125,8 @@ fun CourseRecommendScreen(
             val pick = picks[order]
             CourseRecUi.Found(pick, CourseRecommendations.minutes(pick.course.distanceKm), order + 1, picks.size)
         }
-        (here == null || !boardDone) && !waited -> CourseRecUi.Finding
+        here == null && !waited -> CourseRecUi.Locating
+        !boardDone && !waited -> CourseRecUi.Finding
         else -> CourseRecUi.None
     }
     CourseRecommendContent(
@@ -162,8 +165,8 @@ internal fun CourseRecommendContent(
     RunPage(
         onBack = onBack,
         modifier = Modifier.testTag("run-course-rec"),
-        title = stringResource(R.string.run_course_rec_title),
-        subtitle = if (ui is CourseRecUi.Finding) null else stringResource(R.string.run_course_rec_sub),
+        title = stringResource(if (ui is CourseRecUi.Locating) R.string.run_course_locating_title else R.string.run_course_rec_title),
+        subtitle = if (ui is CourseRecUi.Finding || ui is CourseRecUi.Locating) null else stringResource(R.string.run_course_rec_sub),
         bottom = {
             when (ui) {
                 is CourseRecUi.Found -> {
@@ -171,8 +174,8 @@ internal fun CourseRecommendContent(
                     RunButton(stringResource(R.string.run_course_next), onNext, kind = RunButtonKind.Secondary,
                         enabled = ui.count > 1, modifier = Modifier.testTag("run-course-next"))
                 }
-                CourseRecUi.Finding -> RunButton(stringResource(R.string.run_cancel), onBack, kind = RunButtonKind.Secondary,
-                    modifier = Modifier.testTag("run-course-cancel"))
+                CourseRecUi.Finding, CourseRecUi.Locating -> RunButton(stringResource(R.string.run_cancel), onBack,
+                    kind = RunButtonKind.Secondary, modifier = Modifier.testTag("run-course-cancel"))
                 CourseRecUi.None -> {
                     RunButton(stringResource(R.string.run_course_retry), onRetry, hero = true, modifier = Modifier.testTag("run-course-retry"))
                     RunButton(stringResource(R.string.run_course_free), onFreeRun, kind = RunButtonKind.Secondary,
@@ -187,16 +190,23 @@ internal fun CourseRecommendContent(
         },
     ) {
         when (ui) {
-            CourseRecUi.Finding -> {
+            CourseRecUi.Finding, CourseRecUi.Locating -> {
+                val locating = ui == CourseRecUi.Locating
                 Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    RunSpinner(Modifier.size(84.dp).testTag("run-course-finding"))
+                    RunSpinner(Modifier.size(84.dp).testTag(if (locating) "run-course-locating" else "run-course-finding"))
                     Spacer(Modifier.height(18.dp))
-                    Text(stringResource(R.string.run_course_finding), style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold),
-                        textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.run_course_finding_body), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
-                        textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                    Text(
+                        stringResource(if (locating) R.string.run_course_locating else R.string.run_course_finding),
+                        style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold), textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        stringResource(if (locating) R.string.run_course_locating_body else R.string.run_course_finding_body),
+                        style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                        textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp),
+                    )
                 }
                 Spacer(Modifier.height(20.dp))
+                // 자리를 모르면(L03) 틀만 — 꾸민 지도나 짐작한 자리를 그리지 않는다
                 RunMapFrame(Modifier.fillMaxWidth().height(300.dp)) { HereMap(here) }
             }
             is CourseRecUi.Found -> {

@@ -186,7 +186,8 @@ class RecordsDesignTest {
             awaitTag("stats-chart")
             shot("06-month-statistics")
             tap("stats-weekly")
-            compose.onNodeWithTag("stats-weekly").assertIsSelected()
+            // 주간 칸은 그 주의 기록을 읽어 온 뒤에 고른 것으로 바뀐다(저장소 읽기는 화면 밖 스레드)
+            awaitSelected("stats-weekly")
             awaitTag("stats-chart")
             shot("04-week-statistics")
             val todayBar = today.dayOfWeek.value - 1
@@ -489,6 +490,11 @@ class RecordsDesignTest {
 
     private fun awaitTag(tag: String) {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    private fun awaitSelected(tag: String) {
+        compose.waitUntil(10_000) { runCatching { compose.onNodeWithTag(tag).assertIsSelected() }.isSuccess }
+        compose.onNodeWithTag(tag).assertIsSelected()
     }
 
     private fun awaitGone(tag: String) {

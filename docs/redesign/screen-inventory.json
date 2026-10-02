@@ -1525,21 +1525,21 @@
     {
       "id": "DietInputScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 153,
+      "line": 155,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "DietPlanScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 502,
+      "line": 507,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "CourseRecommendScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunCourseScreens.kt",
-      "line": 82,
+      "line": 84,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1576,7 +1576,7 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1975,
+      "line": 1982,
       "implementation": "pending",
       "verification": "pending"
     }

@@ -256,7 +256,10 @@ class DesignReferenceTest {
                     compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
                 }
                 if (s == Scene.RUN_DIET_INPUT && interact) {
-                    // 키를 지우면 칸 아래 안내(D02) · 다음 버튼은 누를 수 없다. 키 칸에 적으면 휴대폰 숫자 자판(D01)
+                    // 키를 적었다가 지우면 칸 아래 안내(D02) · 다음 버튼은 누를 수 없다. 키 칸에 적으면 휴대폰 숫자 자판(D01)
+                    // (빈 칸을 지우는 것은 바뀐 것이 없어 안내가 뜨지 않는다)
+                    compose.onNodeWithTag("diet-height").performTextInput("1")
+                    compose.waitForIdle()
                     compose.onNodeWithTag("diet-height").performTextClearance()
                     compose.waitForIdle()
                     compose.onAllNodesWithTag("diet-input-error").onFirst().assertExists()

@@ -41,6 +41,7 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.repo.EconomySyncState
 import com.stepup.android.domain.GeoPoint
+import com.stepup.android.domain.GoalAttempt
 import com.stepup.android.domain.RunExperience
 import com.stepup.android.domain.RunGoal
 import com.stepup.android.domain.RunPlan
@@ -120,7 +121,8 @@ class RunJourneyDesignTest {
             // HOME · E01 — 러닝 홈(전시장 · 신발 줄 · 러닝 시작 · 오늘 걸음)과 오늘의 활동 시트
             awaitTag("home-start-run")
             awaitTag("home-shoe-name")
-            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-name")), useUnmergedTree = true)
+            // 시안 HOME — 이름 아래 줄에 등급 배지 · Lv(이름 글 안이 아니다)
+            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-info")), useUnmergedTree = true)
                 .assertExists()
             compose.onNodeWithTag("home-stat-durability-value", useUnmergedTree = true).assertTextContains("92", substring = true)
             shot("HOME")
@@ -138,6 +140,22 @@ class RunJourneyDesignTest {
             tap("run-menu-goals")
             awaitTag("run-goals")
             shot("U02")
+            // C03 — 지난 도전(이 검사가 넣은 도전 셋 — 끝나면 지운다)
+            runBlocking {
+                val day = 86_400_000L
+                val at = System.currentTimeMillis()
+                ServiceLocator.userPrefs.clearGoalAttempts()
+                listOf(
+                    GoalAttempt(at - 4 * day, RunGoal.TEN_MIN, true, 600, 1.28),
+                    GoalAttempt(at - 6 * day, RunGoal.ONE_KM, true, 412, 1.0),
+                    GoalAttempt(at - 7 * day, RunGoal.THREE_KM, true, 1_260, 3.0),
+                ).forEach { ServiceLocator.userPrefs.addGoalAttempt(it) }
+            }
+            tap("run-goals-history")
+            awaitTag("run-goal-history")
+            shot("C03")
+            back()
+            awaitTag("run-goals")
             back()
             awaitTag("run-menu-free")
             back()
@@ -334,6 +352,7 @@ class RunJourneyDesignTest {
             awaitTag("run-result")
             shot("S02", settle = 1_500)
         } finally {
+            runBlocking { ServiceLocator.userPrefs.clearGoalAttempts() }
             WalkSessionService.showStateForTest(WalkSessionState())
             RunPlans.clear()
             syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
@@ -428,7 +447,10 @@ class RunJourneyDesignTest {
             edgeToEdge()
             compose.setContent { DeviceFrame { MainScaffold(initialRoute = Routes.RUN_COURSE) } }
             awaitTag("run-course-rec")
-            if (exists("run-course-finding")) shot("K01")
+            // 기기에서 지나가는 대로 — 자리 확인 중(L03) · 자리를 알고 코스를 찾는 중(K01). 늘 같은 모습은 states() 가 찍는다
+            if (exists("run-course-locating")) shot("L03-device")
+            compose.waitUntil(25_000) { exists("run-course-finding") || exists("run-course-none") || exists("run-course-start") }
+            if (exists("run-course-finding")) shot("K01-device")
             compose.waitUntil(25_000) { exists("run-course-none") || exists("run-course-start") }
             shot(if (exists("run-course-none")) "K03" else "K02-device", settle = 2_000)
         } finally {
@@ -552,7 +574,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · U04 · K02) */
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · L03 · K01 · K17 · K18 · U04 · K02) */
     @Test fun states() {
         seed()
         val repo = ServiceLocator.courseRepository
@@ -569,6 +591,40 @@ class RunJourneyDesignTest {
             }
             show("D04", "diet-preparing") { com.stepup.android.ui.screens.walk.DietPreparingContent {} }
             show("D05", "diet-failed") { com.stepup.android.ui.screens.walk.DietFailedContent({}, {}) }
+            // R01 — 3-2-1(앱이 심은 공원 코스 출발점을 지금 자리로 — 실제 지도 타일)
+            val spot = courses.first().points.first().let { GeoPoint(it.lat, it.lng) }
+            show("R01", "run-countdown-digit") {
+                com.stepup.android.ui.screens.walk.RunCountdownStage(
+                    title = label(R.string.runflow_free), subtitle = null, kicker = label(R.string.run_countdown_soon), digit = 3,
+                    caption = label(R.string.run_countdown_gps_on), here = spot, onCancel = {},
+                )
+            }
+            // E07 — 휴대폰 위치 기능 꺼짐(앱 권한은 있음). 위치가 없으니 지도를 그리지 않는다
+            show("E07", "run-location-off-gate") {
+                com.stepup.android.ui.screens.walk.RunLocationOffContent(label(R.string.runflow_free), {}, {}, {})
+            }
+            // L03 — 추천 코스 전 지금 자리 확인 중(자리를 모르면 지도에 아무 자리도 그리지 않는다) · K01 — 자리를 알고 코스를 찾는 중
+            show("L03", "run-course-locating") {
+                com.stepup.android.ui.screens.walk.CourseRecommendContent(
+                    com.stepup.android.ui.screens.walk.CourseRecUi.Locating, null, {}, {}, {}, {}, {}, {},
+                )
+            }
+            show("K01", "run-course-finding") {
+                com.stepup.android.ui.screens.walk.CourseRecommendContent(
+                    com.stepup.android.ui.screens.walk.CourseRecUi.Finding, spot, {}, {}, {}, {}, {}, {},
+                )
+            }
+            // K17 · K18 — 코스 게시판이 비었을 때 · 못 불러왔을 때(CI 기기는 로그인 전이라 게시판을 읽지 못한다)
+            show("K17", "courses-board-empty") {
+                com.stepup.android.ui.components.RunPage(onBack = {}, title = label(R.string.courses_board)) {
+                    com.stepup.android.ui.screens.walk.BoardEmpty {}
+                }
+            }
+            show("K18", "courses-board-failed") {
+                com.stepup.android.ui.components.RunPage(onBack = {}, title = label(R.string.courses_board)) {
+                    com.stepup.android.ui.screens.walk.BoardFailed(signIn = false, onRetry = {}, onMine = {})
+                }
+            }
             // 추천 코스 — 앱이 심은 공원 코스를 그 코스 출발점 가까이에 서 있는 것처럼(에뮬레이터 자리와 무관한 화면 확인용)
             courses.take(2).forEachIndexed { i, course ->
                 val here = course.points.first().let { GeoPoint(it.lat + 0.002, it.lng) }
@@ -856,10 +912,13 @@ class RunJourneyDesignTest {
         )
     }
 
-    private fun dropRow(now: Long) {
-        ServiceLocator.database.openHelper.writableDatabase.execSQL(
-            "DELETE FROM walk_sessions WHERE startedAt = ${now - 750_000} AND recordingOwner = 'legacy'",
-        )
+    private fun dropRow(now: Long) = runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        // Room 거래 안에서 지워야 그 줄을 지켜보는 화면도 지운 것을 안다(밖에서 지우면 다음 쓰기 전까지 옛 값이 남는다)
+        ServiceLocator.database.runInTransaction {
+            ServiceLocator.database.openHelper.writableDatabase.execSQL(
+                "DELETE FROM walk_sessions WHERE startedAt = ${now - 750_000} AND recordingOwner = 'legacy'",
+            )
+        }
     }
 
     // ── 검사 ─────────────────────────────────────────────────────

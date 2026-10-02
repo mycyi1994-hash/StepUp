@@ -120,7 +120,11 @@ import com.stepup.android.ui.theme.StepUpSans
 
 // ── 러닝 중 ────────────────────────────────────────────────────────
 
-internal enum class GpsBadge { Connected, Searching, Weak, Off, Approx, None }
+internal enum class GpsBadge {
+    Connected, Searching, Weak, Off, Approx, None,
+    /** GPS 는 아직이지만 기지국 · 마지막으로 알던 위치로 지도에 먼저 보인다 */
+    Rough,
+}
 
 /** 큰 수 자리 — 시간(달린 시간 · 경과 시간 · 구간 남은 시간) 또는 거리(1km · 3km 챌린지) */
 @Immutable
@@ -334,7 +338,7 @@ private fun NextChip(text: String) {
     }
 }
 
-/** GPS 상태 — 연결됨(시안 · 막대) · 찾는 중 · 약함 · 꺼짐 · 대략적 위치 */
+/** GPS 상태 — 연결됨(시안 · 막대) · 찾는 중 · 대략적인 위치로 찾는 중 · 약함 · 꺼짐 · 대략적 위치 */
 @Composable
 private fun GpsIndicator(gps: GpsBadge) {
     if (gps == GpsBadge.None) return
@@ -345,6 +349,7 @@ private fun GpsIndicator(gps: GpsBadge) {
         GpsBadge.Weak -> stringResource(R.string.run_gps_weak) to t.label
         GpsBadge.Off -> stringResource(R.string.run_gps_off) to t.muted
         GpsBadge.Approx -> stringResource(R.string.run_gps_approx) to t.label
+        GpsBadge.Rough -> stringResource(R.string.run_gps_search_rough) to t.label
         GpsBadge.None -> "" to t.label
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("run-gps-status")) {

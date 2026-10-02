@@ -267,8 +267,11 @@ fun RunGoalHistoryScreen(
                 GoalAttemptRow(attempt, expanded = open == attempt.startedAt, onOpen = {
                     scope.launch {
                         val id = ServiceLocator.runRecordsRepository.idForStart(attempt.startedAt)
-                        if (id != null) onOpenRecord(id)
-                        else open = if (open == attempt.startedAt) null else attempt.startedAt
+                        // 찾기는 다른 스레드에서 끝날 수 있다 — 화면 이동은 메인에서
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                            if (id != null) onOpenRecord(id)
+                            else open = if (open == attempt.startedAt) null else attempt.startedAt
+                        }
                     }
                 })
             }

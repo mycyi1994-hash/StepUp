@@ -337,6 +337,9 @@
     <string name="run_course_delete">삭제</string>
     <string name="run_unit_min">분</string>
     <string name="run_courses_tab_select">코스 선택</string>
+    <string name="run_course_locating_title">위치 확인</string>
+    <string name="run_course_locating">현재 위치를 확인하고 있어요</string>
+    <string name="run_course_locating_body">주변이 트인 곳에서 잠시 기다려주세요.</string>
     <string name="run_rec_title_all">전체 러닝 기록</string>
     <string name="run_rec_sum_month">이번 달 누적 거리</string>
     <string name="run_rec_sum_named">%1$s 누적 거리</string>

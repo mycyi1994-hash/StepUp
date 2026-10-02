@@ -337,6 +337,9 @@
     <string name="run_course_delete">Delete</string>
     <string name="run_unit_min">min</string>
     <string name="run_courses_tab_select">Choose course</string>
+    <string name="run_course_locating_title">Checking location</string>
+    <string name="run_course_locating">Checking where you are</string>
+    <string name="run_course_locating_body">Please wait a moment somewhere with open sky.</string>
     <string name="run_rec_title_all">All runs</string>
     <string name="run_rec_sum_month">Distance this month</string>
     <string name="run_rec_sum_named">Distance in %1$s</string>
