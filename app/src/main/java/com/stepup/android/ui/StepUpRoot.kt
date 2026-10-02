@@ -37,6 +37,7 @@ import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
@@ -523,8 +524,8 @@ internal fun MainScaffold(
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
         Crossfade(com.stepup.android.ui.components.HomePhotos.all[homePhoto], animationSpec = tween(motion.duration(420)), label = "homeBackground") { photo ->
-            // 홈 풍경은 화면 전체 바탕 — 가운데 아치를 없앴다(2026-09-26 사용 피드백 · 사용자 결정)
-            com.stepup.android.ui.components.S2Scenery(
+            // 러닝 홈(2026-10-02 시안 HOME) — 전시장 창 너머로 고른 풍경을 남색 밤빛으로 깐다(넘기기 · 날씨 풍경 그대로)
+            com.stepup.android.ui.components.HomeShowroomBackdrop(
                 photo, Modifier.fillMaxSize().testTag("home-scene-${photo.key}"),
             )
         }
@@ -945,10 +946,9 @@ internal fun MainScaffold(
                 RunScreen(
                     onBack = { navController.popBackStack() },
                     onOpenCourses = { navController.navigate(Routes.COURSES) },
-                    // "처음 화면으로" — 시작 메뉴(시안 U01). 메뉴 없이 들어왔으면 러닝 탭 첫 화면
+                    // "처음 화면으로" — 러닝 탭 첫 화면(HOME, 러닝 전체 리메이크 2026-10-02)
                     onHome = {
-                        if (!navController.popBackStack(Routes.RUN_MENU, inclusive = false) &&
-                            !navController.popBackStack(Screen.Run.route, inclusive = false)) navController.popBackStack()
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
                     onGoals = {
                         if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.popBackStack()
@@ -963,6 +963,14 @@ internal fun MainScaffold(
                     onLeaveToHome = {
                         if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
+                    // 결과의 "내 러닝 기록 보기" · 기록 삭제 뒤(H01) — 결과는 닫고 기록으로
+                    onOpenRecords = {
+                        navController.navigate(Routes.RECORDS) {
+                            popUpTo(Routes.RUN_ROUTE) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
                 )
             }
             composable(Routes.RUN_MENU) {
@@ -987,6 +995,9 @@ internal fun MainScaffold(
                     onHome = {
                         if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
+                    // 내 러닝 기록(시안 U01 → H01)
+                    onRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
                 )
             }
             composable(Routes.RUN_GOALS) {
@@ -1027,7 +1038,14 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.RUN_GOAL_HISTORY) {
-                com.stepup.android.ui.screens.walk.RunGoalHistoryScreen(onBack = { navController.popBackStack() })
+                com.stepup.android.ui.screens.walk.RunGoalHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    // 새로운 도전 시작 — 챌린지 목록(U02)
+                    onNewChallenge = {
+                        if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.navigate(Routes.RUN_GOALS)
+                    },
+                    onOpenRecord = { id -> navController.navigate(Routes.runRecord(id)) },
+                )
             }
             composable(Routes.COURSES) {
                 CourseHubScreen(onBack = { navController.popBackStack() })
@@ -1416,13 +1434,19 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         ).size.height
     }.maxOrNull() ?: 0
     val labelHeight = with(density) { labelHeightPx.toDp() }
+    // 러닝 전체 리메이크(2026-10-02) — 러닝 · 신발 탭은 시안의 남색 탭 줄과 윗선. 다른 탭은 S2 바닥 그대로
+    val navyBar = com.stepup.android.ui.theme.StepUpColors.dark && parentTabOf(currentRoute).let { it == Screen.Run || it == Screen.Customize }
     Column(
         Modifier
             .fillMaxWidth()
             // S2 — 탭 줄은 바닥에 녹아든다. 카드 면을 두르지 않는다.
-            .background(Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night))),
+            .background(
+                if (navyBar) Brush.verticalGradient(listOf(Color(0xFF061A38), Color(0xFF031227)))
+                else Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night)),
+            ),
     ) {
         if (!com.stepup.android.ui.theme.StepUpColors.dark) HairlineDivider()
+        if (navyBar) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF15386B)))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1470,15 +1494,21 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자(다른 탭은 S2 그대로)
+    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자.
+    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 다른 탭은 고르면 파란 선택 타일 위에 흰 아이콘 · 글자
     val drawTile = selected && screen == Screen.Draw
+    val blueTile = selected && screen != Screen.Draw
+    val dark = com.stepup.android.ui.theme.StepUpColors.dark
     val tint by animateColorAsState(
-        // S2 — 선택한 탭은 밝은 글자, 아래 짧은 파란 선이 자리를 알린다
-        targetValue = if (drawTile) Color.White else if (selected) com.stepup.android.ui.theme.Snow else Slate,
+        targetValue = when {
+            drawTile || blueTile -> Color.White
+            dark -> Color(0xFF9DB7E2)
+            else -> Slate
+        },
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
-        targetValue = if (selected && !drawTile) 1f else 0f,
+        targetValue = 0f,
         label = "navTabDot",
     )
     Column(
@@ -1487,6 +1517,22 @@ private fun RowScope.NavTab(
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
             .drawBehind {
+                if (blueTile) {
+                    // 파란 선택 타일 — 자리 폭에서 양옆 4dp, 탭 줄 높이 그대로(자리보다 크게 키우지 않는다)
+                    val w = minOf(size.width - 8.dp.toPx(), 84.dp.toPx())
+                    val h = minOf(size.height, 70.dp.toPx())
+                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
+                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
+                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
+                    drawRoundRect(
+                        Brush.verticalGradient(listOf(Color(0xFF1F6BFF), Color(0xFF0754FF)), startY = topLeft.y, endY = topLeft.y + h),
+                        topLeft, tileSize, radius,
+                    )
+                    drawRoundRect(
+                        Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
+                    )
+                }
                 if (drawTile) {
                     // 선택 타일 72 × 70(자리보다 넓으면 자리에 맞춘다) — 아이콘을 키운다고 타일까지 키우지 않는다
                     val w = minOf(72.dp.toPx(), size.width)

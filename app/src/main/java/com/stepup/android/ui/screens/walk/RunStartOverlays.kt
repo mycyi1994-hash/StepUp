@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,23 +29,34 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.S2ActionRow
-import com.stepup.android.ui.components.S2Kicker
-import com.stepup.android.ui.components.S2Number
-import com.stepup.android.ui.components.S2SideInfo
-import com.stepup.android.ui.components.S2Stage
-import com.stepup.android.ui.components.S2Subtitle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.stepup.android.domain.GeoPoint
+import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.RunBackdrop
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.RunHeadline
+import com.stepup.android.ui.components.RunNumber
+import com.stepup.android.ui.components.RunSpec
+import com.stepup.android.ui.components.RunTopBar
+import com.stepup.android.ui.components.rememberCurrentLocation
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
-import com.stepup.android.ui.theme.StepUpDesign
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 // 러닝 시작 전 권한 안내는 RunPermissionFlow.kt(시작·로그인·첫 사용 v1 시안 13~19)로 옮겼다 — 예전 한 장짜리 안내(S2 시안 23)를 대신한다.
 
 /**
- * S2 혼자 러닝 3-2-1(시안 24). 끝나면 [onGo] 가 한 번만 불린다.
- * 화면을 누르면 바로 시작하고, 취소나 뒤로 가기는 아무것도 시작하지 않는다.
+ * 혼자 러닝 3-2-1(시안 R01). 끝나면 [onGo] 가 한 번만 불린다.
+ * 화면을 누르면 바로 시작하고, 시작 취소나 뒤로 가기는 아무것도 시작하지 않는다(기록이 생기지 않는다).
  */
 @Composable
 internal fun RunCountdown(
@@ -57,6 +66,8 @@ internal fun RunCountdown(
     onCancel: () -> Unit,
     /** 휴대폰 위치 기능이 켜져 있는가(권한과 별개) */
     locationServicesOn: Boolean = true,
+    /** 이번 러닝 이름 — "자유 러닝" · "10분 챌린지"(시안 R01 제목) */
+    title: String = "",
 ) {
     val feedback = LocalFeedback.current
     var remaining by rememberSaveable { mutableIntStateOf(3) }
@@ -87,45 +98,98 @@ internal fun RunCountdown(
         go()
     }
     val tapToStart = stringResource(R.string.run_countdown_tap)
-    Box(
-        Modifier.fillMaxSize().testTag("run-countdown")
-            .semantics { contentDescription = tapToStart }
+    val here = rememberCurrentLocation(enabled = locationAllowed && locationServicesOn)
+    RunCountdownStage(
+        title = title,
+        subtitle = courseName?.takeIf { it.isNotBlank() },
+        kicker = stringResource(R.string.run_countdown_soon),
+        digit = remaining.coerceAtLeast(1),
+        caption = stringResource(
+            when {
+                !locationAllowed -> R.string.run_countdown_gps_off
+                !locationServicesOn -> R.string.run_countdown_location_services_off
+                else -> R.string.run_countdown_gps_on
+            },
+        ),
+        here = here,
+        onCancel = { if (!fired) onCancel() },
+        modifier = Modifier.semantics { contentDescription = tapToStart }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null, role = Role.Button,
             ) { go() },
-    ) {
-        S2Stage(Modifier.fillMaxSize())
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
-                .padding(horizontal = StepUpDesign.Gutter).padding(bottom = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(56.dp))
-            S2Kicker(
-                if (courseName.isNullOrBlank()) stringResource(R.string.run_countdown_kicker)
-                else stringResource(R.string.run_countdown_kicker_course, courseName),
+    )
+}
+
+/**
+ * 3-2-1 의 모습(R01 · CR08) — 머리 · 이번 러닝 이름 · "곧 시작해요" · 아주 큰 숫자 · 위치 안내 한 줄 · 시작 취소.
+ * 지금 자리를 알면 뒤에 실제 지도를 어둡게 깐다(모르면 지도를 꾸미지 않는다).
+ */
+@Composable
+internal fun RunCountdownStage(
+    title: String,
+    subtitle: String?,
+    kicker: String,
+    digit: Int,
+    caption: String?,
+    here: GeoPoint?,
+    onCancel: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    /** "함께 출발 27명"처럼 숫자 위 한 줄을 바꾼다 */
+    headline: (@Composable () -> Unit)? = null,
+) {
+    val t = runTone()
+    Box(modifier.fillMaxSize().testTag("run-countdown")) {
+        RunBackdrop(Modifier.fillMaxSize())
+        if (here != null) {
+            LiveRouteMap(
+                points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-countdown-map"),
+                follow = true, live = true, routeColor = t.cyan, tileFilter = t.mapFilter, tileShade = t.mapShade,
             )
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                S2Number(remaining.coerceAtLeast(1).toString(), 180.sp,
-                    modifier = Modifier.testTag("run-countdown-digit"))
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        0f to t.screen.copy(alpha = 0.92f), 0.22f to t.screen.copy(alpha = 0.55f),
+                        0.7f to t.screen.copy(alpha = 0.55f), 1f to t.screen.copy(alpha = 0.95f),
+                    ),
+                ),
+            )
+        }
+        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            RunTopBar(onBack = onCancel)
+            Column(
+                Modifier.weight(1f).fillMaxWidth().padding(horizontal = RunSpec.Gutter),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                RunHeadline(title, subtitle = subtitle, titleTag = "run-countdown-title")
+                Spacer(Modifier.weight(1f))
+                if (headline != null) {
+                    headline()
+                } else {
+                    Text(
+                        kicker, style = runTextStyle(30.sp, t.text, FontWeight.ExtraBold, 1.2f), textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag("run-countdown-kicker"),
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                RunNumber(
+                    digit.toString(), size = 200.sp, align = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth(), valueTag = "run-countdown-digit",
+                )
+                if (caption != null) {
+                    Text(caption, style = runTextStyle(15.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag("run-countdown-caption"))
+                }
+                Spacer(Modifier.weight(1.3f))
             }
-            S2Subtitle(stringResource(
-                when {
-                    !locationAllowed -> R.string.run_countdown_gps_off
-                    !locationServicesOn -> R.string.run_countdown_location_services_off
-                    else -> R.string.run_countdown_gps_on
-                },
-            ))
-            Spacer(Modifier.height(16.dp))
-            S2ActionRow(
-                start = { S2SideInfo(tapToStart) },
-                end = {
-                    S2SideInfo(stringResource(R.string.common_cancel), end = true,
-                        onClick = { if (!fired) onCancel() },
-                        modifier = Modifier.testTag("run-countdown-cancel"))
-                },
-            ) { Spacer(Modifier.size(88.dp, 1.dp)) }
+            if (onCancel != null) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 8.dp, bottom = 14.dp)) {
+                    RunButton(
+                        stringResource(R.string.run_countdown_cancel), onCancel, kind = RunButtonKind.Secondary,
+                        modifier = Modifier.testTag("run-countdown-cancel"),
+                    )
+                }
+            }
         }
     }
 }

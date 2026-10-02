@@ -85,6 +85,10 @@ class HomeViewModel(
         .map<Int, Int?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 서버 확인을 기다리는(아직 올리지 못한) 러닝 수 — 오늘의 활동의 "확인 중" */
+    val pendingUploads: StateFlow<Int> = stepRepository.observePendingUploadCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
     val todayRunSec: StateFlow<Long> = today.flatMapLatest { stepRepository.observeDurationSince(startOf(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)

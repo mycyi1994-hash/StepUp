@@ -93,6 +93,10 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
+    /** 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중" */
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
+    fun observePendingUploadCountFor(owner: String): Flow<Int>
+
     /**
      * 크루 러닝으로 달린 거리를, 크루별로 묶어서.
      *
@@ -174,6 +178,10 @@ interface WalkSessionDao {
             "AND steps > 0 AND endedAt >= :since",
     )
     suspend fun pendingSince(owner: String, since: Long): Int
+
+    /** 시작 시각으로 기록 하나 찾기 — 방금 끝난 러닝 결과 · 지난 도전에서 그 기록을 연다 */
+    @Query("SELECT id FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') AND startedAt = :startedAt ORDER BY id DESC LIMIT 1")
+    suspend fun idForStart(owner: String, startedAt: Long): Long?
 
     /** 목록 썸네일용 경로 — 한 줄씩 필요할 때만 읽는다 */
     @Query("SELECT track FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy')")

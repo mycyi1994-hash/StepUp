@@ -84,35 +84,59 @@ import com.stepup.android.ui.theme.VoltText
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
     // 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리)
-    val amount = balance?.let { formatSupDown(it) } ?: "—"
+    val amount = balance?.let { formatSupDown(it, 2) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
-    // S2 — 면과 테두리 없이 글자만. 숫자는 밝게, 단위와 화살표는 흐리게.
+    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · U01) — 파란 알약 · 왼쪽 동전 · 흰 수와 단위
     Row(
         modifier = modifier
+            .heightIn(min = StepUpDesign.BalanceHeight)
+            .widthIn(max = 190.dp)
             .clip(shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
-            .heightIn(min = StepUpDesign.BalanceHeight)
-            .widthIn(max = 160.dp)
-            .testTag("sup-balance")
-            .padding(start = 8.dp, end = if (onClick != null) 2.dp else 8.dp),
+            .testTag("sup-balance"),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            text = amount,
-            modifier = Modifier.weight(1f, fill = false),
-            overflow = TextOverflow.Ellipsis,
-            fontFamily = com.stepup.android.ui.theme.StepUpSans,
-            fontSize = StepUpDesign.BalanceAmount,
-            fontWeight = FontWeight.SemiBold,
-            color = Snow,
-            maxLines = 1,
-        )
-        Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.Medium, color = Silver)
-        if (onClick != null) {
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
+        Row(
+            Modifier
+                .heightIn(min = 38.dp)
+                .clip(shape)
+                .background(Brush.verticalGradient(listOf(Color(0xFF1C6BFF), Color(0xFF0646E0))), shape)
+                .border(1.5.dp, Brush.verticalGradient(listOf(Color(0xFF5AA2FF), Color(0xFF0A4BDF))), shape)
+                .padding(start = 5.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SupCoin(Modifier.size(28.dp))
+            Text(
+                text = amount,
+                modifier = Modifier.weight(1f, fill = false),
+                overflow = TextOverflow.Ellipsis,
+                fontFamily = com.stepup.android.ui.theme.StepUpSans,
+                fontSize = StepUpDesign.BalanceAmount,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+            )
+            Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.SemiBold, color = Color(0xFFDCE8FF))
         }
+    }
+}
+
+/** SUP 동전 — 흰 테두리 파란 원 안의 S */
+@Composable
+private fun SupCoin(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(Color(0xFFEAF3FF), Color(0xFF9EC4FF))))
+            .padding(2.5.dp)
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(Color(0xFF2F7BFF), Color(0xFF0A49DA)))),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("S", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black,
+            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
     }
 }
 

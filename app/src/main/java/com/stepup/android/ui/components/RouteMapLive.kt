@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -104,19 +105,33 @@ fun LiveRouteMap(
     follow: Boolean = false,
     /** [follow] 일 때 지금 자리를 둘 높이(위에서 0..1) — 지도 중 화면에 보이는 쪽 가운데([followAnchor]) */
     followAt: Float = 0.5f,
+    /** 위치 신호가 끊겼다 이어진 점 번호(RunTrack.segmentBreaks) — 그 앞 점과 잇지 않는다 */
+    breaks: Set<Int> = emptySet(),
+    /** 고른 코스 — 남은 안내 경로를 흐린 점선으로 먼저 깐다(달린 길과 구분) */
+    course: List<GeoPoint> = emptyList(),
+    /** 경로 색 — 러닝 화면은 시안(유효 경로) */
+    routeColor: Color = Volt,
+    /** 끝점을 깃발 대신 지금 자리 점(흰 테 파란 점)으로 — 달리는 중 */
+    live: Boolean = false,
+    /** 타일 색 — 러닝 화면은 [RunTone.mapFilter](남색 시안, [LocalMapTone]). null 이면 앱 테마의 지도 색 */
+    tileFilter: ColorFilter? = LocalMapTone.current.filter,
+    tileShade: Float = LocalMapTone.current.shade,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
     StepUpMap(
-        focus = if (follow && points.isNotEmpty()) followFrame(points.last(), around) else points + around,
+        focus = if (follow && points.isNotEmpty()) followFrame(points.last(), around) else points + around + course,
         modifier = modifier,
         seed = seed,
         interactive = interactive,
         controlLabels = controlLabels,
         zooms = if (follow) MapTiles.FOLLOW_ZOOMS else MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
         anchorY = if (follow) followAt else 0.5f,
+        tileFilter = tileFilter,
+        tileShade = tileShade,
     ) { plan ->
-        drawRoute(plan, points, progress)
+        if (course.size >= 2) drawCourseGuide(plan, course)
+        drawRoute(plan, points, progress, routeColor, breaks, live)
         others.forEach { (point, name) ->
             val at = plan.toScreen(point)
             drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
@@ -164,46 +179,86 @@ internal fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, cl
     return ((middle * 20).roundToInt() / 20f).coerceIn(0.2f, 0.8f)
 }
 
-/** 경로 한 줄 — 글로우 · 본선 · 출발점 · 도착 깃발 · 진행 점 */
-private fun DrawScope.drawRoute(plan: TilePlan, points: List<GeoPoint>, progress: Float?) {
+/** 고른 코스의 안내 선 — 흐린 점선(달린 길보다 아래, 시안 K04 의 남은 경로) */
+private fun DrawScope.drawCourseGuide(plan: TilePlan, course: List<GeoPoint>) {
+    val screen = course.map { plan.toScreen(it) }
+    val path = Path().apply {
+        moveTo(screen.first().x, screen.first().y)
+        for (i in 1 until screen.size) lineTo(screen[i].x, screen[i].y)
+    }
+    drawPath(
+        path, color = Color(0xFFB9CCEB).copy(alpha = 0.55f),
+        style = Stroke(
+            width = 4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10.dp.toPx(), 8.dp.toPx())),
+        ),
+    )
+}
+
+/** 경로 한 줄 — 글로우 · 본선 · 출발점 · 도착 깃발(달리는 중이면 지금 자리 점) · 진행 점. [breaks] 앞에서는 끊는다 */
+private fun DrawScope.drawRoute(
+    plan: TilePlan,
+    points: List<GeoPoint>,
+    progress: Float?,
+    color: Color = Volt,
+    breaks: Set<Int> = emptySet(),
+    live: Boolean = false,
+) {
     if (points.isEmpty()) return
     if (points.size < 2) {
         val at = plan.toScreen(points.first())
-        drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
-        drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
+        if (live) drawHereDot(at) else {
+            drawCircle(color.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
+            drawCircle(color, radius = 4.5f.dp.toPx(), center = at)
+        }
         return
     }
 
     val screen = points.map { plan.toScreen(it) }
     val path = Path().apply {
         moveTo(screen.first().x, screen.first().y)
-        for (i in 1 until screen.size) lineTo(screen[i].x, screen[i].y)
+        for (i in 1 until screen.size) {
+            if (i in breaks) moveTo(screen[i].x, screen[i].y) else lineTo(screen[i].x, screen[i].y)
+        }
     }
 
     // 글로우(넓고 옅게) → 본선(가늘고 진하게)
     drawPath(
         path,
-        color = Volt.copy(alpha = 0.20f),
+        color = color.copy(alpha = 0.22f),
         style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
     drawPath(
         path,
-        brush = Brush.linearGradient(listOf(Volt.copy(alpha = 0.85f), Volt)),
+        brush = Brush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
         style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
 
-    drawCircle(Volt.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
-    drawCircle(Volt, radius = 4.5f.dp.toPx(), center = screen.first())
+    drawCircle(color.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
+    drawCircle(color, radius = 4.5f.dp.toPx(), center = screen.first())
     drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
-    drawRouteFlag(screen.last())
+    if (live) drawHereDot(screen.last()) else drawRouteFlag(screen.last())
 
     progress?.let { f ->
         val at = pointAlongRoute(screen, f.coerceIn(0f, 1f))
-        drawCircle(Volt.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
-        drawCircle(Volt, radius = 4.5f.dp.toPx(), center = at)
+        drawCircle(color.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
+        drawCircle(color, radius = 4.5f.dp.toPx(), center = at)
         drawCircle(Color.White, radius = 2.dp.toPx(), center = at)
     }
 }
+
+/** 지금 자리 — 흰 테 두른 파란 점과 옅은 빛 */
+private fun DrawScope.drawHereDot(at: Offset) {
+    drawCircle(Color(0xFF0754FF).copy(alpha = 0.25f), radius = 16.dp.toPx(), center = at)
+    drawCircle(Color.White, radius = 9.dp.toPx(), center = at)
+    drawCircle(Color(0xFF0754FF), radius = 6.5f.dp.toPx(), center = at)
+}
+
+/** 지도 타일 색 — 러닝 화면의 지도 틀([RunMapFrame])이 남색 시안 색으로 바꿔 넣는다. 지도 내용(길 · 물 · 이름)은 그대로다 */
+@androidx.compose.runtime.Immutable
+data class MapTone(val filter: ColorFilter? = null, val shade: Float = 0.30f)
+
+val LocalMapTone = androidx.compose.runtime.staticCompositionLocalOf { MapTone() }
 
 /**
  * 지도 한 칸 — 타일을 깔고 그 위에 [overlay] 를 그린다.
@@ -228,6 +283,10 @@ fun StepUpMap(
     controlLabels: MapControlLabels? = null,
     zooms: IntRange = MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
     anchorY: Float = 0.5f,
+    /** 타일 색 — null 이면 앱 테마의 지도 색(러닝 화면의 지도 틀은 [LocalMapTone] 으로 남색 시안 색을 넣는다) */
+    tileFilter: ColorFilter? = LocalMapTone.current.filter,
+    /** 타일 위에 덮는 바탕색의 짙기 */
+    tileShade: Float = LocalMapTone.current.shade,
     overlay: DrawScope.(TilePlan) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -355,12 +414,12 @@ fun StepUpMap(
             // Unloaded tiles show only an abstract grid. Never imply invented streets
             // are real location data when the tile provider is unavailable.
             drawStreets(seed)
-            val drawn = if (plan != null && revision >= 0) drawTiles(plan) else 0
-            if (drawn > 0) {
+            val drawn = if (plan != null && revision >= 0) drawTiles(plan, tileFilter ?: StepUpColors.mapFilter) else 0
+            if (drawn > 0 && tileShade > 0f) {
                 // 지도를 한 겹 눌러(또는 띄워) 카드 배경과 붙인다.
                 // Night 는 테마의 바닥색이라 밝은 테마에서는 흰 막, 어두운
                 // 테마에서는 검은 막이 된다.
-                drawRect(Night.copy(alpha = 0.30f))
+                drawRect(Night.copy(alpha = tileShade))
             }
 
             if (plan == null) return@Canvas
@@ -583,7 +642,7 @@ data class TilePlan(
  * 상태에 복사해 두면 LruCache가 비워도 컴포지션이 계속 붙잡고 있어, 크기 제한이
  * 무력해지고 줌을 오갈수록 메모리가 샌다.
  */
-private fun DrawScope.drawTiles(plan: TilePlan): Int {
+private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter): Int {
     var drawn = 0
     val side = (MapTiles.TILE_SIZE * plan.scale).toInt()
     for (ty in plan.minTileY..plan.maxTileY) {
@@ -596,7 +655,7 @@ private fun DrawScope.drawTiles(plan: TilePlan): Int {
                 image = image,
                 dstOffset = IntOffset(left, top),
                 dstSize = IntSize(side, side),
-                colorFilter = StepUpColors.mapFilter,
+                colorFilter = filter,
             )
             drawn++
         }

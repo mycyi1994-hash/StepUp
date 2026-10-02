@@ -221,8 +221,11 @@ class WalkSessionService : Service() {
             }
             // 속도 판정 기준점은 트랙과 따로 든다. 튄 구간의 점은 트랙에 넣지
             // 않지만 기준점은 옮겨야, 다음 구간이 연쇄로 튀지 않는다.
-            val prev = speedAnchor
-            val prevAt = speedAnchorAt
+            // 위치 신호가 끊겼다 돌아온 첫 점(시안 L04)은 새 구간의 시작이다 — 끊기기 전 마지막 점과 이어
+            // 그 사이를 직선 거리로 세지 않는다(지도에서도 그 사이는 잇지 않는다, RunTrack.segmentBreaks)
+            val resumedAfterLoss = _state.value.gpsLost
+            val prev = if (resumedAfterLoss) null else speedAnchor
+            val prevAt = if (resumedAfterLoss) 0L else speedAnchorAt
             speedAnchor = p
             speedAnchorAt = now
 
@@ -239,6 +242,7 @@ class WalkSessionService : Service() {
                     // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다
                     return@update current.copy(
                         gpsFix = true,
+                        gpsLost = false,
                         here = p,
                         flaggedSegments = current.flaggedSegments + 1,
                         lastFlaggedAt = now,
@@ -255,6 +259,7 @@ class WalkSessionService : Service() {
                 current.copy(
                     track = if (moved) track + TrackPoint(p.lat, p.lng, at) else track,
                     gpsFix = true,
+                    gpsLost = false,
                     here = p,
                     gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                     validSegments = if (counted) current.validSegments + 1 else current.validSegments,
