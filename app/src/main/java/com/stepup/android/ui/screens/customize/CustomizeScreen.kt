@@ -99,7 +99,7 @@ import com.stepup.android.ui.components.SortBottomSheet
 import com.stepup.android.ui.components.StepUpIcons
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.preloadShoeArt
-import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
@@ -178,6 +178,18 @@ fun CustomizeScreen(
             )
         }
     }
+}
+
+/**
+ * 신발 탭 글자 색 — 러닝 리메이크(2026-10-02)의 신발 색감(별첨 shoes-blue.png): 러닝 화면과 같은 남색 팔레트의 글자 · 강조.
+ * 색만 바꾼다 — 배치 · 정렬 · 거르기 · 보관함 · 착용 구분은 그대로.
+ */
+private class ShoeInk(val text: Color, val secondary: Color, val accent: Color, val divider: Color, val skeleton: Color)
+
+@Composable
+private fun shoeInk(): ShoeInk {
+    val t = runTone()
+    return ShoeInk(text = t.text, secondary = t.label, accent = t.cyan, divider = t.divider, skeleton = t.track)
 }
 
 // ── 내 신발 ───────────────────────────────────────────────────────
@@ -338,7 +350,7 @@ private fun MyShoesLayout(
 /** 이름 + 끝의 둥근 등급 배지(최대 두 줄) · 오른쪽 작은 관리(⋯) → 아래 Lv · 번호 · 착용 상태 */
 @Composable
 private fun NameBlock(shoe: Sneaker, compact: Boolean, onManage: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     Row(Modifier.fillMaxWidth().padding(start = StepUpDesign.Gutter, end = 6.dp)) {
         Column(Modifier.weight(1f).padding(top = 2.dp)) {
             ShoeNameWithBadge(
@@ -369,7 +381,7 @@ private fun NameBlock(shoe: Sneaker, compact: Boolean, onManage: () -> Unit) {
 /** "Lv. 1 · #0001 · 착용 중" — 착용 중은 실제로 신고 있는 켤레에만, 강조색으로 */
 @Composable
 private fun ShoeMeta(shoe: Sneaker, fontSize: Float, modifier: Modifier = Modifier) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val levelNo = stringResource(R.string.sdv_level_no, shoe.level, shoe.mintNumber)
     val wearing = stringResource(R.string.my_shoes_wearing)
     val cd = stringResource(R.string.sdv_level_no_cd, shoe.level, shoe.mintNumber) +
@@ -398,7 +410,7 @@ private fun StageBlock(shoe: Sneaker, onOpen: () -> Unit) {
             .semantics { onClick(label = manage) { onOpen(); true } }
             .testTag("shoe-hero"),
     ) {
-        SneakerGradeStage(shoe, Modifier.fillMaxSize())
+        SneakerGradeStage(shoe, Modifier.fillMaxSize(), pedestal = true)
     }
 }
 
@@ -408,7 +420,7 @@ private fun StageBlock(shoe: Sneaker, onOpen: () -> Unit) {
  */
 @Composable
 private fun StatsBlock(shoe: Sneaker, compact: Boolean, onExplain: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val bars = remember(shoe) { statBars(shoe) }
     val explain = stringResource(R.string.my_shoes_basis_open)
     Column(
@@ -432,7 +444,7 @@ private fun StatsBlock(shoe: Sneaker, compact: Boolean, onExplain: () -> Unit) {
 
 @Composable
 private fun StatBarRow(bar: StatBar) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val (title, hint, full) = when (bar.stat) {
         BarStat.EFFICIENCY -> Triple(
             stringResource(R.string.my_shoes_stat_efficiency), stringResource(R.string.sdv_stat_bonus),
@@ -474,9 +486,10 @@ private fun StatBarRow(bar: StatBar) {
 /** 막대 — 같은 트랙 · 같은 파랑. 값이 조금이라도 있으면 둥근 끝이 보일 만큼은 채운다 */
 @Composable
 private fun StatBarTrack(fraction: Float, modifier: Modifier) {
-    val dark = StepUpColors.dark
-    val track = if (dark) Color(0xFF16233A) else Color(0xFFDCE4F0)
-    val fill = if (dark) listOf(Color(0xFF2C77F0), Color(0xFF5AA6FF)) else listOf(Color(0xFF2E5FB8), Color(0xFF4C86E0))
+    // 러닝 리메이크 신발 색감 — 남색 길 위 파랑 → 시안 채움(러닝 화면의 막대와 같은 색)
+    val t = runTone()
+    val track = t.track
+    val fill = t.barFill
     Box(
         modifier.drawBehind {
             val radius = CornerRadius(size.height / 2)
@@ -492,7 +505,7 @@ private fun StatBarTrack(fraction: Float, modifier: Modifier) {
 /** 보유 신발 N → 켤레마다 한 칸(작은 프레임). 고른 칸은 바깥 테두리, 신고 있는 켤레는 작은 체크 — 서로 다른 표시 */
 @Composable
 private fun OwnedBlock(row: List<Sneaker>, compact: Boolean, selectedId: Long, state: LazyListState, onPick: (Long) -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.padding(horizontal = StepUpDesign.Gutter).semantics(mergeDescendants = true) {}.testTag("shoe-owned-head"),
@@ -526,7 +539,7 @@ private val CompactThumbHeight = 62.dp
 
 @Composable
 private fun OwnedThumb(shoe: Sneaker, height: Dp, selected: Boolean, onClick: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val name = shoe.shoeName()
     val levelNo = stringResource(R.string.sdv_level_no_cd, shoe.level, shoe.mintNumber)
     val state = listOfNotNull(
@@ -534,7 +547,8 @@ private fun OwnedThumb(shoe: Sneaker, height: Dp, selected: Boolean, onClick: ()
         stringResource(R.string.my_shoes_wearing).takeIf { shoe.equipped },
     ).joinToString(", ")
     val tierName = shoe.tier.label()
-    val ring = if (StepUpColors.dark) Color(0xFFE9F0FF) else p.text
+    // 고른 칸 — 파란 테두리(신발 색감 시안의 고른 카드)
+    val ring = if (StepUpColors.dark) Color(0xFF3B7BFF) else runTone().cobalt
     Box(
         Modifier
             .size(width = height * GradeArtRatio + ThumbRing * 2, height = height + ThumbRing * 2)
@@ -559,8 +573,8 @@ private fun OwnedThumb(shoe: Sneaker, height: Dp, selected: Boolean, onClick: ()
 private fun WornCheck(modifier: Modifier, size: Dp) {
     val dark = StepUpColors.dark
     Box(
-        modifier.size(size).clip(CircleShape).background(Color(0xFF2F86FF))
-            .border(1.5.dp, if (dark) Color(0xFF0A1424) else Color.White, CircleShape)
+        modifier.size(size).clip(CircleShape).background(Color(0xFF1F66FF))
+            .border(1.5.dp, if (dark) runTone().screen else Color.White, CircleShape)
             .testTag("shoe-worn-badge"),
         contentAlignment = Alignment.Center,
     ) {
@@ -571,7 +585,7 @@ private fun WornCheck(modifier: Modifier, size: Dp) {
 /** 읽는 중 — 이름 자리 · 빈 무대 · "신발을 불러오고 있어요." (임시 값 · 예시 신발을 보이지 않는다) */
 @Composable
 private fun MyShoesLoading(modifier: Modifier) {
-    val p = settingsPalette()
+    val p = shoeInk()
     Column(modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 12.dp).testTag("shoe-tab-loading")) {
         Box(Modifier.size(width = 168.dp, height = 22.dp).clip(RoundedCornerShape(6.dp)).background(p.skeleton))
         Spacer(Modifier.height(10.dp))
@@ -590,7 +604,7 @@ private fun MyShoesLoading(modifier: Modifier) {
 /** 막대 기준 — 모든 신발에 같은 기준(서버의 최대 · 상한)이라는 것과 효율은 금액이 아니라는 것 */
 @Composable
 private fun StatBasisSheet(onClose: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     SettingsSheet(
         title = stringResource(R.string.my_shoes_basis_open), onDismiss = onClose,
         modifier = Modifier.testTag("shoe-basis-sheet"),
@@ -727,7 +741,7 @@ private class DrawnOrder(var value: Pair<String, ShoeTier?>)
 /** "보유 신발 3" · 오른쪽 정렬("최근 획득순 ⌄") */
 @Composable
 private fun VaultHeader(count: Int, sort: String, onSortClick: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val sortLabel = stringResource(itemSortRes(sort))
     val sortCd = stringResource(R.string.vault_sort_cd, sortLabel)
     Row(
@@ -761,15 +775,15 @@ private fun VaultHeader(count: Int, sort: String, onSortClick: () -> Unit) {
  */
 @Composable
 private fun VaultFilters(counts: List<TierCount>, selected: ShoeTier?, onFilter: (ShoeTier?) -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val dark = StepUpColors.dark
     val shape = RoundedCornerShape(24.dp)
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 4.dp)) {
         val cell = (maxWidth - 8.dp) / counts.size
         Row(
             Modifier.fillMaxWidth().clip(shape)
-                .background(if (dark) Color(0xFF0B1628) else Color(0xFFEEF2F8), shape)
-                .border(1.dp, if (dark) Color(0xFF1E2C44) else Color(0xFFD8E0ED), shape)
+                .background(runTone().inset, shape)
+                .border(1.dp, runTone().panelEdge, shape)
                 .horizontalScroll(rememberScrollState())
                 .padding(4.dp)
                 .testTag("vault-filters"),
@@ -786,8 +800,9 @@ private fun VaultFilters(counts: List<TierCount>, selected: ShoeTier?, onFilter:
                 }
                 Box(
                     Modifier.widthIn(min = cell - 1.dp).heightIn(min = 40.dp).clip(shape)
-                        .then(if (chosen) Modifier.background(if (dark) Color(0xFF10284A) else Color.White, shape)
-                            .border(1.5.dp, Color(0xFF2F86FF), shape) else Modifier)
+                        .then(if (chosen) Modifier.background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), shape,
+                        ).border(1.dp, Color(0xFF4D8BFF), shape) else Modifier)
                         .feedbackClickable(role = Role.Tab, onClick = { onFilter(entry.tier) })
                         .semantics {
                             this.selected = chosen
@@ -800,7 +815,7 @@ private fun VaultFilters(counts: List<TierCount>, selected: ShoeTier?, onFilter:
                     Text(
                         "$label ${entry.count}", maxLines = 1, fontSize = 14.sp,
                         fontWeight = if (chosen) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (chosen) p.text else p.secondary,
+                        color = if (chosen) Color.White else p.secondary,
                     )
                 }
             }
@@ -814,7 +829,7 @@ private fun VaultFilters(counts: List<TierCount>, selected: ShoeTier?, onFilter:
  */
 @Composable
 private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     val dark = StepUpColors.dark
     val shape = RoundedCornerShape(18.dp)
     val state = listOfNotNull(
@@ -834,13 +849,12 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
     ) {
         Box(
             Modifier.fillMaxWidth().aspectRatio(GradeArtRatio).clip(shape)
-                .background(if (dark) Color(0xFF0A1424) else Color(0xFFE9EEF6), shape)
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(runTone().panelTop, runTone().panel)), shape)
                 .border(
                     if (selected) 2.dp else 1.dp,
                     when {
-                        selected -> if (dark) Color(0xFFE9F0FF) else p.text
-                        dark -> Color(0xFF17243A)
-                        else -> Color(0xFFD5DEEB)
+                        selected -> if (dark) Color(0xFF3B7BFF) else runTone().cobalt
+                        else -> runTone().panelEdge
                     },
                     shape,
                 ),
@@ -866,7 +880,7 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
 /** 격자 아래 작은 줄 — 도감 · 마켓 · 아이템(스토어 · NFT). 보유 격자에 섞지 않고 따로 들어간다(지우지 않음) */
 @Composable
 private fun VaultLinks(onOpenDex: () -> Unit, onOpenMarket: () -> Unit, onOpenItems: () -> Unit) {
-    val p = settingsPalette()
+    val p = shoeInk()
     Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
         listOf(
             Triple(R.string.shoes_s2_dex, onOpenDex, "shoe-open-dex"),
@@ -887,7 +901,7 @@ private fun VaultLinks(onOpenDex: () -> Unit, onOpenMarket: () -> Unit, onOpenIt
 /** 읽는 중 — 머리 자리 · 빈 칸 넷(예시 신발을 넣지 않는다) */
 @Composable
 private fun VaultLoading(modifier: Modifier) {
-    val p = settingsPalette()
+    val p = shoeInk()
     Column(modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 14.dp).testTag("vault-loading")) {
         Box(Modifier.size(width = 120.dp, height = 20.dp).clip(RoundedCornerShape(6.dp)).background(p.skeleton))
         Spacer(Modifier.height(14.dp))

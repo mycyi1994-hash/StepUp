@@ -335,6 +335,11 @@ fun SneakerGradeStage(
     animate: Boolean = false,
     /** 신발 층을 그릴지 — 신발 상세가 그림을 읽지 못했을 때(다시 불러오기 안내를 둘 자리) 끈다. 무대 · 프레임은 그대로 */
     showShoe: Boolean = true,
+    /**
+     * 신발 밑 파란 받침 조명(러닝 리메이크 2026-10-02 신발 색감) — 신발 탭의 큰 무대에서만. 무대 안에서 신발 아래에만 그리고
+     * 신발 그림 · 등급 프레임은 그대로 둔다.
+     */
+    pedestal: Boolean = false,
 ) {
     val tier = sneaker.tier
     val art = gradeArt(tier)
@@ -343,9 +348,50 @@ fun SneakerGradeStage(
         val small = constraints.maxWidth <= GradeSmallMaxPx
         Box(Modifier.fillMaxSize().background(GradeStageFill, GradeOctagon))
         GradeLayer(if (small) art.backSmall else art.back)
+        if (pedestal && showShoe) PedestalLight(Modifier.fillMaxSize().testTag("grade-pedestal"))
         if (showShoe) GradeShoe(sneaker, Modifier.fillMaxSize().gradeSlot(61f, 58f, 320f), animate = animate)
         (if (small) art.frontSmall else art.front)?.let { GradeLayer(it) }
         GradeLayer(if (small) art.frameSmall else art.frame)
+    }
+}
+
+/**
+ * 받침 조명 — 신발 밑(그림 좌표 440 × 418 의 바닥 선 근처)에 파란 빛 웅덩이 · 남색 받침 면 · 시안 테두리 고리.
+ * 신발보다 먼저(뒤에) 그려 신발 실루엣을 덮지 않는다.
+ */
+@Composable
+private fun PedestalLight(modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val sx = size.width / GradeArtWidth
+        val sy = size.height / GradeArtHeight
+        val cx = 220f * sx
+        val cy = 302f * sy
+        val glow = 176f * sx
+        drawOval(
+            androidx.compose.ui.graphics.Brush.radialGradient(
+                listOf(Color(0xFF2B6DFF).copy(alpha = 0.55f), Color(0xFF0754FF).copy(alpha = 0.18f), Color.Transparent),
+                center = androidx.compose.ui.geometry.Offset(cx, cy), radius = glow,
+            ),
+            topLeft = androidx.compose.ui.geometry.Offset(cx - glow, cy - 46f * sy),
+            size = androidx.compose.ui.geometry.Size(glow * 2, 92f * sy),
+        )
+        val diskW = 140f * sx
+        val diskH = 18f * sy
+        drawOval(
+            Color(0xFF0B2C57).copy(alpha = 0.88f),
+            topLeft = androidx.compose.ui.geometry.Offset(cx - diskW, cy - diskH), size = androidx.compose.ui.geometry.Size(diskW * 2, diskH * 2),
+        )
+        // 고리 — 넓은 옅은 빛 위에 가는 시안 선
+        drawOval(
+            Color(0xFF48D9FA).copy(alpha = 0.28f),
+            topLeft = androidx.compose.ui.geometry.Offset(cx - diskW, cy - diskH), size = androidx.compose.ui.geometry.Size(diskW * 2, diskH * 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7f * sx),
+        )
+        drawOval(
+            Color(0xFF6FE6FF),
+            topLeft = androidx.compose.ui.geometry.Offset(cx - diskW, cy - diskH), size = androidx.compose.ui.geometry.Size(diskW * 2, diskH * 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.2f * sx),
+        )
     }
 }
 

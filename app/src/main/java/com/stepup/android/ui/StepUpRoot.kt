@@ -535,10 +535,8 @@ internal fun MainScaffold(
             )
         }
     } else if (currentRoute == Screen.Customize.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
-            wardrobeScene, wardrobe = true,
-        )
+        // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
     } else if (currentRoute == Screen.Community.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
