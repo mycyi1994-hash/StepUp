@@ -293,6 +293,9 @@ class CrewChatRepository(
         return photo to loaded
     }
 
+    /** 앱이 그린 그림(러닝 기록 공유 카드)을 보낼 모양으로 — [preparePhoto] 와 같은 크기 · 용량 한도. 못 줄이면 null */
+    suspend fun photoOf(bitmap: Bitmap): ChatPhoto? = withContext(Dispatchers.Default) { encodePhoto(bitmap) }
+
     private fun encodePhoto(source: Bitmap): ChatPhoto? {
         var side = PHOTO_SIDE
         while (side >= 480) {

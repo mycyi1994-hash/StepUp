@@ -57,6 +57,7 @@ import com.stepup.android.ui.Routes
 import com.stepup.android.ui.components.ShoeGradeBadge
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.experience.ExperienceProvider
+import com.stepup.android.ui.screens.walk.CrewNotifyBody
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
@@ -582,6 +583,157 @@ class RunJourneyDesignTest {
                 }
             }
         } finally {
+            restore()
+        }
+    }
+
+    /**
+     * CR — 크루 달리기. 입구(고른 크루 · 크루 없음) · 크루 선택 · 대기실(크루원 준비 전 · 준비 완료 · 진행자 · 혼자) · 출발 확인 ·
+     * 준비 전 확인 · 크루에게 알리기 · 3-2-1 · 기록 공유는 화면 부품에 예시 크루를 넣어 찍고, 같이 달리는 중 · 함께 달리는 사람 ·
+     * 일시정지 · 마치기 · 연결 끊김 · 결과는 실제 앱(MainScaffold)에서 표시용 러닝 · 방 상태로 찍는다(서버 · 채팅에 보내지 않는다).
+     */
+    @Test fun crew() {
+        seed()
+        val repo = ServiceLocator.crewRepository
+        val name = "여의도 퇴근런"
+        val crews = listOf(
+            com.stepup.android.data.repo.Crew(id = "c1", monogram = "YD", name = name, tagline = "함께 달리는 더 특별한 퇴근길",
+                area = "여의도", memberCount = 30, roster = emptyList(), owned = false, joined = true),
+            com.stepup.android.data.repo.Crew(id = "c2", monogram = "HS", name = "한강 새벽런", tagline = "", area = "",
+                memberCount = 18, roster = emptyList(), owned = false, joined = true),
+            com.stepup.android.data.repo.Crew(id = "c3", monogram = "WK", name = "주말 한 바퀴", tagline = "", area = "",
+                memberCount = 12, roster = emptyList(), owned = false, joined = true),
+        )
+        fun member(id: String, who: String, ready: Boolean, me: Boolean = false, host: Boolean = false) =
+            com.stepup.android.data.repo.PartyMember(id, who, ready = ready, isMe = me, isHost = host)
+        val members = listOf(
+            member("h", "준호", ready = true, host = true), member("me", "도윤", ready = false, me = true),
+            member("a", "윤호", ready = false), member("b", "혜진", ready = false),
+        )
+        val lobby = com.stepup.android.data.repo.PartyState(
+            phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = name, members = members,
+        )
+        val hosting = lobby.copy(members = listOf(
+            member("me", "준호", ready = true, me = true, host = true), member("a", "도윤", ready = true),
+            member("b", "윤호", ready = false), member("c", "혜진", ready = false),
+        ))
+        val alone = lobby.copy(members = listOf(member("me", "도윤", ready = true, me = true, host = true)))
+        try {
+            var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
+            edgeToEdge()
+            compose.setContent { DeviceFrame { Box(Modifier.fillMaxSize()) { scene?.invoke() } } }
+            fun show(shotName: String, tag: String, content: @Composable () -> Unit) {
+                compose.runOnIdle { scene = content }
+                awaitTag(tag)
+                shot(shotName, settle = 1_500)
+            }
+            val entry = @Composable { ui: com.stepup.android.ui.screens.walk.CrewEntryUi ->
+                com.stepup.android.ui.screens.walk.CrewRunEntryContent(ui, {}, {}, {}, {}, {}, {}, {}, {})
+            }
+            val room = @Composable { state: com.stepup.android.data.repo.PartyState ->
+                com.stepup.android.ui.screens.community.PartyLobbyContent(
+                    state, state.crewName, null, canNotify = true, here = null,
+                    onBack = {}, onReady = {}, onCancelReady = {}, onStart = {}, onShare = {}, onKick = {}, onNotify = {},
+                    onRetry = {}, onLeave = {}, onDismissResult = {},
+                )
+            }
+            // CR03 자리 · CR14 · CR19 — 입구는 대기실을 열지 않는다(누르기 전)
+            show("CR03", "crew-entry") { entry(com.stepup.android.ui.screens.walk.CrewEntryUi.Ready(crews[0], crews)) }
+            compose.onNodeWithTag("crew-entry-change").assertIsDisplayed()
+            show("CR14", "crew-entry-none") { entry(com.stepup.android.ui.screens.walk.CrewEntryUi.NoCrew) }
+            show("CR19", "crew-pick-sheet") {
+                entry(com.stepup.android.ui.screens.walk.CrewEntryUi.Ready(crews[0], crews))
+                com.stepup.android.ui.screens.walk.CrewPickSheet(crews, "c1", {}, {})
+            }
+            // CR04 · CR05 · CR06 · CR15 — 같은 대기실, 내 역할 · 준비에 따라 버튼만 바뀐다
+            show("CR04", "party-ready") { room(lobby) }
+            show("CR05", "party-waiting") { room(lobby.copy(members = members.map { if (it.isMe) it.copy(ready = true) else it })) }
+            show("CR06", "party-start") { room(hosting) }
+            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_cr_start_n, 2))
+            show("CR15", "party-alone") { room(alone) }
+            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_cr_start_alone))
+            // CR07 — 준비 전 인원을 두고 출발할지
+            show("CR07", "crew-start-confirm") {
+                room(hosting)
+                com.stepup.android.ui.screens.walk.CrewStartConfirmSheet(2, 2, {}, {})
+            }
+            // CR17 — 준비 전 확인: 위치 사용과 위치 공유(기본 끔)는 따로
+            show("CR17", "crew-ready-check") {
+                room(lobby)
+                com.stepup.android.ui.screens.walk.CrewReadyCheckSheet(locationAllowed = false, share = false, {}, {}, {})
+            }
+            compose.onNodeWithTag("crew-ready-check-share").assertIsOff()
+            // CR20 — 크루에게 알리기: 보낼 곳 · 내용을 먼저(보내기 전)
+            show("CR20", "crew-notify-preview") {
+                room(alone)
+                com.stepup.android.ui.components.RunSheet(onDismiss = {}) {
+                    CrewNotifyBody(name, label(R.string.run_cr_notify_message, name, 1),
+                        com.stepup.android.ui.screens.walk.CrewSend.Idle, {}, {})
+                }
+            }
+            // CR08 — 서버가 정한 시각에 모두 함께
+            show("CR08", "party-countdown") {
+                room(hosting.copy(phase = com.stepup.android.data.repo.PartyPhase.COUNTDOWN, countdown = 3))
+            }
+            // CR21 — 크루에 기록 공유(경로는 처음에 꺼져 있다)
+            show("CR21", "crew-share") {
+                com.stepup.android.ui.screens.walk.CrewShareContent(
+                    name, "1.56", "12:30", "8'01\"", label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""),
+                    includeRoute = false, hasRoute = true, preview = null, state = com.stepup.android.ui.screens.walk.CrewSend.Idle,
+                    onRoute = {}, onShare = {}, onClose = {},
+                )
+            }
+            compose.onNodeWithTag("crew-share-route-toggle").assertIsOff()
+
+            // CR09 · CR10 · CR11 · CR12 · CR18 · CR13 — 실제 앱에서 같이 달리는 중(표시용 러닝 · 방)
+            val now = System.currentTimeMillis()
+            val here = GeoPoint(37.5181, 126.9518)
+            val together = lobby.copy(
+                phase = com.stepup.android.data.repo.PartyPhase.RUNNING,
+                members = listOf(
+                    member("me", "도윤", ready = true, me = true).copy(sharing = true, km = 1.56, point = here),
+                    member("h", "준호", ready = true, host = true).copy(sharing = true, km = 1.62, point = GeoPoint(37.5196, 126.9490)),
+                    member("a", "지연", ready = true),
+                    member("b", "혜진", ready = true).copy(sharing = true, km = 1.30, point = GeoPoint(37.5222, 126.9431)),
+                ),
+            )
+            RunPlans.set(RunPlan.Free)
+            repo.showPartyForTest(together)
+            WalkSessionService.showStateForTest(running(now).copy(partySize = 4))
+            compose.runOnIdle { scene = { MainScaffold() } }
+            tap("home-start-run")
+            awaitTag("run-together-row")
+            shot("CR09", settle = 2_500)
+            tap("run-together-row")
+            awaitTag("run-together-list")
+            shot("CR10")
+            tap("run-together-close")
+            awaitGone("run-together-list")
+            WalkSessionService.showStateForTest(running(now).copy(partySize = 4, isPaused = true))
+            awaitTag("run-crew-others")
+            shot("CR11")
+            tap("run-finish")
+            awaitTag("run-end-dialog")
+            shot("CR12")
+            back()
+            awaitGone("run-end-dialog")
+            WalkSessionService.showStateForTest(running(now).copy(partySize = 4))
+            repo.showPartyForTest(together.copy(liveOffline = true))
+            awaitTag("run-crew-offline")
+            shot("CR18")
+            // CR13 — 내 크루 러닝 저장 완료: 함께 출발한 인원 · 크루에 기록 공유
+            repo.showPartyForTest(together.copy(phase = com.stepup.android.data.repo.PartyPhase.FINISHED, resultStartedAt = now - 750_000))
+            WalkSessionService.showStateForTest(finished(now).copy(lastPartySize = 4))
+            awaitTag("run-result-crew")
+            signedIn()
+            compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
+            shot("CR13")
+            tap("run-result-share")
+            awaitTag("crew-share")
+            shot("CR21-app")
+        } finally {
+            repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
+            WalkSessionService.showStateForTest(WalkSessionState())
             restore()
         }
     }

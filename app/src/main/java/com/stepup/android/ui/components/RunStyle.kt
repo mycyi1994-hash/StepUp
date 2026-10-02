@@ -1518,6 +1518,20 @@ fun RunVerticalDivider(modifier: Modifier = Modifier) {
 
 // ── 글자 탭 · 입력칸 ────────────────────────────────────────────────
 
+/** 켜고 끄기 — 켜면 파란 길, 끄면 남색 길(위치 공유 · 경로 포함) */
+@Composable
+fun RunSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val t = runTone()
+    androidx.compose.material3.Switch(
+        checked = checked, onCheckedChange = onCheckedChange, enabled = enabled, modifier = modifier,
+        colors = androidx.compose.material3.SwitchDefaults.colors(
+            checkedThumbColor = Color.White, checkedTrackColor = t.cobalt,
+            uncheckedThumbColor = Color.White, uncheckedTrackColor = t.track, uncheckedBorderColor = t.panelEdge,
+            disabledUncheckedTrackColor = t.track.copy(alpha = 0.5f), disabledUncheckedBorderColor = t.divider,
+        ),
+    )
+}
+
 /** 같은 폭 글자 탭(코스 선택 · 코스 만들기 · 코스 게시판) — 고른 칸은 파란 면 · 흰 글자 */
 @Composable
 fun RunTabs(

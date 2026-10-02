@@ -37,6 +37,7 @@ object AppChromePolicy {
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOAL_HISTORY, Screen.Run, Header.Focus),
         Destination(Routes.RUN_COURSE, Screen.Run, Header.Focus),
+        Destination(Routes.RUN_CREW, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_PLAN, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_EDIT, Screen.Run, Header.Focus),
@@ -52,9 +53,10 @@ object AppChromePolicy {
         Destination(Routes.MAP, Screen.Community, Header.Detail),
         Destination(Routes.RANKING, Screen.Community, Header.Detail),
         Destination(Routes.CREW_BOARD, Screen.Community, Header.Detail),
-        Destination(Routes.LOBBY, Screen.Community, Header.Detail),
+        // 크루 러닝 대기실(러닝 리메이크 CR04–CR08) — 러닝 화면 머리, 하단 탭 없이
+        Destination(Routes.LOBBY, Screen.Community, Header.Focus),
         Destination(Routes.FLASH_DETAIL, Screen.Community, Header.Detail),
-        Destination(Routes.FLASH_LOBBY, Screen.Community, Header.Detail),
+        Destination(Routes.FLASH_LOBBY, Screen.Community, Header.Focus),
         Destination(Routes.CREW_CREATE, Screen.Community, Header.Form),
         Destination(Routes.POST_COMPOSE, Screen.Community, Header.Form),
         // 동네 이야기 — 각 화면이 자기 머리(뒤로 · 제목)를 그린다. 하단 탭 없이 댓글 입력 · 올리기가 아래에 선다

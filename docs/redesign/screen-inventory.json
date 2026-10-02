@@ -166,6 +166,13 @@
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
+      "id": "Routes.RUN_CREW",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "Routes.RUN_COURSE",
       "parent": "Run",
       "chrome": "Focus",
@@ -385,7 +392,7 @@
     {
       "id": "Routes.LOBBY",
       "parent": "Community",
-      "chrome": "Detail",
+      "chrome": "Focus",
       "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
       "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed"
     },
@@ -427,7 +434,7 @@
     {
       "id": "Routes.FLASH_LOBBY",
       "parent": "Community",
-      "chrome": "Detail",
+      "chrome": "Focus",
       "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
       "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed"
     },
@@ -790,7 +797,7 @@
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
-      "line": 84,
+      "line": 91,
       "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
       "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1502,6 +1509,20 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "CrewRunEntryScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt",
+      "line": 118,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewShareScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt",
+      "line": 506,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "DietInputScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
       "line": 153,
@@ -1555,7 +1576,7 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1938,
+      "line": 1975,
       "implementation": "pending",
       "verification": "pending"
     }

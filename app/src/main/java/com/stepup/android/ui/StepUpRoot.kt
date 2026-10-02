@@ -205,6 +205,8 @@ object Routes {
 
     /** 추천 코스(시안 U04 · K01~K03) — 내 위치에서 가까운 저장 · 게시판 코스 */
     const val RUN_COURSE = "run-course"
+    /** 크루 달리기 입구(시안 U01 → 크루 · CR14 · CR19) */
+    const val RUN_CREW = "run-crew"
 
     /** 다이어트 모드 — 입력(U05) · 러닝 방법(U06) · 몸 정보·경험 수정(D06) */
     const val RUN_DIET = "run-diet"
@@ -563,8 +565,11 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
         )
-    } else if (currentRoute in listOf(Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP)) {
-        // 내 러닝 기록(러닝 리메이크 H01–H16) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+    } else if (currentRoute in listOf(
+            Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
+            Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
+        )) {
+        // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
         com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
@@ -1005,7 +1010,49 @@ internal fun MainScaffold(
                     onRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     // 추천 코스(U04)
                     onCourse = { navController.navigate(Routes.RUN_COURSE) { launchSingleTop = true } },
+                    // 크루 달리기 — 달리던 러닝이 있으면 그 러닝, 들어가 있던 대기실이 있으면 그 대기실, 아니면 크루 입구
+                    onCrew = {
+                        val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
+                        val partyCrew = party.crewId
+                        when {
+                            com.stepup.android.service.WalkSessionService.state.value.isActive ->
+                                navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                            (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY ||
+                                party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN) && !partyCrew.isNullOrBlank() ->
+                                navController.navigate(Routes.lobby(partyCrew)) { launchSingleTop = true }
+                            else -> navController.navigate(Routes.RUN_CREW) { launchSingleTop = true }
+                        }
+                    },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
+                )
+            }
+            composable(Routes.RUN_CREW) {
+                val crewScope = rememberCoroutineScope()
+                com.stepup.android.ui.screens.walk.CrewRunEntryScreen(
+                    onBack = { navController.popBackStack() },
+                    // 대기실은 여기서 눌러야만 열린다(party_open 은 참가 · 생성을 일으킨다)
+                    onEnterLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) { launchSingleTop = true } },
+                    onFindCrew = { navController.switchTab(Screen.Community) },
+                    onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
+                    onFreeRun = {
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                        navController.navigate(Routes.RUN_NOW) {
+                            popUpTo(Routes.RUN_CREW) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onSignIn = {
+                        crewScope.launch {
+                            try {
+                                com.stepup.android.ui.components.returnToSignIn(context)
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(context, R.string.feed_save_failed, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                 )
             }
             composable(Routes.RUN_COURSE) {

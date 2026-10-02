@@ -380,6 +380,8 @@ fun RunScreen(
     var togetherSheet by rememberSaveable { mutableStateOf(false) }
     // 결과 — 공유 미리보기(E05) · 삭제 확인(R06) · 삭제 실패(H16) · 무효 까닭
     var showShare by rememberSaveable { mutableStateOf(false) }
+    // 크루에 기록 공유(CR21) — 크루 러닝 결과의 공유
+    var crewShare by rememberSaveable { mutableStateOf(false) }
     var deleteSheet by rememberSaveable { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var deleteFailed by rememberSaveable { mutableStateOf<String?>(null) }
@@ -387,16 +389,20 @@ fun RunScreen(
     // 전체 지도 · 공유 미리보기는 뒤로 가기로 닫는다(러닝 · 결과로 돌아간다). 러닝이 끝나거나 결과를 떠나면 접는다
     androidx.activity.compose.BackHandler(enabled = showFullMap && session.isActive) { showFullMap = false }
     androidx.activity.compose.BackHandler(enabled = showShare && finishing) { showShare = false }
+    androidx.activity.compose.BackHandler(enabled = crewShare && finishing) { crewShare = false }
     LaunchedEffect(session.isActive) { if (!session.isActive) showFullMap = false }
     LaunchedEffect(finishing) {
         if (!finishing) {
             showShare = false
+            crewShare = false
             deleteFailed = null
         }
     }
     val tone = runTone()
     val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
     val crewRun = session.isActive && party.isActive || (!session.isActive && session.lastPartySize > 1)
+    // 끝난 크루 러닝의 크루(번개러닝은 크루가 없다) — 결과에서 크루에 기록 공유(CR21)
+    val crewShareId = party.crewId?.takeIf { crewRun && !session.isActive && it.isNotBlank() }
     val coursePoints = course?.takeIf { it.hasTrack && plan is RunPlan.Free && !recordingCourse }?.points.orEmpty()
     val courseRun = coursePoints.isNotEmpty() && !crewRun
 
@@ -485,6 +491,7 @@ fun RunScreen(
         }
         when {
             finishing && showShare -> RunShareScreen(session, lastServerPoints, lastUpload, onClose = { showShare = false })
+            finishing && crewShare && crewShareId != null -> CrewShareFor(session, crewShareId, party.crewName, onClose = { crewShare = false })
             finishing -> {
                 val km = finishKm(session)
                 val paceSec = finishPace(session)
@@ -568,7 +575,9 @@ fun RunScreen(
                     ui = ui,
                     onBack = done,
                     onDelete = { deleteFailed = null; deleteSheet = true },
-                    onShare = { showShare = true },
+                    // 크루 러닝이면 크루 채팅으로(CR21), 아니면 공유 그림(E05)
+                    onShare = { if (crewShareId != null) crewShare = true else showShare = true },
+                    shareLabel = stringResource(if (crewShareId != null) R.string.run_crew_share else R.string.run_share),
                     onRecords = {
                         viewModel.clearReward()
                         onOpenRecords()
@@ -1934,6 +1943,34 @@ private fun RunPlanPanel(
  * 빠진다 — 미리보기 · 공유 · 이미지 저장이 같은 그림이다. 사용자가 "공유하기"를 눌러야 시스템 공유 창이 열린다.
  * SUP 는 그림에 넣지 않는다(서버 확인 전 금액이 밖으로 나가지 않게). 글에는 서버가 확인한 금액만 적는다.
  */
+/** 크루에 기록 공유(CR21) — 이 러닝의 거리 · 시간 · 페이스와(켜면) 공유 카드 그림 */
+@Composable
+private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: String, onClose: () -> Unit) {
+    val context = LocalContext.current
+    val km = finishKm(session)
+    val elapsed = formatDuration(session.lastElapsedSec)
+    val pace = finishPace(session)?.let { formatPace(it) } ?: "—"
+    val labels = RunShareCard.Labels(
+        distance = stringResource(R.string.share_card_distance),
+        time = stringResource(R.string.share_card_time),
+        pace = stringResource(R.string.share_card_pace),
+        footer = stringResource(R.string.share_card_footer),
+    )
+    CrewShareScreen(
+        crewId = crewId, crewName = crewName.ifBlank { stringResource(R.string.run_crew_title) },
+        km = "%.2f".format(km), time = elapsed, pace = pace,
+        card = { route ->
+            kotlinx.coroutines.withContext(Dispatchers.Default) {
+                runCatching {
+                    RunShareCard.render(context, km, elapsed, pace, if (route) session.geoTrack else emptyList(), labels)
+                }.getOrNull()
+            }
+        },
+        hasRoute = session.geoTrack.size >= 2,
+        onClose = onClose,
+    )
+}
+
 @Composable
 private fun RunShareScreen(session: WalkSessionState, points: Double?, upload: String?, onClose: () -> Unit) {
     val context = LocalContext.current
