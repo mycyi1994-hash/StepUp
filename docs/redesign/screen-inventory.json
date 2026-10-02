@@ -166,6 +166,13 @@
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
+      "id": "Routes.RUN_COURSE",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "Routes.RUN_GOALS",
       "parent": "Run",
       "chrome": "Focus",
@@ -1222,7 +1229,7 @@
     {
       "id": "DrawCheckScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 330,
+      "line": 331,
       "implementation": "신발 뽑기 디자인 — 19 결과 확인 지연(시계 배지, 새로 뽑지 않고 서버 목록 · 현황을 다시 읽는다) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1230,7 +1237,7 @@
     {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 69,
+      "line": 73,
       "implementation": "신발 뽑기 디자인 26장(2026-09-28 전달본): 무료 · 상급 글자 탭 하나씩의 메인(DrawHome.kt), 안내창(DrawSheets.kt), 흐름(DrawFlowScreens.kt), 하단 탭 위 짧은 알림 — 수 · 연결 상태 · 결과는 서버 값만(v2 규칙 그대로) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (Experience QA community suite, screen-gallery/shoe-draw-v3/: in-app example server 03→01→15→17→09→10→02→16→04→06, 12 · 23 · 13 · 14 · 26 · 20, 22→21, device sizes 360×800 · 390×844 · 412×915 · font 1.3 · light with zero-scroll checks, direct scenes 05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawHomeTest · ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1238,7 +1245,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 89,
+      "line": 109,
       "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
       "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -1262,7 +1269,7 @@
     {
       "id": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 117,
+      "line": 125,
       "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail (ShoeDetailContent)",
       "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1270,7 +1277,7 @@
     {
       "id": "SneakerDexScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt",
-      "line": 73,
+      "line": 76,
       "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
       "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1295,7 +1302,7 @@
     {
       "id": "MarketModelScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 68,
+      "line": 70,
       "implementation": "S2 batch C (PR #30): see docs/redesign/s2/STATUS.md",
       "verification": "148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1497,16 +1504,23 @@
     {
       "id": "DietInputScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 92,
+      "line": 151,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "DietPlanScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 267,
+      "line": 501,
       "implementation": "Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
+    },
+    {
+      "id": "CourseRecommendScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunCourseScreens.kt",
+      "line": 82,
+      "implementation": "pending",
+      "verification": "pending"
     },
     {
       "id": "RunStartMenuScreen",
@@ -1518,25 +1532,32 @@
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 216,
+      "line": 175,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 259,
+      "line": 230,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 160,
+      "line": 165,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "notes": "Test changes: CHARACTER-FREE-STAGE3-2026-09-25-KO.md; no device pass claimed."
+    },
+    {
+      "id": "RunShareScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
+      "line": 1876,
+      "implementation": "pending",
+      "verification": "pending"
     }
   ],
   "overlays": [
@@ -1590,13 +1611,6 @@
       "verification": "pending"
     },
     {
-      "kind": "ModalBottomSheet",
-      "owner": "HomeScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 235,
-      "verification": "pending"
-    },
-    {
       "kind": "DialogPanel",
       "owner": "InviteScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/invite/InviteScreen.kt",
@@ -1614,21 +1628,21 @@
       "kind": "DialogPanel",
       "owner": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 180,
+      "line": 188,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "BidDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 318,
+      "line": 329,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "AskDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 345,
+      "line": 356,
       "verification": "pending"
     },
     {
@@ -1646,66 +1660,10 @@
       "verification": "pending"
     },
     {
-      "kind": "KitDialog",
-      "owner": "DietInputScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt",
-      "line": 241,
-      "verification": "pending"
-    },
-    {
-      "kind": "ModalBottomSheet",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 757,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 799,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 816,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 832,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 859,
-      "verification": "pending"
-    },
-    {
-      "kind": "KitDialog",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 881,
-      "verification": "pending"
-    },
-    {
-      "kind": "DialogPanel",
-      "owner": "RunScreen",
-      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 904,
-      "verification": "pending"
-    },
-    {
       "kind": "DialogPanel",
       "owner": "SaveCourseDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 1400,
+      "line": 1646,
       "verification": "pending"
     }
   ],

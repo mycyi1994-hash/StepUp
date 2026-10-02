@@ -261,7 +261,8 @@ if [[ "$suite" == "community" ]]; then
   # 러닝 홈 · 러닝 중 · 러닝 완료 + 공통 등급 배지(2026-09-29) — 홈(알림 종 · 오늘의 걸음 · 신발 카드 · 채운 배지) → 러닝 중(속도 측정 오류 ·
   # 현재 속도 | 내구도 · 일시정지 | 종료) → 러닝 완료(예상 보상 · 정산 대기), 기기 크기(360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마), 배지 여섯
   timeout 20s adb shell am force-stop com.stepup.android || true
-  for part in screens fitsAtDeviceSizes badges; do
+  # 러닝 전체 리메이크(2026-10-02 러닝 109장) — 화면 번호 이름으로 run-journey/ 에 남긴다
+  for part in screens fitsAtDeviceSizes badges diet courseRec courseHub courseRun states; do
     run_instrumentation "run-journey-$part" "com.stepup.android.RunJourneyDesignTest#$part"
     mkdir -p "screen-gallery/run-journey-results/$part"
     cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/$part/" || true

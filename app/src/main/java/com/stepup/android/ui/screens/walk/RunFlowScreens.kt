@@ -79,8 +79,8 @@ fun RunStartMenuScreen(
     onDiet: (() -> Unit)?,
     /** 권한 안내의 "홈으로 돌아가기" */
     onHome: () -> Unit = onBack,
-    onCrew: () -> Unit = {},
-    onCourse: () -> Unit = {},
+    onCrew: (() -> Unit)? = null,
+    onCourse: (() -> Unit)? = null,
     onRecords: () -> Unit = {},
     onOpenWallet: (() -> Unit)? = null,
 ) {
@@ -120,8 +120,9 @@ internal fun RunStartMenuContent(
     onFreeRun: () -> Unit,
     onGoals: () -> Unit,
     onDiet: (() -> Unit)?,
-    onCrew: () -> Unit = {},
-    onCourse: () -> Unit = {},
+    /** 크루 달리기(CR) · 추천 코스(U04) — 없으면(연결 전) 누를 수 없게 "곧" 표시 */
+    onCrew: (() -> Unit)? = null,
+    onCourse: (() -> Unit)? = null,
     onRecords: () -> Unit = {},
     balance: Double? = null,
     onOpenWallet: (() -> Unit)? = null,
@@ -144,7 +145,9 @@ internal fun RunStartMenuContent(
             )
             RunModeCard(
                 stringResource(R.string.run_mode_crew), stringResource(R.string.run_mode_crew_sub),
-                Icons.Filled.Groups, onCrew, modifier = Modifier.testTag("run-menu-crew"),
+                Icons.Filled.Groups, onCrew ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
+                enabled = onCrew != null, badge = if (onCrew == null) stringResource(R.string.runflow_soon) else null,
+                modifier = Modifier.testTag("run-menu-crew"),
             )
             RunModeCard(
                 stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
@@ -152,7 +155,9 @@ internal fun RunStartMenuContent(
             )
             RunModeCard(
                 stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
-                Icons.Filled.Route, onCourse, modifier = Modifier.testTag("run-menu-course"),
+                Icons.Filled.Route, onCourse ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
+                enabled = onCourse != null, badge = if (onCourse == null) stringResource(R.string.runflow_soon) else null,
+                modifier = Modifier.testTag("run-menu-course"),
             )
             RunModeCard(
                 stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),

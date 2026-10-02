@@ -344,6 +344,14 @@ fun RunScreen(
             confirmStop = true
         }
     }
+    // 러닝이 끝나면(알림에서 마쳤거나 다른 화면에서 저장) 묻던 창을 접는다 — 다음 러닝에 남지 않게
+    LaunchedEffect(session.isActive) {
+        if (!session.isActive) {
+            confirmStop = false
+            discardDialog = false
+            showGoalReached = false
+        }
+    }
     // 달리는 중 뒤로 가기는 화면을 닫지 않는다 — 달리고 있으면 일시정지(R03), 멈춰 있으면 마칠지 묻는다(R04)
     androidx.activity.compose.BackHandler(enabled = canAskEnd && !confirmStop && !discardDialog) {
         if (!session.isPaused) WalkSessionService.pause(context) else askEnd()
@@ -920,9 +928,11 @@ fun RunScreen(
         }
     }
 
-    // R07 — 저장 없이 끝낼까요? 취소하면 멈춘 러닝으로
+    // R07 — 저장 없이 끝낼까요? 취소 · 바깥 · 뒤로는 마칠까요(R04)로 돌아간다(러닝은 멈춘 채)
     if (discardDialog && canAskEnd && !discarding) {
-        com.stepup.android.ui.components.RunSheet(onDismiss = { discardDialog = false }, modifier = Modifier.testTag("run-discard-dialog")) {
+        com.stepup.android.ui.components.RunSheet(
+            onDismiss = { discardDialog = false; confirmStop = true }, modifier = Modifier.testTag("run-discard-dialog"),
+        ) {
             DiscardSheetContent(
                 time = minSecText(session.elapsedSec), km = liveKmText,
                 onDiscard = {
@@ -932,7 +942,7 @@ fun RunScreen(
                     discarding = true
                     WalkSessionService.discard(context)
                 },
-                onCancel = { discardDialog = false },
+                onCancel = { discardDialog = false; confirmStop = true },
             )
         }
     }
@@ -1006,6 +1016,7 @@ fun RunScreen(
     if (readyToSaveCourse) {
         SaveCourseDialog(
             track = recordedTrack,
+            elapsedSec = session.lastElapsedSec,
             onSave = viewModel::saveRecordedCourse,
             onDismiss = viewModel::cancelRecording,
         )
@@ -1616,39 +1627,77 @@ private fun CourseRecordingStrip(running: Boolean, onCancel: () -> Unit) {
 }
 
 /**
- * 러닝이 끝나고 뜨는 코스 저장 창.
+ * 러닝이 끝나고 뜨는 코스 저장(시안 K15) — 지도 · 거리 | 달린 시간 · 코스 이름 · 지역 · 코스 공유하기.
  *
- * 여기서 저장해야 방금 뛴 길이 코스가 된다. 닫으면 그 트랙은 버려진다 —
- * 그래서 닫기 버튼에도 "저장 안 함"이라고 적는다. "취소"라고만 적으면
- * 나중에 저장할 수 있다고 읽힌다.
+ * 여기서 저장해야 방금 뛴 길이 코스가 된다. 닫으면 녹화를 그만둔다 — 그래서 바깥을 눌러 닫히지 않고, 아래 버튼에도
+ * "저장 안 함"이라고 적는다. "취소"라고만 적으면 나중에 저장할 수 있다고 읽힌다.
  */
 @Composable
 private fun SaveCourseDialog(
     track: List<GeoPoint>,
+    elapsedSec: Long,
     onSave: (name: String, area: String, shared: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val t = runTone()
     var name by rememberSaveable { mutableStateOf("") }
     var area by rememberSaveable { mutableStateOf("") }
     var share by rememberSaveable { mutableStateOf(true) }
     val km = remember(track) { track.trackDistanceKm() }
-
-    DialogPanel(
-        title = stringResource(R.string.course_save_title),
-        onDismiss = onDismiss,
-        actions = {
-            VoltButton(stringResource(R.string.course_register), onClick = { onSave(name, area, share) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth())
-            GhostButton(stringResource(R.string.course_save_skip), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        },
-    ) {
-        LiveRouteMap(points = track, seed = track.size, modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(16.dp)))
-        Text(stringResource(R.string.course_save_body, "%.2f".format(km)), style = MaterialTheme.typography.titleMedium, color = Snow)
-        FormField(label = stringResource(R.string.course_name_hint), value = name, onValueChange = { name = it })
-        FormField(label = stringResource(R.string.course_area_hint), value = area, onValueChange = { area = it })
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.course_share_toggle), style = MaterialTheme.typography.bodyLarge, color = Snow, modifier = Modifier.weight(1f))
-            Switch(checked = share, onCheckedChange = { share = it }, colors = SwitchDefaults.colors(checkedThumbColor = OnVolt, checkedTrackColor = Volt, uncheckedThumbColor = Silver, uncheckedTrackColor = CarbonHigh))
+    com.stepup.android.ui.components.RunSheet(onDismiss = onDismiss, dismissible = false, modifier = Modifier.testTag("course-save-sheet")) {
+        Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).verticalScroll(rememberScrollState())) {
+            Text(stringResource(R.string.run_course_save_title),
+                style = com.stepup.android.ui.components.runTextStyle(24.sp, t.text, FontWeight.ExtraBold))
+            Spacer(Modifier.height(12.dp))
+            com.stepup.android.ui.components.RunMapFrame(Modifier.fillMaxWidth().height(170.dp)) {
+                LiveRouteMap(points = track, modifier = Modifier.fillMaxSize(), routeColor = t.cyan)
+            }
+            Spacer(Modifier.height(12.dp))
+            com.stepup.android.ui.components.RunStatRow(
+                listOf(
+                    RunStat(stringResource(R.string.run_label_distance), "%.2f".format(km), "km", tag = "course-save-km"),
+                    RunStat(stringResource(R.string.run_label_time), formatDuration(elapsedSec)),
+                ),
+                valueSize = 32.sp,
+            )
+            Spacer(Modifier.height(12.dp))
+            com.stepup.android.ui.components.RunTextField(
+                name, { name = it }, label = stringResource(R.string.run_course_field_name),
+                clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-save-name",
+            )
+            Spacer(Modifier.height(10.dp))
+            com.stepup.android.ui.components.RunTextField(
+                area, { area = it }, label = stringResource(R.string.run_course_field_area),
+                clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-save-area",
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.run_course_save_share),
+                        style = com.stepup.android.ui.components.runTextStyle(15.sp, t.text, FontWeight.Bold))
+                    Text(stringResource(R.string.run_course_save_share_desc),
+                        style = com.stepup.android.ui.components.runTextStyle(12.sp, t.label))
+                }
+                Switch(
+                    checked = share, onCheckedChange = { share = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White, checkedTrackColor = t.cobalt,
+                        uncheckedThumbColor = Color.White, uncheckedTrackColor = t.track, uncheckedBorderColor = t.panelEdge,
+                    ),
+                    modifier = Modifier.testTag("course-save-share"),
+                )
+            }
         }
+        Spacer(Modifier.height(16.dp))
+        com.stepup.android.ui.components.RunButton(
+            stringResource(R.string.run_course_save_do), { onSave(name, area, share) }, enabled = name.isNotBlank(),
+            modifier = Modifier.testTag("course-save-do"),
+        )
+        Spacer(Modifier.height(10.dp))
+        com.stepup.android.ui.components.RunButton(
+            stringResource(R.string.course_save_skip), onDismiss, kind = com.stepup.android.ui.components.RunButtonKind.Secondary,
+            modifier = Modifier.testTag("course-save-skip"),
+        )
     }
 }
 

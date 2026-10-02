@@ -61,6 +61,7 @@ import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -214,6 +215,10 @@ class RunJourneyDesignTest {
             shot("R07")
             tap("run-discard-back")
             awaitGone("run-discard-dialog")
+            // 취소하면 마칠까요(R04)로 돌아간다 — 뒤로 가기로 닫으면 멈춘 러닝
+            awaitTag("run-end-dialog")
+            back()
+            awaitGone("run-end-dialog")
 
             // E04 · S01 — 저장 중 · 저장 실패(기록은 화면에 남고 같은 러닝으로 다시 저장)
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true, saveStatus = RunSaveStatus.SAVING))
@@ -367,6 +372,220 @@ class RunJourneyDesignTest {
         }
     }
 
+    /** U05 · D01 · D02 · D03 · U06 · D06 — 다이어트 모드 입력(휴대폰 숫자 자판)과 러닝 방법(실제 앱) */
+    @Test fun diet() {
+        seed()
+        try {
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold(initialRoute = Routes.RUN_DIET) } }
+            awaitTag("diet-input")
+            // 시안 값(170cm · 70kg · 처음이에요)을 휴대폰 숫자 자판으로 적는다
+            compose.onNodeWithTag("diet-height").performTextClearance()
+            compose.onNodeWithTag("diet-height").performTextInput("170")
+            compose.onNodeWithTag("diet-weight").performTextClearance()
+            compose.onNodeWithTag("diet-weight").performTextInput("70")
+            awaitTag("diet-input-done")
+            shot("D01", settle = 1_500)
+            tap("diet-input-done")
+            awaitGone("diet-input-done")
+            tap("diet-exp-first")
+            shot("U05")
+            // D02 — 키를 지우면 칸 아래 안내, 다음 버튼은 누를 수 없다
+            compose.onNodeWithTag("diet-height").performTextClearance()
+            awaitTag("diet-input-error")
+            tap("diet-input-done")
+            compose.onNodeWithTag("diet-input-next").assertIsNotEnabled()
+            shot("D02")
+            compose.onNodeWithTag("diet-height").performTextInput("170")
+            tap("diet-input-done")
+            // D03 — 적던 중 나가려 하면 한 번 묻는다
+            back()
+            awaitTag("diet-leave-dialog")
+            shot("D03")
+            tap("diet-leave-stay")
+            awaitGone("diet-leave-dialog")
+            // U06 — 러닝 방법 추천(15분 = 준비 3분 + (러닝 1분 + 걷기 2분) × 3 + 마무리 3분)
+            tap("diet-input-next")
+            awaitTag("diet-plan")
+            compose.onNodeWithTag("diet-plan-minutes", useUnmergedTree = true).assertTextEquals(label(R.string.run_diet_min_big, 15))
+            shot("U06")
+            // D06 — 몸 정보 · 경험 수정
+            tap("diet-plan-edit")
+            awaitTag("diet-input")
+            shot("D06")
+            back()
+            awaitTag("diet-plan")
+        } finally {
+            restore()
+        }
+    }
+
+    /** K01 · K03 — 추천 코스(실제 앱): 찾는 중, 그리고 가까운 코스가 없을 때(에뮬레이터 자리에는 저장 · 게시판 코스가 없다) */
+    @Test fun courseRec() {
+        seed()
+        try {
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold(initialRoute = Routes.RUN_COURSE) } }
+            awaitTag("run-course-rec")
+            if (exists("run-course-finding")) shot("K01")
+            compose.waitUntil(25_000) { exists("run-course-none") || exists("run-course-start") }
+            shot(if (exists("run-course-none")) "K03" else "K02-device", settle = 2_000)
+        } finally {
+            restore()
+        }
+    }
+
+    /** K09 · K13 · K14 · K12 · K10 · K11 · K16 — 코스 허브(실제 앱, 앱이 심은 공원 코스) */
+    @Test fun courseHub() {
+        seed()
+        val repo = ServiceLocator.courseRepository
+        try {
+            runBlocking { repo.ensureSeeded() }
+            val list = runBlocking { repo.courses.first().filter { it.hasTrack } }
+            val first = list.first()
+            runBlocking { repo.select(first.id) }
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold(initialRoute = Routes.COURSES) } }
+            awaitTag("courses-title")
+            awaitTag("course-pick-${first.id}")
+            compose.onNodeWithTag("courses-run").assertIsEnabled()
+            shot("K09", settle = 2_500)
+            // K14 — 고른 코스를 누르면 해제할지 묻는다
+            tap("course-pick-${first.id}")
+            awaitTag("course-clear-sheet")
+            shot("K14")
+            tap("course-confirm-cancel")
+            awaitGone("course-clear-sheet")
+            // K13 — 다른 코스를 누르면 고를지 묻는다
+            list.getOrNull(1)?.let { second ->
+                compose.onNodeWithTag("courses-list").performScrollToNode(hasTestTag("course-pick-${second.id}"))
+                tap("course-pick-${second.id}")
+                awaitTag("course-apply-sheet")
+                shot("K13", settle = 1_800)
+                tap("course-confirm-cancel")
+                awaitGone("course-apply-sheet")
+            }
+            // K12 — 코스 순위(서버 기록 — 로그인 전이면 그 까닭)
+            compose.onNodeWithTag("courses-list").performScrollToNode(hasTestTag("course-rank-${first.id}"))
+            tap("course-rank-${first.id}")
+            awaitTag("course-ranking")
+            shot("K12", settle = 2_500)
+            tap("course-ranking-close")
+            awaitGone("course-ranking")
+            // K10 · K11 · K16
+            tap("courses-tab-1")
+            awaitTag("course-recorder")
+            shot("K10")
+            tap("courses-tab-2")
+            compose.waitUntil(15_000) { !exists("courses-board-loading") }
+            shot("K11", settle = 2_500)
+            tap("courses-upload")
+            awaitTag("course-upload-sheet")
+            shot("K16")
+            tap("course-upload-cancel")
+        } finally {
+            runBlocking { repo.clearSelection() }
+            restore()
+        }
+    }
+
+    /** K04 · K07 · K05 · K08 · K06 · K15 — 코스를 고르고 달리는 중 · 전체 지도 · 코스 이탈 · 자유 러닝 전환 · 결과 · 달린 코스 저장 */
+    @Test fun courseRun() {
+        seed()
+        val repo = ServiceLocator.courseRepository
+        try {
+            runBlocking { repo.ensureSeeded() }
+            val course = runBlocking { repo.courses.first().first { it.hasTrack } }
+            runBlocking { repo.select(course.id) }
+            RunPlans.set(RunPlan.Free)
+            val now = System.currentTimeMillis()
+            WalkSessionService.showStateForTest(onCourse(course, now))
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold(initialRoute = Routes.RUN) } }
+            awaitTag("run-live")
+            awaitTag("run-goal-bar")
+            shot("K04", settle = 2_500)
+            tap("run-map-expand")
+            awaitTag("run-full-map")
+            shot("K07", settle = 2_500)
+            tap("run-full-map-close")
+            awaitGone("run-full-map")
+            // K05 — 코스 선에서 60m 넘게 15초 넘게 떨어지면 한 번 알린다(기록은 그대로)
+            val start = course.points.first()
+            WalkSessionService.showStateForTest(onCourse(course, now).copy(here = GeoPoint(start.lat + 0.0025, start.lng + 0.0025)))
+            awaitTag("run-course-off-map", timeout = 30_000)
+            shot("K05")
+            tap("run-course-off-free")
+            awaitTag("run-course-free-ok")
+            shot("K08")
+            tap("run-course-free-cancel")
+            awaitGone("run-course-free-ok")
+            // K06 — 코스 결과
+            WalkSessionService.showStateForTest(
+                WalkSessionState(
+                    lastRewardPoints = 0.9, lastSessionSteps = 3_100, lastRewardedSteps = 3_100,
+                    lastElapsedSec = 1_200, lastGpsKm = course.distanceKm, lastStartedAt = now - 1_200_000,
+                    track = course.points.mapIndexed { i, p -> TrackPoint(p.lat, p.lng, now - 1_200_000 + i * 5_000L) },
+                ),
+            )
+            awaitTag("run-result")
+            signedIn()
+            shot("K06", settle = 2_500)
+            // K15 — "코스 만들기"로 달린 뒤 저장
+            runBlocking { repo.beginRecording() }
+            WalkSessionService.lastTrack.value = course.points
+            awaitTag("course-save-sheet")
+            shot("K15", settle = 2_500)
+            tap("course-save-skip")
+            awaitGone("course-save-sheet")
+        } finally {
+            WalkSessionService.showStateForTest(WalkSessionState())
+            WalkSessionService.lastTrack.value = emptyList()
+            runBlocking {
+                repo.cancelRecording()
+                repo.clearSelection()
+            }
+            RunPlans.clear()
+            syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
+            restore()
+        }
+    }
+
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · U04 · K02) */
+    @Test fun states() {
+        seed()
+        val repo = ServiceLocator.courseRepository
+        try {
+            runBlocking { repo.ensureSeeded() }
+            val courses = runBlocking { repo.courses.first().filter { it.hasTrack } }
+            var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
+            edgeToEdge()
+            compose.setContent { DeviceFrame { Box(Modifier.fillMaxSize()) { scene?.invoke() } } }
+            fun show(name: String, tag: String, content: @Composable () -> Unit) {
+                compose.runOnIdle { scene = content }
+                awaitTag(tag)
+                shot(name, settle = 2_000)
+            }
+            show("D04", "diet-preparing") { com.stepup.android.ui.screens.walk.DietPreparingContent {} }
+            show("D05", "diet-failed") { com.stepup.android.ui.screens.walk.DietFailedContent({}, {}) }
+            // 추천 코스 — 앱이 심은 공원 코스를 그 코스 출발점 가까이에 서 있는 것처럼(에뮬레이터 자리와 무관한 화면 확인용)
+            courses.take(2).forEachIndexed { i, course ->
+                val here = course.points.first().let { GeoPoint(it.lat + 0.002, it.lng) }
+                val pick = com.stepup.android.domain.CourseRecommendations.near(here, listOf(course), radius = 5_000.0).first()
+                show(if (i == 0) "U04" else "K02", "run-course-card") {
+                    com.stepup.android.ui.screens.walk.CourseRecommendContent(
+                        com.stepup.android.ui.screens.walk.CourseRecUi.Found(
+                            pick, com.stepup.android.domain.CourseRecommendations.minutes(course.distanceKm), i + 1, 2,
+                        ),
+                        here, {}, {}, {}, {}, {}, {},
+                    )
+                }
+            }
+        } finally {
+            restore()
+        }
+    }
+
     /** 등급 배지 여섯 — 채운 색 · 흰 글자(어두운 · 밝은 바탕), 긴 이름은 마지막 줄 끝에 */
     @Test fun badges() {
         edgeToEdge()
@@ -447,6 +666,17 @@ class RunJourneyDesignTest {
         isActive = true, steps = (elapsed * 2).toInt(), elapsedSec = elapsed, startedAt = startedAt - 750_000,
         gpsFix = true, gpsKm = elapsed / 900.0 * 1.15, validSegments = 60, track = route(startedAt - 750_000, startedAt - 2_000),
     )
+
+    /** 고른 코스를 08:12 동안 달리는 중 — 코스의 앞쪽 점들을 지나왔다(마지막 점은 방금) */
+    private fun onCourse(course: com.stepup.android.domain.RunCourse, now: Long): WalkSessionState {
+        val passed = course.points.take((course.points.size * 0.4).toInt().coerceAtLeast(2))
+        val start = now - 492_000
+        val track = passed.mapIndexed { i, p -> TrackPoint(p.lat, p.lng, start + (now - 2_000 - start) * i / (passed.size - 1).coerceAtLeast(1)) }
+        return WalkSessionState(
+            isActive = true, steps = 1_300, elapsedSec = 492, startedAt = start, gpsFix = true,
+            gpsKm = course.distanceKm * 0.4, validSegments = 60, track = track, here = passed.last(),
+        )
+    }
 
     /** 한강 따라 남동쪽으로 — 시각은 [from]..[to] 에 고르게(마지막 몇 점은 10초 간격 · 약 2.2m/s) */
     private fun route(from: Long, to: Long): List<TrackPoint> {
@@ -550,6 +780,8 @@ class RunJourneyDesignTest {
     }
 
     private fun label(id: Int): String = compose.activity.getString(id)
+
+    private fun label(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
 
     /**
      * CI 에뮬레이터는 로그인 전이라 러닝 완료에 "다시 로그인"이 붙는다 — 시안(로그인한 사람의 정산 대기)을 보려고 동기화 표시만 바꾼다.

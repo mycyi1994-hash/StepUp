@@ -60,6 +60,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -352,6 +355,10 @@ fun RunButton(
     busy: Boolean = false,
     hero: Boolean = false,
     cue: FeedbackCue = FeedbackCue.Tap,
+    /** 오른쪽 끝 ">"(다음 화면으로 넘어가는 버튼 — "내 러닝 방법 보기 >") */
+    chevron: Boolean = false,
+    /** 기울인 굵은 글자(화면의 큰 행동 — 일시정지 · 처음 화면으로 · 공유하기). [hero] 는 늘 기울인다 */
+    italic: Boolean = hero,
 ) {
     val t = runTone()
     val feedback = LocalFeedback.current
@@ -432,14 +439,28 @@ fun RunButton(
                 label,
                 style = if (strong) {
                     TextStyle(
-                        fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
-                        fontSize = if (hero) 30.sp else 20.sp, letterSpacing = (-0.02).em, color = ink,
+                        fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold,
+                        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+                        fontSize = when {
+                            hero -> 30.sp
+                            italic -> 25.sp
+                            else -> 19.sp
+                        },
+                        letterSpacing = (-0.02).em, color = ink,
                     )
                 } else {
                     runTextStyle(18.sp, ink, FontWeight.SemiBold)
                 },
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
+        }
+        if (chevron) {
+            Box(
+                Modifier.align(Alignment.TopEnd).height(faceHeight).offset(y = sink).padding(end = 18.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink, modifier = Modifier.size(26.dp))
+            }
         }
     }
 }
@@ -588,22 +609,31 @@ fun RunHeadline(
 ) {
     val t = runTone()
     Column(modifier.fillMaxWidth(), horizontalAlignment = if (align == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
-        Text(
-            title,
-            style = if (display) {
-                TextStyle(
-                    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
-                    fontSize = 40.sp, lineHeight = 1.15.em, letterSpacing = (-0.03).em, color = t.text,
+        val style = if (display) {
+            TextStyle(
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
+                fontSize = 42.sp, lineHeight = 1.15.em, letterSpacing = (-0.03).em, color = t.text,
+            )
+        } else {
+            TextStyle(
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp,
+                lineHeight = 1.24.em, letterSpacing = (-0.03).em, color = t.text,
+            )
+        }
+        Box {
+            Text(
+                title, style = style, textAlign = align,
+                modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
+            )
+            if (display) {
+                // 시안의 큰 제목은 가장 굵은 글꼴보다 굵다 — 같은 색 테두리를 얇게 한 겹 더 그린다(읽히는 글자는 위의 것 하나)
+                Text(
+                    title, textAlign = align,
+                    style = style.copy(drawStyle = Stroke(width = with(LocalDensity.current) { 1.4.dp.toPx() }, join = StrokeJoin.Round)),
+                    modifier = Modifier.clearAndSetSemantics { },
                 )
-            } else {
-                TextStyle(
-                    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp,
-                    lineHeight = 1.24.em, letterSpacing = (-0.03).em, color = t.text,
-                )
-            },
-            textAlign = align,
-            modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
-        )
+            }
+        }
         if (subtitle != null) {
             Spacer(Modifier.height(6.dp))
             Text(subtitle, style = runTextStyle(16.sp, t.label, FontWeight.Medium), textAlign = align)
@@ -1478,4 +1508,112 @@ fun RunDivider(modifier: Modifier = Modifier) {
 @Composable
 fun RunVerticalDivider(modifier: Modifier = Modifier) {
     Box(modifier.width(1.dp).fillMaxHeight().background(runTone().divider))
+}
+
+// ── 글자 탭 · 입력칸 ────────────────────────────────────────────────
+
+/** 같은 폭 글자 탭(코스 선택 · 코스 만들기 · 코스 게시판) — 고른 칸은 파란 면 · 흰 글자 */
+@Composable
+fun RunTabs(
+    labels: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    tagPrefix: String = "run-tab",
+) {
+    val t = runTone()
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).background(t.inset, shape).border(1.dp, t.panelEdge, shape)
+            .padding(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        labels.forEachIndexed { i, label ->
+            val on = i == selected
+            val cell = RoundedCornerShape(11.dp)
+            Box(
+                Modifier.weight(1f).heightIn(min = 42.dp).clip(cell)
+                    .then(
+                        if (on) Modifier.background(Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), cell)
+                            .border(1.dp, Color(0xFF4D8BFF), cell)
+                        else Modifier,
+                    )
+                    .feedbackClickable(role = Role.Tab, cue = FeedbackCue.Select) { onSelect(i) }
+                    .semantics { this.selected = on }
+                    .testTag("$tagPrefix-$i"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label, style = runTextStyle(15.sp, if (on) Color.White else t.label, if (on) FontWeight.Bold else FontWeight.SemiBold),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 한 줄 입력칸 — 위에 작은 이름, 남색 칸, 오른쪽 지우기(글이 있을 때). [leading] 이 있으면 앞에 아이콘(검색).
+ */
+@Composable
+fun RunTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String? = null,
+    leading: ImageVector? = null,
+    imeAction: androidx.compose.ui.text.input.ImeAction = androidx.compose.ui.text.input.ImeAction.Done,
+    onImeAction: () -> Unit = {},
+    clearLabel: String? = null,
+    fieldTag: String? = null,
+) {
+    val t = runTone()
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(12.dp)
+    Column(modifier.fillMaxWidth()) {
+        if (label != null) {
+            Text(label, style = runTextStyle(14.sp, t.label, FontWeight.SemiBold), modifier = Modifier.padding(bottom = 6.dp))
+        }
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(t.inset, shape)
+                .border(if (focused) 1.5.dp else 1.dp, if (focused) Color(0xFF4D8BFF) else t.panelEdge, shape)
+                .padding(start = 14.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (leading != null) {
+                Icon(leading, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(10.dp))
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                if (value.isEmpty() && placeholder != null) {
+                    Text(placeholder, style = runTextStyle(16.sp, t.muted, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle = runTextStyle(16.sp, t.text, FontWeight.SemiBold),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(t.cyan),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = imeAction),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onAny = { onImeAction() }),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp)
+                        .onFocusChanged { focused = it.isFocused }
+                        .semantics { if (label != null) contentDescription = label else if (placeholder != null) contentDescription = placeholder }
+                        .then(if (fieldTag != null) Modifier.testTag(fieldTag) else Modifier),
+                )
+            }
+            if (value.isNotEmpty() && clearLabel != null) {
+                Box(
+                    Modifier.size(40.dp).clip(CircleShape).feedbackClickable { onValueChange("") }
+                        .semantics { contentDescription = clearLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.size(20.dp).clip(CircleShape).background(t.label), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Close, contentDescription = null, tint = t.inset, modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
+    }
 }

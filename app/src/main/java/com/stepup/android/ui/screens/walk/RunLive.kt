@@ -248,7 +248,7 @@ internal fun RunLiveContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 RunButton(
-                    ui.primaryLabel, onPrimary, icon = ui.primaryIcon, enabled = primaryEnabled, hero = true,
+                    ui.primaryLabel, onPrimary, icon = ui.primaryIcon, enabled = primaryEnabled, italic = true,
                     modifier = Modifier.testTag("run-primary-action"),
                 )
                 if (showFinish) {
@@ -1037,7 +1037,7 @@ internal fun RunResultContent(
                     RunTileButton(stringResource(R.string.run_open_records), Icons.Outlined.BarChart, onRecords,
                         Modifier.weight(1f).testTag("run-result-records"))
                 }
-                RunButton(stringResource(R.string.run_go_home), onHome, modifier = Modifier.testTag("run-result-done"))
+                RunButton(stringResource(R.string.run_go_home), onHome, italic = true, modifier = Modifier.testTag("run-result-done"))
             }
         }
     }
@@ -1102,7 +1102,7 @@ internal fun DietCompleteContent(totalMinutes: Int, runMinutes: Int, walkMinutes
                 Text(stringResource(R.string.run_diet_done_hint), style = runTextStyle(14.sp, t.cobaltText, FontWeight.Medium), textAlign = TextAlign.Center)
             }
             Box(Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 12.dp, bottom = 12.dp)) {
-                RunButton(stringResource(R.string.run_save_finish), onSave, busy = saving, modifier = Modifier.testTag("run-primary-action"))
+                RunButton(stringResource(R.string.run_save_finish), onSave, busy = saving, hero = true, modifier = Modifier.testTag("run-primary-action"))
             }
         }
     }
@@ -1240,7 +1240,7 @@ internal fun RunSharePreviewContent(
                 Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 10.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                RunButton(shareLabel, onShare, busy = sending, enabled = preview != null, modifier = Modifier.testTag("run-share-send"))
+                RunButton(shareLabel, onShare, busy = sending, enabled = preview != null, italic = true, modifier = Modifier.testTag("run-share-send"))
                 RunButton(stringResource(R.string.run_cancel), onCancel, kind = RunButtonKind.Secondary, modifier = Modifier.testTag("run-share-cancel"))
             }
         }

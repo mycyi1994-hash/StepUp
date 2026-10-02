@@ -203,6 +203,9 @@ object Routes {
     const val RUN_GOALS = "run-goals"
     const val RUN_GOAL_HISTORY = "run-goals/history"
 
+    /** 추천 코스(시안 U04 · K01~K03) — 내 위치에서 가까운 저장 · 게시판 코스 */
+    const val RUN_COURSE = "run-course"
+
     /** 다이어트 모드 — 입력(U05) · 러닝 방법(U06) · 몸 정보·경험 수정(D06) */
     const val RUN_DIET = "run-diet"
     const val RUN_DIET_PLAN = "run-diet/plan"
@@ -997,7 +1000,39 @@ internal fun MainScaffold(
                     },
                     // 내 러닝 기록(시안 U01 → H01)
                     onRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    // 추천 코스(U04)
+                    onCourse = { navController.navigate(Routes.RUN_COURSE) { launchSingleTop = true } },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
+                )
+            }
+            composable(Routes.RUN_COURSE) {
+                val courseScope = rememberCoroutineScope()
+                val startFresh = {
+                    com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                    com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                    navController.navigate(Routes.RUN_NOW) {
+                        popUpTo(Routes.RUN_COURSE) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+                com.stepup.android.ui.screens.walk.CourseRecommendScreen(
+                    onBack = { navController.popBackStack() },
+                    // 이 코스로 시작 — 그 코스를 골라 두고 러닝(권한 안내 → 3-2-1)으로
+                    onStart = { course ->
+                        courseScope.launch {
+                            val repo = com.stepup.android.core.ServiceLocator.courseRepository
+                            val id = repo.localIdFor(course.id) ?: return@launch
+                            repo.select(id)
+                            startFresh()
+                        }
+                    },
+                    onFreeRun = {
+                        courseScope.launch {
+                            // 자유 러닝은 코스 안내 없이
+                            com.stepup.android.core.ServiceLocator.courseRepository.clearSelection()
+                            startFresh()
+                        }
+                    },
                 )
             }
             composable(Routes.RUN_GOALS) {
@@ -1048,7 +1083,22 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.COURSES) {
-                CourseHubScreen(onBack = { navController.popBackStack() })
+                CourseHubScreen(
+                    onBack = { navController.popBackStack() },
+                    // 이 코스로 달리기(K09) — 달리던 러닝이 있으면 그 러닝으로, 아니면 고른 코스로 새 러닝(권한 안내 → 3-2-1)
+                    onRunCourse = {
+                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                        } else {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                            navController.navigate(Routes.RUN_NOW) {
+                                popUpTo(Routes.COURSES) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                )
             }
             composable(Routes.WALLET) {
                 val walletScope = rememberCoroutineScope()
