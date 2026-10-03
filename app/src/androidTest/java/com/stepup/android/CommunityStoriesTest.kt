@@ -170,7 +170,7 @@ class CommunityStoriesTest {
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
         compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.story_area_around, "여의도동")).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.story_blue_area_title, "여의도동")).assertIsDisplayed()
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다
         compose.onNodeWithTag("stories-list").performScrollToNode(hasTestTag("story-row-306"))
         compose.onAllNodesWithTag("story-row-305").assertCountEquals(0)
@@ -180,9 +180,6 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-row-301").assertHasClickAction()
         compose.onNodeWithTag("story-thumb-301").assertHasClickAction()
         shot("01-list", settle = 1_800)
-        tapTag("stories-expand")
-        shot("02-expanded")
-        tapTag("stories-expand")
 
         // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
         tapTag("stories-range")
@@ -205,28 +202,29 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("stories-list").performScrollToIndex(0)
         shot("17-radius-applied-3km", settle = 1_500)
 
-        // ── 14 · 15 · 16 지도 → 장소 → 그 장소의 목록 ─────────────────────
+        // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────
         tapTag("stories-open-map")
         awaitTag("story-map")
         shot("14-map-overview", settle = 2_000)
-        compose.onAllNodesWithTag("story-map-place").onFirst().performClick()
+        compose.onNodeWithTag("story-map-list").performScrollToNode(hasTestTag("story-thumb-302"))
+        tapTag("story-thumb-302")
         awaitTag("story-map-selected")
+        compose.onNodeWithTag("story-map-selected").assert(hasText("여의나루", substring = true))
+        compose.onAllNodesWithTag("story-row-301").assertCountEquals(0)
         shot("15-map-place", settle = 1_500)
-        // 뒤로 가기는 고른 장소부터 푼다
-        pressBack()
+        // "전체 장소"는 장소 필터만 푼다 — "이 장소 글 보기" 같은 다음 단계는 없다
+        tapTag("story-map-all")
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-map-selected").fetchSemanticsNodes().isEmpty() }
+        // 뒤로 가기는 들어온 화면(목록)으로 — 고른 장소가 있어도 지도 안에서 한 번 더 머물지 않는다
         pressBack()
         awaitTag("stories-tab")
         scrollToRow(302)
         tapTag("story-thumb-302")
         awaitTag("story-map-selected")
-        compose.onNodeWithTag("story-map-selected").assertTextEquals("여의나루")
-        tapTag("story-map-place-posts")
-        awaitTag("stories-clear-filter")
-        compose.onNodeWithTag("stories-title").assertTextEquals("여의나루")
-        compose.onAllNodesWithTag("story-row-301").assertCountEquals(0)
+        compose.onNodeWithTag("story-map-selected").assert(hasText("여의나루", substring = true))
         shot("16-place-feed", settle = 1_500)
-        tapTag("stories-clear-filter")
+        pressBack()
+        awaitTag("stories-tab")
         awaitTag("story-row-301")
 
         // ── 03 · 04 · 05 상세 · 댓글 ───────────────────────────────────
@@ -347,12 +345,10 @@ class CommunityStoriesTest {
         awaitText("여의도한강공원")
         closeKeyboard()
         shot("09-place-search")
+        // 검색 결과는 한 번 누르면 바로 정해진다 — 확인 화면을 거치지 않는다(CM14)
         compose.onNodeWithText("여의도한강공원").performClick()
-        awaitTag("story-place-confirm")
-        compose.onNodeWithTag("story-confirm-name").assertTextEquals("여의도한강공원")
-        shot("11-place-confirm", settle = 2_000)
-        tapTag("story-place-choose")
         awaitTag("story-compose")
+        shot("11-place-picked", settle = 1_200)
         compose.onNodeWithTag("story-compose-place", useUnmergedTree = true).assertTextEquals("여의도한강공원")
         // 장소를 고르러 다녀와도 본문은 그대로다
         awaitTextField("story-compose-text", "한강에서 저녁 러닝 같이 하실 분\n7시에 여의나루역 2번 출구 근처에서 천천히 5km 뛰어요.")

@@ -3,7 +3,14 @@ package com.stepup.android.ui.screens.community.stories
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,9 +54,8 @@ import com.stepup.android.data.repo.PlaceSearchResult
 import com.stepup.android.domain.StoryPlace
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.VoltText
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -95,16 +101,17 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
         region?.let {
             Text(
                 stringResource(R.string.story_location_current_region, it.name),
-                color = Slate, fontSize = 12.sp,
+                style = runTextStyle(14.sp, runTone().label, FontWeight.Medium),
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 14.dp),
             )
         }
     }
 }
 
-/** 지역 직접 선택 — 동 · 구 이름으로 찾아 그 지역 한가운데를 기준점으로 쓴다 */
+/** 지역 직접 선택(CM03 · CM04) — 동 · 구 이름으로 찾아 그 지역 한가운데를 기준점으로 쓴다. 결과가 없어도 이전 지역은 그대로 */
 @Composable
 fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
+    val t = runTone()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
@@ -133,11 +140,13 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
         )
         LazyColumn(
             Modifier.fillMaxWidth().weight(1f),
-            contentPadding = PaddingValues(start = StoryFormGutter, end = StoryFormGutter, top = 8.dp, bottom = 24.dp),
+            contentPadding = PaddingValues(start = StoryFormGutter, end = StoryFormGutter, top = 14.dp, bottom = 24.dp),
         ) {
             item {
+                val shape = RoundedCornerShape(16.dp)
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 52.dp).feedbackClickable(role = Role.Button, onClick = {
+                    Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(t.secondaryFace, shape)
+                        .border(1.5.dp, t.cyan, shape).feedbackClickable(role = Role.Button, onClick = {
                         if (StepPermissions.hasLocation(context)) {
                             scope.saveRegionThen(null, onChosen)
                         } else {
@@ -145,17 +154,19 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                         }
                     }).testTag("story-region-my-location"),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    Icon(Icons.Filled.MyLocation, contentDescription = null, tint = Silver, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.story_region_my_location), color = Silver, fontSize = 14.sp)
+                    Icon(Icons.Filled.MyLocation, contentDescription = null, tint = t.cyan, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.story_region_my_location), style = runTextStyle(17.sp, t.cyan, FontWeight.Bold))
                 }
+                Spacer(Modifier.height(18.dp))
             }
             val found = (result as? PlaceSearchResult.Found)?.places?.distinctBy { it.key }
             when {
                 query.isBlank() -> Unit
                 searching || result == null -> item {
-                    Text(stringResource(R.string.story_place_searching), color = Slate, fontSize = 13.sp,
+                    Text(stringResource(R.string.story_place_searching), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
                         modifier = Modifier.padding(vertical = 12.dp))
                 }
                 result is PlaceSearchResult.Offline -> item {
@@ -166,13 +177,13 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                 }
                 found.isNullOrEmpty() -> item {
                     StoryStateBlock(Icons.Filled.Search, stringResource(R.string.story_region_empty_title),
-                        stringResource(R.string.story_place_empty_body)) {
-                        StoryTextButton(stringResource(R.string.story_place_clear), { query = "" }, color = VoltText)
+                        stringResource(R.string.story_blue_region_empty_body), Modifier.testTag("story-region-empty")) {
+                        StoryTextButton(stringResource(R.string.story_place_clear), { query = "" }, color = t.cyan)
                     }
                 }
                 else -> {
                     item {
-                        Text(stringResource(R.string.story_region_results), color = Slate, fontSize = 12.sp,
+                        Text(stringResource(R.string.story_region_results), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
                             modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
                     }
                     items(found, key = { it.key }) { place ->
