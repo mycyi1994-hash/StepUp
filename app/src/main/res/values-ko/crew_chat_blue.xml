@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_blue_reconnecting_title">다시 연결하고 있어요.</string>
+    <string name="chat_blue_reconnecting_body">입력 내용은 남아 있어요.</string>
+    <string name="crew_blue_clear_query">검색어 지우기</string>
+    <string name="crewhome_blue_week_goal_current">현재 목표 %1$dkm</string>
+    <string name="crewhome_blue_week_goal_note">현재 목표를 기준으로 표시해요.</string>
+    <string name="crewhome_blue_run_trim">출발·도착 부근 300m는 지도에서 제외돼요.</string>
+    <string name="crewhome_blue_place_note">모이는 장소를 지도 앱에서 확인할 수 있어요.</string>
+</resources>

@@ -39,6 +39,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
+import com.stepup.android.ui.screens.community.chat.BlueSurface
+import com.stepup.android.ui.screens.community.chat.blueText
+import com.stepup.android.ui.screens.community.chat.BlueBottomBar
+import com.stepup.android.ui.screens.community.chat.BlueButton
+import com.stepup.android.ui.screens.community.chat.BlueGutter
+import com.stepup.android.ui.screens.community.chat.BlueLevelChip
+import com.stepup.android.ui.screens.community.chat.BluePage
+import com.stepup.android.ui.screens.community.chat.BlueSkeleton
+import com.stepup.android.ui.screens.community.chat.BlueTopBar
+import com.stepup.android.ui.screens.community.chat.blueInk
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewHomeRules
 import com.stepup.android.domain.CrewMember
@@ -47,17 +57,9 @@ import com.stepup.android.domain.CrewRun
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
 import com.stepup.android.ui.screens.community.crew.CrewAvatar
-import com.stepup.android.ui.screens.community.crew.CrewBottomBar
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewGutter
 import com.stepup.android.ui.screens.community.crew.CrewImage
-import com.stepup.android.ui.screens.community.crew.CrewLevelChip
 import com.stepup.android.ui.screens.community.crew.CrewLoad
-import com.stepup.android.ui.screens.community.crew.CrewPage
 import com.stepup.android.ui.screens.community.crew.CrewScreenViewModel
-import com.stepup.android.ui.screens.community.crew.CrewSkeletonBox
-import com.stepup.android.ui.screens.community.crew.CrewTopBar
-import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.screens.community.crew.leaderFace
 import com.stepup.android.ui.screens.community.crew.rememberCrewWords
 
@@ -74,37 +76,38 @@ fun CrewIntroScreen(
     onLeader: (String) -> Unit,
     onMembers: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val words = rememberCrewWords()
     val card by viewModel.card.collectAsStateWithLifecycle()
-    CrewPage(Modifier.testTag("home-intro")) {
-        CrewTopBar(stringResource(R.string.crewhome_intro_bar), onBack)
+    BluePage(Modifier.testTag("home-intro")) {
+        BlueTopBar(stringResource(R.string.crewhome_intro_bar), onBack)
         val crew = card
         if (crew == null) {
-            Column(Modifier.weight(1f).padding(horizontal = CrewGutter)) {
+            Column(Modifier.weight(1f).padding(horizontal = BlueGutter)) {
                 Spacer(Modifier.height(20.dp))
-                CrewSkeletonBox(Modifier.fillMaxWidth().height(268.dp), 24.dp)
+                BlueSkeleton(Modifier.fillMaxWidth().height(268.dp), 24.dp)
             }
-            return@CrewPage
+            return@BluePage
         }
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+            Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().homeClickable(onClick = onImage).testTag("home-intro-image")) {
-                CrewImage(crew, 268.dp, 24.dp, Modifier.fillMaxWidth().height(268.dp))
+                CrewImage(crew, 268.dp, 20.dp, Modifier.fillMaxWidth().height(250.dp))
             }
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    crew.name, color = ink.text, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold,
+                    crew.name, style = blueText(34.sp, ink.text, FontWeight.ExtraBold, 1.2f),
                     modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                CrewLevelChip(crew.level)
+                BlueLevelChip(crew.level, large = true)
             }
             if (crew.tagline.isNotBlank()) {
-                Spacer(Modifier.height(14.dp))
-                Text(crew.tagline, color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
+                Spacer(Modifier.height(10.dp))
+                Text(crew.tagline, style = blueText(18.sp, ink.secondary, FontWeight.Medium, 1.5f))
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
+            HomeDivider()
             crew.area.takeIf { it.isNotBlank() }?.let { HomeValueRow(stringResource(R.string.crewhome_intro_area), it, Modifier.testTag("home-intro-area")) }
             if (!crew.schedule.none) HomeValueRow(stringResource(R.string.crewhome_intro_schedule), words.scheduleLong(crew.schedule))
             words.onceLine(crew)?.let { HomeValueRow(stringResource(R.string.crewhome_intro_pace), it) }
@@ -113,20 +116,20 @@ fun CrewIntroScreen(
                     .testTag("home-intro-leader"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CrewAvatar(crew.leaderName, 36.dp, leaderFace(crew), ink.text)
+                ChatFace(crew.leaderName, owner = true, size = 50.dp)
                 Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                    Text(stringResource(R.string.crew_leader_named, crew.leaderName), color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.crew_leader_named, crew.leaderName), style = blueText(17.sp, ink.text, FontWeight.Bold))
                     if (crew.leaderNote.isNotBlank()) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(crew.leaderNote, color = ink.secondary, fontSize = 12.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        Text(crew.leaderNote, style = blueText(15.sp, ink.secondary, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
-                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.height(24.dp))
         }
-        CrewBottomBar {
-            CrewButton(stringResource(R.string.crewhome_intro_members, crew.memberCount), onMembers, Modifier.testTag("home-intro-members"))
+        BlueBottomBar {
+            BlueButton(stringResource(R.string.crewhome_intro_members, crew.memberCount), onMembers, Modifier.testTag("home-intro-members"))
         }
     }
 }
@@ -137,78 +140,78 @@ fun CrewIntroScreen(
 
 @Composable
 fun CrewLevelScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onWeekly: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val card by viewModel.card.collectAsStateWithLifecycle()
     val level by viewModel.level.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) { viewModel.loadLevel() }
-    CrewPage(Modifier.testTag("home-level-page")) {
-        CrewTopBar(stringResource(R.string.crewhome_level_bar), onBack)
+    BluePage(Modifier.testTag("home-level-page")) {
+        BlueTopBar(stringResource(R.string.crewhome_level_bar), onBack)
         val crew = card
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(20.dp))
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+            Spacer(Modifier.height(16.dp))
             if (crew != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CrewImage(crew, 76.dp, 16.dp)
                     Column(Modifier.padding(start = 20.dp)) {
-                        Text(crew.name, color = ink.text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Spacer(Modifier.height(6.dp))
-                        Text(stringResource(R.string.crewhome_level_sub), color = ink.secondary, fontSize = 13.sp)
+                        Text(crew.name, style = blueText(26.sp, ink.text, FontWeight.ExtraBold, 1.25f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        Text(stringResource(R.string.crewhome_level_sub), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                     }
                 }
             }
-            Spacer(Modifier.height(34.dp))
-            Text(stringResource(R.string.crewhome_level_now), color = ink.secondary, fontSize = 14.sp)
+            Spacer(Modifier.height(30.dp))
+            Text(stringResource(R.string.crewhome_level_now), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
             // 저장된 레벨(없으면 새 크루) — 서버 값이 기준이다
             val info = (level as? CrewLoad.Ready)?.value
             val current = info?.level ?: crew?.level
             Text(
                 if (current != null) stringResource(R.string.crew_level_value, current) else stringResource(R.string.crew_level_new),
-                color = ink.text, fontSize = 64.sp, lineHeight = 76.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp).testTag("home-level-now"),
+                style = blueText(72.sp, ink.text, FontWeight.ExtraBold, 1.1f),
+                modifier = Modifier.padding(top = 4.dp).testTag("home-level-now"),
             )
             Spacer(Modifier.height(18.dp))
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(ink.card).padding(horizontal = 24.dp, vertical = 22.dp)
-                    .testTag("home-level-next"),
-            ) {
-                HomeLabel(stringResource(R.string.crewhome_level_next))
-                Spacer(Modifier.height(14.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (current != null) {
-                        Text(stringResource(R.string.crew_level_value, current + 1), color = ink.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+            BlueSurface(Modifier.fillMaxWidth().testTag("home-level-next"), selected = true, radius = 20.dp) {
+                Column(Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
+                    Text(stringResource(R.string.crewhome_level_next), style = blueText(15.sp, ink.secondary, FontWeight.Bold))
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (current != null) {
+                            Text(stringResource(R.string.crew_level_value, current + 1), style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f))
+                        }
+                        Spacer(Modifier.weight(1f))
+                        // 승급 조건은 정해지지 않았다 — XP · 필요 거리 · 보상을 만들지 않는다
+                        Text(stringResource(R.string.crewhome_level_pending), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                     }
-                    Spacer(Modifier.weight(1f))
-                    Text(stringResource(R.string.crewhome_level_pending), color = ink.secondary, fontSize = 13.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Text(stringResource(R.string.crewhome_level_pending_body), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
                 }
-                Spacer(Modifier.height(14.dp))
-                Text(stringResource(R.string.crewhome_level_pending_body), color = ink.secondary, fontSize = 13.sp, lineHeight = 20.sp)
             }
-            Spacer(Modifier.height(36.dp))
-            Text(stringResource(R.string.crewhome_level_week), color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(32.dp))
+            Text(stringResource(R.string.crewhome_level_week), style = blueText(20.sp, ink.text, FontWeight.Bold))
+            Spacer(Modifier.height(14.dp))
             val weekKm = info?.weekKm ?: crew?.weekKm
             val runners = info?.weekRunners ?: crew?.weekRunners
             Row {
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (weekKm != null) stringResource(R.string.crewhome_week_km, km(weekKm)) else "—",
-                        color = ink.text, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("home-level-km"),
+                        style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f), modifier = Modifier.testTag("home-level-km"),
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.crewhome_level_week_km), color = ink.secondary, fontSize = 12.5.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.crewhome_level_week_km), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (runners != null) stringResource(R.string.crewhome_level_runners_value, runners) else "—",
-                        color = ink.text, fontSize = 28.sp, fontWeight = FontWeight.SemiBold,
+                        style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f),
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.crewhome_level_week_runners), color = ink.secondary, fontSize = 12.5.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.crewhome_level_week_runners), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                 }
             }
             Spacer(Modifier.height(28.dp))
         }
-        CrewBottomBar { CrewButton(stringResource(R.string.crewhome_level_weekly), onWeekly, Modifier.testTag("home-level-weekly")) }
+        BlueBottomBar { BlueButton(stringResource(R.string.crewhome_level_weekly), onWeekly, Modifier.testTag("home-level-weekly")) }
     }
 }
 
@@ -219,7 +222,7 @@ fun CrewLevelScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onWeekly
 /** 04 크루원 — 서버 목록 전체를 이어 보인다(크루장 먼저). 27 이름 검색은 같은 자리에서 결과를 바꾼다 */
 @Composable
 fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Unit, onOpen: (member: CrewMember) -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val card by viewModel.card.collectAsStateWithLifecycle()
     val roster by viewModel.roster.collectAsStateWithLifecycle()
     val me by viewModel.me.collectAsStateWithLifecycle()
@@ -228,8 +231,8 @@ fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Uni
         viewModel.load()
         onPauseOrDispose {}
     }
-    CrewPage(Modifier.testTag("home-members-page")) {
-        CrewTopBar(stringResource(R.string.crewhome_members_bar), onBack)
+    BluePage(Modifier.testTag("home-members-page")) {
+        BlueTopBar(stringResource(R.string.crewhome_members_bar), onBack)
         when (val state = roster) {
             is HomeLoad.Ready -> {
                 val all = state.value
@@ -237,27 +240,27 @@ fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Uni
                 val shown = remember(all, query) { all.filter { CrewHomeRules.matches(it.name, query) } }
                 LazyColumn(
                     Modifier.weight(1f).fillMaxWidth().testTag("home-members-list"),
-                    contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp),
+                    contentPadding = PaddingValues(start = BlueGutter, end = BlueGutter, bottom = 40.dp),
                 ) {
                     item(key = "head") {
                         Column {
-                            Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(16.dp))
                             Text(
-                                stringResource(R.string.crewhome_members_title, all.size), color = ink.text, fontSize = 27.sp, fontWeight = FontWeight.SemiBold,
+                                stringResource(R.string.crewhome_members_title, all.size), style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f),
                                 modifier = Modifier.testTag("home-members-title"),
                             )
                             card?.let { crew ->
-                                Spacer(Modifier.height(10.dp))
+                                Spacer(Modifier.height(6.dp))
                                 Text(
                                     crew.capacity?.let { stringResource(R.string.crewhome_members_sub, crew.name, it) } ?: crew.name,
-                                    color = ink.secondary, fontSize = 13.sp,
+                                    style = blueText(16.sp, ink.secondary, FontWeight.Medium),
                                 )
                             }
-                            Spacer(Modifier.height(26.dp))
-                            HomeSearchField(query, viewModel::setQuery, stringResource(R.string.crewhome_members_search), Modifier.testTag("home-members-search"))
+                            Spacer(Modifier.height(20.dp))
+                            HomeSearchField(query, viewModel::setQuery, stringResource(R.string.crewhome_members_search), fieldTag = "home-members-search")
                             Spacer(Modifier.height(if (searching) 24.dp else 14.dp))
                             if (searching && shown.isNotEmpty()) {
-                                Text(stringResource(R.string.crewhome_members_found, shown.size), color = ink.secondary, fontSize = 13.sp, modifier = Modifier.testTag("home-members-found"))
+                                Text(stringResource(R.string.crewhome_members_found, shown.size), style = blueText(15.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.testTag("home-members-found"))
                                 Spacer(Modifier.height(8.dp))
                             }
                         }
@@ -265,9 +268,9 @@ fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Uni
                     if (searching && shown.isEmpty()) {
                         item(key = "none") {
                             Column(Modifier.fillMaxWidth().padding(top = 48.dp).testTag("home-members-none"), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(stringResource(R.string.crewhome_members_none_title), color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                                Spacer(Modifier.height(10.dp))
-                                Text(stringResource(R.string.crewhome_members_none_body), color = ink.secondary, fontSize = 13.5.sp)
+                                Text(stringResource(R.string.crewhome_members_none_title), style = blueText(20.sp, ink.text, FontWeight.Bold))
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.crewhome_members_none_body), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                             }
                         }
                     }
@@ -290,11 +293,11 @@ fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Uni
                 modifier = Modifier.padding(top = 150.dp),
                 tag = "home-members-error",
             )
-            HomeLoad.Loading -> Column(Modifier.padding(CrewGutter)) {
-                CrewSkeletonBox(Modifier.fillMaxWidth().height(40.dp))
+            HomeLoad.Loading -> Column(Modifier.padding(BlueGutter)) {
+                BlueSkeleton(Modifier.fillMaxWidth().height(40.dp))
                 Spacer(Modifier.height(24.dp))
                 repeat(5) {
-                    CrewSkeletonBox(Modifier.fillMaxWidth().height(56.dp))
+                    BlueSkeleton(Modifier.fillMaxWidth().height(56.dp))
                     Spacer(Modifier.height(14.dp))
                 }
             }
@@ -304,21 +307,20 @@ fun CrewMembersHomeScreen(viewModel: CrewHomeMembersViewModel, onBack: () -> Uni
 
 @Composable
 private fun MemberRow(card: CrewCard?, member: CrewMember, sub: String, onClick: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     Row(
         Modifier.fillMaxWidth().heightIn(min = 76.dp).homeClickable(onClick = onClick).testTag("home-member-${member.userId}"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (member.owner && card != null) CrewAvatar(member.name, 44.dp, leaderFace(card), ink.text)
-        else ChatFace(member.name, owner = false, size = 44.dp)
+        ChatFace(member.name, owner = member.owner, size = 48.dp)
         Column(Modifier.weight(1f).padding(start = 18.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).padding(vertical = 14.dp)) {
-                    Text(member.name, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.height(6.dp))
-                    Text(sub, color = if (member.owner) ink.info else ink.secondary, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(member.name, style = blueText(18.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(4.dp))
+                    Text(sub, style = blueText(14.5.sp, if (member.owner) ink.info else ink.secondary, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
             }
             HomeDivider()
         }
@@ -335,7 +337,7 @@ private fun MemberRow(card: CrewCard?, member: CrewMember, sub: String, onClick:
  */
 @Composable
 fun CrewPersonHomeScreen(viewModel: CrewHomePersonViewModel, onBack: () -> Unit, onRun: (CrewRun) -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val card by viewModel.card.collectAsStateWithLifecycle()
     val person by viewModel.person.collectAsStateWithLifecycle()
     val lastRun by viewModel.lastRun.collectAsStateWithLifecycle()
@@ -347,85 +349,86 @@ fun CrewPersonHomeScreen(viewModel: CrewHomePersonViewModel, onBack: () -> Unit,
     LaunchedEffect(ended) { if (ended) onEnded() }
     val current = (person as? HomeLoad.Ready)?.value
     val leader = current?.role == CrewPersonRole.OWNER
-    CrewPage(Modifier.testTag(if (leader) "home-person-leader" else "home-person")) {
-        CrewTopBar(stringResource(if (leader) R.string.crewhome_person_leader_bar else R.string.crewhome_person_member_bar), onBack)
+    BluePage(Modifier.testTag(if (leader) "home-person-leader" else "home-person")) {
+        BlueTopBar(stringResource(if (leader) R.string.crewhome_person_leader_bar else R.string.crewhome_person_member_bar), onBack)
         when {
-            current != null -> Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-                Spacer(Modifier.height(34.dp))
+            current != null -> Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+                Spacer(Modifier.height(24.dp))
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val crew = card
-                    if (leader && crew != null) CrewAvatar(current.name, 96.dp, leaderFace(crew), ink.text)
-                    else ChatFace(current.name, owner = leader, size = 96.dp)
+                    ChatFace(current.name, owner = leader, size = 96.dp)
                 }
-                Spacer(Modifier.height(22.dp))
+                Spacer(Modifier.height(18.dp))
                 Text(
-                    current.name, color = ink.text, fontSize = 30.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                    current.name, style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f), textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().testTag("home-person-name"),
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
                 val member = current.role == CrewPersonRole.OWNER || current.role == CrewPersonRole.MEMBER
                 Text(
                     if (member) stringResource(if (leader) R.string.crewhome_person_leader_of else R.string.crewhome_person_member_of, card?.name.orEmpty())
                     else stringResource(R.string.crewhome_person_gone),
-                    color = ink.info, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                    style = blueText(16.sp, ink.info, FontWeight.Bold), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
                 )
                 current.joinedAt?.takeIf { member && it > 0 }?.let { joined ->
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        stringResource(R.string.crewhome_person_since, homeDate(localDay(joined))), color = ink.secondary, fontSize = 12.5.sp,
+                        stringResource(R.string.crewhome_person_since, homeDate(localDay(joined))), style = blueText(15.sp, ink.secondary, FontWeight.Medium),
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().testTag("home-person-since"),
                     )
                 }
                 val note = card?.leaderNote?.takeIf { leader && it.isNotBlank() }
                 if (note != null) {
-                    Spacer(Modifier.height(40.dp))
-                    Text(note, color = ink.text, fontSize = 20.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("home-person-note"))
+                    Spacer(Modifier.height(32.dp))
+                    Text(note, style = blueText(22.sp, ink.text, FontWeight.ExtraBold, 1.45f), modifier = Modifier.testTag("home-person-note"))
                 }
                 if (member) {
-                    Spacer(Modifier.height(40.dp))
-                    HomeDivider()
                     Spacer(Modifier.height(28.dp))
-                    Text(stringResource(R.string.crewhome_person_runs), color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(18.dp))
+                    HomeDivider()
+                    Spacer(Modifier.height(24.dp))
+                    Text(stringResource(R.string.crewhome_person_runs), style = blueText(18.sp, ink.text, FontWeight.Bold))
+                    Spacer(Modifier.height(14.dp))
                     when (val runState = lastRun) {
                         is HomeLoad.Ready -> {
                             val run = runState.value
                             if (run == null) {
                                 Text(
-                                    stringResource(R.string.crewhome_person_runs_none), color = ink.secondary, fontSize = 14.sp,
+                                    stringResource(R.string.crewhome_person_runs_none), style = blueText(15.5.sp, ink.secondary, FontWeight.Medium),
                                     modifier = Modifier.testTag("home-person-runs-none"),
                                 )
                             } else {
-                                Row(
-                                    Modifier.fillMaxWidth().heightIn(min = 64.dp).homeClickable { onRun(run) }.testTag("home-person-run"),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(
-                                            stringResource(R.string.crewhome_person_run, recordDayLabel(run.endedAt), km(run.km)),
-                                            color = ink.text, fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
-                                        )
-                                        Spacer(Modifier.height(8.dp))
-                                        Text(
-                                            stringResource(R.string.crewhome_person_run_sub, homeClock(run.endedAt), durationLong(run.durationS)),
-                                            color = ink.secondary, fontSize = 12.5.sp,
-                                        )
+                                // 시각은 끝난 시각, 실제 runId 의 19 로
+                                BlueSurface(Modifier.fillMaxWidth().testTag("home-person-run"), onClick = { onRun(run) }, selected = true) {
+                                    Row(
+                                        Modifier.heightIn(min = 72.dp).padding(start = 20.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                stringResource(R.string.crewhome_person_run, recordDayLabel(run.endedAt), km(run.km)),
+                                                style = blueText(22.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+                                            )
+                                            Spacer(Modifier.height(4.dp))
+                                            Text(
+                                                stringResource(R.string.crewhome_person_run_sub, homeClock(run.endedAt), durationLong(run.durationS)),
+                                                style = blueText(15.sp, ink.secondary, FontWeight.Medium),
+                                            )
+                                        }
+                                        Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
                                     }
-                                    Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
-                        HomeLoad.Loading -> CrewSkeletonBox(Modifier.fillMaxWidth().height(56.dp))
-                        else -> Text(stringResource(R.string.crewhome_person_error), color = ink.secondary, fontSize = 14.sp)
+                        HomeLoad.Loading -> BlueSkeleton(Modifier.fillMaxWidth().height(56.dp))
+                        else -> Text(stringResource(R.string.crewhome_person_error), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                     }
                 }
                 Spacer(Modifier.height(32.dp))
             }
-            person is HomeLoad.Loading -> Column(Modifier.weight(1f).padding(CrewGutter), horizontalAlignment = Alignment.CenterHorizontally) {
+            person is HomeLoad.Loading -> Column(Modifier.weight(1f).padding(BlueGutter), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.height(20.dp))
-                CrewSkeletonBox(Modifier.size(96.dp), 48.dp)
+                BlueSkeleton(Modifier.size(96.dp), 48.dp)
                 Spacer(Modifier.height(20.dp))
-                CrewSkeletonBox(Modifier.width(140.dp).height(30.dp))
+                BlueSkeleton(Modifier.width(140.dp).height(30.dp))
             }
             else -> ChatRetryState(
                 title = stringResource(R.string.crewhome_person_error),
