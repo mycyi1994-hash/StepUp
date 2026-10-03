@@ -134,35 +134,22 @@ class ShoeDetailDesignTest {
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
             shot("02-in-app-detail")
 
-            // 04 → 05 → 시스템 뒤로(04) → 확인 — 능력치 자세히 · 신발 정보는 ⋯ 안에서
-            tap("shoe-more")
-            awaitTag("shoe-manage-sheet")
-            tap("shoe-row-stats")
-            awaitTag("shoe-stats-sheet")
-            shot("04-in-app-stats")
-            tap("shoe-stats-help")
-            awaitTag("shoe-explain-sheet")
-            shot("05-in-app-explain")
-            back()
-            awaitTag("shoe-stats-sheet")
-            tap("shoe-stats-ok")
-            awaitGone("shoe-stats-sheet")
-
-            // 06 — 신발 정보: 신발 번호 · 받은 날짜 · 체인 줄(이 기기에서 넣은 신발이라 아직 체인에 없음)
+            // 파란 톤 v4 SD15 — 신발 기록(⋯ 관리 안): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
             tap("shoe-more")
             awaitTag("shoe-manage-sheet")
             tap("shoe-row-info")
             awaitTag("shoe-info-sheet")
-            compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.sdv_chain_none))
+            compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_none))
             shot("06-in-app-info")
             tap("shoe-info-ok")
             awaitGone("shoe-info-sheet")
 
-            // ⋯ — 이전 상세의 강화 · 수리 · 판매(지우지 않고 옮김). 보기만 하고 닫는다
+            // SD13 — ⋯ 신발 관리: 수리하기 · 판매하기 · 신발 기록(강화는 본문 아래 직접 버튼). 보기만 하고 닫는다
             tap("shoe-more")
             awaitTag("shoe-manage-sheet")
-            awaitTag("shoe-manage-enhance")
+            awaitTag("shoe-manage-repair")
             compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
+            compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
             shot("19-in-app-manage")
             back()
             awaitGone("shoe-manage-sheet")
@@ -282,23 +269,16 @@ class ShoeDetailDesignTest {
         // 03 — 신고 있는 신발: 버튼은 강화가 아니라 "지금 신고 있어요"(누를 수 없음)
         show("s03-equipped-detail", "shoe-art", detail(ready(WORN)))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_status_wearing))
-        // 04 — 서버 신발(새 도감)은 있는 값 세 줄 · 예전 신발은 다섯 줄
-        show("s04-all-stats", "shoe-stats-sheet", detail(ready(PAIR_A), sheet = "Stats"))
-        compose.onNodeWithTag("shoe-stat-durability").assertTextContains("100 / 100")
-        compose.onAllNodesWithTag("shoe-stat-luck").assertCountEquals(0)
-        show("s04b-all-stats-legacy", "shoe-stats-sheet", detail(ready(WORN), sheet = "Stats"))
-        compose.onNodeWithTag("shoe-stat-luck").assertTextContains("1.05")
-        compose.onNodeWithTag("shoe-stat-comfort").assertTextContains("1.12")
-        show("s05-stat-explanation", "shoe-explain-sheet", detail(ready(WORN), sheet = "Explain"))
-        // 06 — 신발 정보 + 체인 줄(시안에 없는 줄): 없음 · v3 금고
-        show("s06-shoe-information", "shoe-info-sheet", detail(ready(PAIR_A), sheet = "Info"))
-        compose.onNodeWithTag("shoe-info-number").assertTextContains("#0002")
+        // 파란 톤 v4 — 예전 능력치 자세히 · 설명 시트(04 · 05)는 본문 네 줄로 바뀌어 없다(전달본 07-기존화면-대응표)
+        // SD15 · SD17 신발 기록 — 체인 등록: 없음 · v3 금고. 민팅 번호와 체인 번호를 합치지 않는다
+        show("s06-shoe-information", "shoe-info-sheet", detail(ready(PAIR_A), sheet = "Record"))
+        compose.onNodeWithTag("shoe-info-number").assertTextContains("No. 0002")
         compose.onNodeWithTag("shoe-info-received").assertTextContains("2026.09.27")
-        compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.sdv_chain_none))
+        compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_none))
         compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
-        show("s06b-shoe-information-vault", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Info"))
-        compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.sdv_chain_vault, 1_000_003L))
-        show("s06c-shoe-information-legacy", "shoe-info-sheet", detail(ready(WORN), sheet = "Info"))
+        show("s06b-shoe-information-vault", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Record"))
+        compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_vault, 1_000_003L))
+        show("s06c-shoe-information-legacy", "shoe-info-sheet", detail(ready(WORN), sheet = "Record"))
         compose.onNodeWithTag("shoe-info-faction").assertExists()
         // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
@@ -322,7 +302,7 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-error-retry").assertHasClickAction()
         show("s11b-equip-unconfirmed", "shoe-equip-error",
             detail(ready(PAIR_A), result = EquipResult.NotWorn(PAIR_A.id, EquipFailure.OFFLINE, WORN.id, confirmed = false)))
-        compose.onNodeWithTag("shoe-error-kept").assertTextEquals(string(R.string.sdv_error_unknown_body))
+        compose.onNodeWithTag("shoe-error-kept").assertTextEquals(string(R.string.care_wear_check_body))
         show("s11c-equip-error-none", "shoe-equip-error",
             detail(ready(PAIR_A, all.map { it.copy(equipped = false) }), result = EquipResult.NotWorn(PAIR_A.id, EquipFailure.REJECTED, null, confirmed = true)))
         compose.onNodeWithTag("shoe-error-kept").assertTextEquals(string(R.string.sdv_error_none))
@@ -361,22 +341,22 @@ class ShoeDetailDesignTest {
         // ⋯ — 옮긴 기존 행동. 신고 있으면 판매는 까닭과 함께 누를 수 없다
         show("s19-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
         compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
-        compose.onNodeWithTag("shoe-manage-enhance").assertIsEnabled()
-        compose.onNodeWithTag("shoe-row-stats").assertHasClickAction()
+        compose.onNodeWithTag("shoe-manage-repair").assertIsEnabled()
+        compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
         compose.onNodeWithTag("shoe-row-info").assertHasClickAction()
 
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
         show("s30-light-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         show("s30b-light-detail", "shoe-art", detail(ready(PAIR_A)))
-        show("s30c-light-stats", "shoe-stats-sheet", detail(ready(WORN), sheet = "Stats"))
+        show("s30c-light-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
         compose.runOnIdle { light = false; large = true }
         show("s31-large-font-detail", "shoe-art", detail(ready(SPIKE)))
         assertBarsAligned()
         show("s31d-large-font-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertBarsAligned()
         show("s31b-large-font-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
-        show("s31c-large-font-info", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Info"))
+        show("s31c-large-font-info", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Record"))
         compose.runOnIdle { large = false; narrow = true }
         show("s32-narrow-detail", "shoe-art", detail(ready(SPIKE)))
         assertBarsAligned()
