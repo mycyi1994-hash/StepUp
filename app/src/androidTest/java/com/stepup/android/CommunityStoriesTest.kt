@@ -341,8 +341,13 @@ class CommunityStoriesTest {
         shot("08-place-picker")
         compose.onNodeWithTag("story-place-search").performTextInput("달빛러닝공원")
         awaitTag("story-place-empty")
+        // 자판이 떠 있으면 아래의 "검색어 지우기"를 자판이 가린다 — 내리고 누른다
+        closeKeyboard()
         shot("10-place-empty")
-        compose.onNodeWithText(context.getString(R.string.story_place_clear)).performClick()
+        val clearButton = compose.onNodeWithText(context.getString(R.string.story_place_clear))
+        runCatching { clearButton.performScrollTo() }
+        clearButton.performClick()
+        awaitTextField("story-place-search", "")
         compose.onNodeWithTag("story-place-search").performTextInput("한강")
         awaitText("여의도한강공원")
         closeKeyboard()
