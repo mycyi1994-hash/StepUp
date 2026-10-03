@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- シューズ抽選 青トーン(2026-10-03 統合版 v4)。回数・距離はすべてサーバーの値 -->
+<resources>
+    <string name="draw_blue_subtitle_ready">シューズはすべて無料で引けます。</string>
+    <string name="draw_blue_subtitle_loading">抽選回数を読み込んでいます。</string>
+    <string name="draw_blue_subtitle_failed">抽選回数を読み込めませんでした。</string>
+    <string name="draw_blue_left_label">残り回数</string>
+    <string name="draw_blue_free_breakdown">登録特典 %1$d回 + 今日 %2$d回</string>
+    <string name="draw_blue_before_link">ウォレット未接続</string>
+    <string name="draw_blue_on_first_link">初めて接続すると</string>
+    <string name="draw_blue_run_per_step">接続後ランニング%1$skmごとに1回</string>
+    <string name="draw_blue_reconnect_hint">ウォレットを再接続してください</string>
+    <string name="draw_blue_pending_hint">結果が出たら確認できます。</string>
+    <string name="draw_blue_history">回数の内訳を見る</string>
+    <string name="draw_blue_premium_sheet_sub">ウォレット接続後、ランニング%1$skmごとに1回もらえます。</string>
+    <string name="draw_blue_benefit_note">ウォレットを接続して走ると、プレミアム抽選の回数をさらに貯められます。</string>
+    <string name="draw_blue_free_empty_daily">毎日無料抽選を%1$d回お届けします。</string>
+    <string name="draw_blue_run_sub">接続したウォレットでランニングの回数を貯められます。</string>
+    <string name="draw_blue_run_rule">ランニング%1$skmごとにプレミアム抽選を1回もらえます。</string>
+    <string name="draw_blue_request_head">シューズを確認しています</string>
+    <string name="draw_blue_request_sub">結果が確認されると箱が開きます。</string>
+    <string name="draw_blue_opening_head">箱を開けています</string>
+    <string name="draw_blue_opening_note">シューズ1足が手持ちに追加されます。</string>
+    <string name="draw_blue_check_sub">完了したか確認してからシューズをお見せします。</string>
+    <string name="draw_blue_level_number">Lv. %1$d · %2$s</string>
+</resources>

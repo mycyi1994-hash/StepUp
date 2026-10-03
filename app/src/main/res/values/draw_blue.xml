@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoe draw in the approved blue tone (2026-10-03 hand-off v4, stepup-draw-blue-claude-v19). Counts and distances always come from the server -->
+<resources>
+    <string name="draw_blue_subtitle_ready">Every shoe can be drawn for free.</string>
+    <string name="draw_blue_subtitle_loading">Loading your draw chances.</string>
+    <string name="draw_blue_subtitle_failed">Couldn\'t load your draw chances.</string>
+    <string name="draw_blue_left_label">Chances left</string>
+    <string name="draw_blue_free_breakdown">Sign-up gift %1$d + today %2$d</string>
+    <string name="draw_blue_before_link">Wallet not connected yet</string>
+    <string name="draw_blue_on_first_link">On your first connection</string>
+    <string name="draw_blue_run_per_step">1 per %1$s km run after connecting</string>
+    <string name="draw_blue_reconnect_hint">Please connect your wallet again</string>
+    <string name="draw_blue_pending_hint">You can see it once the result is ready.</string>
+    <string name="draw_blue_history">See chance history</string>
+    <string name="draw_blue_premium_sheet_sub">After connecting a wallet, you get 1 for every %1$s km you run.</string>
+    <string name="draw_blue_benefit_note">Run after connecting your wallet to collect more premium draw chances.</string>
+    <string name="draw_blue_free_empty_daily">You get %1$d free draws every day.</string>
+    <string name="draw_blue_run_sub">Your connected wallet collects running chances.</string>
+    <string name="draw_blue_run_rule">You get 1 premium draw for every %1$s km you run.</string>
+    <string name="draw_blue_request_head">Checking your shoe</string>
+    <string name="draw_blue_request_sub">The box opens once the result is confirmed.</string>
+    <string name="draw_blue_opening_head">Opening the box</string>
+    <string name="draw_blue_opening_note">This pair is added to your shoes.</string>
+    <string name="draw_blue_check_sub">We\'ll show the shoe after confirming the draw went through.</string>
+    <string name="draw_blue_level_number">Lv. %1$d · %2$s</string>
+</resources>

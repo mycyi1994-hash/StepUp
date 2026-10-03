@@ -7,174 +7,67 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.DrawKind
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.components.RunBackdrop
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunMeter
+import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.SneakerVisual
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.LocalMotion
-import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.StepUpColors
 
 /*
- * 신발 뽑기 한 벌(2026-09-28 전달본 "신발 뽑기 디자인" 26장, docs/redesign/shoe-draw-v3) — 색 · 버튼 · 탭 · 상자 무대 · 상자 열기.
- * 어두운 테마는 확정 메인 시안(01 · 02)에서 잰 값(편집용 디자인의 design.css), 밝은 테마는 같은 관계로 옮긴 값이다.
- * 상자는 매트한 실제 신발 상자 — 네온 · 발광 링 · 폭죽 · 금빛 상자를 더하지 않는다(전달서).
+ * 신발 뽑기 한 벌 — 2026-10-03 파란 톤 통합 전달본 v4(stepup-draw-blue-claude-v19)부터 색 · 버튼 · 바닥은 러닝 리메이크의 남색 부품
+ * (ui/components/RunStyle.kt)을 그대로 쓴다. 여기에는 뽑기만의 것 — 화면 칸 나누기([DrawFitLayout]) · 상자 열기([UnboxingStage]) —
+ * 와 예전 이름(DrawButton · DrawBackdrop)을 남색 부품으로 잇는 얇은 이음만 둔다.
+ * 상자는 매트한 실제 신발 상자다 — 네온 · 폭죽 · 금빛 상자를 더하지 않는다. 빛은 상자 · 신발 무대에만 둔다(화면 전체를 깜빡이지 않는다).
  */
 
-@Immutable
-internal class DrawPalette(
-    val background: Color,
-    val glow: Color,
-    val text: Color,
-    /** 보조 글 — "남은 무료 뽑기" 같은 이름 */
-    val secondary: Color,
-    /** 더 흐린 보조 글 — 안내 한 줄 */
-    val note: Color,
-    /** 강조 숫자 · 글자 링크(+1회 · 지금 사용할 수 있는 기회) */
-    val accent: Color,
-    val divider: Color,
-    val tabFace: Color,
-    val tabEdge: Color,
-    val tabOn: Color,
-    val tabOnEdge: Color,
-    val tabOffText: Color,
-    val stageFrom: Color,
-    val stageTo: Color,
-    val stageGlow: Color,
-    val stageText: Color,
-    val stageSub: Color,
-    val chipFace: Color,
-    val chipText: Color,
-    val chipQuietFace: Color,
-    val chipQuietText: Color,
-    val primaryFace: Color,
-    val primaryEdge: Color,
-    val primaryText: Color,
-    /** 누를 수 없는 버튼 — "불러오는 중" · "상급 뽑기를 잠시 멈췄어요" */
-    val offFace: Color,
-    val offEdge: Color,
-    val offText: Color,
-    /** 테두리만 있는 보조 버튼 — "한 번 더 뽑기" · "닫기" · "무료 기회 안내" */
-    val ghostEdge: Color,
-    val ghostText: Color,
-    val row: Color,
-    val rowEdge: Color,
-    val skeleton: Color,
-    val track: Color,
-    val barFrom: Color,
-    val barTo: Color,
-    val toastFace: Color,
-    val toastEdge: Color,
-)
-
-private val DarkDraw = DrawPalette(
-    background = Color(0xFF0A111F), glow = Color(0xFF0C1428),
-    text = Color(0xFFF2F4FC), secondary = Color(0xFF93A1DC), note = Color(0xFF7482B8), accent = Color(0xFF6D8BFF),
-    divider = Color(0xFF25304F),
-    tabFace = Color(0xFF0E1528), tabEdge = Color(0xFF252E8B), tabOn = Color(0xFF3B51D3), tabOnEdge = Color(0x598CA0FF),
-    tabOffText = Color(0xFF9AA6DA),
-    stageFrom = Color(0xFF2F4696), stageTo = Color(0xFF2B3F87), stageGlow = Color(0xFF3A4E9E),
-    stageText = Color(0xFFFFFFFF), stageSub = Color(0xFFAAB7F2),
-    chipFace = Color(0xFFBBCBFD), chipText = Color(0xFF1F2B7A), chipQuietFace = Color(0x38BBCBFD), chipQuietText = Color(0xFFDDE4FF),
-    primaryFace = Color(0xFF3358FA), primaryEdge = Color(0xFF829EF6), primaryText = Color(0xFFFFFFFF),
-    offFace = Color(0xFF353F68), offEdge = Color(0xFF4A5584), offText = Color(0xFFA3ADD6),
-    ghostEdge = Color(0xFF2F3D70), ghostText = Color(0xFFC9D2F5),
-    row = Color(0xE616213E), rowEdge = Color(0xFF23305A),
-    skeleton = Color(0xFF223249), track = Color(0xFF26304F), barFrom = Color(0xFF2F58F0), barTo = Color(0xFF6A8BFF),
-    toastFace = Color(0xFF16213E), toastEdge = Color(0xFF2A3866),
-)
-
-private val LightDraw = DrawPalette(
-    background = Color(0xFFF4F6FC), glow = Color(0xFFE3E9FA),
-    text = Color(0xFF121A33), secondary = Color(0xFF56628E), note = Color(0xFF6B769C), accent = Color(0xFF3358FA),
-    divider = Color(0xFFD5DCEE),
-    tabFace = Color(0xFFFFFFFF), tabEdge = Color(0xFFC9D2F5), tabOn = Color(0xFF3B51D3), tabOnEdge = Color(0x598CA0FF),
-    tabOffText = Color(0xFF56628E),
-    stageFrom = Color(0xFF3E57B2), stageTo = Color(0xFF34499C), stageGlow = Color(0xFF5A70C4),
-    stageText = Color(0xFFFFFFFF), stageSub = Color(0xFFDCE3FF),
-    chipFace = Color(0xFFDCE4FF), chipText = Color(0xFF1F2B7A), chipQuietFace = Color(0x40FFFFFF), chipQuietText = Color(0xFFFFFFFF),
-    primaryFace = Color(0xFF3358FA), primaryEdge = Color(0xFF829EF6), primaryText = Color(0xFFFFFFFF),
-    offFace = Color(0xFFDCE1F0), offEdge = Color(0xFFC3CAE0), offText = Color(0xFF6B769C),
-    ghostEdge = Color(0xFFB9C3E6), ghostText = Color(0xFF2B3A73),
-    row = Color(0xFFFFFFFF), rowEdge = Color(0xFFD5DCEE),
-    skeleton = Color(0xFFD3DCE9), track = Color(0xFFDCE2F2), barFrom = Color(0xFF2F58F0), barTo = Color(0xFF6A8BFF),
-    toastFace = Color(0xFF16213E), toastEdge = Color(0xFF2A3866),
-)
-
-@Composable
-internal fun drawPalette(): DrawPalette = if (StepUpColors.dark) DarkDraw else LightDraw
-
-/** 셸 밖에서 결과를 그릴 때(예전 이름 [DrawResultDialog])만 까는 바탕 — 짙은 남색, 위가 조금 밝다 */
+/** 뽑기 탭 바닥 — 러닝 · 신발 탭과 같은 남색 바닥(앱 셸이 상태 막대 밑까지 깐다) */
 @Composable
 internal fun DrawBackdrop(modifier: Modifier = Modifier) {
-    val p = drawPalette()
-    Canvas(modifier.background(p.background)) {
-        val center = Offset(size.width * 0.5f, 0f)
-        val radius = size.width * 1.1f
-        drawCircle(Brush.radialGradient(listOf(p.glow, Color.Transparent), center, radius), radius, center)
-    }
+    RunBackdrop(modifier)
 }
 
 internal enum class DrawButtonStyle { Primary, Ghost, Off }
 
 /**
- * 실행 버튼 — 일반 크기(높이 52, 모서리 14, 19sp). 화면마다 크기를 바꾸지 않는다(전달서: 과하게 높은 버튼 금지).
- * 누를 수 없으면(또는 [DrawButtonStyle.Off]) 흐린 면. 일하는 중이면 돌고 누를 수 없다.
+ * 뽑기의 버튼 — 주 행동은 공통 주 버튼(흰 면 · 남색 글자 · 얇은 파란 아랫면, 눌리면 1~2dp 내려앉는다), 보조 행동은 글자 버튼
+ * (닫기 · 나중에 · 뽑기 화면으로). 누를 수 없으면([DrawButtonStyle.Off] · [enabled] = false) 흐린 면, 일하는 중이면 도는 표시.
+ * 화면마다 모양 · 크기를 바꾸지 않는다(전달서: 시안마다 다른 모서리는 공통 버튼 하나로).
  */
 @Composable
 internal fun DrawButton(
@@ -184,70 +77,16 @@ internal fun DrawButton(
     style: DrawButtonStyle = DrawButtonStyle.Primary,
     enabled: Boolean = true,
     loading: Boolean = false,
+    icon: ImageVector? = null,
 ) {
-    val p = drawPalette()
-    val shape = RoundedCornerShape(14.dp)
-    val off = style == DrawButtonStyle.Off || (!enabled && style == DrawButtonStyle.Primary)
-    val face = when {
-        off -> p.offFace
-        style == DrawButtonStyle.Ghost -> Color.Transparent
-        else -> p.primaryFace
-    }
-    val edge = when {
-        off -> p.offEdge
-        style == DrawButtonStyle.Ghost -> p.ghostEdge
-        else -> p.primaryEdge
-    }
-    val ink = when {
-        off -> p.offText
-        style == DrawButtonStyle.Ghost -> if (enabled) p.ghostText else p.offText
-        else -> p.primaryText
-    }
-    val clickable = enabled && !loading && style != DrawButtonStyle.Off
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(face, shape).border(1.5.dp, edge, shape)
-            .feedbackClickable(enabled = clickable, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (loading) {
-            CircularProgressIndicator(Modifier.size(18.dp), color = ink, strokeWidth = 2.dp)
-            Spacer(Modifier.width(10.dp))
-        }
-        Text(
-            text, color = ink, fontSize = 19.sp, letterSpacing = (-0.2).sp, textAlign = TextAlign.Center,
-            fontWeight = if (style == DrawButtonStyle.Ghost) FontWeight.SemiBold else FontWeight.Bold,
+    when (style) {
+        DrawButtonStyle.Ghost -> RunTextAction(text, onClick, modifier.fillMaxWidth(), enabled = enabled && !loading)
+        else -> RunButton(
+            text, onClick, modifier, enabled = enabled && style != DrawButtonStyle.Off, busy = loading, icon = icon,
         )
     }
 }
 
-/** 글자 링크 — "기회 내역 보기 ›" · "다음 1회까지 0.4km ›" · "닫기". 누르는 곳은 44dp 이상 */
-@Composable
-internal fun DrawLink(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    chevron: Boolean = false,
-    fontSize: Float = 14f,
-    enabled: Boolean = true,
-) {
-    val p = drawPalette()
-    Row(
-        modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(end = if (chevron) 0.dp else 6.dp, start = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text, color = if (enabled) p.accent else p.secondary, fontSize = fontSize.sp, fontWeight = FontWeight.Medium)
-        if (chevron) {
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.accent, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-/** 러닝 진행 막대 — 모은 거리의 몫(서버 값) */
 /**
  * 위 · 무대 · 아래를 쌓는다 — 위 · 아래 글자 칸을 먼저 재고, 무대에는 남은 높이를 준다([minStage]–[maxStage]).
  * 창 높이 [viewport] 안에 다 들면 스크롤 거리가 0 이다(메인: 내용 · 실행 버튼 · 하단 탭이 함께, 결과: 신발 · 이름이 함께 보인다).
@@ -288,15 +127,10 @@ internal fun DrawFitLayout(
     }
 }
 
+/** 러닝 진행 막대 — 모은 거리의 몫(서버 값). 공통 막대(파랑 → 시안) */
 @Composable
 internal fun DrawProgressBar(fraction: Float, modifier: Modifier = Modifier) {
-    val p = drawPalette()
-    Box(modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(p.track)) {
-        Box(
-            Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(4.dp))
-                .background(Brush.horizontalGradient(listOf(p.barFrom, p.barTo))),
-        )
-    }
+    RunMeter(fraction, modifier, height = 8.dp)
 }
 
 // ── 받침과 상자 · 상자 열기(11) ─────────────────────────────────────
@@ -373,7 +207,7 @@ internal fun UnboxingStage(
     onFinished: () -> Unit = {},
     frozenAt: Float? = null,
 ) {
-    val p = drawPalette()
+    val tone = runTone()
     val reduced = LocalMotion.current.reduced && frozenAt == null
     val time = remember(shoe?.id) { Animatable(frozenAt ?: 0f) }
     val finished by rememberUpdatedState(onFinished)
@@ -396,7 +230,7 @@ internal fun UnboxingStage(
         fun fade() = if (reduced) (time.value / ReducedMillis).coerceIn(0f, 1f) else 0f
         // 뒤의 푸른 빛 · 바닥 그림자
         Canvas(Modifier.fillMaxSize()) {
-            drawStageGlow(unit, p)
+            drawStageGlow(unit, tone.dark)
             val t = time.value
             val box = boxPose(t, reduced, fade())
             softEllipse(Offset(box.x * unit, 329f * unit), 290f * unit, 62f * unit, 0.40f * box.alpha)
@@ -464,14 +298,14 @@ private fun ArtLayer(
     }
 }
 
-/** 상자 뒤의 푸른 빛(시안 rgba(55, 80, 190, .45))과 바닥의 넓은 그림자 */
-private fun DrawScope.drawStageGlow(unit: Float, p: DrawPalette) {
+/** 상자 뒤의 푸른 빛(전기 파랑 #0754FF)과 바닥의 넓은 그림자 — 빛은 상자 자리에만 */
+private fun DrawScope.drawStageGlow(unit: Float, dark: Boolean) {
     val glowCenter = Offset(195f * unit, 250f * unit)
     drawCircle(
-        Brush.radialGradient(listOf(Color(0x733750BE), Color.Transparent), glowCenter, 170f * unit),
+        Brush.radialGradient(listOf(Color(0x800754FF), Color(0x2048D9FA), Color.Transparent), glowCenter, 170f * unit),
         170f * unit, glowCenter,
     )
-    softEllipse(Offset(195f * unit, 372f * unit), 300f * unit, 44f * unit, if (p === DarkDraw) 0.5f else 0.25f)
+    softEllipse(Offset(195f * unit, 372f * unit), 300f * unit, 44f * unit, if (dark) 0.5f else 0.25f)
 }
 
 /** 가장자리가 흐린 타원 그림자 */
