@@ -538,9 +538,8 @@ internal fun MainScaffold(
         // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
         com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
     } else if (currentRoute == Screen.Community.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
-        )
+        // 커뮤니티(2026-10-03 파란 톤 커뮤니티 기본) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("community-backdrop"))
     } else if (currentRoute == Screen.Profile.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize().testTag("profile-scene-${profileSetting.name}"),
@@ -566,6 +565,8 @@ internal fun MainScaffold(
     } else if (currentRoute in listOf(
             Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
             Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
+            // 러닝 이야기 상세 · 글쓰기 · 지도 · 지역(커뮤니티 기본 · 코스 글쓰기 파란 톤)
+            Routes.STORY_DETAIL, Routes.STORY_COMPOSE, Routes.STORY_MAP, Routes.STORY_LOCATION, Routes.STORY_REGION,
         )) {
         // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
         com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
