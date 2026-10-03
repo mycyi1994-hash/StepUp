@@ -962,6 +962,9 @@ fun RunCard(
     )
 }
 
+/** 메뉴 카드 둘레 빛 */
+private val CardGlow = Color(0xFF1E64FF)
+
 /**
  * 러닝 방법 카드(시안 U01 · U02) — 같은 크기의 가로 버튼. 왼쪽 큰 이름 · 작은 설명, 오른쪽 그림 · 화살표.
  * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다).
@@ -984,19 +987,12 @@ fun RunModeCard(
     Row(
         modifier.fillMaxWidth().heightIn(min = minHeight)
             .drawBehind {
-                // 바깥 빛 — 파란 둘레가 은은하게 번진다
+                // 바깥 빛 — 파란 둘레가 은은하게 번진다. 흐림 필터(BlurMaskFilter)는 다시 그릴 때마다 CPU 로 흐림을 계산해
+                // 메뉴 카드가 여럿이면 화면 넘김이 버벅인다 — 넓고 옅은 테 두 겹으로 같은 느낌만 낸다
                 if (t.dark && enabled) {
-                    drawIntoCanvas { canvas ->
-                        val paint = androidx.compose.ui.graphics.Paint().apply {
-                            color = Color(0xFF1E64FF)
-                            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-                            strokeWidth = 3.dp.toPx()
-                            alpha = 0.55f
-                        }
-                        paint.asFrameworkPaint().maskFilter = android.graphics.BlurMaskFilter(6.dp.toPx(), android.graphics.BlurMaskFilter.Blur.NORMAL)
-                        val r = RunSpec.CardRadius.toPx()
-                        canvas.drawRoundRect(0f, 0f, size.width, size.height, r, r, paint)
-                    }
+                    val r = CornerRadius(RunSpec.CardRadius.toPx())
+                    drawRoundRect(CardGlow.copy(alpha = 0.14f), cornerRadius = r, style = Stroke(10.dp.toPx()))
+                    drawRoundRect(CardGlow.copy(alpha = 0.24f), cornerRadius = r, style = Stroke(5.dp.toPx()))
                 }
             }
             .clip(shape)
