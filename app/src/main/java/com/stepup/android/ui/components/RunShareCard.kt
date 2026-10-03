@@ -213,11 +213,12 @@ object RunShareCard {
         canvas.drawCircle(ex, ey, 15f, dot)
     }
 
-    /** 그림을 캐시에 저장하고 공유 창을 연다. */
-    fun share(context: Context, bitmap: Bitmap, text: String, chooserTitle: String?) {
-        val dir = File(context.cacheDir, "shared").apply { mkdirs() }
-        val file = File(dir, "stepup-run.png")
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    /** 그림을 캐시에 저장하고 공유 창을 연다. 큰 그림의 PNG 저장은 화면 스레드 밖에서 한다(누르는 순간 멈칫하지 않게). */
+    suspend fun share(context: Context, bitmap: Bitmap, text: String, chooserTitle: String?) {
+        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val dir = File(context.cacheDir, "shared").apply { mkdirs() }
+            File(dir, "stepup-run.png").also { out -> out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.share", file)
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"

@@ -117,7 +117,7 @@ fun RecordsScreen(
         onOpenStats = { onOpenStats((period as? RecordPeriod.Month)?.month ?: thisMonth) },
         onOpenPeriod = { sheetOpen = true }, onOpenRun = onOpenRun, onStartRun = onStartRun,
         onShowAll = { viewModel.setPeriod(RecordPeriod.All) }, onReload = viewModel::reload, onLoadMore = viewModel::loadMore,
-        route = viewModel::route, zone = zone,
+        route = viewModel::route, cachedRoute = viewModel::cachedRoute, zone = zone,
     )
     if (sheetOpen) {
         PeriodSheet(
@@ -145,6 +145,7 @@ fun RecordsContent(
     onReload: () -> Unit = {},
     onLoadMore: () -> Unit = {},
     route: suspend (Long) -> List<GeoPoint> = { emptyList() },
+    cachedRoute: (Long) -> List<GeoPoint>? = { null },
     listState: LazyListState = rememberLazyListState(),
     zone: ZoneId = ZoneId.systemDefault(),
     today: LocalDate = LocalDate.now(zone),
@@ -194,7 +195,7 @@ fun RecordsContent(
                     ) {
                         if (load.stale) item(key = "stale") { StaleNotice(onReload) }
                         item(key = "summary") { Summary(load.period, load.totals, thisMonth) }
-                        items(load.rows, key = { it.id }) { row -> RecordRow(row, route, zone, today) { onOpenRun(row.id) } }
+                        items(load.rows, key = { it.id }) { row -> RecordRow(row, route, cachedRoute, zone, today) { onOpenRun(row.id) } }
                         if (load.more) {
                             item(key = "more") {
                                 LaunchedEffect(load.rows.size) { onLoadMore() }
@@ -290,14 +291,21 @@ private fun Summary(period: RecordPeriod, totals: RecordTotals, thisMonth: YearM
 
 /** 기록 한 장 — 경로 썸네일 · 날짜 · 거리 · 시간. 카드 전체가 누르는 곳 */
 @Composable
-private fun RecordRow(row: RunRecordRow, route: suspend (Long) -> List<GeoPoint>, zone: ZoneId, today: LocalDate, onClick: () -> Unit) {
+private fun RecordRow(
+    row: RunRecordRow,
+    route: suspend (Long) -> List<GeoPoint>,
+    cachedRoute: (Long) -> List<GeoPoint>?,
+    zone: ZoneId,
+    today: LocalDate,
+    onClick: () -> Unit,
+) {
     val t = runTone()
     val date = row.startedAt.localDate(zone)
     val dateText = rememberFormatter(if (date.year == today.year) R.string.run_rec_row_date else R.string.run_rec_row_date_year).format(date)
     val hasDistance = row.distanceMeters > 0
     RunCard(Modifier.padding(vertical = 5.dp), padding = PaddingValues(8.dp), onClick = onClick, tag = "record-row-${row.id}") {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            RouteThumb(row, route, Modifier.weight(0.47f).height(98.dp))
+            RouteThumb(row, route, cachedRoute, Modifier.weight(0.47f).height(98.dp))
             Column(Modifier.weight(0.53f).padding(start = 14.dp)) {
                 Text(dateText, style = runTextStyle(14.sp, t.label, FontWeight.SemiBold), maxLines = 1)
                 if (hasDistance) {
@@ -320,9 +328,15 @@ private fun RecordRow(row: RunRecordRow, route: suspend (Long) -> List<GeoPoint>
 
 /** 경로 썸네일 — 상세 · 확대 지도와 같은 저장 좌표(실제 지도 타일). 좌표가 없으면 위치 없음 표시 */
 @Composable
-private fun RouteThumb(row: RunRecordRow, route: suspend (Long) -> List<GeoPoint>, modifier: Modifier) {
+private fun RouteThumb(
+    row: RunRecordRow,
+    route: suspend (Long) -> List<GeoPoint>,
+    cachedRoute: (Long) -> List<GeoPoint>?,
+    modifier: Modifier,
+) {
     val t = runTone()
-    var points by remember(row.id) { mutableStateOf<List<GeoPoint>?>(null) }
+    // 이미 읽은 경로면 줄이 다시 보일 때 빈 칸 없이 바로
+    var points by remember(row.id) { mutableStateOf(if (row.hasTrack) cachedRoute(row.id) else emptyList()) }
     LaunchedEffect(row.id, row.hasTrack) {
         points = if (row.hasTrack) route(row.id) else emptyList()
     }

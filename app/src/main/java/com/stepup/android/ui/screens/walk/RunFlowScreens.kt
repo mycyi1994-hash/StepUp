@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -262,13 +263,18 @@ fun RunGoalHistoryScreen(
             Text(stringResource(R.string.runflow_history_empty), style = runTextStyle(16.sp, t.label),
                 modifier = Modifier.testTag("run-goal-history-empty"))
         }
+        // 기록 찾는 중에 한 번 더 눌러도 기록 화면을 두 번 쌓지 않는다
+        var finding by remember { mutableStateOf(false) }
         Column(verticalArrangement = Arrangement.spacedBy(KitGap)) {
             rows.orEmpty().forEach { attempt ->
                 GoalAttemptRow(attempt, expanded = open == attempt.startedAt, onOpen = {
+                    if (finding) return@GoalAttemptRow
+                    finding = true
                     scope.launch {
                         val id = ServiceLocator.runRecordsRepository.idForStart(attempt.startedAt)
                         // 찾기는 다른 스레드에서 끝날 수 있다 — 화면 이동은 메인에서
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                            finding = false
                             if (id != null) onOpenRecord(id)
                             else open = if (open == attempt.startedAt) null else attempt.startedAt
                         }

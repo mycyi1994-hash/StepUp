@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -91,9 +92,11 @@ fun RunRouteMapContent(
                     Modifier.testTag("route-none"), art = RecordArt.Period,
                 )
                 else -> Column(Modifier.fillMaxSize().padding(horizontal = RunSpec.Gutter).padding(top = 12.dp)) {
+                    // 끌고 확대하는 동안 프레임마다 경로를 다시 그린다 — 긴 러닝(점 수천 개)도 화면에 충분한 만큼만
+                    val shown = remember(route) { thin(route, ZOOM_ROUTE_POINTS) }
                     RunMapFrame(Modifier.weight(1f).testTag("route-map")) {
                         LiveRouteMap(
-                            route, Modifier.fillMaxSize(), seed = session.id.toInt(), interactive = true,
+                            shown, Modifier.fillMaxSize(), seed = session.id.toInt(), interactive = true,
                             controlLabels = MapControlLabels(
                                 zoomIn = stringResource(R.string.rec_zoom_in),
                                 zoomOut = stringResource(R.string.rec_zoom_out),
@@ -160,3 +163,6 @@ private fun SummaryCell(label: String, modifier: Modifier, value: @Composable Co
         value()
     }
 }
+
+/** 확대 지도에 그릴 경로 점 수 — 확대해도 꺾임이 보이지 않을 만큼 */
+internal const val ZOOM_ROUTE_POINTS = 1500

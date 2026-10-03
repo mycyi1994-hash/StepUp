@@ -201,7 +201,8 @@ class CrewChatRepository(
             .chat().map { it.toDomain() }
         if (outcome is ChatOutcome.Ok && photo != null) {
             val id = outcome.value.id
-            if (id != null) decodeFile(photo.file)?.let { rememberImage(crewId, id, it) }
+            // 보낸 사진을 다시 읽는 것은 화면 스레드 밖에서(큰 JPEG)
+            if (id != null) withContext(Dispatchers.IO) { decodeFile(photo.file) }?.let { rememberImage(crewId, id, it) }
         }
         if (outcome is ChatOutcome.Ended) forget(crewId)
         return outcome

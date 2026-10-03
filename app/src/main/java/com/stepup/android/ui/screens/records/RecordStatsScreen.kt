@@ -357,8 +357,9 @@ private fun BarChart(
                 if (empty == null) {
                     customActions = listOf(
                         CustomAccessibilityAction(previousDay) {
-                            val at = past.indexOf(pick ?: past.lastOrNull() ?: return@CustomAccessibilityAction false)
-                            past.getOrNull(at - 1)?.let { onSelect(it); true } ?: false
+                            // 고른 날이 없으면 가장 최근 날부터
+                            if (pick == null) return@CustomAccessibilityAction past.lastOrNull()?.let { onSelect(it); true } ?: false
+                            past.getOrNull(past.indexOf(pick) - 1)?.let { onSelect(it); true } ?: false
                         },
                         CustomAccessibilityAction(nextDay) {
                             val at = pick?.let { past.indexOf(it) } ?: -1
@@ -511,6 +512,8 @@ private fun DayCard(bar: RunBar, weekly: Boolean, runs: List<RunMark>, onOpenRun
         }
         if (runs.size > 1) {
             val time = rememberFormatter(R.string.rec_time_pattern)
+            // 월 통계의 막대는 며칠을 묶는다 — 줄마다 날짜도 적어 다른 날의 같은 시각 러닝을 구분한다
+            val day = rememberFormatter(R.string.run_rec_row_date)
             Spacer(Modifier.height(8.dp))
             runs.sortedBy { it.startedAt }.forEach { mark ->
                 Row(
@@ -521,7 +524,9 @@ private fun DayCard(bar: RunBar, weekly: Boolean, runs: List<RunMark>, onOpenRun
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        time.format(Instant.ofEpochMilli(mark.startedAt).atZone(zone)),
+                        Instant.ofEpochMilli(mark.startedAt).atZone(zone).let { at ->
+                            if (weekly) time.format(at) else day.format(at) + " " + time.format(at)
+                        },
                         style = runTextStyle(15.sp, t.label, FontWeight.SemiBold), modifier = Modifier.weight(1f),
                     )
                     Text(if (mark.meters > 0) "${km2(mark.meters)} km" else "—", style = runTextStyle(16.sp, t.text, FontWeight.Bold))

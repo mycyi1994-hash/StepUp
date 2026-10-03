@@ -15,6 +15,8 @@ import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CourseRepository
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -100,10 +102,16 @@ class CourseHubViewModel(
     /** 열려 있는 코스 기록 순위. null 이면 닫혀 있다. */
     val ranking: StateFlow<CourseRankingState?> = _ranking
 
+    /** 지금 묻고 있는 순위 — 닫거나 다른 코스를 열면 버린다(늦게 온 답이 시트를 다시 열거나 다른 코스 위에 겹치지 않게) */
+    private var rankingJob: Job? = null
+
     fun openRanking(course: RunCourse) {
+        rankingJob?.cancel()
         _ranking.value = CourseRankingState.Loading(course.name)
-        viewModelScope.launch {
-            _ranking.value = when (val result = courseRepository.leaderboard(course.encode())) {
+        rankingJob = viewModelScope.launch {
+            val result = courseRepository.leaderboard(course.encode())
+            ensureActive()
+            _ranking.value = when (result) {
                 is ServerResult.Ok -> CourseRankingState.Ready(course.name, result.value)
                 is ServerResult.SignInRequired -> CourseRankingState.Failed(course.name, signIn = true)
                 is ServerResult.Rejected, is ServerResult.Retry -> CourseRankingState.Failed(course.name, signIn = false)
@@ -112,6 +120,8 @@ class CourseHubViewModel(
     }
 
     fun closeRanking() {
+        rankingJob?.cancel()
+        rankingJob = null
         _ranking.value = null
     }
 
