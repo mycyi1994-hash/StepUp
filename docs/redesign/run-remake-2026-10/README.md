@@ -77,6 +77,7 @@
   그 상태로 그려 찍었다(`RunJourneyDesignTest#states`). R01 은 앱 안 캡처(`forms/run-countdown.png`)도 있다. K17 · K18 캡처에는 허브의 글자 탭 · 검색 줄이
   없다 — 그 둘레는 앱 안 K11 캡처에서 본다.
 - CR02 · CR16 은 보기 전용 방 조회 API 가 없어 만들지 않았다(캡처 없음).
+- 다른 AI · 검토자가 캡처를 볼 때 읽을 안내: [CAPTURE-NOTES-FOR-REVIEW.md](CAPTURE-NOTES-FOR-REVIEW.md).
 - 화면별 구현 · 기기 검증 상태는 [implementation-checklist.csv](implementation-checklist.csv). 기기 검증 칸은 같은 코드의 CI 캡처를 보고 확인한 줄만 채웠다.
 - **기기 확인(2026-10-02)**: Experience QA run `37068564191`(커밋 `eaf9f52`, 에뮬레이터 pixel_2 · API 35 · ko-KR) 통과. 캡처 108장(CR02 · CR16 제외)을
   시안과 나란히 놓고 보았다. CI 기기는 로그인 전이라 K11 · K12 · K16 은 로그인 필요 · 올릴 내 코스 없음 상태로 찍힌다(그 상태 그대로가 맞다).
