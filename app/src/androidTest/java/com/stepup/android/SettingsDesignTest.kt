@@ -1,6 +1,7 @@
 package com.stepup.android
 
 import android.content.res.Configuration
+import androidx.compose.ui.semantics.getOrNull
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -138,7 +139,7 @@ class SettingsDesignTest {
             // 11/12 — 연결된 계정: 이 기기의 실제 로그인 상태 그대로
             tap("settings-connected")
             awaitTag("connected-health")
-            compose.waitUntil(10_000) {
+            waitFor("connected accounts finish checking") {
                 compose.onAllNodesWithText(korean(R.string.set_checking)).fetchSemanticsNodes().isEmpty()
             }
             val signedIn = runBlocking { ServiceLocator.sessionHolder.isSignedIn() }
@@ -344,7 +345,34 @@ class SettingsDesignTest {
     }
 
     private fun awaitTag(tag: String) {
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val present = { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        // 먼저 그대로 기다리고, 그래도 없으면(화면 밖 목록 줄) 한 번 넘겨서 찾는다 — 넘기기가 다른 화면의 기다림을 흔들지 않게
+        if (runCatching { compose.waitUntil(4_000) { present() } }.isSuccess) return
+        reveal(tag)
+        waitFor("tag '$tag'", 6_000) { present() }
+    }
+
+    /** 화면 밖이라 아직 만들어지지 않은 목록 줄(LazyColumn)이면 넘길 수 있는 목록을 그 줄까지 넘긴다 */
+    private fun reveal(tag: String) {
+        if (compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) return
+        val lists = compose.onAllNodes(androidx.compose.ui.test.hasScrollToNodeAction())
+        val count = lists.fetchSemanticsNodes().size
+        for (i in 0 until count) {
+            if (runCatching { lists[i].performScrollToNode(androidx.compose.ui.test.hasTestTag(tag)) }.isSuccess) return
+        }
+    }
+
+    /** 기다리다 못 찾으면 무엇을 기다렸는지와 지금 보이는 꼬리표를 남긴다(CI 로그에 스택이 잘려도 어디서 멈췄는지 알 수 있게) */
+    private fun waitFor(what: String, timeout: Long = 10_000, condition: () -> Boolean) {
+        try {
+            compose.waitUntil(timeout) { condition() }
+        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+            val tags = compose.onAllNodes(androidx.compose.ui.test.SemanticsMatcher("tagged") {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) != null
+            }, useUnmergedTree = true).fetchSemanticsNodes()
+                .mapNotNull { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) }.distinct().take(40)
+            throw AssertionError("$what did not happen in ${timeout}ms (tags now: $tags)", e)
+        }
     }
 
     private fun shot(name: String, settle: Long = 700) {

@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import androidx.compose.ui.semantics.getOrNull
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -241,7 +242,7 @@ class CommunityStoriesTest {
         shot("04-comment-entry", settle = 1_200)
         tapTag("story-comment-send")
         // 성공해야 입력이 비고, 새 댓글과 개수가 함께 바뀐다
-        compose.waitUntil(10_000) {
+        waitFor("comment count 3") {
             runCatching {
                 compose.onNodeWithTag("story-comment-count").assertTextEquals(context.getString(R.string.story_comment_count, 3))
             }.isSuccess
@@ -276,7 +277,7 @@ class CommunityStoriesTest {
         tapTag("story-menu")
         tapTag("story-menu-hide")
         awaitTag("story-toast")
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("story-row-301").fetchSemanticsNodes().isEmpty() }
+        waitFor("story-row-301 removed") { compose.onAllNodesWithTag("story-row-301").fetchSemanticsNodes().isEmpty() }
         shot("21-hidden-with-undo")
         compose.onNodeWithText(context.getString(R.string.story_undo)).performClick()
         scrollToRow(301)
@@ -417,23 +418,50 @@ class CommunityStoriesTest {
     // ── 도우미 ─────────────────────────────────────────────────────
 
     private fun awaitTag(tag: String, timeout: Long = 10_000) {
-        compose.waitUntil(timeout) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val present = { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        // 먼저 그대로 기다리고, 그래도 없으면(화면 밖 목록 줄) 한 번 넘겨서 찾는다 — 넘기기가 다른 화면의 기다림을 흔들지 않게
+        if (runCatching { compose.waitUntil((timeout * 2 / 5).coerceAtLeast(2_000)) { present() } }.isSuccess) return
+        reveal(tag)
+        waitFor("tag '$tag'", (timeout * 3 / 5).coerceAtLeast(2_000)) { present() }
+    }
+
+    /** 화면 밖이라 아직 만들어지지 않은 목록 줄(LazyColumn)이면 넘길 수 있는 목록을 그 줄까지 넘긴다 */
+    private fun reveal(tag: String) {
+        if (compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) return
+        val lists = compose.onAllNodes(androidx.compose.ui.test.hasScrollToNodeAction())
+        val count = lists.fetchSemanticsNodes().size
+        for (i in 0 until count) {
+            if (runCatching { lists[i].performScrollToNode(androidx.compose.ui.test.hasTestTag(tag)) }.isSuccess) return
+        }
+    }
+
+    /** 기다리다 못 찾으면 무엇을 기다렸는지와 지금 보이는 꼬리표를 남긴다(CI 로그에 스택이 잘려도 어디서 멈췄는지 알 수 있게) */
+    private fun waitFor(what: String, timeout: Long = 10_000, condition: () -> Boolean) {
+        try {
+            compose.waitUntil(timeout) { condition() }
+        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+            val tags = compose.onAllNodes(androidx.compose.ui.test.SemanticsMatcher("tagged") {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) != null
+            }, useUnmergedTree = true).fetchSemanticsNodes()
+                .mapNotNull { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) }.distinct().take(40)
+            throw AssertionError("$what did not happen in ${timeout}ms (tags now: $tags)", e)
+        }
     }
 
     private fun awaitText(text: String, tag: String? = null, timeout: Long = 10_000) {
-        compose.waitUntil(timeout) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        waitFor("text '$text'", timeout) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
         if (tag != null) awaitTag(tag, timeout)
     }
 
     private fun awaitTextField(tag: String, expected: String) {
-        compose.waitUntil(10_000) {
+        waitFor("field '$tag' = '$expected'") {
             runCatching { compose.onNodeWithTag(tag).assert(hasText(expected)) }.isSuccess
         }
     }
 
     /** 목록을 그 글까지 내린다 — 화면 밖 줄은 아직 만들어지지 않았다 */
     private fun scrollToRow(id: Long) {
-        compose.waitUntil(10_000) {
+        waitFor("scroll to story-row-$id") {
             runCatching { compose.onNodeWithTag("stories-list").performScrollToNode(hasTestTag("story-row-$id")) }.isSuccess
         }
     }
