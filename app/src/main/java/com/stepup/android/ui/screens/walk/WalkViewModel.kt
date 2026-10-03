@@ -110,6 +110,11 @@ class WalkViewModel(
         }
     }
 
+    /** 코스 안내만 끈다(시안 K08) — 러닝 · 시간 · 거리 · 경로는 그대로 이어진다 */
+    fun clearCourse() {
+        viewModelScope.launch { courseRepository.clearSelection() }
+    }
+
     /** 수동 랩 */
     fun recordLap() = WalkSessionService.recordManualLap()
 

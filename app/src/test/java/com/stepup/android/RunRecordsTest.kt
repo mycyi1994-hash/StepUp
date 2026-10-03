@@ -3,6 +3,7 @@ package com.stepup.android
 import com.stepup.android.domain.RecordPeriod
 import com.stepup.android.domain.RunMark
 import com.stepup.android.domain.averagePace
+import com.stepup.android.domain.bestDay
 import com.stepup.android.domain.hasNextMonth
 import com.stepup.android.domain.hasNextWeek
 import com.stepup.android.domain.mondayOf
@@ -80,6 +81,21 @@ class RunRecordsTest {
         assertTrue("29–30일은 아직 오지 않았다", bars[4].future)
         // 2월(28일)은 네 칸
         assertEquals(4, monthBars(YearMonth.of(2026, 2), emptyList(), LocalDate.of(2026, 9, 27), seoul).size)
+    }
+
+    @Test fun `가장 많이 달린 날은 사용자 시간대의 날짜로 묶은 거리 합이 가장 큰 날`() {
+        val runs = listOf(
+            RunMark(at(2026, 9, 21), 3000.0, id = 1), RunMark(at(2026, 9, 25), 2500.0, id = 2),
+            RunMark(at(2026, 9, 25, 20), 2000.0, id = 3), RunMark(at(2026, 9, 23), 4000.0, id = 4),
+        )
+        val best = bestDay(runs, seoul)!!
+        assertEquals(LocalDate.of(2026, 9, 25), best.first)
+        assertEquals(4500.0, best.meters, 0.001)
+        assertEquals(2, best.runs)
+        // 같으면 앞선 날 · 거리가 있는 날이 없으면 없다(0km 를 가장 많이 달린 날로 보이지 않는다)
+        assertEquals(LocalDate.of(2026, 9, 21), bestDay(listOf(RunMark(at(2026, 9, 22), 3000.0), RunMark(at(2026, 9, 21), 3000.0)), seoul)!!.first)
+        assertNull(bestDay(listOf(RunMark(at(2026, 9, 22), 0.0)), seoul))
+        assertNull(bestDay(emptyList(), seoul))
     }
 
     @Test fun `평균 페이스는 시간 합 ÷ 거리 합 — 러닝마다 페이스의 평균이 아니다`() {

@@ -57,6 +57,9 @@ class RunRecordsRepository(
     /** 러닝 하나의 저장된 경로. 없거나 깨졌으면 빈 목록 */
     suspend fun route(id: Long): List<GeoPoint> = RunTrack.decode(dao.trackOf(owner.first(), id).orEmpty()).toGeoPoints()
 
+    /** 그 시각에 시작한 러닝의 기록 번호 — 없으면 null */
+    suspend fun idForStart(startedAt: Long): Long? = dao.idForStart(owner.first(), startedAt)
+
     suspend fun delete(id: Long): RecordDeletion {
         val who = owner.first()
         if (dao.deleteRecord(who, id) > 0) return RecordDeletion.Deleted

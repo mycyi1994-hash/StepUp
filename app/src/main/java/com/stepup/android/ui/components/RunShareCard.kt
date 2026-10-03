@@ -20,29 +20,37 @@ import kotlin.math.cos
 import kotlin.math.max
 
 /**
- * 러닝 결과 공유 카드 — 인스타 스토리·카톡에 올릴 그림 한 장.
+ * 러닝 결과 공유 카드 — 인스타 · 카톡에 올릴 그림 한 장(러닝 전체 리메이크 E05).
  *
- * S2 기록 공유 카드: 푸른 검정 바탕에 도시 야경(S2 원본 그림)을 깔고, 달린 길과
- * 가는 큰 거리 · 시간 · 페이스를 적는다. 로고는 어두운 바탕용 공식 워드마크를
- * 그대로 쓴다 — 글꼴로 흉내 내지 않는다.
+ * 남색 바탕에 공식 워드마크(어두운 바탕용 — 글꼴로 흉내 내지 않는다) · 날짜 · 아주 큰 거리 · 달린 시간 | 평균 페이스.
+ * 경로를 넣으면 세로(4:5) 그림 가운데에 달린 길을 그린다. 경로를 빼면(기본) 가로로 긴 그림이고 길 · 지도 · 장소가 전혀 없다 —
+ * 미리보기와 내보내는 그림이 같은 그림이다.
  *
- * SUP 는 적지 않는다. 서버가 확인하기 전의 적립을 밖으로 내보내면 그 숫자가
- * 나중에 달라질 수 있다.
+ * SUP 는 적지 않는다. 서버가 확인하기 전의 적립을 밖으로 내보내면 그 숫자가 나중에 달라질 수 있다.
  */
 object RunShareCard {
 
-    /** 인스타 세로 게시물 비율(4:5) */
     const val WIDTH = 1080
+    /** 경로를 넣은 세로 그림(4:5) */
     const val HEIGHT = 1350
+    /** 경로를 뺀 가로로 긴 그림 — 거리 · 시간 · 페이스만 */
+    const val HEIGHT_NO_ROUTE = 880
 
-    private const val NIGHT = 0xFF05080E.toInt()
-    private const val SCENE_BOTTOM = 900f
-    private const val MARGIN = 72
-    private const val WHITE = 0xFFFDFDFD.toInt()
-    private const val WHITE_DIM = 0xCCFDFDFD.toInt()
+    /** 바탕 — 위 #06204A → 아래 #031427 */
+    const val TOP = 0xFF06204A.toInt()
+    const val BOTTOM = 0xFF031427.toInt()
+    private const val MARGIN = 80
+    private const val WHITE = 0xFFF5F8FF.toInt()
+    private const val LABEL = 0xFFAAC3EA.toInt()
+    private const val DIVIDER = 0xFF1E3A63.toInt()
+    private const val CYAN = 0xFF48D9FA.toInt()
 
     data class Labels(val distance: String, val time: String, val pace: String, val footer: String)
 
+    /**
+     * @param track 넣을 경로. 비우면 경로 · 지도 없이 가로로 긴 그림으로 그린다.
+     * @param date 그림 오른쪽 위 날짜(없으면 비운다)
+     */
     fun render(
         context: Context,
         km: Double,
@@ -50,63 +58,88 @@ object RunShareCard {
         pace: String,
         track: List<GeoPoint>,
         labels: Labels,
+        date: String? = null,
     ): Bitmap {
-        val bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
+        val withRoute = track.size >= 2
+        val height = if (withRoute) HEIGHT else HEIGHT_NO_ROUTE
+        val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        // S2 — 푸른 검정 바탕 위쪽에 도시 야경, 아래로 바탕색에 녹아든다
-        canvas.drawColor(NIGHT)
-        BitmapFactory.decodeResource(context.resources, R.drawable.s2_bg_login)?.let { scene ->
-            val target = RectF(0f, 0f, WIDTH.toFloat(), SCENE_BOTTOM)
-            val scale = max(target.width() / scene.width, target.height() / scene.height)
-            val sw = target.width() / scale
-            val sh = target.height() / scale
-            val src = Rect(((scene.width - sw) / 2).toInt(), ((scene.height - sh) / 2).toInt(),
-                ((scene.width + sw) / 2).toInt(), ((scene.height + sh) / 2).toInt())
-            paint.alpha = 150
-            canvas.drawBitmap(scene, src, target, paint)
-            paint.alpha = 255
-        }
-        paint.shader = LinearGradient(0f, SCENE_BOTTOM * 0.45f, 0f, SCENE_BOTTOM, 0x0005080E, NIGHT, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, WIDTH.toFloat(), SCENE_BOTTOM, paint)
+        // 남색 바탕 — 위가 조금 밝고 오른쪽 위에서 파란 빛이 번진다
+        paint.shader = LinearGradient(0f, 0f, 0f, height.toFloat(), TOP, BOTTOM, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, WIDTH.toFloat(), height.toFloat(), paint)
+        paint.shader = android.graphics.RadialGradient(
+            WIDTH * 0.92f, 0f, WIDTH * 0.9f, 0x660B3A86, 0x000B3A86, Shader.TileMode.CLAMP,
+        )
+        canvas.drawRect(0f, 0f, WIDTH.toFloat(), height.toFloat(), paint)
         paint.shader = null
 
         // 로고 — 어두운 바탕용 공식 워드마크 그대로
         BitmapFactory.decodeResource(context.resources, R.drawable.logo_wordmark_on_dark)?.let { logo ->
-            val w = 300
+            val w = 330
             val h = w * logo.height / logo.width
             canvas.drawBitmap(logo, null, Rect(MARGIN, MARGIN, MARGIN + w, MARGIN + h), paint)
         }
+        val regular = ResourcesCompat.getFont(context, R.font.pretendard_medium)
+        val heavy = ResourcesCompat.getFont(context, R.font.pretendard_extrabold)
+        if (!date.isNullOrBlank()) {
+            paint.color = LABEL
+            paint.typeface = regular
+            paint.textSize = 40f
+            paint.textAlign = Paint.Align.RIGHT
+            canvas.drawText(date, WIDTH - MARGIN.toFloat(), MARGIN + 52f, paint)
+            paint.textAlign = Paint.Align.LEFT
+        }
 
-        // 달린 길
-        drawRoute(canvas, track, RectF(150f, 230f, WIDTH - 150f, 780f))
+        // 달린 길(넣을 때만)
+        if (withRoute) drawRoute(canvas, track, RectF(150f, 230f, WIDTH - 150f, 700f))
 
-        val light = ResourcesCompat.getFont(context, R.font.pretendard_regular)
-        val medium = ResourcesCompat.getFont(context, R.font.pretendard_medium)
-
-        // 거리 — 가는 큰 숫자, 왼쪽 정렬
-        paint.color = WHITE
-        paint.typeface = light
-        paint.textAlign = Paint.Align.LEFT
-        paint.textSize = 210f
+        // 거리 — 아주 큰 기울인 굵은 수 + km, 가운데
+        val distanceBase = if (withRoute) 905f else 455f
         val distance = "%.2f".format(km)
-        canvas.drawText(distance, MARGIN.toFloat(), 990f, paint)
-        val distanceWidth = paint.measureText(distance)
-        paint.typeface = medium
-        paint.textSize = 52f
-        canvas.drawText("km", MARGIN + distanceWidth + 20f, 990f, paint)
+        paint.color = WHITE
+        paint.typeface = heavy
+        paint.textSkewX = -0.2f
+        paint.textSize = 250f
+        val numberWidth = paint.measureText(distance)
+        paint.textSize = 96f
+        val unitWidth = paint.measureText(" km")
+        val left = (WIDTH - numberWidth - unitWidth) / 2f
+        paint.textSize = 250f
+        heavyText(canvas, paint, distance, left, distanceBase)
+        paint.textSize = 96f
+        heavyText(canvas, paint, " km", left + numberWidth, distanceBase)
+        paint.textSkewX = 0f
 
-        // 시간 · 페이스
-        // 값의 아랫줄(1180)과 맨 아래 문구(1294) 사이를 띄운다
-        stat(canvas, paint, labels.time, elapsed, MARGIN.toFloat(), 1100f, medium, light)
-        stat(canvas, paint, labels.pace, pace, MARGIN + 360f, 1100f, medium, light)
+        // 가는 가로선
+        val lineY = distanceBase + 70f
+        paint.color = DIVIDER
+        canvas.drawRect(MARGIN.toFloat(), lineY, WIDTH - MARGIN.toFloat(), lineY + 3f, paint)
 
-        paint.typeface = medium
+        // 달린 시간 | 평균 페이스
+        val statTop = lineY + 90f
+        stat(canvas, paint, labels.time, elapsed, MARGIN.toFloat(), statTop, regular, heavy)
+        canvas.drawRect(WIDTH / 2f - 1.5f, statTop - 40f, WIDTH / 2f + 1.5f, statTop + 120f, Paint().apply { color = DIVIDER })
+        stat(canvas, paint, labels.pace, "$pace/km", WIDTH / 2f + 50f, statTop, regular, heavy)
+
+        paint.typeface = regular
         paint.textSize = 30f
-        paint.color = WHITE_DIM
-        canvas.drawText(labels.footer, MARGIN.toFloat(), HEIGHT - 56f, paint)
+        paint.color = LABEL
+        canvas.drawText(labels.footer, MARGIN.toFloat(), height - 56f, paint)
         return bitmap
+    }
+
+    /** Pretendard 가장 굵은 굵기보다 더 굵게 — 같은 색 테두리를 한 겹 더 그린다(앱의 큰 운동 숫자와 같은 모양) */
+    private fun heavyText(canvas: Canvas, paint: Paint, text: String, x: Float, y: Float) {
+        val style = paint.style
+        val stroke = paint.strokeWidth
+        paint.style = Paint.Style.FILL_AND_STROKE
+        paint.strokeWidth = paint.textSize * 0.035f
+        paint.strokeJoin = Paint.Join.ROUND
+        canvas.drawText(text, x, y, paint)
+        paint.style = style
+        paint.strokeWidth = stroke
     }
 
     private fun stat(
@@ -119,14 +152,16 @@ object RunShareCard {
         labelFace: android.graphics.Typeface?,
         valueFace: android.graphics.Typeface?,
     ) {
-        paint.color = WHITE_DIM
+        paint.color = LABEL
         paint.typeface = labelFace
-        paint.textSize = 30f
+        paint.textSize = 38f
         canvas.drawText(label, x, y, paint)
         paint.color = WHITE
         paint.typeface = valueFace
-        paint.textSize = 72f
-        canvas.drawText(value, x, y + 80f, paint)
+        paint.textSkewX = -0.2f
+        paint.textSize = 88f
+        heavyText(canvas, paint, value, x, y + 100f)
+        paint.textSkewX = 0f
     }
 
     /** 경로를 상자 안에 비율을 지켜 맞춰 그린다. 경로가 없으면 아무것도 그리지 않는다. */
@@ -156,15 +191,15 @@ object RunShareCard {
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
         }
-        // 흐린 두꺼운 선 위에 선명한 선 — 빛나는 느낌
-        stroke.color = 0x40FFFFFF
-        stroke.strokeWidth = 34f
+        // 흐린 두꺼운 선 위에 선명한 선 — 빛나는 시안 경로
+        stroke.color = 0x5548D9FA
+        stroke.strokeWidth = 36f
         canvas.drawPath(path, stroke)
-        stroke.color = WHITE
+        stroke.color = CYAN
         stroke.strokeWidth = 14f
         canvas.drawPath(path, stroke)
 
-        // 출발점 · 도착점
+        // 출발점(흰 점) · 도착점(흰 테 파란 점)
         val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WHITE }
         fun at(i: Int) = Pair(
             (offX + (xs[i] - minX) * scale).toFloat(),
@@ -173,8 +208,9 @@ object RunShareCard {
         val (sx, sy) = at(0)
         val (ex, ey) = at(xs.lastIndex)
         canvas.drawCircle(sx, sy, 16f, dot)
-        dot.color = 0xFF24D8FF.toInt()
-        canvas.drawCircle(ex, ey, 20f, dot)
+        canvas.drawCircle(ex, ey, 24f, dot)
+        dot.color = 0xFF0754FF.toInt()
+        canvas.drawCircle(ex, ey, 15f, dot)
     }
 
     /** 그림을 캐시에 저장하고 공유 창을 연다. */

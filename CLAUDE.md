@@ -1,6 +1,12 @@
 # StepUp — 작업 메모
 
-## 최신 시작점 — S2 리디자인 인계 (2026-09-26)
+## 최신 — 러닝 전체 리메이크 · 신발 색감 (2026-10-02)
+
+러닝 화면(109장)과 신발 탭 색감은 남색 · 전기 파랑 전달본을 따른다 — [docs/redesign/run-remake-2026-10/README.md](docs/redesign/run-remake-2026-10/README.md)
+(화면 대응표 · 시안과 다른 점 · 남은 연동 · [체크리스트](docs/redesign/run-remake-2026-10/implementation-checklist.csv)). 러닝 화면 부품은
+`ui/components/RunStyle.kt` 를 쓴다. 신발 탭은 구조를 그대로 두고 색감 · 조명만 바꿨다. 아래 S2 안내 중 러닝 화면의 색 · 버튼은 이 전달본이 대신한다.
+
+## 시작점 — S2 리디자인 인계 (2026-09-26)
 
 **먼저 [docs/redesign/s2/README.md](docs/redesign/s2/README.md)를 읽는다.** 사용자는 Figma S2를 최대한 따르되 확보한 이미지로 진행하도록 했다. 기획·원본 이미지·45개 프레임/34개 기존 경로 대응표·6개 비교 화면을 레포에 정리했다. S2 앱 구현은 진행 중이다 — 진행 상황은 [docs/redesign/s2/STATUS.md](docs/redesign/s2/STATUS.md). 하단 탭은 다섯(러닝 · 신발 · 뽑기 · 커뮤니티 · 내 정보)이고 뽑기는 가운데 독립 탭이다. 신발 탭 위 글자 탭은 내 신발 · 신발 보관함이다(2026-09-28 사용자 결정 — [docs/redesign/shoes-ui-2026-09-28](docs/redesign/shoes-ui-2026-09-28/README.md), 2026-09-26의 '탭 넷 · 뽑기는 신발 안'을 대신한다). 새 작업 범위는 현재 사용자 지시를 따른다.
 

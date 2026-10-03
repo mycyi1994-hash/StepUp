@@ -132,6 +132,32 @@ fun haversineMeters(a: GeoPoint, b: GeoPoint): Double {
     return r * 2 * atan2(sqrt(s), sqrt(1 - s))
 }
 
+/**
+ * 한 점에서 경로(꺾은선)까지 가장 가까운 거리(m) — 코스에서 벗어났는지(시안 K05) 화면에 알리는 데만 쓴다(서버 판정과 별개).
+ * 수백 m 안쪽이라 그 점 둘레를 평면으로 펴서(등장방형) 선분까지 잰다. 경로가 비었으면 무한대.
+ */
+fun distanceToPathMeters(point: GeoPoint, path: List<GeoPoint>): Double {
+    if (path.isEmpty()) return Double.POSITIVE_INFINITY
+    if (path.size == 1) return haversineMeters(point, path[0])
+    val r = 6_371_000.0
+    val cosLat = cos(Math.toRadians(point.lat))
+    fun x(g: GeoPoint) = Math.toRadians(g.lng - point.lng) * cosLat * r
+    fun y(g: GeoPoint) = Math.toRadians(g.lat - point.lat) * r
+    var best = Double.POSITIVE_INFINITY
+    for (i in 1 until path.size) {
+        val ax = x(path[i - 1])
+        val ay = y(path[i - 1])
+        val dx = x(path[i]) - ax
+        val dy = y(path[i]) - ay
+        val len2 = dx * dx + dy * dy
+        val t = if (len2 <= 0.0) 0.0 else ((-ax * dx - ay * dy) / len2).coerceIn(0.0, 1.0)
+        val px = ax + t * dx
+        val py = ay + t * dy
+        best = min(best, sqrt(px * px + py * py))
+    }
+    return best
+}
+
 /** 경로 전체 길이(km) */
 fun List<GeoPoint>.trackDistanceKm(): Double {
     if (size < 2) return 0.0

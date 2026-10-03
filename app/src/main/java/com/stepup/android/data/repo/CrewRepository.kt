@@ -181,7 +181,14 @@ data class PartyState(
     /** 방장이 방을 닫았다 */
     val roomClosed: Boolean = false,
     val problem: PartyProblem? = null,
+    /**
+     * 같이 뛰는 중 서버에 닿지 못했다(CR18) — 화면 안내용. 다른 사람 위치는 오래된 값이라 지도에서 뺀다.
+     * 내 러닝은 그대로 이어지고, 다음 물음이 닿으면 저절로 풀린다.
+     */
+    val liveOffline: Boolean = false,
 ) {
+    /** 로비 · 달리는 중 어디서든 서버에 닿지 못하고 있다 */
+    val networkProblem: Boolean get() = problem == PartyProblem.NETWORK || liveOffline
     val readyCount: Int get() = members.count { it.ready }
     val partySize: Int get() = members.size
     val allReady: Boolean get() = members.isNotEmpty() && members.all { it.ready }
@@ -497,6 +504,8 @@ class CrewRepository(
                 is ServerResult.Retry -> {
                     if (_party.value.phase != PartyPhase.RUNNING) {
                         _party.value = _party.value.copy(problem = PartyProblem.NETWORK)
+                    } else {
+                        _party.value = _party.value.copy(liveOffline = true)
                     }
                 }
             }
@@ -604,6 +613,7 @@ class CrewRepository(
             members = if (phase == PartyPhase.FINISHED) before.members else visible,
             startsAtLocal = row.startsAt?.isoToMillis()?.minus(offset) ?: 0L,
             roomClosed = closed,
+            liveOffline = false,
             problem = when {
                 closed && phase == PartyPhase.LOBBY -> PartyProblem.CLOSED
                 // 누른 것이 막혔다는 알림은 다음에 무언가를 누를 때까지 둔다
@@ -675,6 +685,11 @@ class CrewRepository(
         act { id ->
             partyApi.start(id).also { if (it is ServerResult.Ok) Analytics.partyStarted(state.readyCount) }
         }
+    }
+
+    /** 지금 방을 다시 묻는다 — 같이 뛰는 중 연결이 끊겼을 때 "다시 연결"(CR18). 기다리던 물음을 앞당길 뿐이다. */
+    fun wakeParty() {
+        wake.trySend(Unit)
     }
 
     /** 이상이 있어 멈춘 로비를 다시 연다. */

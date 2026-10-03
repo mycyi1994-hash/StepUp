@@ -53,8 +53,8 @@ fun hasNextWeek(monday: LocalDate, today: LocalDate): Boolean = !monday.plusWeek
 
 fun hasNextMonth(month: YearMonth, today: LocalDate): Boolean = !month.plusMonths(1).isAfter(YearMonth.from(today))
 
-/** 러닝 한 번의 날짜 · 거리 — 막대 계산에 쓰는 것만 */
-data class RunMark(val startedAt: Long, val meters: Double)
+/** 러닝 한 번의 날짜 · 거리 — 막대 계산에 쓰는 것만. [id] 는 그 날짜의 기록(상세)으로 가는 세션 id */
+data class RunMark(val startedAt: Long, val meters: Double, val id: Long = 0)
 
 /**
  * 막대 하나 — 주간은 하루, 월간은 날짜 구간(1–7 · 8–14 · 15–21 · 22–28 · 29–말일, 달력 주가 아니다).
@@ -79,6 +79,17 @@ private fun bar(first: LocalDate, last: LocalDate, runs: List<RunMark>, today: L
     val inside = runs.filter { val day = it.startedAt.localDate(zone); !day.isBefore(first) && !day.isAfter(last) }
     return RunBar(first, last, inside.sumOf { it.meters.coerceAtLeast(0.0) }, inside.size, future = first.isAfter(today))
 }
+
+/**
+ * 가장 많이 달린 날(통계 H04 · H06) — 그 기간 러닝을 사용자 시간대의 날짜로 묶어 거리 합이 가장 큰 날.
+ * 거리가 있는 날이 없으면 null(0km 인 날을 "가장 많이 달린 날"로 보이지 않는다). 같으면 앞선 날.
+ */
+fun bestDay(runs: List<RunMark>, zone: ZoneId): RunBar? =
+    runs.groupBy { it.startedAt.localDate(zone) }
+        .map { (day, inside) -> RunBar(day, day, inside.sumOf { it.meters.coerceAtLeast(0.0) }, inside.size, future = false) }
+        .filter { it.meters > 0.0 }
+        .sortedBy { it.first }
+        .maxByOrNull { it.meters }
 
 /**
  * 평균 페이스(초/km) — 거리와 시간이 모두 있는 러닝들의 시간 합 ÷ 거리 합. 러닝마다의 페이스를 평균하지 않는다.

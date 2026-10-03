@@ -14,6 +14,8 @@ import com.stepup.android.data.repo.isUploading
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RecordPeriod
 import com.stepup.android.domain.RunBar
+import com.stepup.android.domain.RunMark
+import com.stepup.android.domain.bestDay
 import com.stepup.android.domain.TimeRange
 import com.stepup.android.domain.hasNextMonth
 import com.stepup.android.domain.hasNextWeek
@@ -127,7 +129,12 @@ sealed interface StatWindow {
     data class Month(val month: YearMonth) : StatWindow
 }
 
-/** 통계 화면이 보일 것(04 · 05 · 06 · 15) */
+/**
+ * 통계 화면이 보일 것(04 · 05 · 06 · 15).
+ * @param marks 이 기간 러닝 하나하나(날짜 · 거리 · id) — 고른 날짜의 기록(05 → 11 · 13)과 가장 많이 달린 날
+ * @param best 가장 많이 달린 날 — 거리가 있는 날이 없으면 null
+ * @param anyRecords 이 계정에 기록이 하나라도 있는가 — 없으면 15(첫 러닝 전), 있는데 이 기간만 비면 다른 기간 안내
+ */
 data class StatsUi(
     val window: StatWindow,
     val totals: RecordTotals?,
@@ -135,6 +142,9 @@ data class StatsUi(
     val canGoNext: Boolean,
     val thisMonth: YearMonth,
     val failed: Boolean = false,
+    val marks: List<RunMark> = emptyList(),
+    val best: RunBar? = null,
+    val anyRecords: Boolean = true,
 )
 
 /** 통계 — 목록에서 고른 달(전체 기간이면 이번 달)의 월간으로 시작한다 */
@@ -151,12 +161,12 @@ class RecordStatsViewModel(
 
     val ui: StateFlow<StatsUi?> = combine(_window, attempt) { w, _ -> w }.flatMapLatest { w ->
         val range = w.range()
-        combine(repo.totals(range), repo.marks(range)) { totals, marks ->
+        combine(repo.totals(range), repo.marks(range), repo.totals(RecordPeriod.All.range(zone))) { totals, marks, all ->
             val now = today()
             when (w) {
                 is StatWindow.Week -> StatsUi(w, totals, weekBars(w.monday, marks, now, zone), hasNextWeek(w.monday, now), YearMonth.from(now))
                 is StatWindow.Month -> StatsUi(w, totals, monthBars(w.month, marks, now, zone), hasNextMonth(w.month, now), YearMonth.from(now))
-            }
+            }.copy(marks = marks, best = bestDay(marks, zone), anyRecords = all.runs > 0)
         }.catch { emit(StatsUi(w, null, emptyList(), canGoNext = false, thisMonth = YearMonth.from(today()), failed = true)) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

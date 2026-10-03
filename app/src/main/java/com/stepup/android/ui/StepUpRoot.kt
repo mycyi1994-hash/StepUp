@@ -37,6 +37,7 @@ import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
@@ -201,6 +202,11 @@ object Routes {
     const val RUN_MENU = "run-start"
     const val RUN_GOALS = "run-goals"
     const val RUN_GOAL_HISTORY = "run-goals/history"
+
+    /** 추천 코스(시안 U04 · K01~K03) — 내 위치에서 가까운 저장 · 게시판 코스 */
+    const val RUN_COURSE = "run-course"
+    /** 크루 달리기 입구(시안 U01 → 크루 · CR14 · CR19) */
+    const val RUN_CREW = "run-crew"
 
     /** 다이어트 모드 — 입력(U05) · 러닝 방법(U06) · 몸 정보·경험 수정(D06) */
     const val RUN_DIET = "run-diet"
@@ -523,16 +529,14 @@ internal fun MainScaffold(
     Box(Modifier.fillMaxSize()) {
     if (currentRoute == Screen.Run.route) {
         Crossfade(com.stepup.android.ui.components.HomePhotos.all[homePhoto], animationSpec = tween(motion.duration(420)), label = "homeBackground") { photo ->
-            // 홈 풍경은 화면 전체 바탕 — 가운데 아치를 없앴다(2026-09-26 사용 피드백 · 사용자 결정)
-            com.stepup.android.ui.components.S2Scenery(
+            // 러닝 홈(2026-10-02 시안 HOME) — 전시장 창 너머로 고른 풍경을 남색 밤빛으로 깐다(넘기기 · 날씨 풍경 그대로)
+            com.stepup.android.ui.components.HomeShowroomBackdrop(
                 photo, Modifier.fillMaxSize().testTag("home-scene-${photo.key}"),
             )
         }
     } else if (currentRoute == Screen.Customize.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize().testTag("wardrobe-scene-${wardrobeScene.name}"),
-            wardrobeScene, wardrobe = true,
-        )
+        // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
     } else if (currentRoute == Screen.Community.route) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
@@ -559,6 +563,12 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
         )
+    } else if (currentRoute in listOf(
+            Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
+            Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
+        )) {
+        // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
     } else if (chrome?.header == AppChromePolicy.Header.Focus) {
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), runSetting,
@@ -945,10 +955,9 @@ internal fun MainScaffold(
                 RunScreen(
                     onBack = { navController.popBackStack() },
                     onOpenCourses = { navController.navigate(Routes.COURSES) },
-                    // "처음 화면으로" — 시작 메뉴(시안 U01). 메뉴 없이 들어왔으면 러닝 탭 첫 화면
+                    // "처음 화면으로" — 러닝 탭 첫 화면(HOME, 러닝 전체 리메이크 2026-10-02)
                     onHome = {
-                        if (!navController.popBackStack(Routes.RUN_MENU, inclusive = false) &&
-                            !navController.popBackStack(Screen.Run.route, inclusive = false)) navController.popBackStack()
+                        if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
                     onGoals = {
                         if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.popBackStack()
@@ -963,6 +972,14 @@ internal fun MainScaffold(
                     onLeaveToHome = {
                         if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
+                    // 결과의 "내 러닝 기록 보기" · 기록 삭제 뒤(H01) — 결과는 닫고 기록으로
+                    onOpenRecords = {
+                        navController.navigate(Routes.RECORDS) {
+                            popUpTo(Routes.RUN_ROUTE) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
                 )
             }
             composable(Routes.RUN_MENU) {
@@ -986,6 +1003,83 @@ internal fun MainScaffold(
                     // 권한 안내의 "홈으로 돌아가기"(시안 14 · 15)
                     onHome = {
                         if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
+                    },
+                    // 내 러닝 기록(시안 U01 → H01)
+                    onRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    // 추천 코스(U04)
+                    onCourse = { navController.navigate(Routes.RUN_COURSE) { launchSingleTop = true } },
+                    // 크루 달리기 — 달리던 러닝이 있으면 그 러닝, 들어가 있던 대기실이 있으면 그 대기실, 아니면 크루 입구
+                    onCrew = {
+                        val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
+                        val partyCrew = party.crewId
+                        when {
+                            com.stepup.android.service.WalkSessionService.state.value.isActive ->
+                                navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                            (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY ||
+                                party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN) && !partyCrew.isNullOrBlank() ->
+                                navController.navigate(Routes.lobby(partyCrew)) { launchSingleTop = true }
+                            else -> navController.navigate(Routes.RUN_CREW) { launchSingleTop = true }
+                        }
+                    },
+                    onOpenWallet = { navController.navigate(Routes.WALLET) },
+                )
+            }
+            composable(Routes.RUN_CREW) {
+                val crewScope = rememberCoroutineScope()
+                com.stepup.android.ui.screens.walk.CrewRunEntryScreen(
+                    onBack = { navController.popBackStack() },
+                    // 대기실은 여기서 눌러야만 열린다(party_open 은 참가 · 생성을 일으킨다)
+                    onEnterLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) { launchSingleTop = true } },
+                    onFindCrew = { navController.switchTab(Screen.Community) },
+                    onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
+                    onFreeRun = {
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                        navController.navigate(Routes.RUN_NOW) {
+                            popUpTo(Routes.RUN_CREW) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onSignIn = {
+                        crewScope.launch {
+                            try {
+                                com.stepup.android.ui.components.returnToSignIn(context)
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(context, R.string.feed_save_failed, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                )
+            }
+            composable(Routes.RUN_COURSE) {
+                val courseScope = rememberCoroutineScope()
+                val startFresh = {
+                    com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                    com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                    navController.navigate(Routes.RUN_NOW) {
+                        popUpTo(Routes.RUN_COURSE) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+                com.stepup.android.ui.screens.walk.CourseRecommendScreen(
+                    onBack = { navController.popBackStack() },
+                    // 이 코스로 시작 — 그 코스를 골라 두고 러닝(권한 안내 → 3-2-1)으로
+                    onStart = { course ->
+                        courseScope.launch {
+                            val repo = com.stepup.android.core.ServiceLocator.courseRepository
+                            val id = repo.localIdFor(course.id) ?: return@launch
+                            repo.select(id)
+                            startFresh()
+                        }
+                    },
+                    onFreeRun = {
+                        courseScope.launch {
+                            // 자유 러닝은 코스 안내 없이
+                            com.stepup.android.core.ServiceLocator.courseRepository.clearSelection()
+                            startFresh()
+                        }
                     },
                 )
             }
@@ -1027,10 +1121,32 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.RUN_GOAL_HISTORY) {
-                com.stepup.android.ui.screens.walk.RunGoalHistoryScreen(onBack = { navController.popBackStack() })
+                com.stepup.android.ui.screens.walk.RunGoalHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    // 새로운 도전 시작 — 챌린지 목록(U02)
+                    onNewChallenge = {
+                        if (!navController.popBackStack(Routes.RUN_GOALS, inclusive = false)) navController.navigate(Routes.RUN_GOALS)
+                    },
+                    onOpenRecord = { id -> navController.navigate(Routes.runRecord(id)) },
+                )
             }
             composable(Routes.COURSES) {
-                CourseHubScreen(onBack = { navController.popBackStack() })
+                CourseHubScreen(
+                    onBack = { navController.popBackStack() },
+                    // 이 코스로 달리기(K09) — 달리던 러닝이 있으면 그 러닝으로, 아니면 고른 코스로 새 러닝(권한 안내 → 3-2-1)
+                    onRunCourse = {
+                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                        } else {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                            navController.navigate(Routes.RUN_NOW) {
+                                popUpTo(Routes.COURSES) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                )
             }
             composable(Routes.WALLET) {
                 val walletScope = rememberCoroutineScope()
@@ -1109,16 +1225,8 @@ internal fun MainScaffold(
                     onBack = { navController.popBackStack() },
                     onOpenStats = { month -> navController.navigate(Routes.recordStats(month)) },
                     onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
-                    // 기록이 하나도 없을 때(07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 기존 자유 러닝 시작
-                    onStartRun = {
-                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                            navController.navigate(Routes.RUN_NOW)
-                        } else {
-                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
-                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
-                            navController.navigate(Routes.RUN_NOW)
-                        }
-                    },
+                    // 러닝 시작하기(H01 · H07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 러닝 방법 고르기(U01)
+                    onStartRun = { startRunFromRecords(navController) },
                 )
             }
             composable(
@@ -1131,6 +1239,9 @@ internal fun MainScaffold(
                     start = month,
                     onBack = { navController.popBackStack() },
                     onOpenStepStats = { navController.navigate(Routes.ANALYTICS) },
+                    // 통계 없음(H15)의 러닝 시작 · 고른 날짜의 기록(H05 → H11 · H13)
+                    onStartRun = { startRunFromRecords(navController) },
+                    onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
                 )
             }
             composable(
@@ -1366,6 +1477,18 @@ internal fun MainScaffold(
     }
 }
 
+/**
+ * 기록 · 통계의 "러닝 시작하기"(H01 · H07 · H15 → U01) — 달리던 러닝이 있으면 그 러닝으로 돌아가고,
+ * 아니면 러닝 방법 고르기(시작 메뉴). 러닝을 바로 시작하지는 않는다.
+ */
+private fun startRunFromRecords(navController: NavHostController) {
+    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+        navController.navigate(Routes.RUN_NOW)
+    } else {
+        navController.navigate(Routes.RUN_MENU) { launchSingleTop = true }
+    }
+}
+
 /** 탭 전환 — 백스택을 쌓지 않고 각 탭의 상태를 보존한다. */
 private fun NavHostController.switchTab(screen: Screen) {
     navigate(screen.route) {
@@ -1416,13 +1539,19 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         ).size.height
     }.maxOrNull() ?: 0
     val labelHeight = with(density) { labelHeightPx.toDp() }
+    // 러닝 전체 리메이크(2026-10-02) — 러닝 · 신발 탭은 시안의 남색 탭 줄과 윗선. 다른 탭은 S2 바닥 그대로
+    val navyBar = com.stepup.android.ui.theme.StepUpColors.dark && parentTabOf(currentRoute).let { it == Screen.Run || it == Screen.Customize }
     Column(
         Modifier
             .fillMaxWidth()
             // S2 — 탭 줄은 바닥에 녹아든다. 카드 면을 두르지 않는다.
-            .background(Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night))),
+            .background(
+                if (navyBar) Brush.verticalGradient(listOf(Color(0xFF061A38), Color(0xFF031227)))
+                else Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night)),
+            ),
     ) {
         if (!com.stepup.android.ui.theme.StepUpColors.dark) HairlineDivider()
+        if (navyBar) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF15386B)))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1470,15 +1599,21 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자(다른 탭은 S2 그대로)
+    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자.
+    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 다른 탭은 고르면 파란 선택 타일 위에 흰 아이콘 · 글자
     val drawTile = selected && screen == Screen.Draw
+    val blueTile = selected && screen != Screen.Draw
+    val dark = com.stepup.android.ui.theme.StepUpColors.dark
     val tint by animateColorAsState(
-        // S2 — 선택한 탭은 밝은 글자, 아래 짧은 파란 선이 자리를 알린다
-        targetValue = if (drawTile) Color.White else if (selected) com.stepup.android.ui.theme.Snow else Slate,
+        targetValue = when {
+            drawTile || blueTile -> Color.White
+            dark -> Color(0xFF9DB7E2)
+            else -> Slate
+        },
         label = "navTabTint",
     )
     val dotAlpha by animateFloatAsState(
-        targetValue = if (selected && !drawTile) 1f else 0f,
+        targetValue = 0f,
         label = "navTabDot",
     )
     Column(
@@ -1487,6 +1622,22 @@ private fun RowScope.NavTab(
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
             .drawBehind {
+                if (blueTile) {
+                    // 파란 선택 타일 — 자리 폭에서 양옆 4dp, 탭 줄 높이 그대로(자리보다 크게 키우지 않는다)
+                    val w = minOf(size.width - 8.dp.toPx(), 84.dp.toPx())
+                    val h = minOf(size.height, 70.dp.toPx())
+                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
+                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
+                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
+                    drawRoundRect(
+                        Brush.verticalGradient(listOf(Color(0xFF1F6BFF), Color(0xFF0754FF)), startY = topLeft.y, endY = topLeft.y + h),
+                        topLeft, tileSize, radius,
+                    )
+                    drawRoundRect(
+                        Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
+                    )
+                }
                 if (drawTile) {
                     // 선택 타일 72 × 70(자리보다 넓으면 자리에 맞춘다) — 아이콘을 키운다고 타일까지 키우지 않는다
                     val w = minOf(72.dp.toPx(), size.width)

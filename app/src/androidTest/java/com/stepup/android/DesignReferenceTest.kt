@@ -228,9 +228,10 @@ class DesignReferenceTest {
                     capture("$name-all")
                 }
                 if (s == Scene.COURSES) {
-                    compose.onNodeWithText(korean(R.string.courses_tab_make)).performClick()
+                    // 글자 탭(코스 선택 · 코스 만들기 · 코스 게시판) — 같은 글의 화면 제목과 가르려고 누를 수 있는 것만
+                    compose.onNode(hasText(korean(R.string.courses_make)) and hasClickAction()).performClick()
                     capture("$name-make")
-                    compose.onNodeWithText(korean(R.string.courses_tab_board)).performClick()
+                    compose.onNode(hasText(korean(R.string.courses_board)) and hasClickAction()).performClick()
                     capture("$name-board")
                 }
                 if (s == Scene.EXPLORE_MAP) {
@@ -255,16 +256,17 @@ class DesignReferenceTest {
                     compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
                 }
                 if (s == Scene.RUN_DIET_INPUT && interact) {
-                    // 빈 입력으로 추천받기 → 칸 아래 안내(D02), 키 칸을 누르면 숫자 키패드(D01)
-                    compose.onNodeWithTag("diet-input-next").performClick()
+                    // 키를 적었다가 지우면 칸 아래 안내(D02) · 다음 버튼은 누를 수 없다. 키 칸에 적으면 휴대폰 숫자 자판(D01)
+                    // (빈 칸을 지우는 것은 바뀐 것이 없어 안내가 뜨지 않는다)
+                    compose.onNodeWithTag("diet-height").performTextInput("1")
                     compose.waitForIdle()
+                    compose.onNodeWithTag("diet-height").performTextClearance()
+                    compose.waitForIdle()
+                    compose.onAllNodesWithTag("diet-input-error").onFirst().assertExists()
                     capture("$name-errors")
-                    compose.onNodeWithTag("diet-height").performClick()
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("keypad-1").fetchSemanticsNodes().isNotEmpty() }
-                    for (key in listOf("keypad-1", "keypad-7", "keypad-0")) {
-                        compose.onNodeWithTag(key).performClick()
-                        compose.waitForIdle()
-                    }
+                    compose.onNodeWithTag("diet-height").performTextInput("170")
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("diet-height").assert(hasText("170"))
                     capture("$name-keypad")
                     compose.onNodeWithTag("diet-input-done").performClick()
                     compose.waitForIdle()
@@ -394,7 +396,9 @@ class DesignReferenceTest {
             Scene.WALLET -> "bottom-nav"
             Scene.ACHIEVEMENTS -> "bottom-nav"
             Scene.INBOX -> "bottom-nav"
-            Scene.COURSES, Scene.EXPLORE_MAP, Scene.RANKING -> "bottom-nav"
+            // 코스(K09~K18)는 러닝 화면처럼 하단 탭이 없다
+            Scene.COURSES -> "courses-title"
+            Scene.EXPLORE_MAP, Scene.RANKING -> "bottom-nav"
             Scene.RUN_MENU -> "run-menu-free"
             Scene.RUN_GOALS -> "run-goal-10min"
             Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> "run-hero-value"
@@ -414,7 +418,7 @@ class DesignReferenceTest {
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
             Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
-            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST ->
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST, Scene.COURSES ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }

@@ -121,7 +121,14 @@ class RunStartFlowTest {
             compose.waitUntil(5_000) { compose.onAllNodesWithTag(tags.getValue(next)).fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithTag("perm-primary").assertIsDisplayed().performClick()
             compose.onNodeWithTag("perm-secondary").assertIsDisplayed().performClick()
-            compose.onNodeWithTag("onboarding-sheet-close").performClick()
+            // 닫기 — 시트의 X · 화면의 뒤로(꼬리표 같음). 메뉴 위 가운데 창(P01)은 닫기 단추 없이 뒤로 가기로
+            if (compose.onAllNodesWithTag("onboarding-sheet-close").fetchSemanticsNodes().isNotEmpty()) {
+                compose.onNodeWithTag("onboarding-sheet-close").performClick()
+            } else {
+                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitForIdle()
+            }
             compose.runOnIdle {
                 assertEquals(index + 1, primary)
                 assertEquals(index + 1, secondary)

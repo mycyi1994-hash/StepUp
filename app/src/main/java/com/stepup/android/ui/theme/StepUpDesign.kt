@@ -20,8 +20,8 @@ object StepUpDesign {
     val CardLogoHeight = 20.dp
     const val LogoAspectRatio = 5.76f
     val BalanceHeight = 48.dp
-    val BalanceAmount = 16.sp
-    val BalanceUnit = 12.sp
+    val BalanceAmount = 17.sp
+    val BalanceUnit = 13.sp
     val PrimaryHeight = 60.dp
     val PrimaryLabel = 18.sp
     val SecondaryLabel = 14.sp

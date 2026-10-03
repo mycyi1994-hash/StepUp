@@ -9,10 +9,52 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.RunDialog
+import com.stepup.android.ui.components.RunMapFrame
+import com.stepup.android.ui.components.RunMapPlaceholder
+import com.stepup.android.ui.components.RunPage
+import com.stepup.android.ui.components.RunSheet
+import com.stepup.android.ui.components.RunStateArt
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.theme.StepUpSans
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,10 +81,6 @@ import com.stepup.android.domain.RunPermissionSheet
 import com.stepup.android.domain.RunPermissionState
 import com.stepup.android.domain.RunPermissionStep
 import com.stepup.android.ui.StepPermissions
-import com.stepup.android.ui.components.OnboardingPrimaryButton
-import com.stepup.android.ui.components.OnboardingSheet
-import com.stepup.android.ui.components.OnboardingSheetBody
-import com.stepup.android.ui.components.OnboardingTextButton
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -197,8 +235,10 @@ internal fun RunPermissionFlow(onReady: () -> Unit, onCancel: () -> Unit, onHome
                     RunPermissionSheet.ActivityRationale, RunPermissionSheet.ActivityDenied -> requestActivity()
                     RunPermissionSheet.ActivitySettings -> openSettings()
                     RunPermissionSheet.LocationRationale -> requestLocation()
-                    // 이대로 계속 · 경로 없이 계속 — 위치 고르기는 끝났다
-                    RunPermissionSheet.ApproximateLocation, RunPermissionSheet.WithoutLocation -> choose { prefs.setRunLocationChosen() }
+                    // 이대로 계속 — 위치 고르기는 끝났다
+                    RunPermissionSheet.ApproximateLocation -> choose { prefs.setRunLocationChosen() }
+                    // 설정에서 위치 켜기(L02 의 주 버튼) — 돌아오면 다시 읽는다
+                    RunPermissionSheet.WithoutLocation -> openSettings()
                     RunPermissionSheet.NotificationRationale -> requestNotifications()
                 }
             },
@@ -209,7 +249,9 @@ internal fun RunPermissionFlow(onReady: () -> Unit, onCancel: () -> Unit, onHome
                     RunPermissionSheet.ActivityDenied, RunPermissionSheet.ActivitySettings -> home()
                     // 경로 없이 계속 — 이미 뜻을 밝혔으니 18 을 다시 보이지 않는다
                     RunPermissionSheet.LocationRationale -> choose { prefs.setRunLocationChosen() }
-                    RunPermissionSheet.ApproximateLocation, RunPermissionSheet.WithoutLocation -> openSettings()
+                    RunPermissionSheet.ApproximateLocation -> openSettings()
+                    // 위치 없이 시간만 기록 — 위치 고르기는 끝났다
+                    RunPermissionSheet.WithoutLocation -> choose { prefs.setRunLocationChosen() }
                     // 나중에 — 권한을 묻지 않고 러닝으로. 이 선택을 매번 다시 묻지 않는다(설정에서 바꾼다)
                     RunPermissionSheet.NotificationRationale -> choose { prefs.setRunNotificationChosen() }
                 }
@@ -260,56 +302,59 @@ internal fun rememberActivityPermissionRequest(onResult: (RunPermissionSheet?) -
     }
 }
 
-/** 한 장면의 글 · 그림 · 버튼 이름 */
+/** 안내가 놓이는 모양 — 메뉴 위 가운데 창(P01) · 아래 시트(L01) · 화면 전체(P02 · P03 · P04 · P05 · L02) */
+private enum class PermLook { Card, Sheet, Page }
+
+/** 한 장면의 글 · 버튼 이름 · 모양 */
 private class SheetSpec(
     val tag: String,
+    val look: PermLook,
     val title: Int,
-    val icon: ImageVector,
-    val headline: Int,
     val body: Int,
     val primary: Int,
     val secondary: Int,
+    /** 가운데 창의 작은 덧말(P01) · 시트 맨 위 이름(L01) */
+    val note: Int? = null,
+    /** 주 버튼을 크게(기울인 굵은 글자) — 이 화면에서 가장 큰 행동(L02 · L01) */
+    val hero: Boolean = false,
 )
 
 private fun specOf(sheet: RunPermissionSheet): SheetSpec = when (sheet) {
     RunPermissionSheet.ActivityRationale -> SheetSpec(
-        "activity", R.string.onb_perm_activity_title, Icons.AutoMirrored.Outlined.DirectionsRun,
-        R.string.onb_perm_activity_headline, R.string.onb_perm_activity_body, R.string.perm_allow, R.string.run_perm_later,
+        "activity", PermLook.Card, R.string.run_pm_activity_title, R.string.run_pm_activity_head,
+        R.string.run_pm_allow, R.string.run_perm_later, note = R.string.run_pm_activity_note,
     )
     RunPermissionSheet.ActivityDenied -> SheetSpec(
-        "activity-denied", R.string.onb_perm_activity_off_title, Icons.AutoMirrored.Outlined.DirectionsRun,
-        R.string.onb_perm_activity_off_headline, R.string.onb_perm_activity_denied_body, R.string.onb_perm_allow_again,
-        R.string.onb_perm_home,
+        "activity-denied", PermLook.Page, R.string.run_pm_activity_off, R.string.run_pm_activity_off_body,
+        R.string.run_pm_allow_again, R.string.run_go_home,
     )
     RunPermissionSheet.ActivitySettings -> SheetSpec(
-        "activity-settings", R.string.onb_perm_activity_off_title, Icons.AutoMirrored.Outlined.DirectionsRun,
-        R.string.onb_perm_activity_off_headline, R.string.onb_perm_activity_settings_body, R.string.cd_open_settings,
-        R.string.onb_perm_home,
+        "activity-settings", PermLook.Page, R.string.run_pm_activity_off, R.string.run_pm_activity_settings_body,
+        R.string.run_pm_open_settings, R.string.run_go_home,
     )
     RunPermissionSheet.LocationRationale -> SheetSpec(
-        "location", R.string.onb_perm_location_title, Icons.Outlined.LocationOn,
-        R.string.onb_perm_location_headline, R.string.onb_perm_location_body, R.string.onb_perm_location_allow,
-        R.string.onb_perm_without_route,
+        "location", PermLook.Sheet, R.string.run_pm_location_head, R.string.run_pm_location_body,
+        R.string.run_pm_location_allow, R.string.run_pm_location_later, note = R.string.run_pm_location_sheet, hero = true,
     )
     RunPermissionSheet.ApproximateLocation -> SheetSpec(
-        "location-approximate", R.string.onb_perm_approx_title, Icons.Outlined.LocationOn,
-        R.string.onb_perm_approx_headline, R.string.onb_perm_approx_body, R.string.onb_perm_continue_as_is,
-        R.string.onb_perm_location_settings,
+        "location-approximate", PermLook.Page, R.string.run_pm_approx_title, R.string.run_pm_approx_body,
+        R.string.run_pm_continue, R.string.run_pm_location_settings,
     )
+    // 앱 위치 권한 없음(L02) — 주 버튼은 설정에서 위치 켜기, 위치 없이 시간만 기록은 보조
     RunPermissionSheet.WithoutLocation -> SheetSpec(
-        "location-off", R.string.onb_perm_no_location_title, Icons.Outlined.LocationOn,
-        R.string.onb_perm_no_location_headline, R.string.onb_perm_no_location_body, R.string.onb_perm_without_route,
-        R.string.onb_perm_location_settings,
+        "location-off", PermLook.Page, R.string.run_pm_no_location_title, R.string.run_pm_no_location_body,
+        R.string.run_pm_turn_on_location, R.string.run_pm_time_only, hero = true,
     )
     RunPermissionSheet.NotificationRationale -> SheetSpec(
-        "notification", R.string.onb_perm_notification_title, Icons.Outlined.Notifications,
-        R.string.onb_perm_notification_headline, R.string.onb_perm_notification_body, R.string.onb_perm_notification_allow,
-        R.string.run_perm_later,
+        "notification", PermLook.Page, R.string.run_pm_notify_title, R.string.run_pm_notify_body,
+        R.string.run_pm_notify_allow, R.string.run_perm_later,
     )
 }
 
 /**
- * 권한 안내 시트 하나 — 제목 · 닫기, 아이콘 칸, 큰 한 줄, 설명, 주 버튼, 글자 보조 버튼.
+ * 권한 안내 하나(시안 P01–P05 · L01 · L02) — 메뉴 위 가운데 창 · 아래 시트 · 화면 전체 중 하나로, 남색 러닝 화면과 같은 틀.
+ * 그림 · 큰 한 줄 · 설명 · 주 버튼 · 보조 버튼. OS 권한 창은 주 버튼을 눌러야만 뜬다(그림으로 흉내 내지 않는다).
+ * 닫기(창 바깥 · 뒤로 · 시트의 X · 화면의 뒤로)는 [onDismiss] 하나 — 아무것도 시작하지 않는다.
  * 스크린리더는 제목 → 설명 → 주 행동 → 보조 행동 차례로 읽는다. 시안 검사도 이 부품을 그대로 그린다.
  */
 @Composable
@@ -320,16 +365,203 @@ internal fun RunPermissionSheetView(
     onDismiss: () -> Unit,
 ) {
     val spec = specOf(sheet)
-    OnboardingSheet(
-        title = stringResource(spec.title),
-        onDismiss = onDismiss,
-        modifier = Modifier.testTag("perm-sheet-${spec.tag}"),
-        actions = {
-            OnboardingPrimaryButton(stringResource(spec.primary), onPrimary, Modifier.fillMaxWidth().testTag("perm-primary"))
-            OnboardingTextButton(stringResource(spec.secondary), onSecondary, Modifier.fillMaxWidth().testTag("perm-secondary"))
-        },
+    val tag = "perm-sheet-${spec.tag}"
+    val buttons: @Composable ColumnScope.() -> Unit = {
+        RunButton(
+            stringResource(spec.primary), onPrimary, Modifier.testTag("perm-primary"),
+            hero = spec.hero && spec.look == PermLook.Page, italic = spec.hero,
+        )
+        Spacer(Modifier.height(10.dp))
+        RunButton(stringResource(spec.secondary), onSecondary, Modifier.testTag("perm-secondary"), kind = RunButtonKind.Secondary)
+    }
+    when (spec.look) {
+        PermLook.Card -> RunDialog(onDismiss = onDismiss, modifier = Modifier.testTag(tag)) {
+            RunStateArt(Icons.AutoMirrored.Filled.DirectionsRun, size = 96.dp)
+            Spacer(Modifier.height(14.dp))
+            PermissionTitle(stringResource(spec.title), size = 28.sp)
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(spec.body), style = runTextStyle(19.sp, runTone().text, FontWeight.SemiBold), textAlign = TextAlign.Center)
+            spec.note?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(it), style = runTextStyle(15.sp, runTone().label, FontWeight.Medium), textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(20.dp))
+            buttons()
+        }
+        PermLook.Sheet -> RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag(tag), closeTag = "onboarding-sheet-close") {
+            spec.note?.let {
+                Text(stringResource(it), style = runTextStyle(17.sp, runTone().text, FontWeight.Bold), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(14.dp))
+            }
+            RunStateArt(Icons.Filled.LocationOn, size = 104.dp)
+            Spacer(Modifier.height(14.dp))
+            PermissionTitle(stringResource(spec.title), size = 27.sp)
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(spec.body), style = runTextStyle(15.sp, runTone().label, FontWeight.Medium), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
+            buttons()
+        }
+        PermLook.Page -> androidx.compose.ui.window.Dialog(
+            onDismissRequest = onDismiss,
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false,
+            ),
+        ) {
+            RunPermissionPage(sheet, spec, onDismiss, buttons, Modifier.testTag(tag))
+        }
+    }
+}
+
+/** 화면 전체 안내(P02 · P03 · P04 · P05 · L02) — 남색 바닥 · 뒤로(닫기) · 그림 · 큰 글 · 아래 버튼 */
+@Composable
+private fun RunPermissionPage(
+    sheet: RunPermissionSheet,
+    spec: SheetSpec,
+    onBack: () -> Unit,
+    buttons: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val t = runTone()
+    RunPage(
+        onBack = onBack, modifier = modifier, backTag = "onboarding-sheet-close",
+        bottom = { buttons() },
     ) {
-        OnboardingSheetBody(spec.icon, stringResource(spec.headline), stringResource(spec.body))
+        if (sheet == RunPermissionSheet.ApproximateLocation) {
+            // P04 — 제목은 왼쪽, 지금 대략적인 자리를 실제 지도에(모르면 지도를 그리지 않는다)
+            PermissionTitle(stringResource(spec.title), size = 38.sp, align = TextAlign.Start, italic = true)
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(spec.body), style = runTextStyle(17.sp, t.label, FontWeight.Medium, 1.5f))
+            Spacer(Modifier.height(18.dp))
+            val here = com.stepup.android.ui.components.rememberCurrentLocation(enabled = true)
+            RunMapFrame(Modifier.height(300.dp).testTag("perm-approx-map")) {
+                if (here != null) {
+                    LiveRouteMap(listOf(here), Modifier.fillMaxSize(), follow = true, live = true, routeColor = t.cyan)
+                } else {
+                    RunMapPlaceholder(Icons.Filled.LocationOn, stringResource(R.string.run_pm_approx_map), null)
+                }
+            }
+            return@RunPage
+        }
+        if (sheet == RunPermissionSheet.NotificationRationale) {
+            // P05 — 제목 · 설명이 위, 알림 그림이 아래
+            Spacer(Modifier.height(36.dp))
+            PermissionTitle(stringResource(spec.title), size = 50.sp, italic = true)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(spec.body), style = runTextStyle(18.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(36.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { NotificationArt() }
+            return@RunPage
+        }
+        Spacer(Modifier.height(48.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            when (sheet) {
+                RunPermissionSheet.ActivityDenied -> SlashedArt(Icons.AutoMirrored.Filled.DirectionsRun)
+                RunPermissionSheet.ActivitySettings ->
+                    RunStateArt(Icons.AutoMirrored.Filled.DirectionsRun, size = 200.dp, badge = Icons.Filled.Close)
+                else -> SlashedArt(Icons.Filled.LocationOn, cyan = true)
+            }
+        }
+        Spacer(Modifier.height(34.dp))
+        PermissionTitle(stringResource(spec.title), size = 37.sp)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(spec.body), style = runTextStyle(18.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun PermissionTitle(
+    text: String,
+    size: androidx.compose.ui.unit.TextUnit,
+    align: TextAlign = TextAlign.Center,
+    italic: Boolean = false,
+) {
+    val t = runTone()
+    Text(
+        text,
+        style = TextStyle(
+            fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = size, lineHeight = 1.22.em,
+            letterSpacing = (-0.03).em, color = t.text,
+            fontStyle = if (italic) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
+        ),
+        textAlign = align, modifier = Modifier.fillMaxWidth().semantics { heading() },
+    )
+}
+
+/** 빗금 그은 그림 — 꺼짐(P02 신체 활동 · L02 위치 권한 · E07 위치 기능). 빗금은 원 안에서 */
+@Composable
+internal fun SlashedArt(icon: ImageVector, cyan: Boolean = false, size: androidx.compose.ui.unit.Dp = 200.dp) {
+    val t = runTone()
+    Box(contentAlignment = Alignment.Center) {
+        RunStateArt(icon, size = size)
+        Canvas(Modifier.size(size)) {
+            val r = this.size.minDimension / 2.25f
+            val d = r * 0.6f
+            drawLine(
+                if (cyan) t.cyan else t.cobalt, androidx.compose.ui.geometry.Offset(center.x - d, center.y - d),
+                androidx.compose.ui.geometry.Offset(center.x + d, center.y + d), strokeWidth = 7.dp.toPx(), cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+/** 알림 안내(P05) — 휴대폰 윤곽 가운데에 걸친 알림 한 장(무엇이 보이는지 이름만, 숫자는 그리지 않는다) */
+@Composable
+private fun NotificationArt() {
+    val t = runTone()
+    Box(Modifier.size(width = 320.dp, height = 250.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(width = 200.dp, height = 250.dp)) {
+            drawCircle(
+                Brush.radialGradient(listOf(t.cobalt.copy(alpha = 0.32f), Color.Transparent), radius = this.size.width * 0.85f),
+                radius = this.size.width * 0.85f,
+            )
+            val radius = androidx.compose.ui.geometry.CornerRadius(30.dp.toPx())
+            drawRoundRect(t.inset.copy(alpha = 0.7f), size = this.size, cornerRadius = radius)
+            drawRoundRect(t.cobalt.copy(alpha = 0.9f), size = this.size, cornerRadius = radius, style = Stroke(3.dp.toPx()))
+            // 위 노치 · 아래 흐린 줄 둘(빈 화면)
+            drawRoundRect(
+                t.cobalt.copy(alpha = 0.9f), topLeft = androidx.compose.ui.geometry.Offset(this.size.width * 0.32f, 10.dp.toPx()),
+                size = androidx.compose.ui.geometry.Size(this.size.width * 0.36f, 12.dp.toPx()),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
+            )
+            listOf(0.76f, 0.88f).forEach { y ->
+                drawRoundRect(
+                    t.track, topLeft = androidx.compose.ui.geometry.Offset(this.size.width * 0.14f, this.size.height * y),
+                    size = androidx.compose.ui.geometry.Size(this.size.width * 0.72f, 16.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()),
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                .background(t.panel).border(1.5.dp, t.cobalt, RoundedCornerShape(16.dp))
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 알림 큰 아이콘 자리 — 런처와 같은 앱 아이콘(바탕색 + 앞그림, 적응형 아이콘의 보이는 가운데 72/108)
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
+                    .background(androidx.compose.ui.res.colorResource(R.color.ic_launcher_background)),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(R.drawable.ic_launcher_foreground), contentDescription = null,
+                    modifier = Modifier.requiredSize(60.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.run_pm_notify_card), style = runTextStyle(16.sp, t.text, FontWeight.Bold))
+                Text(stringResource(R.string.run_pm_notify_card_body), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            }
+            Text(stringResource(R.string.run_pm_notify_now), style = runTextStyle(13.sp, t.label, FontWeight.Medium),
+                modifier = Modifier.align(Alignment.Top))
+        }
     }
 }
 

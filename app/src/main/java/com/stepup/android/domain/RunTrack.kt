@@ -65,3 +65,20 @@ object RunTrack {
 
 /** 시각을 떼고 모양만 넘긴다 — 지도 그리기와 코스 만들기가 쓰는 형태다. */
 fun List<TrackPoint>.toGeoPoints(): List<GeoPoint> = map { it.toGeoPoint() }
+
+/**
+ * 위치 신호가 끊겼다 돌아온 자리(시안 L04) — 앞 점과 이어 그리지 않을 점의 번호들.
+ *
+ * 저장된 경로에는 끊김 표시가 없다. 앞 점에서 [gapMs] 넘게 지나 [jumpMeters] 넘게 떨어진 점은 신호가 끊긴 사이에
+ * 움직인 것이다 — 그 사이를 직선으로 이으면 달리지 않은 길이 그려진다. 제자리에 섰다 다시 출발한 점(가까운 점)은 잇는다.
+ */
+fun segmentBreaks(points: List<TrackPoint>, gapMs: Long = 30_000L, jumpMeters: Double = 30.0): Set<Int> {
+    if (points.size < 2) return emptySet()
+    val breaks = mutableSetOf<Int>()
+    for (i in 1 until points.size) {
+        val a = points[i - 1]
+        val b = points[i]
+        if (b.at - a.at > gapMs && haversineMeters(a.toGeoPoint(), b.toGeoPoint()) > jumpMeters) breaks += i
+    }
+    return breaks
+}

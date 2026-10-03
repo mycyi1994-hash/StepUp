@@ -68,6 +68,7 @@ class ClaimUploadTest {
         override fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long> = observeDurationSince(fromMillis)
         override fun observeRunTotalsSinceFor(owner: String, fromMillis: Long) = observeRunTotals()
         override fun observePendingUploadCount(): Flow<Int> = flowOf(pendingCount())
+        override fun observePendingUploadCountFor(owner: String): Flow<Int> = flowOf(pendingCount())
 
         // 내 러닝 기록 — 이 테스트는 쓰지 않는다
         override fun observeRecordRows(owner: String, from: Long, until: Long, limit: Int) =
@@ -79,6 +80,8 @@ class ClaimUploadTest {
         override fun observeRecord(owner: String, id: Long): Flow<WalkSessionEntity?> = flowOf(rows[id])
         override fun observeFirstRecordAt(owner: String): Flow<Long?> = flowOf(rows.values.minOfOrNull { it.startedAt })
         override suspend fun trackOf(owner: String, id: Long): String? = rows[id]?.track
+        override suspend fun idForStart(owner: String, startedAt: Long): Long? =
+            rows.values.filter { it.startedAt == startedAt }.maxOfOrNull { it.id }
         override suspend fun deleteRecord(owner: String, id: Long): Int = if (rows.remove(id) != null) 1 else 0
         override suspend fun countFor(owner: String): Int = rows.values.count { it.recordingOwner == owner || it.recordingOwner == "legacy" }
         override suspend fun pendingSince(owner: String, since: Long): Int = rows.values.count {
