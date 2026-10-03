@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_blue_reconnecting_title">再接続しています。</string>
+    <string name="chat_blue_reconnecting_body">入力した内容は残っています。</string>
+    <string name="crew_blue_clear_query">検索語を消す</string>
+    <string name="crewhome_blue_week_goal_current">現在の目標 %1$dkm</string>
+    <string name="crewhome_blue_week_goal_note">現在の目標を基準に表示しています。</string>
+    <string name="crewhome_blue_run_trim">スタート・ゴール付近の300mは地図に表示されません。</string>
+    <string name="crewhome_blue_place_note">集合場所は地図アプリで確認できます。</string>
+</resources>

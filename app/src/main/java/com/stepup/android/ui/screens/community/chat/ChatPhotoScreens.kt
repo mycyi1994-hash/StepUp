@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.filled.Check
+import com.stepup.android.ui.components.RunSpinner
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,17 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
-import com.stepup.android.ui.screens.community.crew.CrewBottomBar
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewButtonKind
-import com.stepup.android.ui.screens.community.crew.CrewFieldLabel
-import com.stepup.android.ui.screens.community.crew.CrewGutter
-import com.stepup.android.ui.screens.community.crew.CrewPage
-import com.stepup.android.ui.screens.community.crew.CrewResultPage
-import com.stepup.android.ui.screens.community.crew.CrewSheet
-import com.stepup.android.ui.screens.community.crew.CrewTextField
-import com.stepup.android.ui.screens.community.crew.CrewTopBar
-import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.screens.community.crew.rememberDraftPhoto
 
 /**
@@ -57,7 +48,7 @@ import com.stepup.android.ui.screens.community.crew.rememberDraftPhoto
  */
 @Composable
 fun ChatPhotoScreen(viewModel: ChatPhotoViewModel, onBack: () -> Unit, onSent: () -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val caption by viewModel.caption.collectAsStateWithLifecycle()
     val sending by viewModel.sending.collectAsStateWithLifecycle()
     val failed by viewModel.failed.collectAsStateWithLifecycle()
@@ -77,44 +68,48 @@ fun ChatPhotoScreen(viewModel: ChatPhotoViewModel, onBack: () -> Unit, onSent: (
     BackHandler(onBack = cancel)
     val image = rememberDraftPhoto(photo?.file?.path)
 
-    CrewPage(Modifier.imePadding().testTag("chat-photo-preview")) {
-        CrewTopBar(stringResource(R.string.chat_preview_bar), cancel)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(40.dp))
+    BluePage(Modifier.imePadding().testTag("chat-photo-preview")) {
+        BlueTopBar(stringResource(R.string.chat_preview_bar), cancel)
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+            Spacer(Modifier.height(20.dp))
             val ratio = if (photo != null && photo.height > 0) (photo.width.toFloat() / photo.height).coerceIn(0.75f, 1.6f) else 1f
             Box(
-                Modifier.fillMaxWidth().aspectRatio(ratio).clip(RoundedCornerShape(18.dp)).background(ink.card).testTag("chat-photo-image"),
+                Modifier.fillMaxWidth().aspectRatio(ratio).clip(RoundedCornerShape(20.dp)).background(ink.card).testTag("chat-photo-image"),
                 contentAlignment = Alignment.Center,
             ) {
                 if (image != null) Image(image, stringResource(R.string.chat_photo), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else CircularProgressIndicator(Modifier.size(20.dp), color = ink.secondary, strokeWidth = 2.dp)
+                else RunSpinner(Modifier.size(24.dp))
             }
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.chat_preview_count), color = ink.secondary, fontSize = 13.5.sp)
-            Spacer(Modifier.height(28.dp))
-            CrewFieldLabel(stringResource(R.string.chat_preview_caption))
-            Spacer(Modifier.height(12.dp))
-            CrewTextField(
+            Spacer(Modifier.height(14.dp))
+            Text(stringResource(R.string.chat_preview_count), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
+            Spacer(Modifier.height(26.dp))
+            BlueFieldLabel(stringResource(R.string.chat_preview_caption))
+            Spacer(Modifier.height(10.dp))
+            BlueTextField(
                 caption, viewModel::setCaption, Modifier.testTag("chat-photo-caption"),
                 placeholder = stringResource(R.string.chat_preview_caption_hint), singleLine = false,
             )
             Spacer(Modifier.height(32.dp))
         }
-        CrewBottomBar {
-            CrewButton(stringResource(R.string.chat_preview_send), viewModel::send, Modifier.testTag("chat-photo-send"), busy = sending && !failed)
+        BlueBottomBar {
+            BlueButton(stringResource(R.string.chat_preview_send), viewModel::send, Modifier.testTag("chat-photo-send"), busy = sending && !failed)
         }
     }
     if (failed) {
-        CrewSheet(stringResource(R.string.chat_photo_error_title), viewModel::closeFailed, Modifier.testTag("chat-photo-failed"), dismissible = !sending) {
-            Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.chat_photo_error_body), color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
-            Spacer(Modifier.height(64.dp))
-            CrewButton(stringResource(R.string.chat_photo_retry), viewModel::send, Modifier.testTag("chat-photo-retry"), busy = sending)
-            Spacer(Modifier.height(16.dp))
-            CrewButton(
+        BlueSheet(
+            stringResource(R.string.chat_photo_error_title), viewModel::closeFailed, Modifier.testTag("chat-photo-failed"),
+            dismissible = !sending, centered = true,
+        ) {
+            Spacer(Modifier.height(12.dp))
+            BlueSheetBody(stringResource(R.string.chat_photo_error_body))
+            Spacer(Modifier.height(26.dp))
+            BlueButton(stringResource(R.string.chat_photo_retry), viewModel::send, Modifier.testTag("chat-photo-retry"), busy = sending)
+            Spacer(Modifier.height(12.dp))
+            BlueButton(
                 stringResource(R.string.chat_photo_back), viewModel::closeFailed, Modifier.testTag("chat-photo-back"),
-                CrewButtonKind.SECONDARY, enabled = !sending,
+                BlueKind.SECONDARY, enabled = !sending,
             )
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -125,66 +120,67 @@ fun ChatPhotoScreen(viewModel: ChatPhotoViewModel, onBack: () -> Unit, onSent: (
  */
 @Composable
 fun ChatViewerScreen(viewModel: ChatViewerViewModel, onBack: () -> Unit, onRoom: () -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val image by viewModel.image.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
     LaunchedEffect(ended) { if (ended) onEnded() }
     val message = viewModel.message
     val gone = message != null && !message.visible
-    CrewPage(Modifier.testTag("chat-viewer")) {
-        CrewTopBar(stringResource(R.string.chat_viewer_bar), onBack)
+    BluePage(Modifier.testTag("chat-viewer")) {
+        BlueTopBar(stringResource(R.string.chat_viewer_bar), onBack)
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter),
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(20.dp))
             val bitmap = (image as? ChatLoad.Ready)?.value?.takeIf { !gone }
             val shown = remember(bitmap) { bitmap?.asImageBitmap() }
             val ratio = if (bitmap != null && bitmap.height > 0) (bitmap.width.toFloat() / bitmap.height).coerceIn(0.6f, 1.8f) else 1f
             Box(
-                Modifier.fillMaxWidth().aspectRatio(ratio).clip(RoundedCornerShape(18.dp)).background(ink.card).testTag("chat-viewer-image"),
+                Modifier.fillMaxWidth().aspectRatio(ratio).clip(RoundedCornerShape(20.dp)).background(ink.card).testTag("chat-viewer-image"),
                 contentAlignment = Alignment.Center,
             ) {
                 when {
                     shown != null -> Image(shown, stringResource(R.string.chat_photo), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     gone || image is ChatLoad.Failed -> Text(
-                        stringResource(R.string.chat_viewer_gone), color = ink.secondary, fontSize = 14.sp, textAlign = TextAlign.Center,
+                        stringResource(R.string.chat_viewer_gone), style = blueText(16.sp, ink.secondary, FontWeight.Medium), textAlign = TextAlign.Center,
                         modifier = Modifier.padding(24.dp).testTag("chat-viewer-gone"),
                     )
-                    else -> CircularProgressIndicator(Modifier.size(20.dp), color = ink.secondary, strokeWidth = 2.dp)
+                    else -> RunSpinner(Modifier.size(24.dp))
                 }
             }
             if (message != null && !gone) {
-                Spacer(Modifier.height(26.dp))
+                Spacer(Modifier.height(22.dp))
                 Text(
                     stringResource(
                         R.string.chat_viewer_meta,
                         message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
                         "${chatDate(message.createdAt)} ${chatTime(message.createdAt)}",
                     ),
-                    color = ink.secondary, fontSize = 13.sp, textAlign = TextAlign.Center,
+                    style = blueText(15.sp, ink.secondary, FontWeight.Medium), textAlign = TextAlign.Center,
                 )
                 message.body?.takeIf { it.isNotBlank() }?.let { body ->
-                    Spacer(Modifier.height(16.dp))
-                    Text(body, color = ink.text, fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(14.dp))
+                    Text(body, style = blueText(20.sp, ink.text, FontWeight.Bold, 1.45f), textAlign = TextAlign.Center)
                 }
             }
             Spacer(Modifier.height(32.dp))
         }
-        CrewBottomBar { CrewButton(stringResource(R.string.chat_back_to_room), onRoom, Modifier.testTag("chat-viewer-room")) }
+        BlueBottomBar { BlueButton(stringResource(R.string.chat_back_to_room), onRoom, Modifier.testTag("chat-viewer-room")) }
     }
 }
 
 /** 29 신고 접수 — 서버가 받은 뒤에만 */
 @Composable
 fun ChatReportedScreen(onBack: () -> Unit, onRoom: () -> Unit) {
-    CrewResultPage(
+    BlueResultPage(
         title = stringResource(R.string.chat_report_sent_title),
         body = stringResource(R.string.chat_report_sent_body),
         button = stringResource(R.string.chat_back_to_room),
         onButton = onRoom,
         onBack = onBack,
         modifier = Modifier.testTag("chat-reported"),
+        icon = Icons.Filled.Check,
     )
 }
 
@@ -194,22 +190,28 @@ fun ChatReportedScreen(onBack: () -> Unit, onRoom: () -> Unit) {
  */
 @Composable
 fun ChatEndedScreen(onList: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     BackHandler(onBack = onList)
-    CrewPage(Modifier.testTag("chat-ended")) {
-        CrewTopBar(stringResource(R.string.chat_ended_bar), onList)
-        Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.weight(1f))
-            Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp).align(Alignment.CenterHorizontally))
-            Spacer(Modifier.height(26.dp))
+    BluePage(Modifier.testTag("chat-ended")) {
+        BlueTopBar(stringResource(R.string.chat_ended_bar), onList)
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(96.dp))
+            BlueStateIcon(Icons.Outlined.Info)
+            Spacer(Modifier.height(24.dp))
             Text(
-                stringResource(R.string.chat_ended_title), color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold,
+                stringResource(R.string.chat_ended_title), style = blueText(27.sp, ink.text, FontWeight.ExtraBold, 1.3f),
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(36.dp))
-            Text(stringResource(R.string.chat_ended_body), color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp)
-            Spacer(Modifier.weight(1.6f))
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(R.string.chat_ended_body), style = blueText(16.sp, ink.text.copy(alpha = 0.88f), FontWeight.Medium, 1.6f),
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(32.dp))
         }
-        CrewBottomBar { CrewButton(stringResource(R.string.chat_ended_button), onList, Modifier.testTag("chat-ended-list")) }
+        BlueBottomBar { BlueButton(stringResource(R.string.chat_ended_button), onList, Modifier.testTag("chat-ended-list")) }
     }
 }

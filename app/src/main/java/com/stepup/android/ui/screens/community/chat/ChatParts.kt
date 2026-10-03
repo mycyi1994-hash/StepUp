@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -79,12 +82,10 @@ import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRules
 import com.stepup.android.domain.ChatState
 import com.stepup.android.domain.CrewCard
-import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.community.crew.CrewGutter
 import com.stepup.android.ui.screens.community.crew.CrewImage
-import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpSans
 import java.time.Instant
@@ -94,9 +95,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /*
- * 크루 채팅(2026-09-29 크루 채팅 패키지)의 부품 — 시안(design-tokens.json · 03-components)의 값을 옮겼다:
- * 대화 좌우 16 · 설정 화면 좌우 24 · 말풍선 모서리 14 · 본문 15 · 입력칸 48(모서리 22) · 누르는 곳 44 이상.
- * 크루 명함형의 색 · 버튼 · 시트([crewInk] · CrewButton · CrewSheet)를 그대로 쓰고, 채팅에만 있는 색을 더한다.
+ * 크루 채팅 부품 — 파란 톤 전달본(2026-10-03 v4, stepup-crew-chat-blue-claude-v19)의 색 · 크기:
+ * 남색 바닥 · 파란 말풍선(남) · 밝은 말풍선(나) · 청록 강조 · 대화 좌우 16 · 말풍선 모서리 18 · 본문 16 · 입력칸 52 · 누르는 곳 48.
+ * 두 영역 공통 부품([blueInk] · BlueButton · BlueSheet — CrewBlueKit.kt)을 쓰고, 채팅에만 있는 색을 더한다.
+ * 이모지 · 왕관 · 온라인 수 · '입력 중' 표시는 두지 않는다(지원하지 않는 상태를 꾸미지 않는다).
  */
 
 /** 채팅에만 있는 색 — 어두운 테마는 시안 값, 밝은 테마는 같은 관계의 밝은 값 */
@@ -128,26 +130,29 @@ internal class ChatInk(
     val memberFace: Color,
     val memberFaceText: Color,
     val highlight: Color,
+    /** 전송 대기 · 실패 말풍선(내 것) — 아직 서버가 받았다고 확인하지 않은 상태 */
+    val pending: Color,
+    val pendingText: Color,
 )
 
 private val DarkChatInk = ChatInk(
-    incoming = Color(0xFF17243A), incomingText = Color(0xFFF2F4FC), outgoing = Color(0xFFDCE7FB), outgoingText = Color(0xFF13243E),
-    gone = Color(0xFF111B2B), pinned = Color(0xFF11243B), badge = Color(0xFF26394F), badgeText = Color(0xFFA3BFFE),
-    unread = Color(0xFF4277EF), unreadText = Color(0xFFF2F4FC), composer = Color(0xFF172237), sendOff = Color(0xFF223047),
-    sendOffIcon = Color(0xFF70819A), sendOn = Color(0xFFF2F4FC), sendOnIcon = Color(0xFF0B1423), reply = Color(0xFF142137),
-    banner = Color(0xFF293044), jump = Color(0xFF274771), jumpText = Color(0xFFF2F4FC), failed = Color(0xFF322932),
-    ownerFace = Color(0xFF3D302F), ownerFaceText = Color(0xFFF0D8C7), memberFace = Color(0xFF27374D), memberFaceText = Color(0xFFA3BFFE),
-    highlight = Color(0x33A3BFFE),
+    incoming = Color(0xFF0B2E5C), incomingText = Color(0xFFF5F8FF), outgoing = Color(0xFFE8F4FF), outgoingText = Color(0xFF06274D),
+    gone = Color(0xFF0A2343), pinned = Color(0xFF0A2A55), badge = Color(0xFF0B3566), badgeText = Color(0xFF48D9FA),
+    unread = Color(0xFF0754FF), unreadText = Color(0xFFF5F8FF), composer = Color(0xFF0B2B55), sendOff = Color(0xFF1A3E70),
+    sendOffIcon = Color(0xFF7FA2D8), sendOn = Color(0xFFF5F8FF), sendOnIcon = Color(0xFF0754FF), reply = Color(0xFF0A2547),
+    banner = Color(0xFF0A2547), jump = Color(0xFF061D3B), jumpText = Color(0xFF48D9FA), failed = Color(0xFF061D3B),
+    ownerFace = Color(0xFF4A3330), ownerFaceText = Color(0xFFF3DCCB), memberFace = Color(0xFF0D3A75), memberFaceText = Color(0xFFBFD6FF),
+    highlight = Color(0x2E48D9FA), pending = Color(0xFF9CC7F5), pendingText = Color(0xFF06274D),
 )
 
 private val LightChatInk = ChatInk(
-    incoming = Color(0xFFFFFFFF), incomingText = Color(0xFF10203B), outgoing = Color(0xFF1B2D4E), outgoingText = Color(0xFFFFFFFF),
-    gone = Color(0xFFE7EDF6), pinned = Color(0xFFE3ECFB), badge = Color(0xFFDCE7FA), badgeText = Color(0xFF274C8F),
-    unread = Color(0xFF2F63D8), unreadText = Color(0xFFFFFFFF), composer = Color(0xFFFFFFFF), sendOff = Color(0xFFD5DCE8),
-    sendOffIcon = Color(0xFF7B8AA0), sendOn = Color(0xFF1B2D4E), sendOnIcon = Color(0xFFFFFFFF), reply = Color(0xFFE7EDF6),
-    banner = Color(0xFFE2E9F4), jump = Color(0xFF1B2D4E), jumpText = Color(0xFFFFFFFF), failed = Color(0xFFF6E3DC),
-    ownerFace = Color(0xFFF1E1D8), ownerFaceText = Color(0xFF6B4533), memberFace = Color(0xFFDCE7FA), memberFaceText = Color(0xFF274C8F),
-    highlight = Color(0x33335EAB),
+    incoming = Color(0xFFFFFFFF), incomingText = Color(0xFF0B1E3F), outgoing = Color(0xFF0754FF), outgoingText = Color(0xFFFFFFFF),
+    gone = Color(0xFFE8EEF8), pinned = Color(0xFFFFFFFF), badge = Color(0xFFE1EBFF), badgeText = Color(0xFF0748D6),
+    unread = Color(0xFF0754FF), unreadText = Color(0xFFFFFFFF), composer = Color(0xFFFFFFFF), sendOff = Color(0xFFD5DCE8),
+    sendOffIcon = Color(0xFF7B8AA0), sendOn = Color(0xFF0754FF), sendOnIcon = Color(0xFFFFFFFF), reply = Color(0xFFEDF2FC),
+    banner = Color(0xFFEDF2FC), jump = Color(0xFFFFFFFF), jumpText = Color(0xFF0748D6), failed = Color(0xFFFFFFFF),
+    ownerFace = Color(0xFFF1E1D8), ownerFaceText = Color(0xFF6B4533), memberFace = Color(0xFFE1EBFF), memberFaceText = Color(0xFF0748D6),
+    highlight = Color(0x220754FF), pending = Color(0xFF8DB2F5), pendingText = Color(0xFF0B1E3F),
 )
 
 @Composable
@@ -161,53 +166,43 @@ internal val ChatGutter = 16.dp
 /** 02 · 03 머리 — 뒤로(공통 머리) · 크루 이미지 · 이름 · "크루원 25명"(지금 크루원 수) · 더보기(04 · 05) */
 @Composable
 internal fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Unit, onInfo: (() -> Unit)?) {
-    val ink = crewInk()
-    val label = stringResource(R.string.chat_more)
-    SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null,
-        modifier = Modifier.padding(horizontal = 8.dp),
-        titleContent = {
+    val ink = blueInk()
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BlueBackButton(onBack)
+        if (card == null) {
+            // 36 — 방 정보가 아직 없다: 가짜 크루 이름 · 인원 없이 "크루 채팅"만
+            Text(
+                stringResource(R.string.chat_ended_bar), style = blueText(19.sp, ink.text, FontWeight.Bold, 1.25f),
+                textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f).testTag("chat-room-title"),
+            )
+        } else {
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 58.dp).clip(RoundedCornerShape(12.dp))
+                Modifier.weight(1f).heightIn(min = 60.dp).clip(RoundedCornerShape(12.dp))
                     .feedbackClickable(enabled = onInfo != null, role = Role.Button) { onInfo?.invoke() }
-                    .padding(horizontal = 2.dp, vertical = 6.dp).testTag("chat-room-title"),
+                    .padding(horizontal = 4.dp, vertical = 4.dp).testTag("chat-room-title"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (card != null) CrewImage(card, 42.dp, 11.dp)
-                Spacer(Modifier.width(12.dp))
+                CrewImage(card, 56.dp, 13.dp)
+                Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(card?.name.orEmpty(), color = ink.text, fontSize = 20.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(card.name, style = blueText(22.sp, ink.text, FontWeight.ExtraBold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (memberCount != null) {
                         Text(
-                            stringResource(R.string.chat_members_count, memberCount), color = ink.secondary, fontSize = 11.sp,
+                            stringResource(R.string.chat_members_count, memberCount), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.3f),
                             maxLines = 1, modifier = Modifier.testTag("chat-room-count"),
                         )
                     }
                 }
             }
-        },
-        trailing = {
-            if (onInfo != null) {
-                Box(
-                    Modifier.size(width = 44.dp, height = 49.dp).clip(RoundedCornerShape(12.dp))
-                        .feedbackClickable(role = Role.Button, onClick = onInfo).semantics { contentDescription = label }
-                        .testTag("chat-room-more"),
-                    contentAlignment = Alignment.Center,
-                ) { MoreDots(ink.text) }
-            } else {
-                Spacer(Modifier.size(44.dp))
-            }
-        },
-    )
-}
-
-/** 가로 점 셋(시안의 •••) */
-@Composable
-private fun MoreDots(color: Color) {
-    Canvas(Modifier.size(width = 22.dp, height = 6.dp)) {
-        val r = 1.7.dp.toPx()
-        val y = size.height / 2
-        listOf(0.12f, 0.5f, 0.88f).forEach { drawCircle(color, r, Offset(size.width * it, y)) }
+        }
+        if (onInfo != null) {
+            BlueMoreButton(onInfo, Modifier.testTag("chat-room-more"))
+        } else {
+            Spacer(Modifier.size(48.dp))
+        }
     }
 }
 
@@ -219,36 +214,37 @@ private fun MoreDots(color: Color) {
  */
 @Composable
 internal fun ChatPinnedNotice(title: String, owner: Boolean, onOpen: () -> Unit, onManage: () -> Unit, modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
+    val shape = RoundedCornerShape(16.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 61.dp).clip(RoundedCornerShape(13.dp)).background(chat.pinned).testTag("chat-pinned"),
+        modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(chat.pinned, shape).border(1.5.dp, ink.edgeStrong, shape)
+            .testTag("chat-pinned"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            Modifier.weight(1f).heightIn(min = 61.dp).feedbackClickable(role = Role.Button, onClick = onOpen)
-                .padding(start = 13.dp, end = if (owner) 4.dp else 10.dp, top = 10.dp, bottom = 10.dp).testTag("chat-pinned-open"),
+            Modifier.weight(1f).heightIn(min = 64.dp).feedbackClickable(role = Role.Button, onClick = onOpen)
+                .padding(start = 16.dp, end = if (owner) 4.dp else 12.dp, top = 10.dp, bottom = 10.dp).testTag("chat-pinned-open"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MegaphoneIcon(ink.info, Modifier.size(21.dp))
-            Spacer(Modifier.width(9.dp))
+            MegaphoneIcon(ink.info, Modifier.size(28.dp))
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.chat_notice_label), color = ink.info, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(3.dp))
-                Text(title, color = ink.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(R.string.chat_notice_label), style = blueText(13.sp, ink.info, FontWeight.Bold, 1.2f))
+                Spacer(Modifier.height(2.dp))
+                Text(title, style = blueText(16.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            if (!owner) Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(18.dp))
+            if (!owner) Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(24.dp))
         }
         if (owner) {
-            Box(
-                Modifier.size(width = 58.dp, height = 61.dp).feedbackClickable(role = Role.Button, onClick = onManage)
-                    .testTag("chat-pinned-manage"),
-                contentAlignment = Alignment.TopCenter,
+            Row(
+                Modifier.heightIn(min = 64.dp).feedbackClickable(role = Role.Button, onClick = onManage)
+                    .padding(start = 8.dp, end = 12.dp).testTag("chat-pinned-manage"),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    stringResource(R.string.chat_notice_manage), color = ink.info, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
+                Text(stringResource(R.string.chat_notice_manage), style = blueText(15.sp, ink.info, FontWeight.Bold))
+                Spacer(Modifier.width(6.dp))
+                Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(24.dp))
             }
         }
     }
@@ -274,30 +270,40 @@ private fun MegaphoneIcon(color: Color, modifier: Modifier) {
 /** 20 다시 연결하는 중 — 쓰던 글은 남아 있다 */
 @Composable
 internal fun ChatReconnectBanner(modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
-    Box(
-        modifier.fillMaxWidth().heightIn(min = 29.dp).clip(RoundedCornerShape(8.dp)).background(chat.banner)
-            .padding(horizontal = 12.dp, vertical = 6.dp).testTag("chat-reconnecting"),
-        contentAlignment = Alignment.Center,
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(chat.banner, shape).border(1.dp, ink.edgeStrong, shape)
+            .padding(horizontal = 16.dp, vertical = 10.dp).testTag("chat-reconnecting")
+            .semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.chat_reconnecting), color = ink.info, fontSize = 11.sp, textAlign = TextAlign.Center)
+        RunSpinner(Modifier.size(30.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.chat_blue_reconnecting_title), style = blueText(15.sp, ink.text, FontWeight.Bold, 1.3f))
+            Text(stringResource(R.string.chat_blue_reconnecting_body), style = blueText(14.sp, ink.info, FontWeight.Medium, 1.3f))
+        }
     }
 }
 
-/** 21 새 메시지 N개 — 누르면 맨 아래(최신)로 */
+/** 21 새 메시지 N개 — 누르면 맨 아래(최신)로. 읽던 위치를 자동으로 밀지 않는다 */
 @Composable
 internal fun ChatNewMessagesButton(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val ink = blueInk()
     val chat = chatInk()
-    Box(modifier.heightIn(min = 44.dp).feedbackClickable(role = Role.Button, onClick = onClick).testTag("chat-new-messages"), contentAlignment = Alignment.Center) {
+    val shape = RoundedCornerShape(20.dp)
+    Box(modifier.heightIn(min = 48.dp).feedbackClickable(role = Role.Button, onClick = onClick).testTag("chat-new-messages"), contentAlignment = Alignment.Center) {
         Row(
-            Modifier.widthIn(min = 178.dp).height(36.dp).clip(RoundedCornerShape(18.dp)).background(chat.jump).padding(horizontal = 18.dp),
+            Modifier.widthIn(min = 170.dp).height(40.dp).clip(shape).background(chat.jump, shape).border(1.5.dp, ink.info, shape)
+                .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Text(stringResource(R.string.chat_new_messages, count), color = chat.jumpText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(10.dp))
-            Icon(Icons.Filled.KeyboardArrowDown, null, tint = chat.jumpText, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.chat_new_messages, count), style = blueText(14.sp, chat.jumpText, FontWeight.Bold))
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = chat.jumpText, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -309,11 +315,11 @@ internal fun ChatNewMessagesButton(count: Int, onClick: () -> Unit, modifier: Mo
 internal fun ChatOwnerBadge(modifier: Modifier = Modifier) {
     val chat = chatInk()
     Box(
-        modifier.heightIn(min = 19.dp).widthIn(min = 40.dp).clip(RoundedCornerShape(5.dp)).background(chat.badge)
-            .padding(horizontal = 6.dp, vertical = 2.dp).testTag("chat-owner-badge"),
+        modifier.heightIn(min = 22.dp).widthIn(min = 44.dp).clip(RoundedCornerShape(6.dp)).background(chat.badge)
+            .padding(horizontal = 7.dp, vertical = 2.dp).testTag("chat-owner-badge"),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.chat_owner_badge), color = chat.badgeText, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(stringResource(R.string.chat_owner_badge), style = blueText(12.sp, chat.badgeText, FontWeight.Bold, 1.2f), maxLines = 1)
     }
 }
 
@@ -322,11 +328,11 @@ internal fun ChatOwnerBadge(modifier: Modifier = Modifier) {
 internal fun ChatUnreadBadge(count: Int, modifier: Modifier = Modifier) {
     val chat = chatInk()
     Box(
-        modifier.heightIn(min = 21.dp).widthIn(min = 21.dp).clip(RoundedCornerShape(10.5.dp)).background(chat.unread)
-            .padding(horizontal = 5.dp).testTag("chat-unread"),
+        modifier.heightIn(min = 26.dp).widthIn(min = 26.dp).clip(RoundedCornerShape(13.dp)).background(chat.unread)
+            .padding(horizontal = 7.dp).testTag("chat-unread"),
         contentAlignment = Alignment.Center,
     ) {
-        Text(if (count > 99) "99+" else count.toString(), color = chat.unreadText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(if (count > 99) "99+" else count.toString(), style = blueText(13.sp, chat.unreadText, FontWeight.Bold, 1.2f), maxLines = 1)
     }
 }
 
@@ -340,7 +346,7 @@ internal fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifie
     ) {
         Text(
             ChatRules.initial(name), color = if (owner) chat.ownerFaceText else chat.memberFaceText,
-            fontSize = (size.value * 0.34f).sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.Bold, maxLines = 1,
         )
     }
 }
@@ -350,19 +356,19 @@ internal fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifie
 /** 날짜 줄 — "9월 28일 월요일" */
 @Composable
 internal fun ChatDayLine(day: LocalDate) {
-    val ink = crewInk()
+    val ink = blueInk()
     val pattern = stringResource(R.string.chat_day_pattern)
     val text = remember(day, pattern) { runCatching { day.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault())) }.getOrDefault(day.toString()) }
     Text(
-        text, color = ink.secondary, fontSize = 11.sp, textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 10.dp).testTag("chat-day"),
+        text, style = blueText(13.sp, ink.secondary, FontWeight.Medium), textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp).testTag("chat-day"),
     )
 }
 
 /** 알림 줄 — 새 공지(정보색) · 크루를 떠남(보조색) */
 @Composable
 internal fun ChatSystemLine(message: ChatMessage) {
-    val ink = crewInk()
+    val ink = blueInk()
     val name = message.eventName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name)
     val (text, color) = when (message.event) {
         ChatEvent.NOTICE_CREATED -> stringResource(R.string.chat_line_notice, name) to ink.info
@@ -370,8 +376,8 @@ internal fun ChatSystemLine(message: ChatMessage) {
         null -> return
     }
     Text(
-        text, color = color, fontSize = 11.sp, textAlign = TextAlign.Center, lineHeight = 16.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp).testTag("chat-line"),
+        text, style = blueText(13.5.sp, color, FontWeight.Medium), textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).testTag("chat-line"),
     )
 }
 
@@ -425,11 +431,23 @@ internal fun ChatBubbleRow(
     onRetry: () -> Unit,
     onDiscard: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
     val gone = message.state != ChatState.VISIBLE
-    val background = if (gone) chat.gone else if (mine) chat.outgoing else chat.incoming
-    val textColor = if (gone) ink.secondary else if (mine) chat.outgoingText else chat.incomingText
+    // 전송 대기 · 실패는 서버가 받았다고 확인하지 않은 내 말풍선 — 성공한 말풍선과 다른 옅은 파랑
+    val unconfirmed = mine && !gone && (message.delivery == ChatDelivery.PENDING || message.delivery == ChatDelivery.FAILED)
+    val background = when {
+        gone -> chat.gone
+        unconfirmed -> chat.pending
+        mine -> chat.outgoing
+        else -> chat.incoming
+    }
+    val textColor = when {
+        gone -> ink.secondary
+        unconfirmed -> chat.pendingText
+        mine -> chat.outgoingText
+        else -> chat.incomingText
+    }
     val menuLabel = stringResource(R.string.chat_menu_title)
     Box(
         Modifier.fillMaxWidth().background(if (highlight) chat.highlight else Color.Transparent)
@@ -438,13 +456,13 @@ internal fun ChatBubbleRow(
     ) {
         if (!mine) {
             Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.width(44.dp)) {
+                Box(Modifier.width(52.dp)) {
                     if (header) {
                         Box(
-                            Modifier.size(width = 40.dp, height = 44.dp).offset(x = (-4).dp).clip(RoundedCornerShape(12.dp))
+                            Modifier.size(width = 48.dp, height = 48.dp).offset(x = (-4).dp).clip(CircleShape)
                                 .feedbackClickable(role = Role.Button, onClick = onFace).testTag("chat-face"),
-                            contentAlignment = Alignment.TopCenter,
-                        ) { ChatFace(message.authorName, owner, 32.dp, Modifier.padding(top = 3.dp)) }
+                            contentAlignment = Alignment.Center,
+                        ) { ChatFace(message.authorName, owner, 40.dp) }
                     }
                 }
                 Column(Modifier.weight(1f)) {
@@ -452,7 +470,7 @@ internal fun ChatBubbleRow(
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                             Text(
                                 message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
-                                color = ink.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                style = blueText(15.sp, ink.text, FontWeight.Bold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
                             if (owner) {
@@ -463,7 +481,7 @@ internal fun ChatBubbleRow(
                     }
                     BubbleBody(crewId, message, mine = false, background, textColor, maxBubble, onLongPress, onPhoto, onReply, menuLabel)
                     if (time) {
-                        Text(chatTime(message.createdAt), color = ink.secondary, fontSize = 10.sp, modifier = Modifier.padding(top = 6.dp))
+                        Text(chatTime(message.createdAt), style = blueText(13.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
@@ -472,7 +490,7 @@ internal fun ChatBubbleRow(
                 Column(Modifier.width(IntrinsicSize.Max)) {
                     if (header) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
-                            Text(stringResource(R.string.chat_me), color = ink.secondary, fontSize = 11.sp)
+                            Text(stringResource(R.string.chat_me), style = blueText(13.sp, ink.secondary, FontWeight.Medium))
                             if (owner) {
                                 Spacer(Modifier.width(8.dp))
                                 ChatOwnerBadge()
@@ -483,20 +501,18 @@ internal fun ChatBubbleRow(
                 }
                 when (message.delivery) {
                     ChatDelivery.SENT -> if (time) {
-                        Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (unread != null) {
-                                Text(unread.toString(), color = ink.info, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("chat-read-count"))
-                                Spacer(Modifier.width(22.dp))
+                                Text(unread.toString(), style = blueText(13.sp, ink.info, FontWeight.Bold), modifier = Modifier.testTag("chat-read-count"))
+                                Spacer(Modifier.width(14.dp))
                             }
-                            Text(chatTime(message.createdAt), color = ink.secondary, fontSize = 10.sp)
+                            Text(chatTime(message.createdAt), style = blueText(13.sp, ink.secondary, FontWeight.Medium))
                         }
                     }
-                    ChatDelivery.SENDING -> CircularProgressIndicator(
-                        Modifier.padding(top = 6.dp).size(12.dp).testTag("chat-sending"), color = ink.secondary, strokeWidth = 1.5.dp,
-                    )
+                    ChatDelivery.SENDING -> RunSpinner(Modifier.padding(top = 6.dp).size(14.dp).testTag("chat-sending"))
                     ChatDelivery.PENDING -> Text(
-                        stringResource(R.string.chat_send_pending), color = ink.secondary, fontSize = 10.sp,
-                        modifier = Modifier.padding(top = 6.dp).testTag("chat-pending"),
+                        stringResource(R.string.chat_send_pending), style = blueText(13.sp, ink.secondary, FontWeight.Medium),
+                        modifier = Modifier.padding(top = 4.dp).testTag("chat-pending"),
                     )
                     ChatDelivery.FAILED -> ChatFailedActions(onRetry, onDiscard)
                 }
@@ -519,7 +535,7 @@ private fun BubbleBody(
     onReply: (ChatReply) -> Unit,
     menuLabel: String,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
     val text = chatBodyText(message)
     val photo = message.kind == ChatKind.IMAGE && message.state == ChatState.VISIBLE
@@ -532,17 +548,18 @@ private fun BubbleBody(
     )
     Column(Modifier.widthIn(max = maxBubble).testTag("chat-bubble")) {
         if (photo) {
-            ChatPhotoBox(crewId, message, Modifier.width(maxBubble.coerceAtMost(200.dp)).then(press), mine)
+            ChatPhotoBox(crewId, message, Modifier.width(maxBubble.coerceAtMost(220.dp)).then(press), mine)
             if (text != null) {
+                Spacer(Modifier.height(6.dp))
                 Box(
-                    Modifier.width(maxBubble.coerceAtMost(200.dp)).clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-                        .background(background).then(press).padding(horizontal = 13.dp, vertical = 12.dp),
-                ) { Text(text, color = textColor, fontSize = 13.sp, lineHeight = 19.sp) }
+                    Modifier.width(maxBubble.coerceAtMost(220.dp)).clip(RoundedCornerShape(16.dp))
+                        .background(background).then(press).padding(horizontal = 16.dp, vertical = 12.dp),
+                ) { Text(text, style = blueText(15.sp, textColor, FontWeight.Medium, 1.45f)) }
             }
             return@Column
         }
         Column(
-            Modifier.clip(RoundedCornerShape(14.dp)).background(background).then(press).padding(horizontal = 14.dp, vertical = 11.dp),
+            Modifier.clip(RoundedCornerShape(18.dp)).background(background).then(press).padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             val reply = message.reply
             if (reply != null && message.state == ChatState.VISIBLE) {
@@ -556,17 +573,16 @@ private fun BubbleBody(
                     Column {
                         Text(
                             stringResource(R.string.chat_reply_to, reply.authorName.ifBlank { stringResource(R.string.chat_unknown_name) }),
-                            color = if (mine) chat.outgoingText else ink.info, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                            style = blueText(12.5.sp, if (mine) chat.outgoingText else ink.info, FontWeight.Bold, 1.3f), maxLines = 1,
                         )
                         Text(
-                            chatReplyText(reply), color = textColor.copy(alpha = .72f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            chatReplyText(reply), style = blueText(13.sp, textColor.copy(alpha = .75f), FontWeight.Medium, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
             }
             Text(
-                text ?: "", color = textColor, fontSize = 15.sp, lineHeight = 23.sp,
-                style = TextStyle(fontFamily = StepUpSans),
+                text ?: "", style = blueText(16.sp, textColor, FontWeight.Medium, 1.5f),
                 modifier = Modifier.testTag(if (message.state == ChatState.VISIBLE) "chat-text" else "chat-text-gone"),
             )
         }
@@ -576,7 +592,7 @@ private fun BubbleBody(
 /** 사진 말풍선 — 받은 사진은 방 권한으로 서버에서 읽는다(지웠거나 숨긴 사진은 서버가 주지 않는다) */
 @Composable
 private fun ChatPhotoBox(crewId: String, message: ChatMessage, modifier: Modifier, mine: Boolean) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
     val id = message.id
     var bitmap by remember(id, message.localImage) {
@@ -593,14 +609,14 @@ private fun ChatPhotoBox(crewId: String, message: ChatMessage, modifier: Modifie
             (outcome as? com.stepup.android.data.repo.ChatOutcome.Ok)?.value?.asImageBitmap().also { failed = it == null }
         } else null
     }
-    val shape = if (message.body.isNullOrBlank()) RoundedCornerShape(14.dp) else RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
+    val shape = RoundedCornerShape(18.dp)
     val image = bitmap
     val ratio = if (image != null && image.width > 0) (image.height.toFloat() / image.width).coerceIn(0.56f, 1.3f) else 0.9f
     Box(modifier.aspectRatio(1f / ratio).clip(shape).background(if (mine) chat.gone else chat.incoming).testTag("chat-photo")) {
         when {
             image != null -> Image(image, contentDescription = stringResource(R.string.chat_photo), contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
-            failed -> Text(stringResource(R.string.chat_photo), color = ink.secondary, fontSize = 12.sp, modifier = Modifier.align(Alignment.Center))
-            else -> CircularProgressIndicator(Modifier.size(18.dp).align(Alignment.Center), color = ink.secondary, strokeWidth = 2.dp)
+            failed -> Text(stringResource(R.string.chat_photo), style = blueText(13.sp, ink.secondary), modifier = Modifier.align(Alignment.Center))
+            else -> RunSpinner(Modifier.size(20.dp).align(Alignment.Center))
         }
     }
 }
@@ -608,30 +624,35 @@ private fun ChatPhotoBox(crewId: String, message: ChatMessage, modifier: Modifie
 /** 19 전송 실패 — "전송 실패" 아래 [재전송 · 지우기](지우기는 이 폰의 실패 항목만) */
 @Composable
 private fun ChatFailedActions(onRetry: () -> Unit, onDiscard: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
     Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(top = 6.dp).testTag("chat-failed")) {
-        Text(stringResource(R.string.chat_send_failed), color = ink.secondary, fontSize = 10.sp)
-        Spacer(Modifier.height(6.dp))
-        Row(
-            Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(10.dp)).background(chat.failed),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                Modifier.heightIn(min = 48.dp).feedbackClickable(role = Role.Button, onClick = onRetry).padding(start = 12.dp, end = 14.dp)
-                    .testTag("chat-retry"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Refresh, null, tint = ink.warn, modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(16.dp))
-                Text(stringResource(R.string.chat_retry), color = ink.warn, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Box(
-                Modifier.heightIn(min = 48.dp).widthIn(min = 64.dp).feedbackClickable(role = Role.Button, onClick = onDiscard)
-                    .padding(horizontal = 14.dp).testTag("chat-discard"),
-                contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.chat_discard), color = ink.secondary, fontSize = 12.sp) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Error, null, tint = ink.warn, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.chat_send_failed), style = blueText(14.sp, ink.warn, FontWeight.SemiBold))
         }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FailedAction(Icons.Filled.Refresh, stringResource(R.string.chat_retry), onRetry, "chat-retry", chat.failed)
+            FailedAction(Icons.Outlined.Delete, stringResource(R.string.chat_discard), onDiscard, "chat-discard", chat.failed)
+        }
+    }
+}
+
+/** 실패한 말풍선 아래 작은 테두리 버튼(재전송 · 지우기) */
+@Composable
+private fun FailedAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, tag: String, face: Color) {
+    val ink = blueInk()
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier.heightIn(min = 48.dp).clip(shape).background(face, shape).border(1.5.dp, ink.edgeStrong, shape)
+            .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = ink.info, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = blueText(15.sp, ink.info, FontWeight.Bold))
     }
 }
 
@@ -656,93 +677,94 @@ internal fun ChatComposer(
     replyTo: ChatMessage?,
     onCancelReply: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val chat = chatInk()
     val canSend = active && ChatRules.sendable(text)
     val canAttach = active
-    Column(Modifier.fillMaxWidth().background(ink.canvas).testTag("chat-composer")) {
-        Box(Modifier.padding(horizontal = ChatGutter).fillMaxWidth().height(0.7.dp).background(ink.divider))
+    Column(Modifier.fillMaxWidth().testTag("chat-composer")) {
+        Box(Modifier.padding(horizontal = ChatGutter).fillMaxWidth().height(1.dp).background(ink.edgeStrong.copy(alpha = 0.7f)))
         if (replyTo != null) {
-            Row(Modifier.fillMaxWidth().padding(start = 59.dp, end = 8.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    Modifier.weight(1f).heightIn(min = 47.dp).clip(RoundedCornerShape(10.dp)).background(chat.reply)
-                        .padding(horizontal = 10.dp, vertical = 8.dp).testTag("chat-reply-bar"),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.width(2.dp).height(28.dp).clip(RoundedCornerShape(1.dp)).background(ink.info))
-                    Spacer(Modifier.width(9.dp))
+            val shape = RoundedCornerShape(14.dp)
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = ChatGutter).padding(top = 10.dp).clip(shape).background(chat.reply, shape)
+                    .border(1.5.dp, ink.info, shape).padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(Modifier.weight(1f).heightIn(min = 44.dp).testTag("chat-reply-bar"), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(3.dp).height(32.dp).clip(RoundedCornerShape(2.dp)).background(ink.info))
+                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             stringResource(R.string.chat_reply_to, replyTo.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name)),
-                            color = ink.info, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                            style = blueText(14.sp, ink.info, FontWeight.Bold, 1.3f), maxLines = 1,
                         )
                         Text(
                             if (replyTo.kind == ChatKind.IMAGE && replyTo.body.isNullOrBlank()) stringResource(R.string.chat_photo)
                             else ChatRules.oneLine(replyTo.body.orEmpty()),
-                            color = ink.secondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            style = blueText(13.5.sp, ink.text.copy(alpha = 0.9f), FontWeight.Medium, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
                 Box(
-                    Modifier.size(44.dp).clip(CircleShape).feedbackClickable(role = Role.Button, cue = FeedbackCue.Back, onClick = onCancelReply)
+                    Modifier.size(48.dp).clip(CircleShape).feedbackClickable(role = Role.Button, cue = FeedbackCue.Back, onClick = onCancelReply)
                         .testTag("chat-reply-cancel"),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Close, stringResource(R.string.chat_reply_cancel), tint = ink.secondary, modifier = Modifier.size(20.dp)) }
+                ) { Icon(Icons.Filled.Close, stringResource(R.string.chat_reply_cancel), tint = ink.info, modifier = Modifier.size(24.dp)) }
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(start = 10.dp, end = ChatGutter, top = 12.dp, bottom = 12.dp),
+            Modifier.fillMaxWidth().padding(start = 6.dp, end = ChatGutter, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
             Box(
-                Modifier.size(width = 44.dp, height = 48.dp).clip(RoundedCornerShape(12.dp))
+                Modifier.size(48.dp).clip(CircleShape)
                     .feedbackClickable(enabled = canAttach, role = Role.Button, onClick = onAttach).testTag("chat-attach"),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Filled.Add, stringResource(R.string.chat_attach), tint = if (canAttach) ink.secondary else ink.secondary.copy(alpha = .45f),
-                    modifier = Modifier.size(24.dp),
+                    Icons.Filled.Add, stringResource(R.string.chat_attach), tint = if (canAttach) ink.info else ink.secondary.copy(alpha = .45f),
+                    modifier = Modifier.size(30.dp),
                 )
             }
-            Spacer(Modifier.width(5.dp))
+            Spacer(Modifier.width(6.dp))
             BasicTextField(
                 value = text,
                 onValueChange = onText,
                 enabled = editable,
                 maxLines = 5,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 14.sp, lineHeight = 21.sp),
+                textStyle = blueText(16.sp, ink.text, FontWeight.Medium, 1.4f),
                 cursorBrush = SolidColor(ink.info),
                 modifier = Modifier.weight(1f).testTag("chat-input"),
                 decorationBox = { inner ->
                     Box(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(22.dp)).background(chat.composer)
-                            .padding(horizontal = 16.dp, vertical = 13.dp),
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(26.dp)).background(chat.composer)
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (text.isEmpty()) {
                             Text(
                                 stringResource(if (offline) R.string.chat_input_offline_hint else R.string.chat_input_hint),
-                                color = ink.secondary, fontSize = 14.sp, maxLines = 1,
+                                style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.4f), maxLines = 1,
                             )
                         }
                         inner()
                     }
                 },
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(10.dp))
             Box(
-                Modifier.size(width = 44.dp, height = 48.dp).feedbackClickable(enabled = canSend, role = Role.Button, onClick = onSend)
+                Modifier.size(52.dp).clip(CircleShape).feedbackClickable(enabled = canSend, role = Role.Button, onClick = onSend)
                     .testTag("chat-send"),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    Modifier.size(width = 40.dp, height = 44.dp).clip(RoundedCornerShape(20.dp)).background(if (canSend) chat.sendOn else chat.sendOff),
+                    Modifier.size(52.dp).clip(CircleShape).background(if (canSend) chat.sendOn else chat.sendOff),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Filled.ArrowUpward, stringResource(R.string.chat_send), tint = if (canSend) chat.sendOnIcon else chat.sendOffIcon,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(26.dp),
                     )
                 }
             }
@@ -752,25 +774,32 @@ internal fun ChatComposer(
 
 // ── 시트 줄 · 결과 ──────────────────────────────────────────────
 
-/** 시트 안의 한 줄(메시지 메뉴 · 신고 사유 · 알림) — 이름, 오른쪽 "선택됨", 꺾쇠, 아래 선 */
+/** 시트 안의 메뉴 한 줄(메시지 메뉴 · 사진 보내기 · 모임 고르기) — 이름, 오른쪽 "선택됨", 꺾쇠, 아래 선 */
 @Composable
 internal fun ChatSheetRow(title: String, onClick: () -> Unit, tag: String, warn: Boolean = false, selected: Boolean = false, enabled: Boolean = true) {
-    val ink = crewInk()
+    val ink = blueInk()
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-                .padding(vertical = 10.dp).testTag(tag),
+            Modifier.fillMaxWidth().heightIn(min = 60.dp).feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                .padding(start = 4.dp, end = 2.dp, top = 10.dp, bottom = 10.dp).testTag(tag),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                title, color = if (warn) ink.warn else ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                title, style = blueText(17.sp, if (!enabled) ink.secondary else if (warn) ink.warn else ink.text, FontWeight.Bold, 1.3f),
                 modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            if (selected) Text(stringResource(R.string.chat_selected), color = ink.info, fontSize = 13.sp, modifier = Modifier.padding(start = 8.dp))
-            Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.padding(start = 4.dp).size(18.dp))
+            if (selected) Text(stringResource(R.string.chat_selected), style = blueText(14.sp, ink.info, FontWeight.Bold), modifier = Modifier.padding(start = 8.dp))
+            Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.padding(start = 6.dp).size(24.dp))
         }
-        Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+        BlueDivider()
     }
+}
+
+/** 시트 메뉴의 첫 선 — 제목과 줄 사이 */
+@Composable
+internal fun ChatSheetTopLine() {
+    Spacer(Modifier.height(14.dp))
+    BlueDivider()
 }
 
 /** 크루의 방 정보를 크루 명함형 부품 모양으로 */
@@ -779,15 +808,15 @@ internal fun ChatRoomMeta?.cardOr(card: CrewCard?): CrewCard? = this?.card ?: ca
 /** 불러오기 실패(36)의 가운데 — 다시 불러오기 */
 @Composable
 internal fun ChatRetryState(title: String, body: String, button: String, onRetry: () -> Unit, modifier: Modifier = Modifier, tag: String) {
-    val ink = crewInk()
-    Column(modifier.fillMaxWidth().padding(horizontal = CrewGutter).testTag(tag), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(40.dp))
-        Spacer(Modifier.height(26.dp))
-        Text(title, color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(16.dp))
-        Text(body, color = ink.secondary, fontSize = 13.5.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(32.dp))
-        com.stepup.android.ui.screens.community.crew.CrewButton(button, onRetry, Modifier.testTag("$tag-retry"))
+    val ink = blueInk()
+    Column(modifier.fillMaxWidth().padding(horizontal = BlueGutter).testTag(tag), horizontalAlignment = Alignment.CenterHorizontally) {
+        BlueStateIcon(Icons.Filled.Refresh, ring = false)
+        Spacer(Modifier.height(18.dp))
+        Text(title, style = blueText(26.sp, ink.text, FontWeight.ExtraBold, 1.3f), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(10.dp))
+        Text(body, style = blueText(15.5.sp, ink.secondary, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(28.dp))
+        BlueButton(button, onRetry, Modifier.widthIn(max = 320.dp).testTag("$tag-retry"))
     }
 }
 

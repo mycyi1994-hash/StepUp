@@ -48,6 +48,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
+import androidx.compose.foundation.border
+import com.stepup.android.ui.screens.community.chat.BlueStateIcon
+import com.stepup.android.ui.screens.community.chat.blueText
+import com.stepup.android.ui.screens.community.chat.BlueBottomBar
+import com.stepup.android.ui.screens.community.chat.BlueButton
+import com.stepup.android.ui.screens.community.chat.BlueEmptyState
+import com.stepup.android.ui.screens.community.chat.BlueGutter
+import com.stepup.android.ui.screens.community.chat.BlueKind
+import com.stepup.android.ui.screens.community.chat.BluePage
+import com.stepup.android.ui.screens.community.chat.BlueSheet
+import com.stepup.android.ui.screens.community.chat.BlueSkeleton
+import com.stepup.android.ui.screens.community.chat.BlueTopBar
+import com.stepup.android.ui.screens.community.chat.blueInk
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.HomeProblem
 import com.stepup.android.domain.CrewMeeting
@@ -56,16 +69,6 @@ import com.stepup.android.domain.MeetingResponse
 import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
-import com.stepup.android.ui.screens.community.crew.CrewBottomBar
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewButtonKind
-import com.stepup.android.ui.screens.community.crew.CrewEmptyState
-import com.stepup.android.ui.screens.community.crew.CrewGutter
-import com.stepup.android.ui.screens.community.crew.CrewPage
-import com.stepup.android.ui.screens.community.crew.CrewSheet
-import com.stepup.android.ui.screens.community.crew.CrewSkeletonBox
-import com.stepup.android.ui.screens.community.crew.CrewTopBar
-import com.stepup.android.ui.screens.community.crew.crewInk
 import kotlinx.coroutines.delay
 
 /** "9월 29일 화요일 · 19:30" */
@@ -93,7 +96,7 @@ fun CrewMeetingScreen(
     onChat: () -> Unit,
     onEnded: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val meeting by viewModel.meeting.collectAsStateWithLifecycle()
     val saving by viewModel.saving.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -113,24 +116,24 @@ fun CrewMeetingScreen(
                 MeetingResponse.NO -> "home-meeting-no"
                 null -> "home-meeting"
             }
-            CrewPage(Modifier.testTag(tag)) {
-                CrewTopBar(stringResource(if (current.open) R.string.crewhome_meeting_bar else R.string.crewhome_meeting_past_bar), onBack)
+            BluePage(Modifier.testTag(tag)) {
+                BlueTopBar(stringResource(if (current.open) R.string.crewhome_meeting_bar else R.string.crewhome_meeting_past_bar), onBack)
                 MeetingBody(current, crewName, Modifier.weight(1f), onPlace, onAttendees)
                 MeetingFooter(current, saving, if (sheet) null else error, viewModel::respond, viewModel::openSheet)
             }
             if (sheet) AttendanceSheet(current, saving, error, viewModel::respond, viewModel::closeSheet)
         }
-        HomeLoad.Missing -> CrewPage(Modifier.testTag("home-meeting-cancelled")) {
-            CrewTopBar(stringResource(R.string.crewhome_meeting_past_bar), onBack)
-            CrewEmptyState(
-                icon = { Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+        HomeLoad.Missing -> BluePage(Modifier.testTag("home-meeting-cancelled")) {
+            BlueTopBar(stringResource(R.string.crewhome_meeting_past_bar), onBack)
+            BlueEmptyState(
+                icon = { BlueStateIcon(Icons.Outlined.Info) },
                 title = stringResource(R.string.crewhome_meeting_cancelled_title),
                 body = stringResource(R.string.crewhome_meeting_cancelled_body),
-                modifier = Modifier.padding(top = 150.dp),
-            ) { CrewButton(stringResource(R.string.crewhome_meeting_to_chat), onChat, Modifier.testTag("home-meeting-chat")) }
+                modifier = Modifier.padding(top = 120.dp),
+            ) { BlueButton(stringResource(R.string.crewhome_meeting_to_chat), onChat, Modifier.testTag("home-meeting-chat")) }
         }
-        HomeLoad.Failed -> CrewPage(Modifier.testTag("home-meeting-error")) {
-            CrewTopBar(stringResource(R.string.crewhome_meeting_bar), onBack)
+        HomeLoad.Failed -> BluePage(Modifier.testTag("home-meeting-error")) {
+            BlueTopBar(stringResource(R.string.crewhome_meeting_bar), onBack)
             ChatRetryState(
                 title = stringResource(R.string.crewhome_meeting_load_error),
                 body = stringResource(R.string.crewhome_error_body),
@@ -140,12 +143,12 @@ fun CrewMeetingScreen(
                 tag = "home-meeting-load",
             )
         }
-        HomeLoad.Loading -> CrewPage(Modifier.testTag("home-meeting-loading")) {
-            CrewTopBar(stringResource(R.string.crewhome_meeting_bar), onBack)
-            Column(Modifier.padding(CrewGutter)) {
-                CrewSkeletonBox(Modifier.width(220.dp).height(34.dp))
+        HomeLoad.Loading -> BluePage(Modifier.testTag("home-meeting-loading")) {
+            BlueTopBar(stringResource(R.string.crewhome_meeting_bar), onBack)
+            Column(Modifier.padding(BlueGutter)) {
+                BlueSkeleton(Modifier.width(220.dp).height(34.dp))
                 Spacer(Modifier.height(24.dp))
-                CrewSkeletonBox(Modifier.fillMaxWidth().height(180.dp), 18.dp)
+                BlueSkeleton(Modifier.fillMaxWidth().height(180.dp), 18.dp)
             }
         }
     }
@@ -153,24 +156,24 @@ fun CrewMeetingScreen(
 
 @Composable
 private fun MeetingBody(meeting: CrewMeeting, crewName: String, modifier: Modifier, onPlace: () -> Unit, onAttendees: () -> Unit) {
-    val ink = crewInk()
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-        Spacer(Modifier.height(20.dp))
+    val ink = blueInk()
+    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+        Spacer(Modifier.height(12.dp))
         if (crewName.isNotBlank()) {
             HomeLabel(crewName)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
         }
         Text(
-            meeting.title, color = ink.text, fontSize = 27.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold,
+            meeting.title, style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f),
             modifier = Modifier.testTag("home-meeting-title"),
         )
         meeting.meetAt?.let { at ->
-            Spacer(Modifier.height(18.dp))
-            Text(homeDateWeekday(localDay(at)), color = ink.secondary, fontSize = 15.sp)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(10.dp))
+            Text(homeDateWeekday(localDay(at)), style = blueText(17.sp, ink.secondary, FontWeight.Medium))
+            Spacer(Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    homeClock(at), color = ink.text, fontSize = 54.sp, lineHeight = 60.sp, fontWeight = FontWeight.Bold,
+                    homeClock(at), style = blueText(62.sp, ink.text, FontWeight.ExtraBold, 1.1f), maxLines = 1, softWrap = false,
                     modifier = Modifier.weight(1f).testTag("home-meeting-time"),
                 )
                 val state = when (meeting.myResponse) {
@@ -179,68 +182,71 @@ private fun MeetingBody(meeting: CrewMeeting, crewName: String, modifier: Modifi
                     null -> null
                 }
                 if (state != null) {
-                    Box(
-                        Modifier.clip(RoundedCornerShape(10.dp)).background(ink.secondaryButton).padding(horizontal = 16.dp, vertical = 8.dp)
-                            .testTag("home-meeting-state"),
-                    ) { Text(state, color = ink.levelText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+                    val shape = RoundedCornerShape(12.dp)
+                    Row(
+                        Modifier.clip(shape).background(ink.level, shape).border(1.dp, ink.edgeStrong, shape)
+                            .padding(horizontal = 16.dp, vertical = 9.dp).testTag("home-meeting-state"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) { Text(state, style = blueText(15.sp, ink.levelText, FontWeight.Bold), maxLines = 1) }
                 }
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(16.dp))
         meeting.point?.let { point ->
             Box(Modifier.fillMaxWidth().height(180.dp).homeClickable(onClick = onPlace)) {
                 MeetingMap(point, meeting.place, Modifier.fillMaxWidth().height(180.dp))
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
         }
         if (meeting.place.isNotBlank()) {
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 60.dp).homeClickable(onClick = onPlace).padding(vertical = 10.dp).testTag("home-meeting-place"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(meeting.place, color = ink.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+                Text(meeting.place, style = blueText(21.sp, ink.text, FontWeight.ExtraBold, 1.3f), modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         HomeDivider()
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         Row {
             if (meeting.distanceKm > 0) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.crewhome_meeting_distance), color = ink.secondary, fontSize = 13.sp)
-                    Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.crewhome_week_km, km(meeting.distanceKm)), color = ink.text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.crewhome_meeting_distance), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
+                    Spacer(Modifier.height(2.dp))
+                    Text(stringResource(R.string.crewhome_week_km, km(meeting.distanceKm)), style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.2f))
                 }
             }
-            // 모임 글의 정원 — 크루 정원과 다르다
+            // 모임 글의 정원 — 크루 정원과 다르다(정원이 없는 모임은 숫자를 두지 않는다)
             if (meeting.capacity > 0) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.crewhome_meeting_capacity), color = ink.secondary, fontSize = 13.sp)
-                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.crewhome_meeting_capacity), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        stringResource(R.string.crewhome_meeting_capacity_value, meeting.capacity), color = ink.text, fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        stringResource(R.string.crewhome_meeting_capacity_value, meeting.capacity), style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.2f),
                     )
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
+        HomeDivider()
+        Spacer(Modifier.height(6.dp))
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 56.dp).homeClickable(onClick = onAttendees).padding(vertical = 8.dp).testTag("home-meeting-attendees"),
+            Modifier.fillMaxWidth().heightIn(min = 60.dp).homeClickable(onClick = onAttendees).padding(vertical = 8.dp).testTag("home-meeting-attendees"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FaceStack(meeting.faces, meeting.hostId, meeting.hostOwner)
-            Spacer(Modifier.width(if (meeting.faces.isEmpty()) 0.dp else 8.dp))
+            Spacer(Modifier.width(if (meeting.faces.isEmpty()) 0.dp else 4.dp))
             Text(
-                stringResource(R.string.crewhome_meeting_attendees, meeting.attendees), color = ink.text, fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).testTag("home-meeting-count"),
+                stringResource(R.string.crewhome_meeting_attendees, meeting.attendees), style = blueText(18.sp, ink.text, FontWeight.Bold),
+                modifier = Modifier.weight(1f).testTag("home-meeting-count"),
             )
-            Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
         }
         if (meeting.body.isNotBlank()) {
-            Spacer(Modifier.height(18.dp))
-            Text(meeting.body, color = ink.secondary, fontSize = 14.sp, lineHeight = 24.sp, modifier = Modifier.testTag("home-meeting-body"))
+            Spacer(Modifier.height(12.dp))
+            Text(meeting.body, style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.55f), modifier = Modifier.testTag("home-meeting-body"))
         }
         val note = when {
             !meeting.open -> stringResource(R.string.crewhome_meeting_closed)
@@ -249,7 +255,7 @@ private fun MeetingBody(meeting: CrewMeeting, crewName: String, modifier: Modifi
         }
         if (note != null) {
             Spacer(Modifier.height(18.dp))
-            Text(note, color = ink.warn, fontSize = 13.5.sp, modifier = Modifier.testTag("home-meeting-note"))
+            Text(note, style = blueText(15.sp, ink.warn, FontWeight.SemiBold), modifier = Modifier.testTag("home-meeting-note"))
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -265,32 +271,32 @@ private fun MeetingFooter(
     onChange: () -> Unit,
 ) {
     if (!meeting.open) return
-    val ink = crewInk()
-    CrewBottomBar {
+    val ink = blueInk()
+    BlueBottomBar {
         if (meeting.myResponse == null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
                 val yesBlocked = meeting.full
-                CrewButton(
+                BlueButton(
                     stringResource(if (saving == MeetingResponse.YES) R.string.crewhome_meeting_saving else R.string.crewhome_meeting_yes),
                     { onRespond(true) }, Modifier.weight(1f).testTag("home-meeting-yes-button"),
-                    kind = if (yesBlocked) CrewButtonKind.DISABLED else CrewButtonKind.PRIMARY,
+                    kind = if (yesBlocked) BlueKind.DISABLED else BlueKind.PRIMARY,
                     enabled = saving == null && !yesBlocked,
                 )
-                CrewButton(
+                BlueButton(
                     stringResource(if (saving == MeetingResponse.NO) R.string.crewhome_meeting_saving else R.string.crewhome_meeting_no),
                     { onRespond(false) }, Modifier.weight(1f).testTag("home-meeting-no-button"),
-                    kind = CrewButtonKind.SECONDARY, enabled = saving == null,
+                    kind = BlueKind.SECONDARY, enabled = saving == null,
                 )
             }
             if (error != null) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    meetingErrorText(error), color = ink.warn, fontSize = 13.sp, lineHeight = 20.sp, textAlign = TextAlign.Center,
+                    meetingErrorText(error), style = blueText(14.sp, ink.warn, FontWeight.SemiBold, 1.5f), textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().testTag("home-meeting-error-inline"),
                 )
             }
         } else {
-            CrewButton(stringResource(R.string.crewhome_meeting_change), onChange, Modifier.testTag("home-meeting-change"))
+            BlueButton(stringResource(R.string.crewhome_meeting_change), onChange, Modifier.testTag("home-meeting-change"))
         }
     }
 }
@@ -313,41 +319,41 @@ private fun AttendanceSheet(
     onRespond: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     BackHandler(enabled = saving != null) {}
-    CrewSheet(
+    BlueSheet(
         stringResource(R.string.crewhome_meeting_change), onDismiss,
         Modifier.testTag(if (error != null) "home-attendance-error" else "home-attendance"), dismissible = saving == null,
     ) {
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(8.dp))
         val at = meeting.meetAt
         Text(
             listOfNotNull(
                 at?.let { stringResource(R.string.crewhome_meeting_when, meetingDayLabel(it), homeClock(it)) },
                 meeting.place.takeIf { it.isNotBlank() },
             ).joinToString(" · "),
-            color = ink.secondary, fontSize = 14.sp,
+            style = blueText(16.sp, ink.text.copy(alpha = 0.9f), FontWeight.Medium),
         )
-        Spacer(Modifier.height(30.dp))
-        CrewButton(
+        Spacer(Modifier.height(22.dp))
+        BlueButton(
             stringResource(if (saving == MeetingResponse.YES) R.string.crewhome_meeting_saving else R.string.crewhome_meeting_yes),
             { onRespond(true) }, Modifier.testTag("home-attendance-yes"),
-            kind = CrewButtonKind.SECONDARY,
+            kind = BlueKind.SECONDARY,
             enabled = saving == null && (!meeting.full || meeting.myResponse == MeetingResponse.YES),
         )
-        Spacer(Modifier.height(14.dp))
-        CrewButton(
+        Spacer(Modifier.height(12.dp))
+        BlueButton(
             stringResource(if (saving == MeetingResponse.NO) R.string.crewhome_meeting_saving else R.string.crewhome_meeting_no),
             { onRespond(false) }, Modifier.testTag("home-attendance-no"),
-            kind = CrewButtonKind.SECONDARY, enabled = saving == null,
+            kind = BlueKind.SECONDARY, enabled = saving == null,
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(18.dp))
         if (error != null) {
-            Text(meetingErrorText(error), color = ink.warn, fontSize = 13.5.sp, lineHeight = 22.sp, modifier = Modifier.testTag("home-attendance-error-text"))
+            Text(meetingErrorText(error), style = blueText(15.sp, ink.warn, FontWeight.SemiBold, 1.55f), modifier = Modifier.testTag("home-attendance-error-text"))
         } else {
-            Text(stringResource(R.string.crewhome_meeting_sheet_note), color = ink.secondary, fontSize = 13.5.sp)
+            Text(stringResource(R.string.crewhome_meeting_sheet_note), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
         }
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(16.dp))
     }
 }
 
@@ -358,7 +364,7 @@ private fun AttendanceSheet(
 /** 13 — 서버가 센 참석자(진행자 먼저). 크루 인원과 다르다 */
 @Composable
 fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, onOpen: (MeetingAttendee) -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val attendees by viewModel.attendees.collectAsStateWithLifecycle()
     val meeting by viewModel.meeting.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
@@ -367,30 +373,30 @@ fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, o
         onPauseOrDispose {}
     }
     LaunchedEffect(ended) { if (ended) onEnded() }
-    CrewPage(Modifier.testTag("home-attendees")) {
-        CrewTopBar(stringResource(R.string.crewhome_attendees_bar), onBack)
+    BluePage(Modifier.testTag("home-attendees")) {
+        BlueTopBar(stringResource(R.string.crewhome_attendees_bar), onBack)
         when (val state = attendees) {
             is HomeLoad.Ready -> LazyColumn(
                 Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp),
+                contentPadding = PaddingValues(start = BlueGutter, end = BlueGutter, bottom = 40.dp),
             ) {
                 item(key = "head") {
                     Column {
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(16.dp))
                         Text(
-                            stringResource(R.string.crewhome_attendees_title, state.value.size), color = ink.text, fontSize = 27.sp,
-                            fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("home-attendees-title"),
+                            stringResource(R.string.crewhome_attendees_title, state.value.size), style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+                            modifier = Modifier.testTag("home-attendees-title"),
                         )
                         meeting?.let { m ->
-                            Spacer(Modifier.height(10.dp))
-                            Text(meetingWhenLong(m), color = ink.secondary, fontSize = 13.5.sp)
+                            Spacer(Modifier.height(6.dp))
+                            Text(meetingWhenLong(m), style = blueText(16.sp, ink.secondary, FontWeight.Medium))
                         }
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(14.dp))
                     }
                 }
                 if (state.value.isEmpty()) {
                     item(key = "empty") {
-                        Text(stringResource(R.string.crewhome_attendees_empty), color = ink.secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 24.dp))
+                        Text(stringResource(R.string.crewhome_attendees_empty), style = blueText(15.5.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.padding(top = 24.dp))
                     }
                 }
                 items(state.value, key = { it.userId }) { person ->
@@ -403,34 +409,34 @@ fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, o
                         Modifier.fillMaxWidth().heightIn(min = 76.dp).homeClickable { onOpen(person) }.testTag("home-attendee-${person.userId}"),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ChatFace(person.name, person.owner, 44.dp)
+                        ChatFace(person.name, person.owner, 48.dp)
                         Column(Modifier.weight(1f).padding(start = 18.dp)) {
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f).padding(vertical = 14.dp)) {
-                                    Text(person.name, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(sub, color = if (person.host) ink.info else ink.secondary, fontSize = 13.sp)
+                                    Text(person.name, style = blueText(18.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(sub, style = blueText(14.5.sp, if (person.host) ink.info else ink.secondary, FontWeight.Medium))
                                 }
-                                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.size(24.dp))
                             }
                             HomeDivider()
                         }
                     }
                 }
             }
-            HomeLoad.Loading -> Column(Modifier.padding(CrewGutter)) {
+            HomeLoad.Loading -> Column(Modifier.padding(BlueGutter)) {
                 repeat(4) {
-                    CrewSkeletonBox(Modifier.fillMaxWidth().height(56.dp))
+                    BlueSkeleton(Modifier.fillMaxWidth().height(56.dp))
                     Spacer(Modifier.height(14.dp))
                 }
             }
             // 모임이 취소(삭제)됐다 — 다시 불러와도 같으니 취소 안내
-            HomeLoad.Missing -> CrewEmptyState(
-                icon = { Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+            HomeLoad.Missing -> BlueEmptyState(
+                icon = { BlueStateIcon(Icons.Outlined.Info) },
                 title = stringResource(R.string.crewhome_meeting_cancelled_title),
                 body = stringResource(R.string.crewhome_meeting_cancelled_body),
-                modifier = Modifier.padding(top = 150.dp).testTag("home-attendees-cancelled"),
-            ) { CrewButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-attendees-back")) }
+                modifier = Modifier.padding(top = 120.dp).testTag("home-attendees-cancelled"),
+            ) { BlueButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-attendees-back")) }
             else -> ChatRetryState(
                 title = stringResource(R.string.crewhome_attendees_error),
                 body = stringResource(R.string.crewhome_error_body),
@@ -450,7 +456,7 @@ fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, o
 /** 14 — 실제 지도와 집결 좌표. 지도 앱은 그 장소를 연다(현재 위치 권한을 묻지 않는다) */
 @Composable
 fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val context = LocalContext.current
     val meeting by viewModel.meeting.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
@@ -469,20 +475,20 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
     // 공지에서 바로 온 모임처럼 홈이 들고 있지 않은 모임은 읽기 결과를 그대로 — 취소됐으면 취소, 못 읽었으면 다시 불러오기
     when (meeting) {
         HomeLoad.Missing -> {
-            CrewPage(Modifier.testTag("home-place-cancelled")) {
-                CrewTopBar(stringResource(R.string.crewhome_place_bar), onBack)
-                CrewEmptyState(
-                    icon = { Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+            BluePage(Modifier.testTag("home-place-cancelled")) {
+                BlueTopBar(stringResource(R.string.crewhome_place_bar), onBack)
+                BlueEmptyState(
+                    icon = { BlueStateIcon(Icons.Outlined.Info) },
                     title = stringResource(R.string.crewhome_meeting_cancelled_title),
                     body = stringResource(R.string.crewhome_meeting_cancelled_body),
-                    modifier = Modifier.padding(top = 150.dp),
-                ) { CrewButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-place-back")) }
+                    modifier = Modifier.padding(top = 120.dp),
+                ) { BlueButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-place-back")) }
             }
             return
         }
         HomeLoad.Failed -> {
-            CrewPage(Modifier.testTag("home-place-error")) {
-                CrewTopBar(stringResource(R.string.crewhome_place_bar), onBack)
+            BluePage(Modifier.testTag("home-place-error")) {
+                BlueTopBar(stringResource(R.string.crewhome_place_bar), onBack)
                 ChatRetryState(
                     title = stringResource(R.string.crewhome_meeting_load_error),
                     body = stringResource(R.string.crewhome_error_body),
@@ -498,46 +504,49 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
     }
     val noApp = stringResource(R.string.crewhome_place_no_app)
     Box {
-        CrewPage(Modifier.testTag("home-place")) {
-            CrewTopBar(stringResource(R.string.crewhome_place_bar), onBack)
+        BluePage(Modifier.testTag("home-place")) {
+            BlueTopBar(stringResource(R.string.crewhome_place_bar), onBack)
             val current = (meeting as? HomeLoad.Ready)?.value
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-                Spacer(Modifier.height(20.dp))
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+                Spacer(Modifier.height(16.dp))
                 if (current != null) {
                     Text(
-                        current.place.ifBlank { current.title }, color = ink.text, fontSize = 28.sp, lineHeight = 35.sp,
-                        fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("home-place-name"),
+                        current.place.ifBlank { current.title }, style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+                        modifier = Modifier.testTag("home-place-name"),
                     )
                     if (current.meetAt != null) {
-                        Spacer(Modifier.height(10.dp))
-                        Text(meetingWhenLong(current), color = ink.secondary, fontSize = 14.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(meetingWhenLong(current), style = blueText(16.sp, ink.secondary, FontWeight.Medium))
                     }
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(22.dp))
                     val point = current.point
                     if (point != null) {
-                        MeetingMap(point, current.place, Modifier.fillMaxWidth().height(360.dp), spanMeters = 380)
+                        MeetingMap(point, current.place, Modifier.fillMaxWidth().height(340.dp), spanMeters = 380)
                     } else {
+                        // 집결 좌표가 없으면 가짜 핀 · 지도를 그리지 않는다 — 장소 이름으로 지도 앱에서 찾을 수 있다
                         Text(
-                            stringResource(R.string.crewhome_place_no_point), color = ink.secondary, fontSize = 14.sp, lineHeight = 22.sp,
+                            stringResource(R.string.crewhome_place_no_point), style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.5f),
                             modifier = Modifier.testTag("home-place-no-point"),
                         )
                     }
+                    Spacer(Modifier.height(18.dp))
+                    Text(stringResource(R.string.crewhome_blue_place_note), style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.5f))
                 } else {
-                    CrewSkeletonBox(Modifier.fillMaxWidth().height(360.dp), 18.dp)
+                    BlueSkeleton(Modifier.fillMaxWidth().height(360.dp), 18.dp)
                 }
                 Spacer(Modifier.height(24.dp))
             }
-            CrewBottomBar {
-                CrewButton(
+            BlueBottomBar {
+                BlueButton(
                     stringResource(R.string.crewhome_place_open),
                     { current?.let { if (!openMaps(context, it)) toast = noApp } },
-                    Modifier.testTag("home-place-open"), kind = CrewButtonKind.SECONDARY, enabled = current != null,
+                    Modifier.testTag("home-place-open"), kind = BlueKind.SECONDARY, enabled = current != null,
                 )
                 Spacer(Modifier.height(12.dp))
-                CrewButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-place-back"))
+                BlueButton(stringResource(R.string.crewhome_place_back), onBack, Modifier.testTag("home-place-back"))
             }
         }
-        SettingsToast(toast, Modifier.align(Alignment.BottomCenter).padding(start = CrewGutter, end = CrewGutter, bottom = 150.dp))
+        SettingsToast(toast, Modifier.align(Alignment.BottomCenter).padding(start = BlueGutter, end = BlueGutter, bottom = 150.dp))
     }
 }
 

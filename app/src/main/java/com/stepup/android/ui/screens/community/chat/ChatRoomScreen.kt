@@ -8,6 +8,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Brush
+import com.stepup.android.ui.components.RunSpinner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -66,12 +72,7 @@ import com.stepup.android.domain.ChatRules
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewButtonKind
-import com.stepup.android.ui.screens.community.crew.CrewConfirmSheet
 import com.stepup.android.ui.screens.community.crew.CrewImage
-import com.stepup.android.ui.screens.community.crew.CrewSheet
-import com.stepup.android.ui.screens.community.crew.crewInk
 import java.io.File
 import java.time.ZoneId
 import kotlinx.coroutines.delay
@@ -112,7 +113,7 @@ private const val PROBLEM_DENIED = "denied"
  */
 @Composable
 fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
-    val ink = crewInk()
+    val ink = blueInk()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
@@ -226,9 +227,12 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
     val card: CrewCard? = meta?.card ?: viewModel.preview?.card
     val solo = meta != null && meta.memberCount <= 1 && ui.messages.none { it.kind != ChatKind.SYSTEM }
 
-    Column(Modifier.fillMaxSize().background(ink.canvas).imePadding().testTag(if (meta?.owner == true) "chat-room-owner" else "chat-room")) {
+    Column(
+        Modifier.fillMaxSize().background(Brush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)).imePadding()
+            .testTag(if (meta?.owner == true) "chat-room-owner" else "chat-room"),
+    ) {
         if (solo) {
-            ChatSoloHeader(card?.name.orEmpty(), actions.onBack, actions.onInfo)
+            ChatSoloHeader(card?.name.orEmpty(), meta?.memberCount, actions.onBack, actions.onInfo)
         } else {
             // 36 불러오기 실패에서도 채팅방 정보는 열린다(정보 화면이 서버에 다시 묻는다)
             ChatRoomHeader(card, meta?.memberCount ?: viewModel.preview?.memberCount, actions.onBack, onInfo = actions.onInfo)
@@ -243,19 +247,17 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
                     modifier = Modifier.align(Alignment.Center),
                     tag = "chat-room-error",
                 )
-                meta == null -> CircularProgressIndicator(
-                    Modifier.align(Alignment.Center).size(24.dp).testTag("chat-room-loading"), color = ink.secondary, strokeWidth = 2.dp,
-                )
+                meta == null -> RunSpinner(Modifier.align(Alignment.Center).size(28.dp).testTag("chat-room-loading"))
                 else -> Column(Modifier.fillMaxSize()) {
                     meta.pinned?.let { pinned ->
                         ChatPinnedNotice(
                             pinned.title, meta.owner,
                             onOpen = { actions.onNotice(pinned.id) },
                             onManage = { actions.onManageNotice(pinned.id) },
-                            modifier = Modifier.padding(horizontal = ChatGutter).padding(top = 4.dp),
+                            modifier = Modifier.padding(horizontal = ChatGutter).padding(top = 4.dp, bottom = 4.dp),
                         )
                     }
-                    if (!ui.online) ChatReconnectBanner(Modifier.padding(horizontal = ChatGutter).padding(top = 12.dp))
+                    if (!ui.online) ChatReconnectBanner(Modifier.padding(horizontal = ChatGutter).padding(top = 8.dp))
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (solo) {
                             ChatSoloIntro(meta.card, meta.owner, actions.onRecruit)
@@ -315,7 +317,7 @@ private class ChatEventTexts(val copied: String, val ownerLost: String, val gone
 @Composable
 private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: ChatRoomActions, resumed: Boolean) {
     val meta = ui.meta ?: return
-    val ink = crewInk()
+    val ink = blueInk()
     val listState = rememberLazyListState()
     val items = remember(ui.messages, meta, ui.me) { ChatRules.timeline(ui.messages, meta, ui.me, ZoneId.systemDefault()).reversed() }
     val latestItems by rememberUpdatedState(items)
@@ -401,7 +403,7 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
             if (ui.olderLoading) {
                 item(key = "older") {
                     Box(Modifier.fillMaxWidth().padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.size(18.dp), color = ink.secondary, strokeWidth = 2.dp)
+                        RunSpinner(Modifier.size(20.dp))
                     }
                 }
             }
@@ -422,19 +424,19 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
     }
 }
 
-/** 30 머리 — 가운데 크루 이름, 오른쪽 "정보"(공통 머리) */
+/** 30 머리 — 가운데 크루 이름과 지금 크루원 수, 오른쪽 "정보" */
 @Composable
-private fun ChatSoloHeader(name: String, onBack: () -> Unit, onInfo: () -> Unit) {
-    val ink = crewInk()
-    com.stepup.android.ui.components.SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null, title = name,
-        modifier = Modifier.padding(horizontal = 8.dp),
+private fun ChatSoloHeader(name: String, memberCount: Int?, onBack: () -> Unit, onInfo: () -> Unit) {
+    val ink = blueInk()
+    BlueTopBar(
+        name, onBack,
+        subtitle = memberCount?.let { stringResource(R.string.chat_members_count, it) },
         trailing = {
             Box(
-                Modifier.size(width = 56.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(role = Role.Button, onClick = onInfo)
+                Modifier.size(width = 60.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(role = Role.Button, onClick = onInfo)
                     .testTag("chat-solo-info"),
                 contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.chat_solo_info), color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+            ) { Text(stringResource(R.string.chat_solo_info), style = blueText(16.sp, ink.info, FontWeight.Bold)) }
         },
     )
 }
@@ -442,19 +444,22 @@ private fun ChatSoloHeader(name: String, onBack: () -> Unit, onInfo: () -> Unit)
 /** 30 혼자 있는 새 크루 — 첫 인사를 남길 수 있다. 크루장에게만 "크루 모집하기"(기존 모집 설정) */
 @Composable
 private fun ChatSoloIntro(card: CrewCard, owner: Boolean, onRecruit: () -> Unit) {
-    val ink = crewInk()
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).testTag("chat-solo"), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.weight(1f))
-        CrewImage(card, 120.dp, 22.dp)
-        Spacer(Modifier.height(30.dp))
-        Text(stringResource(R.string.chat_solo_title), color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.chat_solo_body), color = ink.secondary, fontSize = 13.5.sp, lineHeight = 25.sp, textAlign = TextAlign.Center)
+    val ink = blueInk()
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).testTag("chat-solo"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(48.dp))
+        CrewImage(card, 92.dp, 20.dp)
+        Spacer(Modifier.height(28.dp))
+        Text(stringResource(R.string.chat_solo_title), style = blueText(27.sp, ink.text, FontWeight.ExtraBold, 1.3f), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.chat_solo_body), style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.6f), textAlign = TextAlign.Center)
         if (owner) {
-            Spacer(Modifier.height(36.dp))
-            CrewButton(stringResource(R.string.chat_solo_recruit), onRecruit, Modifier.width(232.dp).testTag("chat-solo-recruit"), CrewButtonKind.SECONDARY)
+            Spacer(Modifier.height(32.dp))
+            BlueButton(stringResource(R.string.chat_solo_recruit), onRecruit, Modifier.widthIn(max = 260.dp).testTag("chat-solo-recruit"), BlueKind.SECONDARY)
         }
-        Spacer(Modifier.weight(1.3f))
+        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -515,7 +520,7 @@ private fun ChatRoomSheets(
                 }
             }
         }
-        is ChatSheet.Delete -> CrewConfirmSheet(
+        is ChatSheet.Delete -> BlueConfirmSheet(
             title = stringResource(R.string.chat_delete_title),
             body = stringResource(R.string.chat_delete_body),
             confirm = stringResource(R.string.chat_delete_confirm),
@@ -526,7 +531,7 @@ private fun ChatRoomSheets(
             tag = "chat-delete",
             error = sheet.state.error?.let { chatConfirmErrorText(it) },
         )
-        is ChatSheet.Hide -> CrewConfirmSheet(
+        is ChatSheet.Hide -> BlueConfirmSheet(
             title = stringResource(R.string.chat_hide_title),
             body = stringResource(R.string.chat_hide_body),
             confirm = stringResource(R.string.chat_hide_confirm),
@@ -541,9 +546,8 @@ private fun ChatRoomSheets(
         ChatSheet.Attach -> ChatMenuSheet(stringResource(R.string.chat_attach_title), "chat-attach-sheet", viewModel::closeSheet) {
             ChatSheetRow(stringResource(R.string.chat_attach_pick), onPick, "chat-attach-pick")
             ChatSheetRow(stringResource(R.string.chat_attach_camera), onCamera, "chat-attach-camera")
-            Spacer(Modifier.height(26.dp))
-            Text(stringResource(R.string.chat_attach_note), color = crewInk().secondary, fontSize = 12.5.sp)
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(18.dp))
+            Text(stringResource(R.string.chat_attach_note), style = blueText(15.sp, blueInk().secondary, FontWeight.Medium))
         }
     }
 }
@@ -559,40 +563,42 @@ internal fun chatConfirmErrorText(error: ChatConfirmError): String = stringResou
 /** 메뉴 시트 — 제목과 줄들 */
 @Composable
 internal fun ChatMenuSheet(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    CrewSheet(title, onDismiss, Modifier.testTag(tag)) {
-        Spacer(Modifier.height(12.dp))
+    BlueSheet(title, onDismiss, Modifier.testTag(tag)) {
+        ChatSheetTopLine()
         content()
-        Spacer(Modifier.height(44.dp))
+        Spacer(Modifier.height(20.dp))
     }
 }
 
 /** 28 메시지 신고 — 사유를 고르고 신고하기. 실패하면 고른 사유 그대로 같은 시트에서 다시 */
 @Composable
 private fun ChatReportSheet(sheet: ChatSheet.Report, onPick: (ChatReportReason) -> Unit, onSend: () -> Unit, onDismiss: () -> Unit) {
-    val ink = crewInk()
-    CrewSheet(stringResource(R.string.chat_report_title), onDismiss, Modifier.testTag("chat-report"), dismissible = !sheet.state.busy) {
-        Spacer(Modifier.height(12.dp))
-        listOf(
-            ChatReportReason.ABUSE to R.string.chat_report_abuse,
-            ChatReportReason.SPAM to R.string.chat_report_spam,
-            ChatReportReason.CONTENT to R.string.chat_report_content,
-        ).forEach { (reason, label) ->
-            ChatSheetRow(
-                stringResource(label), { onPick(reason) }, "chat-report-${reason.name.lowercase()}",
-                selected = sheet.reason == reason, enabled = !sheet.state.busy,
-            )
+    val ink = blueInk()
+    BlueSheet(stringResource(R.string.chat_report_title), onDismiss, Modifier.testTag("chat-report"), dismissible = !sheet.state.busy) {
+        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                ChatReportReason.ABUSE to R.string.chat_report_abuse,
+                ChatReportReason.SPAM to R.string.chat_report_spam,
+                ChatReportReason.CONTENT to R.string.chat_report_content,
+            ).forEach { (reason, label) ->
+                BlueChoiceRow(
+                    stringResource(label), selected = sheet.reason == reason, onClick = { onPick(reason) },
+                    tag = "chat-report-${reason.name.lowercase()}", enabled = !sheet.state.busy,
+                )
+            }
         }
         if (sheet.state.error != null) {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(if (sheet.state.error == ChatConfirmError.GONE) R.string.chat_action_gone else R.string.chat_report_error),
-                color = ink.warn, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.testTag("chat-report-error"),
+                style = blueText(14.sp, ink.warn, FontWeight.SemiBold, 1.5f), modifier = Modifier.testTag("chat-report-error"),
             )
         }
-        Spacer(Modifier.height(96.dp))
-        CrewButton(
+        Spacer(Modifier.height(22.dp))
+        BlueButton(
             stringResource(R.string.chat_report_send), onSend, Modifier.testTag("chat-report-send"),
-            kind = if (sheet.reason == null) CrewButtonKind.DISABLED else CrewButtonKind.PRIMARY,
+            kind = if (sheet.reason == null) BlueKind.DISABLED else BlueKind.PRIMARY,
             busy = sheet.state.busy,
             enabled = sheet.reason != null,
         )
@@ -602,22 +608,20 @@ private fun ChatReportSheet(sheet: ChatSheet.Report, onPick: (ChatReportReason) 
 /** 사진을 읽을 수 없다 · 사진 접근이 막혔다 — 다른 사진 · 기기 설정, 글 대화는 그대로 */
 @Composable
 private fun ChatPhotoProblemSheet(denied: Boolean, onPrimary: () -> Unit, onDismiss: () -> Unit) {
-    val ink = crewInk()
-    CrewSheet(
+    val ink = blueInk()
+    BlueSheet(
         stringResource(if (denied) R.string.chat_photo_denied_title else R.string.chat_photo_broken_title), onDismiss,
-        Modifier.testTag(if (denied) "chat-photo-denied" else "chat-photo-broken"),
+        Modifier.testTag(if (denied) "chat-photo-denied" else "chat-photo-broken"), centered = true,
     ) {
-        Spacer(Modifier.height(18.dp))
-        Text(
-            stringResource(if (denied) R.string.chat_photo_denied_body else R.string.chat_photo_broken_body),
-            color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp,
-        )
-        Spacer(Modifier.height(64.dp))
-        CrewButton(
+        Spacer(Modifier.height(12.dp))
+        BlueSheetBody(stringResource(if (denied) R.string.chat_photo_denied_body else R.string.chat_photo_broken_body))
+        Spacer(Modifier.height(26.dp))
+        BlueButton(
             stringResource(if (denied) R.string.chat_photo_settings else R.string.chat_photo_other),
             onPrimary, Modifier.testTag("chat-photo-primary"),
         )
-        Spacer(Modifier.height(16.dp))
-        CrewButton(stringResource(R.string.chat_cancel), onDismiss, Modifier.testTag("chat-photo-cancel"), CrewButtonKind.SECONDARY)
+        Spacer(Modifier.height(12.dp))
+        BlueButton(stringResource(R.string.chat_cancel), onDismiss, Modifier.testTag("chat-photo-cancel"), BlueKind.SECONDARY)
+        Spacer(Modifier.height(8.dp))
     }
 }
