@@ -118,7 +118,11 @@ class ShoeDrawTest {
         }
         compose.onNodeWithTag("draw-premium-history").performScrollTo().performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-premium").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(label(R.string.dv2_next_premium, "0.4")).assertExists()
+        // 메인의 상급 패널에도 같은 줄이 있다 — 안내창 안의 것만 본다
+        compose.onNode(
+            androidx.compose.ui.test.hasText(label(R.string.dv2_next_premium, "0.4"), substring = true) and
+                androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("draw-sheet-premium")),
+        ).assertExists()
         compose.onNodeWithTag("draw-sheet-close").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-premium").fetchSemanticsNodes().isEmpty() }
         // DRAW30 — 오늘 러닝 한도를 채웠다: 남은 수는 그대로, 한도 안내는 상급 기회 내역 안내창에

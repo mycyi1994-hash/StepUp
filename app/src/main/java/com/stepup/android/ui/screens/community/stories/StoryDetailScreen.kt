@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -413,7 +412,7 @@ private fun StoryRunCard(run: StoryRun) {
     val words = rememberStoryWords()
     val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().height(IntrinsicSize.Min).clip(shape)
+        Modifier.fillMaxWidth().clip(shape)
             .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
             .border(1.5.dp, t.cobalt.copy(alpha = 0.8f), shape).padding(12.dp)
             .testTag("story-run-card"),
@@ -421,7 +420,8 @@ private fun StoryRunCard(run: StoryRun) {
     ) {
         if (run.hasRoute) {
             StoryMapTone {
-                StoryRouteThumb(run.route, Modifier.weight(0.9f).fillMaxHeight().heightIn(min = 130.dp), seed = run.endedAt.hashCode(), radius = 12.dp)
+                // 지도(SubcomposeLayout)는 고유 높이를 물을 수 없다 — 줄 높이를 지도에 맞추지 않고 지도 높이를 정해 둔다
+                StoryRouteThumb(run.route, Modifier.weight(0.9f).height(130.dp), seed = run.endedAt.hashCode(), radius = 12.dp)
             }
         } else {
             Box(

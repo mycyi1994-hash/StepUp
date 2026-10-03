@@ -105,7 +105,7 @@ class ProfileRunningPathTest {
             }
             // 순서: 프로필 → 카드 → 기록 보기 → 챌린지 · 지갑 · 설정
             val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-challenges", "profile-wallet", "profile-settings")
-                .map { compose.onNodeWithTag(it).fetchSemanticsNode().boundsInRoot.top }
+                .map { compose.onNodeWithTag(it).fetchSemanticsNode().positionInRoot.y }
             assertTrue("running-path order $order", order == order.sorted())
             shot("01-profile")
 

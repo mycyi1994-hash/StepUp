@@ -144,7 +144,7 @@ class ShoeDrawTabsDesignTest {
             compose.onNodeWithTag("draw-premium-sub", useUnmergedTree = true).assert(hasText(label(R.string.draw_blue_before_link)))
             compose.onAllNodesWithTag("draw-premium-history").assertCountEquals(0)
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_connect, 10))
-            assertMainFits("draw-premium-action", "pixel_2 wallet")
+            assertMainFits("draw-premium-action", "pixel_2 wallet", scroll = true)
             shot("d09-wallet-required")
             // 10 — 연결 혜택. "나중에"는 창만 닫는다(연결 · 뽑기 없음)
             tap("draw-premium-action")
@@ -250,7 +250,11 @@ class ShoeDrawTabsDesignTest {
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_run))
             tap("draw-premium-action")
             awaitTag("draw-sheet-run")
-            compose.onNodeWithText(label(R.string.dv2_km, "0.4"), substring = true).assertExists()
+            // 메인의 상급 패널에도 같은 거리가 있다 — 안내창 안의 것만 본다
+            compose.onNode(
+                androidx.compose.ui.test.hasText(label(R.string.dv2_km, "0.4"), substring = true) and
+                    androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("draw-sheet-run")),
+            ).assertExists()
             shot("d14-premium-empty")
             tap("draw-sheet-close")
             awaitGone("draw-sheet-run")
