@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 뽑기 파란 톤(2026-10-03 통합 전달본 v4 · stepup-draw-blue-claude-v19). 수 · 거리는 모두 서버 값을 넣는다 -->
+<resources>
+    <string name="draw_blue_subtitle_ready">신발은 모두 무료로 뽑을 수 있어요.</string>
+    <string name="draw_blue_subtitle_loading">뽑기 기회를 불러오고 있어요.</string>
+    <string name="draw_blue_subtitle_failed">뽑기 기회를 불러오지 못했어요.</string>
+    <string name="draw_blue_left_label">남은 횟수</string>
+    <string name="draw_blue_free_breakdown">가입 선물 %1$d회 + 오늘 %2$d회</string>
+    <string name="draw_blue_before_link">지갑 연결 전</string>
+    <string name="draw_blue_on_first_link">처음 연결하면</string>
+    <string name="draw_blue_run_per_step">연결 후 러닝 %1$skm당 1회</string>
+    <string name="draw_blue_reconnect_hint">지갑을 다시 연결해주세요</string>
+    <string name="draw_blue_pending_hint">결과가 준비되면 볼 수 있어요.</string>
+    <string name="draw_blue_history">기회 내역 보기</string>
+    <string name="draw_blue_premium_sheet_sub">지갑 연결 후 러닝 %1$skm마다 1회를 받아요.</string>
+    <string name="draw_blue_benefit_note">지갑을 연결한 뒤 달리면 상급 뽑기 기회를 더 모을 수 있어요.</string>
+    <string name="draw_blue_free_empty_daily">매일 무료 뽑기 %1$d회를 드려요.</string>
+    <string name="draw_blue_run_sub">연결된 지갑으로 러닝 기회를 모을 수 있어요.</string>
+    <string name="draw_blue_run_rule">러닝 %1$skm마다 상급 뽑기 1회를 받아요.</string>
+    <string name="draw_blue_request_head">신발을 확인하고 있어요</string>
+    <string name="draw_blue_request_sub">결과가 확인되면 상자가 열려요.</string>
+    <string name="draw_blue_opening_head">상자를 열고 있어요</string>
+    <string name="draw_blue_opening_note">신발 한 켤레가 내 보유 신발에 추가돼요.</string>
+    <string name="draw_blue_check_sub">완료 여부를 확인한 뒤 신발을 보여드릴게요.</string>
+    <string name="draw_blue_level_number">Lv. %1$d · %2$s</string>
+</resources>

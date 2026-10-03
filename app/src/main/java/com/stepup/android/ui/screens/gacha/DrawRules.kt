@@ -128,10 +128,11 @@ fun linkedGift(before: LinkWatch?, now: DrawStatus): Int? =
     if (before == null || before.linked || !now.walletLinked) null
     else (now.giftLeft - before.giftLeft).coerceAtLeast(0)
 
-// ── 메인 한 탭의 모습(01 · 02 · 03 · 09 · 12 · 20 · 21 · 22 · 23) ─────────────────────────────
+// ── 메인 한 패널의 모습(파란 톤 v4 DRAW01 · 02 · 15 · 22 · 24 · 26 · 28 · 29 · 32) ──────────────────────
 //
-// 뽑기 디자인(26장) — 위 글자 탭(무료 · 상급) 하나를 고르면 그 탭의 상자 무대 · 남은 횟수 한 줄 · 실행 버튼 하나.
-// 모르는 수(불러오는 중 · 실패 · 로그인 전)는 "—"로 두고 0 으로 보이지 않는다. 결과를 모르는 요청이 있으면 두 탭 모두
+// 2026-10-03 파란 톤 통합 전달본 v4 — 무료 · 상급 두 패널을 한 화면에 함께 보인다(예전 v3 의 글자 탭 대신). 각 패널은 이 규칙을
+// 종류마다 한 번씩 불러 상자 · 남은 수 · 한 줄 · 주 버튼 하나를 고른다(아래 [drawHomeCard] 의 tab = 그 패널의 종류).
+// 모르는 수(불러오는 중 · 실패 · 로그인 전)는 "—"로 두고 0 으로 보이지 않는다. 결과를 모르는 요청이 있으면 두 패널 모두
 // 새 뽑기 대신 "결과 확인"이다.
 
 /** 무대 제목 */
@@ -270,7 +271,10 @@ fun drawHomeCard(status: DrawStatus?, tab: DrawKind, pendingKind: DrawKind?, loa
     return if (pendingKind != null) card.copy(action = DrawCardAction.Check) else card
 }
 
-/** ⓘ 가 여는 안내 — 무료 탭은 무료 기회(15), 상급 탭은 상급 기회 · 러닝(16 · 24), 지갑을 연결한 적이 없으면 받는 방법(17) */
+/**
+ * 한 종류의 안내 — 무료는 무료 기회(DRAW03), 상급은 상급 기회 · 러닝(DRAW04 · 30), 지갑을 연결한 적이 없으면 받는 방법(DRAW05).
+ * v4 메인은 패널마다 "기회 내역 보기"(연결 전 상급 패널에는 없음)와 아래 "기회 받는 방법"을 따로 두어 이 고르기를 그대로 따른다.
+ */
 fun drawInfoSheet(status: DrawStatus, tab: DrawKind): DrawSheet = when {
     tab == DrawKind.FREE -> DrawSheet.FreeChances
     status.premiumMode() == PremiumMode.Connect -> DrawSheet.Rules

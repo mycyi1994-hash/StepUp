@@ -1618,14 +1618,13 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자.
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 다른 탭은 고르면 파란 선택 타일 위에 흰 아이콘 · 글자
-    val drawTile = selected && screen == Screen.Draw
-    val blueTile = selected && screen != Screen.Draw
+    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 고른 탭은 파란 선택 타일 위에 흰 아이콘 · 글자.
+    // 뽑기 탭도 같다(2026-10-03 파란 톤 통합 전달본 v4 뽑기 — 예전 보라 타일 대신 파란 면)
+    val blueTile = selected
     val dark = com.stepup.android.ui.theme.StepUpColors.dark
     val tint by animateColorAsState(
         targetValue = when {
-            drawTile || blueTile -> Color.White
+            blueTile -> Color.White
             dark -> Color(0xFF9DB7E2)
             else -> Slate
         },
@@ -1655,19 +1654,6 @@ private fun RowScope.NavTab(
                     drawRoundRect(
                         Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                    )
-                }
-                if (drawTile) {
-                    // 선택 타일 72 × 70(자리보다 넓으면 자리에 맞춘다) — 아이콘을 키운다고 타일까지 키우지 않는다
-                    val w = minOf(72.dp.toPx(), size.width)
-                    val h = minOf(70.dp.toPx(), size.height)
-                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
-                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
-                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
-                    drawRoundRect(Color(0xFF5037F0), topLeft, tileSize, radius)
-                    drawRoundRect(
-                        Color(0xFF7377F3), topLeft, tileSize, radius,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()),
                     )
                 }
             }
