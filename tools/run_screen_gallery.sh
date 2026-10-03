@@ -267,6 +267,10 @@ if [[ "$suite" == "community" ]]; then
     mkdir -p "screen-gallery/run-journey-results/$part"
     cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/$part/" || true
   done
+  # 러닝 화면 프레임 시간(통과/실패 없음) — run-journey/perf.txt
+  run_instrumentation "run-performance" "com.stepup.android.RunPerformanceTest"
+  mkdir -p "screen-gallery/run-journey-results/performance"
+  cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/performance/" || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/run-journey/. screen-gallery/run-journey/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then

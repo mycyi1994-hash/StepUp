@@ -1,6 +1,5 @@
 package com.stepup.android.ui.components
 
-import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,11 +22,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -287,17 +284,10 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
             center = Offset(center.x, top + topH * 0.35f), radius = width * 0.45f,
         ),
     )
-    // 윗면 둘레 — 번지는 빛 + 밝은 선
-    drawIntoCanvas { canvas ->
-        val glow = Paint().apply {
-            color = Color(0xFF3FA9FF)
-            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-            strokeWidth = 5.dp.toPx()
-            alpha = 0.75f
-        }
-        glow.asFrameworkPaint().maskFilter = BlurMaskFilter(7.dp.toPx(), BlurMaskFilter.Blur.NORMAL)
-        canvas.drawPath(face, glow)
-    }
+    // 윗면 둘레 — 번지는 빛 + 밝은 선. 흐림 필터는 다시 그릴 때마다 CPU 로 흐림을 계산해 홈이 버벅인다 — 넓은 옅은 선을 겹친다
+    drawPath(face, PedestalGlow.copy(alpha = 0.10f), style = Stroke(width = 16.dp.toPx()))
+    drawPath(face, PedestalGlow.copy(alpha = 0.18f), style = Stroke(width = 10.dp.toPx()))
+    drawPath(face, PedestalGlow.copy(alpha = 0.32f), style = Stroke(width = 5.dp.toPx()))
     drawPath(face, Color(0xFF9AD4FF), style = Stroke(width = 1.8.dp.toPx()))
     // 앞면 위 · 아래 빛줄
     glowLine(Offset(left + cut, bottom), Offset(right - cut, bottom), Color(0xFFBFE3FF), 1.6.dp.toPx(), 6.dp.toPx(), 0.95f)
@@ -312,17 +302,21 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
     }
 }
 
-/** 번지는 빛줄 — 흐린 굵은 선 위에 가는 선 */
+/** 받침 둘레 빛 */
+private val PedestalGlow = Color(0xFF3FA9FF)
+
+/**
+ * 번지는 빛줄(가로) — 위아래로 옅어지는 빛 띠 위에 가는 선. 흐림 필터 대신 그라데이션이라 다시 그려도 싸다.
+ */
 private fun DrawScope.glowLine(start: Offset, end: Offset, color: Color, width: Float, blur: Float, alpha: Float) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint().apply {
-            this.color = color
-            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-            strokeWidth = width * 2.2f
-            this.alpha = alpha * 0.7f
-        }
-        paint.asFrameworkPaint().maskFilter = BlurMaskFilter(blur, BlurMaskFilter.Blur.NORMAL)
-        canvas.drawLine(start, end, paint)
-    }
+    val half = width * 1.1f + blur * 1.5f
+    val y = (start.y + end.y) / 2f
+    drawRect(
+        Brush.verticalGradient(
+            0f to Color.Transparent, 0.5f to color.copy(alpha = alpha * 0.55f), 1f to Color.Transparent,
+            startY = y - half, endY = y + half,
+        ),
+        topLeft = Offset(minOf(start.x, end.x), y - half), size = Size(kotlin.math.abs(end.x - start.x), half * 2f),
+    )
     drawLine(color.copy(alpha = alpha), start, end, strokeWidth = width)
 }

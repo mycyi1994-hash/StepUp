@@ -93,7 +93,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.graphics.TransformOrigin
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -755,56 +757,71 @@ fun RunNumber(
     valueTag: String? = null,
     italicUnit: Boolean = true,
 ) {
-    val measurer = rememberTextMeasurer()
     val valueStyle = runNumberStyle(size, color)
     val unitStyle = if (italicUnit) runNumberStyle(unitSize, unitColor, FontWeight.Bold)
     else runTextStyle(unitSize, unitColor, FontWeight.SemiBold, 1.1f)
-    BoxWithConstraints(modifier, contentAlignment = when (align) {
-        Alignment.CenterHorizontally -> Alignment.Center
-        Alignment.End -> Alignment.CenterEnd
-        else -> Alignment.CenterStart
-    }) {
-        val max = constraints.maxWidth
-        val scale = remember(value, unit, max, size, unitSize) {
-            val v = measurer.measure(value, valueStyle, maxLines = 1).size.width
-            val u = unit?.let { measurer.measure(" $it", unitStyle, maxLines = 1).size.width } ?: 0
-            val total = v + u
-            if (max == Constraints.Infinity || total <= max || total == 0) 1f else max.toFloat() / total
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            val sized = valueStyle.copy(fontSize = size * scale)
-            // 시안의 큰 운동 숫자는 Pretendard 가장 굵은 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
-            // 위가 밝고 아래가 살짝 푸른 빛(남색 테마)
-            val heavy = size >= 28.sp
-            val shine = heavy && runTone().dark && color == runTone().text
-            Box(Modifier.alignByBaseline()) {
-                // 읽히는 글자(꼬리표 · 화면 낭독)가 먼저, 굵히는 테두리는 같은 색이라 위에 겹쳐도 같다
-                Text(
-                    value,
-                    style = if (shine) sized.copy(brush = Brush.verticalGradient(listOf(Color.White, Color(0xFFC7D7F2)))) else sized,
-                    maxLines = 1, softWrap = false,
-                    modifier = if (valueTag != null) Modifier.testTag(valueTag) else Modifier,
-                )
-                if (heavy) {
-                    Text(
-                        value,
-                        style = sized.copy(
-                            drawStyle = Stroke(width = with(LocalDensity.current) { (size.value * scale * 0.035f).dp.toPx() }, join = StrokeJoin.Round),
-                            brush = if (shine) Brush.verticalGradient(listOf(Color.White, Color(0xFFC7D7F2))) else null,
-                        ),
-                        maxLines = 1, softWrap = false, modifier = Modifier.clearAndSetSemantics { },
-                    )
+    // 폭이 모자라면 한 번 잰 줄을 그대로 줄여 그린다 — 예전처럼 BoxWithConstraints(그리는 중에 한 번 더 짜기)와 글자 따로 재기를
+    // 하지 않는다. 이 수는 한 화면에 여러 개(목록 줄마다)라 그 비용이 쌓이면 넘김이 버벅인다.
+    val horizontal = align
+    Row(
+        modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints.copy(minWidth = 0, maxWidth = Constraints.Infinity, minHeight = 0))
+            val max = constraints.maxWidth
+            val scale = if (constraints.hasBoundedWidth && placeable.width > max && placeable.width > 0) {
+                max.toFloat() / placeable.width
+            } else 1f
+            val shownW = (placeable.width * scale).roundToInt()
+            val shownH = (placeable.height * scale).roundToInt()
+            val width = shownW.coerceIn(constraints.minWidth, if (constraints.hasBoundedWidth) max else Int.MAX_VALUE)
+            val height = shownH.coerceIn(constraints.minHeight, constraints.maxHeight)
+            val x = when (horizontal) {
+                Alignment.CenterHorizontally -> (width - shownW) / 2
+                Alignment.End -> width - shownW
+                else -> 0
+            }
+            val y = (height - shownH) / 2
+            layout(width, height) {
+                if (scale == 1f) placeable.place(x, y)
+                else placeable.placeWithLayer(x, y) {
+                    scaleX = scale
+                    scaleY = scale
+                    transformOrigin = TransformOrigin(0f, 0f)
                 }
             }
-            if (unit != null) {
+        },
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        // 시안의 큰 운동 숫자는 Pretendard 가장 굵은 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
+        // 위가 밝고 아래가 살짝 푸른 빛(남색 테마)
+        val heavy = size >= 28.sp
+        val shine = heavy && runTone().dark && color == runTone().text
+        Box(Modifier.alignByBaseline()) {
+            // 읽히는 글자(꼬리표 · 화면 낭독)가 먼저, 굵히는 테두리는 같은 색이라 위에 겹쳐도 같다
+            Text(
+                value,
+                style = if (shine) valueStyle.copy(brush = NumberShine) else valueStyle,
+                maxLines = 1, softWrap = false,
+                modifier = if (valueTag != null) Modifier.testTag(valueTag) else Modifier,
+            )
+            if (heavy) {
                 Text(
-                    " $unit", style = unitStyle.copy(fontSize = unitSize * scale), maxLines = 1, softWrap = false,
-                    modifier = Modifier.alignByBaseline(),
+                    value,
+                    style = valueStyle.copy(
+                        drawStyle = Stroke(width = with(LocalDensity.current) { (size.value * 0.035f).dp.toPx() }, join = StrokeJoin.Round),
+                        brush = if (shine) NumberShine else null,
+                    ),
+                    maxLines = 1, softWrap = false, modifier = Modifier.clearAndSetSemantics { },
                 )
             }
+        }
+        if (unit != null) {
+            Text(" $unit", style = unitStyle, maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline())
         }
     }
 }
+
+/** 큰 수의 빛 — 위가 밝고 아래가 살짝 푸르다 */
+private val NumberShine = Brush.verticalGradient(listOf(Color.White, Color(0xFFC7D7F2)))
 
 /** 가운데 큰 시간 — 작은 이름("달린 시간") · 아주 큰 기울인 수 · 아래 한 줄 */
 @Composable
@@ -962,6 +979,9 @@ fun RunCard(
     )
 }
 
+/** 메뉴 카드 둘레 빛 */
+private val CardGlow = Color(0xFF1E64FF)
+
 /**
  * 러닝 방법 카드(시안 U01 · U02) — 같은 크기의 가로 버튼. 왼쪽 큰 이름 · 작은 설명, 오른쪽 그림 · 화살표.
  * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다).
@@ -984,19 +1004,12 @@ fun RunModeCard(
     Row(
         modifier.fillMaxWidth().heightIn(min = minHeight)
             .drawBehind {
-                // 바깥 빛 — 파란 둘레가 은은하게 번진다
+                // 바깥 빛 — 파란 둘레가 은은하게 번진다. 흐림 필터(BlurMaskFilter)는 다시 그릴 때마다 CPU 로 흐림을 계산해
+                // 메뉴 카드가 여럿이면 화면 넘김이 버벅인다 — 넓고 옅은 테 두 겹으로 같은 느낌만 낸다
                 if (t.dark && enabled) {
-                    drawIntoCanvas { canvas ->
-                        val paint = androidx.compose.ui.graphics.Paint().apply {
-                            color = Color(0xFF1E64FF)
-                            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-                            strokeWidth = 3.dp.toPx()
-                            alpha = 0.55f
-                        }
-                        paint.asFrameworkPaint().maskFilter = android.graphics.BlurMaskFilter(6.dp.toPx(), android.graphics.BlurMaskFilter.Blur.NORMAL)
-                        val r = RunSpec.CardRadius.toPx()
-                        canvas.drawRoundRect(0f, 0f, size.width, size.height, r, r, paint)
-                    }
+                    val r = CornerRadius(RunSpec.CardRadius.toPx())
+                    drawRoundRect(CardGlow.copy(alpha = 0.14f), cornerRadius = r, style = Stroke(10.dp.toPx()))
+                    drawRoundRect(CardGlow.copy(alpha = 0.24f), cornerRadius = r, style = Stroke(5.dp.toPx()))
                 }
             }
             .clip(shape)

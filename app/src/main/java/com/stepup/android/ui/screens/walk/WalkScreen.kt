@@ -184,6 +184,8 @@ fun RunScreen(
     // 러닝 서비스는 끝난 러닝을 백그라운드 스레드에서 내놓는다. 화면은 그 값을 메인 스레드에서 받는다 — 기기 테스트의
     // 즉시 실행 환경에서 결과 목록(LazyColumn)을 백그라운드 스레드에서 처음 그리다 멈췄다(Looper 없음, QA 147)
     val session by viewModel.session.collectAsStateWithLifecycle(context = Dispatchers.Main.immediate)
+    // 경로 좌표는 읽을 때마다 새 목록을 만든다(track.toGeoPoints) — 갱신(1초에 여러 번)마다 여러 번 만들지 않게 경로가 바뀔 때만
+    val geoTrack = remember(session.track) { session.geoTrack }
     val energy by viewModel.energy.collectAsStateWithLifecycle()
     val sneakerLevel by viewModel.sneakerLevel.collectAsStateWithLifecycle()
     val equipped by viewModel.equipped.collectAsStateWithLifecycle()
@@ -442,7 +444,7 @@ fun RunScreen(
             if (!session.isPaused) WalkSessionService.pause(context) else askEnd()
         }
     }
-    val timeOnly = !locationAllowed || (!session.locationOn && !session.gpsFix && session.geoTrack.isEmpty())
+    val timeOnly = !locationAllowed || (!session.locationOn && !session.gpsFix && geoTrack.isEmpty())
     val liveKm = goalKmNow
     // 위치 없이 기록하는 동안(R02_TIME)은 거리 · 페이스를 재지 않은 것으로 둔다 — 걸음으로 셈한 값은 저장한 결과에만 그 근거와 함께 적는다
     val liveKmText = if (timeOnly) "—" else "%.2f".format(liveKm)
@@ -470,9 +472,9 @@ fun RunScreen(
     val liveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
         val here = session.here
         when {
-            timeOnly && session.geoTrack.isEmpty() -> NoLocationMap()
-            session.geoTrack.isNotEmpty() -> LiveRouteMap(
-                points = session.geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true,
+            timeOnly && geoTrack.isEmpty() -> NoLocationMap()
+            geoTrack.isNotEmpty() -> LiveRouteMap(
+                points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true,
                 breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true,
             )
             here != null -> LiveRouteMap(
@@ -586,8 +588,8 @@ fun RunScreen(
                     },
                     onHome = done,
                     map = {
-                        if (session.geoTrack.isNotEmpty()) {
-                            LiveRouteMap(points = session.geoTrack, modifier = Modifier.fillMaxSize().testTag("run-result-map"),
+                        if (geoTrack.isNotEmpty()) {
+                            LiveRouteMap(points = geoTrack, modifier = Modifier.fillMaxSize().testTag("run-result-map"),
                                 breaks = lastTrackBreaks, routeColor = tone.cyan)
                         } else {
                             com.stepup.android.ui.components.RunMapPlaceholder(
@@ -645,7 +647,7 @@ fun RunScreen(
                 map = {
                     val here = session.here
                     LiveRouteMap(
-                        points = session.geoTrack.ifEmpty { listOfNotNull(here) }, modifier = Modifier.fillMaxSize(),
+                        points = geoTrack.ifEmpty { listOfNotNull(here) }, modifier = Modifier.fillMaxSize(),
                         interactive = true, others = others, breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true,
                         controlLabels = com.stepup.android.ui.components.MapControlLabels(
                             zoomIn = stringResource(R.string.rec_zoom_in), zoomOut = stringResource(R.string.rec_zoom_out),
@@ -692,7 +694,7 @@ fun RunScreen(
                         }
                     },
                     onFinish = { if (session.isActive) askEnd() else onBack() },
-                    onExpandMap = if (timeOnly && session.geoTrack.isEmpty()) null else ({ showFullMap = true }),
+                    onExpandMap = if (timeOnly && geoTrack.isEmpty()) null else ({ showFullMap = true }),
                     map = liveMap,
                     notices = {
                         val voidNow = session.isActive && session.liveVerdict == RunVerdict.VOID
