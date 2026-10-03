@@ -109,13 +109,23 @@ fun CourseRecommendScreen(
         runCatching { repo.refreshBoard() }
         boardDone = true
     }
+    // 기다림은 위치를 쓸 수 있을 때부터 센다 — 설정에서 늦게 허용하고 돌아와도 바로 "못 찾음"이 되지 않게
     var waited by remember(attempt) { mutableStateOf(false) }
-    LaunchedEffect(attempt) {
-        delay(FIND_TIMEOUT_MS)
-        waited = true
+    LaunchedEffect(attempt, locationAllowed) {
+        waited = false
+        if (locationAllowed) {
+            delay(FIND_TIMEOUT_MS)
+            waited = true
+        }
     }
-    val picks = remember(here, local, board) {
-        val at = here ?: return@remember emptyList()
+    // 순서는 이번 찾기에서 처음 받은 자리로 정한다 — 위치가 조금씩 바뀔 때마다 보던 코스가 다른 코스로 바뀌지 않게
+    var anchor by remember(attempt) { mutableStateOf<GeoPoint?>(null) }
+    LaunchedEffect(here) {
+        if (anchor == null && here != null) anchor = here
+    }
+    val origin = anchor ?: here
+    val picks = remember(origin, local, board) {
+        val at = origin ?: return@remember emptyList()
         CourseRecommendations.near(at, board + local.filter { it.mine }, exclude = { it.isSeededDemo() })
     }
     val ui = when {

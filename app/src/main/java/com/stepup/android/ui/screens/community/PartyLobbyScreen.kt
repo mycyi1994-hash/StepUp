@@ -269,7 +269,8 @@ fun PartyLobbyContent(
             when {
                 party.phase == PartyPhase.FINISHED ->
                     RunButton(stringResource(R.string.common_ok), onDismissResult, Modifier.testTag("party-result-ok"))
-                !lobby || party.problem != null || party.partyId == null -> Unit
+                // 누른 것이 막힌 것뿐(FAILED)이면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
+                !lobby || (party.problem != null && party.problem != PartyProblem.FAILED) || party.partyId == null -> Unit
                 !party.myReady -> {
                     RunButton(stringResource(R.string.run_cr_get_ready), onReady, Modifier.testTag("party-ready"))
                     if (alone && canNotify) {

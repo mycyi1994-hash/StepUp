@@ -266,8 +266,16 @@ class CrewRepository(
 
     /** 서버에서 크루 목록을 다시 받는다. 동시에 여러 번 불려도 한 번씩 차례로 한다. */
     suspend fun refresh(): CrewSyncState = refreshLock.withLock {
+        val before = _sync.value
         if (_crews.value.isEmpty()) _sync.value = CrewSyncState.Loading
-        val next = when (val result = api.crews()) {
+        // 받는 중에 부른 화면이 닫혀 취소되면 "불러오는 중"으로 남기지 않는다(같은 상태를 보는 다른 화면이 멈춰 보이지 않게)
+        val result = try {
+            api.crews()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            if (_sync.value == CrewSyncState.Loading) _sync.value = before
+            throw cancelled
+        }
+        val next = when (result) {
             is ServerResult.Ok -> {
                 val list = result.value.map { it.toDomain() }
                 announceApprovals(list)
@@ -491,14 +499,17 @@ class CrewRepository(
             when (val result = partyApi.state(partyId)) {
                 is ServerResult.Ok -> applyRoom(result.value)
                 // 방장이 내보냈거나 방이 없어졌다. 더 물어도 같다.
+                // 서버에 닿기는 했다 — 같이 뛰는 중 "연결 끊김"(CR18)은 풀어 둔다(더 묻지 않으니 다시 켜질 일도 없다)
                 is ServerResult.Rejected -> {
                     if (_party.value.phase != PartyPhase.RUNNING) {
-                        _party.value = _party.value.copy(problem = PartyProblem.REMOVED)
+                        _party.value = _party.value.copy(problem = PartyProblem.REMOVED, liveOffline = false)
+                    } else {
+                        _party.value = _party.value.copy(liveOffline = false)
                     }
                     return
                 }
                 is ServerResult.SignInRequired -> {
-                    _party.value = _party.value.copy(problem = PartyProblem.SIGN_IN)
+                    _party.value = _party.value.copy(problem = PartyProblem.SIGN_IN, liveOffline = false)
                     return
                 }
                 is ServerResult.Retry -> {
@@ -689,6 +700,13 @@ class CrewRepository(
 
     /** 지금 방을 다시 묻는다 — 같이 뛰는 중 연결이 끊겼을 때 "다시 연결"(CR18). 기다리던 물음을 앞당길 뿐이다. */
     fun wakeParty() {
+        // 묻기가 이미 끝났으면(서버가 거절 · 로그인 필요로 멈춘 뒤) 깨울 것이 없다 — 같이 뛰는 중이면 다시 묻기 시작한다
+        val now = _party.value
+        val id = now.partyId
+        if (pollJob?.isActive != true && id != null && now.phase == PartyPhase.RUNNING && !now.roomClosed) {
+            pollJob = scope.launch { poll(id) }
+            return
+        }
         wake.trySend(Unit)
     }
 

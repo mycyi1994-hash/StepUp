@@ -774,11 +774,7 @@ fun RunNumber(
             val shownH = (placeable.height * scale).roundToInt()
             val width = shownW.coerceIn(constraints.minWidth, if (constraints.hasBoundedWidth) max else Int.MAX_VALUE)
             val height = shownH.coerceIn(constraints.minHeight, constraints.maxHeight)
-            val x = when (horizontal) {
-                Alignment.CenterHorizontally -> (width - shownW) / 2
-                Alignment.End -> width - shownW
-                else -> 0
-            }
+            val x = horizontal.align(shownW, width, layoutDirection)
             val y = (height - shownH) / 2
             layout(width, height) {
                 if (scale == 1f) placeable.place(x, y)
@@ -1317,10 +1313,11 @@ fun RunSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val t = runTone()
-    val state = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-        confirmValueChange = { dismissible || it != androidx.compose.material3.SheetValue.Hidden },
-    )
+    // confirmValueChange 는 시트 상태(rememberSaveable)의 키다 — 닫을 수 있음(dismissible)이 바뀔 때마다 새 람다를 넘기면
+    // 새 시트 상태가 만들어져 시트가 다시 올라온다(지우는 중 · 보내는 중). 한 번 만든 람다가 지금 값을 읽게 한다
+    val canDismiss by androidx.compose.runtime.rememberUpdatedState(dismissible)
+    val confirm = remember { { value: androidx.compose.material3.SheetValue -> canDismiss || value != androidx.compose.material3.SheetValue.Hidden } }
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = confirm)
     ModalBottomSheet(
         onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = state,

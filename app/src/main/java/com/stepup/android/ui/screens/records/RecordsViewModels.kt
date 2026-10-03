@@ -30,6 +30,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -112,10 +114,25 @@ class RecordsViewModel(
         attempt.value++
     }
 
-    /** 목록 썸네일 — 줄마다 한 번 읽어 둔다 */
+    /** 목록 썸네일 — 줄마다 한 번 읽어 둔다(화면 스레드에서만 만진다) */
     private val routes = HashMap<Long, List<GeoPoint>>()
 
-    suspend fun route(id: Long): List<GeoPoint> = routes[id] ?: repo.route(id).let { thin(it) }.also { routes[id] = it }
+    /** 이미 읽어 둔 썸네일 경로 — 목록을 다시 넘겨 줄이 돌아올 때 빈 칸 없이 바로 그린다 */
+    fun cachedRoute(id: Long): List<GeoPoint>? = routes[id]
+
+    /** 썸네일 경로 — 줄이기는 화면 스레드 밖에서. 읽지 못하면 이번엔 위치 없음으로 두고 기억하지 않는다(다음에 다시 읽는다) */
+    suspend fun route(id: Long): List<GeoPoint> {
+        routes[id]?.let { return it }
+        val shown = try {
+            withContext(Dispatchers.Default) { thin(repo.route(id)) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        routes[id] = shown
+        return shown
+    }
 
     companion object {
         const val PAGE = 40

@@ -129,8 +129,23 @@ fun CourseHubScreen(
     var rankingCourseId by rememberSaveable { mutableStateOf(-1L) }
 
     // 게시판의 서버 코스는 폰에 받아 둔 코스와 번호가 다르다. 같은 길이면 고른 코스다.
-    fun isSelected(course: RunCourse): Boolean =
-        course.id == selectedId || (selectedTrack != null && course.encode() == selectedTrack)
+    // 길 비교(encode)는 목록 · 고른 코스가 바뀔 때만 — 다시 그릴 때마다 줄마다 길 전체를 글자로 만들지 않게
+    val sameTrackIds = remember(courses, boardCourses, selectedTrack) {
+        val track = selectedTrack ?: return@remember emptySet()
+        (courses + boardCourses).filter { it.encode() == track }.mapTo(HashSet()) { it.id }
+    }
+    fun isSelected(course: RunCourse): Boolean = course.id == selectedId || course.id in sameTrackIds
+
+    // 게시판 — 검색어 · 목록이 바뀔 때만 거르고 줄 세운다(하트 순)
+    val sortedBoard = remember(boardCourses, query) {
+        boardCourses
+            .filter { it.matches(query) }
+            .sortedWith(
+                compareByDescending<RunCourse> { it.likes }
+                    .thenByDescending { it.runCount }
+                    .thenByDescending { it.createdAt },
+            )
+    }
 
     // 게시판 탭을 열 때마다 서버에서 새로 받는다.
     LaunchedEffect(tab) {
@@ -250,13 +265,7 @@ fun CourseHubScreen(
                                 UploadChip(onClick = { uploadPicker = true })
                             }
                         }
-                        val board = boardCourses
-                            .filter { it.matches(query) }
-                            .sortedWith(
-                                compareByDescending<RunCourse> { it.likes }
-                                    .thenByDescending { it.runCount }
-                                    .thenByDescending { it.createdAt },
-                            )
+                        val board = sortedBoard
                         val failed = boardSync is BoardSyncState.Failed || boardSync is BoardSyncState.SignInRequired
                         // 서버를 못 읽었으면 왜 못 읽었는지부터(K18). 폰의 코스는 그 아래에 그대로 둔다.
                         if (failed) {

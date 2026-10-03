@@ -209,11 +209,15 @@ fun DietInputScreen(
             }.isSuccess
             // 저장은 다른 스레드에서 끝날 수 있다 — 화면 상태 · 다음 화면 이동은 메인에서
             withContext(Dispatchers.Main.immediate) {
+                // 준비 중에 뒤로 가 입력으로 돌아왔으면 저장만 하고 다음 화면으로 가지 않는다
+                val waiting = phase == DietPhase.Preparing
                 if (saved) {
                     dirty = false
-                    phase = DietPhase.Input
-                    onNext(chosen)
-                } else {
+                    if (waiting) {
+                        phase = DietPhase.Input
+                        onNext(chosen)
+                    }
+                } else if (waiting) {
                     phase = DietPhase.Failed
                 }
             }

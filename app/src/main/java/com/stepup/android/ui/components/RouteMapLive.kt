@@ -227,8 +227,10 @@ private fun DrawScope.drawRoute(
     val screen = points.map { plan.toScreen(it) }
     val path = Path().apply {
         moveTo(screen.first().x, screen.first().y)
+        // 끊긴 자리가 없으면(대부분) 번호 확인 없이 — 그릴 때마다 점마다 번호를 상자에 담지 않게
+        val anyBreak = breaks.isNotEmpty()
         for (i in 1 until screen.size) {
-            if (i in breaks) moveTo(screen[i].x, screen[i].y) else lineTo(screen[i].x, screen[i].y)
+            if (anyBreak && i in breaks) moveTo(screen[i].x, screen[i].y) else lineTo(screen[i].x, screen[i].y)
         }
     }
 

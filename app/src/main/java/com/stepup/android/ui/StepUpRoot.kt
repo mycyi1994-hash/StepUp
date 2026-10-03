@@ -974,9 +974,12 @@ internal fun MainScaffold(
                     },
                     // 결과의 "내 러닝 기록 보기" · 기록 삭제 뒤(H01) — 결과는 닫고 기록으로
                     onOpenRecords = {
-                        navController.navigate(Routes.RECORDS) {
-                            popUpTo(Routes.RUN_ROUTE) { inclusive = true }
-                            launchSingleTop = true
+                        // 기록에서 시작한 러닝이면 그 기록으로 돌아간다(그 위의 메뉴 · 결과는 걷는다)
+                        if (!navController.popBackStack(Routes.RECORDS, inclusive = false)) {
+                            navController.navigate(Routes.RECORDS) {
+                                popUpTo(Routes.RUN_ROUTE) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -1005,7 +1008,12 @@ internal fun MainScaffold(
                         if (!navController.popBackStack(Screen.Run.route, inclusive = false)) navController.switchTab(Screen.Run)
                     },
                     // 내 러닝 기록(시안 U01 → H01)
-                    onRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    onRecords = {
+                        // 기록 → 메뉴로 들어왔으면 그 기록으로 돌아간다(기록 · 메뉴가 번갈아 쌓이지 않게)
+                        if (!navController.popBackStack(Routes.RECORDS, inclusive = false)) {
+                            navController.navigate(Routes.RECORDS) { launchSingleTop = true }
+                        }
+                    },
                     // 추천 코스(U04)
                     onCourse = { navController.navigate(Routes.RUN_COURSE) { launchSingleTop = true } },
                     // 크루 달리기 — 달리던 러닝이 있으면 그 러닝, 들어가 있던 대기실이 있으면 그 대기실, 아니면 크루 입구
@@ -1013,8 +1021,7 @@ internal fun MainScaffold(
                         val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
                         val partyCrew = party.crewId
                         when {
-                            com.stepup.android.service.WalkSessionService.state.value.isActive ->
-                                navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                            com.stepup.android.service.WalkSessionService.state.value.isActive -> navController.backToRun()
                             (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY ||
                                 party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN) && !partyCrew.isNullOrBlank() ->
                                 navController.navigate(Routes.lobby(partyCrew)) { launchSingleTop = true }
@@ -1063,11 +1070,17 @@ internal fun MainScaffold(
                         launchSingleTop = true
                     }
                 }
+                // 달리던 러닝이 있으면(러닝 화면에서 뒤로 와 메뉴로 들어온 경우) 코스 · 계획을 바꾸지 않고 그 러닝으로 돌아간다
+                val backToRun = {
+                    val active = com.stepup.android.service.WalkSessionService.state.value.isActive
+                    if (active) navController.backToRun()
+                    active
+                }
                 com.stepup.android.ui.screens.walk.CourseRecommendScreen(
                     onBack = { navController.popBackStack() },
                     // 이 코스로 시작 — 그 코스를 골라 두고 러닝(권한 안내 → 3-2-1)으로
                     onStart = { course ->
-                        courseScope.launch {
+                        if (!backToRun()) courseScope.launch {
                             val repo = com.stepup.android.core.ServiceLocator.courseRepository
                             val id = repo.localIdFor(course.id) ?: return@launch
                             repo.select(id)
@@ -1075,7 +1088,7 @@ internal fun MainScaffold(
                         }
                     },
                     onFreeRun = {
-                        courseScope.launch {
+                        if (!backToRun()) courseScope.launch {
                             // 자유 러닝은 코스 안내 없이
                             com.stepup.android.core.ServiceLocator.courseRepository.clearSelection()
                             startFresh()
@@ -1136,7 +1149,7 @@ internal fun MainScaffold(
                     // 이 코스로 달리기(K09) — 달리던 러닝이 있으면 그 러닝으로, 아니면 고른 코스로 새 러닝(권한 안내 → 3-2-1)
                     onRunCourse = {
                         if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                            navController.navigate(Routes.RUN_NOW) { launchSingleTop = true }
+                            navController.backToRun()
                         } else {
                             com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
                             com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
@@ -1483,10 +1496,16 @@ internal fun MainScaffold(
  */
 private fun startRunFromRecords(navController: NavHostController) {
     if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-        navController.navigate(Routes.RUN_NOW)
-    } else {
+        navController.backToRun()
+    } else if (!navController.popBackStack(Routes.RUN_MENU, inclusive = false)) {
+        // 메뉴 → 기록으로 들어왔으면 그 메뉴로 돌아간다(메뉴 · 기록이 번갈아 쌓이지 않게)
         navController.navigate(Routes.RUN_MENU) { launchSingleTop = true }
     }
+}
+
+/** 달리던 러닝 화면으로 — 이미 쌓여 있으면 그 위를 걷고 돌아가고, 없을 때만 새로 연다(러닝 화면을 두 번 쌓지 않는다) */
+private fun NavHostController.backToRun() {
+    if (!popBackStack(Routes.RUN_ROUTE, inclusive = false)) navigate(Routes.RUN_NOW) { launchSingleTop = true }
 }
 
 /** 탭 전환 — 백스택을 쌓지 않고 각 탭의 상태를 보존한다. */

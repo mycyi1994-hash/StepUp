@@ -16,10 +16,12 @@ import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.trackDistanceKm
 import com.stepup.android.core.Analytics
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -44,7 +46,8 @@ class CourseRepository(
     private val serverEconomy: Boolean = false,
 ) {
 
-    val courses: Flow<List<RunCourse>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
+    // 길 풀기(decode) · 비교(encode)는 코스마다 점 전체를 다룬다 — 모으는 쪽(화면) 스레드가 아니라 Default 에서
+    val courses: Flow<List<RunCourse>> = dao.observeAll().map { list -> list.map { it.toDomain() } }.flowOn(Dispatchers.Default)
 
     private val _remote = MutableStateFlow<List<CourseRow>>(emptyList())
     private val _boardSync = MutableStateFlow<BoardSyncState>(BoardSyncState.Idle)
@@ -58,12 +61,20 @@ class CourseRepository(
     val board: Flow<List<RunCourse>> = combine(courses, _remote) { local, remote ->
         val onServer = remote.mapTo(HashSet()) { it.track }
         remote.map { it.toDomain() } + local.filter { it.shared && it.encode() !in onServer }
-    }
+    }.flowOn(Dispatchers.Default)
 
     /** 게시판을 서버에서 새로 받는다. */
     suspend fun refreshBoard(): BoardSyncState = refreshLock.withLock {
+        val before = _boardSync.value
         if (_remote.value.isEmpty()) _boardSync.value = BoardSyncState.Loading
-        val state = when (val result = api.board()) {
+        // 받는 중에 부른 화면이 닫혀 취소되면 "불러오는 중"으로 남기지 않는다(같은 상태를 보는 다른 화면이 멈춰 보이지 않게)
+        val result = try {
+            api.board()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            if (_boardSync.value == BoardSyncState.Loading) _boardSync.value = before
+            throw cancelled
+        }
+        val state = when (result) {
             is ServerResult.Ok -> {
                 _remote.value = result.value
                 BoardSyncState.Ready

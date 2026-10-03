@@ -432,7 +432,9 @@ internal fun CrewNotifySheet(crewId: String, crewName: String, waiting: Int, onD
     val chat = ServiceLocator.crewChat
     val scope = rememberCoroutineScope()
     val body = stringResource(R.string.run_cr_notify_message, crewName, waiting)
-    var state by remember { mutableStateOf(CrewSend.Idle) }
+    // 보냈음은 화면을 돌려도 남긴다(다시 보내지 않게). 보내는 중에 화면이 다시 만들어졌으면 결과를 모르니 실패로 두고 다시 보내게 한다
+    var state by rememberSaveable { mutableStateOf(CrewSend.Idle) }
+    LaunchedEffect(Unit) { if (state == CrewSend.Sending) state = CrewSend.Failed }
     var pending by remember { mutableStateOf<ChatMessage?>(null) }
     val text = pending?.body ?: body
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("crew-notify-sheet"), dismissible = state != CrewSend.Sending) {
@@ -517,17 +519,22 @@ internal fun CrewShareScreen(
     val scope = rememberCoroutineScope()
     var includeRoute by rememberSaveable { mutableStateOf(false) }
     var preview by remember { mutableStateOf<Bitmap?>(null) }
-    var state by remember { mutableStateOf(CrewSend.Idle) }
+    var state by rememberSaveable { mutableStateOf(CrewSend.Idle) }
     // 보낸 것(요청 키 · 그림)은 다시 보낼 때 그대로 — 경로를 바꾸면 새 메시지로
     var pending by remember { mutableStateOf<Pair<ChatMessage, ChatPhoto?>?>(null) }
     val text = stringResource(R.string.run_cr_share_message, km, time, pace)
+    var restored by remember { mutableStateOf(true) }
     LaunchedEffect(includeRoute) {
-        preview = null
-        if (includeRoute) preview = card(true)
-        if (state != CrewSend.Sent) {
+        // 보내는 중에 화면이 다시 만들어졌으면 결과를 모른다 — 실패로 두고 다시 보내게 한다
+        if (restored && state == CrewSend.Sending) state = CrewSend.Failed
+        // 보낼 것은 그림을 다시 그리기 전에 비운다 — 그리는 사이에 누른 공유하기(pending)를 나중에 지우지 않게
+        if (!restored && state != CrewSend.Sent) {
             pending = null
             if (state == CrewSend.Failed) state = CrewSend.Idle
         }
+        restored = false
+        preview = null
+        if (includeRoute) preview = card(true)
     }
     CrewShareContent(
         crewName = crewName, km = km, time = time, pace = pace, message = text, includeRoute = includeRoute, hasRoute = hasRoute,

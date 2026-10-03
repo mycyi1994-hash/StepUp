@@ -375,6 +375,15 @@ fun RunScreen(
     // 러닝 전체 리메이크(2026-10-02) — 전체 지도(K07) · 목표 수정(E02) · 위치 신호(L04) · 코스 이탈(K05) · 자유 러닝 전환(K08)
     var showFullMap by rememberSaveable { mutableStateOf(false) }
     var goalEdit by rememberSaveable { mutableStateOf<Double?>(null) }
+    // 러닝이 끝나면 러닝 자세히 · 목표 바꾸기 창도 접는다 — 결과 위에 0으로 돌아간 값으로 남지 않게(달리던 → 끝남일 때만)
+    var wasActive by remember { mutableStateOf(session.isActive) }
+    LaunchedEffect(session.isActive) {
+        if (wasActive && !session.isActive) {
+            showDetails = false
+            goalEdit = null
+        }
+        wasActive = session.isActive
+    }
     var gpsLostSheet by rememberSaveable { mutableStateOf(false) }
     var gpsLostSeen by rememberSaveable { mutableStateOf(false) }
     var courseOffSheet by rememberSaveable { mutableStateOf(false) }
@@ -420,8 +429,11 @@ fun RunScreen(
         }
     }
     // 코스에서 벗어났는가(K05) — 지금 자리가 코스 선에서 60m 넘게 15초 넘게 떨어지면 한 번 알린다(기록은 그대로 이어진다)
-    val offCourse = courseRun && running && session.gpsFix && session.here != null &&
-        com.stepup.android.domain.distanceToPathMeters(session.here!!, coursePoints) > OFF_COURSE_METERS
+    // 코스 선까지 거리는 자리가 바뀔 때만 잰다(갱신마다 코스 전체를 돌지 않게)
+    val offCourseMeters = remember(session.here, coursePoints) {
+        session.here?.let { com.stepup.android.domain.distanceToPathMeters(it, coursePoints) }
+    }
+    val offCourse = courseRun && running && session.gpsFix && offCourseMeters != null && offCourseMeters > OFF_COURSE_METERS
     var offSince by remember { mutableLongStateOf(0L) }
     var offShown by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(offCourse) {
@@ -465,9 +477,12 @@ fun RunScreen(
 
     // 지도 틀 안 — 실제 지도(달린 길 · 지금 자리 · 고른 코스 · 같이 뛰는 사람). 위치 없이 기록하면 안내만
     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
-    val others = if (together && !party.networkProblem) {
-        party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } }
-    } else emptyList()
+    // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
+    val showOthers = together && !party.networkProblem
+    val others = remember(party.members, showOthers) {
+        if (showOthers) party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } } else emptyList()
+    }
+    val hereOnly = remember(session.here) { listOfNotNull(session.here) }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
     val liveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
         val here = session.here
@@ -478,7 +493,7 @@ fun RunScreen(
                 breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true,
             )
             here != null -> LiveRouteMap(
-                points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others,
+                points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others,
                 follow = true, course = coursePoints, routeColor = tone.cyan, live = true,
             )
             coursePoints.isNotEmpty() -> LiveRouteMap(points = emptyList(), course = coursePoints, modifier = Modifier.fillMaxSize())
@@ -647,7 +662,7 @@ fun RunScreen(
                 map = {
                     val here = session.here
                     LiveRouteMap(
-                        points = geoTrack.ifEmpty { listOfNotNull(here) }, modifier = Modifier.fillMaxSize(),
+                        points = geoTrack.ifEmpty { hereOnly }, modifier = Modifier.fillMaxSize(),
                         interactive = true, others = others, breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true,
                         controlLabels = com.stepup.android.ui.components.MapControlLabels(
                             zoomIn = stringResource(R.string.rec_zoom_in), zoomOut = stringResource(R.string.rec_zoom_out),
@@ -664,7 +679,8 @@ fun RunScreen(
                     stats = listOf(distanceStat, paceStat), primaryLabel = stringResource(R.string.run_save_again), primaryIcon = null,
                     finishLabel = "", pillCentered = false,
                 ),
-                onBack = {}, onDetails = { showDetails = true },
+                // 위 화살표도 시스템 뒤로 가기와 같이 — 기록은 서비스에 그대로 있어 다시 들어오면 이 화면이다
+                onBack = onBack, onDetails = { showDetails = true },
                 onPrimary = { WalkSessionService.stop(context) }, onFinish = {}, onExpandMap = null, map = liveMap,
                 showFinish = false,
                 // 창을 닫은 뒤에도 저장되지 않았다는 것을 화면에 남긴다 — 기록은 서비스에 그대로 있고 같은 러닝으로 다시 저장한다
@@ -694,7 +710,8 @@ fun RunScreen(
                         }
                     },
                     onFinish = { if (session.isActive) askEnd() else onBack() },
-                    onExpandMap = if (timeOnly && geoTrack.isEmpty()) null else ({ showFullMap = true }),
+                    // 크게 보기는 달리는 중에만(K07) — 시작 전에 눌러 두면 다음 러닝이 지도부터 열리지 않게
+                    onExpandMap = if (!session.isActive || (timeOnly && geoTrack.isEmpty())) null else ({ showFullMap = true }),
                     map = liveMap,
                     notices = {
                         val voidNow = session.isActive && session.liveVerdict == RunVerdict.VOID
@@ -2016,13 +2033,14 @@ private fun RunShareScreen(session: WalkSessionState, points: Double?, upload: S
     }
     val preview = remember(card) { card?.asImageBitmap() }
     val save = rememberCardSave(card, "StepUp-run-${session.lastStartedAt}")
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     RunSharePreviewContent(
         title = stringResource(R.string.run_share_title),
         subtitle = stringResource(R.string.run_share_sub),
         preview = preview,
         includeRoute = includeRoute,
         onRouteChange = { includeRoute = it },
-        onShare = { card?.let { RunShareCard.share(context, it, shareText, null) } },
+        onShare = { card?.let { shot -> shareScope.launch { RunShareCard.share(context, shot, shareText, null) } } },
         onCancel = onClose,
         shareLabel = stringResource(R.string.run_share),
         onSaveImage = save,

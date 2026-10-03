@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -260,7 +261,8 @@ private fun RouteCard(session: WalkSessionEntity, route: List<GeoPoint>?, onOpen
                     .testTag("run-route"),
                 onExpand = onOpenMap, expandLabel = label,
             ) {
-                LiveRouteMap(route, Modifier.fillMaxSize(), seed = session.id.toInt(), routeColor = t.cyan)
+                val shown = remember(route) { thin(route, ZOOM_ROUTE_POINTS) }
+                LiveRouteMap(shown, Modifier.fillMaxSize(), seed = session.id.toInt(), routeColor = t.cyan)
             }
         }
     }

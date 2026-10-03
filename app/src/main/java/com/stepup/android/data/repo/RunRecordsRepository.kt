@@ -10,10 +10,12 @@ import com.stepup.android.domain.RunMark
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.TimeRange
 import com.stepup.android.domain.toGeoPoints
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.withContext
 
 /** 기록 하나를 지운 결과 */
 enum class RecordDeletion {
@@ -54,8 +56,11 @@ class RunRecordsRepository(
 
     fun firstRecordAt(): Flow<Long?> = owner.flatMapLatest { dao.observeFirstRecordAt(it) }
 
-    /** 러닝 하나의 저장된 경로. 없거나 깨졌으면 빈 목록 */
-    suspend fun route(id: Long): List<GeoPoint> = RunTrack.decode(dao.trackOf(owner.first(), id).orEmpty()).toGeoPoints()
+    /** 러닝 하나의 저장된 경로. 없거나 깨졌으면 빈 목록 — 긴 러닝은 점이 수천 개라 글자 풀기는 화면 스레드 밖에서 */
+    suspend fun route(id: Long): List<GeoPoint> {
+        val raw = dao.trackOf(owner.first(), id).orEmpty()
+        return withContext(Dispatchers.Default) { RunTrack.decode(raw).toGeoPoints() }
+    }
 
     /** 그 시각에 시작한 러닝의 기록 번호 — 없으면 null */
     suspend fun idForStart(startedAt: Long): Long? = dao.idForStart(owner.first(), startedAt)
