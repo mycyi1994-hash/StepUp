@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 둘러보기 · 가입 · 만들기 · 운영 파란 톤(2026-10 v19 전달본) — 새로 더한 문구만 -->
+<resources>
+    <string name="crew_blue_sort_near_here">See crews near you first.</string>
+    <string name="crew_blue_sort_near_region">See crews closest to the area you picked first.</string>
+    <string name="crew_blue_sort_recent">See crews that started recruiting most recently first.</string>
+    <string name="crew_blue_sort_active">See crews whose members run the most first.</string>
+    <string name="crew_blue_range_from_region">From the area you picked</string>
+    <string name="crew_blue_resume_sub">You can continue from what you saved.</string>
+    <string name="crew_blue_draft_named">%1$s draft</string>
+    <string name="crew_blue_activity">Crew activity</string>
+    <string name="crew_blue_loading">Loading</string>
+    <string name="crew_blue_count">%1$d / %2$d</string>
+    <string name="crew_blue_pending_status">Pending</string>
+    <string name="crew_blue_pending_status_body">Waiting for the leader to review.</string>
+    <string name="crew_blue_pending_phrases">Running style you picked</string>
+    <string name="crew_blue_result_eyebrow">Application result</string>
+    <string name="crew_blue_clear">Clear</string>
+    <string name="crew_blue_keep_writing">Keep writing</string>
+</resources>

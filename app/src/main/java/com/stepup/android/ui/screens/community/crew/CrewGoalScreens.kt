@@ -46,15 +46,16 @@ fun CrewGoalScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onPartici
         val crew = card ?: return@CrewPage
         val progress = CrewRules.progress(crew)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
-            CrewIdentityStrip(crew)
-            Spacer(Modifier.height(34.dp))
+            Spacer(Modifier.height(10.dp))
+            CrewIdentityStrip(crew, boxed = false)
+            Spacer(Modifier.height(28.dp))
             if (progress == null) {
-                Text(stringResource(R.string.crew_goal_none_title), color = ink.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+                // 목표가 없으면 나누지 않는다 — 이번 주 달린 거리만
+                Text(stringResource(R.string.crew_goal_none_title), style = crewTitleStyle(ink.text, 28.sp))
                 Spacer(Modifier.height(12.dp))
                 Text(
                     stringResource(R.string.crew_goal_none_body, CrewRules.km(crew.weekKm)),
-                    color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.testTag("crew-goal-none"),
+                    color = ink.text, fontSize = 16.sp, lineHeight = 25.sp, modifier = Modifier.testTag("crew-goal-none"),
                 )
                 if (crew.role == CrewRole.OWNER) {
                     Spacer(Modifier.height(30.dp))
@@ -62,14 +63,17 @@ fun CrewGoalScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onPartici
                 }
             } else {
                 CrewGoalBody(progress, crew.memberCount, crew.weekRunners)
-                Spacer(Modifier.height(40.dp))
-                CrewRow(
+                Spacer(Modifier.height(14.dp))
+                CrewMenuRow(
                     stringResource(R.string.crew_goal_participants), onParticipants, Modifier.testTag("crew-goal-participants"),
                     value = stringResource(R.string.crew_members_only, crew.weekRunners),
                 )
             }
-            Spacer(Modifier.height(56.dp))
-            Text(stringResource(R.string.crew_goal_gathered), color = ink.secondary, fontSize = 13.sp, lineHeight = 20.sp)
+            Spacer(Modifier.height(40.dp))
+            Text(
+                stringResource(R.string.crew_goal_gathered), color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, lineHeight = 21.sp,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.height(28.dp))
         }
     }
@@ -78,30 +82,45 @@ fun CrewGoalScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onPartici
 @Composable
 private fun CrewGoalBody(progress: CrewGoalProgress, members: Int, runners: Int) {
     val ink = crewInk()
-    Text(stringResource(R.string.crew_goal_run_together, progress.goalKm), color = ink.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("crew-goal-heading"))
-    Spacer(Modifier.height(12.dp))
-    Text(stringResource(R.string.crew_goal_week_span), color = ink.secondary, fontSize = 13.5.sp)
-    Spacer(Modifier.height(34.dp))
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        Text(CrewRules.km(progress.doneKm), color = ink.text, fontSize = 60.sp, lineHeight = 62.sp, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("crew-goal-done"))
+    Text(
+        stringResource(R.string.crew_goal_run_together, progress.goalKm), style = crewTitleStyle(ink.text, 32.sp),
+        modifier = Modifier.testTag("crew-goal-heading"),
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(stringResource(R.string.crew_goal_week_span), color = ink.secondary, fontSize = 16.sp)
+    Spacer(Modifier.height(22.dp))
+    // 합계 · 목표는 서버 값 — 막대는 실제 비율(100% 넘으면 끝까지), 숫자는 그대로
+    Column(Modifier.fillMaxWidth().crewPanel(ink, 18.dp, selected = false).padding(horizontal = 20.dp, vertical = 20.dp)) {
+        Text(stringResource(R.string.crew_goal_title), color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                CrewRules.km(progress.doneKm), style = crewTitleStyle(ink.text, 54.sp).copy(lineHeight = 60.sp),
+                maxLines = 1, modifier = Modifier.testTag("crew-goal-done"),
+            )
+            Text(
+                stringResource(R.string.crew_goal_of, progress.goalKm), color = ink.link, fontSize = 26.sp, fontWeight = FontWeight.Bold,
+                maxLines = 1, modifier = Modifier.padding(start = 10.dp, bottom = 6.dp),
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CrewBar(progress.fraction, Modifier.weight(1f).height(12.dp))
+            Text(
+                stringResource(R.string.crew_percent, progress.percent), color = ink.info, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.End, modifier = Modifier.padding(start = 12.dp).testTag("crew-goal-percent"),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
         Text(
-            stringResource(R.string.crew_goal_of, progress.goalKm), color = ink.secondary, fontSize = 24.sp,
-            modifier = Modifier.padding(start = 14.dp, bottom = 8.dp).weight(1f),
-        )
-        Text(
-            stringResource(R.string.crew_percent, progress.percent), color = ink.info, fontSize = 40.sp, fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.End, modifier = Modifier.padding(bottom = 2.dp).testTag("crew-goal-percent"),
+            if (progress.reached) stringResource(R.string.crew_goal_reached)
+            else stringResource(R.string.crew_goal_remaining, CrewRules.km(progress.remainingKm)),
+            color = ink.text, fontSize = 16.sp, lineHeight = 24.sp, modifier = Modifier.testTag("crew-goal-remaining"),
         )
     }
-    Spacer(Modifier.height(24.dp))
-    CrewBar(progress.fraction, Modifier.fillMaxWidth().height(10.dp))
-    Spacer(Modifier.height(30.dp))
-    Text(
-        if (progress.reached) stringResource(R.string.crew_goal_reached)
-        else stringResource(R.string.crew_goal_remaining, CrewRules.km(progress.remainingKm)),
-        color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.testTag("crew-goal-remaining"),
-    )
-    Text(stringResource(R.string.crew_goal_joined, members, runners), color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp)
+    Spacer(Modifier.height(22.dp))
+    // 참여 멤버(이번 주 기여가 있는 사람)와 전체 멤버는 다른 목록이다
+    Text(stringResource(R.string.crew_goal_joined, members, runners), color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
 }
 
 /**
@@ -128,24 +147,24 @@ fun CrewGoalEditScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onApp
         CrewTopBar(stringResource(R.string.crew_goal_edit_title), onBack)
         val crew = card ?: return@CrewPage
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(10.dp))
             CrewIdentityStrip(crew)
-            Spacer(Modifier.height(36.dp))
-            Text(stringResource(R.string.crew_goal_edit_heading), color = ink.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(12.dp))
-            Text(stringResource(R.string.crew_goal_edit_sub), color = ink.secondary, fontSize = 13.5.sp)
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(30.dp))
+            CrewHeading(stringResource(R.string.crew_goal_edit_heading), sub = stringResource(R.string.crew_goal_edit_sub))
+            Spacer(Modifier.height(20.dp))
             CrewChoiceRow {
                 CrewRules.EDIT_GOALS.forEach { km ->
                     CrewChoice(stringResource(R.string.crew_km_value, km.toString()), value == km, { text = km.toString() }, Modifier.weight(1f).testTag("crew-goal-chip-$km"))
                 }
             }
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(24.dp))
             CrewFieldLabel(stringResource(R.string.crew_goal_field))
             Spacer(Modifier.height(12.dp))
             CrewTextField(
                 text, { next -> text = next.filter(Char::isDigit).take(5) }, Modifier.testTag("crew-goal-input"),
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Number),
+                suffix = stringResource(R.string.crew_km_unit),
+                error = text.isNotEmpty() && value == null,
             )
             Spacer(Modifier.height(10.dp))
             CrewHelp(
@@ -153,8 +172,8 @@ fun CrewGoalEditScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onApp
                 else stringResource(R.string.crew_goal_field_help, CrewRules.km(crew.weekKm)),
                 error = text.isNotEmpty() && value == null,
             )
-            Spacer(Modifier.height(46.dp))
-            Text(stringResource(R.string.crew_goal_edit_note), color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp)
+            Spacer(Modifier.height(36.dp))
+            Text(stringResource(R.string.crew_goal_edit_note), color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, lineHeight = 25.sp)
             Spacer(Modifier.height(24.dp))
         }
         CrewBottomBar {
@@ -173,6 +192,7 @@ fun CrewGoalEditScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onApp
             busy = op.op == CrewOp.GOAL && op.running,
             error = if (op.op == CrewOp.GOAL && op.problem != null) crewProblemText(op.problem!!) else null,
             tag = "crew-goal-confirm",
+            eyebrow = crew?.name,
             onConfirm = { viewModel.setGoal(value) },
             onDismiss = { if (!op.running) { confirm = false; if (op.op == CrewOp.GOAL) viewModel.consumeOp() } },
         )
@@ -184,6 +204,6 @@ fun CrewGoalEditScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onApp
 internal fun CrewCenteredNote(text: String) {
     val ink = crewInk()
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text(text, color = ink.secondary, fontSize = 13.sp, textAlign = TextAlign.Center)
+        Text(text, color = ink.secondary, fontSize = 15.sp, textAlign = TextAlign.Center)
     }
 }

@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,6 +87,7 @@ import com.stepup.android.domain.CrewMood
 import com.stepup.android.domain.CrewProblem
 import com.stepup.android.domain.CrewRules
 import com.stepup.android.domain.CrewSchedule
+import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.experience.feedbackClickable
 import java.time.LocalTime
 import kotlin.math.min
@@ -115,23 +115,20 @@ fun CrewRecruitEntryScreen(
     CrewPage(Modifier.testTag("crew-recruit-entry")) {
         CrewTopBar(stringResource(R.string.crew_entry_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(24.dp))
-            Text(stringResource(R.string.crew_entry_heading), color = ink.text, fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(14.dp))
-            Text(stringResource(R.string.crew_entry_sub), color = ink.secondary, fontSize = 14.5.sp, lineHeight = 22.sp)
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(18.dp))
+            CrewHeading(stringResource(R.string.crew_entry_heading), sub = stringResource(R.string.crew_entry_sub))
+            Spacer(Modifier.height(26.dp))
             owned.forEach { crew ->
                 CrewOwnedRow(crew) { onRecruitSettings(crew.id) }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
             }
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(16.dp))
             CrewButton(
                 stringResource(R.string.crew_entry_new),
                 { if (draft != null) sheet = SHEET_DRAFT_RESUME else onCreate(false) },
                 Modifier.testTag("crew-entry-new"),
-                CrewButtonKind.SECONDARY,
             )
-            Spacer(Modifier.height(56.dp))
+            Spacer(Modifier.height(30.dp))
             owned.forEach { crew ->
                 CrewRow(stringResource(R.string.crew_entry_manage), { onManage(crew.id) }, Modifier.testTag("crew-entry-manage-${crew.id}"), value = crew.name)
             }
@@ -146,20 +143,20 @@ fun CrewRecruitEntryScreen(
 private fun CrewOwnedRow(crew: CrewCard, onClick: () -> Unit) {
     val ink = crewInk()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(ink.card).feedbackClickable(role = Role.Button, onClick = onClick)
+        Modifier.fillMaxWidth().crewPanel(ink, 18.dp).feedbackClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 16.dp).testTag("crew-entry-crew-${crew.id}"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CrewImage(crew, 72.dp, 16.dp)
         Column(Modifier.weight(1f).padding(start = 18.dp)) {
-            Text(crew.name, color = ink.text, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(crew.name, style = crewTitleStyle(ink.text, 23.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
             val members = if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity)
             else stringResource(R.string.crew_members_only, crew.memberCount)
             val status = stringResource(if (crew.recruiting) R.string.crew_recruit_open else R.string.crew_recruit_paused)
-            Text("$members · $status", color = ink.info, fontSize = 14.sp, maxLines = 1)
+            Text("$members · $status", color = ink.text.copy(alpha = 0.86f), fontSize = 16.sp, maxLines = 1)
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.secondary, modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.link, modifier = Modifier.size(24.dp))
     }
 }
 
@@ -349,8 +346,8 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = CrewGutter)) {
             Spacer(Modifier.height(if (label != null) 18.dp else 8.dp))
             if (label != null) {
-                Text(label, color = ink.info, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-draft-label"))
-                Spacer(Modifier.height(if (page == CrewDraftPage.IDENTITY) 26.dp else 30.dp))
+                Text(label, color = ink.link, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-draft-label"))
+                Spacer(Modifier.height(20.dp))
             }
             if (restored && mode != CrewDraftMode.CREATE) {
                 CrewRestoredLine(onRevert = viewModel::revert)
@@ -358,7 +355,7 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
             }
             if (!ready && startFailed) {
                 CrewEmptyState(
-                    icon = { Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+                    icon = { CrewStateIcon(Icons.Filled.Refresh) },
                     title = stringResource(R.string.crew_detail_error_title),
                     body = stringResource(R.string.crew_list_error_body),
                     modifier = Modifier.padding(top = 60.dp).testTag("crew-draft-error"),
@@ -384,7 +381,8 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
             }
             Spacer(Modifier.height(28.dp))
         }
-        CrewBottomBar(caption) {
+        // 37 저장 실패 — 입력 · 이미지는 그대로, 같은 요청 키로 다시
+        CrewBottomBar(caption, captionError = caption != null) {
             CrewButton(button, onPrimary, Modifier.testTag("crew-draft-primary"), busy = saving, enabled = enabled)
         }
     }
@@ -422,6 +420,7 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
             body = stringResource(if (mode == CrewDraftMode.CREATE) R.string.crew_leave_draft_body else R.string.crew_leave_edit_body),
             confirm = stringResource(R.string.crew_leave_draft_keep),
             tag = "crew-leave-draft",
+            cancel = stringResource(R.string.crew_blue_keep_writing),
             onConfirm = { viewModel.keepDraft { sheet = ""; actions.onBack() } },
             onDismiss = { sheet = "" },
         )
@@ -469,17 +468,17 @@ private fun draftBg(draft: CrewDraft, card: CrewCard?): Int =
 private fun CrewRestoredLine(onRevert: () -> Unit) {
     val ink = crewInk()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(ink.card).padding(start = 16.dp, end = 6.dp).heightIn(min = 48.dp)
+        Modifier.fillMaxWidth().crewPanel(ink, 14.dp).padding(start = 16.dp, end = 6.dp).heightIn(min = 52.dp)
             .testTag("crew-draft-restored"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.crew_draft_restored), color = ink.secondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.crew_draft_restored), color = ink.text, fontSize = 15.sp, modifier = Modifier.weight(1f))
         Box(
             Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button, onClick = onRevert)
                 .padding(horizontal = 10.dp).testTag("crew-draft-revert"),
             contentAlignment = Alignment.Center,
         ) {
-            Text(stringResource(R.string.crew_draft_revert), color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.crew_draft_revert), color = ink.info, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -509,40 +508,43 @@ internal fun CrewDraftImage(
 @Composable
 private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewProblem?, viewModel: CrewDraftViewModel, onImage: () -> Unit) {
     val ink = crewInk()
+    // 이름을 한 번이라도 고쳤으면 빈 이름을 칸 아래에 바로 알린다(36) — 새 초안을 열자마자 오류로 보이지 않게
+    var touched by rememberSaveable { mutableStateOf(false) }
+    val nameError = problem == CrewProblem.NAME || (touched && !draft.nameOk)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(88.dp).clip(RoundedCornerShape(20.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {
-            CrewDraftImage(draft, 88.dp, 20.dp, card = card)
+        Box(Modifier.size(96.dp).clip(RoundedCornerShape(20.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {
+            CrewDraftImage(draft, 96.dp, 20.dp, card = card)
         }
         Row(
             Modifier.padding(start = 12.dp).heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
                 .feedbackClickable(role = Role.Button, onClick = onImage).padding(horizontal = 12.dp).testTag("crew-draft-image-choose"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = ink.info, modifier = Modifier.size(24.dp))
+            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = ink.link, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.crew_image_choose), color = ink.info, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.crew_image_choose), color = ink.link, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         }
     }
     if (problem == CrewProblem.IMAGE) {
         Spacer(Modifier.height(10.dp))
         CrewHelp(stringResource(R.string.crew_image_upload_failed), error = true, modifier = Modifier.testTag("crew-draft-image-error"))
     }
-    Spacer(Modifier.height(36.dp))
+    Spacer(Modifier.height(28.dp))
     CrewFieldLabel(stringResource(R.string.crew_field_name))
     Spacer(Modifier.height(12.dp))
     CrewTextField(
-        draft.name, { next -> viewModel.update { it.copy(name = next.replace('\n', ' ')) } }, Modifier.testTag("crew-draft-name"),
-        placeholder = stringResource(R.string.crew_field_name_hint), maxChars = CrewRules.NAME_MAX,
+        draft.name, { next -> touched = true; viewModel.update { it.copy(name = next.replace('\n', ' ')) } }, Modifier.testTag("crew-draft-name"),
+        placeholder = stringResource(R.string.crew_field_name_hint), maxChars = CrewRules.NAME_MAX, error = nameError,
     )
     Spacer(Modifier.height(10.dp))
-    if (problem == CrewProblem.NAME) CrewHelp(stringResource(R.string.crew_field_name_error), error = true, modifier = Modifier.testTag("crew-draft-name-error"))
+    if (nameError) CrewHelp(stringResource(R.string.crew_field_name_error), error = true, modifier = Modifier.testTag("crew-draft-name-error"))
     else CrewHelp(stringResource(R.string.crew_field_name_help))
     Spacer(Modifier.height(24.dp))
     CrewFieldLabel(stringResource(R.string.crew_field_tagline))
     Spacer(Modifier.height(12.dp))
     CrewTextField(
         draft.tagline, { next -> viewModel.update { it.copy(tagline = next.replace('\n', ' ')) } }, Modifier.testTag("crew-draft-tagline"),
-        placeholder = stringResource(R.string.crew_field_tagline_hint), maxChars = CrewRules.TAGLINE_MAX,
+        placeholder = stringResource(R.string.crew_field_tagline_hint), maxChars = CrewRules.TAGLINE_MAX, error = problem == CrewProblem.TAGLINE,
     )
     Spacer(Modifier.height(10.dp))
     if (problem == CrewProblem.TAGLINE) CrewHelp(stringResource(R.string.crew_field_tagline_error), error = true)
@@ -552,7 +554,8 @@ private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewPro
     Spacer(Modifier.height(12.dp))
     CrewTextField(
         draft.leaderNote, { next -> viewModel.update { it.copy(leaderNote = next) } }, Modifier.testTag("crew-draft-note"),
-        placeholder = stringResource(R.string.crew_field_note_hint), singleLine = false, minHeight = 104.dp, maxChars = CrewRules.NOTE_MAX,
+        placeholder = stringResource(R.string.crew_field_note_hint), singleLine = false, minHeight = 120.dp, maxChars = CrewRules.NOTE_MAX,
+        error = problem == CrewProblem.LEADER_NOTE,
     )
     if (problem == CrewProblem.LEADER_NOTE) {
         Spacer(Modifier.height(10.dp))
@@ -630,6 +633,9 @@ private fun CrewRecruitForm(
     onCustomGoal: () -> Unit,
 ) {
     val ink = crewInk()
+    val below = capacityProblem == CrewCapacityProblem.BELOW_MEMBERS || problem == CrewProblem.CAPACITY_BELOW_MEMBERS
+    val invalid = draft.capacity.isNotEmpty() && capacityProblem == CrewCapacityProblem.INVALID || problem == CrewProblem.CAPACITY
+    val capacityError = below || invalid
     CrewFieldLabel(stringResource(R.string.crew_field_capacity))
     Spacer(Modifier.height(12.dp))
     CrewTextField(
@@ -637,10 +643,9 @@ private fun CrewRecruitForm(
         placeholder = stringResource(R.string.crew_field_capacity_hint),
         keyboard = KeyboardOptions(keyboardType = KeyboardType.Number),
         suffix = stringResource(R.string.crew_people_suffix),
+        error = capacityError,
     )
     Spacer(Modifier.height(10.dp))
-    val below = capacityProblem == CrewCapacityProblem.BELOW_MEMBERS || problem == CrewProblem.CAPACITY_BELOW_MEMBERS
-    val invalid = draft.capacity.isNotEmpty() && capacityProblem == CrewCapacityProblem.INVALID || problem == CrewProblem.CAPACITY
     when {
         mode != CrewDraftMode.CREATE -> CrewHelp(
             stringResource(R.string.crew_field_capacity_members, members), error = below || invalid,
@@ -649,17 +654,18 @@ private fun CrewRecruitForm(
         invalid -> CrewHelp(stringResource(R.string.crew_field_capacity_error), error = true, modifier = Modifier.testTag("crew-draft-capacity-help"))
         else -> CrewHelp(stringResource(R.string.crew_field_capacity_help), modifier = Modifier.testTag("crew-draft-capacity-help"))
     }
-    Spacer(Modifier.height(40.dp))
+    Spacer(Modifier.height(30.dp))
+    // 가입 방식은 여기서 바꾸지 않는다 — 만들 때는 승인형, 기존 바로 가입 크루는 그대로(운영 설정 › 가입 방식)
     Text(
         stringResource(if (openJoin) R.string.crew_recruit_open_join_title else R.string.crew_recruit_approval_title),
-        color = ink.text, fontSize = 20.sp, lineHeight = 27.sp, fontWeight = FontWeight.SemiBold,
+        style = crewTitleStyle(ink.text, 21.sp),
     )
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(6.dp))
     Text(
         stringResource(if (openJoin) R.string.crew_recruit_open_join_body else R.string.crew_recruit_approval_body),
-        color = ink.secondary, fontSize = 14.sp, lineHeight = 22.sp,
+        color = ink.text.copy(alpha = 0.86f), fontSize = 16.sp, lineHeight = 23.sp,
     )
-    Spacer(Modifier.height(40.dp))
+    Spacer(Modifier.height(30.dp))
     CrewFieldLabel(stringResource(R.string.crew_field_goal))
     Spacer(Modifier.height(10.dp))
     val goalKm = draft.goal.km
@@ -685,12 +691,12 @@ private fun CrewRecruitForm(
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            stringResource(R.string.crew_goal_later), color = ink.info, fontSize = 14.sp,
-            fontWeight = if (goalKm == null) FontWeight.SemiBold else FontWeight.Normal,
+            stringResource(R.string.crew_goal_later), color = ink.info, fontSize = 16.sp,
+            fontWeight = if (goalKm == null) FontWeight.Bold else FontWeight.Medium,
         )
     }
     if (problem == CrewProblem.GOAL) CrewHelp(stringResource(R.string.crew_goal_invalid), error = true)
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(22.dp))
     CrewFieldLabel(stringResource(R.string.crew_field_recruiting))
     Spacer(Modifier.height(10.dp))
     CrewChoiceRow {
@@ -733,50 +739,57 @@ private fun CrewPreview(draft: CrewDraft, words: CrewWords) {
     val ink = crewInk()
     val me = stringResource(R.string.crew_leader_me)
     val card = draft.previewCard(me)
-    Text(stringResource(R.string.crew_preview_heading), color = ink.text, fontSize = 30.sp, lineHeight = 38.sp, fontWeight = FontWeight.SemiBold)
-    Spacer(Modifier.height(14.dp))
-    Text(stringResource(R.string.crew_preview_sub), color = ink.secondary, fontSize = 14.sp, lineHeight = 22.sp)
-    Spacer(Modifier.height(36.dp))
+    CrewHeading(stringResource(R.string.crew_preview_heading), sub = stringResource(R.string.crew_preview_sub))
+    Spacer(Modifier.height(24.dp))
+    // 미리보기의 "새 크루 · 1 / 정원"은 입력 예시다 — 만들기를 눌러 서버가 crewId 를 돌려준 뒤에만 실제 크루가 된다
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(ink.card).padding(horizontal = 18.dp, vertical = 18.dp)
+        Modifier.fillMaxWidth().crewPanel(ink, 20.dp, selected = false).padding(horizontal = 20.dp, vertical = 20.dp)
             .testTag("crew-preview-card"),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CrewDraftImage(draft, 68.dp, 14.dp)
-            Column(Modifier.weight(1f).padding(start = 14.dp)) {
-                Text(card.name, color = ink.text, fontSize = 23.sp, lineHeight = 29.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            CrewDraftImage(draft, 76.dp, 14.dp)
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(card.name, style = crewTitleStyle(ink.text, 24.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(6.dp))
-                Text(crewLevelMembers(card), color = ink.info, fontSize = 13.5.sp, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CrewLevelChip(card.level)
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        if (card.capacity != null) stringResource(R.string.crew_members_of, card.memberCount, card.capacity)
+                        else stringResource(R.string.crew_members_only, card.memberCount),
+                        color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                    )
+                }
             }
         }
         if (card.tagline.isNotBlank()) {
             Spacer(Modifier.height(18.dp))
-            Text(card.tagline, color = ink.text, fontSize = 19.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(card.tagline, style = crewTitleStyle(ink.text, 20.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         val info = words.infoLine(card)
         if (info.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            Text(info, color = ink.secondary, fontSize = 13.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(10.dp))
+            Text(info, color = ink.text.copy(alpha = 0.86f), fontSize = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CrewAvatar(me, 32.dp, leaderFace(card), ink.text)
+            CrewAvatar(me, 36.dp, leaderFace(card), ink.text)
             Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.crew_leader_named, me), color = ink.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.crew_leader_named, me), color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
         card.goalKm?.let { km ->
             Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.crew_preview_goal, km), color = ink.info, fontSize = 13.5.sp)
+            Text(stringResource(R.string.crew_preview_goal, km), color = ink.link, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         }
     }
-    Spacer(Modifier.height(40.dp))
+    Spacer(Modifier.height(28.dp))
     val lines = listOfNotNull(
         stringResource(R.string.crew_preview_leader, me),
         card.moods.joinToString(" · ") { words.moodLong(it) }.ifEmpty { null },
         stringResource(if (card.recruiting) R.string.crew_preview_approval else R.string.crew_preview_paused),
     )
     lines.forEach { line ->
-        Text(line, color = ink.secondary, fontSize = 14.5.sp, lineHeight = 25.sp)
+        Text(line, color = ink.text.copy(alpha = 0.86f), fontSize = 16.sp, lineHeight = 27.sp)
     }
 }
 
@@ -786,7 +799,7 @@ private fun CrewPreview(draft: CrewDraft, words: CrewWords) {
 private fun CrewImageMethodSheet(hasPhoto: Boolean, onPhoto: () -> Unit, onNamed: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
     val ink = crewInk()
     CrewSheet(stringResource(R.string.crew_image_sheet_title), onDismiss, Modifier.testTag("crew-image-sheet")) {
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
         CrewRow(stringResource(R.string.crew_image_from_photos), onPhoto, Modifier.testTag("crew-image-photos"))
         CrewRow(stringResource(R.string.crew_image_named_start), onNamed, Modifier.testTag("crew-image-named"), divider = hasPhoto)
         if (hasPhoto) CrewRow(stringResource(R.string.crew_image_remove), onRemove, Modifier.testTag("crew-image-remove"), titleColor = ink.warn, divider = false)
@@ -801,17 +814,17 @@ private fun CrewPhotoProblemSheet(denied: Boolean, onPrimary: () -> Unit, onName
         stringResource(if (denied) R.string.crew_photo_denied_title else R.string.crew_photo_broken_title), onDismiss,
         Modifier.testTag(if (denied) "crew-photo-denied" else "crew-photo-broken"),
     ) {
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
             stringResource(if (denied) R.string.crew_photo_denied_body else R.string.crew_photo_broken_body),
-            color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp,
+            color = ink.text, fontSize = 16.sp, lineHeight = 25.sp,
         )
-        Spacer(Modifier.height(64.dp))
+        Spacer(Modifier.height(26.dp))
         CrewButton(
             stringResource(if (denied) R.string.crew_photo_settings else R.string.crew_photo_other),
             onPrimary, Modifier.testTag("crew-photo-primary"),
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         CrewButton(stringResource(R.string.crew_photo_named), onNamed, Modifier.testTag("crew-photo-named"), CrewButtonKind.SECONDARY)
     }
 }
@@ -846,11 +859,12 @@ private fun CrewCropPage(step: CrewPhotoStep, onBack: () -> Unit, onUse: (left: 
     CrewPage(Modifier.testTag("crew-crop")) {
         CrewTopBar(stringResource(R.string.crew_crop_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(24.dp))
-            Text(stringResource(R.string.crew_crop_heading), color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(56.dp))
+            Spacer(Modifier.height(18.dp))
+            Text(stringResource(R.string.crew_crop_heading), color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(32.dp))
             Box(
-                Modifier.fillMaxWidth().padding(horizontal = 10.dp).aspectRatio(1f).clip(RoundedCornerShape(42.dp)).background(ink.card)
+                Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(16.dp)).background(ink.field)
+                    .border(2.dp, ink.info, RoundedCornerShape(16.dp))
                     .onSizeChanged { frame = it.width.toFloat() }
                     .pointerInput(image, frame) {
                         if (image == null) return@pointerInput
@@ -871,7 +885,7 @@ private fun CrewCropPage(step: CrewPhotoStep, onBack: () -> Unit, onUse: (left: 
                 contentAlignment = Alignment.Center,
             ) {
                 if (image == null) {
-                    CircularProgressIndicator(Modifier.size(28.dp), color = ink.info, strokeWidth = 2.5.dp)
+                    RunSpinner(Modifier.size(32.dp))
                 } else {
                     Canvas(Modifier.fillMaxSize()) {
                         val scale = base() * zoom
@@ -889,7 +903,7 @@ private fun CrewCropPage(step: CrewPhotoStep, onBack: () -> Unit, onUse: (left: 
             }
             Spacer(Modifier.height(28.dp))
             Text(
-                stringResource(R.string.crew_crop_help), color = ink.secondary, fontSize = 13.5.sp, textAlign = TextAlign.Center,
+                stringResource(R.string.crew_crop_help), color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -922,11 +936,9 @@ private fun CrewNamedImagesPage(name: String, initial: Int, onBack: () -> Unit, 
     CrewPage(Modifier.testTag("crew-named-images")) {
         CrewTopBar(stringResource(R.string.crew_named_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(24.dp))
-            Text(stringResource(R.string.crew_named_heading), color = ink.text, fontSize = 26.sp, lineHeight = 33.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(12.dp))
-            Text(stringResource(R.string.crew_named_sub), color = ink.secondary, fontSize = 14.sp, lineHeight = 22.sp)
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(18.dp))
+            CrewHeading(stringResource(R.string.crew_named_heading), sub = stringResource(R.string.crew_named_sub))
+            Spacer(Modifier.height(26.dp))
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val cell = (maxWidth - 12.dp) / 2
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -944,10 +956,10 @@ private fun CrewNamedImagesPage(name: String, initial: Int, onBack: () -> Unit, 
                                     CrewImageFace(name, bg, null, cell, 18.dp)
                                     if (picked == bg) {
                                         Box(
-                                            Modifier.align(Alignment.TopEnd).padding(10.dp).size(26.dp).clip(CircleShape).background(ink.choiceOn),
+                                            Modifier.align(Alignment.TopEnd).padding(10.dp).size(30.dp).clip(CircleShape).background(ink.choiceOn),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Icon(Icons.Filled.Check, contentDescription = null, tint = ink.choiceOnText, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Filled.Check, contentDescription = null, tint = ink.choiceOnText, modifier = Modifier.size(20.dp))
                                         }
                                     }
                                 }
@@ -973,15 +985,15 @@ private fun CrewScheduleSheet(initial: CrewSchedule, words: CrewWords, onApply: 
     var minutes by rememberSaveable { mutableStateOf(initial.minutes) }
     val schedule = CrewSchedule(days, minutes)
     CrewSheet(stringResource(R.string.crew_schedule_title), onDismiss, Modifier.testTag("crew-schedule-sheet")) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         CrewFieldLabel(stringResource(R.string.crew_schedule_days))
         Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (0..6).forEach { day ->
                 CrewDayChip(words.day(day), schedule.has(day), { days = schedule.toggle(day).days }, Modifier.weight(1f).testTag("crew-schedule-day-$day"))
             }
         }
-        Spacer(Modifier.height(30.dp))
+        Spacer(Modifier.height(22.dp))
         CrewFieldLabel(stringResource(R.string.crew_schedule_time))
         Spacer(Modifier.height(12.dp))
         CrewPickerField(
@@ -998,13 +1010,13 @@ private fun CrewScheduleSheet(initial: CrewSchedule, words: CrewWords, onApply: 
             Modifier.testTag("crew-schedule-time"),
             enabled = days != 0,
         )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(16.dp))
         CrewChoice(
             stringResource(R.string.crew_schedule_no_time), days == 0,
             { days = 0; minutes = null },
             Modifier.fillMaxWidth().testTag("crew-schedule-none"),
         )
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(22.dp))
         CrewButton(
             stringResource(R.string.crew_schedule_apply),
             { onApply(if (days == 0) CrewSchedule.NONE else CrewSchedule(days, minutes)) },
@@ -1023,12 +1035,15 @@ private fun CrewDayChip(text: String, selected: Boolean, onClick: () -> Unit, mo
             .padding(vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
+        val shape = RoundedCornerShape(12.dp)
         Box(
-            Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(14.dp))
-                .background(if (selected) ink.choiceOn else ink.choice).padding(horizontal = 2.dp),
+            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape)
+                .background(if (selected) ink.choiceOn else ink.choice, shape)
+                .border(1.dp, if (selected) androidx.compose.ui.graphics.Color(0xFF4D8BFF) else ink.fieldEdge, shape)
+                .padding(horizontal = 2.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text, color = if (selected) ink.choiceOnText else ink.choiceText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(text, color = if (selected) ink.choiceOnText else ink.choiceText, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
     }
 }
@@ -1041,18 +1056,19 @@ private fun CrewCustomGoalSheet(initial: Int?, onApply: (Int) -> Unit, onDismiss
     var text by rememberSaveable { mutableStateOf(initial?.toString().orEmpty()) }
     val value = CrewRules.goal(text)
     CrewSheet(stringResource(R.string.crew_custom_goal_title), onDismiss, Modifier.testTag("crew-custom-goal")) {
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(16.dp))
         CrewFieldLabel(stringResource(R.string.crew_custom_goal_field))
         Spacer(Modifier.height(12.dp))
         CrewTextField(
             text, { next -> text = next.filter(Char::isDigit).take(5) }, Modifier.testTag("crew-custom-goal-input"),
             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number),
             suffix = stringResource(R.string.crew_km_unit),
+            error = text.isNotEmpty() && value == null,
         )
         Spacer(Modifier.height(10.dp))
         val invalid = text.isNotEmpty() && value == null
         CrewHelp(stringResource(if (invalid) R.string.crew_goal_invalid else R.string.crew_custom_goal_help), error = invalid)
-        Spacer(Modifier.height(56.dp))
+        Spacer(Modifier.height(24.dp))
         CrewButton(stringResource(R.string.crew_custom_goal_apply), { value?.let(onApply) }, Modifier.testTag("crew-custom-goal-apply"), enabled = value != null)
         Spacer(Modifier.height(8.dp))
     }
@@ -1072,6 +1088,7 @@ fun CrewCreatedScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onMana
         onButton = onManage,
         onBack = onBack,
         modifier = Modifier.testTag("crew-created"),
+        topTitle = stringResource(R.string.crew_create_title_new),
         // 만든 사람은 처음부터 채팅방에 들어갈 수 있다 — 혼자 있는 새 크루(크루 채팅 30)
         secondary = stringResource(R.string.chat_open),
         onSecondary = onOpenChat,

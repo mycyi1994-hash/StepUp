@@ -4,6 +4,19 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import com.stepup.android.ui.components.RunSpinner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,10 +35,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -102,101 +113,154 @@ fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, o
     CrewPage(Modifier.imePadding().testTag("crew-region-search")) {
         CrewTopBar(stringResource(R.string.crew_region_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
+            val shape = RoundedCornerShape(14.dp)
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(RoundedCornerShape(18.dp)).background(ink.card).padding(horizontal = 18.dp),
+                Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(ink.field, shape)
+                    .border(1.5.dp, Color(0xFF2E6BE6), shape).padding(start = 18.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.Search, contentDescription = null, tint = ink.secondary, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(16.dp))
+                Icon(Icons.Filled.Search, contentDescription = null, tint = ink.text, modifier = Modifier.size(26.dp))
+                Spacer(Modifier.width(14.dp))
                 BasicTextField(
                     value = query,
                     onValueChange = { viewModel.setQuery(it.replace('\n', ' ').take(40)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { viewModel.search() }),
-                    textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 16.sp),
+                    textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
                     cursorBrush = SolidColor(ink.info),
                     modifier = Modifier.weight(1f).focusRequester(focus).testTag("crew-region-input"),
                     decorationBox = { inner ->
                         Box {
-                            if (query.isEmpty()) Text(stringResource(R.string.crew_region_hint), color = ink.secondary, fontSize = 16.sp)
+                            if (query.isEmpty()) Text(stringResource(R.string.crew_region_hint), color = ink.secondary, fontSize = 18.sp)
                             inner()
                         }
                     },
                 )
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(enabled = !locating, role = Role.Button) {
-                        if (StepPermissions.hasLocation(context)) useHere() else sheet = true
-                    }
-                    .testTag("crew-region-here"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.MyLocation, contentDescription = null, tint = ink.info, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(16.dp))
-                Text(stringResource(R.string.crew_region_here_find), color = ink.info, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                if (locating) CircularProgressIndicator(Modifier.size(18.dp), color = ink.info, strokeWidth = 2.dp)
-            }
-            if (hereFailed) {
-                CrewHelp(stringResource(R.string.crew_region_here_failed), error = true, modifier = Modifier.padding(bottom = 6.dp).testTag("crew-region-here-failed"))
-            }
-            Spacer(Modifier.height(16.dp))
-            when (val current = state) {
-                CrewRegionState.Idle -> Unit
-                CrewRegionState.Searching -> Text(stringResource(R.string.crew_region_searching), color = ink.secondary, fontSize = 13.sp)
-                is CrewRegionState.Found -> {
-                    Text(stringResource(R.string.crew_region_results), color = ink.secondary, fontSize = 13.sp)
-                    Spacer(Modifier.height(4.dp))
-                    LazyColumn(Modifier.fillMaxWidth().weight(1f).testTag("crew-region-results")) {
-                        items(current.areas, key = { "${it.name}|${it.address}|${it.lat}|${it.lng}" }) { area ->
-                            CrewRow(
-                                area.name, { onPicked(area) }, Modifier.testTag("crew-region-result"),
-                                value = area.address.takeIf { it.isNotBlank() }, titleSize = 18.sp,
-                            )
+                if (query.isNotEmpty()) {
+                    val clear = stringResource(R.string.crew_blue_clear)
+                    Box(
+                        Modifier.size(44.dp).clip(CircleShape).feedbackClickable(role = Role.Button) {
+                            viewModel.setQuery("")
+                            runCatching { focus.requestFocus() }
+                        }.semantics { contentDescription = clear }.testTag("crew-region-clear"),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(Modifier.size(22.dp).clip(CircleShape).background(ink.secondary), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Close, contentDescription = null, tint = ink.field, modifier = Modifier.size(15.dp))
                         }
                     }
                 }
-                CrewRegionState.Empty -> CrewEmptyState(
-                    icon = { Icon(Icons.Filled.Search, null, tint = ink.info, modifier = Modifier.size(40.dp)) },
-                    title = stringResource(R.string.crew_region_empty_title),
-                    body = stringResource(R.string.crew_region_empty_body),
-                    modifier = Modifier.padding(top = 56.dp).testTag("crew-region-empty"),
-                ) {
-                    CrewButton(stringResource(R.string.crew_region_retry), {
-                        viewModel.setQuery("")
-                        runCatching { focus.requestFocus() }
-                    }, Modifier.testTag("crew-region-retry"))
+            }
+            Spacer(Modifier.height(12.dp))
+            // 현재 위치 — 권한이 있으면 바로, 없으면 앱 설명(71) 뒤 OS 권한 창
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(ink.secondaryButton, shape)
+                    .border(1.5.dp, Color(0xFF2E6BE6), shape)
+                    .feedbackClickable(enabled = !locating, role = Role.Button) {
+                        if (StepPermissions.hasLocation(context)) useHere() else sheet = true
+                    }
+                    .padding(horizontal = 16.dp)
+                    .testTag("crew-region-here"),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                if (locating) RunSpinner(Modifier.size(22.dp)) else Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = ink.info, modifier = Modifier.size(26.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.crew_region_here_find), color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+            if (hereFailed) {
+                Spacer(Modifier.height(8.dp))
+                CrewErrorLine(stringResource(R.string.crew_region_here_failed), Modifier.padding(bottom = 6.dp).testTag("crew-region-here-failed"))
+            }
+            Spacer(Modifier.height(22.dp))
+            when (val current = state) {
+                CrewRegionState.Idle -> Unit
+                CrewRegionState.Searching -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    RunSpinner(Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.crew_region_searching), color = ink.secondary, fontSize = 16.sp)
                 }
-                CrewRegionState.Offline -> CrewEmptyState(
-                    icon = { Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(40.dp)) },
-                    title = stringResource(R.string.crew_region_offline_title),
-                    body = stringResource(R.string.crew_region_offline_body),
-                    modifier = Modifier.padding(top = 56.dp).testTag("crew-region-offline"),
-                ) {
-                    CrewButton(stringResource(R.string.crew_region_retry), { viewModel.search() }, Modifier.testTag("crew-region-retry"))
+                is CrewRegionState.Found -> {
+                    Text(stringResource(R.string.crew_region_results), style = crewTitleStyle(ink.text, 26.sp))
+                    Spacer(Modifier.height(6.dp))
+                    LazyColumn(Modifier.fillMaxWidth().weight(1f).testTag("crew-region-results")) {
+                        items(current.areas, key = { "${it.name}|${it.address}|${it.lat}|${it.lng}" }) { area ->
+                            CrewRegionRow(area) { onPicked(area) }
+                        }
+                    }
+                }
+                CrewRegionState.Empty -> Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
+                    CrewEmptyState(
+                        icon = { CrewStateIcon(Icons.Filled.Search, circled = true) },
+                        title = stringResource(R.string.crew_region_empty_title),
+                        body = stringResource(R.string.crew_region_empty_body),
+                        modifier = Modifier.padding(top = 40.dp).testTag("crew-region-empty"),
+                    ) {
+                        CrewButton(stringResource(R.string.crew_region_retry), {
+                            viewModel.setQuery("")
+                            runCatching { focus.requestFocus() }
+                        }, Modifier.testTag("crew-region-retry"))
+                    }
+                }
+                CrewRegionState.Offline -> Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
+                    CrewEmptyState(
+                        icon = { CrewStateIcon(Icons.Filled.Refresh) },
+                        title = stringResource(R.string.crew_region_offline_title),
+                        body = stringResource(R.string.crew_region_offline_body),
+                        modifier = Modifier.padding(top = 40.dp).testTag("crew-region-offline"),
+                    ) {
+                        CrewButton(stringResource(R.string.crew_region_retry), { viewModel.search() }, Modifier.testTag("crew-region-retry"))
+                    }
                 }
             }
         }
     }
 
     if (sheet) {
-        // 71 위치를 쓰기 전에 묻는다 — 직접 검색으로도 고를 수 있다
-        CrewSheet(stringResource(R.string.crew_location_title), { sheet = false }, Modifier.testTag("crew-location-sheet")) {
-            Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.crew_location_body), color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
-            Spacer(Modifier.height(64.dp))
+        // 71 위치를 쓰기 전에 묻는 앱 설명(OS 권한 창과 별개) — 직접 검색으로도 고를 수 있다
+        CrewSheet(null, { sheet = false }, Modifier.testTag("crew-location-sheet")) {
+            Box(Modifier.fillMaxWidth()) {
+                CrewSheetClose({ sheet = false }, Modifier.align(Alignment.TopEnd))
+                Column(Modifier.fillMaxWidth().padding(top = 44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(stringResource(R.string.crew_location_title), style = crewTitleStyle(ink.text, 25.sp), textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(R.string.crew_location_body), color = ink.text, fontSize = 16.sp, lineHeight = 25.sp, textAlign = TextAlign.Center)
+                }
+            }
+            Spacer(Modifier.height(26.dp))
             CrewButton(stringResource(R.string.crew_location_use), {
                 sheet = false
                 permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
             }, Modifier.testTag("crew-location-use"))
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             CrewButton(stringResource(R.string.crew_location_search), {
                 sheet = false
                 runCatching { focus.requestFocus() }
             }, Modifier.testTag("crew-location-search"), CrewButtonKind.SECONDARY)
         }
+    }
+}
+
+/** 검색 결과 한 줄 — 위치 그림 · 동네 이름 · 주소 · 파란 꺾쇠 */
+@Composable
+private fun CrewRegionRow(area: CrewArea, onClick: () -> Unit) {
+    val ink = crewInk()
+    Column(Modifier.fillMaxWidth().testTag("crew-region-result")) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = ink.text, modifier = Modifier.size(28.dp))
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(area.name, color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                if (area.address.isNotBlank()) {
+                    Text(area.address, color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, maxLines = 2)
+                }
+            }
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.link, modifier = Modifier.size(26.dp))
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
     }
 }
