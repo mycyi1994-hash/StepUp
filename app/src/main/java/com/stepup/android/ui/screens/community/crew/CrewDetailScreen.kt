@@ -19,7 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -139,8 +145,8 @@ fun CrewDetailScreen(actions: CrewDetailActions, viewModel: CrewScreenViewModel)
                 CrewMenuSheet(
                     stringResource(R.string.crew_menu_visitor_title),
                     listOf(
-                        CrewMenuItem(stringResource(R.string.crew_menu_members_short), "crew-menu-members") { sheet = ""; actions.onOpenMembers() },
-                        CrewMenuItem(stringResource(R.string.crew_menu_report), "crew-menu-report") { sheet = SHEET_REPORT },
+                        CrewMenuItem(stringResource(R.string.crew_menu_members_short), "crew-menu-members", icon = Icons.Outlined.Groups) { sheet = ""; actions.onOpenMembers() },
+                        CrewMenuItem(stringResource(R.string.crew_menu_report), "crew-menu-report", icon = Icons.Outlined.ReportProblem) { sheet = SHEET_REPORT },
                     ),
                     onDismiss = { sheet = "" },
                     tag = "crew-visitor-menu",
@@ -189,125 +195,133 @@ private fun CrewDetailContent(
     CrewPage(Modifier.testTag("crew-detail")) {
         CrewTopBar(card.name, actions.onBack, onMore = onMore)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
             card.unseenResult?.let { result ->
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).background(ink.card)
+                    Modifier.fillMaxWidth().heightIn(min = 52.dp).crewPanel(ink, 14.dp, selected = result == CrewApplicationStatus.APPROVED)
                         .feedbackClickable(role = Role.Button) { card.myApplicationId?.let(actions.onOpenResult) }
                         .padding(horizontal = 16.dp, vertical = 10.dp).testTag("crew-detail-result"),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         stringResource(if (result == CrewApplicationStatus.APPROVED) R.string.crew_result_banner_approved else R.string.crew_result_banner_declined, card.name),
-                        color = ink.text, fontSize = 13.5.sp, modifier = Modifier.weight(1f),
+                        color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
                     )
-                    Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(22.dp))
                 }
                 Spacer(Modifier.height(16.dp))
             }
             // 대표 이미지 · 이름 · 레벨 · 인원 · 지역과 분위기
             Row(verticalAlignment = Alignment.Top) {
                 Box(
-                    Modifier.size(84.dp).clip(RoundedCornerShape(17.dp))
+                    Modifier.size(96.dp).clip(RoundedCornerShape(18.dp))
                         .feedbackClickable(role = Role.Image, onClick = actions.onOpenImage).testTag("crew-detail-image"),
-                ) { CrewImage(card, 84.dp, 17.dp) }
-                Column(Modifier.weight(1f).padding(start = 17.dp)) {
+                ) { CrewImage(card, 96.dp, 18.dp) }
+                Column(Modifier.weight(1f).padding(start = 18.dp)) {
                     Text(
-                        card.name, color = ink.text, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold,
+                        card.name, style = crewTitleStyle(ink.text, 29.sp),
                         maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-detail-name"),
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onLevel)
+                            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onLevel)
                                 .testTag("crew-detail-level"),
                             contentAlignment = Alignment.CenterStart,
                         ) { CrewLevelChip(card.level) }
-                        Spacer(Modifier.width(36.dp))
+                        Spacer(Modifier.width(28.dp))
                         Box(
-                            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp))
+                            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
                                 .feedbackClickable(role = Role.Button, onClick = actions.onOpenMembers).testTag("crew-detail-members"),
                             contentAlignment = Alignment.CenterStart,
-                        ) { CrewMembersLabel(card.memberCount, card.capacity, ink.secondary) }
+                        ) { CrewMembersLabel(card.memberCount, card.capacity, ink.text) }
                     }
                     val sub = words.subLine(card)
-                    if (sub.isNotEmpty()) Text(sub, color = ink.secondary, fontSize = 11.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    if (sub.isNotEmpty()) Text(sub, color = ink.secondary, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (card.tagline.isNotBlank()) {
-                Spacer(Modifier.height(26.dp))
-                Text(card.tagline, color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("crew-detail-tagline"))
+                Spacer(Modifier.height(24.dp))
+                Text(card.tagline, style = crewTitleStyle(ink.text, 25.sp), modifier = Modifier.testTag("crew-detail-tagline"))
             }
             if (card.leaderNote.isNotBlank()) {
-                Spacer(Modifier.height(12.dp))
-                Text(card.leaderNote, color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp)
+                Spacer(Modifier.height(10.dp))
+                Text(card.leaderNote, color = ink.secondary, fontSize = 16.sp, lineHeight = 25.sp)
             }
             // 정기 모임 · 한 번에
-            Spacer(Modifier.height(24.dp))
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ink.card).padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                CrewInfoLine(stringResource(R.string.crew_detail_meet), words.scheduleShort(card.schedule), 15)
-                words.onceLine(card)?.let { CrewInfoLine(stringResource(R.string.crew_detail_once), it, 13) }
+            Spacer(Modifier.height(22.dp))
+            Column(Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(horizontal = 18.dp, vertical = 6.dp)) {
+                CrewInfoLine(stringResource(R.string.crew_detail_meet), words.scheduleShort(card.schedule))
+                words.onceLine(card)?.let {
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
+                    CrewInfoLine(stringResource(R.string.crew_detail_once), it)
+                }
             }
             // 크루장
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 50.dp).clip(RoundedCornerShape(12.dp))
+                Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(RoundedCornerShape(12.dp))
                     .feedbackClickable(role = Role.Button) { actions.onOpenLeader(card.leaderId) }.testTag("crew-detail-leader"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CrewAvatar(card.leaderName, 34.dp, leaderFace(card), ink.text)
+                CrewAvatar(card.leaderName, 40.dp, leaderFace(card), ink.text)
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    stringResource(R.string.crew_leader_named, card.leaderName), color = ink.text, fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    stringResource(R.string.crew_leader_named, card.leaderName), color = ink.text, fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                Text(stringResource(R.string.crew_detail_leader_more), color = ink.info, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.crew_detail_leader_more), color = ink.link, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Filled.ChevronRight, null, tint = ink.link, modifier = Modifier.size(22.dp))
             }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
             CrewRow(
                 stringResource(R.string.crew_detail_members), actions.onOpenMembers, Modifier.testTag("crew-detail-members-row"),
                 value = stringResource(R.string.crew_members_only, card.memberCount),
             )
             CrewRules.progress(card)?.let { progress ->
-                Spacer(Modifier.height(19.dp))
+                Spacer(Modifier.height(18.dp))
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ink.card)
+                    Modifier.fillMaxWidth().crewPanel(ink, 16.dp)
                         .feedbackClickable(role = Role.Button, onClick = actions.onOpenGoal)
                         .padding(horizontal = 18.dp, vertical = 18.dp).testTag("crew-detail-goal"),
                 ) {
-                    Text(stringResource(R.string.crew_goal_together, progress.goalKm), color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(18.dp))
+                    Text(stringResource(R.string.crew_goal_together, progress.goalKm), color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
                     CrewWeeklyLine(progress)
                 }
             }
-            // 멤버에게는 기존 크루 게시판 · 같이 달리기(크루 러닝으로 달린 거리가 이번 주 목표에 들어간다)
+            // 94 멤버 · 크루장에게만 크루 활동 — 기존 크루 채팅 · 같이 달리기 대기실 · 크루 게시판(새 탭이 아니라 아래 영역)
             if (card.role == CrewRole.MEMBER || card.role == CrewRole.OWNER) {
-                Spacer(Modifier.height(8.dp))
-                CrewRow(stringResource(R.string.chat_row_crew_chat), actions.onOpenChat, Modifier.testTag("crew-detail-chat"))
-                CrewRow(stringResource(R.string.crew_detail_lobby), actions.onOpenLobby, Modifier.testTag("crew-detail-lobby"), value = stringResource(R.string.crew_detail_lobby_hint))
-                CrewRow(stringResource(R.string.crew_detail_board), actions.onOpenBoard, Modifier.testTag("crew-detail-board"))
+                Spacer(Modifier.height(26.dp))
+                Text(stringResource(R.string.crew_blue_activity), style = crewTitleStyle(ink.text, 22.sp), modifier = Modifier.semantics { heading() })
+                Spacer(Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CrewMenuRow(stringResource(R.string.chat_row_crew_chat), actions.onOpenChat, Modifier.testTag("crew-detail-chat"), icon = Icons.Outlined.ChatBubbleOutline)
+                    CrewMenuRow(
+                        stringResource(R.string.crew_detail_lobby), actions.onOpenLobby, Modifier.testTag("crew-detail-lobby"),
+                        icon = Icons.AutoMirrored.Filled.DirectionsRun, value = stringResource(R.string.crew_detail_lobby_hint),
+                    )
+                    CrewMenuRow(stringResource(R.string.crew_detail_board), actions.onOpenBoard, Modifier.testTag("crew-detail-board"), icon = Icons.AutoMirrored.Outlined.Article)
+                }
             }
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
         }
         CrewDetailFooter(card, actions, busy, joinFailed, onJoinNow)
     }
 }
 
 @Composable
-private fun CrewInfoLine(label: String, value: String, size: Int) {
+private fun CrewInfoLine(label: String, value: String) {
     val ink = crewInk()
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = ink.secondary, fontSize = 12.sp, modifier = Modifier.padding(end = 12.dp))
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = ink.secondary, fontSize = 15.sp, modifier = Modifier.padding(end = 12.dp))
         Text(
-            value, color = ink.text, fontSize = size.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End,
+            value, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End,
             modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** 아래 한 줄 설명과 큰 버튼 하나 — 역할 · 모집 상태로 고른다 */
+/** 아래 한 줄 설명과 큰 버튼 하나 — 역할 · 모집 상태로 고른다(OWNER → MEMBER → PENDING → VISITOR) */
 @Composable
 private fun CrewDetailFooter(card: CrewCard, actions: CrewDetailActions, busy: Boolean, joinFailed: Boolean, onJoinNow: () -> Unit) {
     val footer = CrewRules.footer(card)
@@ -323,7 +337,9 @@ private fun CrewDetailFooter(card: CrewCard, actions: CrewDetailActions, busy: B
             CrewFooter.OWNER_PAUSED -> R.string.crew_footer_owner_paused
         },
     )
-    CrewBottomBar(caption = if (joinFailed && footer == CrewFooter.JOIN_NOW) stringResource(R.string.crew_join_now_failed) else caption) {
+    // 93 바로 가입 실패 — 역할 · 인원은 그대로, 같은 버튼으로 다시
+    val failedNow = joinFailed && footer == CrewFooter.JOIN_NOW
+    CrewBottomBar(caption = if (failedNow) stringResource(R.string.crew_join_now_failed) else caption, captionError = failedNow) {
         when (footer) {
             CrewFooter.APPLY -> CrewButton(stringResource(R.string.crew_apply_button), actions.onJoin, Modifier.testTag("crew-detail-primary"))
             CrewFooter.JOIN_NOW -> CrewButton(stringResource(R.string.crew_join_now_button), onJoinNow, Modifier.testTag("crew-detail-primary"), busy = busy)
@@ -341,62 +357,90 @@ private fun CrewDetailFooter(card: CrewCard, actions: CrewDetailActions, busy: B
     }
 }
 
-/** 67 상세 로딩 — 신청 동작은 정보를 확인한 뒤 켠다 */
+/** 67 상세 로딩 — 그림 · 인원 · 목표를 채우지 않고, 신청 동작은 정보를 확인한 뒤 켠다 */
 @Composable
 private fun CrewDetailLoading(onBack: () -> Unit) {
+    val ink = crewInk()
     CrewPage(Modifier.testTag("crew-detail-loading")) {
         CrewTopBar(stringResource(R.string.crew_title), onBack)
-        Column(Modifier.weight(1f).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
+            Spacer(Modifier.height(12.dp))
             Row {
-                CrewSkeletonBox(Modifier.size(84.dp), 17.dp)
-                Column(Modifier.padding(start = 17.dp, top = 16.dp)) {
-                    CrewSkeletonBox(Modifier.width(160.dp).height(24.dp), 8.dp)
-                    Spacer(Modifier.height(20.dp))
-                    CrewSkeletonBox(Modifier.width(206.dp).height(12.dp), 6.dp)
+                CrewSkeletonBox(Modifier.size(96.dp), 18.dp)
+                Column(Modifier.padding(start = 18.dp, top = 12.dp)) {
+                    CrewSkeletonBox(Modifier.width(150.dp).height(22.dp), 8.dp)
+                    Spacer(Modifier.height(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CrewSkeletonBox(Modifier.width(60.dp).height(20.dp), 6.dp)
+                        Spacer(Modifier.width(24.dp))
+                        PeopleIcon(ink.secondary.copy(alpha = 0.5f), Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        CrewSkeletonBox(Modifier.width(60.dp).height(12.dp), 6.dp)
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    CrewSkeletonBox(Modifier.width(180.dp).height(12.dp), 6.dp)
                 }
             }
-            Spacer(Modifier.height(46.dp))
-            CrewSkeletonBox(Modifier.fillMaxWidth(0.84f).height(24.dp), 8.dp)
+            Spacer(Modifier.height(32.dp))
+            CrewSkeletonBox(Modifier.fillMaxWidth(0.84f).height(22.dp), 8.dp)
+            Spacer(Modifier.height(12.dp))
+            CrewSkeletonBox(Modifier.fillMaxWidth(0.95f).height(22.dp), 8.dp)
             Spacer(Modifier.height(24.dp))
-            CrewSkeletonBox(Modifier.fillMaxWidth(0.95f).height(12.dp), 6.dp)
-            Spacer(Modifier.height(38.dp))
-            CrewSkeletonBox(Modifier.fillMaxWidth().height(100.dp), 16.dp)
-            Spacer(Modifier.height(20.dp))
-            CrewSkeletonBox(Modifier.fillMaxWidth().height(52.dp), 16.dp)
+            Column(Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(18.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                CrewSkeletonBox(Modifier.fillMaxWidth().height(18.dp), 6.dp)
+                CrewSkeletonBox(Modifier.fillMaxWidth().height(18.dp), 6.dp)
+            }
+            Spacer(Modifier.height(22.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CrewSkeletonBox(Modifier.size(40.dp), 20.dp)
+                Spacer(Modifier.width(12.dp))
+                CrewSkeletonBox(Modifier.width(110.dp).height(14.dp), 6.dp)
+            }
+            Spacer(Modifier.height(22.dp))
+            Column(Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(18.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                CrewSkeletonBox(Modifier.fillMaxWidth(0.6f).height(18.dp), 6.dp)
+                CrewSkeletonBox(Modifier.fillMaxWidth().height(12.dp), 6.dp)
+            }
+            Spacer(Modifier.height(24.dp))
         }
-        CrewBottomBar { CrewButton(stringResource(R.string.crew_checking), {}, kind = CrewButtonKind.DISABLED) }
+        CrewBottomBar(caption = stringResource(R.string.crew_checking)) {
+            CrewButton(stringResource(R.string.crew_blue_loading), {}, Modifier.testTag("crew-detail-loading-button"), busy = true)
+        }
     }
 }
 
-/** 처음 읽기 실패(캐시 없음) — 다시 읽기 */
+/** 처음 읽기 실패(캐시 없음 · 일시 통신 실패) — 접근 불가(66)와 다르게 다시 읽기 */
 @Composable
 private fun CrewDetailFailed(onBack: () -> Unit, onRetry: () -> Unit) {
-    val ink = crewInk()
     CrewPage(Modifier.testTag("crew-detail-error")) {
         CrewTopBar(stringResource(R.string.crew_title), onBack)
-        Spacer(Modifier.height(140.dp))
-        CrewEmptyState(
-            icon = { Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
-            title = stringResource(R.string.crew_detail_error_title),
-            body = stringResource(R.string.crew_list_error_body),
-        ) { CrewButton(stringResource(R.string.crew_list_reload), onRetry, Modifier.testTag("crew-detail-retry")) }
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            Spacer(Modifier.height(120.dp))
+            CrewEmptyState(
+                icon = { CrewStateIcon(Icons.Filled.Refresh) },
+                title = stringResource(R.string.crew_detail_error_title),
+                body = stringResource(R.string.crew_list_error_body),
+            ) { CrewButton(stringResource(R.string.crew_list_reload), onRetry, Modifier.testTag("crew-detail-retry")) }
+        }
     }
 }
 
-/** 66 크루 접근 불가 — 해산 · 비공개 · 권한 변경 */
+/** 66 크루 접근 불가 — 해산 · 비공개 · 권한 변경(원인을 모르면 해산으로 단정하지 않는 문구) */
 @Composable
 internal fun CrewMissingPage(onBack: () -> Unit, onList: () -> Unit) {
     val ink = crewInk()
     CrewPage(Modifier.testTag("crew-missing")) {
         CrewTopBar(stringResource(R.string.crew_title), onBack)
-        Column(Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(170.dp))
-            Icon(Icons.Outlined.Info, null, tint = ink.info, modifier = Modifier.size(44.dp))
-            Spacer(Modifier.height(30.dp))
-            Text(stringResource(R.string.crew_missing_title), color = ink.text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.crew_missing_body), color = ink.secondary, fontSize = 13.5.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = CrewGutter))
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(140.dp))
+            CrewStateIcon(Icons.Outlined.Groups, Modifier.size(96.dp))
+            Spacer(Modifier.height(26.dp))
+            Text(stringResource(R.string.crew_missing_title), style = crewTitleStyle(ink.text, 27.sp), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(14.dp))
+            Text(stringResource(R.string.crew_missing_body), color = ink.text, fontSize = 16.sp, lineHeight = 24.sp, textAlign = TextAlign.Center)
         }
         CrewBottomBar { CrewButton(stringResource(R.string.crew_to_list), onList, Modifier.testTag("crew-missing-list")) }
     }
