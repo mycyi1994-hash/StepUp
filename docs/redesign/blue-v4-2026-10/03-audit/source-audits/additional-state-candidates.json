@@ -1,0 +1,168 @@
+{
+  "date": "2026-10-03",
+  "status": "scope audit in progress; additions below are grounded candidates, not completed designs",
+  "routesAfterParserCorrection": 104,
+  "observations": [
+    {
+      "source": "docs/redesign/shoe-detail-v1/README.md",
+      "finding": "18 older detail states exist; visual content is superseded by cartoon-handoff, equip/error/state behavior preserved. Full stats and info must not be promoted as primary split pages again."
+    },
+    {
+      "source": "output/stepup-shoe-detail-cartoon-handoff/CLAUDE-HANDOFF.md",
+      "finding": "Latest detail uses four individual inline bars; retain style-specific bar treatment with latest shared blue palette. Later upgrade max20 supersedes earlier sample maxima for approved upgrade flow."
+    },
+    {
+      "source": "docs/redesign/profile-running-path/README.md",
+      "finding": "Profile must retain profile edit, records, challenges, wallet, settings, including loading/empty/error/long values. v16 style main alone omits existing entries."
+    },
+    {
+      "source": "docs/redesign/wallet-v1/README.md",
+      "finding": "WAL15 reconnect does not exist in current service. Keep historical design as conditional reference, do not invent a service state."
+    }
+  ],
+  "additionalStateCandidates": [
+    {
+      "prefix": "SH",
+      "source": "ui/screens/customize/CustomizeScreen.kt + shoes-ui-2026-09-28/README.md",
+      "states": [
+        "내 신발",
+        "신발 보관함",
+        "정렬",
+        "등급 필터",
+        "다른 신발 선택",
+        "효율 도움말",
+        "착화감 도움말",
+        "내구도 도움말",
+        "관리 메뉴",
+        "조회 중",
+        "조회 실패",
+        "빈 보유 목록",
+        "신발 그림 없음"
+      ],
+      "created": [
+        "SH01",
+        "SH02"
+      ]
+    },
+    {
+      "prefix": "SD",
+      "source": "shoe-detail-cartoon-handoff + shoe-detail-v1 state behaviors",
+      "states": [
+        "통합 신발 상세",
+        "현재 착용 상세",
+        "다른 소유 사본",
+        "소유 사본 선택",
+        "착용 변경 중",
+        "착용 완료",
+        "착용 실패",
+        "착용 결과 미확인",
+        "조회 중",
+        "조회 실패",
+        "소유하지 않은 신발",
+        "그림 없음",
+        "최초 착용",
+        "관리 메뉴",
+        "체인 정보"
+      ]
+    },
+    {
+      "prefix": "RP",
+      "source": "ui/screens/items/SneakerDetailScreen.kt + user repair modal decision",
+      "states": [
+        "수리 확인 모달",
+        "수리 중",
+        "수리 완료",
+        "수리 필요 없음",
+        "잔액 부족",
+        "수리 실패",
+        "결과 미확인"
+      ],
+      "note": "Prior three repair alternatives were passed over, not approved as three separate routes. Produce one consistent modal flow; obtain actual repair formula from model."
+    },
+    {
+      "prefix": "DNEW",
+      "source": "docs/redesign/shoe-draw-v3/README.md",
+      "states": [
+        "로그인 필요",
+        "상급 뽑기 일시 중단",
+        "일일 러닝 적립 한도",
+        "발행 한도"
+      ],
+      "note": "Other22 states must map to existing DRAW00–27 before generating duplicates."
+    },
+    {
+      "prefix": "PF",
+      "source": "ui/screens/profile/ProfileHome.kt + profile-running-path README",
+      "states": [
+        "기록 없는 러닝 패스",
+        "기록 읽는 중",
+        "기록 읽기 실패",
+        "긴 이름과 큰 기록 값"
+      ],
+      "note": "Do not inflate count with identical alternate viewport screenshots as new routes."
+    },
+    {
+      "prefix": "BODY",
+      "source": "ui/screens/setup/S2SetupScreens.kt:BodySettingsScreen/ModeSettingsScreen",
+      "states": [
+        "신체 정보 수정",
+        "목표 수정",
+        "입력 오류",
+        "정보 삭제 후",
+        "모드 설정"
+      ]
+    },
+    {
+      "prefix": "AN",
+      "source": "ui/screens/profile/AnalyticsScreen.kt",
+      "states": [
+        "주간 통계",
+        "날짜 선택",
+        "3개월 통계",
+        "통계 하단 기록",
+        "기록 없는 통계"
+      ]
+    },
+    {
+      "prefix": "HM",
+      "source": "ui/screens/profile/HistoryMapScreen.kt",
+      "states": [
+        "주간 기록 지도",
+        "월간 기록 지도",
+        "전체 기록 지도",
+        "경로 없는 지도"
+      ],
+      "note": "Reuse period control component; real map data."
+    },
+    {
+      "prefix": "AC",
+      "source": "ui/screens/profile/AchievementsScreen.kt",
+      "states": [
+        "전체 업적",
+        "등급 필터",
+        "미달성 상태"
+      ],
+      "note": "Current progress values; do not promise rewards."
+    },
+    {
+      "prefix": "CA",
+      "source": "ui/screens/rewards/ChainActivityScreen.kt",
+      "states": [
+        "체인 기록",
+        "안내 시트",
+        "조회 중",
+        "조회 실패",
+        "로그인 안 됨",
+        "기록 없음",
+        "확정/대기/취소/실패 행"
+      ],
+      "note": "Explorer is external native browser, not fabricate owned in-app destination."
+    }
+  ],
+  "remainingInspection": [
+    "events/news/invite",
+    "catalog/items/market with order forms",
+    "legacy community flash/map/ranking routes",
+    "route-to-screen mapping including existing Running v18"
+  ]
+}

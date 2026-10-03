@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ブルートーン v4(2026-10-03) — スタート・ログイン・初期設定(ONB21~25) -->
+<resources>
+    <string name="setup_first_title">初期設定</string>
+    <string name="setup_progress_desc">%2$dステップ中%1$dステップ目</string>
+    <string name="setup_loading">保存した情報を読み込んでいます</string>
+    <string name="setup_load_failed_title">保存した情報を読み込めませんでした</string>
+    <string name="setup_load_failed_body">もう一度試すか、このステップをスキップできます。</string>
+    <string name="setup_save_failed">保存できませんでした。もう一度押してください。</string>
+</resources>

@@ -32,16 +32,18 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.SettingsDangerButton
-import com.stepup.android.ui.components.SettingsGroupLabel
-import com.stepup.android.ui.components.SettingsNavRow
-import com.stepup.android.ui.components.SettingsPrimaryButton
-import com.stepup.android.ui.components.SettingsSecondaryButton
-import com.stepup.android.ui.components.SettingsSheet
-import com.stepup.android.ui.components.SettingsStatusRow
-import com.stepup.android.ui.components.SettingsToast
-import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.BlueGroup
+import com.stepup.android.ui.components.BlueGroupLabel
+import com.stepup.android.ui.components.BlueNavRow
+import com.stepup.android.ui.components.BluePage
+import com.stepup.android.ui.components.BlueSheet
+import com.stepup.android.ui.components.BlueSheetDivider
+import com.stepup.android.ui.components.BlueStatusRow
+import com.stepup.android.ui.components.BlueToast
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -58,7 +60,7 @@ data class PermissionSnapshot(
 enum class ClearStep { Closed, Confirm, Clearing, Failed }
 
 /**
- * 개인정보 · 앱 권한(설정 v1 06~10 · 27).
+ * 개인정보 · 앱 권한(설정 v1 06~10 · 27 → 파란 톤 v4 SET06~10 · 27 · 30).
  *
  * 권한 줄은 휴대폰의 실제 상태(신체 활동 · 위치 정확/대략/안 됨 · 알림)를 읽어 글자로 보인다 — 앱 안에서 바꿀 수 있는
  * 것처럼 보이지 않고, 바꾸는 길은 "휴대폰 설정 열기" 하나다. 돌아오면 다시 읽는다.
@@ -132,17 +134,21 @@ fun PrivacyContent(
     onCloseClear: () -> Unit = {},
 ) {
     Box(Modifier.fillMaxSize()) {
-        DetailPage(title = stringResource(R.string.set_privacy), onBack = onBack) {
+        BluePage(title = stringResource(R.string.set_privacy), onBack = onBack) {
             item {
-                SettingsNavRow(
-                    stringResource(R.string.set_stored_info), onClick = onOpenStored,
-                    description = stringResource(R.string.set_stored_info_desc), modifier = Modifier.testTag("privacy-stored"),
-                )
+                BlueGroupLabel(stringResource(R.string.set_stored_info))
+                BlueGroup {
+                    BlueNavRow(
+                        stringResource(R.string.set_stored_info_desc), onClick = onOpenStored,
+                        modifier = Modifier.testTag("privacy-stored"),
+                    )
+                }
             }
             item {
-                Column(Modifier.fillMaxWidth()) {
-                    SettingsGroupLabel(stringResource(R.string.set_group_permissions))
-                    SettingsStatusRow(
+                BlueGroupLabel(stringResource(R.string.set_group_permissions))
+                // 권한은 휴대폰의 실제 상태를 글자로만 — 앱 안의 스위치가 아니다
+                BlueGroup {
+                    BlueStatusRow(
                         stringResource(R.string.set_perm_activity), stringResource(R.string.set_perm_activity_desc),
                         stringResource(if (permissions.activity) R.string.set_perm_allowed else R.string.set_perm_denied),
                         Modifier.testTag("perm-activity"), strong = permissions.activity,
@@ -152,12 +158,13 @@ fun PrivacyContent(
                         permissions.approximateLocation -> R.string.set_perm_approximate
                         else -> R.string.set_perm_denied
                     }
-                    SettingsStatusRow(
+                    BlueStatusRow(
                         stringResource(R.string.set_perm_location), stringResource(R.string.set_perm_location_desc),
                         stringResource(location), Modifier.testTag("perm-location"),
-                        strong = permissions.preciseLocation || permissions.approximateLocation,
+                        // 대략적인 위치는 허용이지만 정확한 위치와 구분한다
+                        strong = permissions.preciseLocation,
                     )
-                    SettingsStatusRow(
+                    BlueStatusRow(
                         stringResource(R.string.set_perm_notifications), stringResource(R.string.set_perm_notifications_desc),
                         stringResource(if (permissions.notifications) R.string.set_perm_allowed else R.string.set_perm_denied),
                         Modifier.testTag("perm-notifications"), strong = permissions.notifications,
@@ -165,57 +172,60 @@ fun PrivacyContent(
                 }
             }
             item {
-                SettingsPrimaryButton(
+                RunButton(
                     stringResource(R.string.set_open_phone_settings), onOpenPhoneSettings,
-                    Modifier.fillMaxWidth().padding(top = 10.dp).testTag("privacy-open-settings"),
+                    Modifier.padding(top = 10.dp).testTag("privacy-open-settings"),
                 )
             }
             item {
-                SettingsNavRow(
-                    stringResource(R.string.set_clear_history), onClick = onAskClear,
-                    description = stringResource(R.string.set_clear_history_desc),
-                    modifier = Modifier.padding(top = 18.dp).testTag("privacy-clear"),
-                )
+                BlueGroup(Modifier.padding(top = 6.dp)) {
+                    BlueNavRow(
+                        stringResource(R.string.set_clear_history), onClick = onAskClear,
+                        description = stringResource(R.string.set_clear_history_desc),
+                        modifier = Modifier.testTag("privacy-clear"),
+                    )
+                }
             }
         }
-        SettingsToast(toast, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp))
+        BlueToast(toast, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp))
     }
 
     if (storedOpen) StoredInfoSheet(onCloseStored)
     if (clear != ClearStep.Closed) ClearHistorySheet(clear, onClear, onCloseClear)
 }
 
-/** 저장하는 정보(08) — 보관 범위의 짧은 안내. 새 정책을 정하지 않고, 기존 안내(보관 이유 · 광고 식별자)를 아래에 둔다 */
+/** 저장하는 정보(SET08) — 보관 범위의 짧은 안내. 새 정책을 정하지 않고, 기존 안내(보관 이유 · 광고 식별자)를 아래에 둔다 */
 @Composable
 private fun StoredInfoSheet(onDismiss: () -> Unit) {
-    val p = settingsPalette()
-    SettingsSheet(
+    val t = runTone()
+    BlueSheet(
         title = stringResource(R.string.set_stored_info), onDismiss = onDismiss, modifier = Modifier.testTag("stored-sheet"),
-        actions = { SettingsPrimaryButton(stringResource(R.string.set_ok), onDismiss, Modifier.fillMaxWidth()) },
+        compactTitle = true,
+        actions = { RunButton(stringResource(R.string.set_ok), onDismiss) },
     ) {
-        Text(stringResource(R.string.set_stored_heading), color = p.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(R.string.set_stored_body), color = p.secondary, fontSize = 15.sp, lineHeight = 1.55.em)
-        Text(stringResource(R.string.privacy_data_body), color = p.secondary, fontSize = 13.sp, lineHeight = 1.5.em)
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
-        Text(stringResource(R.string.set_stored_delete_note), color = p.secondary, fontSize = 14.sp)
-        Text(stringResource(R.string.set_stored_clear_note), color = p.secondary, fontSize = 14.sp)
+        Text(stringResource(R.string.set_stored_heading), style = runTextStyle(20.sp, t.text, FontWeight.Bold))
+        Text(stringResource(R.string.set_stored_body), style = runTextStyle(16.sp, t.text.copy(alpha = 0.92f), FontWeight.Medium, 1.5f))
+        Text(stringResource(R.string.privacy_data_body), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.5f))
+        BlueSheetDivider()
+        Text(stringResource(R.string.set_stored_delete_note), style = runTextStyle(16.sp, t.text, FontWeight.SemiBold, 1.45f))
+        Text(stringResource(R.string.set_stored_clear_note), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f))
     }
 }
 
-/** 알림 기록 지우기 확인(09) · 지우는 중 · 못 지움(27). 지우는 동안에는 닫을 수 없다 */
+/** 알림 기록 지우기 확인(SET09) · 지우는 중(SET30) · 못 지움(SET27). 지우는 동안에는 닫을 수 없다 */
 @Composable
 private fun ClearHistorySheet(step: ClearStep, onClear: () -> Unit, onDismiss: () -> Unit) {
-    val p = settingsPalette()
+    val t = runTone()
     val failed = step == ClearStep.Failed
     val clearing = step == ClearStep.Clearing
-    SettingsSheet(
+    BlueSheet(
         title = stringResource(if (failed) R.string.set_clear_failed else R.string.set_clear_title),
         onDismiss = onDismiss, dismissible = !clearing, showClose = false,
         modifier = Modifier.testTag(if (failed) "clear-failed-sheet" else "clear-sheet"),
         actions = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SettingsSecondaryButton(stringResource(R.string.set_cancel), onDismiss, Modifier.weight(1f), enabled = !clearing)
-                SettingsDangerButton(
+                RunButton(stringResource(R.string.set_cancel), onDismiss, Modifier.weight(1f), kind = RunButtonKind.Secondary, enabled = !clearing)
+                RunButton(
                     stringResource(
                         when {
                             clearing -> R.string.set_clearing
@@ -223,17 +233,16 @@ private fun ClearHistorySheet(step: ClearStep, onClear: () -> Unit, onDismiss: (
                             else -> R.string.set_clear_action
                         },
                     ),
-                    onClear, Modifier.weight(1f).testTag("clear-confirm"), loading = clearing,
+                    onClear, Modifier.weight(1f).testTag("clear-confirm"), kind = RunButtonKind.Danger, busy = clearing,
                 )
             }
         },
     ) {
-        Text(stringResource(R.string.set_clear_heading), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.set_clear_heading), style = runTextStyle(19.sp, t.label, FontWeight.Bold))
         Text(stringResource(if (failed) R.string.set_clear_failed_body else R.string.set_clear_cannot_undo),
-            color = p.secondary, fontSize = 15.sp)
-        Text(stringResource(R.string.set_clear_keeps_data), color = p.secondary, fontSize = 15.sp)
-        Text(stringResource(R.string.set_clear_keeps_pending), color = p.secondary, fontSize = 15.sp,
-            modifier = Modifier.padding(top = 4.dp))
+            style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f))
+        Text(stringResource(R.string.set_clear_keeps_data), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f))
+        Text(stringResource(R.string.set_clear_keeps_pending), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f))
     }
 }
 

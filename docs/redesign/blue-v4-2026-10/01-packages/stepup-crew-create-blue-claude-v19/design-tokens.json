@@ -1,0 +1,57 @@
+{
+  "color": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "accent": "#0754FF",
+    "highlight": "#48D9FA",
+    "text": "#F5F8FF",
+    "secondary": "#ABC6ED",
+    "error": "#FF8E86"
+  },
+  "layout": {
+    "baseWidthDp": 390,
+    "horizontalGutterDp": 20,
+    "gapDp": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "minTouchDp": 48,
+    "primaryHeightDp": 56,
+    "surfaceRadiusDp": 16,
+    "sheetRadiusDp": 24,
+    "borderDp": 1,
+    "systemInsets": "native status/navigation/IME; never draw screenshot clock or home bar"
+  },
+  "type": {
+    "family": "existing project Pretendard, native fallback",
+    "pageTitleSp": 24,
+    "crewNameSp": 26,
+    "bodySp": 16,
+    "secondarySp": 14,
+    "lineHeightMultiplier": 1.4
+  },
+  "components": [
+    "CrewDraftHeader",
+    "CrewIdentityFields",
+    "CrewImagePicker",
+    "CrewImageCrop",
+    "CrewNamedImageChoice",
+    "CrewRunningChoices",
+    "CrewScheduleSheet",
+    "CrewRecruitFields",
+    "CrewCustomGoalSheet",
+    "CrewDraftPreview",
+    "CrewDraftFeedback",
+    "OpaqueSheet",
+    "CrewManageRows"
+  ],
+  "rules": [
+    "토큰은 구현 기준 초안이며 래스터 픽셀의 역산값이 아님",
+    "공통5탭 활성은 파란면·흰 아이콘, 크루 모집 글자탭은 하늘색 밑줄",
+    "기존 로고 재사용; 화면 전체 PNG를 앱 배경으로 사용 금지",
+    "크루 고유 대표 이미지색은 그대로 유지, 앱 공통 면만 파랑/남색",
+    "주 버튼 흰면·파란 하단면, 카드 전체에 두꺼운 게임 테두리나 무한 광택 애니메이션 금지"
+  ]
+}

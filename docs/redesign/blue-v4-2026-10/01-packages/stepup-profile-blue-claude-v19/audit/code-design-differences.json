@@ -1,0 +1,37 @@
+[
+  {
+    "type": "기능 보존",
+    "item": "기록 RECORDS, 챌린지 CHALLENGE_HISTORY, 지갑 WALLET, 설정 SETTINGS, 프로필 PROFILE_EDIT",
+    "source": "StepUpRoot.kt / ProfileScreen.kt"
+  },
+  {
+    "type": "시각 변경",
+    "item": "v16 쇼케이스 색감과 러닝패스 신발; 기존 메뉴 복원; 러너 레벨 작은표시 유지",
+    "source": "ProfileHome.kt / Components.LevelAvatar"
+  },
+  {
+    "type": "시각 변경",
+    "item": "PRO08 사진 오류를 사진 영역 아래에 배치; PRO13 초기 blank에 로딩 안내 추가; 처리중 작은spinner",
+    "source": "ProfileEditScreen.kt"
+  },
+  {
+    "type": "현행 저장 유지",
+    "item": "이름 trim.take16, 빈값유효; 사진즉시/이름버튼; 앱범위저장, 사진롤백",
+    "source": "ProfileEditor.kt / UserPrefs.kt / ServiceLocator.kt"
+  },
+  {
+    "type": "확인된 한계",
+    "item": "초기읽기 catch가 이름빈값/아바타0을 방출함. 별도 읽기오류 UI는 현행에 없음. 데이터보존과 오류구분 후속 검토 필요",
+    "source": "ProfileEditViewModel.stored / avatarId"
+  },
+  {
+    "type": "자산 제한",
+    "item": "기본 이미지16개는 기존AvatarEmojis ID 유지. 시안단색glyph는 별도 제작자산이 아님. 로고는원본첨부.",
+    "source": "Components.kt / profile_edit.xml"
+  },
+  {
+    "type": "실행 미검증",
+    "item": "정적시안은 키보드, 느린 저장, 회전, 큰 글꼴,실패 재진입의 실행증거가 아님",
+    "source": "no runtime run"
+  }
+]

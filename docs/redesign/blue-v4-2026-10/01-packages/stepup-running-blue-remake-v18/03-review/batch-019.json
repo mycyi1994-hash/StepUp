@@ -1,0 +1,93 @@
+[
+  {
+    "id": "E01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-25ea8ff8-a60a-490a-a88d-0fde273f3969.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "메인 신발 쇼케이스 위 활동 시트, 6240/8000걸음·78%·1760걸음 남음, 거리와 시간 및 보상 확인 중 상태를 확인."
+    }
+  },
+  {
+    "id": "E02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a6831aaf-b71d-4d70-a5b3-2770fb7613fe.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "배경 러닝 상태를 일시정지로 수정. 3.0km 목표, 0.5km 증감, 적용·취소·닫기 확인."
+    }
+  },
+  {
+    "id": "E03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-5c6dc678-e211-483d-9fbe-c51ce770ab7c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "러닝 상세 시트에 12:30·1.56km, 목표 3km·52%, 수정, 예상 SUP 확인 중, 선택 코스와 닫기를 확인."
+    }
+  },
+  {
+    "id": "E04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2ec08bda-b8ae-4462-a326-59258696b4d8.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "저장 진행 상태에 거리·시간·페이스 유지, 공유와 기록 버튼 비활성화, 저장 완료를 표시하지 않음."
+    }
+  },
+  {
+    "id": "E05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d57b90ea-db4d-4226-b553-fb490ccf3382.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "경로 포함 OFF 상태의 공유 미리보기에서 지도와 장소 제거. 날짜·거리·시간·페이스와 외부 토글을 확인."
+    }
+  },
+  {
+    "id": "E08",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2f37fe34-f974-4db6-a248-25988fa4a54c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "저장된 러닝 기록과 SUP 지급 제외 상태를 구분. 삭제·공유·기록·처음 화면 버튼 확인."
+    }
+  },
+  {
+    "id": "E09",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-64276f49-e4ad-40b8-a8e5-4988f07fd635.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "저장된 러닝 기록 유지, 보상 미지급과 보상 내역 진입 표시. 삭제·공유·기록·처음 화면 버튼 확인."
+    }
+  }
+]

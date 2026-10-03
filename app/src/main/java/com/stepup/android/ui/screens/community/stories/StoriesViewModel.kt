@@ -171,12 +171,16 @@ class StoriesViewModel(
         buildStoryList(posts, hiddenIds, from, currentRange, filter)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, StoryListState())
 
-    /** 지도 전체 화면의 장소 목록 — 범위 안의 모든 장소(필터와 상관없이) */
-    val areaPins: StateFlow<List<StoryPin>> = combine(
+    /** 지도 전체 화면의 목록 — 범위 안의 모든 글 · 장소(목록의 장소 필터와 상관없이). 지도 화면은 자기 안에서 장소를 거른다 */
+    val area: StateFlow<StoryListState> = combine(
         repository.posts, hidden, origin, range,
     ) { posts, hiddenIds, from, currentRange ->
-        buildStoryList(posts, hiddenIds, from, currentRange, null).pins
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        buildStoryList(posts, hiddenIds, from, currentRange, null)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, StoryListState())
+
+    /** 지도 전체 화면의 장소 목록 — 범위 안의 모든 장소(필터와 상관없이) */
+    val areaPins: StateFlow<List<StoryPin>> = area.map { it.pins }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** 한 장소의 글(지도에서 장소를 골랐을 때 미리보기) — 같은 숨김 기준 */
     fun postsAt(place: StoryPlace): List<StoryItem> {

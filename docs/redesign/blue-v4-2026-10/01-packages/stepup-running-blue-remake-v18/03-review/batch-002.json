@@ -1,0 +1,47 @@
+[
+  {
+    "id": "R01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-885361fb-4167-4d14-8ec6-4a8a589b7dbe.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "한 화면",
+        "로고·파랑 톤",
+        "필수 숫자·문구",
+        "버튼 구분",
+        "겹침 없음"
+      ],
+      "notes": "지도 배경, 단일 숫자3와 취소 버튼. 시작 전 경로 없음."
+    }
+  },
+  {
+    "id": "R02_TIME",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-633c5cb6-1a93-4b80-bc17-96bfe6840962.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "한 화면",
+        "로고·파랑 톤",
+        "필수 숫자·문구",
+        "버튼 구분",
+        "겹침 없음"
+      ],
+      "notes": "시간만 표시하고 거리·페이스는 미측정으로 구분."
+    }
+  },
+  {
+    "id": "R05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-8fb87660-46d6-42fa-8409-0cf04e07ca3b.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "한 화면",
+        "로고·파랑 톤",
+        "필수 숫자·문구",
+        "버튼 구분",
+        "겹침 없음"
+      ],
+      "notes": "저장 완료와 결과 수치, 지도·공유·기록 링크·홈 버튼 확인."
+    }
+  }
+]

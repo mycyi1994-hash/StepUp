@@ -29,13 +29,29 @@ import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.NotifyPrefs
 import com.stepup.android.push.NotificationSyncState
-import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.SettingsLoadFailed
-import com.stepup.android.ui.components.SettingsNote
-import com.stepup.android.ui.components.SettingsNotice
-import com.stepup.android.ui.components.SettingsSkeleton
-import com.stepup.android.ui.components.SettingsSwitchRow
-import com.stepup.android.ui.components.SettingsToast
+import com.stepup.android.ui.components.BlueAlertIcon
+import com.stepup.android.ui.components.BlueGroup
+import com.stepup.android.ui.components.BlueLoadFailed
+import com.stepup.android.ui.components.BlueNote
+import com.stepup.android.ui.components.BlueNotice
+import com.stepup.android.ui.components.BlueNoticeAction
+import com.stepup.android.ui.components.BluePage
+import com.stepup.android.ui.components.BlueSkeleton
+import com.stepup.android.ui.components.BlueSwitchRow
+import com.stepup.android.ui.components.BlueToast
+import com.stepup.android.ui.components.RunSpinner
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -131,14 +147,16 @@ fun NotificationSettingsContent(
     onReload: () -> Unit = {},
 ) {
     Box(Modifier.fillMaxSize()) {
-        DetailPage(title = stringResource(R.string.set_notifications), onBack = onBack) {
+        BluePage(title = stringResource(R.string.set_notifications), onBack = onBack) {
             when (val load = ui.load) {
+                // SET25 — 모르는 토글 값을 OFF 나 예시로 보이지 않는다
                 SettingsLoad.Loading -> {
-                    item { SettingsNote(stringResource(R.string.set_loading), top = true) }
-                    item { SettingsSkeleton(4, Modifier.padding(top = 18.dp).testTag("settings-loading")) }
+                    item { BlueNote(stringResource(R.string.set_loading), intro = true) }
+                    item { BlueSkeleton(4, Modifier.testTag("settings-loading")) }
                 }
+                // SET26 — 빈 설정으로 덮어쓰지 않는다
                 SettingsLoad.Failed -> item {
-                    SettingsLoadFailed(
+                    BlueLoadFailed(
                         stringResource(R.string.set_load_failed), stringResource(R.string.set_load_failed_body),
                         stringResource(R.string.set_reload), onReload, Modifier.testTag("settings-load-failed"),
                     )
@@ -147,58 +165,79 @@ fun NotificationSettingsContent(
                     val prefs = load.value
                     val anyOn = prefs.push || prefs.goalReminder || prefs.partyInvite || prefs.eventNews
                     when {
+                        // SET03 — 휴대폰(OS) 차단이 서버 반영 안내보다 먼저다(앱 스위치를 대신 끄지 않는다)
                         ui.osBlocked && anyOn -> item {
-                            SettingsNotice(
+                            BlueNotice(
                                 stringResource(R.string.set_notif_blocked), stringResource(R.string.set_notif_blocked_body),
                                 Modifier.testTag("notif-blocked"),
                                 actionLabel = stringResource(R.string.set_open_phone_settings), onAction = onOpenPhoneSettings,
+                                actionStyle = BlueNoticeAction.Primary,
                             )
                         }
+                        // SET04 · SET37 — 이 휴대폰 저장과 서버 반영을 나눈다. 보내는 중엔 다시 반영만 막는다
                         ui.sync == NotificationSyncState.Pending || ui.sync == NotificationSyncState.Sending -> item {
                             val sending = ui.sync == NotificationSyncState.Sending
-                            SettingsNotice(
+                            BlueNotice(
                                 stringResource(R.string.set_sync_pending), stringResource(R.string.set_sync_pending_body),
                                 Modifier.testTag("notif-sync-pending"),
                                 actionLabel = stringResource(if (sending) R.string.set_sync_sending else R.string.set_sync_retry),
-                                onAction = onRetrySync, actionEnabled = !sending && !ui.saving,
+                                onAction = onRetrySync, actionEnabled = !sending && !ui.saving, actionTag = "notif-sync-retry",
                             )
                         }
-                        else -> item { SettingsNote(stringResource(R.string.set_notif_intro), top = true) }
+                        else -> item { BlueNote(stringResource(R.string.set_notif_intro), intro = true) }
                     }
                     item {
-                        Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                            SettingsSwitchRow(
+                        // 네 가지는 따로 고른다(푸시가 나머지의 마스터 스위치가 아니다). 이 휴대폰에 저장하는 동안만 잠시 막는다
+                        BlueGroup {
+                            BlueSwitchRow(
                                 stringResource(R.string.set_notif_push), stringResource(R.string.set_notif_push_desc),
                                 prefs.push, { onChange(prefs.copy(push = it)) }, Modifier.testTag("notif-push"), !ui.saving,
                             )
-                            SettingsSwitchRow(
+                            BlueSwitchRow(
                                 stringResource(R.string.set_notif_goal), stringResource(R.string.set_notif_goal_desc),
                                 prefs.goalReminder, { onChange(prefs.copy(goalReminder = it)) }, Modifier.testTag("notif-goal"), !ui.saving,
                             )
-                            SettingsSwitchRow(
+                            BlueSwitchRow(
                                 stringResource(R.string.set_notif_invite), stringResource(R.string.set_notif_invite_desc),
                                 prefs.partyInvite, { onChange(prefs.copy(partyInvite = it)) }, Modifier.testTag("notif-invite"), !ui.saving,
                             )
-                            SettingsSwitchRow(
+                            BlueSwitchRow(
                                 stringResource(R.string.set_notif_event), stringResource(R.string.set_notif_event_desc),
                                 prefs.eventNews, { onChange(prefs.copy(eventNews = it)) }, Modifier.testTag("notif-event"), !ui.saving,
                             )
                         }
                     }
-                    if (ui.saveFailed) {
-                        item {
-                            SettingsNotice(
+                    when {
+                        // SET36 — 기존 saving 상태에 진행 한 줄(새 서버 상태가 아니다)
+                        ui.saving -> item { SavingLine(stringResource(R.string.set_blue_saving_on_phone)) }
+                        // SET05 — 이전 저장값 그대로, 성공 알림 없음
+                        ui.saveFailed -> item {
+                            BlueNotice(
                                 stringResource(R.string.set_save_failed), stringResource(R.string.set_save_failed_body),
-                                Modifier.padding(top = 18.dp).testTag("notif-save-failed"),
+                                Modifier.testTag("notif-save-failed"), icon = BlueAlertIcon,
                             )
                         }
-                    } else {
-                        item { SettingsNote(stringResource(R.string.set_saves_right_away)) }
+                        else -> item { BlueNote(stringResource(R.string.set_saves_right_away)) }
                     }
                 }
             }
         }
-        SettingsToast(ui.toast, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp))
+        BlueToast(ui.toast, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp))
+    }
+}
+
+/** 처리 중 한 줄 — 도는 표시 하나와 글(가짜 백분율 없음) */
+@Composable
+internal fun SavingLine(text: String, modifier: Modifier = Modifier) {
+    val t = runTone()
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            .testTag("settings-saving"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RunSpinner(Modifier.size(24.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = runTextStyle(15.sp, t.label, FontWeight.Medium))
     }
 }
 

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "K09",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-9d54480c-dcd3-4b1f-b96f-81800132decf.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "코스 정보·숫자",
+        "선택과 확인",
+        "가독성"
+      ],
+      "notes": "코스3개 메뉴와 저장 코스2개, 선택 상태·순위·공유 꺼짐·러닝 진입 확인."
+    }
+  },
+  {
+    "id": "K12",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-86c8fee9-4858-439e-aaf6-ec7af83086b3.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "코스 정보·숫자",
+        "선택과 확인",
+        "가독성"
+      ],
+      "notes": "2.4km 코스의3명 순위와 내 기록21:10,닫기 확인. 전체 높이 상세 화면으로 구성."
+    }
+  },
+  {
+    "id": "K16",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-37bbf8ce-fbbb-42e7-a61d-37e0e9795166.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "코스 정보·숫자",
+        "선택과 확인",
+        "가독성"
+      ],
+      "notes": "공개 대상 코스2개와 선택 상태, 게시판 공개 안내, 올리기/취소 확인."
+    }
+  }
+]

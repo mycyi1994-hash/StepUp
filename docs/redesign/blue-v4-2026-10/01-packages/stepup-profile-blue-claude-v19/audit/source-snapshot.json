@@ -1,0 +1,57 @@
+{
+  "capturedAt": "2026-10-03T19:20:29.379874",
+  "readOnly": true,
+  "files": [
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileHome.kt",
+      "sha256": "10e6bd717df9f7dd595263b46e883025a677d4514b98c9a28c46cb9d7cbf80a1"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt",
+      "sha256": "e0b924e3504ddbd43e9ced48cb264cecf3ef74348f3f986193dda5bda3779194"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileViewModel.kt",
+      "sha256": "745d03846ed15d76719263663d6092bec5ff90c1c17bc66ce4e33356c486b3f5"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt",
+      "sha256": "7b2b7f4668d56bfceb72a1a84591c39e0dbb6e2715c68b2fd68ff450965aac5c"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/data/repo/ProfileEditor.kt",
+      "sha256": "715ec5f68d6a93d42de48c146f8d35ded5cb49a80a75ff63eb37bda7d32e7e5b"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/data/prefs/UserPrefs.kt",
+      "sha256": "51f96bf60b91ca938fa9888a400798bb736e710b060bf3637c7ca3291064ca10"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/domain/RunnerLevel.kt",
+      "sha256": "2326bbece4d2c42c5fb5745fbb59e2ad203c72592c5976d7f8fd9ef04b71543d"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/components/Components.kt",
+      "sha256": "2b945883c8f090358945556db27ec191fa2c2e7c848059d477537d40623f2e25"
+    },
+    {
+      "file": "app/src/main/res/values-ko/profile_edit.xml",
+      "sha256": "82accad228aadd032b29384d1be2a7b091509d4bfda364901c14a9b3f47ce87e"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+      "sha256": "e6133d4e65c4faa34bc0d791611c0e1aea38fba0fef967576f87c094f00b9e04",
+      "inspection": "relevant profile connections only; added during packaging"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/AppChromePolicy.kt",
+      "sha256": "7d9eb79c1a5a17ca2749df25604beb66b73b34fd85c01649193898a576b73d6c",
+      "inspection": "relevant profile connections only; added during packaging"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/core/ServiceLocator.kt",
+      "sha256": "fed263b7525eb0abc35d84fd81f76749be10ec38cc55dd3a3d83cf0fa276d06a",
+      "inspection": "relevant profile connections only; added during packaging"
+    }
+  ]
+}

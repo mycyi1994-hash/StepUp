@@ -1,0 +1,49 @@
+{
+  "readOnly": true,
+  "files": [
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\ConnectedAccountsScreen.kt",
+      "sha256": "00832b4325e2e9e5d13ad0976cd0a296474b71d76e3e0ee6e47918c616144c3e"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\ExperienceSettingsScreen.kt",
+      "sha256": "5385dd74021592e8fa780e1bef9cd90dbf9ecec2b0d6b705f389a0dc535e19a3"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\LanguageScreen.kt",
+      "sha256": "d944ffdc9cbb20771cf0026e99591822ee3baf7e1b12ed7efbcec0495a105530"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\NotificationSettingsScreen.kt",
+      "sha256": "7e717d9adebbd7aeb5aeda6a88321ab8b4cd0b59950b8bee21e6e77dd7f3f7a4"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\PrivacyScreen.kt",
+      "sha256": "bc3ed83b22ed8cef9979b3fcc84b2ff37f9af7b8a0f52a2eb01ff7081c3304a7"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\SettingsHomeScreen.kt",
+      "sha256": "0e9001532259ec5cd5ec63457ff4bc6a4ed5d352e8d0ed3484ac926e5611f07e"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\SupportScreen.kt",
+      "sha256": "56cf08bad9edb5a66ae468e19aea59999989269ebf53d73d64132fa62ddfa29b"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\settings\\ThemeScreen.kt",
+      "sha256": "1e1b10943c29c5c3e92a41c33ca36912cd22ce568dd9507048e7d90d5b8db694"
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\stepup\\android\\ui\\AppChromePolicy.kt",
+      "sha256": "7d9eb79c1a5a17ca2749df25604beb66b73b34fd85c01649193898a576b73d6c"
+    },
+    {
+      "file": "app\\src\\main\\res\\values-ko\\settings.xml",
+      "sha256": "0ce87d4978bd25159f58a571a23b5032fb68300a1331d83423f9f848afb587e2"
+    },
+    {
+      "file": "app\\src\\main\\res\\values-ko\\experience.xml",
+      "sha256": "afcaecda6030e832997db4f35fd1e2b4df13fa76997a0eac514fda1c628e77aa"
+    }
+  ]
+}

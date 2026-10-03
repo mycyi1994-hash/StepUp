@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 둘러보기 · 가입 · 만들기 · 운영 파란 톤(2026-10 v19 전달본) — 새로 더한 문구만 -->
+<resources>
+    <string name="crew_blue_sort_near_here">내 주변의 크루부터 볼 수 있어요.</string>
+    <string name="crew_blue_sort_near_region">선택한 지역에서 가까운 크루부터 볼 수 있어요.</string>
+    <string name="crew_blue_sort_recent">최근에 모집을 시작한 크루부터 볼 수 있어요.</string>
+    <string name="crew_blue_sort_active">멤버들의 활동이 활발한 크루부터 볼 수 있어요.</string>
+    <string name="crew_blue_range_from_region">선택한 지역에서</string>
+    <string name="crew_blue_resume_sub">저장해 둔 내용을 이어서 만들 수 있어요.</string>
+    <string name="crew_blue_draft_named">%1$s 초안</string>
+    <string name="crew_blue_activity">크루 활동</string>
+    <string name="crew_blue_loading">불러오는 중</string>
+    <string name="crew_blue_count">%1$d / %2$d</string>
+    <string name="crew_blue_pending_status">승인 대기</string>
+    <string name="crew_blue_pending_status_body">크루장의 확인을 기다리고 있어요.</string>
+    <string name="crew_blue_pending_phrases">선택한 러닝 취향</string>
+    <string name="crew_blue_result_eyebrow">가입 신청 결과</string>
+    <string name="crew_blue_clear">지우기</string>
+    <string name="crew_blue_keep_writing">계속 작성</string>
+</resources>

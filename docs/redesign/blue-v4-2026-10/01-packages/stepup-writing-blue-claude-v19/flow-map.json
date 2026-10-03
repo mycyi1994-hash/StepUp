@@ -1,0 +1,233 @@
+{
+  "screens": [
+    "WRITE01",
+    "WRITE02",
+    "WRITE03",
+    "WRITE04",
+    "WRITE05",
+    "WRITE06",
+    "WRITE07",
+    "WRITE08",
+    "WRITE09",
+    "WRITE10",
+    "WRITE11",
+    "WRITE12",
+    "WRITE13",
+    "WRITE14",
+    "WRITE15",
+    "WRITE16",
+    "WRITE17",
+    "WRITE18",
+    "WRITE19",
+    "WRITE20"
+  ],
+  "sharedScreens": [
+    "CM01",
+    "CM06",
+    "CM09",
+    "CM12",
+    "CM13",
+    "CM14",
+    "CM15",
+    "CM16",
+    "CM17",
+    "CM20",
+    "CM21",
+    "CM22",
+    "CM23",
+    "CM24",
+    "CM25",
+    "CM26"
+  ],
+  "externalTargets": {
+    "COMPOSER_STATE": "데이터 조건에 맞는 작성 상태를 선택, 신규 라우트 아님",
+    "COMPOSER_RETURN": "기존 작성 내용/첨부를 보존한 실제 진입 화면",
+    "EXISTING_AUTH": "현행 인증 화면. 성공 후 자동 게시하지 않음",
+    "ACTIVE_RUN": "현재 진행 중 러닝",
+    "RUN_HISTORY": "기존 H01/H02 기록 목록",
+    "RUN_START": "기존 U01 러닝 시작"
+  },
+  "edges": [
+    {
+      "source": "CM12",
+      "action": "코스 붙이기",
+      "target": "WRITE09"
+    },
+    {
+      "source": "CM21",
+      "action": "초안 이어쓰기·날짜 재검증",
+      "target": "COMPOSER_STATE"
+    },
+    {
+      "source": "WRITE09",
+      "action": "유효 기록 선택",
+      "target": "WRITE03"
+    },
+    {
+      "source": "WRITE09",
+      "action": "GPS 경로 없는 유효 기록 선택",
+      "target": "WRITE05"
+    },
+    {
+      "source": "WRITE09",
+      "action": "최근 결과 없음",
+      "target": "WRITE11"
+    },
+    {
+      "source": "WRITE09",
+      "action": "2일 전 필터 결과 없음",
+      "target": "WRITE16"
+    },
+    {
+      "source": "WRITE16",
+      "action": "전체 기록 보기",
+      "target": "WRITE09"
+    },
+    {
+      "source": "WRITE03",
+      "action": "장소 변경",
+      "target": "WRITE10"
+    },
+    {
+      "source": "WRITE10",
+      "action": "장소 검색",
+      "target": "CM14"
+    },
+    {
+      "source": "WRITE10",
+      "action": "지도 직접 선택",
+      "target": "CM15"
+    },
+    {
+      "source": "WRITE10",
+      "action": "확정된 장소 행 탭",
+      "target": "COMPOSER_RETURN"
+    },
+    {
+      "source": "CM14",
+      "action": "검색 결과 한 번 선택",
+      "target": "COMPOSER_RETURN"
+    },
+    {
+      "source": "CM15",
+      "action": "지도 위치 확정",
+      "target": "COMPOSER_RETURN"
+    },
+    {
+      "source": "WRITE07",
+      "action": "검색",
+      "target": "CM14"
+    },
+    {
+      "source": "WRITE07",
+      "action": "지도",
+      "target": "CM15"
+    },
+    {
+      "source": "WRITE03",
+      "action": "올리기",
+      "target": "CM17"
+    },
+    {
+      "source": "CM17",
+      "action": "코스 글 서버 성공",
+      "target": "WRITE12"
+    },
+    {
+      "source": "CM17",
+      "action": "코스 글 확정 실패",
+      "target": "WRITE08"
+    },
+    {
+      "source": "CM17",
+      "action": "로그인 만료",
+      "target": "WRITE20"
+    },
+    {
+      "source": "CM17",
+      "action": "첨부 만료",
+      "target": "WRITE04"
+    },
+    {
+      "source": "CM17",
+      "action": "첨부 사용 불가",
+      "target": "WRITE19"
+    },
+    {
+      "source": "WRITE08",
+      "action": "재시도",
+      "target": "CM17"
+    },
+    {
+      "source": "WRITE12",
+      "action": "게시한 글 선택",
+      "target": "WRITE13"
+    },
+    {
+      "source": "WRITE13",
+      "action": "장소 확대",
+      "target": "CM06"
+    },
+    {
+      "source": "WRITE13",
+      "action": "댓글 입력",
+      "target": "CM09"
+    },
+    {
+      "source": "WRITE13",
+      "action": "내 글 메뉴",
+      "target": "CM22"
+    },
+    {
+      "source": "WRITE13",
+      "action": "타인 글 메뉴",
+      "target": "CM26"
+    },
+    {
+      "source": "WRITE20",
+      "action": "로그인",
+      "target": "EXISTING_AUTH"
+    },
+    {
+      "source": "EXISTING_AUTH",
+      "action": "같은 계정 인증·초안 복원",
+      "target": "COMPOSER_STATE"
+    },
+    {
+      "source": "WRITE18",
+      "action": "재조회",
+      "target": "COMPOSER_STATE"
+    },
+    {
+      "source": "WRITE06",
+      "action": "재조회",
+      "target": "COMPOSER_STATE"
+    },
+    {
+      "source": "WRITE15",
+      "action": "러닝 화면으로",
+      "target": "ACTIVE_RUN"
+    },
+    {
+      "source": "WRITE02",
+      "action": "지난 기록 보기",
+      "target": "RUN_HISTORY"
+    },
+    {
+      "source": "WRITE01",
+      "action": "첫 러닝 시작",
+      "target": "RUN_START"
+    },
+    {
+      "source": "WRITE02",
+      "action": "러닝 시작",
+      "target": "RUN_START"
+    }
+  ],
+  "globalRules": [
+    "작성에서 뒤로: 변경 있으면 CM20, 없으면 실제 진입 화면.",
+    "시트 X/뒤로는 임시 선택 취소 후 기존 작성 복원.",
+    "일반 게시 성공은 기존 CM18/44, 코스 게시 성공은 WRITE12/13.",
+    "선택 버튼·본문 입력·첨부 교체는 상태 변화이며 별도 페이지 추가가 아니다."
+  ]
+}

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -16,19 +17,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -36,8 +42,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -45,17 +51,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,37 +77,57 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewGoalProgress
 import com.stepup.android.domain.CrewRules
-import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.components.ChamferShape
+import com.stepup.android.ui.components.RunBackdrop
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.RunSpinner
+import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
-import com.stepup.android.ui.theme.StepUpDesign
+import com.stepup.android.ui.theme.StepUpSans
 
 /*
- * 크루 명함형 — 화면들이 함께 쓰는 부품. 시안(design-tokens.json · 03-components)의 값을 그대로 옮겼다:
- * 좌우 24 · 카드 모서리 18 · 입력칸 14 · 시트 26 · 주 버튼 52(모서리 15) · 선택 버튼 42(모서리 12).
- * 금속 배지 · 방패 · 왕관 · 게임 등급 · XP 바는 두지 않는다 — 레벨은 짙은 파랑 칩 하나, 목표는 가는 진행 바 하나.
+ * 크루 화면(둘러보기 · 가입 · 만들기 · 운영)이 함께 쓰는 부품 — 2026-10 파란 톤 전달본(v19 크루 95장).
+ *
+ * 남색 바닥 #031427 · 파란 면 #0B2B50 · 전기 파랑 #0754FF · 청록 #48D9FA · 흰 글자 #F5F8FF · 보조 #AAC3EA.
+ * 러닝 리메이크 부품(RunStyle.kt)의 색 · 주 버튼(흰 면 · 파란 아랫면) · 보조 버튼(남색 면 · 파란 테두리)을 그대로 쓰고,
+ * 크루에만 있는 것(명함 · 레벨 칩 · 사람 줄 · 시트 · 확인 창)만 여기서 그린다. 왕관 · 방패 · 게임 등급 · XP 는 두지 않는다.
+ * 같은 부품을 크루 채팅 · 내 크루 홈도 쓰므로 함수 모양(이름 · 인자)은 바꾸지 않고 더하기만 한다.
  */
 
-/** 시안 색 — 어두운 테마는 시안 값, 밝은 테마는 같은 관계의 밝은 값 */
+/** 크루 화면의 색 — 어두운 테마는 시안 값, 밝은 테마는 러닝 리메이크의 밝은 값과 같은 관계 */
 @Immutable
 internal class CrewInk(
     val canvas: Color,
+    /** 패널 면(아래쪽) · 위쪽 */
     val card: Color,
+    val cardTop: Color,
+    /** 패널 둘레 — 얇은 파란 선 */
+    val edge: Color,
+    /** 입력칸 면 · 둘레 */
+    val field: Color,
+    val fieldEdge: Color,
     val sheet: Color,
+    val sheetTop: Color,
+    val sheetEdge: Color,
     val text: Color,
     val secondary: Color,
-    /** 정보 · 링크(푸른 정보색) */
+    /** 강조 값 · 진행률(청록) */
     val info: Color,
+    /** 글자 링크(크루장 소개 보기 · 24명 >) */
+    val link: Color,
     val divider: Color,
     val tabMark: Color,
-    /** 실패 · 주의 글자 */
+    /** 실패 · 주의 글자(코랄) */
     val warn: Color,
     val choice: Color,
     val choiceText: Color,
@@ -110,6 +144,7 @@ internal class CrewInk(
     val disabledText: Color,
     val danger: Color,
     val dangerText: Color,
+    val dangerBase: Color,
     val primaryFace: Brush,
     val primaryText: Color,
     val skeleton: Color,
@@ -118,38 +153,64 @@ internal class CrewInk(
 )
 
 private val DarkCrewInk = CrewInk(
-    canvas = Color(0xFF050912), card = Color(0xFF0D1829), sheet = Color(0xFF111C2D), text = Color(0xFFF2F4FC),
-    secondary = Color(0xFF98A8C0), info = Color(0xFFA3BFFE), divider = Color(0xFF1D2B3F), tabMark = Color(0xFF467CFF),
-    warn = Color(0xFFE5B49B), choice = Color(0xFF16253A), choiceText = Color(0xFF98A8C0), choiceOn = Color(0xFFDCE8FF),
-    choiceOnText = Color(0xFF132641), level = Color(0xFF223851), levelText = Color(0xFFC3D8FF), track = Color(0xFF253852),
-    bar = Color(0xFF99B9FF), avatar = Color(0xFF263B55), avatarText = Color(0xFFA3BFFE), secondaryButton = Color(0xFF1D304A),
-    disabled = Color(0xFF202C3D), disabledText = Color(0xFF8795AA), danger = Color(0xFF503332), dangerText = Color(0xFFFFDED4),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFFF8F9FF), Color(0xFFEDF0F9))), primaryText = Color(0xFF0B1423),
-    skeleton = Color(0xFF1A2940), handle = Color(0xFF46576F), scrim = Color(0xB3050912),
+    canvas = Color(0xFF031427), card = Color(0xFF0A2547), cardTop = Color(0xFF0D2E57), edge = Color(0xFF1C4E95),
+    field = Color(0xFF08244A), fieldEdge = Color(0xFF1F5BD0),
+    sheet = Color(0xFF0A2750), sheetTop = Color(0xFF0E3264), sheetEdge = Color(0xFF1F5BD0),
+    text = Color(0xFFF5F8FF), secondary = Color(0xFFAAC3EA), info = Color(0xFF48D9FA), link = Color(0xFF5B95FF),
+    divider = Color(0xFF1E3F72), tabMark = Color(0xFF48D9FA), warn = Color(0xFFFF6B78),
+    choice = Color(0xFF0A2547), choiceText = Color(0xFFF5F8FF), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
+    level = Color(0xFF16386E), levelText = Color(0xFF8CB8FF), track = Color(0xFF15305A), bar = Color(0xFF48D9FA),
+    avatar = Color(0xFF12335F), avatarText = Color(0xFF8CB8FF), secondaryButton = Color(0xFF061D3B),
+    disabled = Color(0xFF2A4166), disabledText = Color(0xFF8FA5C7),
+    danger = Color(0xFF4A1626), dangerText = Color(0xFFFF7A85), dangerBase = Color(0xFFE2505F),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFDCEBFD))), primaryText = Color(0xFF071B3D),
+    skeleton = Color(0xFF17345F), handle = Color(0xFF3F74C8), scrim = Color(0xA8010A16),
 )
 
 private val LightCrewInk = CrewInk(
-    canvas = Color(0xFFF4F6FB), card = Color(0xFFFFFFFF), sheet = Color(0xFFFFFFFF), text = Color(0xFF10203B),
-    secondary = Color(0xFF536580), info = Color(0xFF335EAB), divider = Color(0xFFDCE3EE), tabMark = Color(0xFF2F63D8),
-    warn = Color(0xFF94561C), choice = Color(0xFFE7EDF6), choiceText = Color(0xFF536580), choiceOn = Color(0xFF1B2D4E),
-    choiceOnText = Color(0xFFFFFFFF), level = Color(0xFFDCE7FA), levelText = Color(0xFF274C8F), track = Color(0xFFDCE4F0),
-    bar = Color(0xFF335EAB), avatar = Color(0xFFDCE7FA), avatarText = Color(0xFF274C8F), secondaryButton = Color(0xFFE2E9F4),
-    disabled = Color(0xFFD5DCE8), disabledText = Color(0xFF7B8AA0), danger = Color(0xFFF6DDD6), dangerText = Color(0xFF7A2E1E),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1B2D4E), Color(0xFF10203B))), primaryText = Color(0xFFFFFFFF),
-    skeleton = Color(0xFFDCE4F0), handle = Color(0xFFB8C3D4), scrim = Color(0x80101828),
+    canvas = Color(0xFFF5F8FF), card = Color(0xFFF7FAFF), cardTop = Color(0xFFFFFFFF), edge = Color(0xFFC9D8F2),
+    field = Color(0xFFEDF2FC), fieldEdge = Color(0xFF9DB8EE),
+    sheet = Color(0xFFF5F8FF), sheetTop = Color(0xFFFFFFFF), sheetEdge = Color(0xFFC9D8F2),
+    text = Color(0xFF0B1E3F), secondary = Color(0xFF4A5F84), info = Color(0xFF0A7FA6), link = Color(0xFF0748D6),
+    divider = Color(0xFFDCE4F2), tabMark = Color(0xFF0754FF), warn = Color(0xFFC62337),
+    choice = Color(0xFFFFFFFF), choiceText = Color(0xFF0B1E3F), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
+    level = Color(0xFFE1EBFF), levelText = Color(0xFF0748D6), track = Color(0xFFDCE5F5), bar = Color(0xFF0754FF),
+    avatar = Color(0xFFE1EBFF), avatarText = Color(0xFF0748D6), secondaryButton = Color(0xFFFFFFFF),
+    disabled = Color(0xFFC9D3E3), disabledText = Color(0xFF6E7D96),
+    danger = Color(0xFFFFE5E8), dangerText = Color(0xFFC62337), dangerBase = Color(0xFFE59AA4),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1C63FF), Color(0xFF0754FF))), primaryText = Color.White,
+    skeleton = Color(0xFFDCE5F5), handle = Color(0xFFB5C3DB), scrim = Color(0xB3091A33),
 )
 
 @Composable
 internal fun crewInk(): CrewInk = if (StepUpColors.dark) DarkCrewInk else LightCrewInk
 
-internal val CrewGutter = 24.dp
+internal val CrewGutter = 20.dp
 
-/** 이름 이미지 바탕 네 가지(시안 30) — 글자는 옅은 초록빛 흰색 */
+/** 이름 이미지 바탕 네 가지(시안 30) — 글자는 옅은 초록빛 흰색. 크루가 고른 고유 색이라 앱 색으로 바꾸지 않는다 */
 internal val CrewNamedColors = listOf(Color(0xFF263D47), Color(0xFF403343), Color(0xFF233C58), Color(0xFF383E32))
 private val CrewNamedText = Color(0xFFE9EEE6)
 
 /** 크루장 동그라미 — 크루 바탕보다 조금 밝은 톤(시안의 크루장 색과 같은 관계) */
 internal val CrewLeaderColors = listOf(Color(0xFF34505B), Color(0xFF4B3D4E), Color(0xFF2E4A6A), Color(0xFF474D3F))
+
+/** 사람 동그라미 — 이름마다 정해진 차분한 색(시안 명단의 갈색 · 파랑 · 초록 · 보라 · 붉은 톤) */
+private val CrewPersonColors = listOf(
+    Color(0xFF5A3A30), Color(0xFF1F4A7A), Color(0xFF2F5A47), Color(0xFF453A78), Color(0xFF6A3343), Color(0xFF1F5C66),
+)
+
+internal fun crewPersonFace(name: String): Color =
+    CrewPersonColors[Math.floorMod(name.trim().hashCode(), CrewPersonColors.size)]
+
+// ── 패널 ─────────────────────────────────────────────────────
+
+/** 패널 면 — 남색 그라데이션 · 얇은 파란 둘레(카드 · 정보 칸 · 목표 칸) */
+internal fun Modifier.crewPanel(ink: CrewInk, radius: Dp = 16.dp, selected: Boolean = false): Modifier {
+    val shape = RoundedCornerShape(radius)
+    return this.clip(shape)
+        .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+        .border(if (selected) 1.5.dp else 1.dp, if (selected) ink.info else ink.edge, shape)
+}
 
 // ── 대표 이미지 ───────────────────────────────────────────────
 
@@ -189,9 +250,13 @@ internal fun CrewImageFace(
     }
 }
 
-/** 이름 이미지의 글자 — 이름 그대로, 길면 빈칸에서 두 줄 · 긴 줄에 맞춰 작게 */
+/** 이름 이미지의 글자 — 이름 그대로, 길면 빈칸에서 두 줄 · 긴 줄에 맞춰 작게. 이름이 비면 중립 점 하나(시안 36) */
 @Composable
 private fun CrewNameText(name: String, size: Dp, textSize: TextUnit?) {
+    if (name.isBlank()) {
+        Box(Modifier.size(size * 0.12f).clip(CircleShape).background(CrewNamedText.copy(alpha = 0.85f)))
+        return
+    }
     val label = CrewRules.nameImageText(name)
     val longest = label.lines().maxOf { it.length }
     val base = textSize ?: (size.value * 0.24f).sp
@@ -229,17 +294,23 @@ internal fun rememberDraftPhoto(path: String?): ImageBitmap? {
 
 // ── 레벨 · 인원 · 크루장 · 목표 ─────────────────────────────────
 
-/** 레벨 칩 — 저장된 레벨이 없으면 "새 크루" */
+/** 레벨 칩 — 평문 "Lv.7", 저장된 레벨이 없으면 "새 크루"(청록 테두리) */
 @Composable
 internal fun CrewLevelChip(level: Int?, modifier: Modifier = Modifier) {
     val ink = crewInk()
+    val shape = RoundedCornerShape(8.dp)
     Box(
-        modifier.clip(RoundedCornerShape(7.dp)).background(ink.level).padding(horizontal = 12.dp, vertical = 3.dp),
+        modifier.clip(shape)
+            .then(
+                if (level != null) Modifier.background(ink.level, shape)
+                else Modifier.border(1.dp, ink.info, RoundedCornerShape(50)).clip(RoundedCornerShape(50)),
+            )
+            .padding(horizontal = 12.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             if (level != null) stringResource(R.string.crew_level_value, level) else stringResource(R.string.crew_level_new),
-            color = ink.levelText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            color = if (level != null) ink.levelText else ink.info, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
         )
     }
 }
@@ -248,10 +319,10 @@ internal fun CrewLevelChip(level: Int?, modifier: Modifier = Modifier) {
 @Composable
 internal fun CrewMembersLabel(members: Int, capacity: Int?, color: Color, modifier: Modifier = Modifier) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        PeopleIcon(color, Modifier.size(16.dp))
+        PeopleIcon(color, Modifier.size(18.dp))
         Text(
             if (capacity != null) stringResource(R.string.crew_members_of, members, capacity) else stringResource(R.string.crew_members_only, members),
-            color = color, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
         )
     }
 }
@@ -279,31 +350,32 @@ internal fun PeopleIcon(color: Color, modifier: Modifier) {
 @Composable
 internal fun CrewAvatar(name: String, size: Dp, face: Color, textColor: Color, modifier: Modifier = Modifier) {
     Box(modifier.size(size).clip(CircleShape).background(face), contentAlignment = Alignment.Center) {
-        Text(CrewRules.initial(name), color = textColor, fontSize = (size.value * 0.34f).sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(CrewRules.initial(name), color = textColor, fontSize = (size.value * 0.36f).sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
 /** 크루장 동그라미 색 — 크루 바탕과 같은 결 */
 internal fun leaderFace(card: CrewCard): Color = CrewLeaderColors[Math.floorMod(card.bg, CrewLeaderColors.size)]
 
-/** 이번 주 목표 한 줄 — "이번 주 126 / 160km ━━━━━ 79%" */
+/** 이번 주 목표 한 줄 — "이번 주 126 / 160km ━━━━━ 79%". 막대 길이는 실제 비율, 100% 를 넘으면 막대만 끝까지 */
 @Composable
 internal fun CrewWeeklyLine(progress: CrewGoalProgress, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             stringResource(R.string.crew_week_line, CrewRules.km(progress.doneKm), progress.goalKm),
-            color = ink.secondary, fontSize = 11.5.sp, maxLines = 1, modifier = Modifier.weight(1f),
+            color = ink.secondary, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
-        CrewBar(progress.fraction, Modifier.width(121.dp).height(5.dp))
+        Spacer(Modifier.width(10.dp))
+        CrewBar(progress.fraction, Modifier.weight(0.85f).height(7.dp))
         Text(
-            stringResource(R.string.crew_percent, progress.percent), color = ink.info, fontSize = 11.5.sp,
-            fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.widthIn(min = 40.dp),
+            stringResource(R.string.crew_percent, progress.percent), color = ink.info, fontSize = 15.sp,
+            fontWeight = FontWeight.Bold, textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.widthIn(min = 48.dp),
         )
     }
 }
 
-/** 가는 진행 바 — 100% 까지만 채운다 */
+/** 가는 진행 막대 — 100% 까지만 채운다 */
 @Composable
 internal fun CrewBar(fraction: Float, modifier: Modifier) {
     val ink = crewInk()
@@ -319,7 +391,10 @@ internal fun CrewBar(fraction: Float, modifier: Modifier) {
 
 internal enum class CrewButtonKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
-/** 주 버튼 52dp · 모서리 15. 처리 중이면 도는 표시와 함께 다시 누를 수 없다 */
+/**
+ * 큰 버튼 — 러닝 리메이크의 주 버튼(흰 면 · 남색 글자 · 파란 아랫면)과 보조 버튼(남색 면 · 파란 테두리)을 그대로 쓴다.
+ * 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은 어두운 코랄 면 · 코랄 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
+ */
 @Composable
 internal fun CrewButton(
     text: String,
@@ -329,72 +404,122 @@ internal fun CrewButton(
     busy: Boolean = false,
     enabled: Boolean = true,
 ) {
-    val ink = crewInk()
-    val shape = RoundedCornerShape(15.dp)
-    val active = enabled && !busy && kind != CrewButtonKind.DISABLED
-    val face: Modifier = when {
-        kind == CrewButtonKind.DISABLED || !enabled -> Modifier.background(ink.disabled, shape)
-        kind == CrewButtonKind.PRIMARY -> Modifier.background(ink.primaryFace, shape)
-        kind == CrewButtonKind.DANGER -> Modifier.background(ink.danger, shape)
-        else -> Modifier.background(ink.secondaryButton, shape)
-    }
-    val color = when {
-        kind == CrewButtonKind.DISABLED || !enabled -> ink.disabledText
-        kind == CrewButtonKind.PRIMARY -> ink.primaryText
-        kind == CrewButtonKind.DANGER -> ink.dangerText
-        else -> ink.text
-    }
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).then(face)
-            .feedbackClickable(enabled = active, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (busy) {
-            CircularProgressIndicator(Modifier.size(16.dp), color = color, strokeWidth = 2.dp)
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(text, color = color, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+    when (kind) {
+        CrewButtonKind.PRIMARY -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = enabled, busy = busy)
+        CrewButtonKind.SECONDARY -> RunButton(text, onClick, modifier, RunButtonKind.Secondary, enabled = enabled, busy = busy)
+        CrewButtonKind.DISABLED -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = false)
+        CrewButtonKind.DANGER -> CrewDangerButton(text, onClick, modifier, busy = busy, enabled = enabled)
     }
 }
 
-/** 작은 흰 버튼 — 카드의 "크루 보기"(32dp 면, 누르는 곳 44dp) */
+/** 어두운 코랄 면 · 코랄 글자 · 코랄 아랫면 — 주 버튼과 같은 깎은 모양 · 높이 */
+@Composable
+private fun CrewDangerButton(text: String, onClick: () -> Unit, modifier: Modifier, busy: Boolean, enabled: Boolean) {
+    val ink = crewInk()
+    val active = enabled && !busy
+    val shape: Shape = ChamferShape(16.dp)
+    val face = if (active) ink.danger else ink.disabled
+    val textColor = if (active) ink.dangerText else ink.disabledText
+    Box(
+        modifier.fillMaxWidth().heightIn(min = 62.dp)
+            .feedbackClickable(enabled = active, role = Role.Button, onClick = onClick)
+            .semantics { if (busy) contentDescription = text },
+    ) {
+        Box(Modifier.fillMaxWidth().height(56.dp).offset(y = 6.dp).clip(shape).background(if (active) ink.dangerBase else ink.disabled))
+        Row(
+            Modifier.fillMaxWidth().height(56.dp).clip(shape).background(face, shape).border(1.dp, if (active) ink.dangerBase else ink.disabled, shape)
+                .padding(horizontal = 22.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            if (busy) {
+                RunSpinner(Modifier.size(22.dp), color = textColor, track = textColor.copy(alpha = 0.25f))
+                Spacer(Modifier.width(12.dp))
+            }
+            Text(text, color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/** 글자만 있는 작은 행동 — 시트의 "취소" · 결과의 "크루 채팅 열기"(청록) */
+@Composable
+internal fun CrewTextAction(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color? = null,
+) {
+    val ink = crewInk()
+    Box(
+        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(12.dp))
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text, color = if (enabled) color ?: ink.info else ink.disabledText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** 작은 테두리 버튼 — 카드의 "크루 보기"(청록 테두리 · 흰 글자, 누르는 곳 48dp) */
 @Composable
 internal fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Box(
-        modifier.heightIn(min = 44.dp).feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
+        modifier.heightIn(min = 48.dp).feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
+        val shape = RoundedCornerShape(12.dp)
         Box(
-            Modifier.widthIn(min = 101.dp).heightIn(min = 32.dp).clip(RoundedCornerShape(12.dp)).background(ink.primaryFace)
-                .padding(horizontal = 14.dp, vertical = 6.dp),
+            Modifier.widthIn(min = 104.dp).heightIn(min = 40.dp).clip(shape).background(ink.secondaryButton, shape)
+                .border(1.dp, ink.info.copy(alpha = 0.75f), shape)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text, color = ink.primaryText, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(text, color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
     }
 }
 
-/** 고르는 버튼(42dp · 모서리 12) — 고르면 옅은 파랑 면 · 짙은 글자 */
+/**
+ * 고르는 버튼 — 고르지 않으면 남색 면 · 파란 테두리, 고르면 전기 파랑 면 · 흰 글자 · 체크.
+ * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칩(러닝 스타일 · 신청 문구)이다.
+ */
 @Composable
 internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val ink = crewInk()
+    val display = !enabled && selected
     Box(
-        modifier.heightIn(min = 48.dp).feedbackClickable(enabled = enabled, role = Role.Checkbox, onClick = onClick)
+        modifier.heightIn(min = 52.dp).feedbackClickable(enabled = enabled, role = Role.Checkbox, cue = FeedbackCue.Select, onClick = onClick)
+            .semantics { this.selected = selected }
             .padding(vertical = 3.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier.fillMaxWidth().heightIn(min = 42.dp).clip(RoundedCornerShape(12.dp))
-                .background(if (selected) ink.choiceOn else ink.choice).padding(horizontal = 8.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center,
+        val shape = RoundedCornerShape(12.dp)
+        val on = selected && !display
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape)
+                .background(
+                    if (on) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
+                    else Brush.verticalGradient(listOf(ink.cardTop, ink.choice)),
+                    shape,
+                )
+                .border(1.dp, if (on) Color(0xFF4D8BFF) else ink.fieldEdge.copy(alpha = if (display) 1f else 0.85f), shape)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text, color = if (selected) ink.choiceOnText else ink.choiceText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center, lineHeight = 17.sp,
+                text, color = if (on) ink.choiceOnText else if (!enabled && !selected) ink.disabledText else ink.choiceText,
+                fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 19.sp,
+                modifier = Modifier.weight(1f, fill = false),
             )
+            if (on) {
+                Spacer(Modifier.width(6.dp))
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -402,33 +527,41 @@ internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, mo
 /** 한 줄에 버튼 여러 개 — 폭을 나눈다 */
 @Composable
 internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp), content = content)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), content = content)
 }
 
 // ── 머리 · 줄 · 시트 ───────────────────────────────────────────
 
-/** 크루 화면 머리 — 앱 공통 하위 화면 머리(뒤로 · 가운데 제목 · 오른쪽 보조 행동 하나) */
+/** 크루 화면 머리 — 왼쪽 뒤로(가는 꺾쇠) · 가운데 제목 · 오른쪽 더보기(•••) 하나 */
 @Composable
 internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, onMore: (() -> Unit)? = null) {
     val ink = crewInk()
-    SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null, title = title,
-        modifier = modifier.padding(horizontal = 8.dp),
-        trailing = onMore?.let { more ->
-            {
-                Box(
-                    Modifier.size(width = 56.dp, height = StepUpDesign.TouchTarget).clip(RoundedCornerShape(12.dp))
-                        .feedbackClickable(role = Role.Button, onClick = more).testTag("crew-more"),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("•••", color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                }
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        com.stepup.android.ui.components.RunBackButton(onBack, Modifier, tint = ink.text)
+        Text(
+            title, color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() },
+        )
+        if (onMore != null) {
+            val more = stringResource(R.string.common_more)
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).feedbackClickable(role = Role.Button, onClick = onMore)
+                    .semantics { contentDescription = more }.testTag("crew-more"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.MoreHoriz, contentDescription = null, tint = ink.text, modifier = Modifier.size(26.dp))
             }
-        },
-    )
+        } else {
+            Spacer(Modifier.size(48.dp))
+        }
+    }
 }
 
-/** 설정 줄 — 이름, 오른쪽 값(푸른 정보색), 꺾쇠, 아래 선 */
+/** 설정 줄 — 이름, 오른쪽 값(청록), 꺾쇠, 아래 파란 선 */
 @Composable
 internal fun CrewRow(
     title: String,
@@ -436,30 +569,66 @@ internal fun CrewRow(
     modifier: Modifier = Modifier,
     value: String? = null,
     titleColor: Color? = null,
-    titleSize: TextUnit = 16.sp,
+    titleSize: TextUnit = 17.sp,
     divider: Boolean = true,
 ) {
     val ink = crewInk()
     Column(modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 59.dp).feedbackClickable(role = Role.Button, onClick = onClick)
+            Modifier.fillMaxWidth().heightIn(min = 60.dp).feedbackClickable(role = Role.Button, onClick = onClick)
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                title, color = titleColor ?: ink.text, fontSize = titleSize, fontWeight = FontWeight.SemiBold,
+                title, color = titleColor ?: ink.text, fontSize = titleSize, fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
             if (value != null) {
-                Text(value, color = ink.info, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 8.dp))
+                Text(
+                    value, color = ink.info, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp).widthIn(max = 200.dp),
+                )
             }
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.secondary, modifier = Modifier.padding(start = 4.dp).size(18.dp))
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.text, modifier = Modifier.padding(start = 6.dp).size(22.dp))
         }
-        if (divider) Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+        if (divider) Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
     }
 }
 
-/** 사람 한 줄 — 동그라미 · 이름 · 역할 줄 · 꺾쇠 */
+/** 더보기 · 관리 시트의 한 줄 — 테두리 있는 칸, 앞에 그림(있으면) · 이름 · 꺾쇠. 삭제성 행동은 코랄 글자 */
+@Composable
+internal fun CrewMenuRow(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    warn: Boolean = false,
+    /** 오른쪽 작은 값(같이 달리기 › 대기실) */
+    value: String? = null,
+) {
+    val ink = crewInk()
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 60.dp).crewPanel(ink, 14.dp)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = if (warn) ink.warn else ink.info, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.width(14.dp))
+        }
+        Text(
+            label, color = if (warn) ink.warn else ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
+        )
+        if (value != null) {
+            Text(value, color = ink.info, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.padding(start = 8.dp))
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.text, modifier = Modifier.padding(start = 4.dp).size(22.dp))
+    }
+}
+
+/** 사람 한 줄 — 동그라미 · 이름(· 크루장 표시) · 역할 줄 · 파란 꺾쇠 */
 @Composable
 internal fun CrewPersonRow(
     name: String,
@@ -467,40 +636,61 @@ internal fun CrewPersonRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     subColor: Color? = null,
+    /** 이름 옆 작은 파란 표시("크루장") */
+    badge: String? = null,
 ) {
     val ink = crewInk()
     Row(
-        modifier.fillMaxWidth().heightIn(min = 75.dp).feedbackClickable(role = Role.Button, onClick = onClick),
+        modifier.fillMaxWidth().heightIn(min = 80.dp).feedbackClickable(role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CrewAvatar(name, 36.dp, ink.avatar, ink.avatarText)
-        Column(Modifier.weight(1f).padding(start = 14.dp)) {
+        CrewAvatar(name, 50.dp, crewPersonFace(name), Color.White)
+        Column(Modifier.weight(1f).padding(start = 16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).padding(vertical = 12.dp)) {
-                    Text(name, color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.height(5.dp))
-                    Text(sub, color = subColor ?: ink.secondary, fontSize = 12.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Column(Modifier.weight(1f).padding(vertical = 14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            name, color = ink.text, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                        )
+                        if (badge != null) {
+                            Spacer(Modifier.width(8.dp))
+                            CrewBadge(badge)
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(sub, color = subColor ?: ink.secondary, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.secondary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.link, modifier = Modifier.size(24.dp))
             }
-            Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
         }
     }
 }
 
+/** 이름 옆 작은 파란 표시 — "크루장" */
+@Composable
+internal fun CrewBadge(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+        modifier = modifier.clip(RoundedCornerShape(50)).background(Color(0xFF0754FF)).padding(horizontal = 9.dp, vertical = 2.dp),
+    )
+}
+
 /** 크루 머리 띠 — 이미지 · 이름 · "공덕 · 크루장 준호"(신청 · 관리 · 목표 화면 위) */
 @Composable
-internal fun CrewIdentityStrip(card: CrewCard, modifier: Modifier = Modifier, sub: String? = null) {
+internal fun CrewIdentityStrip(card: CrewCard, modifier: Modifier = Modifier, sub: String? = null, boxed: Boolean = true) {
     val ink = crewInk()
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(ink.card).padding(horizontal = 12.dp, vertical = 12.dp),
+        modifier.fillMaxWidth()
+            .then(if (boxed) Modifier.crewPanel(ink, 18.dp).padding(horizontal = 14.dp, vertical = 14.dp) else Modifier.padding(vertical = 4.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CrewImage(card, 60.dp, 14.dp)
-        Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            Text(card.name, color = ink.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        CrewImage(card, if (boxed) 64.dp else 80.dp, 16.dp)
+        Column(Modifier.weight(1f).padding(start = 18.dp)) {
+            Text(card.name, style = crewTitleStyle(ink.text, if (boxed) 22.sp else 25.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(4.dp))
-            Text(sub ?: crewAreaLeader(card), color = ink.secondary, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sub ?: crewAreaLeader(card), color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -511,7 +701,36 @@ internal fun crewAreaLeader(card: CrewCard): String {
     return listOf(card.area.takeIf { it.isNotBlank() }, leader).filterNotNull().joinToString(" · ")
 }
 
-/** 시트 — 배경은 누를 수 없고, 닫기 · 취소는 바꾸기 전으로 돌아간다 */
+/** 큰 제목 · 설명(목록 · 명단 · 만들기 화면 위) */
+@Composable
+internal fun CrewHeading(title: String, modifier: Modifier = Modifier, sub: String? = null, titleTag: String? = null, eyebrow: String? = null) {
+    val ink = crewInk()
+    Column(modifier.fillMaxWidth()) {
+        if (eyebrow != null) {
+            Text(eyebrow, color = ink.info, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(6.dp))
+        }
+        Text(
+            title, style = crewTitleStyle(ink.text, 28.sp),
+            modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
+        )
+        if (sub != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(sub, color = ink.secondary, fontSize = 16.sp, lineHeight = 23.sp)
+        }
+    }
+}
+
+/** 굵은 제목 글자 — 시안의 큰 한국어 제목 */
+internal fun crewTitleStyle(color: Color, size: TextUnit): TextStyle = TextStyle(
+    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = size, lineHeight = 1.3.em,
+    letterSpacing = (-0.02).em, color = color,
+)
+
+/**
+ * 시트 — 불투명 남색 면 · 파란 윗선 · 손잡이 · 오른쪽 위 닫기. 뒤 화면은 한 번만 어둡게 덮여 누를 수 없고,
+ * 닫기 · 바깥 · 뒤로는 바꾸기 전으로 돌아간다. 보내는 중([dismissible] 거짓)에는 닫히지 않는다.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CrewSheet(
@@ -519,6 +738,8 @@ internal fun CrewSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     dismissible: Boolean = true,
+    /** 제목 위 작은 청록 글자(크루 이름) */
+    eyebrow: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val ink = crewInk()
@@ -526,38 +747,83 @@ internal fun CrewSheet(
     val canDismiss by rememberUpdatedState(dismissible)
     val confirm = remember { { value: androidx.compose.material3.SheetValue -> canDismiss || value != androidx.compose.material3.SheetValue.Hidden } }
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = confirm)
+    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ModalBottomSheet(
         onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = state,
-        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
-        containerColor = ink.sheet,
+        shape = shape,
+        containerColor = Color.Transparent,
         contentColor = ink.text,
         scrimColor = ink.scrim,
-        dragHandle = {
-            Box(Modifier.padding(top = 12.dp, bottom = 6.dp).size(width = 42.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(ink.handle))
-        },
+        dragHandle = null,
+        properties = androidx.compose.material3.ModalBottomSheetProperties(shouldDismissOnBackPress = dismissible),
         modifier = modifier,
     ) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = CrewGutter, end = CrewGutter, bottom = 16.dp)) {
-            if (title != null) {
-                Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    Box(
-                        Modifier.size(StepUpDesign.TouchTarget).clip(CircleShape)
-                            .feedbackClickable(enabled = dismissible, role = Role.Button, cue = FeedbackCue.Back, onClick = onDismiss)
-                            .testTag("crew-sheet-close"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.Close, stringResource(R.string.common_close), tint = ink.secondary, modifier = Modifier.size(20.dp))
+        Box(
+            Modifier.fillMaxWidth().clip(shape)
+                .background(Brush.verticalGradient(listOf(ink.sheetTop, ink.sheet)), shape)
+                .border(1.dp, ink.sheetEdge, shape),
+        ) {
+            Column(
+                Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
+                    .padding(start = CrewGutter, end = CrewGutter, top = 12.dp, bottom = 18.dp),
+            ) {
+                Box(
+                    Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp)
+                        .clip(RoundedCornerShape(3.dp)).background(ink.handle),
+                )
+                if (title != null) {
+                    Spacer(Modifier.height(22.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1f).padding(top = 4.dp)) {
+                            if (eyebrow != null) {
+                                Text(eyebrow, color = ink.info, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Spacer(Modifier.height(4.dp))
+                            }
+                            Text(title, style = crewTitleStyle(ink.text, 26.sp), modifier = Modifier.semantics { heading() })
+                        }
+                        Box(
+                            Modifier.size(48.dp).clip(CircleShape)
+                                .feedbackClickable(enabled = dismissible, role = Role.Button, cue = FeedbackCue.Back, onClick = onDismiss)
+                                .testTag("crew-sheet-close"),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Close, stringResource(R.string.common_close), tint = ink.text, modifier = Modifier.size(26.dp))
+                        }
                     }
+                } else {
+                    Spacer(Modifier.height(14.dp))
                 }
+                content()
             }
-            content()
         }
     }
 }
 
-/** 확인 시트 — 설명 두 줄과 [취소 · 행동] 버튼 */
+/** 시트 · 화면 안의 짧은 오류 줄 — 코랄 느낌표 · 글(색만으로 알리지 않게 그림을 함께) */
+@Composable
+internal fun CrewErrorLine(text: String, modifier: Modifier = Modifier, boxed: Boolean = false) {
+    val ink = crewInk()
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier.fillMaxWidth()
+            .then(
+                if (boxed) Modifier.clip(shape).background(ink.danger.copy(alpha = if (StepUpColors.dark) 0.7f else 1f), shape)
+                    .border(1.dp, ink.dangerBase, shape).padding(horizontal = 14.dp, vertical = 12.dp)
+                else Modifier,
+            ),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = ink.warn, modifier = Modifier.padding(top = 1.dp).size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, color = ink.warn, fontSize = 15.sp, lineHeight = 21.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+/**
+ * 확인 시트 — (크루 이름) · 큰 질문 · 설명, 아래 주 행동 하나와 글자 "취소"를 세로로. 보내는 중에는 닫히지 않고,
+ * 실패하면 같은 시트 안에 오류를 보이고 그대로 다시 누를 수 있다.
+ */
 @Composable
 internal fun CrewConfirmSheet(
     title: String,
@@ -569,27 +835,53 @@ internal fun CrewConfirmSheet(
     danger: Boolean = false,
     tag: String = "crew-confirm",
     error: String? = null,
+    eyebrow: String? = null,
+    /** 아래 글자 행동 — 기본은 "취소"(작성 중 나가기는 "계속 작성") */
+    cancel: String? = null,
 ) {
     val ink = crewInk()
-    CrewSheet(title, onDismiss, Modifier.testTag(tag), dismissible = !busy) {
-        Spacer(Modifier.height(18.dp))
-        Text(body, color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
+    CrewSheet(title, onDismiss, Modifier.testTag(tag), dismissible = !busy, eyebrow = eyebrow) {
+        Spacer(Modifier.height(12.dp))
+        Text(body, color = ink.text, fontSize = 16.sp, lineHeight = 25.sp)
         if (error != null) {
             Spacer(Modifier.height(14.dp))
-            Text(error, color = ink.warn, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.testTag("crew-confirm-error"))
+            CrewErrorLine(error, Modifier.testTag("crew-confirm-error"), boxed = true)
         }
-        Spacer(Modifier.height(96.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            CrewButton(stringResource(R.string.common_cancel), onDismiss, Modifier.weight(1f), CrewButtonKind.SECONDARY, enabled = !busy)
-            CrewButton(
-                confirm, onConfirm, Modifier.weight(1f).testTag("$tag-yes"),
-                if (danger) CrewButtonKind.DANGER else CrewButtonKind.PRIMARY, busy = busy,
-            )
-        }
+        Spacer(Modifier.height(28.dp))
+        CrewButton(
+            confirm, onConfirm, Modifier.testTag("$tag-yes"),
+            if (danger) CrewButtonKind.DANGER else CrewButtonKind.PRIMARY, busy = busy,
+        )
+        Spacer(Modifier.height(4.dp))
+        CrewTextAction(cancel ?: stringResource(R.string.common_cancel), onDismiss, Modifier.testTag("$tag-no"), enabled = !busy)
     }
 }
 
-/** 결과 화면(알림) — 동그라미 표시 · 제목 · 설명, 아래 큰 버튼 하나 */
+/** 결과 화면의 동그라미 — 남색 원 · 청록 체크(또는 안내) · 은은한 빛 */
+@Composable
+internal fun CrewResultArt(info: Boolean = false, modifier: Modifier = Modifier) {
+    val ink = crewInk()
+    Box(
+        modifier.size(112.dp).drawBehind {
+            drawCircle(
+                Brush.radialGradient(
+                    0f to ink.info.copy(alpha = if (StepUpColors.dark) 0.22f else 0.12f), 1f to Color.Transparent,
+                    center = center, radius = size.minDimension * 0.6f,
+                ),
+                radius = size.minDimension * 0.6f,
+            )
+            drawCircle(if (StepUpColors.dark) Color(0xFF0B2F5E) else Color(0xFFE1EBFF), radius = size.minDimension / 2.3f)
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(if (info) Icons.Outlined.Info else Icons.Filled.Check, contentDescription = null, tint = ink.info, modifier = Modifier.size(54.dp))
+    }
+}
+
+/**
+ * 결과 화면(알림) — (크루 띠) · 동그라미 체크 · 제목 · 설명, 아래 큰 버튼 하나와 글자 행동 하나.
+ * [info] 면 미승인처럼 왼쪽 정렬 큰 제목(그림 없음)으로 보인다.
+ */
 @Composable
 internal fun CrewResultPage(
     title: String,
@@ -599,34 +891,52 @@ internal fun CrewResultPage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     info: Boolean = false,
-    /** 큰 버튼 아래의 보조 버튼 하나(예: 크루 채팅 열기) */
+    /** 큰 버튼 아래의 보조 행동 하나(예: 크루 채팅 열기) — 청록 글자 */
     secondary: String? = null,
     onSecondary: (() -> Unit)? = null,
+    /** 위 크루 띠(가입 결과 18 · 19) */
+    header: (@Composable () -> Unit)? = null,
+    /** 왼쪽 정렬 결과의 작은 머리말("가입 신청 결과") */
+    eyebrow: String? = null,
+    /** 머리 제목 — 기본 "알림"(만들기 완료는 "크루 만들기") */
+    topTitle: String? = null,
 ) {
     val ink = crewInk()
-    Column(modifier.fillMaxSize().background(ink.canvas)) {
-        CrewTopBar(stringResource(R.string.crew_notice_title), onBack)
+    CrewPage(modifier) {
+        CrewTopBar(topTitle ?: stringResource(R.string.crew_notice_title), onBack)
         Column(
-            Modifier.weight(1f).fillMaxWidth().padding(horizontal = CrewGutter),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter),
+            horizontalAlignment = if (info) Alignment.Start else Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(110.dp))
-            Box(Modifier.size(66.dp).clip(CircleShape).background(ink.avatar), contentAlignment = Alignment.Center) {
-                Icon(if (info) Icons.Outlined.Info else Icons.Filled.Check, contentDescription = null, tint = ink.info, modifier = Modifier.size(30.dp))
-            }
-            Spacer(Modifier.height(30.dp))
-            Text(title, color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(16.dp))
-            Text(body, color = ink.secondary, fontSize = 14.sp, lineHeight = 26.sp, textAlign = TextAlign.Center)
-        }
-        if (secondary != null && onSecondary != null) {
-            Column(Modifier.padding(horizontal = CrewGutter).padding(bottom = 24.dp).navigationBarsPadding()) {
-                CrewButton(button, onButton, Modifier.testTag("crew-result-button"))
+            if (header != null) {
                 Spacer(Modifier.height(12.dp))
-                CrewButton(secondary, onSecondary, Modifier.testTag("crew-result-secondary"), CrewButtonKind.SECONDARY)
+                header()
             }
-        } else {
-            CrewButton(button, onButton, Modifier.padding(horizontal = CrewGutter).padding(bottom = 24.dp).navigationBarsPadding().testTag("crew-result-button"))
+            if (info) {
+                Spacer(Modifier.height(if (header != null) 40.dp else 72.dp))
+                if (eyebrow != null) {
+                    Text(eyebrow, color = ink.secondary, fontSize = 15.sp)
+                    Spacer(Modifier.height(10.dp))
+                }
+                Text(title, style = crewTitleStyle(ink.text, 32.sp), modifier = Modifier.semantics { heading() })
+                Spacer(Modifier.height(16.dp))
+                Text(body, color = ink.text, fontSize = 17.sp, lineHeight = 26.sp)
+            } else {
+                Spacer(Modifier.height(if (header != null) 56.dp else 96.dp))
+                CrewResultArt()
+                Spacer(Modifier.height(28.dp))
+                Text(title, style = crewTitleStyle(ink.text, 27.sp), textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
+                Spacer(Modifier.height(14.dp))
+                Text(body, color = ink.text, fontSize = 16.sp, lineHeight = 25.sp, textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+        CrewBottomBar {
+            CrewButton(button, onButton, Modifier.testTag("crew-result-button"))
+            if (secondary != null && onSecondary != null) {
+                Spacer(Modifier.height(4.dp))
+                CrewTextAction(secondary, onSecondary, Modifier.testTag("crew-result-secondary"))
+            }
         }
     }
 }
@@ -643,12 +953,36 @@ internal fun CrewEmptyState(
     val ink = crewInk()
     Column(modifier.fillMaxWidth().padding(horizontal = CrewGutter), horizontalAlignment = Alignment.CenterHorizontally) {
         icon()
-        Spacer(Modifier.height(24.dp))
-        Text(title, color = ink.text, fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(12.dp))
-        Text(body, color = ink.secondary, fontSize = 13.5.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(44.dp))
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp), content = buttons)
+        Spacer(Modifier.height(22.dp))
+        Text(
+            title, style = crewTitleStyle(ink.text, 26.sp), textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() },
+        )
+        if (body.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Text(body, color = ink.secondary, fontSize = 16.sp, lineHeight = 24.sp, textAlign = TextAlign.Center)
+        }
+        Spacer(Modifier.height(28.dp))
+        Column(
+            Modifier.widthIn(max = 340.dp).fillMaxWidth().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = buttons,
+        )
+    }
+}
+
+/** 빈 화면 그림 — 옅은 파랑 선 그림(원 없이). [circled] 면 파란 원 안에(검색 결과 없음) */
+@Composable
+internal fun CrewStateIcon(icon: ImageVector, modifier: Modifier = Modifier, circled: Boolean = false) {
+    val ink = crewInk()
+    val tint = if (StepUpColors.dark) Color(0xFFBFD6FF) else ink.link
+    if (circled) {
+        Box(
+            modifier.size(92.dp).clip(CircleShape).background(ink.avatar).border(1.5.dp, ink.fieldEdge, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, contentDescription = null, tint = ink.info, modifier = Modifier.size(46.dp)) }
+    } else {
+        Icon(icon, contentDescription = null, tint = tint, modifier = modifier.size(64.dp))
     }
 }
 
@@ -663,16 +997,19 @@ internal fun CrewSkeletonBox(modifier: Modifier, radius: Dp = 10.dp) {
 @Composable
 internal fun CrewFieldLabel(text: String, modifier: Modifier = Modifier) {
     val ink = crewInk()
-    Text(text, color = ink.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = modifier)
+    Text(text, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }
 
 @Composable
 internal fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
     val ink = crewInk()
-    Text(text, color = if (error) ink.warn else ink.secondary, fontSize = 12.sp, lineHeight = 18.sp, modifier = modifier)
+    Text(
+        text, color = if (error) ink.warn else ink.secondary, fontSize = 14.sp, lineHeight = 20.sp,
+        fontWeight = if (error) FontWeight.SemiBold else FontWeight.Normal, modifier = modifier,
+    )
 }
 
-/** 입력칸 — 모서리 14 · 51dp 이상 */
+/** 입력칸 — 남색 칸 · 파란 테두리(쓰는 중이면 밝게, 오류면 코랄) */
 @Composable
 internal fun CrewTextField(
     value: String,
@@ -680,31 +1017,46 @@ internal fun CrewTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     singleLine: Boolean = true,
-    minHeight: Dp = 51.dp,
+    minHeight: Dp = 56.dp,
     keyboard: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
     maxChars: Int = Int.MAX_VALUE,
     suffix: String? = null,
+    error: Boolean = false,
 ) {
     val ink = crewInk()
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(14.dp)
     androidx.compose.foundation.text.BasicTextField(
         value = value,
         onValueChange = { next -> onValueChange(if (next.length > maxChars) next.take(maxChars) else next) },
         singleLine = singleLine,
         keyboardOptions = keyboard,
-        textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = ink.text, fontSize = 15.sp, lineHeight = 24.sp),
+        textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 17.sp, lineHeight = 26.sp),
         cursorBrush = androidx.compose.ui.graphics.SolidColor(ink.info),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
         decorationBox = { inner ->
             Row(
-                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(RoundedCornerShape(14.dp)).background(ink.card)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(ink.field, shape)
+                    .border(
+                        if (focused || error) 1.5.dp else 1.dp,
+                        when {
+                            error -> ink.warn
+                            focused -> Color(0xFF4D8BFF)
+                            else -> ink.fieldEdge
+                        },
+                        shape,
+                    )
+                    .padding(horizontal = 18.dp, vertical = 15.dp),
                 verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
             ) {
                 Box(Modifier.weight(1f)) {
-                    if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = ink.secondary, fontSize = 15.sp, lineHeight = 24.sp)
+                    if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = ink.secondary.copy(alpha = 0.8f), fontSize = 17.sp, lineHeight = 26.sp)
                     inner()
                 }
-                if (suffix != null && value.isNotEmpty()) Text(suffix, color = ink.text, fontSize = 15.sp, modifier = Modifier.padding(start = 2.dp))
+                if (suffix != null) {
+                    Box(Modifier.padding(start = 12.dp).width(1.dp).height(24.dp).background(ink.divider))
+                    Text(suffix, color = ink.secondary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 14.dp))
+                }
             }
         },
     )
@@ -714,36 +1066,48 @@ internal fun CrewTextField(
 @Composable
 internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val ink = crewInk()
+    val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 51.dp).clip(RoundedCornerShape(14.dp)).background(ink.card)
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier.fillMaxWidth().heightIn(min = 58.dp).clip(shape).background(ink.field, shape)
+            .border(1.dp, if (enabled) ink.fieldEdge else ink.divider, shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text.ifEmpty { placeholder }, color = if (text.isEmpty() || !enabled) ink.secondary else ink.text, fontSize = 15.sp,
+            text.ifEmpty { placeholder }, color = if (text.isEmpty() || !enabled) ink.secondary else ink.text, fontSize = 17.sp,
+            fontWeight = if (text.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
             modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.secondary, modifier = Modifier.size(18.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = if (enabled) ink.text else ink.secondary, modifier = Modifier.size(22.dp))
     }
 }
 
-/** 화면 바탕 — 시안의 검정에 가까운 남색 */
+/** 화면 바탕 — 남색, 위가 조금 밝고 오른쪽 위에서 파란 빛이 번진다(러닝 리메이크와 같은 바닥) */
 @Composable
 internal fun CrewPage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val ink = crewInk()
-    Column(modifier.fillMaxSize().background(ink.canvas), content = content)
+    Box(modifier.fillMaxSize()) {
+        RunBackdrop(Modifier.matchParentSize())
+        Column(Modifier.fillMaxSize(), content = content)
+    }
 }
 
-/** 아래 고정 버튼 자리 — 본문이 가려지지 않게 본문 쪽이 이만큼 여백을 둔다 */
+/** 아래 고정 버튼 자리 — 위 한 줄 설명(오류면 코랄 느낌표) · 버튼. 시스템 아래 영역 위에 선다 */
 @Composable
-internal fun CrewBottomBar(caption: String? = null, content: @Composable ColumnScope.() -> Unit) {
+internal fun CrewBottomBar(caption: String? = null, captionError: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     val ink = crewInk()
     Column(
-        Modifier.fillMaxWidth().background(ink.canvas).navigationBarsPadding().padding(horizontal = CrewGutter).padding(top = 8.dp, bottom = 16.dp),
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = CrewGutter).padding(top = 8.dp, bottom = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (caption != null) {
-            Text(caption, color = ink.secondary, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"))
+            if (captionError) {
+                CrewErrorLine(caption, Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"))
+            } else {
+                Text(
+                    caption, color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, lineHeight = 21.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"),
+                )
+            }
         }
         content()
     }
@@ -757,3 +1121,6 @@ internal fun rememberCompact(content: @Composable (Boolean) -> Unit) {
 
 /** 비트맵이 없을 때의 편의 */
 internal fun Bitmap?.orImage(): ImageBitmap? = this?.asImageBitmap()
+
+/** 글자 스타일 — 러닝 리메이크와 같은 글꼴 · 줄 간격 */
+internal fun crewText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal): TextStyle = runTextStyle(size, color, weight)

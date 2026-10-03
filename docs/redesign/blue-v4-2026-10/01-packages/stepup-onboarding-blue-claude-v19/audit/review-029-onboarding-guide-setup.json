@@ -1,0 +1,42 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "ONB10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "외부 안내 페이지 열기 실패를 로그인 실패와 구분. 두 법적 링크·Google 버튼 유지, 단일 인라인 안내."
+    },
+    {
+      "id": "ONB11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "승인 HOME 무대·로고·5탭 유지. 일반/Lv1/내구도100 및 첫 러닝 안내, 작은 기록/코스 진입 확인. 잔액0.00은 조회 완료 예시로만 사용."
+    },
+    {
+      "id": "ONB20",
+      "revision": 1,
+      "result": "needs-repair",
+      "notes": "내 정보 행이 두 사람 커뮤니티 아이콘이어서 부적합. r2에서 한 사람 원형 아이콘으로 변경."
+    },
+    {
+      "id": "ONB20",
+      "revision": 2,
+      "result": "passed",
+      "notes": "한 사람 원형 프로필 아이콘으로 보완. 3개 설명 행은 화살표 없이 표시, 단일 러닝 홈으로 CTA, 하단탭 없음."
+    },
+    {
+      "id": "ONB02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "첫 홈 위 어두운 배경과 하나의 안내 시트, X·3개 설명·러닝 시작·먼저 둘러보기 모두 확인. 시트 아래 탭을 다시 넣지 않음."
+    },
+    {
+      "id": "ONB21",
+      "revision": 1,
+      "result": "passed",
+      "notes": "첫 설정1/3, 로컬 저장 설명, BMI22.0 정상 구간, 키165/몸무게60.0 조절 버튼, 다음과 건너뛰기 명확."
+    }
+  ],
+  "runtimeVerified": false
+}

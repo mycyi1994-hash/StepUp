@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-03",
+  "method": "각 생성 이미지 반환 픽셀 및 r2 재검수",
+  "screens": [
+    {
+      "id": "SD02",
+      "revision": 2,
+      "result": "passed",
+      "notes": "레어와No0007 복원, 착용 상태는 비활성주버튼으로 표시. 강화 활성."
+    },
+    {
+      "id": "SD03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "요청 중 스피너/비활성강화/관리,성공미표시."
+    },
+    {
+      "id": "SD04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "레어번호보존,실제착용확정 snackbar와비활성착용 확인."
+    },
+    {
+      "id": "SD05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "확정거절과기존클라우드러너유지,재착용/닫기,스크림 확인."
+    },
+    {
+      "id": "SD06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인필요전용시트,수동로그인/닫기."
+    },
+    {
+      "id": "SD07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "결과미확인과읽기확인행동,실패나기존착용유지단정없음."
+    },
+    {
+      "id": "SD08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "스켈레톤과네수치—,샘플소유데이터없음,버튼비활성."
+    },
+    {
+      "id": "SD09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "조회실패와재시도/보관함,빈목록과구분."
+    },
+    {
+      "id": "SD11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "실제데이터네줄과행동유지,아트만실패안내/재조회. 무대광원은구현에서빈상태에낮춤."
+    }
+  ]
+}

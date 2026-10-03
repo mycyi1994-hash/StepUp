@@ -1,5 +1,13 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.ui.experience.feedbackClickable
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
@@ -157,48 +165,39 @@ fun CommunityScreen(
     CommentSheetHost(viewModel)
 
     Column(Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            when {
-                tab == CommunityTab.CREW -> com.stepup.android.ui.components.FocusHeader(
-                    stringResource(R.string.community_tab_my_crew),
-                    onBack = { viewModel.selectTab(CommunityTab.BOARD) },
-                )
-                // 번개 모임(예전 함께 뛰기) — 지도 · 내 크루 아이콘은 여기 그대로
-                meetups -> com.stepup.android.ui.components.FocusHeader(
-                    stringResource(R.string.community_together),
-                    onBack = { if (allMeetups) allMeetups = false else meetups = false },
-                ) {
-                    Row {
-                        DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
-                        DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
-                            onClick = { viewModel.selectTab(CommunityTab.CREW) })
-                    }
-                }
-                // S2 — 위는 글자 탭 세 개(러닝 이야기 / 크루 모집 / 크루 채팅). 큰 제목은 두지 않는다.
-                else -> Row(
-                    Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
-                    // 시안(크루 채팅 01) — 세 탭이 좌우 끝까지 고르게
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    segments.forEachIndexed { index, label ->
-                        com.stepup.android.ui.components.S2TextTab(
-                            label = label,
-                            selected = segment == index,
-                            onClick = { segment = index },
-                            modifier = Modifier.testTag(
-                                when (index) {
-                                    SEGMENT_STORIES -> "community-tab-stories"
-                                    SEGMENT_CREWS -> "community-tab-crews"
-                                    else -> "community-tab-chat"
-                                },
-                            ),
-                        )
+        when {
+            tab == CommunityTab.CREW || meetups -> Column(
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (tab == CommunityTab.CREW) {
+                    com.stepup.android.ui.components.FocusHeader(
+                        stringResource(R.string.community_tab_my_crew),
+                        onBack = { viewModel.selectTab(CommunityTab.BOARD) },
+                    )
+                } else {
+                    // 번개 모임(예전 함께 뛰기) — 지도 · 내 크루 아이콘은 여기 그대로
+                    com.stepup.android.ui.components.FocusHeader(
+                        stringResource(R.string.community_together),
+                        onBack = { if (allMeetups) allMeetups = false else meetups = false },
+                    ) {
+                        Row {
+                            DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
+                            DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
+                                onClick = { viewModel.selectTab(CommunityTab.CREW) })
+                        }
                     }
                 }
             }
+            // 위는 글자 탭 세 개(러닝 이야기 / 크루 모집 / 크루 채팅) — 2026-10-03 커뮤니티 기본 파란 톤(CM01): 고른 탭은
+            // 기울인 시안 글자와 시안 밑줄, 탭 사이 가는 세로선, 아래 가로선. 큰 제목은 두지 않는다.
+            else -> CommunityTabs(
+                labels = segments,
+                selected = segment,
+                onSelect = { segment = it },
+                tags = listOf("community-tab-stories", "community-tab-crews", "community-tab-chat"),
+                modifier = Modifier.guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
+            )
         }
 
         when {
@@ -849,3 +848,58 @@ private fun MapEntryCard(onClick: () -> Unit) {
 private const val SEGMENT_STORIES = 0
 private const val SEGMENT_CREWS = 1
 private const val SEGMENT_CHAT = 2
+
+/**
+ * 커뮤니티 위 글자 탭 셋(CM01) — 같은 폭, 고른 탭은 기울인 굵은 시안 글자와 그 아래 시안 밑줄, 탭 사이 가는 세로선,
+ * 줄 아래 파란 가로선. 크루 모집 · 크루 채팅의 안쪽 화면은 각 묶음이 그린다(여기는 겉 틀만).
+ */
+@Composable
+private fun CommunityTabs(
+    labels: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    tags: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    val t = com.stepup.android.ui.components.runTone()
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            labels.forEachIndexed { index, label ->
+                val on = index == selected
+                if (index > 0) {
+                    Box(Modifier.width(1.dp).height(22.dp).background(t.divider))
+                }
+                Column(
+                    Modifier.weight(1f).heightIn(min = 52.dp).clip(RoundedCornerShape(10.dp))
+                        .feedbackClickable(role = Role.Tab, cue = com.stepup.android.ui.experience.FeedbackCue.Select) { onSelect(index) }
+                        .semantics { this.selected = on }
+                        .testTag(tags[index]),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom,
+                ) {
+                    Text(
+                        label,
+                        style = TextStyle(
+                            fontFamily = com.stepup.android.ui.theme.StepUpSans,
+                            fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Bold,
+                            fontStyle = if (on) FontStyle.Italic else FontStyle.Normal,
+                            fontSize = 18.sp,
+                            color = if (on) t.cyan else t.text.copy(alpha = 0.86f),
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
+                    )
+                    Box(
+                        Modifier.fillMaxWidth(0.82f).height(4.dp).clip(RoundedCornerShape(2.dp))
+                            .background(if (on) t.cyan else androidx.compose.ui.graphics.Color.Transparent),
+                    )
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(t.panelEdge.copy(alpha = 0.8f)))
+    }
+}

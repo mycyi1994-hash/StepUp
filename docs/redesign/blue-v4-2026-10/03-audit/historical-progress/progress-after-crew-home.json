@@ -1,0 +1,26 @@
+{
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-내크루홈32장-파란톤-지시서.zip",
+  "bytes": 39664424,
+  "sha256": "e4a37ed490d2b0bcd35ff528e08cc31aee74dd1852e31ef189935f0b9b0aaa6f",
+  "visualStateCount": 32,
+  "newScreenCount": 27,
+  "reusedStateCount": 5,
+  "sharedReferenceCount": 4,
+  "pngCRC": "passed",
+  "archiveCRC": "passed",
+  "archiveAllFileHashes": "passed",
+  "packageLinks": "passed",
+  "latestReviewMatch": "passed",
+  "reusedOriginalHashes": "passed",
+  "sourceHashesUnchangedDuringPackaging": true,
+  "dimensions": {
+    "887x1774": 32
+  },
+  "allV19StatusCounts": {
+    "reviewed": 317,
+    "pending": 92
+  },
+  "additionalStateGroups": 19,
+  "appRuntimeVerified": false,
+  "fullGoalComplete": false
+}

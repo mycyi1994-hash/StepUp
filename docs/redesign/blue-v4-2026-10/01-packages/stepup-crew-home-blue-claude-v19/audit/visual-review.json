@@ -1,0 +1,197 @@
+{
+  "method": "Individual image inspection; static mockups, not runtime validation.",
+  "screens": [
+    {
+      "id": "CH00",
+      "revision": 1,
+      "result": "passed",
+      "notes": "기존4번 홈의 좌측 흰 채팅/우측 다음 러닝,큰 크루 카드,참석/주간/공지 순서 유지. 24/30명과모임8명·주간9명 구분,126/160=79%. 현재앱내부페이지이므로SUP/하단탭 없음. 새 파란면·선·흰버튼하단면 적용."
+    },
+    {
+      "id": "CH01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "큰 대표이미지·크루명/Lv7·실제항목3행·크루장·24명보기 구성. 기존홈소개기능을 보존하며 임의 개인프로필필드 없음. 글자겹침·버튼잘림 없음."
+    },
+    {
+      "id": "CH03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "기존홈레벨독립페이지. 현재Lv7·다음Lv8자리/승급기준준비중·주간126km9명. 임의XP·달성률·보상정책 없음. 주간기록보기 한개와 안전여백."
+    },
+    {
+      "id": "CH04",
+      "revision": 1,
+      "result": "passed",
+      "notes": "전체24명/정원30명·이름검색·크루장/나/일반멤버7행. 전체목록중첫뷰포트로스크롤연결. 멤버별프로필로연결하며활동지·온라인여부등임의필드 없음."
+    },
+    {
+      "id": "CH02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "현행CrewRoutes.IMAGE공유화면. CP09 최신 파란톤 대표이미지 확대를 픽셀변경없이재사용. 뒤로/닫기는소개호출자로복귀. 새생성아님."
+    },
+    {
+      "id": "CH07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "현행같은ChatRoutes.ROOM 멤버분기로 CHAT02-r2 재사용. 24명·도윤본인·공지·입력일관. 채팅자료의9/28예시는홈9/29와별도스냅샷. 새생성아님."
+    },
+    {
+      "id": "CH08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "현행같은ChatRoutes.INFO 멤버분기로 CHAT04 재사용. 크루상세보기는해당홈,명단은홈멤버로연결. 새생성아님."
+    },
+    {
+      "id": "CH30",
+      "revision": 1,
+      "result": "passed",
+      "notes": "현행같은ChatRoutes.ROOM 크루장분기로 CHAT03 재사용. 준호본인·관리버튼·24명유지. 새생성아님."
+    },
+    {
+      "id": "CH31",
+      "revision": 1,
+      "result": "passed",
+      "notes": "현행같은ChatRoutes.INFO 크루장분기로 CHAT05 재사용. 공지등록/멤버관리추가·직접나가기없음. 새생성아님."
+    },
+    {
+      "id": "CH05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "크루장·가입일·실제 공개 기록 한 건과 크루장 안내만 표시. 서버에 없는 개인 소개·선호 항목 제외. 887×1774."
+    },
+    {
+      "id": "CH06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "크루원·가입일·공개 기록 한 건을 표시. 크루장 안내를 일반 크루원에게 복사하지 않음. 887×1774."
+    },
+    {
+      "id": "CH09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "미응답 다음 러닝. 집결 지도 예시·3km·실제 참석8명. 모임 정원과 크루 정원 분리. 한 개 흰색 주 버튼."
+    },
+    {
+      "id": "CH11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "참석 저장 성공.9명으로 갱신, 참석 예정, 변경 버튼. 기타 일정과 안내 유지."
+    },
+    {
+      "id": "CH12",
+      "revision": 1,
+      "result": "passed",
+      "notes": "불참 저장 성공.8명 유지, 불참 예정, 변경 버튼. CH09 동일 상세 정보."
+    },
+    {
+      "id": "CH10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "참석9명 상태 위 변경 시트. 두 응답은 즉시 저장, 별도 적용 없음. 닫기 시 변경 없음."
+    },
+    {
+      "id": "CH13",
+      "revision": 1,
+      "result": "passed",
+      "notes": "실제 참석8명 명단, 진행자 준호 먼저. 크루 전체24명 및 미참석 도윤과 분리. 모든8행 식별 가능."
+    },
+    {
+      "id": "CH14",
+      "revision": 1,
+      "result": "passed",
+      "notes": "집결 좌표 지도 예시와 외부 지도 앱/복귀 버튼. 사용자 위치·가상 길찾기 제거. 실제 타일 및 집결 좌표 사용 명세 필요."
+    },
+    {
+      "id": "CH25",
+      "revision": 1,
+      "result": "passed",
+      "notes": "YES→NO 저장 실패 시트. 이전 참석 예정 유지, 오류문 두 줄, 응답 버튼 재시도. 실제앱 검증 아님."
+    },
+    {
+      "id": "CH15",
+      "revision": 1,
+      "result": "passed",
+      "notes": "126/160km79%,요일61.2+64.8=126, 미래요일—,참여9명. 지연주간18.6과최근5.2구분."
+    },
+    {
+      "id": "CH18",
+      "revision": 1,
+      "result": "passed",
+      "notes": "9/29일 필터명 일치. 종료시각 내림차순,6건은 스크롤 일부. 시안 상하 시스템 영역 미묘사, 실제앱 안전영역은 유지."
+    },
+    {
+      "id": "CH16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "선택한 이번 주 체크, 실제3주 목록, 즉시 전환. 별도 적용 없음. 주간/기록 목록 공용."
+    },
+    {
+      "id": "CH17",
+      "revision": 2,
+      "result": "passed",
+      "notes": "142/160km89%,요일합142. 과거7일 같은 파랑, 오늘 강조 없음. 현재목표 기준 표기."
+    },
+    {
+      "id": "CH19",
+      "revision": 1,
+      "result": "passed",
+      "notes": "지연5.2km36:24=7분/km. 경로 예시 및 출발/도착300m제외 안내. 원본 좌표 복원 금지."
+    },
+    {
+      "id": "CH20",
+      "revision": 1,
+      "result": "passed",
+      "notes": "9/29새 공지 및 연결모임. 제목·날짜 홈과 일치. 일반멤버 편집행 없음. 채팅과 모임 상세 연결."
+    },
+    {
+      "id": "CH21",
+      "revision": 1,
+      "result": "passed",
+      "notes": "고정9/29공지+9/24공지. 채팅공통 목록 구조 재사용하되 독립 데이터예시."
+    },
+    {
+      "id": "CH22",
+      "revision": 1,
+      "result": "passed",
+      "notes": "일반 크루원 메뉴6행. 게시판·함께 달리기 보존. 나가기는 확인시트로. 크루장 메뉴는별도추가상태."
+    },
+    {
+      "id": "CH23",
+      "revision": 1,
+      "result": "passed",
+      "notes": "예정모임없음에도126km/9명 및미읽음3보존. 이분기고정공지없음. 빈모임과빈기록독립."
+    },
+    {
+      "id": "CH24",
+      "revision": 1,
+      "result": "passed",
+      "notes": "실제조회0km/0명. 월화0과 미래—구분, 가짜참여자없음. 첫러닝 안내와 내크루복귀."
+    },
+    {
+      "id": "CH26",
+      "revision": 1,
+      "result": "passed",
+      "notes": "캐시없는 최초조회실패. 가짜크루명/0인원없음, 재조회하나. 기존데이터있는갱신실패는별도감사."
+    },
+    {
+      "id": "CH27",
+      "revision": 1,
+      "result": "passed",
+      "notes": "전체24명보존,검색지연1명,지우기X,행프로필. 키보드닫힌상태."
+    },
+    {
+      "id": "CH28",
+      "revision": 1,
+      "result": "passed",
+      "notes": "YES저장후9명참석/참석예정. 크루24명·주간9명·126km·미읽음3유지."
+    },
+    {
+      "id": "CH29",
+      "revision": 1,
+      "result": "passed",
+      "notes": "NO저장후홈8명참석·불참예정. 크루24명·주간9명·126km·미읽음3유지. 다른영역불변."
+    }
+  ]
+}

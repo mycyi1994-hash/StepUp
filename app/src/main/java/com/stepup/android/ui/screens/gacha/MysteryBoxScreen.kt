@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -54,20 +56,20 @@ class DrawActions(
     val onSignIn: (() -> Unit)? = null,
 )
 
-/** 짧은 알림(26)이 보이는 동안 메인 아래에 비우는 자리 — 알림 48dp + 하단 탭과의 틈 12dp */
+/** 짧은 알림(DRAW18)이 보이는 동안 메인 아래에 비우는 자리 — 알림 48dp + 하단 탭과의 틈 12dp */
 private val ToastRoom = 60.dp
 
 /** 메인 위에서 여닫는 안내창 — 여닫아도 기회를 쓰지 않는다(10 · 13 · 14 · 15 · 16 · 17) */
 enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances }
 
 /**
- * 신발 뽑기(2026-09-28 전달본 "신발 뽑기 디자인" 26장, docs/redesign/shoe-draw-v3) — 하단 가운데 "뽑기" 탭.
- * 위에 무료 뽑기 / 상급 뽑기 글자 탭, 고른 탭의 상자 무대 · 남은 횟수 · 일반 크기 실행 버튼 하나. 로고 · 잔액 머리와 하단 탭은
- * 앱 셸이 그린다. 뽑기를 누르면 결과 확인 중(04) → 서버가 결과를 확인한 뒤에만 상자 열기(05) → 결과(06 · 07 · 08) —
- * 이 동안은 하단 탭을 걷는다. 답을 받지 못하면 새로 뽑지 않고 확인한다(19), 뒤로 가면 "결과 확인"이 남는다(20).
+ * 신발 뽑기 — 하단 가운데 "뽑기" 탭(2026-10-03 파란 톤 통합 전달본 v4, stepup-draw-blue-claude-v19 · DRAW00~33).
+ * 무료 패널과 상급 패널을 한 화면에 함께 두고(예전 무료 / 상급 글자 탭 대신), 각 패널에 상자 · 남은 수 · 주 버튼 하나. 로고 · 잔액 머리와
+ * 하단 탭은 앱 셸이 그린다. 뽑기를 누르면 결과 확인 중(DRAW10) → 서버가 결과를 확인한 뒤에만 상자 열기(DRAW11) → 결과(DRAW12 · 13 · 14 · 33)
+ * — 이 동안은 하단 탭만 걷는다. 답을 받지 못하면 새로 뽑지 않고 확인한다(DRAW20), 뒤로 가면 두 패널 모두 "결과 확인"이 남는다(DRAW26).
  * 수 · 연결 상태 · 신발은 모두 서버 값이다 — 가격 · SUP 결제 · 확률 · 나올 수 있는 신발 목록은 없다.
  *
- * [initialSheet] · [initialTab] · [openingAt] 는 기기 검사가 한 장면을 바로 찍을 때만 쓴다.
+ * [initialSheet] · [initialTab] · [openingAt] 는 기기 검사가 한 장면을 바로 찍을 때만 쓴다([initialTab] 이 상급이면 상급 패널을 화면 안으로).
  */
 @Composable
 fun MysteryBoxScreen(
@@ -86,15 +88,12 @@ fun MysteryBoxScreen(
     val motion = LocalMotion.current
     val status = (state as? DrawScreenState.Ready)?.status
     var sheet by rememberSaveable { mutableStateOf(initialSheet) }
-    var tab by rememberSaveable { mutableStateOf(initialTab ?: pending?.kind ?: DrawKind.FREE) }
-    // 결과를 모르는 요청 · 시작 실패 · 지갑 연결 확인은 그 종류의 탭에서 보인다
-    LaunchedEffect(pending?.kind) { pending?.kind?.let { tab = it } }
+    // 상급 패널을 화면 안으로 옮길 때마다 하나씩 는다(예전에는 상급 탭을 골랐다) — 상급 요청의 결과 확인 · 시작 실패 · 지갑 연결 확인
+    var premiumFocus by remember { mutableIntStateOf(if (initialTab == DrawKind.PREMIUM) 1 else 0) }
+    LaunchedEffect(pending?.kind) { if (pending?.kind == DrawKind.PREMIUM) premiumFocus++ }
     LaunchedEffect(notice) {
-        when (notice) {
-            is DrawNotice.NotStarted -> tab = notice.kind
-            is DrawNotice.Linked -> tab = DrawKind.PREMIUM
-            else -> Unit
-        }
+        val premium = notice is DrawNotice.Linked || (notice is DrawNotice.NotStarted && notice.kind == DrawKind.PREMIUM)
+        if (premium) premiumFocus++
     }
 
     BackHandler(enabled = flow !is DrawFlow.Home) {
@@ -106,8 +105,8 @@ fun MysteryBoxScreen(
         }
     }
 
-    // 26 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐(하단 탭 위). 보이는 동안은 메인 아래에 자리를 비워
-    // 상자 무대가 그만큼 줄고 실행 버튼이 알림 위로 올라간다(알림이 버튼을 가리지 않게 — 시안 26)
+    // DRAW18 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐(하단 탭 위). 보이는 동안은 메인 아래에 자리를 비워
+    // 알림이 버튼을 가리지 않는다
     val toast = when (notice) {
         is DrawNotice.RunReward -> stringResource(R.string.dv2_run_reward, notice.added)
         DrawNotice.Relinked -> stringResource(R.string.dv2_relinked)
@@ -131,11 +130,10 @@ fun MysteryBoxScreen(
                     status = status,
                     loading = state == DrawScreenState.Loading,
                     signedOut = state == DrawScreenState.SignedOut,
-                    tab = tab,
                     pending = pending,
                     actions = actions,
-                    onTab = { tab = it },
                     onSheet = { sheet = it },
+                    premiumFocus = premiumFocus,
                 )
                 is DrawFlow.Requesting -> DrawRequestScreen(current.kind, onBack = actions.onLeaveFlow)
                 is DrawFlow.Opening -> DrawOpeningScreen(current.result, onFinish = actions.onFinishOpening, frozenAt = openingAt)
@@ -218,8 +216,8 @@ fun MysteryBoxScreen(
         )
         DrawSheet.Rules -> RulesSheet(status, onClose = close)
         DrawSheet.WalletBenefit -> WalletBenefitSheet(status, onConnect = { close(); actions.onConnectWallet() }, onClose = close)
-        // 13 → "상급 뽑기 보기"는 상급 탭으로
-        DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); tab = DrawKind.PREMIUM }, onClose = close)
+        // DRAW16 → "상급 뽑기 보기"는 같은 화면의 상급 패널로(글자 탭을 새로 만들지 않는다)
+        DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); premiumFocus++ }, onClose = close)
         DrawSheet.RunChances -> RunChancesSheet(status, onStartRun = { close(); actions.onStartRun() }, onClose = close)
         null -> Unit
     }

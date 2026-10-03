@@ -1,0 +1,58 @@
+[
+  {
+    "id": "H07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2423cde6-dfee-41fa-a03f-1bbb892ab74f.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "상태 일치",
+        "명확한 버튼",
+        "예시 지도 표시"
+      ],
+      "notes": "최초 빈 기록에서 허위 경로 제거, 단순 기록 아이콘과 시작/돌아가기 확인."
+    }
+  },
+  {
+    "id": "H08",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-97d68d63-a33a-49ba-9f3d-11503491621e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "상태 일치",
+        "명확한 버튼",
+        "예시 지도 표시"
+      ],
+      "notes": "선택한8월의 빈 상태와 다른 기간 안내,전체 기록 보기 확인."
+    }
+  },
+  {
+    "id": "E06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f0c54d48-2f98-4a1e-b451-c2fd8db9611c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "상태 일치",
+        "명확한 버튼",
+        "예시 지도 표시"
+      ],
+      "notes": "기록 중 측정 확인 안내와 자세히 보기, 정상 기록 수치 및 일시정지/종료 유지."
+    }
+  },
+  {
+    "id": "E07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-aa41644c-ee91-436e-9cfd-b50a4b526aed.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "상태 일치",
+        "명확한 버튼",
+        "예시 지도 표시"
+      ],
+      "notes": "기기 위치 기능 꺼짐과 앱 권한 차이 구분,위치 설정/시간만 기록하기. 현재 GPS점 없음."
+    }
+  }
+]

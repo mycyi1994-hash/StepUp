@@ -1,0 +1,24 @@
+{
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-크루채팅44장-파란톤-지시서.zip",
+  "bytes": 55344557,
+  "sha256": "8de3da4b94026195591b81ad5fcca7913e174971b8ceccbe67039e02e8ca9bd1",
+  "newScreenCount": 44,
+  "sharedReferenceCount": 7,
+  "pngCRC": "passed",
+  "archiveCRC": "passed",
+  "archiveAllFileHashes": "passed",
+  "packageLinks": "passed",
+  "latestReviewMatch": "passed",
+  "sourceHashesUnchangedDuringPackaging": true,
+  "dimensions": {
+    "887x1774": 41,
+    "886x1774": 3
+  },
+  "allV19StatusCounts": {
+    "reviewed": 285,
+    "pending": 124
+  },
+  "additionalStateGroups": 23,
+  "appRuntimeVerified": false,
+  "fullGoalComplete": false
+}

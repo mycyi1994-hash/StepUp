@@ -1,0 +1,127 @@
+{
+  "purpose": "정적 시안의 가상 데이터. 서버 정책·현재 사용자 자료·검증된 동작을 뜻하지 않는다.",
+  "base": {
+    "crew": "퇴근런",
+    "members": 24,
+    "owner": "준호",
+    "memberViewer": "도윤",
+    "art": "assets/crew-examples/afterwork.png",
+    "date": "9월28일 월요일",
+    "noticeCount": 2
+  },
+  "messages": [
+    {
+      "author": "준호",
+      "time": "19:05",
+      "body": "오늘은 공덕역 2번 출구에서 만나요. 7시 30분에 출발해요!",
+      "ownerUnreadExample": 3
+    },
+    {
+      "author": "지연",
+      "time": "19:07",
+      "body": "저도 오늘 함께할게요!"
+    },
+    {
+      "author": "도윤",
+      "time": "19:09",
+      "body": "좋아요! 저는 5분 정도 먼저 가 있을게요.",
+      "memberUnreadExample": 7
+    },
+    {
+      "author": "준호",
+      "time": "19:12",
+      "body": "천천히 오세요. 같이 출발해요.",
+      "ownerUnreadExample": 9
+    }
+  ],
+  "notices": {
+    "A": {
+      "title": "오늘 19:30 · 공덕역 2번 출구",
+      "author": "준호",
+      "created": "9월28일18:30",
+      "pinned": true,
+      "linkedMeeting": "공덕역2번출구19:30"
+    },
+    "B": {
+      "title": "이번 주 러닝 일정",
+      "created": "9월25일",
+      "summary": "화·목 저녁에 함께 달려요."
+    },
+    "C": {
+      "title": "오늘은 러닝을 쉬어요",
+      "body": "오늘은 비가 와서 러닝을 쉬어요.\n\n다음 모임은 목요일 저녁 7시 30분,\n공덕역 2번 출구에서 만나요.",
+      "pinned": true,
+      "linkedMeeting": null
+    }
+  },
+  "independentBranches": {
+    "noticeNew": [
+      "CHAT10",
+      "CHAT43 or CHAT44",
+      "CHAT13 after server success"
+    ],
+    "noticeEdit": {
+      "screen": "CHAT11",
+      "notice": "A",
+      "unsavedExtra": "물도 챙겨주세요.",
+      "preservesMeeting": true
+    },
+    "deleteOwn": {
+      "screens": [
+        "CHAT17",
+        "CHAT18"
+      ],
+      "targetAuthor": "도윤",
+      "targetTime": "19:09",
+      "membersAfter": 24
+    },
+    "hideOther": {
+      "screens": [
+        "CHAT38",
+        "CHAT39",
+        "CHAT40"
+      ],
+      "targetAuthor": "지연",
+      "targetTime": "19:07",
+      "membersAfter": 24
+    },
+    "removeMember": {
+      "screens": [
+        "CHAT33",
+        "CHAT34",
+        "CHAT35"
+      ],
+      "target": "민수",
+      "membersAfter": 23
+    },
+    "sendFailure": {
+      "screens": [
+        "CHAT19",
+        "CHAT20"
+      ],
+      "initialReceivedMessages": 2,
+      "targetAuthor": "도윤",
+      "later1912NotYetVisible": true
+    },
+    "photo": {
+      "screens": [
+        "CHAT26",
+        "CHAT27",
+        "CHAT41",
+        "CHAT42"
+      ],
+      "initialReceivedMessages": 2,
+      "author": "도윤",
+      "time": "19:10",
+      "caption": "크루 사진 이걸로 어때요?",
+      "unreadExample": 7
+    },
+    "solo": {
+      "screen": "CHAT30",
+      "crew": "공덕한바퀴",
+      "members": 1,
+      "draft": "안녕하세요! 같이 달려요."
+    }
+  },
+  "identity": "실제 crewId/userId/messageId/noticeId/clientId로 연결. 이름·화면번호로 데이터 조회 금지. 날짜는 과거 대화 예시이며 현재 날짜를 고정하지 않는다."
+}

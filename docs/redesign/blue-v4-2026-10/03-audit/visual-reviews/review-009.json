@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-03",
+  "method": "복구된4장과신규/수정4장모두view_image 또는 imagegen 반환 픽셀검사. SD13/14 r1은배치/문구문제, r2만통과.",
+  "screens": [
+    {
+      "id": "SD12",
+      "revision": 1,
+      "result": "passed",
+      "notes": "첫 착용 안내,현재 착용신발없음,직접강화/신기와네줄."
+    },
+    {
+      "id": "SD13",
+      "revision": 2,
+      "result": "passed",
+      "notes": "모달을높여수리/판매/기록3행모두표시,번호/내구도/스크림확인."
+    },
+    {
+      "id": "SD14",
+      "revision": 2,
+      "result": "passed",
+      "notes": "관리3행과착용중판매비활성사유확인. 공통구현은SD13아이콘없는행으로통일."
+    },
+    {
+      "id": "SD15",
+      "revision": 1,
+      "result": "passed",
+      "notes": "조회정보5행,체인등록없음,No0007유지,닫기."
+    },
+    {
+      "id": "SD16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Token#142와민트No0007별도,다른정보동일."
+    },
+    {
+      "id": "SD17",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Vault#1000007온전히표시,No0007와분리."
+    }
+  ]
+}

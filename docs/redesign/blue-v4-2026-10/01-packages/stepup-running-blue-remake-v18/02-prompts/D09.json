@@ -1,0 +1,8 @@
+{
+  "id": "D09",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI only: remove incorrect top-left subtitle 준비 구간. This is the FIRST recovery walk interval, not warm-up. Keep existing1/3번째걷기 and all other phase,01:20,04:40,0.36km,15:00 text unchanged. No other layoutchanges.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-509268d3-03ba-464c-b7cc-8b9533dbc743.png"
+  ]
+}

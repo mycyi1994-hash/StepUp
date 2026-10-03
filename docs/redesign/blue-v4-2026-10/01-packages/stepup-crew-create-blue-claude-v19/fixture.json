@@ -1,0 +1,30 @@
+{
+  "purpose": "정적 시안 비교용 가상 초안. 서버 데이터가 아님",
+  "name": "공덕 한바퀴",
+  "tagline": "퇴근길에 함께 한 바퀴",
+  "leaderNote": "처음이어도 편하게 함께해요.\n천천히, 꾸준히 같이 달려요.",
+  "areaLabel": "공덕동",
+  "coordinates": null,
+  "schedule": {
+    "days": [
+      "화",
+      "목"
+    ],
+    "time": "19:30"
+  },
+  "distance": "3~5km",
+  "moods": [
+    "천천히",
+    "처음도 환영"
+  ],
+  "capacity": 20,
+  "goalKm": 100,
+  "recruiting": true,
+  "image": "이름형 teal; CP28은 사용자가 사진을 고른 별도 분기",
+  "creationResultExample": {
+    "members": 1,
+    "pendingApplications": 0,
+    "level": null
+  },
+  "existingCrewAtEntry": "퇴근런24/30; 공덕 한바퀴 생성 결과와 다른 크루"
+}

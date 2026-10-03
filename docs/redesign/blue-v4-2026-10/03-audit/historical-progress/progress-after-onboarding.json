@@ -1,0 +1,23 @@
+{
+  "screens": 17,
+  "references": 10,
+  "pngFilesIncludingAssets": 30,
+  "latestRevisions": "passed",
+  "visualReviews": "passed",
+  "pngCRC": "passed",
+  "documentLinks": "passed",
+  "sourceHashesUnchanged": true,
+  "runtimeVerified": false,
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-시작로그인17장-파란톤-지시서.zip",
+  "bytes": 41367777,
+  "sha256": "b1102332c957f4b8dd140584c4f240b71aad189dd620858428c2e8a7cf17fc43",
+  "archiveCRC": "passed",
+  "archiveAllHashes": "passed",
+  "currentCandidates": 434,
+  "currentStatusCounts": {
+    "reviewed": 395,
+    "pending": 39
+  },
+  "fullGoalComplete": false,
+  "priorConsolidatedV2ZipUnmodified": true
+}

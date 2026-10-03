@@ -1,0 +1,43 @@
+{
+  "basis": [
+    "stepup-community-easy-writing/screen-index.json",
+    "stepup-community-writing-states/screen-index.json",
+    "stepup-community-writing-states/Claude-상황별추가지시서.md"
+  ],
+  "easyWritingCoverage": {
+    "01-quick-compose": "CM12",
+    "02-record-picker": "WRITE09",
+    "03-ready-compose": "WRITE03",
+    "04-quick-place": "WRITE10",
+    "05-no-recent-run": "WRITE11",
+    "06-place-search": "CM14",
+    "07-published-feed": "WRITE12",
+    "08-course-post": "WRITE13"
+  },
+  "reusedLayoutNotes": {
+    "CM12": "기본 버튼형 작성 화면으로 갱신 완료",
+    "CM14": "쉬운 장소 검색으로 갱신 완료; 결과 즉시 선택",
+    "WRITE03": "코스가 붙은 작성 화면과 3일 전 유효 기록의 같은 구성; 날짜별 데이터만 다름"
+  },
+  "newCandidates": [
+    "WRITE09",
+    "WRITE10",
+    "WRITE11",
+    "WRITE12",
+    "WRITE13",
+    "WRITE14",
+    "WRITE15",
+    "WRITE16",
+    "WRITE17"
+  ],
+  "notes": [
+    "기본 CM43장은 시각 검수 완료. WRITE01~17은 아직 새 톤 시안 미완료다.",
+    "기존 상세 화면의 크루 모집/채팅 제외라는 범위 문장은 해당 옛 패키지 한정이며 현재 제품의 3개 커뮤니티 탭을 삭제하는 근거가 아니다.",
+    "CM07 중복 장소 목록은 폐기 상태 유지.",
+    "전체 경로 누락 감사는 계속 필요하다. 현재 후보 수를 최종 전체 범위로 단정하지 않는다."
+  ],
+  "counts": {
+    "reviewed": 126,
+    "pending": 275
+  }
+}

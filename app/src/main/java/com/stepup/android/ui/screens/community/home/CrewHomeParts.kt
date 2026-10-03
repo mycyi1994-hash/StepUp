@@ -47,17 +47,21 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
+import com.stepup.android.ui.screens.community.chat.BlueGutter
+import com.stepup.android.ui.screens.community.chat.BlueSkeleton
+import com.stepup.android.ui.screens.community.chat.blueInk
 import com.stepup.android.domain.CrewHomeRules
 import com.stepup.android.domain.CrewRules
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.MeetingFace
 import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.RunMapFrame
+import com.stepup.android.ui.screens.community.chat.BlueClearButton
+import com.stepup.android.ui.screens.community.chat.BlueDivider
+import com.stepup.android.ui.screens.community.chat.blueText
 import com.stepup.android.ui.components.StepUpMap
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.chat.ChatFace
-import com.stepup.android.ui.screens.community.crew.CrewGutter
-import com.stepup.android.ui.screens.community.crew.CrewSkeletonBox
-import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.screens.community.stories.rangeSpan
 import java.time.Instant
 import java.time.LocalDate
@@ -67,7 +71,7 @@ import java.time.format.TextStyle as DayStyle
 import java.util.Locale
 
 /*
- * 내 크루 홈(확정 4번) — 화면들이 함께 쓰는 부품. 색 · 여백은 크루 명함형(crewInk · 좌우 24)과 같은 값을 쓴다.
+ * 내 크루 홈(확정 4번) — 화면들이 함께 쓰는 부품. 색 · 여백은 크루 명함형(blueInk · 좌우 24)과 같은 값을 쓴다.
  * 시안의 지도 도식은 실제 지도 타일(StepUpMap)과 서버 좌표로 바꿨다 — 좌표가 없으면 지도를 그리지 않는다.
  */
 
@@ -155,25 +159,24 @@ internal fun km(value: Double): String = CrewRules.km(value)
 /** 작은 푸른 소제목(시안의 "다음 러닝" · "퇴근런") */
 @Composable
 internal fun HomeLabel(text: String, modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    Text(text, color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = modifier)
+    val ink = blueInk()
+    Text(text, style = blueText(15.sp, ink.info, FontWeight.Bold), modifier = modifier)
 }
 
 @Composable
 internal fun HomeDivider(modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    Box(modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+    BlueDivider(modifier)
 }
 
 /** 얼굴 셋 겹치기 — 진행자(크루장이면 따뜻한 색) 먼저 */
 @Composable
 internal fun FaceStack(faces: List<MeetingFace>, hostId: String, hostOwner: Boolean, modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val ink = blueInk()
     Row(modifier) {
         faces.take(3).forEachIndexed { index, face ->
             ChatFace(
-                face.name, owner = hostOwner && face.userId == hostId, size = 30.dp,
-                modifier = Modifier.offset(x = (-8 * index).dp).border(1.5.dp, ink.canvas, CircleShape),
+                face.name, owner = hostOwner && face.userId == hostId, size = 40.dp,
+                modifier = Modifier.offset(x = (-8 * index).dp).border(2.dp, ink.canvas, CircleShape),
             )
         }
     }
@@ -182,7 +185,7 @@ internal fun FaceStack(faces: List<MeetingFace>, hostId: String, hostOwner: Bool
 /** 요일별 거리 막대(월 → 일) — 값이 있는 날은 숫자와 막대, 오지 않은 날은 "—"(0km 와 다르다) */
 @Composable
 internal fun WeekBars(days: List<Double?>, today: Int?, modifier: Modifier = Modifier, height: Dp = 132.dp, onDay: ((Int) -> Unit)? = null) {
-    val ink = crewInk()
+    val ink = blueInk()
     val labels = weekdayLabels()
     val bars = CrewHomeRules.bars(days)
     Row(modifier.fillMaxWidth().height(height), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
@@ -196,28 +199,33 @@ internal fun WeekBars(days: List<Double?>, today: Int?, modifier: Modifier = Mod
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom,
             ) {
-                Text(if (value == null) "—" else km(value), color = ink.secondary, fontSize = 11.sp, maxLines = 1)
+                Text(if (value == null) "—" else km(value), style = blueText(13.sp, ink.secondary, FontWeight.SemiBold, 1.2f), maxLines = 1)
                 Spacer(Modifier.height(6.dp))
-                val barHeight = (height.value - 48f) * (fraction ?: 0f)
+                val barHeight = (height.value - 52f) * (fraction ?: 0f)
                 val filled = value != null && value > 0.0
                 Box(
-                    Modifier.width(28.dp).height(if (filled) barHeight.coerceAtLeast(6f).dp else 3.dp)
-                        .clip(RoundedCornerShape(if (filled) 7.dp else 2.dp))
+                    Modifier.fillMaxWidth(0.62f).height(if (filled) barHeight.coerceAtLeast(6f).dp else 4.dp)
+                        .clip(RoundedCornerShape(if (filled) 8.dp else 2.dp))
                         .background(
                             when {
                                 !filled && value == null -> ink.track
-                                !filled -> ink.bar.copy(alpha = 0.55f)
-                                index == today -> ink.text
-                                else -> ink.bar
+                                !filled -> weekBarPast().copy(alpha = 0.7f)
+                                // 지금 요일만 청록으로(지난 주에는 오늘 강조가 없다)
+                                index == today -> ink.info
+                                else -> weekBarPast()
                             },
                         ),
                 )
                 Spacer(Modifier.height(10.dp))
-                Text(labels.getOrElse(index) { "" }, color = ink.secondary, fontSize = 12.sp, maxLines = 1)
+                Text(labels.getOrElse(index) { "" }, style = blueText(14.sp, ink.secondary, FontWeight.Medium, 1.2f), maxLines = 1)
             }
         }
     }
 }
+
+/** 지난 요일 막대 — 밝은 파랑(오늘은 청록) */
+@Composable
+private fun weekBarPast(): Color = if (com.stepup.android.ui.theme.StepUpColors.dark) Color(0xFF5B95FF) else Color(0xFF6E9BF5)
 
 /** 누르는 곳 — 앱의 공통 누름(소리 · 떨림 설정을 따른다) */
 @Composable
@@ -227,11 +235,11 @@ internal fun Modifier.homeClickable(enabled: Boolean = true, onClick: () -> Unit
 /** 모임 장소 지도 — 실제 지도 타일 위에 모이는 곳 표시와 이름. 좌표가 없으면 그리지 않는다 */
 @Composable
 internal fun MeetingMap(point: GeoPoint, label: String, modifier: Modifier = Modifier, spanMeters: Int = 260) {
-    val ink = crewInk()
     val measurer = rememberTextMeasurer()
     val style = TextStyle(color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-    val dot = Color(0xFF4F86FF)
-    Box(modifier.clip(RoundedCornerShape(18.dp)).background(ink.card).testTag("home-meeting-map")) {
+    val dot = Color(0xFF0754FF)
+    // 러닝 리메이크의 지도 틀 — 실제 타일을 남색으로 옮긴다(타일 · 출처 표기는 그대로)
+    RunMapFrame(modifier.testTag("home-meeting-map")) {
         StepUpMap(focus = remember(point, spanMeters) { rangeSpan(point, spanMeters) }, seed = 4) { plan ->
             val at = plan.toScreen(point)
             drawCircle(dot.copy(alpha = 0.25f), radius = 16.dp.toPx(), center = at)
@@ -250,11 +258,10 @@ internal fun MeetingMap(point: GeoPoint, label: String, modifier: Modifier = Mod
     }
 }
 
-/** 러닝 코스 지도 — 서버가 처음과 끝 300m 를 뗀 코스 */
+/** 러닝 코스 지도 — 서버가 처음과 끝 300m 를 뗀 코스(두 끝을 잇거나 원래 좌표를 되살리지 않는다) */
 @Composable
 internal fun RunRouteMap(route: List<GeoPoint>, modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    Box(modifier.clip(RoundedCornerShape(18.dp)).background(ink.card).testTag("home-run-map")) {
+    RunMapFrame(modifier.testTag("home-run-map")) {
         LiveRouteMap(points = route, seed = 5)
     }
 }
@@ -262,27 +269,27 @@ internal fun RunRouteMap(route: List<GeoPoint>, modifier: Modifier = Modifier) {
 /** 처음 읽는 동안의 자리 — 이전 크루 · 다른 모임의 값을 먼저 보이지 않는다 */
 @Composable
 internal fun HomeSkeleton(modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().padding(horizontal = CrewGutter).testTag("home-loading")) {
+    Column(modifier.fillMaxWidth().padding(horizontal = BlueGutter).testTag("home-loading")) {
         Spacer(Modifier.height(20.dp))
-        CrewSkeletonBox(Modifier.fillMaxWidth().height(258.dp), 24.dp)
+        BlueSkeleton(Modifier.fillMaxWidth().height(258.dp), 24.dp)
         Spacer(Modifier.height(28.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            CrewSkeletonBox(Modifier.weight(1.45f).height(148.dp), 24.dp)
-            CrewSkeletonBox(Modifier.weight(1f).height(148.dp), 24.dp)
+            BlueSkeleton(Modifier.weight(1.45f).height(148.dp), 24.dp)
+            BlueSkeleton(Modifier.weight(1f).height(148.dp), 24.dp)
         }
         Spacer(Modifier.height(28.dp))
-        CrewSkeletonBox(Modifier.fillMaxWidth().height(96.dp), 16.dp)
+        BlueSkeleton(Modifier.fillMaxWidth().height(96.dp), 16.dp)
     }
 }
 
 /** 한 줄 값 — 이름 왼쪽, 값 오른쪽, 아래 선(01 · 05 · 06) */
 @Composable
 internal fun HomeValueRow(label: String, value: String, modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val ink = blueInk()
     Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, color = ink.secondary, fontSize = 14.sp, modifier = Modifier.weight(1f))
-            Text(value, color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, modifier = Modifier.padding(start = 16.dp))
+        Row(Modifier.fillMaxWidth().heightIn(min = 62.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = blueText(15.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.weight(1f))
+            Text(value, style = blueText(17.sp, ink.text, FontWeight.Bold), textAlign = TextAlign.End, modifier = Modifier.padding(start = 16.dp))
         }
         HomeDivider()
     }
@@ -316,32 +323,48 @@ internal fun ChatBubbleIcon(color: Color, modifier: Modifier = Modifier) {
 
 /** 이름 찾기 칸 — 돋보기 · 입력(모서리 14 · 52dp) */
 @Composable
-internal fun HomeSearchField(value: String, onValueChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    androidx.compose.foundation.text.BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = TextStyle(fontFamily = com.stepup.android.ui.theme.StepUpSans, color = ink.text, fontSize = 15.sp),
-        cursorBrush = androidx.compose.ui.graphics.SolidColor(ink.info),
-        modifier = modifier.fillMaxWidth(),
-        decorationBox = { inner ->
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(ink.card)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                androidx.compose.material3.Icon(
-                    androidx.compose.material.icons.Icons.Filled.Search, null, tint = ink.secondary, modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(14.dp))
-                Box(Modifier.weight(1f)) {
-                    if (value.isEmpty()) Text(placeholder, color = ink.secondary, fontSize = 15.sp, maxLines = 1)
+internal fun HomeSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    /** 입력칸 자체의 꼬리표(글 넣기 검사) */
+    fieldTag: String? = null,
+) {
+    val ink = blueInk()
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+            .border(1.dp, if (value.isEmpty()) ink.edge else ink.edgeStrong, shape)
+            .padding(start = 16.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.Icon(
+            androidx.compose.material.icons.Icons.Filled.Search, null, tint = if (value.isEmpty()) ink.secondary else ink.info, modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = blueText(17.sp, ink.text, FontWeight.SemiBold, 1.3f),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(ink.info),
+            modifier = Modifier.weight(1f).padding(vertical = 14.dp).then(if (fieldTag != null) Modifier.testTag(fieldTag) else Modifier),
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty()) Text(placeholder, style = blueText(17.sp, ink.secondary, FontWeight.Medium, 1.3f), maxLines = 1)
                     inner()
                 }
-            }
-        },
-    )
+            },
+        )
+        // 27 — 지우기 X 는 검색어만 비운다(전체 명단은 그대로)
+        if (value.isNotEmpty()) {
+            BlueClearButton(stringResource(R.string.crew_blue_clear_query), { onValueChange("") }, Modifier.testTag("home-members-clear"))
+        } else {
+            Spacer(Modifier.width(12.dp))
+        }
+    }
 }
 
 /** 공개 값만 읽는 홈 화면(소개 · 레벨 · 크루원)의 가입 확인 — 보일 때마다 확인하고, 접근이 사라졌으면 접근 종료로 */

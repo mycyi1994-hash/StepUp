@@ -1,0 +1,114 @@
+[
+  {
+    "id": "CR11",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-6a0fe434-d0dc-4a23-9b8c-82f76c559a9a.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "본인만 일시정지, 다른 크루원 러닝 지속,12:30·1.56km와 재개/종료 버튼 확인."
+    }
+  },
+  {
+    "id": "CR17",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-0dd6be13-3fa5-45e0-b449-a14625b20bf2.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "기기 위치 사용 허용과 크루 공유 선택을 분리. 위치 공유 기본 꺼짐 확인."
+    }
+  },
+  {
+    "id": "CR19",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-4e7d828a-39ba-417e-b95d-70c73267ddd0.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "3개 크루 이름·상징·30/18/12명과 선택 상태 및 취소X 확인."
+    }
+  },
+  {
+    "id": "CR20",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f2726955-36b0-452b-91b6-baf2025c560c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "일정·5km·40분·모임 장소·크루 채팅 대상이 보이는 전송 전 미리보기."
+    }
+  },
+  {
+    "id": "CR21",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-1ce0cc50-b202-42fb-b378-9872ec3f3fd7.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "1.56km·12:30·8′01″ 공유 미리보기, 크루 대상 및 경로 공유 꺼짐 확인."
+    }
+  },
+  {
+    "id": "S01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d11fd260-83c7-4cb6-b91b-53ad9b6377c1.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "저장 전 상태 유지, 저장 실패 안내와 재시도/기록 확인 행동 확인."
+    }
+  },
+  {
+    "id": "S02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b8b1807f-32a8-4f5c-91fd-bf1cd0e2f392.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "15분 다이어트 완료·저장 완료,1.15km/13′03″,삭제와 기록/처음화면 확인."
+    }
+  },
+  {
+    "id": "H06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b787b356-81ac-4cb8-9f46-b304a905acc0.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "필수 수치와 문구",
+        "버튼과 상태",
+        "남색·파랑"
+      ],
+      "notes": "월간34.2km8회, 구간별2.7+6.9+4.6+17.6+2.4=34.2km, 최다 달린 날 확인."
+    }
+  }
+]

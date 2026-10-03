@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-03",
+  "edition": "v4",
+  "v18Reviewed": 109,
+  "v19Candidates": 457,
+  "v19Reviewed": 421,
+  "reviewedStatesTotal": 530,
+  "pending": 36,
+  "byPendingGroup": {
+    "지갑": 16,
+    "알림과 공지": 20
+  },
+  "notificationsReviewed": 26,
+  "additionalRouteAndStateAuditOutstanding": true,
+  "fullRedesignComplete": false,
+  "runtimeVerified": false,
+  "packagingOnly": true
+}

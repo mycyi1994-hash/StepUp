@@ -74,9 +74,10 @@ for path in UI.rglob('*.kt'):
     if 'settings' in path.parts and re.search(r'Icons\.AutoMirrored\.Filled\.ArrowBack|\bWordmark\(', text):
         errors.append(f'{rel}: settings chrome must come from DetailPage/SecondaryHeader')
 
+# 파란 톤 v4(2026-10-03) — 설정 상세는 공용 파란 상세 화면(components/BlueSettingsParts.kt 의 BluePage, 머리 · 뒤로 포함)을 쓴다
 for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 'ExperienceSettings'):
     path = UI/'screens/settings'/f'{name}Screen.kt'
-    if 'DetailPage(' not in path.read_text(encoding='utf-8'):
+    if not any(marker in path.read_text(encoding='utf-8') for marker in ('DetailPage(', 'BluePage(')):
         errors.append(f'{path.name}: use the fixed shared detail page')
 notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
 for relative in ('map/MapScreen.kt', 'profile/HistoryMapScreen.kt'):
@@ -99,7 +100,8 @@ for relative in ('walk/CourseHubScreen.kt', 'community/PartyLobbyScreen.kt'):
         errors.append(f'{relative}: use shared detail or run chrome')
 # 알림·공지 v1: 공통 상세 머리(SecondaryHeader — DetailPage 와 같은 것) 아래에 고정 메뉴(내 알림 · 공지)와
 # 메뉴마다 스크롤 위치를 따로 둔 목록 둘이라 DetailPage 의 목록 하나 대신 머리를 직접 쓴다. 자체 뒤로 버튼은 여전히 금지.
-if not ('DetailPage(' in notifications or 'SecondaryHeader(' in notifications) or 'ArrowBack' in notifications:
+# 파란 톤 v4 — 알림은 시작 · 알림 공용 제목 줄(BlueTitleBar, 공용 RunBackButton)을 쓴다
+if not any(marker in notifications for marker in ('DetailPage(', 'SecondaryHeader(', 'BlueTitleBar(')) or 'ArrowBack' in notifications:
     errors.append('Notifications must use the shared detail page')
 if 'markAllRead()' in notifications and 'LaunchedEffect(Unit) { viewModel.markAllRead() }' in notifications:
     errors.append('Opening the inbox must not mark everything read')

@@ -1,0 +1,8 @@
+{
+  "id": "R04",
+  "mode": "built-in imagegen",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b6b5e119-37c8-4ed0-8cc9-53deffdc1ed2.png"
+  ],
+  "prompt": "Make ONE tiny correction to this image. The dimmed underlying running screen has a blue status pill reading 기록 중. Change ONLY that pill text to 일시정지, since this end confirmation pauses recording. Preserve every other pixel-level composition, all numbers, title, map, overlay and three buttons. Do not add anything. Same portrait single screen."
+}

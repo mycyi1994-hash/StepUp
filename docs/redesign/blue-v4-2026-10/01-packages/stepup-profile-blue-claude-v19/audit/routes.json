@@ -1,0 +1,35 @@
+[
+  {
+    "route": "Screen.Profile.route",
+    "states": [
+      "PF01",
+      "PF02",
+      "PF03",
+      "PF04",
+      "PRO12"
+    ],
+    "chrome": "Main"
+  },
+  {
+    "route": "Routes.PROFILE_EDIT",
+    "states": [
+      "PRO01",
+      "PRO02",
+      "PRO03",
+      "PRO04",
+      "PRO05",
+      "PRO06",
+      "PRO07",
+      "PRO08",
+      "PRO09",
+      "PRO10",
+      "PRO11",
+      "PRO13",
+      "PRO14",
+      "PRO15",
+      "PRO16",
+      "PRO17"
+    ],
+    "chrome": "Form"
+  }
+]

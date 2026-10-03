@@ -1,0 +1,40 @@
+{
+  "readOnly": true,
+  "checkedOn": "2026-10-03",
+  "files": [
+    {
+      "path": "domain/StoryRuns.kt",
+      "sha256": "86ce49adcac1836bc8acfc614cd9696ec4c67e4df95c0fe6ce70e18c8f6abb0c"
+    },
+    {
+      "path": "ui/screens/community/stories/StoryComposeScreen.kt",
+      "sha256": "ee756ac0deded76467901bebe5a1e86b7b290a36d39f31b0d9253d6ec576e090"
+    },
+    {
+      "path": "ui/screens/community/stories/StoryComposeParts.kt",
+      "sha256": "5f6733d170095f840e0e65ec7ccdfa64210dc29fcbeda871b4a142fee2e43cb7"
+    },
+    {
+      "path": "ui/screens/community/stories/StoryDetailScreen.kt",
+      "sha256": "8aa9f506978b55f82163574fa57b39f26e9920052af64d0b6f2d23383ed2dd03"
+    }
+  ],
+  "confirmed": [
+    "StoryRunRules: KST calendar day 0..3 inclusive",
+    "StoryAttachment.kept bypasses reattachment age",
+    "StoryComposeRules.canPost separates ordinary posting from valid attachment",
+    "StoryComposeRules.placeSources limits visible source buttons to 3",
+    "StoryComposeRules.insertStarter preserves user-edited body",
+    "StoryDetailScreen.StoryRunCard is a read-only summary without click navigation"
+  ],
+  "changesRequired": [
+    "Search/named-place selection currently always goes to CONFIRM; new design returns directly to composer.",
+    "SIGN_IN currently adds SignInAgainButton next to a publish control; new design shows only login-and-continue primary."
+  ],
+  "notVerified": [
+    "App build/runtime interactions",
+    "Backend mutation success",
+    "All 104 route coverage",
+    "Further detail/place API error audit"
+  ]
+}

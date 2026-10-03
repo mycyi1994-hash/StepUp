@@ -1,0 +1,14 @@
+{
+  "scope": "문서 예시의 산술 검증. 서버 실행 검증 아님",
+  "perPoint": "1.5625",
+  "cost68to100": "50.0000",
+  "cost92to100": "12.5000",
+  "barFractions": {
+    "level": "5/20",
+    "efficiency": "8/27.5",
+    "comfort": "5.8/20",
+    "durability": "92/100"
+  },
+  "passed": true,
+  "appOrServerTest": false
+}

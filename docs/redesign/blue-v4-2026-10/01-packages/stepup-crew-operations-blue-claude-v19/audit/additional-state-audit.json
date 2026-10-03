@@ -1,0 +1,86 @@
+[
+  {
+    "state": "가입 방식 시트: 승인제/자유가입, 미변경·변경·전송 중·실패",
+    "source": "CrewManageScreens.kt:CrewPolicySheet",
+    "status": "추가 시안 필요",
+    "note": "기존95개에 없지만 현행 기능이다. 선택이 달라야 적용 활성. 실패 문구가 별도 전달되지 않는 현행 구조는 구현 검토도 필요."
+  },
+  {
+    "state": "수정 데이터 로딩/조회 실패/저장 중/일반·필드 오류",
+    "source": "CrewCreateScreens.kt / CrewViewModels.kt:EDIT_*",
+    "status": "추가 시안 필요",
+    "note": "CP41~43은 변경된 준비 상태. 생성용 CP37을 수정 오류로 그대로 쓰지 않는다."
+  },
+  {
+    "state": "수정 초안 복원·임시저장·삭제 및 실패",
+    "source": "CrewDraftViewModel / CrewDraftRoute",
+    "status": "추가 감사·시안 필요",
+    "note": "생성 초안과 별개. 입력을 버리는 동작과 저장 완료를 혼동하지 않는다."
+  },
+  {
+    "state": "관리/설정 조회 중·조회 실패·권한 상실",
+    "source": "CrewManageScreen / CrewSettingsScreen",
+    "status": "추가 시안 필요",
+    "note": "기존 관리 권한 상실 안내 보존. 현재 설정의 card-null/non-owner 빈 본문은 완성된 복구 UX로 간주하지 않는다."
+  },
+  {
+    "state": "가입 신청 목록 로딩/조회 실패",
+    "source": "CrewRequestsScreen",
+    "status": "추가 시안 필요",
+    "note": "CP54는 성공한0건만 의미."
+  },
+  {
+    "state": "신청 상세 로딩/조회 실패/이미 처리됨/현재 만원",
+    "source": "CrewReviewScreen",
+    "status": "추가 시안 필요",
+    "note": "CP81은 승인 요청 중 정원 충돌이며 최초 진입 만원 상태와 구분."
+  },
+  {
+    "state": "멤버 프로필 로딩/조회 실패/소속 없음/이번 주 활동 없음",
+    "source": "CrewPersonScreen / CrewPersonBody",
+    "status": "추가 시안 필요",
+    "note": "CP56/84/85는 성공한 조회 예시만 포함."
+  },
+  {
+    "state": "명단 로딩/실패/빈 명단·참여자 없음",
+    "source": "CrewRosterScreen MEMBERS/MANAGE/WEEK",
+    "status": "추가 시안 필요",
+    "note": "공통 틀로 재사용하되 실제 인원·참여자 정의는 보존."
+  },
+  {
+    "state": "새 크루장 후보 조회 중/실패/후보0명",
+    "source": "CrewTransferScreen",
+    "status": "추가 시안 필요",
+    "note": "현재 크루장과 대기 신청자를 후보로 채우지 않는다."
+  },
+  {
+    "state": "확인 시트 전송 중/실패",
+    "source": "CrewConfirmSheet:PAUSE/RESUME/GOAL/REMOVE/TRANSFER/LEAVE/DISSOLVE",
+    "status": "공통 상태 시안 필요",
+    "note": "행동·대상별 문구는 매핑. 전송 중 닫기 및 중복 탭 제한, 실패 시 현재 데이터 유지."
+  },
+  {
+    "state": "신고 미선택/기타 메모/전송 중/전송 실패",
+    "source": "CrewReportSheet",
+    "status": "추가 시안 필요",
+    "note": "CP64는 광고 사유 선택 완료,CP65는 접수 성공만 포함."
+  },
+  {
+    "state": "모집 재개:정원 가득 참/정원 미설정",
+    "source": "CrewSettingsScreen:SHEET_RESUME",
+    "status": "추가 상태 시안 필요",
+    "note": "CP45의6자리 문구를 모든 상태에 고정하지 않는다."
+  },
+  {
+    "state": "주간 목표 빈 값/0/범위 밖/미변경/저장 중·실패",
+    "source": "CrewGoalEditScreen",
+    "status": "추가 상태 시안 필요",
+    "note": "CP46/47/83은160→200 성공 분기."
+  },
+  {
+    "state": "크루 상세 최초 로드 실패",
+    "source": "CrewDetailScreen:CrewDetailFailed",
+    "status": "추가 시안 필요",
+    "note": "CP66접근불가/해산,CP67로딩과 다른 네트워크 재시도 상태."
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "H11",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-8c67f401-e618-44b3-b628-aff9687f3de1.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "기간·수치 일치",
+        "버튼",
+        "남색·파랑"
+      ],
+      "notes": "지난 기록2.40km20:008′20″/km7.2km/h와 날짜, 지도 확대, 삭제·목록 버튼 확인."
+    }
+  },
+  {
+    "id": "H02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c51e3263-eac0-4492-a380-eaa0613c121f.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "기간·수치 일치",
+        "버튼",
+        "남색·파랑"
+      ],
+      "notes": "전체 기간34.2km8회 및 H01과 같은 기록 목록·통계 진입 확인."
+    }
+  },
+  {
+    "id": "H03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-88c9e8a6-292d-4209-8071-daf853f92f1c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "기간·수치 일치",
+        "버튼",
+        "남색·파랑"
+      ],
+      "notes": "기간4종 선택과 적용/취소,9월 선택 상태 확인."
+    }
+  },
+  {
+    "id": "H09",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-156169f3-1746-4b64-8353-14e570eab8b3.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "기간·수치 일치",
+        "버튼",
+        "남색·파랑"
+      ],
+      "notes": "불러오기 안내와 숫자 없는 스켈레톤3개, 기간·시작 버튼 유지."
+    }
+  },
+  {
+    "id": "H10",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-32fc41ea-25d1-4fa0-b76c-dda620034163.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "기간·수치 일치",
+        "버튼",
+        "남색·파랑"
+      ],
+      "notes": "불러오기 실패와 기존 기록 보존 안내,재시도/돌아가기 확인."
+    }
+  }
+]

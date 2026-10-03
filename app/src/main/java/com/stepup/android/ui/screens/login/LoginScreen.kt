@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +51,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -58,14 +63,13 @@ import com.stepup.android.core.Analytics
 import com.stepup.android.core.ExternalIntents
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.sync.SessionUploadWorker
-import com.stepup.android.ui.components.OnboardingArch
-import com.stepup.android.ui.components.OnboardingNotice
-import com.stepup.android.ui.components.OnboardingToast
-import com.stepup.android.ui.components.S2Stage
+import com.stepup.android.ui.components.RunBackdrop
 import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.BrandLogoRole
+import com.stepup.android.ui.theme.StepUpSans
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -154,8 +158,9 @@ fun LoginScreen(onDone: () -> Unit) {
 }
 
 /**
- * 로그인 화면 — 로고 → 큰 제목 → 한 줄 → 아치 강변 → 버튼 위 한 줄(시작 안내 · 확인 중 · 결과 안내) → Google 버튼 → 약관.
- * 한 스크롤 면이라 큰 글씨 · 작은 화면에서도 버튼과 약관 링크까지 닿는다.
+ * 로그인 화면(파란 톤 v4 ONB01 · ONB05~10) — 로고 → 큰 제목 → 한 줄 → 아치 강변 → 버튼 위 안내 칸 → Google 버튼 → 동의 문구 · 법적 링크.
+ * 안내 칸은 가장 긴 문구(제목 + 두 줄) 높이를 늘 잡아 두어, 상태가 바뀌어도 Google 버튼 자리가 움직이지 않는다.
+ * 한 스크롤 면이라 큰 글씨 · 작은 화면에서도 버튼과 약관 링크까지 닿는다(사진부터 줄인다).
  * 상태만 넣어 그릴 수 있다(시안 검사). 실제 상태는 [LoginScreen] 의 로그인 결과에서만 온다.
  */
 @Composable
@@ -168,7 +173,7 @@ internal fun LoginContent(
     legalFailedAtStart: Boolean = false,
 ) {
     val context = LocalContext.current
-    val p = settingsPalette()
+    val t = runTone()
     var legalFailed by remember { mutableStateOf(legalFailedAtStart) }
     var legalFailures by remember { mutableIntStateOf(0) }
     LaunchedEffect(legalFailures) {
@@ -189,7 +194,7 @@ internal fun LoginContent(
     val largeText = LocalDensity.current.fontScale > 1.2f
     val archHeight = loginArchHeight(LocalConfiguration.current.screenHeightDp, largeText)
     Box(Modifier.fillMaxSize()) {
-        S2Stage(Modifier.fillMaxSize())
+        RunBackdrop(Modifier.fillMaxSize())
         Column(
             Modifier.fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
@@ -198,62 +203,59 @@ internal fun LoginContent(
         ) {
             Spacer(Modifier.height(20.dp))
             Wordmark(role = BrandLogoRole.Header)
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(36.dp))
             Text(
-                stringResource(R.string.onb_login_headline), color = p.text, fontSize = 35.sp,
-                fontWeight = FontWeight.SemiBold, lineHeight = 1.23.em, letterSpacing = (-0.028).em,
+                stringResource(R.string.onb_login_headline),
+                style = TextStyle(
+                    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 38.sp, lineHeight = 1.25.em,
+                    letterSpacing = (-0.03).em, color = t.text,
+                ),
                 modifier = Modifier.semantics { heading() },
             )
             Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.onb_login_subtitle), color = p.secondary, fontSize = 15.sp, lineHeight = 1.45.em)
-            Spacer(Modifier.height(36.dp))
-            // 아치 아래 한 칸 — 로그인 중이면 확인 중, 결과 안내가 있으면 그 안내, 아니면 시작 안내. 약관 링크를 열지 못했으면
-            // 그 위에 잠깐 뜬다(시안 10). 안내 칸은 바닥색에 녹아드는 아치 아랫부분에 걸쳐 놓아, 어떤 상태든 Google 버튼 자리가 같다
+            Text(stringResource(R.string.onb_login_subtitle), style = runTextStyle(17.sp, t.label, FontWeight.Medium, 1.45f))
+            Spacer(Modifier.height(30.dp))
+            // 아치 아래 한 칸 — 로그인 중이면 확인 중, 링크를 열지 못했으면 그 안내(10, 4초), 결과 안내가 있으면 그 안내, 아니면 시작 안내.
+            // 안내 칸은 바닥색으로 녹아드는 아치 아랫부분에 걸쳐 놓아, 어떤 상태든 Google 버튼 자리가 같다
             Box(Modifier.fillMaxWidth()) {
-                OnboardingArch(
+                LoginArch(
                     R.drawable.home_banner_blue_night,
                     Modifier.align(Alignment.TopCenter).height(archHeight).width(archHeight * ARCH_RATIO),
                 )
                 Box(
                     Modifier.fillMaxWidth().padding(top = archHeight - NOTICE_OVERLAP).heightIn(min = NOTICE_SLOT),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.BottomCenter,
                 ) {
                     when {
                         phase == LoginPhase.Verifying -> LoginCaption(
                             stringResource(R.string.onb_login_verifying),
-                            Modifier.padding(top = NOTICE_OVERLAP).testTag("login-verifying")
-                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            Modifier.testTag("login-verifying").semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                        legalFailed -> LoginSlotNotice(
+                            stringResource(R.string.onb_legal_failed_title), stringResource(R.string.onb_legal_failed_body),
+                            Modifier.testTag("login-legal-failed"),
                         )
                         notice != null -> {
                             val (title, body) = noticeText(notice)
-                            OnboardingNotice(title, body, Modifier.testTag("login-notice-${notice.name.lowercase()}"))
+                            LoginSlotNotice(title, body, Modifier.testTag("login-notice-${notice.name.lowercase()}"))
                         }
-                        else -> LoginCaption(
-                            stringResource(R.string.onb_login_caption),
-                            Modifier.padding(top = NOTICE_OVERLAP).testTag("login-caption"),
-                        )
-                    }
-                    if (legalFailed) {
-                        OnboardingToast(
-                            stringResource(R.string.onb_legal_failed_title), stringResource(R.string.onb_legal_failed_body),
-                            Modifier.padding(horizontal = 10.dp).testTag("login-legal-failed"),
-                        )
+                        else -> LoginCaption(stringResource(R.string.onb_login_caption), Modifier.testTag("login-caption"))
                     }
                 }
             }
-            Spacer(Modifier.height(17.dp))
+            Spacer(Modifier.height(14.dp))
             GoogleSignInButton(phase, onClick = {
                 legalFailed = false
                 onSignIn()
             })
             Spacer(Modifier.height(18.dp))
             Text(
-                stringResource(R.string.login_terms), color = p.secondary, fontSize = 12.sp, lineHeight = 1.55.em,
+                stringResource(R.string.login_terms), style = runTextStyle(13.sp, t.label, FontWeight.Normal, 1.55f),
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             )
             // 큰 글씨 · 긴 번역이면 두 줄로 — 두 링크가 늘 화면 안에 있다
             FlowRow(
-                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
             ) {
                 LegalLink(stringResource(R.string.login_terms_link), Modifier.testTag("login-terms")) { openLegal(TERMS_URL) }
                 LegalLink(stringResource(R.string.login_privacy_link), Modifier.testTag("login-privacy")) { openLegal(PRIVACY_URL) }
@@ -265,9 +267,9 @@ internal fun LoginContent(
 /** 아치 가로 : 세로 — 시안 238 × 319 */
 private const val ARCH_RATIO = 238f / 319f
 
-/** 버튼 위 안내 칸 — 시안의 안내 상자 높이(78). 아치 아랫부분(바닥색으로 녹는 곳)에 24 만큼 걸친다 */
-private val NOTICE_SLOT = 78.dp
-private val NOTICE_OVERLAP = 24.dp
+/** 버튼 위 안내 칸 — 가장 긴 안내(굵은 제목 한 줄 + 설명 두 줄) 높이. 아치 아랫부분(바닥색으로 녹는 곳)에 걸친다 */
+private val NOTICE_SLOT = 112.dp
+private val NOTICE_OVERLAP = 36.dp
 
 /** 아치 높이 — 작은 화면 · 큰 글씨에서 풍경부터 줄여 버튼과 약관이 먼저 보이게 한다 */
 private fun loginArchHeight(screenHeightDp: Int, largeText: Boolean): Dp = when {
@@ -289,9 +291,52 @@ private fun noticeText(notice: LoginNotice): Pair<String, String> = when (notice
 @Composable
 private fun LoginCaption(text: String, modifier: Modifier = Modifier) {
     Text(
-        text, color = settingsPalette().secondary, fontSize = 14.sp, lineHeight = 1.45.em,
-        textAlign = TextAlign.Center, modifier = modifier.fillMaxWidth(),
+        text, style = runTextStyle(16.sp, runTone().label, FontWeight.Medium, 1.45f),
+        textAlign = TextAlign.Center, modifier = modifier.fillMaxWidth().padding(bottom = 4.dp),
     )
+}
+
+/** 버튼 위 안내(06~10) — 가운데 굵은 한 줄과 설명. 상자 없이 아치 아래 바닥에 얹는다. 스크린리더가 바로 읽는다 */
+@Composable
+private fun LoginSlotNotice(title: String, body: String, modifier: Modifier = Modifier) {
+    val t = runTone()
+    Column(
+        modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            .padding(horizontal = 12.dp).padding(bottom = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(title, style = runTextStyle(20.sp, t.text, FontWeight.Bold, 1.3f), textAlign = TextAlign.Center)
+        Text(body, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * 아치 풍경 — 위가 반원인 틀에 기존 강변 사진(home_banner_blue_night)을 담고 얇은 파란 테를 두른다.
+ * 아래로 바닥색에 녹아든다. 지도나 현재 위치가 아니다 — 장식이라 읽지 않는다.
+ */
+@Composable
+private fun LoginArch(@androidx.annotation.DrawableRes image: Int, modifier: Modifier = Modifier) {
+    val t = runTone()
+    val shape = RoundedCornerShape(topStartPercent = 50, topEndPercent = 50)
+    Box(
+        modifier.clip(shape).background(t.inset)
+            .border(
+                1.5.dp,
+                Brush.verticalGradient(0f to t.cobalt, 0.7f to t.cobalt.copy(alpha = 0.5f), 1f to Color.Transparent),
+                shape,
+            ),
+    ) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(image), contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(0f to Color.Transparent, 0.72f to t.screen.copy(alpha = 0.10f), 1f to t.screenBottom),
+            ),
+        )
+    }
 }
 
 /** 약관 링크 — 글자는 작아도 누르는 곳은 48dp 이상 */
@@ -302,41 +347,49 @@ private fun LegalLink(text: String, modifier: Modifier = Modifier, onClick: () -
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, color = settingsPalette().accent, fontSize = 13.sp)
+        Text(text, style = runTextStyle(15.sp, runTone().cobaltText, FontWeight.SemiBold))
     }
 }
 
 /**
- * Google 버튼 — 흰 면 · 공식 G · Google 글꼴 규칙(Roboto Medium 14) 그대로. 시안의 앱 글꼴로 바꾸지 않는다.
- * 계정 선택 창이 떠 있는 동안은 누를 수 없고, 계정을 고른 뒤 서버가 확인하는 동안(05)만 "로그인 중…"과 도는 표시.
+ * Google 버튼 — 흰 면 · 공식 G · Google 글꼴 규칙(Roboto Medium) 그대로. 앱의 기울어진 게임식 주 버튼으로 바꾸지 않는다.
+ * 계정 선택 창이 떠 있는 동안은 누를 수 없고, 계정을 고른 뒤 서버가 확인하는 동안(05)만 옅은 면 · 도는 표시 하나 · "로그인 중…".
  */
 @Composable
 private fun GoogleSignInButton(phase: LoginPhase, onClick: () -> Unit) {
     val verifying = phase == LoginPhase.Verifying
     androidx.compose.material3.OutlinedButton(
         onClick = onClick, enabled = phase == LoginPhase.Idle,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).testTag("login-google"),
-        shape = RoundedCornerShape(50),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF747775)),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp).testTag("login-google"),
+        shape = RoundedCornerShape(18.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (verifying) Color(0xFF9FB3D4) else Color(0xFFD7DEEA)),
         colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
             containerColor = Color.White, contentColor = Color(0xFF1F1F1F),
-            disabledContainerColor = Color.White, disabledContentColor = Color(0xFF1F1F1F),
+            // 서버 확인 중(05) — 시안의 옅은 파란 회색 면. 계정 선택 창이 떠 있는 동안(Picking)은 흰 면 그대로 잠근다
+            disabledContainerColor = if (verifying) Color(0xFFA9BCDB) else Color.White,
+            disabledContentColor = Color(0xFF1F1F1F),
         ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
     ) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(R.drawable.google_g),
-            contentDescription = null, modifier = Modifier.size(20.dp),
+            contentDescription = null, modifier = Modifier.size(24.dp),
         )
-        Spacer(Modifier.size(10.dp))
-        Text(stringResource(if (verifying) R.string.login_google_progress else R.string.login_google),
-            fontSize = 14.sp, fontWeight = FontWeight.Medium,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-            modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-        // 도는 표시가 없을 때도 같은 자리를 비워 둔다 — 글자가 가운데에서 흔들리지 않게
-        Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-            if (verifying) CircularProgressIndicator(Modifier.size(18.dp), color = Color(0xFF33465E), strokeWidth = 2.dp)
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            if (verifying) {
+                CircularProgressIndicator(Modifier.size(20.dp), color = Color(0xFF0754FF), strokeWidth = 2.5.dp,
+                    trackColor = Color.White.copy(alpha = 0.6f))
+                Spacer(Modifier.width(12.dp))
+            }
+            Text(
+                stringResource(if (verifying) R.string.login_google_progress else R.string.login_google),
+                fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
+                textAlign = TextAlign.Center,
+            )
         }
+        // G 와 같은 폭을 오른쪽에도 비워 둔다 — 글자가 버튼 가운데에 선다
+        Spacer(Modifier.size(24.dp))
     }
 }
 

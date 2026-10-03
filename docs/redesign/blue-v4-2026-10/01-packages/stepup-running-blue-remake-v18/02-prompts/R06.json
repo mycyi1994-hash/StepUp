@@ -1,0 +1,9 @@
+{
+  "id": "R06",
+  "mode": "built-in imagegen",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f044c1f0-be63-4930-b434-04ea62a41d37.png",
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/R07.png"
+  ],
+  "prompt": "Edit first image only: recolor its bottom deletion confirmation sheet from white to midnight NAVY #0B2B50, matching the dark modal of second reference. Change sheet title to white and helper text to pale blue. Keep exact Korean wording, unchanged underlying result screen, date, all data, map, positions and dimensions. Keep destructive 기록 삭제 button deep red with white text. Recolor 취소 button to navy with subtle blue outline and white text. Recolor X and gesture indicator pale blue. Remove any white surface except letterforms; this is a dark app sheet, NOT a light theme. Single portrait screen unchanged layout."
+}

@@ -1,0 +1,60 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "NOT01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "내 알림/공지·오늘/어제 구분, 3개 읽지 않은 점과 마지막 읽은 행, 5탭 내 정보 선택 및 SUP 없는 헤더 확인."
+    },
+    {
+      "id": "NOT05",
+      "revision": 1,
+      "result": "needs-repair",
+      "notes": "시트 자체는 명확하나 뒤 알림함 헤더와 예시 행이 기준 NOT01과 다름. 같은 알림함 위로 정합성 수정."
+    },
+    {
+      "id": "NOT15",
+      "revision": 1,
+      "result": "needs-repair",
+      "notes": "공지 목록은 명확하나 선택 밑줄 길이가 NOT01과 다름. 짧은 라벨 밑줄로 통일."
+    },
+    {
+      "id": "NOT05",
+      "revision": 2,
+      "result": "needs-repair",
+      "notes": "뒤 목록은 NOT01로 정합하나 시트 뒤 스크림이 빠짐. 배경만 어둡게 보완."
+    },
+    {
+      "id": "NOT15",
+      "revision": 2,
+      "result": "passed",
+      "notes": "공지 선택 밑줄을 라벨 폭으로 수정, 4개 제목·날짜와 5탭 모두 유지."
+    },
+    {
+      "id": "NOT16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "공지 상세 제목·날짜·무료/상급 조건·지갑 연결 준비 문구·단일 뽑기 보기 및 5탭 확인."
+    },
+    {
+      "id": "NOT05",
+      "revision": 3,
+      "result": "passed",
+      "notes": "스크림 적용으로 뒤 목록이 비활성임을 구분. 크루 보기와 거절/초대 수락, 닫기·드래그 핸들·가려진 하단탭 확인."
+    },
+    {
+      "id": "NOT03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "저장된 2.40 SUP 적립문구와 날짜, 설명, 지갑 보기만 표시. 보상 재수령 CTA 없음."
+    },
+    {
+      "id": "NOT04",
+      "revision": 1,
+      "result": "passed",
+      "notes": "신발 알림 명칭·날짜·보유 목록 안내·보유 신발 보기 확인. 개별 신발 지급/착용 행동을 만들지 않음."
+    }
+  ],
+  "runtimeVerified": false
+}

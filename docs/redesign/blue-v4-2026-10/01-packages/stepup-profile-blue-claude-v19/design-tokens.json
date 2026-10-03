@@ -1,0 +1,44 @@
+{
+  "canvas": [
+    887,
+    1774
+  ],
+  "mode": "native static mockup",
+  "colors": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "primaryEdge": "#0754FF",
+    "accent": "#48D9FA",
+    "text": "#F5F8FF",
+    "muted": "#ABC7EF"
+  },
+  "layout": {
+    "gutterDp": 24,
+    "touchMinDp": 48,
+    "primaryMinHeightDp": 56,
+    "fieldMinHeightDp": 60,
+    "avatarDp": 100
+  },
+  "type": {
+    "family": "Existing StepUpSans/Pretendard",
+    "bodySp": [
+      14,
+      16
+    ],
+    "fieldSp": 18,
+    "headerSp": [
+      20,
+      22
+    ],
+    "bodyItalic": false
+  },
+  "chrome": {
+    "root": "shared original logo, filled SUP, 5 tabs",
+    "edit": "back and title, no shared logo/SUP/tabs"
+  },
+  "notes": [
+    "OS IME andstatusbar are not bitmapassets",
+    "Only one spinner per independent operation",
+    "Use scroll for short viewport andfont scaling"
+  ]
+}

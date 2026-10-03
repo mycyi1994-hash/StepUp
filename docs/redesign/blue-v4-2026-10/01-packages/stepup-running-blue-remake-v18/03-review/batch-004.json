@@ -1,0 +1,72 @@
+[
+  {
+    "id": "R04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2a63d816-893c-440f-ba8c-ffbde4c73d4a.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태와 안내 문구",
+        "남색·파랑 일관성",
+        "행동 구분",
+        "잘림 없음"
+      ],
+      "notes": "종료 시 일시정지 상태와3개 선택 확인."
+    }
+  },
+  {
+    "id": "R06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-54c981b4-2515-48e9-80e4-f348c4f2a5a6.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태와 안내 문구",
+        "남색·파랑 일관성",
+        "행동 구분",
+        "잘림 없음"
+      ],
+      "notes": "삭제 시트 남색으로 통일. 되돌릴 수 없음 안내와 취소 확인."
+    }
+  },
+  {
+    "id": "L02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-94ffee32-ea2f-467f-9773-1dffae053120.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태와 안내 문구",
+        "남색·파랑 일관성",
+        "행동 구분",
+        "잘림 없음"
+      ],
+      "notes": "위치 설정 또는 시간 기록 선택. 가짜 위치 없음."
+    }
+  },
+  {
+    "id": "L03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a165bbff-5d9f-4d69-ac48-0c3c1c076189.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태와 안내 문구",
+        "남색·파랑 일관성",
+        "행동 구분",
+        "잘림 없음"
+      ],
+      "notes": "위치 확인 중에는 경로와 위치점을 표시하지 않음."
+    }
+  },
+  {
+    "id": "L04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b4fc5dc0-66cf-41c2-aedb-c6ea9c2feff0.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태와 안내 문구",
+        "남색·파랑 일관성",
+        "행동 구분",
+        "잘림 없음"
+      ],
+      "notes": "GPS 손실·미측정 페이스·계속 기록 안내 확인. 점선은 미확인 구간 예시."
+    }
+  }
+]

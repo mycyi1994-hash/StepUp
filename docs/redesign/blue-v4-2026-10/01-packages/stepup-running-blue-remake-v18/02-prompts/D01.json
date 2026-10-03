@@ -1,0 +1,8 @@
+{
+  "id": "D01",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact form to show native numeric keyboard OPEN. Preserve original title 다이어트 모드, subtitle, the two SIDE-BY-SIDE fields 키170cm on LEFT and 몸무게70kg on RIGHT. Focus 키 with a cyan caret after170. Do NOT reorder fields or turn into fullwidth rows. A dark standard numeric keyboard occupies bottom30%: digits1-9 then decimal0backspace. A narrow native dark toolbar immediately above it says 완료 at right. Above keyboard show the original 러닝은 얼마나 해보셨나요? and original selected 처음이에요 card; lower experience cards naturally scroll below keyboard viewport. No new copy, no giant 완료 appbutton, no newpage orrearrangedform. Keep original brand, colors, spacing.",
+  "references": [
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/U05.png"
+  ]
+}

@@ -1,0 +1,76 @@
+[
+  {
+    "family": "홈 기록 상태",
+    "screens": [
+      "PF01",
+      "PF02",
+      "PF03",
+      "PF04"
+    ],
+    "coverage": "ready/loading/failed/actualzero"
+  },
+  {
+    "family": "이름 입력",
+    "screens": [
+      "PRO01",
+      "PRO02",
+      "PRO05",
+      "PRO06",
+      "PRO16"
+    ],
+    "coverage": "unchanged/dirty/blank/max16/IME"
+  },
+  {
+    "family": "이름 저장",
+    "screens": [
+      "PRO10",
+      "PRO11",
+      "PRO12"
+    ],
+    "coverage": "saving/failed/saved"
+  },
+  {
+    "family": "사진 저장",
+    "screens": [
+      "PRO03",
+      "PRO07",
+      "PRO08",
+      "PRO17"
+    ],
+    "coverage": "choose/saving/failed/saved"
+  },
+  {
+    "family": "기본 이미지",
+    "screens": [
+      "PRO04",
+      "PRO14",
+      "PRO15"
+    ],
+    "coverage": "choose/saving/failed; saved returns same edit with selected avatar; existing selection check is data variant"
+  },
+  {
+    "family": "나가기",
+    "screens": [
+      "PRO09"
+    ],
+    "coverage": "nickname discard; photo-kept line conditional; no namechanges goesbackwithoutsheet"
+  },
+  {
+    "family": "초기 편집 로딩",
+    "screens": [
+      "PRO13"
+    ],
+    "coverage": "loading; current readfailure defaultvalue fallback is remaining implementation concern"
+  },
+  {
+    "family": "동시 오류·재진입·긴 이름·선택 취소",
+    "screens": [
+      "PRO08",
+      "PRO11",
+      "PRO01",
+      "PRO02",
+      "PRO04"
+    ],
+    "coverage": "same components and handoff rules, no separate new route; runtime verification required"
+  }
+]

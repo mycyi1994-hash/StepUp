@@ -1,0 +1,50 @@
+{
+  "basis": "2026-10-03 현행 코드 읽기 전용 확인",
+  "states": [
+    {
+      "id": "CP91",
+      "title": "크루 목록 로그인 필요",
+      "file": "ui/screens/community/crew/CrewListTab.kt",
+      "symbol": "CrewSyncState.SignInRequired",
+      "sha256": "c34fc5e4c6e013f7eb6f8f10e33fcb66ff563724a17885494119b08cc7c48342"
+    },
+    {
+      "id": "CP92",
+      "title": "바로 가입 크루 상세",
+      "file": "ui/screens/community/crew/CrewDetailScreen.kt",
+      "symbol": "CrewFooter.JOIN_NOW",
+      "sha256": "bd1b500fb2a0e13542091e97c14058ed353dc7230c735e6dd54c07bf43672c15"
+    },
+    {
+      "id": "CP93",
+      "title": "바로 가입 실패",
+      "file": "ui/screens/community/crew/CrewDetailScreen.kt",
+      "symbol": "joinFailed",
+      "sha256": "bd1b500fb2a0e13542091e97c14058ed353dc7230c735e6dd54c07bf43672c15"
+    },
+    {
+      "id": "CP94",
+      "title": "멤버 상세 하단 연결",
+      "file": "ui/screens/community/crew/CrewDetailScreen.kt",
+      "symbol": "crew-detail-chat",
+      "sha256": "bd1b500fb2a0e13542091e97c14058ed353dc7230c735e6dd54c07bf43672c15"
+    },
+    {
+      "id": "CP95",
+      "title": "모집 목록 하단 기존 모임 연결",
+      "file": "ui/screens/community/crew/CrewListTab.kt",
+      "symbol": "crew-list-meetups",
+      "sha256": "c34fc5e4c6e013f7eb6f8f10e33fcb66ff563724a17885494119b08cc7c48342"
+    }
+  ],
+  "decisions": [
+    "로그인 필요와 모집 결과 없음은 구분한다.",
+    "openJoin 크루는 승인 신청서와 대기를 거치지 않는다. 실패하면 같은 가입 동작을 재시도한다.",
+    "멤버·크루장의 채팅/같이 달리기/크루 게시판 진입은 상세 하단에 보존한다. CP94는 새 탭이 아니라 아래로 스크롤한 상태다.",
+    "기존 번개 모임 연결은 목록 아래에 유지한다. CP95는 스크롤 상태다.",
+    "크루 정원 30명은 예시다. 크루 달리기 세션 최대 30명과 크루 가입 정원 정책을 혼동하지 않는다."
+  ],
+  "remainingChecks": [
+    "크루 생성·관리 상세와 전체 앱의 미감사 경로는 계속 검토 중이다."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-03",
+  "mode": "read-only",
+  "files": [
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
+      "sha256": "325ac21251f5f57323d90d0986d702c64198e892cd63f717204c71bc979e6475"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsViewModel.kt",
+      "sha256": "ac534f7b2728f01ef201f8ddd7c3cf940e2c9d411b5a21e77dc24c8368f6338b"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/data/repo/SneakerRepository.kt",
+      "sha256": "88bfe59e6ede6e989f2aee19767574aee9f203f6fc5fd815d81924fa7be3506b"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/data/remote/EconomyApi.kt",
+      "sha256": "cf2746b2e9143d51144d6041b2f00d3d98b6246661078f1740aefe297acf2456"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/domain/Sneaker.kt",
+      "sha256": "e08cc96aca05b8978f7b5ff501317652e29cd7ddae78a1324b4d404ba46b51f8"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/customize/MyShoesModel.kt",
+      "sha256": "303c0cc1932af950ca6c4da17863e1ef929792fea469d39d57eb230baa85a6eb"
+    },
+    {
+      "path": "supabase/migrations/0023_sneaker_ops.sql",
+      "sha256": "d8d01257167ccef8b06f177c2835f1e4d0d1ed4ad92c41f873217b5ec2b270f9"
+    }
+  ]
+}

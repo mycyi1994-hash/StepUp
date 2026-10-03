@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-03",
+  "method": "Individual view_image review",
+  "scope": "batch2 revised and batch3 first review",
+  "screens": [
+    {
+      "id": "DRAW07",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff."
+    },
+    {
+      "id": "DRAW08",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff."
+    },
+    {
+      "id": "DRAW09",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff."
+    },
+    {
+      "id": "DRAW14",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations."
+    },
+    {
+      "id": "DRAW15",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations."
+    },
+    {
+      "id": "DRAW18",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations."
+    },
+    {
+      "id": "DRAW20",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations."
+    },
+    {
+      "id": "DRAW16",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Dim complete background and restore boxes-left main layout."
+    },
+    {
+      "id": "DRAW17",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Dim complete background and restore boxes-left main layout."
+    },
+    {
+      "id": "DRAW19",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Dim complete background and restore boxes-left main layout."
+    },
+    {
+      "id": "DRAW22",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Remove chance-breakdown links while counts unknown."
+    }
+  ]
+}

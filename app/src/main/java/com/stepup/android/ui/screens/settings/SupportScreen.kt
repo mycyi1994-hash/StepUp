@@ -44,14 +44,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.SettingsGroupLabel
-import com.stepup.android.ui.components.SettingsNavRow
-import com.stepup.android.ui.components.SettingsPrimaryButton
-import com.stepup.android.ui.components.SettingsSecondaryButton
-import com.stepup.android.ui.components.SettingsSheet
-import com.stepup.android.ui.components.SettingsToast
-import com.stepup.android.ui.components.settingsPalette
+import androidx.compose.ui.text.style.TextAlign
+import com.stepup.android.ui.components.BlueGroup
+import com.stepup.android.ui.components.BlueGroupLabel
+import com.stepup.android.ui.components.BlueNavRow
+import com.stepup.android.ui.components.BluePage
+import com.stepup.android.ui.components.BlueSheet
+import com.stepup.android.ui.components.BlueToast
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.blueListColors
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import kotlinx.coroutines.delay
 
@@ -68,7 +72,7 @@ private val faqEntries = listOf(
 )
 
 /**
- * 도움말 · 문의(설정 v1 21~23 · 28). 질문은 하나씩 펼친다. 앱 사용 안내는 한 장짜리 다시 보기(시작·로그인·첫 사용 v1 시안 20)를 연다.
+ * 도움말 · 문의(설정 v1 21~23 · 28 → 파란 톤 v4 SET21~23 · 28 · 40). 질문은 하나씩 펼친다. 앱 사용 안내는 한 장짜리 다시 보기(시작·로그인·첫 사용 v1 시안 20)를 연다.
  * 문의는 메일 앱 열기와 주소 복사뿐이다 — 자동으로 보내지 않고, 위치 · 계정 정보 · 기록을 붙이지 않는다.
  */
 @Composable
@@ -93,10 +97,11 @@ fun SupportContent(
     onOpenContact: () -> Unit = {},
     onCloseContact: () -> Unit = {},
 ) {
-    DetailPage(title = stringResource(R.string.set_support), onBack = onBack) {
+    BluePage(title = stringResource(R.string.set_support), onBack = onBack) {
         item {
-            Column(Modifier.fillMaxWidth()) {
-                SettingsGroupLabel(stringResource(R.string.set_faq))
+            BlueGroupLabel(stringResource(R.string.set_faq))
+            // 질문은 하나만 펼친다
+            BlueGroup {
                 faqEntries.forEachIndexed { index, (question, answer) ->
                     FaqRow(stringResource(question), stringResource(answer), expanded == index, { onToggle(index) },
                         Modifier.testTag("faq-$index"))
@@ -104,15 +109,15 @@ fun SupportContent(
             }
         }
         item {
-            SettingsNavRow(
-                stringResource(R.string.set_guide), onClick = onOpenGuide, description = stringResource(R.string.onb_guide_row_desc),
-                modifier = Modifier.padding(top = 8.dp).testTag("support-guide"),
-            )
+            BlueGroupLabel(stringResource(R.string.set_guide), Modifier.padding(top = 6.dp))
+            BlueGroup {
+                BlueNavRow(stringResource(R.string.onb_guide_row_desc), onClick = onOpenGuide, modifier = Modifier.testTag("support-guide"))
+            }
         }
         item {
-            SettingsPrimaryButton(
+            RunButton(
                 stringResource(R.string.set_contact_mail), onOpenContact,
-                Modifier.fillMaxWidth().padding(top = 18.dp).testTag("support-contact"),
+                Modifier.padding(top = 14.dp).testTag("support-contact"),
             )
         }
     }
@@ -122,37 +127,36 @@ fun SupportContent(
 /** 질문 한 줄 — 누르면 그 자리에서 답을 펼친다(+ / −). 줄 전체가 하나의 누름 대상이다 */
 @Composable
 private fun FaqRow(question: String, answer: String, open: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
-    val p = settingsPalette()
-    Column(modifier.fillMaxWidth()) {
+    val t = runTone()
+    val c = blueListColors()
+    Column(modifier.fillMaxWidth().background(c.face)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 58.dp)
+            Modifier.fillMaxWidth().heightIn(min = 62.dp)
                 .feedbackClickable(role = Role.Button, onClick = onToggle)
                 // 읽기 도구가 펼침 · 접힘을 알린다
                 .semantics { if (open) collapse { onToggle(); true } else expand { onToggle(); true } }
-                .padding(vertical = 12.dp),
+                .padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(question, color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 1.35.em,
-                modifier = Modifier.weight(1f))
-            Icon(if (open) Icons.Filled.Remove else Icons.Filled.Add, contentDescription = null, tint = p.secondary,
-                modifier = Modifier.size(22.dp))
+            Text(question, style = runTextStyle(18.sp, t.text, FontWeight.SemiBold, 1.35f), modifier = Modifier.weight(1f))
+            Icon(if (open) Icons.Filled.Remove else Icons.Filled.Add, contentDescription = null, tint = t.label,
+                modifier = Modifier.size(28.dp))
         }
         if (open) {
-            Text(answer, color = p.secondary, fontSize = 14.sp, lineHeight = 1.6.em,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
+            Text(answer, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.6f),
+                modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 18.dp))
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
     }
 }
 
 /**
- * 메일로 문의(23) · 메일 앱을 열지 못함(28). 메일 앱의 작성 창만 연다 — 여는 것은 문의 접수가 아니다.
- * 메일 앱이 없으면 주소 복사로 잇는다. 복사는 실제로 된 뒤에만 알린다.
+ * 메일로 문의(SET23) · 메일 앱을 열지 못함(SET28) · 주소 복사 완료(SET40). 메일 앱의 작성 창만 연다 — 여는 것은 문의 접수가 아니다.
+ * 메일 앱이 없으면 주소 복사로 잇는다. 복사는 클립보드에 실제로 들어간 뒤에만 2.5초 알린다(시트와 버튼은 그대로).
  */
 @Composable
 internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
-    val p = settingsPalette()
+    val t = runTone()
     val context = LocalContext.current
     val address = stringResource(R.string.support_email)
     val subject = stringResource(R.string.set_mail_subject)
@@ -168,28 +172,31 @@ internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
     fun copy() {
         if (copyToClipboard(context, address)) copied = copiedText
     }
-    SettingsSheet(
+    BlueSheet(
         title = stringResource(if (failed) R.string.set_mail_open_failed else R.string.set_contact_mail),
         onDismiss = onDismiss, modifier = Modifier.testTag(if (failed) "contact-failed-sheet" else "contact-sheet"),
+        centered = true,
         actions = {
             if (failed) {
-                SettingsPrimaryButton(stringResource(R.string.set_copy_mail_address), ::copy, Modifier.fillMaxWidth().testTag("contact-copy"))
-                SettingsSecondaryButton(stringResource(R.string.set_close), onDismiss, Modifier.fillMaxWidth())
+                RunButton(stringResource(R.string.set_copy_mail_address), ::copy, Modifier.testTag("contact-copy"))
+                RunButton(stringResource(R.string.set_close), onDismiss, kind = RunButtonKind.Secondary)
             } else {
-                SettingsPrimaryButton(
+                RunButton(
                     stringResource(R.string.set_open_mail_app),
                     onClick = { if (!openMailApp(context, address, subject)) failed = true },
-                    modifier = Modifier.fillMaxWidth().testTag("contact-open-mail"),
+                    modifier = Modifier.testTag("contact-open-mail"),
                 )
-                SettingsSecondaryButton(stringResource(R.string.set_copy_address), ::copy, Modifier.fillMaxWidth().testTag("contact-copy"))
+                RunButton(stringResource(R.string.set_copy_address), ::copy, Modifier.testTag("contact-copy"), kind = RunButtonKind.Secondary)
             }
-            SettingsToast(copied, Modifier.padding(top = 4.dp))
+            BlueToast(copied, Modifier.padding(top = 2.dp))
         },
     ) {
-        Icon(Icons.Outlined.Email, contentDescription = null, tint = p.accent, modifier = Modifier.size(28.dp))
-        Text(address, color = p.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("contact-address"))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Icon(Icons.Outlined.Email, contentDescription = null, tint = t.cyan, modifier = Modifier.size(34.dp))
+            Text(address, style = runTextStyle(20.sp, t.text, FontWeight.SemiBold), modifier = Modifier.testTag("contact-address"))
+        }
         Text(stringResource(if (failed) R.string.set_mail_open_failed_body else R.string.set_contact_body),
-            color = p.secondary, fontSize = 14.sp, lineHeight = 1.5.em)
+            style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center)
     }
 }
 

@@ -1,0 +1,8 @@
+{
+  "id": "D13",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit exact screenshot only: add small pale-blue 삭제 text button in top-right header. Add unobtrusive line '15분 중 6분 20초' between 다이어트 모드 chip and large6분20초 number, using available spacing without overlaps. Preserve all other exact stats, controls, map and color. This is saved partial routine, not15mincompletion.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-07420ed4-27da-4c37-9bd3-551dc564bf0b.png"
+  ]
+}

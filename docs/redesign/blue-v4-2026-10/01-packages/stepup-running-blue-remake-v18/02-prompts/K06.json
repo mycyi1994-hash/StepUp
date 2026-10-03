@@ -1,0 +1,8 @@
+{
+  "id": "K06",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit exact screenshot only replace main title 코스 저장 완료 with 러닝 결과. The small 저장 완료 badge remains. This is the completed run record, not saving a course. Preserve all other content, map, buttons and layout.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-879d5a31-662f-43bf-be46-c8de665f6c0a.png"
+  ]
+}

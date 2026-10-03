@@ -1,0 +1,991 @@
+{
+  "delivered": [
+    "CP40",
+    "CP41",
+    "CP42",
+    "CP43",
+    "CP44",
+    "CP45",
+    "CP46",
+    "CP47",
+    "CP48",
+    "CP49",
+    "CP50",
+    "CP51",
+    "CP52",
+    "CP53",
+    "CP54",
+    "CP55",
+    "CP56",
+    "CP57",
+    "CP58",
+    "CP59",
+    "CP60",
+    "CP61",
+    "CP62",
+    "CP63",
+    "CP64",
+    "CP65",
+    "CP74",
+    "CP75",
+    "CP76",
+    "CP79",
+    "CP80",
+    "CP81",
+    "CP83",
+    "CP84",
+    "CP85",
+    "CP86",
+    "CP89",
+    "CP90"
+  ],
+  "reusedReferences": [
+    "CP01",
+    "CP03",
+    "CP10",
+    "CP12",
+    "CP13",
+    "CP21",
+    "CP32",
+    "CP82",
+    "CP94"
+  ],
+  "crewOriginalCandidateCount": 95,
+  "crewOriginalReviewed": 95,
+  "additionalCrewStatesComplete": false,
+  "additionalStates": [
+    {
+      "state": "가입 방식 시트: 승인제/자유가입, 미변경·변경·전송 중·실패",
+      "source": "CrewManageScreens.kt:CrewPolicySheet",
+      "status": "추가 시안 필요",
+      "note": "기존95개에 없지만 현행 기능이다. 선택이 달라야 적용 활성. 실패 문구가 별도 전달되지 않는 현행 구조는 구현 검토도 필요."
+    },
+    {
+      "state": "수정 데이터 로딩/조회 실패/저장 중/일반·필드 오류",
+      "source": "CrewCreateScreens.kt / CrewViewModels.kt:EDIT_*",
+      "status": "추가 시안 필요",
+      "note": "CP41~43은 변경된 준비 상태. 생성용 CP37을 수정 오류로 그대로 쓰지 않는다."
+    },
+    {
+      "state": "수정 초안 복원·임시저장·삭제 및 실패",
+      "source": "CrewDraftViewModel / CrewDraftRoute",
+      "status": "추가 감사·시안 필요",
+      "note": "생성 초안과 별개. 입력을 버리는 동작과 저장 완료를 혼동하지 않는다."
+    },
+    {
+      "state": "관리/설정 조회 중·조회 실패·권한 상실",
+      "source": "CrewManageScreen / CrewSettingsScreen",
+      "status": "추가 시안 필요",
+      "note": "기존 관리 권한 상실 안내 보존. 현재 설정의 card-null/non-owner 빈 본문은 완성된 복구 UX로 간주하지 않는다."
+    },
+    {
+      "state": "가입 신청 목록 로딩/조회 실패",
+      "source": "CrewRequestsScreen",
+      "status": "추가 시안 필요",
+      "note": "CP54는 성공한0건만 의미."
+    },
+    {
+      "state": "신청 상세 로딩/조회 실패/이미 처리됨/현재 만원",
+      "source": "CrewReviewScreen",
+      "status": "추가 시안 필요",
+      "note": "CP81은 승인 요청 중 정원 충돌이며 최초 진입 만원 상태와 구분."
+    },
+    {
+      "state": "멤버 프로필 로딩/조회 실패/소속 없음/이번 주 활동 없음",
+      "source": "CrewPersonScreen / CrewPersonBody",
+      "status": "추가 시안 필요",
+      "note": "CP56/84/85는 성공한 조회 예시만 포함."
+    },
+    {
+      "state": "명단 로딩/실패/빈 명단·참여자 없음",
+      "source": "CrewRosterScreen MEMBERS/MANAGE/WEEK",
+      "status": "추가 시안 필요",
+      "note": "공통 틀로 재사용하되 실제 인원·참여자 정의는 보존."
+    },
+    {
+      "state": "새 크루장 후보 조회 중/실패/후보0명",
+      "source": "CrewTransferScreen",
+      "status": "추가 시안 필요",
+      "note": "현재 크루장과 대기 신청자를 후보로 채우지 않는다."
+    },
+    {
+      "state": "확인 시트 전송 중/실패",
+      "source": "CrewConfirmSheet:PAUSE/RESUME/GOAL/REMOVE/TRANSFER/LEAVE/DISSOLVE",
+      "status": "공통 상태 시안 필요",
+      "note": "행동·대상별 문구는 매핑. 전송 중 닫기 및 중복 탭 제한, 실패 시 현재 데이터 유지."
+    },
+    {
+      "state": "신고 미선택/기타 메모/전송 중/전송 실패",
+      "source": "CrewReportSheet",
+      "status": "추가 시안 필요",
+      "note": "CP64는 광고 사유 선택 완료,CP65는 접수 성공만 포함."
+    },
+    {
+      "state": "모집 재개:정원 가득 참/정원 미설정",
+      "source": "CrewSettingsScreen:SHEET_RESUME",
+      "status": "추가 상태 시안 필요",
+      "note": "CP45의6자리 문구를 모든 상태에 고정하지 않는다."
+    },
+    {
+      "state": "주간 목표 빈 값/0/범위 밖/미변경/저장 중·실패",
+      "source": "CrewGoalEditScreen",
+      "status": "추가 상태 시안 필요",
+      "note": "CP46/47/83은160→200 성공 분기."
+    },
+    {
+      "state": "크루 상세 최초 로드 실패",
+      "source": "CrewDetailScreen:CrewDetailFailed",
+      "status": "추가 시안 필요",
+      "note": "CP66접근불가/해산,CP67로딩과 다른 네트워크 재시도 상태."
+    }
+  ],
+  "allCandidateCount": 409,
+  "allStatusCounts": {
+    "reviewed": 241,
+    "pending": 168
+  },
+  "allPending": [
+    {
+      "id": "CHAT01",
+      "title": "커뮤니티 · 크루 채팅",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT02",
+      "title": "크루원 · 실시간 대화",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT03",
+      "title": "크루장 · 실시간 대화",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT04",
+      "title": "크루원 · 채팅방 정보",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT05",
+      "title": "크루장 · 채팅방 정보",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT06",
+      "title": "크루원 목록",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT07",
+      "title": "크루원 프로필",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT08",
+      "title": "공지 상세",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT09",
+      "title": "공지 모아보기",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT10",
+      "title": "공지 등록",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT11",
+      "title": "공지 수정",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT12",
+      "title": "공지 삭제 확인",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT13",
+      "title": "공지 등록 후",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT14",
+      "title": "다른 메시지 메뉴",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT15",
+      "title": "내 메시지 메뉴",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT16",
+      "title": "답장 작성",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT17",
+      "title": "내 메시지 삭제 확인",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT18",
+      "title": "메시지 삭제 후",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT19",
+      "title": "메시지 전송 실패",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT20",
+      "title": "연결이 끊긴 상태",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT21",
+      "title": "이전 대화를 보는 중",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT22",
+      "title": "대화 검색 결과",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT23",
+      "title": "대화 검색 결과 없음",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT24",
+      "title": "내 채팅 알림 설정",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT25",
+      "title": "사진 첨부 방법",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT26",
+      "title": "사진 전송 전 확인",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT27",
+      "title": "사진이 올라간 대화",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT28",
+      "title": "메시지 신고",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT29",
+      "title": "신고 접수 완료",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT30",
+      "title": "혼자 있는 새 크루",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT31",
+      "title": "가입한 크루가 없는 상태",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT32",
+      "title": "채팅 참여 종료",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT33",
+      "title": "크루장 · 크루원 프로필",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT34",
+      "title": "크루원 내보내기 확인",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT35",
+      "title": "크루원 내보내기 후",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT36",
+      "title": "대화 불러오기 실패",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT37",
+      "title": "기기 알림 권한 안내",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT38",
+      "title": "크루장 · 다른 메시지 메뉴",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT39",
+      "title": "메시지 숨기기 확인",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT40",
+      "title": "메시지 숨김 후",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT41",
+      "title": "받은 사진 크게 보기",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT42",
+      "title": "사진 전송 실패",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT43",
+      "title": "공지 저장 실패",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CHAT44",
+      "title": "작성 중인 공지 보관",
+      "group": "크루 채팅"
+    },
+    {
+      "id": "CH00",
+      "title": "확정 4번 · 내 크루 홈",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH01",
+      "title": "크루 소개",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH02",
+      "title": "대표 이미지 확대",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH03",
+      "title": "크루 레벨",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH04",
+      "title": "크루원 목록",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH05",
+      "title": "크루장 프로필",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH06",
+      "title": "크루원 프로필",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH07",
+      "title": "크루 채팅 · 크루원",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH08",
+      "title": "채팅방 정보 · 크루원",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH09",
+      "title": "다음 러닝 상세",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH10",
+      "title": "참석 여부 변경",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH11",
+      "title": "참석 완료",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH12",
+      "title": "불참 선택 후",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH13",
+      "title": "모임 참석자",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH14",
+      "title": "모이는 장소",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH15",
+      "title": "주간 기록 상세",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH16",
+      "title": "주간 선택",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH17",
+      "title": "지난주 기록",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH18",
+      "title": "참여 기록 목록",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH19",
+      "title": "개별 러닝 기록",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH20",
+      "title": "공지 상세",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH21",
+      "title": "공지 목록",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH22",
+      "title": "내 크루 더보기",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH23",
+      "title": "예정된 모임이 없는 홈",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH24",
+      "title": "주간 기록 없음",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH25",
+      "title": "참석 응답 저장 실패",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH26",
+      "title": "홈 불러오기 실패",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH27",
+      "title": "크루원 이름 검색",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH28",
+      "title": "참석 후 홈",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH29",
+      "title": "불참 후 홈",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH30",
+      "title": "크루 채팅 · 크루장",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "CH31",
+      "title": "채팅방 정보 · 크루장",
+      "group": "내 크루 홈"
+    },
+    {
+      "id": "SET01",
+      "title": "설정 첫 화면",
+      "group": "설정"
+    },
+    {
+      "id": "SET02",
+      "title": "알림",
+      "group": "설정"
+    },
+    {
+      "id": "SET03",
+      "title": "휴대폰 알림 차단",
+      "group": "설정"
+    },
+    {
+      "id": "SET04",
+      "title": "서버 반영 대기",
+      "group": "설정"
+    },
+    {
+      "id": "SET05",
+      "title": "설정 저장 실패",
+      "group": "설정"
+    },
+    {
+      "id": "SET06",
+      "title": "개인정보·앱 권한",
+      "group": "설정"
+    },
+    {
+      "id": "SET07",
+      "title": "권한이 일부 제한됨",
+      "group": "설정"
+    },
+    {
+      "id": "SET08",
+      "title": "저장하는 정보",
+      "group": "설정"
+    },
+    {
+      "id": "SET09",
+      "title": "알림 기록 지우기",
+      "group": "설정"
+    },
+    {
+      "id": "SET10",
+      "title": "알림 기록 삭제 완료",
+      "group": "설정"
+    },
+    {
+      "id": "SET11",
+      "title": "연결된 계정",
+      "group": "설정"
+    },
+    {
+      "id": "SET12",
+      "title": "로그인되지 않은 상태",
+      "group": "설정"
+    },
+    {
+      "id": "SET13",
+      "title": "계정 삭제 확인",
+      "group": "설정"
+    },
+    {
+      "id": "SET14",
+      "title": "계정 삭제 처리 중",
+      "group": "설정"
+    },
+    {
+      "id": "SET15",
+      "title": "삭제 결과 미확인",
+      "group": "설정"
+    },
+    {
+      "id": "SET16",
+      "title": "어두운 테마",
+      "group": "설정"
+    },
+    {
+      "id": "SET17",
+      "title": "밝은 테마",
+      "group": "설정"
+    },
+    {
+      "id": "SET18",
+      "title": "언어 선택",
+      "group": "설정"
+    },
+    {
+      "id": "SET19",
+      "title": "영어 적용 후",
+      "group": "설정"
+    },
+    {
+      "id": "SET20",
+      "title": "소리·진동·동작",
+      "group": "설정"
+    },
+    {
+      "id": "SET21",
+      "title": "도움말·문의",
+      "group": "설정"
+    },
+    {
+      "id": "SET22",
+      "title": "답변을 펼쳤을 때",
+      "group": "설정"
+    },
+    {
+      "id": "SET23",
+      "title": "문의 방법",
+      "group": "설정"
+    },
+    {
+      "id": "SET24",
+      "title": "하루 걸음 목표",
+      "group": "설정"
+    },
+    {
+      "id": "SET25",
+      "title": "설정 확인 중",
+      "group": "설정"
+    },
+    {
+      "id": "SET26",
+      "title": "설정 조회 실패",
+      "group": "설정"
+    },
+    {
+      "id": "SET27",
+      "title": "알림 기록 삭제 실패",
+      "group": "설정"
+    },
+    {
+      "id": "SET28",
+      "title": "메일 앱 열기 실패",
+      "group": "설정"
+    },
+    {
+      "id": "WAL01",
+      "title": "지갑 · 연결 전",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL02",
+      "title": "지갑 · 연결 완료",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL03",
+      "title": "적립 내역",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL04",
+      "title": "사용 내역",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL05",
+      "title": "적립 상세",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL06",
+      "title": "사용 상세",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL07",
+      "title": "첫 적립 전",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL08",
+      "title": "사용 내역 없음",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL09",
+      "title": "정보 확인 중",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL10",
+      "title": "전체 조회 실패",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL11",
+      "title": "내역만 조회 실패",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL12",
+      "title": "연결 기능 준비 중",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL13",
+      "title": "SUP 안내",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL14",
+      "title": "연결 상태 확인",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL15",
+      "title": "재연결 필요",
+      "group": "지갑"
+    },
+    {
+      "id": "WAL16",
+      "title": "이전 내역 추가 조회 실패",
+      "group": "지갑"
+    },
+    {
+      "id": "ONB01",
+      "title": "Google 로그인",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB02",
+      "title": "첫 사용 안내",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB03",
+      "title": "앱 준비 중",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB04",
+      "title": "앱 준비 실패",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB05",
+      "title": "로그인 중",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB06",
+      "title": "연결 실패",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB07",
+      "title": "로그인 실패",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB08",
+      "title": "Google 계정 없음",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB09",
+      "title": "다시 로그인",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB10",
+      "title": "약관 링크 열기 실패",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB11",
+      "title": "첫 러닝 홈",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "ONB20",
+      "title": "사용 안내 다시 보기",
+      "group": "시작과 로그인"
+    },
+    {
+      "id": "NOT01",
+      "title": "내 알림",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT02",
+      "title": "모두 읽음",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT03",
+      "title": "적립 알림 내용",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT04",
+      "title": "신발 알림 내용",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT05",
+      "title": "크루 초대",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT06",
+      "title": "가입 신청 완료",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT07",
+      "title": "초대 응답 실패",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT08",
+      "title": "함께 뛰기 초대",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT09",
+      "title": "지급 미확인 보상",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT10",
+      "title": "빈 알림함",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT11",
+      "title": "알림 조회 중",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT12",
+      "title": "알림 조회 실패",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT13",
+      "title": "읽음 저장 실패",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT14",
+      "title": "연결된 글을 열 수 없음",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT15",
+      "title": "공지 목록",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT16",
+      "title": "공지 상세",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT17",
+      "title": "빈 공지 목록",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT18",
+      "title": "공지 조회 실패",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT19",
+      "title": "볼 수 없는 공지",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT20",
+      "title": "공지 조회 중",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT21",
+      "title": "초대 거절 확인",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT22",
+      "title": "로그인 필요",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "NOT23",
+      "title": "공지 갱신 실패",
+      "group": "알림과 공지"
+    },
+    {
+      "id": "PRO01",
+      "title": "프로필 수정",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO02",
+      "title": "닉네임 변경",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO03",
+      "title": "사진 변경 메뉴",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO04",
+      "title": "기본 이미지 선택",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO05",
+      "title": "닉네임을 비웠을 때",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO06",
+      "title": "16자 입력",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO07",
+      "title": "사진 저장 중",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO08",
+      "title": "사진 저장 실패",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO09",
+      "title": "수정 중 나가기",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO10",
+      "title": "닉네임 저장 중",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO11",
+      "title": "닉네임 저장 실패",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PRO12",
+      "title": "저장 완료",
+      "group": "프로필 편집"
+    },
+    {
+      "id": "PF01",
+      "title": "내 정보 러닝 패스",
+      "group": "내 정보"
+    }
+  ],
+  "all104RoutesAudited": false,
+  "fullScopeComplete": false
+}

@@ -1,0 +1,125 @@
+{
+  "notice": "검수용 가상 예시. 화면 전체에서 같은 선택 ID의 실제 데이터로 치환한다. 정책·서버 응답·레벨 공식이 아니다.",
+  "crews": [
+    {
+      "id": "afterwork",
+      "name": "퇴근런",
+      "level": 7,
+      "leader": "준호",
+      "initial": "준",
+      "members": 24,
+      "capacity": 30,
+      "region": "공덕",
+      "schedule": "화·목 19:30",
+      "distance": "3–5km",
+      "pace": "대화하며 달려요",
+      "motto": "퇴근 후 가볍게 한 바퀴",
+      "quote": [
+        "빠른 사람보다,",
+        "꾸준히 나올 사람을 기다려요."
+      ],
+      "style": "퇴근 러닝 · 초보 환영",
+      "total": 126,
+      "goal": 160,
+      "bg": "#352631",
+      "accent": "#edb6a0",
+      "profile": "#3d302f"
+    },
+    {
+      "id": "sunrise",
+      "name": "해뜨런",
+      "level": 12,
+      "leader": "서윤",
+      "initial": "서",
+      "members": 18,
+      "capacity": 24,
+      "region": "여의도",
+      "schedule": "월·수·금 06:00",
+      "distance": "5km",
+      "pace": "가볍게 뛰고 출근해요",
+      "motto": "도시가 깨기 전에, 먼저",
+      "quote": [
+        "아침을 바꾸고 싶은 분,",
+        "한강에서 같이 시작해요."
+      ],
+      "style": "새벽 러닝 · 5km 습관",
+      "total": 162,
+      "goal": 200,
+      "bg": "#153b37",
+      "accent": "#e1e2b6",
+      "profile": "#294c43"
+    },
+    {
+      "id": "slowsteps",
+      "name": "느긋한 발걸음",
+      "level": 3,
+      "leader": "민지",
+      "initial": "민",
+      "members": 9,
+      "capacity": 15,
+      "region": "망원",
+      "schedule": "토요일 10:00",
+      "distance": "2–3km",
+      "pace": "걷다가 뛰어도 괜찮아요",
+      "motto": "걷다가 뛰어도 괜찮아요",
+      "quote": [
+        "한 번도 안 뛰어봤어도,",
+        "같이 걸으면서 시작해요."
+      ],
+      "style": "걷기와 러닝 · 입문 환영",
+      "total": 28,
+      "goal": 50,
+      "bg": "#30334e",
+      "accent": "#dadfaf",
+      "profile": "#43425f"
+    }
+  ],
+  "newCrew": {
+    "id": "newcrew",
+    "name": "공덕 한바퀴",
+    "level": null,
+    "leader": "나",
+    "members": 1,
+    "capacity": 20,
+    "total": 0,
+    "goal": 100
+  },
+  "applicationExample": {
+    "applicant": "도윤",
+    "message": "퇴근 후 함께 뛰고 싶어요.\n천천히, 꾸준히 같이 달려요.",
+    "beforeMembers": 24,
+    "afterApprovalMembers": 25,
+    "afterDeclineMembers": 24,
+    "dateLabel": "10월 3일",
+    "messageLengthIncludingNewline": 32
+  },
+  "goalChangeExample": {
+    "completedKm": 126,
+    "oldTargetKm": 160,
+    "oldPercent": 79,
+    "newTargetKm": 200,
+    "newPercent": 63,
+    "remainingKm": 74
+  },
+  "weeklyParticipantsExample": {
+    "crewId": "afterwork",
+    "count": 9,
+    "totalKm": 126,
+    "visibleDistancesKm": [
+      24,
+      18,
+      16,
+      15,
+      13
+    ],
+    "remainingFourTotalKm": 40,
+    "notRanking": true
+  },
+  "variants": {
+    "existingMemberCount": 24,
+    "afterApprovedCount": 25,
+    "fullCount": 30,
+    "fullCapacity": 30,
+    "openJoin": "같은 데이터의 별도 가입 방식 예시, 생성 정책을 바꾸라는 뜻 아님"
+  }
+}

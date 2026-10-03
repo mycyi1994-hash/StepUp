@@ -1,0 +1,62 @@
+[
+  {
+    "id": "HOME",
+    "file": "reference/HOME.png",
+    "sha256": "4c63921d182ae9a2b596de55c296d315294c73db787746aef5febf038b3dd6c4",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "U01",
+    "file": "reference/U01.png",
+    "sha256": "dbb07dab6a99c544f1faa55ef26b2bff1a8870b3b3cfdd1a3d0fbd27f9892f08",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "P01",
+    "file": "reference/P01.png",
+    "sha256": "7fe6b69712669c33efd2a2b78dc2761ea66f5ebc03779b866dde745f81451b31",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "P02",
+    "file": "reference/P02.png",
+    "sha256": "4e2b2d0626ec512e8938948b5b24b7f04a7cf0b6e4ecb3860ecaa0862de938f3",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "P03",
+    "file": "reference/P03.png",
+    "sha256": "02b96e4abfdf5ad5d5b524c7d26d8053581dad732e65a54b969c0b0cb9739dc8",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "P04",
+    "file": "reference/P04.png",
+    "sha256": "cecaec529d317e158d51c40bf82a0080c6394bae1726b59d9289ac74ccb1537b",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "P05",
+    "file": "reference/P05.png",
+    "sha256": "fd96d4aa24df70adebb8766ad05159fd19a39beceb77a1674eaad6a7a12fbbee",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "L01",
+    "file": "reference/L01.png",
+    "sha256": "57c2112d92b19916fa52844bec50d56b1dd65e8aab11f5602aef71f1d54974e2",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "L02",
+    "file": "reference/L02.png",
+    "sha256": "3083dfd999ecbfcdcb7f00793bd0b9947e7fbab4172990ac5811521503aaaa9d",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  },
+  {
+    "id": "R01",
+    "file": "reference/R01.png",
+    "sha256": "432c2e258a1b1489acdcaf05ef7fa051a51bd7819eecd37954f68a6b8f5aee2c",
+    "role": "기존 러닝v18 연결 참고, 신규17개 미포함"
+  }
+]

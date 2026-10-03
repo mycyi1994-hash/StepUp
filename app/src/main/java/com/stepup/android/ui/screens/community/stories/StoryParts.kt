@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,77 +20,82 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.automirrored.filled.CallMade
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.stepup.android.R
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Post
 import com.stepup.android.domain.StoryPlace
 import com.stepup.android.domain.StoryText
 import com.stepup.android.domain.formatStoryDistance
+import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.LocalMapTone
+import com.stepup.android.ui.components.MapTone
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.RunSheet
+import com.stepup.android.ui.components.RunSpinner
+import com.stepup.android.ui.components.RunStateArt
 import com.stepup.android.ui.components.StepUpMap
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.FeedbackCue
-import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.relativeTime
-import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Carbon
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Edge
-import com.stepup.android.ui.theme.Night
-import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpColors
-import com.stepup.android.ui.theme.StepUpDesign
-import com.stepup.android.ui.theme.Volt
-import com.stepup.android.ui.theme.VoltText
+import com.stepup.android.ui.theme.StepUpSans
 
 /*
- * 동네 이야기(목록형 커뮤니티)의 공통 조각. 시안(2026-09-27)의 수치를 앱 토큰으로 옮겼다:
- * 주요 버튼 높이 50 · 모서리 14, 하단 시트 위 모서리 24, 목록 좌우 여백 22, 장소 썸네일 92 × 101.
+ * 러닝 이야기(커뮤니티 기본 CM01~44 · 코스 글쓰기 WRITE01~20, 2026-10-03 파란 톤 전달본)의 공통 조각.
+ *
+ * 러닝 리메이크의 남색 부품([runTone] · [RunButton] · [RunSheet])을 그대로 쓴다 — 바닥 #031427, 면 #0B2B50,
+ * 전기 파랑 #0754FF, 시안 #48D9FA, 흰 주 버튼. 글 행은 두꺼운 카드 없이 얇은 구분선, 오른쪽에 공개 장소의 실제 지도
+ * 썸네일. 안쪽 화면의 머리는 뒤로 · 가운데 제목 · (더보기)이며 로고와 하단 탭을 반복하지 않는다.
  */
 
-internal val StoryListGutter = 22.dp
-internal val StoryFormGutter = 24.dp
-private val ButtonShape = RoundedCornerShape(14.dp)
+internal val StoryListGutter = 20.dp
+internal val StoryFormGutter = 20.dp
 
-/** 주요 버튼의 면 · 글자 — 어두운 테마는 흰 면에 짙은 글자, 밝은 테마는 남색 면에 흰 글자(PrimaryCta 와 같다) */
+/** 러닝 화면과 같은 남색 지도 색 — 실제 타일(길 · 물 · 이름)의 색만 옮긴다 */
 @Composable
-private fun primaryFace(): Pair<Color, Color> =
-    if (StepUpColors.dark) Color(0xFFF3F5FF) to Color(0xFF070B12) else Snow to Color.White
+fun StoryMapTone(content: @Composable () -> Unit) {
+    val t = runTone()
+    CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade), content = content)
+}
 
 enum class StoryButtonStyle { PRIMARY, SECONDARY, DANGER }
 
-/** 시안의 버튼 — 높이 50, 모서리 14. 비활성은 짙은 바탕 · 흐린 글자 */
+/**
+ * 버튼 — 주(흰 면 · 파란 아랫면), 보조(남색 면 · 파란 테두리), 위험(빨강). [compact] 는 입력 줄 옆 "등록"처럼 좁은 자리,
+ * [hero] 는 목록 아래 큰 "+ 글쓰기"(기울인 굵은 글자).
+ */
 @Composable
 fun StoryButton(
     text: String,
@@ -101,76 +105,98 @@ fun StoryButton(
     enabled: Boolean = true,
     busy: Boolean = false,
     icon: ImageVector? = null,
-    /** 입력 줄 옆 "등록"처럼 좁은 자리 — 글자 폭만큼, 보내는 동안은 도는 표시만 */
     compact: Boolean = false,
+    italic: Boolean = false,
 ) {
-    val (face, ink) = when (style) {
-        StoryButtonStyle.PRIMARY -> primaryFace()
-        StoryButtonStyle.SECONDARY -> CarbonHigh to Snow
-        StoryButtonStyle.DANGER -> Alert.copy(alpha = 0.78f) to Color(0xFF1A0707)
+    if (compact) {
+        StoryCompactButton(text, onClick, modifier, enabled, busy)
+        return
     }
+    RunButton(
+        label = text,
+        onClick = onClick,
+        modifier = modifier,
+        kind = when (style) {
+            StoryButtonStyle.PRIMARY -> RunButtonKind.Primary
+            StoryButtonStyle.SECONDARY -> RunButtonKind.Secondary
+            StoryButtonStyle.DANGER -> RunButtonKind.Danger
+        },
+        icon = icon,
+        enabled = enabled,
+        busy = busy,
+        italic = italic,
+    )
+}
+
+/** 입력 줄 옆 좁은 버튼 — 켜지면 파란 면 · 흰 글자, 꺼지면 흐린 면. 보내는 동안은 도는 표시만 */
+@Composable
+private fun StoryCompactButton(text: String, onClick: () -> Unit, modifier: Modifier, enabled: Boolean, busy: Boolean) {
+    val t = runTone()
     val active = enabled && !busy
-    Row(
-        modifier
-            .then(if (compact) Modifier.widthIn(min = 64.dp) else Modifier.fillMaxWidth())
-            .heightIn(min = 50.dp)
-            .clip(ButtonShape)
-            .background(if (active || style != StoryButtonStyle.PRIMARY) face else CarbonHigh, ButtonShape)
-            .then(if (!active && style == StoryButtonStyle.PRIMARY) Modifier.border(1.dp, Edge, ButtonShape) else Modifier)
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier.widthIn(min = 72.dp).heightIn(min = 52.dp).clip(shape)
+            .background(if (active) t.cobalt else t.disabledFace.copy(alpha = if (t.dark) 0.55f else 1f), shape)
             .feedbackClickable(enabled = active, role = Role.Button, onClick = onClick)
-            .semantics { if (busy && compact) contentDescription = text }
-            .padding(horizontal = if (compact) 14.dp else 18.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+            .semantics { if (busy) contentDescription = text }
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        val color = if (active || style != StoryButtonStyle.PRIMARY) ink else Slate
         if (busy) {
-            CircularProgressIndicator(Modifier.size(16.dp), color = color, strokeWidth = 2.dp)
-            if (!compact) Spacer(Modifier.width(8.dp))
-        } else if (icon != null) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-        }
-        if (!(busy && compact)) {
-            Text(text, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                maxLines = if (compact) 1 else Int.MAX_VALUE)
+            RunSpinner(Modifier.size(20.dp))
+        } else {
+            Text(text, style = runTextStyle(17.sp, if (active) Color.White else t.disabledInk, FontWeight.Bold), maxLines = 1)
         }
     }
 }
 
-/** 글자 버튼 — "지역 직접 선택" · "삭제하고 나가기" 처럼 보조 행동 */
+/** 글자 버튼 — "지역 직접 선택" · "저장하지 않고 나가기" 처럼 보조 행동. [color] 를 주지 않으면 보조 글자색 */
 @Composable
-fun StoryTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Silver) {
+fun StoryTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Color.Unspecified) {
+    val t = runTone()
     Box(
         modifier
-            .heightIn(min = StepUpDesign.TouchTarget)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .feedbackClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+        Text(
+            text, style = runTextStyle(16.sp, if (color == Color.Unspecified) t.label else color, FontWeight.SemiBold),
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
-/** 오른쪽 위로 향한 화살표가 붙은 글자 링크 — "글 더 보기 ↗", "장소 변경 ↗" */
+/** 시안 글자 링크 — "지도 보기 >" · "지역 변경 >" · "범위 변경 ∨" */
 @Composable
-fun StoryLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Silver) {
+fun StoryLink(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    trailing: ImageVector? = Icons.Filled.ChevronRight,
+) {
+    val t = runTone()
+    val ink = if (color == Color.Unspecified) t.cyan else color
     Row(
         modifier
-            .heightIn(min = StepUpDesign.TouchTarget)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .feedbackClickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp),
+            .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, color = color, fontSize = 12.sp)
-        Spacer(Modifier.width(3.dp))
-        Icon(Icons.AutoMirrored.Filled.CallMade, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
+        Text(text, style = runTextStyle(16.sp, ink, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (trailing != null) {
+            Spacer(Modifier.width(4.dp))
+            Icon(trailing, contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
-/** 하위 화면의 머리 — 뒤로 · 가운데 제목 · 오른쪽 행동(없으면 빈 자리) */
+/** 안쪽 화면의 머리 — 왼쪽 뒤로, 가운데 제목, 오른쪽 행동 하나(글 메뉴). 로고 · SUP 잔액은 두지 않는다 */
 @Composable
 fun StoryHeader(
     title: String,
@@ -178,58 +204,59 @@ fun StoryHeader(
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    // 앱 공통 하위 화면 머리 — 뒤로 · 가운데 제목 · 오른쪽 보조 행동(글 메뉴)
-    SecondaryHeader(
-        onBack = onBack, balance = null, onOpenWallet = null, title = title, trailing = trailing,
-        modifier = modifier.padding(horizontal = StepUpDesign.Gutter - 8.dp),
-    )
+    val t = runTone()
+    Box(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp)) {
+        com.stepup.android.ui.components.RunBackButton(onBack, Modifier.align(Alignment.CenterStart), tag = "story-back", tint = t.text)
+        Text(
+            title,
+            style = runTextStyle(19.sp, t.text, FontWeight.ExtraBold),
+            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp).semantics { heading() },
+        )
+        if (trailing != null) Box(Modifier.align(Alignment.CenterEnd)) { trailing() }
+    }
 }
 
 /**
- * 아래에서 올라오는 시트 — 범위 · 메뉴 · 신고 · 임시저장. 위 모서리 24, 제목과 닫기(×).
- * 시트가 열리면 뒤 화면은 눌리지 않고, 뒤로 가기 · 바깥 누르기 · × 가 모두 [onDismiss] 다.
+ * 아래에서 올라오는 시트 — 불투명 남색 면, 배경 전체를 덮는 어두운 가림막, 손잡이와 닫기(×). 뒤 화면은 눌리지 않는다.
+ * 뒤로 가기 · 바깥 누르기 · × 가 모두 [onDismiss] 다. [dismissible] 이 false 면(보내는 중) 닫히지 않는다.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorySheet(
     title: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    /** 시트 바탕 — 러닝 이야기 글쓰기의 시트는 시안의 색(#111D2E) */
-    container: Color = Carbon,
+    dismissible: Boolean = true,
+    centered: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = state,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = container,
-        contentColor = Snow,
-        modifier = modifier,
-    ) {
+    val t = runTone()
+    RunSheet(onDismiss = onDismiss, modifier = modifier, dismissible = dismissible, closeTag = "story-sheet-close") {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(start = StoryFormGutter, end = StoryFormGutter, bottom = 18.dp),
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
         ) {
             if (title != null) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, color = Snow, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    Box(
-                        Modifier.size(StepUpDesign.TouchTarget).clip(CircleShape)
-                            .feedbackClickable(role = Role.Button, cue = FeedbackCue.Back, onClick = onDismiss)
-                            .testTag("story-sheet-close"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_close), tint = Silver, modifier = Modifier.size(20.dp))
-                    }
-                }
+                Text(
+                    title,
+                    style = TextStyle(
+                        fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp,
+                        lineHeight = 1.3.em, letterSpacing = (-0.02).em, color = t.text,
+                    ),
+                    textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+                    modifier = Modifier.padding(end = if (centered) 0.dp else 44.dp).semantics { heading() },
+                )
+                Spacer(Modifier.height(8.dp))
             }
             content()
         }
     }
 }
 
-/** 되돌릴 수 없는 일(삭제)만 가운데 확인 창으로 묻는다 */
+/**
+ * 되돌릴 수 없는 일(삭제) 확인 — 시트(CM24). 취소(보조) · 삭제하기. 보내는 동안은 닫히지 않는다.
+ * 이름은 예전 창(Dialog) 그대로 둔다 — 꼬리표 "story-confirm-dialog" 도 그대로.
+ */
 @Composable
 fun StoryConfirmDialog(
     title: String,
@@ -238,24 +265,28 @@ fun StoryConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     busy: Boolean = false,
+    note: String? = null,
+    /** 요청이 실패했다(CM25) — 빨간 한 줄. 글은 그대로 있다 */
+    errorText: String? = null,
 ) {
-    Dialog(onDismissRequest = { if (!busy) onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(
-            Modifier.padding(horizontal = StoryFormGutter).widthIn(max = 420.dp).fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp)).background(Carbon).border(1.dp, Edge, RoundedCornerShape(20.dp))
-                .padding(20.dp)
-                .testTag("story-confirm-dialog"),
-        ) {
-            Text(title, color = Snow, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(10.dp))
-            Text(body, color = Silver, fontSize = 13.sp, lineHeight = 20.sp)
-            Spacer(Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StoryButton(stringResource(R.string.common_cancel), onDismiss, Modifier.weight(1f),
-                    style = StoryButtonStyle.SECONDARY, enabled = !busy)
-                StoryButton(confirm, onConfirm, Modifier.weight(1f).testTag("story-confirm"),
-                    style = StoryButtonStyle.DANGER, busy = busy)
-            }
+    val t = runTone()
+    StorySheet(title = title, onDismiss = onDismiss, dismissible = !busy, modifier = Modifier.testTag("story-confirm-dialog")) {
+        Text(body, style = runTextStyle(17.sp, t.text, FontWeight.Bold, 1.45f))
+        if (note != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(note, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.45f))
+        }
+        if (errorText != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(errorText, style = runTextStyle(15.sp, t.dangerText, FontWeight.Bold, 1.45f), modifier = Modifier.testTag("story-confirm-error"))
+        }
+        Spacer(Modifier.height(20.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
+            StoryButton(
+                stringResource(R.string.common_cancel), onDismiss, Modifier.weight(1f),
+                style = StoryButtonStyle.SECONDARY, enabled = !busy,
+            )
+            StoryButton(confirm, onConfirm, Modifier.weight(1f).testTag("story-confirm"), busy = busy)
         }
     }
 }
@@ -263,12 +294,14 @@ fun StoryConfirmDialog(
 /** 이름 첫 글자 원 — 이모지처럼 두 글자 단위인 첫 글자를 반으로 자르지 않는다 */
 @Composable
 fun StoryAvatar(name: String, modifier: Modifier = Modifier, size: Dp = 30.dp) {
+    val t = runTone()
     val initial = name.trim().takeIf { it.isNotEmpty() }?.let { String(Character.toChars(it.codePointAt(0))) } ?: "?"
     Box(
-        modifier.size(size).clip(CircleShape).background(CarbonHigh).border(1.dp, Edge, CircleShape),
+        modifier.size(size).clip(CircleShape)
+            .background(if (t.dark) Color(0xFF0E3468) else t.chipFace),
         contentAlignment = Alignment.Center,
     ) {
-        Text(initial, color = Silver, fontSize = (size.value * 0.4f).sp, fontWeight = FontWeight.SemiBold)
+        Text(initial, style = runTextStyle((size.value * 0.4f).sp, if (t.dark) Color(0xFFBFD6FF) else t.cobaltText, FontWeight.Bold, 1.1f))
     }
 }
 
@@ -280,8 +313,11 @@ fun storyAuthor(post: Post): String =
 /** 거리 문구 — 기준점이 없으면 빈 문자열(숫자를 지어내지 않는다) */
 fun storyDistance(meters: Double?): String = meters?.let(::formatStoryDistance).orEmpty()
 
+/** 썸네일 · 카드의 면 — 지도 위에 남색을 살짝 덮어 글자가 읽히게 */
+private val ThumbShape = RoundedCornerShape(12.dp)
+
 /**
- * 장소 지도 썸네일 — 글쓴이가 고른 공개 장소 둘레의 실제 지도(MapTiler 타일)에 핀 · 장소 이름 · 거리.
+ * 장소 지도 썸네일 — 글쓴이가 고른 공개 장소 둘레의 실제 지도(남색 타일)에 시안 핀 · 장소 이름 · 거리.
  * 누르면 그 장소의 지도로 간다(글 제목과 다른 터치 영역).
  */
 @Composable
@@ -292,26 +328,51 @@ fun StoryPlaceThumb(
     onClick: (() -> Unit)? = null,
     showName: Boolean = true,
 ) {
-    val shape = RoundedCornerShape(10.dp)
+    val t = runTone()
     Box(
-        modifier.clip(shape).background(Night).border(1.dp, Edge, shape)
+        modifier.clip(ThumbShape).background(t.inset).border(1.dp, t.panelEdge, ThumbShape)
             .then(if (onClick != null) Modifier.feedbackClickable(role = Role.Button, onClick = onClick) else Modifier),
     ) {
-        StepUpMap(focus = listOf(place.point), modifier = Modifier.fillMaxSize(), seed = place.key.hashCode())
-        Box(Modifier.fillMaxSize().background(Night.copy(alpha = 0.35f)))
+        StoryMapTone { StepUpMap(focus = listOf(place.point), modifier = Modifier.fillMaxSize(), seed = place.key.hashCode()) }
+        Box(Modifier.fillMaxSize().background(t.screen.copy(alpha = if (t.dark) 0.30f else 0.12f)))
         Column(
             Modifier.fillMaxSize().padding(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(Icons.Filled.LocationOn, contentDescription = null, tint = VoltText, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.LocationOn, contentDescription = null, tint = t.cyan, modifier = Modifier.size(26.dp))
             if (showName) {
-                Spacer(Modifier.height(6.dp))
-                Text(place.name, color = Snow, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                Text(place.name, style = runTextStyle(12.sp, t.text, FontWeight.SemiBold, 1.2f), maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             }
             if (distance.isNotEmpty()) {
-                Text(distance, color = Snow, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(distance, style = runTextStyle(17.sp, t.text, FontWeight.ExtraBold, 1.2f), maxLines = 1)
             }
+        }
+    }
+}
+
+/**
+ * 글에 붙은 코스 썸네일(WRITE12) — 저장된 실제 경로를 남색 지도 위에, 아래 "달린 코스 · 2.10km".
+ * 경로 좌표가 둘 미만이면 부르지 않는다(가짜 코스를 그리지 않는다).
+ */
+@Composable
+fun StoryCourseThumb(route: List<GeoPoint>, km: String, seed: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    val t = runTone()
+    Box(
+        modifier.clip(ThumbShape).background(t.inset).border(1.dp, t.panelEdge, ThumbShape)
+            .then(if (onClick != null) Modifier.feedbackClickable(role = Role.Button, onClick = onClick) else Modifier),
+    ) {
+        if (route.size >= 2) StoryMapTone { LiveRouteMap(route, Modifier.fillMaxSize(), seed = seed) }
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(0.45f to Color.Transparent, 1f to t.screen.copy(alpha = 0.85f)),
+            ),
+        )
+        Column(Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 8.dp, end = 8.dp)) {
+            Text(stringResource(R.string.story_blue_course_label), style = runTextStyle(12.sp, t.text, FontWeight.SemiBold, 1.2f), maxLines = 1)
+            Text("${km}km", style = runTextStyle(17.sp, t.text, FontWeight.ExtraBold, 1.2f), maxLines = 1)
         }
     }
 }
@@ -323,14 +384,15 @@ fun StoryReactions(
     liked: Boolean,
     comments: Int,
     modifier: Modifier = Modifier,
-    size: Int = 11,
+    size: Int = 15,
     onLike: (() -> Unit)? = null,
 ) {
+    val t = runTone()
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier.then(
-                if (onLike != null) Modifier.heightIn(min = StepUpDesign.TouchTarget).clip(RoundedCornerShape(10.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onLike).padding(end = 8.dp)
+                if (onLike != null) Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+                    .feedbackClickable(role = Role.Button, onClick = onLike).padding(end = 10.dp)
                 else Modifier,
             ).testTag("story-like"),
             verticalAlignment = Alignment.CenterVertically,
@@ -338,22 +400,22 @@ fun StoryReactions(
             Icon(
                 if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = stringResource(if (liked) R.string.story_unlike else R.string.story_like),
-                tint = if (liked) Volt else Silver, modifier = Modifier.size((size + 3).dp),
+                tint = if (liked) t.cyan else t.label, modifier = Modifier.size((size + 7).dp),
             )
-            Spacer(Modifier.width(3.dp))
-            Text("$likes", color = Silver, fontSize = size.sp)
+            Spacer(Modifier.width(6.dp))
+            Text("$likes", style = runTextStyle(size.sp, t.label, FontWeight.Medium))
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(14.dp))
         Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = stringResource(R.string.story_comments_label),
-            tint = Silver, modifier = Modifier.size((size + 3).dp))
-        Spacer(Modifier.width(3.dp))
-        Text("$comments", color = Silver, fontSize = size.sp)
+            tint = t.label, modifier = Modifier.size((size + 5).dp))
+        Spacer(Modifier.width(6.dp))
+        Text("$comments", style = runTextStyle(size.sp, t.label, FontWeight.Medium))
     }
 }
 
 /**
- * 목록 한 줄 — 왼쪽 장소 지도 썸네일(장소 이름 · 거리), 오른쪽 제목 · 본문 한 줄 · 글쓴이 · 시간 · 반응.
- * 제목 쪽을 누르면 상세, 썸네일을 누르면 그 장소의 지도.
+ * 목록 한 줄(CM01 · CM05 · WRITE12) — 왼쪽 제목 · 본문 한 줄 · 글쓴이 · 시간 · 반응, 오른쪽 공개 장소 썸네일
+ * (코스가 붙은 글은 코스 썸네일). 제목 쪽을 누르면 상세, 장소 썸네일을 누르면 그 장소의 지도. 코스 썸네일은 상세로 간다.
  */
 @Composable
 fun StoryRow(
@@ -365,37 +427,47 @@ fun StoryRow(
     modifier: Modifier = Modifier,
     onLike: (() -> Unit)? = null,
 ) {
-    val (title, body) = post.title to StoryText.bodyForDisplay(post.body)
+    val t = runTone()
+    val title = post.title
+    val body = StoryText.bodyForDisplay(post.body)
+    val run = post.run
     Row(modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {
-        if (place != null) {
-            StoryPlaceThumb(
-                place, storyDistance(meters),
-                Modifier.size(width = 92.dp, height = 101.dp).testTag("story-thumb-${post.id}"),
-                onClick = onOpenPlace,
-            )
-            Spacer(Modifier.width(14.dp))
-        }
         Column(
-            Modifier.weight(1f).heightIn(min = 101.dp).clip(RoundedCornerShape(8.dp))
+            Modifier.weight(1f).heightIn(min = 104.dp).clip(RoundedCornerShape(8.dp))
                 .feedbackClickable(role = Role.Button, onClick = onOpen).testTag("story-row-${post.id}"),
         ) {
-            Text(title, color = Snow, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2,
-                overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)
-            if (body.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(body.lineSequence().first(), color = Silver, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val second = when {
+                body.isNotEmpty() -> body.lineSequence().first()
+                run != null && place != null -> place.name
+                else -> ""
             }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                listOfNotNull(
-                    storyAuthor(post), relativeTime(post.createdAt),
-                    post.run?.let { stringResource(R.string.story_row_run, com.stepup.android.domain.StoryComposeRules.km(it.distanceMeters)) },
-                    if (post.mine) stringResource(R.string.story_mine_tag) else null,
-                ).joinToString(" · "),
-                color = Slate, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
+            if (second.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(second, style = runTextStyle(15.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.weight(1f))
-            StoryReactions(post.likes, post.liked, post.commentCount, Modifier.align(Alignment.End).padding(top = 2.dp), onLike = onLike)
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    listOfNotNull(
+                        storyAuthor(post), relativeTime(post.createdAt),
+                        if (post.mine) stringResource(R.string.story_mine_tag) else null,
+                    ).joinToString(" · "),
+                    style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                StoryReactions(post.likes, post.liked, post.commentCount, onLike = onLike)
+            }
+        }
+        val thumb = Modifier.padding(start = 14.dp).size(width = 96.dp, height = 96.dp)
+        when {
+            run != null && run.hasRoute -> StoryCourseThumb(
+                run.route, com.stepup.android.domain.StoryComposeRules.km(run.distanceMeters), seed = run.endedAt.hashCode(),
+                modifier = thumb.testTag("story-thumb-${post.id}"), onClick = onOpen,
+            )
+            place != null -> StoryPlaceThumb(
+                place, storyDistance(meters), thumb.testTag("story-thumb-${post.id}"), onClick = onOpenPlace,
+            )
         }
     }
 }
@@ -403,62 +475,86 @@ fun StoryRow(
 /** 얇은 구분선 — 글마다 상자를 두르지 않는다 */
 @Composable
 fun StoryDivider(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(1.dp).background(Edge.copy(alpha = 0.7f)))
+    Box(modifier.fillMaxWidth().height(1.dp).background(runTone().divider))
 }
 
-/** 정보가 없거나 실패했을 때의 가운데 안내 — 아이콘 · 제목 · 설명 · 행동 */
+/** 정보가 없거나 실패했을 때의 가운데 안내 — 그림 · 제목 · 설명 · 행동 */
 @Composable
 fun StoryStateBlock(
     icon: ImageVector,
     title: String,
     body: String,
     modifier: Modifier = Modifier,
+    alert: Boolean = false,
     actions: @Composable ColumnScope.() -> Unit = {},
 ) {
+    val t = runTone()
     Column(modifier.fillMaxWidth().padding(vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = VoltText, modifier = Modifier.size(30.dp))
-        Spacer(Modifier.height(14.dp))
-        Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        RunStateArt(icon, size = 88.dp, alert = alert)
+        Spacer(Modifier.height(16.dp))
+        Text(title, style = runTextStyle(21.sp, t.text, FontWeight.ExtraBold, 1.35f), textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(8.dp))
-        Text(body, color = Silver, fontSize = 13.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
+        Text(body, style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center)
         Spacer(Modifier.height(18.dp))
         actions()
     }
 }
 
-/** 불러오는 동안 목록 자리를 지키는 빈 줄 */
+/** 불러오는 동안 목록 자리를 지키는 빈 줄(CM34) — 왼쪽 글 막대 셋, 오른쪽 썸네일 자리 */
 @Composable
 fun StorySkeletonRow(modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(10.dp)
+    val t = runTone()
+    val bar = if (t.dark) Color(0xFF1C3A66) else t.track
     Row(modifier.fillMaxWidth().padding(vertical = 14.dp)) {
-        Box(Modifier.size(width = 92.dp, height = 101.dp).clip(shape).background(CarbonHigh))
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.fillMaxWidth(0.85f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(CarbonHigh))
-            Box(Modifier.fillMaxWidth(0.45f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(CarbonHigh))
-            Box(Modifier.fillMaxWidth(0.65f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(CarbonHigh))
+        Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.fillMaxWidth(0.92f).height(16.dp).clip(RoundedCornerShape(8.dp)).background(bar))
+            Box(Modifier.fillMaxWidth(0.62f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(bar))
+            Box(Modifier.fillMaxWidth(0.24f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(bar))
         }
+        Spacer(Modifier.width(14.dp))
+        Box(Modifier.size(96.dp).clip(ThumbShape).background(bar))
     }
 }
 
-/** 짧은 확인 메시지 — 게시 · 수정 · 숨김 · 삭제. [action] 이 있으면 오른쪽에 글자 버튼(닫기 · 되돌리기) */
+/**
+ * 짧은 안내 — 게시 · 수정 · 숨김 · 삭제의 확인, 또는 [error] 면 실패(좋아요 · 댓글). 글 읽기를 막지 않는 띠로 보이고,
+ * [action] 이 있으면 오른쪽에 글자 버튼(닫기 · 되돌리기).
+ */
 @Composable
 fun StoryToast(
     text: String,
     modifier: Modifier = Modifier,
     action: String? = null,
     onAction: () -> Unit = {},
+    error: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    val t = runTone()
+    val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().clip(shape).background(CarbonHigh).border(1.dp, Edge, shape)
-            .padding(start = 14.dp, end = 4.dp).heightIn(min = 48.dp)
+        modifier.fillMaxWidth().clip(shape).background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)))
+            .border(1.dp, if (error) t.errorEdge else t.panelEdge, shape)
+            .padding(start = 14.dp, end = 4.dp).heightIn(min = 52.dp)
             .testTag("story-toast"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.Check, contentDescription = null, tint = VoltText, modifier = Modifier.size(16.dp))
+        Icon(
+            if (error) Icons.Outlined.ErrorOutline else Icons.Filled.Check, contentDescription = null,
+            tint = if (error) t.errorIcon else t.cyan, modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(text, style = runTextStyle(15.sp, t.text, FontWeight.SemiBold), modifier = Modifier.weight(1f).padding(vertical = 8.dp))
+        if (action != null) StoryTextButton(action, onAction, color = t.cyan)
+    }
+}
+
+/** 본문 안 한 줄 안내(CM39 좋아요 실패) — 아이콘 · 시안 글자. 확인 창을 띄우지 않는다 */
+@Composable
+fun StoryInlineNotice(text: String, modifier: Modifier = Modifier, tag: String? = null) {
+    val t = runTone()
+    Row(modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = t.cyan, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text, color = Snow, fontSize = 13.sp, modifier = Modifier.weight(1f))
-        if (action != null) StoryTextButton(action, onAction, color = VoltText)
+        Text(text, style = runTextStyle(14.sp, t.cyan, FontWeight.SemiBold))
     }
 }

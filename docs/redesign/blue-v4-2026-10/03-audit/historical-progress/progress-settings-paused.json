@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-03",
+  "goalPaused": true,
+  "v18Reviewed": 109,
+  "v19Candidates": 429,
+  "v19Reviewed": 368,
+  "needsRepair": [
+    "SET31"
+  ],
+  "pending": 60,
+  "unfinished": 61,
+  "byGroup": {
+    "지갑": 16,
+    "시작과 로그인": 12,
+    "알림과 공지": 23,
+    "설정": 10
+  },
+  "settings": {
+    "candidates": 40,
+    "reviewed": 30,
+    "needsRepair": 1,
+    "pending": 9
+  },
+  "settingsSourceHashesUnchanged": true,
+  "settingsSourceChanges": [],
+  "runtimeVerified": false,
+  "fullGoalComplete": false,
+  "additionalRouteAndStateAuditOutstanding": true
+}

@@ -1,0 +1,7 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-ae229dda-12f7-4acc-af26-ae068900a55e.png"
+  ],
+  "prompt": "Edit this Korean StepUp screen. Replace this full-page details layout with one compact DARK NAVY bottomsheet over a dim running screen (same palette). Top of sheet: '러닝 상세 정보', close X. Small 12:30 /1.56km summary. Row '목표 거리 3.0km' with a clear small '수정' button, 52% bar. Row '이번 러닝 예상 SUP +0.80' with '확인 중'. Short info line '보상은 확인 후 반영돼요.' Course row '한강 가볍게 한 바퀴' and '코스 보기', NO large duplicate map in sheet. White '닫기' bottom button. Remove fabricated date2024 completely. Upper background retains dim active running timer12:30, original logo. Sheet occupies lower65%, not fullpage. Preserve original logo style and visual system; no SUPbalanceheader. One887x1774 full-screen image, original navy/electric-blue/ice-white style. No unrelated changes."
+}

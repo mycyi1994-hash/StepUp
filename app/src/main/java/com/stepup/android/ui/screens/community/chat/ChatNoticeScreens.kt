@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.CalendarMonth
+import com.stepup.android.ui.components.RunSwitch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -43,19 +46,6 @@ import com.stepup.android.R
 import com.stepup.android.domain.ChatNotice
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.community.crew.CrewBottomBar
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewButtonKind
-import com.stepup.android.ui.screens.community.crew.CrewConfirmSheet
-import com.stepup.android.ui.screens.community.crew.CrewFieldLabel
-import com.stepup.android.ui.screens.community.crew.CrewGutter
-import com.stepup.android.ui.screens.community.crew.CrewPage
-import com.stepup.android.ui.screens.community.crew.CrewPickerField
-import com.stepup.android.ui.screens.community.crew.CrewSheet
-import com.stepup.android.ui.screens.community.crew.CrewSkeletonBox
-import com.stepup.android.ui.screens.community.crew.CrewTextField
-import com.stepup.android.ui.screens.community.crew.CrewTopBar
-import com.stepup.android.ui.screens.community.crew.crewInk
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -77,7 +67,7 @@ private fun noticeDay(millis: Long): String {
 /** 09 공지 모아보기 — 위에 고정 공지 하나, 아래 지난 공지. 각각 자기 공지 id 로 08 을 연다 */
 @Composable
 fun ChatNoticesScreen(viewModel: ChatNoticesViewModel, onBack: () -> Unit, onOpen: (Long) -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val notices by viewModel.notices.collectAsStateWithLifecycle()
     val meta by viewModel.meta.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
@@ -86,19 +76,19 @@ fun ChatNoticesScreen(viewModel: ChatNoticesViewModel, onBack: () -> Unit, onOpe
         onPauseOrDispose {}
     }
     LaunchedEffect(ended) { if (ended) onEnded() }
-    CrewPage(Modifier.testTag("chat-notices")) {
-        CrewTopBar(stringResource(R.string.chat_notices_bar), onBack)
+    BluePage(Modifier.testTag("chat-notices")) {
+        BlueTopBar(stringResource(R.string.chat_notices_bar), onBack)
         when (val state = notices) {
-            is ChatLoad.Ready -> LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp)) {
+            is ChatLoad.Ready -> LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = BlueGutter, end = BlueGutter, bottom = 40.dp)) {
                 item(key = "heading") {
                     Text(
-                        stringResource(R.string.chat_notices_heading, meta?.name.orEmpty()), color = ink.text, fontSize = 26.sp, lineHeight = 33.sp,
-                        fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 22.dp, bottom = 34.dp),
+                        stringResource(R.string.chat_notices_heading, meta?.name.orEmpty()), style = blueText(30.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+                        modifier = Modifier.padding(top = 18.dp, bottom = 26.dp),
                     )
                 }
                 if (state.value.isEmpty()) {
                     item(key = "empty") {
-                        Text(stringResource(R.string.chat_notices_empty), color = ink.secondary, fontSize = 14.sp, modifier = Modifier.testTag("chat-notices-empty"))
+                        Text(stringResource(R.string.chat_notices_empty), style = blueText(16.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.testTag("chat-notices-empty"))
                     }
                 }
                 val pinned = state.value.firstOrNull { it.pinned }
@@ -115,45 +105,50 @@ fun ChatNoticesScreen(viewModel: ChatNoticesViewModel, onBack: () -> Unit, onOpe
                 modifier = Modifier.padding(top = 120.dp),
                 tag = "chat-notices-error",
             )
-            else -> Column(Modifier.padding(CrewGutter)) { CrewSkeletonBox(Modifier.fillMaxWidth().height(160.dp), 18.dp) }
+            else -> Column(Modifier.padding(BlueGutter)) { BlueSkeleton(Modifier.fillMaxWidth().height(160.dp), 18.dp) }
         }
     }
 }
 
 @Composable
 private fun PinnedNoticeCard(notice: ChatNotice, onClick: () -> Unit) {
-    val ink = crewInk()
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(ink.card).feedbackClickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 24.dp).testTag("chat-notices-pinned"),
-    ) {
-        Text(stringResource(R.string.chat_notices_pinned), color = ink.info, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(12.dp))
-        Text(notice.title, color = ink.text, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        if (notice.preview.isNotEmpty()) {
+    val ink = blueInk()
+    BlueSurface(Modifier.fillMaxWidth().testTag("chat-notices-pinned"), onClick = onClick, selected = true) {
+        Column(Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
+            Text(stringResource(R.string.chat_notices_pinned), style = blueText(14.sp, ink.info, FontWeight.Bold))
+            Spacer(Modifier.height(8.dp))
+            Text(notice.title, style = blueText(20.sp, ink.text, FontWeight.ExtraBold, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (notice.preview.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(notice.preview, style = blueText(15.sp, ink.secondary, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.height(12.dp))
-            Text(notice.preview, color = ink.secondary, fontSize = 13.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
         }
-        Spacer(Modifier.height(14.dp))
-        Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), color = ink.secondary, fontSize = 11.5.sp)
     }
-    Spacer(Modifier.height(18.dp))
+    Spacer(Modifier.height(12.dp))
 }
 
 @Composable
 private fun NoticeRow(notice: ChatNotice, onClick: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag("chat-notices-row")) {
-        Spacer(Modifier.height(18.dp))
-        Text(notice.title, color = ink.text, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        if (notice.preview.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            Text(notice.preview, color = ink.secondary, fontSize = 13.5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(notice.title, style = blueText(20.sp, ink.text, FontWeight.ExtraBold, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (notice.preview.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(notice.preview, style = blueText(15.sp, ink.secondary, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
+            }
+            androidx.compose.material3.Icon(
+                androidx.compose.material.icons.Icons.Filled.ChevronRight, null, tint = ink.secondary,
+                modifier = Modifier.padding(start = 8.dp).height(24.dp).width(24.dp),
+            )
         }
-        Spacer(Modifier.height(14.dp))
-        Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), color = ink.secondary, fontSize = 11.5.sp)
-        Spacer(Modifier.height(24.dp))
-        Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+        BlueDivider()
     }
 }
 
@@ -174,7 +169,7 @@ fun ChatNoticeScreen(
     onEnded: () -> Unit,
     onMeeting: (Long) -> Unit = {},
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val notices by viewModel.notices.collectAsStateWithLifecycle()
     val meta by viewModel.meta.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
@@ -185,13 +180,13 @@ fun ChatNoticeScreen(
     LaunchedEffect(ended) { if (ended) onEnded() }
     val notice = (notices as? ChatLoad.Ready)?.value?.firstOrNull { it.id == viewModel.noticeId }
     val owner = meta?.owner == true
-    CrewPage(Modifier.testTag("chat-notice")) {
-        CrewTopBar(stringResource(R.string.chat_notice_bar), onBack, onMore = if (owner && notice != null) ({ onEdit(notice.id) }) else null)
+    BluePage(Modifier.testTag("chat-notice")) {
+        BlueTopBar(stringResource(R.string.chat_notice_bar), onBack, onMore = if (owner && notice != null) ({ onEdit(notice.id) }) else null)
         when {
             notice != null -> NoticeBody(notice, meta, Modifier.weight(1f), onMeeting)
-            notices is ChatLoad.Ready -> Column(Modifier.weight(1f).padding(horizontal = CrewGutter)) {
+            notices is ChatLoad.Ready -> Column(Modifier.weight(1f).padding(horizontal = BlueGutter)) {
                 Spacer(Modifier.height(80.dp))
-                Text(stringResource(R.string.chat_notice_missing), color = ink.secondary, fontSize = 15.sp, modifier = Modifier.testTag("chat-notice-missing"))
+                Text(stringResource(R.string.chat_notice_missing), style = blueText(16.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.testTag("chat-notice-missing"))
             }
             notices is ChatLoad.Failed -> ChatRetryState(
                 title = stringResource(R.string.chat_notices_error),
@@ -201,68 +196,69 @@ fun ChatNoticeScreen(
                 modifier = Modifier.weight(1f).padding(top = 120.dp),
                 tag = "chat-notice-error",
             )
-            else -> Column(Modifier.weight(1f).padding(CrewGutter)) { CrewSkeletonBox(Modifier.fillMaxWidth().height(200.dp), 16.dp) }
+            else -> Column(Modifier.weight(1f).padding(BlueGutter)) { BlueSkeleton(Modifier.fillMaxWidth().height(200.dp), 16.dp) }
         }
-        CrewBottomBar { CrewButton(stringResource(R.string.chat_notice_to_chat), onRoom, Modifier.testTag("chat-notice-room")) }
+        BlueBottomBar { BlueButton(stringResource(R.string.chat_notice_to_chat), onRoom, Modifier.testTag("chat-notice-room")) }
     }
 }
 
 @Composable
 private fun NoticeBody(notice: ChatNotice, meta: ChatRoomMeta?, modifier: Modifier, onMeeting: (Long) -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val authorOwner = notice.authorId != null && notice.authorId == meta?.ownerId
     val meeting = notice.meeting
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-        Spacer(Modifier.height(30.dp))
+    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+        Spacer(Modifier.height(20.dp))
         // "모임 안내" — 공지에 분류 데이터가 없어, 모임을 이은 공지에만 붙인다
         if (meeting != null) {
-            Box(
-                Modifier.clip(RoundedCornerShape(9.dp)).background(ink.level).padding(horizontal = 14.dp, vertical = 7.dp)
-                    .testTag("chat-notice-meeting-label"),
-            ) { Text(stringResource(R.string.chat_notice_meeting_label), color = ink.levelText, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold) }
-            Spacer(Modifier.height(22.dp))
+            Text(
+                stringResource(R.string.chat_notice_meeting_label), style = blueText(15.sp, ink.info, FontWeight.Bold),
+                modifier = Modifier.testTag("chat-notice-meeting-label"),
+            )
+            Spacer(Modifier.height(10.dp))
         }
-        Text(notice.title, color = ink.text, fontSize = 30.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.testTag("chat-notice-title"))
-        Spacer(Modifier.height(26.dp))
+        Text(notice.title, style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f), modifier = Modifier.testTag("chat-notice-title"))
+        Spacer(Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ChatFace(notice.authorName, authorOwner, 38.dp)
-            Spacer(Modifier.width(16.dp))
+            ChatFace(notice.authorName, authorOwner, 46.dp)
+            Spacer(Modifier.width(14.dp))
             Column {
-                Text(
-                    if (authorOwner) stringResource(R.string.chat_notice_author_owner, notice.authorName) else notice.authorName,
-                    color = ink.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(Modifier.height(5.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(notice.authorName, style = blueText(16.sp, ink.text, FontWeight.Bold))
+                    if (authorOwner) {
+                        Spacer(Modifier.width(8.dp))
+                        ChatOwnerBadge()
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
                 Text(
                     stringResource(R.string.chat_notice_meta, noticeDay(notice.createdAt), chatTime(notice.createdAt)),
-                    color = ink.secondary, fontSize = 12.sp,
+                    style = blueText(14.sp, ink.secondary, FontWeight.Medium),
                 )
             }
         }
-        Spacer(Modifier.height(26.dp))
-        Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
-        Spacer(Modifier.height(28.dp))
-        Text(notice.body, color = ink.text, fontSize = 15.5.sp, lineHeight = 27.sp, modifier = Modifier.testTag("chat-notice-body"))
+        Spacer(Modifier.height(20.dp))
+        BlueDivider()
+        Spacer(Modifier.height(22.dp))
+        Text(notice.body, style = blueText(17.sp, ink.text, FontWeight.Medium, 1.65f), modifier = Modifier.testTag("chat-notice-body"))
         if (meeting != null) {
-            Spacer(Modifier.height(40.dp))
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 76.dp).clip(RoundedCornerShape(16.dp)).background(ink.card)
-                    .feedbackClickable(role = Role.Button) { onMeeting(meeting.id) }
-                    .padding(horizontal = 22.dp, vertical = 16.dp).testTag("chat-notice-meeting"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        noticeMeetingLine(meeting), color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+            Spacer(Modifier.height(32.dp))
+            BlueSurface(Modifier.fillMaxWidth().testTag("chat-notice-meeting"), onClick = { onMeeting(meeting.id) }, selected = true) {
+                Row(Modifier.heightIn(min = 76.dp).padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Outlined.CalendarMonth, null, tint = ink.info, modifier = Modifier.size(30.dp),
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.chat_notice_meeting_cta), color = ink.info, fontSize = 12.5.sp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(noticeMeetingLine(meeting), style = blueText(17.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        Text(stringResource(R.string.chat_notice_meeting_cta), style = blueText(14.sp, ink.secondary, FontWeight.Medium))
+                    }
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.ChevronRight, null, tint = ink.info,
+                        modifier = Modifier.padding(start = 8.dp).size(26.dp),
+                    )
                 }
-                androidx.compose.material3.Icon(
-                    androidx.compose.material.icons.Icons.Filled.ChevronRight, null, tint = ink.secondary,
-                    modifier = Modifier.padding(start = 8.dp).height(20.dp).width(20.dp),
-                )
             }
         }
         Spacer(Modifier.height(32.dp))
@@ -299,7 +295,7 @@ fun ChatNoticeEditScreen(
     onOwnerLost: () -> Unit,
     onEnded: () -> Unit,
 ) {
-    val ink = crewInk()
+    val ink = blueInk()
     val form by viewModel.form.collectAsStateWithLifecycle()
     val load by viewModel.load.collectAsStateWithLifecycle()
     val saving by viewModel.saving.collectAsStateWithLifecycle()
@@ -314,104 +310,101 @@ fun ChatNoticeEditScreen(
     val edit = viewModel.noticeId != null
     BackHandler(enabled = !saving) { viewModel.back(onBack) }
 
-    CrewPage(Modifier.imePadding().testTag(if (edit) "chat-notice-edit" else "chat-notice-write")) {
-        CrewTopBar(stringResource(if (edit) R.string.chat_edit_bar else R.string.chat_write_bar), { if (!saving) viewModel.back(onBack) })
+    BluePage(Modifier.imePadding().testTag(if (edit) "chat-notice-edit" else "chat-notice-write")) {
+        BlueTopBar(stringResource(if (edit) R.string.chat_edit_bar else R.string.chat_write_bar), { if (!saving) viewModel.back(onBack) })
         when (load) {
             is ChatLoad.Ready -> {
-                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-                    Spacer(Modifier.height(38.dp))
-                    CrewFieldLabel(stringResource(R.string.chat_notice_title_label))
-                    Spacer(Modifier.height(12.dp))
-                    CrewTextField(
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = BlueGutter)) {
+                    Spacer(Modifier.height(20.dp))
+                    BlueFieldLabel(stringResource(R.string.chat_notice_title_label))
+                    Spacer(Modifier.height(10.dp))
+                    BlueTextField(
                         form.title, viewModel::setTitle, Modifier.testTag("chat-notice-title-field"),
                         placeholder = stringResource(R.string.chat_notice_title_hint),
                     )
-                    Spacer(Modifier.height(34.dp))
-                    CrewFieldLabel(stringResource(R.string.chat_notice_body_label))
-                    Spacer(Modifier.height(12.dp))
-                    CrewTextField(
+                    Spacer(Modifier.height(26.dp))
+                    BlueFieldLabel(stringResource(R.string.chat_notice_body_label))
+                    Spacer(Modifier.height(10.dp))
+                    BlueTextField(
                         form.body, viewModel::setBody, Modifier.testTag("chat-notice-body-field"),
                         placeholder = stringResource(R.string.chat_notice_body_hint), singleLine = false, minHeight = 220.dp,
                     )
-                    Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(26.dp))
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.chat_notice_pin), color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = form.pinned,
-                            onCheckedChange = viewModel::setPinned,
-                            modifier = Modifier.testTag("chat-notice-pin"),
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White, checkedTrackColor = ink.tabMark, checkedBorderColor = ink.tabMark,
-                                uncheckedThumbColor = ink.secondary, uncheckedTrackColor = ink.choice, uncheckedBorderColor = ink.divider,
-                            ),
-                        )
+                        Text(stringResource(R.string.chat_notice_pin), style = blueText(17.sp, ink.text, FontWeight.Bold), modifier = Modifier.weight(1f))
+                        RunSwitch(checked = form.pinned, onCheckedChange = viewModel::setPinned, modifier = Modifier.testTag("chat-notice-pin"))
                     }
-                    Spacer(Modifier.height(10.dp))
-                    Text(stringResource(R.string.chat_notice_pin_note), color = ink.secondary, fontSize = 12.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.chat_notice_pin_note), style = blueText(14.sp, ink.secondary, FontWeight.Medium))
                     // 4번 — 공지에 이을 모임(없으면 공지에서 모임 버튼을 숨긴다)
-                    Spacer(Modifier.height(34.dp))
-                    CrewFieldLabel(stringResource(R.string.chat_notice_meeting))
-                    Spacer(Modifier.height(12.dp))
-                    CrewPickerField(
+                    Spacer(Modifier.height(26.dp))
+                    BlueFieldLabel(stringResource(R.string.chat_notice_meeting))
+                    Spacer(Modifier.height(10.dp))
+                    BluePickerField(
                         form.meeting?.let { noticeMeetingLine(it) }.orEmpty(),
                         stringResource(R.string.chat_notice_meeting_none),
                         viewModel::openMeetings,
                         Modifier.testTag("chat-notice-meeting-field"),
+                        leading = androidx.compose.material.icons.Icons.Outlined.CalendarMonth,
                     )
-                    Spacer(Modifier.height(10.dp))
-                    Text(stringResource(R.string.chat_notice_meeting_note), color = ink.secondary, fontSize = 12.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.chat_notice_meeting_note), style = blueText(14.sp, ink.secondary, FontWeight.Medium))
                     if (edit) {
-                        Spacer(Modifier.height(40.dp))
+                        Spacer(Modifier.height(28.dp))
                         Box(
-                            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = viewModel::askDelete)
+                            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = viewModel::askDelete)
                                 .padding(end = 12.dp).testTag("chat-notice-delete"),
                             contentAlignment = Alignment.CenterStart,
-                        ) { Text(stringResource(R.string.chat_notice_delete), color = ink.warn, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+                        ) { Text(stringResource(R.string.chat_notice_delete), style = blueText(17.sp, ink.warn, FontWeight.Bold)) }
                     }
                     Spacer(Modifier.height(32.dp))
                 }
-                CrewBottomBar {
-                    CrewButton(
+                BlueBottomBar {
+                    BlueButton(
                         stringResource(if (edit) R.string.chat_notice_save else R.string.chat_notice_publish), viewModel::save,
                         Modifier.testTag("chat-notice-save"),
-                        kind = if (form.ready && (!edit || form.changed)) CrewButtonKind.PRIMARY else CrewButtonKind.DISABLED,
+                        kind = if (form.ready && (!edit || form.changed)) BlueKind.PRIMARY else BlueKind.DISABLED,
                         busy = saving && sheet == null,
                         enabled = form.ready && (!edit || form.changed),
                     )
                 }
             }
-            ChatLoad.Failed -> Column(Modifier.weight(1f).padding(horizontal = CrewGutter)) {
+            ChatLoad.Failed -> Column(Modifier.weight(1f).padding(horizontal = BlueGutter)) {
                 Spacer(Modifier.height(80.dp))
-                Text(stringResource(R.string.chat_notice_missing), color = ink.secondary, fontSize = 15.sp, modifier = Modifier.testTag("chat-notice-missing"))
+                Text(stringResource(R.string.chat_notice_missing), style = blueText(16.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.testTag("chat-notice-missing"))
             }
-            else -> Column(Modifier.weight(1f).padding(CrewGutter)) { CrewSkeletonBox(Modifier.fillMaxWidth().height(260.dp), 16.dp) }
+            else -> Column(Modifier.weight(1f).padding(BlueGutter)) { BlueSkeleton(Modifier.fillMaxWidth().height(260.dp), 16.dp) }
         }
     }
 
     when (val current = sheet) {
         null -> Unit
-        is ChatNoticeSheet.SaveFailed -> CrewSheet(
-            stringResource(R.string.chat_notice_error_title), viewModel::closeSheet, Modifier.testTag("chat-notice-failed"), dismissible = !current.busy,
+        is ChatNoticeSheet.SaveFailed -> BlueSheet(
+            stringResource(R.string.chat_notice_error_title), viewModel::closeSheet, Modifier.testTag("chat-notice-failed"),
+            dismissible = !current.busy, centered = true,
         ) {
-            Spacer(Modifier.height(18.dp))
-            Text(
+            Spacer(Modifier.height(12.dp))
+            BlueSheetBody(
                 stringResource(if (current.meetingGone) R.string.chat_notice_meeting_gone else R.string.chat_notice_error_body),
-                color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp,
                 modifier = if (current.meetingGone) Modifier.testTag("chat-notice-meeting-gone") else Modifier,
             )
-            Spacer(Modifier.height(96.dp))
-            CrewButton(stringResource(R.string.chat_notice_retry), viewModel::save, Modifier.testTag("chat-notice-retry"), busy = current.busy || saving)
+            Spacer(Modifier.height(26.dp))
+            BlueButton(stringResource(R.string.chat_notice_retry), viewModel::save, Modifier.testTag("chat-notice-retry"), busy = current.busy || saving)
+            Spacer(Modifier.height(8.dp))
         }
-        ChatNoticeSheet.KeepDraft -> CrewSheet(stringResource(R.string.chat_notice_draft_title), viewModel::closeSheet, Modifier.testTag("chat-notice-draft")) {
-            Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.chat_notice_draft_body), color = ink.secondary, fontSize = 15.sp, lineHeight = 25.sp)
-            Spacer(Modifier.height(96.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                CrewButton(stringResource(R.string.chat_notice_continue), viewModel::closeSheet, Modifier.weight(1f).testTag("chat-notice-continue"), CrewButtonKind.SECONDARY)
-                CrewButton(stringResource(R.string.chat_notice_keep), { viewModel.keepDraft(onBack) }, Modifier.weight(1f).testTag("chat-notice-keep"))
+        ChatNoticeSheet.KeepDraft -> BlueSheet(
+            stringResource(R.string.chat_notice_draft_title), viewModel::closeSheet, Modifier.testTag("chat-notice-draft"), centered = true,
+        ) {
+            Spacer(Modifier.height(12.dp))
+            BlueSheetBody(stringResource(R.string.chat_notice_draft_body))
+            Spacer(Modifier.height(26.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
+                BlueButton(stringResource(R.string.chat_notice_continue), viewModel::closeSheet, Modifier.weight(1f).testTag("chat-notice-continue"), BlueKind.SECONDARY)
+                BlueButton(stringResource(R.string.chat_notice_keep), { viewModel.keepDraft(onBack) }, Modifier.weight(1f).testTag("chat-notice-keep"))
             }
+            Spacer(Modifier.height(8.dp))
         }
-        is ChatNoticeSheet.Delete -> CrewConfirmSheet(
+        is ChatNoticeSheet.Delete -> BlueConfirmSheet(
             title = stringResource(R.string.chat_notice_delete_title),
             body = stringResource(R.string.chat_notice_delete_body),
             confirm = stringResource(R.string.chat_notice_delete),
@@ -426,8 +419,8 @@ fun ChatNoticeEditScreen(
 
     val picking = meetings
     if (picking != null) {
-        CrewSheet(stringResource(R.string.chat_notice_meeting_pick), viewModel::closeMeetings, Modifier.testTag("chat-notice-meetings")) {
-            Spacer(Modifier.height(12.dp))
+        BlueSheet(stringResource(R.string.chat_notice_meeting_pick), viewModel::closeMeetings, Modifier.testTag("chat-notice-meetings")) {
+            ChatSheetTopLine()
             when (picking) {
                 is ChatLoad.Ready -> {
                     ChatSheetRow(
@@ -443,18 +436,18 @@ fun ChatNoticeEditScreen(
                     }
                     if (picking.value.isEmpty()) {
                         Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.chat_notice_meeting_empty), color = ink.secondary, fontSize = 13.5.sp, lineHeight = 21.sp)
+                        Text(stringResource(R.string.chat_notice_meeting_empty), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.5f))
                     }
                 }
                 ChatLoad.Failed -> {
                     Spacer(Modifier.height(16.dp))
-                    Text(stringResource(R.string.chat_notice_meeting_error), color = ink.warn, fontSize = 14.sp)
+                    Text(stringResource(R.string.chat_notice_meeting_error), style = blueText(15.sp, ink.warn, FontWeight.SemiBold))
                     Spacer(Modifier.height(24.dp))
-                    CrewButton(stringResource(R.string.chat_error_retry), viewModel::openMeetings, Modifier.testTag("chat-notice-meetings-retry"))
+                    BlueButton(stringResource(R.string.chat_error_retry), viewModel::openMeetings, Modifier.testTag("chat-notice-meetings-retry"))
                 }
-                else -> CrewSkeletonBox(Modifier.fillMaxWidth().height(120.dp), 14.dp)
+                else -> BlueSkeleton(Modifier.fillMaxWidth().height(120.dp), 14.dp)
             }
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(20.dp))
         }
     }
 }

@@ -1,0 +1,9 @@
+{
+  "id": "L01",
+  "mode": "built-in imagegen edit",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b6e14a16-ac4b-4f62-97e1-ce137c2377c2.png",
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/U01.png"
+  ],
+  "prompt": "Precise composite correction to FIRST image. Preserve its dark location-permission bottom sheet entirely unchanged, including title 위치 사용 안내, blue pin, all copy and two actions. REPLACE ONLY the dimmed underlying screen visible above the sheet with the top portion of the SECOND image (the real 러닝 시작 menu: exact logo/header, 러닝 시작 title, 오늘은 어떻게 달릴까요?, and equal menu rows beneath), under a dark modal scrim. Remove the invented 30:00/5.00km/6′00″ preparation data from the background entirely. Do not alter the sheet height, buttons, color, text or foreground position. One 887x1774 portrait screen."
+}

@@ -4,6 +4,9 @@ import android.content.Context
 import android.location.LocationManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,12 +15,17 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,6 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.location.LocationManagerCompat
@@ -41,10 +51,11 @@ import com.stepup.android.domain.StoryPlaceSource
 import com.stepup.android.domain.StoryRecordCard
 import com.stepup.android.domain.StoryRunRules
 import com.stepup.android.ui.StepPermissions
-import com.stepup.android.ui.components.SignInAgainButton
 import com.stepup.android.ui.components.rememberCurrentLocation
-import com.stepup.android.ui.theme.Alert
-import com.stepup.android.ui.theme.Silver
+import com.stepup.android.ui.components.returnToSignIn
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import kotlinx.coroutines.launch
 
 /** 글쓰기 한 화면 안의 단계 — 쓰기 · 장소 선택 · 장소 확인. 단계를 오가도 본문 · 첨부가 그대로다 */
 private enum class ComposeStep { WRITE, PICK, CONFIRM }
@@ -86,9 +97,15 @@ fun StoryComposeScreen(
     var pickMode by rememberSaveable { mutableStateOf(StoryPickMode.NEARBY) }
     var candidate by rememberSaveable(stateSaver = StoryPlaceSaver) { mutableStateOf<StoryPlace?>(null) }
     var pickOnMap by rememberSaveable { mutableStateOf(false) }
+    // 지도에서 고르기를 어디서 열었나 — 장소 선택 화면이면 뒤로 가기가 그 화면으로, 시트에서 열었으면 글쓰기로
+    var confirmFromPicker by rememberSaveable { mutableStateOf(false) }
+    // 장소 쉽게 고르기 시트(WRITE10) — 코스 주변 · 내 주변 · 최근 장소. null 이면 닫힘
+    var quick by rememberSaveable { mutableStateOf<StoryPickMode?>(null) }
     var leaving by rememberSaveable { mutableStateOf(false) }
     var showRuns by rememberSaveable { mutableStateOf(false) }
     var showNoLocation by rememberSaveable { mutableStateOf(false) }
+    var signingIn by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     // 내 주변 — 위치 권한과 위치 기능을 확인한다. 쓸 수 없으면 검색 · 지도로 이어 가게 한다
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
@@ -98,7 +115,9 @@ fun StoryComposeScreen(
         onPauseOrDispose { }
     }
     // 내 위치는 "내 주변"으로 장소를 고를 때만 묻는다(글쓰기를 열었다고 위치를 쓰지 않는다)
-    val here = rememberCurrentLocation(enabled = locationAllowed && step == ComposeStep.PICK && pickMode == StoryPickMode.NEARBY)
+    val wantsHere = (step == ComposeStep.PICK && pickMode == StoryPickMode.NEARBY) || quick == StoryPickMode.NEARBY
+    val here = rememberCurrentLocation(enabled = locationAllowed && wantsHere)
+    val nearbyOrigin = if (here != null) StoryOrigin(here, "", manual = false) else null
 
     val attached = StoryComposeRules.postableRun(card)
     val validRun = attached?.run
@@ -123,28 +142,51 @@ fun StoryComposeScreen(
         pickMode = mode
         step = ComposeStep.PICK
     }
+    val openQuick = { mode: StoryPickMode ->
+        if (mode == StoryPickMode.NEARBY && !locationUsable(context, locationAllowed)) {
+            quick = null
+            showNoLocation = true
+        } else {
+            quick = mode
+        }
+    }
+    val openMapPick = { fromPicker: Boolean ->
+        candidate = null
+        pickOnMap = true
+        confirmFromPicker = fromPicker
+        step = ComposeStep.CONFIRM
+    }
     // 러닝 · 지난 기록 화면에 다녀와도 쓰던 글이 남게 먼저 저장한다(목록에 "임시저장했어요"는 띄우지 않는다)
     val leaveFor = { go: () -> Unit -> viewModel.saveDraft(notify = false) { go() } }
 
     BackHandler(enabled = step == ComposeStep.WRITE && !leaving) { leave() }
     BackHandler(enabled = step == ComposeStep.PICK) { step = ComposeStep.WRITE }
-    BackHandler(enabled = step == ComposeStep.CONFIRM) { step = ComposeStep.PICK }
+    BackHandler(enabled = step == ComposeStep.CONFIRM) { step = if (confirmFromPicker) ComposeStep.PICK else ComposeStep.WRITE }
 
+    val placeSources = StoryComposeRules.placeSources(card, hasRecent = recent.isNotEmpty())
     when (step) {
         ComposeStep.PICK -> StoryPlacePicker(
-            origin = if (pickMode == StoryPickMode.NEARBY && here != null) StoryOrigin(here, "", manual = false) else origin,
+            origin = if (pickMode == StoryPickMode.NEARBY && nearbyOrigin != null) nearbyOrigin else origin,
             onBack = { step = ComposeStep.WRITE },
-            onPick = { candidate = it; pickOnMap = false; step = ComposeStep.CONFIRM },
-            onPickOnMap = { candidate = null; pickOnMap = true; step = ComposeStep.CONFIRM },
+            // 검색 결과 · 장소 줄은 한 번 누르면 바로 정해진다 — 확인 화면을 거치지 않는다(CM14)
+            onPick = { picked ->
+                viewModel.setPlace(picked, pickMode.source)
+                step = ComposeStep.WRITE
+            },
+            onPickOnMap = { openMapPick(true) },
             mode = pickMode,
             course = validRun?.route.orEmpty(),
             recent = recent,
+            onQuick = { mode ->
+                step = ComposeStep.WRITE
+                openQuick(mode)
+            },
         )
         ComposeStep.CONFIRM -> StoryPlaceConfirm(
             initial = candidate,
             pickOnMap = pickOnMap,
             origin = origin,
-            onBack = { step = ComposeStep.PICK },
+            onBack = { step = if (confirmFromPicker) ComposeStep.PICK else ComposeStep.WRITE },
             onChoose = { chosen ->
                 viewModel.setPlace(chosen, pickMode.source.takeUnless { pickOnMap })
                 step = ComposeStep.WRITE
@@ -159,7 +201,7 @@ fun StoryComposeScreen(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                     .padding(horizontal = ComposeGutter),
             ) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 StoryRecordCardView(
                     card = card,
                     words = words,
@@ -171,60 +213,112 @@ fun StoryComposeScreen(
                         onHistory = { leaveFor(onOpenRecords) },
                     ),
                 )
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(20.dp))
                 StoryPlaceBlock(
                     place = place,
-                    sources = StoryComposeRules.placeSources(card, hasRecent = recent.isNotEmpty()),
+                    sources = placeSources,
                     selected = placeSource.takeIf { place != null },
                     onOpen = { openPicker(StoryPickMode.DEFAULT) },
                     onSource = { source ->
                         when (source) {
-                            StoryPlaceSource.COURSE -> openPicker(StoryPickMode.COURSE)
-                            StoryPlaceSource.RECENT -> openPicker(StoryPickMode.RECENT)
+                            StoryPlaceSource.COURSE -> openQuick(StoryPickMode.COURSE)
+                            StoryPlaceSource.RECENT -> openQuick(StoryPickMode.RECENT)
                             StoryPlaceSource.SEARCH -> openPicker(StoryPickMode.SEARCH)
-                            StoryPlaceSource.NEARBY ->
-                                if (locationUsable(context, locationAllowed)) openPicker(StoryPickMode.NEARBY) else showNoLocation = true
+                            StoryPlaceSource.NEARBY -> openQuick(StoryPickMode.NEARBY)
                         }
                     },
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(20.dp))
                 StoryPhraseBlock(
                     set = StoryComposeRules.phraseSet(card),
                     selected = phrase.takeIf { text.isNotBlank() },
                     words = words,
                     onPhrase = { chosen -> viewModel.applyStarter(chosen, words.starter(chosen, validRun, place)) },
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
                 StoryBodyBox(text, viewModel::setText, enabled = ready && !submitting, large = large)
                 Spacer(Modifier.height(14.dp))
             }
             Column(Modifier.padding(start = ComposeGutter, end = ComposeGutter, bottom = 12.dp)) {
                 val (note, warn) = composeNote(card, place != null, text, fallback, error)
-                Text(
-                    note, color = if (warn) composeInk().warn else composeInk().secondary, fontSize = 12.sp, lineHeight = 17.sp,
-                    modifier = Modifier.fillMaxWidth().testTag(if (error != null) "story-publish-error" else "story-compose-note"),
-                )
-                if (error == StoryPublishError.SIGN_IN) {
-                    Spacer(Modifier.height(8.dp))
-                    SignInAgainButton()
+                val ink = composeInk()
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        if (warn) Icons.Outlined.ErrorOutline else Icons.Outlined.Info, contentDescription = null,
+                        tint = if (warn) ink.warn else ink.secondary, modifier = Modifier.padding(top = 1.dp).size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        note, style = runTextStyle(14.sp, if (warn) ink.warn else ink.secondary, FontWeight.Medium, 1.45f),
+                        modifier = Modifier.fillMaxWidth().testTag(if (error != null) "story-publish-error" else "story-compose-note"),
+                    )
                 }
                 Spacer(Modifier.height(12.dp))
-                ComposePrimaryButton(
-                    text = stringResource(
-                        when {
-                            submitting -> R.string.story_publishing
-                            error != null -> R.string.story_publish_retry
-                            edit -> R.string.story_edit_done
-                            else -> R.string.story_publish
+                if (error == StoryPublishError.SIGN_IN) {
+                    // 로그인 만료(WRITE20) — 주 버튼은 "로그인하고 계속 쓰기" 하나. 쓰던 글을 저장한 뒤 기존 로그인으로 가고,
+                    // 돌아오면 이어 쓰기로 복원해 사용자가 다시 올린다(로그인은 게시 동의가 아니다)
+                    StoryButton(
+                        stringResource(R.string.story_blue_sign_in_continue),
+                        {
+                            signingIn = true
+                            viewModel.saveDraft(notify = false) {
+                                scope.launch {
+                                    try {
+                                        returnToSignIn(context)
+                                    } finally {
+                                        signingIn = false
+                                    }
+                                }
+                            }
                         },
-                    ),
-                    onClick = { viewModel.submit(fallback, onDone) },
-                    enabled = ready && StoryComposeRules.canPost(card, place != null, text, fallback),
-                    busy = submitting,
-                    modifier = Modifier.testTag("story-compose-submit"),
-                )
+                        Modifier.testTag("story-compose-sign-in"),
+                        busy = signingIn,
+                    )
+                } else {
+                    StoryButton(
+                        text = stringResource(
+                            when {
+                                submitting -> R.string.story_publishing
+                                error != null -> R.string.story_publish_retry
+                                edit -> R.string.story_edit_done
+                                else -> R.string.story_publish
+                            },
+                        ),
+                        onClick = { viewModel.submit(fallback, onDone) },
+                        enabled = ready && StoryComposeRules.canPost(card, place != null, text, fallback),
+                        busy = submitting,
+                        modifier = Modifier.testTag("story-compose-submit"),
+                    )
+                }
             }
         }
+    }
+
+    quick?.let { mode ->
+        StoryQuickPlaceSheet(
+            mode = mode,
+            sources = placeSources,
+            origin = if (mode == StoryPickMode.NEARBY) nearbyOrigin else origin,
+            locating = mode == StoryPickMode.NEARBY && nearbyOrigin == null,
+            course = validRun?.route.orEmpty(),
+            recent = recent,
+            current = place,
+            onMode = { next -> openQuick(next) },
+            onPick = { picked ->
+                viewModel.setPlace(picked, mode.source)
+                quick = null
+            },
+            onSearch = {
+                quick = null
+                openPicker(StoryPickMode.SEARCH)
+            },
+            onMap = {
+                quick = null
+                pickMode = mode
+                openMapPick(false)
+            },
+            onDismiss = { quick = null },
+        )
     }
 
     if (showRuns) {
@@ -245,9 +339,7 @@ fun StoryComposeScreen(
             onMap = {
                 showNoLocation = false
                 pickMode = StoryPickMode.SEARCH
-                candidate = null
-                pickOnMap = true
-                step = ComposeStep.CONFIRM
+                openMapPick(false)
             },
             onSettings = {
                 showNoLocation = false
@@ -259,15 +351,19 @@ fun StoryComposeScreen(
     }
 
     if (leaving) {
-        StorySheet(stringResource(R.string.story_leave_title), onDismiss = { leaving = false }) {
-            Text(stringResource(R.string.story_leave_body), color = Silver, fontSize = 13.sp, modifier = Modifier.padding(bottom = 16.dp))
+        // 작성 중 나가기(CM20) — 임시저장하고 나가기 · 계속 쓰기 · 저장하지 않고 나가기
+        val t = runTone()
+        StorySheet(stringResource(R.string.story_blue_leave_title), onDismiss = { leaving = false }, centered = true) {
+            Text(stringResource(R.string.story_blue_leave_body), style = runTextStyle(16.sp, t.text, FontWeight.Medium, 1.5f),
+                textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
             StoryButton(stringResource(R.string.story_leave_save), { viewModel.saveDraft { leaving = false; onBack() } },
                 Modifier.testTag("story-leave-save"))
             Spacer(Modifier.height(10.dp))
             StoryButton(stringResource(R.string.story_leave_keep), { leaving = false }, style = StoryButtonStyle.SECONDARY)
             Spacer(Modifier.height(4.dp))
-            StoryTextButton(stringResource(R.string.story_leave_discard), { viewModel.discard { leaving = false; onBack() } },
-                Modifier.align(Alignment.CenterHorizontally).testTag("story-leave-discard"), color = Alert)
+            StoryTextButton(stringResource(R.string.story_blue_leave_discard), { viewModel.discard { leaving = false; onBack() } },
+                Modifier.align(Alignment.CenterHorizontally).testTag("story-leave-discard"), color = t.dangerText)
         }
     }
 }

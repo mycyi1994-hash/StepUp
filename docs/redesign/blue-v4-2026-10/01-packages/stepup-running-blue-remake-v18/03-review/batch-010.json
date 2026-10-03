@@ -1,0 +1,67 @@
+[
+  {
+    "id": "D01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-3eceb380-2238-40cf-8729-4503fbcf68ed.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할 및 상태",
+        "정보와 버튼",
+        "스타일 및 가독성"
+      ],
+      "notes": "원래2열 키/몸무게 입력 유지,키 포커스·숫자키보드·완료 동작 확인."
+    }
+  },
+  {
+    "id": "D04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-9b08c7dc-15cf-4f98-b936-258fd6383b44.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할 및 상태",
+        "정보와 버튼",
+        "스타일 및 가독성"
+      ],
+      "notes": "추천 준비 로딩과스켈레톤,입력 복귀 한개버튼 확인."
+    }
+  },
+  {
+    "id": "CR02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-12192893-0fae-4fb2-8e76-0578c0f7cbb0.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할 및 상태",
+        "정보와 버튼",
+        "스타일 및 가독성"
+      ],
+      "notes": "크루명과러닝정보,12/30명·준비9명,대기실참여/크루변경 확인."
+    }
+  },
+  {
+    "id": "CR06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-836a6209-b1f7-4355-acc6-19fab09da758.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할 및 상태",
+        "정보와 버튼",
+        "스타일 및 가독성"
+      ],
+      "notes": "진행자 준호,30/30명중27명준비 및27명출발/준비취소 확인."
+    }
+  },
+  {
+    "id": "CR07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f60eae5b-a665-448b-8c53-d40d35ddd425.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할 및 상태",
+        "정보와 버튼",
+        "스타일 및 가독성"
+      ],
+      "notes": "27명출발·미준비3명제외 명시,출발/더기다리기 분기 확인."
+    }
+  }
+]

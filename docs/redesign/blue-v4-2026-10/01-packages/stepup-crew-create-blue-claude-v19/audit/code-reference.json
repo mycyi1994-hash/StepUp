@@ -1,0 +1,46 @@
+{
+  "readOnly": true,
+  "checkedOn": "2026-10-03",
+  "files": [
+    {
+      "path": "domain/CrewCards.kt",
+      "sha256": "14aea461be4aae1cadc3f1de1048e6f367cf00e20110e7bad59adf27b5d9499c"
+    },
+    {
+      "path": "ui/screens/community/crew/CrewCreateScreens.kt",
+      "sha256": "de4ac8fea46b9a49baed3ef976be92ab9e3a528be4afb1889d7ffe4ad78bb0af"
+    },
+    {
+      "path": "ui/screens/community/crew/CrewManageScreens.kt",
+      "sha256": "89d0e5e8783ca2dc16916be405107b025040cf6ff68c0a601776060c87d0ef26"
+    },
+    {
+      "path": "ui/screens/community/crew/CrewViewModels.kt",
+      "sha256": "475074de010c3e571bfe651ec0da04ed3f2f493ceea60708aef5d9f48d7cd234"
+    }
+  ],
+  "confirmed": [
+    "nameOk is trimmed1..40; duplicate name not locally blocked",
+    "tagline120,note300,capacity1..9999,goal1..99999",
+    "distance single optional; mood independent toggles",
+    "no days normalizes schedule to none",
+    "CREATE custom goal changes draft only",
+    "generic create failure stays preview; field failure returns relevant step",
+    "photo load/crop/save/error/denied states exist",
+    "created=true management includes chat row",
+    "keepDraft awaits local save before onDone; errors do not have a dedicated designed state here"
+  ],
+  "intentionalDesignChanges": [
+    "CP36 replaces obsolete duplicate-name claim with real empty-name rule",
+    "CP37 uses actual creation preview state",
+    "CP32 labels entire schedule reset 정기 일정 없음",
+    "CP38 secondary label 계속 작성 clarifies cancel",
+    "CP77 keeps current code chat row absent from old mockup"
+  ],
+  "notVerified": [
+    "API request idempotency behavior",
+    "local draft write/delete exception recovery",
+    "runtime permission/settings results",
+    "accessibility and actual device layout"
+  ]
+}

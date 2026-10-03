@@ -1,0 +1,26 @@
+[
+  {
+    "id": "CP01",
+    "png": "02-shared-reference/CP01.png",
+    "reused": true,
+    "purpose": "생성 진입 또는 지역 선택 연결 참고"
+  },
+  {
+    "id": "CP03",
+    "png": "02-shared-reference/CP03.png",
+    "reused": true,
+    "purpose": "생성 진입 또는 지역 선택 연결 참고"
+  },
+  {
+    "id": "CP71",
+    "png": "02-shared-reference/CP71.png",
+    "reused": true,
+    "purpose": "생성 진입 또는 지역 선택 연결 참고"
+  },
+  {
+    "id": "CP72",
+    "png": "02-shared-reference/CP72.png",
+    "reused": true,
+    "purpose": "생성 진입 또는 지역 선택 연결 참고"
+  }
+]

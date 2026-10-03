@@ -1,0 +1,41 @@
+{
+  "method": "Original review entries recovered from persisted manifest reviewNotes after naming collision; no new visual approval asserted.",
+  "screens": [
+    {
+      "id": "DRAW21",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Two copies of same model distinguished by owned ID; selected new shoe not equipped; full durability bar."
+    },
+    {
+      "id": "DRAW23",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography."
+    },
+    {
+      "id": "DRAW25",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography."
+    },
+    {
+      "id": "DRAW26",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography."
+    },
+    {
+      "id": "DRAW30",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography."
+    },
+    {
+      "id": "DRAW31",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography."
+    }
+  ]
+}

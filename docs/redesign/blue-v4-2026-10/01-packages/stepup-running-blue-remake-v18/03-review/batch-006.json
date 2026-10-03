@@ -1,0 +1,41 @@
+[
+  {
+    "id": "L01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-537ff343-40ec-4551-8bfc-42a66b966e8e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 목적과 상태",
+        "문구 및 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "러닝 시작 메뉴 위의 남색 위치 사용 안내. 허용·나중에 버튼과 설명, 겹침 없음 확인."
+    }
+  },
+  {
+    "id": "C03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-7eb79866-5be8-4d4a-9be6-e94dd33dcd02.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 목적과 상태",
+        "문구 및 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "완료한 도전 3회와 3개 기록, 상세 진입과 새 도전 버튼 확인."
+    }
+  },
+  {
+    "id": "C05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-58885415-fc18-435d-968d-c9f7de1dce7d.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 목적과 상태",
+        "문구 및 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "3km 도전 1.92km·64%·남은1.08km 및 일시정지/마치기 확인. 지도 예시와 경로 끝 현재 위치 확인."
+    }
+  }
+]

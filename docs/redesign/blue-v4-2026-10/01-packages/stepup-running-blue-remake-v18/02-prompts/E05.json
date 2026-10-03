@@ -1,0 +1,7 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-6ed70c31-d3cd-429c-abe8-6b4e188e1ed7.png"
+  ],
+  "prompt": "Edit this Korean StepUp screen. The '경로 포함' toggle is OFF. REMOVE the ENTIRE geographic map and route from the share preview card. Collapse the vacated map area so the preview consists only of original small logo, date2026.10.03,1.56km,12:30,8′01″/km. Place the '경로 포함' OFF toggle as a separate control BELOW the preview card, not part of the exported preview. Keep the title, explanatory line and share/cancel buttons and colors. No route/address/location visible anywhere. One887x1774 full-screen image, original navy/electric-blue/ice-white style. No unrelated changes."
+}

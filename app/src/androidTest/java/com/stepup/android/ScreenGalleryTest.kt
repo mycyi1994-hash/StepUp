@@ -282,26 +282,24 @@ class ScreenGalleryTest {
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
                 val shoe = before.first { it.id == sneakerId }
                 if (shoe.canUpgrade) {
-                    // 보유 신발 상세 v1 — 강화는 위쪽 ⋯(이 신발 관리) 안으로 옮겼다. 확인 창 · 비용은 그대로
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-more").fetchSemanticsNodes().isNotEmpty() }
-                    compose.onNodeWithTag("shoe-more").performClick()
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-manage-enhance").fetchSemanticsNodes().isNotEmpty() }
-                    compose.onNodeWithTag("shoe-manage-enhance").performClick()
-                    val costNode = compose.onNodeWithText(localized.getString(
-                        R.string.items_upgrade_cost, "%,.0f".format(shoe.upgradeCost),
-                    ))
-                    // A dialog owns a separate Android window. Compose idleness alone
-                    // does not establish that WindowManager has laid out that window.
+                    // 파란 톤 v4 — 상세 아래 "강화하기"가 독립 강화 화면을 연다. 비용은 지금 서버 계약(SUP) 그대로, 여는 것만으로 쓰지 않는다
+                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-upgrade-open").fetchSemanticsNodes().isNotEmpty() }
+                    compose.onNodeWithTag("shoe-upgrade-open").performClick()
+                    val costNode = compose.onNodeWithTag("upgrade-cost-value", useUnmergedTree = true)
                     try {
-                        compose.waitUntil(timeoutMillis = 5_000) { costNode.isDisplayed() }
+                        compose.waitUntil(timeoutMillis = 5_000) {
+                            compose.onAllNodesWithTag("upgrade-cost-value", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+                        }
                     } finally {
                         capture("extra-sneaker-upgrade-confirm")
                         File(directory, "sneaker-upgrade-semantics.txt").writeText(
                             compose.onAllNodes(isRoot()).printToString(),
                         )
                     }
-                    costNode.assertIsDisplayed()
-                    compose.onNodeWithText(localized.getString(R.string.common_cancel)).performClick()
+                    costNode.assertTextContains(com.stepup.android.ui.screens.items.formatSupExact(shoe.upgradeCost), substring = true)
+                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                    compose.waitForIdle()
                     org.junit.Assert.assertEquals(before,
                         runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
                     compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()

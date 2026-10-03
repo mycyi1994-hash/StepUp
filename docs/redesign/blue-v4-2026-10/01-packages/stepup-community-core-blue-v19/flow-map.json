@@ -1,0 +1,497 @@
+{
+  "screens": [
+    "CM01",
+    "CM02",
+    "CM03",
+    "CM04",
+    "CM05",
+    "CM06",
+    "CM08",
+    "CM09",
+    "CM10",
+    "CM11",
+    "CM12",
+    "CM13",
+    "CM14",
+    "CM15",
+    "CM16",
+    "CM17",
+    "CM18",
+    "CM19",
+    "CM20",
+    "CM21",
+    "CM22",
+    "CM23",
+    "CM24",
+    "CM25",
+    "CM26",
+    "CM27",
+    "CM28",
+    "CM29",
+    "CM30",
+    "CM31",
+    "CM32",
+    "CM33",
+    "CM34",
+    "CM35",
+    "CM36",
+    "CM37",
+    "CM38",
+    "CM39",
+    "CM40",
+    "CM41",
+    "CM42",
+    "CM43",
+    "CM44"
+  ],
+  "excluded": {
+    "CM07": "장소를 선택하면 CM06 안에서 목록 필터. 다시 글 보기를 여는 화면 없음."
+  },
+  "externalTargets": [
+    "RETURN_CONTEXT",
+    "WRITE09",
+    "WRITE10",
+    "EXISTING_CREW_LIST",
+    "EXISTING_CREW_CHAT"
+  ],
+  "edges": [
+    {
+      "from": "CM01",
+      "action": "범위 변경",
+      "to": "CM02"
+    },
+    {
+      "from": "CM02",
+      "action": "지역 변경",
+      "to": "CM03"
+    },
+    {
+      "from": "CM02",
+      "action": "범위 적용",
+      "to": "CM01"
+    },
+    {
+      "from": "CM02",
+      "action": "취소",
+      "to": "CM01"
+    },
+    {
+      "from": "CM03",
+      "action": "검색 결과 없음",
+      "to": "CM04"
+    },
+    {
+      "from": "CM04",
+      "action": "검색어 수정",
+      "to": "CM03"
+    },
+    {
+      "from": "CM03",
+      "action": "지역 선택",
+      "to": "CM43"
+    },
+    {
+      "from": "CM03",
+      "action": "내 위치로 찾기",
+      "to": "CM32"
+    },
+    {
+      "from": "CM01",
+      "action": "지도 보기",
+      "to": "CM05"
+    },
+    {
+      "from": "CM05",
+      "action": "장소 핀 선택",
+      "to": "CM06"
+    },
+    {
+      "from": "CM05",
+      "action": "글 선택",
+      "to": "CM08"
+    },
+    {
+      "from": "CM06",
+      "action": "글 선택",
+      "to": "CM08"
+    },
+    {
+      "from": "CM06",
+      "action": "전체 장소",
+      "to": "CM05"
+    },
+    {
+      "from": "CM06",
+      "action": "뒤로·진입한 목록 또는 상세와 이전 상태 복원",
+      "to": "RETURN_CONTEXT"
+    },
+    {
+      "from": "CM05",
+      "action": "뒤로·진입한 목록 또는 상세와 이전 상태 복원",
+      "to": "RETURN_CONTEXT"
+    },
+    {
+      "from": "CM01",
+      "action": "글 선택",
+      "to": "CM08"
+    },
+    {
+      "from": "CM01",
+      "action": "장소 썸네일 선택",
+      "to": "CM06"
+    },
+    {
+      "from": "CM08",
+      "action": "장소 카드",
+      "to": "CM06"
+    },
+    {
+      "from": "CM08",
+      "action": "댓글 입력",
+      "to": "CM09"
+    },
+    {
+      "from": "CM09",
+      "action": "등록 성공",
+      "to": "CM10"
+    },
+    {
+      "from": "CM09",
+      "action": "등록 실패",
+      "to": "CM11"
+    },
+    {
+      "from": "CM11",
+      "action": "재시도 성공",
+      "to": "CM10"
+    },
+    {
+      "from": "CM08",
+      "action": "좋아요 실패·원복",
+      "to": "CM39"
+    },
+    {
+      "from": "CM01",
+      "action": "글쓰기",
+      "to": "CM12"
+    },
+    {
+      "from": "CM12",
+      "action": "장소 선택",
+      "to": "CM14"
+    },
+    {
+      "from": "CM14",
+      "action": "결과 없음",
+      "to": "CM16"
+    },
+    {
+      "from": "CM16",
+      "action": "검색어 수정",
+      "to": "CM14"
+    },
+    {
+      "from": "CM14",
+      "action": "검색 결과 즉시 선택·작성 화면 복귀·기존 입력 유지",
+      "to": "CM13"
+    },
+    {
+      "from": "CM15",
+      "action": "장소 확정·작성 내용 복원",
+      "to": "CM13"
+    },
+    {
+      "from": "CM13",
+      "action": "장소 변경",
+      "to": "CM14"
+    },
+    {
+      "from": "CM13",
+      "action": "올리기",
+      "to": "CM17"
+    },
+    {
+      "from": "CM17",
+      "action": "서버 성공",
+      "to": "CM18"
+    },
+    {
+      "from": "CM17",
+      "action": "서버 실패",
+      "to": "CM19"
+    },
+    {
+      "from": "CM19",
+      "action": "재시도",
+      "to": "CM17"
+    },
+    {
+      "from": "CM13",
+      "action": "뒤로 가기",
+      "to": "CM20"
+    },
+    {
+      "from": "CM20",
+      "action": "계속 쓰기",
+      "to": "CM13"
+    },
+    {
+      "from": "CM20",
+      "action": "임시저장하고 나가기",
+      "to": "CM01"
+    },
+    {
+      "from": "CM20",
+      "action": "버리고 나가기",
+      "to": "CM01"
+    },
+    {
+      "from": "CM01",
+      "action": "초안이 있는 상태에서 글쓰기",
+      "to": "CM21"
+    },
+    {
+      "from": "CM21",
+      "action": "이어쓰기",
+      "to": "CM13"
+    },
+    {
+      "from": "CM21",
+      "action": "지우고 새로 쓰기",
+      "to": "CM12"
+    },
+    {
+      "from": "CM18",
+      "action": "내 글 선택",
+      "to": "CM44"
+    },
+    {
+      "from": "CM44",
+      "action": "더보기",
+      "to": "CM22"
+    },
+    {
+      "from": "CM22",
+      "action": "수정",
+      "to": "CM23"
+    },
+    {
+      "from": "CM23",
+      "action": "수정 서버 성공",
+      "to": "CM44"
+    },
+    {
+      "from": "CM22",
+      "action": "삭제",
+      "to": "CM24"
+    },
+    {
+      "from": "CM24",
+      "action": "삭제 서버 성공",
+      "to": "CM01"
+    },
+    {
+      "from": "CM24",
+      "action": "삭제 실패",
+      "to": "CM25"
+    },
+    {
+      "from": "CM25",
+      "action": "재시도 성공",
+      "to": "CM01"
+    },
+    {
+      "from": "CM08",
+      "action": "더보기",
+      "to": "CM26"
+    },
+    {
+      "from": "CM26",
+      "action": "이 글 숨기기",
+      "to": "CM29"
+    },
+    {
+      "from": "CM29",
+      "action": "되돌리기",
+      "to": "CM01"
+    },
+    {
+      "from": "CM26",
+      "action": "신고",
+      "to": "CM27"
+    },
+    {
+      "from": "CM27",
+      "action": "접수 성공",
+      "to": "CM28"
+    },
+    {
+      "from": "CM27",
+      "action": "접수 실패",
+      "to": "CM40"
+    },
+    {
+      "from": "CM40",
+      "action": "재시도 성공",
+      "to": "CM28"
+    },
+    {
+      "from": "CM30",
+      "action": "현재 위치 사용·OS 권한 허용",
+      "to": "CM32"
+    },
+    {
+      "from": "CM30",
+      "action": "OS 권한 거부",
+      "to": "CM31"
+    },
+    {
+      "from": "CM30",
+      "action": "지역 직접 선택",
+      "to": "CM03"
+    },
+    {
+      "from": "CM31",
+      "action": "지역 직접 선택",
+      "to": "CM03"
+    },
+    {
+      "from": "CM31",
+      "action": "설정 복귀 후 허용",
+      "to": "CM32"
+    },
+    {
+      "from": "CM32",
+      "action": "위치 성공",
+      "to": "CM34"
+    },
+    {
+      "from": "CM32",
+      "action": "위치 실패",
+      "to": "CM37"
+    },
+    {
+      "from": "CM32",
+      "action": "지역 직접 선택",
+      "to": "CM03"
+    },
+    {
+      "from": "CM37",
+      "action": "지역 직접 선택",
+      "to": "CM03"
+    },
+    {
+      "from": "CM37",
+      "action": "위치 다시 찾기",
+      "to": "CM32"
+    },
+    {
+      "from": "CM34",
+      "action": "조회 성공·글 있음",
+      "to": "CM01"
+    },
+    {
+      "from": "CM34",
+      "action": "조회 성공·글 없음",
+      "to": "CM33"
+    },
+    {
+      "from": "CM34",
+      "action": "조회 실패",
+      "to": "CM35"
+    },
+    {
+      "from": "CM35",
+      "action": "다시 불러오기",
+      "to": "CM34"
+    },
+    {
+      "from": "CM33",
+      "action": "첫 이야기 남기기",
+      "to": "CM12"
+    },
+    {
+      "from": "CM33",
+      "action": "범위 변경",
+      "to": "CM02"
+    },
+    {
+      "from": "CM41",
+      "action": "지도 성공",
+      "to": "CM05"
+    },
+    {
+      "from": "CM41",
+      "action": "지도 실패",
+      "to": "CM36"
+    },
+    {
+      "from": "CM36",
+      "action": "재시도",
+      "to": "CM41"
+    },
+    {
+      "from": "CM42",
+      "action": "상세 성공",
+      "to": "CM08"
+    },
+    {
+      "from": "CM42",
+      "action": "삭제됨·접근 불가",
+      "to": "CM38"
+    },
+    {
+      "from": "CM38",
+      "action": "글 목록으로",
+      "to": "CM01"
+    },
+    {
+      "from": "CM43",
+      "action": "범위 변경",
+      "to": "CM02"
+    },
+    {
+      "from": "CM43",
+      "action": "글 선택",
+      "to": "CM08"
+    },
+    {
+      "from": "CM43",
+      "action": "글쓰기",
+      "to": "CM12"
+    },
+    {
+      "from": "CM14",
+      "action": "지도에서 직접 선택",
+      "to": "CM15"
+    },
+    {
+      "from": "CM12",
+      "action": "달린 코스 붙이기",
+      "to": "WRITE09",
+      "status": "후속 시안 제작 중; 기존 기능 연결"
+    },
+    {
+      "from": "CM12",
+      "action": "장소 빠른 선택",
+      "to": "WRITE10",
+      "status": "후속 시안 제작 중; 기존 기능 연결"
+    },
+    {
+      "from": "CM01",
+      "action": "크루 모집 탭",
+      "to": "EXISTING_CREW_LIST"
+    },
+    {
+      "from": "CM01",
+      "action": "크루 채팅 탭",
+      "to": "EXISTING_CREW_CHAT"
+    }
+  ],
+  "notes": [
+    "진입·전환 예시이며 전체 앱 경로 그래프가 아니다.",
+    "상태별-동작은 화면별-동작.md와 함께 읽는다.",
+    "검색 결과는 즉시 선택, 지도 직접 지정만 확인.",
+    "단순 네트워크 오류를 CM38 접근 불가로 매핑하지 않는다."
+  ]
+}

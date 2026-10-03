@@ -1,0 +1,92 @@
+[
+  {
+    "id": "U02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-24d02684-b0cc-498c-836e-51d95e16d6e4.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "3종 챌린지·지난 도전 진입 확인."
+    }
+  },
+  {
+    "id": "U03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f84503f3-9552-431f-b5b9-bf18b67b3cb3.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "06:24와64%,남은3:36 및 수치 일치."
+    }
+  },
+  {
+    "id": "U04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a0f8c464-337c-4488-a954-eefa487bb968.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "내 위치에서 시작하는 추천 코스2.4km/20분,지도·2개 버튼 분리."
+    }
+  },
+  {
+    "id": "U05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e04f1c43-5dd0-4a22-9c28-60cd414c0915.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "키·몸무게와3개 경험 선택,추천 버튼 확인."
+    }
+  },
+  {
+    "id": "U06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d45fa121-bd48-4c99-9e0a-d56a9f6da116.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "3분걷기+(1분러닝+2분걷기)×3+3분걷기=15분 확인."
+    }
+  },
+  {
+    "id": "CR04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e8d8644d-c9e3-4364-8930-11df78d4029e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단일 화면",
+        "읽기 순서",
+        "필수 문구·수치",
+        "버튼 크기",
+        "남색·파랑"
+      ],
+      "notes": "크루명·일정·코스·만나는곳·30명 정원·27명 준비·나의 준비버튼 확인."
+    }
+  }
+]
