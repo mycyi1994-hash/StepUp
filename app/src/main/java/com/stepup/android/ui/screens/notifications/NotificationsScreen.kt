@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.notifications
 import android.os.SystemClock
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,24 +28,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.GroupAdd
-import androidx.compose.material.icons.filled.MilitaryTech
-import androidx.compose.material.icons.filled.PersonOff
-import androidx.compose.material.icons.filled.Redeem
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.PersonOff
+import androidx.compose.material.icons.outlined.Redeem
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Toll
+import androidx.compose.material.icons.outlined.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,15 +89,17 @@ import com.stepup.android.data.repo.CommentTarget
 import com.stepup.android.data.repo.NoticeBoard
 import com.stepup.android.domain.parseModelSlotKey
 import com.stepup.android.domain.parseSlotKey
-import com.stepup.android.ui.components.SecondaryHeader
-import com.stepup.android.ui.components.SettingsPrimaryButton
-import com.stepup.android.ui.components.SettingsToast
+import com.stepup.android.ui.components.RunBackdrop
 import com.stepup.android.ui.components.StepUpIcons
-import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.components.shoeModelNameRes
 import com.stepup.android.ui.components.variantLabel
+import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.StepUpColors
+import com.stepup.android.ui.screens.onboarding.BlueHeaderText
+import com.stepup.android.ui.screens.onboarding.BlueRule
+import com.stepup.android.ui.screens.onboarding.BlueTitleBar
 import com.stepup.android.ui.theme.StepUpDesign
 import java.time.Instant
 import java.time.ZoneId
@@ -121,7 +124,8 @@ data class NotificationsUi(
 )
 
 /**
- * 알림(알림·공지 v1, 2026-09-28 전달본 — docs/redesign/notifications-v1).
+ * 알림(알림·공지 v1, 2026-09-28 전달본 — docs/redesign/notifications-v1). 파란 톤 통합 전달본 v4(2026-10-03, NOT01~26)의
+ * 남색 · 전기 파랑 · 청록 색감으로 다시 그렸다 — 동작(읽음 · 응답 · 실제 가입 구분, 금액 표시 조건)은 그대로다.
  *
  * "내 알림"은 오늘 · 어제 · 이전으로 묶은 단순 목록(작은 아이콘 · 제목 · 시간 · 읽지 않은 점), "공지"는 제목과
  * 게시일의 짧은 목록이다. 들어온 것만으로 읽음 처리하지 않는다 — 알림을 열면 그 알림만, "모두 읽음"은 누를 때만.
@@ -305,21 +309,13 @@ fun NotificationsContent(
     noticeState: LazyListState = rememberLazyListState(),
     zone: ZoneId = ZoneId.systemDefault(),
 ) {
-    val p = settingsPalette()
     Box(Modifier.fillMaxSize()) {
+        RunBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
-            SecondaryHeader(
-                onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.notif_title),
+            BlueTitleBar(
+                stringResource(R.string.notif_title), onBack = onBack, backTag = "inbox-back",
                 trailing = {
-                    Box(
-                        Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
-                            .feedbackClickable(role = Role.Button, onClick = onOpenSettings)
-                            .padding(horizontal = 6.dp).testTag("inbox-settings"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(stringResource(R.string.inbox_settings), color = p.accent, fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium)
-                    }
+                    BlueHeaderText(stringResource(R.string.inbox_settings), onOpenSettings, Modifier.testTag("inbox-settings"))
                 },
             )
             InboxTabs(ui.tab, onSelectTab)
@@ -331,45 +327,47 @@ fun NotificationsContent(
             }
         }
         val message = ui.toast?.let { stringResource(it.message) }
-        SettingsToast(message, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp),
+        BlueToast(message, Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpDesign.Gutter, vertical = 16.dp),
             success = ui.toast?.success != false)
     }
 }
 
-/** 내 알림 · 공지 — 고른 쪽은 밑줄과 굵은 글자 */
+/** 내 알림 · 공지 — 같은 폭 두 칸. 고른 쪽은 청록 글자와 글자 아래 짧은 청록 밑줄, 아래로 파란 가는 선 */
 @Composable
 private fun InboxTabs(selected: NotifTab, onSelect: (NotifTab) -> Unit) {
-    val p = settingsPalette()
+    val t = runTone()
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(start = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth()) {
             listOf(
                 NotifTab.Inbox to R.string.inbox_tab_mine,
                 NotifTab.Notices to R.string.inbox_tab_notices,
             ).forEach { (tab, label) ->
                 val on = tab == selected
-                Column(
-                    Modifier.width(IntrinsicSize.Max).heightIn(min = 52.dp)
-                        .feedbackClickable(role = null) { onSelect(tab) }
+                Box(
+                    Modifier.weight(1f).heightIn(min = 56.dp)
+                        .feedbackClickable(role = null, cue = FeedbackCue.Select) { onSelect(tab) }
                         .semantics {
                             role = Role.Tab
                             this.selected = on
                         }
-                        .padding(horizontal = 16.dp).testTag("inbox-tab-${tab.name.lowercase()}"),
-                    verticalArrangement = Arrangement.Bottom,
+                        .testTag("inbox-tab-${tab.name.lowercase()}"),
+                    contentAlignment = Alignment.BottomCenter,
                 ) {
-                    Box(Modifier.padding(top = 12.dp, bottom = 10.dp)) {
-                        // 굵은 글자의 폭을 미리 잡아 둔다 — 고를 때 메뉴 폭 · 밑줄이 흔들리지 않는다
-                        Text(stringResource(label), color = Color.Transparent, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clearAndSetSemantics { })
-                        Text(stringResource(label), color = if (on) p.text else p.secondary, fontSize = 17.sp,
-                            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+                    Column(Modifier.width(IntrinsicSize.Max), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.padding(top = 12.dp, bottom = 10.dp, start = 18.dp, end = 18.dp)) {
+                            // 굵은 글자의 폭을 미리 잡아 둔다 — 고를 때 밑줄이 흔들리지 않는다
+                            Text(stringResource(label), style = runTextStyle(19.sp, Color.Transparent, FontWeight.Bold),
+                                modifier = Modifier.clearAndSetSemantics { })
+                            Text(stringResource(label), style = runTextStyle(19.sp, if (on) t.cyan else t.label,
+                                if (on) FontWeight.Bold else FontWeight.SemiBold))
+                        }
+                        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
+                            .background(if (on) t.cyan else Color.Transparent))
                     }
-                    Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp))
-                        .background(if (on) p.accent else Color.Transparent))
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
+        BlueRule(strong = true)
     }
 }
 
@@ -389,13 +387,13 @@ private fun InboxPane(
         InboxLoad.Loading -> ListSkeleton(icons = true, modifier = Modifier.testTag("inbox-loading"),
             label = stringResource(R.string.inbox_loading))
         InboxLoad.Failed -> PaneState(
-            icon = Icons.Filled.Refresh, title = stringResource(R.string.inbox_load_failed),
+            icon = Icons.Outlined.ErrorOutline, title = stringResource(R.string.inbox_load_failed),
             body = stringResource(R.string.inbox_load_failed_body), actionLabel = stringResource(R.string.set_reload),
             onAction = onReload, modifier = Modifier.testTag("inbox-failed"),
         )
         is InboxLoad.Ready -> if (load.items.isEmpty()) {
             PaneState(
-                icon = Icons.Outlined.Notifications, title = stringResource(R.string.inbox_empty_title),
+                icon = Icons.Outlined.NotificationsActive, title = stringResource(R.string.inbox_empty_title),
                 body = stringResource(R.string.inbox_empty_body), actionLabel = stringResource(R.string.inbox_open_settings),
                 onAction = onOpenSettings, modifier = Modifier.testTag("inbox-empty"),
             )
@@ -406,7 +404,7 @@ private fun InboxPane(
             LazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag("inbox-list"),
-                contentPadding = PaddingValues(top = 10.dp, bottom = 28.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
             ) {
                 groups.forEachIndexed { index, (group, rows) ->
                     item(key = "group-${group.name}") {
@@ -422,50 +420,51 @@ private fun InboxPane(
     }
 }
 
-/** 날짜 묶음 이름. 첫 묶음 줄에 새 알림 수와 "모두 읽음"을 둔다 */
+/** 날짜 묶음 이름. 첫 묶음 줄에 새 알림 수와 "모두 읽음"(누를 때만 — 들어온 것만으로 읽음 처리하지 않는다) */
 @Composable
 private fun GroupHeader(group: DayGroup, first: Boolean, unread: Int, readingAll: Boolean, onMarkAllRead: () -> Unit) {
-    val p = settingsPalette()
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(top = if (first) 0.dp else 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            stringResource(
-                when (group) {
-                    DayGroup.Today -> R.string.inbox_group_today
-                    DayGroup.Yesterday -> R.string.inbox_group_yesterday
-                    DayGroup.Earlier -> R.string.inbox_group_earlier
-                },
-            ),
-            color = p.text, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-            modifier = Modifier.semantics { heading() },
-        )
-        if (first) {
-            Spacer(Modifier.width(14.dp))
+    val t = runTone()
+    Column(Modifier.fillMaxWidth().padding(top = if (first) 0.dp else 22.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (unread > 0) stringResource(R.string.inbox_new_count, unread) else stringResource(R.string.inbox_all_read),
-                color = p.secondary, fontSize = 13.sp, modifier = Modifier.weight(1f).testTag("inbox-summary"),
+                stringResource(
+                    when (group) {
+                        DayGroup.Today -> R.string.inbox_group_today
+                        DayGroup.Yesterday -> R.string.inbox_group_yesterday
+                        DayGroup.Earlier -> R.string.inbox_group_earlier
+                    },
+                ),
+                style = runTextStyle(19.sp, t.text, FontWeight.Bold),
+                modifier = Modifier.semantics { heading() },
             )
-            if (unread > 0) {
-                Box(
-                    Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
-                        .feedbackClickable(enabled = !readingAll, role = Role.Button, onClick = onMarkAllRead)
-                        .padding(start = 8.dp).testTag("inbox-read-all"),
-                    contentAlignment = Alignment.CenterEnd,
-                ) {
-                    Text(stringResource(R.string.inbox_mark_all_read), color = if (readingAll) p.secondary else p.accent,
-                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            if (first) {
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    if (unread > 0) stringResource(R.string.inbox_new_count, unread) else stringResource(R.string.inbox_all_read),
+                    style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                    modifier = Modifier.weight(1f).testTag("inbox-summary"),
+                )
+                if (unread > 0) {
+                    Box(
+                        Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                            .feedbackClickable(enabled = !readingAll, role = Role.Button, onClick = onMarkAllRead)
+                            .padding(start = 8.dp).testTag("inbox-read-all"),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        Text(stringResource(R.string.inbox_mark_all_read),
+                            style = runTextStyle(16.sp, if (readingAll) t.muted else t.label, FontWeight.SemiBold))
+                    }
                 }
             }
         }
+        BlueRule(strong = true)
     }
 }
 
-/** 알림 한 줄 — 줄 전체가 누르는 곳. 읽지 않은 알림은 점과 굵은 제목, 그리고 "읽지 않음"을 읽어 준다 */
+/** 알림 한 줄 — 줄 전체가 누르는 곳. 선 그림 · 본문 · 시간 · 읽지 않은 청록 점 · 화살표. 읽지 않음을 읽어 준다 */
 @Composable
 private fun NotificationRow(entity: NotificationEntity, now: Long, zone: ZoneId, onClick: () -> Unit) {
-    val p = settingsPalette()
+    val t = runTone()
     val unreadLabel = stringResource(R.string.inbox_unread)
     Column(
         Modifier.fillMaxWidth()
@@ -473,39 +472,31 @@ private fun NotificationRow(entity: NotificationEntity, now: Long, zone: ZoneId,
             .semantics { if (!entity.read) stateDescription = unreadLabel }
             .testTag("notif-row-${entity.id}"),
     ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(vertical = 20.dp)) {
-            Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(p.surface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(iconFor(entity.type), contentDescription = null, tint = p.accent, modifier = Modifier.size(18.dp))
+        Row(Modifier.fillMaxWidth().heightIn(min = 92.dp).padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                Icon(iconFor(entity.type), contentDescription = null, tint = t.label, modifier = Modifier.size(32.dp))
             }
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(18.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    messageFor(entity), color = p.text, fontSize = 16.5.sp, lineHeight = 1.42.em,
-                    fontWeight = if (entity.read) FontWeight.Normal else FontWeight.SemiBold,
+                    messageFor(entity),
+                    style = runTextStyle(18.sp, t.text, if (entity.read) FontWeight.Medium else FontWeight.Bold, 1.4f),
                 )
-                Text(timeLabel(entity.timestamp, now, zone), color = p.secondary, fontSize = 13.sp,
-                    modifier = Modifier.padding(top = 8.dp))
+                Text(timeLabel(entity.timestamp, now, zone), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                    modifier = Modifier.padding(top = 6.dp))
             }
             Spacer(Modifier.width(10.dp))
-            Column(Modifier.width(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    Modifier.padding(top = 4.dp).size(7.dp).clip(CircleShape)
-                        .background(if (entity.read) Color.Transparent else unreadDot())
-                        .then(if (entity.read) Modifier else Modifier.testTag("notif-unread-${entity.id}")),
-                )
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.secondary,
-                    modifier = Modifier.padding(top = 10.dp).size(20.dp))
-            }
+            Box(
+                Modifier.size(12.dp).clip(CircleShape)
+                    .background(if (entity.read) Color.Transparent else t.cyan)
+                    .then(if (entity.read) Modifier else Modifier.testTag("notif-unread-${entity.id}")),
+            )
+            Spacer(Modifier.width(10.dp))
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(28.dp))
         }
-        Box(Modifier.padding(start = 50.dp).fillMaxWidth().height(1.dp).background(p.divider))
+        BlueRule(strong = true)
     }
 }
-
-@Composable
-private fun unreadDot(): Color = if (StepUpColors.dark) Color(0xFF85ABFF) else settingsPalette().accent
 
 // ── 공지 ────────────────────────────────────────────────────────────
 
@@ -519,28 +510,35 @@ private fun NoticePane(
 ) {
     val items = board.items
     when {
+        // 받아 둔 공지가 없고 처음 받기도 실패(NOT18)
         items == null && board.refreshFailed && !board.loading -> PaneState(
-            icon = Icons.Filled.Refresh, title = stringResource(R.string.notice_load_failed),
+            icon = Icons.Outlined.ErrorOutline, title = stringResource(R.string.notice_load_failed),
             body = stringResource(R.string.inbox_load_failed_body), actionLabel = stringResource(R.string.set_reload),
             onAction = onRetry, modifier = Modifier.testTag("notice-failed"),
         )
+        // 받는 중(NOT20) — 빈 목록으로 보이지 않는다
         items == null -> ListSkeleton(icons = false, modifier = Modifier.testTag("notice-loading"),
             label = stringResource(R.string.notice_loading))
         else -> {
-            val p = settingsPalette()
+            val t = runTone()
             val language = LocalConfiguration.current.locales[0].language
             val date = rememberPattern(R.string.date_notice)
             LazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag("notice-list"),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+                contentPadding = PaddingValues(top = 14.dp, bottom = 28.dp),
             ) {
-                item(key = "notice-header") {
-                    Text(stringResource(R.string.notice_header), color = p.secondary, fontSize = 13.sp,
-                        modifier = Modifier.padding(bottom = 6.dp))
-                }
                 if (board.refreshFailed) {
+                    // 새로 받기 실패(NOT23) — 받아 둔 목록은 그대로, 같은 뜻의 소제목은 뺀다
                     item(key = "notice-stale") { NoticeStale(onRetry, retrying = board.loading) }
+                } else {
+                    item(key = "notice-header") {
+                        Column {
+                            Text(stringResource(R.string.notice_header), style = runTextStyle(16.sp, t.label, FontWeight.SemiBold),
+                                modifier = Modifier.padding(top = 6.dp, bottom = 12.dp))
+                            BlueRule(strong = true)
+                        }
+                    }
                 }
                 if (items.isEmpty()) {
                     item(key = "notice-empty") {
@@ -559,112 +557,77 @@ private fun NoticePane(
     }
 }
 
-/** 공지 한 줄 — 제목과 게시일. 임의의 "중요" 배지나 그림을 넣지 않는다 */
+/** 공지 한 줄 — 제목과 게시일. 임의의 "중요" · NEW 배지나 그림을 넣지 않는다 */
 @Composable
 private fun NoticeRow(notice: Announcement, language: String, date: DateTimeFormatter, zone: ZoneId, onClick: () -> Unit) {
-    val p = settingsPalette()
+    val t = runTone()
     Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag("notice-row-${notice.id}")) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 94.dp).padding(vertical = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 92.dp).padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(notice.title(language), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                    lineHeight = 1.35.em)
-                Text(date.format(Instant.ofEpochMilli(notice.publishedAt).atZone(zone)), color = p.secondary,
-                    fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp))
+                Text(notice.title(language), style = runTextStyle(20.sp, t.text, FontWeight.Bold, 1.35f))
+                Text(date.format(Instant.ofEpochMilli(notice.publishedAt).atZone(zone)),
+                    style = runTextStyle(16.sp, t.label, FontWeight.Medium), modifier = Modifier.padding(top = 8.dp))
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.secondary,
-                modifier = Modifier.padding(start = 12.dp).size(20.dp))
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label,
+                modifier = Modifier.padding(start = 12.dp).size(28.dp))
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
+        BlueRule(strong = true)
     }
 }
 
-/** 새로 받기 실패 — 받아 둔 공지는 그대로 보이고 다시 받을 수 있다(23) */
+/** 새로 받기 실패(NOT23) — 받아 둔 공지는 그대로 보이고 "다시"로 다시 받는다. 받는 동안 "다시"는 잠근다 */
 @Composable
 private fun NoticeStale(onRetry: () -> Unit, retrying: Boolean) {
-    val p = settingsPalette()
+    val t = runTone()
+    val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(RoundedCornerShape(20.dp)).background(raisedSurface())
-            .padding(start = 18.dp, end = 6.dp, top = 14.dp, bottom = 14.dp).testTag("notice-stale"),
+        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp).clip(shape).background(t.panel, shape)
+            .border(1.dp, t.secondaryEdge, shape)
+            .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp).testTag("notice-stale"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(30.dp))
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.notice_stale_title), color = p.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Text(stringResource(R.string.notice_stale_body), color = p.secondary, fontSize = 13.sp,
-                modifier = Modifier.padding(top = 6.dp))
+            Text(stringResource(R.string.notice_stale_title), style = runTextStyle(17.sp, t.text, FontWeight.Bold, 1.35f))
+            Text(stringResource(R.string.notice_stale_body), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                modifier = Modifier.padding(top = 4.dp))
         }
+        Box(Modifier.padding(horizontal = 8.dp).width(1.dp).height(36.dp).background(t.panelEdge))
         Box(
-            Modifier.heightIn(min = 48.dp).widthIn(min = 56.dp)
+            Modifier.heightIn(min = 48.dp).widthIn(min = 64.dp).clip(RoundedCornerShape(12.dp))
                 .feedbackClickable(enabled = !retrying, role = Role.Button, onClick = onRetry).testTag("notice-retry"),
             contentAlignment = Alignment.Center,
         ) {
-            Text(stringResource(R.string.notice_retry), color = if (retrying) p.secondary else p.accent, fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.notice_retry), style = runTextStyle(17.sp, if (retrying) t.muted else t.cyan, FontWeight.Bold))
         }
     }
 }
 
 // ── 공통 상태 ───────────────────────────────────────────────────────
 
-/** 비었을 때 · 못 읽었을 때 — 가운데 아이콘 · 제목 · 한 줄 · 버튼 하나. 큰 글씨면 스크롤한다 */
-@Composable
-internal fun PaneState(
-    icon: ImageVector,
-    title: String,
-    body: String,
-    modifier: Modifier = Modifier,
-    actionLabel: String? = null,
-    onAction: () -> Unit = {},
-    boxed: Boolean = true,
-    scroll: Boolean = true,
-) {
-    val p = settingsPalette()
-    Column(
-        modifier.fillMaxWidth().then(if (scroll) Modifier.fillMaxSize().verticalScroll(rememberScrollState()) else Modifier)
-            .padding(top = 96.dp, bottom = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)).background(if (boxed) p.surface else Color.Transparent),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = p.accent, modifier = Modifier.size(28.dp))
-        }
-        Text(title, color = p.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() })
-        Text(body, color = p.secondary, fontSize = 14.sp, textAlign = TextAlign.Center, lineHeight = 1.5.em)
-        if (actionLabel != null) {
-            Spacer(Modifier.height(12.dp))
-            SettingsPrimaryButton(actionLabel, onAction, Modifier.fillMaxWidth().testTag("pane-action"))
-        }
-    }
-}
-
-/** 불러오는 동안 — 빈 목록 대신 제목 · 날짜 자리만(11 · 20) */
+/** 불러오는 동안(NOT11 · NOT20) — 빈 목록이나 0 대신 "불러오고 있어요" 한 줄과 행 자리만 */
 @Composable
 private fun ListSkeleton(icons: Boolean, label: String, modifier: Modifier = Modifier) {
-    val p = settingsPalette()
-    Column(modifier.fillMaxWidth().padding(top = 18.dp).semantics { stateDescription = label }) {
+    val t = runTone()
+    Column(modifier.fillMaxWidth().padding(top = 18.dp).semantics(mergeDescendants = true) { stateDescription = label }) {
+        Text(label, style = runTextStyle(16.sp, t.label, FontWeight.Medium), modifier = Modifier.padding(bottom = 10.dp))
         repeat(4) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 22.dp)) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (icons) {
-                    Box(Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(p.skeleton))
-                    Spacer(Modifier.width(16.dp))
+                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(t.panelEdge.copy(alpha = 0.5f)))
+                    Spacer(Modifier.width(18.dp))
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.fillMaxWidth(0.72f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(p.skeleton))
-                    Box(Modifier.fillMaxWidth(0.5f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(p.skeleton))
-                    Box(Modifier.fillMaxWidth(0.22f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(p.skeleton))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SkeletonBar(if (icons) 0.85f else 0.92f, 14.dp)
+                    if (icons) SkeletonBar(0.6f, 14.dp)
+                    SkeletonBar(if (icons) 0.2f else 0.3f, 10.dp)
                 }
             }
-            Box(Modifier.padding(start = if (icons) 50.dp else 0.dp).fillMaxWidth().height(1.dp).background(p.divider))
+            BlueRule(strong = true)
         }
     }
 }
-
-/** 시트 안 · 공지의 한 칸 바탕 — 어두운 테마에서는 시트보다 한 단계 밝게 */
-@Composable
-internal fun raisedSurface(): Color = if (StepUpColors.dark) Color(0xFF1B2B45) else settingsPalette().surface
 
 // ── 글 · 시간 ───────────────────────────────────────────────────────
 
@@ -727,20 +690,20 @@ private fun rememberNow(): Long {
 }
 
 internal fun iconFor(type: String): ImageVector = when (type) {
-    NotificationType.REWARD_EARNED -> Icons.AutoMirrored.Filled.DirectionsWalk
-    NotificationType.GOAL_REACHED -> Icons.Filled.EmojiEvents
+    NotificationType.REWARD_EARNED -> Icons.Outlined.Toll
+    NotificationType.GOAL_REACHED -> Icons.Outlined.EmojiEvents
     NotificationType.SNEAKER_MINTED -> StepUpIcons.Shoe
-    NotificationType.SNEAKER_UPGRADED -> Icons.Filled.TrendingUp
-    NotificationType.BOOST_ACTIVATED -> Icons.Filled.Whatshot
-    NotificationType.CREW_JOINED -> Icons.Filled.Shield
-    NotificationType.PARTY_FINISHED -> Icons.Filled.MilitaryTech
-    NotificationType.EVENT_CLAIMED -> Icons.Filled.CheckCircle
-    NotificationType.PARTY_MEMBER_LEFT -> Icons.Filled.PersonOff
-    NotificationType.CREW_INVITE -> Icons.Filled.GroupAdd
-    NotificationType.PARTY_INVITE -> Icons.Filled.Bolt
-    NotificationType.EVENT_REWARD -> Icons.Filled.Redeem
-    NotificationType.COMMENT_REPLY -> Icons.AutoMirrored.Filled.Reply
-    NotificationType.COURSE_COMPLETE -> Icons.Filled.Flag
+    NotificationType.SNEAKER_UPGRADED -> Icons.AutoMirrored.Outlined.TrendingUp
+    NotificationType.BOOST_ACTIVATED -> Icons.Outlined.Whatshot
+    NotificationType.CREW_JOINED -> Icons.Outlined.Shield
+    NotificationType.PARTY_FINISHED -> Icons.Outlined.MilitaryTech
+    NotificationType.EVENT_CLAIMED -> Icons.Outlined.CheckCircle
+    NotificationType.PARTY_MEMBER_LEFT -> Icons.Outlined.PersonOff
+    NotificationType.CREW_INVITE -> Icons.Outlined.Group
+    NotificationType.PARTY_INVITE -> Icons.AutoMirrored.Outlined.DirectionsRun
+    NotificationType.EVENT_REWARD -> Icons.Outlined.Redeem
+    NotificationType.COMMENT_REPLY -> Icons.Outlined.ChatBubbleOutline
+    NotificationType.COURSE_COMPLETE -> Icons.Outlined.Flag
     else -> Icons.Outlined.Notifications
 }
 
@@ -762,8 +725,8 @@ internal fun showsAmount(entity: NotificationEntity): Boolean =
 internal fun messageFor(entity: NotificationEntity): String {
     val amount = "%,.2f".format(entity.argAmount)
     // 서버 경제에서는 아래 네 가지 알림을 더 만들지 않는다 — 남은 것은 폰이 계산하던 때의 기록이라
-    // 서버가 인정한 금액이 아니다. 금액 없이 무슨 일이었는지만 보인다.
-    val legacy = ServiceLocator.serverEconomyOn
+    // 서버가 인정한 금액이 아니다. 금액 없이 무슨 일이었는지만 보인다(NOT25). 시트도 같은 [showsAmount] 를 쓴다.
+    val legacy = !showsAmount(entity)
     val steps = entity.argText.toLongOrNull()?.let { "%,d".format(it) } ?: entity.argText
     return when (entity.type) {
         NotificationType.REWARD_EARNED ->
