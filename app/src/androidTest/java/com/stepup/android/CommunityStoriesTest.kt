@@ -198,8 +198,9 @@ class CommunityStoriesTest {
         pressBack()
         awaitTag("stories-tab")
         compose.onNodeWithTag("story-row-305").assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        // 범위 줄은 목록 맨 위(지역 · 작은 지도)와 함께 올라간다 — 맨 위로 돌아가 그대로인지 본다
         compose.onNodeWithTag("stories-list").performScrollToIndex(0)
+        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
         shot("17-radius-applied-3km", settle = 1_500)
 
         // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────

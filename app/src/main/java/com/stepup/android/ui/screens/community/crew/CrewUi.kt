@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -541,15 +540,7 @@ internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = 
         modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(48.dp).clip(CircleShape).feedbackClickable(cue = FeedbackCue.Back, onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = ink.text,
-                modifier = Modifier.size(20.dp).offset(x = 3.dp),
-            )
-        }
+        com.stepup.android.ui.components.RunBackButton(onBack, Modifier, tint = ink.text)
         Text(
             title, color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
             maxLines = 1, overflow = TextOverflow.Ellipsis,

@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -212,16 +211,7 @@ internal fun BlueTopBar(
 /** 뒤로 — 가는 꺾쇠 하나(48dp 누르는 곳) */
 @Composable
 internal fun BlueBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val ink = blueInk()
-    Box(
-        modifier.size(48.dp).clip(CircleShape).feedbackClickable(cue = FeedbackCue.Back, onClick = onBack),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = ink.text,
-            modifier = Modifier.size(22.dp).offset(x = 4.dp),
-        )
-    }
+    com.stepup.android.ui.components.RunBackButton(onBack, modifier, tint = blueInk().text)
 }
 
 /** ••• (더보기) */

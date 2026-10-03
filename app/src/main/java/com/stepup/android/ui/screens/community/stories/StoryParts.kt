@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
@@ -207,16 +206,7 @@ fun StoryHeader(
 ) {
     val t = runTone()
     Box(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp)) {
-        Box(
-            Modifier.align(Alignment.CenterStart).size(48.dp).clip(CircleShape)
-                .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag("story-back"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = t.text,
-                modifier = Modifier.size(20.dp).padding(start = 3.dp),
-            )
-        }
+        com.stepup.android.ui.components.RunBackButton(onBack, Modifier.align(Alignment.CenterStart), tag = "story-back", tint = t.text)
         Text(
             title,
             style = runTextStyle(19.sp, t.text, FontWeight.ExtraBold),

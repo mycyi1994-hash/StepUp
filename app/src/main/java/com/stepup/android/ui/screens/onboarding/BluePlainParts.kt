@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -158,16 +157,7 @@ internal fun BlueTitleBar(
             )
         }
         if (onBack != null) {
-            Box(
-                Modifier.align(Alignment.CenterStart).size(48.dp).clip(CircleShape)
-                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag(backTag),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = t.text,
-                    modifier = Modifier.size(20.dp).offset(x = 3.dp),
-                )
-            }
+            com.stepup.android.ui.components.RunBackButton(onBack, Modifier.align(Alignment.CenterStart), tag = backTag, tint = t.text)
         }
         if (trailing != null) {
             Box(Modifier.align(Alignment.CenterEnd).heightIn(min = 48.dp).widthIn(min = 48.dp), contentAlignment = Alignment.CenterEnd) {
