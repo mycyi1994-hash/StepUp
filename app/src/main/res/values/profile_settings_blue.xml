@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 내 정보 · 프로필 수정 · 설정 파란 톤 v4(docs/redesign/blue-v4-2026-10 PF · PRO · SET) — 새로 더한 글 -->
+<resources>
+    <string name="pf_pass_title">Running pass</string>
+    <string name="pf_total_distance">Total distance</string>
+    <string name="pf_total_runs">Total runs</string>
+    <string name="pf_runs_unit">runs</string>
+    <string name="pf_first_run">Log your first run.</string>
+    <string name="pe_blue_loading">Loading your profile…</string>
+    <string name="pe_blue_default_saving">Saving the image…</string>
+    <string name="pe_blue_default_failed_title">Couldn\'t save the image.</string>
+    <string name="pe_blue_default_failed_body">Please choose again.</string>
+    <string name="set_blue_saving_on_phone">Saving on this phone…</string>
+</resources>

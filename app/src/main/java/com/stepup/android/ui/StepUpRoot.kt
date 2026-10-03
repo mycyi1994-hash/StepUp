@@ -541,11 +541,9 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
         )
-    } else if (currentRoute == Screen.Profile.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize().testTag("profile-scene-${profileSetting.name}"),
-            profileSetting, home = true,
-        )
+    } else if (currentRoute == Screen.Profile.route || currentRoute in com.stepup.android.ui.components.BlueProfileArea.backdropRoutes) {
+        // 내 정보 · 프로필 수정 · 설정(파란 톤 v4) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("profile-backdrop"))
     } else if (currentRoute in listOf(
             Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
             Routes.SNEAKER, Routes.MARKET_MODEL,

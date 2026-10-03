@@ -1,72 +1,89 @@
 package com.stepup.android.ui.screens.profile
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.ui.components.LevelAvatar
-import com.stepup.android.ui.components.RunningPathCard
-import com.stepup.android.ui.components.RunningPathColors
+import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.components.ChamferShape
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunNumber
+import com.stepup.android.ui.components.RunSpinner
+import com.stepup.android.ui.components.SneakerVisual
+import com.stepup.android.ui.components.blueListColors
 import com.stepup.android.ui.components.formatSupDown
 import com.stepup.android.ui.components.rememberCustomAvatar
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
-import com.stepup.android.ui.theme.CarbonHigh
-import com.stepup.android.ui.theme.Silver
-import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpSans
-import com.stepup.android.ui.theme.VoltText
 import java.util.Locale
 
 /**
- * 내 정보 첫 화면 — 러닝 패스(2026-09-27 사용자 선택, docs/redesign/profile-running-path).
+ * 내 정보 첫 화면 — 파란 톤 v4 러닝 패스(PF01~04 · PRO12, docs/redesign/blue-v4-2026-10/01-packages/stepup-profile-blue-claude-v19).
  *
- * 프로필 한 줄 → 누적 거리 카드(오른쪽 경로 장식) → 흰 "내 러닝 기록 보기" → 챌린지 · 지갑 · 설정.
- * 공통 머리(로고 · SUP)와 아래 탭은 앱 셸의 것을 쓴다 — 이 화면은 제목 줄을 따로 그리지 않는다.
- * 최근 기록 · 총 시간은 "내 러닝 기록 보기"(기록 화면)에 그대로 있다.
+ * "내 정보" 제목 → 사진 · 이름 · 러너 레벨 · 프로필 수정 → 러닝 패스 카드(누적 거리 · 총 러닝) → 흰 "내 러닝 기록 보기" →
+ * 챌린지 · 지갑 · 설정. 공통 머리(로고 · SUP)와 아래 다섯 탭은 앱 셸의 것을 쓴다.
+ *
+ * 러너 레벨은 걸음으로 쌓은 기존 `state.runner.level` 이다(신발 강화 레벨 · 러닝 횟수와 섞지 않는다). 패스의 신발은 지금 신은
+ * 신발의 실제 그림이고, 신은 신발이 없거나 아직 읽지 못했으면 비워 둔다(다른 신발로 채우지 않는다). 패스의 도시 사진은 장식이며
+ * 위치나 경로가 아니다. 거리 · 횟수는 저장된 러닝 세션의 합 — 읽는 중엔 "—", 못 읽으면 실패 안내와 다시 시도(0 으로 보이지 않는다).
  */
 @Composable
 internal fun ProfileHome(
@@ -79,33 +96,43 @@ internal fun ProfileHome(
     onOpenWallet: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val palette = profilePalette()
-    // 목록의 기본 여백(20dp)에 4dp 를 더해 시안의 24dp 여백
-    Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-        ProfileRow(state, palette, onEditProfile)
-        Spacer(Modifier.height(30.dp))
-        RecordCard(records, onRetryRecords)
-        Spacer(Modifier.height(25.dp))
-        RecordsButton(onOpenRecords)
-        Spacer(Modifier.height(33.dp))
-        ProfileMenuRow(
-            icon = ProfileIcons.Trophy, iconTint = palette.accentIcon,
-            label = stringResource(R.string.challenge_title), onClick = onOpenChallenges, palette = palette,
-            modifier = Modifier.testTag("profile-challenges"),
+    val t = runTone()
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.tab_me),
+            style = TextStyle(
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
+                fontSize = 36.sp, lineHeight = 1.15.em, letterSpacing = (-0.03).em, color = t.text,
+            ),
+            modifier = Modifier.padding(start = 2.dp).semantics { heading() },
         )
-        ProfileMenuRow(
-            icon = ProfileIcons.Wallet, iconTint = palette.accentIcon,
-            label = stringResource(R.string.me_path_wallet),
-            // 읽기 전에 "0 SUP"을 보이면 잔액이 사라진 것처럼 읽힌다
-            value = if (state.loaded) stringResource(R.string.me_path_balance, formatSupDown(state.balance)) else "—",
-            onClick = onOpenWallet, palette = palette,
-            modifier = Modifier.testTag("profile-wallet"),
+        Spacer(Modifier.height(14.dp))
+        ProfileRow(state, onEditProfile)
+        Spacer(Modifier.height(18.dp))
+        PassCard(records, state.equipped.takeIf { state.loaded }, onRetryRecords)
+        Spacer(Modifier.height(18.dp))
+        val recordsLabel = stringResource(R.string.me_path_records)
+        RunButton(
+            recordsLabel, onOpenRecords, Modifier.testTag("profile-records"),
+            icon = Icons.Filled.Description, chevron = true, italic = recordsLabel.length <= 14,
         )
-        ProfileMenuRow(
-            icon = ProfileIcons.Gear, iconTint = palette.quietIcon,
-            label = stringResource(R.string.profile_tab_settings), onClick = onOpenSettings, palette = palette,
-            modifier = Modifier.testTag("profile-settings"),
-        )
+        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            MenuCard(
+                icon = Icons.AutoMirrored.Filled.DirectionsRun, label = stringResource(R.string.challenge_title),
+                onClick = onOpenChallenges, tag = "profile-challenges",
+            )
+            MenuCard(
+                icon = Icons.Outlined.AccountBalanceWallet, label = stringResource(R.string.me_path_wallet),
+                // 읽기 전에 "0 SUP"을 보이면 잔액이 사라진 것처럼 읽힌다
+                value = if (state.loaded) stringResource(R.string.me_path_balance, formatSupDown(state.balance)) else "—",
+                onClick = onOpenWallet, tag = "profile-wallet",
+            )
+            MenuCard(
+                icon = Icons.Filled.Settings, label = stringResource(R.string.profile_tab_settings),
+                onClick = onOpenSettings, tag = "profile-settings",
+            )
+        }
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -117,131 +144,129 @@ sealed interface RunRecordState {
     data object Failed : RunRecordState
 }
 
-/** 카드 밖의 색 — 어두운 테마는 시안 값, 밝은 테마는 앱의 색 토큰 */
-private class ProfilePalette(
-    val primary: Color,
-    val secondary: Color,
-    val link: Color,
-    val plate: Color,
-    val accentIcon: Color,
-    val quietIcon: Color,
-)
-
+/** 사진 · 이름 · 러너 레벨 · 프로필 수정 — 사진을 눌러도 같은 편집 화면 */
 @Composable
-private fun profilePalette(): ProfilePalette = if (StepUpColors.dark) {
-    ProfilePalette(
-        primary = Color(0xFFF2F4FC), secondary = Color(0xFF98A8C0), link = RunningPathColors.link,
-        plate = Color(0xFF101B2C), accentIcon = Color(0xFFB4CAFF), quietIcon = Color(0xFFA4B2CA),
-    )
-} else {
-    ProfilePalette(
-        primary = Snow, secondary = Silver, link = VoltText,
-        plate = CarbonHigh, accentIcon = VoltText, quietIcon = Silver,
-    )
-}
-
-/** 사진 · 이름 · 프로필 수정 — 사진을 눌러도 수정 창이 열린다 */
-@Composable
-private fun ProfileRow(state: ProfileViewModel.UiState, palette: ProfilePalette, onEditProfile: () -> Unit) {
+private fun ProfileRow(state: ProfileViewModel.UiState, onEditProfile: () -> Unit) {
+    val t = runTone()
     val edit = stringResource(R.string.me_path_edit)
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        LevelAvatar(
-            level = state.runner.level, size = 40.dp, contentDescription = edit, avatarId = state.avatarId,
-            customBitmap = rememberCustomAvatar(state.avatarRev),
-            modifier = Modifier.feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR),
+    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp), verticalAlignment = Alignment.CenterVertically) {
+        BlueAvatar(
+            avatarId = state.avatarId, photo = rememberCustomAvatar(state.avatarRev), size = 68.dp,
+            contentDescription = edit,
+            modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                .feedbackClickable(onClick = onEditProfile).guideTarget(GuideTour.Targets.PROFILE_AVATAR),
         )
-        Spacer(Modifier.width(13.dp))
-        Text(
-            state.nickname.ifBlank { stringResource(R.string.me_default_name) },
-            color = palette.primary, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.45).sp,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).testTag("profile-name"),
-        )
-        // 글자는 작아도 누르는 자리는 48dp — 오른쪽 끝은 본문 여백에 맞춘다
-        Box(
-            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                state.nickname.ifBlank { stringResource(R.string.me_default_name) },
+                style = runTextStyle(23.sp, t.text, FontWeight.Bold, 1.2f),
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("profile-name"),
+            )
+            // 러너 레벨 — 읽기 전엔 비운다(1 로 보이지 않게)
+            if (state.loaded) {
+                val chip = RoundedCornerShape(50)
+                Text(
+                    stringResource(R.string.level_chip, state.runner.level),
+                    style = runTextStyle(14.sp, t.cyan, FontWeight.Bold, 1.1f), maxLines = 1,
+                    modifier = Modifier.clip(chip).background(t.inset, chip).border(1.dp, t.cyan.copy(alpha = 0.55f), chip)
+                        .padding(horizontal = 12.dp, vertical = 4.dp).testTag("profile-level"),
+                )
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        val pill = RoundedCornerShape(50)
+        Row(
+            Modifier.heightIn(min = 48.dp).clip(pill).background(t.secondaryFace, pill).border(1.5.dp, t.secondaryEdge, pill)
                 .feedbackClickable(role = Role.Button, onClick = onEditProfile)
-                .padding(start = 12.dp).testTag("profile-edit"),
-            contentAlignment = Alignment.CenterEnd,
+                .padding(horizontal = 16.dp).testTag("profile-edit"),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(edit, color = palette.link, fontSize = 13.sp, letterSpacing = (-0.25).sp, maxLines = 1)
+            Icon(Icons.Filled.Edit, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(edit, style = runTextStyle(15.sp, t.text, FontWeight.SemiBold), maxLines = 1)
         }
     }
 }
 
+/** 패스 카드의 색 — 밝은 테마에서도 밤 사진 위의 남색 표(글자는 흰색) */
+private val PassTop = Color(0xFF0B2E62)
+private val PassBottom = Color(0xFF051733)
+private val PassEdge = Color(0xFF48D9FA)
+private val PassText = Color(0xFFF5F8FF)
+private val PassLabel = Color(0xFFAAC3EA)
+
 /**
- * 지금까지 달린 거리 — 저장된 러닝의 누적 거리(km, 소수 첫째 자리)와 횟수. 걸음으로 어림한 거리는 쓰지 않는다.
- * 숫자와 km 는 한 줄로 재어 넘치면 숫자를 줄이고, 장식은 그 뒤로 민다.
+ * 러닝 패스 — 왼쪽 위 큰 이름, 오른쪽 위 밤 도시(장식) 와 지금 신은 신발, 아래 누적 거리 · 총 러닝.
+ * 모서리를 깎은 남색 표에 시안 빛 테두리.
  */
 @Composable
-private fun RecordCard(records: RunRecordState, onRetry: () -> Unit) {
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    BoxWithConstraints(Modifier.fillMaxWidth().testTag("profile-record-card")) {
-        val number = when (records) {
-            // 천 단위 쉼표(랭킹과 같은 모양) — 1,284.5
-            is RunRecordState.Ready -> String.format(Locale.ROOT, "%,.1f", records.meters / 1000)
-            else -> "—"
-        }
-        val showUnit = records is RunRecordState.Ready
-        val unitStyle = TextStyle(fontFamily = StepUpSans, fontSize = 23.sp, fontWeight = FontWeight.Normal,
-            letterSpacing = (-0.5).sp)
-        val inner = with(density) { (maxWidth - 36.dp).toPx() }
-        // 72sp 부터 한 칸씩 줄여 숫자 · 간격 · km 가 한 줄에 들어가는 크기
-        val fit = remember(number, showUnit, inner, density) {
-            val unitWidth = if (showUnit) measurer.measure("km", unitStyle).size.width + with(density) { 8.dp.toPx() } else 0f
-            val size = listOf(72, 64, 56, 48, 40).firstOrNull { size ->
-                measurer.measure(number, numberStyle(size)).size.width + unitWidth <= inner
-            } ?: 40
-            val width = measurer.measure(number, numberStyle(size)).size.width + unitWidth
-            size to with(density) { (20.dp - 4.dp).toPx() + width }
-        }
-        val textEnd: Dp = with(density) { fit.second.toDp() }
-        RunningPathCard(textEnd = if (records is RunRecordState.Failed) 0.dp else textEnd) {
-            Column(Modifier.padding(start = 20.dp, end = 16.dp)) {
-                Text(
-                    stringResource(R.string.me_path_title),
-                    color = RunningPathColors.title, fontSize = 14.sp, letterSpacing = (-0.25).sp,
-                    modifier = Modifier.paddingFromBaseline(top = 35.dp),
-                )
-                if (records is RunRecordState.Failed) {
+private fun PassCard(records: RunRecordState, shoe: Sneaker?, onRetry: () -> Unit) {
+    val shape = ChamferShape(18.dp)
+    Column(
+        Modifier.fillMaxWidth()
+            .drawBehind {
+                val outline = shape.createOutline(size, layoutDirection, this)
+                if (outline is Outline.Generic) drawPath(outline.path, PassEdge.copy(alpha = 0.16f), style = Stroke(9.dp.toPx()))
+            }
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(PassTop, PassBottom)))
+            .drawWithContent {
+                drawContent()
+                val outline = shape.createOutline(size, layoutDirection, this)
+                if (outline is Outline.Generic) drawPath(outline.path, PassEdge.copy(alpha = 0.9f), style = Stroke(1.8.dp.toPx()))
+            }
+            .testTag("profile-record-card"),
+    ) {
+        PassScene(shoe)
+        Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 20.dp)) {
+            if (records is RunRecordState.Failed) {
+                Column(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        stringResource(R.string.me_path_failed),
-                        color = RunningPathColors.number, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.paddingFromBaseline(top = 36.dp).testTag("profile-record-failed"),
+                        stringResource(R.string.me_path_failed), style = runTextStyle(20.sp, PassText, FontWeight.Bold),
+                        textAlign = TextAlign.Center, modifier = Modifier.testTag("profile-record-failed"),
                     )
+                    Spacer(Modifier.height(10.dp))
+                    val chip = RoundedCornerShape(50)
                     Box(
-                        Modifier.padding(top = 8.dp, bottom = 12.dp).heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                        Modifier.heightIn(min = 48.dp).clip(chip).border(1.5.dp, PassEdge.copy(alpha = 0.8f), chip)
                             .feedbackClickable(role = Role.Button, onClick = onRetry)
-                            .padding(horizontal = 4.dp).testTag("profile-record-retry"),
-                        contentAlignment = Alignment.CenterStart,
+                            .padding(horizontal = 30.dp).testTag("profile-record-retry"),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Text(stringResource(R.string.me_path_retry), color = RunningPathColors.link, fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.me_path_retry), style = runTextStyle(16.sp, PassEdge, FontWeight.Bold))
                     }
-                } else {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            number, style = numberStyle(fit.first), color = RunningPathColors.number, maxLines = 1,
-                            // 큰 숫자의 왼쪽 여백이 커 보여 4dp 당긴다(시안)
-                            modifier = Modifier.alignByBaseline().paddingFromBaseline(top = 72.dp).offset(x = (-4).dp)
-                                .testTag("profile-distance"),
-                        )
-                        if (showUnit) {
-                            Spacer(Modifier.width(4.dp))
-                            Text("km", style = unitStyle, color = RunningPathColors.unit, maxLines = 1,
-                                modifier = Modifier.alignByBaseline())
-                        }
+                }
+            } else {
+                val ready = records as? RunRecordState.Ready
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                    PassStat(
+                        stringResource(R.string.pf_total_distance),
+                        // 천 단위 쉼표(랭킹과 같은 모양) — 1,284.5
+                        ready?.let { String.format(Locale.ROOT, "%,.1f", it.meters / 1000) } ?: "—",
+                        if (ready != null) "km" else null, "profile-distance", Modifier.weight(1f),
+                    )
+                    Box(Modifier.padding(vertical = 6.dp).width(1.dp).fillMaxHeight().background(PassLabel.copy(alpha = 0.35f)))
+                    PassStat(
+                        stringResource(R.string.pf_total_runs),
+                        ready?.let { String.format(Locale.ROOT, "%,d", it.runs) } ?: "—",
+                        if (ready != null) stringResource(R.string.pf_runs_unit) else null, "profile-runs",
+                        Modifier.weight(1f).padding(start = 22.dp),
+                    )
+                }
+                when {
+                    records is RunRecordState.Loading -> Row(
+                        Modifier.fillMaxWidth().padding(top = 14.dp).testTag("profile-record-loading"),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+                    ) {
+                        RunSpinner(Modifier.size(22.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(stringResource(R.string.me_path_loading), style = runTextStyle(15.sp, PassEdge, FontWeight.Medium))
                     }
-                    Text(
-                        when (records) {
-                            is RunRecordState.Ready ->
-                                if (records.runs == 0) stringResource(R.string.me_path_none)
-                                else pluralStringResource(R.plurals.me_path_runs, records.runs, records.runs)
-                            else -> stringResource(R.string.me_path_loading)
-                        },
-                        color = RunningPathColors.runs, fontSize = 13.5.sp, letterSpacing = (-0.25).sp,
-                        modifier = Modifier.paddingFromBaseline(top = 15.dp, bottom = 24.dp).testTag("profile-runs"),
+                    ready != null && ready.runs == 0 -> Text(
+                        stringResource(R.string.pf_first_run), style = runTextStyle(15.sp, PassLabel, FontWeight.Medium),
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("profile-first-run"),
                     )
                 }
             }
@@ -249,130 +274,102 @@ private fun RecordCard(records: RunRecordState, onRetry: () -> Unit) {
     }
 }
 
-private fun numberStyle(size: Int) = TextStyle(
-    fontFamily = StepUpSans, fontSize = size.sp, fontWeight = FontWeight.SemiBold,
-    // 시안 72sp 에서 -2.7 — 크기를 줄여도 같은 비율
-    letterSpacing = (-2.7f * size / 72f).sp,
-)
-
-/** 흰 "내 러닝 기록 보기" — 기록 · 분석 화면으로. 밝은 테마는 앱 규칙대로 남색 면에 흰 글자 */
+/** 수치 한 칸 — 작은 이름 · 큰 수 · 단위(폭이 모자라면 같이 줄인다) */
 @Composable
-private fun RecordsButton(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(17.dp)
-    val dark = StepUpColors.dark
-    Box(Modifier.fillMaxWidth()) {
-        // 버튼 아래 2dp 비치는 두께
-        if (dark) Box(Modifier.matchParentSize().offset(y = 2.dp).clip(shape).background(Color(0xFF26334B)))
-        Box(
-            Modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape)
-                .background(if (dark) Brush.verticalGradient(listOf(Color(0xFFF7F8FF), Color(0xFFE8EDFA))) else SolidColor(Snow))
-                .feedbackClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 14.dp)
-                .testTag("profile-records"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(R.string.me_path_records),
-                color = if (dark) Color(0xFF081223) else Color.White,
-                fontSize = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.25).sp, textAlign = TextAlign.Center,
+private fun PassStat(label: String, value: String, unit: String?, tag: String, modifier: Modifier) {
+    Column(modifier.semantics(mergeDescendants = true) {}) {
+        Text(label, style = runTextStyle(16.sp, PassLabel, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
+        RunNumber(
+            value, unit = unit, size = 46.sp, unitSize = 22.sp, color = PassText, unitColor = PassText,
+            valueTag = tag, italicUnit = false, modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** 패스 위 장면 — 밤 도시 사진(장식)에 파란 빛을 얹고, 비스듬한 파란 띠 · 바닥 빛 위에 지금 신은 신발 */
+@Composable
+private fun PassScene(shoe: Sneaker?) {
+    Box(Modifier.fillMaxWidth().height(236.dp)) {
+        // 도시 사진 — 오른쪽 위 3분의 2 · 위 64%
+        Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.66f)) {
+            Image(
+                painterResource(R.drawable.home_banner_blue_night), contentDescription = null,
+                contentScale = ContentScale.Crop, alignment = BiasAlignment(0.75f, 0.1f),
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(Modifier.fillMaxSize().background(Color(0xFF0A3CA8).copy(alpha = 0.38f)))
+            // 왼쪽 · 아래로 남색에 녹아든다
+            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to PassTop, 0.35f to PassTop.copy(alpha = 0f))))
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.7f to Color.Transparent, 1f to Color(0xFF0A2856))))
+        }
+        // 비스듬한 파란 띠와 바닥 빛
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val floor = h * 0.66f
+            drawPath(
+                Path().apply {
+                    moveTo(w * 0.58f, 0f); lineTo(w * 0.70f, 0f); lineTo(w * 0.44f, floor); lineTo(w * 0.32f, floor); close()
+                },
+                Color(0xFF1C5BFF).copy(alpha = 0.55f),
+            )
+            drawLine(PassEdge.copy(alpha = 0.18f), Offset(0f, floor), Offset(w, floor), strokeWidth = 1.dp.toPx())
+            drawOval(
+                Brush.radialGradient(
+                    listOf(Color(0xFF3D8BFF).copy(alpha = 0.55f), Color.Transparent),
+                    center = Offset(w * 0.70f, h * 0.90f), radius = w * 0.32f,
+                ),
+                topLeft = Offset(w * 0.38f, h * 0.80f), size = androidx.compose.ui.geometry.Size(w * 0.64f, h * 0.2f),
+            )
+        }
+        Text(
+            stringResource(R.string.pf_pass_title),
+            style = TextStyle(
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
+                fontSize = 32.sp, lineHeight = 1.15.em, letterSpacing = (-0.03).em, color = PassText,
+            ),
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 22.dp, top = 22.dp).fillMaxWidth(0.55f),
+        )
+        // 지금 신은 신발 — 없으면 비워 둔다
+        if (shoe != null) {
+            SneakerVisual(
+                shoe,
+                Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 4.dp).fillMaxWidth(0.62f).height(150.dp)
+                    .testTag("profile-pass-shoe"),
             )
         }
     }
 }
 
-/** 메뉴 한 줄 — 줄 전체를 누른다. 아이콘 받침 · 이름 · (값) · 작은 화살표 */
+/** 메뉴 칸 — 줄 전체를 누른다. 아이콘 · 이름 · (값 알약) · 화살표 */
 @Composable
-private fun ProfileMenuRow(
-    icon: ImageVector,
-    iconTint: Color,
-    label: String,
-    onClick: () -> Unit,
-    palette: ProfilePalette,
-    modifier: Modifier = Modifier,
-    value: String? = null,
-) {
+private fun MenuCard(icon: ImageVector, label: String, onClick: () -> Unit, tag: String, value: String? = null) {
+    val t = runTone()
+    val c = blueListColors()
+    val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 74.dp).clip(RoundedCornerShape(16.dp))
-            .feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 10.dp),
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(c.face, shape)
+            .border(1.dp, c.edge.copy(alpha = 0.6f), shape)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
+            .padding(start = 18.dp, end = 12.dp, top = 8.dp, bottom = 8.dp).testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(palette.plate), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(21.dp))
-        }
-        Spacer(Modifier.width(15.dp))
-        LabelAndValue(label, value, palette, Modifier.weight(1f))
-        Spacer(Modifier.width(12.dp))
-        Icon(ProfileIcons.Chevron, contentDescription = null, tint = palette.secondary, modifier = Modifier.size(width = 8.dp, height = 12.dp))
-    }
-}
-
-/** 이름과 값을 한 줄에 — 값이 길거나 글자가 커서 겹치면 값을 이름 아래 줄로 내린다 */
-@Composable
-private fun LabelAndValue(label: String, value: String?, palette: ProfilePalette, modifier: Modifier) {
-    Layout(
-        content = {
-            Text(label, color = palette.primary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.25).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (value != null) {
-                Text(value, color = palette.secondary, fontSize = 14.sp, letterSpacing = (-0.25).sp,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        },
-        modifier = modifier,
-    ) { measurables, constraints ->
-        val loose = constraints.copy(minWidth = 0, minHeight = 0)
-        val labelPlaceable = measurables[0].measure(loose)
-        val valuePlaceable = measurables.getOrNull(1)?.measure(loose)
-        val gap = 12.dp.roundToPx()
-        val width = constraints.maxWidth
-        if (valuePlaceable == null || labelPlaceable.width + gap + valuePlaceable.width <= width) {
-            val height = maxOf(labelPlaceable.height, valuePlaceable?.height ?: 0)
-            layout(width, height) {
-                labelPlaceable.placeRelative(0, (height - labelPlaceable.height) / 2)
-                valuePlaceable?.placeRelative(width - valuePlaceable.width, (height - valuePlaceable.height) / 2)
-            }
-        } else {
-            layout(width, labelPlaceable.height + valuePlaceable.height) {
-                labelPlaceable.placeRelative(0, 0)
-                valuePlaceable.placeRelative(0, labelPlaceable.height)
-            }
-        }
-    }
-}
-
-/** 시안의 얇은 선 아이콘(24 격자, 선 1.6) — 트로피 · 지갑 · 톱니, 작은 화살표 */
-private object ProfileIcons {
-    val Trophy: ImageVector = strokeIcon(
-        "trophy",
-        "M7 3h10v6a5 5 0 0 1-10 0V3ZM7 5H3v3a4 4 0 0 0 4 4m10-7h4v3a4 4 0 0 1-4 4M12 14v5m-4 2h8m-4-2H8m4 0h4",
-    )
-    val Wallet: ImageVector = strokeIcon(
-        "wallet",
-        "M20 7V4H6a3 3 0 0 0 0 6h15v11H5a2 2 0 0 1-2-2V7m18 6h-6v5h6",
-        "M17.7 15.5a.7 .7 0 1 1-1.4 0a.7 .7 0 1 1 1.4 0",
-    )
-    val Gear: ImageVector = strokeIcon(
-        "gear",
-        "m9.5 3 .6-1h3.8l.6 1 .4 2 1.8 1 1.9-.5 1.1.2 1.9 3.3-.4 1-1.5 1.5v2l1.5 1.5.4 1-1.9 3.3-1.1.2-1.9-.5-1.8 1-.4 2" +
-            "-.6 1h-3.8l-.6-1-.4-2-1.8-1-1.9.5-1.1-.2-1.9-3.3.4-1 1.5-1.5v-2L3.2 10l-.4-1 1.9-3.3 1.1-.2 1.9.5 1.8-1 .4-2Z",
-        "M15.1 12a3.1 3.1 0 1 1-6.2 0a3.1 3.1 0 1 1 6.2 0",
-    )
-    val Chevron: ImageVector = ImageVector.Builder("thinChevron", 8.dp, 12.dp, 8f, 12f).apply {
-        addPath(
-            PathParser().parsePathString("M2 2l4 4-4 4").toNodes(),
-            stroke = SolidColor(Color.Black), strokeLineWidth = 1.5f,
-            strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
+        Icon(icon, contentDescription = null, tint = t.cyan, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.width(18.dp))
+        Text(
+            label, style = runTextStyle(18.sp, t.text, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
-    }.build()
-
-    private fun strokeIcon(name: String, vararg paths: String): ImageVector =
-        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
-            paths.forEach { data ->
-                addPath(
-                    PathParser().parsePathString(data).toNodes(),
-                    stroke = SolidColor(Color.Black), strokeLineWidth = 1.6f,
-                    strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
-                )
-            }
-        }.build()
+        if (value != null) {
+            val pill = RoundedCornerShape(50)
+            Text(
+                value, style = runTextStyle(15.sp, t.cyan, FontWeight.Bold), maxLines = 1, softWrap = false,
+                modifier = Modifier.clip(pill).background(t.inset, pill).border(1.dp, t.cyan.copy(alpha = 0.3f), pill)
+                    .padding(horizontal = 14.dp, vertical = 5.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(26.dp))
+    }
 }

@@ -95,12 +95,13 @@ class ProfileRunningPathTest {
             compose.waitUntil(10_000) {
                 runCatching { compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals(km) }.isSuccess
             }
+            // 파란 톤 v4 러닝 패스(PF01) — 총 러닝은 큰 수 하나와 "회" 단위
             compose.onNodeWithTag("profile-runs", useUnmergedTree = true)
-                .assertTextEquals(context.resources.getQuantityString(R.plurals.me_path_runs, runs, runs))
+                .assertTextEquals(String.format(Locale.ROOT, "%,d", runs))
             if (before.runs == 0) {
                 // 앞선 기록이 없으면 시안과 같은 값이다
                 compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("34.2")
-                compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8번의 러닝을 기록했어요.")
+                compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8")
             }
             // 순서: 프로필 → 카드 → 기록 보기 → 챌린지 · 지갑 · 설정
             val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-challenges", "profile-wallet", "profile-settings")
@@ -189,12 +190,16 @@ class ProfileRunningPathTest {
         }
         state("11-empty") {
             compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("0.0")
-            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("아직 기록한 러닝이 없어요.")
+            // PF04 — 실제 0건은 0.0 km · 0 회와 첫 러닝 안내(레벨 · 잔액은 그대로)
+            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("0")
+            compose.onNodeWithTag("profile-first-run", useUnmergedTree = true).assertIsDisplayed()
         }
         compose.runOnIdle { records = RunRecordState.Loading }
         state("12-loading") {
             // 읽기 전에는 0 을 보이지 않는다
             compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("profile-record-loading", useUnmergedTree = true).assertIsDisplayed()
         }
         compose.runOnIdle { records = RunRecordState.Failed }
         state("13-failed") {
