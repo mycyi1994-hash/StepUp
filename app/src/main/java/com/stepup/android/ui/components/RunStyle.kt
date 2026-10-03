@@ -93,7 +93,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.TransformOrigin
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.style.TextAlign
@@ -764,27 +763,7 @@ fun RunNumber(
     // 하지 않는다. 이 수는 한 화면에 여러 개(목록 줄마다)라 그 비용이 쌓이면 넘김이 버벅인다.
     val horizontal = align
     Row(
-        modifier.layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints.copy(minWidth = 0, maxWidth = Constraints.Infinity, minHeight = 0))
-            val max = constraints.maxWidth
-            val scale = if (constraints.hasBoundedWidth && placeable.width > max && placeable.width > 0) {
-                max.toFloat() / placeable.width
-            } else 1f
-            val shownW = (placeable.width * scale).roundToInt()
-            val shownH = (placeable.height * scale).roundToInt()
-            val width = shownW.coerceIn(constraints.minWidth, if (constraints.hasBoundedWidth) max else Int.MAX_VALUE)
-            val height = shownH.coerceIn(constraints.minHeight, constraints.maxHeight)
-            val x = horizontal.align(shownW, width, layoutDirection)
-            val y = (height - shownH) / 2
-            layout(width, height) {
-                if (scale == 1f) placeable.place(x, y)
-                else placeable.placeWithLayer(x, y) {
-                    scaleX = scale
-                    scaleY = scale
-                    transformOrigin = TransformOrigin(0f, 0f)
-                }
-            }
-        },
+        modifier.then(FitScale(align)),
         verticalAlignment = Alignment.Bottom,
     ) {
         // 시안의 큰 운동 숫자는 Pretendard 가장 굵은 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
@@ -1648,4 +1627,65 @@ fun RunTextField(
             }
         }
     }
+}
+
+/**
+ * [RunNumber] 의 줄 맞춤 — 줄을 한 번만 재고, 폭이 모자랄 때만 그 줄을 그대로 줄여 그린다.
+ * 고유 크기(IntrinsicSize 줄 · 나란한 칸 높이 맞추기)도 같은 규칙으로 답한다 — 기본 layout { } 은 폭을 무한으로 잰
+ * 자식의 고유 높이를 제대로 넘기지 못해 IntrinsicSize.Min 줄 안에서 높이 0 이 되어 숫자가 잘렸다(내 정보 러닝 패스).
+ */
+private class FitScale(private val horizontal: Alignment.Horizontal) : androidx.compose.ui.layout.LayoutModifier {
+    override fun androidx.compose.ui.layout.MeasureScope.measure(
+        measurable: androidx.compose.ui.layout.Measurable,
+        constraints: Constraints,
+    ): androidx.compose.ui.layout.MeasureResult {
+        val placeable = measurable.measure(constraints.copy(minWidth = 0, maxWidth = Constraints.Infinity, minHeight = 0))
+        val max = constraints.maxWidth
+        val scale = if (constraints.hasBoundedWidth && placeable.width > max && placeable.width > 0) {
+            max.toFloat() / placeable.width
+        } else 1f
+        val shownW = (placeable.width * scale).roundToInt()
+        val shownH = (placeable.height * scale).roundToInt()
+        val width = shownW.coerceIn(constraints.minWidth, if (constraints.hasBoundedWidth) max else Int.MAX_VALUE)
+        val height = shownH.coerceIn(constraints.minHeight, constraints.maxHeight)
+        val x = horizontal.align(shownW, width, layoutDirection)
+        val y = (height - shownH) / 2
+        return layout(width, height) {
+            if (scale == 1f) placeable.place(x, y)
+            else placeable.placeWithLayer(x, y) {
+                scaleX = scale
+                scaleY = scale
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
+        }
+    }
+
+    /** 줄 하나의 자연 폭 — 줄여도 되므로 최소 · 최대 모두 이 값 */
+    private fun natural(measurable: androidx.compose.ui.layout.IntrinsicMeasurable) = measurable.maxIntrinsicWidth(Constraints.Infinity)
+
+    /** 폭 [width] 에 맞춰 줄였을 때의 높이 */
+    private fun heightAt(measurable: androidx.compose.ui.layout.IntrinsicMeasurable, width: Int): Int {
+        val w = natural(measurable)
+        val h = measurable.maxIntrinsicHeight(w.coerceAtLeast(0))
+        return if (width in 1 until w && width != Constraints.Infinity) (h.toLong() * width / w).toInt() else h
+    }
+
+    override fun androidx.compose.ui.layout.IntrinsicMeasureScope.minIntrinsicWidth(
+        measurable: androidx.compose.ui.layout.IntrinsicMeasurable, height: Int,
+    ) = natural(measurable)
+
+    override fun androidx.compose.ui.layout.IntrinsicMeasureScope.maxIntrinsicWidth(
+        measurable: androidx.compose.ui.layout.IntrinsicMeasurable, height: Int,
+    ) = natural(measurable)
+
+    override fun androidx.compose.ui.layout.IntrinsicMeasureScope.minIntrinsicHeight(
+        measurable: androidx.compose.ui.layout.IntrinsicMeasurable, width: Int,
+    ) = heightAt(measurable, width)
+
+    override fun androidx.compose.ui.layout.IntrinsicMeasureScope.maxIntrinsicHeight(
+        measurable: androidx.compose.ui.layout.IntrinsicMeasurable, width: Int,
+    ) = heightAt(measurable, width)
+
+    override fun equals(other: Any?) = other is FitScale && other.horizontal == horizontal
+    override fun hashCode() = horizontal.hashCode()
 }

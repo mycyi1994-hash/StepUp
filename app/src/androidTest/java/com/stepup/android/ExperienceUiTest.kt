@@ -299,9 +299,11 @@ class ExperienceUiTest {
         compose.onNodeWithTag("shoes-section-draw").assertDoesNotExist()
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
-        compose.onNodeWithTag("profile-settings").performClick()
+        // 파란 톤 v4 내 정보는 짧은 화면에서 본문이 넘어간다 — 설정 줄까지 넘겨서 누른다
+        compose.onNodeWithTag("profile-settings").performScrollTo().performClick()
+        compose.waitForIdle()
         val settingsLabel = compose.activity.getString(R.string.set_experience)
-        compose.onAllNodes(hasScrollAction())[0].performScrollToNode(hasText(settingsLabel))
+        compose.onNode(hasScrollAction() and hasAnyDescendant(hasText(settingsLabel))).performScrollToNode(hasText(settingsLabel))
         compose.onNodeWithText(settingsLabel).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.experience_sound)).assertIsDisplayed()
         capture("navigation-experience")
