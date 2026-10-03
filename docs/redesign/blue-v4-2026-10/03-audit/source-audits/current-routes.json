@@ -1,0 +1,522 @@
+[
+  {
+    "symbol": "Screen.Run.route",
+    "tab": "Run",
+    "chrome": "Main"
+  },
+  {
+    "symbol": "Screen.Customize.route",
+    "tab": "Customize",
+    "chrome": "Main"
+  },
+  {
+    "symbol": "Screen.Community.route",
+    "tab": "Community",
+    "chrome": "Main"
+  },
+  {
+    "symbol": "Screen.Profile.route",
+    "tab": "Profile",
+    "chrome": "Main"
+  },
+  {
+    "symbol": "Routes.MYSTERY_BOX",
+    "tab": "Draw",
+    "chrome": "Main"
+  },
+  {
+    "symbol": "Routes.RUN_ROUTE",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_MENU",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_GOALS",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_GOAL_HISTORY",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_DIET",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_DIET_PLAN",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.RUN_DIET_EDIT",
+    "tab": "Run",
+    "chrome": "Focus"
+  },
+  {
+    "symbol": "Routes.NEWS",
+    "tab": "Run",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.EVENTS",
+    "tab": "Run",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.COURSES",
+    "tab": "Run",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.RUNNER_MARKET",
+    "tab": "Customize",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.ITEMS",
+    "tab": "Customize",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SNEAKER_DEX",
+    "tab": "Customize",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SNEAKER",
+    "tab": "Customize",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.MARKET_MODEL",
+    "tab": "Customize",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.MAP",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.RANKING",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.CREW_BOARD",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.LOBBY",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.FLASH_DETAIL",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.FLASH_LOBBY",
+    "tab": "Community",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.CREW_CREATE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.POST_COMPOSE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.STORY_DETAIL",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.STORY_COMPOSE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.STORY_MAP",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.STORY_LOCATION",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.STORY_REGION",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.WALLET",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.CHAIN_ACTIVITY",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.NOTIFICATIONS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.NOTICE",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.ACHIEVEMENTS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.ANALYTICS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.PROFILE_EDIT",
+    "tab": "Profile",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.RECORDS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.RECORD_STATS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.RUN_RECORD",
+    "tab": "Profile",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.RUN_RECORD_MAP",
+    "tab": "Profile",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.HISTORY_MAP",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_NOTIFICATIONS",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_PRIVACY",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_SUPPORT",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_GUIDE",
+    "tab": "Profile",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "Routes.SETTINGS_CONNECTED",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_LANGUAGE",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_EXPERIENCE",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_THEME",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_BODY",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.SETTINGS_MODE",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.INVITE",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "Routes.CHALLENGE_HISTORY",
+    "tab": "Profile",
+    "chrome": "Detail"
+  },
+  {
+    "symbol": "CrewRoutes.APPLICATION",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.CREATED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.DECIDED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.DETAIL",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.DRAFT",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.GOAL",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.GOAL_EDIT",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.IMAGE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.JOIN",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.JOINED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.LEADER",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.MANAGE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.PERSON",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.RECRUIT",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.REGION",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.REPORTED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.REQUESTS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.RESULT",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.REVIEW",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.SETTINGS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewRoutes.TRANSFER",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.ENDED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.INFO",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.MEMBER",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICES",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICE_EDIT",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.PHOTO",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.REPORTED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.ROOM",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.SEARCH",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "ChatRoutes.VIEWER",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.ATTENDEES",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.ENDED",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.HOME",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.INTRO",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.LEVEL",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.MEETING",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.PERSON",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.PLACE",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.RUN",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.RUNS",
+    "tab": "Community",
+    "chrome": "Form"
+  },
+  {
+    "symbol": "CrewHomeRoutes.WEEK",
+    "tab": "Community",
+    "chrome": "Form"
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "NOT02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "모두 읽었어요 요약·완료 토스트, 미읽음 점 제거와 기존 4행 보존."
+    },
+    {
+      "id": "NOT06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "가입 신청 완료와 승인 대기 표현, 크루 보기 단일 버튼."
+    },
+    {
+      "id": "NOT07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "수락 실패·재시도 가능 설명과 거절/다시 수락 구분."
+    },
+    {
+      "id": "NOT08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "함께 뛰기 초대의 보조 대기실 보기와 수락하고 보기 구분. 참가 완료 표현 없음."
+    },
+    {
+      "id": "NOT09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "지급 미확인 안내와 챌린지 보기만 제공, 금액·받기 버튼 없음."
+    },
+    {
+      "id": "NOT10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "참 빈 알림함 안내·설정 보기와 기존 헤더/5탭 보존, 로딩/오류와 구분."
+    }
+  ],
+  "runtimeVerified": false
+}

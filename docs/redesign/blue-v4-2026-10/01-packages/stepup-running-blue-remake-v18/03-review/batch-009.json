@@ -1,0 +1,67 @@
+[
+  {
+    "id": "K04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-33dc8abb-954f-497f-9ec9-971e5d3292de.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 수치",
+        "지도/버튼 의미",
+        "스타일과 가독성"
+      ],
+      "notes": "진행0.98/2.40km·08:12·8분22초.지도에서 완료/남은 구간과 순환 경로 확인."
+    }
+  },
+  {
+    "id": "K05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-43346889-a9fa-4668-a00c-b13188d1310c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 수치",
+        "지도/버튼 의미",
+        "스타일과 가독성"
+      ],
+      "notes": "코스 러닝 제목,육상 현재위치와 이탈 연결선,전체지도/자유러닝 전환 확인."
+    }
+  },
+  {
+    "id": "K07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-50e4a28d-0430-4f3e-96da-0741013a733c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 수치",
+        "지도/버튼 의미",
+        "스타일과 가독성"
+      ],
+      "notes": "확대지도와 진행거리,기록중 표시,일시정지 아이콘 제거된 복귀 버튼 확인."
+    }
+  },
+  {
+    "id": "D07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e707e617-2508-4a9f-a9a3-056a9bf806d6.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 수치",
+        "지도/버튼 의미",
+        "스타일과 가독성"
+      ],
+      "notes": "준비걷기 남은02:24와전체00:36/15:00,다음1분러닝,일시정지/종료 확인."
+    }
+  },
+  {
+    "id": "D10",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-240e4b3f-69fb-4939-87c3-599d95c0236d.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 수치",
+        "지도/버튼 의미",
+        "스타일과 가독성"
+      ],
+      "notes": "15분루틴 완료와러닝3분/걷기12분,저장 전 상태와단일저장버튼 확인."
+    }
+  }
+]

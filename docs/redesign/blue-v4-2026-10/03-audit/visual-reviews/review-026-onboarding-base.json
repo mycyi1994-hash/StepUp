@@ -1,0 +1,18 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "ONB01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "원본 형태 흰 STEP·파란 UP, 한강 아치, 단일 Google 버튼, 동의 문구와 두 링크가 화면 안에 정리됨. SUP·하단탭 없음."
+    },
+    {
+      "id": "ONB03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "남색 바탕 원본 형태 로고와 단일 대기 표시·문구만 표시. 가짜 진행률·버튼·잔액 없음."
+    }
+  ],
+  "runtimeVerified": false
+}

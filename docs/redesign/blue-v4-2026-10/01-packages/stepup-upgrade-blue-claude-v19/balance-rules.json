@@ -1,0 +1,147 @@
+{
+  "status": "Claude 구현 기준안. 사용자 확정 규칙과 이전 보정·결과 제안을 함께 정리함. 이 패키지 작성으로 앱·서버를 변경하지 않음.",
+  "maxLevel": 20,
+  "baseRate": {
+    "levelBasis": "강화 대상의 현재 레벨 L. L=1~19일 때만 시도 가능.",
+    "formula": "100 - 3 * L",
+    "unit": "percent"
+  },
+  "materialCount": 3,
+  "eligible": "대상보다 낮은 실제 등급만 허용. 같은 등급·상위 등급·대상 신발 자체·중복 소유ID는 제외.",
+  "rarityOrder": [
+    "COMMON",
+    "RARE",
+    "EPIC",
+    "LEGENDARY"
+  ],
+  "seriesNote": "REDLINE/FINISH는 현재 코드상 LEGENDARY 시리즈이므로 별도 상위 등급으로 세지 않음.",
+  "perMaterialBonus": {
+    "formula": "(2 + 0.4 * (materialLevel - 1)) * gradeFactor",
+    "unit": "percentage points",
+    "gradeFactors": {
+      "1": "1.0",
+      "2": "0.5",
+      "3": "0.25"
+    },
+    "validLevelRange": [
+      1,
+      20
+    ]
+  },
+  "finalRate": "min(100, baseRate + sum(materialBonus))",
+  "precision": "이 제안의 현재 4등급과 Lv.1~20 범위는 0.1%p 단위 정수로 오차 없이 계산 가능. UI는 소수 첫째 자리까지 표시.",
+  "consumption": {
+    "success": "선택한 재료 신발 3개 소각",
+    "failure": "선택한 재료 신발 3개 소각",
+    "networkError": "실패 판정과 통신 오류를 구분. 결과 미확인 시 재실행하지 않고 확정 결과 조회."
+  },
+  "outcomeProposal": {
+    "success": "대상 레벨 +1; 효율 +0.5%p; 착화감 +0.2%p(기존 20% 상한 유지)",
+    "failure": "대상 신발 및 현재 레벨·능력치 유지",
+    "note": "성공 시 증가량은 기존 강화값을 유지한 제안. 실패 시 대상 유지도 제안이며 사용자 확정은 재료 소각 규칙."
+  },
+  "limits": {
+    "level20": "최대 레벨. 강화 불가.",
+    "lowestGrade": "하위 등급이 없어 현재 규칙으로 강화 불가. 자동으로 같은 등급 재료를 허용하지 않음.",
+    "insufficientMaterials": "3개 미만일 때 실행 비활성.",
+    "consumptionVisibility": "실패해도 재료 신발 3개가 소각된다는 문구를 선택 화면과 실행 버튼 근처에서 확인 가능하게."
+  },
+  "fee": "추가 SUP 요금은 이번 제안에 표시하지 않음. 기존625SUP를 재료 소각에 자동으로 중복 적용하지 않음.",
+  "example": {
+    "target": {
+      "modelId": 1302,
+      "name": "스태빌리티 트레이너",
+      "rarity": "LEGENDARY",
+      "instance": "0007",
+      "level": 10
+    },
+    "materials": [
+      {
+        "modelId": 1201,
+        "name": "니트 랩 러너",
+        "rarity": "EPIC",
+        "instance": "0021",
+        "level": 10,
+        "gap": 1,
+        "bonus": 5.6
+      },
+      {
+        "modelId": 1108,
+        "name": "러그 트레일 러너",
+        "rarity": "RARE",
+        "instance": "0034",
+        "level": 10,
+        "gap": 2,
+        "bonus": 2.8
+      },
+      {
+        "modelId": 1203,
+        "name": "템포 로커 트레이너",
+        "rarity": "EPIC",
+        "instance": "0048",
+        "level": 1,
+        "gap": 1,
+        "bonus": 2
+      }
+    ],
+    "base": 70,
+    "bonus": 10.4,
+    "total": 80.4,
+    "nextLevel": 11,
+    "stats": {
+      "efficiency": "18.0% → 18.5%",
+      "comfort": "8.0% → 8.2%"
+    },
+    "note": "소유번호, 보유신발 및 능력치 수치는 시안 예시."
+  },
+  "comparisons": [
+    {
+      "targetCurrentLevel": 1,
+      "base": 97,
+      "threeOneTierLowerLv1": 100,
+      "threeOneTierLowerLv10": 100,
+      "threeTwoTiersLowerLv10": 100,
+      "threeOneTierLowerLv20": 100
+    },
+    {
+      "targetCurrentLevel": 5,
+      "base": 85,
+      "threeOneTierLowerLv1": 91,
+      "threeOneTierLowerLv10": 100,
+      "threeTwoTiersLowerLv10": 93.4,
+      "threeOneTierLowerLv20": 100
+    },
+    {
+      "targetCurrentLevel": 10,
+      "base": 70,
+      "threeOneTierLowerLv1": 76,
+      "threeOneTierLowerLv10": 86.8,
+      "threeTwoTiersLowerLv10": 78.4,
+      "threeOneTierLowerLv20": 98.8
+    },
+    {
+      "targetCurrentLevel": 15,
+      "base": 55,
+      "threeOneTierLowerLv1": 61,
+      "threeOneTierLowerLv10": 71.8,
+      "threeTwoTiersLowerLv10": 63.4,
+      "threeOneTierLowerLv20": 83.8
+    },
+    {
+      "targetCurrentLevel": 19,
+      "base": 43,
+      "threeOneTierLowerLv1": 49,
+      "threeOneTierLowerLv10": 59.8,
+      "threeTwoTiersLowerLv10": 51.4,
+      "threeOneTierLowerLv20": 71.8
+    }
+  ],
+  "uiPolicy": {
+    "explanationScreen": false,
+    "explanationEntry": false,
+    "calculationsVisible": false,
+    "perMaterialBonusVisible": true,
+    "finalRateVisible": true,
+    "burnNoticeVisible": true
+  }
+}

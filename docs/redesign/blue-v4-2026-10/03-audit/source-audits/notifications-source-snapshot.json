@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-03",
+  "purpose": "알림 리메이크 코드 조사 기준; 디자인 작업이며 앱 실행 검증 아님",
+  "files": [
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt",
+      "sha256": "8c8176c8fa751f305a64f3b5ea7e2f6bbb89cc92a9754d3401474ad3db35234f"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsViewModel.kt",
+      "sha256": "2b83e9abeb32ae166011b85bca7dd3b7fc58b9e929696f22cbb6b80f061656c1"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationSheets.kt",
+      "sha256": "7fd7ba63dde4710528f22319111114fa604df2c502085d096bed905742287cd1"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/notifications/NoticeDetailScreen.kt",
+      "sha256": "886047e8610ca74a94eb941b12753f73a63827ffb2953134873303d19eaeace8"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/data/repo/NotificationRepository.kt",
+      "sha256": "c7fca4cc354437785f403d9febd46bd831109e129dbc44b85324d2679f3c8791"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/data/repo/AnnouncementRepository.kt",
+      "sha256": "7e3d102585460a1fa7062e40a9c998eaff224fa470666a5183e7dc4eabab95d6"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/AppChromePolicy.kt",
+      "sha256": "7d9eb79c1a5a17ca2749df25604beb66b73b34fd85c01649193898a576b73d6c"
+    },
+    {
+      "file": "app/src/main/res/values-ko/notifications.xml",
+      "sha256": "2c55a96fc665fa3f3bfc0e881776d009bbda9fa0199f40492338672e96750635"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+      "sha256": "e6133d4e65c4faa34bc0d791611c0e1aea38fba0fef967576f87c094f00b9e04"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
+      "sha256": "12e1dbd91f365fb02ad1048ec4e45ef838c5f1d4f460d94c7da1a040d2247060"
+    }
+  ],
+  "runtimeVerified": false
+}

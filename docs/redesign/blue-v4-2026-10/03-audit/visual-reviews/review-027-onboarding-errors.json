@@ -1,0 +1,24 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "ONB04",
+      "revision": 1,
+      "result": "passed",
+      "notes": "준비 실패 문구와 단일 재시도 버튼 확인. 로딩 스피너 제거, 원본 로고 형태·남색 유지."
+    },
+    {
+      "id": "ONB05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "계정 확인 중 문구와 비활성 Google 버튼 내부 단일 로딩 표시. 법적 고지와 링크 유지."
+    },
+    {
+      "id": "ONB06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "인터넷 연결 안내 3줄과 활성 Google 재시도 진입이 함께 표시. 여백·법적 고지·하단 링크 잘림 없음. 실제 구현 시 모든 로그인 상태의 버튼 위치는 공통 레이아웃으로 고정."
+    }
+  ],
+  "runtimeVerified": false
+}

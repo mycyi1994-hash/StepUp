@@ -1,0 +1,263 @@
+{
+  "method": "Individual image inspection",
+  "screens": [
+    {
+      "id": "CM01",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Chosen compact region/map + three text-led rows preserved. Three community tabs, five bottom nav with filled Community selection, no SUP. Latest sort is label only. Full titles and CTA visible."
+    },
+    {
+      "id": "CM02",
+      "revision": 2,
+      "notes": "Strong uniform scrim, clear opaque radius sheet; 3km selected and one confirm CTA. No SUP.",
+      "result": "passed"
+    },
+    {
+      "id": "CM03",
+      "revision": 1,
+      "notes": "Region search with direct result rows and current location control. Native subpage with no bottom tabs.",
+      "result": "passed"
+    },
+    {
+      "id": "CM04",
+      "revision": 1,
+      "notes": "Empty region search keeps query and retry path, no invented search results.",
+      "result": "passed"
+    },
+    {
+      "id": "CM05",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Compact map and full text-led list preserved; no redundant view-posts action, no SUP or bottom tabs. Implement map height <=196dp at390dp width; system insets native."
+    },
+    {
+      "id": "CM06",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Compact map and full text-led list preserved; no redundant view-posts action, no SUP or bottom tabs. Implement map height <=196dp at390dp width; system insets native."
+    },
+    {
+      "id": "CM08",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Post, selected public place and three comments fit; inactive empty registration clear. No SUP/tab chrome."
+    },
+    {
+      "id": "CM09",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Focused input above Korean keyboard; typed content and active registration readable. Keyboard represents native IME."
+    },
+    {
+      "id": "CM10",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Successful comment increments both counts4, shows own posted comment, clears composer; all visible rows fit."
+    },
+    {
+      "id": "CM11",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Failed comment retains typed content/count3 and offers retry above native keyboard. Error is text as well as color."
+    },
+    {
+      "id": "CM12",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Easy compose with optional recent route, direct place shortcuts, editable phrase starters; empty state correctly disables publish."
+    },
+    {
+      "id": "CM13",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Shares exact empty composer components; public place and body entered, optional route empty; publish enabled. Removed invented character counter."
+    },
+    {
+      "id": "CM14",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Place search has readable result metadata, shortcuts and direct selection; no writer location exposure."
+    },
+    {
+      "id": "CM15",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Public place confirm with single selected pin and one CTA; illustrative map labelled; actual map required."
+    },
+    {
+      "id": "CM16",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Place search empty preserves search and shortcuts; no fictional results."
+    },
+    {
+      "id": "CM17",
+      "result": "passed",
+      "revision": 1,
+      "notes": "In-flight publish keeps selected place and body; disabled spinner CTA, no success assertion. Actual native controls locked in implementation."
+    },
+    {
+      "id": "CM18",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Published story at top, exactly three visible rows, original feed heading/layout retained, success text does not cover CTA or nav."
+    },
+    {
+      "id": "CM19",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Failed post retains content and place, error is outside editor, retry clear; removed stray logo."
+    },
+    {
+      "id": "CM20",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Latest easy composer remains under scrim; leave sheet has save, continue, discard with one primary; no obsolete background."
+    },
+    {
+      "id": "CM21",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Draft preview and continue/new actions clearly separated over dimmed mainfeed."
+    },
+    {
+      "id": "CM44",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Own post uses same public place/content as composer, zero reactions and empty comments; native insets to be applied."
+    },
+    {
+      "id": "CM23",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Editing reuses easy composer with preserved text and place, clear save CTA."
+    },
+    {
+      "id": "CM22",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Own post menu correctly offers edit/delete only over same dimmed ownpost."
+    },
+    {
+      "id": "CM24",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Confirmation over exact ownpost; cancellation separate from single primary delete."
+    },
+    {
+      "id": "CM26",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Other-post menu offers hide-this-post and report, not own-edit/delete or authorblock."
+    },
+    {
+      "id": "CM25",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Delete failure leaves post visible, explicit retry and cancel; one primary."
+    },
+    {
+      "id": "CM27",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Reporting reasons fully visible, selected radio state and one submit CTA; dimmed correct otherpost."
+    },
+    {
+      "id": "CM28",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Report received acknowledgement only; no claim of enforcement, single close CTA."
+    },
+    {
+      "id": "CM40",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Report failure retains selected reason and four choices, clear error/retry."
+    },
+    {
+      "id": "CM43",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Manual region uses selected-region pin and explicit distance basis, no current GPS claim; exact three-row feed retained."
+    },
+    {
+      "id": "CM29",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Only hidden story removed, remaining two retain full row pattern and restored section heading. Undo snackbar fits above compose CTA."
+    },
+    {
+      "id": "CM30",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Permission rationale explains public-place discovery and keeps manual region path, one primary and uniform scrim."
+    },
+    {
+      "id": "CM31",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Permission denied screen stops loading; settings and manual-region actions separated, no invented location."
+    },
+    {
+      "id": "CM32",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Unknown-location loading has no premature map/radius controls and allows manual region selection."
+    },
+    {
+      "id": "CM37",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Unknown-location failure has clear manual region primary and retry link, no invented region or distance."
+    },
+    {
+      "id": "CM33",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Genuine empty feed has no fabricated posts or clusters; region/map remain known and one first-post CTA."
+    },
+    {
+      "id": "CM34",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Three skeleton rows match feed layout; loading separate from empty/error, no fictional text or counts; compose retained."
+    },
+    {
+      "id": "CM35",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Fetch failure distinguished from no posts; known region/map retained, one retry primary."
+    },
+    {
+      "id": "CM36",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Only main map fails; loaded three post rows retained. Compact map retry, no fabricated live map or global tabs."
+    },
+    {
+      "id": "CM38",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Unavailable detail exposes no post data; clear list return CTA, no global chrome."
+    },
+    {
+      "id": "CM39",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Like failure rolls back unfilled heart12, comments3 retained; inline error doesn't cover inputs or posts."
+    },
+    {
+      "id": "CM41",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Map loading limited to top map slot; full loaded list retained without global nav."
+    },
+    {
+      "id": "CM42",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Detail skeleton contains no fabricated post fields, counts or map; header/back retained."
+    }
+  ]
+}

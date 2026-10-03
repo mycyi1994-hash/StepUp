@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-03",
+  "result": "passed",
+  "scope": "인계 문서와 패키지 연결 검증. 앱 실행 검증 아님.",
+  "screenActionCount": 109,
+  "implementationChecklistCount": 110,
+  "allImageIDsCovered": true,
+  "unknownTargetIDs": [],
+  "brokenDocumentLinks": [],
+  "sourcePathChecks": [
+    "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+    "app/src/main/java/com/stepup/android/ui/AppChromePolicy.kt",
+    "app/src/main/java/com/stepup/android/ui/components/MapTiles.kt",
+    "app/src/main/java/com/stepup/android/ui/components/RouteMapLive.kt",
+    "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
+    "app/src/main/java/com/stepup/android/data/remote/PartyApi.kt",
+    "app/src/main/java/com/stepup/android/domain/Onboarding.kt",
+    "tools/check_design_contract.py",
+    "scripts/check-strings.py",
+    "tools/check_experience_assets.py",
+    "scripts/check-fakes.py"
+  ],
+  "originalImageAudit": "../03-review/final-audit.json",
+  "clarifications": [
+    "기존 ZIP의 legacyActions를 현재 사양으로 사용하지 않도록 명시",
+    "신발 색감 참고 이미지와 현행 앱 구조 차이 명시",
+    "그림 검수 완료와 앱 미구현/미검증 구분",
+    "지도·보상·권한·크루 서버 상태를 실제 구현과 연결하도록 지정",
+    "레이어가 분리된 Figma 자산이나 독립 조명 자산은 제공된 것으로 주장하지 않음"
+  ]
+}

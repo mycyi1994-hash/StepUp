@@ -1,0 +1,72 @@
+{
+  "localCheckout": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\stepup-waitlist-implementation",
+  "mode": "read-only scoped reference; no runtime tests or code edits",
+  "files": [
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt",
+      "sha256": "908d61625ecea823071212377b3aa949ef344defc79166aa85558eff4890524f"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryParts.kt",
+      "sha256": "834f1643fd52238b925ad7011a3d2aa6d9b08cbc03c14959c82e5ce7361a501e"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryMapScreen.kt",
+      "sha256": "e95b7a70e83d28bd1d1ed541e8c194cfc0660577dc0097ba4c613c50a495f6c9"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryMap.kt",
+      "sha256": "840bdbf66ebcf6e4624aecbf78f804d1bfec15dda90d4350a424ee5233f80513"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryComposeScreen.kt",
+      "sha256": "ee756ac0deded76467901bebe5a1e86b7b290a36d39f31b0d9253d6ec576e090"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryComposeViewModel.kt",
+      "sha256": "27f18c38ad9e1d70567cd5e236793850ec13ce738be64349011f6e4246655687"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryDetailScreen.kt",
+      "sha256": "8aa9f506978b55f82163574fa57b39f26e9920052af64d0b6f2d23383ed2dd03"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryDetailViewModel.kt",
+      "sha256": "e0e07e4ee58c9e850f6f543eb1dfbea720191ae617a305260324568426b21f2c"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryPlacePicker.kt",
+      "sha256": "8332a7ae6d7bba069137d4dd5e9dd132caf307ad925546a30d33d03672d711b5"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryLocationScreens.kt",
+      "sha256": "d5353cee126628f0fd0058c9baaa79f0d94b669ff3100cae5558ab2f86a44bb0"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryOriginState.kt",
+      "sha256": "144a4a28e15c38c58115cb710ddb5c29a1e0dc90b99aa39d67dd8d7a3c7c892d"
+    },
+    {
+      "path": "app/src/main/java/com/stepup/android/domain/StoryRuns.kt",
+      "sha256": "86ce49adcac1836bc8acfc614cd9696ec4c67e4df95c0fe6ce70e18c8f6abb0c"
+    }
+  ],
+  "observations": [
+    {
+      "file": "StoryComposeScreen.kt",
+      "symbol": "StoryPlacePicker.onPick",
+      "observed": "candidate=it; pickOnMap=false; step=CONFIRM",
+      "required": "검색 결과는 setPlace 후 WRITE로 즉시 복귀. 지도 직접 지정만 CONFIRM."
+    },
+    {
+      "file": "CommunityScreen.kt",
+      "observed": "three segments and preserved meetups entry",
+      "required": "3개 커뮤니티 탭과 기존 번개 모임/내 크루 연결을 유지."
+    }
+  ],
+  "notFullyAudited": [
+    "서버 API 전체 계약",
+    "상세 조회 일반 통신 오류와 로그인 만료의 새 톤 개별 시안",
+    "현재 앱 전체 104개 경로의 하위 상태"
+  ]
+}

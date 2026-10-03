@@ -1,0 +1,54 @@
+[
+  {
+    "id": "D08",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-7f3ba364-efae-40d9-a9c0-d8a29ba289c7.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 데이터",
+        "행동 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "첫 러닝 구간남은32초·전체03:28·0.25km 및 다음2분걷기 확인."
+    }
+  },
+  {
+    "id": "K06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-9b26e398-4bac-465d-80e1-3d854f643923.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 데이터",
+        "행동 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "러닝 결과로 제목수정,저장완료·2.40km20분·삭제와기록/홈 버튼 확인."
+    }
+  },
+  {
+    "id": "D13",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-5a4e8479-4304-4550-9c8b-ccdd595a7c56.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 데이터",
+        "행동 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "15분중6분20초 부분종료 명시,0.42km/15분05초페이스,저장완료와삭제·공유 확인."
+    }
+  },
+  {
+    "id": "H04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-360291a9-cbc0-41b0-a4c9-cb9e62d8cc60.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단계와 데이터",
+        "행동 버튼",
+        "스타일과 가독성"
+      ],
+      "notes": "주간12.4km·3회와화3.8/금5.2/토3.4km 막대높이·요일·최다일 확인."
+    }
+  }
+]

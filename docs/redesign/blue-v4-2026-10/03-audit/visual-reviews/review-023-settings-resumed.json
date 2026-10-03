@@ -1,0 +1,25 @@
+{
+  "scope": "설정 후속 제작: SET31 보완과 SET32/33",
+  "method": "생성 결과 직접 시각 확인",
+  "screens": [
+    {
+      "id": "SET31",
+      "revision": 2,
+      "result": "passed",
+      "notes": "삭제 범위·크루장 이전·되돌릴 수 없음·휴대폰 기록 안내와 별도 확정 실패 문구를 모두 유지. 취소/삭제/X와 탭을 덮는 시트 확인."
+    },
+    {
+      "id": "SET32",
+      "revision": 1,
+      "result": "passed",
+      "notes": "소셜/지갑 모두 확인 중. 미확정 로그인에 계정 삭제 없음. 준비 중 행과 5탭 유지."
+    },
+    {
+      "id": "SET33",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인 유지, 지갑 확인하지 못함+진입 화살표, 연결 안 됨으로 단정하지 않음. 기존 삭제와5탭 유지."
+    }
+  ],
+  "runtimeVerified": false
+}

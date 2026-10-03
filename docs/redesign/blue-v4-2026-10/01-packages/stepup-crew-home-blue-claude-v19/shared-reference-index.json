@@ -1,0 +1,30 @@
+[
+  {
+    "id": "CP40",
+    "png": "02-shared-reference/CP40.png",
+    "revision": 1,
+    "sha256": "a041a014bdcf545b1ae814c8bc8c370efbfbe8c245b95a52cbca5c9e889df2c3",
+    "reused": true
+  },
+  {
+    "id": "CP55",
+    "png": "02-shared-reference/CP55.png",
+    "revision": 2,
+    "sha256": "21cd337b9bf622643223485525d89a0ab0db0ebb0aa91de74f800e9d1dba34c1",
+    "reused": true
+  },
+  {
+    "id": "CP61",
+    "png": "02-shared-reference/CP61.png",
+    "revision": 1,
+    "sha256": "564ef2d185aee523bd8242d3ac714ea3f2ff3909f7a0a760972a2a212dcfaacb",
+    "reused": true
+  },
+  {
+    "id": "CP66",
+    "png": "02-shared-reference/CP66.png",
+    "revision": 1,
+    "sha256": "49567afe6d9bcb2b692fa1680ce5ca735be2884e6d126c2da0883fd975da26ce",
+    "reused": true
+  }
+]

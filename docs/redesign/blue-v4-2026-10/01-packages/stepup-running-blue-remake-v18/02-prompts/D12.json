@@ -1,0 +1,8 @@
+{
+  "id": "D12",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI only: replace overall elapsed00:36 with03:28, replace distance0.04km with0.25km to correctly correspond to first running interval paused at00:32 remaining. Replace pause || icon on 이어서 달리기 with play triangle. Preserve remaining layout,paused state,allothercopy,mapandbuttons.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c5bd61dc-629a-4d4a-84c7-a8341d37b1c8.png"
+  ]
+}

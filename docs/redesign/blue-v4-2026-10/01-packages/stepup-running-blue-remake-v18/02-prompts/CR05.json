@@ -1,0 +1,8 @@
+{
+  "id": "CR05",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact crew waiting-room screenshot into the READY MEMBER state. Preserve all layout and copy except these exactchanges: header준비완료27명 becomes28명. Bottomstickyself 도윤·나 상태준비전 becomes준비완료, preserve 위치공유꺼짐 onright. Replace singlebottomwhite준비완료 button by a wide mutedblue DISABLED 출발을 기다리는 중 statecontrol and a smaller navyoutlined 준비 취소 button besideit. Preserve the roster unchanged:준호 진행자 준비완료;윤호 준비전;혜진 준비전. Keep self ONLY in fixed bottomrow not list. Keep course보기,위치보기,map,allmeetingdata,crewname,30/30counts,logo identical. Do not add badges or repeated readiness text. No 출발하기 for member.",
+  "references": [
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/CR04.png"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "color": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "accent": "#0754FF",
+    "highlight": "#48D9FA",
+    "text": "#F5F8FF"
+  },
+  "layout": {
+    "baseWidthDp": 390,
+    "mapDetailMaxHeightDp": 196,
+    "minTouchAndroidDp": 48,
+    "bodyTextStartSp": 16,
+    "secondaryTextStartSp": 14,
+    "systemInsets": "native",
+    "scroll": "content and sheets adapt to viewport"
+  },
+  "components": [
+    "CommunityHeader",
+    "CommunityTabs",
+    "RegionSummary",
+    "StoryListRow",
+    "PublicPlaceThumbnail",
+    "PrimaryButton",
+    "SecondaryButton",
+    "BottomNavigation",
+    "OpaqueBottomSheet",
+    "StoryComposer",
+    "InlineFeedback",
+    "SkeletonState"
+  ],
+  "limits": [
+    "설계 토큰과 구성 지침이며 코드 컴포넌트나 Figma 노드가 아니다.",
+    "시안 전체를 하나의 배경 이미지로 앱에 넣지 않는다."
+  ]
+}

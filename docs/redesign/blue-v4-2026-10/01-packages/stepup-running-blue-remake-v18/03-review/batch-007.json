@@ -1,0 +1,54 @@
+[
+  {
+    "id": "K01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c0f3af38-1049-4919-9030-68b07e916432.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 상태",
+        "버튼 및 전환",
+        "스타일과 가독성"
+      ],
+      "notes": "코스 탐색 대기,지도 예시와 취소,미확정 경로 미표시를 확인."
+    }
+  },
+  {
+    "id": "K02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-bdf874ea-d041-4bf8-a0f7-69b3dd1ec9b1.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 상태",
+        "버튼 및 전환",
+        "스타일과 가독성"
+      ],
+      "notes": "현재 위치에서 시작하는 순환 코스1.8km/약15분과 시작/다른코스 버튼 확인."
+    }
+  },
+  {
+    "id": "K03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-0e242238-923d-4fbd-a164-f533d51789b9.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 상태",
+        "버튼 및 전환",
+        "스타일과 가독성"
+      ],
+      "notes": "주변 코스 없음과 재검색/자유러닝 시작 동선을 확인."
+    }
+  },
+  {
+    "id": "K08",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-0bc619c4-6fb8-409e-935e-9d93967168b5.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "화면 상태",
+        "버튼 및 전환",
+        "스타일과 가독성"
+      ],
+      "notes": "코스 안내만 종료하고 시간·거리를 이어가는 확인문과 계속/취소를 확인."
+    }
+  }
+]

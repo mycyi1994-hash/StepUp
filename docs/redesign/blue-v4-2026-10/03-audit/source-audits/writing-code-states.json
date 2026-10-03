@@ -1,0 +1,32 @@
+{
+  "basis": "실제 코드 읽기 전용 확인",
+  "states": [
+    {
+      "id": "WRITE18",
+      "title": "서버 확인을 기다리는 러닝",
+      "file": "domain/StoryRuns.kt",
+      "symbol": "StoryRecordCard.Pending"
+    },
+    {
+      "id": "WRITE19",
+      "title": "사용할 수 없는 첨부 기록",
+      "file": "domain/StoryRuns.kt",
+      "symbol": "StoryRecordCard.Invalid"
+    },
+    {
+      "id": "WRITE20",
+      "title": "글쓰기 중 로그인 만료",
+      "file": "ui/screens/community/stories/StoryComposeScreen.kt",
+      "symbol": "StoryPublishError.SIGN_IN"
+    }
+  ],
+  "decisions": [
+    "Pending은 기록 없음이나 적립 완료가 아니다. 일반 글 작성은 유지한다.",
+    "Invalid는 원인 확인 없이 부정행위나 다른 사용자 기록이라고 단정하지 않는다. 첨부 교체 또는 제거 후 게시한다.",
+    "로그인 만료는 본문·장소·기록을 보존하고 재인증으로 연결한다. 인증 후 자동 게시하지 않는다."
+  ],
+  "remainingChecks": [
+    "이미 게시된 첨부를 수정할 때의 kept 상태는 기간 재제한 없이 기존 상세 구성 재사용",
+    "상세 네트워크 오류와 장소 API 추가 오류의 전체 감사는 별도 진행"
+  ]
+}

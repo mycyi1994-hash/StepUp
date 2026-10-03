@@ -1,0 +1,7 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-4ef8d9e0-b6cc-4d81-a096-0e4d9ee51518.png"
+  ],
+  "prompt": "Edit the provided Korean StepUp UI; targeted correction only. Replace the three top segment labels with '코스 선택' / '코스 만들기' / '코스 게시판', last one selected cobalt. Below the search/upload row place a small right-aligned plain label '많이 좋아한 순' above list; do not make more tabs. Remove both invented2024dates under authors while preserving names 민수/지연, cards, 28 and16 likes. Everything else unchanged. Preserve exact navy/electric-blue/ice-white materials, original logo and887x1774 portraitcomposition. No unrelated changes."
+}

@@ -1,0 +1,51 @@
+{
+  "scope": "40후보 밖 후속 조사 묶음. 각 항목은 새PNG1장과 동일하지 않음. 전체 작업 미완료.",
+  "groups": [
+    {
+      "area": "설정 홈 초기 조회",
+      "basis": "SettingsHomeScreen goal initialValue=null",
+      "remaining": "목표 미확정 표시와 테스트 빌드 정보 분기. SET01/29에 공통 상태 적용 또는 별도 시안 필요성 확인"
+    },
+    {
+      "area": "목표 경계와 저장 경합",
+      "basis": "DailyGoalSheet current nullable, MIN/MAX, collectLatest, sheet scope",
+      "remaining": "최소/최대/로딩/빠른 연속 변경 후 닫기. 읽기 전 보조값의 DEFAULT_GOAL 표시와 닫기 후 저장 지속 검사"
+    },
+    {
+      "area": "알림 복합 상태",
+      "basis": "osBlocked priority; saving; preferenceSync",
+      "remaining": "OS차단+반영대기, 빠른 토글, 저장완료 토스트. SET03/36/37 공통 표현의 조합 검증"
+    },
+    {
+      "area": "테마와 언어 저장 경합",
+      "basis": "ThemeScreen launch; LanguageScreen IO scope and recreation",
+      "remaining": "연속 선택의 최종 값, 언어 저장 실패·복귀. 테마 미리보기 합계 조회 중/실패 표시"
+    },
+    {
+      "area": "체험 로딩과 실패",
+      "basis": "ExperienceSettingsScreen SettingsLoad + weather independent flow",
+      "remaining": "SET25/26 구성 재사용 시 제목/행 수를 체험에 맞게 변경. 날씨 값 조회와 효과 미리듣기 비활성 상태"
+    },
+    {
+      "area": "권한 변형",
+      "basis": "PrivacyScreen actual activity/location/notification states",
+      "remaining": "미요청/거절/대략적/정확한 위치 등 조합. SET06/07의 실제 라벨 바인딩과 복귀 재조회"
+    },
+    {
+      "area": "문의·클립보드",
+      "basis": "ContactSheet failed/copyToClipboard returns boolean",
+      "remaining": "정상 문의 시트에서 복사 성공도 SET40 공통 토스트 적용. 복사 실패를 성공으로 보이지 않기; OS메일 복귀"
+    },
+    {
+      "area": "더 보기의 연결 대상",
+      "basis": "SET29 existing routes",
+      "remaining": "알림함/업적/초대/몸정보/모드/가이드는 다른 범위 경로 감사에서 별도 대응. 테스트 업데이트 상태는 빌드조건 확인"
+    },
+    {
+      "area": "계정 삭제의 실제 정리 범위",
+      "basis": "ConnectedAccountsScreen Deleted cleanup and existing copy",
+      "remaining": "계정 전환·세션 종료·정리 실패·초안/데이터 격리와 휴대폰 기록 설명의 일치. 서버 재검증 필요"
+    }
+  ],
+  "runtimeVerified": false
+}

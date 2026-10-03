@@ -1,0 +1,8 @@
+{
+  "id": "H01",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI only: remove the entire secondary bottom '내 기록 더보기' button. Leave the primary 러닝 시작하기 button and modest navy safe area. List scrolls for remaining records. Preserve month selector,statstotal,threevisiblecards,logo and allotherlayout.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-4b9b9e2b-ae67-41d7-9849-f978ca3659a7.png"
+  ]
+}

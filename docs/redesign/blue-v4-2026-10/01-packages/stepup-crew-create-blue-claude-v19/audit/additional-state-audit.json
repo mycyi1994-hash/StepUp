@@ -1,0 +1,32 @@
+[
+  {
+    "state": "CrewPhotoStep.Loading / Saving",
+    "evidence": "CrewViewModels.kt: loadPhoto/applyCrop; CrewCreateScreens.kt: CrewCropPage",
+    "status": "추가 시안 필요",
+    "note": "현재19장은 크롭 준비 화면과 실패만 포함. 실제 처리 중 화면은 별도 감사 대상으로 남김."
+  },
+  {
+    "state": "CrewSave.Saving",
+    "evidence": "CrewDraftViewModel.submit",
+    "status": "추가 시안 필요",
+    "note": "동작 지시서에는 중복 탭 잠금·진행 표시 요구. 처리 중 전용 정적 시안은 아직 없음."
+  },
+  {
+    "state": "Draft initialization / edit startFailed",
+    "evidence": "CrewDraftViewModel.start / retryStart",
+    "status": "운영 수정 묶음에서 대조",
+    "note": "startFailed는 현재 코드상 EDIT 경로의 기존 크루 조회 실패. 생성 실패와 혼동 금지."
+  },
+  {
+    "state": "Draft local save/delete failure",
+    "evidence": "keepDraft and draft resume/discard flow",
+    "status": "복구 처리 추가 감사",
+    "note": "이 자료는 해당 오류 처리가 이미 구현됐다는 증거가 아니다."
+  },
+  {
+    "state": "CrewDetailFailed, management loading/lost ownership, request-list loading/error",
+    "evidence": "CrewDetailScreen.kt / CrewManageScreens.kt",
+    "status": "후속 운영 묶음 감사",
+    "note": "기존95 후보에 다 포함되었다고 단정하지 않는다."
+  }
+]

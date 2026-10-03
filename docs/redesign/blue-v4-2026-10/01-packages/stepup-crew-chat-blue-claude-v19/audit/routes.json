@@ -1,0 +1,50 @@
+[
+  {
+    "symbol": "ROOM",
+    "pattern": "chat/room/{crewId}"
+  },
+  {
+    "symbol": "INFO",
+    "pattern": "chat/room/{crewId}/info"
+  },
+  {
+    "symbol": "MEMBERS",
+    "pattern": "chat/room/{crewId}/members"
+  },
+  {
+    "symbol": "MEMBER",
+    "pattern": "chat/room/{crewId}/member/{userId}"
+  },
+  {
+    "symbol": "NOTICES",
+    "pattern": "chat/room/{crewId}/notices"
+  },
+  {
+    "symbol": "NOTICE",
+    "pattern": "chat/room/{crewId}/notice/{noticeId}"
+  },
+  {
+    "symbol": "NOTICE_EDIT",
+    "pattern": "chat/room/{crewId}/notice-edit?noticeId={noticeId}&fromMessage={fromMessage}"
+  },
+  {
+    "symbol": "SEARCH",
+    "pattern": "chat/room/{crewId}/search"
+  },
+  {
+    "symbol": "PHOTO",
+    "pattern": "chat/room/{crewId}/photo"
+  },
+  {
+    "symbol": "VIEWER",
+    "pattern": "chat/room/{crewId}/viewer/{messageId}"
+  },
+  {
+    "symbol": "REPORTED",
+    "pattern": "chat/room/{crewId}/reported"
+  },
+  {
+    "symbol": "ENDED",
+    "pattern": "chat/ended"
+  }
+]

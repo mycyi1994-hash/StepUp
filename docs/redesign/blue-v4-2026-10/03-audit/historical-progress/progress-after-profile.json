@@ -1,0 +1,25 @@
+{
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-내정보프로필21장-파란톤-지시서.zip",
+  "bytes": 29922802,
+  "sha256": "e2bea5bdaa2a82e1df70b577c2d0e945f2e4a93441b63bf81f7035b425a37e96",
+  "visualStateCount": 21,
+  "newScreenCount": 21,
+  "sharedReferenceCount": 2,
+  "dimensions": {
+    "887x1774": 19,
+    "886x1774": 2
+  },
+  "pngCRC": "passed",
+  "archiveCRC": "passed",
+  "archiveAllHashes": "passed",
+  "latestReviews": "passed",
+  "documentLinks": "passed",
+  "sourceHashesUnchanged": true,
+  "currentCandidates": 417,
+  "currentStatusCounts": {
+    "reviewed": 338,
+    "pending": 79
+  },
+  "runtimeVerified": false,
+  "fullGoalComplete": false
+}

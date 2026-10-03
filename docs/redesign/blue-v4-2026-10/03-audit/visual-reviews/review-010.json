@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-03",
+  "method": "생성 이미지 실제 픽셀 검사",
+  "screens": [
+    {
+      "id": "SD10",
+      "revision": 2,
+      "result": "passed",
+      "notes": "없는소유신발의관리버튼과무대제거,보관함복귀한행동."
+    },
+    {
+      "id": "SD18",
+      "revision": 1,
+      "result": "passed",
+      "notes": "강화결과미확정배너,마지막값표시,변경비활성/결과조회."
+    },
+    {
+      "id": "RP02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "견적/잔액—와비활성버튼,알고있는회복량만표시."
+    }
+  ]
+}

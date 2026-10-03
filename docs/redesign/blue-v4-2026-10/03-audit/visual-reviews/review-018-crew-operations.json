@@ -1,0 +1,233 @@
+{
+  "method": "Individual image inspection; static mockups, not runtime validation.",
+  "screens": [
+    {
+      "id": "CP40",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Seven owner management rows and current crew identity retained; no unnecessary primary or global tabs."
+    },
+    {
+      "id": "CP41",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Existing crew avatar and all three profile fields retained; edited tagline supports active save; safe footer."
+    },
+    {
+      "id": "CP42",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Existing meeting form retained; 1–3km edited selection and independent mood checks, one save footer."
+    },
+    {
+      "id": "CP43",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Capacity30 with current24 constraint; edited100km goal, recruitment states and single save preserved."
+    },
+    {
+      "id": "CP74",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Owner operations keep active recruitment, transfer/leave/dissolve and existing policy row; no duplicate action footer."
+    },
+    {
+      "id": "CP90",
+      "revision": 2,
+      "result": "passed",
+      "notes": "Paused operations now preserve same layout as CP74, changing status/action only; existing policy row retained."
+    },
+    {
+      "id": "CP44",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Recruitment pause confirmation over actual operations context; existing members preserved; single primary plus cancel."
+    },
+    {
+      "id": "CP45",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Resume sheet on paused settings;24/30 and six spaces, one confirm/cancel, opaque sheet and safe bottom."
+    },
+    {
+      "id": "CP46",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Goal edit selected200, current126 preserved, presets/input and one save footer fit."
+    },
+    {
+      "id": "CP47",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Confirm200 sheet retains126km; opaque overlay one primary and cancel."
+    },
+    {
+      "id": "CP83",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Applied200 goal preserves126,63%,74remaining and9participants; exact CP13 geometry."
+    },
+    {
+      "id": "CP48",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Two applicant previews remain readable with native row affordance and24/30 context; no bulk actions."
+    },
+    {
+      "id": "CP49",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Application body/profile entry and24→25 helper preserved; white approval and secondary decline clearly differentiated."
+    },
+    {
+      "id": "CP50",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Confirm sheet shows pending24→25 and exact applicant; no premature success."
+    },
+    {
+      "id": "CP51",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Approved state25/30 and1remaining, simple check and one next action."
+    },
+    {
+      "id": "CP52",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Decline confirmation distinct coral action, applicant maintained, safe sheet controls."
+    },
+    {
+      "id": "CP53",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Decline branch retains24members and remaining-list action, no implied approval."
+    },
+    {
+      "id": "CP54",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Clear loaded-empty copy and return-to-manage; compact check no phantom requests."
+    },
+    {
+      "id": "CP79",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Doyun removed, Jiyeon moved up, pending1 andmembers25/30 consistent after approval."
+    },
+    {
+      "id": "CP80",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Error sheet retains application, no success implication, explicit recheck action."
+    },
+    {
+      "id": "CP81",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Capacity conflict preserves application and gives capacity check/return; one high-emphasis action."
+    },
+    {
+      "id": "CP56",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Member role/join date/week distance follows actual public data model; no management menu for ordinary viewer."
+    },
+    {
+      "id": "CP55",
+      "revision": 2,
+      "result": "passed",
+      "notes": "Restored887x1774 roster geometry/safeinsets with transfer entry,5member rows; avatar colors matchCP12."
+    },
+    {
+      "id": "CP84",
+      "revision": 1,
+      "result": "passed",
+      "notes": "ExactCP56 public profile plus owner-only moremenu, subject remains regularmember."
+    },
+    {
+      "id": "CP75",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Owner-only two-item menu on Minsu profile, destructive removal distinguished, no premature action."
+    },
+    {
+      "id": "CP85",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Applicant date/selected phrase and explicit not-member state; no membership stats/manage actions."
+    },
+    {
+      "id": "CP57",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Minsu removal confirmation over owner-view member profile; single coral destructive action and cancel, no premature removal."
+    },
+    {
+      "id": "CP58",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Three existing member candidates with initial-avatar continuity; no current leader/applicant, no premature transfer action."
+    },
+    {
+      "id": "CP59",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Transfer confirmation preserves candidate list and explicitly explains retained ordinary membership; one confirm/cancel."
+    },
+    {
+      "id": "CP62",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Owner exit guard above actual settings context; directs to leader selection before separate leave flow."
+    },
+    {
+      "id": "CP76",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Exact detail family retained; owner footer changes to manage,24/30 and126/16079% unchanged."
+    },
+    {
+      "id": "CP63",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Dissolve confirmation describes membership/recruitment ending, uses distinct destructive action over actual settings."
+    },
+    {
+      "id": "CP89",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Paused owner detail retains24members and126/160 goal; only recruitment helper changes."
+    },
+    {
+      "id": "CP86",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Transfer result updates leader toMinsu, keeps viewer member and24count, retains goal data and member footer."
+    },
+    {
+      "id": "CP60",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Member-only three-action sheet on memberdetail, coral leave distinct; no owner actions."
+    },
+    {
+      "id": "CP61",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Leave confirmation preserves underlying24count until response, warns reapplication for approval-policy fixture."
+    },
+    {
+      "id": "CP64",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Four single-select reasons; explicit first selected with check/text, one submit; no Other field or premature receipt."
+    },
+    {
+      "id": "CP65",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Simple report received message only, one return confirmation and generous safe footer; no invented resolution."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
+    "sha256": "3b6154ccc78ad20372b40edc6b977c08a94606815daa7b8f05fa5c2b198dfc7f",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeNavGraph.kt",
+    "sha256": "931598b374e84916c8bd4062926a9a6104499a55fb9855236dd62a2accf74d59",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeParts.kt",
+    "sha256": "f8b7251321c4467adee78535c26a446b347d1c0456396ab11f8696d6f07d73fc",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeScreen.kt",
+    "sha256": "01979906d864e68bcfc1f8da68af27e5626bffb3c4dfbe296d96e4139cacc135",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeViewModels.kt",
+    "sha256": "f272a48ef96e802c6210f915197427e8d7a1f397d979b5b6898022c72794ef5e",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt",
+    "sha256": "11226beb195f2fc90f3e653f281a74598e0e31d12f1f3f2de950fe793c3ca15d",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/home/CrewWeekScreens.kt",
+    "sha256": "3e1396a768b59ed4546eb628811549d496816e589aa197865af57a8c7105bc95",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/domain/CrewHome.kt",
+    "sha256": "c823092226978014086147bd73e023b792ad78bacb8a61798658758c10bc51a3",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/data/repo/CrewHomeRepository.kt",
+    "sha256": "1b0a6c9d3a632c15efa5dc7206fe028851e7da5c0c77a6e7dba2b4d7f959409e",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/res/values-ko/crew_home.xml",
+    "sha256": "3e1e2b16c348ece05878492f273f138035583f4e9d62160c52d733a30e0743d0",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  },
+  {
+    "path": "stepup-waitlist-implementation/supabase/migrations/0049_crew_home.sql",
+    "sha256": "0862756c10e085b539e5e5c106290f686cbd0cd7b6175417c9ec288033ec6d78",
+    "coverage": "관련동작구간 읽기·검색. 전체서버·기기 검증을 뜻하지 않음."
+  }
+]

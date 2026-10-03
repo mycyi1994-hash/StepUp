@@ -1,0 +1,8 @@
+{
+  "id": "C04",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI image only: the cyan recorded path in the map must END exactly at the blue white-ring current location dot. Remove only the cyan segment continuing to the right beyond that dot. Preserve the underlying map and the cyan path from start to the dot. Preserve all other layout, exact stats and controls. This is a 1km running challenge showing already recorded 0.64km, not a future recommended route.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f8f451d9-a274-4035-897e-3440cf8983ea.png"
+  ]
+}

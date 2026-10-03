@@ -1,0 +1,119 @@
+{
+  "method": "Individual image inspection; static mockups, not runtime validation.",
+  "screens": [
+    {
+      "id": "CP25",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Owned crew selection24/30 preserved; separate create primary and manage row, focused native chrome."
+    },
+    {
+      "id": "CP26",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Three original intro fields and representative image preserved; same draft name, one next CTA and safe native insets."
+    },
+    {
+      "id": "CP31",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Region/schedule fields and all distance/mood choices retained; selected3–5km/easy/beginner have visiblecheckmarks; one Next."
+    },
+    {
+      "id": "CP33",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Capacity20, optional100km or later, recruiting/paused all clear; preview only primary and native safe insets."
+    },
+    {
+      "id": "CP32",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Opaque schedule sheet keepsTue/Thu19:30 and no-schedule alternative; one apply, close and safe inset."
+    },
+    {
+      "id": "CP88",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Draft goal sheet shows100km input and one apply; no existingcrew mutation implied; opaque panel over step3."
+    },
+    {
+      "id": "CP34",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Draftpreview retainsname/motto/schedule3–5km, newcrew1/20, leaderme and100km target; nofalselevel/progress; one createCTA."
+    },
+    {
+      "id": "CP35",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Confirmed creation outcome namesnewcrew; one manageprimary plus existing chatsecondary; nofakebadge/reward."
+    },
+    {
+      "id": "CP27",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Name-avatar state offers photo or named image only; no invaliddeleteaction; opaque sheet with close."
+    },
+    {
+      "id": "CP30",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Four distinctnamebackgrounds keepfull공덕한바퀴, visibletealselection, one useCTA and safe inset."
+    },
+    {
+      "id": "CP29",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Image decode failure retainsdraft, different-photo primary and named-image secondary, dimmedbackground andopaque sheet."
+    },
+    {
+      "id": "CP69",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Corrected scrim makes background inactive; accesssettings primary and namedimage fallback; same retaineddraft."
+    },
+    {
+      "id": "CP28",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Squarephoto-crop with guides, instruction and oneapply; clearly exampleuserphoto and no unsupportededitingactions."
+    },
+    {
+      "id": "CP36",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Empty name error uses real 1–40 limit; other draft text retained, neutral name-avatar fallback, Next disabled; no invented uniqueness rule."
+    },
+    {
+      "id": "CP37",
+      "revision": 1,
+      "result": "passed",
+      "notes": "General save failure stays on preview with full draft retained, one retry button and visible non-overlapping feedback."
+    },
+    {
+      "id": "CP38",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Opaque draft-exit sheet over dimmed form; save-and-exit primary and continue secondary, no destructive reset."
+    },
+    {
+      "id": "CP39",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Draft resume over correct three-tab community, full draft identity; primary resume and secondary new draft separated."
+    },
+    {
+      "id": "CP77",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Confirmed new owner management retains 1/20 and six current-code rows including crew chat; single list-return CTA."
+    },
+    {
+      "id": "CP78",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Draft deletion confirmation clearly identifies draft; restrained coral destructive primary, cancel and close preserve draft; correct dim community background."
+    }
+  ]
+}

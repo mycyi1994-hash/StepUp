@@ -1,0 +1,8 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-01e5f44c-d08e-44aa-9a22-7db87ad10acf.png",
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/K09.png"
+  ],
+  "prompt": "Edit the provided Korean StepUp UI; targeted correction only. Image1 is the exact modal to retain. Image2 is the CORRECT background. Replace ONLY all background ABOVE the bottomsheet with dimmed screenshot of image2. Thus top reads 내 코스 with 코스 선택/코스 만들기/코스 게시판, first tabselected, actual existing card. Keep ENTIRE bottomsheet from image1 unchanged, including selectedcourse2.4km and buttons. No new coursefilters or other features. Preserve exact navy/electric-blue/ice-white materials, original logo and887x1774 portraitcomposition. No unrelated changes."
+}

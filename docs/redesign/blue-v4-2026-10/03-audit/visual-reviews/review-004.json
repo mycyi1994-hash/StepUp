@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-03",
+  "method": "Individual view_image review",
+  "scope": "batch3 revision and batches4/5 first review",
+  "screens": [
+    {
+      "id": "DRAW00",
+      "result": "passed",
+      "revision": 1,
+      "notes": "SH01 reused for existing shoe tab entry; bottom draw navigation replaces obsolete top draw button. Not a new unique design."
+    },
+    {
+      "id": "DRAW16",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Complete modal scrim or unknown-count loading corrected; state appropriate."
+    },
+    {
+      "id": "DRAW17",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Complete modal scrim or unknown-count loading corrected; state appropriate."
+    },
+    {
+      "id": "DRAW19",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Complete modal scrim or unknown-count loading corrected; state appropriate."
+    },
+    {
+      "id": "DRAW22",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Complete modal scrim or unknown-count loading corrected; state appropriate."
+    },
+    {
+      "id": "DRAW24",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW27",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW28",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW29",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW32",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW33",
+      "result": "passed",
+      "revision": 1,
+      "notes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links."
+    },
+    {
+      "id": "DRAW21",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1, preserve exact whole shoe screen. THREE targeted changes: top pill becomes83.07 SUP; bottom SECOND owned-card #0001 must show the SAME mint/navy/ivory running shoe as large hero and firstcard (two separate owned copies of same model), keep equippedcheck on SECOND ONLY; durability100/100 cyan bar must reach completely to the right endpoint100%, no dark unfilled tail. Allotherlayout,text,selection firstcard,rare/epic/legendarycolors stay."
+    },
+    {
+      "id": "DRAW23",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1 foreground errorbottomsheet unchanged. REPLACE entire underlying app above sheet with image2 (loadfailuremain) in its exact arrangement; APPLY a uniform BLACK60% overlay to all of this background includinglogo/pill/text/box/button. Therefore background buttons say '다시 불러오기', NOT무료로1회뽑기; countsdashes—, nofakecounts. Keep foregroundtitle/actions/handleXbright. Bottomsheet coversallnav.887x1774."
+    },
+    {
+      "id": "DRAW25",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1 foreground walletgiftpendingbottomsheet unchanged. REPLACE underlying app with image2. In underlyingpremium panel MUSThave '연결 선물 확인 중' and NOTalreadycredited '남은 횟수10회'. PutuniformBLACK60%overlay onALLbackground inclheaderandboxes. Allforegroundtext/buttons/spinnerremainbright andunchanged; sheetcovernav.887x1774."
+    },
+    {
+      "id": "DRAW26",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1 MAIN. Preserve all functional text, both '결과 확인' buttons, originalheaderandfivebottomtabs. Change BOTH panel internal layouts to image2 composition: boxonLEFT,textonRIGHT. Top: 무료뽑기 / 뽑은신발 / 확인중 / 결과가준비되면볼수있어요. Bottom: 상급뽑기 / 남은기회10회 / 다음1회까지0.4km. Bothbuttons '결과 확인'. Boxclosed, no drawCTA.887x1774."
+    },
+    {
+      "id": "DRAW30",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1. KEEP entire foreground navy bottomsheet exactly, firstlink0+run2=remaining2,capnotice,drawbuttonandclose. Replace background above sheet with image2 freepanel (무료뽑기13,whiteboxLEFT,textRIGHT) notpremium10whitebox. Dim ALLbackgroundincludinglogopillwithBLACK60%overlay. Do notchange anyforegroundnumbers orlayout.887x1774."
+    },
+    {
+      "id": "DRAW31",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Edit image1. Convert centerfloatingdialog into opaque NAVY BOTTOMSHEET anchored to screenbottom coveringALLnav, samehandle/Xstyle as image2. No areaofappvisible belowit. Title '지금은 뽑을 수 없어요',note '기회는 사용되지 않았어요.', explanation '오늘 상급 뽑기 발행 한도가 찼어요.' nextline '내일 다시 해주세요.' Onlylargewhite'확인'button;no retry. DimALLunderlyingappincludinglogoSUPwithBLACK60%. Uniformshell,notdeviceframe.887x1774."
+    }
+  ]
+}

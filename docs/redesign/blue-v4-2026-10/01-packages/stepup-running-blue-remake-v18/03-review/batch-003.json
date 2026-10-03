@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-29d28416-294f-4a5f-84ed-cadad63b7e64.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태 문구",
+        "원본 로고",
+        "남색 패널",
+        "큰 조작 버튼",
+        "필수 수치"
+      ],
+      "notes": "불필요한 SUP 제거 및 일시정지 제목 교정 확인."
+    }
+  },
+  {
+    "id": "R07",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d235b426-98b3-4215-b495-ba7b319f22a5.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "상태 문구",
+        "원본 로고",
+        "남색 패널",
+        "큰 조작 버튼",
+        "필수 수치"
+      ],
+      "notes": "기록 소실 경고와 취소/종료 선택 구분."
+    }
+  }
+]

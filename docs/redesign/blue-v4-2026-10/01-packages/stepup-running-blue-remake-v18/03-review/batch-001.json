@@ -1,0 +1,32 @@
+[
+  {
+    "id": "U01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-df84f591-cee0-45ee-bcd9-4d9ab4228798.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단독 세로 화면",
+        "원본 로고 형태",
+        "승인 남색·파랑 재질",
+        "주요 문구와 버튼",
+        "겹침·잘림 없음"
+      ],
+      "notes": "5개 동일 크기 진입과 러닝 기록 링크 확인."
+    }
+  },
+  {
+    "id": "R02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c1b485e4-1c5d-404d-a623-2a436b9dfe2a.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "단독 세로 화면",
+        "원본 로고 형태",
+        "승인 남색·파랑 재질",
+        "주요 문구와 버튼",
+        "겹침·잘림 없음"
+      ],
+      "notes": "12:30·1.56km·8′01″, 일시정지·종료 확인. 지도는 지리 정확성이 검증된 실제 지도 아님."
+    }
+  }
+]

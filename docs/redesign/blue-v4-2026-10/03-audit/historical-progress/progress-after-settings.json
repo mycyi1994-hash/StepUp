@@ -1,0 +1,24 @@
+{
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-설정40장-파란톤-지시서.zip",
+  "bytes": 48692934,
+  "sha256": "2a8d98996ecd92d6e445d387bc88b1ae06664839da42b604596fb700c530336a",
+  "screens": 40,
+  "latestRevisions": "passed",
+  "allIndividuallyVisuallyReviewed": true,
+  "pngCRC": "passed",
+  "dimensions": {
+    "887x1774": 40
+  },
+  "documentLinks": "passed",
+  "sourceHashesUnchanged": true,
+  "runtimeVerified": false,
+  "fullGoalComplete": false,
+  "archiveCRC": "passed",
+  "archiveAllHashes": "passed",
+  "currentCandidates": 429,
+  "currentStatusCounts": {
+    "reviewed": 378,
+    "pending": 51
+  },
+  "priorConsolidatedZipUnmodified": true
+}

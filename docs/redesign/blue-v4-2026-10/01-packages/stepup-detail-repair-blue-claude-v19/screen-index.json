@@ -1,0 +1,611 @@
+[
+  {
+    "id": "SD01",
+    "title": "신발 상세 · 미착용",
+    "file": "images/SD01.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "c46810bbf842965fa84d92a5ab55ae791c051e24ec5c285ca69790c33f7933bb",
+    "finalPrompt": "prompts/SD01.json",
+    "promptHistory": [
+      "prompts/SD01.json"
+    ],
+    "reviewNotes": "원형 받침/조명, 원본 민트 신발, 네 독립 한줄바, 등급 오른쪽번호, 관리 및 직접강화/착용 확인. 레벨25%의 미술적근사치와 정확한계산은별도문서.",
+    "entry": "정상 조회한 소유 신발이 현재 착용 ID와 다름",
+    "behavior": "이 신발 신기 → SD03; 강화하기 → UP01; 관리 → SD13; 뒤로 → 진입한 목록",
+    "kind": "상세 화면 상태",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD02",
+    "title": "신발 상세 · 착용 중",
+    "file": "images/SD02.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "9549a92547e60d6e217cdb471f7b755968ca20021d56afc3de49e1e466336247",
+    "finalPrompt": "prompts/SD02-r2.json",
+    "promptHistory": [
+      "prompts/SD02-r2.json",
+      "prompts/SD02.json"
+    ],
+    "reviewNotes": "레어와No0007 복원, 착용 상태는 비활성주버튼으로 표시. 강화 활성.",
+    "entry": "보유 ID와 실제 wearing ID 일치",
+    "behavior": "강화하기 → UP01; 관리 → SD14; 비활성 착용",
+    "kind": "상세 화면 상태",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD03",
+    "title": "착용 요청 중",
+    "file": "images/SD03.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "61848835e540d2de471304cde20ddc011a1ffed1fff5b372023a09a4c7a1a2d0",
+    "finalPrompt": "prompts/SD03.json",
+    "promptHistory": [
+      "prompts/SD03.json"
+    ],
+    "reviewNotes": "요청 중 스피너/비활성강화/관리,성공미표시.",
+    "entry": "명시적 착용 요청이 전송된 동안",
+    "behavior": "중복 착용/강화 금지; 응답 및 실제 wearing ID 조회",
+    "kind": "상세 화면 상태",
+    "guard": "중복 착용과 해당 신발 변경 차단. 이탈 후 재진입 시 실제 착용 재조회"
+  },
+  {
+    "id": "SD04",
+    "title": "착용 확인 완료",
+    "file": "images/SD04.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "1c28779b72c68804b8eba9c43ee0a6dba6e8dc2536d8a2db14f4c60feb48baa6",
+    "finalPrompt": "prompts/SD04-r2.json",
+    "promptHistory": [
+      "prompts/SD04-r2.json",
+      "prompts/SD04.json"
+    ],
+    "reviewNotes": "레어번호보존,실제착용확정 snackbar와비활성착용 확인.",
+    "entry": "조회된 wearing ID가 대상 ID와 일치한 최초 1회",
+    "behavior": "2초 안내 후 SD02; 결과 재진입 시 안내 반복 금지",
+    "kind": "상세 화면 상태",
+    "guard": "확인 안내는 한 번만, 약2초 후 SD02. 숫자를 타이머로 확정하지 않음"
+  },
+  {
+    "id": "SD05",
+    "title": "착용 변경 거절",
+    "file": "images/SD05.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "a72e32589dfc7b45226b62bd2978205dabdb3524bb21307b5c81a45260a351a0",
+    "finalPrompt": "prompts/SD05.json",
+    "promptHistory": [
+      "prompts/SD05.json"
+    ],
+    "reviewNotes": "확정거절과기존클라우드러너유지,재착용/닫기,스크림 확인.",
+    "entry": "서버 거절이고 기존 착용이 재조회로 확인됨",
+    "behavior": "닫기 → SD01; 다시 신기 → 소유 재확인 후 SD03",
+    "kind": "하단 모달",
+    "guard": "확정 거절과 기존 착용 확인이 모두 필요. 기존 신발명은 실제 값"
+  },
+  {
+    "id": "SD06",
+    "title": "착용 · 로그인 필요",
+    "file": "images/SD06.png",
+    "revision": 1,
+    "size": [
+      853,
+      1843
+    ],
+    "sha256": "7dc718bb8000f63b1e70dc9e35632a35529959b563d8ec5419edff242c5d80d2",
+    "finalPrompt": "prompts/SD06.json",
+    "promptHistory": [
+      "prompts/SD06.json"
+    ],
+    "reviewNotes": "로그인필요전용시트,수동로그인/닫기.",
+    "entry": "SIGN_IN 응답",
+    "behavior": "로그인 경로 → 같은 소유 ID 상세 재조회; 자동 착용 금지",
+    "kind": "하단 모달",
+    "guard": "로그인 뒤 자동 착용하지 않음. 닫기는 이전 상세"
+  },
+  {
+    "id": "SD07",
+    "title": "착용 결과 미확인",
+    "file": "images/SD07.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "978b16a7052cf95636c805cf388121fd52a11c47d9bcf77c5c970601dde785ee",
+    "finalPrompt": "prompts/SD07.json",
+    "promptHistory": [
+      "prompts/SD07.json"
+    ],
+    "reviewNotes": "결과미확인과읽기확인행동,실패나기존착용유지단정없음.",
+    "entry": "OFFLINE 또는 UNCONFIRMED",
+    "behavior": "착용 상태 확인 → 읽기 조회만; 대상 착용 확인 → SD04; 요청 미실행/거절과 미착용이 확정 → SD01; 미확인 → 유지. 나중에 → 이전 화면, 재진입 시 재조회",
+    "kind": "하단 모달",
+    "guard": "한 번의 미착용 조회로 진행 중 요청을 실패로 단정하지 않음"
+  },
+  {
+    "id": "SD08",
+    "title": "신발 상세 · 불러오는 중",
+    "file": "images/SD08.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "330bdec8fab1d46bc1422201518423947c27906a46d6e4de7edb8d68d2ecb85d",
+    "finalPrompt": "prompts/SD08.json",
+    "promptHistory": [
+      "prompts/SD08.json"
+    ],
+    "reviewNotes": "스켈레톤과네수치—,샘플소유데이터없음,버튼비활성.",
+    "entry": "OwnedLoad.Loading",
+    "behavior": "조회 완료 → SD01/02; 실패 → SD09; 성공 조회에 ID없음 → SD10",
+    "kind": "상세 화면 상태",
+    "guard": "미확정 값은 —/스켈레톤. 0개 또는 다른 예시 신발로 대체하지 않음"
+  },
+  {
+    "id": "SD09",
+    "title": "신발 상세 · 조회 실패",
+    "file": "images/SD09.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "98ec3a2260c95a4e7edbefb13d38d70c37761a14b7aeb3436b809d3abc6979bd",
+    "finalPrompt": "prompts/SD09.json",
+    "promptHistory": [
+      "prompts/SD09.json"
+    ],
+    "reviewNotes": "조회실패와재시도/보관함,빈목록과구분.",
+    "entry": "OwnedLoad.Failed",
+    "behavior": "다시 불러오기 → SD08; 보관함으로 → SH02",
+    "kind": "상세 화면 상태",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD10",
+    "title": "신발 상세 · 소유 신발 없음",
+    "file": "images/SD10.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "04299eca8bb5564b8452295e048b5365cde888c0f57885c661f8ed801e13231b",
+    "finalPrompt": "prompts/SD10-r2.json",
+    "promptHistory": [
+      "prompts/SD10-r2.json",
+      "prompts/SD10.json"
+    ],
+    "reviewNotes": "없는소유신발의관리버튼과무대제거,보관함복귀한행동.",
+    "entry": "성공한 보유 목록 조회에 해당 ID가 없음 또는 MISSING",
+    "behavior": "보관함으로 → SH02; 다른 소유 신발은 보존",
+    "kind": "상세 화면 상태",
+    "guard": "성공한 소유 목록 조회에서 ID 없음이 확인된 상태"
+  },
+  {
+    "id": "SD11",
+    "title": "신발 그림만 표시 실패",
+    "file": "images/SD11.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "c8a01c61931326a1f62a4207b3f20c2ca244e5a371dab078e8293774b5f977c6",
+    "finalPrompt": "prompts/SD11.json",
+    "promptHistory": [
+      "prompts/SD11.json"
+    ],
+    "reviewNotes": "실제데이터네줄과행동유지,아트만실패안내/재조회. 무대광원은구현에서빈상태에낮춤.",
+    "entry": "실제 신발 데이터는 있고 이미지 조회만 실패",
+    "behavior": "그림 다시 불러오기 → 아트 요청만; 착용/관리 유지",
+    "kind": "상세 화면 상태",
+    "guard": "이미지 오류와 데이터 오류를 분리"
+  },
+  {
+    "id": "SD12",
+    "title": "첫 신발 착용",
+    "file": "images/SD12.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "095bbfe08ad4d48885a048d017a839886006c4ab88586d29ae410eafb11866e6",
+    "finalPrompt": "prompts/SD12.json",
+    "promptHistory": [
+      "prompts/SD12.json"
+    ],
+    "reviewNotes": "첫 착용 안내,현재 착용신발없음,직접강화/신기와네줄.",
+    "entry": "보유 대상은 있지만 wearing ID가 없음",
+    "behavior": "이 신발 신기 → SD03; 강화/관리는 실제 가능 조건",
+    "kind": "상세 화면 상태",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD13",
+    "title": "신발 관리 · 미착용",
+    "file": "images/SD13.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "6d17ab5e48e84e4dc633f2a326d6a1d6718bdc14c7c6f04bc674fa6cdc76aad6",
+    "finalPrompt": "prompts/SD13-r2.json",
+    "promptHistory": [
+      "prompts/SD13-r2.json",
+      "prompts/SD13.json"
+    ],
+    "reviewNotes": "모달을높여수리/판매/기록3행모두표시,번호/내구도/스크림확인.",
+    "entry": "미착용 상세에서 관리 버튼",
+    "behavior": "수리하기 → RP02; 판매하기 → 기존 판매 흐름; 신발 기록 → SD15/16/17; 닫기 → SD01",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD14",
+    "title": "신발 관리 · 착용 중",
+    "file": "images/SD14.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "790c9302747acb085ab5fc3468cde26f08c3b85ac2f6ed935930fc3cdc712182",
+    "finalPrompt": "prompts/SD14-r2.json",
+    "promptHistory": [
+      "prompts/SD14-r2.json",
+      "prompts/SD14.json"
+    ],
+    "reviewNotes": "관리3행과착용중판매비활성사유확인. 공통구현은SD13아이콘없는행으로통일.",
+    "entry": "착용 상세에서 관리 버튼",
+    "behavior": "수리하기 → RP02; 신발 기록 → SD15/16/17; 판매는 사유와 함께 비활성; 닫기 → SD02",
+    "kind": "하단 모달",
+    "guard": "아이콘은 SD13처럼 없는 행으로 통일. 상태 외 배치 유지"
+  },
+  {
+    "id": "SD15",
+    "title": "신발 기록 · 체인 등록 없음",
+    "file": "images/SD15.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "c483893579f4e5bbd9f98b59839ef8de6e47d29bbc820f3a8185e4adbd1cccae",
+    "finalPrompt": "prompts/SD15.json",
+    "promptHistory": [
+      "prompts/SD15.json"
+    ],
+    "reviewNotes": "조회정보5행,체인등록없음,No0007유지,닫기.",
+    "entry": "ChainMark.None",
+    "behavior": "닫기 → 상세; 기록은 읽기 전용",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD16",
+    "title": "신발 기록 · 토큰",
+    "file": "images/SD16.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "786379f9925a52c36da7a3387acd43cf3b804fdb7cb600fb599875e78a8c3395",
+    "finalPrompt": "prompts/SD16.json",
+    "promptHistory": [
+      "prompts/SD16.json"
+    ],
+    "reviewNotes": "Token#142와민트No0007별도,다른정보동일.",
+    "entry": "실제 chainId가 Token 구간",
+    "behavior": "닫기 → 상세; 민트번호와 체인 식별자 분리",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD17",
+    "title": "신발 기록 · Vault",
+    "file": "images/SD17.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "dd86721cf7bd31adb54b7b99ef426d99121d3c2a09cc2d16424ad65b7372084b",
+    "finalPrompt": "prompts/SD17.json",
+    "promptHistory": [
+      "prompts/SD17.json"
+    ],
+    "reviewNotes": "Vault#1000007온전히표시,No0007와분리.",
+    "entry": "실제 chainId가 Vault 구간",
+    "behavior": "닫기 → 상세",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "SD18",
+    "title": "상세로 돌아온 강화 처리 중",
+    "file": "images/SD18.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "136936edf8b35b0d9ba5bb51aeea7365c5e5a63013521bc697ea4f95f21ba8b4",
+    "finalPrompt": "prompts/SD18.json",
+    "promptHistory": [
+      "prompts/SD18.json"
+    ],
+    "reviewNotes": "강화결과미확정배너,마지막값표시,변경비활성/결과조회.",
+    "entry": "대상 신발에 미확정 강화 작업 있음",
+    "behavior": "결과 확인 → UP15/기존 operation 조회; 해당 작업 확정 전 대상 관련 변경 차단",
+    "kind": "상세 화면 상태",
+    "guard": "미확정 작업의 같은 요청 조회. 새 강화 실행 금지"
+  },
+  {
+    "id": "SD19",
+    "title": "상세로 돌아온 수리 처리 중",
+    "file": "images/SD19.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "ae6be1c69e5ad4c7f4cd9dbcc19da80b5fc757c1f2d00df00696be5d1404d59f",
+    "finalPrompt": "prompts/SD19-r2.json",
+    "promptHistory": [
+      "prompts/SD19-r2.json",
+      "prompts/SD19.json"
+    ],
+    "reviewNotes": "수리결과배너위치통일,68/100마지막값,네독립행과수정행동비활성.",
+    "entry": "수리 전송 후 결과 미확인",
+    "behavior": "결과 확인 → RP08; 읽기 조회만, 중복 수리·대상 상태 변경 차단",
+    "kind": "상세 화면 상태",
+    "guard": "마지막 확인 값임을 표시. 같은 수리의 결과 조회"
+  },
+  {
+    "id": "RP01",
+    "title": "수리 · 확인",
+    "file": "images/RP01.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "ad5a11fb36b25d76013ad578e5bb61a2de32d2a4aed222011e23f85828e2e525",
+    "finalPrompt": "prompts/RP01.json",
+    "promptHistory": [
+      "prompts/RP01.json"
+    ],
+    "reviewNotes": "수리모달,배경스크림,대상0007,68→100,50SUP/83.07/33.07,하나의명시적수리버튼 확인. 실제RareLv5공식과예시금액일치.",
+    "entry": "RP02에서 대상·최신 내구도·비용·잔액 확인 완료",
+    "behavior": "비용 확인 후 수리하기 → RP03; 닫기 → 상세. 모달을 여는 것만으로 실행하지 않음",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "RP02",
+    "title": "수리 · 비용 불러오는 중",
+    "file": "images/RP02.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "d36d2ff0c0315683b496a68a36c34d30c736716e187be819aa8e979e5bc0aaf8",
+    "finalPrompt": "prompts/RP02.json",
+    "promptHistory": [
+      "prompts/RP02.json"
+    ],
+    "reviewNotes": "견적/잔액—와비활성버튼,알고있는회복량만표시.",
+    "entry": "비용 또는 잔액 로딩",
+    "behavior": "조회 완료 → RP01/05/06/09/11; 조회 실패 → RP07; 닫기 → 상세. 요청은 조회뿐",
+    "kind": "하단 모달",
+    "guard": "실제 소유 ID와 서버 상태 기준. 닫기/뒤로는 진입 화면으로 복귀"
+  },
+  {
+    "id": "RP03",
+    "title": "수리 요청 중",
+    "file": "images/RP03.png",
+    "revision": 3,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "12dd746cfe2d4445463e1e5abc93f6354e8ced14f10e6eba713267317fd2d893",
+    "finalPrompt": "prompts/RP03-r3.json",
+    "promptHistory": [
+      "prompts/RP03-r2.json",
+      "prompts/RP03-r3.json",
+      "prompts/RP03.json"
+    ],
+    "reviewNotes": "이전잔액83.07/비용50/예상잔액33.07로시점명확화,오탈자수정확인.",
+    "entry": "수리 RPC 전송 후 대기",
+    "behavior": "확정 성공+최신값 동기화 → RP04; 결과 불명 → RP08; 나중에 확인/닫기/뒤로 → SD19. 서버 작업 취소를 의미하지 않음",
+    "kind": "하단 모달",
+    "guard": "이전 잔액과 예상 잔액은 완료 금액이 아님"
+  },
+  {
+    "id": "RP04",
+    "title": "수리 완료",
+    "file": "images/RP04.png",
+    "revision": 2,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "621770ebe3aa6022b6cb0cab7af28b697931d9d7eb9d00fef9c093e06552d2fa",
+    "finalPrompt": "prompts/RP04-r2.json",
+    "promptHistory": [
+      "prompts/RP04-r2.json",
+      "prompts/RP04.json"
+    ],
+    "reviewNotes": "중복신발그림제거,대상번호복원,100/100,사용50/잔액33.07와완료확인.",
+    "entry": "성공 응답과 내구도100 및 잔액 동기화 확인",
+    "behavior": "완료 → 상세 최신100; 성공 안내 1회",
+    "kind": "하단 모달",
+    "guard": "완료 후 배경 상세도 최신값. 이미지 여백 때문에 기존 본문을 삭제하지 않음"
+  },
+  {
+    "id": "RP05",
+    "title": "수리 불필요 · 내구도 최대",
+    "file": "images/RP05.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "1b4f5adc143f1aa8180b0146fd23b6d6ca636fac4613303eb8b265927f15b229",
+    "finalPrompt": "prompts/RP05.json",
+    "promptHistory": [
+      "prompts/RP05.json"
+    ],
+    "reviewNotes": "이미100과수리불필요,차감버튼없고닫기만.",
+    "entry": "조회된 내구도100",
+    "behavior": "닫기 → 상세; 수리 요청 없음",
+    "kind": "하단 모달",
+    "guard": "100이면 청구 없음"
+  },
+  {
+    "id": "RP06",
+    "title": "수리 · 잔액 부족",
+    "file": "images/RP06.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "6aa99c9515f35979b304e48f9d04d23049936a830542efaed444a0670b255418",
+    "finalPrompt": "prompts/RP06.json",
+    "promptHistory": [
+      "prompts/RP06.json"
+    ],
+    "reviewNotes": "50비용과20잔액→부족30수치일치,실행비활성,닫기.",
+    "entry": "실제 잔액20, 견적50",
+    "behavior": "닫기 → 상세; 부족금액max(cost-balance,0); 수리 금지",
+    "kind": "하단 모달",
+    "guard": "예시20/50/30은 실제 잔액·견적으로 대체"
+  },
+  {
+    "id": "RP07",
+    "title": "수리 · 사전 조회 오류",
+    "file": "images/RP07.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "8c71b4f1eafcbb4233b39c876b4ac3cbe52c81ee48240ef66e96e6def3531fee",
+    "finalPrompt": "prompts/RP07.json",
+    "promptHistory": [
+      "prompts/RP07.json"
+    ],
+    "reviewNotes": "수리전조회오류와수리RPC아닌재조회,기존내구도만유지.",
+    "entry": "수리 요청 전 견적/잔액 조회 실패",
+    "behavior": "다시 불러오기 → RP02; 실제 수리 RPC 호출 금지",
+    "kind": "하단 모달",
+    "guard": "전송 전 조회 오류. 버튼은 수리 재실행이 아님"
+  },
+  {
+    "id": "RP08",
+    "title": "수리 결과 미확인",
+    "file": "images/RP08.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "c2070da640e578e10bc3ad69cf5daecbb666e6486bf1394f51ab39872de8db6a",
+    "finalPrompt": "prompts/RP08.json",
+    "promptHistory": [
+      "prompts/RP08.json"
+    ],
+    "reviewNotes": "결과불명확안내,차감/실패단정없고읽기확인/나중에만.",
+    "entry": "수리 전송 후 연결 끊김·응답 불명확",
+    "behavior": "결과 확인 → 보유 신발/잔액/가능한 작업기록 읽기; 나중에 → SD19",
+    "kind": "하단 모달",
+    "guard": "작업 결과를 구분할 서버 계약이 필요. 조회만으로 확정 불가하면 계속 미확인"
+  },
+  {
+    "id": "RP09",
+    "title": "수리할 수 없는 신발",
+    "file": "images/RP09.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "fd7fa685fd2c64d57b919717989dd4d964858f2dfccbb0d8a48073e5a45e01e7",
+    "finalPrompt": "prompts/RP09.json",
+    "promptHistory": [
+      "prompts/RP09.json"
+    ],
+    "reviewNotes": "거래중확정불가사유,수리실행없음,닫기.",
+    "entry": "소유/지원/거래 상태의 확정 불가 사유",
+    "behavior": "확인된 실제 불가 사유 표시; 닫기 → 상세 재조회. 네트워크 오류만으로 거래 중이라고 표시하지 않음. upgradable만으로 수리 가능 여부를 결정하지 않음",
+    "kind": "하단 모달",
+    "guard": "사전 거절만 표시. 전송 후 결과 불명은 RP08"
+  },
+  {
+    "id": "RP10",
+    "title": "수리 · 최신 비용 재확인",
+    "file": "images/RP10.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "468f2641eddba4ebdb3897e69f0da749b322fb915fad45a4657e9b113f075b49",
+    "finalPrompt": "prompts/RP10.json",
+    "promptHistory": [
+      "prompts/RP10.json"
+    ],
+    "reviewNotes": "92→100,비용12.5/잔액70.57수치일치,상태변경안내,명시적재확인.",
+    "entry": "확인 중 레벨/내구도/단가 변경 감지",
+    "behavior": "새 견적 보여주기; 명시적 재확인 후 전송; 서버 동시성 계약은 별도 구현 필요",
+    "kind": "하단 모달",
+    "guard": "새 가격에 명시적 재확인 필요. 기존 p_id RPC만으로 가격 고정을 보장할 수 없음"
+  },
+  {
+    "id": "RP11",
+    "title": "수리 · 로그인 필요",
+    "file": "images/RP11.png",
+    "revision": 1,
+    "size": [
+      853,
+      1844
+    ],
+    "sha256": "23046e2690a45ac35f2ba5fed6533eef022abfb29ccd6cfd75520cfe84f608bc",
+    "finalPrompt": "prompts/RP11.json",
+    "promptHistory": [
+      "prompts/RP11.json"
+    ],
+    "reviewNotes": "로그인필요/수동로그인과닫기,금액표시나자동수리없음.",
+    "entry": "SIGN_IN 또는 세션 만료",
+    "behavior": "로그인 → 같은 ID 재조회 RP02; 자동 수리 없음",
+    "kind": "하단 모달",
+    "guard": "로그인 뒤 최신 견적부터 재조회. 자동 수리 없음"
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인 및 표시 값 수동 계산 대조",
+  "screens": [
+    {
+      "id": "ONB22",
+      "revision": 1,
+      "result": "passed",
+      "notes": "목표58kg·12주 선택, 변화−2.0kg·주당0.2kg·BMI21.3 계산 일치. 목표 조절과 기간 버튼·다음·건너뛰기 모두 확인."
+    },
+    {
+      "id": "ONB23",
+      "revision": 1,
+      "result": "passed",
+      "notes": "라이트 단일 선택과 하단 현재 선택 일치. 2개 카드 설명·같은 SUP 규칙·계속·건너뛰기 유지. 실제 홈 연결은 코드상 미완료 항목."
+    },
+    {
+      "id": "ONB24",
+      "revision": 1,
+      "result": "passed",
+      "notes": "목표49kg·8주·변화−11.0kg·주당1.4kg·BMI18.0 일치. 기존 주의 문구가 버튼을 가리지 않으며 다음/건너뛰기 유지."
+    },
+    {
+      "id": "ONB25",
+      "revision": 1,
+      "result": "passed",
+      "notes": "라이트 선택 해제, 러너 모드 라디오/카드와 현재 선택문구 일치. 추가 메뉴 버튼 없이 동일 폼 유지."
+    }
+  ],
+  "runtimeVerified": false
+}

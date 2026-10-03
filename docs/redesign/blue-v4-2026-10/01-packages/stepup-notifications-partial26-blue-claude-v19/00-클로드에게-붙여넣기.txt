@@ -1,0 +1,1 @@
+이 폴더의 Claude-알림공지-파란톤-지시서.md와 화면별동작.md를 읽고 NOT01~26 PNG를 기존 Android 앱에 적용해. NOT27~46은 미제작이며 기존 기능을 보존해. showsAmount/serverEconomyOn 조건을 목록과 시트에 동일하게 적용하고, 정적 검수와 실행 검증을 구분해.

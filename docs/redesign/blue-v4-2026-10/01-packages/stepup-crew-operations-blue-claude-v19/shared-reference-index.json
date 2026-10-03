@@ -1,0 +1,47 @@
+[
+  {
+    "id": "CP01",
+    "png": "02-shared-reference/CP01.png",
+    "reused": true
+  },
+  {
+    "id": "CP03",
+    "png": "02-shared-reference/CP03.png",
+    "reused": true
+  },
+  {
+    "id": "CP10",
+    "png": "02-shared-reference/CP10.png",
+    "reused": true
+  },
+  {
+    "id": "CP12",
+    "png": "02-shared-reference/CP12.png",
+    "reused": true
+  },
+  {
+    "id": "CP13",
+    "png": "02-shared-reference/CP13.png",
+    "reused": true
+  },
+  {
+    "id": "CP21",
+    "png": "02-shared-reference/CP21.png",
+    "reused": true
+  },
+  {
+    "id": "CP32",
+    "png": "02-shared-reference/CP32.png",
+    "reused": true
+  },
+  {
+    "id": "CP82",
+    "png": "02-shared-reference/CP82.png",
+    "reused": true
+  },
+  {
+    "id": "CP94",
+    "png": "02-shared-reference/CP94.png",
+    "reused": true
+  }
+]

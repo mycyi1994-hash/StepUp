@@ -1,0 +1,56 @@
+{
+  "purpose": "시안 검수용 예시. 실제 앱 값으로 하드코딩하지 않는다.",
+  "asOf": "2026-10-03T09:41:00+09:00",
+  "zone": "Asia/Seoul",
+  "eligibleWindow": {
+    "first": "2026-09-30",
+    "last": "2026-10-03",
+    "inclusive": true,
+    "notHours": 72
+  },
+  "attached": {
+    "completedDay": "2026-09-30",
+    "distanceMeters": 2100,
+    "durationSeconds": 1008,
+    "paceSecondsPerKm": 480,
+    "body": "9월 30일 여의도에서 2.10km 달렸어요.",
+    "publicPlace": "여의도 한강공원",
+    "viewerPlaceDistanceMeters": 2600
+  },
+  "expiredDraft": {
+    "completedDay": "2026-09-29",
+    "distanceMeters": 2100,
+    "durationSeconds": 1008,
+    "newAttachmentAllowed": false
+  },
+  "picker": [
+    {
+      "completedDay": "2026-10-03",
+      "distanceMeters": 3240,
+      "durationSeconds": 1458,
+      "hasRoute": true
+    },
+    {
+      "completedDay": "2026-10-02",
+      "distanceMeters": 5020,
+      "durationSeconds": 2108,
+      "hasRoute": true
+    },
+    {
+      "completedDay": "2026-09-30",
+      "distanceMeters": 2100,
+      "durationSeconds": 1008,
+      "hasRoute": true
+    }
+  ],
+  "dayEmpty": "2026-10-01",
+  "gpslessVariant": {
+    "separateScenario": true,
+    "completedDay": "2026-10-03",
+    "distanceMeters": 3240,
+    "durationSeconds": 1458,
+    "hasRoute": false
+  },
+  "mapLimitation": "이미지생성 지도는 배치 예시다. 화면마다 선의 모양을 데이터로 옮기지 말고 같은 기록 ID의 실제 공유 경로를 재사용한다.",
+  "wrapLimitation": "시안의 줄바꿈은 화면 폭에 따른 자동 줄바꿈이다. 예시 본문 첫 문장 중간에 강제 개행을 넣어 제목이 잘리지 않게 한다."
+}

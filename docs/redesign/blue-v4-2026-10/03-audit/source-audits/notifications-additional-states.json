@@ -1,0 +1,191 @@
+{
+  "scope": "NOT24~46 추가 23상태 중 NOT24~26은 정적 검수 완료, NOT27~46 20개는 미제작.",
+  "runtimeVerified": false,
+  "items": [
+    {
+      "id": "NOT24",
+      "title": "일반 알림 내용",
+      "source": "NotificationSheets.kt GeneralSheet",
+      "status": "reviewed",
+      "requirement": "저장된 내용·시각과 확인만. 없는 목적지 생성 금지."
+    },
+    {
+      "id": "NOT25",
+      "title": "금액 없는 기록 알림",
+      "source": "NotificationSheets.kt RewardSheet showsAmount=false",
+      "status": "reviewed",
+      "requirement": "기록 알림과 지갑 보기. 금액·적립 완료 문구를 임의 추가하지 않음."
+    },
+    {
+      "id": "NOT26",
+      "title": "크루 가입 완료",
+      "source": "NotificationSheets.kt InviteStep.Joined",
+      "status": "reviewed",
+      "requirement": "서버 가입 완료와 신청 대기를 구분. 크루 보기."
+    },
+    {
+      "id": "NOT27",
+      "title": "이미 응답한 크루 초대",
+      "source": "NotificationSheets.kt InviteStep.Answered",
+      "status": "pending",
+      "requirement": "현재 가입 상태 불명인 응답 이력. 재수락 대신 크루 보기."
+    },
+    {
+      "id": "NOT28",
+      "title": "크루 초대 처리 중",
+      "source": "NotificationSheets.kt InviteStep.Busy",
+      "status": "pending",
+      "requirement": "확인 중, 수락/거절 비활성. 서버 응답 전 성공 표현 금지."
+    },
+    {
+      "id": "NOT29",
+      "title": "크루 초대 응답 미확인",
+      "source": "NotificationSheets.kt InviteStep.Unknown",
+      "status": "pending",
+      "requirement": "가입 상태 확인/닫기. 수락 재전송 금지."
+    },
+    {
+      "id": "NOT30",
+      "title": "가입 상태 재확인 실패",
+      "source": "NotificationSheets.kt InviteStep.StillUnknown",
+      "status": "pending",
+      "requirement": "아직 모름을 알리고 상태 확인만 재시도."
+    },
+    {
+      "id": "NOT31",
+      "title": "초대 거절 처리 중",
+      "source": "NotificationSheets.kt InviteStep.Declining",
+      "status": "pending",
+      "requirement": "시트 겹침 없음. 취소/거절 비활성·닫기 제한."
+    },
+    {
+      "id": "NOT32",
+      "title": "초대 거절 실패",
+      "source": "NotificationSheets.kt InviteStep.DeclineFailed",
+      "status": "pending",
+      "requirement": "초대 보존, 취소/다시 거절. 크루/파티 문구는 매개변수."
+    },
+    {
+      "id": "NOT33",
+      "title": "함께 뛰기 수락 표시 완료",
+      "source": "NotificationSheets.kt InviteStep.Marked",
+      "status": "pending",
+      "requirement": "로컬 수락 표시와 실제 참가 별개. 대기실 보기."
+    },
+    {
+      "id": "NOT34",
+      "title": "함께 뛰기 수락 표시 실패",
+      "source": "NotificationSheets.kt InviteStep.MarkFailed",
+      "status": "pending",
+      "requirement": "기존 초대 유지, 수락하고 보기 재시도."
+    },
+    {
+      "id": "NOT35",
+      "title": "대기실 정보 없는 초대",
+      "source": "NotificationSheets.kt lobby==null",
+      "status": "pending",
+      "requirement": "없는 대기실 링크 생성 금지. 거절/닫기만."
+    },
+    {
+      "id": "NOT36",
+      "title": "공지 상세 조회 중",
+      "source": "NoticeDetailScreen.kt NoticeDetail.Loading",
+      "status": "pending",
+      "requirement": "목록 스켈레톤과 다른 제목·날짜·본문 자리."
+    },
+    {
+      "id": "NOT37",
+      "title": "공지 상세 조회 실패",
+      "source": "NoticeDetailScreen.kt NoticeDetail.Failed",
+      "status": "pending",
+      "requirement": "사본 없는 통신 실패. 다시 불러오기."
+    },
+    {
+      "id": "NOT38",
+      "title": "저장된 공지 상세",
+      "source": "NoticeDetailScreen.kt Ready(saved=true)",
+      "status": "pending",
+      "requirement": "본문/동작 유지하고 최신 내용 확인 실패 안내."
+    },
+    {
+      "id": "NOT39",
+      "title": "모두 읽음 저장 중",
+      "source": "NotificationsScreen.kt GroupHeader readingAll=true",
+      "status": "pending",
+      "requirement": "새 알림과 행 유지, 모두읽음 비활성. 결과 확정 전 성공 토스트 금지."
+    },
+    {
+      "id": "NOT40",
+      "title": "개별 읽음 저장 실패",
+      "source": "NotificationsViewModel.kt markRead catch",
+      "status": "pending",
+      "requirement": "내용 시트는 유지하고 개별 읽음 저장 실패 안내. 보상/응답 상태와 별개."
+    },
+    {
+      "id": "NOT41",
+      "title": "답글 확인 연결 실패",
+      "source": "NotificationsViewModel.kt CommentCheck.Offline",
+      "status": "pending",
+      "requirement": "목록 유지·읽음 처리 안 함, 재탭 안내 토스트."
+    },
+    {
+      "id": "NOT42",
+      "title": "답글 열기 로그인 필요",
+      "source": "NotificationsViewModel.kt CommentCheck.SignIn",
+      "status": "pending",
+      "requirement": "목록의 안내 토스트, 초대 로그인 시트와 구분."
+    },
+    {
+      "id": "NOT43",
+      "title": "초대 거절 완료",
+      "source": "NotificationsViewModel.kt decline success",
+      "status": "pending",
+      "requirement": "해당 초대만 삭제 후 토스트. 다른 알림 유지."
+    },
+    {
+      "id": "NOT44",
+      "title": "저장된 빈 공지 목록·갱신 실패",
+      "source": "NotificationsScreen.kt NoticePane items.empty and refreshFailed",
+      "status": "pending",
+      "requirement": "빈 사본과 갱신 오류 함께 표시. 최신 서버 빈 목록으로 단정 금지."
+    },
+    {
+      "id": "NOT45",
+      "title": "이동 버튼 없는 공지 상세",
+      "source": "NoticeDetailScreen.kt notice.action==null",
+      "status": "pending",
+      "requirement": "본문만 표시, 임의 CTA 생성 금지."
+    },
+    {
+      "id": "NOT46",
+      "title": "함께 뛰기 수락 표시 중",
+      "source": "NotificationSheets.kt PartyInviteSheet Busy",
+      "status": "pending",
+      "requirement": "로컬 저장 중 두 응답 버튼 비활성. 대기실 이동은 성공 이후."
+    }
+  ],
+  "sharedVariants": [
+    {
+      "base": "NOT21/NOT31/NOT32",
+      "variant": "함께 뛰기 초대 거절",
+      "rule": "크루명 대신 보낸이, 초대 알림 삭제·대기실 불변 설명. 중복 가입/참가 변경 금지."
+    },
+    {
+      "base": "NOT26/NOT27/NOT33",
+      "variant": "대상 ID 누락",
+      "rule": "대상 보기 대신 확인으로 닫기. 없는 대상 만들어 연결 금지."
+    },
+    {
+      "base": "NOT23/NOT44",
+      "variant": "갱신 재시도 중",
+      "rule": "저장된 목록 유지, 다시 버튼만 잠금."
+    }
+  ],
+  "validationRemaining": [
+    "큰 글씨/작은 화면/긴 크루명·여러 언어",
+    "개별/모두 읽음 연타와 새 알림 경쟁",
+    "로그인 복귀·취소·알림 삭제 후 복귀",
+    "시트 포커스/스크린리더/뒤로 복귀",
+    "실제 서버 초대 상태·공지 공개 상태·OS 알림 권한 별개"
+  ]
+}

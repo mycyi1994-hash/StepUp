@@ -1,0 +1,93 @@
+[
+  {
+    "id": "CR03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-4d7ea8a2-57ef-405f-ba73-1d3f17b5dd3c.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "미개설 대기실과크루명/상징,다음러닝정보,대기실열기/크루변경 확인."
+    }
+  },
+  {
+    "id": "CR05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-76f66bb3-3660-4133-ab68-0f239f5b4f94.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "크루원준비완료28/30,진행자구분,고정내상태·위치공유꺼짐 및대기/취소 확인."
+    }
+  },
+  {
+    "id": "CR08",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-f1375c1a-85bf-4c7f-8d40-36018a5aa402.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "27명 동시출발 카운트다운.시작전기록선제거·현재위치만표시,임의건너뛰기없음 확인."
+    }
+  },
+  {
+    "id": "CR09",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-0520fe8b-5b36-48e2-879f-259592580817.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "크루명,내12:30/1.56km/8분01초,27명목록진입,구분된지도마커,개인정지/종료 확인."
+    }
+  },
+  {
+    "id": "CR14",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b728e175-fbd7-4498-82b1-42d132a4e3c6.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "가입크루없음,찾기/만들기/자유러닝 진입 확인."
+    }
+  },
+  {
+    "id": "CR15",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a9acab07-69b3-4e4f-9f3b-cad7d6d0abec.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "1/30명·준비1명,진행자본인,러닝정보와혼자출발/알리기,위치공유꺼짐 확인."
+    }
+  },
+  {
+    "id": "CR16",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2bf2eef6-f90c-4744-970f-031e3bca85bb.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "역할과 상태",
+        "인원 및 동작",
+        "시각 스타일"
+      ],
+      "notes": "이미출발19:30·27명과합류불가안내,새대기실/자유러닝 선택 확인."
+    }
+  }
+]

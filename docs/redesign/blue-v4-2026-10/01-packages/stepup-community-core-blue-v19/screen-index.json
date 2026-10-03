@@ -1,0 +1,647 @@
+[
+  {
+    "id": "CM01",
+    "title": "확정 목록",
+    "png": "01-screens/CM01.png",
+    "revision": 2,
+    "sha256": "62be08c4aefc6242d92a7c0dca381b42e34b178fc0394644c088ddbc8c861658",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "선택 지역과 목록 조회 성공",
+    "behavior": "범위 변경→CM02; 지도→CM05; 글→CM08; 장소 썸네일→CM06; 글쓰기→CM12 또는 초안이 있으면 CM21.",
+    "legacyId": "01-feed",
+    "review": "Chosen compact region/map + three text-led rows preserved. Three community tabs, five bottom nav with filled Community selection, no SUP. Latest sort is label only. Full titles and CTA visible."
+  },
+  {
+    "id": "CM02",
+    "title": "범위 변경",
+    "png": "01-screens/CM02.png",
+    "revision": 2,
+    "sha256": "17515806b6340e19036303622b14bea7fa9d0cc4e2fda40cc6d91912b46f5889",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "목록에서 범위 변경",
+    "behavior": "반경 임시 선택; 적용하면 해당 목록 재조회; 지역 변경→CM03; 닫으면 기존 범위 유지.",
+    "legacyId": "02-radius",
+    "review": "Strong uniform scrim, clear opaque radius sheet; 3km selected and one confirm CTA. No SUP."
+  },
+  {
+    "id": "CM03",
+    "title": "지역 검색",
+    "png": "01-screens/CM03.png",
+    "revision": 1,
+    "sha256": "f8ea6debc70bc64ca882af3eff7189a260a3c278cb6bc9a7a90b358d7a947c1e",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "지역 변경 또는 지역 직접 선택",
+    "behavior": "결과 선택→CM43; 내 위치로 찾기는 권한 상태에 따라 CM30/31/32; 검색 결과 없음→CM04.",
+    "legacyId": "03-region-search",
+    "review": "Region search with direct result rows and current location control. Native subpage with no bottom tabs."
+  },
+  {
+    "id": "CM04",
+    "title": "지역 검색 결과 없음",
+    "png": "01-screens/CM04.png",
+    "revision": 1,
+    "sha256": "021dd8a0cf434553afcb928e65712fe9180c7c2c921e56f7f92ea127c10bfd98",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "지역 검색 성공 결과 0개",
+    "behavior": "검색어 변경→CM03. 이전 선택 지역은 유지하고 가짜 결과를 넣지 않음.",
+    "legacyId": "04-region-empty",
+    "review": "Empty region search keeps query and retry path, no invented search results."
+  },
+  {
+    "id": "CM05",
+    "title": "주변 지도",
+    "png": "01-screens/CM05.png",
+    "revision": 1,
+    "sha256": "9e7b7e662efa810f577dbdecdb9c7b6cb53ada557474c12a119459e6c4c3d5e4",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "작은 지도 또는 지도 보기",
+    "behavior": "핀→CM06; 글→CM08; 내 위치 버튼은 실제 권한 확인; 뒤로는 진입 화면과 필터 복원.",
+    "legacyId": "05-map",
+    "review": "Compact map and full text-led list preserved; no redundant view-posts action, no SUP or bottom tabs. Implement map height <=196dp at390dp width; system insets native."
+  },
+  {
+    "id": "CM06",
+    "title": "지도에서 장소 선택",
+    "png": "01-screens/CM06.png",
+    "revision": 1,
+    "sha256": "f56a51a4ab8964c48c0a16441466e034b17d8f73b27af2bb79879b60436be120",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "핀 또는 글의 공개 장소 선택",
+    "behavior": "같은 목록을 해당 장소로 필터; 글→CM08; 전체 장소→CM05; 뒤로는 실제 진입 화면.",
+    "legacyId": "06-map-place",
+    "review": "Compact map and full text-led list preserved; no redundant view-posts action, no SUP or bottom tabs. Implement map height <=196dp at390dp width; system insets native."
+  },
+  {
+    "id": "CM08",
+    "title": "글 상세",
+    "png": "01-screens/CM08.png",
+    "revision": 1,
+    "sha256": "82cf6b7a4b7dd11c3f442c32b5a4b90b58a89332facbbea3f1ad42a9acfb9362",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "다른 사람의 글 조회 성공",
+    "behavior": "댓글 입력→CM09; 더보기→CM26; 장소→CM06; 좋아요 실패→CM39; 뒤로 목록 상태 복원.",
+    "legacyId": "08-post",
+    "review": "Post, selected public place and three comments fit; inactive empty registration clear. No SUP/tab chrome."
+  },
+  {
+    "id": "CM09",
+    "title": "댓글 입력",
+    "png": "01-screens/CM09.png",
+    "revision": 1,
+    "sha256": "b1676176180f2b3228f3c32f5460623c97f1896a4320e0be32c0ba74ea7c7543",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "댓글 입력창에 포커스",
+    "behavior": "OS 키보드 사용; 등록 중 중복 방지; 성공→CM10; 실패→CM11; 입력 내용은 보존.",
+    "legacyId": "09-comment-entry",
+    "review": "Focused input above Korean keyboard; typed content and active registration readable. Keyboard represents native IME."
+  },
+  {
+    "id": "CM10",
+    "title": "댓글 등록 완료",
+    "png": "01-screens/CM10.png",
+    "revision": 1,
+    "sha256": "436876fa86ea4afc15162145c9e9cc552dc5b39e06d9534e713f34b5890fa998",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "댓글 서버 등록 성공",
+    "behavior": "실제 댓글과 개수 갱신, 입력창 초기화. 등록을 다시 누른 것으로 처리하지 않음.",
+    "legacyId": "10-comment-posted",
+    "review": "Successful comment increments both counts4, shows own posted comment, clears composer; all visible rows fit."
+  },
+  {
+    "id": "CM11",
+    "title": "댓글 등록 실패",
+    "png": "01-screens/CM11.png",
+    "revision": 1,
+    "sha256": "121aa5940db882b3614a7e84d7dc8c63205c367cc8f28d58c9f4a7ff5cc5983f",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "댓글 등록 실패",
+    "behavior": "입력과 개수 보존; 재시도 성공→CM10; 입력 수정 가능, 오류가 입력창을 가리지 않음.",
+    "legacyId": "11-comment-error",
+    "review": "Failed comment retains typed content/count3 and offers retry above native keyboard. Error is text as well as color."
+  },
+  {
+    "id": "CM12",
+    "title": "글쓰기 시작",
+    "png": "01-screens/CM12.png",
+    "revision": 1,
+    "sha256": "a3230300a709d60db21ec98bcb95574099020ae4554b9c0171e5134c3a964837",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "새 글쓰기, 아직 필수 입력 없음",
+    "behavior": "코스→후속 WRITE09; 장소→CM14/후속 WRITE10; 문구·본문 입력 가능. 장소와 본문/기록이 갖춰져야 게시 활성화.",
+    "legacyId": "12-compose-empty",
+    "review": "Easy compose with optional recent route, direct place shortcuts, editable phrase starters; empty state correctly disables publish."
+  },
+  {
+    "id": "CM13",
+    "title": "내용과 장소 입력",
+    "png": "01-screens/CM13.png",
+    "revision": 2,
+    "sha256": "a1970277be3e4ffe0ec57b3b5301d299b0bcd2ef8c4b60e72208c2776d5aca36",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "공개 장소와 본문을 입력한 일반 글",
+    "behavior": "올리기→CM17; 장소 변경→CM14; 코스는 선택사항; 뒤로→CM20. 시안 예시에는 첨부 기록이 없음.",
+    "legacyId": "13-compose-filled",
+    "review": "Shares exact empty composer components; public place and body entered, optional route empty; publish enabled. Removed invented character counter."
+  },
+  {
+    "id": "CM14",
+    "title": "장소 검색",
+    "png": "01-screens/CM14.png",
+    "revision": 1,
+    "sha256": "c4123e8d70d5a5ea27dfe665e29624044fe468ac085d4cac1f10a1f4fc571bfc",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "장소 검색 또는 선택 진입",
+    "behavior": "검색 결과 한 번 선택→작성 화면, 내용 유지; 지도 직접 선택만 CM15; 결과 없음→CM16. 매번 확인 화면을 열지 않음.",
+    "legacyId": "14-place-search",
+    "review": "Place search has readable result metadata, shortcuts and direct selection; no writer location exposure."
+  },
+  {
+    "id": "CM15",
+    "title": "장소 확인",
+    "png": "01-screens/CM15.png",
+    "revision": 1,
+    "sha256": "803920683db3531fdbb4f46579c25b20cf9e13c1cd3b141b041617d91f2c47db",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "지도에서 공개 장소 직접 지정",
+    "behavior": "선택한 장소 확정→작성 화면; 뒤로는 장소 선택, 본문 보존. 장소 검색 결과의 필수 중간 화면이 아님.",
+    "legacyId": "15-place-confirm",
+    "review": "Public place confirm with single selected pin and one CTA; illustrative map labelled; actual map required."
+  },
+  {
+    "id": "CM16",
+    "title": "장소 검색 결과 없음",
+    "png": "01-screens/CM16.png",
+    "revision": 1,
+    "sha256": "fb93f54b11b8ab792a186bff105652373dd629ee3d7a90a7fa6fc57b77edb494",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "장소 검색 성공 결과 0개",
+    "behavior": "검색어 수정→CM14; 지도 선택→CM15; 취소해도 작성 내용과 이전 장소 유지.",
+    "legacyId": "16-place-empty",
+    "review": "Place search empty preserves search and shortcuts; no fictional results."
+  },
+  {
+    "id": "CM17",
+    "title": "글 올리는 중",
+    "png": "01-screens/CM17.png",
+    "revision": 1,
+    "sha256": "dac14d43e74fee8e08ac9b92923ef32b28b94a1c78a880d30bcaef08252421f3",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "게시 요청 중",
+    "behavior": "내용·장소·첨부 유지, 중복 게시 차단; 서버 성공→CM18; 확정 실패→CM19; 결과 불명은 같은 요청 조회.",
+    "legacyId": "17-posting",
+    "review": "In-flight publish keeps selected place and body; disabled spinner CTA, no success assertion. Actual native controls locked in implementation."
+  },
+  {
+    "id": "CM18",
+    "title": "글 게시 완료",
+    "png": "01-screens/CM18.png",
+    "revision": 2,
+    "sha256": "e980441853683db5713d319ef57a7b5d79c46f60ab27dd85f90e716eed1fd575",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "서버가 일반 글 게시를 확인",
+    "behavior": "같은 목록 형식의 새 글과 짧은 완료 안내; 내 글→CM44; 실제 지역·필터 기준 개수 갱신.",
+    "legacyId": "18-posted",
+    "review": "Published story at top, exactly three visible rows, original feed heading/layout retained, success text does not cover CTA or nav."
+  },
+  {
+    "id": "CM19",
+    "title": "글 게시 실패",
+    "png": "01-screens/CM19.png",
+    "revision": 2,
+    "sha256": "29b1401a81e40c588e13ab55ee7a3ba18db334c59a50e1d825807b6cf2a84204",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "일반 글 게시 실패",
+    "behavior": "내용과 장소 그대로; 다시 올리기→CM17. 만료 인증이면 기존 인증 복귀 경로 사용, 자동 게시하지 않음.",
+    "legacyId": "19-post-error",
+    "review": "Failed post retains content and place, error is outside editor, retry clear; removed stray logo."
+  },
+  {
+    "id": "CM20",
+    "title": "작성 중 나가기",
+    "png": "01-screens/CM20.png",
+    "revision": 2,
+    "sha256": "9694d531d660a6449d945a358a2e470eeed4e6c8100598866f3f166539f379fe",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "내용 변경 후 작성 화면 이탈",
+    "behavior": "임시저장하고 나가기 / 계속 쓰기 / 버리고 나가기; 계정별 초안 보존, 저장 실패를 완료 처리하지 않음.",
+    "legacyId": "20-leave-compose",
+    "review": "Latest easy composer remains under scrim; leave sheet has save, continue, discard with one primary; no obsolete background."
+  },
+  {
+    "id": "CM21",
+    "title": "임시저장 이어쓰기",
+    "png": "01-screens/CM21.png",
+    "revision": 1,
+    "sha256": "76a897c14831e6d93af8990e01687ed7689eafe47a2d2ce5e3d0552315822200",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "보관된 초안이 있는 상태에서 글쓰기",
+    "behavior": "이어쓰기→보존된 작성 상태; 지우고 새로 쓰기→CM12; 닫으면 초안 보존. 첨부 기간 재검증.",
+    "legacyId": "21-resume-draft",
+    "review": "Draft preview and continue/new actions clearly separated over dimmed mainfeed."
+  },
+  {
+    "id": "CM22",
+    "title": "내 글 메뉴",
+    "png": "01-screens/CM22.png",
+    "revision": 1,
+    "sha256": "dcaeb8e58ab02d2d1b1ec0347d2c43328e7ff9affb8a11752ac18e0a36c22fe2",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "내 글 상세의 더보기",
+    "behavior": "수정→CM23; 삭제→CM24; 닫기→같은 내 글. 다른 사람 글에 이 메뉴를 표시하지 않음.",
+    "legacyId": "22-own-menu",
+    "review": "Own post menu correctly offers edit/delete only over same dimmed ownpost."
+  },
+  {
+    "id": "CM23",
+    "title": "글 수정",
+    "png": "01-screens/CM23.png",
+    "revision": 1,
+    "sha256": "28e6daf5b1a8c2fd763af0affcfe48aac6f904a3ee82550a1e01ef36b797608b",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "내 글 수정",
+    "behavior": "원문·장소·첨부 유지; 성공하면 같은 ID의 CM44 갱신; 실패 시 내용 보존과 재시도; 기존 댓글·반응 유지.",
+    "legacyId": "23-edit",
+    "review": "Editing reuses easy composer with preserved text and place, clear save CTA."
+  },
+  {
+    "id": "CM24",
+    "title": "글 삭제 확인",
+    "png": "01-screens/CM24.png",
+    "revision": 2,
+    "sha256": "47f0366c0512970db065470b745abd25c11c79a876f59cd151c9c3f2d46cdba9",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "내 글 삭제 선택",
+    "behavior": "명시적 삭제 확인 후 요청; 성공하면 목록에서 제거; 실패→CM25; 취소는 글 유지.",
+    "legacyId": "24-delete",
+    "review": "Confirmation over exact ownpost; cancellation separate from single primary delete."
+  },
+  {
+    "id": "CM25",
+    "title": "삭제 실패",
+    "png": "01-screens/CM25.png",
+    "revision": 1,
+    "sha256": "85836bccb224782efaea96efd275ec43a214536df792b5fe03945283dd3120bf",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "글 삭제 확정 실패",
+    "behavior": "원래 글과 목록 유지; 다시 시도하거나 취소; 결과 불확실은 재조회하여 중복 요청을 피함.",
+    "legacyId": "25-delete-error",
+    "review": "Delete failure leaves post visible, explicit retry and cancel; one primary."
+  },
+  {
+    "id": "CM26",
+    "title": "다른 글 메뉴",
+    "png": "01-screens/CM26.png",
+    "revision": 1,
+    "sha256": "6a562bca5dd7944b2d2fc3d775519965742ce30a6835386398731429e759eb5a",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "다른 사람 글의 더보기",
+    "behavior": "이 글 숨기기→CM29; 신고→CM27; 닫기→같은 글. 작성자 차단과 구분.",
+    "legacyId": "26-other-menu",
+    "review": "Other-post menu offers hide-this-post and report, not own-edit/delete or authorblock."
+  },
+  {
+    "id": "CM27",
+    "title": "신고 사유",
+    "png": "01-screens/CM27.png",
+    "revision": 1,
+    "sha256": "749b05557fe48cf4840363de180a517df2aa0a9e235d60901ee07fe79e0fcf8b",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "신고 선택",
+    "behavior": "사유 하나를 선택하고 제출; 접수 성공→CM28; 실패→CM40; 미선택 또는 처리 중 제출 비활성.",
+    "legacyId": "27-report",
+    "review": "Reporting reasons fully visible, selected radio state and one submit CTA; dimmed correct otherpost."
+  },
+  {
+    "id": "CM28",
+    "title": "신고 접수 완료",
+    "png": "01-screens/CM28.png",
+    "revision": 1,
+    "sha256": "607c6d1d7b4091b49adf3c265dd871e1201e07b249f5e7c6874214463bd70212",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "신고 접수 서버 확인",
+    "behavior": "확인으로 시트 닫기; 글 삭제나 제재 완료로 안내하지 않음.",
+    "legacyId": "28-report-success",
+    "review": "Report received acknowledgement only; no claim of enforcement, single close CTA."
+  },
+  {
+    "id": "CM29",
+    "title": "글 숨김 완료",
+    "png": "01-screens/CM29.png",
+    "revision": 2,
+    "sha256": "0611ef28e8f3874752ad318d23ce41aa42663adeabe4ec20cd1703c551caefb8",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "글 한 건 숨김 반영",
+    "behavior": "해당 글만 제외하고 핀 개수 갱신; 되돌리기는 그 글 숨김만 취소. 전체 작성자 글을 차단하지 않음.",
+    "legacyId": "29-hidden",
+    "review": "Only hidden story removed, remaining two retain full row pattern and restored section heading. Undo snackbar fits above compose CTA."
+  },
+  {
+    "id": "CM30",
+    "title": "위치 사용 안내",
+    "png": "01-screens/CM30.png",
+    "revision": 1,
+    "sha256": "462c41db964bf6d45e663fd4e1a9b52517ff740eeb3abe1e0e515602ebfb3394",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "주변 검색의 위치 사용 안내",
+    "behavior": "내 위치 사용하기→OS 권한→CM32/31; 지역 직접 선택→CM03; 닫기로 동의를 강요하지 않음.",
+    "legacyId": "30-location-guide",
+    "review": "Permission rationale explains public-place discovery and keeps manual region path, one primary and uniform scrim."
+  },
+  {
+    "id": "CM31",
+    "title": "위치 권한 꺼짐",
+    "png": "01-screens/CM31.png",
+    "revision": 2,
+    "sha256": "b2fc2532e95d1a4b52ca0c424e03e9e259fd154e689892a66f0c59a649e6e4ea",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "위치 권한 또는 위치 기능 사용 불가 확인",
+    "behavior": "설정 열기→OS 설정, 복귀 후 재확인; 지역 직접 선택→CM03. 무한 권한 요청과 로딩 금지.",
+    "legacyId": "31-location-blocked",
+    "review": "Permission denied screen stops loading; settings and manual-region actions separated, no invented location."
+  },
+  {
+    "id": "CM32",
+    "title": "위치 확인 중",
+    "png": "01-screens/CM32.png",
+    "revision": 2,
+    "sha256": "5522f99aabb660cd3533ce0874a5bce778178099f16202f0d80eecbb7b8e3b29",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "GPS 위치 확인 중",
+    "behavior": "성공→목록 조회 CM34; 실패→CM37; 지역 직접 선택→CM03. 지역 전에는 범위·지도 버튼 없음.",
+    "legacyId": "32-locating",
+    "review": "Unknown-location loading has no premature map/radius controls and allows manual region selection."
+  },
+  {
+    "id": "CM33",
+    "title": "주변 글 없음",
+    "png": "01-screens/CM33.png",
+    "revision": 1,
+    "sha256": "17d1e357c36e403235c28c0f3f1f9537e400383925eead70fcf0a1a782606676",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "목록 조회 성공, 조건에 맞는 글 0개",
+    "behavior": "첫 이야기 남기기→CM12; 범위 변경→CM02. 실패나 조회 중 상태를 0개로 표시하지 않음.",
+    "legacyId": "33-feed-empty",
+    "review": "Genuine empty feed has no fabricated posts or clusters; region/map remain known and one first-post CTA."
+  },
+  {
+    "id": "CM34",
+    "title": "목록 불러오는 중",
+    "png": "01-screens/CM34.png",
+    "revision": 1,
+    "sha256": "b09916a84b888d30cf5eb015ce6a150bb0da8e6129138f2086cb34be91d8a264",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "초기 목록 조회 중",
+    "behavior": "목록 자리표시자; 성공→CM01/43 또는 CM33; 실패→CM35; 글쓰기는 조회와 별개로 이용 가능.",
+    "legacyId": "34-feed-loading",
+    "review": "Three skeleton rows match feed layout; loading separate from empty/error, no fictional text or counts; compose retained."
+  },
+  {
+    "id": "CM35",
+    "title": "목록 조회 실패",
+    "png": "01-screens/CM35.png",
+    "revision": 1,
+    "sha256": "f3afa07a46c175b306686b412e082fd77978108073a50b3dc2b27d65a0316700",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "목록 조회 실패",
+    "behavior": "다시 불러오기→CM34; 알고 있는 지역 유지. 이전 데이터가 있으면 별도 새로고침 실패 안내와 함께 보존.",
+    "legacyId": "35-feed-error",
+    "review": "Fetch failure distinguished from no posts; known region/map retained, one retry primary."
+  },
+  {
+    "id": "CM36",
+    "title": "지도 조회 실패",
+    "png": "01-screens/CM36.png",
+    "revision": 1,
+    "sha256": "70d60b5cb93df4c22bf3719616d160a46ed4e306378cacf81ca2adfeb9056876",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "주변 지도 타일만 조회 실패",
+    "behavior": "지도 안 다시 불러오기→CM41; 이미 불러온 글은 계속 선택 가능. 목록까지 오류로 비우지 않음.",
+    "legacyId": "36-map-error",
+    "review": "Only main map fails; loaded three post rows retained. Compact map retry, no fabricated live map or global tabs."
+  },
+  {
+    "id": "CM37",
+    "title": "위치 찾기 실패",
+    "png": "01-screens/CM37.png",
+    "revision": 2,
+    "sha256": "0b96b53ccd4d4caf506cfbe8509f8bec0edc6dd880094b899a42bebf2434b7da",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "현재 위치 찾기 실패",
+    "behavior": "지역 직접 선택→CM03; 위치 다시 찾기→CM32. 임의 지역·거리·현재 위치 점을 넣지 않음.",
+    "legacyId": "37-location-error",
+    "review": "Unknown-location failure has clear manual region primary and retry link, no invented region or distance."
+  },
+  {
+    "id": "CM38",
+    "title": "볼 수 없는 글",
+    "png": "01-screens/CM38.png",
+    "revision": 1,
+    "sha256": "34cc81688758522800c59c9ced6ff64c4ee7ba1088de559fa1ef093dfbb0debb",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "글 삭제 또는 접근 불가 확인",
+    "behavior": "글 목록으로→원래 목록; 본문·작성자·댓글 조작 UI 없음. 일반 통신 실패와 구별.",
+    "legacyId": "38-post-unavailable",
+    "review": "Unavailable detail exposes no post data; clear list return CTA, no global chrome."
+  },
+  {
+    "id": "CM39",
+    "title": "좋아요 반영 실패",
+    "png": "01-screens/CM39.png",
+    "revision": 1,
+    "sha256": "e78b210401c8356f280118559c916a9c7ee32bfc420fa27af3718af1dd2d20ad",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "좋아요 반영 실패",
+    "behavior": "직전 좋아요 상태와 수치 복구; 본문 내 안내, 재탭 가능; 댓글·본문·입력은 유지.",
+    "legacyId": "39-like-error",
+    "review": "Like failure rolls back unfilled heart12, comments3 retained; inline error doesn't cover inputs or posts."
+  },
+  {
+    "id": "CM40",
+    "title": "신고 접수 실패",
+    "png": "01-screens/CM40.png",
+    "revision": 1,
+    "sha256": "973c464103802db96e6122b5e206a6a93a9601f103a45b266f54f16ac4568303",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "신고 접수 실패",
+    "behavior": "선택 사유 유지; 다시 접수; 닫기 가능. 접수 성공은 서버 확인 후 CM28.",
+    "legacyId": "40-report-error",
+    "review": "Report failure retains selected reason and four choices, clear error/retry."
+  },
+  {
+    "id": "CM41",
+    "title": "지도 불러오는 중",
+    "png": "01-screens/CM41.png",
+    "revision": 1,
+    "sha256": "60b5121095112106ba7be6740cca2bee6bcdef1f9b78c2ddfa7a1c3a41614f8e",
+    "dimensions": [
+      887,
+      1773
+    ],
+    "entry": "지도 타일 불러오는 중",
+    "behavior": "지도 자리만 로딩; 성공→CM05/06; 실패→CM36; 이미 조회한 글 목록은 계속 사용.",
+    "legacyId": "41-map-loading",
+    "review": "Map loading limited to top map slot; full loaded list retained without global nav."
+  },
+  {
+    "id": "CM42",
+    "title": "글 불러오는 중",
+    "png": "01-screens/CM42.png",
+    "revision": 1,
+    "sha256": "4326bd8658d480496ec57720db2302bf251963e8a567b31ce7c99a6c61db11df",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "글 상세 최초 조회 중",
+    "behavior": "자리표시자와 뒤로 가기; 성공→CM08/44; 접근 불가→CM38; 일반 통신 실패는 재시도. 이전 글을 새 글처럼 노출하지 않음.",
+    "legacyId": "42-post-loading",
+    "review": "Detail skeleton contains no fabricated post fields, counts or map; header/back retained."
+  },
+  {
+    "id": "CM43",
+    "title": "직접 선택한 지역의 글",
+    "png": "01-screens/CM43.png",
+    "revision": 1,
+    "sha256": "09ac93ce4db529e691ad187b16796b29a464af73ed0af53bc1dbeb76e4981cd5",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "GPS 대신 사용자가 지역 선택",
+    "behavior": "선택 지역 기준 거리 명시; 범위→CM02, 지도→CM05, 글→CM08, 글쓰기→CM12. GPS 위치점 금지.",
+    "legacyId": "43-manual-region-feed",
+    "review": "Manual region uses selected-region pin and explicit distance basis, no current GPS claim; exact three-row feed retained."
+  },
+  {
+    "id": "CM44",
+    "title": "내가 쓴 글 상세",
+    "png": "01-screens/CM44.png",
+    "revision": 1,
+    "sha256": "cbd97a172f114424348dbb2aa1f299e52cbe600254d6d2b55a57ef9da514c9f2",
+    "dimensions": [
+      887,
+      1774
+    ],
+    "entry": "내가 쓴 글 상세",
+    "behavior": "더보기→CM22; 댓글·장소는 공통 상세와 동일; 예시의 댓글 0개를 모든 내 글에 강제하지 않음.",
+    "legacyId": "44-own-post",
+    "review": "Own post uses same public place/content as composer, zero reactions and empty comments; native insets to be applied."
+  }
+]

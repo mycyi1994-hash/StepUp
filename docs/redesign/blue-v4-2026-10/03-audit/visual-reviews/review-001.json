@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-03",
+  "method": "each individual generated image visually inspected",
+  "scope": "static visual mockups only; not app implementation",
+  "screens": [
+    {
+      "id": "SH01",
+      "result": "passed",
+      "revision": 2,
+      "notes": "원래 내 신발 순서와 mint 모델·3개 보유 목록·3개 능력치 유지. 효율 바가 축소된 것을 확인. 이미지의 바 길이는 근사치; 구현에서4.8/27.5,7.5/20,92/100으로 계산. 실제 원본 로고·신발 아트를 재사용한다."
+    },
+    {
+      "id": "SH02",
+      "result": "passed",
+      "revision": 3,
+      "notes": "보관함2열·3켤레·정렬·필터·각ID·착용 표시 유지. SUP 채움/신발 탭 선택 개선. r2에서 탭4개가 사라져 폐기했고 r3에서5개 탭과별도도감/마켓/아이템행을 확인."
+    },
+    {
+      "id": "DRAW02",
+      "result": "passed",
+      "revision": 1,
+      "notes": "무료13/상급10 두 패널·각 실행 버튼·내역·규칙·5nav·SUP 유지. 실제 값은 서버."
+    },
+    {
+      "id": "DRAW03",
+      "result": "passed",
+      "revision": 2,
+      "notes": "10+3=13,1회뽑기/닫기/X,전체scrim 및nav를 덮는 시트 확인."
+    },
+    {
+      "id": "DRAW04",
+      "result": "passed",
+      "revision": 2,
+      "notes": "10+0=10,0.6/1km바와0.4km남음,실행/닫기/X 확인. 시트 뒤 dim및하단nav덮음."
+    },
+    {
+      "id": "DRAW05",
+      "result": "passed",
+      "revision": 2,
+      "notes": "가입10/매일3/첫연결10/1km당1 규칙과확인버튼. dim및nav덮음."
+    },
+    {
+      "id": "DRAW06",
+      "result": "passed",
+      "revision": 2,
+      "notes": "첫연결10/러닝당+1 혜택,연결하기/나중에/X. 연결전상태유지,dim및nav덮음."
+    }
+  ]
+}

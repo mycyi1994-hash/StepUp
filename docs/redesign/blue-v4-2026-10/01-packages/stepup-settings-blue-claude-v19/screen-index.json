@@ -1,0 +1,642 @@
+[
+  {
+    "id": "SET01",
+    "title": "설정 첫 화면",
+    "png": "01-screens/SET01.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "c05cd51465d6284a39cfe2ad10991bcfa7a0dd982b4dc3cd6efe70c295c344fb",
+    "prompt": "prompts/SET01.json",
+    "review": "설정 3그룹, 현재 값, 더 보기 스크롤 예고와 5탭 확인.",
+    "state": "설정 첫 화면",
+    "actions": "8개 설정 행→각 기존 경로; 아래로 스크롤→SET29. 뒤로→진입 화면.",
+    "guard": "행 우측은 현재 값. 로딩 값을 임의로 만들지 않음."
+  },
+  {
+    "id": "SET02",
+    "title": "알림",
+    "png": "01-screens/SET02.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ef4c1ae9b3797d075f0d85b30334ed4134f35f48c4f73a467279a69c5ce6a661",
+    "prompt": "prompts/SET02.json",
+    "review": "알림 4종, 3ON/이벤트OFF, 즉시 저장 안내 확인.",
+    "state": "알림 정상",
+    "actions": "4개 토글 변경→로컬 저장→서버 동기화.",
+    "guard": "푸시는 다른 세 토글의 마스터 스위치가 아님."
+  },
+  {
+    "id": "SET03",
+    "title": "휴대폰 알림 차단",
+    "png": "01-screens/SET03.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "241926874762755abe9e9a1fcf79153e83db084c01264a852f61d8ea70d3c556",
+    "prompt": "prompts/SET03.json",
+    "review": "OS 차단 안내와 설정 열기, 기존 ON 선택 보존 확인.",
+    "state": "OS 알림 차단",
+    "actions": "설정 열기→OS 앱 설정. 복귀 시 권한 재조회.",
+    "guard": "기존 앱 토글 선택을 지우지 않음."
+  },
+  {
+    "id": "SET04",
+    "title": "서버 반영 대기",
+    "png": "01-screens/SET04.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "275e865fc188f6247b22c349cb9973580f9275946d1c9d7ac69146e0247e49c6",
+    "prompt": "prompts/SET04.json",
+    "review": "로컬 저장과 서버 반영 대기 구분, 재시도 확인.",
+    "state": "서버 반영 대기",
+    "actions": "다시 시도→서버 동기화.",
+    "guard": "이 휴대폰 저장과 서버 반영 완료를 구분."
+  },
+  {
+    "id": "SET05",
+    "title": "설정 저장 실패",
+    "png": "01-screens/SET05.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "78221f214c3c41130e14be6006ca67348ab9f9920805d8095000defdcc52df22",
+    "prompt": "prompts/SET05.json",
+    "review": "저장 실패 안내와 이전 토글값 유지 확인.",
+    "state": "로컬 저장 실패",
+    "actions": "오류 표시; 사용자가 토글을 다시 조작할 수 있음.",
+    "guard": "이전 저장값을 유지하고 성공 토스트를 띄우지 않음."
+  },
+  {
+    "id": "SET06",
+    "title": "개인정보·앱 권한",
+    "png": "01-screens/SET06.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "86cc4e5ec83d4ac38d580e0acc06c52a1283c35e0f9e25a9accc3c3eb5f5e29d",
+    "prompt": "prompts/SET06.json",
+    "review": "저장 정보 진입, 읽기 전용 권한 3행, OS 설정과 알림 삭제 진입 확인.",
+    "state": "개인정보·권한 정상",
+    "actions": "권한 설정→OS; 저장 정보→SET08; 알림 삭제→SET09.",
+    "guard": "상태 행 자체는 가짜 권한 토글이 아님."
+  },
+  {
+    "id": "SET07",
+    "title": "권한이 일부 제한됨",
+    "png": "01-screens/SET07.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "2410a5dcce40b29f80f87369089ac8c8b1bad662c7487a0bfe384fdfcde49f02",
+    "prompt": "prompts/SET07-r2.json",
+    "review": "r2: SET06 구조와 일치, 대략적 위치 및 알림 거부 표시.",
+    "state": "권한 제한",
+    "actions": "설정 열기→OS; 복귀 시 실제 상태 반영.",
+    "guard": "대략적 위치와 거절을 구분."
+  },
+  {
+    "id": "SET08",
+    "title": "저장하는 정보",
+    "png": "01-screens/SET08.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "7396bc325d7f715afa0ed38366bc0e0f17651978de146c6b2658237c295a7c9b",
+    "prompt": "prompts/SET08.json",
+    "review": "보관 범위 설명 시트, 확인/X, 하단 탭 덮임 확인.",
+    "state": "저장 정보 시트",
+    "actions": "확인/X/뒤로→진입한 개인정보 화면.",
+    "guard": "기존 저장 범위 설명을 임의 정책으로 바꾸지 않음."
+  },
+  {
+    "id": "SET09",
+    "title": "알림 기록 지우기",
+    "png": "01-screens/SET09.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "912667df01eea5788931ddbe47065bd05bdbb449e10e2a572b3facd2fd0efef8",
+    "prompt": "prompts/SET09.json",
+    "review": "알림 삭제 범위 및 미처리 알림 보존, 취소/삭제 확인.",
+    "state": "일반 알림 삭제 확인",
+    "actions": "취소→닫기; 삭제→SET30.",
+    "guard": "미응답 초대와 미확인 보상 알림 유지."
+  },
+  {
+    "id": "SET10",
+    "title": "알림 기록 삭제 완료",
+    "png": "01-screens/SET10.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d61b53305d8680ef23b893dffe85d8b1476ac9aacc1eac419add7c2e6b785423",
+    "prompt": "prompts/SET10.json",
+    "review": "기존 개인정보 화면 보존, 삭제 성공 토스트 확인.",
+    "state": "일반 알림 삭제 완료",
+    "actions": "완료 알림 뒤 원래 개인정보 화면.",
+    "guard": "실제 저장소 삭제 성공 뒤만 완료."
+  },
+  {
+    "id": "SET11",
+    "title": "연결된 계정",
+    "png": "01-screens/SET11.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d10409dea11ea137e7b1e52737820bf73ad70a3e95c6944c0455aa0b6dbfa3bc",
+    "prompt": "prompts/SET11-r2.json",
+    "review": "r2: 로그인 상태는 읽기 전용, 지갑 연결됨과 Health Connect 준비 중 구분.",
+    "state": "계정·지갑 연결됨",
+    "actions": "계정 삭제→SET13; 뒤로→설정.",
+    "guard": "소셜 연결은 읽기 전용; 준비 중 건강 연동을 활성 기능처럼 표시하지 않음."
+  },
+  {
+    "id": "SET12",
+    "title": "로그인되지 않은 상태",
+    "png": "01-screens/SET12.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "5776930478d80776968b0d708b1be0d69dd1a0dfb7ecfeaf765a9632cc79fecf",
+    "prompt": "prompts/SET12-r2.json",
+    "review": "r2: 로그인 전 양쪽 연결 안 됨 및 계정 삭제 메뉴 없음 확인.",
+    "state": "로그아웃 상태",
+    "actions": "기존 로그인 경로 이용; 뒤로→설정.",
+    "guard": "회원 전용 계정 삭제와 가짜 연결 버튼을 만들지 않음."
+  },
+  {
+    "id": "SET13",
+    "title": "계정 삭제 확인",
+    "png": "01-screens/SET13.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "bc65ba176c9424f5f5c81ec76879d9a67270d5fe862d76491fa574f959aa4dd1",
+    "prompt": "prompts/SET13-r2.json",
+    "review": "r2: 계정 삭제 범위, 크루장 안내, 되돌릴 수 없음, 취소/삭제 및 시트 하단 확인.",
+    "state": "계정 삭제 확인",
+    "actions": "취소/X→닫기; 계정 삭제→SET14.",
+    "guard": "삭제 범위·되돌릴 수 없음·휴대폰 기록 안내를 모두 유지."
+  },
+  {
+    "id": "SET14",
+    "title": "계정 삭제 처리 중",
+    "png": "01-screens/SET14.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "659cf1732fc6a98d47bfd66aa0d8729d279b7405521778eeb9d181810ec1db3c",
+    "prompt": "prompts/SET14.json",
+    "review": "삭제 처리 중, 단일 비활성 처리 표시, X/취소 없음 확인.",
+    "state": "계정 삭제 요청 중",
+    "actions": "서버 확정 결과로 성공 처리/SET31/SET15 분기.",
+    "guard": "중복 요청과 닫기 방지. 타이머로 성공 처리 금지."
+  },
+  {
+    "id": "SET15",
+    "title": "삭제 결과 미확인",
+    "png": "01-screens/SET15.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9c30b911e54b0316b1c49035fc19e48a2233973130fa1987162e7ed315f061de",
+    "prompt": "prompts/SET15.json",
+    "review": "삭제 결과 미확인, 문의/닫기만 제공, 실패·성공으로 단정하지 않음.",
+    "state": "삭제 결과 미확인",
+    "actions": "문의→기존 문의 기능; 닫기→계정 상태 재조회.",
+    "guard": "확정 실패와 다름. 자동 재삭제하지 않음."
+  },
+  {
+    "id": "SET16",
+    "title": "어두운 테마",
+    "png": "01-screens/SET16.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1ac2306c809d12f7a778b07b6357889b55cc0120ac4905b71858f2af67a44fd0",
+    "prompt": "prompts/SET16.json",
+    "review": "어두운 테마 선택, 세 선택지, 누적 거리 미리보기 확인.",
+    "state": "어두운 테마",
+    "actions": "시스템/어둡게/밝게 중 선택 즉시 적용·저장.",
+    "guard": "실패 시 이전 선택 복원. 별도 저장 버튼 없음."
+  },
+  {
+    "id": "SET17",
+    "title": "밝은 테마",
+    "png": "01-screens/SET17.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a93acc0012ed1fb5757126ce21d79a826dbc7e1460f1b2a3cf8cb23aceb36264",
+    "prompt": "prompts/SET17-r2.json",
+    "review": "r2: 전체 밝은 테마 적용 및 밝게 행만 선택 확인.",
+    "state": "밝은 테마",
+    "actions": "테마 변경/뒤로.",
+    "guard": "의도적인 밝은 배경 예외. 밝은 테마 기능을 삭제하지 않음."
+  },
+  {
+    "id": "SET18",
+    "title": "언어 선택",
+    "png": "01-screens/SET18.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0eb30a27746b604d8c17980e2546418f9e464cf5d879f21c4b899deb4dacdebb",
+    "prompt": "prompts/SET18.json",
+    "review": "5개 언어 선택 순서와 한국어 체크, 원문 유지 안내 확인.",
+    "state": "한국어 설정",
+    "actions": "시스템/en/ko/zh/ja 중 선택→앱 언어 변경.",
+    "guard": "사용자 글·이름까지 자동 번역하지 않음."
+  },
+  {
+    "id": "SET19",
+    "title": "영어 적용 후",
+    "png": "01-screens/SET19.png",
+    "revision": 3,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d4947f0915ef7eb2c217e15d80f031a09efdc39a2a77fc226db42b3fd36c6d82",
+    "prompt": "prompts/SET19-r3.json",
+    "review": "r3: 영어 적용, English 체크, 하단 5탭 영어 확인. 추가 안내 한 줄은 같은 의미의 예시 문구.",
+    "state": "영어 설정",
+    "actions": "같은 5개 언어·영어 앱 내비게이션.",
+    "guard": "기존 번역 리소스를 우선하고 시안 문구를 새 정책으로 사용하지 않음."
+  },
+  {
+    "id": "SET20",
+    "title": "소리·진동·동작",
+    "png": "01-screens/SET20.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a56b61df54c0b9e09a599b9c547b10ac677524f6e10c0b534245ce71020a7e64",
+    "prompt": "prompts/SET20-r2.json",
+    "review": "r2: 5개 스위치, 날씨 위치 안내, 이동 화살표 대신 미리 듣기 아이콘 확인.",
+    "state": "소리·진동·동작",
+    "actions": "효과음/주변음/진동/동작 줄이기/날씨 배경 토글; 피드백 미리듣기.",
+    "guard": "미리듣기는 보상을 지급하지 않음. 날씨는 기존 위치 권한과 근사 위치 처리 유지."
+  },
+  {
+    "id": "SET21",
+    "title": "도움말·문의",
+    "png": "01-screens/SET21.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "7a59bcfe0ea6c942193d02da241dbec5d1e5f2b37d19a9b89ba1ccd600fa5e71",
+    "prompt": "prompts/SET21.json",
+    "review": "5개 FAQ, 앱 사용 안내, 메일 문의와 5탭 확인.",
+    "state": "도움말 기본",
+    "actions": "FAQ 5개 중 하나 펼치기; 가이드→기존 안내; 문의→SET23.",
+    "guard": "메일이 자동 전송되지 않음."
+  },
+  {
+    "id": "SET22",
+    "title": "답변을 펼쳤을 때",
+    "png": "01-screens/SET22.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "570175c158525e69ed3f528b9d368f89a1bf023d5c9a7b1f75cf7b417cbbb6a5",
+    "prompt": "prompts/SET22.json",
+    "review": "첫 FAQ만 펼침, 나머지 접힘, 문의 버튼/탭 겹침 없음 확인.",
+    "state": "첫 FAQ 펼침",
+    "actions": "같은 질문→닫기; 다른 질문→해당 하나 펼치기.",
+    "guard": "접힌 질문의 순서와 가이드/문의 유지."
+  },
+  {
+    "id": "SET23",
+    "title": "문의 방법",
+    "png": "01-screens/SET23.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f1ebe392543a0fb06d0e6f6affd8501ebc872a8479ca3e4158c004ff463ddaae",
+    "prompt": "prompts/SET23.json",
+    "review": "실제 리소스 문의 주소, 메일 앱 열기/복사, 시트 확인.",
+    "state": "문의 시트",
+    "actions": "메일 앱 열기→OS 메일 작성; X/뒤로→도움말.",
+    "guard": "support@stepupcrew.com. 본인 위치/계정 데이터를 자동 첨부하지 않음."
+  },
+  {
+    "id": "SET24",
+    "title": "하루 걸음 목표",
+    "png": "01-screens/SET24.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d0d3eae77454700354929dbbe6d1ad6ebeaa19d79cdbd2862f0f1f690ff48f7e",
+    "prompt": "prompts/SET24.json",
+    "review": "8,000걸음, ±500, 범위, 6.1km/20.0SUP 예시 계산, 즉시 저장 및 닫기 확인.",
+    "state": "하루 걸음 목표",
+    "actions": "±500으로 3,000~20,000 조정·자동 저장; 닫기→설정.",
+    "guard": "8,000걸음=6.1km·기본 목표 보너스20SUP은 계산 예시, 지급 확정 아님."
+  },
+  {
+    "id": "SET25",
+    "title": "설정 확인 중",
+    "png": "01-screens/SET25.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "88a15ddd3298af1d4d65c0f4d924827ec1cbd6fb435ffb82bdfe369fd4f8dfa0",
+    "prompt": "prompts/SET25.json",
+    "review": "로딩 4행, 임시 토글값 없음 확인.",
+    "state": "알림 설정 로딩",
+    "actions": "조회 결과→정상/SET26.",
+    "guard": "모르는 토글 값을 OFF 또는 예시값으로 보이지 않음."
+  },
+  {
+    "id": "SET26",
+    "title": "설정 조회 실패",
+    "png": "01-screens/SET26.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0191272805f51c18a03c1399eef4c015986e2f2c2b79ddfb6cbdd04547d14096",
+    "prompt": "prompts/SET26.json",
+    "review": "조회 실패, 이전 설정 보존 안내와 다시 불러오기 확인.",
+    "state": "알림 설정 조회 실패",
+    "actions": "다시 시도→조회.",
+    "guard": "빈 설정으로 덮어쓰지 않음."
+  },
+  {
+    "id": "SET27",
+    "title": "알림 기록 삭제 실패",
+    "png": "01-screens/SET27.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ea88dc630b47d0329ab1c5d19aa123d75665a705cc1387d3d2a1447745406e61",
+    "prompt": "prompts/SET27-r2.json",
+    "review": "r2: 삭제 실패, 취소/재시도, 시트가 하단 탭 덮음 확인.",
+    "state": "일반 알림 삭제 실패",
+    "actions": "취소→닫기; 삭제 재시도→SET30.",
+    "guard": "삭제 전 안내와 유지 대상 보존."
+  },
+  {
+    "id": "SET28",
+    "title": "메일 앱 열기 실패",
+    "png": "01-screens/SET28.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ad4a23ac2eee21a9d33acb4ef04d7a0a87e5efedd6e3251a6df0356d4adb19ea",
+    "prompt": "prompts/SET28.json",
+    "review": "메일 앱 열기 실패, 실제 주소와 복사/닫기 확인.",
+    "state": "메일 앱 열기 실패",
+    "actions": "주소 복사→실제 클립보드 성공 후 SET40; 닫기→호출자.",
+    "guard": "복사 성공 뒤에만 SET40 안내."
+  },
+  {
+    "id": "SET29",
+    "title": "설정 더 보기와 앱 정보",
+    "png": "01-screens/SET29.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9f3a5417dad06ddb916956caf58183992742c0d7bb5ee3c4fc0587ae45cc213e",
+    "prompt": "prompts/SET29.json",
+    "review": "더 보기 5개 진입 및 데모 모드, 앱 정보 확인. 1.0.0은 예시이며 실제 버전을 연결해야 함.",
+    "state": "설정 아래쪽",
+    "actions": "알림함/업적/초대/몸 정보·목표/모드→기존 경로. 앱 정보 표시.",
+    "guard": "1.0.0은 시안 예시. 실제 버전 사용; 테스트 기능은 테스트 빌드에만."
+  },
+  {
+    "id": "SET30",
+    "title": "알림 기록 삭제 처리 중",
+    "png": "01-screens/SET30.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "cff192f173fc659ae3d096ce32a1390580bc7b6d636550e16a0ccaa2666277a4",
+    "prompt": "prompts/SET30.json",
+    "review": "알림 삭제 처리 중, 취소/반복 삭제 비활성, 단일 처리 표시 확인.",
+    "state": "일반 알림 삭제 중",
+    "actions": "완료→SET10; 실패→SET27.",
+    "guard": "취소/삭제 중복 비활성, 뒤로·바깥 눌러 닫기 차단."
+  },
+  {
+    "id": "SET31",
+    "title": "계정 삭제 확정 실패",
+    "png": "01-screens/SET31.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "102ed47bb1a02064ad9e98057ec87d8c22e4911f98a31d5387ec956048e1673e",
+    "prompt": "prompts/SET31-r2.json",
+    "review": "삭제 범위·크루장 이전·되돌릴 수 없음·휴대폰 기록 안내와 별도 확정 실패 문구를 모두 유지. 취소/삭제/X와 탭을 덮는 시트 확인.",
+    "state": "계정 삭제 확정 실패",
+    "actions": "재시도→SET14; 취소→닫기.",
+    "guard": "SET31 r2에서 SET13의 삭제 범위·되돌릴 수 없음·휴대폰 안내를 보존했다."
+  },
+  {
+    "id": "SET32",
+    "title": "계정 연결 조회 중",
+    "png": "01-screens/SET32.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "b56c58564538b70d58a8c67c98a60134a729f35052da9cba98d9a896c9a2e740",
+    "prompt": "prompts/SET32.json",
+    "review": "소셜/지갑 모두 확인 중. 미확정 로그인에 계정 삭제 없음. 준비 중 행과 5탭 유지.",
+    "state": "계정 확인 중",
+    "actions": "조회 완료→SET11/12/33/34; 뒤로→설정.",
+    "guard": "소셜/지갑 확인 중. 로그인 확인 전 삭제 버튼 없음."
+  },
+  {
+    "id": "SET33",
+    "title": "지갑 연결 조회 실패",
+    "png": "01-screens/SET33.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d5c4777c80d7e7463a63753d7615ffa7344e394e5de1e31eb896f4873ccbc980",
+    "prompt": "prompts/SET33.json",
+    "review": "로그인 유지, 지갑 확인하지 못함+진입 화살표, 연결 안 됨으로 단정하지 않음. 기존 삭제와5탭 유지.",
+    "state": "지갑 조회 실패",
+    "actions": "지갑 행→기존 웹 지갑 확인/연결. 뒤로→설정.",
+    "guard": "확인하지 못함은 미연결과 다름. 조회 실패만으로 연결을 해제하지 않음."
+  },
+  {
+    "id": "SET34",
+    "title": "지갑 연결 전",
+    "png": "01-screens/SET34.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9864dc71785ac1e53d5cbb1b030cf654cbfd031f013fe7202393925f53e3a8b4",
+    "prompt": "prompts/SET34.json",
+    "review": "미연결 지갑 연결하기·진입 화살표, 로그인/삭제/준비 중/5탭 유지.",
+    "state": "지갑 미연결",
+    "actions": "연결하기→기존 웹 지갑 연결.",
+    "guard": "탭만으로 연결됨을 표시하지 않음. 서버에서 다시 확인."
+  },
+  {
+    "id": "SET35",
+    "title": "걸음 목표 저장 실패",
+    "png": "01-screens/SET35.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "7e446a9c4282a2ab069aaf6ec5fd5d8c415dc500b8f30c17460d887a78e6fc56",
+    "prompt": "prompts/SET35.json",
+    "review": "저장된8000걸음/6.1km/20SUP 유지와 실패 설명,±500/닫기/X, 탭을 덮는 시트 확인.",
+    "state": "걸음 목표 저장 실패",
+    "actions": "±500→다시 변경·저장; 닫기/X→설정.",
+    "guard": "실제 저장된 목표를 복원. 목표 변경은 SUP 지급이 아님."
+  },
+  {
+    "id": "SET36",
+    "title": "알림 설정 저장 중",
+    "png": "01-screens/SET36.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e57b1cbde8d2b94678ae032eb29bc803d7ee817a7eaef67e6840e723f888d216",
+    "prompt": "prompts/SET36.json",
+    "review": "알림4종의3ON/1OFF 위치 유지하며 저장 중 비활성, 단일 진행 표시, 성공 오표시 없음. 진행 설명은 saving상태의 표현 제안.",
+    "state": "알림 로컬 저장 중",
+    "actions": "저장 성공→알림 설정 및 서버 동기화; 실패→SET05.",
+    "guard": "4개 토글 비활성. 단일 진행 표시는 기존 saving 상태의 표현 제안."
+  },
+  {
+    "id": "SET37",
+    "title": "알림 서버 반영 중",
+    "png": "01-screens/SET37.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "b5e2f3e4bef6c3e34d74f42cc60e977d8ce0868e578bd27e19f86a863c66862b",
+    "prompt": "prompts/SET37.json",
+    "review": "휴대폰 저장과 서버 전송을 분리. 반영하는 중 비활성 버튼, 로컬4토글 활성·3ON1OFF 유지.",
+    "state": "알림 서버 반영 중",
+    "actions": "서버 성공→정상; 실패/확인 대기→SET04.",
+    "guard": "재시도 버튼만 비활성. 로컬 토글은 저장 중이 아닐 때 사용 가능."
+  },
+  {
+    "id": "SET38",
+    "title": "테마 저장 실패",
+    "png": "01-screens/SET38.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e6ce9eb0e55387dac187481671777549020ee203fdbc0c6d98293cea221f6d0a",
+    "prompt": "prompts/SET38.json",
+    "review": "어두운 테마 선택 복원과 저장 실패 설명, 미리보기·3개옵션·5탭 유지.",
+    "state": "테마 저장 실패",
+    "actions": "다른 테마 선택→즉시 적용·저장 재시도.",
+    "guard": "직전 저장 테마로 복원. 별도 저장/재시도 버튼 추가 없음."
+  },
+  {
+    "id": "SET39",
+    "title": "소리·진동 설정 저장 실패",
+    "png": "01-screens/SET39.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "3a216871a0589d1f3a125b6316af33d4f550f50b03c991ebf8737c8046a73d09",
+    "prompt": "prompts/SET39.json",
+    "review": "5개옵션·기존 값·날씨 위치 안내·미리듣기·저장 실패·시스템 음소거 설명을 모두 유지. 안전영역과5탭 겹침 없음.",
+    "state": "소리·진동·동작 저장 실패",
+    "actions": "토글 재조작→기존 저장 경로; 미리듣기는 기존 피드백.",
+    "guard": "이전 설정 유지. 날씨 권한·위치 설명과 기기 설정 안내 유지."
+  },
+  {
+    "id": "SET40",
+    "title": "문의 주소 복사 완료",
+    "png": "01-screens/SET40.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "be42c6eee8045df3ba19ec7e0009cce675c4d1f01f527838d5aba31b1145d0d7",
+    "prompt": "prompts/SET40.json",
+    "review": "메일 열기 실패 시트 그대로, 실제 주소와 복사/닫기/X 유지, 별도 주소 복사 완료 안내. 메일 전송 성공으로 오표시 없음.",
+    "state": "문의 주소 복사 완료",
+    "actions": "복사 또는 닫기/X 유지; 2.5초 후 안내 숨김.",
+    "guard": "실제 클립보드 복사 성공 뒤만 표시. 메일 전송 완료 아님."
+  }
+]

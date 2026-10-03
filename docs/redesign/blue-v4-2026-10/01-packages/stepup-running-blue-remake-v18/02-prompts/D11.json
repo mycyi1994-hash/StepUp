@@ -1,0 +1,8 @@
+{
+  "id": "D11",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI only: the thin cyan overall progress bar beneath13:00/15:00 must be filled to approximately86.7% of its full width (13 of15 minutes), leaving only13.3% dark remainder. Preserve all numbers, text, map, style and layout. No otherchanges.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-75c256ac-a1d7-4c5d-9cb1-c927f76cde57.png"
+  ]
+}

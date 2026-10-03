@@ -1,0 +1,76 @@
+{
+  "scope": "시작·로그인17장 이후 추가 점검. 아래 묶음은 그대로 PNG 장수나 완료 수가 아니다.",
+  "runtimeVerified": false,
+  "items": [
+    {
+      "id": "setup-read",
+      "status": "pending-audit",
+      "states": [
+        "몸 정보 첫 로컬 조회 대기",
+        "로컬 조회 실패/재시도"
+      ],
+      "source": "S2SetupFlow stored ?: return"
+    },
+    {
+      "id": "setup-save",
+      "status": "pending-audit",
+      "states": [
+        "몸 정보/목표/모드 저장 중",
+        "저장 실패",
+        "빠른 다음/건너뛰기 순서"
+      ],
+      "source": "S2SetupFlow save/finish coroutine"
+    },
+    {
+      "id": "setup-back",
+      "status": "pending-audit",
+      "states": [
+        "몸 정보 건너뛴 뒤 모드에서 뒤로"
+      ],
+      "source": "BackHandler step -= 1"
+    },
+    {
+      "id": "mode-home",
+      "status": "implementation-gap",
+      "states": [
+        "라이트 홈",
+        "러너 홈",
+        "저장한 모드 복원"
+      ],
+      "source": "runMode consumer search; HomeShoeCard unconditional"
+    },
+    {
+      "id": "setup-settings",
+      "status": "pending-route-audit",
+      "states": [
+        "설정에서 몸 정보 수정",
+        "목표 수정",
+        "몸 정보 삭제",
+        "설정에서 모드 변경"
+      ],
+      "source": "BodySettingsScreen / ModeSettingsScreen"
+    },
+    {
+      "id": "first-home-data",
+      "status": "pending-state-audit",
+      "states": [
+        "HOME 데이터 로딩/실패",
+        "스타터 없음/신발 아트 없음",
+        "로그인 복구 회원 구분"
+      ],
+      "source": "HomeScreen and broader SH/HOME audit"
+    },
+    {
+      "id": "native-and-return",
+      "status": "runtime-validation",
+      "states": [
+        "OS 계정 선택/취소",
+        "외부 링크 복귀",
+        "딥링크 목적지 우선",
+        "진행 중 러닝 복구 우선",
+        "권한 거절/복귀"
+      ],
+      "source": "LoginRules / FirstGuideRules / RunPermissionRules"
+    }
+  ]
+}

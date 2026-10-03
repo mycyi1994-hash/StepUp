@@ -1,0 +1,24 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "ONB07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인 실패 사유와 동일한 Google 재시도 버튼 확인. 회원 가입/보상/삭제 같은 잘못된 안내 없음."
+    },
+    {
+      "id": "ONB08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "기기에 Google 계정을 추가하라는 후속 행동이 명확함. 원래 법적 고지·링크 및 로고 보존."
+    },
+    {
+      "id": "ONB09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "같은 계정으로 기록을 이어가는 재로그인 설명과 활성 Google 버튼. 연결 실패 문구와 구분됨."
+    }
+  ],
+  "runtimeVerified": false
+}

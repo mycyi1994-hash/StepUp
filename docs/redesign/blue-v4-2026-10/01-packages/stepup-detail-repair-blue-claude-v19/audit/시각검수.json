@@ -1,0 +1,186 @@
+{
+  "method": "저장된 원본 이미지 시각 검수와 최종 revision 일치 확인",
+  "screens": [
+    {
+      "id": "SD01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "원형 받침/조명, 원본 민트 신발, 네 독립 한줄바, 등급 오른쪽번호, 관리 및 직접강화/착용 확인. 레벨25%의 미술적근사치와 정확한계산은별도문서."
+    },
+    {
+      "id": "SD02",
+      "revision": 2,
+      "result": "passed",
+      "notes": "레어와No0007 복원, 착용 상태는 비활성주버튼으로 표시. 강화 활성."
+    },
+    {
+      "id": "SD03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "요청 중 스피너/비활성강화/관리,성공미표시."
+    },
+    {
+      "id": "SD04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "레어번호보존,실제착용확정 snackbar와비활성착용 확인."
+    },
+    {
+      "id": "SD05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "확정거절과기존클라우드러너유지,재착용/닫기,스크림 확인."
+    },
+    {
+      "id": "SD06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인필요전용시트,수동로그인/닫기."
+    },
+    {
+      "id": "SD07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "결과미확인과읽기확인행동,실패나기존착용유지단정없음."
+    },
+    {
+      "id": "SD08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "스켈레톤과네수치—,샘플소유데이터없음,버튼비활성."
+    },
+    {
+      "id": "SD09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "조회실패와재시도/보관함,빈목록과구분."
+    },
+    {
+      "id": "SD10",
+      "revision": 2,
+      "result": "passed",
+      "notes": "없는소유신발의관리버튼과무대제거,보관함복귀한행동."
+    },
+    {
+      "id": "SD11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "실제데이터네줄과행동유지,아트만실패안내/재조회. 무대광원은구현에서빈상태에낮춤."
+    },
+    {
+      "id": "SD12",
+      "revision": 1,
+      "result": "passed",
+      "notes": "첫 착용 안내,현재 착용신발없음,직접강화/신기와네줄."
+    },
+    {
+      "id": "SD13",
+      "revision": 2,
+      "result": "passed",
+      "notes": "모달을높여수리/판매/기록3행모두표시,번호/내구도/스크림확인."
+    },
+    {
+      "id": "SD14",
+      "revision": 2,
+      "result": "passed",
+      "notes": "관리3행과착용중판매비활성사유확인. 공통구현은SD13아이콘없는행으로통일."
+    },
+    {
+      "id": "SD15",
+      "revision": 1,
+      "result": "passed",
+      "notes": "조회정보5행,체인등록없음,No0007유지,닫기."
+    },
+    {
+      "id": "SD16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Token#142와민트No0007별도,다른정보동일."
+    },
+    {
+      "id": "SD17",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Vault#1000007온전히표시,No0007와분리."
+    },
+    {
+      "id": "SD18",
+      "revision": 1,
+      "result": "passed",
+      "notes": "강화결과미확정배너,마지막값표시,변경비활성/결과조회."
+    },
+    {
+      "id": "SD19",
+      "revision": 2,
+      "result": "passed",
+      "notes": "수리결과배너위치통일,68/100마지막값,네독립행과수정행동비활성."
+    },
+    {
+      "id": "RP01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "수리모달,배경스크림,대상0007,68→100,50SUP/83.07/33.07,하나의명시적수리버튼 확인. 실제RareLv5공식과예시금액일치."
+    },
+    {
+      "id": "RP02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "견적/잔액—와비활성버튼,알고있는회복량만표시."
+    },
+    {
+      "id": "RP03",
+      "revision": 3,
+      "result": "passed",
+      "notes": "이전잔액83.07/비용50/예상잔액33.07로시점명확화,오탈자수정확인."
+    },
+    {
+      "id": "RP04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "중복신발그림제거,대상번호복원,100/100,사용50/잔액33.07와완료확인."
+    },
+    {
+      "id": "RP05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "이미100과수리불필요,차감버튼없고닫기만."
+    },
+    {
+      "id": "RP06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "50비용과20잔액→부족30수치일치,실행비활성,닫기."
+    },
+    {
+      "id": "RP07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "수리전조회오류와수리RPC아닌재조회,기존내구도만유지."
+    },
+    {
+      "id": "RP08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "결과불명확안내,차감/실패단정없고읽기확인/나중에만."
+    },
+    {
+      "id": "RP09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "거래중확정불가사유,수리실행없음,닫기."
+    },
+    {
+      "id": "RP10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "92→100,비용12.5/잔액70.57수치일치,상태변경안내,명시적재확인."
+    },
+    {
+      "id": "RP11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인필요/수동로그인과닫기,금액표시나자동수리없음."
+    }
+  ],
+  "nativeImplementationVerified": false
+}

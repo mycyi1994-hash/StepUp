@@ -1,0 +1,195 @@
+{
+  "scope": "설정 진행 중 체크포인트; 사용자 요청으로 작업 중단. 패키지 완료 아님.",
+  "method": "각 생성 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "SET01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "설정 3그룹, 현재 값, 더 보기 스크롤 예고와 5탭 확인."
+    },
+    {
+      "id": "SET02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "알림 4종, 3ON/이벤트OFF, 즉시 저장 안내 확인."
+    },
+    {
+      "id": "SET03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "OS 차단 안내와 설정 열기, 기존 ON 선택 보존 확인."
+    },
+    {
+      "id": "SET04",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로컬 저장과 서버 반영 대기 구분, 재시도 확인."
+    },
+    {
+      "id": "SET05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "저장 실패 안내와 이전 토글값 유지 확인."
+    },
+    {
+      "id": "SET06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "저장 정보 진입, 읽기 전용 권한 3행, OS 설정과 알림 삭제 진입 확인."
+    },
+    {
+      "id": "SET07",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: SET06 구조와 일치, 대략적 위치 및 알림 거부 표시."
+    },
+    {
+      "id": "SET08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "보관 범위 설명 시트, 확인/X, 하단 탭 덮임 확인."
+    },
+    {
+      "id": "SET09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "알림 삭제 범위 및 미처리 알림 보존, 취소/삭제 확인."
+    },
+    {
+      "id": "SET10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "기존 개인정보 화면 보존, 삭제 성공 토스트 확인."
+    },
+    {
+      "id": "SET11",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 로그인 상태는 읽기 전용, 지갑 연결됨과 Health Connect 준비 중 구분."
+    },
+    {
+      "id": "SET12",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 로그인 전 양쪽 연결 안 됨 및 계정 삭제 메뉴 없음 확인."
+    },
+    {
+      "id": "SET13",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 계정 삭제 범위, 크루장 안내, 되돌릴 수 없음, 취소/삭제 및 시트 하단 확인."
+    },
+    {
+      "id": "SET14",
+      "revision": 1,
+      "result": "passed",
+      "notes": "삭제 처리 중, 단일 비활성 처리 표시, X/취소 없음 확인."
+    },
+    {
+      "id": "SET15",
+      "revision": 1,
+      "result": "passed",
+      "notes": "삭제 결과 미확인, 문의/닫기만 제공, 실패·성공으로 단정하지 않음."
+    },
+    {
+      "id": "SET16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "어두운 테마 선택, 세 선택지, 누적 거리 미리보기 확인."
+    },
+    {
+      "id": "SET17",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 전체 밝은 테마 적용 및 밝게 행만 선택 확인."
+    },
+    {
+      "id": "SET18",
+      "revision": 1,
+      "result": "passed",
+      "notes": "5개 언어 선택 순서와 한국어 체크, 원문 유지 안내 확인."
+    },
+    {
+      "id": "SET19",
+      "revision": 3,
+      "result": "passed",
+      "notes": "r3: 영어 적용, English 체크, 하단 5탭 영어 확인. 추가 안내 한 줄은 같은 의미의 예시 문구."
+    },
+    {
+      "id": "SET20",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 5개 스위치, 날씨 위치 안내, 이동 화살표 대신 미리 듣기 아이콘 확인."
+    },
+    {
+      "id": "SET21",
+      "revision": 1,
+      "result": "passed",
+      "notes": "5개 FAQ, 앱 사용 안내, 메일 문의와 5탭 확인."
+    },
+    {
+      "id": "SET22",
+      "revision": 1,
+      "result": "passed",
+      "notes": "첫 FAQ만 펼침, 나머지 접힘, 문의 버튼/탭 겹침 없음 확인."
+    },
+    {
+      "id": "SET23",
+      "revision": 1,
+      "result": "passed",
+      "notes": "실제 리소스 문의 주소, 메일 앱 열기/복사, 시트 확인."
+    },
+    {
+      "id": "SET24",
+      "revision": 1,
+      "result": "passed",
+      "notes": "8,000걸음, ±500, 범위, 6.1km/20.0SUP 예시 계산, 즉시 저장 및 닫기 확인."
+    },
+    {
+      "id": "SET25",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로딩 4행, 임시 토글값 없음 확인."
+    },
+    {
+      "id": "SET26",
+      "revision": 1,
+      "result": "passed",
+      "notes": "조회 실패, 이전 설정 보존 안내와 다시 불러오기 확인."
+    },
+    {
+      "id": "SET27",
+      "revision": 2,
+      "result": "passed",
+      "notes": "r2: 삭제 실패, 취소/재시도, 시트가 하단 탭 덮음 확인."
+    },
+    {
+      "id": "SET28",
+      "revision": 1,
+      "result": "passed",
+      "notes": "메일 앱 열기 실패, 실제 주소와 복사/닫기 확인."
+    },
+    {
+      "id": "SET29",
+      "revision": 1,
+      "result": "passed",
+      "notes": "더 보기 5개 진입 및 데모 모드, 앱 정보 확인. 1.0.0은 예시이며 실제 버전을 연결해야 함."
+    },
+    {
+      "id": "SET30",
+      "revision": 1,
+      "result": "passed",
+      "notes": "알림 삭제 처리 중, 취소/반복 삭제 비활성, 단일 처리 표시 확인."
+    }
+  ],
+  "needsRepair": [
+    {
+      "id": "SET31",
+      "revision": 1,
+      "result": "needs-repair",
+      "notes": "계정 삭제 실패 시트에서 되돌릴 수 없음 및 휴대폰에 남은 기록 안내가 빠짐. SET13의 안내를 유지한 채 실패 문구를 추가해야 함."
+    }
+  ],
+  "runtimeVerified": false
+}

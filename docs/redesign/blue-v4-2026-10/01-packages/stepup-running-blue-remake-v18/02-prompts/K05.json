@@ -1,0 +1,8 @@
+{
+  "id": "K05",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI image: heading must say 코스 러닝, not 자유 러닝, because route guidance is still active. Move the blue current position dot OUT OF THE RIVER onto an inland side street in the park below the cyan recommended trail. A short dotted connector goes between that land dot and the nearest trail point, wholly on land. Keep exact 08:12,0.98km, the navy 코스에서 조금 벗어났어요 sheet and both buttons unchanged. No water crossing path.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c97ec7af-a4cf-41f2-a788-6e0dbd13a928.png"
+  ]
+}
