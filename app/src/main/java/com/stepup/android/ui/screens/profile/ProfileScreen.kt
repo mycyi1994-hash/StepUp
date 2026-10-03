@@ -191,8 +191,10 @@ fun ProfileScreen(
             )
         }
     }
-    com.stepup.android.ui.components.SettingsToast(
-        notice, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp).testTag("profile-saved-notice"),
+    // PRO12 — 실제로 저장된 뒤 한 번만(2.6초)
+    com.stepup.android.ui.components.BlueToast(
+        notice, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp),
+        tag = "profile-saved-notice",
     )
     }
 }

@@ -32,16 +32,22 @@ import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.remote.AccountDeletion
 import com.stepup.android.data.remote.ServerResult
-import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.SettingsDangerButton
-import com.stepup.android.ui.components.SettingsGroupLabel
-import com.stepup.android.ui.components.SettingsNavRow
-import com.stepup.android.ui.components.SettingsNote
-import com.stepup.android.ui.components.SettingsPrimaryButton
-import com.stepup.android.ui.components.SettingsSecondaryButton
-import com.stepup.android.ui.components.SettingsSheet
-import com.stepup.android.ui.components.SettingsStatusRow
-import com.stepup.android.ui.components.settingsPalette
+import com.stepup.android.ui.components.BlueGroup
+import com.stepup.android.ui.components.BlueGroupLabel
+import com.stepup.android.ui.components.BlueNavRow
+import com.stepup.android.ui.components.BlueNote
+import com.stepup.android.ui.components.BluePage
+import com.stepup.android.ui.components.BlueSheet
+import com.stepup.android.ui.components.BlueSheetDivider
+import com.stepup.android.ui.components.BlueStatusRow
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -54,7 +60,7 @@ enum class WalletLink { Checking, Linked, NotLinked, Unknown, SignedOut }
 enum class DeleteStep { Closed, Confirm, Deleting, Failed, Unknown }
 
 /**
- * 연결된 계정(설정 v1 11~15).
+ * 연결된 계정(설정 v1 11~15 → 파란 톤 v4 SET11~15 · 31~34).
  *
  * 로그인은 이 휴대폰의 로그인 상태(sessionHolder)만, WEB3 지갑은 서버가 아는 실제 연결만 보인다 — 연결 전이면 "연결하기"로
  * 뽑기 화면과 같은 웹 지갑 페이지를 연다. Health Connect 는 아직 없어 "준비 중". 탭 한 번으로 연결된 것처럼 꾸미지 않는다.
@@ -167,12 +173,12 @@ fun ConnectedAccountsContent(
     onOpenContact: () -> Unit = {},
     onCloseContact: () -> Unit = {},
 ) {
-    DetailPage(title = stringResource(R.string.set_connected), onBack = onBack) {
-        item { SettingsNote(stringResource(R.string.set_connected_intro), top = true) }
+    BluePage(title = stringResource(R.string.set_connected), onBack = onBack, subtitle = stringResource(R.string.set_connected_intro)) {
         item {
-            Column(Modifier.fillMaxWidth()) {
-                SettingsGroupLabel(stringResource(R.string.set_group_login))
-                SettingsStatusRow(
+            BlueGroupLabel(stringResource(R.string.set_group_login))
+            // 소셜 계정은 읽기 전용 — 이 휴대폰의 로그인 상태만
+            BlueGroup {
+                BlueStatusRow(
                     stringResource(R.string.set_social_account), null,
                     stringResource(
                         when (signedIn) {
@@ -186,16 +192,17 @@ fun ConnectedAccountsContent(
             }
         }
         item {
-            Column(Modifier.fillMaxWidth()) {
-                SettingsGroupLabel(stringResource(R.string.set_group_external))
+            BlueGroupLabel(stringResource(R.string.set_group_external))
+            BlueGroup {
                 when (wallet) {
-                    // 연결 전이거나 서버에서 읽지 못했으면 웹 지갑 페이지에서 확인 · 연결한다
-                    WalletLink.NotLinked, WalletLink.Unknown -> SettingsNavRow(
+                    // SET33 · SET34 — 연결 전이거나 서버에서 읽지 못했으면 웹 지갑 페이지에서 확인 · 연결한다(탭만으로 연결됨을 보이지 않는다)
+                    WalletLink.NotLinked, WalletLink.Unknown -> BlueNavRow(
                         stringResource(R.string.set_web3_wallet), onClick = onConnectWallet,
                         value = stringResource(if (wallet == WalletLink.NotLinked) R.string.set_wallet_connect else R.string.set_wallet_unknown),
+                        valueAccent = wallet == WalletLink.NotLinked,
                         modifier = Modifier.testTag("connected-wallet"),
                     )
-                    else -> SettingsStatusRow(
+                    else -> BlueStatusRow(
                         stringResource(R.string.set_web3_wallet), null,
                         stringResource(
                             when (wallet) {
@@ -207,20 +214,24 @@ fun ConnectedAccountsContent(
                         Modifier.testTag("connected-wallet"), strong = wallet == WalletLink.Linked,
                     )
                 }
-                SettingsStatusRow(
+                // 준비 중 — 가짜 연결 기능을 만들지 않는다
+                BlueStatusRow(
                     stringResource(R.string.set_health_connect), null, stringResource(R.string.set_coming_soon),
                     Modifier.testTag("connected-health"), strong = false,
                 )
             }
         }
-        item { SettingsNote(stringResource(R.string.set_external_note)) }
+        item { BlueNote(stringResource(R.string.set_external_note), Modifier.padding(top = 2.dp)) }
         // 로그인이 확인된 사람에게만 — 확인 중이거나 로그인 전이면 숨긴다
         if (signedIn == true) {
             item {
-                SettingsNavRow(
-                    stringResource(R.string.set_delete_account), onClick = onAskDelete, danger = true,
-                    modifier = Modifier.padding(top = 28.dp).testTag("connected-delete"),
-                )
+                Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(runTone().divider))
+                    BlueNavRow(
+                        stringResource(R.string.set_delete_account), onClick = onAskDelete, danger = true, plain = true,
+                        modifier = Modifier.padding(top = 4.dp).testTag("connected-delete"),
+                    )
+                }
             }
         }
     }
@@ -233,53 +244,65 @@ fun ConnectedAccountsContent(
     if (contactOpen) ContactSheet(onDismiss = onCloseContact)
 }
 
-/** 계정 삭제 확인(13) · 처리 중(14). 서버에서 지워지는 것과 이 휴대폰에 남는 것을 나눠 알린다 */
+/**
+ * 계정 삭제 확인(SET13) · 처리 중(SET14) · 확정 실패(SET31 r2). 서버에서 지워지는 것과 이 휴대폰에 남는 것을 나눠 알린다.
+ * 실패해도 삭제 범위 · 크루장 이전 · 되돌릴 수 없음 · 휴대폰 기록 안내를 그대로 두고 아래에 실패 안내를 더한다.
+ */
 @Composable
 private fun DeleteAccountSheet(step: DeleteStep, onDelete: () -> Unit, onDismiss: () -> Unit) {
-    val p = settingsPalette()
+    val t = runTone()
     val deleting = step == DeleteStep.Deleting
-    SettingsSheet(
+    BlueSheet(
         title = stringResource(R.string.set_delete_title), onDismiss = onDismiss,
         dismissible = !deleting, showClose = !deleting, modifier = Modifier.testTag("delete-sheet"),
         actions = {
             if (deleting) {
-                SettingsSecondaryButton(stringResource(R.string.set_deleting), {}, Modifier.fillMaxWidth().testTag("delete-busy"), enabled = false)
+                // 타이머로 끝내지 않는다 — 서버의 확정 답(지움 · 지우지 않음 · 모름)을 기다린다
+                RunButton(stringResource(R.string.set_deleting), {}, Modifier.testTag("delete-busy"), busy = true)
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SettingsSecondaryButton(stringResource(R.string.set_cancel), onDismiss, Modifier.weight(1f))
-                    SettingsDangerButton(stringResource(R.string.set_delete_action), onDelete, Modifier.weight(1f).testTag("delete-confirm"))
+                    RunButton(stringResource(R.string.set_cancel), onDismiss, Modifier.weight(1f), kind = RunButtonKind.Secondary)
+                    RunButton(stringResource(R.string.set_delete_action), onDelete, Modifier.weight(1f).testTag("delete-confirm"),
+                        kind = RunButtonKind.Danger)
                 }
             }
         },
     ) {
-        Text(stringResource(R.string.set_delete_heading), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-        listOf(R.string.set_delete_item_runs, R.string.set_delete_item_sup, R.string.set_delete_item_places).forEach {
-            Text(stringResource(it), color = p.secondary, fontSize = 16.sp)
+        Text(stringResource(R.string.set_delete_heading), style = runTextStyle(18.sp, t.label, FontWeight.Bold))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf(R.string.set_delete_item_runs, R.string.set_delete_item_sup, R.string.set_delete_item_places).forEach {
+                Text(stringResource(it), style = runTextStyle(17.sp, t.text, FontWeight.Medium))
+            }
         }
-        Text(stringResource(R.string.set_delete_crew_leader), color = p.secondary, fontSize = 14.sp, lineHeight = 1.45.em)
-        Box(Modifier.fillMaxWidth().padding(vertical = 4.dp).height(1.dp).background(p.divider))
-        Text(stringResource(R.string.set_delete_cannot_undo), color = p.danger, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(R.string.set_delete_phone_note), color = p.secondary, fontSize = 14.sp)
+        Text(stringResource(R.string.set_delete_crew_leader), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f))
+        BlueSheetDivider()
+        Text(stringResource(R.string.set_delete_cannot_undo), style = runTextStyle(17.sp, t.dangerText, FontWeight.Bold))
+        Text(stringResource(R.string.set_delete_phone_note), style = runTextStyle(15.sp, t.text.copy(alpha = 0.9f), FontWeight.Medium, 1.45f))
         if (step == DeleteStep.Failed) {
-            Text(stringResource(R.string.set_delete_failed), color = p.danger, fontSize = 14.sp, lineHeight = 1.45.em,
-                modifier = Modifier.testTag("delete-failed"))
+            Text(
+                stringResource(R.string.set_delete_failed), style = runTextStyle(16.sp, t.dangerText, FontWeight.Bold, 1.45f),
+                modifier = Modifier.padding(top = 6.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("delete-failed"),
+            )
         }
     }
 }
 
-/** 삭제 결과 미확인(15) — 완료나 실패로 단정하지 않고, 같은 요청을 자동으로 다시 보내지 않는다 */
+/** 삭제 결과 미확인(SET15) — 완료나 실패로 단정하지 않고, 같은 요청을 자동으로 다시 보내지 않는다 */
 @Composable
 private fun DeleteUnknownSheet(onContact: () -> Unit, onClose: () -> Unit) {
-    val p = settingsPalette()
-    SettingsSheet(
+    val t = runTone()
+    BlueSheet(
         title = stringResource(R.string.set_delete_unknown_title), onDismiss = onClose, modifier = Modifier.testTag("delete-unknown"),
+        centered = true,
         actions = {
-            SettingsPrimaryButton(stringResource(R.string.set_contact_options), onContact, Modifier.fillMaxWidth().testTag("delete-unknown-contact"))
-            SettingsSecondaryButton(stringResource(R.string.set_close), onClose, Modifier.fillMaxWidth())
+            RunButton(stringResource(R.string.set_contact_options), onContact, Modifier.testTag("delete-unknown-contact"))
+            RunButton(stringResource(R.string.set_close), onClose, kind = RunButtonKind.Secondary)
         },
     ) {
-        Text(stringResource(R.string.set_delete_unknown_heading), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(R.string.set_delete_unknown_body), color = p.secondary, fontSize = 15.sp, lineHeight = 1.55.em)
+        Text(stringResource(R.string.set_delete_unknown_heading), style = runTextStyle(16.sp, t.label, FontWeight.SemiBold),
+            textAlign = TextAlign.Center)
+        Text(stringResource(R.string.set_delete_unknown_body), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.55f),
+            textAlign = TextAlign.Center)
     }
 }
 
