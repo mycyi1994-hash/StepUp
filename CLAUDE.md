@@ -4,7 +4,7 @@
 
 러닝 밖 화면(뽑기 · 신발 상세 · 수리 · 강화 · 커뮤니티 · 글쓰기 · 크루 · 내 정보 · 설정 · 시작 · 알림, 421개 상태)도 같은 남색 · 전기 파랑으로 맞췄다 —
 [docs/redesign/blue-v4-2026-10/IMPLEMENTATION-REPORT.md](docs/redesign/blue-v4-2026-10/IMPLEMENTATION-REPORT.md)
-(기능별 상태 · 지시서와 서버가 다른 곳 · [화면별 기록표](docs/redesign/blue-v4-2026-10/implementation-tracker.csv)). 강화 · 수리는 현행 서버 계약을 따른다.
+(기능별 상태 · 지시서와 서버가 다른 곳 · [화면별 기록표](docs/redesign/blue-v4-2026-10/implementation-tracker.csv)). 강화는 재료 신발 3개를 태우는 확률 강화다(서버 0054 `forge_*`, 규칙 forge-v2 — 재료는 대상보다 한 등급 아래 이상, [shoe-upgrade-2026-10-01](docs/redesign/shoe-upgrade-2026-10-01/README.md)). 수리는 현행 서버 계약을 따른다.
 지갑 WAL01~16 · 알림 NOT27~46 은 시안이 없어 기존 그대로다.
 
 ## 최신 — 러닝 전체 리메이크 · 신발 색감 (2026-10-02)
