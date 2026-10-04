@@ -495,8 +495,16 @@ internal fun MainScaffold(
         if (currentRoute != null) {
             val tabs = listOf(Screen.Customize.route, Screen.Draw.route, Screen.Community.route, Screen.Profile.route)
             if (currentRoute == Screen.Run.route && previousRoute in tabs) {
-                homePhoto = upcomingPhoto?.takeIf { weatherPick == null || com.stepup.android.ui.components.HomePhotos.all[it].suits(weatherPick) }
-                    ?: com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
+                // 미리 풀기가 아직 안 끝났으면 그 사진을 기다리지 않고(화면 스레드가 멈춘다) 지금 사진을 그대로 둔다
+                val ready = upcomingPhoto?.takeIf {
+                    (weatherPick == null || com.stepup.android.ui.components.HomePhotos.all[it].suits(weatherPick)) &&
+                        com.stepup.android.ui.components.RasterCache.isReady(context.resources, com.stepup.android.ui.components.HomePhotos.all[it].res)
+                }
+                if (ready != null) {
+                    homePhoto = ready
+                } else if (weatherPick != null && !com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(weatherPick)) {
+                    homePhoto = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
+                }
                 upcomingPhoto = null
             } else if (previousRoute == Screen.Run.route && currentRoute in tabs) {
                 val next = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)

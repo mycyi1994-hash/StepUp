@@ -44,7 +44,8 @@ internal object RasterCache {
     private val vectors = ConcurrentHashMap.newKeySet<Int>()
     private val locks = ConcurrentHashMap<Long, Any>()
     private val warmer by lazy {
-        Executors.newSingleThreadExecutor { r -> Thread(r, "stepup-image-warm").apply { priority = Thread.MIN_PRIORITY + 1 } }
+        // 보통 우선순위 — 낮추면 화면 스레드가 이 작업이 끝나기를 기다릴 때 오래 밀린다
+        Executors.newSingleThreadExecutor { r -> Thread(r, "stepup-image-warm") }
     }
 
     private fun key(resources: Resources, id: Int): Long {
@@ -52,6 +53,9 @@ internal object RasterCache {
         val variant = c.densityDpi * 4 + ((c.uiMode and Configuration.UI_MODE_NIGHT_MASK) shr 4)
         return (variant.toLong() shl 32) or (id.toLong() and 0xffffffffL)
     }
+
+    /** 이미 풀어 둔 그림인가 — 화면 스레드에서 기다리지 않고 물어본다 */
+    fun isReady(resources: Resources, @DrawableRes id: Int): Boolean = cache.get(key(resources, id)) != null
 
     /** 비트맵 그림이면 풀어서(또는 기억한 것을) 돌려준다. 벡터 · 풀 수 없는 그림은 null — 부르는 쪽이 painterResource 로 그린다. */
     fun get(resources: Resources, @DrawableRes id: Int): ImageBitmap? {
