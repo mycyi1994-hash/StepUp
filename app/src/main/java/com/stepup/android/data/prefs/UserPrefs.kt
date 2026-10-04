@@ -954,8 +954,12 @@ class UserPrefs(
     val forgePendingFlow: Flow<Pair<String?, String?>> =
         store.data.map { it[Keys.FORGE_PENDING] to it[Keys.ECONOMY_OWNER] }
 
-    suspend fun setForgePending(value: String?) {
-        store.edit { if (value == null) it.remove(Keys.FORGE_PENDING) else it[Keys.FORGE_PENDING] = value }
+    /** 저장된 강화 요청들을 한 번에 읽고 바꾼다(계정마다 한 줄 — 다른 계정 줄을 덮어쓰지 않게 읽기 · 쓰기를 한 편집으로) */
+    suspend fun updateForgePending(transform: (String?) -> String?) {
+        store.edit {
+            val next = transform(it[Keys.FORGE_PENDING])
+            if (next == null) it.remove(Keys.FORGE_PENDING) else it[Keys.FORGE_PENDING] = next
+        }
     }
 
     /** 폰의 서버 경제 사본이 어느 계정 것인가 — 다른 계정으로 로그인하면 사본을 먼저 지운다 */
