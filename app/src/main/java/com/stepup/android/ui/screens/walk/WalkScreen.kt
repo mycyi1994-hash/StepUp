@@ -865,7 +865,7 @@ fun RunScreen(
                 },
                 onClose = { showDetails = false },
                 extra = {
-                    if (BuildConfig.DEBUG) {
+                    if (BuildConfig.TEST_TOOLS) {
                         TextButton(onClick = { viewModel.simulateSteps(100) }) {
                             Text(stringResource(R.string.run_simulate), color = tone.muted)
                         }
