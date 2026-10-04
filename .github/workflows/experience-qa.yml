@@ -39,7 +39,7 @@ jobs:
           # 그림 검사(tools/check_experience_assets.py)가 Pillow 로 배너 크기를 읽는다
           python -m pip install --quiet pillow
           python tools/check_experience_assets.py
-          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:assembleQa :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
           # 컴파일은 여기서 끝난다 — 남아 있는 Kotlin 컴파일 데몬(2GB 넘게)을 내려 에뮬레이터(4GB)가 쓸 메모리를 비운다.
           # 그대로 두면 러너(16GB) 스왑이 바닥나 기준 장면 캡처 중 에뮬레이터가 꺼졌다(PR #82 Experience QA 37148859097 · 37160119015).
           # 기기 검사의 gradle 은 이미 만든 APK 를 쓰므로 다시 컴파일하지 않는다.
