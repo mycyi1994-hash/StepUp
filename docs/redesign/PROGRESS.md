@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-10-04 — forge follow-up (#84): per-account pending request · blocked candidates shown (migration 0055)
+
+- App: the unresolved forge request (`forge_pending`) is stored one line per account (`upsertPending` · `pendingFor` in `ForgeRepository.kt`, read-modify-write in one DataStore edit via `UserPrefs.updateForgePending`). Switching accounts no longer overwrites or deletes another account's request key, so returning to that account can still ask whether its three materials burned. Old single-line values still read.
+- Server: migration `0055_forge_material_candidates.sql` — `forge_materials` returns every owned shoe except the target and lets `forge_material_block` mark two-or-more-grades-lower ones `GRADE` (rule forge-v2 unchanged; quote/start still reject them). The picker shows those rows with their reason even when no candidate is usable (the empty headline appears above them).
+- Evidence: `ShoeForgeTest` (per-account store), SQL test "두 등급 이상 아래 신발도 후보 목록에 보이되 GRADE 로 막힌다(0055)" (`supabase/tests/run.sh`, 1000 OK), compile/unit/lint locally; CI Experience QA on #84.
+
 ## 2026-10-04 — shoe upgrade: burn three material shoes (forge, rule forge-v2) in the blue v4 look
 
 - Replaces the SUP upgrade that the blue v4 pass (#82) kept. The detail's 강화하기 opens the independent screen `ShoeUpgradeScreen` (route `sneaker/{id}/upgrade`), drawn with the blue kit (RunButton · RunSheet · CareShoeHeader · UpgradeStatRows) after the v4 upgrade package UP01–UP15 · UP18. Material picker, final confirm, changed-materials and offline are bottom sheets. No UP16 / help / "기본 + 보정" text.
