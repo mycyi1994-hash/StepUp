@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -196,7 +195,7 @@ fun SneakerVisual(
     if (res != null) {
         val float = if (animate && LocalMotion.current.decorative) ambientPhase(3600, reverse = true) else null
         Image(
-            painter = painterResource(res),
+            painter = cachedPainterResource(res),
             contentDescription = null,
             modifier = modifier.graphicsLayer {
                 if (float != null) {
@@ -316,7 +315,7 @@ private fun Modifier.gradeSlot(left: Float, top: Float, side: Float) = layout { 
 @Composable
 private fun GradeLayer(@DrawableRes res: Int) {
     Image(
-        painter = painterResource(res),
+        painter = cachedPainterResource(res),
         contentDescription = null,
         modifier = Modifier.fillMaxSize(),
         // 상자가 이미 그림 비율(440:418)이라 늘어나지 않는다 — 반 픽셀 차이만 메운다

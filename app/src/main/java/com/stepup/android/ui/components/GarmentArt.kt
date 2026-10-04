@@ -40,7 +40,7 @@ fun OutfitArt(outfit: Outfit, gender: AvatarGender, modifier: Modifier = Modifie
     val res = outfitProductRes(outfit.designIdFor(gender)) ?: outfitProductRes(outfit.id) ?: return
     if (res != null) {
         androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(res),
+            painter = cachedPainterResource(res),
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             modifier = modifier,

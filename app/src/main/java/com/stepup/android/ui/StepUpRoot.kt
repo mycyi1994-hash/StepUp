@@ -488,15 +488,33 @@ internal fun MainScaffold(
         weatherPick?.let { homePhoto = com.stepup.android.ui.components.HomePhotos.forWeather(it, homePhoto) }
     }
     var previousRoute by remember { mutableStateOf<String?>(null) }
+    // 러닝 탭을 떠날 때 돌아와서 보일 사진을 미리 골라 뒤에서 풀어 둔다 — 돌아오는 순간 큰 사진(780×1200)을
+    // 화면 스레드에서 풀면 탭 넘김 첫 프레임이 끊긴다
+    var upcomingPhoto by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != null) {
-            if (currentRoute == Screen.Run.route && previousRoute in listOf(
-                    Screen.Customize.route, Screen.Draw.route, Screen.Community.route, Screen.Profile.route,
-                )) {
-                homePhoto = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
+            val tabs = listOf(Screen.Customize.route, Screen.Draw.route, Screen.Community.route, Screen.Profile.route)
+            if (currentRoute == Screen.Run.route && previousRoute in tabs) {
+                homePhoto = upcomingPhoto?.takeIf { weatherPick == null || com.stepup.android.ui.components.HomePhotos.all[it].suits(weatherPick) }
+                    ?: com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
+                upcomingPhoto = null
+            } else if (previousRoute == Screen.Run.route && currentRoute in tabs) {
+                val next = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
+                upcomingPhoto = next
+                com.stepup.android.ui.components.RasterCache.prewarm(context.resources, com.stepup.android.ui.components.HomePhotos.all[next].res)
             }
             previousRoute = currentRoute
         }
+    }
+    // 자주 여는 탭의 큰 그림(내 정보 패스 사진 · 뽑기 상자)은 첫 화면이 뜬 뒤 뒤에서 미리 풀어 둔다
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1_500)
+        com.stepup.android.ui.components.RasterCache.prewarm(
+            context.resources,
+            com.stepup.android.R.drawable.home_banner_blue_night,
+            com.stepup.android.R.drawable.draw_box_closed_free,
+            com.stepup.android.R.drawable.draw_box_closed_premium,
+        )
     }
     val wardrobeScene = wardrobeSetting.takeIf {
         it in com.stepup.android.ui.components.WardrobeBackgrounds.settings

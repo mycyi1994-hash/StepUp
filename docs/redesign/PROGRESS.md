@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-10-04 — lag: optimized test APK build (qa) · cached raster images
+
+- User: "아니 렉걸리는데" after #84. Two causes found.
+- Build: the phone test APK (`test-apk/StepUp-test.apk`) was the **debug** build — debuggable (ART runs without its usual optimizations, library baseline profiles are not applied) and not shrunk by R8, which makes every Compose screen noticeably slower. New build type `qa` (`app/build.gradle.kts`): release code path with R8 (`-dontobfuscate` in `proguard-qa.pro`, resource shrinking off), not debuggable, signed with the same fixed debug key so it installs over the existing test app (same applicationId · data). Self-update and the 걸음 흉내 test button stay on (`BuildConfig.TEST_TOOLS`, debug · qa). Credential Manager keep rule added to `proguard-rules.pro`. Publishing it as `StepUp-test.apk` needs the Build APK workflow change (waiting for the user's go-ahead).
+- Code: `painterResource` decodes webp/png on the main thread at full size and forgets the bitmap when the screen leaves — shoe cells and grade-stage layers (up to 4 per shoe), the Run-tab photo (780×1200, a new one on every return), the profile pass photo (1774×887 png) and the draw boxes were decoded again on every tab switch and scroll. `ui/components/CachedImage.kt` (`cachedPainterResource`, `RasterCache` — app-wide LruCache, ≤ 1/6 heap, max 96 MB; vectors fall back to `painterResource`) replaces it at the raster call sites. The next Run-tab photo is chosen and decoded in the background when leaving the Run tab; the pass photo and draw boxes are decoded in the background 1.5 s after start.
+- Evidence: compile, unit tests, lint, `assembleQa` (R8) locally; CI Experience QA on the PR.
+
 ## 2026-10-04 — forge follow-up (#84): per-account pending request · blocked candidates shown (migration 0055)
 
 - App: the unresolved forge request (`forge_pending`) is stored one line per account (`upsertPending` · `pendingFor` in `ForgeRepository.kt`, read-modify-write in one DataStore edit via `UserPrefs.updateForgePending`). Switching accounts no longer overwrites or deletes another account's request key, so returning to that account can still ask whether its three materials burned. Old single-line values still read.

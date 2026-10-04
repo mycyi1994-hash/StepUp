@@ -328,7 +328,7 @@ private fun LoginArch(@androidx.annotation.DrawableRes image: Int, modifier: Mod
             ),
     ) {
         androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(image), contentDescription = null,
+            painter = com.stepup.android.ui.components.cachedPainterResource(image), contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize(),
         )
         Box(

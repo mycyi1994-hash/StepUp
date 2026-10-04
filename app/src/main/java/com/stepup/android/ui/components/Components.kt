@@ -63,7 +63,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -253,7 +252,7 @@ fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Mo
     // 바탕에서는 흰색. "UP"은 두 벌 모두 같은 블루다.
     val asset = if (StepUpColors.dark) R.drawable.logo_wordmark_on_dark else R.drawable.logo_wordmark
     Image(
-        painter = painterResource(asset),
+        painter = cachedPainterResource(asset),
         contentDescription = "STEPUP",
         modifier = modifier.size(width = logoHeight * StepUpDesign.LogoAspectRatio, height = logoHeight)
             .testTag(if (role == BrandLogoRole.Card) "brand-wordmark-card" else "brand-wordmark"),
