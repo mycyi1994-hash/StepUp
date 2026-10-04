@@ -2,6 +2,9 @@ package com.stepup.android
 
 import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.domain.Faction
+import com.stepup.android.domain.ForgePending
+import com.stepup.android.domain.ForgeStats
+import com.stepup.android.domain.ForgeTarget
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.ServerStats
 import com.stepup.android.domain.Sneaker
@@ -10,19 +13,15 @@ import com.stepup.android.ui.screens.items.DetailStat
 import com.stepup.android.ui.screens.items.RepairPhase
 import com.stepup.android.ui.screens.items.ShoeCareBackend
 import com.stepup.android.ui.screens.items.ShoeCareStore
-import com.stepup.android.ui.screens.items.UpgradePhase
-import com.stepup.android.ui.screens.items.UpgradeRejection
-import com.stepup.android.ui.screens.items.atMaxLevel
 import com.stepup.android.ui.screens.items.balanceAfter
 import com.stepup.android.ui.screens.items.careBlockOf
+import com.stepup.android.ui.screens.items.forgeRows
 import com.stepup.android.ui.screens.items.formatSupExact
+import com.stepup.android.ui.screens.items.holds
 import com.stepup.android.ui.screens.items.pending
 import com.stepup.android.ui.screens.items.repairGate
 import com.stepup.android.ui.screens.items.repairQuoteOf
 import com.stepup.android.ui.screens.items.repairShortfall
-import com.stepup.android.ui.screens.items.upgradeBlockOf
-import com.stepup.android.ui.screens.items.upgradePreview
-import com.stepup.android.ui.screens.items.upgradeRows
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
@@ -34,7 +33,7 @@ import java.math.BigDecimal
 
 /**
  * 신발 상세 · 수리 · 강화(파란 톤 v4) — 수리 견적(서버 sneaker_repair 와 같은 계산) · 보내기 전 판정 · 한 번만 보내기 ·
- * 결과 미확인의 읽기 확인, 강화(지금 계약: SUP 를 내고 레벨 +1)의 미리보기 · 결말. 예시 수는 전달본 04-데이터와-금액기준.md 의 예시다.
+ * 결과 미확인의 읽기 확인, 강화 화면의 세 줄(서버 forge 값). 강화 요청 · 확률은 ShoeForgeTest. 예시 수는 전달본 04-데이터와-금액기준.md 의 예시다.
  */
 class ShoeCareTest {
 
@@ -171,81 +170,32 @@ class ShoeCareTest {
         assertEquals(0, backend.repairs)
     }
 
-    // ── 강화(지금 계약) ────────────────────────────────────────
+    // ── 강화 화면의 세 줄(서버 forge 값) ────────────────────────
 
-    @Test fun `미리보기는 서버 레벨 한 칸 몫(효율 +0_5 · 착화감 +0_2, 20 상한) — 내구도 줄은 없다`() {
-        val shoe = server(efficiencyBps = 1_800, comfortBps = 800, level = 10, maxLevel = 30)
-        val next = upgradePreview(shoe)
-        assertEquals(11, next.level)
-        val rows = upgradeRows(shoe, next)
+    @Test fun `강화 미리보기는 서버 실효 값에 레벨 한 칸 몫(효율 +0_5 · 착화감 +0_2, 20 상한) — 내구도 줄은 없다`() {
+        val stats = ForgeStats(level = 10, maxLevel = 20, efficiencyBps = 1_800, comfortBps = 800)
+        val target = ForgeTarget(ID, Rarity.LEGENDARY, stats, basePermille = 700, block = null)
+        val rows = forgeRows(stats, target.previewNext())
         assertEquals(listOf(DetailStat.LEVEL, DetailStat.EFFICIENCY, DetailStat.COMFORT), rows.map { it.stat })
         assertEquals("10" to "11", rows[0].now to rows[0].next)
         assertEquals("+18.0%" to "+18.5%", rows[1].now to rows[1].next)
         assertEquals("8.0%" to "8.2%", rows[2].now to rows[2].next)
-        // 레벨 분모는 서버가 준 상한(30) — 화면만 20 으로 바꾸지 않는다
-        assertEquals(10f / 30f, rows[0].nowFraction, 1e-6f)
-        val capped = upgradePreview(server(comfortBps = 1_990))
-        assertEquals(2_000, capped.server!!.comfortBps)
-        // 결과 미확인 · 최대 화면은 다음 값을 그리지 않는다
-        assertNull(upgradeRows(shoe, null)[0].next)
+        // 레벨 분모는 서버가 준 상한(20)
+        assertEquals(10f / 20f, rows[0].nowFraction, 1e-6f)
+        assertEquals(11f / 20f, rows[0].nextFraction!!, 1e-6f)
+        val capped = target.copy(stats = stats.copy(comfortBps = 1_990)).previewNext()
+        assertEquals(2_000, capped.comfortBps)
+        // 실패 · 결과 미확인 · 최대 화면은 다음 값을 그리지 않는다
+        assertNull(forgeRows(stats, null)[0].next)
+        assertNull(forgeRows(stats, null)[0].nextFraction)
     }
 
-    @Test fun `강화할 수 없는 까닭 — 판매 중 · 체인 · 예전 신발, 최대 레벨은 서버 상한으로`() {
-        assertEquals(CareBlock.LISTED, upgradeBlockOf(server(status = "LISTED")))
-        assertEquals(CareBlock.ON_CHAIN, upgradeBlockOf(server(chain = "CHAIN")))
-        assertEquals(CareBlock.LEGACY, upgradeBlockOf(server(origin = "IMPORT")))
-        assertNull(upgradeBlockOf(server()))
-        assertTrue(atMaxLevel(server(level = 30, maxLevel = 30)))
-        assertFalse(atMaxLevel(server(level = 20, maxLevel = 30)))
-    }
-
-    @Test fun `강화는 한 번만 보내고 서버가 돌려준 새 레벨로만 성공`() {
-        val before = server(level = 10, maxLevel = 30)
-        val backend = FakeBackend(before, balance = 5_000.0)
-        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
-        backend.onUpgrade = {
-            // 보내는 중에 다시 눌러도(연타) 두 번째 요청은 나가지 않는다
-            store.startUpgrade(before)
-            EconomyOutcome.Ok to before.copy(level = 11)
-        }
-        store.startUpgrade(before)
-        assertEquals(1, backend.upgrades)
-        val success = store.upgrade.value[ID] as UpgradePhase.Success
-        assertEquals(11, success.after.level)
-    }
-
-    @Test fun `강화 응답을 못 받으면 결과 미확인 — 다시 확인은 읽기만, 새 강화를 막는다`() {
-        val before = server(level = 10, maxLevel = 30)
-        val backend = FakeBackend(before, balance = 5_000.0)
-        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
-        backend.onUpgrade = { EconomyOutcome.Offline to null }
-        store.startUpgrade(before)
-        assertTrue(store.upgrade.value[ID] is UpgradePhase.Unknown)
-        assertTrue(store.busy(ID))
-        store.startUpgrade(before)
-        store.clearUpgrade(ID)
-        assertEquals(1, backend.upgrades)
-        assertTrue(store.upgrade.value[ID] is UpgradePhase.Unknown)
-        // 다시 읽었는데 그대로면 미확인(값만 확인), 레벨이 올라 있으면 그 값으로 보인다
-        store.recheckUpgrade(ID)
-        assertTrue((store.upgrade.value[ID] as UpgradePhase.Unknown).synced)
-        backend.shoe = before.copy(level = 11)
-        store.recheckUpgrade(ID)
-        val seen = store.upgrade.value[ID] as UpgradePhase.Success
-        assertTrue(seen.observed)
-        assertEquals(1, backend.upgrades)
-    }
-
-    @Test fun `서버 거절은 차감 없는 거절로 — 확률 실패로 말하지 않는다`() {
-        val before = server(level = 10, maxLevel = 30)
-        val backend = FakeBackend(before, balance = 0.0)
-        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
-        backend.onUpgrade = { EconomyOutcome.NotEnoughBalance to null }
-        store.startUpgrade(before)
-        assertEquals(UpgradePhase.Rejected(UpgradeRejection.NOT_ENOUGH_BALANCE), store.upgrade.value[ID])
-        assertFalse(store.busy(ID))
-        store.clearUpgrade(ID)
-        assertNull(store.upgrade.value[ID])
+    @Test fun `결과를 모르는 강화 요청은 대상과 재료 신발을 붙잡는다`() {
+        val pending = ForgePending("k", targetId = ID, materialIds = listOf(11, 12, 13), ratePermille = 806, createdAt = 0)
+        assertTrue(pending.holds(ID))
+        assertTrue(pending.holds(12))
+        assertFalse(pending.holds(99))
+        assertFalse((null as ForgePending?).holds(ID))
     }
 
     // ── 도우미 ─────────────────────────────────────────────────
@@ -254,18 +204,12 @@ class ShoeCareTest {
         var refreshOutcome: EconomyOutcome = EconomyOutcome.Ok
         var refreshes = 0
         var repairs = 0
-        var upgrades = 0
         var onRepair: () -> EconomyOutcome = { EconomyOutcome.Ok }
-        var onUpgrade: () -> Pair<EconomyOutcome, Sneaker?> = { EconomyOutcome.Ok to null }
         override val serverEconomy: Boolean = true
         override suspend fun refresh(): EconomyOutcome = refreshOutcome.also { refreshes++ }
         override suspend fun shoe(id: Long): Sneaker? = shoe?.takeIf { it.id == id }
         override suspend fun balance(): Double? = balance
         override suspend fun repair(id: Long): EconomyOutcome = onRepair().also { repairs++ }
-        override suspend fun upgrade(id: Long): Pair<EconomyOutcome, Sneaker?> = onUpgrade().also {
-            upgrades++
-            it.second?.let { s -> shoe = s }
-        }
     }
 
     private companion object {

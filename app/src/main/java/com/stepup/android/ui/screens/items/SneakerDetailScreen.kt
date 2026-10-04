@@ -1,7 +1,6 @@
 package com.stepup.android.ui.screens.items
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -65,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.domain.ForgePending
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.DarkIconButton
@@ -103,25 +103,25 @@ import kotlinx.coroutines.launch
 /** 상세 위에 뜨는 시트 — 신발 관리(SD13 · SD14) · 신발 기록(SD15 ~ SD17). 수리 시트는 따로(한 번에 하나) */
 private enum class DetailSheet { None, Manage, Record }
 
-/** 상세가 보이는 수리 · 강화의 결과 미확정(SD18 · SD19) — 이때는 착용 · 강화 · 수리 · 판매를 막는다 */
+/**
+ * 상세가 보이는 수리 · 강화의 결과 미확정(SD18 · SD19) — 이때는 착용 · 수리 · 판매를 막는다.
+ * [upgradePending] 은 결과를 아직 모르는 강화 요청(폰에 저장한 요청 키)의 대상이거나 재료인 신발 — 강화하기 자리가 "강화 결과 확인"이 된다.
+ */
 data class ShoeCareStatus(val upgradePending: Boolean = false, val repairPending: Boolean = false) {
     val busy: Boolean get() = upgradePending || repairPending
 }
 
-/** 휴대폰에 쓸 수 있는 연결이 있는가 — 없으면 강화 요청을 보내지 않는다(UP14). 있다고 서버에 닿는다는 보장은 아니다 */
-private fun hasNetwork(context: android.content.Context): Boolean {
-    val manager = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return true
-    val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
-    return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
-}
+/** 저장된 미확인 강화 요청이 이 신발(대상 · 재료)을 붙잡고 있는가 */
+fun ForgePending?.holds(id: Long): Boolean = this != null && (targetId == id || id in materialIds)
 
 /**
  * 신발 상세(파란 톤 v4 — docs/redesign/blue-v4-2026-10, 상세 · 수리 30 · 강화 17).
  *
  * 본문: 등급 무대 → 이름 · 등급 배지 · No. 번호 → 레벨 · 효율 · 착화감 · 내구도 네 독립 줄 → 아래 "강화하기"(파란 면) + "이 신발 신기"(흰 면).
- * 강화하기는 같은 경로 안의 독립 강화 화면([ShoeUpgradeContent])을, ⋯ 관리는 수리하기 · 판매하기 · 신발 기록을 연다.
- * 수리는 관리에서 여는 하단 시트([ShoeRepairSheet])다. 착용은 기존 길 그대로([ItemsViewModel.equip]).
- * 수리 · 강화는 지금 서버 계약 그대로 [ShoeCareStore] 가 보낸다 — 결과를 모르면 결과 확인은 읽기만 한다.
+ * 강화하기는 독립 강화 화면([ShoeUpgradeScreen] — 재료 신발 3개 · 확률, 0054 forge_*)으로 간다([onUpgrade]).
+ * 결과를 모르는 강화 요청이 이 신발을 붙잡고 있으면 그 자리가 "강화 결과 확인"이 되고, 같은 화면이 같은 요청의 결과만 묻는다.
+ * ⋯ 관리는 수리하기 · 판매하기 · 신발 기록을 연다. 수리는 관리에서 여는 하단 시트([ShoeRepairSheet])이고 지금 서버 계약 그대로
+ * [ShoeCareStore] 가 보낸다. 착용은 기존 길 그대로([ItemsViewModel.equip]).
  */
 @Composable
 fun SneakerDetailScreen(
@@ -132,21 +132,24 @@ fun SneakerDetailScreen(
         { _, _, _, _ -> },
     /** SD09 · SD10 "보관함으로" — 앱 셸에서는 신발 탭의 최신 목록으로 */
     onOpenOwned: () -> Unit = onBack,
+    /** 강화하기 · 강화 결과 확인 — 독립 강화 화면으로. 강화는 거기서만 한다 */
+    onUpgrade: (Long) -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val context = LocalContext.current
     val owned by viewModel.owned.collectAsStateWithLifecycle()
     val equipping by viewModel.equipping.collectAsStateWithLifecycle()
     val result by viewModel.equipResult.collectAsStateWithLifecycle()
-    val balance by viewModel.balance.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val store = ShoeCareStore.shared
     val repairs by store.repair.collectAsStateWithLifecycle()
-    val upgrades by store.upgrade.collectAsStateWithLifecycle()
+    // 결과를 아직 모르는 강화 요청(앱을 다시 켜도 남는다) — 이 신발이 대상 · 재료면 "강화 결과 확인"
+    val forgePending by remember {
+        runCatching { ServiceLocator.forgeRepository.pendingFlow }.getOrElse { kotlinx.coroutines.flow.flowOf(null) }
+    }.collectAsStateWithLifecycle(initialValue = null)
     val state = detailStateOf(owned, sneakerId)
     val scope = rememberCoroutineScope()
 
-    var upgradeOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
     var repairOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
 
     // 로그인 화면으로 — 돌아온 뒤 자동으로 착용 · 수리 · 강화하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
@@ -175,35 +178,11 @@ fun SneakerDetailScreen(
         viewModel.consumeMessage()
     }
 
-    val upgradePhase = upgrades[sneakerId]
     val repairPhase = repairs[sneakerId]
+    val care = ShoeCareStatus(upgradePending = forgePending.holds(sneakerId), repairPending = repairPhase?.pending == true)
     // 화면이 다시 만들어졌는데(프로세스 재시작) 열려 있던 수리 시트의 상태가 없으면 — 조회부터 다시(읽기만)
     LaunchedEffect(repairOpen) {
         if (repairOpen && store.repair.value[sneakerId] == null) store.openRepair(sneakerId)
-    }
-
-    if (upgradeOpen) {
-        val leave = {
-            upgradeOpen = false
-            store.clearUpgrade(sneakerId)
-        }
-        BackHandler { leave() }
-        ShoeUpgradeContent(
-            state = state,
-            balance = balance,
-            phase = upgradePhase,
-            onBack = leave,
-            onOpenOwned = {
-                leave()
-                onOpenOwned()
-            },
-            onStart = store::startUpgrade,
-            onRecheck = { store.recheckUpgrade(sneakerId) },
-            onReset = { store.clearUpgrade(sneakerId) },
-            onSignIn = signIn,
-            isOnline = { !ServiceLocator.serverEconomyOn || hasNetwork(context) },
-        )
-        return
     }
 
     ShoeDetailContent(
@@ -213,11 +192,11 @@ fun SneakerDetailScreen(
         onBack = onBack,
         onOpenOwned = onOpenOwned,
         onReload = viewModel::reloadOwned,
-        onWear = { if (!store.busy(sneakerId)) viewModel.equip(sneakerId) },
+        onWear = { if (!care.busy) viewModel.equip(sneakerId) },
         onResultShown = viewModel::consumeEquipResult,
-        onEnhance = { upgradeOpen = true },
+        onEnhance = { if (!care.repairPending) onUpgrade(sneakerId) },
         onSell = { shoe -> onSell(shoe.faction.id, shoe.rarity.id, shoe.variant, shoe.id) },
-        care = ShoeCareStatus(upgradePending = upgradePhase?.pending == true, repairPending = repairPhase?.pending == true),
+        care = care,
         repair = if (repairOpen) repairPhase ?: RepairPhase.Loading else null,
         onOpenRepair = {
             repairOpen = true
@@ -289,7 +268,8 @@ fun ShoeDetailContent(
         }
     }
 
-    val upgradeLabel = stringResource(if (care.upgradePending) R.string.care_upgrade_checking else R.string.care_upgrade_open)
+    // 결과를 모르는 강화가 있으면 같은 자리에서 "강화 결과 확인"(새로 강화하지 않고 같은 요청의 결과만 묻는다)
+    val upgradeLabel = stringResource(if (care.upgradePending) R.string.upg_action_check else R.string.care_upgrade_open)
     val checkingBar: @Composable ColumnScope.() -> Unit = {
         DetailButtons(upgradeLabel, upgradeEnabled = false, onUpgrade = {},
             wearLabel = stringResource(R.string.sdv_checking), wearEnabled = false, wearBusy = true, onWear = {})
@@ -303,7 +283,7 @@ fun ShoeDetailContent(
         }
         DetailButtons(
             upgradeLabel = upgradeLabel,
-            upgradeEnabled = !equipping && !care.busy,
+            upgradeEnabled = !equipping && !care.repairPending,
             onUpgrade = onEnhance,
             wearLabel = when {
                 equipping -> stringResource(R.string.sdv_wear_busy)

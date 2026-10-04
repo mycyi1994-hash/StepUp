@@ -10,7 +10,7 @@ import kotlinx.serialization.decodeFromString
  * 정본은 서버다. 폰은 여기서 받은 값을 화면에 비출 뿐 스스로 적립하거나 차감하지
  * 않는다. 쓰는 일은 전부 서버 함수가 하고, 폰은 그 결과를 다시 읽어 온다.
  */
-class EconomyApi(private val server: StepUpServer) {
+class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.repo.ForgeServer {
 
     val isConfigured: Boolean get() = server.isConfigured
 
@@ -65,9 +65,31 @@ class EconomyApi(private val server: StepUpServer) {
     suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
         rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
 
-    /** 강화. 새 레벨을 돌려준다. */
+    /** 예전 강화(SUP 를 내고 레벨 +1). 새 앱의 강화 화면은 부르지 않는다 — 신발 강화는 아래 forge_* 다. 새 레벨을 돌려준다. */
     suspend fun upgrade(id: Long): ServerResult<Int> =
         rpc("sneaker_upgrade", jsonBody { put("p_id", id) }) { it.trim().toIntOrNull() }
+
+    // ── 신발 강화(0054, 규칙 forge-v2) — 재료 신발 3개 · 확률. 응답은 JSON 한 덩어리(ForgeRepository 가 읽는다) ──
+
+    /** 강화 화면을 열 때 — 대상 상태와 재료 후보 */
+    override suspend fun forgeMaterials(target: Long): ServerResult<String> =
+        rpc("forge_materials", "{\"p_target\":$target}") { it }
+
+    /** 실행 전 견적 — 서버가 판정할 확률 */
+    override suspend fun forgeQuote(target: Long, materials: List<Long>): ServerResult<String> =
+        rpc("forge_quote", "{\"p_target\":$target,\"p_materials\":${materials.joinToString(",", "[", "]")}}") { it }
+
+    /** 강화 한 번. 같은 [key] 로 다시 보내면 기록된 결과를 그대로 돌려준다 */
+    override suspend fun forgeStart(key: String, target: Long, materials: List<Long>, quoteVersion: String): ServerResult<String> =
+        rpc(
+            "forge_start",
+            "{\"p_key\":${key.asJsonString()},\"p_target\":$target," +
+                "\"p_materials\":${materials.joinToString(",", "[", "]")},\"p_quote\":${quoteVersion.asJsonString()}}",
+        ) { it }
+
+    /** 같은 요청 키의 결과. 기록이 없으면 서버가 그 키를 막고 "접수 안 됨"을 확정한다 */
+    override suspend fun forgeResult(key: String): ServerResult<String> =
+        rpc("forge_result", "{\"p_key\":${key.asJsonString()}}") { it }
 
     /** 내구도를 가득 채운다. 채운 뒤의 내구도를 돌려준다. */
     suspend fun repair(id: Long): ServerResult<Double> =

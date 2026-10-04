@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -241,6 +241,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-detail-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-detail-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || status=1
+  # 신발 강화(파란 톤 v4 강화 · 재료 신발 3개, 0054 forge-v2) — UP01 ~ UP15 · UP18 장면 · 일반 신발 강화 · 360dp · 큰 글씨
+  run_instrumentation shoe-upgrade "com.stepup.android.ShoeUpgradeDesignTest"
+  mkdir -p screen-gallery/shoe-upgrade-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-upgrade-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-upgrade/. screen-gallery/shoe-upgrade/ || status=1
   # 신발 뽑기 디자인 26장(2026-09-28) — 위 무료 · 상급 글자 탭 한 화면. 앱 셸 안의 흉내 낸 서버로 03 → 01 → 15 → 17 → 09 → 10 → 02 →
   # 16 → 04 → 06 → 내 신발, 12 · 23 · 13 · 14 · 26 · 20, 22 → 21, 기기 크기(360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마)에서
   # 스크롤 없이 버튼이 하단 탭 위 + 상태를 바로 넣은 장면(05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26) · 밝은 테마 · 큰 글씨 · 320dp.

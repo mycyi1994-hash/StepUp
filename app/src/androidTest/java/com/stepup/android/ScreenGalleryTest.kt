@@ -280,30 +280,21 @@ class ScreenGalleryTest {
             if (index == 20) {
                 compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
-                val shoe = before.first { it.id == sneakerId }
-                if (shoe.canUpgrade) {
-                    // 파란 톤 v4 — 상세 아래 "강화하기"가 독립 강화 화면을 연다. 비용은 지금 서버 계약(SUP) 그대로, 여는 것만으로 쓰지 않는다
-                    compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-upgrade-open").fetchSemanticsNodes().isNotEmpty() }
-                    compose.onNodeWithTag("shoe-upgrade-open").performClick()
-                    val costNode = compose.onNodeWithTag("upgrade-cost-value", useUnmergedTree = true)
-                    try {
-                        compose.waitUntil(timeoutMillis = 5_000) {
-                            compose.onAllNodesWithTag("upgrade-cost-value", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-                        }
-                    } finally {
-                        capture("extra-sneaker-upgrade-confirm")
-                        File(directory, "sneaker-upgrade-semantics.txt").writeText(
-                            compose.onAllNodes(isRoot()).printToString(),
-                        )
-                    }
-                    costNode.assertTextContains(com.stepup.android.ui.screens.items.formatSupExact(shoe.upgradeCost), substring = true)
-                    androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                        .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
-                    compose.waitForIdle()
-                    org.junit.Assert.assertEquals(before,
-                        runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
-                    compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                check(before.any { it.id == sneakerId })
+                // 신발 강화(재료 신발 3개 · 확률, 0054) — 상세 아래 "강화하기"가 독립 강화 화면을 연다. 여는 것만으로 보유 신발은 바뀌지 않는다
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-upgrade-open").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("shoe-upgrade-open").performClick()
+                try {
+                    compose.waitUntil(10_000) { compose.onAllNodesWithTag("upgrade-screen").fetchSemanticsNodes().isNotEmpty() }
+                } finally {
+                    capture("extra-sneaker-upgrade")
+                    File(directory, "sneaker-upgrade-semantics.txt").writeText(compose.onAllNodes(isRoot()).printToString())
                 }
+                org.junit.Assert.assertEquals(before, runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
+                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                    .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
             }
         }
         val variations = listOf(

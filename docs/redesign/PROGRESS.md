@@ -1,5 +1,13 @@
 # Redesign progress
 
+## 2026-10-04 — shoe upgrade: burn three material shoes (forge, rule forge-v2) in the blue v4 look
+
+- Replaces the SUP upgrade that the blue v4 pass (#82) kept. The detail's 강화하기 opens the independent screen `ShoeUpgradeScreen` (route `sneaker/{id}/upgrade`), drawn with the blue kit (RunButton · RunSheet · CareShoeHeader · UpgradeStatRows) after the v4 upgrade package UP01–UP15 · UP18. Material picker, final confirm, changed-materials and offline are bottom sheets. No UP16 / help / "기본 + 보정" text.
+- Server: migration `0054_shoe_forge.sql` from the unmerged PR #78 — `forge_materials` · `forge_quote` · `forge_start` (idempotent request key; roll + burn + level-up + record in one transaction) · `forge_result`. Burned shoes are `status = 'BURNED'`, owner cleared; on-chain shoes cannot be materials. `sneaker_upgrade` stays for installed old apps.
+- 2026-10-04 user rule: a material may be one grade lower, the same grade or any higher grade (two or more lower is rejected, `GRADE`), so common shoes can be upgraded (UP17 gone). Bonus per material = step × k / 2 with step = 20 + 4 × (min(L, 20) − 1) and k = 2 · 3 · 4 · 5 · 6 for grade difference −1 · 0 · +1 · +2 · ≥+3; final = min(1000, max(0, 1000 − 30 × level) + Σ). Same integer formula in SQL (`economy.forge_bonus_permille`) and Kotlin (`ShoeForge.bonusPermille`). Details: docs/redesign/shoe-upgrade-2026-10-01/README.md.
+- App: `ForgeRepository` saves the request key before sending and only re-asks the same key when the result is unknown; the detail shows 강화 결과 확인 on the target and material shoes while a request is unresolved and blocks wear / repair / sell. Repair is unchanged.
+- Evidence: SQL tests, `ShoeForgeTest` · `ShoeCareTest`, compile/lint/check scripts locally; `ShoeUpgradeDesignTest` device captures from CI.
+
 ## 2026-09-30 — shoe detail: cartoon 3D stat cells (user-approved option 1)
 
 - Shoe detail (`SneakerDetailScreen`) body is now grade stage → name · grade badge · `No. 0007` on one line → four steel-blue cells (level · efficiency · comfort · durability), each `label · cartoon 3D bar · value` on one line → wear button. Bars are drawn as paths (`CartoonStatBar`), values come from the selected owned pair (`detailStatRows`, `formatShoeNumber`). Details: docs/redesign/shoe-detail-cartoon-2026-09-30/README.md.

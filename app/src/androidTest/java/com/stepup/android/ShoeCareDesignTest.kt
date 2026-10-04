@@ -15,7 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -39,9 +38,6 @@ import com.stepup.android.ui.screens.items.RepairPhase
 import com.stepup.android.ui.screens.items.ShoeCareStatus
 import com.stepup.android.ui.screens.items.ShoeDetailContent
 import com.stepup.android.ui.screens.items.ShoeDetailState
-import com.stepup.android.ui.screens.items.ShoeUpgradeContent
-import com.stepup.android.ui.screens.items.UpgradePhase
-import com.stepup.android.ui.screens.items.UpgradeRejection
 import com.stepup.android.ui.screens.items.repairQuoteOf
 import com.stepup.android.ui.screens.items.sceneTag
 import com.stepup.android.ui.theme.StepUpTheme
@@ -52,9 +48,9 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * 파란 톤 v4 신발 상세 · 수리 · 강화(docs/redesign/blue-v4-2026-10 — SD01 ~ SD19 · RP01 ~ RP11 · UP01 ~ UP18 중 지금 계약으로 그릴 수 있는 장면).
+ * 파란 톤 v4 신발 상세 · 수리(docs/redesign/blue-v4-2026-10 — SD01 ~ SD19 · RP01 ~ RP11).
  * 상태를 화면에 바로 넣어 찍는다(서버 · 저장소를 건드리지 않는다). 번호 · 능력치 · 잔액은 이 테스트 화면의 예시다 — 앱 데이터가 아니다.
- * 강화의 재료 선택 · 성공률 · 소각(UP02 · 07 · 08 ~ 12 · 17)은 서버 계약이 없어 장면이 없다.
+ * 강화 화면(UP01 ~ UP15 · UP18 — 재료 신발 3개 · 확률, 0054 forge)은 ShoeUpgradeDesignTest 가 찍는다.
  */
 class ShoeCareDesignTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
@@ -94,13 +90,6 @@ class ShoeCareDesignTest {
             ShoeDetailContent(state = state, equipping = equipping, result = result, zone = SEOUL, initialSheet = sheet,
                 care = care, repair = repair, onSignIn = {})
         }
-        fun upgrade(shoe: Sneaker = TARGET, phase: UpgradePhase? = null, balance: Double? = 5_000.0, sheet: String? = null):
-            @Composable () -> Unit = {
-                ShoeUpgradeContent(
-                    state = ShoeDetailState.Ready(shoe, WORN), balance = balance, phase = phase,
-                    onBack = {}, onOpenOwned = {}, onStart = {}, onRecheck = {}, onReset = {}, onSignIn = {}, initialSheet = sheet,
-                )
-            }
 
         // SD01 · SD03 · SD12 · SD18 · SD19
         show("SD01-detail", "shoe-art", detail())
@@ -109,8 +98,11 @@ class ShoeCareDesignTest {
         show("SD03-equipping", "shoe-art", detail(equipping = true))
         compose.onNodeWithTag("shoe-upgrade-open").assertIsNotEnabled()
         show("SD12-first", "shoe-first-hint", detail(state = ShoeDetailState.Ready(RARE, null)))
+        // 결과를 모르는 강화 요청 — 강화하기 자리가 "강화 결과 확인"(같은 요청의 결과만 묻는다), 신기는 막는다
         show("SD18-upgrade-pending", "shoe-upgrade-pending", detail(care = ShoeCareStatus(upgradePending = true)))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled()
+        compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled()
+        compose.onNodeWithTag("shoe-upgrade-open").assertTextContains(string(R.string.upg_action_check))
         show("SD19-repair-pending", "shoe-repair-pending", detail(care = ShoeCareStatus(repairPending = true)))
         compose.onNodeWithTag("shoe-upgrade-open").assertIsNotEnabled()
         // SD05 · SD06 · SD07
@@ -152,37 +144,14 @@ class ShoeCareDesignTest {
         compose.onNodeWithTag("repair-short", useUnmergedTree = true).assertTextEquals(string(R.string.care_short, "30"))
         compose.onNodeWithTag("repair-confirm").assertIsNotEnabled()
 
-        // UP01(지금 계약) · UP04 · UP05 · UP06 · UP13 · UP14 · UP15 · UP18
-        show("UP01-ready", "upgrade-ready", upgrade())
-        compose.onNodeWithTag("upgrade-primary").assertIsEnabled()
-        compose.onAllNodesWithTag("upgrade-rejected").assertCountEquals(0)
-        show("UP01b-short", "upgrade-short", upgrade(balance = 100.0))
-        compose.onNodeWithTag("upgrade-primary").assertIsNotEnabled()
-        show("UP04-confirm", "upgrade-confirm-sheet", upgrade(sheet = "Confirm"))
-        show("UP05-sending", "upgrade-sending", upgrade(phase = UpgradePhase.Sending(TARGET)))
-        show("UP06-success", "upgrade-success", upgrade(shoe = TARGET.copy(level = 11),
-            phase = UpgradePhase.Success(TARGET, upgraded(TARGET))))
-        show("UP13-max", "upgrade-max", upgrade(shoe = TARGET.copy(level = 30)))
-        show("UP14-offline", "upgrade-offline-sheet", upgrade(sheet = "Offline"))
-        show("UP15-unknown", "upgrade-unknown", upgrade(phase = UpgradePhase.Unknown(TARGET, accepted = false)))
-        show("UP18-blocked", "upgrade-blocked", upgrade(shoe = TARGET.copy(server = TARGET.server!!.copy(status = "LISTED"))))
-        show("UP18b-rejected", "upgrade-no-charge", upgrade(phase = UpgradePhase.Rejected(UpgradeRejection.OTHER)))
-
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
         show("L-SD01", "shoe-art", detail())
         show("L-RP01", "repair-confirm", detail(state = worn, repair = RepairPhase.Confirm(quote, 83.07)))
-        show("L-UP01", "upgrade-ready", upgrade())
         compose.runOnIdle { light = false; large = true; narrow = true }
         show("N-SD01", "shoe-art", detail())
         show("N-RP03", "repair-sending", detail(state = worn, repair = RepairPhase.Sending(quote, 83.07)))
-        show("N-UP01", "upgrade-ready", upgrade())
-        show("N-UP15", "upgrade-unknown", upgrade(phase = UpgradePhase.Unknown(TARGET, accepted = true)))
     }
-
-    private fun upgraded(s: Sneaker) = s.copy(
-        level = s.level + 1, server = s.server!!.copy(efficiencyBps = s.server!!.efficiencyBps + 50, comfortBps = s.server!!.comfortBps + 20),
-    )
 
     private fun string(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
 
@@ -214,11 +183,6 @@ class ShoeCareDesignTest {
             id = 9201, faction = Faction.WIND, rarity = Rarity.EPIC, variant = 0, level = 3, mintNumber = 21,
             luck = 1.0, comfort = 1.0, durability = 100, equipped = true, acquiredAt = 1_790_000_000_000L,
             server = server(300, 400, maxLevel = 20), modelId = 1201,
-        )
-        val TARGET = Sneaker(
-            id = 9302, faction = Faction.WIND, rarity = Rarity.LEGENDARY, variant = 0, level = 10, mintNumber = 7,
-            luck = 1.0, comfort = 1.0, durability = 100, equipped = false, acquiredAt = 1_790_000_000_000L,
-            server = server(1_800, 800, maxLevel = 30, cost = 3_000.0), modelId = 1302,
         )
     }
 }

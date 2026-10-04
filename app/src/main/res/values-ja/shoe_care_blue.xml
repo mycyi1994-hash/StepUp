@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 신발 상세 · 수리 · 강화(파란 톤 v4, docs/redesign/blue-v4-2026-10 — 상세·수리 30 · 강화 17) -->
+<!-- 신발 상세 · 수리(파란 톤 v4, docs/redesign/blue-v4-2026-10 — 상세·수리 30). 강화 화면 글은 shoe_upgrade.xml -->
 <resources>
     <string name="care_upgrade_open">強化する</string>
-    <string name="care_upgrade_checking">強化を確認中</string>
     <string name="care_first_hint">最初のランニングシューズに選んでみましょう。</string>
     <string name="care_pending_upgrade_title">強化の結果を確認しています</string>
     <string name="care_pending_upgrade_body">最後に確認した能力値です。</string>
@@ -26,7 +25,6 @@
     <string name="care_sign_in_title">ログインが必要です</string>
     <string name="care_sign_in_wear">ログインするとシューズを替えられます。</string>
     <string name="care_sign_in_repair">ログインすると修理できます。</string>
-    <string name="care_sign_in_upgrade">ログインすると強化できます。</string>
     <string name="care_wear_failed_hint">しばらくしてからもう一度お試しください。</string>
     <string name="care_wear_check_title">着用状態を確認してください</string>
     <string name="care_wear_check_body">接続が切れたため、まだ結果を確認できていません。</string>
@@ -69,42 +67,4 @@
     <string name="care_block_legacy">スマホで作った以前のシューズは強化できません。</string>
     <string name="care_block_missing">保有シューズにありません。保有シューズから選び直してください。</string>
     <string name="care_block_other">サーバーがリクエストを受け付けませんでした。しばらくしてから確認してください。</string>
-    <string name="care_no_charge">SUPは差し引かれていません。</string>
-    <string name="care_upgrade_title">シューズ強化</string>
-    <string name="care_upgrade_after">強化後の変化</string>
-    <string name="care_upgrade_cost">強化費用</string>
-    <string name="care_after_upgrade">強化後</string>
-    <string name="care_balance_checking">残高を確認中…</string>
-    <string name="care_upgrade_short_action">SUPが足りません</string>
-    <string name="care_not_enough_upgrade">SUPが足りないため強化しませんでした。</string>
-    <string name="care_confirm_title">このシューズを強化しますか？</string>
-    <string name="care_confirm_level">レベル %1$d → %2$d</string>
-    <string name="care_confirm_note">開始すると%1$s SUPが差し引かれます。</string>
-    <string name="care_start">強化開始</string>
-    <string name="care_upgrading_title">強化の結果を確認しています</string>
-    <string name="care_upgrading_body">完了したら結果をお見せします。</string>
-    <string name="care_upgrading">強化中</string>
-    <string name="care_upgrade_done_kicker">強化完了</string>
-    <string name="care_upgrade_done_title">レベル%1$d達成</string>
-    <string name="care_upgrade_observed">サーバーから再確認した値です。</string>
-    <string name="care_view_detail">シューズ詳細を見る</string>
-    <string name="care_next_level">次のレベルへ強化</string>
-    <string name="care_upgrade_max_title">最大レベルに到達しました</string>
-    <string name="care_upgrade_max_body">これ以上強化できません。</string>
-    <string name="care_upgrade_blocked_title">このシューズは強化できません。</string>
-    <string name="care_view_owned">保有シューズを見る</string>
-    <string name="care_upgrade_unknown_title">強化の結果を確認できませんでした</string>
-    <string name="care_upgrade_unknown_body">強化が処理されたか確認しています。結果が確認されるまでお待ちください。</string>
-    <string name="care_upgrade_unknown_accepted">強化リクエストは処理されました。最新のレベルを確認しています。</string>
-    <string name="care_last_record">最後に確認した記録</string>
-    <string name="care_recheck_note">新たに強化せず、既存の結果だけを確認します。</string>
-    <string name="care_recheck">結果を再確認</string>
-    <string name="care_upgrade_unchanged">再確認しましたがレベルは変わっていません。強化が反映されていなければ、もう一度試せます。</string>
-    <string name="care_back_to_upgrade">強化画面へ</string>
-    <string name="care_offline_title">接続を確認してください</string>
-    <string name="care_offline_body">強化リクエストを送信できませんでした。</string>
-    <string name="care_offline_note">まだ強化を開始していません。</string>
-    <string name="care_still_offline">まだ接続されていません。</string>
-    <string name="care_go_back">戻る</string>
-    <string name="care_check_connection">接続を再確認</string>
 </resources>
