@@ -107,7 +107,7 @@ android {
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
         // 테스트 APK(debug) 에서만 새 버전을 스스로 받아 설치 화면을 연다. 스토어 빌드에는 없다.
         buildConfigField("boolean", "SELF_UPDATE", "false")
-        // 러닝 화면의 "걸음 흉내" 같은 시험용 버튼 — debug · tester 에서만 켠다.
+        // 러닝 화면의 "걸음 흉내" 같은 시험용 버튼 — debug · qa 에서만 켠다.
         buildConfigField("boolean", "TEST_TOOLS", "false")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -164,15 +164,15 @@ android {
         }
         // 폰에 받는 테스트 APK(test-apk 의 StepUp-test.apk). 예전에는 debug 를 그대로 올렸는데, 디버그 가능 앱은
         // ART 가 최적화를 끄고 R8 도 돌지 않아 Compose 화면 전체가 눈에 띄게 끊겼다(2026-10-04 "렉 걸린다").
-        // release 처럼 R8 로 줄이고 디버그 불가로 만들되, 서명은 debug 키 그대로라 이미 깔린 테스트 앱 위에 덮어 설치된다
+        // 빌드 이름은 qa(test 로 시작하는 이름은 AGP 가 막는다). release 처럼 R8 로 줄이고 디버그 불가로 만들되, 서명은 debug 키 그대로라 이미 깔린 테스트 앱 위에 덮어 설치된다
         // (applicationId · 서명 · strideup.db 그대로). 자가 업데이트 · 테스트 도구(걸음 흉내)는 debug 처럼 켠다.
-        create("tester") {
+        create("qa") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
             // 리소스 줄이기는 크기만 줄이고 속도와 상관없다 — 이름으로 찾는 리소스가 빠지는 위험만 있어 끈다.
             isShrinkResources = false
-            proguardFiles("proguard-tester.pro")
+            proguardFiles("proguard-qa.pro")
             matchingFallbacks += listOf("release")
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("boolean", "TEST_TOOLS", "true")
@@ -180,7 +180,7 @@ android {
     }
     sourceSets {
         // 새 버전을 받아 설치 화면을 여는 권한(REQUEST_INSTALL_PACKAGES)은 debug 와 같은 파일을 쓴다.
-        getByName("tester") { manifest.srcFile("src/debug/AndroidManifest.xml") }
+        getByName("qa") { manifest.srcFile("src/debug/AndroidManifest.xml") }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
