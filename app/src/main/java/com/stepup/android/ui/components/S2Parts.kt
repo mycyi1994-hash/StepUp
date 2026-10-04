@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -96,7 +95,7 @@ fun S2Stage(modifier: Modifier = Modifier) {
 fun S2Scenery(photo: HomePhoto, modifier: Modifier = Modifier) {
     Box(modifier.background(Night)) {
         Image(
-            painter = painterResource(photo.res),
+            painter = cachedPainterResource(photo.res),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
@@ -205,7 +204,7 @@ fun S2Arch(
     ) {
         if (image != null) {
             Image(
-                painterResource(image), contentDescription = null,
+                cachedPainterResource(image), contentDescription = null,
                 contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
             )
             // 아래로 바닥색에 녹아든다

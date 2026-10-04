@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -222,8 +221,8 @@ internal fun UnboxingStage(
         finished()
     }
     // 몸통 그림은 뒤 · 앞 두 겹이 함께 쓴다 — 한 번만 푼다
-    val body = painterResource(R.drawable.draw_box_body)
-    val lid = painterResource(if (kind == DrawKind.PREMIUM) R.drawable.draw_box_lid_premium else R.drawable.draw_box_lid)
+    val body = com.stepup.android.ui.components.cachedPainterResource(R.drawable.draw_box_body)
+    val lid = com.stepup.android.ui.components.cachedPainterResource(if (kind == DrawKind.PREMIUM) R.drawable.draw_box_lid_premium else R.drawable.draw_box_lid)
     BoxWithConstraints(modifier.aspectRatio(ArtW / ArtH)) {
         val unit = constraints.maxWidth / ArtW
         val unitDp = maxWidth / ArtW

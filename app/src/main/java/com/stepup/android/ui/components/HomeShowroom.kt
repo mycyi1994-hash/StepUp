@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -62,7 +61,7 @@ fun HomeShowroomBackdrop(photo: HomePhoto, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.background(t.screen)) {
         val windowHeight = maxHeight * 0.52f
         Image(
-            painter = painterResource(photo.res),
+            painter = cachedPainterResource(photo.res),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             colorFilter = if (t.dark) ShowroomGrade else null,

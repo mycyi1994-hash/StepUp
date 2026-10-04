@@ -55,6 +55,13 @@ jobs:
           set -o pipefail
           ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee -a build-output.log
 
+      # 폰에 올리는 테스트 APK — release 처럼 R8 로 최적화하고 디버그 불가로 만든 빌드(qa).
+      # debug 를 그대로 올리면 ART 최적화가 꺼져 화면 전체가 끊긴다. 서명은 같은 debug 키다.
+      - name: Build qa APK (R8 on, not debuggable)
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleQa --stacktrace 2>&1 | tee -a build-output.log
+
       # 고정 키스토어로 서명됐는지 확인한다. 지문이 빌드마다 달라지면
       # 기기에 이미 설치된 앱을 덮어쓸 수 없다(INSTALL_FAILED_UPDATE_INCOMPATIBLE).
       - name: Verify APK signature is stable
@@ -62,14 +69,15 @@ jobs:
           set -euo pipefail
           EXPECTED=$(keytool -list -v -keystore app/debug.keystore -storepass android \
             | grep 'SHA256:' | head -1 | tr -d ' ')
-          ACTUAL=$(keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk \
-            | grep 'SHA256:' | head -1 | tr -d ' ')
           echo "keystore : $EXPECTED"
-          echo "apk      : $ACTUAL"
-          if [ "$EXPECTED" != "$ACTUAL" ]; then
-            echo "::error::APK가 고정 debug 키스토어로 서명되지 않았습니다."
-            exit 1
-          fi
+          for apk in app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/qa/app-qa.apk; do
+            ACTUAL=$(keytool -printcert -jarfile "$apk" | grep 'SHA256:' | head -1 | tr -d ' ')
+            echo "$apk : $ACTUAL"
+            if [ "$EXPECTED" != "$ACTUAL" ]; then
+              echo "::error::$apk 가 고정 debug 키스토어로 서명되지 않았습니다."
+              exit 1
+            fi
+          done
           echo "✓ 서명 일치 — 이전 빌드 위에 업데이트 설치 가능"
 
       # R8이 켜져 있으므로 release 빌드가 컴파일되는지 매 푸시마다 확인한다.
@@ -114,6 +122,12 @@ jobs:
           name: StepUp-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Upload qa APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StepUp-qa-apk
+          path: app/build/outputs/apk/qa/app-qa.apk
+
       - name: Preserve generated Room schemas
         uses: actions/upload-artifact@v4
         with:
@@ -140,7 +154,7 @@ jobs:
           set -euo pipefail
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           SHORT=${GITHUB_SHA:0:7}
-          cp app/build/outputs/apk/debug/app-debug.apk StepUp-test.apk
+          cp app/build/outputs/apk/qa/app-qa.apk StepUp-test.apk
           # 앱의 새 버전 알림이 읽는 빌드 정보. 앱에 들어간 BUILD_COMMIT_TIME 과 같은 커밋 시각이다.
           COMMIT_TIME=$(git log -1 --format=%ct)
           printf '{"commitTime":%s,"commit":"%s","version":"%s"}\n' "$COMMIT_TIME" "$SHORT" "$VERSION" > StepUp-test.json
@@ -153,7 +167,7 @@ jobs:
             | grep 'SHA1:' | head -1 | sed 's/.*SHA1: //')
 
           cat > notes.md <<EOF
-          **StepUp ${VERSION}** · 테스트용 디버그 빌드
+          **StepUp ${VERSION}** · 테스트 빌드(최적화)
 
           | | |
           |---|---|
@@ -168,7 +182,8 @@ jobs:
           폰 브라우저에서 아래 \`StepUp-test.apk\` 를 받아 여세요.
           처음이면 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 합니다.
 
-          > 디버그 빌드입니다. 스토어에 올릴 빌드가 아니라 동작을 보기 위한 것입니다.
+          > 스토어에 올릴 빌드가 아니라 동작을 보기 위한 것입니다. 스토어 빌드처럼 최적화(R8)해 화면이 끊기지 않게 했고,
+          > 서명은 예전 테스트 APK 와 같아 그 위에 그대로 덮어 설치됩니다.
           > 이 파일은 푸시할 때마다 같은 주소에서 최신으로 바뀝니다.
           > 한 번 설치한 뒤로는 앱이 새 버전을 알려 줍니다(내 정보 › 설정 › 테스트 빌드 업데이트).
           EOF

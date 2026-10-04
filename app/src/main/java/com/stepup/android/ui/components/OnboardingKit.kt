@@ -286,7 +286,7 @@ fun OnboardingArch(@androidx.annotation.DrawableRes image: Int, modifier: Modifi
     val ground = com.stepup.android.ui.theme.Night
     Box(modifier.clip(shape).background(StepUpColors.carbon)) {
         androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(image), contentDescription = null,
+            painter = cachedPainterResource(image), contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize(),
         )
         Box(Modifier.fillMaxSize().background(Color(0x38071224)))

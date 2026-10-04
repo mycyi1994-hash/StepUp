@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -294,7 +293,7 @@ private fun PassScene(shoe: Sneaker?) {
         // 도시 사진 — 오른쪽 위 3분의 2 · 위 64%
         Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.66f)) {
             Image(
-                painterResource(R.drawable.home_banner_blue_night), contentDescription = null,
+                com.stepup.android.ui.components.cachedPainterResource(R.drawable.home_banner_blue_night), contentDescription = null,
                 contentScale = ContentScale.Crop, alignment = BiasAlignment(0.75f, 0.1f),
                 modifier = Modifier.fillMaxSize(),
             )

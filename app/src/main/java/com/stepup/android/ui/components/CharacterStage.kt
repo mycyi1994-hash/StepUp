@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -84,7 +83,7 @@ fun AvatarImage(
 ) {
     val res = art.drawableRes() ?: return
     Image(
-        painter = painterResource(res),
+        painter = cachedPainterResource(res),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         alignment = Alignment.BottomCenter,

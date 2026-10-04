@@ -34,3 +34,10 @@
 # ── 경고 억제 ───────────────────────────────────────────────────────
 # JSR-305 애너테이션(코루틴이 참조)은 런타임에 없어도 무방하다.
 -dontwarn javax.annotation.**
+
+# ── Credential Manager (구글 로그인) ────────────────────────────────
+# Play 서비스 제공자를 이름으로 불러온다. 공식 안내의 규칙 — 없으면 R8 빌드에서 로그인 창이 뜨지 않는다.
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** {
+  *;
+}

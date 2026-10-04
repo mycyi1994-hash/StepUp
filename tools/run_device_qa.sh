@@ -21,4 +21,6 @@ bash tools/run_screen_gallery.sh records || status=1
 bash tools/run_screen_gallery.sh explore || status=1
 # 동네 이야기(목록형 커뮤니티) — 목록 · 상세 · 글쓰기 · 장소 · 관리 · 상태 31장면(2026-09-27)
 bash tools/run_screen_gallery.sh community || status=1
+# 폰에 올리는 최적화 테스트 APK(qa, R8)를 마지막에 덮어 설치해 켜 본다 — debug 로 도는 위 검사가 못 잡는 R8 문제
+bash tools/run_qa_apk_smoke.sh || status=1
 exit "$status"

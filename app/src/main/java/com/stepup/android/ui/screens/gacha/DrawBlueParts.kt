@@ -52,7 +52,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -199,7 +198,7 @@ internal fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Bo
             }
         }
         Image(
-            painterResource(if (kind == DrawKind.PREMIUM) R.drawable.draw_box_closed_premium else R.drawable.draw_box_closed_free),
+            com.stepup.android.ui.components.cachedPainterResource(if (kind == DrawKind.PREMIUM) R.drawable.draw_box_closed_premium else R.drawable.draw_box_closed_free),
             contentDescription = stringResource(R.string.draw_box_description),
             contentScale = ContentScale.Fit, colorFilter = matrix,
             modifier = Modifier.padding(bottom = maxHeight * 0.1f).width(boxWidth).heightIn(max = maxHeight * 0.86f),

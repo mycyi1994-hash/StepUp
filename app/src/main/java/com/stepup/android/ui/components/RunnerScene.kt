@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import com.stepup.android.ui.experience.LocalMotion
@@ -65,7 +64,7 @@ fun RunnerBanner(
 ) {
     val dawn = setting == RunnerSetting.HomeDawn || setting == RunnerSetting.Sunset || setting == RunnerSetting.RunSunset
     Image(
-        painter = painterResource(if (dawn) R.drawable.home_banner_dawn else R.drawable.home_banner_blue_night),
+        painter = cachedPainterResource(if (dawn) R.drawable.home_banner_dawn else R.drawable.home_banner_blue_night),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = modifier,
