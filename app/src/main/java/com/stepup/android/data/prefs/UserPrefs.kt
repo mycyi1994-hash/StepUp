@@ -124,6 +124,9 @@ class UserPrefs(
         val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
         /** 폰의 서버 경제 사본(잔고 · 신발 · 부스터 · 받은 도전)이 어느 계정 것인가 */
         val ECONOMY_OWNER = stringPreferencesKey("economy_owner")
+
+        /** 보낸 강화 요청(0054) — 결과를 확인할 때까지. "계정|키|대상|재료,재료,재료|확률|시각" */
+        val FORGE_PENDING = stringPreferencesKey("forge_pending")
         val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
 
         // ── 러너 캐릭터 ──
@@ -943,6 +946,17 @@ class UserPrefs(
 
     /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
     val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
+
+    /** 결과를 아직 확인하지 못한 강화 요청(저장 형식 그대로). 없으면 null */
+    suspend fun forgePending(): String? = store.data.map { it[Keys.FORGE_PENDING] }.first()
+
+    /** [forgePending] 과 지금 경제 사본의 계정 — 상세가 "강화 결과 확인"을 보일지 정한다 */
+    val forgePendingFlow: Flow<Pair<String?, String?>> =
+        store.data.map { it[Keys.FORGE_PENDING] to it[Keys.ECONOMY_OWNER] }
+
+    suspend fun setForgePending(value: String?) {
+        store.edit { if (value == null) it.remove(Keys.FORGE_PENDING) else it[Keys.FORGE_PENDING] = value }
+    }
 
     /** 폰의 서버 경제 사본이 어느 계정 것인가 — 다른 계정으로 로그인하면 사본을 먼저 지운다 */
     suspend fun economyOwner(): String? = store.data.map { it[Keys.ECONOMY_OWNER] }.first()

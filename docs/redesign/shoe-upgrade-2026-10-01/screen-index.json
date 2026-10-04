@@ -1,0 +1,214 @@
+{
+  "name": "StepUp 신발 강화 Claude 구현 자료",
+  "version": "v6",
+  "totalScreens": 17,
+  "entryDocument": "CLAUDE-HANDOFF.md",
+  "starterPrompt": "CLAUDE-START.txt",
+  "rules": "balance-rules.json",
+  "status": "구현 지시서와 정지 시안. 앱 코드 변경 없음.",
+  "removed": {
+    "id": "16",
+    "title": "성공률 계산 안내",
+    "entryButtonsRemoved": true
+  },
+  "numbering": "기존 번호 유지: 01~15, 17, 18",
+  "uiProbability": {
+    "separateExplanationScreen": false,
+    "helpEntry": false,
+    "showPerMaterialBonus": true,
+    "showFinalRate": true,
+    "showBaseAndBonusBreakdown": false,
+    "burnNotice": "실패해도 재료 신발 3개는 소각돼요."
+  },
+  "screenshotOverrides": [
+    "PNG의 기본 확률 + 보정 합계 문장은 구현에서 제외한다.",
+    "생성 이미지의 바 길이보다 실제 값과 스케일 계산이 우선한다.",
+    "실패·최대 레벨·결과 미확인에는 증가 예정 구간을 표시하지 않는다.",
+    "능력치 단위는 지시서대로 양쪽 값에 명확히 표시한다."
+  ],
+  "screens": [
+    {
+      "id": "01",
+      "title": "강화기본-재료선택전",
+      "file": "screens/01-강화기본-재료선택전.png",
+      "type": "standalone",
+      "trigger": "신발 상세의 강화하기",
+      "actions": {
+        "add": "02",
+        "back": "신발 상세"
+      }
+    },
+    {
+      "id": "02",
+      "title": "재료선택-보정값",
+      "file": "screens/02-재료선택-보정값.png",
+      "type": "bottom_sheet",
+      "trigger": "01 또는08의 +",
+      "actions": {
+        "applyThree": "03",
+        "applyTwo": "08",
+        "close": "이전 화면"
+      }
+    },
+    {
+      "id": "03",
+      "title": "강화준비완료",
+      "file": "screens/03-강화준비완료.png",
+      "type": "standalone",
+      "trigger": "재료3개선택완료",
+      "actions": {
+        "start": "04",
+        "remove": "08"
+      }
+    },
+    {
+      "id": "04",
+      "title": "최종확인",
+      "file": "screens/04-최종확인.png",
+      "type": "bottom_sheet",
+      "trigger": "03→04",
+      "actions": {
+        "cancel": "03",
+        "confirm": "05"
+      }
+    },
+    {
+      "id": "05",
+      "title": "강화진행중",
+      "file": "screens/05-강화진행중.png",
+      "type": "standalone",
+      "trigger": "04 실행 후 응답 대기",
+      "actions": {
+        "leave": "신발 상세의 결과 대기 상태"
+      }
+    },
+    {
+      "id": "06",
+      "title": "강화성공",
+      "file": "screens/06-강화성공.png",
+      "type": "standalone",
+      "trigger": "05 확정 성공 응답",
+      "actions": {
+        "primary": "신발 상세",
+        "secondary": "01 새 재료 선택"
+      }
+    },
+    {
+      "id": "07",
+      "title": "강화실패",
+      "file": "screens/07-강화실패.png",
+      "type": "standalone",
+      "trigger": "05 확정 실패 응답",
+      "actions": {
+        "primary": "01 새 재료 선택",
+        "secondary": "신발 상세"
+      }
+    },
+    {
+      "id": "08",
+      "title": "재료2개선택",
+      "file": "screens/08-재료2개선택.png",
+      "type": "standalone",
+      "trigger": "재료 선택창에서 2개 넣기",
+      "actions": {
+        "add": "02",
+        "remove": "01 또는 부분선택"
+      }
+    },
+    {
+      "id": "09",
+      "title": "재료없음",
+      "file": "screens/09-재료없음.png",
+      "type": "bottom_sheet",
+      "trigger": "02 조회 성공·적합 재료 0개",
+      "actions": {
+        "primary": "보유 신발",
+        "close": "선택창 진입 전의 강화 상태"
+      }
+    },
+    {
+      "id": "10",
+      "title": "재료불러오는중",
+      "file": "screens/10-재료불러오는중.png",
+      "type": "bottom_sheet",
+      "trigger": "02 첫 진입·조회 대기",
+      "actions": {
+        "close": "이전 강화 화면"
+      }
+    },
+    {
+      "id": "11",
+      "title": "재료조회실패",
+      "file": "screens/11-재료조회실패.png",
+      "type": "bottom_sheet",
+      "trigger": "02 조회 실패",
+      "actions": {
+        "retry": "10",
+        "close": "기존 선택 유지"
+      }
+    },
+    {
+      "id": "12",
+      "title": "선택재료변경",
+      "file": "screens/12-선택재료변경.png",
+      "type": "bottom_sheet",
+      "trigger": "실행 전 검증에서 재료 변경 발견",
+      "actions": {
+        "primary": "02",
+        "cancel": "유효한 선택을 유지한 강화 상태"
+      }
+    },
+    {
+      "id": "13",
+      "title": "최대레벨20",
+      "file": "screens/13-최대레벨20.png",
+      "type": "standalone",
+      "trigger": "Lv20 대상 진입 또는 Lv19→20 성공 후",
+      "actions": {
+        "primary": "신발 상세"
+      }
+    },
+    {
+      "id": "14",
+      "title": "시작전오프라인",
+      "file": "screens/14-시작전오프라인.png",
+      "type": "bottom_sheet",
+      "trigger": "요청 전 오프라인 확인",
+      "actions": {
+        "retry": "03 상태 재확인",
+        "cancel": "03"
+      }
+    },
+    {
+      "id": "15",
+      "title": "결과확인필요",
+      "file": "screens/15-결과확인필요.png",
+      "type": "standalone",
+      "trigger": "요청 후 응답 유실 또는 앱 재진입",
+      "actions": {
+        "primary": "같은 요청 결과 조회",
+        "secondary": "신발 상세·대기 상태 유지"
+      }
+    },
+    {
+      "id": "17",
+      "title": "최하위등급강화불가",
+      "file": "screens/17-최하위등급강화불가.png",
+      "type": "standalone",
+      "trigger": "하위 등급이 없는 대상 진입",
+      "actions": {
+        "primary": "다른 신발 보기"
+      }
+    },
+    {
+      "id": "18",
+      "title": "강화대상사용불가",
+      "file": "screens/18-강화대상사용불가.png",
+      "type": "standalone",
+      "trigger": "대상 소유·관리 상태가 바뀐 후 진입",
+      "actions": {
+        "primary": "보유 신발 목록"
+      }
+    }
+  ]
+}

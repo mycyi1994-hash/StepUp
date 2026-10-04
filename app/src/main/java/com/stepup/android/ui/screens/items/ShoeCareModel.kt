@@ -1,6 +1,6 @@
 package com.stepup.android.ui.screens.items
 
-import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.domain.ForgeStats
 import com.stepup.android.domain.Sneaker
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -11,9 +11,8 @@ import java.util.Locale
 /*
  * 신발 상세 · 수리 · 강화(파란 톤 v4 전달본, docs/redesign/blue-v4-2026-10 — 상세·수리 30 · 강화 17)가 쓰는 순수 계산.
  *
- * 경제는 지금 서버 계약 그대로다 — 수리는 sneaker_repair(p_id), 강화는 sneaker_upgrade(p_id)(SUP 를 내고 레벨 +1).
- * 전달본의 "하위 등급 재료 3개 · 최대 Lv20 · 기본 확률 100 − 3L · 실패해도 재료 소각"은 서버에 없는 계약이라 화면이 흉내 내지 않는다
- * (재료 고르기 · 성공률 · 소각을 폰에서 정하지 않는다). 차이는 tracker/upgrade.csv 에 적었다.
+ * 수리는 지금 서버 계약 그대로다 — sneaker_repair(p_id). 강화는 재료 신발 3개 · 확률 강화(0054 forge_*, 규칙 forge-v2)로
+ * ShoeUpgradeViewModel · ForgeRepository 가 한다. 여기에는 강화 화면의 세 줄 계산만 둔다(성공 · 확률 · 소각을 폰에서 정하지 않는다).
  * 값은 모두 실제 신발 · 잔고에서 온다. 시안의 예시 숫자(83.07 · 50 · No. 0007)를 쓰지 않는다.
  */
 
@@ -83,7 +82,7 @@ enum class CareBlock {
     /** 체인에 나가 있다(chain_state ≠ APP) */
     ON_CHAIN,
 
-    /** 폰에서 올린 예전 신발 — 서버가 강화를 받지 않는다(수리는 받는다) */
+    /** 폰에서 올린 예전 신발(서버 거절 문구 "예전 신발") */
     LEGACY,
 
     /** 성공한 조회에 이 소유 id 가 없다 */
@@ -93,7 +92,7 @@ enum class CareBlock {
     OTHER,
 }
 
-/** 서버 거절 문구 → 확인된 까닭(0023 economy.my_app_sneaker · sneaker_upgrade 의 문구) */
+/** 서버 거절 문구 → 확인된 까닭(0023 economy.my_app_sneaker 의 문구) */
 fun careBlockOf(reason: String): CareBlock = when {
     "판매 중" in reason -> CareBlock.LISTED
     "체인에 있는" in reason -> CareBlock.ON_CHAIN
@@ -150,7 +149,7 @@ val RepairPhase.pending: Boolean
 
 /**
  * 보내기 전 판정 — 최신으로 읽은 신발 · 잔고로 RP01 · RP05 · RP06 · RP09 · RP11 을 고른다.
- * 강화 가능(upgradable)으로 수리 가능을 정하지 않는다 — 서버(my_app_sneaker)가 보는 소유 · 판매 · 체인 상태만 본다.
+ * 강화 가능 여부로 수리 가능을 정하지 않는다 — 서버(my_app_sneaker)가 보는 소유 · 판매 · 체인 상태만 본다.
  */
 fun repairGate(shoe: Sneaker?, balance: Double?, serverEconomy: Boolean): RepairPhase {
     if (shoe == null) return RepairPhase.Blocked(CareBlock.MISSING)
@@ -165,46 +164,7 @@ fun repairGate(shoe: Sneaker?, balance: Double?, serverEconomy: Boolean): Repair
     return RepairPhase.Confirm(quote, balance)
 }
 
-// ── 강화(지금 서버 계약: SUP 를 내고 레벨 +1) ─────────────────────────
-
-/** 레벨 한 칸에 오르는 효율 · 착화감 — 서버 economy.efficiency_per_level_bps · comfort_per_level_bps · comfort_cap_bps(0022) */
-private const val EFFICIENCY_PER_LEVEL_BPS = 50
-private const val COMFORT_PER_LEVEL_BPS = 20
-private const val COMFORT_CAP_BPS = 2_000
-
-/** 강화할 수 없는 까닭(UP13 · UP18). null 이면 지금 계약으로 강화할 수 있다 */
-fun upgradeBlockOf(shoe: Sneaker?): CareBlock? {
-    if (shoe == null) return CareBlock.MISSING
-    val server = shoe.server
-    return when {
-        server != null && server.status != "OWNED" -> CareBlock.LISTED
-        server != null && server.chainState.isNotBlank() && server.chainState != "APP" -> CareBlock.ON_CHAIN
-        server != null && !server.upgradable -> CareBlock.LEGACY
-        else -> null
-    }
-}
-
-/** 최대 레벨(서버가 준 상한 우선, 없으면 등급 기본값) — 화면 분모만 20 으로 바꾸지 않는다 */
-fun atMaxLevel(shoe: Sneaker): Boolean = shoe.level >= shoe.maxLevel
-
-/**
- * 강화 뒤의 값을 미리 본다(화면 미리보기 전용 — 저장하지 않는다). 서버 신발은 실효 스탯에 레벨 한 칸 몫을 더하고(서버 sneaker_effective),
- * 예전 신발은 폰 강화(SneakerRepository.upgrade)와 같게. 실제 결과는 서버가 돌려준 값으로 다시 그린다.
- */
-fun upgradePreview(shoe: Sneaker): Sneaker {
-    val server = shoe.server
-    return if (server != null) {
-        shoe.copy(
-            level = shoe.level + 1,
-            server = server.copy(
-                efficiencyBps = server.efficiencyBps + EFFICIENCY_PER_LEVEL_BPS,
-                comfortBps = minOf(server.comfortBps + COMFORT_PER_LEVEL_BPS, maxOf(COMFORT_CAP_BPS, server.comfortBps)),
-            ),
-        )
-    } else {
-        shoe.copy(level = shoe.level + 1, comfort = shoe.comfort + 0.02, luck = shoe.luck + 0.02)
-    }
-}
+// ── 강화 화면의 세 줄(레벨 · 효율 · 착화감) — 강화 자체는 ShoeUpgradeViewModel · ForgeRepository(0054) ────────
 
 /** 강화 화면의 한 줄 — 레벨 · 효율 · 착화감(내구도는 강화로 바뀌지 않아 넣지 않는다) */
 data class UpgradeRow(
@@ -216,68 +176,28 @@ data class UpgradeRow(
     val nextFraction: Float?,
 )
 
-/** [before] → [after] 의 세 줄. [after] 가 null 이면 지금 값만 */
-fun upgradeRows(before: Sneaker, after: Sneaker?): List<UpgradeRow> {
-    val max = before.maxLevel.toDouble()
-    fun level(s: Sneaker) = com.stepup.android.ui.screens.customize.barFraction(s.level.toDouble(), max)
-    fun eff(s: Sneaker) = com.stepup.android.ui.screens.customize.barFraction(
-        bonusPercent(s), com.stepup.android.ui.screens.customize.StatScale.EFFICIENCY_MAX_PERCENT,
+/**
+ * 서버 값 [before] → [after] 의 세 줄. [after] 가 null 이면 지금 값만. 막대는 실제 값 ÷ 표시 스케일 —
+ * 레벨은 서버가 준 상한(대개 20), 효율 27.5% · 착화감 20%(StatScale). 값 아래에 정규화 비율을 쓰지 않는다.
+ */
+fun forgeRows(before: ForgeStats, after: ForgeStats?): List<UpgradeRow> {
+    val max = (after ?: before).maxLevel.toDouble()
+    fun level(s: ForgeStats) = com.stepup.android.ui.screens.customize.barFraction(s.level.toDouble(), max)
+    fun eff(s: ForgeStats) = com.stepup.android.ui.screens.customize.barFraction(
+        s.efficiencyPercent, com.stepup.android.ui.screens.customize.StatScale.EFFICIENCY_MAX_PERCENT,
     )
-    fun comfort(s: Sneaker) = com.stepup.android.ui.screens.customize.barFraction(
-        energySavingPercent(s), com.stepup.android.ui.screens.customize.StatScale.ENERGY_MAX_PERCENT,
+    fun comfort(s: ForgeStats) = com.stepup.android.ui.screens.customize.barFraction(
+        s.comfortPercent, com.stepup.android.ui.screens.customize.StatScale.ENERGY_MAX_PERCENT,
     )
     return listOf(
         UpgradeRow(DetailStat.LEVEL, before.level.toString(), after?.level?.toString(), level(before), after?.let(::level)),
         UpgradeRow(
-            DetailStat.EFFICIENCY, formatBonus(bonusPercent(before)), after?.let { formatBonus(bonusPercent(it)) },
+            DetailStat.EFFICIENCY, formatBonus(before.efficiencyPercent), after?.let { formatBonus(it.efficiencyPercent) },
             eff(before), after?.let(::eff),
         ),
         UpgradeRow(
-            DetailStat.COMFORT, formatPercent(energySavingPercent(before)), after?.let { formatPercent(energySavingPercent(it)) },
+            DetailStat.COMFORT, formatPercent(before.comfortPercent), after?.let { formatPercent(it.comfortPercent) },
             comfort(before), after?.let(::comfort),
         ),
     )
-}
-
-/** 강화 요청의 진행 · 결말 — UP05 · UP06 · UP13 · UP15 · UP18 과 사전 거절 */
-sealed interface UpgradePhase {
-    /** UP05 — 보냈다. 타이머로 결과를 만들지 않는다 */
-    data class Sending(val before: Sneaker) : UpgradePhase
-
-    /** UP06 — 서버가 확정하고 새 레벨을 받은 뒤. [observed] 면 결과 다시 확인(읽기)으로 바뀐 레벨을 본 것 */
-    data class Success(val before: Sneaker, val after: Sneaker, val observed: Boolean = false) : UpgradePhase
-
-    /**
-     * UP15 — 보냈는지 · 처리됐는지 모른다. 새 강화를 보내지 않고 같은 결과만 읽는다.
-     * [accepted] 면 서버는 처리했다고 답했지만 최신 레벨을 아직 못 받았다. [synced] 면 다시 읽었는데 레벨이 그대로였다.
-     */
-    data class Unknown(
-        val before: Sneaker,
-        val accepted: Boolean,
-        val checking: Boolean = false,
-        val synced: Boolean = false,
-    ) : UpgradePhase
-
-    /** 서버가 받지 않았다(차감 없음) */
-    data class Rejected(val reason: UpgradeRejection) : UpgradePhase
-}
-
-enum class UpgradeRejection { NOT_ENOUGH_BALANCE, MAX_LEVEL, SIGN_IN, LISTED, ON_CHAIN, LEGACY, MISSING, OTHER }
-
-val UpgradePhase.pending: Boolean
-    get() = this is UpgradePhase.Sending || (this is UpgradePhase.Unknown && (!synced || accepted))
-
-/** 서버의 거절 결말 → 화면 까닭 */
-fun upgradeRejectionOf(outcome: EconomyOutcome): UpgradeRejection = when (outcome) {
-    EconomyOutcome.NotEnoughBalance -> UpgradeRejection.NOT_ENOUGH_BALANCE
-    EconomyOutcome.MaxLevel -> UpgradeRejection.MAX_LEVEL
-    EconomyOutcome.SignInRequired -> UpgradeRejection.SIGN_IN
-    is EconomyOutcome.Rejected -> when (careBlockOf(outcome.reason)) {
-        CareBlock.LISTED -> UpgradeRejection.LISTED
-        CareBlock.ON_CHAIN -> UpgradeRejection.ON_CHAIN
-        CareBlock.LEGACY -> UpgradeRejection.LEGACY
-        CareBlock.MISSING -> UpgradeRejection.MISSING
-        CareBlock.OTHER -> UpgradeRejection.OTHER
-    }
-    else -> UpgradeRejection.OTHER
 }

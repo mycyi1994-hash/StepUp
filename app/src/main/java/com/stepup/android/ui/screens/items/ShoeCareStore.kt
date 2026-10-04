@@ -18,8 +18,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * 수리 · 강화가 쓰는 기존 저장소 길 — 서버 요청은 지금 계약 그대로(SneakerRepository.repairOnServer · upgradeOnServer).
+ * 수리가 쓰는 기존 저장소 길 — 서버 요청은 지금 계약 그대로(SneakerRepository.repairOnServer).
  * [refresh] 는 읽기만 한다(서버 값을 다시 받아 폰 사본을 맞춘다 — 차감 · 지급을 하지 않는다).
+ * 강화는 여기를 지나지 않는다 — 재료 신발 3개 · 확률 강화(ShoeUpgradeViewModel · ForgeRepository, 0054).
  */
 interface ShoeCareBackend {
     val serverEconomy: Boolean
@@ -27,7 +28,6 @@ interface ShoeCareBackend {
     suspend fun shoe(id: Long): Sneaker?
     suspend fun balance(): Double?
     suspend fun repair(id: Long): EconomyOutcome
-    suspend fun upgrade(id: Long): Pair<EconomyOutcome, Sneaker?>
 }
 
 private object AppShoeCareBackend : ShoeCareBackend {
@@ -37,16 +37,15 @@ private object AppShoeCareBackend : ShoeCareBackend {
     override suspend fun shoe(id: Long): Sneaker? = ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == id }
     override suspend fun balance(): Double? = ServiceLocator.rewardRepository.balance.first()
     override suspend fun repair(id: Long): EconomyOutcome = ServiceLocator.sneakerRepository.repairOnServer(id)
-    override suspend fun upgrade(id: Long): Pair<EconomyOutcome, Sneaker?> = ServiceLocator.sneakerRepository.upgradeOnServer(id)
 }
 
 /**
- * 신발 한 켤레(소유 id)마다 수리 · 강화의 진행을 들고 있는 곳 — 상세에서 나가도 보낸 요청의 결말을 잃지 않게
- * 화면(ViewModel)보다 오래 산다. 앱을 다시 켜면 비어 있다: 지금 서버에는 요청 id 로 결과를 조회하는 계약이 없어
- * 재시작 뒤 같은 요청을 복구할 수 없다(tracker 에 적었다).
+ * 신발 한 켤레(소유 id)마다 수리의 진행을 들고 있는 곳 — 상세에서 나가도 보낸 요청의 결말을 잃지 않게
+ * 화면(ViewModel)보다 오래 산다. 앱을 다시 켜면 비어 있다: 지금 서버(sneaker_repair)에는 요청 id 로 결과를 조회하는 계약이 없어
+ * 재시작 뒤 같은 요청을 복구할 수 없다(tracker 에 적었다). 강화는 요청 키를 폰에 저장해 재시작 뒤에도 복구한다(ForgeRepository).
  *
  * 지키는 것 — 같은 신발에 결과가 안 정해진 요청이 있으면 새로 보내지 않는다. 결과를 모르면 "결과 확인"은 읽기만 한다.
- * 성공은 서버의 성공 답과 동기화된 값으로만, 성공 · 확률 · 소각을 폰에서 정하지 않는다.
+ * 성공은 서버의 성공 답과 동기화된 값으로만.
  */
 class ShoeCareStore(
     private val backend: ShoeCareBackend,
@@ -55,14 +54,10 @@ class ShoeCareStore(
     private val _repair = MutableStateFlow<Map<Long, RepairPhase>>(emptyMap())
     val repair: StateFlow<Map<Long, RepairPhase>> = _repair.asStateFlow()
 
-    private val _upgrade = MutableStateFlow<Map<Long, UpgradePhase>>(emptyMap())
-    val upgrade: StateFlow<Map<Long, UpgradePhase>> = _upgrade.asStateFlow()
-
     private fun setRepair(id: Long, phase: RepairPhase?) = _repair.update { if (phase == null) it - id else it + (id to phase) }
-    private fun setUpgrade(id: Long, phase: UpgradePhase?) = _upgrade.update { if (phase == null) it - id else it + (id to phase) }
 
-    /** 대상 신발에 결과가 안 정해진 작업이 있는가 — 착용 · 강화 · 수리 · 판매를 막는다 */
-    fun busy(id: Long): Boolean = _repair.value[id]?.pending == true || _upgrade.value[id]?.pending == true
+    /** 대상 신발에 결과가 안 정해진 수리가 있는가 — 착용 · 강화 · 수리 · 판매를 막는다(강화 미확인은 상세가 따로 본다) */
+    fun busy(id: Long): Boolean = _repair.value[id]?.pending == true
 
     // ── 수리 ──────────────────────────────────────────────────────
 
@@ -164,58 +159,6 @@ class ShoeCareStore(
     fun closeRepair(id: Long) {
         if (_repair.value[id]?.pending == true) return
         setRepair(id, null)
-    }
-
-    // ── 강화(지금 계약 — SUP 를 내고 레벨 +1) ─────────────────────────
-
-    /** UP04 "강화 시작" — 서버에 한 번 보낸다. 같은 신발에 결과가 안 정해진 강화 · 수리가 있으면 보내지 않는다 */
-    fun startUpgrade(before: Sneaker) {
-        val id = before.id
-        if (busy(id)) return
-        setUpgrade(id, UpgradePhase.Sending(before))
-        scope.launch {
-            val (outcome, result) = try {
-                backend.upgrade(id)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                EconomyOutcome.Offline to null
-            }
-            val next = when (outcome) {
-                EconomyOutcome.Ok -> {
-                    val after = result ?: backend.shoe(id)
-                    if (after != null && after.level > before.level) UpgradePhase.Success(before, after)
-                    else UpgradePhase.Unknown(before, accepted = true)
-                }
-                EconomyOutcome.Offline -> UpgradePhase.Unknown(before, accepted = false)
-                else -> UpgradePhase.Rejected(upgradeRejectionOf(outcome))
-            }
-            ExperienceEvents.emit(if (next is UpgradePhase.Success) FeedbackCue.Success else FeedbackCue.Error)
-            setUpgrade(id, next)
-        }
-    }
-
-    /** UP15 "결과 다시 확인" — 같은 신발의 서버 값을 다시 읽기만 한다. 새 강화를 보내지 않는다 */
-    fun recheckUpgrade(id: Long) {
-        val unknown = _upgrade.value[id] as? UpgradePhase.Unknown ?: return
-        if (unknown.checking) return
-        setUpgrade(id, unknown.copy(checking = true))
-        scope.launch {
-            val synced = !backend.serverEconomy || safe { backend.refresh() } == EconomyOutcome.Ok
-            val shoe = if (synced) backend.shoe(id) else null
-            val next = when {
-                !synced -> unknown.copy(checking = false)
-                shoe != null && shoe.level > unknown.before.level -> UpgradePhase.Success(unknown.before, shoe, observed = true)
-                else -> unknown.copy(checking = false, synced = true)
-            }
-            setUpgrade(id, next)
-        }
-    }
-
-    /** 결과 화면을 떠날 때 · 거절 안내를 닫을 때 — 결과가 안 정해진 강화는 남긴다(상세가 SD18 로 보인다) */
-    fun clearUpgrade(id: Long) {
-        if (_upgrade.value[id]?.pending == true) return
-        setUpgrade(id, null)
     }
 
     private suspend fun safe(block: suspend () -> EconomyOutcome): EconomyOutcome = try {

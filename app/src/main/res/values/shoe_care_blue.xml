@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 신발 상세 · 수리 · 강화(파란 톤 v4, docs/redesign/blue-v4-2026-10 — 상세·수리 30 · 강화 17) -->
+<!-- 신발 상세 · 수리(파란 톤 v4, docs/redesign/blue-v4-2026-10 — 상세·수리 30). 강화 화면 글은 shoe_upgrade.xml -->
 <resources>
     <string name="care_upgrade_open">Upgrade</string>
-    <string name="care_upgrade_checking">Checking upgrade</string>
     <string name="care_first_hint">Pick it as your first running pair.</string>
     <string name="care_pending_upgrade_title">Checking the upgrade result</string>
     <string name="care_pending_upgrade_body">These are the last confirmed stats.</string>
@@ -26,7 +25,6 @@
     <string name="care_sign_in_title">Sign-in needed</string>
     <string name="care_sign_in_wear">Sign in to switch shoes.</string>
     <string name="care_sign_in_repair">Sign in to repair this pair.</string>
-    <string name="care_sign_in_upgrade">Sign in to upgrade this pair.</string>
     <string name="care_wear_failed_hint">Please try again in a moment.</string>
     <string name="care_wear_check_title">Check what you\'re wearing</string>
     <string name="care_wear_check_body">The connection dropped, so we couldn\'t confirm the result yet.</string>
@@ -69,42 +67,4 @@
     <string name="care_block_legacy">Shoes made on the phone before the server economy can\'t be upgraded.</string>
     <string name="care_block_missing">This pair isn\'t in your shoes anymore. Choose again from your shoes.</string>
     <string name="care_block_other">The server didn\'t accept the request. Please check again in a moment.</string>
-    <string name="care_no_charge">No SUP was charged.</string>
-    <string name="care_upgrade_title">Shoe upgrade</string>
-    <string name="care_upgrade_after">After the upgrade</string>
-    <string name="care_upgrade_cost">Upgrade cost</string>
-    <string name="care_after_upgrade">After upgrade</string>
-    <string name="care_balance_checking">Checking balance…</string>
-    <string name="care_upgrade_short_action">Not enough SUP</string>
-    <string name="care_not_enough_upgrade">Not enough SUP, so the upgrade didn\'t happen.</string>
-    <string name="care_confirm_title">Upgrade this pair?</string>
-    <string name="care_confirm_level">Level %1$d → %2$d</string>
-    <string name="care_confirm_note">%1$s SUP will be deducted when you start.</string>
-    <string name="care_start">Start upgrade</string>
-    <string name="care_upgrading_title">Checking the upgrade result</string>
-    <string name="care_upgrading_body">We\'ll show the result when it\'s done.</string>
-    <string name="care_upgrading">Upgrading</string>
-    <string name="care_upgrade_done_kicker">Upgrade complete</string>
-    <string name="care_upgrade_done_title">Reached level %1$d</string>
-    <string name="care_upgrade_observed">These are the values we read again from the server.</string>
-    <string name="care_view_detail">View shoe details</string>
-    <string name="care_next_level">Upgrade to the next level</string>
-    <string name="care_upgrade_max_title">Max level reached</string>
-    <string name="care_upgrade_max_body">This pair can\'t be upgraded any further.</string>
-    <string name="care_upgrade_blocked_title">This pair can\'t be upgraded.</string>
-    <string name="care_view_owned">View my shoes</string>
-    <string name="care_upgrade_unknown_title">Couldn\'t confirm the upgrade result</string>
-    <string name="care_upgrade_unknown_body">We\'re checking whether the upgrade went through. Please wait until it\'s confirmed.</string>
-    <string name="care_upgrade_unknown_accepted">The server took the upgrade. We\'re still checking the latest level.</string>
-    <string name="care_last_record">Last confirmed record</string>
-    <string name="care_recheck_note">We only check the existing result — no new upgrade is sent.</string>
-    <string name="care_recheck">Check result again</string>
-    <string name="care_upgrade_unchanged">We checked again and the level hasn\'t changed. If the upgrade wasn\'t applied, you can try again.</string>
-    <string name="care_back_to_upgrade">Back to upgrade</string>
-    <string name="care_offline_title">Check your connection</string>
-    <string name="care_offline_body">We didn\'t send the upgrade request.</string>
-    <string name="care_offline_note">The upgrade hasn\'t started yet.</string>
-    <string name="care_still_offline">Still not connected.</string>
-    <string name="care_go_back">Go back</string>
-    <string name="care_check_connection">Check connection</string>
 </resources>
