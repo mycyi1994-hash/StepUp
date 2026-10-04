@@ -731,13 +731,15 @@ private fun PickerSheet(state: ShoeUpgradeState, actions: UpgradeActions) {
                         }
                         Headline(stringResource(R.string.upg_pick_failed_title), stringResource(R.string.upg_pick_failed_body))
                     }
-                    is MaterialsLoad.Ready -> if (usable.isEmpty() && draft.isEmpty()) {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 24.dp).testTag("picker-empty"),
-                            horizontalAlignment = Alignment.CenterHorizontally) {
-                            Headline(stringResource(R.string.upg_pick_empty_title), stringResource(R.string.upg_pick_empty_body))
+                    is MaterialsLoad.Ready -> {
+                        if (usable.isEmpty() && draft.isEmpty()) {
+                            Column(Modifier.fillMaxWidth().padding(vertical = 24.dp).testTag("picker-empty"),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Headline(stringResource(R.string.upg_pick_empty_title), stringResource(R.string.upg_pick_empty_body))
+                            }
                         }
-                    } else {
-                        // 쓸 수 있는 것 먼저(보정이 큰 순), 쓸 수 없는 것은 까닭과 함께 흐리게(고를 수 없다)
+                        // 쓸 수 있는 것 먼저(보정이 큰 순), 쓸 수 없는 것은 까닭과 함께 흐리게(고를 수 없다).
+                        // 쓸 수 있는 것이 없어도 내 신발이 있으면 줄마다 까닭("두 등급 이상 낮아요" 등)을 보인다
                         val ordered = load.list.filter { it.usable || it.id in draft } + load.list.filterNot { it.usable || it.id in draft }
                         ordered.forEach { material ->
                             PickerRow(material, targetRarity, selected = material.id in draft, full = draft.size >= ShoeForge.MATERIALS,

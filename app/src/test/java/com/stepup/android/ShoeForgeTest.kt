@@ -8,6 +8,8 @@ import com.stepup.android.data.repo.ForgeRepository
 import com.stepup.android.data.repo.ForgeServer
 import com.stepup.android.data.repo.decodePending
 import com.stepup.android.data.repo.encodePending
+import com.stepup.android.data.repo.pendingFor
+import com.stepup.android.data.repo.upsertPending
 import com.stepup.android.domain.ForgeMaterial
 import com.stepup.android.domain.ForgeMaterialBlock
 import com.stepup.android.domain.ForgePending
@@ -161,6 +163,28 @@ class ShoeForgeTest {
         assertEquals(p, decodePending(raw, "user-a"))
         assertNull(decodePending(raw, "user-b"))
         assertNull(decodePending("broken", "user-a"))
+    }
+
+    @Test
+    fun `계정마다 따로 저장해 다른 계정의 결과 모르는 요청을 덮어쓰거나 지우지 않는다`() {
+        val a = ForgePending("k-a", 7, listOf(1, 2, 3), 804, 1_000)
+        val b = ForgePending("k-b", 9, listOf(4, 5, 6), 700, 2_000)
+        var all = upsertPending(null, "user-a", a)
+        all = upsertPending(all, "user-b", b)
+        assertEquals(a, pendingFor(all, "user-a"))
+        assertEquals(b, pendingFor(all, "user-b"))
+        // B 의 결과가 확정돼 지워도 A 의 요청은 남는다
+        all = upsertPending(all, "user-b", null)
+        assertEquals(a, pendingFor(all, "user-a"))
+        assertNull(pendingFor(all, "user-b"))
+        // A 가 새 요청을 저장하면 A 의 줄만 바뀐다
+        val a2 = a.copy(requestKey = "k-a2")
+        all = upsertPending(upsertPending(all, "user-b", b), "user-a", a2)
+        assertEquals(a2, pendingFor(all, "user-a"))
+        assertEquals(b, pendingFor(all, "user-b"))
+        assertNull(upsertPending(upsertPending(all, "user-a", null), "user-b", null))
+        // 예전(한 줄) 저장값도 그대로 읽힌다
+        assertEquals(a, pendingFor(encodePending(a, "user-a"), "user-a"))
     }
 
     @Test

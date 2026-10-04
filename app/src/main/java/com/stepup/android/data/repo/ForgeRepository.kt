@@ -277,22 +277,33 @@ class ForgeRepository(
     }
 }
 
-/** 저장 형식 "키|대상|재료,재료,재료|확률|시각" — 다른 계정의 요청을 섞지 않게 계정 표시를 앞에 붙인다 */
+/**
+ * 저장 형식 — 계정마다 한 줄 "계정|키|대상|재료,재료,재료|확률|시각". 한 폰에서 계정을 바꿔도 다른 계정의 결과 모르는 요청을
+ * 덮어쓰거나 지우지 않는다(그 계정으로 돌아오면 같은 요청 키로 결과를 다시 묻는다 — 재료 3켤레가 탔는지 확인할 길을 잃지 않게).
+ */
 class PrefsForgePendingStore(
     private val prefs: com.stepup.android.data.prefs.UserPrefs,
 ) : ForgePendingStore {
-    override suspend fun load(): ForgePending? {
-        val raw = prefs.forgePending() ?: return null
-        val owner = prefs.economyOwner().orEmpty()
-        return decodePending(raw, owner)
-    }
+    override suspend fun load(): ForgePending? = pendingFor(prefs.forgePending(), prefs.economyOwner().orEmpty())
 
     override suspend fun save(pending: ForgePending?) {
-        prefs.setForgePending(pending?.let { encodePending(it, prefs.economyOwner().orEmpty()) })
+        val owner = prefs.economyOwner().orEmpty()
+        prefs.updateForgePending { all -> upsertPending(all, owner, pending) }
     }
 
     override val pending: Flow<ForgePending?>
-        get() = prefs.forgePendingFlow.map { (raw, owner) -> raw?.let { decodePending(it, owner.orEmpty()) } }
+        get() = prefs.forgePendingFlow.map { (raw, owner) -> pendingFor(raw, owner.orEmpty()) }
+}
+
+/** 저장된 줄들 가운데 이 계정의 요청 */
+internal fun pendingFor(all: String?, owner: String): ForgePending? =
+    all.orEmpty().split('\n').firstNotNullOfOrNull { line -> decodePending(line, owner) }
+
+/** 이 계정의 줄만 바꾸거나([pending]) 지운다(null). 다른 계정의 줄은 그대로. 남은 줄이 없으면 null */
+internal fun upsertPending(all: String?, owner: String, pending: ForgePending?): String? {
+    val others = all.orEmpty().split('\n').filter { it.isNotBlank() && it.substringBefore('|') != owner }
+    val lines = if (pending != null) others + encodePending(pending, owner) else others
+    return lines.joinToString("\n").ifEmpty { null }
 }
 
 internal fun encodePending(p: ForgePending, owner: String): String =

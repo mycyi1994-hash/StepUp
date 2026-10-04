@@ -6211,8 +6211,9 @@ begin
   perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_a') = 'OK' and v_blocks ->> pg_temp.fx('fg_c') = 'OK'
                      and v_blocks ->> pg_temp.fx('fg_s') = 'OK' and v_blocks ->> pg_temp.fx('fg_over') = 'OK',
     '한 등급 아래 · 같은 등급 내 신발은 재료 후보(레벨 25 도 막지 않는다)');
-  perform pg_temp.ok(not v_blocks ? pg_temp.fx('fg_b') and not v_blocks ? pg_temp.fx('fg_low'),
-    '두 등급 이상 아래 신발은 후보에 없다');
+  perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_b') = 'GRADE' and v_blocks ->> pg_temp.fx('fg_low') = 'GRADE'
+                     and (v_bonus ->> pg_temp.fx('fg_b'))::int = 0,
+    '두 등급 이상 아래 신발도 후보 목록에 보이되 GRADE 로 막힌다(0055)');
   perform pg_temp.ok(not v_blocks ? pg_temp.fx('fg_t') and not v_blocks ? pg_temp.fx('fg_other'),
     '대상 자신 · 남의 신발은 후보에 없다');
   perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_worn') = 'EQUIPPED' and v_blocks ->> pg_temp.fx('fg_chain') = 'ON_CHAIN'
