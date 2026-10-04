@@ -1,0 +1,8 @@
+{
+  "id": "C01",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI image only: replace the underlying page title 자유 러닝 with 10분 챌린지. Correct displayed average pace to 7′49″/km to match 1.28km in10:00. Preserve all other pixels, dark navy centered goal-achieved modal, buttons and logo. Do not introduce any new text or balance.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-38731c8f-bf3c-410b-bea1-38f8bb951b29.png"
+  ]
+}

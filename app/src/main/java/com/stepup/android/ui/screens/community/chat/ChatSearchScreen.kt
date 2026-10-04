@@ -1,6 +1,14 @@
 package com.stepup.android.ui.screens.community.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import com.stepup.android.ui.components.RunSpinner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -54,11 +62,6 @@ import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewGutter
-import com.stepup.android.ui.screens.community.crew.CrewPage
-import com.stepup.android.ui.screens.community.crew.CrewTopBar
-import com.stepup.android.ui.screens.community.crew.crewInk
 import com.stepup.android.ui.theme.StepUpSans
 
 /**
@@ -67,7 +70,7 @@ import com.stepup.android.ui.theme.StepUpSans
  */
 @Composable
 fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen: (messageId: Long, seq: Long) -> Unit, onEnded: () -> Unit) {
-    val ink = crewInk()
+    val ink = blueInk()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val meta by viewModel.meta.collectAsStateWithLifecycle()
@@ -78,14 +81,16 @@ fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen:
     LaunchedEffect(ended) { if (ended) onEnded() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
-    CrewPage(Modifier.imePadding().testTag("chat-search")) {
-        CrewTopBar(stringResource(R.string.chat_search_bar), onBack)
+    BluePage(Modifier.imePadding().testTag("chat-search")) {
+        BlueTopBar(stringResource(R.string.chat_search_bar), onBack)
+        val fieldShape = RoundedCornerShape(16.dp)
         Row(
-            Modifier.padding(horizontal = CrewGutter).padding(top = 22.dp).fillMaxWidth().heightIn(min = 51.dp)
-                .clip(RoundedCornerShape(14.dp)).background(ink.card).padding(horizontal = 16.dp),
+            Modifier.padding(horizontal = BlueGutter).padding(top = 10.dp).fillMaxWidth().heightIn(min = 56.dp)
+                .clip(fieldShape).background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), fieldShape)
+                .border(1.5.dp, ink.edgeStrong, fieldShape).padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Filled.Search, null, tint = ink.secondary, modifier = Modifier.size(22.dp))
+            Icon(Icons.Filled.Search, null, tint = ink.info, modifier = Modifier.size(26.dp))
             Spacer(Modifier.width(12.dp))
             BasicTextField(
                 value = field,
@@ -99,47 +104,59 @@ fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen:
                     viewModel.search()
                     keyboard?.hide()
                 }),
-                textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 15.sp),
+                textStyle = blueText(17.sp, ink.text, FontWeight.SemiBold, 1.3f),
                 cursorBrush = SolidColor(ink.info),
                 modifier = Modifier.weight(1f).padding(vertical = 14.dp).focusRequester(focus).testTag("chat-search-field"),
                 decorationBox = { inner ->
                     Box {
-                        if (field.text.isEmpty()) Text(stringResource(R.string.chat_search_hint), color = ink.secondary, fontSize = 15.sp)
+                        if (field.text.isEmpty()) Text(stringResource(R.string.chat_search_hint), style = blueText(17.sp, ink.secondary, FontWeight.Medium, 1.3f))
                         inner()
                     }
                 },
             )
+            // 22 — 지우기 X 는 검색어만 비운다(기존 검색 상태를 그대로 쓴다)
+            if (field.text.isNotEmpty()) {
+                BlueClearButton(
+                    stringResource(R.string.crew_blue_clear_query),
+                    onClear = {
+                        field = TextFieldValue("")
+                        viewModel.setQuery("")
+                        runCatching { focus.requestFocus() }
+                    },
+                    modifier = Modifier.testTag("chat-search-clear"),
+                )
+            }
         }
         when (val current = state) {
             ChatSearchState.Idle -> Unit
             ChatSearchState.Searching -> Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(Modifier.size(22.dp), color = ink.secondary, strokeWidth = 2.dp)
+                RunSpinner(Modifier.size(26.dp))
             }
             is ChatSearchState.Found -> LazyColumn(
                 Modifier.weight(1f).fillMaxWidth().testTag("chat-search-results"),
-                contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp),
+                contentPadding = PaddingValues(start = BlueGutter, end = BlueGutter, bottom = 40.dp),
             ) {
                 item(key = "count") {
                     Text(
-                        stringResource(R.string.chat_search_count, current.results.size), color = ink.secondary, fontSize = 13.5.sp,
-                        modifier = Modifier.padding(top = 28.dp, bottom = 14.dp),
+                        stringResource(R.string.chat_search_count, current.results.size), style = blueText(15.sp, ink.secondary, FontWeight.Medium),
+                        modifier = Modifier.padding(top = 24.dp, bottom = 6.dp),
                     )
                 }
                 items(current.results, key = { it.id ?: 0L }) { message ->
-                    ChatSearchRow(message, meta) {
+                    ChatSearchRow(message, meta, query) {
                         val id = message.id
                         val seq = message.seq
                         if (id != null && seq != null) onOpen(id, seq)
                     }
                 }
             }
-            ChatSearchState.Empty -> Column(Modifier.padding(horizontal = CrewGutter).testTag("chat-search-empty")) {
-                Spacer(Modifier.height(96.dp))
-                Text(stringResource(R.string.chat_search_empty_title), color = ink.text, fontSize = 26.sp, lineHeight = 33.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(18.dp))
-                Text(stringResource(R.string.chat_search_empty_body), color = ink.secondary, fontSize = 14.sp)
-                Spacer(Modifier.height(40.dp))
-                CrewButton(
+            ChatSearchState.Empty -> Column(Modifier.padding(horizontal = BlueGutter).testTag("chat-search-empty")) {
+                Spacer(Modifier.height(64.dp))
+                Text(stringResource(R.string.chat_search_empty_title), style = blueText(27.sp, ink.text, FontWeight.ExtraBold, 1.3f))
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.chat_search_empty_body), style = blueText(16.sp, ink.secondary, FontWeight.Medium))
+                Spacer(Modifier.height(26.dp))
+                BlueButton(
                     stringResource(R.string.chat_search_change),
                     {
                         field = field.copy(selection = TextRange(0, field.text.length))
@@ -149,48 +166,65 @@ fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen:
                     Modifier.testTag("chat-search-change"),
                 )
             }
-            ChatSearchState.Failed -> Column(Modifier.padding(horizontal = CrewGutter).padding(top = 40.dp).testTag("chat-search-failed")) {
-                Text(stringResource(R.string.chat_search_error), color = ink.warn, fontSize = 14.sp)
+            ChatSearchState.Failed -> Column(Modifier.padding(horizontal = BlueGutter).padding(top = 40.dp).testTag("chat-search-failed")) {
+                Text(stringResource(R.string.chat_search_error), style = blueText(16.sp, ink.warn, FontWeight.SemiBold))
                 Spacer(Modifier.height(24.dp))
-                CrewButton(stringResource(R.string.chat_error_retry), viewModel::search, Modifier.testTag("chat-search-retry"))
+                BlueButton(stringResource(R.string.chat_error_retry), viewModel::search, Modifier.testTag("chat-search-retry"))
             }
         }
     }
 }
 
 @Composable
-private fun ChatSearchRow(message: ChatMessage, meta: ChatRoomMeta?, onClick: () -> Unit) {
-    val ink = crewInk()
+private fun ChatSearchRow(message: ChatMessage, meta: ChatRoomMeta?, query: String, onClick: () -> Unit) {
+    val ink = blueInk()
     val owner = message.authorId != null && message.authorId == meta?.ownerId
-    Row(
-        Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).padding(top = 18.dp).testTag("chat-search-row"),
-        verticalAlignment = Alignment.Top,
-    ) {
-        ChatFace(message.authorName, owner, 32.dp)
-        Column(Modifier.weight(1f).padding(start = 14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
-                    color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (owner) {
-                    Spacer(Modifier.width(10.dp))
-                    ChatOwnerBadge()
+    val body = message.body?.takeIf { it.isNotBlank() } ?: if (message.kind == ChatKind.IMAGE) stringResource(R.string.chat_photo) else ""
+    Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag("chat-search-row")) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            ChatFace(message.authorName, owner, 50.dp)
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
+                        style = blueText(17.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (owner) {
+                        Spacer(Modifier.width(10.dp))
+                        ChatOwnerBadge()
+                    }
                 }
+                Spacer(Modifier.height(6.dp))
+                // 22 — 검색어를 청록으로 강조(새 API 없이 받은 본문에서 찾는다)
+                Text(
+                    highlightQuery(body, query, ink.info), style = blueText(16.sp, ink.text, FontWeight.Medium, 1.45f),
+                    maxLines = 3, overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.chat_notice_meta, chatDate(message.createdAt), chatTime(message.createdAt)),
+                    style = blueText(14.sp, ink.secondary, FontWeight.Medium),
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                message.body?.takeIf { it.isNotBlank() } ?: if (message.kind == ChatKind.IMAGE) stringResource(R.string.chat_photo) else "",
-                color = ink.text, fontSize = 15.sp, lineHeight = 23.sp, maxLines = 3, overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.chat_notice_meta, chatDate(message.createdAt), chatTime(message.createdAt)),
-                color = ink.secondary, fontSize = 11.5.sp,
-            )
-            Spacer(Modifier.height(22.dp))
-            Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
+            Icon(Icons.Filled.ChevronRight, null, tint = ink.secondary, modifier = Modifier.padding(start = 8.dp).size(24.dp))
+        }
+        BlueDivider()
+    }
+}
+
+/** 본문에서 검색어(대소문자 무시)를 찾아 그 부분만 강조 */
+internal fun highlightQuery(text: String, query: String, color: Color): AnnotatedString {
+    val needle = query.trim()
+    if (needle.isEmpty()) return AnnotatedString(text)
+    return buildAnnotatedString {
+        append(text)
+        var from = 0
+        while (true) {
+            val at = text.indexOf(needle, from, ignoreCase = true)
+            if (at < 0) break
+            addStyle(SpanStyle(color = color, fontWeight = FontWeight.Bold), at, at + needle.length)
+            from = at + needle.length
         }
     }
 }

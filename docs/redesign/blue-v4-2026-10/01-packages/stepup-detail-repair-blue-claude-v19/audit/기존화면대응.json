@@ -1,0 +1,82 @@
+{
+  "source": "stepup-shoe-detail-v1 및 현재 Routes.SNEAKER",
+  "mapping": [
+    {
+      "source": "01-owned-shoes-entry",
+      "destination": "SH01/SH02",
+      "interpretation": "별도 신발탭 전달본"
+    },
+    {
+      "source": "02-shoe-detail",
+      "destination": "SD01",
+      "interpretation": "네 독립 한줄 바의 최신 상세로 대체"
+    },
+    {
+      "source": "03-equipped-detail",
+      "destination": "SD02",
+      "interpretation": "등급·번호를 보존한 착용 상태"
+    },
+    {
+      "source": "04-all-stats / 05-stat-explanation",
+      "destination": "SD01",
+      "interpretation": "이전 별도 능력치 시트를 본문4행으로 대체. 제거된 속성 복원 안 함"
+    },
+    {
+      "source": "06-shoe-information",
+      "destination": "SD15/16/17",
+      "interpretation": "체인 정보를 관리의 신발 기록으로 유지"
+    },
+    {
+      "source": "07-owned-copies / 08-another-copy",
+      "destination": "SH02 / SD01",
+      "interpretation": "현재 보관함에서 소유 ID별 상세 진입. 선택만으로 착용 변경 없음"
+    },
+    {
+      "source": "09-equipping / 10-equipped-success",
+      "destination": "SD03/04",
+      "interpretation": "요청 중과 실제 착용 확인 분리"
+    },
+    {
+      "source": "11-equip-error",
+      "destination": "SD05/06/07/10",
+      "interpretation": "거절·로그인·미확인·소유 없음 구분"
+    },
+    {
+      "source": "12-inventory-after-equip",
+      "destination": "SH01/SH02",
+      "interpretation": "별도 목록이 실제 착용 ID를 갱신하는 상태"
+    },
+    {
+      "source": "13-detail-loading / 14-detail-load-error",
+      "destination": "SD08/09",
+      "interpretation": "로딩과 실패 분리"
+    },
+    {
+      "source": "15-shoe-not-found / 16-art-load-error",
+      "destination": "SD10/11",
+      "interpretation": "소유 없음과 아트만 실패 분리"
+    },
+    {
+      "source": "17-first-equipment",
+      "destination": "SD12",
+      "interpretation": "첫 소유 신발도 명시적 착용"
+    },
+    {
+      "source": "18-empty-inventory",
+      "destination": "추가 제작 대상",
+      "interpretation": "이 전달본의 상세 오류로 빈 보관함을 대체하지 않음"
+    },
+    {
+      "source": "현재 관리 / 강화·수리 후 상세",
+      "destination": "SD13/14/18/19",
+      "interpretation": "기능 진입과 미확정 작업 복귀"
+    },
+    {
+      "source": "수리 진입 시안3개 중 간편 확인 구조",
+      "destination": "RP01~11",
+      "interpretation": "최종1개 구조를 확인·처리·완료·경계 상태로 확장"
+    }
+  ],
+  "all104RoutesAudited": false,
+  "fullRemakeComplete": false
+}

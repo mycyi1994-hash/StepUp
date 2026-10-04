@@ -1,0 +1,9 @@
+{
+  "id": "CR03",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit image1 exactly with these corrections only. The crew name must be 여의도 퇴근런, remove the accidental English 'crew' prefix. Replace the people emblem next to crew name with the same blue oval running-track emblem shown in image2. Remove the unrequested '전체 일정 보기' link. Preserve all remaininglayout and all functional buttons, navy/blue finish and Koreantext.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-c6063ae2-27b9-41f3-b51a-5c37c8c3473f.png",
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-running-blue-remake-v18/01-screens/CR02.png"
+  ]
+}

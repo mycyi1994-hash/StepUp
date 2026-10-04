@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import androidx.compose.ui.semantics.getOrNull
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -170,7 +171,7 @@ class CommunityStoriesTest {
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
         compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.story_area_around, "여의도동")).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.story_blue_area_title, "여의도동")).assertIsDisplayed()
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다
         compose.onNodeWithTag("stories-list").performScrollToNode(hasTestTag("story-row-306"))
         compose.onAllNodesWithTag("story-row-305").assertCountEquals(0)
@@ -180,9 +181,6 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-row-301").assertHasClickAction()
         compose.onNodeWithTag("story-thumb-301").assertHasClickAction()
         shot("01-list", settle = 1_800)
-        tapTag("stories-expand")
-        shot("02-expanded")
-        tapTag("stories-expand")
 
         // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
         tapTag("stories-range")
@@ -201,32 +199,34 @@ class CommunityStoriesTest {
         pressBack()
         awaitTag("stories-tab")
         compose.onNodeWithTag("story-row-305").assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        // 범위 줄은 목록 맨 위(지역 · 작은 지도)와 함께 올라간다 — 맨 위로 돌아가 그대로인지 본다
         compose.onNodeWithTag("stories-list").performScrollToIndex(0)
+        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
         shot("17-radius-applied-3km", settle = 1_500)
 
-        // ── 14 · 15 · 16 지도 → 장소 → 그 장소의 목록 ─────────────────────
+        // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────
         tapTag("stories-open-map")
         awaitTag("story-map")
         shot("14-map-overview", settle = 2_000)
-        compose.onAllNodesWithTag("story-map-place").onFirst().performClick()
+        compose.onNodeWithTag("story-map-list").performScrollToNode(hasTestTag("story-thumb-302"))
+        tapTag("story-thumb-302")
         awaitTag("story-map-selected")
+        compose.onNodeWithTag("story-map-selected").assert(hasText("여의나루", substring = true))
+        compose.onAllNodesWithTag("story-row-301").assertCountEquals(0)
         shot("15-map-place", settle = 1_500)
-        // 뒤로 가기는 고른 장소부터 푼다
-        pressBack()
+        // "전체 장소"는 장소 필터만 푼다 — "이 장소 글 보기" 같은 다음 단계는 없다
+        tapTag("story-map-all")
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-map-selected").fetchSemanticsNodes().isEmpty() }
+        // 뒤로 가기는 들어온 화면(목록)으로 — 고른 장소가 있어도 지도 안에서 한 번 더 머물지 않는다
         pressBack()
         awaitTag("stories-tab")
         scrollToRow(302)
         tapTag("story-thumb-302")
         awaitTag("story-map-selected")
-        compose.onNodeWithTag("story-map-selected").assertTextEquals("여의나루")
-        tapTag("story-map-place-posts")
-        awaitTag("stories-clear-filter")
-        compose.onNodeWithTag("stories-title").assertTextEquals("여의나루")
-        compose.onAllNodesWithTag("story-row-301").assertCountEquals(0)
+        compose.onNodeWithTag("story-map-selected").assert(hasText("여의나루", substring = true))
         shot("16-place-feed", settle = 1_500)
-        tapTag("stories-clear-filter")
+        pressBack()
+        awaitTag("stories-tab")
         awaitTag("story-row-301")
 
         // ── 03 · 04 · 05 상세 · 댓글 ───────────────────────────────────
@@ -242,7 +242,7 @@ class CommunityStoriesTest {
         shot("04-comment-entry", settle = 1_200)
         tapTag("story-comment-send")
         // 성공해야 입력이 비고, 새 댓글과 개수가 함께 바뀐다
-        compose.waitUntil(10_000) {
+        waitFor("comment count 3") {
             runCatching {
                 compose.onNodeWithTag("story-comment-count").assertTextEquals(context.getString(R.string.story_comment_count, 3))
             }.isSuccess
@@ -277,7 +277,7 @@ class CommunityStoriesTest {
         tapTag("story-menu")
         tapTag("story-menu-hide")
         awaitTag("story-toast")
-        compose.waitUntil(10_000) { compose.onAllNodesWithTag("story-row-301").fetchSemanticsNodes().isEmpty() }
+        waitFor("story-row-301 removed") { compose.onAllNodesWithTag("story-row-301").fetchSemanticsNodes().isEmpty() }
         shot("21-hidden-with-undo")
         compose.onNodeWithText(context.getString(R.string.story_undo)).performClick()
         scrollToRow(301)
@@ -341,18 +341,21 @@ class CommunityStoriesTest {
         shot("08-place-picker")
         compose.onNodeWithTag("story-place-search").performTextInput("달빛러닝공원")
         awaitTag("story-place-empty")
+        // 자판이 떠 있으면 아래의 "검색어 지우기"를 자판이 가린다 — 내리고 누른다
+        closeKeyboard()
         shot("10-place-empty")
-        compose.onNodeWithText(context.getString(R.string.story_place_clear)).performClick()
+        val clearButton = compose.onNodeWithText(context.getString(R.string.story_place_clear))
+        runCatching { clearButton.performScrollTo() }
+        clearButton.performClick()
+        awaitTextField("story-place-search", "")
         compose.onNodeWithTag("story-place-search").performTextInput("한강")
         awaitText("여의도한강공원")
         closeKeyboard()
         shot("09-place-search")
+        // 검색 결과는 한 번 누르면 바로 정해진다 — 확인 화면을 거치지 않는다(CM14)
         compose.onNodeWithText("여의도한강공원").performClick()
-        awaitTag("story-place-confirm")
-        compose.onNodeWithTag("story-confirm-name").assertTextEquals("여의도한강공원")
-        shot("11-place-confirm", settle = 2_000)
-        tapTag("story-place-choose")
         awaitTag("story-compose")
+        shot("11-place-picked", settle = 1_200)
         compose.onNodeWithTag("story-compose-place", useUnmergedTree = true).assertTextEquals("여의도한강공원")
         // 장소를 고르러 다녀와도 본문은 그대로다
         awaitTextField("story-compose-text", "한강에서 저녁 러닝 같이 하실 분\n7시에 여의나루역 2번 출구 근처에서 천천히 5km 뛰어요.")
@@ -420,23 +423,50 @@ class CommunityStoriesTest {
     // ── 도우미 ─────────────────────────────────────────────────────
 
     private fun awaitTag(tag: String, timeout: Long = 10_000) {
-        compose.waitUntil(timeout) { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val present = { compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        // 먼저 그대로 기다리고, 그래도 없으면(화면 밖 목록 줄) 한 번 넘겨서 찾는다 — 넘기기가 다른 화면의 기다림을 흔들지 않게
+        if (runCatching { compose.waitUntil((timeout * 2 / 5).coerceAtLeast(2_000)) { present() } }.isSuccess) return
+        reveal(tag)
+        waitFor("tag '$tag'", (timeout * 3 / 5).coerceAtLeast(2_000)) { present() }
+    }
+
+    /** 화면 밖이라 아직 만들어지지 않은 목록 줄(LazyColumn)이면 넘길 수 있는 목록을 그 줄까지 넘긴다 */
+    private fun reveal(tag: String) {
+        if (compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) return
+        val lists = compose.onAllNodes(androidx.compose.ui.test.hasScrollToNodeAction())
+        val count = lists.fetchSemanticsNodes().size
+        for (i in 0 until count) {
+            if (runCatching { lists[i].performScrollToNode(androidx.compose.ui.test.hasTestTag(tag)) }.isSuccess) return
+        }
+    }
+
+    /** 기다리다 못 찾으면 무엇을 기다렸는지와 지금 보이는 꼬리표를 남긴다(CI 로그에 스택이 잘려도 어디서 멈췄는지 알 수 있게) */
+    private fun waitFor(what: String, timeout: Long = 10_000, condition: () -> Boolean) {
+        try {
+            compose.waitUntil(timeout) { condition() }
+        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+            val tags = compose.onAllNodes(androidx.compose.ui.test.SemanticsMatcher("tagged") {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) != null
+            }, useUnmergedTree = true).fetchSemanticsNodes()
+                .mapNotNull { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) }.distinct().take(40)
+            throw AssertionError("$what did not happen in ${timeout}ms (tags now: $tags)", e)
+        }
     }
 
     private fun awaitText(text: String, tag: String? = null, timeout: Long = 10_000) {
-        compose.waitUntil(timeout) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        waitFor("text '$text'", timeout) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
         if (tag != null) awaitTag(tag, timeout)
     }
 
     private fun awaitTextField(tag: String, expected: String) {
-        compose.waitUntil(10_000) {
+        waitFor("field '$tag' = '$expected'") {
             runCatching { compose.onNodeWithTag(tag).assert(hasText(expected)) }.isSuccess
         }
     }
 
     /** 목록을 그 글까지 내린다 — 화면 밖 줄은 아직 만들어지지 않았다 */
     private fun scrollToRow(id: Long) {
-        compose.waitUntil(10_000) {
+        waitFor("scroll to story-row-$id") {
             runCatching { compose.onNodeWithTag("stories-list").performScrollToNode(hasTestTag("story-row-$id")) }.isSuccess
         }
     }

@@ -17,9 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.stepup.android.R
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.ui.components.DetailPage
-import com.stepup.android.ui.components.SettingsChoiceRow
-import com.stepup.android.ui.components.SettingsNote
+import com.stepup.android.ui.components.BlueChoiceRow
+import com.stepup.android.ui.components.BlueGroup
+import com.stepup.android.ui.components.BlueNote
+import com.stepup.android.ui.components.BluePage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,7 +37,7 @@ private val OPTIONS = listOf(
 )
 
 /**
- * 언어(설정 v1 18 · 19). 고르는 즉시 저장하고 화면을 새 언어로 다시 그린다 — Android 13 이상은 OS 의 앱별 언어 설정에도
+ * 언어(설정 v1 18 · 19 → 파란 톤 v4 SET18 · 19). 고르는 즉시 저장하고 화면을 새 언어로 다시 그린다 — Android 13 이상은 OS 의 앱별 언어 설정에도
  * 그대로 반영된다. 저장은 화면이 다시 만들어져도 끊기지 않는 곳에서 한다(고른 뒤 이전 언어로 돌아가지 않게).
  * 게시물 · 이름처럼 사람이 쓴 글은 번역하지 않는다.
  */
@@ -57,13 +58,13 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
 
 @Composable
 fun LanguageContent(selected: String, onBack: () -> Unit = {}, onPick: (String) -> Unit = {}) {
-    DetailPage(title = stringResource(R.string.set_language), onBack = onBack) {
-        item { SettingsNote(stringResource(R.string.set_language_intro), top = true) }
+    BluePage(title = stringResource(R.string.set_language), onBack = onBack) {
+        item { BlueNote(stringResource(R.string.set_language_intro), intro = true) }
         item {
-            Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+            BlueGroup {
                 OPTIONS.forEach { option ->
                     val label = option.labelRes?.let { stringResource(it) } ?: option.nativeName.orEmpty()
-                    SettingsChoiceRow(
+                    BlueChoiceRow(
                         label, selected = option.tag == selected, onClick = { onPick(option.tag) },
                         description = option.nativeName?.takeIf { option.labelRes != null && it != label },
                         modifier = Modifier.testTag("language-${option.tag.ifEmpty { "system" }}"),
@@ -71,6 +72,7 @@ fun LanguageContent(selected: String, onBack: () -> Unit = {}, onPick: (String) 
                 }
             }
         }
-        item { SettingsNote(stringResource(R.string.set_language_note)) }
+        // 사람이 쓴 글 · 이름은 번역하지 않는다
+        item { BlueNote(stringResource(R.string.set_language_note)) }
     }
 }

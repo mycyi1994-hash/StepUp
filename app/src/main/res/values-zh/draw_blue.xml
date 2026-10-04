@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 抽鞋 蓝色调(2026-10-03 合并版 v4)。次数与距离均来自服务器 -->
+<resources>
+    <string name="draw_blue_subtitle_ready">所有鞋子都可以免费抽取。</string>
+    <string name="draw_blue_subtitle_loading">正在加载抽取次数。</string>
+    <string name="draw_blue_subtitle_failed">无法加载抽取次数。</string>
+    <string name="draw_blue_left_label">剩余次数</string>
+    <string name="draw_blue_free_breakdown">注册礼物 %1$d次 + 今日 %2$d次</string>
+    <string name="draw_blue_before_link">尚未连接钱包</string>
+    <string name="draw_blue_on_first_link">首次连接后</string>
+    <string name="draw_blue_run_per_step">连接后每跑%1$s公里得1次</string>
+    <string name="draw_blue_reconnect_hint">请重新连接钱包</string>
+    <string name="draw_blue_pending_hint">结果确认后即可查看。</string>
+    <string name="draw_blue_history">查看次数明细</string>
+    <string name="draw_blue_premium_sheet_sub">连接钱包后，每跑%1$s公里获得1次。</string>
+    <string name="draw_blue_benefit_note">连接钱包后跑步，可以累积更多高级抽取次数。</string>
+    <string name="draw_blue_free_empty_daily">每天赠送%1$d次免费抽取。</string>
+    <string name="draw_blue_run_sub">已连接的钱包可以累积跑步次数。</string>
+    <string name="draw_blue_run_rule">每跑%1$s公里获得1次高级抽取。</string>
+    <string name="draw_blue_request_head">正在确认鞋子</string>
+    <string name="draw_blue_request_sub">结果确认后盒子会打开。</string>
+    <string name="draw_blue_opening_head">正在打开盒子</string>
+    <string name="draw_blue_opening_note">这双鞋会加入你的鞋子。</string>
+    <string name="draw_blue_check_sub">确认完成后再展示鞋子。</string>
+    <string name="draw_blue_level_number">Lv. %1$d · %2$s</string>
+</resources>

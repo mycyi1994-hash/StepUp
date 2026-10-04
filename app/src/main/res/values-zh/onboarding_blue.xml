@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 蓝色调 v4(2026-10-03) — 开始 · 登录 · 初始设置(ONB21~25) -->
+<resources>
+    <string name="setup_first_title">初始设置</string>
+    <string name="setup_progress_desc">第%1$d步，共%2$d步</string>
+    <string name="setup_loading">正在读取已保存的信息</string>
+    <string name="setup_load_failed_title">无法读取已保存的信息</string>
+    <string name="setup_load_failed_body">可以重试，或跳过此步骤。</string>
+    <string name="setup_save_failed">保存失败，请再点一次。</string>
+</resources>

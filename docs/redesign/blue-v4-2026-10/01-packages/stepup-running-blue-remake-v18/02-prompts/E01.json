@@ -1,0 +1,8 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-20ce7587-3774-4baa-99b8-8500cd0c3962.png",
+    "C:/Users/gana0/OneDrive/문서/New project 3/output/stepup-showcase-enhanced-v15/03-쇼케이스-레벨등급-수정.png"
+  ],
+  "prompt": "Edit this Korean StepUp screen. Image1 is the exact modal to preserve; image2 is the correct underlying HOME. Replace ONLY the dimmed background above the sheet with the approved HOME from image2, including its original logo, filled SUP balance, blue shoe showroom and Cloud Runner. It must open from HOME, not from a running timer. Keep the entire '오늘의 활동' sheet and its data/buttons unchanged. One887x1774 full-screen image, original navy/electric-blue/ice-white style. No unrelated changes."
+}

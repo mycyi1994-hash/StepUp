@@ -1,0 +1,317 @@
+[
+  {
+    "id": "PF01",
+    "title": "내 정보 러닝 패스",
+    "png": "01-screens/PF01.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "b9e159f6b39fc947c6a7f52d9b280b54c0122a5164443a15af2a55f49df15223",
+    "entry": "内정보 정상",
+    "actions": "사진·프로필 수정→PRO01; 기록→RECORDS/H01; 챌린지→CHALLENGE_HISTORY; 지갑→WALLET; 설정→SETTINGS; 5탭 기존 이동.",
+    "guard": "루트 공유 헤더·탭 사용. 러너 레벨과 신발 레벨, 전체 누적과 월별 기록을 구분.",
+    "review": "Approved pass shoe and original logo, runner Lv.12 retained; record CTA, challenges, wallet, settings and five tabs visible."
+  },
+  {
+    "id": "PF02",
+    "title": "내 정보 기록 불러오는 중",
+    "png": "01-screens/PF02.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "459a410dacd3fa72fe923d7789f758e8a92e119777684584c6303e2e2a873b52",
+    "entry": "프로필 값은 도착했지만 러닝 합계를 읽는 중",
+    "actions": "조회 결과→PF01/PF04 또는 PF03. 다른 메뉴 이동 유지.",
+    "guard": "모르는 거리·횟수에 0을 표시하지 않음. 잔액과 프로필의 독립 상태 보존.",
+    "review": "Records independently loading: dashes no units/zeros, spinner; known identity andbalance retained."
+  },
+  {
+    "id": "PF03",
+    "title": "내 정보 기록 조회 실패",
+    "png": "01-screens/PF03.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f0d14d5576aa244113fed538450c274c40e972aaf982aef53d55482774eef5ad",
+    "entry": "러닝 합계 조회 실패",
+    "actions": "보조 다시 시도→기존 retryRecords→PF02; 기록·다른 메뉴 유지.",
+    "guard": "실패를 빈 기록이나 탈퇴로 처리하지 않음.",
+    "review": "Passmetrics replaced by errorandsecondaryretry; recordCTAandmenus preserved; nofakezero."
+  },
+  {
+    "id": "PF04",
+    "title": "내 정보 첫 러닝 전",
+    "png": "01-screens/PF04.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1bf8922d5a6fe3cbc130cfafd6b65ad296a7f7e9ac6d302577b0f96c90ab181a",
+    "entry": "저장된 러닝이 실제 0건",
+    "actions": "기록→H07 참고 구조의 실제 빈 기록 화면; 다른 메뉴 유지.",
+    "guard": "걸음 기반 레벨·보상 잔액·신발 소유를 임의 초기화하지 않음.",
+    "review": "Actual0.0km/0runs plusfirst-runhelper; walking-basedrunnerlevel andknownbalance independent."
+  },
+  {
+    "id": "PRO01",
+    "title": "프로필 수정",
+    "png": "01-screens/PRO01.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "67af36bb74fb27f9528e2909f5b5b1ac4909ae6965f910f35fe09e5c5970d921",
+    "entry": "프로필 수정 진입, 변경 없음",
+    "actions": "사진 변경→PRO03; 닉네임 터치→PRO16; X→PRO05; 뒤로→내 정보.",
+    "guard": "저장 비활성. 실제 사진·이름 유지. 최초 자동 키보드 없음.",
+    "review": "Full edit screen: fallback avatar, immediate-photo helper, 민수2/16, disabled save, no shared chrome; all labels visible."
+  },
+  {
+    "id": "PRO02",
+    "title": "닉네임 변경",
+    "png": "01-screens/PRO02.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "3ae18b9368612eec65f2a1fa761d43916ed428202bb7bced2010b1b822d21817",
+    "entry": "정규화한 닉네임이 달라짐",
+    "actions": "저장→PRO10; 뒤로→PRO09; 사진 변경→PRO03.",
+    "guard": "예시 달리는민수5/16. 최종 저장값과 비교.",
+    "review": "Edited nickname5/16, active white save, clean focus; no keyboard shown in this variant."
+  },
+  {
+    "id": "PRO03",
+    "title": "사진 변경 메뉴",
+    "png": "01-screens/PRO03.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "24a21b9e8134261d1cea4173025834761dec9afed1ed5b8e8b314c2080865325",
+    "entry": "사진 변경 메뉴",
+    "actions": "앨범→OS PickVisualMedia; 기본 이미지→PRO04; 닫기·외부·뒤로→편집.",
+    "guard": "앨범 취소 시 아무 변화 없음. 선택은 즉시 사진 저장이며 이름 초안 보존.",
+    "review": "Two photo choices and secondary close; helper immediate save; scrim avoids duplicate active actions."
+  },
+  {
+    "id": "PRO04",
+    "title": "기본 이미지 선택",
+    "png": "01-screens/PRO04.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "02db0d8ac39345563c3d83babe2bb6012595a811d03313b9b1fcffed3dcee020",
+    "entry": "기본 이미지 목록",
+    "actions": "새 이미지→PRO14; 같은 저장 ID→저장 없이 닫기; 닫기→편집.",
+    "guard": "기존16개 ID 순서 유지. 사용자 사진이면 체크 없음. 기존 기본 이미지면 그 체크만 표시.",
+    "review": "16 distinct legacy options in same ID order; second runningwoman marked, no check for custom avatar; close only."
+  },
+  {
+    "id": "PRO05",
+    "title": "닉네임을 비웠을 때",
+    "png": "01-screens/PRO05.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e061f411bc80769c3d888e41fcd6fddca35383beb5f6da72f2b0f49d615230c1",
+    "entry": "저장된 민수를 지워 빈 이름 입력",
+    "actions": "저장→PRO10→기본 호칭으로 내 정보; 입력→해당 길이 상태.",
+    "guard": "빈 이름은 유효. 원래도 빈 이름이었다면 저장 비활성. X 없음.",
+    "review": "Blank0/16 valid, clearX removed, active save, neutral helper."
+  },
+  {
+    "id": "PRO06",
+    "title": "16자 입력",
+    "png": "01-screens/PRO06.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "c9bf441cf33b53ba19fc26d8361c4091bddcbbedf2f78f4d2271daaaf2f253bb",
+    "entry": "16자 이름 입력",
+    "actions": "저장→PRO10; 계속 편집·지우기 가능.",
+    "guard": "16자 자체는 오류 아님. 입력 변환·저장 규칙·카운트 일치.",
+    "review": "Exact16-syllable nickname visible;16/16, neutral limit message; active save."
+  },
+  {
+    "id": "PRO07",
+    "title": "사진 저장 중",
+    "png": "01-screens/PRO07.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0ccb8538d3fd5c1019a4944b9e8431ea025c29584cc5f66e8d541f8cf544289a",
+    "entry": "앨범 사진 저장 처리",
+    "actions": "성공→PRO17; 실패→PRO08. 이름 입력은 가능.",
+    "guard": "사진 재선택과 이름 저장 차단. 작업은 앱 범위에서 계속됨.",
+    "review": "Photo-area spinner only; photo action/name save disabled; name field editable; no invented progress."
+  },
+  {
+    "id": "PRO08",
+    "title": "사진 저장 실패",
+    "png": "01-screens/PRO08.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "7c03be4fda14a64522cb69794b284d6edb4fa465246bdc5fcd2eca4124160e51",
+    "entry": "앨범 사진 저장 실패",
+    "actions": "다시 선택→OS 선택기; 사진 변경→PRO03; 이름은 독립적으로 편집.",
+    "guard": "이전 파일·ID·리비전 보존. 초안 변경 시 이름 저장은 정상 활성.",
+    "review": "Photo failure shown beside photo area before nickname (intentional placement); original avatar retained, retry selection available, name unchanged."
+  },
+  {
+    "id": "PRO09",
+    "title": "수정 중 나가기",
+    "png": "01-screens/PRO09.png",
+    "revision": 2,
+    "size": [
+      886,
+      1774
+    ],
+    "sha256": "b10cd181e6f80a9bc972baf4df0ff13fac7589dcb17eb245bb9d998332e23903",
+    "entry": "저장하지 않은 이름으로 뒤로 가기",
+    "actions": "계속 수정·외부·뒤로→편집 초안 유지; 닉네임 버리고 나가기→내 정보.",
+    "guard": "이미 저장된 사진은 유지. 사진 변경 없으면 사진 유지 안내 줄 생략.",
+    "review": "Photo already saved helper corrected; discard concerns nickname only; one primary and one secondary, no caret behind sheet."
+  },
+  {
+    "id": "PRO10",
+    "title": "닉네임 저장 중",
+    "png": "01-screens/PRO10.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "803a887be8e7d8087c4fec6d64acbde6d1cb202adb2ec65a24fdeb0c08269fa3",
+    "entry": "닉네임 저장 중",
+    "actions": "성공→PRO12; 실패→PRO11.",
+    "guard": "이름 입력·사진 변경·중복 저장 비활성. 화면 종료 후 임의 재진입 금지.",
+    "review": "Saving input and photo controls muted; saved draft retained, busybutton spinner without percent."
+  },
+  {
+    "id": "PRO11",
+    "title": "닉네임 저장 실패",
+    "png": "01-screens/PRO11.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d1d1ae4f32bf6365111ef5097215e4f9a3143f7fa39c3866b3f997c34ae536e5",
+    "entry": "닉네임 저장 실패",
+    "actions": "다시 저장→PRO10; 편집 가능; 변경 초안으로 뒤로→PRO09.",
+    "guard": "실패 초안 재진입 복원. 다른 작업 상태를 덮지 않음.",
+    "review": "Name failure retains5/16 draft, one retry primary; independent photo controls."
+  },
+  {
+    "id": "PRO12",
+    "title": "저장 완료",
+    "png": "01-screens/PRO12.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9faa154d807bef3b6e7291048a47d234029eee18a6891173b9d2c094696d9d4b",
+    "entry": "닉네임 실제 저장 성공 후 내 정보 복귀",
+    "actions": "PF01과 같은 메뉴. 2.6초 안내 한 번 후 사라짐.",
+    "guard": "사진 변경 없는 독립 분기: 기본 사진 유지, 새 이름만 반영. 성공 전에 표시 금지.",
+    "review": "Success home shows newname, allmenus and nav; toast does not cover their labels. Actual bounddata only."
+  },
+  {
+    "id": "PRO13",
+    "title": "프로필 초기 불러오는 중",
+    "png": "01-screens/PRO13.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0046789b4a8cd52b6889e80fe5d41aab236919af6636c75c5a72acd8123f53e9",
+    "entry": "저장된 이름·아바타 초기 로딩",
+    "actions": "로드 완료→PRO01 또는 복원된 초안; 뒤로→호출자.",
+    "guard": "기본값을 실제 저장값으로 오인시키지 않음. 현행 읽기 실패 기본값 처리와 별개의 상태.",
+    "review": "Recovered interrupted generation and individually inspected: neutral skeletons and spinner, no assumed name or zero, back retained."
+  },
+  {
+    "id": "PRO14",
+    "title": "기본 이미지 저장 중",
+    "png": "01-screens/PRO14.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "56cca7d684aeaacb3641e770ccd3788272d9daa1172bcd3cb7fba7ab8506c5ea",
+    "entry": "새 기본 이미지 즉시 저장 중",
+    "actions": "성공→편집 사진 갱신; 실패→PRO15.",
+    "guard": "첫 셀은 pending 표시만. 이전 선택 유지. 모든 선택·닫기·외부·뒤로 차단.",
+    "review": "One spinner on pending firstcell only; no premature selectioncheck; all options andclose disabled."
+  },
+  {
+    "id": "PRO15",
+    "title": "기본 이미지 저장 실패",
+    "png": "01-screens/PRO15.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "41e3a974d1eb9fca29b0c150f2b98f25b186d95587a9aebcc40c2bd7862c2572",
+    "entry": "기본 이미지 저장 실패",
+    "actions": "선택 재시도→PRO14; 닫기→편집.",
+    "guard": "이전 저장값과 초안을 유지. 새 이미지에 성공 체크 없음.",
+    "review": "Same16options/no newselectioncheck; inlinefailure fits aboveclose, oldavatar retained."
+  },
+  {
+    "id": "PRO16",
+    "title": "닉네임 키보드 입력",
+    "png": "01-screens/PRO16.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "57cfb5cac6a839b9b23acf3e3c96584e3cd5fdde5966ac5e9e8a4c40a762263a",
+    "entry": "닉네임 입력·OS 키보드 열림",
+    "actions": "저장→키보드 닫고 PRO10; 완료→키보드만 닫기; 사진 메뉴→포커스 해제 후 PRO03.",
+    "guard": "입력·안내·저장 버튼은 IME 위. 키보드는 생성 그림이 아닌 실제 OS.",
+    "review": "Native IME example: field andsave visible abovekeyboard; scrolled avatar clipped at contentviewport intentionally; actualOSIME notcustomasset."
+  },
+  {
+    "id": "PRO17",
+    "title": "사진 변경 완료",
+    "png": "01-screens/PRO17.png",
+    "revision": 1,
+    "size": [
+      886,
+      1774
+    ],
+    "sha256": "b8ca589a52ec9449e199f4cc54e2f76afe22a5e939e72dcc48dcb313eb98734d",
+    "entry": "사진만 저장 완료",
+    "actions": "사진 변경→PRO03; 뒤로→변경 사진이 반영된 내 정보; 이름 변경→PRO02형태.",
+    "guard": "이름 변화 없으므로 저장 버튼 비활성. 새 사진을 나가기 때 되돌리지 않음.",
+    "review": "Photo saved while nickname unchanged; only photohelper changes, save remains disabled."
+  }
+]

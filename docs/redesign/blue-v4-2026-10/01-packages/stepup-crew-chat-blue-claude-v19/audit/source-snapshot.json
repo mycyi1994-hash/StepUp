@@ -1,0 +1,67 @@
+[
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/domain/CrewChat.kt",
+    "sha256": "d3bc56dc01583c89a5a543b1f70c53b27db8f0d8913084c69c1f680fbf0a5605",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt",
+    "sha256": "105ed818a085ca861d8aad38d123e23ea07f70f524f5b4d31d43721e090eb9e5",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatListTab.kt",
+    "sha256": "020f416f8ae6e22eed88581ecaacc32a2ffd84cf84992c75cdcc3c01d4d0cd99",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatNavGraph.kt",
+    "sha256": "2f87a8f466084bc6cb1a83e9a7335be21f9010120d86177aee3a4abd8321eac4",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatNoticeScreens.kt",
+    "sha256": "b34b57844bc17d0e46a49c4d065cea96b975d50fa223368d5778e1ee23800522",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatParts.kt",
+    "sha256": "270d450b0595f2070f94726e52dd28cef0bff53d5335046dc484ed50a466991f",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt",
+    "sha256": "709cbff2e3a3159ec17095ab90c14b7c6b00961045d81c0c4fbdbe352fa787fc",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatRoomScreen.kt",
+    "sha256": "589842dac3b8b8c9617d813d761276818cea6ec584c0ad3679c8f9e8296e61d9",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatSearchScreen.kt",
+    "sha256": "5b47321782e2292ee8ac32fb7db6880d0ca3b73e7a805fe2a85ad9ba37c80718",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatViewModels.kt",
+    "sha256": "f9d6927f509c7846f412cd143a931d3e3b4071620bbcf099e008beebb9690202",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/java/com/stepup/android/data/repo/CrewChatRepository.kt",
+    "sha256": "be29e872081699447a2b59da9c8e2d719b0eb3640655dc251b50dc27837417d2",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/res/values-ko/crew_chat.xml",
+    "sha256": "8eb8d055f2fc09575927db1c68820263eee4591bfad55a7f4e7031304c0b3d14",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  },
+  {
+    "path": "stepup-waitlist-implementation/app/src/main/res/values-ko/crew_home.xml",
+    "sha256": "3e1e2b16c348ece05878492f273f138035583f4e9d62160c52d733a30e0743d0",
+    "coverage": "동작 관련 구간 읽기·검색. 전체 서비스·서버 감사 아님."
+  }
+]

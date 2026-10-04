@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.BodyProfile
@@ -49,7 +50,8 @@ class S2SetupTest {
         compose.onNodeWithTag("setup-height-minus").performClick()
         compose.onNodeWithTag("setup-height-minus").performClick()
         compose.onNodeWithTag("setup-height-minus").performClick()
-        compose.onNodeWithTag("setup-weight-minus").performClick()
+        // 몸무게 칸은 작은 화면에서 본문 아래로 넘어간다 — 넘겨서 누른다(안 보이는 자리를 누르면 아래 "다음"이 눌린다)
+        compose.onNodeWithTag("setup-weight-minus").performScrollTo().performClick()
         compose.onNodeWithTag("setup-weight-minus").performClick()
         compose.onNodeWithTag("setup-height-value", useUnmergedTree = true).assertTextEquals("162")
         compose.onNodeWithTag("setup-weight-value", useUnmergedTree = true).assertTextEquals("59.0")
@@ -58,21 +60,21 @@ class S2SetupTest {
 
         compose.onNodeWithTag("setup-primary").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("setup-goal").fetchSemanticsNodes().isNotEmpty() }
-        repeat(13) { compose.onNodeWithTag("setup-goal-minus").performClick() }
+        repeat(13) { compose.onNodeWithTag("setup-goal-minus").performScrollTo().performClick() }
         compose.onNodeWithTag("setup-goal-value", useUnmergedTree = true).assertTextEquals("52.5")
         compose.onNodeWithTag("setup-weeks-12").assertIsSelected()
         compose.onNodeWithTag("setup-goal-caution").assertDoesNotExist()
         capture("setup-2-goal.png")
-        compose.onNodeWithTag("setup-weeks-8").performClick()
-        repeat(4) { compose.onNodeWithTag("setup-goal-minus").performClick() }
+        compose.onNodeWithTag("setup-weeks-8").performScrollTo().performClick()
+        repeat(4) { compose.onNodeWithTag("setup-goal-minus").performScrollTo().performClick() }
         compose.onNodeWithTag("setup-goal-caution").assertIsDisplayed()
-        repeat(4) { compose.onNodeWithTag("setup-goal-plus").performClick() }
-        compose.onNodeWithTag("setup-weeks-12").performClick()
+        repeat(4) { compose.onNodeWithTag("setup-goal-plus").performScrollTo().performClick() }
+        compose.onNodeWithTag("setup-weeks-12").performScrollTo().performClick()
 
         compose.onNodeWithTag("setup-primary").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("mode-runner").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("mode-lite").assertIsSelected()
-        compose.onNodeWithTag("mode-runner").performClick().assertIsSelected()
+        compose.onNodeWithTag("mode-runner").performScrollTo().performClick().assertIsSelected()
         capture("setup-3-mode.png")
         compose.onNodeWithTag("setup-primary").performClick()
         compose.waitUntil(5_000) { done }
@@ -94,7 +96,7 @@ class S2SetupTest {
         compose.onNodeWithTag("setup-height-plus").performClick()
         compose.onNodeWithTag("setup-secondary").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("mode-runner").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("mode-runner").performClick()
+        compose.onNodeWithTag("mode-runner").performScrollTo().performClick()
         compose.onNodeWithTag("setup-secondary").performClick()
         compose.waitUntil(5_000) { done }
         assertEquals(BodyProfile(), runBlocking { ServiceLocator.userPrefs.bodyProfile.first() })

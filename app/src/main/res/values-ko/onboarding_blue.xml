@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 파란 톤 통합 전달본 v4(2026-10-03) — 시작·로그인·첫 설정(ONB21~25) -->
+<resources>
+    <string name="setup_first_title">처음 설정</string>
+    <string name="setup_progress_desc">%2$d단계 중 %1$d단계</string>
+    <string name="setup_loading">저장된 정보를 불러오고 있어요</string>
+    <string name="setup_load_failed_title">저장된 정보를 읽지 못했어요</string>
+    <string name="setup_load_failed_body">다시 시도하거나 이 단계를 건너뛸 수 있어요.</string>
+    <string name="setup_save_failed">저장하지 못했어요. 다시 눌러 주세요.</string>
+</resources>

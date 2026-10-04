@@ -1,0 +1,1230 @@
+{
+  "result": "passed",
+  "checkedAt": "2026-10-03",
+  "screenCount": 109,
+  "completed": 109,
+  "pending": [],
+  "coverage": {
+    "originalRunning62": [
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "D01",
+      "D02",
+      "D03",
+      "D04",
+      "D05",
+      "D06",
+      "D07",
+      "D08",
+      "D09",
+      "D10",
+      "D11",
+      "D12",
+      "D13",
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "H05",
+      "H06",
+      "H07",
+      "H08",
+      "H09",
+      "H10",
+      "H11",
+      "H12",
+      "H13",
+      "H14",
+      "H15",
+      "H16",
+      "K01",
+      "K02",
+      "K03",
+      "K04",
+      "K05",
+      "K06",
+      "K07",
+      "K08",
+      "L01",
+      "L02",
+      "L03",
+      "L04",
+      "R01",
+      "R02",
+      "R02_TIME",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "S01",
+      "S02",
+      "U01",
+      "U02",
+      "U03",
+      "U04",
+      "U05",
+      "U06"
+    ],
+    "crew20": [
+      "CR02",
+      "CR03",
+      "CR04",
+      "CR05",
+      "CR06",
+      "CR07",
+      "CR08",
+      "CR09",
+      "CR10",
+      "CR11",
+      "CR12",
+      "CR13",
+      "CR14",
+      "CR15",
+      "CR16",
+      "CR17",
+      "CR18",
+      "CR19",
+      "CR20",
+      "CR21"
+    ],
+    "crewStartMergedInto": "U01",
+    "additional26": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10",
+      "E11",
+      "K09",
+      "K10",
+      "K11",
+      "K12",
+      "K13",
+      "K14",
+      "K15",
+      "K16",
+      "K17",
+      "K18",
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05"
+    ],
+    "approvedHome": "HOME"
+  },
+  "checks": [
+    "전체 109개 고유 ID",
+    "이전 러닝 62개 대응",
+    "크루 20개 및 시작 메뉴 통합 대응",
+    "추가 26개 상태 대응",
+    "PNG 시그니처·청크 CRC·압축 데이터 검사",
+    "세로 1774px 및 가로 886~887px 확인",
+    "109개 고유 이미지 해시",
+    "개별 육안 검수 기록",
+    "108개 생성 프롬프트",
+    "승인 메인 원본 일치"
+  ],
+  "visualReviewEvidence": "03-review/batch-001.json ~ batch-021.json 및 manifest.json의 review",
+  "files": [
+    {
+      "id": "HOME",
+      "file": "01-screens/HOME.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "4c63921d182ae9a2b596de55c296d315294c73db787746aef5febf038b3dd6c4",
+      "bytes": 1570775
+    },
+    {
+      "id": "U01",
+      "file": "01-screens/U01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "dbb07dab6a99c544f1faa55ef26b2bff1a8870b3b3cfdd1a3d0fbd27f9892f08",
+      "bytes": 1283349
+    },
+    {
+      "id": "U02",
+      "file": "01-screens/U02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "ba61855aca5ee0cfec31259c6cf94c9a26c1b07951b69c4b0abc424fae278c00",
+      "bytes": 1286285
+    },
+    {
+      "id": "U03",
+      "file": "01-screens/U03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "279f3b4ef3afc967044e63b12085f3c4fd10bd3c43ec40982dd54b67e4eeb08c",
+      "bytes": 1490215
+    },
+    {
+      "id": "U04",
+      "file": "01-screens/U04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "1869aa4938a3fefa09deb64ff5567220d18caf1362b328b55a60bf4078e1a368",
+      "bytes": 1577684
+    },
+    {
+      "id": "U05",
+      "file": "01-screens/U05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "6d939ad678088467fc9da5c56d1c800178ac8d4abf0d8edf350762b4ea596f34",
+      "bytes": 1264210
+    },
+    {
+      "id": "U06",
+      "file": "01-screens/U06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "dc3d95c3f1387b9a61554ad823b3f4442eba0dcf5c357cc49b94467e31d40ed6",
+      "bytes": 1319838
+    },
+    {
+      "id": "R01",
+      "file": "01-screens/R01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "432c2e258a1b1489acdcaf05ef7fa051a51bd7819eecd37954f68a6b8f5aee2c",
+      "bytes": 1531395
+    },
+    {
+      "id": "R02",
+      "file": "01-screens/R02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "bd426dfb403b1a5f6d6e11d6f54af9365efcb834b01cee6f617d4d3612507801",
+      "bytes": 1486827
+    },
+    {
+      "id": "R02_TIME",
+      "file": "01-screens/R02_TIME.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "decc6c1fe0276eb448fae3bc2e9e26b582ad84e7002027932d45e415de1a3d83",
+      "bytes": 1181414
+    },
+    {
+      "id": "R03",
+      "file": "01-screens/R03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "f73173afadac151c02bfb9d0fdfd0c535f883100791fe39e8b350a99216801c6",
+      "bytes": 1550781
+    },
+    {
+      "id": "R04",
+      "file": "01-screens/R04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "42866db462ddd2626e90f9611946061a1da76786f4e6f20b460440fb75c32183",
+      "bytes": 1447427
+    },
+    {
+      "id": "R05",
+      "file": "01-screens/R05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "3954bb0cbf1e909d8d22f5ad4a4d749ed89854d133dbfee5a9d92e4958c93232",
+      "bytes": 1529151
+    },
+    {
+      "id": "R06",
+      "file": "01-screens/R06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "c5044a0bcd0e8ffd6b0b9baf0aa6a00d233a5fbe5f83de5564bc591cdd4e79bc",
+      "bytes": 1463441
+    },
+    {
+      "id": "R07",
+      "file": "01-screens/R07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "ab0ecd9686f3e00750fbdeff762e3d440b0e5b93ad3811ae28895894159eb528",
+      "bytes": 1352598
+    },
+    {
+      "id": "C01",
+      "file": "01-screens/C01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "072059e3b1446685e8d76c3b2d315a22214b0d0b8868a48f5b65ed9b0e4e30d6",
+      "bytes": 1390348
+    },
+    {
+      "id": "C02",
+      "file": "01-screens/C02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "618743c9ed1e3650445f01fb38bda56c0b154ed2d4f272239d7ee0505fb4bfab",
+      "bytes": 1601017
+    },
+    {
+      "id": "C03",
+      "file": "01-screens/C03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "6de3c31e287d9516604be477355486648a9e6e0c1a66a18d153a944b06c7fe12",
+      "bytes": 1186378
+    },
+    {
+      "id": "C04",
+      "file": "01-screens/C04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "9643e24ba324946cc2ec5ec569530af193b0824bd08818fe90c4704e8bfcebc8",
+      "bytes": 1535009
+    },
+    {
+      "id": "C05",
+      "file": "01-screens/C05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "8ca6f9fbcb9f4126b463e7af8dbcd5b2f4a20fc362db255da0fed97f7a93b3f8",
+      "bytes": 1472281
+    },
+    {
+      "id": "L01",
+      "file": "01-screens/L01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "57c2112d92b19916fa52844bec50d56b1dd65e8aab11f5602aef71f1d54974e2",
+      "bytes": 1240858
+    },
+    {
+      "id": "L02",
+      "file": "01-screens/L02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "3083dfd999ecbfcdcb7f00793bd0b9947e7fbab4172990ac5811521503aaaa9d",
+      "bytes": 1106615
+    },
+    {
+      "id": "L03",
+      "file": "01-screens/L03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "ac7e443e2f8d9683978419cc9136d33a5c01e3b90a3175984a44dfc93d8420ce",
+      "bytes": 1427523
+    },
+    {
+      "id": "L04",
+      "file": "01-screens/L04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "b6074dbce280be13c3c991f2c17727331ae6fec036e33b907a7739c738b61588",
+      "bytes": 1475549
+    },
+    {
+      "id": "K01",
+      "file": "01-screens/K01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "e58863378af8aa17ab48c5c5b4deb7d62ed05b8e8b23962d217f97ba74ee9745",
+      "bytes": 1472594
+    },
+    {
+      "id": "K02",
+      "file": "01-screens/K02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "0cc8cb6403ce660631f0b56451ed6885468f1f4a69a40aa190eb66e108e19c95",
+      "bytes": 1597983
+    },
+    {
+      "id": "K03",
+      "file": "01-screens/K03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "2a5d0a9f82f3c3a39ca9b295961848b452fd0d1d3cea46a077661af6eadf629e",
+      "bytes": 1593588
+    },
+    {
+      "id": "K04",
+      "file": "01-screens/K04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "a097bfc1e777b2d0eb919dd27ff031b3911a0da131f46dea04e4296c45b3835e",
+      "bytes": 1527561
+    },
+    {
+      "id": "K05",
+      "file": "01-screens/K05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "a1e7a191138ce17b56277fcf237c3bd338b8e0807465938bbfe9576e5d0678fd",
+      "bytes": 1571227
+    },
+    {
+      "id": "K06",
+      "file": "01-screens/K06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "fe1f5f08f2bf9a3a7c49d06dd327b2df00eb3207e81661c02acb3cdbe59ca74d",
+      "bytes": 1595042
+    },
+    {
+      "id": "K07",
+      "file": "01-screens/K07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "021c882607b1b3ab742265ae526a89e9aa8795f966dda69fd6705a50385988fb",
+      "bytes": 1725364
+    },
+    {
+      "id": "K08",
+      "file": "01-screens/K08.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "fa2eb58300d6e752f52c3bdbe8157f7aa5aea49215788ef7b195dadee6763707",
+      "bytes": 1343280
+    },
+    {
+      "id": "D01",
+      "file": "01-screens/D01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "d3c2df8c21b18ae93aa573dffb1e1f44120957d24dfca3e4469c2a7d871829b9",
+      "bytes": 1210271
+    },
+    {
+      "id": "D02",
+      "file": "01-screens/D02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "c10ff9179ddf91dfc969392b57a5c179c51bef34f19b51b80f6f967bfd6ab075",
+      "bytes": 1297091
+    },
+    {
+      "id": "D03",
+      "file": "01-screens/D03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "2ee3afe2a0b84809a92e40b7bc4d9a60442805aee6ac2c97f7bd614172ecb85d",
+      "bytes": 1277328
+    },
+    {
+      "id": "D04",
+      "file": "01-screens/D04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "b9f526f2c340aa228cf7abcee88fb1a27ccaf783b96879de6eecedc0a14a4959",
+      "bytes": 1264246
+    },
+    {
+      "id": "D05",
+      "file": "01-screens/D05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "75e713e79a6d76bb3520779d3da2a98f473a32b944598114797406bdd328f373",
+      "bytes": 1231513
+    },
+    {
+      "id": "D06",
+      "file": "01-screens/D06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "cde2794860cab717dd7ad2e1e1b5b87816966dacfaba141f5e994d0d17ff620d",
+      "bytes": 1288339
+    },
+    {
+      "id": "D07",
+      "file": "01-screens/D07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "413c59fa7ad2de5bee1a0be4389de8ff9aa035e0573efbca36219f1aaa55be23",
+      "bytes": 1483059
+    },
+    {
+      "id": "D08",
+      "file": "01-screens/D08.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "80457c043a18892887cd4c7a2f102b072334b150d4aac6f57facdd046182afd5",
+      "bytes": 1512390
+    },
+    {
+      "id": "D09",
+      "file": "01-screens/D09.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "929c7c9b539057a2dabdd4f70bb53bce20acba20a8189db47426ebdb49c7a2cf",
+      "bytes": 1498322
+    },
+    {
+      "id": "D11",
+      "file": "01-screens/D11.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "763bf513de4ee661f69be273a1f82975da2e2606df0467d326008c0be94be8b7",
+      "bytes": 1515390
+    },
+    {
+      "id": "D10",
+      "file": "01-screens/D10.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "fca26507058b6cc51e4580549ed8c016c4fe89b1fd4b05efbef7512129b2cd78",
+      "bytes": 1256630
+    },
+    {
+      "id": "D12",
+      "file": "01-screens/D12.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "d9bbb30343a485bad7dbe875cc601cdfdd10e339ad0a3a9a5ce4b90d580c6494",
+      "bytes": 1518850
+    },
+    {
+      "id": "D13",
+      "file": "01-screens/D13.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "c9f26da7ee0f06a0d248365cf0971cf1dc8224b1d40e4126dfd98af097674e52",
+      "bytes": 1600755
+    },
+    {
+      "id": "S01",
+      "file": "01-screens/S01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "54b38b5cc977991e95c59945422b7d8ef4cd7eee29c7b6b9966bc77572f70e31",
+      "bytes": 1448965
+    },
+    {
+      "id": "S02",
+      "file": "01-screens/S02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "79e6aaecb83d4219551d2160dc9e0677215b506acc3a6358ff5a3c335d1ef41d",
+      "bytes": 1527777
+    },
+    {
+      "id": "H01",
+      "file": "01-screens/H01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "31f0d40e3b6fda75787a38bb2d32cee5316f43ea68bd573786a4a0b36a6aceab",
+      "bytes": 1463890
+    },
+    {
+      "id": "H02",
+      "file": "01-screens/H02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "28ab7caca7624043c30b37fd091e8f86fe27c32068c115e4ff18cb0505d9ccd4",
+      "bytes": 1440960
+    },
+    {
+      "id": "H03",
+      "file": "01-screens/H03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "9d4ab6ee755b8c183c89e4fa7a24412265668c95088fc6d805d5f1c7c42821cc",
+      "bytes": 1258447
+    },
+    {
+      "id": "H04",
+      "file": "01-screens/H04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "e541551b0e929df74aa74e99bd61700d5e645d9af1da5038988e5f235fed4f2a",
+      "bytes": 1136783
+    },
+    {
+      "id": "H05",
+      "file": "01-screens/H05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "210b2326bf2ec8ade4b9d338915d5107dd19eb0fdc8da1ebbcc8d7fe3ba683c0",
+      "bytes": 1132881
+    },
+    {
+      "id": "H06",
+      "file": "01-screens/H06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "8654063018f5ec7ef47f1fd3ebc9f1b0b3aa0adf14bcfbc22d62b71eaf9eb58d",
+      "bytes": 1189567
+    },
+    {
+      "id": "H07",
+      "file": "01-screens/H07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "0f92e93d3b1f12516c1a6cd78f9ad3224e2084625fa44d48885b815bb99e73f2",
+      "bytes": 1252907
+    },
+    {
+      "id": "H08",
+      "file": "01-screens/H08.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "44b51b616d78fa601d9be83ed6d2c6725eff636b766b1c006e180996d85855b4",
+      "bytes": 1244549
+    },
+    {
+      "id": "H09",
+      "file": "01-screens/H09.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "09a4f9dba10cfd5d88063ef0c08a310c54335b6923357e9f07d5f5744960efef",
+      "bytes": 1249524
+    },
+    {
+      "id": "H10",
+      "file": "01-screens/H10.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "d067c4a4bc8c8264e6ce762047ae15dcd9fc95d0e33bc0f49dcccceaf28cfe93",
+      "bytes": 1163969
+    },
+    {
+      "id": "H11",
+      "file": "01-screens/H11.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "333d44632421b6fcd208bd0969a84fc005dcec4a6ad190ff28d482fe3ea6a9d1",
+      "bytes": 1549359
+    },
+    {
+      "id": "H12",
+      "file": "01-screens/H12.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "50e1e995da5c0f60828749663779c7bc9ce789f91eacde418cf4b24dbd910d0e",
+      "bytes": 1924219
+    },
+    {
+      "id": "H13",
+      "file": "01-screens/H13.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "d8f7af3b5a123cc26ac3118b51afe4ffa4ab80ec7f7c893d3c9b1530ed69a6e6",
+      "bytes": 1210229
+    },
+    {
+      "id": "H14",
+      "file": "01-screens/H14.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "57058efacf06df27f8a72a8f5fcb33927facf25ced6a8c2028d40d09e22b69b7",
+      "bytes": 1460370
+    },
+    {
+      "id": "H15",
+      "file": "01-screens/H15.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "ae1e565fb14647486c2a457190a8a40a94b54360ef6dbc6f63e8181423c470d4",
+      "bytes": 1105686
+    },
+    {
+      "id": "H16",
+      "file": "01-screens/H16.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "283a77b5dae4f45ee8d230688117aa57d6d512b881adb4031aa4d6ace4f19866",
+      "bytes": 1529305
+    },
+    {
+      "id": "CR02",
+      "file": "01-screens/CR02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "f93d3f2d15def89b5d26eca313187b2fb61bacfa35d6b1741843ff30459cea17",
+      "bytes": 1442932
+    },
+    {
+      "id": "CR03",
+      "file": "01-screens/CR03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "be4521828c8c443e564ac7b06b7e9958f1fcaa2aef72adc3b3b16ca40a094745",
+      "bytes": 1495779
+    },
+    {
+      "id": "CR04",
+      "file": "01-screens/CR04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "19a0cd5d239bbfc1412b0aaaf5d32a53d8e5d95f8e089afc434cecbeeccbdd56",
+      "bytes": 1468339
+    },
+    {
+      "id": "CR05",
+      "file": "01-screens/CR05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "ece9058081b085d572d95b471f315b4f97447b8c2c0de4b6cfab8deaf14c6ba8",
+      "bytes": 1517691
+    },
+    {
+      "id": "CR06",
+      "file": "01-screens/CR06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "0f6319088f9aa3527bf836fc42cac3eaf2cc074aea1e4259b841c926139c6836",
+      "bytes": 1479233
+    },
+    {
+      "id": "CR07",
+      "file": "01-screens/CR07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "9dac427606a01227bc61db7f5a650c2951b4b7ba020dd837f927ad1a5b96735f",
+      "bytes": 1467417
+    },
+    {
+      "id": "CR08",
+      "file": "01-screens/CR08.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "73e9aa1f5edaad3e1a6a80585de25ab074803f408645534159d0f73e55e90db4",
+      "bytes": 1467907
+    },
+    {
+      "id": "CR09",
+      "file": "01-screens/CR09.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "e95c012a4b7a979eed0da6037c2b80d74e7ff1aeebbfa96552f822150f294465",
+      "bytes": 1517590
+    },
+    {
+      "id": "CR10",
+      "file": "01-screens/CR10.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "b94f6ecf47a7f06bc2fa17da5304a558d554f220f3fbe3c2d0c4b6753cb6aa8b",
+      "bytes": 1347910
+    },
+    {
+      "id": "CR11",
+      "file": "01-screens/CR11.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "9557de539d712d8e1fe5305ab868b1fe16413475b2f80d91aa4f2c4b24cbbced",
+      "bytes": 1513099
+    },
+    {
+      "id": "CR12",
+      "file": "01-screens/CR12.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "acda5335454287b1a0afda66be9f5409a3f4b624bfc0cc8f31528da2ffa3d03a",
+      "bytes": 1426049
+    },
+    {
+      "id": "CR13",
+      "file": "01-screens/CR13.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "dd4f514e29c59940b30d5728b3d69ab1f9030e829dc301bf92a7b3781208d83d",
+      "bytes": 1574375
+    },
+    {
+      "id": "CR14",
+      "file": "01-screens/CR14.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "30f198c8495f2cbd0bc7e1b834c53a91b5be5f7d797ff849e4443a6776f9eace",
+      "bytes": 1194156
+    },
+    {
+      "id": "CR15",
+      "file": "01-screens/CR15.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "43dbd833c0b67eb857bfa837e352f50dc7f0034f5f6fcc27050b4e3e568694a5",
+      "bytes": 1502575
+    },
+    {
+      "id": "CR16",
+      "file": "01-screens/CR16.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "54b67ab60335ce9634fae4cce2780d131c7f3b1f6b8659ed839832c4ad696094",
+      "bytes": 1501639
+    },
+    {
+      "id": "CR17",
+      "file": "01-screens/CR17.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "f50b4e6f8699e811dd2f19b6697a53f63355e3544cf7dc81c138ffa8c376fa40",
+      "bytes": 1490984
+    },
+    {
+      "id": "CR18",
+      "file": "01-screens/CR18.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "39860d1dc2da301e6ba33e276c37920df8d65af3930cfe68aecc559641594c60",
+      "bytes": 1509041
+    },
+    {
+      "id": "CR19",
+      "file": "01-screens/CR19.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "847fcfb36c52c65823357cbd4fee16e8ea8152c0ba0d650bc9de7a361635a1c9",
+      "bytes": 1285361
+    },
+    {
+      "id": "CR20",
+      "file": "01-screens/CR20.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "cba83e0e1d23326f56b73c2107e57fd1d20b0bbfd85f0cf0310cd86c53406054",
+      "bytes": 1441222
+    },
+    {
+      "id": "CR21",
+      "file": "01-screens/CR21.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "cea14eb6c23ff18c903167b1fdd2cfccf40684bcc67990d678327cee14ac025b",
+      "bytes": 1271916
+    },
+    {
+      "id": "P01",
+      "file": "01-screens/P01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "7fe6b69712669c33efd2a2b78dc2761ea66f5ebc03779b866dde745f81451b31",
+      "bytes": 1268788
+    },
+    {
+      "id": "P02",
+      "file": "01-screens/P02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "4e2b2d0626ec512e8938948b5b24b7f04a7cf0b6e4ecb3860ecaa0862de938f3",
+      "bytes": 1230129
+    },
+    {
+      "id": "P03",
+      "file": "01-screens/P03.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "02b96e4abfdf5ad5d5b524c7d26d8053581dad732e65a54b969c0b0cb9739dc8",
+      "bytes": 1280488
+    },
+    {
+      "id": "P04",
+      "file": "01-screens/P04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "cecaec529d317e158d51c40bf82a0080c6394bae1726b59d9289ac74ccb1537b",
+      "bytes": 1416268
+    },
+    {
+      "id": "P05",
+      "file": "01-screens/P05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "fd96d4aa24df70adebb8766ad05159fd19a39beceb77a1674eaad6a7a12fbbee",
+      "bytes": 1201671
+    },
+    {
+      "id": "E01",
+      "file": "01-screens/E01.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "fc7042ee28d8ccefccd2e6a8a2d75ef16e19e7194439aa5abe297b4c3f35f7a2",
+      "bytes": 1557042
+    },
+    {
+      "id": "E02",
+      "file": "01-screens/E02.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "5af01cf846ea9b2bcea3913cf0f725c23cbcd8af032eda1938b629e2a624aa49",
+      "bytes": 1368258
+    },
+    {
+      "id": "E03",
+      "file": "01-screens/E03.png",
+      "dimensions": [
+        886,
+        1774
+      ],
+      "sha256": "9e7930dfcf52829134175e8aff2fc1615867666817d7b7782ad95cabeb70f386",
+      "bytes": 1272609
+    },
+    {
+      "id": "E04",
+      "file": "01-screens/E04.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "12e648294ee918257a68922f626fa9c6869126c3a0b1ca8748fc81d02527a897",
+      "bytes": 1451799
+    },
+    {
+      "id": "E05",
+      "file": "01-screens/E05.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "99cf92a73e0e1b03446a87f0a466d9b168dee657f14b295ea34a336a5162c9fc",
+      "bytes": 1204709
+    },
+    {
+      "id": "E06",
+      "file": "01-screens/E06.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "9bb45eb3ee19b519f8fb2f2c8a2201a84581c51832abb10e32b94ac29a3dff71",
+      "bytes": 1539169
+    },
+    {
+      "id": "E07",
+      "file": "01-screens/E07.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "a73b1130b4adb4dfc940ce8f17dad6a6203dd812644ae00cabc24dd71eea5343",
+      "bytes": 1489023
+    },
+    {
+      "id": "E08",
+      "file": "01-screens/E08.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "387629aa896b6d6d139890582bcfb909676d4e82590a2ff5b291965cce10eb40",
+      "bytes": 1579486
+    },
+    {
+      "id": "E09",
+      "file": "01-screens/E09.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "6611ed321bfec343bc0cf20d8aa9c7de447a0c3224451a8438d99a00a8df7085",
+      "bytes": 1583878
+    },
+    {
+      "id": "K09",
+      "file": "01-screens/K09.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "90ad1bb26f2f9a4dfd176284fb6047da45688233b46cad89fdd70b8c3e168735",
+      "bytes": 1590668
+    },
+    {
+      "id": "K10",
+      "file": "01-screens/K10.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "8be53648b047511bfe53b0d772ec9ae7e607bf75717652d446212aef0032319b",
+      "bytes": 1439070
+    },
+    {
+      "id": "K11",
+      "file": "01-screens/K11.png",
+      "dimensions": [
+        886,
+        1774
+      ],
+      "sha256": "102a1e71b4c0ef9558e2f8d731dda465e7c737933188b46975c69bc7d17919c2",
+      "bytes": 1568075
+    },
+    {
+      "id": "K12",
+      "file": "01-screens/K12.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "f19b33198f019e77bdd368fd7067b7db5341b3a252ed98ccb85f4d1c4be5c72c",
+      "bytes": 1404445
+    },
+    {
+      "id": "K13",
+      "file": "01-screens/K13.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "728dd3552b64023da70040402397ae2ee1bf7715c564477ddb84e3574114bee6",
+      "bytes": 1438879
+    },
+    {
+      "id": "K14",
+      "file": "01-screens/K14.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "722a9d874bc3a9b0b6c936550a50deefc933c6c2685e4d697cb154fa1fceb41a",
+      "bytes": 1493522
+    },
+    {
+      "id": "K15",
+      "file": "01-screens/K15.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "a3527dacde91ce8781a72743129765bc5b73dc4f26b6a085fa229b5856a7ec95",
+      "bytes": 1514884
+    },
+    {
+      "id": "K16",
+      "file": "01-screens/K16.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "675e7ab7325fcafe9dda99d24d0747b173dc5e09b0c93b4c630cadccc9ef9869",
+      "bytes": 1560828
+    },
+    {
+      "id": "K17",
+      "file": "01-screens/K17.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "1c6f70438015167b3eedb9dc0dc5f22054aea8a9f0490de25101c0f259ae19bd",
+      "bytes": 1224743
+    },
+    {
+      "id": "K18",
+      "file": "01-screens/K18.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "4f8a58c728c5ca828743f13897290d9c2a0e95fe78a49f75ef54ccc21f1c7c7c",
+      "bytes": 1280468
+    },
+    {
+      "id": "E10",
+      "file": "01-screens/E10.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "dc801fc599c981e93513a6225313572f2ddbfef88afe2b812be64b6a50c4d72d",
+      "bytes": 1597117
+    },
+    {
+      "id": "E11",
+      "file": "01-screens/E11.png",
+      "dimensions": [
+        887,
+        1774
+      ],
+      "sha256": "51b96eb264eeb5a12ff3ba0bd20018b99bd230261023ded51c5a76da5e56d118",
+      "bytes": 1586919
+    }
+  ]
+}

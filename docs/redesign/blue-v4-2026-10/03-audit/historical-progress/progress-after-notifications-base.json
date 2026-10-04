@@ -1,0 +1,24 @@
+{
+  "screens": 23,
+  "referenceScreens": 1,
+  "pngFiles": 24,
+  "latestRevisions": "passed",
+  "visualReviews": "passed",
+  "pngCRC": "passed",
+  "documentLinks": "passed",
+  "sourceHashesUnchanged": true,
+  "runtimeVerified": false,
+  "newPendingStates": 23,
+  "fullGoalComplete": false,
+  "archive": "C:\\Users\\gana0\\OneDrive\\문서\\New project 3\\output\\StepUp-Claude-알림공지기본23장-파란톤-지시서.zip",
+  "bytes": 29416627,
+  "sha256": "738325740477cf061735419bb4f504fcc03a7bf44f45fb7a1723156269d7fd0b",
+  "archiveCRC": "passed",
+  "archiveAllHashes": "passed",
+  "currentCandidates": 457,
+  "currentStatusCounts": {
+    "reviewed": 418,
+    "pending": 39
+  },
+  "priorConsolidatedV3ZipUnmodified": true
+}

@@ -1,0 +1,111 @@
+{
+  "owner": [
+    "CP76",
+    "CP40",
+    "CP74"
+  ],
+  "profileEdit": [
+    "CP40",
+    "CP41",
+    "CP40"
+  ],
+  "runningEdit": [
+    "CP40",
+    "CP42",
+    "CP40"
+  ],
+  "recruitEdit": [
+    "CP40",
+    "CP43",
+    "caller"
+  ],
+  "pause": [
+    "CP74",
+    "CP44",
+    "CP89",
+    "CP90"
+  ],
+  "resume": [
+    "CP90",
+    "CP45",
+    "CP76"
+  ],
+  "goal": [
+    "CP40",
+    "CP46",
+    "CP47",
+    "CP83"
+  ],
+  "approve": [
+    "CP48",
+    "CP49",
+    "CP50",
+    "CP51",
+    "CP79"
+  ],
+  "decline": [
+    "CP48",
+    "CP49",
+    "CP52",
+    "CP53",
+    "latestPendingList"
+  ],
+  "approvalRecovery": {
+    "generic": [
+      "CP80",
+      "reload crew and application"
+    ],
+    "capacity": [
+      "CP81",
+      "CP43 or reload application"
+    ]
+  },
+  "remove": [
+    "CP55",
+    "CP84",
+    "CP75",
+    "CP57",
+    "reload roster"
+  ],
+  "transfer": [
+    "CP58",
+    "CP59",
+    "CP86"
+  ],
+  "memberMenu": [
+    "CP21",
+    "CP60"
+  ],
+  "leave": [
+    "CP60",
+    "CP61",
+    "same detail with refreshed role"
+  ],
+  "ownerExit": [
+    "CP74",
+    "CP62",
+    "CP58",
+    "CP59",
+    "CP86",
+    "CP60",
+    "CP61"
+  ],
+  "dissolve": [
+    "CP74",
+    "CP63",
+    "CP01"
+  ],
+  "report": [
+    "CP60 or CP73",
+    "CP64",
+    "CP65",
+    "caller detail"
+  ],
+  "existingFunctionsRetained": [
+    "가입 방식 변경",
+    "대표 이미지 선택과 크롭",
+    "지역/일정 선택",
+    "크루 활동: 채팅·함께 달리기·게시판"
+  ],
+  "note": "번호는 상태 식별자. 기존 경로·시트·역할 분기를 활용한다. 변경 확정은 서버 성공 후."
+}

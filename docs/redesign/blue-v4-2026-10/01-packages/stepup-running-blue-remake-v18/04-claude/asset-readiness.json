@@ -1,0 +1,22 @@
+{
+  "readyForReference": [
+    {
+      "file": "../01-screens/HOME.png",
+      "role": "승인 러닝 메인"
+    },
+    {
+      "file": "reference/shoes-blue.png",
+      "role": "신발 색감 참고. 현행 구조 변경 지시가 아님."
+    },
+    {
+      "file": "reference/logo-reference.png",
+      "role": "원본 로고 비교용. 앱 공통 브랜드 자산 우선."
+    }
+  ],
+  "notDeliveredAsEditableComponents": [
+    "PNG 내부 글자·버튼·탭은 레이어가 분리된 Figma/Compose 자산이 아님",
+    "새 조명·받침의 독립 투명 PNG는 이 패키지에 없음"
+  ],
+  "implementationAction": "앱의 기존 신발·로고 원본과 공통 컴포넌트를 재사용한다. 필요한 장식 자산은 기존 자산으로 대응하거나 별도 준비 항목으로 남긴다. 전체 화면 이미지를 UI로 대체하지 않는다.",
+  "maps": "예시 지도 그림을 실제 타일로 쓰지 않고 MapTiles/RouteMapLive 등 현행 실제 지도 연결을 확인한다."
+}

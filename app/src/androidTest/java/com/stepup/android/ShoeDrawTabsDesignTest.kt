@@ -58,7 +58,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * 신발 뽑기 디자인(2026-09-28 전달본 26장) 장면 — docs/redesign/shoe-draw-v3, 캡처는 `shoe-draw-v3/`(파일 이름 앞 번호가 시안 번호).
+ * 신발 뽑기 장면 — 2026-10-03 파란 톤 통합 전달본 v4(docs/redesign/blue-v4-2026-10/01-packages/stepup-draw-blue-claude-v19)부터
+ * 무료 · 상급 두 패널이 한 화면에 함께 있다(예전 글자 탭 없음). 캡처는 `shoe-draw-v3/`(파일 이름 앞 번호는 예전 v3 26장 번호 그대로).
  *
  * - [inTheApp] — 앱 셸 안(공통 머리 · 하단 탭), 흉내 낸 서버: 불러오는 중(03) → 무료 탭(01) → ⓘ 무료 내역(15) → 받는 방법(17) →
  *   상급 탭 · 지갑 전(09) → 연결 혜택(10) → 연결 뒤(02) → ⓘ 상급 내역(16) → 결과 확인 중(04, 하단 탭만 걷힘) → 결과(06) → 내 신발
@@ -104,27 +105,28 @@ class ShoeDrawTabsDesignTest {
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
             openDrawTab()
             // 03 — 첫 읽기 중: 흐린 상자 · "—" · 누를 수 없는 버튼. 0 을 임시로 보이지 않고, 모르는 동안은 ⓘ 도 두지 않는다
-            awaitTag("draw-left-unknown")
+            awaitTag("draw-free-unknown")
+            compose.onNodeWithTag("draw-premium-unknown", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("draw-free-action").assertIsNotEnabled()
             compose.onAllNodesWithText("0회").assertCountEquals(0)
-            compose.onAllNodesWithTag("draw-info").assertCountEquals(0)
+            compose.onAllNodesWithTag("draw-free-history").assertCountEquals(0)
+            compose.onAllNodesWithTag("draw-rules").assertCountEquals(0)
             shot("d03-loading")
             server.statusGate = null
             reading.complete(Unit)
 
-            // 01 — 무료 탭: "매일 3회 무료" · 남은 무료 뽑기 13회(처음 가입한 날) · 무료로 1회 뽑기 하나. 스크롤 없이 버튼이 하단 탭 위
+            // DRAW01 — 두 패널: 무료(가입 선물 10 + 오늘 3 = 13회 · 무료로 1회 뽑기)와 상급(지갑 전)이 함께. 무료 버튼은 스크롤 없이 하단 탭 위
             awaitText("draw-free-left", "13회")
-            compose.onNodeWithTag("draw-tab-free").assertIsSelected()
-            compose.onNodeWithTag("draw-tab-premium").assertIsNotSelected()
-            compose.onNodeWithTag("draw-stage-title", useUnmergedTree = true).assert(hasText(label(R.string.dv3_stage_daily_free, 3)))
+            compose.onAllNodesWithTag("draw-tab-free").assertCountEquals(0)
+            compose.onNodeWithTag("draw-free-detail", useUnmergedTree = true).assert(hasText(label(R.string.draw_blue_free_breakdown, 10, 3)))
             compose.onNodeWithTag("draw-free-action").assertIsEnabled().assertTextContains(label(R.string.dv2_action_free))
-            compose.onAllNodesWithTag("draw-premium-action").assertCountEquals(0)
+            compose.onNodeWithTag("draw-premium-action").assertExists()
             compose.onNodeWithTag("main-header").assertIsDisplayed()
             assertMainFits("draw-free-action", "pixel_2 free")
             shot("d01-free-main")
 
-            // 15 — ⓘ: 무료 기회 내역 → 안의 "기회 받는 방법 ›"(17). 여닫아도 기회를 쓰지 않는다
-            tap("draw-info")
+            // DRAW03 — 무료 패널의 "기회 내역 보기": 무료 기회 내역 → 안의 "기회 받는 방법 ›"(DRAW05). 여닫아도 기회를 쓰지 않는다
+            tap("draw-free-history")
             awaitTag("draw-sheet-free")
             compose.onNodeWithTag("draw-sheet-free-total").assert(hasText("13회", substring = true))
             shot("d15-free-history")
@@ -136,14 +138,13 @@ class ShoeDrawTabsDesignTest {
             awaitGone("draw-sheet-rules")
             assertEquals("sheets never draw", 0, server.draws.get())
 
-            // 09 — 상급 탭 · 지갑 전: 무대 오른쪽 위는 수 대신 지갑 그림, 받을 수 있는 첫 연결 선물 10회, "지갑 연결하고 10회 받기"
-            tap("draw-tab-premium")
+            // DRAW01 상급 패널 · 지갑 전: "지갑 연결 전", 처음 연결하면 받을 수 있는 10회(보유 수가 아니다), "지갑 연결하고 10회 받기"
             awaitTag("draw-premium-gift")
-            compose.onNodeWithTag("draw-tab-premium").assertIsSelected()
             compose.onNodeWithTag("draw-premium-gift").assert(hasText("10회", substring = true))
-            compose.onNodeWithTag("draw-chip-wallet", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("draw-premium-sub", useUnmergedTree = true).assert(hasText(label(R.string.draw_blue_before_link)))
+            compose.onAllNodesWithTag("draw-premium-history").assertCountEquals(0)
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_connect, 10))
-            assertMainFits("draw-premium-action", "pixel_2 wallet")
+            assertMainFits("draw-premium-action", "pixel_2 wallet", scroll = true)
             shot("d09-wallet-required")
             // 10 — 연결 혜택. "나중에"는 창만 닫는다(연결 · 뽑기 없음)
             tap("draw-premium-action")
@@ -152,27 +153,23 @@ class ShoeDrawTabsDesignTest {
             tap("draw-sheet-later")
             awaitGone("draw-sheet-benefit")
 
-            // 02 — 지갑을 연결하고 돌아왔다(서버 값): 지갑 연결 완료 · 남은 상급 뽑기 10회 · 상급으로 1회 뽑기
+            // DRAW02 — 지갑을 연결하고 돌아왔다(서버 값): 남은 상급 10회 · 다음 1회까지 0.4km(서버 거리) · 상급으로 1회 뽑기
             server.linked = true
             leaveAndReturn()
-            tap("draw-tab-premium")
             awaitText("draw-premium-left", "10회")
-            compose.onNodeWithTag("draw-stage-sub", useUnmergedTree = true).assert(hasText(label(R.string.dv3_state_linked)))
+            compose.onNodeWithTag("draw-premium-detail", useUnmergedTree = true).assert(hasText(label(R.string.dv2_next_premium, "0.4")))
             compose.onNodeWithTag("draw-premium-action").assertIsEnabled().assertTextContains(label(R.string.dv2_action_premium))
-            // 러닝 진행 거리는 메인에 두지 않는다(ⓘ 안내창 16 에만)
-            compose.onAllNodesWithText(label(R.string.dv2_next_premium, "0.4")).assertCountEquals(0)
-            assertMainFits("draw-premium-action", "pixel_2 premium")
+            assertMainFits("draw-premium-action", "pixel_2 premium", scroll = true)
             shot("d02-premium-main")
-            // 16 — ⓘ: 상급 기회 내역 · 다음 1회까지 0.4km(0.6 / 1km)
-            tap("draw-info")
+            // DRAW04 — 상급 패널의 "기회 내역 보기": 상급 기회 내역 · 다음 1회까지 0.4km(0.6 / 1km)
+            tap("draw-premium-history")
             awaitTag("draw-sheet-premium")
             compose.onNodeWithText(label(R.string.dv2_progress, "0.6", "1")).assertExists()
             shot("d16-premium-history")
             tap("draw-sheet-close")
             awaitGone("draw-sheet-premium")
 
-            // 04 — 결과 확인 중: 로고 · 잔액 머리는 그대로, 하단 탭만 걷는다. 다시 누를 뽑기 버튼이 없다
-            tap("draw-tab-free")
+            // DRAW10 — 결과 확인 중: 로고 · 잔액 머리는 그대로, 하단 탭만 걷는다. 다시 누를 뽑기 버튼이 없다
             awaitText("draw-free-left", "13회")
             val gate = CompletableDeferred<Unit>()
             server.gate = gate
@@ -221,9 +218,8 @@ class ShoeDrawTabsDesignTest {
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
             openDrawTab()
             awaitText("draw-free-left", "13회")
-            tap("draw-tab-premium")
             awaitText("draw-premium-left", "10회")
-            compose.onNodeWithTag("draw-stage-sub", useUnmergedTree = true).assert(hasText(label(R.string.dv3_state_wallet_needed)))
+            compose.onNodeWithTag("draw-premium-sub", useUnmergedTree = true).assert(hasText(label(R.string.dv3_state_wallet_needed)))
             compose.onNodeWithText(label(R.string.dv2_kept_premium), substring = true).assertExists()
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_reconnect))
             compose.onAllNodesWithTag("draw-premium-gift").assertCountEquals(0)
@@ -232,16 +228,14 @@ class ShoeDrawTabsDesignTest {
             // 23 — 상급 뽑기를 잠시 멈췄다(서버 값): 남은 수는 그대로, 버튼은 누를 수 없는 안내
             server.statusOverride = DrawSamples.LINKED.copy(chainPaused = true)
             leaveAndReturn()
-            tap("draw-tab-premium")
-            eventually { compose.onNodeWithTag("draw-stage-sub", useUnmergedTree = true).assert(hasText(label(R.string.dv3_state_paused))) }
+            awaitTag("draw-premium-paused")
             awaitText("draw-premium-left", "10회")
             compose.onNodeWithTag("draw-premium-action").assertIsNotEnabled().assertTextContains(label(R.string.dv2_action_paused))
             shot("d23-service-paused")
 
-            // 13 — 무료 기회를 모두 썼다: 버튼은 뽑기 대신 안내 → "상급 뽑기 보기"는 상급 탭으로
+            // DRAW15 · 16 — 무료 기회를 모두 썼다: 버튼은 뽑기 대신 안내 → "상급 뽑기 보기"는 같은 화면의 상급 패널로
             server.statusOverride = DrawSamples.EMPTY
             leaveAndReturn()
-            tap("draw-tab-free")
             awaitText("draw-free-left", "0회")
             compose.onNodeWithTag("draw-free-action").assertTextContains(label(R.string.dv2_action_free_info))
             shot("d13a-free-used-up")
@@ -250,12 +244,17 @@ class ShoeDrawTabsDesignTest {
             shot("d13-free-empty")
             tap("draw-sheet-see-premium")
             awaitGone("draw-sheet-free-empty")
-            compose.onNodeWithTag("draw-tab-premium").assertIsSelected()
+            compose.waitForIdle()
+            compose.onNodeWithTag("draw-premium-action").assertIsDisplayed()
             // 14 — 연결됨 · 상급 기회 없음: 러닝하고 기회 받기 → 러닝으로 기회 받기(다음 1회까지 0.4km)
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_run))
             tap("draw-premium-action")
             awaitTag("draw-sheet-run")
-            compose.onNodeWithText(label(R.string.dv2_km, "0.4"), substring = true).assertExists()
+            // 메인의 상급 패널에도 같은 거리가 있다 — 안내창 안의 것만 본다
+            compose.onNode(
+                androidx.compose.ui.test.hasText(label(R.string.dv2_km, "0.4"), substring = true) and
+                    androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("draw-sheet-run")),
+            ).assertExists()
             shot("d14-premium-empty")
             tap("draw-sheet-close")
             awaitGone("draw-sheet-run")
@@ -268,8 +267,7 @@ class ShoeDrawTabsDesignTest {
             compose.onNodeWithText(label(R.string.dv2_run_reward, 1)).assertExists()
             // 알림은 실행 버튼을 가리지 않는다 — 버튼이 알림 위로 올라간다
             compose.waitForIdle()
-            val action = if (exists("draw-premium-action")) "draw-premium-action" else "draw-free-action"
-            assertTrue("the notice sits below the action", bounds("draw-toast").top >= bounds(action).bottom - 1)
+            assertTrue("the notice sits below the main content", bounds("draw-toast").top >= bounds("draw-home").bottom - 1)
             shot("d26-running-notice", settle = 300)
             compose.mainClock.advanceTimeBy(4_000)
             awaitGone("draw-toast")
@@ -280,7 +278,6 @@ class ShoeDrawTabsDesignTest {
             val hold = CompletableDeferred<Unit>()
             server.gate = hold
             leaveAndReturn()
-            tap("draw-tab-free")
             awaitText("draw-free-left", "13회")
             tap("draw-free-action")
             // 04 가 그려진 뒤에 뒤로 — 그리기 전(같은 프레임)에 누르면 뽑기 화면의 뒤로가 아직 켜지지 않는다
@@ -288,13 +285,12 @@ class ShoeDrawTabsDesignTest {
             compose.waitUntil(5_000) { server.draws.get() == 1 }
             back()
             awaitTag("draw-pending")
-            compose.onNodeWithTag("draw-tab-free").assertIsSelected()
-            compose.onNodeWithTag("draw-stage-title", useUnmergedTree = true).assert(hasText(label(R.string.dv2_pending_label)))
+            compose.onNodeWithTag("draw-free-value").assert(hasText(label(R.string.dv2_pending_label), substring = true))
             compose.onNodeWithTag("draw-free-action").assertTextContains(label(R.string.dv2_action_check))
-            shot("d20-resume-result")
-            tap("draw-tab-premium")
+            // DRAW26 — 다른 종류의 새 뽑기도 막는다: 상급 패널도 "결과 확인"
             compose.onNodeWithTag("draw-premium-action").assertTextContains(label(R.string.dv2_action_check))
-            shot("d20b-resume-result-other-tab")
+            compose.onAllNodesWithTag("draw-free-history").assertCountEquals(0)
+            shot("d20-resume-result")
             hold.complete(Unit)
             compose.waitUntil(15_000) { server.checks.get() >= 1 }
             tap("draw-premium-action")
@@ -319,11 +315,11 @@ class ShoeDrawTabsDesignTest {
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
             openDrawTab()
             // 22 — 로그인 전: "로그인하면 볼 수 있어요." · 수는 "—" · 버튼 하나(로그인 화면으로 — 이 기기의 로그인을 바꾸니 여기서는 누르지 않는다)
-            awaitTag("draw-left-unknown")
-            compose.onNodeWithTag("draw-stage-title", useUnmergedTree = true).assert(hasText(label(R.string.dv3_signed_out_title)))
+            awaitTag("draw-free-unknown")
+            compose.onNodeWithTag("draw-free-detail", useUnmergedTree = true).assert(hasText(label(R.string.dv3_signed_out_title)))
             compose.onAllNodesWithText("0회").assertCountEquals(0)
-            compose.onAllNodesWithTag("draw-chip", useUnmergedTree = true).assertCountEquals(0)
-            compose.onAllNodesWithTag("draw-info").assertCountEquals(0)
+            compose.onAllNodesWithTag("draw-free-history").assertCountEquals(0)
+            compose.onAllNodesWithTag("draw-rules").assertCountEquals(0)
             shot("d22-signed-out")
 
             // 21 — 로그인 뒤 첫 읽기 실패: 소진(0)과 다르다. 안내창, 닫으면 흐린 상자 · "—" · 다시 불러오기
@@ -335,7 +331,7 @@ class ShoeDrawTabsDesignTest {
             shot("d21-load-failed")
             back()
             awaitGone("draw-sheet-load-failed")
-            awaitTag("draw-left-unknown")
+            awaitTag("draw-free-unknown")
             compose.onNodeWithTag("draw-free-action").assertIsEnabled().assertTextContains(label(R.string.dv2_action_reload))
             shot("d21b-load-failed-closed")
             server.statusFails = false
@@ -373,9 +369,8 @@ class ShoeDrawTabsDesignTest {
                 val dpPx = frameDpPx(next)
                 assertMainFits("draw-free-action", "${next.label} free", dpPx)
                 shot("f-${next.label}-free")
-                tap("draw-tab-premium")
                 awaitText("draw-premium-left", "${server.premium}회")
-                assertMainFits("draw-premium-action", "${next.label} premium", dpPx)
+                assertMainFits("draw-premium-action", "${next.label} premium", dpPx, scroll = true)
                 shot("f-${next.label}-premium")
             }
             // 결과 — 작은 폭 · 큰 글씨에서도 신발 · 이름 · 남은 수 · 두 버튼이 한 화면에(가운데를 넘기지 않는다)
@@ -464,7 +459,6 @@ class ShoeDrawTabsDesignTest {
         // 11 — 지갑 연결을 서버 값으로 확인했을 때만: +10회 · 상급으로 1회 뽑기(뒤는 상급 탭)
         show("d11-wallet-success", "draw-sheet-linked", draw(linked, notice = DrawNotice.Linked(10)))
         compose.onNodeWithTag("draw-sheet-linked-gift", useUnmergedTree = true).assert(hasText("+10회"))
-        compose.onNodeWithTag("draw-tab-premium").assertIsSelected()
         // 18 — 시작 실패(기회를 쓰지 않았다): 연결 문제면 다시 뽑기, 무료가 없으면 확인만
         show("d18-not-started", "draw-sheet-not-started", draw(fresh, notice = DrawNotice.NotStarted(DrawKind.FREE, DrawStop.Network)))
         compose.onNodeWithText(label(R.string.dv2_stop_unused)).assertExists()
@@ -583,13 +577,18 @@ class ShoeDrawTabsDesignTest {
     }
 
     /**
-     * 메인이 한 화면 — 스크롤 거리 0, 남은 횟수 줄과 실행 버튼이 화면 안에 온전히(하단 탭이 있으면 그 위).
-     * 시안: 메인 내용 · 실행 버튼 · 하단 탭이 함께 보인다.
+     * 메인의 실행 버튼이 화면 안에 온전히(하단 탭이 있으면 그 위) — 무료 패널 버튼은 넘기지 않아도 보이고, 상급 패널 버튼은
+     * [scroll] 이면 넘겨서 닿는다(작은 화면 · 큰 글씨는 넘김을 허용한다 — 두 번째 버튼이 하단 탭 뒤로 사라지지 않을 것).
      */
-    private fun assertMainFits(action: String, where: String, dpPx: Float = compose.density.density) {
+    private fun assertMainFits(action: String, where: String, dpPx: Float = compose.density.density, scroll: Boolean = false) {
         compose.waitForIdle()
-        val scroll = compose.onNodeWithTag("draw-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
-        assertEquals("the draw main must not scroll at $where", 0f, scroll.maxValue(), 1f)
+        if (scroll) {
+            compose.onNodeWithTag(action).performScrollTo()
+            compose.waitForIdle()
+        } else {
+            val range = compose.onNodeWithTag("draw-scroll").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+            assertEquals("the draw main starts at the top at $where", 0f, range.value(), 1f)
+        }
         val button = bounds(action)
         val limit = if (exists(BOTTOM_NAV_TAG)) bounds(BOTTOM_NAV_TAG).top else frameBottom()
         assertTrue("$action above the bottom tabs at $where: $button / $limit", button.bottom <= limit + 1)

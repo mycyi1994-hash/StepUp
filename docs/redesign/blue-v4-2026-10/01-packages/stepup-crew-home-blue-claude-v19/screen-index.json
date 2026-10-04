@@ -1,0 +1,546 @@
+[
+  {
+    "id": "CH00",
+    "title": "확정 4번 · 내 크루 홈",
+    "png": "01-screens/CH00.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "529dd6127cb80ad51b21cc670eaa06a037867a8916a36ac8e5012c4fb318554c",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "가입한 크루의 홈·모임 있음·미응답",
+    "actions": "카드→CH01; 레벨→CH03; 인원→CH04; 크루장→CH05; 채팅→CH07/30; 다음 러닝·참석 여부→CH09; 주간→CH15; 공지→CH20; 더보기→CH22.",
+    "guard": "퇴근런24/30명, 모임8명, 주간9명은 별개. 홈의 참석 상태는 상세 진입이며 즉시 응답 아님.",
+    "review": "기존4번 홈의 좌측 흰 채팅/우측 다음 러닝,큰 크루 카드,참석/주간/공지 순서 유지. 24/30명과모임8명·주간9명 구분,126/160=79%. 현재앱내부페이지이므로SUP/하단탭 없음. 새 파란면·선·흰버튼하단면 적용."
+  },
+  {
+    "id": "CH01",
+    "title": "크루 소개",
+    "png": "01-screens/CH01.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a837be8dc06ab86d6906b9f76e3728a0634cf8f02a0ee3db170a78e5050eb378",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "크루 카드 또는 메뉴에서 소개",
+    "actions": "대표 이미지→CH02; 크루장→CH05; 크루원24명 보기→CH04; 뒤로→호출자.",
+    "guard": "실제 소개 필드만 사용. 개인 소개와 크루 소개를 혼합하지 않는다.",
+    "review": "큰 대표이미지·크루명/Lv7·실제항목3행·크루장·24명보기 구성. 기존홈소개기능을 보존하며 임의 개인프로필필드 없음. 글자겹침·버튼잘림 없음."
+  },
+  {
+    "id": "CH02",
+    "title": "대표 이미지 확대",
+    "png": "01-screens/CH02.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ec4176d9275051fa4e963a9fffae4b2f7553c414e7032df972ddb13d4a317f89",
+    "reusedFrom": "CP09",
+    "reusedRevision": 1,
+    "entry": "소개에서 대표 이미지 열기",
+    "actions": "닫기·뒤로→소개 호출자.",
+    "guard": "CP09 r1 파일 그대로 재사용. 새로운 확대 기능이나 다운로드 행동 추가 없음.",
+    "review": "현행CrewRoutes.IMAGE공유화면. CP09 최신 파란톤 대표이미지 확대를 픽셀변경없이재사용. 뒤로/닫기는소개호출자로복귀. 새생성아님."
+  },
+  {
+    "id": "CH03",
+    "title": "크루 레벨",
+    "png": "01-screens/CH03.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "53b77f12343fdfe92c5122dcbc067b9c4bfc9318090c86c3eafadd373e4c9591",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈의 레벨 선택",
+    "actions": "주간 기록 보기→CH15; 뒤로→홈.",
+    "guard": "Lv7은 저장값. 승급 조건 준비 중. 가짜 XP·필요거리·보상 없음.",
+    "review": "기존홈레벨독립페이지. 현재Lv7·다음Lv8자리/승급기준준비중·주간126km9명. 임의XP·달성률·보상정책 없음. 주간기록보기 한개와 안전여백."
+  },
+  {
+    "id": "CH04",
+    "title": "크루원 목록",
+    "png": "01-screens/CH04.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1e8a3e4289e9c171341029f0214596783982e66f18ada2815035766de7305b67",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈/소개/메뉴/채팅 정보에서 멤버 명단",
+    "actions": "이름 검색→CH27; 행→해당 userId CH05/06; 뒤로→호출자.",
+    "guard": "24명 중 첫 화면7행. 본인 행도 현행 홈 PERSON 경로 유지.",
+    "review": "전체24명/정원30명·이름검색·크루장/나/일반멤버7행. 전체목록중첫뷰포트로스크롤연결. 멤버별프로필로연결하며활동지·온라인여부등임의필드 없음."
+  },
+  {
+    "id": "CH05",
+    "title": "크루장 프로필",
+    "png": "01-screens/CH05.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0133ea71fee9a75c0b68a7a31c32e522a6b03e2481e5cb0101454cdeebd9da05",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "크루장 준호의 홈 프로필",
+    "actions": "최근 공개 러닝→해당 runId의 CH19 구성; 뒤로→호출자.",
+    "guard": "4.8km/33:36/18:00 완료 예시. CH19 PNG는 지연 기록이므로 이름과 값을 그대로 복사하지 않는다.",
+    "review": "크루장·가입일·실제 공개 기록 한 건과 크루장 안내만 표시. 서버에 없는 개인 소개·선호 항목 제외. 887×1774."
+  },
+  {
+    "id": "CH06",
+    "title": "크루원 프로필",
+    "png": "01-screens/CH06.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "cf008e444e16dd783dba81c77daf1429677d6f63be980e2e39d4f97f4656f1e2",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "크루원 지연의 홈 프로필",
+    "actions": "최근 공개 러닝→CH19; 뒤로→호출자.",
+    "guard": "5.2km/36:24/18:15 완료. 일반 멤버에게 크루장 안내·내보내기 버튼 없음.",
+    "review": "크루원·가입일·공개 기록 한 건을 표시. 크루장 안내를 일반 크루원에게 복사하지 않음. 887×1774."
+  },
+  {
+    "id": "CH07",
+    "title": "크루 채팅 · 크루원",
+    "png": "01-screens/CH07.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "08f02082e31a7088458687605c9e756c98d902f06224f281975278c556520d3b",
+    "reusedFrom": "CHAT02",
+    "reusedRevision": 2,
+    "entry": "일반 크루원이 홈에서 채팅 진입",
+    "actions": "정보→CH08; 대화·공지·첨부·메시지 메뉴는 기존 CHAT02 규칙; 뒤로→원래 호출자.",
+    "guard": "CHAT02 r2 재사용. 도윤이 본인. 9/28 독립 예시. 기존 방 스택과 스크롤 보존.",
+    "review": "현행같은ChatRoutes.ROOM 멤버분기로 CHAT02-r2 재사용. 24명·도윤본인·공지·입력일관. 채팅자료의9/28예시는홈9/29와별도스냅샷. 새생성아님."
+  },
+  {
+    "id": "CH08",
+    "title": "채팅방 정보 · 크루원",
+    "png": "01-screens/CH08.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e6bc1326934025011c29b5a7a321cb0cf82730bcc8dadd24edf2e6661824a13e",
+    "reusedFrom": "CHAT04",
+    "reusedRevision": 1,
+    "entry": "일반 멤버 채팅 정보",
+    "actions": "크루원→CH04; 상세→CH00; 공지→CH21 구성; 검색·알림→기존 채팅; 나가기→CP61.",
+    "guard": "CHAT04 재사용. 공지 예시는 9/28이므로 실제 noticeId로 연결. 크루장 관리 메뉴 없음.",
+    "review": "현행같은ChatRoutes.INFO 멤버분기로 CHAT04 재사용. 크루상세보기는해당홈,명단은홈멤버로연결. 새생성아님."
+  },
+  {
+    "id": "CH09",
+    "title": "다음 러닝 상세",
+    "png": "01-screens/CH09.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "94684bad0295879da05d2b7c50848badb29f527576ac10cdc27d944396dc9851",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "아직 응답하지 않은 모임",
+    "actions": "참석→요청 성공 CH11; 불참→성공 CH12; 참석자→CH13; 지도·장소→CH14; 뒤로→호출자.",
+    "guard": "8명,9/29 19:30,3km. 정원 미설정 예시. 서버 성공 전 인원·내 상태 바꾸지 않는다.",
+    "review": "미응답 다음 러닝. 집결 지도 예시·3km·실제 참석8명. 모임 정원과 크루 정원 분리. 한 개 흰색 주 버튼."
+  },
+  {
+    "id": "CH10",
+    "title": "참석 여부 변경",
+    "png": "01-screens/CH10.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ca11c813a73dfcc6ba817bb0dea2962bfe01933fa944c868eece732de1695c9e",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "응답한 뒤 참석 여부 변경",
+    "actions": "참석/불참 선택 즉시 저장→성공 CH11/12; 닫기·뒤로→기존 상태.",
+    "guard": "현재 YES9명. 별도 적용 버튼 없음. 저장 중 중복 선택과 닫기 차단.",
+    "review": "참석9명 상태 위 변경 시트. 두 응답은 즉시 저장, 별도 적용 없음. 닫기 시 변경 없음."
+  },
+  {
+    "id": "CH11",
+    "title": "참석 완료",
+    "png": "01-screens/CH11.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a8ffb7b75744d93639ae7d601a7e6d49446c8360e7d833e334e58ba98db1ceeb",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "참석 저장 성공",
+    "actions": "변경→CH10; 참석자→CH13 구성의 갱신9명 명단; 장소→CH14; 뒤로→홈 CH28.",
+    "guard": "서버 기준9명과 참석 예정. 실제 명단에 도윤 추가. 크루 소속 인원24명 유지.",
+    "review": "참석 저장 성공.9명으로 갱신, 참석 예정, 변경 버튼. 기타 일정과 안내 유지."
+  },
+  {
+    "id": "CH12",
+    "title": "불참 선택 후",
+    "png": "01-screens/CH12.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "dec57929292ceb4b8af00f9e9e624659e56133f89f89e5a127490e0b09c71e0b",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "불참 저장 성공",
+    "actions": "변경→CH10 구성; 장소·명단 조회 유지; 뒤로→홈 CH29.",
+    "guard": "8명과 불참 예정. 미응답8명과 같은 수치여도 응답 상태는 다르다.",
+    "review": "불참 저장 성공.8명 유지, 불참 예정, 변경 버튼. CH09 동일 상세 정보."
+  },
+  {
+    "id": "CH13",
+    "title": "모임 참석자",
+    "png": "01-screens/CH13.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "3f73d43a020af73f5660b19e53223556b675e99cb0e3cc23e6ae6864d49fe00c",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "모임 참석 인원 선택",
+    "actions": "준호→CH05; 다른 사람→그 userId의 CH06 구성; 뒤로→같은 모임.",
+    "guard": "8명 전체 명단 예시. 진행자와 크루장은 별도 역할. YES 후에는 서버 명단9명으로 갱신.",
+    "review": "실제 참석8명 명단, 진행자 준호 먼저. 크루 전체24명 및 미참석 도윤과 분리. 모든8행 식별 가능."
+  },
+  {
+    "id": "CH14",
+    "title": "모이는 장소",
+    "png": "01-screens/CH14.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "05a277d41659d446381b7e2a7fdad2afe930c124f2a8fedd96f52c6514ab09a3",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "모임 지도/장소 선택",
+    "actions": "지도 앱에서 열기→집결 좌표 또는 장소명; 모임으로 돌아가기·뒤로→기존 모임.",
+    "guard": "지도 예시 PNG는 실제 타일로 구현. 현재 위치 권한 추가 요구 없음. 외부 앱 없음 안내 필요.",
+    "review": "집결 좌표 지도 예시와 외부 지도 앱/복귀 버튼. 사용자 위치·가상 길찾기 제거. 실제 타일 및 집결 좌표 사용 명세 필요."
+  },
+  {
+    "id": "CH15",
+    "title": "주간 기록 상세",
+    "png": "01-screens/CH15.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "7af0d65453770c64b5064463dcdcd65b156b9f6d37899ba65ffbf9776d07f9ea",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈의 주간 영역 또는 레벨의 주간 기록",
+    "actions": "기간→CH16; 월/화→해당 날 CH18; 멤버→그 주·그 사람 기록; 전체→그 주 전체 기록.",
+    "guard": "126/160km79%,참여9명. 미래수~일은—·선택불가,실제0과 구분.",
+    "review": "126/160km79%,요일61.2+64.8=126, 미래요일—,참여9명. 지연주간18.6과최근5.2구분."
+  },
+  {
+    "id": "CH16",
+    "title": "주간 선택",
+    "png": "01-screens/CH16.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "b197352150c4e5450ee5690a26572b36f5ca38ddc06714403d2eda9536c71d38",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "주간 또는 참여 기록의 기간 선택",
+    "actions": "주 행→즉시 선택; 닫기·뒤로→원래 조회 유지.",
+    "guard": "주간에서 지난주 선택→CH17. 참여 기록에서 주 선택→날짜/개인 필터 해제한 그 주 전체.",
+    "review": "선택한 이번 주 체크, 실제3주 목록, 즉시 전환. 별도 적용 없음. 주간/기록 목록 공용."
+  },
+  {
+    "id": "CH17",
+    "title": "지난주 기록",
+    "png": "01-screens/CH17.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "935b8b5e7dd101d304a64f2a9754b4acd6ebea4ec19bbafc2ccfb000ef37cd93",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "9/21~27 지난주 선택",
+    "actions": "CH15와 같은 기간·요일·사람·전체 동작을 선택 주에 적용.",
+    "guard": "142km/11명/현재 목표160km89%. 요일20+18+0+28+22+34+20. 과거 주에 오늘 강조 없음.",
+    "review": "142/160km89%,요일합142. 과거7일 같은 파랑, 오늘 강조 없음. 현재목표 기준 표기."
+  },
+  {
+    "id": "CH18",
+    "title": "참여 기록 목록",
+    "png": "01-screens/CH18.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a1005b578f04ebd2fd9ed6e74e96df36de9a33a6a04d11681294c767d0aa0d5b",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "9/29 날짜 선택 후 참여 기록",
+    "actions": "기록행→실제 runId CH19 구성; 기간행→CH16; 스크롤→다음 페이지; 뒤로→원래 주간.",
+    "guard": "지연부터6건은 전체64.8km의 일부. 완료시각 내림차순. 조회 범위 표시를 9/29기록으로 일치.",
+    "review": "9/29일 필터명 일치. 종료시각 내림차순,6건은 스크롤 일부. 시안 상하 시스템 영역 미묘사, 실제앱 안전영역은 유지."
+  },
+  {
+    "id": "CH19",
+    "title": "개별 러닝 기록",
+    "png": "01-screens/CH19.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "648894ff44e5cb50b7095d132cebe3b060e6915d426efb923ed080d653d91242",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "공개 러닝 기록 선택",
+    "actions": "참여 기록으로→기존 목록이면 필터 보존 복귀; 프로필에서 왔으면 이번 주 전체 목록; 상단 뒤로→호출자.",
+    "guard": "지연5.2km/36:24/7분km. 서버가 잘라 준 경로만 표시; 양 끝300m 복원 금지.",
+    "review": "지연5.2km36:24=7분/km. 경로 예시 및 출발/도착300m제외 안내. 원본 좌표 복원 금지."
+  },
+  {
+    "id": "CH20",
+    "title": "공지 상세",
+    "png": "01-screens/CH20.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "575ea00ae62d26ff6d476d008a41e9d7f4c7081414375ef0c84b7afdcd88a604",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈 고정 공지 또는 목록의 새 공지",
+    "actions": "연결 모임 행→CH09/11/12; 크루 채팅→같은 방; 뒤로→호출자.",
+    "guard": "9/29 18:00 준호 공지. 일반 멤버는 수정 없음. 실제 연결 모임이 있는 경우만 행 표시.",
+    "review": "9/29새 공지 및 연결모임. 제목·날짜 홈과 일치. 일반멤버 편집행 없음. 채팅과 모임 상세 연결."
+  },
+  {
+    "id": "CH21",
+    "title": "공지 목록",
+    "png": "01-screens/CH21.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9e430441459e590ae4eb2f2f9d84e20c27dae4344df1907f73e86b485532f691",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈 메뉴 또는 채팅 정보의 공지",
+    "actions": "고정 공지→CH20; 다른 행→해당 noticeId 상세; 뒤로→호출자.",
+    "guard": "9/29와9/24 공지2개. 조회 실패/로딩을 공지 없음으로 표시하지 않는다.",
+    "review": "고정9/29공지+9/24공지. 채팅공통 목록 구조 재사용하되 독립 데이터예시."
+  },
+  {
+    "id": "CH22",
+    "title": "내 크루 더보기",
+    "png": "01-screens/CH22.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "93ac2942e2ea2b408f0dc98ec13151ed856c2a0a173b63ae96defae36b366286",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "일반 멤버 홈 더보기",
+    "actions": "소개→CH01; 명단→CH04; 공지→CH21; 게시판·함께달리기→기존 전달 경로; 나가기→CP61; 닫기→홈.",
+    "guard": "기존 게시판·러닝 대기실 기능 보존. 크루장은 나가기 대신 관리→CP40.",
+    "review": "일반 크루원 메뉴6행. 게시판·함께 달리기 보존. 나가기는 확인시트로. 크루장 메뉴는별도추가상태."
+  },
+  {
+    "id": "CH23",
+    "title": "예정된 모임이 없는 홈",
+    "png": "01-screens/CH23.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a998b3ce5d22d16499a4c6bb025fe72cea78719713fab4863bc706cc7135f6e1",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "홈 조회 성공·예정 모임 없음·고정 공지 없음",
+    "actions": "채팅→CH07/30; 카드 세부/주간/메뉴는 기존 동작.",
+    "guard": "모임이 없어도126km/9명·미읽음3은 유지하는 별도 예시. 가짜 모임 만들기 CTA 없음.",
+    "review": "예정모임없음에도126km/9명 및미읽음3보존. 이분기고정공지없음. 빈모임과빈기록독립."
+  },
+  {
+    "id": "CH24",
+    "title": "주간 기록 없음",
+    "png": "01-screens/CH24.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e8d8e44162bb2c246a5c2f53ba9a7f7ec942899006f6156c7f227de459a8c547",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "주간 조회 성공·실제 기록0km0명",
+    "actions": "기간→CH16; 내 크루로→CH00 또는 실제 홈 상태.",
+    "guard": "월화0,미래—. 빈 목록에 가짜 러너 행 없음. 로딩/오류와 분리.",
+    "review": "실제조회0km/0명. 월화0과 미래—구분, 가짜참여자없음. 첫러닝 안내와 내크루복귀."
+  },
+  {
+    "id": "CH25",
+    "title": "참석 응답 저장 실패",
+    "png": "01-screens/CH25.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "02dc3ba92ee9309a5e2944d61741938dd4ef0c4dfb135d1d9a3294fe10be627f",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "YES→NO 참석 변경 저장 실패",
+    "actions": "기존 응답 선택을 다시 눌러 재시도; 닫기→변경 전 CH11.",
+    "guard": "현재 응답 YES9명 그대로. 오류 문구만 표시. 실패를 불참 완료로 표시하지 않는다.",
+    "review": "YES→NO 저장 실패 시트. 이전 참석 예정 유지, 오류문 두 줄, 응답 버튼 재시도. 실제앱 검증 아님."
+  },
+  {
+    "id": "CH26",
+    "title": "홈 불러오기 실패",
+    "png": "01-screens/CH26.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "5592df542f7e7f32adaee8aacfd339df52413367ddac956fc69af5ea3f6c961b",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "캐시 없이 최초 홈 조회 실패",
+    "actions": "다시 불러오기→동일crewId 조회; 뒤로→호출자.",
+    "guard": "가짜 크루명·인원 없음. 기존 데이터 갱신 실패에는 이 전체 실패 화면을 사용하지 않는다.",
+    "review": "캐시없는 최초조회실패. 가짜크루명/0인원없음, 재조회하나. 기존데이터있는갱신실패는별도감사."
+  },
+  {
+    "id": "CH27",
+    "title": "크루원 이름 검색",
+    "png": "01-screens/CH27.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "124e02ac8dc874ffe737191f9af53616e9ef3fab4e0dc6dc80183c400377e621",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "명단에서 지연 검색·성공1명",
+    "actions": "지연→CH06; 지우기→CH04; 입력 변경→즉시 필터; 뒤로→호출자.",
+    "guard": "전체24명 보존,검색1명 별도. 키보드 닫힌 예시,키보드 상태는 후속 검수.",
+    "review": "전체24명보존,검색지연1명,지우기X,행프로필. 키보드닫힌상태."
+  },
+  {
+    "id": "CH28",
+    "title": "참석 후 홈",
+    "png": "01-screens/CH28.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1f74b3067ffea52f2d20d3331bc0b87cde8eb0a6987bea967083872beb169039",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "참석 저장 후 홈 복귀",
+    "actions": "참석 예정·다음 러닝→CH11; 그 외 CH00와 동일.",
+    "guard": "모임9명. 크루24명·주간9명·126km와 별개. 클라이언트 임의+1 금지.",
+    "review": "YES저장후9명참석/참석예정. 크루24명·주간9명·126km·미읽음3유지."
+  },
+  {
+    "id": "CH29",
+    "title": "불참 후 홈",
+    "png": "01-screens/CH29.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "2d5166c79229309038cde4bda23d0c16b1b1d8ace5b271e80a4ce523531463b8",
+    "reusedFrom": null,
+    "reusedRevision": null,
+    "entry": "불참 저장 후 홈 복귀",
+    "actions": "불참 예정·다음 러닝→CH12; 그 외 CH00와 동일.",
+    "guard": "모임8명. 탈퇴가 아니므로 크루 인원·주간 활동을 감소시키지 않는다.",
+    "review": "NO저장후홈8명참석·불참예정. 크루24명·주간9명·126km·미읽음3유지. 다른영역불변."
+  },
+  {
+    "id": "CH30",
+    "title": "크루 채팅 · 크루장",
+    "png": "01-screens/CH30.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d7fc2999e2d7dd0412ec88c94e090ff7ca96ebdc1309dc5cf11dc939789f1581",
+    "reusedFrom": "CHAT03",
+    "reusedRevision": 1,
+    "entry": "크루장이 홈에서 채팅 진입",
+    "actions": "정보→CH31; 관리·공지 등 기존 CHAT03 권한별 동작.",
+    "guard": "CHAT03 그대로 재사용. 준호 본인·24명. 9/28 독립 스냅샷.",
+    "review": "현행같은ChatRoutes.ROOM 크루장분기로 CHAT03 재사용. 준호본인·관리버튼·24명유지. 새생성아님."
+  },
+  {
+    "id": "CH31",
+    "title": "채팅방 정보 · 크루장",
+    "png": "01-screens/CH31.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f3779bca7b88f2861f4e54280c777306d2db186f170aed5ae9ce05064c824c16",
+    "reusedFrom": "CHAT05",
+    "reusedRevision": 1,
+    "entry": "크루장 채팅 정보",
+    "actions": "명단→CH04; 상세→CH00; 멤버 관리→CP55; 공지 등록·검색·알림은 기존 채팅.",
+    "guard": "CHAT05 재사용. 직접 크루 나가기 없음. 역할 변경 후 실제 권한 재조회.",
+    "review": "현행같은ChatRoutes.INFO 크루장분기로 CHAT05 재사용. 공지등록/멤버관리추가·직접나가기없음. 새생성아님."
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "checkedOn": "2026-10-03",
+  "readOnly": true,
+  "files": [
+    {
+      "path": "domain/CrewCards.kt",
+      "sha256": "14aea461be4aae1cadc3f1de1048e6f367cf00e20110e7bad59adf27b5d9499c"
+    },
+    {
+      "path": "ui/screens/community/crew/CrewListTab.kt",
+      "sha256": "c34fc5e4c6e013f7eb6f8f10e33fcb66ff563724a17885494119b08cc7c48342"
+    },
+    {
+      "path": "ui/screens/community/crew/CrewDetailScreen.kt",
+      "sha256": "bd1b500fb2a0e13542091e97c14058ed353dc7230c735e6dd54c07bf43672c15"
+    },
+    {
+      "path": "ui/components/SignInAgainButton.kt",
+      "sha256": "c6530fb41237129d76af189134a56a075ee2a28d85e5b6a92419cb4354e99fd8"
+    }
+  ],
+  "confirmed": [
+    "CrewRules.footer: owned > joined > requested > visitor; visitor paused/full before openJoin",
+    "CrewGoalProgress.percent rounds half up; fraction caps at1; remaining clamps at0",
+    "CrewRules.MESSAGE_MAX=300, RADII=[1,3,5], capacity may be null",
+    "List distinguishes SignInRequired; existing meetup route below cards",
+    "Detail keeps member/owner chat, lobby, board; openJoin failure does not change role"
+  ],
+  "designChanges": [
+    "CP95의 지역·정렬 줄을 목록 위에 고정",
+    "목록 오류·빈 결과·로그인 필요는 복구 주 버튼 하나와 생성 보조 버튼; 큰 생성 CTA 중복 금지"
+  ],
+  "notVerified": [
+    "실행 화면/상호작용/접근성",
+    "서버 수정·응답 성공",
+    "새로 그린 화면의 앱 반영",
+    "전체 앱 상태 누락 감사"
+  ]
+}

@@ -1,0 +1,257 @@
+[
+  {
+    "id": "ONB01",
+    "title": "Google 로그인",
+    "png": "01-screens/ONB01.png",
+    "revision": 1,
+    "sha256": "c3c883cab025dc93264336cba72194cfefc0fd846fd91f68a92ce64eb26cf6e9",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB01.json",
+    "review": "원본 형태 흰 STEP·파란 UP, 한강 아치, 단일 Google 버튼, 동의 문구와 두 링크가 화면 안에 정리됨. SUP·하단탭 없음.",
+    "actions": "Google→OS 계정 선택→ONB05; 법적 링크→외부 브라우저.",
+    "guard": "취소는 원래 안내로 복귀. Picking 중 중복 요청 금지."
+  },
+  {
+    "id": "ONB02",
+    "title": "첫 사용 안내",
+    "png": "01-screens/ONB02.png",
+    "revision": 1,
+    "sha256": "d9bc910f67297a2133f541c4c51257fd38bef634160c7cf26e5e1eb3193c6c5e",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB02.json",
+    "review": "첫 홈 위 어두운 배경과 하나의 안내 시트, X·3개 설명·러닝 시작·먼저 둘러보기 모두 확인. 시트 아래 탭을 다시 넣지 않음.",
+    "actions": "러닝 시작→U01; 둘러보기/X/뒤로/바깥/드래그→홈.",
+    "guard": "사람이 닫거나 선택했을 때만 guideSeen 저장. 강제 종료는 미확인 유지."
+  },
+  {
+    "id": "ONB03",
+    "title": "앱 준비 중",
+    "png": "01-screens/ONB03.png",
+    "revision": 1,
+    "sha256": "b854548c2201bd50fe03c3ab697c7de42ace2b67adcca5406fa53394623326d6",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB03.json",
+    "review": "남색 바탕 원본 형태 로고와 단일 대기 표시·문구만 표시. 가짜 진행률·버튼·잔액 없음.",
+    "actions": "실제 초기화 성공→현재 세션에 맞는 다음 진입; 실패→ONB04.",
+    "guard": "가짜 시간·퍼센트·보상 없음. 기존14초 타임아웃 유지."
+  },
+  {
+    "id": "ONB04",
+    "title": "앱 준비 실패",
+    "png": "01-screens/ONB04.png",
+    "revision": 1,
+    "sha256": "5ce179ac693021bdb54f8a4c01c932287f6f2b767440f236f2dfbe2f29996601",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB04.json",
+    "review": "준비 실패 문구와 단일 재시도 버튼 확인. 로딩 스피너 제거, 원본 로고 형태·남색 유지.",
+    "actions": "다시 시도→ONB03 초기화 재실행.",
+    "guard": "성공 확인 전 홈 진입 금지."
+  },
+  {
+    "id": "ONB05",
+    "title": "로그인 중",
+    "png": "01-screens/ONB05.png",
+    "revision": 1,
+    "sha256": "4de274bb824bac081f3e592fec88c491a9db4bcfbc07679660a2bb3acea22b5d",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB05.json",
+    "review": "계정 확인 중 문구와 비활성 Google 버튼 내부 단일 로딩 표시. 법적 고지와 링크 유지.",
+    "actions": "실제 서버 성공→필요한 첫 설정 또는 메인; 오류→해당 안내.",
+    "guard": "계정 선택 이후 서버 확인. 버튼 비활성·스피너 하나."
+  },
+  {
+    "id": "ONB06",
+    "title": "연결 실패",
+    "png": "01-screens/ONB06.png",
+    "revision": 1,
+    "sha256": "8d2e2d6a1c5f4b054dbe5c988094c4d0a60f6f30b6618be6d6ca81f696d0a020",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB06.json",
+    "review": "인터넷 연결 안내 3줄과 활성 Google 재시도 진입이 함께 표시. 여백·법적 고지·하단 링크 잘림 없음. 실제 구현 시 모든 로그인 상태의 버튼 위치는 공통 레이아웃으로 고정.",
+    "actions": "Google→계정 선택부터 재시도.",
+    "guard": "통신 실패를 계정 만료로 단정하지 않음."
+  },
+  {
+    "id": "ONB07",
+    "title": "로그인 실패",
+    "png": "01-screens/ONB07.png",
+    "revision": 1,
+    "sha256": "af24502bd7e90f008ec6a0a54eb32bef2733c23ea9f283272aede6a40453e670",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB07.json",
+    "review": "로그인 실패 사유와 동일한 Google 재시도 버튼 확인. 회원 가입/보상/삭제 같은 잘못된 안내 없음.",
+    "actions": "Google→로그인 재시도.",
+    "guard": "기존 세션 규칙과 finally Idle 복원 유지."
+  },
+  {
+    "id": "ONB08",
+    "title": "Google 계정 없음",
+    "png": "01-screens/ONB08.png",
+    "revision": 1,
+    "sha256": "4174e7305d006dc263aa669ce6a197bb3f5d032bf105b9ccdf32f46214541eb4",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB08.json",
+    "review": "기기에 Google 계정을 추가하라는 후속 행동이 명확함. 원래 법적 고지·링크 및 로고 보존.",
+    "actions": "기기에 계정을 추가한 뒤 Google 다시 선택.",
+    "guard": "앱에서 계정 생성·비밀번호 입력 UI를 만들지 않음."
+  },
+  {
+    "id": "ONB09",
+    "title": "다시 로그인",
+    "png": "01-screens/ONB09.png",
+    "revision": 1,
+    "sha256": "a4629f16589a10046af746241d1326bbf534ddb642e05b7001ff3fd860750666",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB09.json",
+    "review": "같은 계정으로 기록을 이어가는 재로그인 설명과 활성 Google 버튼. 연결 실패 문구와 구분됨.",
+    "actions": "동일 Google 계정으로 다시 로그인.",
+    "guard": "실제 signInAgain 사유가 있는 경우만. 복귀 사용자의 데이터를 초기화하지 않음."
+  },
+  {
+    "id": "ONB10",
+    "title": "안내 링크 열기 실패",
+    "png": "01-screens/ONB10.png",
+    "revision": 1,
+    "sha256": "b3d6f9b3c8dca6ada333bb8ba3a0d29ecd856b523c528ad8e18d80712edbf8a5",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB10.json",
+    "review": "외부 안내 페이지 열기 실패를 로그인 실패와 구분. 두 법적 링크·Google 버튼 유지, 단일 인라인 안내.",
+    "actions": "법적 링크 재탭→외부 브라우저; Google 로그인도 계속 가능.",
+    "guard": "외부 열기 자체 실패에만4초 안내. 페이지 내부 로딩 결과 추측 금지."
+  },
+  {
+    "id": "ONB11",
+    "title": "첫 러닝 홈",
+    "png": "01-screens/ONB11.png",
+    "revision": 1,
+    "sha256": "185cfcf3bbd80fd8b801b7bb88c97dac17ce9926cf008d517f35077598fe29b4",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB11.json",
+    "review": "승인 HOME 무대·로고·5탭 유지. 일반/Lv1/내구도100 및 첫 러닝 안내, 작은 기록/코스 진입 확인. 잔액0.00은 조회 완료 예시로만 사용.",
+    "actions": "러닝 시작→U01; 기록 보기→H01; 코스 찾기→기존 코스 허브.",
+    "guard": "활동권한없음·러닝수0·누적걸음0·오늘활동없음. 조회중을0으로 보지 않음."
+  },
+  {
+    "id": "ONB20",
+    "title": "앱 사용 안내 다시 보기",
+    "png": "01-screens/ONB20.png",
+    "revision": 2,
+    "sha256": "e7394b68113e4a4f6731e5bc8c2ed2e43735ac9092d7708392631017b8b79d8b",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB20-r2.json",
+    "review": "한 사람 원형 프로필 아이콘으로 보완. 3개 설명 행은 화살표 없이 표시, 단일 러닝 홈으로 CTA, 하단탭 없음.",
+    "actions": "뒤로→도움말; 러닝 홈으로→HOME.",
+    "guard": "guideSeen을 초기화하지 않음. 설명3행은 클릭 버튼이 아님."
+  },
+  {
+    "id": "ONB21",
+    "title": "첫 설정 몸 정보",
+    "png": "01-screens/ONB21.png",
+    "revision": 1,
+    "sha256": "2f22a8e7ac2329a905a53ff602548a46d21d81fdd4b46d826a2a847e77519d07",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB21.json",
+    "review": "첫 설정1/3, 로컬 저장 설명, BMI22.0 정상 구간, 키165/몸무게60.0 조절 버튼, 다음과 건너뛰기 명확.",
+    "actions": "±조절; 다음→몸 정보 저장 후 목표; 건너뛰기→모드.",
+    "guard": "건너뛴 몸 정보 기본값은 저장하지 않음. 키1cm/몸무게0.5kg 단위."
+  },
+  {
+    "id": "ONB22",
+    "title": "첫 설정 목표",
+    "png": "01-screens/ONB22.png",
+    "revision": 1,
+    "sha256": "987049f4b2eff7b4fbc141a31ef6417d2d990f5fcca5a514e381693eb23dd3de",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB22.json",
+    "review": "목표58kg·12주 선택, 변화−2.0kg·주당0.2kg·BMI21.3 계산 일치. 목표 조절과 기간 버튼·다음·건너뛰기 모두 확인.",
+    "actions": "목표±/8·12·16주; 다음→목표 저장 후 모드; 건너뛰기→모드.",
+    "guard": "예시58kg를 자동 권장 목표로 쓰지 않음. 이전 몸 정보는 유지."
+  },
+  {
+    "id": "ONB23",
+    "title": "라이트 모드 선택",
+    "png": "01-screens/ONB23.png",
+    "revision": 1,
+    "sha256": "f09c48fb94d146abcac8175313bb84022e9e1fc3ba5bb88799feeec35dc99243",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB23.json",
+    "review": "라이트 단일 선택과 하단 현재 선택 일치. 2개 카드 설명·같은 SUP 규칙·계속·건너뛰기 유지. 실제 홈 연결은 코드상 미완료 항목.",
+    "actions": "카드→선택 변경; 계속→선택 모드 저장; 건너뛰기→기존 모드 유지.",
+    "guard": "최초 기본 라이트. 종료 시 setupSeen 저장."
+  },
+  {
+    "id": "ONB24",
+    "title": "목표 주의 상태",
+    "png": "01-screens/ONB24.png",
+    "revision": 1,
+    "sha256": "452a0a3c434744ce166bc4605701ecc169d4141db0919555b076f34fccdbef52",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB24.json",
+    "review": "목표49kg·8주·변화−11.0kg·주당1.4kg·BMI18.0 일치. 기존 주의 문구가 버튼을 가리지 않으며 다음/건너뛰기 유지.",
+    "actions": "목표/기간 재조절; 다음 또는 건너뛰기.",
+    "guard": "기존 조건의 안내이며 현재 다음을 막는 별도 승인 모달이 아님."
+  },
+  {
+    "id": "ONB25",
+    "title": "러너 모드 선택",
+    "png": "01-screens/ONB25.png",
+    "revision": 1,
+    "sha256": "9190dd9696ce380e4174648de8829c6e39cafa07679080491dd40aac137df613",
+    "size": [
+      887,
+      1774
+    ],
+    "prompt": "prompts/ONB25.json",
+    "review": "라이트 선택 해제, 러너 모드 라디오/카드와 현재 선택문구 일치. 추가 메뉴 버튼 없이 동일 폼 유지.",
+    "actions": "카드→선택 변경; 계속→러너 저장; 건너뛰기→기존 모드 유지.",
+    "guard": "홈과 실제 모드 바인딩은 조사 시점에 미연결. 실행 검증 필요."
+  }
+]

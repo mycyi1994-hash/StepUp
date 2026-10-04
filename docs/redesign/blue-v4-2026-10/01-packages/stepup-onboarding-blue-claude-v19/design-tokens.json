@@ -1,0 +1,21 @@
+{
+  "colors": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "blue": "#0754FF",
+    "cyan": "#48D9FA",
+    "text": "#F5F8FF",
+    "secondary": "#ABC7EF"
+  },
+  "font": "existing Pretendard family; Google button existing standard style",
+  "logo": "assets/logo_wordmark_on_dark.png",
+  "singlePrimaryAction": true,
+  "loginNotice": "fixed reserved slot above stable Google button",
+  "bottomNavigation": {
+    "ONB11": "existing5tabs",
+    "ONB02": "covered by sheet",
+    "others": "none"
+  },
+  "statusBar": "OS-managed",
+  "runtimeVerified": false
+}

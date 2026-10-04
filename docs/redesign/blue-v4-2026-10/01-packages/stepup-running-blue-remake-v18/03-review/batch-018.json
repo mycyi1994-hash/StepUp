@@ -1,0 +1,58 @@
+[
+  {
+    "id": "CR10",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-ed01cf9c-0b0e-4c1c-8dbc-b7bd14d883e2.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "개인과 크루 상태 구분",
+        "동작과 문구",
+        "위치 공유 상태"
+      ],
+      "notes": "본인 도윤·나와DY를 일치시킴. 진행자,위치 미공유,일시정지 구분,공유 기본꺼짐 확인."
+    }
+  },
+  {
+    "id": "CR12",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-82768e27-8d2b-47c2-9b2c-cd5682684e71.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "개인과 크루 상태 구분",
+        "동작과 문구",
+        "위치 공유 상태"
+      ],
+      "notes": "종료 확인 중 내 기록 일시정지·다른 사람 러닝 계속 안내 및 저장/재개 확인."
+    }
+  },
+  {
+    "id": "CR13",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-3654088d-46af-4d64-b6a1-46bf916d009b.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "개인과 크루 상태 구분",
+        "동작과 문구",
+        "위치 공유 상태"
+      ],
+      "notes": "크루달리기 모드로 정정,함께 출발27명과 내 저장 결과·공유/기록/처음 버튼 확인."
+    }
+  },
+  {
+    "id": "CR18",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-abb800ce-4806-4657-8c7c-4a607b067cf8.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 시각 검토",
+        "개인과 크루 상태 구분",
+        "동작과 문구",
+        "위치 공유 상태"
+      ],
+      "notes": "크루 연결 끊김 동안 타인 실시간 핀 제거. 내 기록 유지·인원 대시·재연결 확인."
+    }
+  }
+]

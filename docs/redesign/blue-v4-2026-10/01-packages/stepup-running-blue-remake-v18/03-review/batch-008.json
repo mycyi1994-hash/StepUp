@@ -1,0 +1,93 @@
+[
+  {
+    "id": "C01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b2a34a7b-83ee-4688-944c-96d496755c01.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "10분 챌린지 제목으로 수정 확인.10:00/1.28km/7분49초,달성 후 저장 또는 계속 달리기 분기 확인."
+    }
+  },
+  {
+    "id": "C02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-3bd388b3-007e-4cb9-8dc3-e4c230d233a9.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "미달성 기록 저장 상태,06:24/0.82km,삭제·공유·기록·홈 진입 확인."
+    }
+  },
+  {
+    "id": "C04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-48f5b540-4195-40db-8ef3-cc6a439b3924.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "1km 도전64%,남은360m,실제 기록선이 현재 위치에서 끝나도록 수정 확인."
+    }
+  },
+  {
+    "id": "D02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-ae1a3934-1237-47b0-a3fd-a69ffc3a98a7.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "키 입력 오류만 강조,몸무게와 선택 경험 유지,다음 버튼 비활성 확인."
+    }
+  },
+  {
+    "id": "D03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-966c73df-fa0e-40e5-8b39-1c25881bca8e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "입력 중단 확인에서 기존 저장 데이터 보존 설명 및 중단/취소 확인."
+    }
+  },
+  {
+    "id": "D05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-ca76e0cb-9a92-4c44-bc9c-46a5c9e94667.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "추천 실패,입력 보존,재시도/몸 정보 확인 버튼 확인."
+    }
+  },
+  {
+    "id": "D06",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-41de345b-360f-4355-8f78-45a841bc761e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "목적과 상태",
+        "수치 및 버튼",
+        "동일 톤과 가독성"
+      ],
+      "notes": "170cm70kg와3개 경험 버튼,선택 상태 및 수정 후 재추천 버튼 확인."
+    }
+  }
+]

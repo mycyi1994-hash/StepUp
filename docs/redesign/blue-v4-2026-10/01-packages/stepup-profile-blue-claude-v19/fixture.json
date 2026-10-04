@@ -1,0 +1,29 @@
+{
+  "fictional": true,
+  "nickname": "민수",
+  "draft": "달리는민수",
+  "maxLength": 16,
+  "longDraft": "오늘도한강에서천천히달리는민수야",
+  "balanceSup": 83.07,
+  "runnerLevel": 12,
+  "runnerLevelSource": "walk-derived lifetimeKm; independent of run total",
+  "runTotals": {
+    "meters": 128400,
+    "runs": 28
+  },
+  "equippedExample": "클라우드 러너",
+  "avatar": {
+    "id": -2,
+    "fileMissing": true,
+    "fallback": "outline person"
+  },
+  "photoSuccessExample": "cream and navy sneaker photograph, fictional user-selected photo",
+  "branches": {
+    "PF02": "identity/balance known, run totalsloading",
+    "PF03": "only runtotalsfailed",
+    "PF04": "actualzero runs, otherknownfields unchanged",
+    "PRO09": "photo saved then nickname editedanddiscarded",
+    "PRO12": "name-only success;originalavatar unchanged",
+    "PRO17": "photo-only success;name unchanged"
+  }
+}

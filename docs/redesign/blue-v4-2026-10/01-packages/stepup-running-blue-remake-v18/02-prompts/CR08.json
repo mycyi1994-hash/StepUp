@@ -1,0 +1,8 @@
+{
+  "id": "CR08",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact countdown UI only. Remove the top-left back arrow because crew synchronized countdown is already committed. In the map remove the entire cyan completed-run line and all endpointdots. Leave ONLY one blue white-ring current location dot in the park near the left/start side. Preserve map base, small지도예시, countdown3,27명,crewname and remainingcopy exactly. This is BEFORE running; no recordedrouteexists.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-b178faae-64e4-4893-9417-09f8d8de4738.png"
+  ]
+}

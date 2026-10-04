@@ -1,0 +1,135 @@
+[
+  {
+    "id": "CH-X01",
+    "state": "홈 최초 로딩·기존 정보 갱신 실패",
+    "source": "CrewHomeScreen.kt / CrewHomeViewModel.refresh",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "처음에는 스켈레톤,기존정보 있으면 유지+재조회 안내. CH26은 최초실패만."
+  },
+  {
+    "id": "CH-X02",
+    "state": "홈 크루장 메뉴·권한 변경",
+    "source": "HomeMenu / CrewHomeViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "일반멤버 CH22의 나가기 대신 관리. 관리진입 직전과 복귀 때 실제 역할 확인."
+  },
+  {
+    "id": "CH-X03",
+    "state": "홈 목표 없음·공지 없음·미읽음0",
+    "source": "CrewHomeScreen.kt / CrewHomeSummary",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "각 데이터 독립. CH23은 모임없음 대표 예시이며 모든 조합을 그린 것은 아님."
+  },
+  {
+    "id": "CH-X04",
+    "state": "소개·레벨 조회 중/실패·필드 없음",
+    "source": "CrewHomeDetails.kt / CrewScreenViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "임의 기본 소개나 레벨 생성 금지. 현재 실패가 계속 로딩처럼 남는지 추가 확인."
+  },
+  {
+    "id": "CH-X05",
+    "state": "명단 로딩·실패·검색0명·본인 프로필",
+    "source": "CrewMembersHomeScreen / CrewHomeMembersViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "검색어 보존,전체 인원과 결과 수 분리. 검색0명과 서버 실패를 구분."
+  },
+  {
+    "id": "CH-X06",
+    "state": "프로필 기록 없음·읽기 실패·소속 없음",
+    "source": "CrewPersonHomeScreen / CrewHomePersonViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "유효한 공개 정보만 표시. 없는 개인 소개·주간 기록을 만들지 않는다."
+  },
+  {
+    "id": "CH-X07",
+    "state": "모임 조회 중·실패·삭제됨",
+    "source": "CrewMeetingScreen / CrewMeetingViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "삭제는 취소 안내,통신오류는 재조회,접근종료는공통종료. 초기 모임 부품의 가짜값 없음."
+  },
+  {
+    "id": "CH-X08",
+    "state": "모임 정원 가득 참·정원 충돌",
+    "source": "CrewMeeting / MeetingFooter / AttendanceSheet",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "이미 참석한 회원은 NO로 변경 가능. 크루 정원30을 모임 정원으로 복사하지 않는다."
+  },
+  {
+    "id": "CH-X09",
+    "state": "모임 시작됨·응답 중·저장 중 닫기",
+    "source": "CrewMeetingViewModel.respond / AttendanceSheet",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "시작후 변경불가. 요청중 중복탭/닫기 차단. 늦은 이전조회가 최신 저장값을 덮지 않는지 실행확인."
+  },
+  {
+    "id": "CH-X10",
+    "state": "참석자0명·로딩·실패·모임 취소",
+    "source": "CrewAttendeesScreen",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "실제 명단만 사용. 진행자 표시와 소속 크루장 별개. CH13은8명성공만."
+  },
+  {
+    "id": "CH-X11",
+    "state": "장소 좌표 없음·지도 앱 없음·지도 실패",
+    "source": "CrewPlaceScreen / openMaps / MeetingMap",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "좌표없음은 장소명 검색. 실제타일실패에예시그림대입금지.외부앱없음현재토스트 검수."
+  },
+  {
+    "id": "CH-X12",
+    "state": "주간 로딩·실패·목표 없음·100% 초과",
+    "source": "CrewWeekScreen / CrewWeekViewModel / CrewGoal",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "전체거리 보존,분모없음은퍼센트숨김.100%이상숫자유지·막대만제한."
+  },
+  {
+    "id": "CH-X13",
+    "state": "과거 주0기록·요일0선택",
+    "source": "WeekBars / CrewRunsScreen",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "현재0과미래null구분. 과거빈주에이번주첫러닝문구가나오지않는지확인."
+  },
+  {
+    "id": "CH-X14",
+    "state": "주 전체·개인 필터 참여 기록·조회0건",
+    "source": "CrewRunsScreen / RunsHead",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "CH18은날짜필터성공만. 기간선택시날짜/개인해제와서버scope일치."
+  },
+  {
+    "id": "CH-X15",
+    "state": "참여 기록 초기/추가 조회 실패·복귀·필터 변경 경쟁",
+    "source": "CrewRunsViewModel.load/loadMore/selectWeek",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "현재추가조회실패는else Unit으로안내없음. 재시도표현보완과늦은응답·중복/누락실행확인필요."
+  },
+  {
+    "id": "CH-X16",
+    "state": "러닝 기록 로딩·실패·삭제/무효·경로없음",
+    "source": "CrewRunScreen / CrewRunViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "경로2점미만지도숨김.실제거리/시간유지.사라진기록은목록복귀.보유화면재조회실패동작확인."
+  },
+  {
+    "id": "CH-X17",
+    "state": "탈퇴 확인·요청중·실패·소속 종료",
+    "source": "CrewHomeViewModel.confirmLeave / HomeAccessGuard / ENDED",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "CP61/66공유.크루장직접탈퇴금지.탈퇴후채팅/홈캐시정리와뒤로스택검수."
+  },
+  {
+    "id": "CH-X18",
+    "state": "공지 연결 모임 없음/사라짐·권한별 관리",
+    "source": "ChatNoticeScreens.kt / ChatNoticeEditViewModel",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "이미 채팅 추가감사에있는동일범위. CH20/21때문에공지기능을복제하지않는다."
+  },
+  {
+    "id": "CH-X19",
+    "state": "작은 화면·큰 글자·IME·스크린리더",
+    "source": "native runtime",
+    "status": "추가 시안 또는 실행 검증 필요",
+    "note": "시트가키보드/시스템바에가리지않고48dp터치/포커스/배경상호작용차단.정적PNG검수와별개."
+  }
+]

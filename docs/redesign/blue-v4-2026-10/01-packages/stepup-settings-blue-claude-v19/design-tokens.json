@@ -1,0 +1,28 @@
+{
+  "colors": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "edge": "#0754FF",
+    "accent": "#48D9FA",
+    "text": "#F5F8FF",
+    "muted": "#ABC7EF",
+    "error": "#FF9A98"
+  },
+  "layout": {
+    "gutterDp": 24,
+    "minimumTouchDp": 48,
+    "titleSp": 24,
+    "bodySp": 16,
+    "secondarySp": 14,
+    "rowRadiusDp": 16,
+    "sheetRadiusDp": 24
+  },
+  "chrome": {
+    "page": "back/title + existing five bottom tabs; no logo/SUP",
+    "sheet": "covers and dims underlying navigation; no duplicated tabs"
+  },
+  "exceptions": [
+    "SET17 light theme intentionally uses a light background"
+  ],
+  "note": "구현 시작값. 생성 PNG의 픽셀을 dp로 직접 옮기지 않는다."
+}

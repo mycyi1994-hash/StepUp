@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "보존",
+    "item": "기존홈4번구도,입장ID,역할별메뉴,게시판과함께달리기,채팅왕복스택 보존",
+    "evidence": "CrewHomeNavGraph.kt / HomeMenu"
+  },
+  {
+    "kind": "구형시안 수정",
+    "item": "프로필의임의소개·선호거리·지역은제외.현재실제필드와최근공개기록1건만표시",
+    "evidence": "CrewPersonHomeScreen / CrewHomePersonViewModel"
+  },
+  {
+    "kind": "구형시안 수정",
+    "item": "레벨승급조건미정.준비중표시이며필요XP/목표/승급보상없음",
+    "evidence": "CrewLevelScreen"
+  },
+  {
+    "kind": "작은 문구 보완",
+    "item": "과거주현재목표기준·공유경로300m제외 안내를추가.새데이터/API아님",
+    "evidence": "CH17/19 / 0049_crew_home.sql"
+  },
+  {
+    "kind": "검색 UI 보완",
+    "item": "CH27 검색어지우기X는기존query를비우는동작.키보드/포커스실행검수별도",
+    "evidence": "CrewHomeMembersViewModel.setQuery"
+  },
+  {
+    "kind": "현재 기능 유지",
+    "item": "좌표없음지도생략,장소명외부검색,실제타일표기및공유경로보호유지",
+    "evidence": "CrewPlaceScreen / openMaps / MeetingMap"
+  },
+  {
+    "kind": "미구현 완료 주장 금지",
+    "item": "참여기록추가조회실패안내는현행else Unit.초기실패화면만으로처리완료라하지않음",
+    "evidence": "CrewRunsViewModel.loadMore"
+  },
+  {
+    "kind": "범위 한계",
+    "item": "정적그림의시스템시계·홈바누락이나아이콘미세차이는실제OS/UI에서통일.통째PNG배경구현금지",
+    "evidence": "CH13/18/21/24/26/27 및 design-tokens.json"
+  }
+]

@@ -1,0 +1,113 @@
+[
+  {
+    "symbol": "HOME",
+    "pattern": "crew/home/{crewId}",
+    "visualStates": [
+      "CH00",
+      "CH22",
+      "CH23",
+      "CH26",
+      "CH28",
+      "CH29"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "INTRO",
+    "pattern": "crew/home/{crewId}/intro",
+    "visualStates": [
+      "CH01"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "LEVEL",
+    "pattern": "crew/home/{crewId}/level",
+    "visualStates": [
+      "CH03"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "MEMBERS",
+    "pattern": "crew/home/{crewId}/members",
+    "visualStates": [
+      "CH04",
+      "CH27"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "PERSON",
+    "pattern": "crew/home/{crewId}/person/{userId}",
+    "visualStates": [
+      "CH05",
+      "CH06"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "MEETING",
+    "pattern": "crew/home/{crewId}/meeting/{meetingId}",
+    "visualStates": [
+      "CH09",
+      "CH10",
+      "CH11",
+      "CH12",
+      "CH25"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "ATTENDEES",
+    "pattern": "crew/home/{crewId}/meeting/{meetingId}/attendees",
+    "visualStates": [
+      "CH13"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "PLACE",
+    "pattern": "crew/home/{crewId}/meeting/{meetingId}/place",
+    "visualStates": [
+      "CH14"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "WEEK",
+    "pattern": "crew/home/{crewId}/week?week={week}",
+    "visualStates": [
+      "CH15",
+      "CH16",
+      "CH17",
+      "CH24"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "RUNS",
+    "pattern": "crew/home/{crewId}/runs?week={week}&day={day}&userId={userId}&name={name}",
+    "visualStates": [
+      "CH18",
+      "CH16"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "RUN",
+    "pattern": "crew/home/{crewId}/run/{runId}",
+    "visualStates": [
+      "CH19"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  },
+  {
+    "symbol": "ENDED",
+    "pattern": "crew/home-ended",
+    "visualStates": [
+      "CP66"
+    ],
+    "coverage": "대표 상태 대응. 모든 코드분기의 시안·실행검증 완료가 아님."
+  }
+]

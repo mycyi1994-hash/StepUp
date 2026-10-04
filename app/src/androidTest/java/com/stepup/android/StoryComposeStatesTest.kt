@@ -212,7 +212,7 @@ class StoryComposeStatesTest {
         compose.onNodeWithTag("story-record-km", useUnmergedTree = true).assertTextEquals("2.10")
         awaitTextField("story-compose-text", "9월 25일 2.10km 달렸어요.")
         tapTag("story-src-COURSE")
-        awaitTag("story-place-picker")
+        awaitTag("story-place-quick")
         pickRow("마포대교 남단")
         awaitTextField("story-compose-text", "9월 25일 마포대교에서 2.10km 달렸어요.")
         compose.onNodeWithTag("story-compose-place", useUnmergedTree = true).assertTextEquals("마포대교 남단")
@@ -277,8 +277,8 @@ class StoryComposeStatesTest {
         // ── 07 현재 위치를 쓸 수 없는 사람 — 권한 없이도 검색 · 지도에서 장소 선택 ────────
         tapTag("story-src-NEARBY")
         if (StepPermissions.hasLocation(context)) {
-            notes += "07: location permission was granted on this device — 내 주변 opened the picker; captured the picker instead"
-            awaitTag("story-place-picker")
+            notes += "07: location permission was granted on this device — 내 주변 opened the quick place sheet; captured it instead"
+            awaitTag("story-place-quick")
             shot("07-location-unavailable")
             pressBack()
             awaitTag("story-compose")
@@ -327,7 +327,7 @@ class StoryComposeStatesTest {
         awaitTag("story-record-attached")
         compose.onNodeWithTag("story-record-date", useUnmergedTree = true).assertTextEquals("오늘 오전 7:12")
         tapTag("story-src-COURSE")
-        awaitTag("story-place-picker")
+        awaitTag("story-place-quick")
         pickRow("여의도 한강공원")
         awaitTextField("story-compose-text", "9월 28일 여의도에서 3.24km 달렸어요.")
         server.createAnswers += HttpResponse(503, "busy")
@@ -441,9 +441,8 @@ class StoryComposeStatesTest {
     private fun pickRow(name: String) {
         val row = hasTestTag("story-place-row") and hasText(name, substring = true)
         compose.waitUntil(10_000) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
+        // 장소 줄 · 검색 결과는 한 번 누르면 바로 글쓰기로 돌아온다(확인 화면은 지도에서 직접 고를 때만)
         compose.onAllNodes(row).onFirst().performClick()
-        awaitTag("story-place-confirm")
-        tapTag("story-place-choose")
         awaitTag("story-compose")
     }
 

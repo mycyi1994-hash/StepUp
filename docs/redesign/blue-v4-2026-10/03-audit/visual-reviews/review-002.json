@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-03",
+  "method": "Each generated portrait opened with view_image; text, hierarchy, counters, art, navigation inspected.",
+  "scope": "batch2 first review",
+  "screens": [
+    {
+      "id": "DRAW01",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Two panels, unconnected premium gift presented as future benefit, five navigation items, original logo."
+    },
+    {
+      "id": "DRAW10",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately."
+    },
+    {
+      "id": "DRAW11",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately."
+    },
+    {
+      "id": "DRAW12",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately."
+    },
+    {
+      "id": "DRAW13",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately."
+    },
+    {
+      "id": "DRAW07",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Modal background not dimmed enough; connection pending/failed background must not show already credited premium gift. Correcting."
+    },
+    {
+      "id": "DRAW08",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Modal background not dimmed enough; connection pending/failed background must not show already credited premium gift. Correcting."
+    },
+    {
+      "id": "DRAW09",
+      "result": "needs-revision",
+      "revision": 1,
+      "notes": "Modal background not dimmed enough; connection pending/failed background must not show already credited premium gift. Correcting."
+    }
+  ]
+}

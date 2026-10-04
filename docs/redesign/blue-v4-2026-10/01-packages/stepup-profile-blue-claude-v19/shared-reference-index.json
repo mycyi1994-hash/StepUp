@@ -1,0 +1,16 @@
+[
+  {
+    "id": "H01",
+    "png": "02-shared-reference/H01.png",
+    "sha256": "31f0d40e3b6fda75787a38bb2d32cee5316f43ea68bd573786a4a0b36a6aceab",
+    "reusedUnchanged": true,
+    "note": "독립 v18 참고. 현재 기록 화면 하단 탭 유지 결정이 이미지보다 우선."
+  },
+  {
+    "id": "H07",
+    "png": "02-shared-reference/H07.png",
+    "sha256": "0f92e93d3b1f12516c1a6cd78f9ad3224e2084625fa44d48885b815bb99e73f2",
+    "reusedUnchanged": true,
+    "note": "독립 v18 참고. 현재 기록 화면 하단 탭 유지 결정이 이미지보다 우선."
+  }
+]

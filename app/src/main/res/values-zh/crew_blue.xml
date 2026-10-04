@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 둘러보기 · 가입 · 만들기 · 운영 파란 톤(2026-10 v19 전달본) — 새로 더한 문구만 -->
+<resources>
+    <string name="crew_blue_sort_near_here">优先显示你附近的跑团。</string>
+    <string name="crew_blue_sort_near_region">优先显示离所选地区近的跑团。</string>
+    <string name="crew_blue_sort_recent">优先显示最近开始招募的跑团。</string>
+    <string name="crew_blue_sort_active">优先显示成员活动活跃的跑团。</string>
+    <string name="crew_blue_range_from_region">从所选地区</string>
+    <string name="crew_blue_resume_sub">可以接着保存的内容继续创建。</string>
+    <string name="crew_blue_draft_named">%1$s 草稿</string>
+    <string name="crew_blue_activity">跑团活动</string>
+    <string name="crew_blue_loading">加载中</string>
+    <string name="crew_blue_count">%1$d / %2$d</string>
+    <string name="crew_blue_pending_status">待批准</string>
+    <string name="crew_blue_pending_status_body">正在等待团长确认。</string>
+    <string name="crew_blue_pending_phrases">你选择的跑步偏好</string>
+    <string name="crew_blue_result_eyebrow">加入申请结果</string>
+    <string name="crew_blue_clear">清除</string>
+    <string name="crew_blue_keep_writing">继续填写</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 내 정보 · 프로필 수정 · 설정 파란 톤 v4(docs/redesign/blue-v4-2026-10 PF · PRO · SET) — 새로 더한 글 -->
+<resources>
+    <string name="pf_pass_title">跑步通行证</string>
+    <string name="pf_total_distance">累计距离</string>
+    <string name="pf_total_runs">总跑步</string>
+    <string name="pf_runs_unit">次</string>
+    <string name="pf_first_run">记录你的第一次跑步吧。</string>
+    <string name="pe_blue_loading">正在加载资料…</string>
+    <string name="pe_blue_default_saving">正在保存图片…</string>
+    <string name="pe_blue_default_failed_title">无法保存图片。</string>
+    <string name="pe_blue_default_failed_body">请重新选择。</string>
+    <string name="set_blue_saving_on_phone">正在保存到这部手机…</string>
+</resources>

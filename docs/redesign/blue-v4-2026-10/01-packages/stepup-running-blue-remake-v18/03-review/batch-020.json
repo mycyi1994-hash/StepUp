@@ -1,0 +1,80 @@
+[
+  {
+    "id": "H12",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e750a2f8-b82b-416f-9ae9-d46b3e3f41e9.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "저장된 경로 확대 화면의 시작·도착 구분, 지도 확대·축소, 9월29일·2.40km·20분과 기록 복귀 확인. 지도는 예시 표시."
+    }
+  },
+  {
+    "id": "H13",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-3476fc66-38da-48e1-aeb8-38fb809efe10.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "시간만 저장된 과거 러닝에서 거리·페이스 미측정 및 위치 기록 없음 표시. 삭제와 목록 복귀 확인."
+    }
+  },
+  {
+    "id": "H14",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-675ced52-6a9e-4a78-8903-87bf8133f549.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "9월29일 2.40km·20분 기록 삭제 확인 시트, 되돌릴 수 없음 안내, 빨간 삭제와 취소를 확인."
+    }
+  },
+  {
+    "id": "H16",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-78e42acf-5af2-4856-8043-d25fbe3e6af3.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "삭제 실패를 표시하면서 기존 기록과 지도를 유지. 삭제 재시도 및 기록 목록 복귀 확인."
+    }
+  },
+  {
+    "id": "E10",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e8a6618b-ad53-40a4-b222-761874a294a3.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "결과에 저장 완료와 예상 보상 확인 중을 구분. 날짜·거리·시간·페이스·속도·신발·등급·레벨·내구도 및 공유·삭제·기록·홈 확인."
+    }
+  },
+  {
+    "id": "E11",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d552f3ad-aac5-4dd8-b92a-871e5dfa597e.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "결과에 저장 완료와 보상 반영 완료 구분. 날짜·거리·시간·페이스·속도·신발·등급·레벨·내구도 및 공유·삭제·기록·홈 확인."
+    }
+  }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "CM01",
+    "title": "확정 목록",
+    "png": "02-shared-reference/CM01.png",
+    "reused": true,
+    "sha256": "62be08c4aefc6242d92a7c0dca381b42e34b178fc0394644c088ddbc8c861658"
+  },
+  {
+    "id": "CM06",
+    "title": "지도에서 장소 선택",
+    "png": "02-shared-reference/CM06.png",
+    "reused": true,
+    "sha256": "f56a51a4ab8964c48c0a16441466e034b17d8f73b27af2bb79879b60436be120"
+  },
+  {
+    "id": "CM09",
+    "title": "댓글 입력",
+    "png": "02-shared-reference/CM09.png",
+    "reused": true,
+    "sha256": "b1676176180f2b3228f3c32f5460623c97f1896a4320e0be32c0ba74ea7c7543"
+  },
+  {
+    "id": "CM12",
+    "title": "글쓰기 시작",
+    "png": "02-shared-reference/CM12.png",
+    "reused": true,
+    "sha256": "a3230300a709d60db21ec98bcb95574099020ae4554b9c0171e5134c3a964837"
+  },
+  {
+    "id": "CM13",
+    "title": "내용과 장소 입력",
+    "png": "02-shared-reference/CM13.png",
+    "reused": true,
+    "sha256": "a1970277be3e4ffe0ec57b3b5301d299b0bcd2ef8c4b60e72208c2776d5aca36"
+  },
+  {
+    "id": "CM14",
+    "title": "장소 검색",
+    "png": "02-shared-reference/CM14.png",
+    "reused": true,
+    "sha256": "c4123e8d70d5a5ea27dfe665e29624044fe468ac085d4cac1f10a1f4fc571bfc"
+  },
+  {
+    "id": "CM15",
+    "title": "장소 확인",
+    "png": "02-shared-reference/CM15.png",
+    "reused": true,
+    "sha256": "803920683db3531fdbb4f46579c25b20cf9e13c1cd3b141b041617d91f2c47db"
+  },
+  {
+    "id": "CM16",
+    "title": "장소 검색 결과 없음",
+    "png": "02-shared-reference/CM16.png",
+    "reused": true,
+    "sha256": "fb93f54b11b8ab792a186bff105652373dd629ee3d7a90a7fa6fc57b77edb494"
+  },
+  {
+    "id": "CM17",
+    "title": "글 올리는 중",
+    "png": "02-shared-reference/CM17.png",
+    "reused": true,
+    "sha256": "dac14d43e74fee8e08ac9b92923ef32b28b94a1c78a880d30bcaef08252421f3"
+  },
+  {
+    "id": "CM20",
+    "title": "작성 중 나가기",
+    "png": "02-shared-reference/CM20.png",
+    "reused": true,
+    "sha256": "9694d531d660a6449d945a358a2e470eeed4e6c8100598866f3f166539f379fe"
+  },
+  {
+    "id": "CM21",
+    "title": "임시저장 이어쓰기",
+    "png": "02-shared-reference/CM21.png",
+    "reused": true,
+    "sha256": "76a897c14831e6d93af8990e01687ed7689eafe47a2d2ce5e3d0552315822200"
+  },
+  {
+    "id": "CM22",
+    "title": "내 글 메뉴",
+    "png": "02-shared-reference/CM22.png",
+    "reused": true,
+    "sha256": "dcaeb8e58ab02d2d1b1ec0347d2c43328e7ff9affb8a11752ac18e0a36c22fe2"
+  },
+  {
+    "id": "CM23",
+    "title": "글 수정",
+    "png": "02-shared-reference/CM23.png",
+    "reused": true,
+    "sha256": "28e6daf5b1a8c2fd763af0affcfe48aac6f904a3ee82550a1e01ef36b797608b"
+  },
+  {
+    "id": "CM24",
+    "title": "글 삭제 확인",
+    "png": "02-shared-reference/CM24.png",
+    "reused": true,
+    "sha256": "47f0366c0512970db065470b745abd25c11c79a876f59cd151c9c3f2d46cdba9"
+  },
+  {
+    "id": "CM25",
+    "title": "삭제 실패",
+    "png": "02-shared-reference/CM25.png",
+    "reused": true,
+    "sha256": "85836bccb224782efaea96efd275ec43a214536df792b5fe03945283dd3120bf"
+  },
+  {
+    "id": "CM26",
+    "title": "다른 글 메뉴",
+    "png": "02-shared-reference/CM26.png",
+    "reused": true,
+    "sha256": "6a562bca5dd7944b2d2fc3d775519965742ce30a6835386398731429e759eb5a"
+  }
+]

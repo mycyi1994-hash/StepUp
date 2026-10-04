@@ -1,0 +1,24 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인 및 전달 전 재확인",
+  "screens": [
+    {
+      "id": "NOT24",
+      "revision": 1,
+      "result": "passed",
+      "notes": "일반 안내 시트의 부스트 문구·일시·확인 한 개·닫기와 하단 덮임 확인. 배경 적립 문구는 기존 비서버 보상 모드 예시로만 사용하고 showsAmount 조건을 구현 지시서에 별도 명시."
+    },
+    {
+      "id": "NOT25",
+      "revision": 1,
+      "result": "passed",
+      "notes": "목록·시트 모두 SUP 금액 없는 러닝 기록, 새 알림 2개와 해당 행 점 제거, 지갑 보기·닫기 확인."
+    },
+    {
+      "id": "NOT26",
+      "revision": 1,
+      "result": "passed",
+      "notes": "크루 가입 완료 체크·크루명·일시·크루 보기 하나 확인. 승인 대기와 다른 실제 Joined 결과 상태. 기존 배경 적립 문구는 모드에 따라 교체."
+    }
+  ],
+  "runtimeVerified": false
+}

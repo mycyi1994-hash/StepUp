@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 내 정보 · 프로필 수정 · 설정 파란 톤 v4(docs/redesign/blue-v4-2026-10 PF · PRO · SET) — 새로 더한 글 -->
+<resources>
+    <string name="pf_pass_title">ランニングパス</string>
+    <string name="pf_total_distance">累計距離</string>
+    <string name="pf_total_runs">総ラン数</string>
+    <string name="pf_runs_unit">回</string>
+    <string name="pf_first_run">最初のランを記録してみましょう。</string>
+    <string name="pe_blue_loading">プロフィールを読み込んでいます…</string>
+    <string name="pe_blue_default_saving">画像を保存しています…</string>
+    <string name="pe_blue_default_failed_title">画像を保存できませんでした。</string>
+    <string name="pe_blue_default_failed_body">もう一度選んでください。</string>
+    <string name="set_blue_saving_on_phone">この端末に保存しています…</string>
+</resources>

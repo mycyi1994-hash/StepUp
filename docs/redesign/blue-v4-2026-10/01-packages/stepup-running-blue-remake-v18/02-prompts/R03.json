@@ -1,0 +1,8 @@
+{
+  "id": "R03",
+  "mode": "built-in imagegen",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e24ad6d4-5602-4f07-b8cd-1dd8ecfa2c68.png"
+  ],
+  "prompt": "Edit this one StepUp paused-running mockup with ONLY TWO precise corrections: completely remove the top-right 83.07 SUP pill and leave that area plain matching navy background; change the large page title from 자유 러닝 to 일시정지. Keep original STEPUP logo, back arrow, paused status, frozen12:30 timer,1.56km,8′01″/km, map, 이어서 달리기 button and 러닝 마치기 button unchanged. Same 887x1774 portrait. Do not add any other elements. This is a focus running state with no balance control."
+}

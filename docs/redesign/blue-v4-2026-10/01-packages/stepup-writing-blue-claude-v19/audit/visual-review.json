@@ -1,0 +1,125 @@
+{
+  "method": "Individual image inspection; static mockups, not runtime verification.",
+  "screens": [
+    {
+      "id": "WRITE09",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Three dated records and five day filters fit. Immediate per-row attach, secondary continue-without-record, consistent 10/3 fixture."
+    },
+    {
+      "id": "WRITE03",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Valid 9/30 record on 10/3, 2.10km/16:48/8min per km, selected public place/body, clear change/remove and enabled publish."
+    },
+    {
+      "id": "WRITE01",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Verified-first-record-empty wording, optional start button and beginner phrases; manually selected place/body permit general posting, no recent-place shortcut."
+    },
+    {
+      "id": "WRITE02",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Old-record state uses 9/29 four days before 10/3, history/start secondary actions; selected place and returning-user text enable general post."
+    },
+    {
+      "id": "WRITE04",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Expired attachment keeps original route/metrics, body and place; replace/remove-only controls, publish disabled until resolved."
+    },
+    {
+      "id": "WRITE05",
+      "result": "passed",
+      "revision": 1,
+      "notes": "GPS-less summary has actual distance/time and no map or course-nearby shortcut; missing public place correctly disables posting."
+    },
+    {
+      "id": "WRITE06",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Record fetch error retains selected public place and user body; retry is secondary, general posting remains available, no invented empty history."
+    },
+    {
+      "id": "WRITE07",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Location-unavailable sheet offers direct search, map selection and settings while retaining GPS-less attachment draft underneath. One primary button and opaque sheet."
+    },
+    {
+      "id": "WRITE08",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Publish failure preserves record, public place and typed text; visible inline error and one retry CTA. No success claim."
+    },
+    {
+      "id": "WRITE10",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Quick-place sheet has course/nearby/recent sources, three named public places, selected check, direct row selection and search/map fallbacks without extra confirmation."
+    },
+    {
+      "id": "WRITE11",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Neutral empty recent-record picker; no false never-run claim, date window explicit, one continue-writing primary."
+    },
+    {
+      "id": "WRITE16",
+      "result": "passed",
+      "revision": 1,
+      "notes": "2-day filter highlights Oct 1 with no records, distinguishes day-empty from all-empty; all-records filter reset and writing fallback fit."
+    },
+    {
+      "id": "WRITE14",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Initial loading shows spinner and neutral starter skeletons; retained place/body permit ordinary post, no guessed history."
+    },
+    {
+      "id": "WRITE15",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Active-run status has return-to-running secondary action and no fabricated completed route; public place/body allow ordinary story."
+    },
+    {
+      "id": "WRITE17",
+      "result": "passed",
+      "revision": 1,
+      "notes": "No recent-place history: only nearby/search equal buttons, attachment remains optional/available; empty required place/body disables publish."
+    },
+    {
+      "id": "WRITE18",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Pending server eligibility has refresh secondary action, no falsely verified attachment; ordinary place/body posting is active."
+    },
+    {
+      "id": "WRITE19",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Invalid attachment preserves original preview/body/place, offers replace/remove-only, removes course-nearby, disables publish with concise neutral reason."
+    },
+    {
+      "id": "WRITE20",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Authentication expiry preserves all draft content; only login-and-continue-writing primary is shown, no automatic posting claim."
+    },
+    {
+      "id": "WRITE13",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Published own course story preserves 9/30 and 2.10km/16:48/8min pace. Distinct viewer-to-public-place 2.6km label, empty comments/input, no extra global chrome."
+    },
+    {
+      "id": "WRITE12",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Published course post uses existing text-left/thumbnail-right feed and five-tab shell. Viewer remains Dohwa, own course row shows run distance; ordinary rows keep location distances."
+    }
+  ]
+}

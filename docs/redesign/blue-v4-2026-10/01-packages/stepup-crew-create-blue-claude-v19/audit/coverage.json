@@ -1,0 +1,224 @@
+{
+  "delivered": [
+    "CP25",
+    "CP26",
+    "CP27",
+    "CP28",
+    "CP29",
+    "CP30",
+    "CP31",
+    "CP32",
+    "CP33",
+    "CP34",
+    "CP35",
+    "CP36",
+    "CP37",
+    "CP38",
+    "CP39",
+    "CP69",
+    "CP77",
+    "CP78",
+    "CP88"
+  ],
+  "shared": [
+    "CP01",
+    "CP03",
+    "CP71",
+    "CP72"
+  ],
+  "crewReviewed": 57,
+  "crewCandidateCount": 95,
+  "pendingCrew": [
+    {
+      "id": "CP40",
+      "title": "크루 관리 홈"
+    },
+    {
+      "id": "CP41",
+      "title": "크루 소개 수정"
+    },
+    {
+      "id": "CP42",
+      "title": "모임 정보 수정"
+    },
+    {
+      "id": "CP43",
+      "title": "모집 설정"
+    },
+    {
+      "id": "CP44",
+      "title": "모집 잠시 멈추기"
+    },
+    {
+      "id": "CP45",
+      "title": "모집 다시 시작"
+    },
+    {
+      "id": "CP46",
+      "title": "주간 목표 수정"
+    },
+    {
+      "id": "CP47",
+      "title": "주간 목표 변경 확인"
+    },
+    {
+      "id": "CP48",
+      "title": "가입 신청 목록"
+    },
+    {
+      "id": "CP49",
+      "title": "가입 신청 검토"
+    },
+    {
+      "id": "CP50",
+      "title": "가입 승인 확인"
+    },
+    {
+      "id": "CP51",
+      "title": "가입 승인 완료"
+    },
+    {
+      "id": "CP52",
+      "title": "미승인 확인"
+    },
+    {
+      "id": "CP53",
+      "title": "미승인 처리 완료"
+    },
+    {
+      "id": "CP54",
+      "title": "가입 신청 없음"
+    },
+    {
+      "id": "CP55",
+      "title": "멤버 관리"
+    },
+    {
+      "id": "CP56",
+      "title": "멤버 공개 프로필"
+    },
+    {
+      "id": "CP57",
+      "title": "멤버 내보내기 확인"
+    },
+    {
+      "id": "CP58",
+      "title": "새 크루장 선택"
+    },
+    {
+      "id": "CP59",
+      "title": "크루장 변경 확인"
+    },
+    {
+      "id": "CP60",
+      "title": "멤버용 더보기"
+    },
+    {
+      "id": "CP61",
+      "title": "크루 나가기 확인"
+    },
+    {
+      "id": "CP62",
+      "title": "크루장 탈퇴 안내"
+    },
+    {
+      "id": "CP63",
+      "title": "크루 해산 확인"
+    },
+    {
+      "id": "CP64",
+      "title": "크루 신고 사유"
+    },
+    {
+      "id": "CP65",
+      "title": "신고 접수 완료"
+    },
+    {
+      "id": "CP74",
+      "title": "운영 설정"
+    },
+    {
+      "id": "CP75",
+      "title": "멤버 관리 동작"
+    },
+    {
+      "id": "CP76",
+      "title": "크루 상세 · 크루장"
+    },
+    {
+      "id": "CP79",
+      "title": "남은 가입 신청"
+    },
+    {
+      "id": "CP80",
+      "title": "관리 작업 실패"
+    },
+    {
+      "id": "CP81",
+      "title": "승인 직전 정원 초과"
+    },
+    {
+      "id": "CP83",
+      "title": "목표 변경 후 현황"
+    },
+    {
+      "id": "CP84",
+      "title": "멤버 프로필 · 크루장 열람"
+    },
+    {
+      "id": "CP85",
+      "title": "신청자 공개 프로필"
+    },
+    {
+      "id": "CP86",
+      "title": "크루장 변경 후 상세"
+    },
+    {
+      "id": "CP89",
+      "title": "모집 중지 후 크루장 화면"
+    },
+    {
+      "id": "CP90",
+      "title": "모집 중지 상태의 운영 설정"
+    }
+  ],
+  "allCandidateCount": 409,
+  "allStatusCounts": {
+    "reviewed": 203,
+    "pending": 206
+  },
+  "fullScopeComplete": false,
+  "all104RoutesAudited": false,
+  "additionalStates": [
+    {
+      "state": "CrewPhotoStep.Loading / Saving",
+      "evidence": "CrewViewModels.kt: loadPhoto/applyCrop; CrewCreateScreens.kt: CrewCropPage",
+      "status": "추가 시안 필요",
+      "note": "현재19장은 크롭 준비 화면과 실패만 포함. 실제 처리 중 화면은 별도 감사 대상으로 남김."
+    },
+    {
+      "state": "CrewSave.Saving",
+      "evidence": "CrewDraftViewModel.submit",
+      "status": "추가 시안 필요",
+      "note": "동작 지시서에는 중복 탭 잠금·진행 표시 요구. 처리 중 전용 정적 시안은 아직 없음."
+    },
+    {
+      "state": "Draft initialization / edit startFailed",
+      "evidence": "CrewDraftViewModel.start / retryStart",
+      "status": "운영 수정 묶음에서 대조",
+      "note": "startFailed는 현재 코드상 EDIT 경로의 기존 크루 조회 실패. 생성 실패와 혼동 금지."
+    },
+    {
+      "state": "Draft local save/delete failure",
+      "evidence": "keepDraft and draft resume/discard flow",
+      "status": "복구 처리 추가 감사",
+      "note": "이 자료는 해당 오류 처리가 이미 구현됐다는 증거가 아니다."
+    },
+    {
+      "state": "CrewDetailFailed, management loading/lost ownership, request-list loading/error",
+      "evidence": "CrewDetailScreen.kt / CrewManageScreens.kt",
+      "status": "후속 운영 묶음 감사",
+      "note": "기존95 후보에 다 포함되었다고 단정하지 않는다."
+    }
+  ]
+}

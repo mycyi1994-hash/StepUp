@@ -1,0 +1,7 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-15329ac5-5a8e-43f7-9b5c-9d3b0958cab7.png"
+  ],
+  "prompt": "Edit the provided Korean StepUp UI; targeted correction only. Header title must be '코스 게시판'. Replace tabs with exactly '코스 선택' / '코스 만들기' / '코스 게시판', last selected cobalt. Below tabs, add the same full-width search field '코스나 지역 검색'; remove the detached top-right search icon. Preserve central loading error, retry and 내 코스 보기 actions. No new tabs or filters. Preserve exact navy/electric-blue/ice-white materials, original logo and887x1774 portraitcomposition. No unrelated changes."
+}

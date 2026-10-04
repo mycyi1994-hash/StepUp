@@ -18,8 +18,6 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.StoryPlace
 import com.stepup.android.ui.components.StepUpMap
-import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.Volt
 import kotlin.math.cos
 
 /** 지도 위 장소 하나 — 그곳에 올라온(지금 보이는) 글 수 */
@@ -60,7 +58,10 @@ fun StoryPinsMap(
     dotSeparator: Boolean = false,
     onPin: ((StoryPin) -> Unit)? = null,
     onTapMap: ((GeoPoint) -> Unit)? = null,
+    /** 확대 · 축소 · 제자리 버튼의 읽는 이름 — [interactive] 지도에서 */
+    controlLabels: com.stepup.android.ui.components.MapControlLabels? = null,
 ) {
+    val t = com.stepup.android.ui.components.runTone()
     val measurer = rememberTextMeasurer()
     // 마지막으로 그린 알약 자리 — 누른 자리가 어느 핀인지 찾는다(그린 것과 같은 자리로)
     val hitBoxes = remember { mutableListOf<Pair<Rect, StoryPin>>() }
@@ -72,15 +73,19 @@ fun StoryPinsMap(
         addAll(extraFocus)
         // 지도에서 고른 자리는 맞춤에 넣지 않는다 — 누를 때마다 지도가 다시 맞춰 흔들리지 않게
     }.ifEmpty { listOfNotNull(picked) }
-    val labelStyle = TextStyle(color = Snow, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-    val originStyle = TextStyle(color = Snow.copy(alpha = 0.85f), fontSize = 10.sp)
-    val pinFace = Color(0xFF0C1729).copy(alpha = 0.92f)
-    val pinEdge = Color(0xFF6E8FD8).copy(alpha = 0.55f)
+    // 남색 · 전기 파랑(2026-10-03 커뮤니티 기본) — 장소 알약은 남색 면 · 시안 테, 고른 장소는 파란 면 · 흰 테
+    val labelStyle = TextStyle(color = t.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+    val selectedStyle = labelStyle.copy(color = Color.White)
+    val originStyle = TextStyle(color = t.text, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+    val pinFace = (if (t.dark) Color(0xFF0B2B50) else Color.White).copy(alpha = 0.94f)
+    val pinEdge = t.cyan.copy(alpha = 0.7f)
+    val dot = t.cobalt
     StepUpMap(
         focus = focus,
         modifier = modifier,
         seed = 7,
         interactive = interactive,
+        controlLabels = controlLabels,
         onTap = if (onPin == null && onTapMap == null) null else { at, plan ->
             val hit = hitBoxes.lastOrNull { (box, _) -> box.inflate(8f).contains(at) }?.second
             if (hit != null) onPin?.invoke(hit) else onTapMap?.invoke(plan.fromScreen(at))
@@ -90,16 +95,17 @@ fun StoryPinsMap(
         // 기준점 — 파란 점과 흰 테, 옆에 "내 위치"
         origin?.let { point ->
             val at = plan.toScreen(point)
-            drawCircle(Color.White, radius = 7.dp.toPx(), center = at)
-            drawCircle(Volt, radius = 5.dp.toPx(), center = at)
+            drawCircle(dot.copy(alpha = 0.25f), radius = 14.dp.toPx(), center = at)
+            drawCircle(Color.White, radius = 8.dp.toPx(), center = at)
+            drawCircle(dot, radius = 5.5f.dp.toPx(), center = at)
             val label = measurer.measure(originLabel, originStyle)
             drawText(label, topLeft = Offset(at.x + 10.dp.toPx(), at.y - label.size.height / 2f))
         }
         // 고른 자리 — 지도에서 직접 고를 때
         picked?.let { point ->
             val at = plan.toScreen(point)
-            drawCircle(Volt.copy(alpha = 0.25f), radius = 16.dp.toPx(), center = at)
-            drawCircle(Volt, radius = 7.dp.toPx(), center = at)
+            drawCircle(t.cyan.copy(alpha = 0.25f), radius = 16.dp.toPx(), center = at)
+            drawCircle(dot, radius = 7.dp.toPx(), center = at)
             drawCircle(Color.White, radius = 7.dp.toPx(), center = at, style = Stroke(2.dp.toPx()))
         }
         pins.forEach { pin ->
@@ -109,15 +115,15 @@ fun StoryPinsMap(
             } else {
                 pin.place.name
             }
-            val measured = measurer.measure(text, labelStyle)
+            val selected = pin.place.key == selectedKey
+            val measured = measurer.measure(text, if (selected) selectedStyle else labelStyle)
             val padX = 10.dp.toPx()
             val padY = 6.dp.toPx()
             val size = Size(measured.size.width + padX * 2, measured.size.height + padY * 2)
             val topLeft = Offset(at.x - size.width / 2f, at.y - size.height / 2f)
-            val selected = pin.place.key == selectedKey
             val radius = CornerRadius(size.height / 2f, size.height / 2f)
-            drawRoundRect(if (selected) Volt else pinFace, topLeft = topLeft, size = size, cornerRadius = radius)
-            drawRoundRect(if (selected) Color.White.copy(alpha = 0.6f) else pinEdge, topLeft = topLeft, size = size,
+            drawRoundRect(if (selected) dot else pinFace, topLeft = topLeft, size = size, cornerRadius = radius)
+            drawRoundRect(if (selected) t.cyan else pinEdge, topLeft = topLeft, size = size,
                 cornerRadius = radius, style = Stroke(1.dp.toPx()))
             drawText(measured, topLeft = Offset(topLeft.x + padX, topLeft.y + padY))
             hitBoxes += Rect(topLeft, size) to pin

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "K10",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a820bb21-6358-46ac-b9ba-6297f4666890.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "코스 선택·코스 만들기·코스 게시판 메뉴 통일. 직접 달리며 기록하기, 최근 경로 이름·지역 입력, 공유 OFF, 저장 확인."
+    }
+  },
+  {
+    "id": "K11",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-5c43163b-5473-4554-9c81-e234dfe15884.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "코스 게시판 상단 메뉴 통일. 검색과 올리기, 좋아요순, 두 코스 거리·작성자·좋아요 확인. 잘못된 과거 날짜 제거."
+    }
+  },
+  {
+    "id": "K13",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e84aa61e-c849-4e9c-b168-da6864c3330b.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "내 코스 목록 위 선택 확인 시트로 연결. 코스명·2.4km·지도 예시·선택하기·취소 확인. 자동 러닝 시작 없음."
+    }
+  },
+  {
+    "id": "K14",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-a474031a-c1cf-4b9c-8a3a-459abc4cc8f2.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "선택 코스 목록 위 해제 시트. 선택만 해제하는 설명과 해제·취소 확인."
+    }
+  },
+  {
+    "id": "K15",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e5aae20a-d089-4a4d-8ab1-445f96b10d07.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "달린 코스 저장에서 2.40km와 달린 시간20:00 단위 수정 확인. 이름·지역·공유OFF·저장·취소 확인."
+    }
+  },
+  {
+    "id": "K17",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-41b9b544-a401-4164-9777-4a947c9d7e81.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "빈 코스 게시판에서 동일한 세 메뉴, 검색, 공유된 코스 없음 및 내 코스 올리기 확인."
+    }
+  },
+  {
+    "id": "K18",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-991d297b-fd12-41ec-b8d5-ce95dbee9090.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "개별 이미지 육안 검수",
+        "화면 상태와 문구 확인",
+        "주요 버튼과 수치 확인"
+      ],
+      "notes": "코스 게시판 불러오기 실패에서 동일 메뉴·검색·다시 불러오기·저장된 내 코스 보기 확인."
+    }
+  }
+]

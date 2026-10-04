@@ -1,0 +1,37 @@
+[
+  {
+    "id": "CP01",
+    "png": "02-shared-reference/CP01.png",
+    "reused": true
+  },
+  {
+    "id": "CP25",
+    "png": "02-shared-reference/CP25.png",
+    "reused": true
+  },
+  {
+    "id": "CP43",
+    "png": "02-shared-reference/CP43.png",
+    "reused": true
+  },
+  {
+    "id": "CP55",
+    "png": "02-shared-reference/CP55.png",
+    "reused": true
+  },
+  {
+    "id": "CP56",
+    "png": "02-shared-reference/CP56.png",
+    "reused": true
+  },
+  {
+    "id": "CP61",
+    "png": "02-shared-reference/CP61.png",
+    "reused": true
+  },
+  {
+    "id": "CP84",
+    "png": "02-shared-reference/CP84.png",
+    "reused": true
+  }
+]

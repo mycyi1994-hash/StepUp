@@ -1,0 +1,73 @@
+{
+  "purpose": "정적 시안용 가상 값이며 서버 완료나 실제 인원 증거가 아니다.",
+  "base": {
+    "crew": "퇴근런",
+    "owner": "준호",
+    "members": 24,
+    "capacity": 30,
+    "level": 7,
+    "area": "공덕",
+    "meeting": "화·목19:30",
+    "distance": "3~5km",
+    "goalKm": 160,
+    "weekKm": 126,
+    "displayPercent": 79,
+    "weekRunners": 9,
+    "policy": "approval",
+    "recruiting": true
+  },
+  "independentBranches": {
+    "profileEdit": {
+      "screen": "CP41",
+      "changedTagline": "퇴근 후 편하게 한 바퀴"
+    },
+    "runningEdit": {
+      "screen": "CP42",
+      "changedDistance": "1~3km"
+    },
+    "recruitEdit": {
+      "screen": "CP43",
+      "draftGoalKm": 100
+    },
+    "goalEdit": {
+      "screens": [
+        "CP46",
+        "CP47",
+        "CP83"
+      ],
+      "newGoalKm": 200,
+      "weekKm": 126,
+      "displayPercent": 63,
+      "remainingKm": 74
+    },
+    "approved": {
+      "screens": [
+        "CP51",
+        "CP79"
+      ],
+      "applicant": "도윤",
+      "members": 25,
+      "pending": 1
+    },
+    "declined": {
+      "screen": "CP53",
+      "applicant": "도윤",
+      "members": 24
+    },
+    "transferred": {
+      "screen": "CP86",
+      "newOwner": "민수",
+      "viewerRole": "MEMBER",
+      "members": 24
+    },
+    "paused": {
+      "screens": [
+        "CP89",
+        "CP90"
+      ],
+      "recruiting": false,
+      "members": 24
+    }
+  },
+  "identityRule": "이름은 표시 예시. 지연이 대기 신청과 명단에 각각 등장하는 화면은 서로 다른 스냅샷이며 동일 applicationId/userId의 연속 상태로 조합하지 않는다. 실제 식별은 서버 ID로 한다."
+}

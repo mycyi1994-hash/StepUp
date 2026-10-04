@@ -1,0 +1,156 @@
+[
+  {
+    "id": "P01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-d0f77598-b370-40cb-94f6-3ee0f5e24b2b.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "신체 활동 권한 사전 안내와 허용/나중에 선택, 남색 모달 확인."
+    }
+  },
+  {
+    "id": "P02",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-445062b0-c9c3-44a7-9b08-56a10c3a0995.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "권한 재요청 가능 상태와 다시 허용하기/처음 화면 구분."
+    }
+  },
+  {
+    "id": "P03",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-48e1da0c-1a94-4ff5-8fa2-4f7b34c90140.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "영구 거절 상태에서 휴대폰 설정 진입 버튼 확인."
+    }
+  },
+  {
+    "id": "P04",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-4af5479f-ebab-4a83-88a9-d80288d46cbf.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "대략적 위치 경고, 예시 지도, 계속/위치 설정 선택 확인."
+    }
+  },
+  {
+    "id": "P05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2ce0939b-81b3-49d4-bacd-6ae8d938cb9b.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "러닝 상태 알림 예시 및 알림 허용/나중에 선택 확인. 알림의 페이스는 현재 페이스 예시."
+    }
+  },
+  {
+    "id": "D09",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-9c1df3e9-6cea-40b1-b9f1-8d1a177aa290.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "걷기 1/3, 남은1:20, 전체4:40/15:00,0.36km와 다음 러닝 구간 확인."
+    }
+  },
+  {
+    "id": "D11",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-97d6d68d-3713-4cf1-8aa5-1d2c88073253.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "마무리 걷기2:00, 전체13:00/15:00 및 약86.7% 진행바 확인."
+    }
+  },
+  {
+    "id": "D12",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-dd530955-e8d6-48f2-8161-6e6ce1bf1239.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "일시정지1/3 러닝, 남은32초와 전체3:28 일치. 재생 아이콘으로 재개 확인."
+    }
+  },
+  {
+    "id": "H01",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-e244cb96-7d1a-46d9-bd8f-3bdffc8428ed.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "월간34.2km8회,3개 날짜별 기록과 통계/기간/러닝 시작 버튼. 중복 더보기 제거 확인."
+    }
+  },
+  {
+    "id": "H05",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-2106b2f7-44e5-4448-9d17-543b909cd5ff.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "주간12.4km3회, 금요일5.2km 선택 및9월25일 상세 일치."
+    }
+  },
+  {
+    "id": "H15",
+    "source": "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-5fcffe59-4ceb-4ad7-87a8-a2ff9a1451f5.png",
+    "review": {
+      "checked": true,
+      "checks": [
+        "시각 검토",
+        "숫자·상태 일치",
+        "행동 버튼",
+        "남색·파랑 일관성"
+      ],
+      "notes": "빈 통계의 대시·비어 있는 축과 시작 버튼 확인. 임의 기록 막대 없음."
+    }
+  }
+]

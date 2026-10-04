@@ -56,20 +56,23 @@ import com.stepup.android.ui.screens.customize.StatScale
 class CartoonFill(val face: Color, val top: Color, val bottom: Color)
 
 object CartoonColors {
-    /** 네 칸의 스틸 블루 바탕 */
-    val Cell = Color(0xFF244768)
-    val Text = Color(0xFFF4F7FC)
-    val Number = Color(0xFFA5B5CF)
-    val Ink = Color(0xFF04101E)
-    val Frame = Color(0xFF2D6699)
-    val FrameTop = Color(0xFF5B9ACD)
-    val FrameBottom = Color(0xFF143B62)
-    val Track = Color(0xFF081D32)
+    /** 네 칸의 파란 바탕(파란 톤 v4 — 기본 파란 표면 #0B2B50 보다 한 단계 밝게, 남색 바닥과 갈리게) */
+    val Cell = Color(0xFF0E2E57)
+    val Text = Color(0xFFF5F8FF)
+    val Number = Color(0xFFAAC3EA)
+    val Ink = Color(0xFF020C1A)
+    val Frame = Color(0xFF1B4FB0)
+    val FrameTop = Color(0xFF4F8DF2)
+    val FrameBottom = Color(0xFF0E2C6A)
+    val Track = Color(0xFF061830)
 
     val Level = CartoonFill(Color(0xFFFFBD35), Color(0xFFFFE586), Color(0xFFC77A0E))
     val Efficiency = CartoonFill(Color(0xFF2E99FF), Color(0xFF80CBFF), Color(0xFF1254B0))
     val Comfort = CartoonFill(Color(0xFFA779F3), Color(0xFFD0B5FF), Color(0xFF6630AF))
     val Durability = CartoonFill(Color(0xFF27DCC5), Color(0xFF93FFEC), Color(0xFF0B927C))
+
+    /** 강화 화면의 효율 — 강화 전달본의 청록 #48D9FA */
+    val UpgradeEfficiency = CartoonFill(Color(0xFF48D9FA), Color(0xFFB0F1FF), Color(0xFF1287B0))
 }
 
 private fun fillOf(stat: DetailStat): CartoonFill = when (stat) {
@@ -193,8 +196,11 @@ private fun StatCell(
  * [fraction] 은 프레임을 뺀 안쪽 트랙 폭에 적용한다. 0 이면 채움 · 하이라이트를 그리지 않는다. 읽기 도구는 칸이 읽는다.
  */
 @Composable
-fun CartoonStatBar(fraction: Float, fill: CartoonFill, modifier: Modifier = Modifier) {
-    Canvas(modifier) { drawCartoonBar(fraction.coerceIn(0f, 1f).takeUnless { it.isNaN() } ?: 0f, fill) }
+fun CartoonStatBar(fraction: Float, fill: CartoonFill, modifier: Modifier = Modifier, preview: Float? = null) {
+    Canvas(modifier) {
+        val now = fraction.coerceIn(0f, 1f).takeUnless { it.isNaN() } ?: 0f
+        drawCartoonBar(now, fill, preview?.coerceIn(0f, 1f)?.takeUnless { it.isNaN() || it <= now })
+    }
 }
 
 /** 모서리를 짧게 잘라낸 사각형 — [cut] 은 모서리 사선의 깊이 */
@@ -215,7 +221,7 @@ private fun chamfered(rect: Rect, cut: Float): Path {
 
 private fun Rect.inset(by: Float) = Rect(left + by, top + by, right - by, bottom - by)
 
-private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
+private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill, preview: Float? = null) {
     val drop = 2.5.dp.toPx()
     val ink = 1.75.dp.toPx()
     val body = Rect(0f, 0f, size.width, size.height - drop)
@@ -244,6 +250,15 @@ private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
     drawPath(chamfered(track, trackCut - 0.5.dp.toPx()), CartoonColors.Track)
     // 5 ~ 7 채움 — 트랙 안쪽 전체 폭이 100%
     val lane = track.inset(1.5.dp.toPx())
+    // 강화 미리보기 — 지금 채움 뒤에 다음 값까지의 구간을 옅게(실제 값으로 계산한 길이 그대로, 과장하지 않는다)
+    if (preview != null) {
+        val previewWidth = lane.width * preview
+        if (previewWidth >= 0.5f) {
+            val ahead = Rect(lane.left, lane.top, lane.left + previewWidth, lane.bottom)
+            val aheadCut = minOf(3.dp.toPx(), previewWidth / 2f, ahead.height / 2f)
+            drawPath(chamfered(ahead, aheadCut), fill.top.copy(alpha = 0.55f))
+        }
+    }
     val width = lane.width * fraction
     if (fraction <= 0f || width < 0.5f) return
     val bar = Rect(lane.left, lane.top, lane.left + width, lane.bottom)
@@ -265,5 +280,32 @@ private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill) {
     if (endX - startX >= line) {
         val y = bar.top + bar.height * 0.17f + line / 2f
         drawLine(Color.White.copy(alpha = 0.9f), Offset(startX, y), Offset(endX, y), strokeWidth = line, cap = StrokeCap.Round)
+    }
+}
+
+/**
+ * SD08 조회 중 — 네 칸의 이름만 두고 막대는 빈 트랙, 값은 "—". 읽지 못한 값을 0 으로 보이지 않는다.
+ */
+@Composable
+fun ShoeStatCellsPlaceholder(modifier: Modifier = Modifier) {
+    val base = LocalTextStyle.current
+    val labelStyle = remember(base) { base.merge(LabelStyle) }
+    val valueStyle = remember(base) { base.merge(ValueStyle) }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        DetailStat.entries.forEach { stat ->
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
+                    .padding(horizontal = CellPadding, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(statTitle(stat), style = labelStyle, color = CartoonColors.Text.copy(alpha = 0.7f), maxLines = 1,
+                    softWrap = false, modifier = Modifier.width(LabelMin + 16.dp))
+                Spacer(Modifier.width(ColumnGap))
+                CartoonStatBar(0f, fillOf(stat), Modifier.weight(1f).height(30.dp))
+                Spacer(Modifier.width(ColumnGap))
+                Text("—", style = valueStyle, color = CartoonColors.Number, textAlign = TextAlign.End,
+                    modifier = Modifier.width(ValueMin))
+            }
+        }
     }
 }

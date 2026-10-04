@@ -1,0 +1,8 @@
+{
+  "id": "K04",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this UI image only inside its map. Replace the linear path with a complete compact 2.4km loop around the park on LAND along the southern riverbank. The pale start/finish dot is a single point. At 41% around the loop place the blue white-ring current position; the first41% of loop from start to current is cyan and remaining59% muted gray-blue returning to the same start. Do not send route across water. Preserve all exact Korean text and all other UI.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-78c5f929-a384-4c89-8fa2-f23afcb5fc0c.png"
+  ]
+}

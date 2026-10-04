@@ -1,0 +1,42 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "NOT14",
+      "revision": 2,
+      "result": "passed",
+      "notes": "시트 X 보완, 커뮤니티 보기/알림 복귀 및 비활성 배경 확인."
+    },
+    {
+      "id": "NOT19",
+      "revision": 1,
+      "result": "passed",
+      "notes": "공지 상세 헤더, 볼 수 없는 공지 안내와 목록 복귀 CTA, 탭 선택기 없음."
+    },
+    {
+      "id": "NOT20",
+      "revision": 1,
+      "result": "passed",
+      "notes": "공지 로딩 스켈레톤·공지 선택·5탭 보존, 가짜 제목/날짜 없음."
+    },
+    {
+      "id": "NOT21",
+      "revision": 1,
+      "result": "passed",
+      "notes": "초대 거절 단일 시트, 현재 가입 크루 불변 설명, 취소/초대거절만 표시."
+    },
+    {
+      "id": "NOT22",
+      "revision": 1,
+      "result": "passed",
+      "notes": "로그인 필요·초대 미처리 안내, 나중에/로그인·X 구성 확인."
+    },
+    {
+      "id": "NOT23",
+      "revision": 1,
+      "result": "passed",
+      "notes": "저장된 4개 공지 행 유지, 갱신실패 인라인 배너와 다시 버튼. 중복 안내 소제목은 생략해 배너를 먼저 읽도록 구성."
+    }
+  ],
+  "runtimeVerified": false
+}

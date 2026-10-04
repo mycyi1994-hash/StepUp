@@ -1,0 +1,8 @@
+{
+  "id": "C02",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this exact UI image only: add a small legible pale-blue text action 삭제 at top-right in header, aligned with back/logo row, safely inset. It is a secondary action, not a red prominent button. Preserve all other layout, stats, content, map, Korean copy and buttons exactly.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-1345a380-1e8c-446b-b796-c12ae863ad63.png"
+  ]
+}

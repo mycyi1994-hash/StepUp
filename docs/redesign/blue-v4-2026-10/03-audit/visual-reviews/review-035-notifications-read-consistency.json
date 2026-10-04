@@ -1,0 +1,24 @@
+{
+  "method": "생성 결과 개별 이미지 직접 시각 확인",
+  "screens": [
+    {
+      "id": "NOT03",
+      "revision": 2,
+      "result": "passed",
+      "notes": "새 알림2개, 적립 행의 읽지 않은 점 제거, 나머지 2개 점 유지. 적립 시트와 지갑 버튼 보존."
+    },
+    {
+      "id": "NOT04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "새 알림2개, 신발 행 점 제거, 댓글/적립 미읽음 점 유지. 보유 신발 CTA 보존."
+    },
+    {
+      "id": "NOT14",
+      "revision": 3,
+      "result": "passed",
+      "notes": "댓글 행 점 제거와 새 알림2개 정합, X·두 복귀 동작 및 시트 내용 보존."
+    }
+  ],
+  "runtimeVerified": false
+}

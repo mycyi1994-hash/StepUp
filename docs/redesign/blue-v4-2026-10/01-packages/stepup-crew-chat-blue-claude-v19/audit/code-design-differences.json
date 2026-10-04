@@ -1,0 +1,37 @@
+[
+  {
+    "kind": "보존",
+    "item": "정보의 크루원 보기→내 크루 홈 명단, 크루 상세 보기→내 크루 홈, 크루장 멤버 관리→기존CP55",
+    "evidence": "ChatNavGraph.kt"
+  },
+  {
+    "kind": "보존",
+    "item": "공지 모임 연결·본문 선택·제목 필수·최대100/2000자",
+    "evidence": "ChatNoticeScreens.kt / ChatNoticeEditViewModel / ChatRules"
+  },
+  {
+    "kind": "디자인 보완",
+    "item": "검색어 강조·지우기X는 기존 검색 상태를 재사용하는 UI 변경이며 새 API가 아니다.",
+    "evidence": "CHAT22 / ChatSearchScreen.kt"
+  },
+  {
+    "kind": "시안 통일 지침",
+    "item": "생성 이미지마다 화살표·프로필 미세 색이 다를 수 있다. 전송은 프로젝트의 같은 위쪽 화살표, 같은 회원은 같은ChatFace를 사용.",
+    "evidence": "CHAT16/36 및 공통 시안"
+  },
+  {
+    "kind": "삭제한 구형 장식",
+    "item": "기존 시안에 있던 입력 중 표시를 복원하지 않는다. 현재 지원하지 않는 온라인 수/타이핑 상태를 만들어 넣지 않는다.",
+    "evidence": "ChatRoomUi / ChatRoomScreen.kt"
+  },
+  {
+    "kind": "추가 감사 필요",
+    "item": "원격 메시지 숨김·삭제가 이미 열린 뷰어와 imageNow 캐시에 반영되는지 미검증. 로컬 hide/delete만으로 다른 기기의 반영까지 확인되었다고 하지 않는다.",
+    "evidence": "CrewChatRepository.image / ChatViewerViewModel / ChatRoomViewModel.apply"
+  },
+  {
+    "kind": "추가 감사 필요",
+    "item": "공지 로컬 임시저장 실패를 사용자에게 설명하는 경로,탈퇴 후 ChatPhotoDraft 등 UI 메모리의 정리 범위는 실행 검증 필요.",
+    "evidence": "ChatNoticeEditViewModel.keepDraft / CrewChatRepository.forget"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "colors": {
+    "background": "#031427",
+    "surface": "#0B2B50",
+    "blue": "#0754FF",
+    "cyan": "#48D9FA",
+    "text": "#F5F8FF",
+    "secondary": "#ABC7EF"
+  },
+  "font": "Pretendard",
+  "primary": "white, blue bottom edge, max one per state",
+  "tabs": [
+    "러닝",
+    "신발",
+    "뽑기",
+    "커뮤니티",
+    "내 정보"
+  ],
+  "selectedTab": "내 정보",
+  "secondaryHeaderBalance": false,
+  "sheet": "covers bottom nav; dim underlying content; no stacked confirmation",
+  "illustrations": "none needed; native line icons",
+  "minTouchDp": 48,
+  "runtimeVerified": false
+}

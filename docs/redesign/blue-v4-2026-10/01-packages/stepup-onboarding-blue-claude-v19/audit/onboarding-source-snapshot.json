@@ -1,0 +1,109 @@
+{
+  "sourceReadOnly": true,
+  "files": [
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/onboarding/OnboardingScreens.kt",
+      "sha256": "816feff938e5a664e24fde495a71fe638356e274e19e17e0f393b91a3e4fa95f"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
+      "sha256": "a760042616455a7f8deff5f52b975fc6a7b0f4a584c0517238ece061aef6b404"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/login/LoginRules.kt",
+      "sha256": "5675f5f8115f01c9d4b3fa69eac3dd6dd845d166da7a81fe59f7fec3a56b3dc2"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
+      "sha256": "d78c2a55bfcd8fc8291e2dda2ea970cf7a916dfbc2ab9896add8d7383d1f6426"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/setup/S2SetupScreens.kt",
+      "sha256": "c137bbcae90a1dc6e320bdc0d7aa38f6c72fc8178807930d7a7d706dc60b3f25"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
+      "sha256": "096d5711987976503baf9243cbf29f71825dc838effce1b1f94de335272e770c"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+      "sha256": "e6133d4e65c4faa34bc0d791611c0e1aea38fba0fef967576f87c094f00b9e04"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/AppChromePolicy.kt",
+      "sha256": "7d9eb79c1a5a17ca2749df25604beb66b73b34fd85c01649193898a576b73d6c"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/domain/Onboarding.kt",
+      "sha256": "c63cae19ab1a51b9ba25c281b6ba1056b87c32ded04e97374380b4418aba531e"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/domain/BodyProfile.kt",
+      "sha256": "f4d7dc2b1360b97a4dbb4c6cf2c0ac62f49406de46e0648f64ac008cf5c58226"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/domain/Sneaker.kt",
+      "sha256": "e08cc96aca05b8978f7b5ff501317652e29cd7ddae78a1324b4d404ba46b51f8"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/data/prefs/UserPrefs.kt",
+      "sha256": "51f96bf60b91ca938fa9888a400798bb736e710b060bf3637c7ca3291064ca10"
+    },
+    {
+      "file": "app/src/main/res/values-ko/onboarding_v1.xml",
+      "sha256": "e8ceb4636114cec348f5035fb5346459111f28c42ce1db8ad78e4b705b449641"
+    },
+    {
+      "file": "app/src/main/res/values-ko/strings.xml",
+      "sha256": "8befa1fdd793f9b6537b19a6cd7d6086d660078c13c96c2e05e8a5026a2d3de2"
+    }
+  ],
+  "newCandidates": [
+    [
+      "ONB21",
+      "첫 설정 · 키와 몸무게"
+    ],
+    [
+      "ONB22",
+      "첫 설정 · 목표"
+    ],
+    [
+      "ONB23",
+      "첫 설정 · 라이트 모드 선택"
+    ],
+    [
+      "ONB24",
+      "첫 설정 · 목표 주의 안내"
+    ],
+    [
+      "ONB25",
+      "첫 설정 · 러너 모드 선택"
+    ]
+  ],
+  "findings": [
+    {
+      "id": "mode-home-binding",
+      "evidence": "runMode consumers found only in UserPrefs and S2SetupScreens; HomeScreen calls HomeShoeCard unconditionally.",
+      "status": "implementation-gap",
+      "action": "모드 선택 시안은 기존 기능 의도. 실제 HOME 바인딩은 미완료로 기록하고 연결을 검증한다."
+    },
+    {
+      "id": "starter-shoe",
+      "evidence": "SneakerMint.starter(): COMMON, level1, durability100, equipped true, Wind variant0 Cloud Runner",
+      "action": "ONB11은 예시 잔액0.00과 스타터 신발 fixture. 신규 회원 잔액/기존 데이터는 실제 조회값을 사용한다."
+    },
+    {
+      "id": "first-setup-save",
+      "evidence": "body save coroutine does not await before advancing; initial stored null returns no UI; mode save has no explicit error UI.",
+      "status": "needs-state-audit",
+      "action": "조회 대기/저장 실패/빠른 다음 및 건너뛰기 경쟁을 별도 처리 대상으로 남긴다. 시안 제작으로 동작 보장 주장 금지."
+    },
+    {
+      "id": "skip-body-back",
+      "evidence": "Body skip jumps step0 to2; BackHandler decrements step2 to1.",
+      "status": "needs-behavior-review",
+      "action": "몸 정보 없이 목표로 돌아가는 동작을 구현 검토. 기본값을 사용자 입력으로 저장하지 않는다."
+    }
+  ],
+  "runtimeVerified": false
+}

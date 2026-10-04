@@ -1,0 +1,233 @@
+{
+  "method": "Individual image inspection; static mockups, not runtime verification.",
+  "screens": [
+    {
+      "id": "CP08",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Visitor detail keeps same crew poster, Lv7,24/30, leader Junho, schedule and126/160km79%. One apply primary and focused detail chrome."
+    },
+    {
+      "id": "CP01",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Corrected to887x1774 with status and bottom safe insets; both crew cards/identities, one primary, original logo and five tabs preserved."
+    },
+    {
+      "id": "CP03",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Manual Gongdeok search with two specific results, clear control, current-location alternative and back; focused page without global navigation or unrelated crew data."
+    },
+    {
+      "id": "CP02",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Opaque region sheet over uniformly dimmed list; manual region row, 1/3/5km with3selected, selected-region copy, one Apply."
+    },
+    {
+      "id": "CP04",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Opaque sort sheet shows single selected nearest radio, recent/active alternatives and one Apply; muted underlying list."
+    },
+    {
+      "id": "CP05",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Empty search distinguished from error/loading; range expansion primary, create secondary, three community/five global tabs preserved."
+    },
+    {
+      "id": "CP06",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Two skeleton cards without fabricated crew data, loading announcement and independent create action; native insets and navigation preserved."
+    },
+    {
+      "id": "CP07",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Failure distinctly labeled; reload primary/create secondary, filters and navigation intact."
+    },
+    {
+      "id": "CP14",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Crew identity and optional phrase buttons/note are legible; removed incorrect character counter; single submit primary."
+    },
+    {
+      "id": "CP17",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Inline network failure retains selected preference and exact note; retry CTA, context/safearea remain visible; error color confined to message."
+    },
+    {
+      "id": "CP20",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Pending visitor keeps24/30and all public info; sole footer changes to application detail, no duplicate join."
+    },
+    {
+      "id": "CP15",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Pending state accurately says awaiting leader, retains crew/phrase/note/date; cancel secondary and return primary; does not claim current reading or approval."
+    },
+    {
+      "id": "CP16",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Pre-cancel modal explicitly identifies crew and maintain/cancel choices; opaque panel and blocked dim background."
+    },
+    {
+      "id": "CP18",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Server-confirmed approval names same crew, sole crew-view CTA, no fabricated rewards or pending actions."
+    },
+    {
+      "id": "CP19",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Nonapproval names target crew, neutral decision copy, other-crews primary; distinct from request failure."
+    },
+    {
+      "id": "CP22",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Paused visitor retains24/30and public information, muted disabled footer with no enabled primary; safe insets intact."
+    },
+    {
+      "id": "CP21",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Existing member state keeps24/30with member-view action only; restored native status and home indicator."
+    },
+    {
+      "id": "CP23",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Capacity consistently30/30and30memberrow, disabled full footer; unchanged crew identity/public information."
+    },
+    {
+      "id": "CP24",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Changed-capacity/recruitment race modal preserves draft context, explains no application was completed and offers latest-state lookup."
+    },
+    {
+      "id": "CP09",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Same plum19:30crew poster enlarged on focused image page with close; no new identity or extra actions."
+    },
+    {
+      "id": "CP11",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Stored Lv7only, separate weekly9participants126km; no invented XP/formula; opaque dismissible sheet with one confirm."
+    },
+    {
+      "id": "CP12",
+      "result": "passed",
+      "revision": 1,
+      "notes": "24member/30capacity list with named leader and5previewrows, no owner controls; full roster scroll described."
+    },
+    {
+      "id": "CP13",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Samecrew weekly126/160km79%,34remaining,9of24participants and participant-list entry; read-only no goal edit."
+    },
+    {
+      "id": "CP10",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Leader Junio profile has explicit page title, correct crew poster and style; no invented contact/stats or admin action."
+    },
+    {
+      "id": "CP87",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Accepted membership updatesboth25/30and25members while weeklygoalunchanged; memberCTA and successhint only."
+    },
+    {
+      "id": "CP66",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Unavailable crew lacks invented identity or reason certainty, explains access/unavailability and offers list return."
+    },
+    {
+      "id": "CP67",
+      "result": "passed",
+      "revision": 2,
+      "notes": "Unknown crew data rendered as uniform skeletons, no fabricated progress or active chevrons; disabled loading action."
+    },
+    {
+      "id": "CP68",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Level-only lookup failure keeps public crew data, uses unknown-level label rather thanzero/newcrew; opaque retry sheet and safe bottomgap."
+    },
+    {
+      "id": "CP70",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Distinct sunrise artwork and complete data substitution:Haetteureon,Seoyoon,Lv12,18/24,6am,162/20081%; no Afterwork info leaked."
+    },
+    {
+      "id": "CP71",
+      "result": "passed",
+      "revision": 1,
+      "notes": "App rationale not OS dialog; location use primary, manual region alternative; entered query persists under scrim."
+    },
+    {
+      "id": "CP72",
+      "result": "passed",
+      "revision": 1,
+      "notes": "No matching region preserves misspelled query/clear/current-location and retrysearch; not confused with emptycrewlist."
+    },
+    {
+      "id": "CP73",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Visitor action sheet contains only members/report, no owner/memberprivilege actions; opaque and dismissible."
+    },
+    {
+      "id": "CP82",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Filtered weekly9participants/126km clearly distinguished from24memberroster; first5distances24,18,16,15,13plus4below, no rankings."
+    },
+    {
+      "id": "CP91",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Authentication-needed list retains3tabs/5nav, one loginprimary and creationsecondary; no fakeemptyresults."
+    },
+    {
+      "id": "CP92",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Open-join caption and directjoin action distinct fromapproval, no applicationform or pending state."
+    },
+    {
+      "id": "CP93",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Open-join failure inline above same retryaction;24/30remains, no falsemembership; textfits."
+    },
+    {
+      "id": "CP94",
+      "result": "passed",
+      "revision": 1,
+      "notes": "Member detail scrolled state preserves25member and weekly data, exposes existing chat/lobby/board rows, fixed primary clears rows and native bottom inset."
+    },
+    {
+      "id": "CP95",
+      "result": "passed",
+      "revision": 1,
+      "notes": "List lower-scroll example preserves filters/nav, sunrise identity/data, existing meetup entry and one create primary; no fabricated additional results."
+    }
+  ]
+}

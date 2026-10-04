@@ -1,6 +1,23 @@
 package com.stepup.android.ui.screens.community.crew
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import com.stepup.android.domain.CrewRules
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -78,13 +95,11 @@ fun CrewJoinScreen(
     CrewPage(Modifier.imePadding().testTag("crew-join")) {
         CrewTopBar(stringResource(R.string.crew_join_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
-            card?.let { CrewIdentityStrip(it) }
-            Spacer(Modifier.height(34.dp))
-            Text(stringResource(R.string.crew_join_question), color = ink.text, fontSize = 24.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.crew_join_question_sub), color = ink.secondary, fontSize = 13.5.sp)
-            Spacer(Modifier.height(20.dp))
+            card?.let { CrewIdentityStrip(it, boxed = false) }
+            Spacer(Modifier.height(28.dp))
+            CrewHeading(stringResource(R.string.crew_join_question), sub = stringResource(R.string.crew_join_question_sub))
+            Spacer(Modifier.height(18.dp))
             CrewPhrase.entries.chunked(2).forEach { row ->
                 CrewChoiceRow {
                     row.forEach { phrase ->
@@ -95,21 +110,26 @@ fun CrewJoinScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(20.dp))
             CrewFieldLabel(stringResource(R.string.crew_join_message_label))
             Spacer(Modifier.height(12.dp))
             CrewTextField(
                 message, viewModel::setMessage, Modifier.testTag("crew-join-message"),
-                placeholder = stringResource(R.string.crew_join_message_hint), singleLine = false, minHeight = 137.dp,
+                placeholder = stringResource(R.string.crew_join_message_hint), singleLine = false, minHeight = 120.dp,
+                maxChars = CrewRules.MESSAGE_MAX,
             )
+            Spacer(Modifier.height(6.dp))
+            CrewHelp(stringResource(R.string.crew_blue_count, message.length, CrewRules.MESSAGE_MAX), modifier = Modifier.align(Alignment.End))
             card?.let { crew ->
                 val where = listOfNotNull(crew.area.takeIf { it.isNotBlank() }, crew.schedule.takeIf { !it.none }?.let(words::scheduleLong))
                     .joinToString(" · ")
                 val once = words.onceLine(crew)
                 if (where.isNotEmpty() || once != null) {
-                    Spacer(Modifier.height(34.dp))
-                    if (where.isNotEmpty()) Text(where, color = ink.secondary, fontSize = 13.5.sp, lineHeight = 25.sp)
-                    if (once != null) Text(once, color = ink.secondary, fontSize = 13.5.sp, lineHeight = 25.sp)
+                    Spacer(Modifier.height(18.dp))
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
+                    Spacer(Modifier.height(14.dp))
+                    if (where.isNotEmpty()) CrewIconLine(Icons.Outlined.LocationOn, where)
+                    if (once != null) CrewIconLine(Icons.AutoMirrored.Filled.DirectionsRun, once)
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -117,10 +137,10 @@ fun CrewJoinScreen(
         CrewBottomBar {
             // 17 보내지 못함 — 작은 화면에서도 보이게 본문 끝이 아니라 버튼 바로 위에 둔다
             if (failed) {
-                Text(
+                CrewErrorLine(
                     stringResource(if (op.problem == CrewProblem.SIGN_IN) R.string.crew_problem_signin else R.string.crew_join_failed),
-                    color = ink.warn, fontSize = 13.5.sp, lineHeight = 21.sp,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).testTag("crew-join-error"),
+                    Modifier.padding(bottom = 12.dp).testTag("crew-join-error"),
+                    boxed = true,
                 )
             }
             CrewButton(
@@ -187,32 +207,56 @@ fun CrewPendingScreen(
     CrewPage(Modifier.testTag("crew-pending")) {
         CrewTopBar(stringResource(R.string.crew_pending_title), onBack)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(18.dp))
-            card?.let { CrewIdentityStrip(it) }
-            Spacer(Modifier.height(50.dp))
-            Text(stringResource(R.string.crew_pending_heading), color = ink.text, fontSize = 26.sp, lineHeight = 33.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.crew_pending_body, card?.name.orEmpty()), color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp,
-            )
-            Spacer(Modifier.height(64.dp))
+            Spacer(Modifier.height(10.dp))
+            card?.let { CrewIdentityStrip(it, boxed = false) }
+            Spacer(Modifier.height(28.dp))
+            CrewHeading(stringResource(R.string.crew_pending_heading), sub = stringResource(R.string.crew_pending_body, card?.name.orEmpty()))
+            Spacer(Modifier.height(22.dp))
             when (val state = application) {
-                is CrewLoad.Ready -> CrewSentMessage(state.value, words)
-                is CrewLoad.Failed -> Text(stringResource(R.string.crew_pending_load_failed), color = ink.warn, fontSize = 13.sp)
+                is CrewLoad.Ready -> {
+                    // 신청 대기는 멤버가 아니다 — 크루장이 지금 읽는 중이라고 단정하지 않는다
+                    if (state.value.status == CrewApplicationStatus.PENDING) {
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 60.dp).crewPanel(ink, 14.dp).padding(horizontal = 18.dp, vertical = 12.dp)
+                                .testTag("crew-pending-status"),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(R.string.crew_blue_pending_status), color = ink.info, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                            Spacer(Modifier.width(14.dp))
+                            Text(
+                                stringResource(R.string.crew_blue_pending_status_body), color = ink.text, fontSize = 14.sp,
+                                textAlign = TextAlign.End, modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    CrewSentMessage(state.value, words, phrasesInside = false)
+                    if (state.value.phrases.isNotEmpty()) {
+                        Spacer(Modifier.height(22.dp))
+                        CrewFieldLabel(stringResource(R.string.crew_blue_pending_phrases))
+                        Spacer(Modifier.height(10.dp))
+                        CrewChipFlow(state.value.phrases.map { words.phrase(it) })
+                    }
+                }
+                is CrewLoad.Failed -> CrewErrorLine(stringResource(R.string.crew_pending_load_failed))
                 CrewLoad.Loading -> CrewSkeletonBox(Modifier.fillMaxWidth().height(110.dp), 16.dp)
             }
             loaded?.let {
-                Spacer(Modifier.height(20.dp))
-                Text(stringResource(R.string.crew_pending_date, words.date(it.createdAt)), color = ink.secondary, fontSize = 12.5.sp)
+                Spacer(Modifier.height(18.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
+                Spacer(Modifier.height(14.dp))
+                CrewIconLine(Icons.Outlined.CalendarMonth, stringResource(R.string.crew_pending_date, words.date(it.createdAt)))
             }
             Spacer(Modifier.height(24.dp))
         }
         CrewBottomBar {
-            CrewButton(
-                stringResource(R.string.crew_pending_cancel), { cancelSheet = true }, Modifier.testTag("crew-pending-cancel"),
-                CrewButtonKind.SECONDARY, enabled = loaded?.status == CrewApplicationStatus.PENDING,
-            )
-            Spacer(Modifier.height(18.dp))
+            Box(Modifier.widthIn(max = 260.dp)) {
+                CrewButton(
+                    stringResource(R.string.crew_pending_cancel), { cancelSheet = true }, Modifier.testTag("crew-pending-cancel"),
+                    CrewButtonKind.SECONDARY, enabled = loaded?.status == CrewApplicationStatus.PENDING,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
             CrewButton(stringResource(R.string.crew_pending_back), onBackToCrew, Modifier.testTag("crew-pending-back"))
         }
     }
@@ -225,31 +269,67 @@ fun CrewPendingScreen(
             busy = op.op == CrewOp.CANCEL && op.running,
             error = if (op.op == CrewOp.CANCEL && op.problem != null) stringResource(R.string.crew_cancel_failed) else null,
             tag = "crew-cancel",
+            eyebrow = card?.name,
             onConfirm = { viewModel.cancel(applicationId) },
             onDismiss = { if (!op.running) { cancelSheet = false; if (op.op == CrewOp.CANCEL) viewModel.consumeOp() } },
         )
     }
 }
 
-/** 보낸 한마디 — 고른 문구(푸른 글자) · 직접 쓴 글(첫 줄 굵게) */
+/**
+ * 보낸 한마디 — 위 이름("내가 보낸 한마디" · "크루장에게 남긴 한마디"), 아래 칸에 직접 쓴 글(첫 줄 굵게).
+ * [phrasesInside] 면 고른 문구를 칸 안 청록 글자로(신청 검토 49), 아니면 칸 밖 칩으로 따로 보인다(15).
+ */
 @Composable
-internal fun CrewSentMessage(application: CrewApplication, words: CrewWords, label: String? = null) {
+internal fun CrewSentMessage(application: CrewApplication, words: CrewWords, label: String? = null, phrasesInside: Boolean = true) {
     val ink = crewInk()
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ink.card).padding(horizontal = 18.dp, vertical = 18.dp)
-            .testTag("crew-sent-message"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(label ?: stringResource(R.string.crew_pending_sent_label), color = ink.secondary, fontSize = 12.5.sp)
-        if (application.phrases.isNotEmpty()) {
-            Text(application.phrases.joinToString(" · ") { words.phrase(it) }, color = ink.info, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    Column(Modifier.fillMaxWidth().testTag("crew-sent-message")) {
+        CrewFieldLabel(label ?: stringResource(R.string.crew_pending_sent_label))
+        Spacer(Modifier.height(10.dp))
+        Column(
+            Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (phrasesInside && application.phrases.isNotEmpty()) {
+                Text(application.phrases.joinToString(" · ") { words.phrase(it) }, color = ink.info, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            }
+            val lines = application.message.lines()
+            if (application.message.isBlank()) {
+                Text(stringResource(R.string.crew_pending_no_message), color = ink.secondary, fontSize = 16.sp)
+            } else {
+                Text(lines.first(), color = ink.text, fontSize = 18.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold)
+                if (lines.size > 1) Text(lines.drop(1).joinToString("\n"), color = ink.text, fontSize = 16.sp, lineHeight = 25.sp)
+            }
         }
-        val lines = application.message.lines()
-        if (application.message.isBlank()) {
-            if (application.phrases.isEmpty()) Text(stringResource(R.string.crew_pending_no_message), color = ink.secondary, fontSize = 14.sp)
-        } else {
-            Text(lines.first(), color = ink.text, fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
-            if (lines.size > 1) Text(lines.drop(1).joinToString("\n"), color = ink.text, fontSize = 15.sp, lineHeight = 24.sp)
+    }
+}
+
+/** 그림 한 줄 — "📍 공덕 · 화·목 오후 7시30분" · "🏃 3-5km" · "📅 신청일" */
+@Composable
+internal fun CrewIconLine(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
+    val ink = crewInk()
+    Row(modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = ink.info, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(text, color = ink.text, fontSize = 16.sp, lineHeight = 23.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+/** 누르지 않는 칩들 — 한 줄에 둘씩(러닝 스타일 · 고른 문구) */
+@Composable
+internal fun CrewChipFlow(labels: List<String>) {
+    val ink = crewInk()
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        labels.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { label ->
+                    Text(
+                        label, color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(ink.secondaryButton)
+                            .border(1.dp, ink.fieldEdge, RoundedCornerShape(50)).padding(horizontal = 18.dp, vertical = 10.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -282,6 +362,8 @@ fun CrewResultScreen(
             onBack = onBack,
             info = true,
             modifier = Modifier.testTag("crew-result-declined"),
+            header = card?.let { crew -> { CrewIdentityStrip(crew, boxed = false) } },
+            eyebrow = stringResource(R.string.crew_blue_result_eyebrow),
         )
         CrewApplicationStatus.APPROVED -> CrewResultPage(
             title = stringResource(R.string.crew_approved_title, withParticle(name, "과", "와")),
@@ -292,12 +374,13 @@ fun CrewResultScreen(
             modifier = Modifier.testTag("crew-result-approved"),
             secondary = stringResource(R.string.chat_open),
             onSecondary = onOpenChat,
+            header = card?.let { crew -> { CrewIdentityStrip(crew, boxed = false) } },
         )
         else -> CrewPage(Modifier.testTag("crew-result-loading")) {
             CrewTopBar(stringResource(R.string.crew_notice_title), onBack)
             if (application is CrewLoad.Failed) {
                 Spacer(Modifier.height(140.dp))
-                CrewEmptyState(icon = {}, title = stringResource(R.string.crew_pending_load_failed), body = "") {
+                CrewEmptyState(icon = { CrewStateIcon(Icons.Filled.Refresh) }, title = stringResource(R.string.crew_pending_load_failed), body = "") {
                     CrewButton(stringResource(R.string.crew_list_reload), { viewModel.loadApplication(applicationId) })
                 }
             }
@@ -318,6 +401,7 @@ fun CrewJoinedNowScreen(card: CrewCard?, onBack: () -> Unit, onOpenCrew: () -> U
         modifier = Modifier.testTag("crew-result-joined"),
         secondary = stringResource(R.string.chat_open),
         onSecondary = onOpenChat,
+        header = card?.let { crew -> { CrewIdentityStrip(crew, boxed = false) } },
     )
 }
 

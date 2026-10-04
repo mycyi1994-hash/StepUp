@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 둘러보기 · 가입 · 만들기 · 운영 파란 톤(2026-10 v19 전달본) — 새로 더한 문구만 -->
+<resources>
+    <string name="crew_blue_sort_near_here">近くのクルーから表示します。</string>
+    <string name="crew_blue_sort_near_region">選んだ地域に近いクルーから表示します。</string>
+    <string name="crew_blue_sort_recent">最近募集を始めたクルーから表示します。</string>
+    <string name="crew_blue_sort_active">メンバーの活動が活発なクルーから表示します。</string>
+    <string name="crew_blue_range_from_region">選んだ地域から</string>
+    <string name="crew_blue_resume_sub">保存した内容から続けて作れます。</string>
+    <string name="crew_blue_draft_named">%1$sの下書き</string>
+    <string name="crew_blue_activity">クルー活動</string>
+    <string name="crew_blue_loading">読み込み中</string>
+    <string name="crew_blue_count">%1$d / %2$d</string>
+    <string name="crew_blue_pending_status">承認待ち</string>
+    <string name="crew_blue_pending_status_body">クルー長の確認を待っています。</string>
+    <string name="crew_blue_pending_phrases">選んだランニングの好み</string>
+    <string name="crew_blue_result_eyebrow">参加申請の結果</string>
+    <string name="crew_blue_clear">消去</string>
+    <string name="crew_blue_keep_writing">書き続ける</string>
+</resources>

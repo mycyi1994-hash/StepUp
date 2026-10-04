@@ -1,6 +1,12 @@
 package com.stepup.android.ui.screens.community.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,16 +51,10 @@ import com.stepup.android.domain.ChatRole
 import com.stepup.android.domain.ChatRoomSummary
 import com.stepup.android.domain.ChatRules
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.community.crew.CrewButton
-import com.stepup.android.ui.screens.community.crew.CrewButtonKind
-import com.stepup.android.ui.screens.community.crew.CrewEmptyState
-import com.stepup.android.ui.screens.community.crew.CrewGutter
 import com.stepup.android.ui.screens.community.crew.CrewImage
-import com.stepup.android.ui.screens.community.crew.CrewSkeletonBox
 import com.stepup.android.ui.screens.community.crew.CrewStartSheets
 import com.stepup.android.ui.screens.community.crew.SHEET_DRAFT_DISCARD
 import com.stepup.android.ui.screens.community.crew.SHEET_DRAFT_RESUME
-import com.stepup.android.ui.screens.community.crew.crewInk
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -75,7 +75,7 @@ class ChatListActions(
  */
 @Composable
 fun ChatListTab(actions: ChatListActions, viewModel: ChatListViewModel = viewModel(factory = ChatListViewModel.Factory)) {
-    val ink = crewInk()
+    val ink = blueInk()
     val rooms by viewModel.rooms.collectAsStateWithLifecycle()
     val draft by viewModel.createDraft.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf("") }
@@ -87,37 +87,37 @@ fun ChatListTab(actions: ChatListActions, viewModel: ChatListViewModel = viewMod
 
     Box(Modifier.fillMaxSize().testTag("chat-list")) {
         when (val state = rooms) {
-            ChatRoomsState.SignIn -> CrewEmptyState(
-                icon = { Icon(Icons.Filled.Search, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+            ChatRoomsState.SignIn -> BlueEmptyState(
+                icon = { BlueStateIcon(Icons.Filled.Search) },
                 title = stringResource(R.string.chat_signin_title),
                 body = stringResource(R.string.chat_signin_body),
                 modifier = Modifier.padding(top = 72.dp).testTag("chat-list-signin"),
             ) { com.stepup.android.ui.components.SignInAgainButton() }
-            ChatRoomsState.Loading -> Column(Modifier.fillMaxWidth().padding(horizontal = CrewGutter).testTag("chat-list-loading")) {
+            ChatRoomsState.Loading -> Column(Modifier.fillMaxWidth().padding(horizontal = BlueGutter).testTag("chat-list-loading")) {
                 ChatListHeading()
                 repeat(2) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                        CrewSkeletonBox(Modifier.size(61.dp), 14.dp)
+                        BlueSkeleton(Modifier.size(78.dp), 16.dp)
                         Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                            CrewSkeletonBox(Modifier.width(120.dp).height(20.dp))
+                            BlueSkeleton(Modifier.width(120.dp).height(20.dp))
                             Spacer(Modifier.height(10.dp))
-                            CrewSkeletonBox(Modifier.fillMaxWidth().height(14.dp))
+                            BlueSkeleton(Modifier.fillMaxWidth().height(14.dp))
                         }
                     }
                 }
             }
-            is ChatRoomsState.Failed -> CrewEmptyState(
-                icon = { Icon(Icons.Filled.Refresh, null, tint = ink.info, modifier = Modifier.size(44.dp)) },
+            is ChatRoomsState.Failed -> BlueEmptyState(
+                icon = { BlueStateIcon(Icons.Filled.Refresh, ring = false) },
                 title = stringResource(R.string.chat_list_error),
                 body = stringResource(R.string.chat_error_body),
                 modifier = Modifier.padding(top = 72.dp).testTag("chat-list-error"),
-            ) { CrewButton(stringResource(R.string.chat_error_retry), viewModel::retry, Modifier.testTag("chat-list-retry")) }
+            ) { BlueButton(stringResource(R.string.chat_error_retry), viewModel::retry, Modifier.testTag("chat-list-retry")) }
             is ChatRoomsState.Ready -> if (state.rooms.isEmpty()) {
                 ChatNoCrew(onFind = actions.onFindCrews, onCreate = create)
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize().testTag("chat-list-scroll"),
-                    contentPadding = PaddingValues(start = CrewGutter, end = CrewGutter, bottom = 40.dp),
+                    contentPadding = PaddingValues(start = BlueGutter, end = BlueGutter, bottom = 40.dp),
                 ) {
                     item(key = "heading") { ChatListHeading() }
                     items(state.rooms, key = { it.crewId }) { room ->
@@ -125,8 +125,8 @@ fun ChatListTab(actions: ChatListActions, viewModel: ChatListViewModel = viewMod
                     }
                     item(key = "footer") {
                         Text(
-                            stringResource(R.string.chat_list_footer), color = ink.secondary, fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 56.dp).testTag("chat-list-footer"),
+                            stringResource(R.string.chat_list_footer), style = blueText(15.sp, ink.secondary, FontWeight.Medium),
+                            modifier = Modifier.padding(top = 40.dp).testTag("chat-list-footer"),
                         )
                     }
                 }
@@ -140,55 +140,57 @@ fun ChatListTab(actions: ChatListActions, viewModel: ChatListViewModel = viewMod
 
 @Composable
 private fun ChatListHeading() {
-    val ink = crewInk()
-    Column(Modifier.fillMaxWidth().padding(top = 30.dp, bottom = 22.dp)) {
-        Text(stringResource(R.string.chat_list_title), color = ink.text, fontSize = 25.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
+    val ink = blueInk()
+    Column(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 22.dp)) {
+        Text(
+            stringResource(R.string.chat_list_title), style = blueText(30.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+            modifier = Modifier.semantics { heading() },
+        )
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.chat_list_sub), color = ink.secondary, fontSize = 13.sp)
+        Text(stringResource(R.string.chat_list_sub), style = blueText(16.sp, ink.secondary, FontWeight.Medium))
     }
 }
 
 /** 방 한 줄 — 대표 이미지 · 크루 이름 · "크루원 · 25명" · 마지막 메시지 · 시각 · 미확인 수 */
 @Composable
 private fun ChatRoomRow(room: ChatRoomSummary, onClick: () -> Unit) {
-    val ink = crewInk()
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 109.dp).feedbackClickable(role = Role.Button, onClick = onClick)
-            .padding(top = 5.dp).testTag("chat-row-${room.crewId}"),
-        verticalAlignment = Alignment.Top,
+    val ink = blueInk()
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 112.dp).feedbackClickable(role = Role.Button, onClick = onClick)
+            .testTag("chat-row-${room.crewId}"),
     ) {
-        CrewImage(room.card, 61.dp, 14.dp)
-        Column(Modifier.weight(1f).padding(start = 16.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Column(Modifier.weight(1f)) {
-                    Text(room.name, color = ink.text, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        stringResource(if (room.role == ChatRole.OWNER) R.string.chat_list_role_owner else R.string.chat_list_role_member, room.memberCount),
-                        color = ink.info, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
-                    val last = room.last
-                    Text(
-                        if (last == null) stringResource(R.string.chat_list_new) else chatListTime(last.createdAt),
-                        color = ink.secondary, fontSize = 11.sp, maxLines = 1,
-                    )
-                    if (room.unread > 0) {
-                        Spacer(Modifier.height(8.dp))
-                        ChatUnreadBadge(room.unread)
+        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.Top) {
+            CrewImage(room.card, 78.dp, 16.dp)
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    Column(Modifier.weight(1f)) {
+                        Text(room.name, style = blueText(22.sp, ink.text, FontWeight.ExtraBold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            stringResource(if (room.role == ChatRole.OWNER) R.string.chat_list_role_owner else R.string.chat_list_role_member, room.memberCount),
+                            style = blueText(15.sp, ink.info, FontWeight.Bold), maxLines = 1,
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp, top = 2.dp)) {
+                        val last = room.last
+                        Text(
+                            if (last == null) stringResource(R.string.chat_list_new) else chatListTime(last.createdAt),
+                            style = blueText(13.5.sp, ink.secondary, FontWeight.Medium), maxLines = 1,
+                        )
+                        if (room.unread > 0) {
+                            Spacer(Modifier.height(8.dp))
+                            ChatUnreadBadge(room.unread)
+                        }
                     }
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    chatPreviewText(room), style = blueText(15.sp, ink.text.copy(alpha = 0.86f), FontWeight.Medium), maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("chat-row-preview"),
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                chatPreviewText(room), color = ink.secondary, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag("chat-row-preview"),
-            )
-            Spacer(Modifier.height(24.dp))
-            Box(Modifier.fillMaxWidth().height(0.7.dp).background(ink.divider))
-            Spacer(Modifier.height(18.dp))
         }
+        BlueDivider()
     }
 }
 
@@ -218,15 +220,29 @@ internal fun chatListTime(millis: Long, now: Long = System.currentTimeMillis(), 
 /** 31 가입한 크루가 없다 — 크루 찾아보기(크루 모집) · 내 크루 만들기 */
 @Composable
 private fun ChatNoCrew(onFind: () -> Unit, onCreate: () -> Unit) {
-    val ink = crewInk()
-    Column(Modifier.fillMaxWidth().padding(horizontal = CrewGutter).testTag("chat-none"), verticalArrangement = Arrangement.Top) {
-        Spacer(Modifier.height(50.dp))
-        Text(stringResource(R.string.chat_none_title), color = ink.text, fontSize = 26.sp, lineHeight = 33.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(24.dp))
-        Text(stringResource(R.string.chat_none_body), color = ink.secondary, fontSize = 14.sp, lineHeight = 25.sp)
+    val ink = blueInk()
+    // 가운데 놓되, 큰 글씨 · 작은 화면에서는 넘겨 본다
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(horizontal = BlueGutter)
+            .testTag("chat-none"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Spacer(Modifier.height(40.dp))
-        CrewButton(stringResource(R.string.chat_none_find), onFind, Modifier.testTag("chat-none-find"))
-        Spacer(Modifier.height(12.dp))
-        CrewButton(stringResource(R.string.chat_none_create), onCreate, Modifier.testTag("chat-none-create"), CrewButtonKind.SECONDARY)
+        Text(
+            stringResource(R.string.chat_none_title), style = blueText(30.sp, ink.text, FontWeight.ExtraBold, 1.3f), textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() },
+        )
+        Spacer(Modifier.height(14.dp))
+        Text(stringResource(R.string.chat_none_body), style = blueText(16.sp, ink.secondary, FontWeight.Medium, 1.6f), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(32.dp))
+        Column(Modifier.widthIn(max = 360.dp)) {
+            BlueButton(stringResource(R.string.chat_none_find), onFind, Modifier.testTag("chat-none-find"))
+            Spacer(Modifier.height(12.dp))
+            BlueButton(stringResource(R.string.chat_none_create), onCreate, Modifier.testTag("chat-none-create"), BlueKind.SECONDARY)
+        }
+        Spacer(Modifier.height(40.dp))
+    }
     }
 }

@@ -538,14 +538,11 @@ internal fun MainScaffold(
         // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
         com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
     } else if (currentRoute == Screen.Community.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunSunset,
-        )
-    } else if (currentRoute == Screen.Profile.route) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize().testTag("profile-scene-${profileSetting.name}"),
-            profileSetting, home = true,
-        )
+        // 커뮤니티(2026-10-03 파란 톤 커뮤니티 기본) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("community-backdrop"))
+    } else if (currentRoute == Screen.Profile.route || currentRoute in com.stepup.android.ui.components.BlueProfileArea.backdropRoutes) {
+        // 내 정보 · 프로필 수정 · 설정(파란 톤 v4) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("profile-backdrop"))
     } else if (currentRoute in listOf(
             Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
             Routes.SNEAKER, Routes.MARKET_MODEL,
@@ -566,6 +563,8 @@ internal fun MainScaffold(
     } else if (currentRoute in listOf(
             Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
             Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
+            // 러닝 이야기 상세 · 글쓰기 · 지도 · 지역(커뮤니티 기본 · 코스 글쓰기 파란 톤)
+            Routes.STORY_DETAIL, Routes.STORY_COMPOSE, Routes.STORY_MAP, Routes.STORY_LOCATION, Routes.STORY_REGION,
         )) {
         // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
         com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
@@ -1618,14 +1617,13 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 신발 뽑기 디자인(2026-09-28) — 뽑기 탭을 고르면 보라 선택 타일 위에 흰 아이콘 · 글자.
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 다른 탭은 고르면 파란 선택 타일 위에 흰 아이콘 · 글자
-    val drawTile = selected && screen == Screen.Draw
-    val blueTile = selected && screen != Screen.Draw
+    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 고른 탭은 파란 선택 타일 위에 흰 아이콘 · 글자.
+    // 뽑기 탭도 같다(2026-10-03 파란 톤 통합 전달본 v4 뽑기 — 예전 보라 타일 대신 파란 면)
+    val blueTile = selected
     val dark = com.stepup.android.ui.theme.StepUpColors.dark
     val tint by animateColorAsState(
         targetValue = when {
-            drawTile || blueTile -> Color.White
+            blueTile -> Color.White
             dark -> Color(0xFF9DB7E2)
             else -> Slate
         },
@@ -1655,19 +1653,6 @@ private fun RowScope.NavTab(
                     drawRoundRect(
                         Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                    )
-                }
-                if (drawTile) {
-                    // 선택 타일 72 × 70(자리보다 넓으면 자리에 맞춘다) — 아이콘을 키운다고 타일까지 키우지 않는다
-                    val w = minOf(72.dp.toPx(), size.width)
-                    val h = minOf(70.dp.toPx(), size.height)
-                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
-                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
-                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
-                    drawRoundRect(Color(0xFF5037F0), topLeft, tileSize, radius)
-                    drawRoundRect(
-                        Color(0xFF7377F3), topLeft, tileSize, radius,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()),
                     )
                 }
             }

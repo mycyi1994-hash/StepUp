@@ -1,0 +1,74 @@
+{
+  "scope": "다음 시작·로그인 묶음의 현재 코드 선행 조사. 이미지 제작 전, 전체 완료 아님.",
+  "sourceReadOnly": true,
+  "files": [
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/onboarding/OnboardingScreens.kt",
+      "sha256": "816feff938e5a664e24fde495a71fe638356e274e19e17e0f393b91a3e4fa95f"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt",
+      "sha256": "a760042616455a7f8deff5f52b975fc6a7b0f4a584c0517238ece061aef6b404"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/login/LoginRules.kt",
+      "sha256": "5675f5f8115f01c9d4b3fa69eac3dd6dd845d166da7a81fe59f7fec3a56b3dc2"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt",
+      "sha256": "d78c2a55bfcd8fc8291e2dda2ea970cf7a916dfbc2ab9896add8d7383d1f6426"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/screens/setup/S2SetupScreens.kt",
+      "sha256": "c137bbcae90a1dc6e320bdc0d7aa38f6c72fc8178807930d7a7d706dc60b3f25"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/StepUpRoot.kt",
+      "sha256": "e6133d4e65c4faa34bc0d791611c0e1aea38fba0fef967576f87c094f00b9e04"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/ui/AppChromePolicy.kt",
+      "sha256": "7d9eb79c1a5a17ca2749df25604beb66b73b34fd85c01649193898a576b73d6c"
+    },
+    {
+      "file": "app/src/main/java/com/stepup/android/domain/Onboarding.kt",
+      "sha256": "c63cae19ab1a51b9ba25c281b6ba1056b87c32ded04e97374380b4418aba531e"
+    }
+  ],
+  "findings": [
+    {
+      "state": "startup",
+      "finding": "실제 초기화 완료 후 다음단계;14초 타임아웃/오류면 재시도. 장식 최소지연 없음."
+    },
+    {
+      "state": "login",
+      "finding": "Google 단일 로그인. OS 계정 선택 Picking과 서버 확인 Verifying 분리; 취소는 조용히 원래 화면. 토큰 성공 후만 로그인."
+    },
+    {
+      "state": "entry-order",
+      "finding": "준비→로그인→새회원이고 guideSeen/setupSeen 미완료면 건너뛸 수 있는 S2SetupFlow→메인/첫 안내. 옛 온보딩 문서의 로그인 즉시 안내보다 현재 순서 우선."
+    },
+    {
+      "state": "not-yet-in-12-candidates",
+      "finding": "S2SetupFlow의 몸 정보1/3,목표2/3,모드3/3은 현재 최초12후보 밖. BODY설정과 구분하여 추가 설계/목록 반영 필요."
+    },
+    {
+      "state": "first-guide",
+      "finding": "첫안내는 홈에서만,딥링크 목적지나 러닝 복구 우선. 러닝시작은 U01 이동이지 즉시 측정 아님. 닫아도seen저장."
+    },
+    {
+      "state": "guide-replay",
+      "finding": "SETTINGS_GUIDE Header.Form 하단탭없음. 뒤로는도움말,러닝홈으로는HOME;guideSeen초기화없음."
+    },
+    {
+      "state": "first-home",
+      "finding": "오늘활동없음/활동권한없음/조회완료runCount0/누적걸음0일때만. 조회중은첫러닝아님."
+    },
+    {
+      "state": "legal",
+      "finding": "기존URL의 열기 자체 실패만4초 안내. 외부브라우저 내부 성공여부 추측금지. 실제법률문서 미조회."
+    }
+  ],
+  "runtimeVerified": false,
+  "generatedInThisPreflight": 0
+}

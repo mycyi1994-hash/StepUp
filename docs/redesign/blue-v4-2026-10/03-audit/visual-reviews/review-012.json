@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-03",
+  "method": "반환된생성원본의실제픽셀검사",
+  "screens": [
+    {
+      "id": "RP04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "중복신발그림제거,대상번호복원,100/100,사용50/잔액33.07와완료확인."
+    },
+    {
+      "id": "RP07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "수리전조회오류와수리RPC아닌재조회,기존내구도만유지."
+    },
+    {
+      "id": "RP08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "결과불명확안내,차감/실패단정없고읽기확인/나중에만."
+    },
+    {
+      "id": "RP09",
+      "revision": 1,
+      "result": "passed",
+      "notes": "거래중확정불가사유,수리실행없음,닫기."
+    },
+    {
+      "id": "RP10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "92→100,비용12.5/잔액70.57수치일치,상태변경안내,명시적재확인."
+    }
+  ]
+}

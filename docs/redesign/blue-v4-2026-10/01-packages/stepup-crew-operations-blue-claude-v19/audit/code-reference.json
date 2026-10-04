@@ -1,0 +1,87 @@
+{
+  "readOnly": true,
+  "checkedOn": "2026-10-03",
+  "files": [
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewCreateScreens.kt",
+      "sha256": "de4ac8fea46b9a49baed3ef976be92ab9e3a528be4afb1889d7ffe4ad78bb0af"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewDetailScreen.kt",
+      "sha256": "bd1b500fb2a0e13542091e97c14058ed353dc7230c735e6dd54c07bf43672c15"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewGoalScreens.kt",
+      "sha256": "7a2f56e711995df42f2df2b35dd1c9b7ef18a238d0d72497c442f43baf2b0487"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewJoinScreens.kt",
+      "sha256": "31f6f158474a6ff6cdc71dab6fc2c6bd55472f9ef0c11d8e3683870e789b8a2d"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewListTab.kt",
+      "sha256": "c34fc5e4c6e013f7eb6f8f10e33fcb66ff563724a17885494119b08cc7c48342"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewManageScreens.kt",
+      "sha256": "89d0e5e8783ca2dc16916be405107b025040cf6ff68c0a601776060c87d0ef26"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewNavGraph.kt",
+      "sha256": "2b1e21c4b5768d32d53187f3faa91c3dbd541d1780b49c1e717410cf74ec856e"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewPeopleScreens.kt",
+      "sha256": "b91b264a384097ff09fa813be8142699b330b1579eae1051f7df91ca2d3d57bf"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewRegionScreen.kt",
+      "sha256": "b9ca510ebcea5377becbbde98ace8a6aa4a1cfb3e4e394dbb5321483fefcd154"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewSheets.kt",
+      "sha256": "56901c68a417c1f3d6e7de210b96bc22213326281b786bd40680970d042aa9eb"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewUi.kt",
+      "sha256": "69f92fa56ff80c8cae057a0421330615f42269bc14357e53b91952edcbcf2da4"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewViewModels.kt",
+      "sha256": "475074de010c3e571bfe651ec0da04ed3f2f493ceea60708aef5d9f48d7cd234"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\ui\\screens\\community\\crew\\CrewWords.kt",
+      "sha256": "616e8aae43c4b4076680b115f2f649b0a8b31bc9b84f280d7452ccf845b34021"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\java\\com\\stepup\\android\\domain\\CrewCards.kt",
+      "sha256": "14aea461be4aae1cadc3f1de1048e6f367cf00e20110e7bad59adf27b5d9499c"
+    },
+    {
+      "path": "stepup-waitlist-implementation\\app\\src\\main\\res\\values-ko\\strings.xml",
+      "sha256": "8befa1fdd793f9b6537b19a6cd7d6086d660078c13c96c2e05e8a5026a2d3de2"
+    }
+  ],
+  "confirmed": [
+    "기존 역할별 상세·메뉴·관리·설정·명단·신청 동작",
+    "가입 결정 응답값으로 결과 화면의 인원/정원/남은 신청 표시",
+    "승인 실패 재조회와 정원 충돌 분리",
+    "넘긴 뒤 기존 크루장은 일반 멤버",
+    "가입 방식 기존 기능 보존",
+    "신고 기타500자 및 서버 접수 후 결과",
+    "탈퇴/해산 성공 시 해당 크루 로컬 채팅·홈 자료 정리"
+  ],
+  "notVerified": [
+    "API/실시간 권한 전파",
+    "로컬 정리 예외 복구",
+    "실기기 크기/접근성/스크롤/IME",
+    "개발 브랜치에 시안 적용 완료"
+  ],
+  "intentionalDesignChanges": [
+    "일반 멤버 프로필은 실제 가입일/주간거리 데이터로 구성; 구형 러닝 취향값 임의 표시 제외",
+    "신고 사유는 이동 화살표 대신 단일 선택 상태 표시",
+    "확인 시트는 한 개 주 행동과 취소를 세로로 구분",
+    "크루장 탈퇴/해산 시트의 배경은 현행 진입인 운영 설정"
+  ]
+}

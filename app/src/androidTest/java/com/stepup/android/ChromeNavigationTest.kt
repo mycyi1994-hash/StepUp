@@ -104,13 +104,12 @@ class ChromeNavigationTest {
                 assertEquals("balance $next/$tab", token, bounds("sup-balance"))
                 capture("${next.width}-${next.font}-${next.mode}-$tab")
                 if (tab == R.string.tab_me) {
-                    if (next.font == 1f) {
-                        val wallet = bounds("profile-wallet")
-                        org.junit.Assert.assertTrue("profile destinations fit above navigation $next", wallet.bottom <= bar.top)
-                    } else {
-                        compose.onNodeWithTag("profile-wallet").performScrollTo().assertIsDisplayed()
-                        compose.onNodeWithTag("profile-settings").performScrollTo()
-                    }
+                    // 파란 톤 v4 내 정보(PF01): 러닝 패스가 커서 짧은 화면에서는 본문이 넘어간다(지시서: 짧은 화면 · 큰 글자는 스크롤).
+                    // 넘겨서 닿고, 닿은 자리는 하단 탭 위에 온전히 보여야 한다
+                    compose.onNodeWithTag("profile-wallet").performScrollTo().assertIsDisplayed()
+                    compose.waitForIdle()
+                    org.junit.Assert.assertTrue("profile destinations scroll above navigation $next", bounds("profile-wallet").bottom <= bar.top)
+                    compose.onNodeWithTag("profile-settings").performScrollTo()
                     // 러닝 패스(2026-09-27): 설정은 메뉴의 "설정" 줄이다. 설정 v1(2026-09-28)부터 설정 첫 목록은
                     // 다른 설정 화면처럼 상세 화면(뒤로 · 제목 머리)이고, 아래 탭은 내 정보 그대로다
                     compose.onNodeWithTag("profile-settings").performScrollTo().performClick()

@@ -1,0 +1,7 @@
+{
+  "mode": "built-in imagegen edit",
+  "referenced_image_paths": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-eadcf27f-42ae-4fb3-91c5-c07068799d26.png"
+  ],
+  "prompt": "Edit only this Korean StepUp empty selected-month screen. Keep the navy/electric-blue style, August 2026 period control, stats and all data placeholders. Replace the incorrect line about starting the FIRST record with exactly '다른 기간의 기록을 확인해보세요.' Remove the extra button '이전 달 보기' completely. Keep one white '전체 기록 보기' primary button. Title '내 러닝 기록'. Do not add map or chart data. This is empty August for an existing runner, not a first-time user. Keep everything else unchanged, one 887x1774 image."
+}

@@ -1,0 +1,490 @@
+{
+  "scope": "뽑기 34개 정적 상태 시안과 Claude 구현 지시서; 전체 앱 완료본 아님",
+  "screens": [
+    {
+      "id": "DRAW00",
+      "title": "내 신발에서 진입",
+      "file": "images/DRAW00.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "d4551b05b0f779987e78458f686d1e42f4106a1474dca275706000396744d9c2",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "SH01 reused for existing shoe tab entry; bottom draw navigation replaces obsolete top draw button. Not a new unique design.",
+      "conditional": false,
+      "reusedFrom": "SH01"
+    },
+    {
+      "id": "DRAW01",
+      "title": "두 칸으로 보는 뽑기",
+      "file": "images/DRAW01.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "1e5a08ada3d596d9adf5bcd701bcb4d2cf2343b7df09421f99d6c74741de0ab7",
+      "review": "03-review\\review-002.json",
+      "reviewNotes": "Two panels, unconnected premium gift presented as future benefit, five navigation items, original logo.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW02",
+      "title": "지갑 연결 후",
+      "file": "images/DRAW02.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "dce0d330aca1d74cd83ac1dcc488eac98ad60e0ca7528d0769d608d766f5d905",
+      "review": "03-review\\review-001.json",
+      "reviewNotes": "무료13/상급10 두 패널·각 실행 버튼·내역·규칙·5nav·SUP 유지. 실제 값은 서버.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW03",
+      "title": "무료 기회 내역",
+      "file": "images/DRAW03.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "d92d670d53ac7f2cee7af2d96eed3bfbf80980fe42310249344757ae3c6ffd95",
+      "review": "03-review\\review-001.json",
+      "reviewNotes": "10+3=13,1회뽑기/닫기/X,전체scrim 및nav를 덮는 시트 확인.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW04",
+      "title": "상급 기회와 러닝 진행",
+      "file": "images/DRAW04.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "2ef76e59a9c89dc469d3dff25d240858a56f55805831e17f642ccd62843835e7",
+      "review": "03-review\\review-001.json",
+      "reviewNotes": "10+0=10,0.6/1km바와0.4km남음,실행/닫기/X 확인. 시트 뒤 dim및하단nav덮음.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW05",
+      "title": "무료 기회 받는 방법",
+      "file": "images/DRAW05.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "2b65aebc97e61c23439bf1a0b1e5dae86fb1a94e8687c84cedf02d2891ead9d0",
+      "review": "03-review\\review-001.json",
+      "reviewNotes": "가입10/매일3/첫연결10/1km당1 규칙과확인버튼. dim및nav덮음.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW06",
+      "title": "지갑 연결 안내",
+      "file": "images/DRAW06.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "b37b31933603ef188a77079cff82c8b73103027fc6dbe65d9d51e8211add05d5",
+      "review": "03-review\\review-001.json",
+      "reviewNotes": "첫연결10/러닝당+1 혜택,연결하기/나중에/X. 연결전상태유지,dim및nav덮음.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW07",
+      "title": "지갑에서 연결 중",
+      "file": "images/DRAW07.png",
+      "size": [
+        886,
+        1774
+      ],
+      "sha256": "6128be3ca185a28bf45595f67be7c1c25192b7ae5e68ff8e286de7a8c2cbe944",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff.",
+      "conditional": true,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW08",
+      "title": "연결 완료 · 상급 10회",
+      "file": "images/DRAW08.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "731f7a33d535b1278025fca68e2af989df4d7ecbe26c23bb44e7b9fc0afaaa4b",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW09",
+      "title": "지갑 연결 실패",
+      "file": "images/DRAW09.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "e9061bba280df4b9fffe401c802d2bb46713231f293f853a97b9ee34f8c6d0c0",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Uniform dimmed background; sheet readable and covers navigation. Pending/failed backgrounds state unconnected gift as future benefit. Native common sheet close affordance standardized in handoff.",
+      "conditional": true,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW10",
+      "title": "뽑기 결과 확인 중",
+      "file": "images/DRAW10.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "7d25bef9a276382cbddbc5c125c9e52142e8caf2af790b503d01eb071f3daa93",
+      "review": "03-review\\review-002.json",
+      "reviewNotes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW11",
+      "title": "상자 열기",
+      "file": "images/DRAW11.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "a0d58756aa08621cfbd9ce37d6a8aa2a19b7ad4dc6b2cfff5fc2551320b81a15",
+      "review": "03-review\\review-002.json",
+      "reviewNotes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW12",
+      "title": "무료 뽑기 결과",
+      "file": "images/DRAW12.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "8b21a283b0a3c0b10a1d732f1f4853c40cb871fe1f647a4763af068688e9a341",
+      "review": "03-review\\review-002.json",
+      "reviewNotes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW13",
+      "title": "상급 뽑기 결과",
+      "file": "images/DRAW13.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "7fd16419d31a3f0ce0f597d73de9ec616e31dc93ed65f0fff67bc74e630c462f",
+      "review": "03-review\\review-002.json",
+      "reviewNotes": "Header retained, bottom navigation hidden, shoe/result content and actions appropriate. DRAW11 is static animation keyframe only; native timing specified separately.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW14",
+      "title": "마지막 기회 사용 후",
+      "file": "images/DRAW14.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "ba36ad13e6cc9954804656e648dd66503103df2b6bae56f22f262e068c5cedef",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW15",
+      "title": "두 기회를 모두 사용한 상태",
+      "file": "images/DRAW15.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "1e05eb684d2458daff9035a753b62102f8a02562e3cfff84347d518a99bd7f23",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW16",
+      "title": "무료 기회 소진 안내",
+      "file": "images/DRAW16.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "fb06c42d3a5f7ac59b96d659698f26fc93f9ede89a09df3fa0109e10cdfeb8d3",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "Complete modal scrim or unknown-count loading corrected; state appropriate.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW17",
+      "title": "러닝으로 상급 기회 받기",
+      "file": "images/DRAW17.png",
+      "size": [
+        886,
+        1774
+      ],
+      "sha256": "64557b665f7050807cd80016caf65167203ea3f4c1b5f4df554902705bbed0c7",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "Complete modal scrim or unknown-count loading corrected; state appropriate.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW18",
+      "title": "러닝 반영 · 상급 1회 추가",
+      "file": "images/DRAW18.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "398bad1b29e0015d26c1d96f0d439573d577f0c0afeda7dc8d519b972d3bcce1",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW19",
+      "title": "뽑기 시작 실패 · 미사용 확인",
+      "file": "images/DRAW19.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "8a1253708abf1a71894316f012550010f2d5da0d70c326a5257279ad6c8b5183",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "Complete modal scrim or unknown-count loading corrected; state appropriate.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW20",
+      "title": "결과 확인 지연",
+      "file": "images/DRAW20.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "7d8d3b129c82d14968ca07f7cb2266b2087e3ad8210fd81113307c8c1f3b6c59",
+      "review": "03-review\\review-003.json",
+      "reviewNotes": "Correct result/zero-count/credited/unknown semantics, buttons and navigation. Native names/badges/spacing standardized across result component rather than reproducing raster typography variations.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW21",
+      "title": "받은 신발을 보유 목록에서 보기",
+      "file": "images/DRAW21.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "fff414bbe98ab8b091004e85176dc8ca8d3202832fef8678cf322c86b6a9f31f",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Two copies of same model distinguished by owned ID; selected new shoe not equipped; full durability bar.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW22",
+      "title": "횟수 불러오는 중",
+      "file": "images/DRAW22.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "f08e5dd06f5a21c3989b265a0091265c5476a42883833db7eaa0fd570be76417",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "Complete modal scrim or unknown-count loading corrected; state appropriate.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW23",
+      "title": "횟수 불러오기 실패",
+      "file": "images/DRAW23.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "824dd2b0070b6cd02b2d28595a47a12916cb3881d18aaa003527d1570283c73a",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW24",
+      "title": "기존 지갑 연결 해제 상태",
+      "file": "images/DRAW24.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "192775119b0958ff5fe84f72ad9b596ec6b0a7dafa5fc197d0f715658b2e91d6",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW25",
+      "title": "연결 성공 · 선물 확인 중",
+      "file": "images/DRAW25.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "6ae9940de32132f1e62aac22b5faa81715c015907156ca4c5de2df52a583888c",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography.",
+      "conditional": true,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW26",
+      "title": "진행 중인 결과로 돌아가기",
+      "file": "images/DRAW26.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "2aec4e13acd9b805150521632935d1e5c41e1e67030cb5788c28cf1f472f4360",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW27",
+      "title": "연결 선물 확인 중인 첫 화면",
+      "file": "images/DRAW27.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "2ff8016d47edbc0e77f95a23e856aef69feed79e96b666a207612b751a231065",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": true,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW28",
+      "title": "로그인 전",
+      "file": "images/DRAW28.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "64cb16044ad6329cd99a8ea4042666e33cc05b6cb92df178f09b66dfdeac3adb",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW29",
+      "title": "상급 뽑기 일시 중단",
+      "file": "images/DRAW29.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "d66ca306eac88a498914ed99d20c985c9dc4bd6a41f63bf01f6c3b27e24ff536",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW30",
+      "title": "오늘 러닝 지급 한도",
+      "file": "images/DRAW30.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "46f670d83be04f9c58437dd93019e81ff69fd200a75dea3ffc06857a14c5ff16",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW31",
+      "title": "발행 한도 안내",
+      "file": "images/DRAW31.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "b4d41146ea8b620fa6e930cd18382a67015307f52075ee86c7bde706788a0086",
+      "review": "03-review\\review-005.json",
+      "reviewNotes": "Consistent panel orientation, authoritative-state messaging and bottomsheet layering corrected. Native common component normalizes minor raster typography.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW32",
+      "title": "불러오기 실패 후 첫 화면",
+      "file": "images/DRAW32.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "ef61831f9c270218708d4ee3157f1d1f5263e842298e8cdb3ca20e19925eb222",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": false,
+      "reusedFrom": null
+    },
+    {
+      "id": "DRAW33",
+      "title": "신발 수령 완료 · 잔여 횟수 확인 중",
+      "file": "images/DRAW33.png",
+      "size": [
+        887,
+        1774
+      ],
+      "sha256": "bd08fae86b42ddeef17c854e34f8b19ee13bb5e5e7c42a038a2d45101b0c5ee5",
+      "review": "03-review\\review-004.json",
+      "reviewNotes": "State content/actions/known vs unknown counts reviewed. Native common component normalizes single dash, shell back/close controls and rules links.",
+      "conditional": false,
+      "reusedFrom": null
+    }
+  ],
+  "originalLogoSha256": "4f03fe619ca85b70e700a17a124a2efff35347d6edbeac264e0a2bea260dca15",
+  "appImplemented": false,
+  "layeredAssets": false,
+  "conditionalStates": [
+    "DRAW07",
+    "DRAW09",
+    "DRAW25",
+    "DRAW27"
+  ]
+}

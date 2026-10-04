@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 채팅 · 내 크루 홈 파란 톤(2026-10-03 통합 전달본 v4)에서 더한 글 -->
+<resources>
+    <string name="chat_blue_reconnecting_title">Reconnecting.</string>
+    <string name="chat_blue_reconnecting_body">What you typed is kept.</string>
+    <string name="crew_blue_clear_query">Clear search</string>
+    <string name="crewhome_blue_week_goal_current">Current goal %1$dkm</string>
+    <string name="crewhome_blue_week_goal_note">Shown against the crew\'s current goal.</string>
+    <string name="crewhome_blue_run_trim">About 300m near the start and finish is left off the map.</string>
+    <string name="crewhome_blue_place_note">You can check the meeting spot in a maps app.</string>
+</resources>

@@ -1,0 +1,730 @@
+[
+  {
+    "symbol": "Screen.Run.route",
+    "tab": "Run",
+    "chrome": "Main",
+    "proposedMapping": "v18:HOME",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Screen.Customize.route",
+    "tab": "Customize",
+    "chrome": "Main",
+    "proposedMapping": "v19:SH01,SH02",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Screen.Community.route",
+    "tab": "Community",
+    "chrome": "Main",
+    "proposedMapping": "v19:CM01,CP01,CHAT01",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Screen.Profile.route",
+    "tab": "Profile",
+    "chrome": "Main",
+    "proposedMapping": "v19:PF01",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.MYSTERY_BOX",
+    "tab": "Draw",
+    "chrome": "Main",
+    "proposedMapping": "v19:DRAW00-DRAW27 + new code states",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_ROUTE",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:R02-R07,L04,E03-E11",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_MENU",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:U01",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_GOALS",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:U02",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_GOAL_HISTORY",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:C03",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_DIET",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:U05,D01-D03",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_DIET_PLAN",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:U06,D04-D05",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_DIET_EDIT",
+    "tab": "Run",
+    "chrome": "Focus",
+    "proposedMapping": "v18:D06",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.NEWS",
+    "tab": "Run",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.EVENTS",
+    "tab": "Run",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.COURSES",
+    "tab": "Run",
+    "chrome": "Detail",
+    "proposedMapping": "v18:U04,K01-K18",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUNNER_MARKET",
+    "tab": "Customize",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.ITEMS",
+    "tab": "Customize",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.SNEAKER_DEX",
+    "tab": "Customize",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.SNEAKER",
+    "tab": "Customize",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.MARKET_MODEL",
+    "tab": "Customize",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.MAP",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.RANKING",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.CREW_BOARD",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.LOBBY",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": "v18:CR02-CR21 PartyLobbyScreen; specific state validation pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.FLASH_DETAIL",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.FLASH_LOBBY",
+    "tab": "Community",
+    "chrome": "Detail",
+    "proposedMapping": "v18:CR04-CR18 common PartyLobbyScreen; flash-specific data needs review",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.CREW_CREATE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP25-CP39; inspect legacy alias behavior",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.POST_COMPOSE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.STORY_DETAIL",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CM08-CM11,CM21-CM29,CM38-CM44",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.STORY_COMPOSE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CM12-CM20,WRITE01-WRITE08 with latest easy-writing content",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.STORY_MAP",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CM05-CM06,CM36-CM37,CM41",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.STORY_LOCATION",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CM14-CM16",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.STORY_REGION",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CM03-CM04,CM43",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.WALLET",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:WAL01-WAL16",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.CHAIN_ACTIVITY",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.NOTIFICATIONS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:NOT01-NOT23",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.NOTICE",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:NOT16,NOT19",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.ACHIEVEMENTS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.ANALYTICS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.PROFILE_EDIT",
+    "tab": "Profile",
+    "chrome": "Form",
+    "proposedMapping": "v19:PRO01-PRO12",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RECORDS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v18:H01-H03,H07-H10",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RECORD_STATS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v18:H04-H06,H15",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_RECORD",
+    "tab": "Profile",
+    "chrome": "Form",
+    "proposedMapping": "v18:H11,H13,H14,H16",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.RUN_RECORD_MAP",
+    "tab": "Profile",
+    "chrome": "Form",
+    "proposedMapping": "v18:H12",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.HISTORY_MAP",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.SETTINGS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET01",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_NOTIFICATIONS",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET02-SET05",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_PRIVACY",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET06-SET10",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_SUPPORT",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET21-SET23,SET28",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_GUIDE",
+    "tab": "Profile",
+    "chrome": "Form",
+    "proposedMapping": "v19:ONB20",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_CONNECTED",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET11-SET15",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_LANGUAGE",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET18-SET19",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_EXPERIENCE",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET20",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_THEME",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": "v19:SET16-SET17",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "Routes.SETTINGS_BODY",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.SETTINGS_MODE",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.INVITE",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "Routes.CHALLENGE_HISTORY",
+    "tab": "Profile",
+    "chrome": "Detail",
+    "proposedMapping": null,
+    "status": "needs-additional-mockups"
+  },
+  {
+    "symbol": "CrewRoutes.APPLICATION",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.CREATED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.DECIDED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.DETAIL",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.DRAFT",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.GOAL",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.GOAL_EDIT",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.IMAGE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.JOIN",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.JOINED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.LEADER",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.MANAGE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.PERSON",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.RECRUIT",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.REGION",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.REPORTED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.REQUESTS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.RESULT",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.REVIEW",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.SETTINGS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewRoutes.TRANSFER",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CP01-CP90; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.ENDED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.INFO",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.MEMBER",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICES",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.NOTICE_EDIT",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.PHOTO",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.REPORTED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.ROOM",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.SEARCH",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "ChatRoutes.VIEWER",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CHAT01-CHAT44; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.ATTENDEES",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.ENDED",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.HOME",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.INTRO",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.LEVEL",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.MEETING",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.MEMBERS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.PERSON",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.PLACE",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.RUN",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.RUNS",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  },
+  {
+    "symbol": "CrewHomeRoutes.WEEK",
+    "tab": "Community",
+    "chrome": "Form",
+    "proposedMapping": "v19:CH00-CH31; individual state mapping pending",
+    "status": "needs-individual-cross-check"
+  }
+]

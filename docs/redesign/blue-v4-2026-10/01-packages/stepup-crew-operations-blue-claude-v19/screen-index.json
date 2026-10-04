@@ -1,0 +1,572 @@
+[
+  {
+    "id": "CP40",
+    "title": "크루 관리 홈",
+    "png": "01-screens/CP40.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a041a014bdcf545b1ae814c8bc8c370efbfbe8c245b95a52cbca5c9e889df2c3",
+    "entry": "크루장 상세의 크루 관리",
+    "actions": "가입 신청→CP48/54; 멤버 관리→CP55; 소개→CP41; 모임→CP42; 모집→CP43; 주간 목표→CP46; 운영 설정→CP74/90.",
+    "guard": "현재 소유한 크루만 관리. 생성 직후6행 관리 CP77과 구별한다.",
+    "review": "Seven owner management rows and current crew identity retained; no unnecessary primary or global tabs."
+  },
+  {
+    "id": "CP41",
+    "title": "크루 소개 수정",
+    "png": "01-screens/CP41.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "88dd01a27c32859aa79c0f725fc35625912c760c61975e0bceca818aed1d6e05",
+    "entry": "소개 수정",
+    "actions": "대표 이미지→공유 CP27~30/69; 이름·소개·한마디 수정; 저장 성공→호출 관리 화면; 뒤로→변경 시 공유 초안 이탈 확인.",
+    "guard": "원본 소개는 가볍게, 시안 수정안은 편하게. 변경이 있어 저장 활성. 이름1~40,소개120,한마디300자.",
+    "review": "Existing crew avatar and all three profile fields retained; edited tagline supports active save; safe footer."
+  },
+  {
+    "id": "CP42",
+    "title": "모임 정보 수정",
+    "png": "01-screens/CP42.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "b0faea001b64389814c60b571f6105f2ee45088a268870cfca29cbf8437df554",
+    "entry": "모임 정보 수정",
+    "actions": "지역→CP03/71/72; 일정→CP32; 거리 단일 선택; 분위기 독립 토글; 저장 성공→호출 관리 화면.",
+    "guard": "기존3~5km에서1~3km로 바꾼 입력 예시. 요일이 없으면 시간도 비운다. 다른 입력과 대표 이미지 보존.",
+    "review": "Existing meeting form retained; 1–3km edited selection and independent mood checks, one save footer."
+  },
+  {
+    "id": "CP43",
+    "title": "모집 설정",
+    "png": "01-screens/CP43.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "0b89fb5381eb801d25fb9fa30dfebc434ead5eb267bd85aa34b856383a8263c1",
+    "entry": "모집 설정 수정 또는 정원 충돌 CP81",
+    "actions": "정원·목표·모집 상태 변경; 직접 목표→기존 크루 CP46; 설정 저장 성공→호출자.",
+    "guard": "현재24명/정원30. 정원은 현행1~9999 범위와 현재 인원 조건을 따른다. 목표100km는 별도 수정 초안이며 CP46의200km 분기와 연속 상태가 아니다.",
+    "review": "Capacity30 with current24 constraint; edited100km goal, recruitment states and single save preserved."
+  },
+  {
+    "id": "CP44",
+    "title": "모집 잠시 멈추기",
+    "png": "01-screens/CP44.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "845ef5f37cc9b6dd149dec490e35ce29b5745695f2a6c94041847f15bffb872d",
+    "entry": "모집 중 운영 설정에서 모집 잠시 멈추기",
+    "actions": "모집 멈추기→요청→성공 후 CP89; 취소/닫기→CP74.",
+    "guard": "기존 멤버·레벨·기록을 유지한다. 요청 중 중복 탭/닫기 제한, 실패는 시트 안 오류.",
+    "review": "Recruitment pause confirmation over actual operations context; existing members preserved; single primary plus cancel."
+  },
+  {
+    "id": "CP45",
+    "title": "모집 다시 시작",
+    "png": "01-screens/CP45.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "bc82f2726651de053dd3211770aa34d7d591046f462210c1e70c693e51dc9cec",
+    "entry": "모집 쉼 운영 설정에서 모집 다시 시작",
+    "actions": "모집 시작→요청→성공 후 CP76; 취소/닫기→CP90.",
+    "guard": "24/30이라6자리인 예시. 만원·정원 미설정일 때는 현행 별도 설명을 사용하고 숫자를 임의 계산하지 않는다.",
+    "review": "Resume sheet on paused settings;24/30 and six spaces, one confirm/cancel, opaque sheet and safe bottom."
+  },
+  {
+    "id": "CP46",
+    "title": "주간 목표 수정",
+    "png": "01-screens/CP46.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "8dd5d9eb054ae201c107e242880e11cb20adb329f1babf204ffeb030e461f2c1",
+    "entry": "관리의 주간 목표 또는 기존 크루 직접 목표 입력",
+    "actions": "100/160/200km 또는 숫자 입력; 목표 변경→CP47; 뒤로→호출자.",
+    "guard": "현재160,초안200,누적126. 유효 범위1~99999. 바뀌지 않은 값·빈 값·0·범위 밖이면 저장하지 않는다.",
+    "review": "Goal edit selected200, current126 preserved, presets/input and one save footer fit."
+  },
+  {
+    "id": "CP47",
+    "title": "주간 목표 변경 확인",
+    "png": "01-screens/CP47.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f373d2d773f19560a52c9071f7d4d02908ab40b8565afa80587595ab3ef66502",
+    "entry": "유효하고 변경된200km 목표 적용 직전",
+    "actions": "목표 적용→서버 성공 CP83; 취소/닫기→CP46 초안 보존.",
+    "guard": "누적126km를 초기화하지 않는다. 전송 중 잠금, 실패는 오류와 같은 초안 유지.",
+    "review": "Confirm200 sheet retains126km; opaque overlay one primary and cancel."
+  },
+  {
+    "id": "CP48",
+    "title": "가입 신청 목록",
+    "png": "01-screens/CP48.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "c48e1a13211fdeb5698a3309bba2040e486e0a98c143010f1432908ca9d05097",
+    "entry": "가입 신청2건이 있는 목록",
+    "actions": "도윤/지연 행→해당 applicationId의 CP49; 뒤로→CP40.",
+    "guard": "24/30은 이 분기의 예시. 로딩·조회 실패를 신청0건과 구분한다.",
+    "review": "Two applicant previews remain readable with native row affordance and24/30 context; no bulk actions."
+  },
+  {
+    "id": "CP49",
+    "title": "가입 신청 검토",
+    "png": "01-screens/CP49.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e51cf2342da72ea0ed039f1207748b1403160dde368806a24616b07dfe85d2d1",
+    "entry": "대기 중인 가입 신청 열기",
+    "actions": "공개 프로필→CP85; 가입 승인→CP50; 승인하지 않기→CP52.",
+    "guard": "도윤 신청 예시. 승인 전24명, 승인 성공 시25명. 이미 처리된 신청은 두 행동 비활성화하고 현재 결과 안내.",
+    "review": "Application body/profile entry and24→25 helper preserved; white approval and secondary decline clearly differentiated."
+  },
+  {
+    "id": "CP50",
+    "title": "가입 승인 확인",
+    "png": "01-screens/CP50.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ae70158637482cd41ebd9afef72089d408010eb4f83c41bca968bcb4c7c03b56",
+    "entry": "가입 승인 확인",
+    "actions": "가입 승인→성공 CP51; 정원 충돌 CP81; 다른 실패 CP80; 취소→CP49.",
+    "guard": "승인 성공 응답 전에는 멤버를 추가하지 않는다. 현재 정원과 권한을 서버에서 재확인.",
+    "review": "Confirm sheet shows pending24→25 and exact applicant; no premature success."
+  },
+  {
+    "id": "CP51",
+    "title": "가입 승인 완료",
+    "png": "01-screens/CP51.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f96f0b198a73d342998835e6be697273e18ad3b09d500115efe432bc40c0a91e",
+    "entry": "승인 성공 응답",
+    "actions": "남은 신청 보기→CP79, 실제0건이면 CP54.",
+    "guard": "도윤 승인 후25/30,남은1건. 인원·정원·남은 신청 수는 결정 응답값을 사용한다.",
+    "review": "Approved state25/30 and1remaining, simple check and one next action."
+  },
+  {
+    "id": "CP52",
+    "title": "미승인 확인",
+    "png": "01-screens/CP52.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d280f57a0ca1aa2ef8cacfb12687ef2c5f146c3056f083dc5c215997189adf97",
+    "entry": "승인하지 않기 확인",
+    "actions": "승인하지 않기→성공 CP53; 실패 CP80; 취소→CP49.",
+    "guard": "승인과 다른 분기. 가입시키지 않으며 확인 전 신청을 목록에서 제거하지 않는다.",
+    "review": "Decline confirmation distinct coral action, applicant maintained, safe sheet controls."
+  },
+  {
+    "id": "CP53",
+    "title": "미승인 처리 완료",
+    "png": "01-screens/CP53.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "53ce5fa8c668bc2cede3d26d93539010efd20a30289c145424ce96785c918baf",
+    "entry": "승인 거절 처리 성공",
+    "actions": "남은 신청 보기→최신 신청 목록,없으면 CP54.",
+    "guard": "멤버24명 그대로. 승인 결과 CP51의25명으로 바꾸지 않는다.",
+    "review": "Decline branch retains24members and remaining-list action, no implied approval."
+  },
+  {
+    "id": "CP54",
+    "title": "가입 신청 없음",
+    "png": "01-screens/CP54.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "60c772619221409650048234ead8a8ea0b8dd0f7adb793334f85ac20e0867a98",
+    "entry": "신청 조회 성공·결과0건",
+    "actions": "크루 관리로→기존 관리 화면.",
+    "guard": "로드 중·권한 오류·네트워크 오류를 빈 목록으로 처리하지 않는다.",
+    "review": "Clear loaded-empty copy and return-to-manage; compact check no phantom requests."
+  },
+  {
+    "id": "CP55",
+    "title": "멤버 관리",
+    "png": "01-screens/CP55.png",
+    "revision": 2,
+    "size": [
+      886,
+      1774
+    ],
+    "sha256": "21cd337b9bf622643223485525d89a0ab0db0ebb0aa91de74f800e9d1dba34c1",
+    "entry": "크루장 멤버 관리",
+    "actions": "크루장 넘기기→CP58; 크루장 행→CP10; 일반 멤버→CP84.",
+    "guard": "전체24명 중 첫5행 예시이며 목록 스크롤. 실제 userId로 연결, 보이는 이름으로 대상 식별 금지.",
+    "review": "Restored887x1774 roster geometry/safeinsets with transfer entry,5member rows; avatar colors matchCP12."
+  },
+  {
+    "id": "CP56",
+    "title": "멤버 공개 프로필",
+    "png": "01-screens/CP56.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "e6c9b2ec64398975f0be4cf29cd9ab8f3faf8350f6a117e18d6b8b1302b5d807",
+    "entry": "일반 사용자가 보는 멤버 공개 프로필",
+    "actions": "함께하는 크루→해당 상세; 뒤로→명단.",
+    "guard": "가입일·주간 거리 등 공개된 실제 데이터만. 크루장 전용 더보기 없음.0거리면 현행 활동 없음 문구.",
+    "review": "Member role/join date/week distance follows actual public data model; no management menu for ordinary viewer."
+  },
+  {
+    "id": "CP57",
+    "title": "멤버 내보내기 확인",
+    "png": "01-screens/CP57.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "d28ddb6638db78ad74ff21edd17b6498b4ea4b40ae40860875d860178ed2da2a",
+    "entry": "크루장 멤버 메뉴의 내보내기",
+    "actions": "내보내기→서버 성공 후 명단 재조회·호출 명단으로 복귀; 취소→CP84.",
+    "guard": "일반 멤버 대상만. 요청 중 닫기·중복 차단, 실패는 같은 시트 안 오류.24명에서23명으로 그리는 것은 성공 확인 후.",
+    "review": "Minsu removal confirmation over owner-view member profile; single coral destructive action and cancel, no premature removal."
+  },
+  {
+    "id": "CP58",
+    "title": "새 크루장 선택",
+    "png": "01-screens/CP58.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "471881187d2d507dbf5a1dda906e99481cd5252e91632f743d15c3a3467c09b4",
+    "entry": "운영 설정·명단에서 크루장 넘기기",
+    "actions": "현재 일반 멤버 행→CP59; 뒤로→호출자.",
+    "guard": "현재 크루장과 가입 대기자는 후보가 아니다. 후보0명/조회 실패/로딩은 별도 상태.",
+    "review": "Three existing member candidates with initial-avatar continuity; no current leader/applicant, no premature transfer action."
+  },
+  {
+    "id": "CP59",
+    "title": "크루장 변경 확인",
+    "png": "01-screens/CP59.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "9c2f5f107da713cc383945d2701e75010571a9dc58a0a46403527814c69e8bb4",
+    "entry": "민수 선택 또는 CP75의 민수에게 지정",
+    "actions": "크루장 변경→서버 성공 CP86; 취소→CP58 또는 실제 호출 흐름.",
+    "guard": "현재 소유자는 일반 멤버로 남는다. 자동 탈퇴하지 않는다. 실패 시 권한과 선택 대상을 임의 변경하지 않는다.",
+    "review": "Transfer confirmation preserves candidate list and explicitly explains retained ordinary membership; one confirm/cancel."
+  },
+  {
+    "id": "CP60",
+    "title": "멤버용 더보기",
+    "png": "01-screens/CP60.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "02050ca17c3a2750b095466d10b9b9e56b13fb1aee2acd9a71e84a10665e735d",
+    "entry": "일반 멤버 상세의 더보기",
+    "actions": "크루 멤버 보기→CP12; 크루 신고→CP64; 크루 나가기→CP61; 닫기→상세.",
+    "guard": "가입 대기/방문자의 CP73, 크루장의 운영 설정 진입과 구분한다.",
+    "review": "Member-only three-action sheet on memberdetail, coral leave distinct; no owner actions."
+  },
+  {
+    "id": "CP61",
+    "title": "크루 나가기 확인",
+    "png": "01-screens/CP61.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "564ef2d185aee523bd8242d3ac714ea3f2ff3909f7a0a760972a2a212dcfaacb",
+    "entry": "일반 멤버가 크루 나가기 선택",
+    "actions": "크루 나가기→서버 성공 후 멤버 권한 해제·상세 갱신; 취소→기존 상세.",
+    "guard": "퇴근런 승인제 예시라 재가입 신청 안내. 자유가입 크루의 실제 정책에 맞게 문구 분기. 계정/다른 크루를 지우지 않는다.",
+    "review": "Leave confirmation preserves underlying24count until response, warns reapplication for approval-policy fixture."
+  },
+  {
+    "id": "CP62",
+    "title": "크루장 탈퇴 안내",
+    "png": "01-screens/CP62.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "a00a79dc01df30f8f9eada31764eb51affb449b79795183a5b0bfb044f759149",
+    "entry": "다른 멤버가 남아 있는 크루장의 나가기",
+    "actions": "새 크루장 선택→CP58; 닫기→운영 설정.",
+    "guard": "권한 이전과 탈퇴는 별도 작업이다. 혼자 남은 크루장은 이 시트 대신 CP63으로 이어진다.",
+    "review": "Owner exit guard above actual settings context; directs to leader selection before separate leave flow."
+  },
+  {
+    "id": "CP63",
+    "title": "크루 해산 확인",
+    "png": "01-screens/CP63.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "cf84621e84190b2c1a46a6ae8fd1d4571914c38bbfa2e399ac5738b326d3a06c",
+    "entry": "크루 해산 또는 혼자 남은 크루장의 나가기",
+    "actions": "크루 해산→서버 성공 후 크루 목록; 취소→운영 설정.",
+    "guard": "소속과 모집 종료 범위를 설명한다. 확인 전 삭제하지 않는다. 실패는 시트 안에 표시하고 기존 상태 유지.",
+    "review": "Dissolve confirmation describes membership/recruitment ending, uses distinct destructive action over actual settings."
+  },
+  {
+    "id": "CP64",
+    "title": "크루 신고 사유",
+    "png": "01-screens/CP64.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1d59e62a1d6d0a87eec434f2fbfa6a3eea76426d8a61ce5f38c97eb4a34fe3fb",
+    "entry": "방문자/멤버 메뉴의 신고",
+    "actions": "사유 하나 선택; 기타면 선택 메모 입력; 신고하기→접수 성공 CP65; 닫기→상세.",
+    "guard": "사유 미선택 전송 비활성. 시안은광고 선택 예시. 실패 시 사유·메모 유지.기타 메모 최대500자.",
+    "review": "Four single-select reasons; explicit first selected with check/text, one submit; no Other field or premature receipt."
+  },
+  {
+    "id": "CP65",
+    "title": "신고 접수 완료",
+    "png": "01-screens/CP65.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "ea395a27caadc9aa707070030bd282dbf249902cac64781adc8a105d32137f61",
+    "entry": "신고 접수 성공",
+    "actions": "확인/뒤로→신고했던 크루 상세.",
+    "guard": "접수 확인만 의미. 제재 완료·문제 해결·처리 시간 보장으로 해석하지 않는다.",
+    "review": "Simple report received message only, one return confirmation and generous safe footer; no invented resolution."
+  },
+  {
+    "id": "CP74",
+    "title": "운영 설정",
+    "png": "01-screens/CP74.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "959fc61c511ef80d6e83a892b10f50b734192a3df0167b4867cd8beef8e43a5d",
+    "entry": "모집 중인 크루장의 더보기/운영 설정",
+    "actions": "모집 멈춤→CP44; 넘기기→CP58; 나가기→CP62 또는 CP63; 해산→CP63; 가입 방식→기존 정책 시트.",
+    "guard": "가입 방식 행은 기존 기능이므로 보존. 정책 시트는 기존95개 후보 밖의 추가 제작 대상.",
+    "review": "Owner operations keep active recruitment, transfer/leave/dissolve and existing policy row; no duplicate action footer."
+  },
+  {
+    "id": "CP75",
+    "title": "멤버 관리 동작",
+    "png": "01-screens/CP75.png",
+    "revision": 1,
+    "size": [
+      887,
+      1773
+    ],
+    "sha256": "9728e1b35289cf7fbf079eab6db18fd0df618f7fd51eb5db3f93d05ee0086e93",
+    "entry": "크루장이 일반 멤버 CP84의 더보기",
+    "actions": "크루장으로 지정→대상이 지정된 CP59; 크루에서 내보내기→CP57; 닫기→CP84.",
+    "guard": "본인·현재 크루장·신청자에게 보여주지 않는다. 대상 userId를 유지한다.",
+    "review": "Owner-only two-item menu on Minsu profile, destructive removal distinguished, no premature action."
+  },
+  {
+    "id": "CP76",
+    "title": "크루 상세 · 크루장",
+    "png": "01-screens/CP76.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1b66952f7b22403ba210b83502be8419fbec7caacbe8f5860d4ff9c12248f2e1",
+    "entry": "크루장이 보는 모집 중 상세",
+    "actions": "크루 관리→CP40; 더보기→CP74; 대표 이미지→CP09; 레벨→CP11; 크루장→CP10; 명단→CP12; 목표→CP13.",
+    "guard": "소개·멤버24·준호·126/160km·79% 유지. 화면 아래의 크루 활동 진입도 보존(CP94 참고).",
+    "review": "Exact detail family retained; owner footer changes to manage,24/30 and126/16079% unchanged."
+  },
+  {
+    "id": "CP79",
+    "title": "남은 가입 신청",
+    "png": "01-screens/CP79.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "8bf0f857c3167a7b1a71976f65024f33d31ad0bb17750787027dcafc0c40b4fd",
+    "entry": "도윤 승인 후 남은 신청 목록",
+    "actions": "지연 신청→해당 CP49; 뒤로→관리.",
+    "guard": "도윤은 목록에서 빠지고 신청1건·멤버25/30. 거절 분기의 멤버 수는24이며 이 이미지 수치를 재사용하지 않는다.",
+    "review": "Doyun removed, Jiyeon moved up, pending1 andmembers25/30 consistent after approval."
+  },
+  {
+    "id": "CP80",
+    "title": "관리 작업 실패",
+    "png": "01-screens/CP80.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "2635d0e61fabdb5a2cf607473ead9b9dcafddfb858c8b69fccc05f736297f92a",
+    "entry": "가입 처리 실패 또는 결과 재확인 필요",
+    "actions": "다시 확인→작업 오류 해제 후 신청·크루 상태 재조회; 닫기→신청.",
+    "guard": "실패를 성공으로 표시하거나 무조건 승인 재전송하지 않는다. 최신 신청 상태로 다음 행동을 결정한다.",
+    "review": "Error sheet retains application, no success implication, explicit recheck action."
+  },
+  {
+    "id": "CP81",
+    "title": "승인 직전 정원 초과",
+    "png": "01-screens/CP81.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "dc060c7c358382dc0ce3a42bf58dd0b9f1f98e34345cf8d942175bbd2ceffdff",
+    "entry": "가입 승인 중 정원 충돌",
+    "actions": "모집 정원 확인→CP43; 신청으로 돌아가기→현재 신청 재조회.",
+    "guard": "작성된 신청을 보존한다. 자동 정원 확대/자동 승인 금지. 최신 멤버 수를 우선한다.",
+    "review": "Capacity conflict preserves application and gives capacity check/return; one high-emphasis action."
+  },
+  {
+    "id": "CP83",
+    "title": "목표 변경 후 현황",
+    "png": "01-screens/CP83.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "1c947c24a01c1b43567fdf428cb95ff5f96fe01f6bd36cbe3a0b20500349eecf",
+    "entry": "주간 목표200km 적용 성공",
+    "actions": "참여 멤버→CP82; 목표 수정→CP46; 뒤로→호출자.",
+    "guard": "누적126/200=63%,남은74km,참여9/24명. 새 목표로 누적 거리를 재설정하지 않는다.",
+    "review": "Applied200 goal preserves126,63%,74remaining and9participants; exact CP13 geometry."
+  },
+  {
+    "id": "CP84",
+    "title": "멤버 프로필 · 크루장 열람",
+    "png": "01-screens/CP84.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "dfdad3cc567a89f706302025fde6dbf373d28e3099ad65f903cdbab4fc014c05",
+    "entry": "크루장이 보는 일반 멤버 공개 프로필",
+    "actions": "더보기→CP75; 함께하는 크루→상세; 뒤로→명단.",
+    "guard": "표시 대상은 일반 멤버 민수이고 보는 사람이 크루장이다. CP56과 공개 데이터는 동일.",
+    "review": "ExactCP56 public profile plus owner-only moremenu, subject remains regularmember."
+  },
+  {
+    "id": "CP85",
+    "title": "신청자 공개 프로필",
+    "png": "01-screens/CP85.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "802b30062eae4de14dff0c788bd0965a6becd634dfe113a942bdf80d416c1e37",
+    "entry": "가입 신청 상세에서 공개 프로필 보기",
+    "actions": "뒤로→해당 신청.",
+    "guard": "도윤은 아직 멤버 아님. 신청 날짜·선택한 문구만 사용. 멤버 가입일·주간 거리·관리 메뉴를 넣지 않는다.",
+    "review": "Applicant date/selected phrase and explicit not-member state; no membership stats/manage actions."
+  },
+  {
+    "id": "CP86",
+    "title": "크루장 변경 후 상세",
+    "png": "01-screens/CP86.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "f199a07e212ef2583d7f4e62e4b2e56e649b2df89749cd148319407541492332",
+    "entry": "크루장 넘기기 성공 후 상세",
+    "actions": "멤버 보기→CP12; 더보기→CP60; 새 크루장 소개→현재 민수의 프로필.",
+    "guard": "총24명 그대로. 새 크루장민수,이전 크루장준호는 일반 멤버. 뒤로 가도 이전 운영 권한이 남지 않아야 한다.",
+    "review": "Transfer result updates leader toMinsu, keeps viewer member and24count, retains goal data and member footer."
+  },
+  {
+    "id": "CP89",
+    "title": "모집 중지 후 크루장 화면",
+    "png": "01-screens/CP89.png",
+    "revision": 1,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "4076bbd1125028671c574144c8e52b7a27a08dde4f9ce344fc377a5391e30b01",
+    "entry": "모집 멈춤 성공 후 크루장 상세",
+    "actions": "크루 관리→CP40; 더보기→CP90; 기존 멤버/목표 조회 유지.",
+    "guard": "모집 쉼 상태라도24명·레벨·누적거리와 운영 권한 유지.",
+    "review": "Paused owner detail retains24members and126/160 goal; only recruitment helper changes."
+  },
+  {
+    "id": "CP90",
+    "title": "모집 중지 상태의 운영 설정",
+    "png": "01-screens/CP90.png",
+    "revision": 2,
+    "size": [
+      887,
+      1774
+    ],
+    "sha256": "28716dfe22c6d41d8ff7cf237e20942508e1aab818f0c1ecd129668322219dc9",
+    "entry": "모집 쉼 상태의 크루 운영 설정",
+    "actions": "모집 시작→CP45; 나머지 넘기기/나가기/해산/가입 방식은 CP74와 동일.",
+    "guard": "CP74와 동일한 행 배치이며 상태 문구와 모집 행동만 바뀐다.",
+    "review": "Paused operations now preserve same layout as CP74, changing status/action only; existing policy row retained."
+  }
+]

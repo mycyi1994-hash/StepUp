@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_blue_reconnecting_title">正在重新连接。</string>
+    <string name="chat_blue_reconnecting_body">已输入的内容会保留。</string>
+    <string name="crew_blue_clear_query">清除搜索词</string>
+    <string name="crewhome_blue_week_goal_current">当前目标 %1$dkm</string>
+    <string name="crewhome_blue_week_goal_note">按当前目标显示。</string>
+    <string name="crewhome_blue_run_trim">起点和终点附近约300米不会显示在地图上。</string>
+    <string name="crewhome_blue_place_note">可以在地图应用中查看集合地点。</string>
+</resources>

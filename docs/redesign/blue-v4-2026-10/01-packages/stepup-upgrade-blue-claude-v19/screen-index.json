@@ -1,0 +1,240 @@
+[
+  {
+    "id": "UP01",
+    "title": "강화기본-재료선택전",
+    "file": "images/UP01.png",
+    "revision": 1,
+    "sha256": "6910e2eda3332d1d40c41235b90d8595bf7d215edfdc16a0e29e610c1b37ef9a",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "신발 상세의 강화하기",
+    "visualReview": "빈 재료 슬롯3개,0/3,비활성버튼,현재70.0%,하위등급/소각안내,독립3바 확인. 별도 확률계산 문장 제거."
+  },
+  {
+    "id": "UP02",
+    "title": "재료선택-보정값",
+    "file": "images/UP02.png",
+    "revision": 2,
+    "sha256": "5b4497f6c06a9c4127e870ac84eeec2dd145ed85d04c6a19859ef6e5fad8961e",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "01 또는08의 +",
+    "visualReview": "3개 체크와3/3 일치,각 신발 등급/레벨/소유번호/보정 일치,최종80.4%만 표시. r2에서 배경만 어둡게 수정 후 글자/선택/버튼 재검수."
+  },
+  {
+    "id": "UP03",
+    "title": "강화준비완료",
+    "file": "images/UP03.png",
+    "revision": 1,
+    "sha256": "ef138543c4612d452e4e8df10102e945fa297482a0418c1426dd95b476d3aa79",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "재료3개선택완료",
+    "visualReview": "재료3개,X제거,하위등급 혼합,80.4%,활성강화 버튼 및소각안내 확인. 레벨20상한과증가예시 유지."
+  },
+  {
+    "id": "UP04",
+    "title": "최종확인",
+    "file": "images/UP04.png",
+    "revision": 2,
+    "sha256": "0ef56175055c1e37588bf5a77925a29c60618ba36b4f9cd4e9055066c35f7abb",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "03→04",
+    "visualReview": "r2에서 모달배경 대비 수정. 실제 사용재료3개,대상0007,80.4%,되돌릴수없음,취소/강화시작 확인."
+  },
+  {
+    "id": "UP05",
+    "title": "강화진행중",
+    "file": "images/UP05.png",
+    "revision": 1,
+    "sha256": "42c9654d3e639592f048297472d85f9a340fd2be0e735faa3f14e06fd15f98fc",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "04 실행 후 응답 대기",
+    "visualReview": "Lv10결과대기,스피너,재료확인중,중복실행비활성,나중에확인. 확정소각/성공을 미리 주장하지않음."
+  },
+  {
+    "id": "UP06",
+    "title": "강화성공",
+    "file": "images/UP06.png",
+    "revision": 1,
+    "sha256": "4ccdfcf36b0e99aab8520fdc0311e1020884f7873d0d68be9780e9204c3cd665",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "05 확정 성공 응답",
+    "visualReview": "Lv11,예시증가수치,소각완료 및 상세/다음레벨 두행동 확인."
+  },
+  {
+    "id": "UP07",
+    "title": "강화실패",
+    "file": "images/UP07.png",
+    "revision": 1,
+    "sha256": "c78ed1221069bd5f20480e479e34e2036429bb2948351d7cb3a87935e17e4b53",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "05 확정 실패 응답",
+    "visualReview": "확정실패와3개소각,대상Lv10유지,증가화살표없는현재값,재료다시선택/상세 확인."
+  },
+  {
+    "id": "UP08",
+    "title": "재료2개선택",
+    "file": "images/UP08.png",
+    "revision": 1,
+    "sha256": "176767ef91cb394da5d1434ca7758fd99071fc404ada23eee936975cd61a5691",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "재료 선택창에서 2개 넣기",
+    "visualReview": "2/3와두재료및빈슬롯 일치,78.4%,실행비활성,계산내역제거."
+  },
+  {
+    "id": "UP09",
+    "title": "재료없음",
+    "file": "images/UP09.png",
+    "revision": 1,
+    "sha256": "514f11efce7748874580eb845bf635d4a985e9a0ad5578c56e1522d28703b75c",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "02 조회 성공·적합 재료 0개",
+    "visualReview": "정상조회빈결과,적합재료없음,0/3,보유신발/닫기. 재료없음과조회오류구분."
+  },
+  {
+    "id": "UP10",
+    "title": "재료불러오는중",
+    "file": "images/UP10.png",
+    "revision": 1,
+    "sha256": "58e43559d4c0abfa26b39093b61a5cb44aa1413258744157c1f483f3bd9dd591",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "02 첫 진입·조회 대기",
+    "visualReview": "스켈레톤3행,불러오는중,비활성footer와닫기,가짜신발수치없음."
+  },
+  {
+    "id": "UP11",
+    "title": "재료조회실패",
+    "file": "images/UP11.png",
+    "revision": 2,
+    "sha256": "ba2459925d7bec9c867c45a33a0b8ff4476ed01459510e84ecb2ed6a9e4891ac",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "02 조회 실패",
+    "visualReview": "r2 배경대비수정. 조회실패와재시도/닫기/기존선택유지 문구 확인."
+  },
+  {
+    "id": "UP12",
+    "title": "선택재료변경",
+    "file": "images/UP12.png",
+    "revision": 1,
+    "sha256": "fec3cf31a0b0d9cd56f3968e9f8f76b5654015893ea30d66b457212ebaa382a4",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "실행 전 검증에서 재료 변경 발견",
+    "visualReview": "사전검증거절,문제재료0048식별,미시작/미소각문구,다른재료선택/돌아가기."
+  },
+  {
+    "id": "UP13",
+    "title": "최대레벨20",
+    "file": "images/UP13.png",
+    "revision": 1,
+    "sha256": "17d42dbc3612680ce23dbc9696cb07d3b648bc7b56ad6ca0e27e26c689b8401c",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "Lv20 대상 진입 또는 Lv19→20 성공 후",
+    "visualReview": "20/20완전채움,더강화불가,성공률/재료슬롯없음,상세보기. 현재값만표시."
+  },
+  {
+    "id": "UP14",
+    "title": "시작전오프라인",
+    "file": "images/UP14.png",
+    "revision": 1,
+    "sha256": "595fb451ca9b4d91efed967385d1bc4619a8fdde226512e8894dc1c2bcec0b96",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "bottom_sheet",
+    "trigger": "요청 전 오프라인 확인",
+    "visualReview": "전송전오프라인과미시작문구,선택보존,연결재확인/돌아가기. 새강화자동요청버튼없음."
+  },
+  {
+    "id": "UP15",
+    "title": "결과확인필요",
+    "file": "images/UP15.png",
+    "revision": 1,
+    "sha256": "bfd8cb2d0ed5999f173f5394a191f4028ad1f5dc7d323e332f90aa2748905787",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "요청 후 응답 유실 또는 앱 재진입",
+    "visualReview": "접수확정으로단정하지않는결과미확인문구,잠금재료,마지막확인기록,결과조회/나중에확인."
+  },
+  {
+    "id": "UP17",
+    "title": "최하위등급강화불가",
+    "file": "images/UP17.png",
+    "revision": 1,
+    "sha256": "413a4cc8b4a2697ebb3d2415ba168eff5b52ef7ce7483cf2c343d0b763f4caba",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "하위 등급이 없는 대상 진입",
+    "visualReview": "일반등급은은색프레임/실제원본참조의흰청록신발 유지,하위등급없음,다른신발보기. 새등급/허구이름추가안함."
+  },
+  {
+    "id": "UP18",
+    "title": "강화대상사용불가",
+    "file": "images/UP18.png",
+    "revision": 1,
+    "sha256": "f4d9432678479c5b4d27408deab4a890bd25e77002eae6119a225bf1d7ff2a10",
+    "size": [
+      853,
+      1844
+    ],
+    "type": "standalone",
+    "trigger": "대상 소유·관리 상태가 바뀐 후 진입",
+    "visualReview": "대상상태변경,미소각문구,보유신발보기. 확정미접수상태용으로자료에명시."
+  }
+]

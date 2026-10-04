@@ -1,0 +1,8 @@
+{
+  "id": "K07",
+  "mode": "built-in imagegen edit",
+  "prompt": "Edit this UI image only: remove the PAUSE symbol from the 러닝 화면으로 button, since it returns without pausing. In the map replace the open multicolor route with a compact closed loop on park LAND along southern bank: first41% cyan from one small start/finish circle, blue white-ring current dot at cyan/gray join, remainder59% muted gray-blue returns to start. No extra dots, no crossing water. Preserve 코스 지도 heading, all 0.98km/2.40km figures, 기록 중 status, recenter and buttonlabel.",
+  "references": [
+    "C:\\Users\\gana0\\.codex\\generated_images\\01a0e10e-d257-7912-b9d5-ea15ac98265b\\exec-fb8b2eb1-54f9-4715-9f54-bda5eab739a7.png"
+  ]
+}

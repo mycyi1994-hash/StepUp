@@ -1,0 +1,13 @@
+{
+  "scope": "문서의보정식/예시 산술 검증",
+  "exampleBonuses": [
+    5.6,
+    2.8,
+    2.0
+  ],
+  "partial": 78.4,
+  "final": 80.4,
+  "comparisonRows": 5,
+  "passed": true,
+  "appOrServerTest": false
+}

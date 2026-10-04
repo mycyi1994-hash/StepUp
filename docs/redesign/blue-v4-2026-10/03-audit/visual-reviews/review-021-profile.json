@@ -1,0 +1,131 @@
+{
+  "method": "Individual visual inspection of final PNG; not runtime verification",
+  "screens": [
+    {
+      "id": "PRO01",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Full edit screen: fallback avatar, immediate-photo helper, 민수2/16, disabled save, no shared chrome; all labels visible."
+    },
+    {
+      "id": "PF01",
+      "revision": 2,
+      "result": "passed",
+      "notes": "Approved pass shoe and original logo, runner Lv.12 retained; record CTA, challenges, wallet, settings and five tabs visible."
+    },
+    {
+      "id": "PRO02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Edited nickname5/16, active white save, clean focus; no keyboard shown in this variant."
+    },
+    {
+      "id": "PRO03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Two photo choices and secondary close; helper immediate save; scrim avoids duplicate active actions."
+    },
+    {
+      "id": "PRO04",
+      "revision": 2,
+      "result": "passed",
+      "notes": "16 distinct legacy options in same ID order; second runningwoman marked, no check for custom avatar; close only."
+    },
+    {
+      "id": "PRO05",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Blank0/16 valid, clearX removed, active save, neutral helper."
+    },
+    {
+      "id": "PRO06",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Exact16-syllable nickname visible;16/16, neutral limit message; active save."
+    },
+    {
+      "id": "PRO07",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Photo-area spinner only; photo action/name save disabled; name field editable; no invented progress."
+    },
+    {
+      "id": "PRO08",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Photo failure shown beside photo area before nickname (intentional placement); original avatar retained, retry selection available, name unchanged."
+    },
+    {
+      "id": "PRO10",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Saving input and photo controls muted; saved draft retained, busybutton spinner without percent."
+    },
+    {
+      "id": "PRO11",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Name failure retains5/16 draft, one retry primary; independent photo controls."
+    },
+    {
+      "id": "PRO12",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Success home shows newname, allmenus and nav; toast does not cover their labels. Actual bounddata only."
+    },
+    {
+      "id": "PF02",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Records independently loading: dashes no units/zeros, spinner; known identity andbalance retained."
+    },
+    {
+      "id": "PF03",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Passmetrics replaced by errorandsecondaryretry; recordCTAandmenus preserved; nofakezero."
+    },
+    {
+      "id": "PF04",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Actual0.0km/0runs plusfirst-runhelper; walking-basedrunnerlevel andknownbalance independent."
+    },
+    {
+      "id": "PRO13",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Recovered interrupted generation and individually inspected: neutral skeletons and spinner, no assumed name or zero, back retained."
+    },
+    {
+      "id": "PRO09",
+      "revision": 2,
+      "result": "passed",
+      "notes": "Photo already saved helper corrected; discard concerns nickname only; one primary and one secondary, no caret behind sheet."
+    },
+    {
+      "id": "PRO14",
+      "revision": 2,
+      "result": "passed",
+      "notes": "One spinner on pending firstcell only; no premature selectioncheck; all options andclose disabled."
+    },
+    {
+      "id": "PRO15",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Same16options/no newselectioncheck; inlinefailure fits aboveclose, oldavatar retained."
+    },
+    {
+      "id": "PRO16",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Native IME example: field andsave visible abovekeyboard; scrolled avatar clipped at contentviewport intentionally; actualOSIME notcustomasset."
+    },
+    {
+      "id": "PRO17",
+      "revision": 1,
+      "result": "passed",
+      "notes": "Photo saved while nickname unchanged; only photohelper changes, save remains disabled."
+    }
+  ]
+}
