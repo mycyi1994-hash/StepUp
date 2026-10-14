@@ -151,4 +151,10 @@ class PaletteContrastTest {
             p.assertAtLeast(4.5, "강조 글자", p.voltText, p.carbon)
         }
     }
+
+    /** 2026-10-14 "지도가 너무 어둡다" — 어두운 테마는 타일 위 막을 얇게 둔다. 밝은 테마는 그대로 */
+    @Test fun `어두운 지도는 밝게 — 막은 얇게, 밝은 테마는 그대로`() {
+        assertTrue("dark map shade must be thinner than the light one", DarkPalette.mapShadeScale < 1f)
+        assertTrue("light map unchanged: full shade", LightPalette.mapShadeScale == 1f)
+    }
 }

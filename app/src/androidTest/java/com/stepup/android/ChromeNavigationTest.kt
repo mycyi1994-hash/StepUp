@@ -45,7 +45,12 @@ class ChromeNavigationTest {
             ServiceLocator.userPrefs.setHaptics(false)
             ServiceLocator.userPrefs.setGuideSeen()
             ServiceLocator.sneakerRepository.ensureStarter()
+            // 러닝 화면은 자유 러닝(보상 UI 없는 지도 화면)으로 본다 — 앞 테스트가 남긴 코스 · 코스 만들기를 비운다
+            ServiceLocator.courseRepository.clearSelection()
+            ServiceLocator.courseRepository.cancelRecording()
         }
+        com.stepup.android.domain.RunPlans.clear()
+        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
         var viewport by mutableStateOf(Viewport(360, 780, 1f, ThemeMode.DARK))
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1.8f, viewport.font)) {
@@ -175,12 +180,18 @@ class ChromeNavigationTest {
             compose.waitForIdle()
             compose.onNodeWithTag("main-header").assertDoesNotExist()
             compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
+            // 자유 러닝(2026-10-14 v2) — 지도 가득 + 아래 기록 판. 멈춰 있으면 지도 위 일시정지 띠, 주 버튼은 "다시 시작"
+            compose.onNodeWithTag("run-live").assertExists()
+            compose.onNodeWithTag("run-paused-band", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
+                .assertTextContains(compose.activity.getString(R.string.run_free_resume))
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
             capture("${next.width}-${next.font}-${next.mode}-run-paused")
             compose.onNodeWithTag("run-finish").performClick()
-            // R04 — 러닝을 마칠까요?(아래 시트)
+            // 04 — 러닝을 마칠까요?(아래 시트, 닫기 X 없이 저장하고 종료 · 계속 달리기)
             compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
+            compose.onNodeWithTag("run-end-save").assertIsDisplayed()
+            compose.onAllNodesWithTag("run-sheet-close").assertCountEquals(0)
             capture("${next.width}-${next.font}-${next.mode}-run-finish-confirm")
             compose.onNodeWithTag("run-end-continue").performClick()
             compose.waitForIdle()
@@ -193,6 +204,7 @@ class ChromeNavigationTest {
             compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
             compose.onNodeWithTag("run-finish").assertIsDisplayed()
             // Presentation fixtures only: these do not simulate server settlement or GPS.
+            // 자유 러닝은 저장 중(06) · 저장 실패(07)도 같은 지도 · 기록 판이다. 실패는 시트 없이 위 띠 · 다시 저장 · 화면에 머물기
             for (saveStatus in listOf(com.stepup.android.service.RunSaveStatus.SAVING,
                 com.stepup.android.service.RunSaveStatus.FAILED)) {
                 com.stepup.android.service.WalkSessionService.showStateForTest(
@@ -203,13 +215,25 @@ class ChromeNavigationTest {
                 compose.onNodeWithTag("run-finish").assertDoesNotExist()
                 val action = compose.onNodeWithTag("run-primary-action").assertIsDisplayed()
                 if (saveStatus == com.stepup.android.service.RunSaveStatus.SAVING) {
+                    compose.onNodeWithTag("run-saving").assertExists()
                     action.assertIsNotEnabled()
                     compose.onNodeWithTag("run-save-error").assertDoesNotExist()
                 } else {
                     action.assertIsEnabled()
                     compose.onNodeWithTag("run-save-error").assertIsDisplayed()
+                    compose.onNodeWithTag("run-save-stay").assertIsDisplayed()
+                    compose.onNodeWithTag("run-save-failed-dialog").assertDoesNotExist()
+                    compose.onNodeWithTag("run-details-open").assertDoesNotExist()
                 }
                 capture("${next.width}-${next.font}-${next.mode}-save-$saveStatus")
+                if (saveStatus == com.stepup.android.service.RunSaveStatus.FAILED) {
+                    // "화면에 머물기"는 한 번 누르면 숨는다 — 위 띠와 다시 저장은 남는다
+                    compose.onNodeWithTag("run-save-stay").performClick()
+                    compose.waitForIdle()
+                    compose.onNodeWithTag("run-save-stay").assertDoesNotExist()
+                    compose.onNodeWithTag("run-save-error").assertIsDisplayed()
+                    compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertIsEnabled()
+                }
             }
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
@@ -218,15 +242,15 @@ class ChromeNavigationTest {
                 ),
             )
             compose.waitForIdle()
+            // 자유 러닝 결과(08) — 기록 저장만 알린다. 이 폰이 셈한 보상 · 서버 확인 상태(SUP · 예상 · 확인 중)는 두지 않는다
+            compose.onNodeWithTag("run-result").assertExists()
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().assertHasClickAction()
-            // 러닝 결과(E10) — 서버 확인 전에는 이 폰이 셈한 값을 "이번 러닝 SUP · 예상 · 확인 중"으로만 보인다
-            compose.onNodeWithTag("run-result-reward").onChildren().onFirst().assertTextEquals("+4.0")
-            compose.onNodeWithTag("run-result-reward-label", useUnmergedTree = true)
-                .assertTextEquals(compose.activity.getString(R.string.run_reward_this))
-            compose.onNodeWithText(compose.activity.getString(R.string.run_reward_estimate), useUnmergedTree = true).assertExists()
-            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
-            compose.onAllNodesWithTag("run-result-settle-done", useUnmergedTree = true).assertCountEquals(0)
-            capture("${next.width}-${next.font}-${next.mode}-result-pending")
+            compose.onNodeWithTag("run-result-saved", useUnmergedTree = true)
+                .assertTextEquals(compose.activity.getString(R.string.run_free_record_saved))
+            // 거리는 GPS 로 잰 값만 — GPS 거리가 없으면 걸음으로 셈하지 않고 "—"
+            compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("—")
+            assertNoRewardOnFreeResult("result")
+            capture("${next.width}-${next.font}-${next.mode}-result")
             com.stepup.android.service.WalkSessionService.showStateForTest(
                 com.stepup.android.service.WalkSessionState(
                     lastRewardPoints = 4.0, lastSessionSteps = 1200, lastElapsedSec = 623,
@@ -234,10 +258,11 @@ class ChromeNavigationTest {
                 ),
             )
             compose.waitForIdle()
-            // 지급 제외(E08) — 금액을 적지 않고 "지급 제외"와 까닭(자세히 보기)만
-            compose.onAllNodesWithTag("run-result-reward").assertCountEquals(0)
-            compose.onNodeWithTag("run-result-settle-void", useUnmergedTree = true).assertExists()
-            compose.onNodeWithTag("run-result-void-reason", useUnmergedTree = true).assertExists()
+            // 지급 제외(VOID)여도 자유 러닝 결과는 같은 모습이다 — "지급 제외" · 까닭 줄을 따로 두지 않는다
+            compose.onNodeWithTag("run-result").assertExists()
+            compose.onNodeWithTag("run-result-done").assertIsDisplayed().assertHasClickAction()
+            compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("—")
+            assertNoRewardOnFreeResult("void result")
             capture("${next.width}-${next.font}-${next.mode}-result-void")
             compose.onNodeWithTag("run-result-done").assertIsDisplayed().performClick()
             compose.waitForIdle()
@@ -248,7 +273,7 @@ class ChromeNavigationTest {
             )
             compose.onNodeWithTag("home-start-run").performClick()
             compose.waitForIdle()
-            // 멈춘 러닝에서 뒤로 가기는 화면을 닫지 않고 마칠지 묻는다(R04 — 달리는 중이면 먼저 일시정지)
+            // 멈춘 러닝에서 뒤로 가기는 화면을 닫지 않고 마칠지 묻는다(04 — 달리는 중이면 먼저 일시정지)
             pressBack()
             compose.waitForIdle()
             compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
@@ -275,6 +300,28 @@ class ChromeNavigationTest {
 
     private fun bounds(tag: String): Rect = compose.onNodeWithTag(tag, useUnmergedTree = true)
         .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+
+    /** 자유 러닝 결과에는 보상 칸 · 정산 상태 · 무효 까닭 · SUP 글이 없다(보상 상태와 상관없이 같은 모습) */
+    private fun assertNoRewardOnFreeResult(state: String) {
+        listOf(
+            "run-result-reward", "run-result-reward-card", "run-result-reward-label", "run-result-reward-note",
+            "run-result-settle-pending", "run-result-settle-done", "run-result-settle-void", "run-result-settle-rejected",
+            "run-result-void-reason", "run-result-shoe", "run-result-note", "run-result-basis", "run-result-message",
+            "run-result-scroll",
+        ).forEach { tag ->
+            assertEquals("free run $state must not show $tag", 0,
+                compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().size)
+        }
+        listOf(R.string.run_reward_this, R.string.run_reward_estimate).forEach { id ->
+            val text = compose.activity.getString(id)
+            assertEquals("free run $state must not say \"$text\"", 0,
+                compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size)
+        }
+        assertEquals("free run $state must not mention SUP", 0,
+            compose.onAllNodesWithText("SUP", substring = true, useUnmergedTree = true).fetchSemanticsNodes().size)
+        assertEquals("free run $state must not read SUP aloud", 0,
+            compose.onAllNodesWithContentDescription("SUP", substring = true, useUnmergedTree = true).fetchSemanticsNodes().size)
+    }
 
     private fun awaitVisible(tag: String) {
         try {

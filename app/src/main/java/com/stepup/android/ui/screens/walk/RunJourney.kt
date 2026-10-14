@@ -278,7 +278,7 @@ private fun PanelValue(
  * 선을 그림으로 긋는다 — 칸 안의 큰 수([FitNumber])는 폭을 재는 칸이라 "높이를 먼저 물어보는" 줄(IntrinsicSize)에 넣을 수 없다.
  */
 @Composable
-private fun DividedRow(
+internal fun DividedRow(
     columns: Int,
     gap: Dp,
     modifier: Modifier = Modifier,

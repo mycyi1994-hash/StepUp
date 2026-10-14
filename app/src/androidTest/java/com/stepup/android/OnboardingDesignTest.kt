@@ -44,8 +44,10 @@ import com.stepup.android.ui.screens.walk.RunStartMenuContent
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -233,6 +235,81 @@ class OnboardingDesignTest {
         compose.onNodeWithTag("first-guide-sheet").assertDoesNotExist()
         assertTrue(runBlocking { ServiceLocator.userPrefs.guideSeen.first() })
         shot("a20c-run-home")
+    }
+
+    /**
+     * 자유 러닝의 짧은 권한 안내(2026-10-14 v2, 전달본 11 · 12) — 러닝 방법의 자유 러닝 카드가 minimal 로 띄우는 카드 한 장.
+     * 태그는 예전 안내와 같다(perm-sheet-* · perm-primary · perm-secondary). 버튼 하나에 콜백 하나만 불리고 닫기는 불리지 않는다.
+     * 위치 권한 없음은 보이는 차례만 바뀐다 — 앞의 "경로 없이 시작"이 시간만 기록(onSecondary), 옆의 "위치 설정"이 설정 열기(onPrimary).
+     */
+    @Test fun freeRunPermissionCards() {
+        prepare()
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider { Box(Modifier.fillMaxSize()) { scene() } } }
+        }
+        // 장면 이름 · 안내 · 카드 태그 · 보이는 주 버튼 글 · 보조 버튼 글 · 보이는 주 버튼이 보조 행동을 하는지
+        class Card(
+            val name: String,
+            val sheet: RunPermissionSheet,
+            val tag: String,
+            val primary: Int,
+            val secondary: Int,
+            val swapped: Boolean = false,
+        )
+        val cards = listOf(
+            Card("fr11-activity", RunPermissionSheet.ActivityRationale, "activity", R.string.run_pm_allow, R.string.run_perm_later),
+            Card("fr11-location", RunPermissionSheet.LocationRationale, "location",
+                R.string.run_free_pm_location_allow, R.string.run_free_pm_no_route),
+            Card("fr11-notification", RunPermissionSheet.NotificationRationale, "notification",
+                R.string.run_pm_notify_allow, R.string.run_perm_later),
+            Card("fr12-activity-denied", RunPermissionSheet.ActivityDenied, "activity-denied",
+                R.string.run_free_pm_allow_again, R.string.run_free_pm_home),
+            Card("fr12-activity-settings", RunPermissionSheet.ActivitySettings, "activity-settings",
+                R.string.run_pm_open_settings, R.string.run_free_pm_home),
+            Card("fr12-approximate", RunPermissionSheet.ApproximateLocation, "location-approximate",
+                R.string.run_free_pm_keep_going, R.string.run_pm_location_settings),
+            Card("fr12-no-location", RunPermissionSheet.WithoutLocation, "location-off",
+                R.string.run_free_pm_no_route, R.string.run_pm_location_settings, swapped = true),
+        )
+        assertEquals("안내 일곱 가지를 모두 찍는다", RunPermissionSheet.entries.toSet(), cards.map { it.sheet }.toSet())
+
+        for (card in cards) {
+            // 장면마다 새 셈 — 앞 장면에서 누른 것이 섞이지 않게
+            val primary = AtomicInteger()
+            val secondary = AtomicInteger()
+            val dismissed = AtomicInteger()
+            show(card.name, "perm-sheet-${card.tag}") {
+                RunStartMenuContent(onBack = {}, onFreeRun = {}, onGoals = {}, onDiet = {})
+                RunPermissionSheetView(
+                    card.sheet,
+                    onPrimary = { primary.incrementAndGet() },
+                    onSecondary = { secondary.incrementAndGet() },
+                    onDismiss = { dismissed.incrementAndGet() },
+                    minimal = true,
+                )
+            }
+            compose.onNodeWithTag("perm-sheet-${card.tag}").assertExists()
+            compose.onNodeWithTag("perm-primary").assertExists().assertHasClickAction().assertTextEquals(text(card.primary))
+            compose.onNodeWithTag("perm-secondary").assertExists().assertHasClickAction().assertTextEquals(text(card.secondary))
+
+            // 보이는 주 버튼 — 위치 권한 없음만 보조 행동(시간만 기록), 나머지는 주 행동
+            compose.onNodeWithTag("perm-primary").performClick()
+            compose.waitForIdle()
+            val afterPrimary = Triple(primary.get(), secondary.get(), dismissed.get())
+            assertEquals(
+                "${card.name}: 보이는 주 버튼은 콜백 하나만",
+                if (card.swapped) Triple(0, 1, 0) else Triple(1, 0, 0), afterPrimary,
+            )
+
+            // 보이는 보조 버튼 — 위치 권한 없음만 주 행동(설정 열기), 나머지는 보조 행동
+            compose.onNodeWithTag("perm-secondary").performClick()
+            compose.waitForIdle()
+            val afterSecondary = Triple(primary.get() - afterPrimary.first, secondary.get() - afterPrimary.second, dismissed.get())
+            assertEquals(
+                "${card.name}: 보이는 보조 버튼은 콜백 하나만",
+                if (card.swapped) Triple(1, 0, 0) else Triple(0, 1, 0), afterSecondary,
+            )
+        }
     }
 
     // ── 도우미 ─────────────────────────────────────────────────────

@@ -28,12 +28,21 @@ import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -97,7 +106,13 @@ import kotlinx.coroutines.launch
  * - 러닝 서비스는 여기서 켜지 않는다. [onReady] 가 한 번만 불리고, 부른 쪽이 3-2-1 로 간다.
  */
 @Composable
-internal fun RunPermissionFlow(onReady: () -> Unit, onCancel: () -> Unit, onHome: () -> Unit) {
+internal fun RunPermissionFlow(
+    onReady: () -> Unit,
+    onCancel: () -> Unit,
+    onHome: () -> Unit,
+    /** 자유 러닝(2026-10-14 v2) — 안내를 짧은 카드 하나로(전달본 11 · 12). 차례 · OS 권한 창 · 버튼의 뜻은 같다 */
+    minimal: Boolean = false,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = ServiceLocator.userPrefs
@@ -258,6 +273,7 @@ internal fun RunPermissionFlow(onReady: () -> Unit, onCancel: () -> Unit, onHome
             },
             // X · 뒤로 · 바깥 · 아래로 끌기 — 준비를 거두고 메뉴로. 닫았는데 러닝이 시작되지 않게 한다
             onDismiss = { cancel() },
+            minimal = minimal,
         )
     }
 }
@@ -363,7 +379,12 @@ internal fun RunPermissionSheetView(
     onPrimary: () -> Unit,
     onSecondary: () -> Unit,
     onDismiss: () -> Unit,
+    minimal: Boolean = false,
 ) {
+    if (minimal) {
+        MinimalPermissionCard(sheet, onPrimary, onSecondary, onDismiss)
+        return
+    }
     val spec = specOf(sheet)
     val tag = "perm-sheet-${spec.tag}"
     val buttons: @Composable ColumnScope.() -> Unit = {
@@ -408,6 +429,141 @@ internal fun RunPermissionSheetView(
             ),
         ) {
             RunPermissionPage(sheet, spec, onDismiss, buttons, Modifier.testTag(tag))
+        }
+    }
+}
+
+/** 자유 러닝 짧은 안내의 모양 — 예외 장면의 작은 배지 */
+private enum class MinimalBadge { Minus, Caution }
+
+/** 자유 러닝 짧은 안내 한 장의 글 · 버튼 이름 · 그림 */
+private class MinimalSpec(
+    val title: Int,
+    val body: Int,
+    val primary: Int,
+    val secondary: Int,
+    val icon: ImageVector,
+    /** 예외 장면(전달본 12) — 빨간 빼기(거부 · 설정 · 위치 권한 없음) · 노란 느낌표(대략적 위치). null 이면 안내(11) */
+    val badge: MinimalBadge? = null,
+    /** 보이는 주 버튼이 보조 행동을 한다 — 위치 권한 없음은 "경로 없이 시작"이 앞이고 "위치 설정"이 옆(뜻은 그대로) */
+    val swapped: Boolean = false,
+)
+
+private fun minimalSpecOf(sheet: RunPermissionSheet): MinimalSpec = when (sheet) {
+    RunPermissionSheet.ActivityRationale -> MinimalSpec(
+        R.string.run_free_pm_activity_title, R.string.run_free_pm_activity_body, R.string.run_pm_allow, R.string.run_perm_later,
+        Icons.AutoMirrored.Outlined.DirectionsRun,
+    )
+    RunPermissionSheet.ActivityDenied -> MinimalSpec(
+        R.string.run_free_pm_denied_title, R.string.run_free_pm_denied_body, R.string.run_free_pm_allow_again, R.string.run_free_pm_home,
+        Icons.AutoMirrored.Filled.DirectionsRun, MinimalBadge.Minus,
+    )
+    RunPermissionSheet.ActivitySettings -> MinimalSpec(
+        R.string.run_free_pm_settings_title, R.string.run_free_pm_settings_body, R.string.run_pm_open_settings, R.string.run_free_pm_home,
+        Icons.Filled.Settings, MinimalBadge.Minus,
+    )
+    RunPermissionSheet.LocationRationale -> MinimalSpec(
+        R.string.run_free_pm_location_title, R.string.run_free_pm_location_body, R.string.run_free_pm_location_allow,
+        R.string.run_free_pm_no_route, Icons.Outlined.LocationOn,
+    )
+    RunPermissionSheet.ApproximateLocation -> MinimalSpec(
+        R.string.run_free_pm_approx_title, R.string.run_free_pm_approx_body, R.string.run_free_pm_keep_going,
+        R.string.run_pm_location_settings, Icons.Filled.LocationOn, MinimalBadge.Caution,
+    )
+    RunPermissionSheet.WithoutLocation -> MinimalSpec(
+        R.string.run_free_pm_no_location_title, R.string.run_free_pm_no_location_body, R.string.run_free_pm_no_route,
+        R.string.run_pm_location_settings, Icons.Filled.LocationOn, MinimalBadge.Minus, swapped = true,
+    )
+    RunPermissionSheet.NotificationRationale -> MinimalSpec(
+        R.string.run_free_pm_notify_title, R.string.run_free_pm_notify_body, R.string.run_pm_notify_allow, R.string.run_perm_later,
+        Icons.Outlined.Notifications,
+    )
+}
+
+/**
+ * 자유 러닝의 권한 안내(전달본 11 · 12) — 가운데 카드 한 장: 그림 · 굵은 한 줄 · 설명 한 줄 · 버튼 둘.
+ * 안내(11)는 버튼을 위아래로, 예외(12)는 나란히 둔다. 화면 전체였던 예외 장면은 바깥을 눌러도 닫히지 않는다(예전과 같다).
+ * OS 권한 창은 버튼을 눌러야만 뜬다. 닫기(뒤로 · 바깥)는 [onDismiss] 하나 — 아무것도 시작하지 않는다.
+ */
+@Composable
+private fun MinimalPermissionCard(
+    sheet: RunPermissionSheet,
+    onPrimary: () -> Unit,
+    onSecondary: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val spec = specOf(sheet)
+    val m = minimalSpecOf(sheet)
+    val t = runTone()
+    val shownPrimary = if (m.swapped) onSecondary else onPrimary
+    val shownSecondary = if (m.swapped) onPrimary else onSecondary
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false, dismissOnClickOutside = spec.look != PermLook.Page,
+        ),
+    ) {
+        val shape = RoundedCornerShape(24.dp)
+        Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+            Column(
+                Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(shape)
+                    .background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
+                    .border(1.dp, t.panelEdge, shape)
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
+                    .testTag("perm-sheet-${spec.tag}"),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MinimalArt(m)
+                Spacer(Modifier.height(16.dp))
+                PermissionTitle(stringResource(m.title), size = 22.sp)
+                Spacer(Modifier.height(6.dp))
+                Text(stringResource(m.body), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(20.dp))
+                // 큰 글씨에서는 예외 카드도 위아래로 — 나란히 두면 "경로 없이 시작"이 잘린다
+                if (m.badge == null || androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) {
+                    FreeRunButton(stringResource(m.primary), shownPrimary, Modifier.fillMaxWidth().testTag("perm-primary"))
+                    Spacer(Modifier.height(10.dp))
+                    FreeRunButton(stringResource(m.secondary), shownSecondary, Modifier.fillMaxWidth().testTag("perm-secondary"),
+                        kind = FreeButtonKind.Secondary)
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FreeRunButton(stringResource(m.primary), shownPrimary, Modifier.weight(1f).testTag("perm-primary"))
+                        FreeRunButton(stringResource(m.secondary), shownSecondary, Modifier.weight(1f).testTag("perm-secondary"),
+                            kind = FreeButtonKind.Secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 안내는 선 그림 하나, 예외는 원 안 그림 + 작은 배지(빨간 빼기 · 노란 느낌표) — 배지는 그림으로 그린다 */
+@Composable
+private fun MinimalArt(m: MinimalSpec) {
+    val t = runTone()
+    val c = freeRunColors()
+    if (m.badge == null) {
+        Icon(m.icon, contentDescription = null, tint = t.label, modifier = Modifier.size(64.dp))
+        return
+    }
+    Box(Modifier.size(88.dp)) {
+        Box(
+            Modifier.size(80.dp).align(Alignment.Center).clip(CircleShape).background(t.panelTop),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(m.icon, contentDescription = null, tint = t.label, modifier = Modifier.size(40.dp))
+        }
+        Box(
+            Modifier.align(Alignment.BottomEnd).size(28.dp).clip(CircleShape)
+                .background(if (m.badge == MinimalBadge.Minus) c.danger else c.band)
+                .clearAndSetSemantics { },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (m.badge == MinimalBadge.Minus) {
+                Box(Modifier.size(width = 12.dp, height = 3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White))
+            } else {
+                Text("!", style = runTextStyle(16.sp, c.bandInk, FontWeight.ExtraBold, 1.0f))
+            }
         }
     }
 }

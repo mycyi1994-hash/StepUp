@@ -70,6 +70,8 @@ internal fun RunCountdown(
     locationServicesOn: Boolean = true,
     /** 이번 러닝 이름 — "자유 러닝" · "10분 챌린지"(시안 R01 제목) */
     title: String = "",
+    /** 자유 러닝(2026-10-14 v2) — 지도 · 고리 숫자 · 기록 판 · 바로 시작 | 취소. 세기 · 시작은 같다 */
+    freeRun: Boolean = false,
 ) {
     val feedback = LocalFeedback.current
     var remaining by rememberSaveable { mutableIntStateOf(3) }
@@ -101,25 +103,39 @@ internal fun RunCountdown(
     }
     val tapToStart = stringResource(R.string.run_countdown_tap)
     val here = rememberCurrentLocation(enabled = locationAllowed && locationServicesOn)
+    val caption = stringResource(
+        when {
+            !locationAllowed -> R.string.run_countdown_gps_off
+            !locationServicesOn -> R.string.run_countdown_location_services_off
+            else -> R.string.run_countdown_gps_on
+        },
+    )
+    val stageModifier = Modifier.semantics { contentDescription = tapToStart }
+        .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null, role = Role.Button,
+        ) { go() }
+    if (freeRun) {
+        FreeRunCountdownStage(
+            kicker = stringResource(R.string.run_countdown_soon),
+            digit = remaining.coerceAtLeast(1),
+            caption = caption,
+            here = here,
+            onGo = go,
+            onCancel = { if (!fired) onCancel() },
+            modifier = stageModifier,
+        )
+        return
+    }
     RunCountdownStage(
         title = title,
         subtitle = courseName?.takeIf { it.isNotBlank() },
         kicker = stringResource(R.string.run_countdown_soon),
         digit = remaining.coerceAtLeast(1),
-        caption = stringResource(
-            when {
-                !locationAllowed -> R.string.run_countdown_gps_off
-                !locationServicesOn -> R.string.run_countdown_location_services_off
-                else -> R.string.run_countdown_gps_on
-            },
-        ),
+        caption = caption,
         here = here,
         onCancel = { if (!fired) onCancel() },
-        modifier = Modifier.semantics { contentDescription = tapToStart }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null, role = Role.Button,
-            ) { go() },
+        modifier = stageModifier,
     )
 }
 
@@ -146,7 +162,7 @@ internal fun RunCountdownStage(
         if (here != null) {
             LiveRouteMap(
                 points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-countdown-map"),
-                follow = true, live = true, routeColor = t.cyan, tileFilter = t.mapFilter, tileShade = t.mapShade,
+                follow = true, live = true, routeColor = t.cyan, tileFilter = t.mapFilter, tileShade = t.mapShade, tileRoads = t.mapRoads,
             )
             Box(
                 Modifier.fillMaxSize().background(

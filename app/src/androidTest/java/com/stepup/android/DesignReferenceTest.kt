@@ -87,6 +87,10 @@ class DesignReferenceTest {
         // 크루·글은 서버에만 있다. 서버 없이 도는 검사라 같은 모양의 자료를 채운다.
         TestData.seedCommunity()
         ServiceLocator.courseRepository.ensureSeeded()
+        // 러닝 장면(계획이 자유)은 자유 러닝 화면으로 찍는다 — 앞 테스트가 남긴 코스 · 코스 만들기 · 챌린지를 비운다
+        ServiceLocator.courseRepository.clearSelection()
+        ServiceLocator.courseRepository.cancelRecording()
+        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
     }
 
     @After fun restore() {
@@ -109,7 +113,7 @@ class DesignReferenceTest {
         RUN_MENU, RUN_GOALS, RUN_GOAL_TIME, RUN_GOAL_KM, RUN_GOAL_HISTORY,
         // 다이어트 모드 — 입력 · 러닝 방법 · 걷기 구간(멈춤) · 루틴 완료
         RUN_DIET_INPUT, RUN_DIET_PLAN, RUN_DIET_ACTIVE, RUN_DIET_DONE,
-        // 위치 신호 끊김 안내(L04)
+        // 위치 신호 약함 — 자유 러닝은 L04 시트 대신 지도 위 노란 띠(run-gps-weak)
         RUN_GPS_LOST,
     }
 
@@ -313,6 +317,7 @@ class DesignReferenceTest {
                 gpsFix = s != Scene.RUN_NO_GPS,
                 track = if (s == Scene.RUN_NO_GPS) emptyList() else fixtureTrack,
             )
+            // 끝난 자유 러닝 — lastRewardPoints 는 결과 화면을 여는 값일 뿐, 자유 러닝 결과에는 보이지 않는다
             Scene.RUN_FINISH -> WalkSessionState(
                 lastRewardPoints = 4.0, lastSessionSteps = 4_200, lastRewardedSteps = 4_200,
                 lastElapsedSec = 1_458, lastGpsKm = 3.2, lastStartedAt = now,
@@ -332,6 +337,7 @@ class DesignReferenceTest {
                 isActive = true, isPaused = true, steps = 520, elapsedSec = 272, startedAt = now - 272_000,
                 gpsFix = true, track = fixtureTrack,
             )
+            // 자유 러닝 중 위치 신호가 끊김(L04 상황) — 시트는 열지 않고 지도 위 띠로 알린다
             Scene.RUN_GPS_LOST -> WalkSessionState(
                 isActive = true, steps = 2_300, elapsedSec = 812, startedAt = now - 812_000,
                 gpsFix = true, gpsLost = true, track = fixtureTrack,
@@ -379,6 +385,7 @@ class DesignReferenceTest {
             Scene.SHOES -> "shoe-owned-row"
             // 신발 뽑기 v2 — 하단 가운데 뽑기 탭의 두 칸, 칸마다 버튼 하나(로그인 전 기기에서는 누를 수 없다)
             Scene.DRAW -> "draw-free-action"
+            // 자유 러닝(2026-10-14 v2) — 지도 가득 화면. 결과도 저장된 경로(점 2개 이상)를 지도 가득 그린다
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
             Scene.COMMUNITY -> "community-featured-title"
@@ -406,7 +413,8 @@ class DesignReferenceTest {
             Scene.RUN_DIET_INPUT -> "diet-input-next"
             Scene.RUN_DIET_PLAN -> "diet-plan-start"
             Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE -> "run-hero-value"
-            Scene.RUN_GPS_LOST -> "run-gps-lost"
+            // 자유 러닝은 위치 신호가 끊겨도 L04 시트(run-gps-lost)를 열지 않고 지도 위 띠(run-gps-weak)로 알린다
+            Scene.RUN_GPS_LOST -> "run-gps-weak"
             else -> "bottom-nav"
         }
         // Clickable cards merge child text for accessibility; readiness may target that child.
@@ -429,11 +437,33 @@ class DesignReferenceTest {
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
             compose.onNodeWithTag("shoes-section-vault").assertExists()
         }
-        if (s == Scene.RUN_NO_GPS) compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
+        // 자유 러닝 중 지도 위 — 문제가 없으면 "러닝 중" 칩, 멈추면 일시정지 띠, 위치를 찾는 중이면 노란 띠 하나
+        if (s == Scene.RUN_ACTIVE) compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()
+        if (s == Scene.RUN_PAUSED) compose.onNodeWithTag("run-paused-band", useUnmergedTree = true).assertExists()
+        if (s == Scene.RUN_NO_GPS) {
+            compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
+            compose.onNodeWithTag("run-gps-searching", useUnmergedTree = true).assertExists()
+        }
+        if (s == Scene.RUN_GPS_LOST) compose.onAllNodesWithTag("run-gps-lost").assertCountEquals(0)
         if (s == Scene.RUN_FINISH) {
-            // 서버 확인 전 — 이 폰이 셈한 값을 "예상 보상 · 정산 대기"로(적립 완료라고 쓰지 않는다)
-            compose.onNode(hasText("+4.0") and hasAnyAncestor(hasTestTag("run-result-reward"))).assertExists()
-            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
+            // 자유 러닝 결과(08) — 기록 저장만 알린다. 예상 보상 · 정산 대기 · SUP 글은 두지 않는다(보상 상태와 상관없이 같은 모습)
+            compose.onNodeWithTag("run-result-saved", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("run-result-done").assertExists()
+            // 거리는 GPS 로 잰 값(lastGpsKm)만 — 걸음으로 셈한 거리가 아니다
+            compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("%.2f".format(3.2))
+            listOf(
+                "run-result-reward", "run-result-reward-card", "run-result-reward-label", "run-result-reward-note",
+                "run-result-settle-pending", "run-result-settle-done", "run-result-settle-void", "run-result-settle-rejected",
+                "run-result-void-reason", "run-result-shoe", "run-result-note", "run-result-basis", "run-result-message",
+                "run-result-scroll",
+            ).forEach { tag ->
+                assertTrue("free run result must not show $tag",
+                    compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+            }
+            assertTrue("free run result must not mention SUP",
+                compose.onAllNodesWithText("SUP", substring = true, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+            assertTrue("free run result must not read SUP aloud",
+                compose.onAllNodesWithContentDescription("SUP", substring = true, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
         }
     }
 
@@ -462,8 +492,9 @@ class DesignReferenceTest {
             }
         }
         if (scene == Scene.RUN_ACTIVE && !enlarged) {
-            // 러닝 중(2026-09-29 전달본 01) — 위 판의 러닝 시간은 지도 위, 고정 버튼보다 위에 온전히 보인다
-            val hero = compose.onNodeWithTag("run-hero-value").getUnclippedBoundsInRoot()
+            // 자유 러닝 중(2026-10-14 v2) — 아래 기록 판의 러닝 시간은 고정 버튼보다 위에 온전히 보인다.
+            // 시간 칸은 화면 낭독용으로 묶여 있어(시간 + 값 한 번에 읽기) 묶이기 전 노드에서 찾는다
+            val hero = compose.onNodeWithTag("run-hero-value", useUnmergedTree = true).getUnclippedBoundsInRoot()
             val action = compose.onNodeWithTag("run-primary-action").getUnclippedBoundsInRoot()
             assertTrue("Run time must be above the pinned action: time=${hero.bottom}, action=${action.top}", hero.bottom <= action.top)
         }
