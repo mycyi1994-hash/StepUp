@@ -44,6 +44,11 @@ jobs:
           # 그대로 두면 러너(16GB) 스왑이 바닥나 기준 장면 캡처 중 에뮬레이터가 꺼졌다(PR #82 Experience QA 37148859097 · 37160119015).
           # 기기 검사의 gradle 은 이미 만든 APK 를 쓰므로 다시 컴파일하지 않는다.
           pkill -f KotlinCompileDaemon || true
+          # 데몬(힙 7GB)이 실제로 내려갈 때까지 기다린다 — 바로 잰 free 는 내려가는 중인 데몬까지 셌다(used 12.8GB).
+          for _ in $(seq 1 30); do pgrep -f KotlinCompileDaemon > /dev/null || break; sleep 1; done
+          # Gradle 데몬도 내린다 — 컴파일 · R8 · lint 로 3GB 힙이 찬 채 기기 검사 내내 남아 에뮬레이터와 메모리를 다퉜고,
+          # 기준 장면 캡처 중 에뮬레이터가 통째로 사라졌다(PR #86 Experience QA 38545387775). 기기 검사의 gradle 은 새 데몬으로 돈다.
+          ./gradlew --stop
           free -m
       - name: Device interaction and screenshot coverage
         uses: reactivecircus/android-emulator-runner@v2
