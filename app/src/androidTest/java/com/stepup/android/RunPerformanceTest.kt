@@ -80,6 +80,7 @@ class RunPerformanceTest {
             }
 
             // 2. 달리는 중 — 시간 · 걸음 · 위치가 1초에 여러 번 바뀐다
+            // 자유 러닝이라 지도 가득 + 아래 기록 판 화면(뿌리 태그는 예전과 같은 run-live)을 잰다
             RunPlans.set(RunPlan.Free)
             val now = System.currentTimeMillis()
             WalkSessionService.showStateForTest(running(now, 750))

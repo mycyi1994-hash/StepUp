@@ -198,18 +198,36 @@ class RunTone(
     val mapFilter: ColorFilter? = null,
     /** 타일 위에 덮는 바탕색의 짙기 — 남색 지도는 이미 어두워 덮지 않는다 */
     val mapShade: Float = 0.30f,
+    /** 길만 밝히는 두 번째 겹(더하기) — 남색 지도에서 길이 땅보다 밝게(시안 4번). null 이면 한 겹 */
+    val mapRoads: ColorFilter? = null,
 )
 
 /**
- * 밝은 길거리 타일(땅 #F1EEDC · 물 #85CAF9 · 길 흰색 · 글자 짙은 회색)을 시안 지도 색(땅 #08223E · 물 #03316F ·
- * 글자 #92B0D6)으로 옮기는 4x5 행렬 — 실제 타일 색과 시안 색을 짝지어 맞춘 값이다.
+ * 밝은 길거리 타일(땅 #F5F0E4 · 물 #85CAF9 · 길 흰색 · 공원 #D7E9C8 · 글자 회색)을 남색 지도(땅 #235180 쯤 · 물 #1B5EAF ·
+ * 공원 청록 · 글자 #CBD8EF)로 옮기는 4x5 행렬 — 실제 MapTiler 타일 색과 자유 러닝 시안(2026-10-14) 색을 짝지어 맞췄다.
+ * 예전 값(땅 #08223E)은 너무 어둡고 길이 땅보다 어두워 지도를 알아보기 어려웠다.
  */
 private val NavyMapFilter = ColorFilter.colorMatrix(
     ColorMatrix(
         floatArrayOf(
-            0.1069f, -0.5333f, -0.4397f, 0f, 206.3f,
-            -0.4935f, 0.4639f, -0.8512f, 0f, 233.1f,
-            -1.0416f, 1.0823f, -0.9839f, 0f, 276.0f,
+            0.7081f, -1.8423f, 0.0662f, 0f, 289.1f,
+            0.0599f, -0.6625f, -0.2608f, 0f, 285.5f,
+            0.1568f, -1.3727f, 0.5622f, 0f, 291.7f,
+            0f, 0f, 0f, 1f, 0f,
+        ),
+    ),
+)
+
+/**
+ * 길(흰색 · 노란색 — 빨강 값 247 이상)에만 밝은 파랑을 더한다 — 남색 위 길이 땅보다 밝게(시안의 밝은 길).
+ * 글자 둘레(흰 테)도 같은 색이라 함께 밝아진다 — 지명이 묻히지 않게 길을 #3268A9 쯤까지만 띄운다(더 밝히면 글자가 흐려진다).
+ */
+private val NavyRoadFilter = ColorFilter.colorMatrix(
+    ColorMatrix(
+        floatArrayOf(
+            4.6433f, 0f, 0f, 0f, -1146.9f,
+            5.4689f, 0f, 0f, 0f, -1350.82f,
+            6.2006f, 0f, 0f, 0f, -1531.54f,
             0f, 0f, 0f, 1f, 0f,
         ),
     ),
@@ -236,7 +254,7 @@ val NavyRunTone = RunTone(
     chipFace = Color(0xFF16305A), chipEdge = Color(0xFF2C4C7E), chipInk = Color(0xFFD6E2F8),
     warnFace = Color(0xFF0C2B55), warnEdge = Color(0xFF2B6BE0), warnIcon = Color(0xFF48D9FA),
     errorFace = Color(0xFF3A1323), errorEdge = Color(0xFFB83246), errorIcon = Color(0xFFFF5C6B),
-    mapFilter = NavyMapFilter, mapShade = 0f,
+    mapFilter = NavyMapFilter, mapShade = 0f, mapRoads = NavyRoadFilter,
 )
 
 val LightRunTone = RunTone(
@@ -1059,7 +1077,7 @@ fun RunMapFrame(
     Box(
         modifier.fillMaxWidth().clip(shape).background(t.inset, shape).border(1.dp, t.panelEdge, shape),
     ) {
-        androidx.compose.runtime.CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade)) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
             content()
         }
         if (onExpand != null) {

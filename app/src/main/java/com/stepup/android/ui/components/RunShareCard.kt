@@ -44,8 +44,16 @@ object RunShareCard {
     private const val LABEL = 0xFFAAC3EA.toInt()
     private const val DIVIDER = 0xFF1E3A63.toInt()
     private const val CYAN = 0xFF48D9FA.toInt()
+    /** 자유 러닝 — 남색 바탕 · 아래 띠 · 형광 초록 경로 · 단위 파랑 */
+    private const val FREE_NAVY = 0xFF05213B.toInt()
+    private const val FREE_BAND = 0xFF0A2A4D.toInt()
+    const val FREE_GREEN = 0xFF19F52E.toInt()
+    private const val FREE_UNIT = 0xFF7EAEFF.toInt()
 
     data class Labels(val distance: String, val time: String, val pace: String, val footer: String)
+
+    /** 그림 모양 — 예전 모습(가운데 큰 거리) 또는 자유 러닝(위 지도 자리 · 형광 초록 경로 · 아래 거리 | 시간 | 평균 페이스) */
+    enum class Style { Classic, Free }
 
     /**
      * @param track 넣을 경로. 비우면 경로 · 지도 없이 가로로 긴 그림으로 그린다.
@@ -59,7 +67,11 @@ object RunShareCard {
         track: List<GeoPoint>,
         labels: Labels,
         date: String? = null,
+        style: Style = Style.Classic,
+        /** [Style.Free] 의 거리 글 — 모르면 "—"(걸음으로 셈한 거리를 적지 않는다) */
+        distance: String? = null,
     ): Bitmap {
+        if (style == Style.Free) return renderFree(context, distance ?: "%.2f".format(km), elapsed, pace, track, labels, date)
         val withRoute = track.size >= 2
         val height = if (withRoute) HEIGHT else HEIGHT_NO_ROUTE
         val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
@@ -131,11 +143,11 @@ object RunShareCard {
     }
 
     /** Pretendard 가장 굵은 굵기보다 더 굵게 — 같은 색 테두리를 한 겹 더 그린다(앱의 큰 운동 숫자와 같은 모양) */
-    private fun heavyText(canvas: Canvas, paint: Paint, text: String, x: Float, y: Float) {
+    private fun heavyText(canvas: Canvas, paint: Paint, text: String, x: Float, y: Float, weight: Float = 0.035f) {
         val style = paint.style
         val stroke = paint.strokeWidth
         paint.style = Paint.Style.FILL_AND_STROKE
-        paint.strokeWidth = paint.textSize * 0.035f
+        paint.strokeWidth = paint.textSize * weight
         paint.strokeJoin = Paint.Join.ROUND
         canvas.drawText(text, x, y, paint)
         paint.style = style
@@ -212,6 +224,165 @@ object RunShareCard {
         dot.color = 0xFF0754FF.toInt()
         canvas.drawCircle(ex, ey, 15f, dot)
     }
+
+    /**
+     * 자유 러닝 공유 그림(전달본 10) — 늘 세로(4:5) 남색. 위 대부분은 경로 자리(넣을 때만 형광 초록 경로 · 고리 출발점 · 화살표 끝점,
+     * 빼면 길 · 지도 · 장소가 전혀 없다), 왼쪽 위 공식 워드마크 · 오른쪽 위 날짜, 아래 띠에 거리 | 시간 | 평균 페이스.
+     * 보상(SUP) · 아래 안내 글은 두지 않는다.
+     */
+    private fun renderFree(
+        context: Context,
+        distance: String,
+        elapsed: String,
+        pace: String,
+        track: List<GeoPoint>,
+        labels: Labels,
+        date: String?,
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val band = 290f
+        val bandTop = HEIGHT - band
+
+        paint.shader = LinearGradient(0f, 0f, 0f, bandTop, 0xFF0A2C52.toInt(), FREE_NAVY, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, WIDTH.toFloat(), bandTop, paint)
+        paint.shader = null
+
+        if (track.size >= 2) drawFreeRoute(canvas, track, RectF(140f, 240f, WIDTH - 140f, bandTop - 110f))
+
+        BitmapFactory.decodeResource(context.resources, R.drawable.logo_wordmark_on_dark)?.let { logo ->
+            val w = 300
+            val h = w * logo.height / logo.width
+            canvas.drawBitmap(logo, null, Rect(64, 64, 64 + w, 64 + h), paint)
+        }
+        val regular = ResourcesCompat.getFont(context, R.font.pretendard_medium)
+        val heavy = ResourcesCompat.getFont(context, R.font.pretendard_extrabold)
+        if (!date.isNullOrBlank()) {
+            paint.color = WHITE
+            paint.typeface = regular
+            paint.textSize = 40f
+            paint.textAlign = Paint.Align.RIGHT
+            canvas.drawText(date, WIDTH - 64f, 112f, paint)
+            paint.textAlign = Paint.Align.LEFT
+        }
+
+        // 아래 띠 — 거리 | 시간 | 평균 페이스
+        paint.color = FREE_BAND
+        canvas.drawRect(0f, bandTop, WIDTH.toFloat(), HEIGHT.toFloat(), paint)
+        paint.color = DIVIDER
+        canvas.drawRect(0f, bandTop, WIDTH.toFloat(), bandTop + 3f, paint)
+        val column = WIDTH / 3f
+        val cells = listOf(
+            Triple(labels.distance, distance, " km"),
+            Triple(labels.time, elapsed, null),
+            Triple(labels.pace, pace, " /km"),
+        )
+        cells.forEachIndexed { i, (label, value, unit) ->
+            val left = column * i + 56f
+            val room = column - 84f
+            paint.color = LABEL
+            paint.typeface = regular
+            paint.textSize = 38f
+            canvas.drawText(label, left, bandTop + 92f, paint)
+            // 한 칸에 들어가게 — 넘치면 수 · 단위를 같은 비율로 줄인다
+            paint.typeface = heavy
+            paint.textSize = 92f
+            val valueWidth = paint.measureText(value)
+            paint.textSize = 44f
+            val unitWidth = unit?.let { paint.measureText(it) } ?: 0f
+            val scale = minOf(1f, room / (valueWidth + unitWidth).coerceAtLeast(1f))
+            paint.color = WHITE
+            paint.textSize = 92f * scale
+            heavyText(canvas, paint, value, left, bandTop + 210f, 0.02f)
+            if (unit != null) {
+                paint.color = FREE_UNIT
+                paint.typeface = regular
+                paint.textSize = 44f * scale
+                canvas.drawText(unit, left + valueWidth * scale, bandTop + 210f, paint)
+            }
+            if (i > 0) {
+                paint.color = DIVIDER
+                canvas.drawRect(column * i - 1.5f, bandTop + 56f, column * i + 1.5f, bandTop + 230f, paint)
+            }
+        }
+        return bitmap
+    }
+
+    /** 자유 러닝 경로 — 남색 테 위 형광 초록 선, 고리 출발점 · 마지막 방향 화살표 끝점 */
+    private fun drawFreeRoute(canvas: Canvas, track: List<GeoPoint>, box: RectF) {
+        val points = fit(track, box)
+        val path = Path()
+        points.forEachIndexed { i, (x, y) -> if (i == 0) path.moveTo(x, y) else path.lineTo(x, y) }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        stroke.color = FREE_NAVY
+        stroke.strokeWidth = 28f
+        canvas.drawPath(path, stroke)
+        stroke.color = FREE_GREEN
+        stroke.strokeWidth = 16f
+        canvas.drawPath(path, stroke)
+
+        val dot = Paint(Paint.ANTI_ALIAS_FLAG)
+        val (sx, sy) = points.first()
+        dot.color = FREE_NAVY; canvas.drawCircle(sx, sy, 30f, dot)
+        dot.color = FREE_GREEN; canvas.drawCircle(sx, sy, 25f, dot)
+        dot.color = FREE_NAVY; canvas.drawCircle(sx, sy, 16f, dot)
+        dot.color = FREE_GREEN; canvas.drawCircle(sx, sy, 8f, dot)
+
+        val (ex, ey) = points.last()
+        var from = points.lastIndex - 1
+        while (from > 0 && kotlin.math.hypot(ex - points[from].first, ey - points[from].second) < 1f) from--
+        val dx = ex - points[from].first
+        val dy = ey - points[from].second
+        val degrees = if (kotlin.math.hypot(dx, dy) < 1f) -90f else Math.toDegrees(kotlin.math.atan2(dy, dx).toDouble()).toFloat()
+        dot.color = FREE_NAVY; canvas.drawCircle(ex, ey, 38f, dot)
+        dot.color = FREE_GREEN; canvas.drawCircle(ex, ey, 32f, dot)
+        val r = 18f
+        val arrow = Path().apply {
+            moveTo(r, 0f)
+            lineTo(-r * 0.75f, -r * 0.7f)
+            lineTo(-r * 0.35f, 0f)
+            lineTo(-r * 0.75f, r * 0.7f)
+            close()
+        }
+        canvas.save()
+        canvas.translate(ex, ey)
+        canvas.rotate(degrees)
+        dot.color = WHITE
+        canvas.drawPath(arrow, dot)
+        canvas.restore()
+    }
+
+    /** 경로 점을 상자 안에 비율을 지켜 맞춘 화면 좌표로(위도에 따라 줄어드는 경도 길이를 바로잡는다) */
+    private fun fit(track: List<GeoPoint>, box: RectF): List<Pair<Float, Float>> {
+        val midLat = track.map { it.lat }.average()
+        val lngScale = cos(Math.toRadians(midLat))
+        val xs = track.map { it.lng * lngScale }
+        val ys = track.map { -it.lat }
+        val minX = xs.min()
+        val minY = ys.min()
+        val spanX = max(xs.max() - minX, 1e-9)
+        val spanY = max(ys.max() - minY, 1e-9)
+        val scale = minOf(box.width() / spanX, box.height() / spanY)
+        val offX = box.left + (box.width() - spanX * scale) / 2
+        val offY = box.top + (box.height() - spanY * scale) / 2
+        return xs.indices.map { i -> Pair((offX + (xs[i] - minX) * scale).toFloat(), (offY + (ys[i] - minY) * scale).toFloat()) }
+    }
+
+    /**
+     * 글만 공유한다 — 그림을 만들지 못했거나 그림 공유가 실패했을 때. 받을 앱이 없으면 false.
+     */
+    fun shareText(context: Context, text: String): Boolean = runCatching {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(Intent.createChooser(send, null))
+    }.isSuccess
 
     /** 그림을 캐시에 저장하고 공유 창을 연다. 큰 그림의 PNG 저장은 화면 스레드 밖에서 한다(누르는 순간 멈칫하지 않게). */
     suspend fun share(context: Context, bitmap: Bitmap, text: String, chooserTitle: String?) {

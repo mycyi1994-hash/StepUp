@@ -613,7 +613,8 @@ internal data class RunDetailsUi(
     val km: String,
     val goalKm: Double,
     val goalFraction: Float,
-    val estimate: String,
+    /** 예상 SUP — null 이면 보상 칸을 두지 않는다(자유 러닝) */
+    val estimate: String?,
     val courseName: String?,
     val speed: String,
     val durability: String,
@@ -658,15 +659,17 @@ internal fun ColumnScope.RunDetailsContent(
             Spacer(Modifier.height(10.dp))
             RunMeter(ui.goalFraction, height = 10.dp)
         }
-        Spacer(Modifier.height(10.dp))
-        RunCard(padding = PaddingValues(16.dp), tag = "run-details-reward") {
-            Text(stringResource(R.string.run_estimate_title), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RunNumber(ui.estimate, size = 34.sp, color = t.cyan, valueTag = "run-details-estimate")
-                Spacer(Modifier.width(10.dp))
-                RunChip(stringResource(R.string.run_checking), icon = Icons.Outlined.Schedule)
+        ui.estimate?.let { estimate ->
+            Spacer(Modifier.height(10.dp))
+            RunCard(padding = PaddingValues(16.dp), tag = "run-details-reward") {
+                Text(stringResource(R.string.run_estimate_title), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RunNumber(estimate, size = 34.sp, color = t.cyan, valueTag = "run-details-estimate")
+                    Spacer(Modifier.width(10.dp))
+                    RunChip(stringResource(R.string.run_checking), icon = Icons.Outlined.Schedule)
+                }
+                Text(stringResource(R.string.run_reward_note), style = runTextStyle(13.sp, t.label))
             }
-            Text(stringResource(R.string.run_reward_note), style = runTextStyle(13.sp, t.label))
         }
         Spacer(Modifier.height(10.dp))
         RunCard(padding = PaddingValues(16.dp), tag = "run-details-course") {
@@ -1191,6 +1194,10 @@ internal fun RunSharePreviewContent(
     target: (@Composable ColumnScope.() -> Unit)? = null,
     onSaveImage: (() -> Unit)? = null,
     sending: Boolean = false,
+    /** 보내기를 누를 수 있는가 — 그림을 만들지 못했어도 글로 보낼 수 있으면 true(자유 러닝) */
+    shareEnabled: Boolean = preview != null,
+    /** 그림을 만들지 못했을 때 미리보기 자리에 적는 글. null 이면 그림이 올 때까지 도는 표시 */
+    failedNote: String? = null,
 ) {
     val t = runTone()
     Box(modifier.fillMaxSize().testTag("run-share")) {
@@ -1214,6 +1221,9 @@ internal fun RunSharePreviewContent(
                     if (preview != null) {
                         androidx.compose.foundation.Image(preview, contentDescription = null, contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize())
+                    } else if (failedNote != null) {
+                        Text(failedNote, style = runTextStyle(15.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(20.dp).testTag("run-share-failed"))
                     } else {
                         RunSpinner(Modifier.size(40.dp))
                     }
@@ -1245,7 +1255,7 @@ internal fun RunSharePreviewContent(
                 Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 10.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                RunButton(shareLabel, onShare, busy = sending, enabled = preview != null, italic = true, modifier = Modifier.testTag("run-share-send"))
+                RunButton(shareLabel, onShare, busy = sending, enabled = shareEnabled, italic = true, modifier = Modifier.testTag("run-share-send"))
                 RunButton(stringResource(R.string.run_cancel), onCancel, kind = RunButtonKind.Secondary, modifier = Modifier.testTag("run-share-cancel"))
             }
         }

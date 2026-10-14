@@ -74,7 +74,11 @@ import org.junit.Test
  * 챌린지 · 다이어트 상태를 차례로 띄워 찍는다. 캡처 이름은 전달본 화면 번호(HOME · E01 · U01 · R02 …)다 — `run-journey/`.
  *
  * 러닝 상태는 표시용 값이다(서비스를 켜지 않는다 — [WalkSessionService.showStateForTest]). 서버 확인 상태(E11)는 이 검사가 넣은
- * 저장 줄 하나로만 보이고 끝나면 지운다. 보상은 서버 확인 전에는 "예상 · 확인 중"으로만 보이는지 본다.
+ * 저장 줄 하나로만 보이고 끝나면 지운다.
+ *
+ * 자유 러닝(2026-10-14 v2)은 보상 UI 가 없는 지도 중심 화면이다 — 러닝 중 · 시트 · 결과 · 공유에 보상 칸 · 정산 표시 · SUP 글이 없고,
+ * 결과는 보상 상태(확인 중 · 무효 · 미지급 · 서버 확인 · 로그아웃)와 상관없이 같은 모습인지 본다. 보상 칸(E03 · E10 · E11 · E08 · E09)과
+ * 위치 끊김 시트(L04) · 저장 실패 시트는 챌린지 러닝에서 찍고, 보상은 서버 확인 전에는 "예상 · 확인 중"으로만 보이는지 본다.
  */
 class RunJourneyDesignTest {
     @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
@@ -161,7 +165,7 @@ class RunJourneyDesignTest {
             back()
             awaitTag("home-start-run")
 
-            // R02 — 자유 러닝 중(실제 지도 · 달린 길 · GPS 연결됨)
+            // R02 — 자유 러닝 중(2026-10-14 v2: 지도 가득 · 형광 초록 경로 · 아래 작은 기록 판). 보상 칸 · SUP 는 없다
             val now = System.currentTimeMillis()
             RunPlans.set(RunPlan.Free)
             WalkSessionService.showStateForTest(running(now))
@@ -169,39 +173,62 @@ class RunJourneyDesignTest {
             awaitTag("run-live")
             compose.onNodeWithTag("run-hero-value", useUnmergedTree = true).assertTextEquals("12:30")
             compose.onNodeWithTag("run-distance-value", useUnmergedTree = true).assertTextEquals("1.56")
+            compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertExists()
+            // 내구도는 신고 있는 신발(seed — 내구도 92)
+            compose.onNodeWithTag("run-durability-value", useUnmergedTree = true).assertTextEquals("92")
+            compose.onNode(hasText(label(R.string.run_free_chip_running)) and hasAnyAncestor(hasTestTag("run-status")), useUnmergedTree = true)
+                .assertExists()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertTextContains(label(R.string.run_pause))
-            compose.onNodeWithTag("run-finish").assertIsDisplayed().assertTextContains(label(R.string.run_finish_run))
+            compose.onNodeWithTag("run-finish").assertIsDisplayed().assertTextContains(label(R.string.run_free_stop))
+            compose.onAllNodesWithTag("run-details-reward", useUnmergedTree = true).assertCountEquals(0)
+            assertNoRewardText("run-live")
             assertRunFits("390x844")
+            // 이 검사는 390×844 · 글자 100%(viewport 기본값)에서 돈다 — 지도가 러닝 화면 높이의 68% 이상
+            assertMapShare("390x844")
             shot("R02", settle = 2_500)
 
-            // E06 — 측정 확인이 필요한 구간 · 지급 제외 띠(가짜 위치)
+            // E06 — 속도 측정 오류 띠 · 측정 무효 띠(가짜 위치). 믿을 수 없는 속도 · 페이스는 "—", 보상 · 적립 안내는 없다
             WalkSessionService.showStateForTest(running(now, flagged = 2, flaggedAt = now))
             awaitTag("run-speed-banner")
+            assertUnknownSpeed()
+            assertNoRewardText("run-live")
             shot("E06")
             WalkSessionService.showStateForTest(running(now).copy(mockLocation = true))
             awaitTag("run-void-banner")
+            assertUnknownSpeed()
+            assertNoRewardText("run-live")
             shot("E06b-void")
 
             // R02_TIME — 위치 없이 기록(거리 · 페이스는 재지 않는다)
             WalkSessionService.showStateForTest(timeOnly(now))
             awaitTag("run-no-location")
             compose.onNodeWithTag("run-distance-value", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("—")
+            // 경로가 없으니 지도 크게 보기도 없다
+            compose.onAllNodesWithTag("run-map-expand").assertCountEquals(0)
             shot("R02_TIME")
 
-            // L04 — 러닝 중 위치 신호가 끊김(시간은 계속, 끊긴 구간 거리는 더하지 않는다)
+            // L04 — 러닝 중 위치 신호가 끊김. 자유 러닝은 시트를 열지 않고 지도 위 띠로 알린다(시간은 계속, 끊긴 구간 거리는 더하지 않는다)
+            // (시트 L04 는 아래 챌린지 러닝에서 찍는다)
             WalkSessionService.showStateForTest(running(now).copy(gpsLost = true))
-            awaitTag("run-gps-lost")
-            shot("L04")
-            tap("run-gps-time-only")
-            awaitGone("run-gps-lost")
+            awaitTag("run-gps-weak")
+            compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("—")
+            shot("L04-free")
+            // 기다린 뒤에도 시트는 열리지 않는다
+            compose.onAllNodesWithTag("run-gps-lost", useUnmergedTree = true).assertCountEquals(0)
 
-            // E03 — 러닝 상세 정보(목표 · 예상 SUP 확인 중 · 코스 · 현재 속도 · 내구도)
+            // E03 — 자유 러닝의 러닝 정보(목표 · 코스 · 현재 속도 · 내구도). 예상 SUP 칸은 없다(예상 SUP 가 있는 E03 은 챌린지 러닝에서)
             WalkSessionService.showStateForTest(running(now))
-            awaitGone("run-gps-lost")
+            awaitGone("run-gps-weak")
             tap("run-details-open")
             awaitTag("run-details")
-            compose.onNodeWithTag("run-details-estimate", useUnmergedTree = true).assertTextContains("+", substring = true)
-            shot("E03")
+            compose.onAllNodesWithTag("run-details-reward", useUnmergedTree = true).assertCountEquals(0)
+            compose.onAllNodesWithTag("run-details-estimate", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("run-details-goal-edit").assertExists()
+            compose.onNodeWithTag("run-speed", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("run-durability", useUnmergedTree = true).assertTextEquals("92")
+            assertNoRewardText("run-details")
+            shot("E03-free")
             tap("run-details-close")
             awaitGone("run-details")
 
@@ -212,9 +239,12 @@ class RunJourneyDesignTest {
             tap("run-full-map-close")
             awaitGone("run-full-map")
 
-            // R03 — 일시정지(기록이 멈춰 있어요 · 이어서 달리기)
+            // R03 — 일시정지(일시정지 띠 · 다시 시작). 멈춰 있으니 속도 0.0, 페이스는 "—"
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true))
-            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_resume)) }
+            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_free_resume)) }
+            awaitTag("run-paused-band")
+            compose.onNodeWithTag("run-pace-value", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("0.0")
             shot("R03")
 
             // E02 — 러닝 목표 수정(멈춘 채로)
@@ -225,16 +255,24 @@ class RunJourneyDesignTest {
             tap("run-goal-cancel")
             awaitGone("run-goal-value")
 
-            // R04 · R07 — 마칠까요? · 기록 없이 끝낼까요?(뒤 화면은 멈춘 채)
+            // R04 · R07 — 러닝을 마칠까요?(저장하고 종료 · 계속 달리기 · 저장하지 않고 종료) · 저장하지 않고 종료할까요?(뒤 화면은 멈춘 채)
             tap("run-finish")
             awaitTag("run-end-dialog")
+            compose.onNodeWithTag("run-end-line", useUnmergedTree = true).assertTextContains("12:30", substring = true)
+            compose.onNodeWithTag("run-end-save").assertTextContains(label(R.string.run_free_save_finish))
+            compose.onNodeWithTag("run-end-continue").assertTextContains(label(R.string.run_continue))
+            compose.onNodeWithTag("run-end-discard").assertTextContains(label(R.string.run_free_discard))
+            // 자유 러닝의 마칠까요 시트에는 닫기(X)가 없다 — 바깥 · 뒤로 가기로 닫는다
+            compose.onAllNodesWithTag("run-sheet-close", useUnmergedTree = true).assertCountEquals(0)
             shot("R04")
             tap("run-end-discard")
             awaitTag("run-discard-dialog")
+            compose.onNodeWithTag("run-discard-confirm").assertTextContains(label(R.string.run_free_discard_confirm))
+            compose.onNodeWithTag("run-discard-back").assertTextContains(label(R.string.runflow_discard_back))
             shot("R07")
             tap("run-discard-back")
             awaitGone("run-discard-dialog")
-            // 취소하면 마칠까요(R04)로 돌아간다 — 뒤로 가기로 닫으면 멈춘 러닝
+            // 돌아가기를 누르면 마칠까요(R04)로 돌아간다 — 뒤로 가기로 닫으면 멈춘 러닝
             awaitTag("run-end-dialog")
             back()
             awaitGone("run-end-dialog")
@@ -242,68 +280,102 @@ class RunJourneyDesignTest {
             // E04 · S01 — 저장 중 · 저장 실패(기록은 화면에 남고 같은 러닝으로 다시 저장)
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true, saveStatus = RunSaveStatus.SAVING))
             awaitTag("run-saving")
-            compose.onNodeWithTag("run-primary-action").assertIsNotEnabled()
+            compose.onNodeWithTag("run-primary-action").assertIsNotEnabled().assertTextContains(label(R.string.run_saving_title))
             shot("E04")
+            // 자유 러닝의 저장 실패는 시트 없이 — 위 노란 띠 · 기록은 화면에 남아 있어요 · 다시 저장 | 화면에 머물기
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true, saveStatus = RunSaveStatus.FAILED))
-            awaitTag("run-save-failed-dialog")
-            shot("S01")
-            tap("run-save-stay")
-            awaitGone("run-save-failed-dialog")
+            awaitTag("run-save-stay")
             awaitTag("run-save-error")
+            compose.onAllNodesWithTag("run-save-failed-dialog", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("run-save-kept", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("run-primary-action").assertIsEnabled().assertTextContains(label(R.string.runflow_save_again))
+            // 저장 실패 중에는 종료 · 러닝 정보 버튼을 두지 않는다
+            compose.onAllNodesWithTag("run-finish").assertCountEquals(0)
+            compose.onAllNodesWithTag("run-details-open").assertCountEquals(0)
+            shot("S01")
+            // 화면에 머물기는 한 번 누르면 숨고, 저장하지 못했다는 띠와 다시 저장은 남는다
+            tap("run-save-stay")
+            awaitGone("run-save-stay")
+            compose.onNodeWithTag("run-save-error").assertIsDisplayed()
+            compose.onNodeWithTag("run-primary-action").assertIsEnabled()
             shot("S01b-unsaved")
 
-            // R05 · E10 — 러닝 결과 · 보상 확인 중(서버 확인 전: "예상 +0.80 SUP · 확인 중")
+            // R05 — 자유 러닝 결과(지도 가득 · 러닝 완료 · 기록 저장 완료 · 기록 판 · 완료 | 공유). 보상 칸 · 정산 표시 · SUP 는 없다
+            // (보상 칸이 있는 결과 E10 · E11 · E08 · E09 는 아래 챌린지 러닝 결과에서 찍는다)
             WalkSessionService.showStateForTest(finished(now))
             awaitTag("run-result")
             signedIn()
-            compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("1.56")
-            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
-            compose.onAllNodesWithTag("run-result-settle-done", useUnmergedTree = true).assertCountEquals(0)
-            compose.onNode(hasText("+0.8", substring = true) and hasAnyAncestor(hasTestTag("run-result-reward")), useUnmergedTree = true)
-                .assertExists()
-            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("run-result-shoe")), useUnmergedTree = true)
-                .assertExists()
+            assertFreeResult()
             assertResultFits("390x844")
-            shot("E10", settle = 2_500)
-            compose.onNodeWithTag("run-result-message", useUnmergedTree = true).performScrollTo()
-            shot("R05")
+            shot("R05", settle = 2_500)
 
-            // E11 — 서버가 확인한 금액(이 검사가 넣은 저장 줄 — 끝나면 지운다)
+            // 보상 상태가 달라도 자유 러닝 결과는 같은 모습 — 지급 제외(무효 판정) · 미지급(걸음이 없다)
+            for ((name, state) in listOf(
+                "R05-void" to finished(now).copy(lastVerdict = RunVerdict.VOID),
+                "R05-unpaid" to finished(now).copy(lastSessionSteps = 0, lastRewardPoints = 0.0),
+            )) {
+                WalkSessionService.showStateForTest(state)
+                // 바뀐 상태가 그려질 때까지 기다린 뒤(shot) 같은 모습인지 본다
+                shot(name)
+                assertFreeResult()
+            }
+            // 서버가 확인한 금액(이 검사가 넣은 저장 줄 — 끝나면 지운다)
+            WalkSessionService.showStateForTest(finished(now))
             signedRow(now, "0.80")
             try {
-                awaitTag("run-result-settle-done")
-                shot("E11", settle = 1_500)
+                shot("R05-signed", settle = 1_500)
+                assertFreeResult()
             } finally {
                 dropRow(now)
             }
+            // 로그아웃(다시 로그인 안내도 자유 러닝 결과에는 없다) — 끝나면 동기화 표시를 되돌린다
+            ServiceLocator.economySync.showStateForTest(EconomySyncState.SIGNED_OUT)
+            try {
+                shot("R05-signed-out")
+                assertFreeResult()
+            } finally {
+                ServiceLocator.economySync.showStateForTest(EconomySyncState.SYNCED)
+            }
 
-            // E08 · E09 — 지급 제외(까닭 자세히) · 미지급(걸음이 없어 올릴 것이 없다)
-            WalkSessionService.showStateForTest(finished(now).copy(lastVerdict = RunVerdict.VOID))
-            awaitTag("run-result-settle-void")
-            compose.onAllNodesWithTag("run-result-reward").assertCountEquals(0)
-            shot("E08")
-            tap("run-result-void-reason")
-            awaitTag("run-sheet-close")
-            shot("E08b-reason")
-            back()
-            WalkSessionService.showStateForTest(finished(now).copy(lastSessionSteps = 0, lastRewardPoints = 0.0))
-            awaitTag("run-result-settle-rejected")
-            shot("E09")
-
-            // R06 — 저장한 기록 삭제 확인(누르기 전에는 지우지 않는다)
-            WalkSessionService.showStateForTest(finished(now))
-            awaitTag("run-result-settle-pending")
+            // R06 — 저장한 기록 삭제 확인(누르기 전에는 지우지 않는다). 덜 쓰는 기록 보기 · 삭제는 ⋯ 안에
+            tap("run-result-more")
+            awaitTag("run-result-more-sheet")
+            compose.onNodeWithTag("run-result-records").assertExists()
+            assertNoRewardText("run-result-more-sheet")
+            shot("R05-more")
             tap("run-result-delete")
             awaitTag("run-delete-sheet")
             shot("R06")
             tap("run-delete-cancel")
             awaitGone("run-delete-sheet")
 
-            // E05 — 공유 미리보기: 경로 포함은 처음에 꺼져 있다(그림에 길 · 지도가 없다)
+            // 14 오른쪽 — 기록 삭제 실패. 서버 확인을 기다리는 저장 줄은 지우지 않는다(이 검사가 넣은 줄 — 끝나면 지운다)
+            pendingRow(now)
+            try {
+                tap("run-result-more")
+                tap("run-result-delete")
+                tap("run-delete-confirm")
+                awaitTag("run-delete-failed")
+                awaitTag("run-delete-retry")
+                awaitTag("run-delete-back")
+                // 실패 중에는 ⋯ 를 두지 않는다 — 다시 시도하거나 돌아간다
+                compose.onAllNodesWithTag("run-result-more").assertCountEquals(0)
+                assertTrue("record kept after a failed delete",
+                    runBlocking { ServiceLocator.runRecordsRepository.idForStart(now - 750_000) } != null)
+                shot("R06b-delete-failed")
+                tap("run-delete-back")
+                awaitGone("run-delete-failed")
+                awaitTag("run-result-more")
+            } finally {
+                dropRow(now)
+            }
+
+            // E05 — 공유 미리보기: 경로 포함은 처음에 꺼져 있다(그림에 길 · 지도가 없다). 보상(SUP)은 그림 · 글에 없다
             tap("run-result-share")
             awaitTag("run-share")
             compose.onNodeWithTag("run-share-route").assertIsOff()
             eventually { compose.onNodeWithTag("run-share-send").assertIsEnabled() }
+            assertNoRewardText("run-share")
             shot("E05")
             tap("run-share-route")
             compose.onNodeWithTag("run-share-route").assertIsOn()
@@ -312,9 +384,43 @@ class RunJourneyDesignTest {
             tap("run-share-cancel")
             awaitTag("run-result")
 
-            // U03 · C04 · C05 · C01 · C02 — 러닝 챌린지
-            challenge(RunGoal.TEN_MIN, now + 1, elapsed = 384, km = 0.82)
+            // 14 왼쪽 — 저장된 경로가 없는 자유 러닝 결과. 지도를 꾸미지 않고, GPS 거리가 없으면 "—"(걸음으로 셈한 거리로 채우지 않는다)
+            WalkSessionService.showStateForTest(finished(now).copy(track = emptyList(), lastGpsKm = 0.0))
+            awaitTag("run-result-no-route")
+            compose.onAllNodesWithTag("run-result-map", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("run-result-time", useUnmergedTree = true).assertTextEquals("12:30")
+            compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("run-result-pace", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("run-result-speed", useUnmergedTree = true).assertTextEquals("—")
+            compose.onNodeWithTag("run-result-durability", useUnmergedTree = true).assertTextEquals("92")
+            assertNoRewardResult()
+            shot("R05-no-route")
+
+            // U03 · L04 · E03 · S01-goal · C04 · C05 · C01 · C02 — 러닝 챌린지(자유 러닝이 아니라 예전 러닝 화면 그대로)
+            val tenMin = challenge(RunGoal.TEN_MIN, now + 1, elapsed = 384, km = 0.82)
             shot("U03", settle = 2_000)
+            // L04 — 자유 러닝이 아닌 러닝은 위치 신호가 끊기면 시트로 한 번 알린다
+            WalkSessionService.showStateForTest(tenMin.copy(gpsLost = true))
+            awaitTag("run-gps-lost")
+            shot("L04")
+            tap("run-gps-time-only")
+            awaitGone("run-gps-lost")
+            // E03 — 러닝 상세 정보(목표 · 예상 SUP 확인 중 · 코스 · 현재 속도 · 내구도)
+            WalkSessionService.showStateForTest(tenMin)
+            awaitGone("run-gps-lost")
+            tap("run-details-open")
+            awaitTag("run-details")
+            compose.onNodeWithTag("run-details-estimate", useUnmergedTree = true).assertTextContains("+", substring = true)
+            shot("E03")
+            tap("run-details-close")
+            awaitGone("run-details")
+            // S01 — 자유 러닝이 아닌 러닝의 저장 실패는 시트로 알린다(기록은 화면에 남고 같은 러닝으로 다시 저장)
+            WalkSessionService.showStateForTest(tenMin.copy(isPaused = true, saveStatus = RunSaveStatus.FAILED))
+            awaitTag("run-save-failed-dialog")
+            shot("S01-goal")
+            tap("run-save-stay")
+            awaitGone("run-save-failed-dialog")
+            awaitTag("run-save-error")
             challenge(RunGoal.ONE_KM, now + 2, elapsed = 312, km = 0.64)
             shot("C04", settle = 2_000)
             challenge(RunGoal.THREE_KM, now + 3, elapsed = 936, km = 1.92)
@@ -329,6 +435,47 @@ class RunJourneyDesignTest {
             signedIn()
             compose.onNodeWithTag("run-result-note", useUnmergedTree = true).assertExists()
             shot("C02", settle = 1_500)
+
+            // E10 · E11 · E08 · E09 — 보상 칸은 자유 러닝이 아닌 러닝의 결과에만 있다. 같은 챌린지 러닝(10분 · 시작 시각이 같다)의 결과로 찍는다
+            val goalRun = now + 4
+            // E10 — 보상 확인 중(서버 확인 전: "예상 +0.80 SUP · 확인 중")
+            WalkSessionService.showStateForTest(finished(goalRun))
+            awaitTag("run-result-settle-pending")
+            signedIn()
+            // C02(0.82km)에서 바뀐 결과가 그려질 때까지
+            eventually { compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("1.56") }
+            compose.onAllNodesWithTag("run-result-settle-done", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNode(hasText("+0.8", substring = true) and hasAnyAncestor(hasTestTag("run-result-reward")), useUnmergedTree = true)
+                .assertExists()
+            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("run-result-shoe")), useUnmergedTree = true)
+                .assertExists()
+            assertResultFits("390x844")
+            shot("E10", settle = 2_500)
+
+            // E11 — 서버가 확인한 금액(이 검사가 넣은 저장 줄 — 끝나면 지운다)
+            signedRow(goalRun, "0.80")
+            try {
+                awaitTag("run-result-settle-done")
+                shot("E11", settle = 1_500)
+            } finally {
+                dropRow(goalRun)
+            }
+
+            // E08 · E09 — 지급 제외(까닭 자세히) · 미지급(걸음이 없어 올릴 것이 없다)
+            WalkSessionService.showStateForTest(finished(goalRun).copy(lastVerdict = RunVerdict.VOID))
+            awaitTag("run-result-settle-void")
+            compose.onAllNodesWithTag("run-result-reward").assertCountEquals(0)
+            shot("E08")
+            // 까닭 자세히는 넘기는 결과 안에 있다 — 화면에 보이게 넘긴 뒤 누른다
+            compose.onNodeWithTag("run-result-void-reason").performScrollTo()
+            tap("run-result-void-reason")
+            awaitTag("run-sheet-close")
+            shot("E08b-reason")
+            back()
+            awaitGone("run-sheet-close")
+            WalkSessionService.showStateForTest(finished(goalRun).copy(lastSessionSteps = 0, lastRewardPoints = 0.0))
+            awaitTag("run-result-settle-rejected")
+            shot("E09")
 
             // D07 · D08 · D09 · D11 · D12 · D10 · D13 · S02 — 다이어트 모드(3분 + (1분 러닝 + 2분 걷기)×3 + 3분 = 15분)
             val diet = now + 5
@@ -360,7 +507,10 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 러닝 중은 큰 시간이 버튼 위 · 두 버튼이 화면 안, 결과는 처음 화면으로가 화면 안 */
+    /**
+     * 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 자유 러닝 중은 큰 시간이 버튼 위 · 두 버튼이 화면 안(390×844 · 글자 100% 는
+     * 지도가 러닝 화면 높이의 68% 이상), 결과는 완료 · 공유가 화면 안이고 보상 칸 · SUP 가 없다
+     */
     @Test fun fitsAtDeviceSizes() {
         seed()
         try {
@@ -377,11 +527,13 @@ class RunJourneyDesignTest {
                 WalkSessionService.showStateForTest(running(now))
                 awaitTag("run-live")
                 assertRunFits(next.label)
+                if (next.width == 390 && next.height == 844 && next.font == 1f) assertMapShare(next.label)
                 shot("f-${next.label}-run")
                 WalkSessionService.showStateForTest(finished(now))
                 awaitTag("run-result")
                 signedIn()
                 assertResultFits(next.label)
+                assertNoRewardResult()
                 shot("f-${next.label}-result", settle = 1_200)
             }
         } finally {
@@ -850,23 +1002,26 @@ class RunJourneyDesignTest {
         gpsFix = false, locationOn = false,
     )
 
-    /** 방금 끝난 러닝 — 1.56km · 12:30 · 폰이 셈한 예상 0.80 SUP(서버 확인 전) */
+    /** 방금 끝난 러닝 — 1.56km · 12:30 · 폰이 셈한 예상 0.80 SUP(서버 확인 전). 자유 러닝 결과는 이 보상 값을 보이지 않는다 */
     private fun finished(now: Long) = WalkSessionState(
         lastRewardPoints = 0.8, lastSessionSteps = 2_100, lastRewardedSteps = 2_100,
         lastElapsedSec = 750, lastGpsKm = 1.56, lastStartedAt = now - 750_000,
         track = route(now - 750_000, now - 2_000),
     )
 
-    /** 러닝 챌린지 하나를 고르고 그 러닝을 달리는 중 */
-    private fun challenge(goal: RunGoal, now: Long, elapsed: Long, km: Double) {
+    /**
+     * 러닝 챌린지 하나를 고르고 그 러닝을 달리는 중 — 보인 상태를 돌려준다(같은 러닝으로 위치 끊김 · 저장 실패를 찍는다).
+     * 계획은 처음 만난 러닝(시작 시각 [now] - 750 000)에 묶인다 — 같은 시작 시각의 결과([finished])도 챌린지 러닝 결과다.
+     */
+    private fun challenge(goal: RunGoal, now: Long, elapsed: Long, km: Double): WalkSessionState {
         RunPlans.set(RunPlan.Goal(goal))
-        WalkSessionService.showStateForTest(
-            WalkSessionState(
-                isActive = true, steps = (km * 1_350).toInt(), elapsedSec = elapsed, startedAt = now - 750_000,
-                gpsFix = true, gpsKm = km, validSegments = 120, track = route(now - 750_000, now - 2_000),
-            ),
+        val state = WalkSessionState(
+            isActive = true, steps = (km * 1_350).toInt(), elapsedSec = elapsed, startedAt = now - 750_000,
+            gpsFix = true, gpsKm = km, validSegments = 120, track = route(now - 750_000, now - 2_000),
         )
+        WalkSessionService.showStateForTest(state)
         awaitTag("run-goal-bar")
+        return state
     }
 
     /** 다이어트 루틴 — [elapsed] 초째(구간은 운동 시간에서 계산한다) */
@@ -912,6 +1067,19 @@ class RunJourneyDesignTest {
         )
     }
 
+    /**
+     * 서버 확인을 기다리는 저장 줄(14 오른쪽) — 걸음이 있고 아직 올리지 않은 러닝은 이 휴대폰에서 지우지 않는다(지우면 확인이 끝나지 않는다).
+     * 옛 기록(legacy) 줄이라 로그인 전 CI 기기의 올리기(지금 계정 줄만)는 이 줄을 건드리지 않는다. [dropRow] 로 지운다.
+     */
+    private fun pendingRow(now: Long) = runBlocking {
+        ServiceLocator.database.walkSessionDao().insert(
+            WalkSessionEntity(
+                startedAt = now - 750_000, endedAt = now, steps = 2_100, durationSec = 750, distanceMeters = 1_560.0,
+                calories = 0.0, pointsEarned = 0.0, uploadState = "PENDING",
+            ),
+        )
+    }
+
     private fun dropRow(now: Long) = runBlocking(kotlinx.coroutines.Dispatchers.IO) {
         // Room 거래 안에서 지워야 그 줄을 지켜보는 화면도 지운 것을 안다(밖에서 지우면 다음 쓰기 전까지 옛 값이 남는다)
         ServiceLocator.database.runInTransaction {
@@ -935,13 +1103,85 @@ class RunJourneyDesignTest {
         assertTrue("finish inside the screen at $where: $finish / $limit", finish.bottom <= limit + 1)
     }
 
-    /** 러닝 결과 — 처음 화면으로 · 공유 · 기록이 늘 화면 안(내용은 넘긴다) */
+    /**
+     * 러닝 결과 — 완료(처음 화면으로) · 공유가 늘 화면 안. 공유는 완료와 한 줄(자유 러닝)이거나 그 위(다른 러닝)다.
+     * 자유 러닝 결과의 기록 보기는 ⋯ 안으로 옮겼다(화면 아래에 없다).
+     */
     private fun assertResultFits(where: String) {
         compose.waitForIdle()
         val done = bounds("run-result-done")
-        assertTrue("done inside the screen at $where: $done / ${frameBottom()}", done.bottom <= frameBottom() + 1)
-        val records = bounds("run-result-records")
-        assertTrue("records above done at $where", records.bottom <= done.top + 1)
+        val share = bounds("run-result-share")
+        val frame = bounds(FRAME)
+        assertTrue("done inside the screen at $where: $done / $frame", done.top >= frame.top - 1 && done.bottom <= frame.bottom + 1)
+        assertTrue("share inside the screen at $where: $share / $frame", share.top >= frame.top - 1 && share.bottom <= frame.bottom + 1)
+        assertTrue("share above or level with done at $where: $share / $done", share.top <= done.top + 1)
+    }
+
+    /**
+     * 자유 러닝 중 — 지도가 러닝 화면 높이의 68% 이상(390×844 · 글자 100% 에서만 본다).
+     * 러닝 화면은 앱 틀(Scaffold)이 상태 막대 · 탐색 막대 안쪽에 둔다 — 그 높이(run-live)로 나눈다. 틀(844dp) 전체로 나누면
+     * 에뮬레이터의 탐색 막대 방식(세 버튼 · 제스처)에 따라 값이 달라져 같은 화면도 붙었다 떨어졌다 한다(틀 기준 값은 글에 함께 적는다).
+     */
+    private fun assertMapShare(where: String) {
+        compose.waitForIdle()
+        val map = bounds("run-live-map")
+        val screen = bounds("run-live")
+        val frame = bounds(FRAME)
+        val share = map.height / screen.height
+        assertTrue(
+            "map is at least 68% of the run screen at $where: $share (map $map / screen $screen; of the frame ${map.height / frame.height})",
+            share >= 0.68f,
+        )
+    }
+
+    /** 믿을 수 없는 지금 속도 · 페이스는 "—"(속도 측정 오류 · 측정 무효) */
+    private fun assertUnknownSpeed() {
+        compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("—")
+        compose.onNodeWithTag("run-pace-value", useUnmergedTree = true).assertTextEquals("—")
+    }
+
+    /**
+     * 자유 러닝 화면에 보상 글이 없다 — [root] 안의 글과 화면 낭독 글 모두에서 SUP 와, 예전 화면의 보상 · 적립 · 정산 안내 글을 찾는다.
+     * 앱 언어는 규칙(appLanguage)이 한국어로 두지만, 낱말을 적지 않고 앱의 글(label)로 찾는다.
+     */
+    private fun assertNoRewardText(root: String) {
+        val inside = hasAnyAncestor(hasTestTag(root))
+        val words = listOf("SUP") + listOf(
+            R.string.run_live_void_title, R.string.run_void_banner, R.string.run_estimate_title, R.string.run_reward_note,
+            R.string.run_reward_void, R.string.run_reward_void_note, R.string.run_reward_not_paid, R.string.run_reward_done_note,
+        ).map { label(it) }
+        for (word in words) {
+            compose.onAllNodes((hasText(word, substring = true) or hasContentDescription(word, substring = true)) and inside, useUnmergedTree = true)
+                .assertCountEquals(0)
+        }
+    }
+
+    /** 자유 러닝 결과에 없는 칸 — 보상 · 정산 · 신발 칸, 예전 결과의 안내 줄과 넘기는 판. SUP 글도 없다 */
+    private fun assertNoRewardResult() {
+        for (tag in FREE_RESULT_ABSENT) compose.onAllNodesWithTag(tag, useUnmergedTree = true).assertCountEquals(0)
+        assertNoRewardText("run-result")
+    }
+
+    /**
+     * 자유 러닝 결과(1.56km · 12:30) — 보상 상태와 상관없이 같은 모습: 지도 · 러닝 완료 · 기록 저장 완료 · 기록 판(GPS 거리 · 내구도) ·
+     * 완료 | 공유. 덜 쓰는 기록 보기 · 삭제는 ⋯ 안에만 있다.
+     */
+    private fun assertFreeResult() {
+        compose.onNodeWithTag("run-result-map", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("run-result-title", useUnmergedTree = true).assertTextEquals(label(R.string.finish_title))
+        compose.onNodeWithTag("run-result-saved", useUnmergedTree = true).assertTextEquals(label(R.string.run_free_record_saved))
+        compose.onNodeWithTag("run-result-time", useUnmergedTree = true).assertTextEquals("12:30")
+        // 평균 페이스 12:30 ÷ 1.56km = 8분 00초/km · 평균 속도 7.5km/h — GPS 거리로만 셈한다
+        compose.onNodeWithTag("run-result-pace", useUnmergedTree = true).assertTextEquals("8′00″")
+        compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("1.56")
+        compose.onNodeWithTag("run-result-speed", useUnmergedTree = true).assertTextEquals("7.5")
+        compose.onNodeWithTag("run-result-durability", useUnmergedTree = true).assertTextEquals("92")
+        compose.onNodeWithTag("run-result-done").assertTextContains(label(R.string.finish_done))
+        compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_free_share))
+        compose.onNodeWithTag("run-result-more").assertExists()
+        compose.onAllNodesWithTag("run-result-records", useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodesWithTag("run-result-delete", useUnmergedTree = true).assertCountEquals(0)
+        assertNoRewardResult()
     }
 
     /** 앱 셸을 [viewport] 크기(dp) · 글자 배율 · 테마로 — 에뮬레이터 창 안에 그 크기의 화면을 만든다 */
@@ -964,6 +1204,10 @@ class RunJourneyDesignTest {
     /** 신고 있는 신발을 레어 새 도감 신발(1107 · 내구도 92)로 — 끝나면 원래 신발로 되돌리고 지운다 */
     private fun seed() = runBlocking {
         syncBefore = ServiceLocator.economySync.state.value
+        // 자유 러닝 화면을 본다 — 앞 테스트가 남긴 코스 선택 · 코스 녹화 · 이벤트 챌린지가 있으면 예전 화면이 된다
+        ServiceLocator.courseRepository.clearSelection()
+        ServiceLocator.courseRepository.cancelRecording()
+        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
         ServiceLocator.userPrefs.setReducedMotion(true)
         ServiceLocator.userPrefs.setSounds(false)
         ServiceLocator.userPrefs.setHaptics(false)
@@ -1050,5 +1294,13 @@ class RunJourneyDesignTest {
 
     private companion object {
         const val FRAME = "run-frame"
+
+        /** 자유 러닝 결과에는 없다(다른 러닝 결과에만) — 보상 칸 · 정산 표시 · 신발 칸 · 안내 줄 · 넘기는 판 */
+        val FREE_RESULT_ABSENT = listOf(
+            "run-result-reward", "run-result-reward-card", "run-result-reward-label", "run-result-reward-note",
+            "run-result-settle-pending", "run-result-settle-done", "run-result-settle-void", "run-result-settle-rejected",
+            "run-result-void-reason", "run-result-shoe", "run-result-note", "run-result-basis", "run-result-message",
+            "run-result-scroll",
+        )
     }
 }

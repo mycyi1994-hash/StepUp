@@ -87,7 +87,7 @@ internal val StoryFormGutter = 20.dp
 @Composable
 fun StoryMapTone(content: @Composable () -> Unit) {
     val t = runTone()
-    CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade), content = content)
+    CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads), content = content)
 }
 
 enum class StoryButtonStyle { PRIMARY, SECONDARY, DANGER }

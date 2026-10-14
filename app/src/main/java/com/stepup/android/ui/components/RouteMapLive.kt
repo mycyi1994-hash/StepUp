@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -116,8 +117,14 @@ fun LiveRouteMap(
     /** 타일 색 — 러닝 화면은 [RunTone.mapFilter](남색 시안, [LocalMapTone]). null 이면 앱 테마의 지도 색 */
     tileFilter: ColorFilter? = LocalMapTone.current.filter,
     tileShade: Float = LocalMapTone.current.shade,
+    /** 길만 밝히는 두 번째 겹 — [tileFilter] 와 짝(null 필터면 쓰지 않는다) */
+    tileRoads: ColorFilter? = LocalMapTone.current.roads,
     /** 출발 · 도착 점 옆 작은 이름표("시작" · "도착", 지난 기록의 경로 확대 H12) — null 이면 두지 않는다 */
     endpointLabels: Pair<String, String>? = null,
+    /** 경로 둘레 색 — 주면 빛(글로우) 대신 이 색 테를 두른다(자유 러닝의 형광 초록 경로). null 이면 예전 모습 */
+    routeOutline: Color? = null,
+    /** 출발 · 끝 표시 — [RouteMarkers.Pin] 은 고리 출발점 · 방향 화살표 끝점(자유 러닝) */
+    markers: RouteMarkers = RouteMarkers.Classic,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
@@ -131,9 +138,10 @@ fun LiveRouteMap(
         anchorY = if (follow) followAt else 0.5f,
         tileFilter = tileFilter,
         tileShade = tileShade,
+        tileRoads = tileRoads,
     ) { plan ->
         if (course.size >= 2) drawCourseGuide(plan, course)
-        drawRoute(plan, points, progress, routeColor, breaks, live)
+        drawRoute(plan, points, progress, routeColor, breaks, live, routeOutline, markers)
         if (endpointLabels != null && points.size >= 2) {
             val start = plan.toScreen(points.first())
             val end = plan.toScreen(points.last())
@@ -205,6 +213,9 @@ private fun DrawScope.drawCourseGuide(plan: TilePlan, course: List<GeoPoint>) {
     )
 }
 
+/** 경로 출발 · 끝 표시 — 예전 모습(작은 출발점 · 도착 깃발 · 지금 자리 점) 또는 자유 러닝의 고리 출발점 · 방향 화살표 끝점 */
+enum class RouteMarkers { Classic, Pin }
+
 /** 경로 한 줄 — 글로우 · 본선 · 출발점 · 도착 깃발(달리는 중이면 지금 자리 점) · 진행 점. [breaks] 앞에서는 끊는다 */
 private fun DrawScope.drawRoute(
     plan: TilePlan,
@@ -213,11 +224,14 @@ private fun DrawScope.drawRoute(
     color: Color = Volt,
     breaks: Set<Int> = emptySet(),
     live: Boolean = false,
+    outline: Color? = null,
+    markers: RouteMarkers = RouteMarkers.Classic,
 ) {
     if (points.isEmpty()) return
     if (points.size < 2) {
         val at = plan.toScreen(points.first())
-        if (live) drawHereDot(at) else {
+        // 점 하나뿐이면 아직 길이 없다 — 지금 자리만 보인다(가짜 경로를 그리지 않는다)
+        if (live) drawHereDot(at) else if (markers == RouteMarkers.Pin) drawStartRing(at, color, outline) else {
             drawCircle(color.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
             drawCircle(color, radius = 4.5f.dp.toPx(), center = at)
         }
@@ -234,22 +248,33 @@ private fun DrawScope.drawRoute(
         }
     }
 
-    // 글로우(넓고 옅게) → 본선(가늘고 진하게)
-    drawPath(
-        path,
-        color = color.copy(alpha = 0.22f),
-        style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-    )
-    drawPath(
-        path,
-        brush = Brush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
-        style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-    )
+    if (outline != null) {
+        // 둘레(남색 테) → 본선(선명한 한 색) — 밝은 길 · 공원 위에서도 경로가 번지지 않는다
+        drawPath(path, color = outline, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(path, color = color, style = Stroke(width = 4.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    } else {
+        // 글로우(넓고 옅게) → 본선(가늘고 진하게)
+        drawPath(
+            path,
+            color = color.copy(alpha = 0.22f),
+            style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+        drawPath(
+            path,
+            brush = Brush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
+            style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+    }
 
-    drawCircle(color.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
-    drawCircle(color, radius = 4.5f.dp.toPx(), center = screen.first())
-    drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
-    if (live) drawHereDot(screen.last()) else drawRouteFlag(screen.last())
+    if (markers == RouteMarkers.Pin) {
+        drawStartRing(screen.first(), color, outline)
+        drawArrowEnd(screen, color, outline)
+    } else {
+        drawCircle(color.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
+        drawCircle(color, radius = 4.5f.dp.toPx(), center = screen.first())
+        drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
+        if (live) drawHereDot(screen.last()) else drawRouteFlag(screen.last())
+    }
 
     progress?.let { f ->
         val at = pointAlongRoute(screen, f.coerceIn(0f, 1f))
@@ -300,6 +325,35 @@ private fun DrawScope.drawEndpointChip(
     drawText(label, topLeft = Offset(x + padX, y + padY))
 }
 
+/** 출발점 고리 — 경로 색 고리 안에 남색 면과 경로 색 점(자유 러닝) */
+private fun DrawScope.drawStartRing(at: Offset, color: Color, outline: Color?) {
+    drawCircle(outline ?: Color(0xFF05213B), radius = 11.dp.toPx(), center = at)
+    drawCircle(color, radius = 9.dp.toPx(), center = at)
+    drawCircle(Color(0xFF05213B), radius = 6.dp.toPx(), center = at)
+    drawCircle(color, radius = 3.dp.toPx(), center = at)
+}
+
+/** 끝점 — 경로 색 원 안에 마지막 구간 방향으로 돌린 흰 화살표(자유 러닝의 지금 자리 · 도착) */
+private fun DrawScope.drawArrowEnd(screen: List<Offset>, color: Color, outline: Color?) {
+    val at = screen.last()
+    // 마지막으로 움직인 방향 — 같은 자리에 겹친 점은 건너뛴다
+    var from = screen.lastIndex - 1
+    while (from > 0 && (screen[from] - at).getDistance() < 0.5f) from--
+    val delta = at - screen[from]
+    val degrees = if (delta.getDistance() < 0.5f) -90f else Math.toDegrees(kotlin.math.atan2(delta.y, delta.x).toDouble()).toFloat()
+    drawCircle(outline ?: Color(0xFF05213B), radius = 14.dp.toPx(), center = at)
+    drawCircle(color, radius = 12.dp.toPx(), center = at)
+    val r = 7.dp.toPx()
+    val arrow = Path().apply {
+        moveTo(at.x + r, at.y)
+        lineTo(at.x - r * 0.75f, at.y - r * 0.7f)
+        lineTo(at.x - r * 0.35f, at.y)
+        lineTo(at.x - r * 0.75f, at.y + r * 0.7f)
+        close()
+    }
+    rotate(degrees, pivot = at) { drawPath(arrow, Color.White) }
+}
+
 /** 지금 자리 — 흰 테 두른 파란 점과 옅은 빛 */
 private fun DrawScope.drawHereDot(at: Offset) {
     drawCircle(Color(0xFF0754FF).copy(alpha = 0.25f), radius = 16.dp.toPx(), center = at)
@@ -309,7 +363,12 @@ private fun DrawScope.drawHereDot(at: Offset) {
 
 /** 지도 타일 색 — 러닝 화면의 지도 틀([RunMapFrame])이 남색 시안 색으로 바꿔 넣는다. 지도 내용(길 · 물 · 이름)은 그대로다 */
 @androidx.compose.runtime.Immutable
-data class MapTone(val filter: ColorFilter? = null, val shade: Float = 0.30f)
+data class MapTone(
+    val filter: ColorFilter? = null,
+    val shade: Float = 0.30f,
+    /** 길만 밝히는 두 번째 겹([filter] 와 짝). [filter] 가 null(앱 테마 색)이면 쓰지 않는다 */
+    val roads: ColorFilter? = null,
+)
 
 val LocalMapTone = androidx.compose.runtime.staticCompositionLocalOf { MapTone() }
 
@@ -340,6 +399,8 @@ fun StepUpMap(
     tileFilter: ColorFilter? = LocalMapTone.current.filter,
     /** 타일 위에 덮는 바탕색의 짙기 */
     tileShade: Float = LocalMapTone.current.shade,
+    /** 길만 밝히는 두 번째 겹 — [tileFilter] 와 짝(null 필터면 쓰지 않는다) */
+    tileRoads: ColorFilter? = LocalMapTone.current.roads,
     overlay: DrawScope.(TilePlan) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -467,12 +528,16 @@ fun StepUpMap(
             // Unloaded tiles show only an abstract grid. Never imply invented streets
             // are real location data when the tile provider is unavailable.
             drawStreets(seed)
-            val drawn = if (plan != null && revision >= 0) drawTiles(plan, tileFilter ?: StepUpColors.mapFilter) else 0
-            if (drawn > 0 && tileShade > 0f) {
+            // 길 겹은 필터와 짝이다 — 앱 테마 색(필터 null)에는 길 겹이 없다
+            val drawn = if (plan != null && revision >= 0) {
+                drawTiles(plan, tileFilter ?: StepUpColors.mapFilter, if (tileFilter == null) null else tileRoads)
+            } else 0
+            val shade = tileShade * StepUpColors.mapShadeScale
+            if (drawn > 0 && shade > 0f) {
                 // 지도를 한 겹 눌러(또는 띄워) 카드 배경과 붙인다.
                 // Night 는 테마의 바닥색이라 밝은 테마에서는 흰 막, 어두운
-                // 테마에서는 검은 막이 된다.
-                drawRect(Night.copy(alpha = tileShade))
+                // 테마에서는 검은 막이 된다(어두운 테마는 얇게 — mapShadeScale).
+                drawRect(Night.copy(alpha = shade))
             }
 
             if (plan == null) return@Canvas
@@ -695,7 +760,7 @@ data class TilePlan(
  * 상태에 복사해 두면 LruCache가 비워도 컴포지션이 계속 붙잡고 있어, 크기 제한이
  * 무력해지고 줌을 오갈수록 메모리가 샌다.
  */
-private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter): Int {
+private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter, roads: ColorFilter? = null): Int {
     var drawn = 0
     val side = (MapTiles.TILE_SIZE * plan.scale).toInt()
     for (ty in plan.minTileY..plan.maxTileY) {
@@ -710,6 +775,16 @@ private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter): Int {
                 dstSize = IntSize(side, side),
                 colorFilter = filter,
             )
+            if (roads != null) {
+                // 길 겹 — 길이 아닌 자리는 검정(0)이라 더해도 그대로다. 더하기(Plus)는 Android 8 의 하드웨어 그리기에서도 된다
+                drawImage(
+                    image = image,
+                    dstOffset = IntOffset(left, top),
+                    dstSize = IntSize(side, side),
+                    colorFilter = roads,
+                    blendMode = androidx.compose.ui.graphics.BlendMode.Plus,
+                )
+            }
             drawn++
         }
     }

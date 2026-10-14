@@ -99,6 +99,8 @@ class StepUpPalette(
     mapMatrix: FloatArray,
     /** 다크 테마인가 — 상태바 아이콘과 워드마크를 고르는 데 쓴다 */
     val dark: Boolean,
+    /** 타일 위 막(MapTone.shade)의 짙기 비율 — 어두운 테마는 막을 얇게 둔다 */
+    val mapShadeScale: Float = 1f,
 ) {
     /** 진행 링 — 한 바퀴 돌며 강조색의 밝기가 굽이친다 */
     val voltSweep: Brush = Brush.sweepGradient(
@@ -209,14 +211,16 @@ val DarkPalette = StepUpPalette(
     cardBottom = Color(0xFF0B1019),
     backdropTop = Color(0xFF060C18),
     backdropBottom = Color(0xFF05080E),
-    // 밝은 타일을 뒤집어 어두운 지도로 만든다. 채도를 낮춰 도로가 회색 계열로만
-    // 남고, 그 위의 파란 경로가 화면에서 유일한 색이 된다.
+    // 밝은 타일을 어두운 지도로 옮긴다(2026-10-14 "지도가 너무 어둡다") — 땅 #22324A 쯤 · 물 파랑(예전에는 뒤집혀 갈색이었다) ·
+    // 길은 땅보다 어두운 선 · 지명은 밝은 글자. 실제 MapTiler 타일 색(땅 #F5F0E4 · 물 #85CAF9 · 길 흰색 · 공원 #D7E9C8 · 글자 회색)에 맞춘 값이다.
     mapMatrix = floatArrayOf(
-        -0.62f, -0.20f, -0.10f, 0f, 232f,
-        -0.20f, -0.62f, -0.10f, 0f, 232f,
-        -0.16f, -0.20f, -0.56f, 0f, 236f,
+        0.7577f, -1.861f, 0.0683f, 0f, 281.8f,
+        0.1532f, -1.0204f, -0.1254f, 0f, 287.8f,
+        0.0708f, -1.3206f, 0.3286f, 0f, 297.5f,
         0f, 0f, 0f, 1f, 0f,
     ),
+    // 예전에는 타일 위에 바닥색 막을 30% 덮어 더 어두웠다 — 10% 남짓으로
+    mapShadeScale = 0.35f,
     dark = true,
 )
 

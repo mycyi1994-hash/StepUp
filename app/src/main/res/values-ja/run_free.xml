@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- フリーラン(2026-10-14 v2) — 地図中心の画面。報酬UIなし(SUP・報酬・残高の文言を置かない)。 -->
+<resources>
+    <string name="run_free_chip_running">ラン中</string>
+    <string name="run_free_resume">再開</string>
+    <string name="run_free_stop">終了</string>
+    <string name="run_free_route_waiting">ルート待機中</string>
+    <string name="run_free_gps_searching">GPSで位置を検索中</string>
+    <string name="run_free_gps_weak">GPS信号が弱い · 再接続中</string>
+    <string name="run_free_location_off">位置情報がオフ</string>
+    <string name="run_free_settings">設定</string>
+    <string name="run_free_measure_invalid">測定値を確認できません</string>
+    <string name="run_free_pace_unknown">ペースが分かりません</string>
+    <string name="run_free_save_finish">保存して終了</string>
+    <string name="run_free_discard">保存せずに終了</string>
+    <string name="run_free_discard_title">保存せずに終了しますか？</string>
+    <string name="run_free_discard_body">今回のランの記録は残りません。</string>
+    <string name="run_free_discard_confirm">保存せずに終了</string>
+    <string name="run_free_save_failed">記録を保存できませんでした</string>
+    <string name="run_free_save_stay">この画面に残る</string>
+    <string name="run_free_save_kept">記録はこの画面に残っています。</string>
+    <string name="run_free_record_saved">記録を保存しました</string>
+    <string name="run_free_no_route_body">測定した記録のみ表示します</string>
+    <string name="run_free_delete_failed">記録を削除できませんでした</string>
+    <string name="run_free_try_again">もう一度お試しください</string>
+    <string name="run_free_retry">再試行</string>
+    <string name="run_free_go_now">すぐ開始</string>
+    <string name="run_free_more">その他</string>
+    <string name="run_free_share">共有</string>
+    <string name="run_free_share_time">StepUpで%1$s走りました。</string>
+    <string name="run_free_share_image_failed">画像を作成できませんでした。テキストで共有できます。</string>
+    <string name="run_free_pm_activity_title">歩数を記録します</string>
+    <string name="run_free_pm_activity_body">身体活動の権限が必要です。</string>
+    <string name="run_free_pm_location_title">ルートを地図に残します</string>
+    <string name="run_free_pm_location_body">位置情報の権限がないとルートは記録されません。</string>
+    <string name="run_free_pm_location_allow">位置情報を許可</string>
+    <string name="run_free_pm_no_route">ルートなしで開始</string>
+    <string name="run_free_pm_notify_title">ランの状態をお知らせします</string>
+    <string name="run_free_pm_notify_body">通知で進行状況を確認できます。</string>
+    <string name="run_free_pm_denied_title">歩数の権限が必要です</string>
+    <string name="run_free_pm_denied_body">ランを始めるには許可してください。</string>
+    <string name="run_free_pm_allow_again">もう一度許可</string>
+    <string name="run_free_pm_home">ホームへ</string>
+    <string name="run_free_pm_settings_title">設定で権限をオンにしてください</string>
+    <string name="run_free_pm_settings_body">身体活動の権限を確認してください。</string>
+    <string name="run_free_pm_approx_title">おおよその位置情報がオンです</string>
+    <string name="run_free_pm_approx_body">ルートが不正確になる場合があります。</string>
+    <string name="run_free_pm_keep_going">このまま続ける</string>
+    <string name="run_free_pm_no_location_title">ルートなしで開始しますか？</string>
+    <string name="run_free_pm_no_location_body">時間と歩数は記録されます。</string>
+</resources>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自由跑(2026-10-14 v2) — 以地图为主的页面，不含奖励界面(不放 SUP、奖励、余额文案)。 -->
+<resources>
+    <string name="run_free_chip_running">跑步中</string>
+    <string name="run_free_resume">继续</string>
+    <string name="run_free_stop">结束</string>
+    <string name="run_free_route_waiting">等待路线</string>
+    <string name="run_free_gps_searching">正在搜索GPS位置</string>
+    <string name="run_free_gps_weak">GPS信号弱 · 正在重新连接</string>
+    <string name="run_free_location_off">定位已关闭</string>
+    <string name="run_free_settings">设置</string>
+    <string name="run_free_measure_invalid">无法确认测量值</string>
+    <string name="run_free_pace_unknown">无法获取配速</string>
+    <string name="run_free_save_finish">保存并结束</string>
+    <string name="run_free_discard">不保存并结束</string>
+    <string name="run_free_discard_title">不保存就结束吗？</string>
+    <string name="run_free_discard_body">本次跑步记录不会保留。</string>
+    <string name="run_free_discard_confirm">不保存结束</string>
+    <string name="run_free_save_failed">未能保存记录</string>
+    <string name="run_free_save_stay">留在此页面</string>
+    <string name="run_free_save_kept">记录仍保留在此页面。</string>
+    <string name="run_free_record_saved">记录已保存</string>
+    <string name="run_free_no_route_body">仅显示已测量的记录</string>
+    <string name="run_free_delete_failed">未能删除记录</string>
+    <string name="run_free_try_again">请重试</string>
+    <string name="run_free_retry">重试</string>
+    <string name="run_free_go_now">立即开始</string>
+    <string name="run_free_more">更多</string>
+    <string name="run_free_share">分享</string>
+    <string name="run_free_share_time">我在StepUp跑了%1$s。</string>
+    <string name="run_free_share_image_failed">无法生成图片，可以文字分享。</string>
+    <string name="run_free_pm_activity_title">我们将记录步数</string>
+    <string name="run_free_pm_activity_body">需要身体活动权限。</string>
+    <string name="run_free_pm_location_title">在地图上记录你的路线</string>
+    <string name="run_free_pm_location_body">没有定位权限将不会记录路线。</string>
+    <string name="run_free_pm_location_allow">允许定位</string>
+    <string name="run_free_pm_no_route">不记录路线开始</string>
+    <string name="run_free_pm_notify_title">为你通知跑步状态</string>
+    <string name="run_free_pm_notify_body">可在通知中查看进度。</string>
+    <string name="run_free_pm_denied_title">需要步数权限</string>
+    <string name="run_free_pm_denied_body">请允许后开始跑步。</string>
+    <string name="run_free_pm_allow_again">再次允许</string>
+    <string name="run_free_pm_home">回到首页</string>
+    <string name="run_free_pm_settings_title">请在设置中开启权限</string>
+    <string name="run_free_pm_settings_body">请检查身体活动权限。</string>
+    <string name="run_free_pm_approx_title">已开启大致位置</string>
+    <string name="run_free_pm_approx_body">路线可能不准确。</string>
+    <string name="run_free_pm_keep_going">照常继续</string>
+    <string name="run_free_pm_no_location_title">不记录路线开始吗？</string>
+    <string name="run_free_pm_no_location_body">仍会记录时间和步数。</string>
+</resources>

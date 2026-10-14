@@ -325,12 +325,10 @@ fun RunScreen(
     }
     val discardFailures by WalkSessionService.discardFailures.collectAsStateWithLifecycle()
     val discardFailedText = stringResource(R.string.runflow_discard_failed)
-    LaunchedEffect(discardFailures) {
-        if (discarding) {
-            discarding = false
-            android.widget.Toast.makeText(context, discardFailedText, android.widget.Toast.LENGTH_LONG).show()
-        }
-    }
+    // 자유 러닝은 못 지웠다는 것을 토스트 대신 지도 위 띠와 다시 시도 · 돌아가기로 남긴다(전달본 14 오른쪽)
+    var discardFailedBand by rememberSaveable { mutableStateOf(false) }
+    // 알림 등에서 다시 달리면 실패 안내를 접는다 — 달리는 화면에 "삭제하지 못했어요"가 남지 않게
+    LaunchedEffect(session.isPaused) { if (!session.isPaused) discardFailedBand = false }
     var goalSheetFor by rememberSaveable { mutableLongStateOf(0L) }
     var showGoalReached by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(goalReached, session.startedAt, session.isPaused) {
@@ -354,6 +352,7 @@ fun RunScreen(
             confirmStop = false
             discardDialog = false
             showGoalReached = false
+            discardFailedBand = false
         }
     }
     // 달리는 중 뒤로 가기는 화면을 닫지 않는다 — 달리고 있으면 일시정지(R03), 멈춰 있으면 마칠지 묻는다(R04)
@@ -417,9 +416,43 @@ fun RunScreen(
     val coursePoints = course?.takeIf { it.hasTrack && plan is RunPlan.Free && !recordingCourse }?.points.orEmpty()
     val courseRun = coursePoints.isNotEmpty() && !crewRun
 
-    // 위치 신호가 끊기면(L04) 한 번 알린다 — 다시 잡히면 다음 끊김에 또 알린다
+    // 자유 러닝(2026-10-14 v2) — 보상 UI 없는 지도 중심 화면. 시작 메뉴 · 러닝 홈에서 고른 자유 러닝만 그린다.
+    // 코스 · 코스 만들기 · 크루 · 이벤트 챌린지 러닝도 계획은 자유(RunPlan.Free)지만 예전 화면 그대로다.
+    // 챌린지 화면에서 시작한 러닝 — 진행값을 못 읽었어도(막대 없음) 챌린지 러닝이다
+    val challengeLaunched by com.stepup.android.ui.screens.events.ChallengeRunFocus.launched.collectAsStateWithLifecycle()
+    LaunchedEffect(session.isActive, session.startedAt) {
+        if (session.isActive) com.stepup.android.ui.screens.events.ChallengeRunFocus.bind(session.startedAt)
+    }
+    val focusRun = challengeLaunched &&
+        com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
+    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !party.isActive && !recordingCourse && !focusRun
+    // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
+    // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
+    var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
+    var freeLatch by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(session.isActive, session.startedAt, freeRunNow) {
+        if (session.isActive && session.startedAt > 0) {
+            freeLatchStart = session.startedAt
+            freeLatch = freeRunNow
+        }
+    }
+    // 결과 · 공유는 저장된 순간의 판단을 지킨다 — 코스 저장 창을 닫거나 코스를 바꿔도 결과 모습이 바뀌지 않게(회전에도).
+    // 달리는 모습을 보지 못한 러닝(되살린 러닝 등)만 지금 상태로 정한다
+    val freeRunResult = rememberSaveable(session.lastStartedAt, finishing) {
+        if (freeLatchStart > 0 && freeLatchStart == session.lastStartedAt) freeLatch else freeRunNow
+    }
+    LaunchedEffect(discardFailures) {
+        if (discarding) {
+            discarding = false
+            // 띠는 멈춘 러닝에만 — 그사이 다시 달리고 있으면 띠를 남기지 않는다(다음 일시정지에 "다시 시도"가 확인 없이 지우지 않게)
+            if (freeRunNow) { if (session.isPaused) discardFailedBand = true }
+            else android.widget.Toast.makeText(context, discardFailedText, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // 위치 신호가 끊기면(L04) 한 번 알린다 — 다시 잡히면 다음 끊김에 또 알린다. 자유 러닝은 시트 대신 지도 위 띠로 알린다
     LaunchedEffect(session.gpsLost, running) {
-        if (session.gpsLost && running && !gpsLostSeen) {
+        if (session.gpsLost && running && !gpsLostSeen && !freeRunNow) {
             gpsLostSeen = true
             gpsLostSheet = true
         }
@@ -475,6 +508,34 @@ fun RunScreen(
     val distanceStat = RunStat(stringResource(R.string.run_label_distance), liveKmText, "km", caption = distanceCaption, tag = "run-distance-value")
     val paceStat = RunStat(stringResource(R.string.run_label_pace), livePace, "/km", caption = distanceCaption)
 
+    // 자유 러닝 기록 판 — GPS 로 잰 값만(걸음으로 셈한 거리 · 평균을 쓰지 않는다). 믿을 수 없으면 "—"
+    val freeNow = remember(session.elapsedSec, session.track.size, session.lastFlaggedAt) { System.currentTimeMillis() }
+    val freeVoid = session.isActive && session.liveVerdict == RunVerdict.VOID
+    val freeSpeed = freeSpeedKmh(
+        paused = session.isPaused, locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
+        void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt,
+    )
+    val freeDist = freeDistance(timeOnly, session.gpsKm, geoTrack.isNotEmpty())
+    val freeDurability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPoints(it) }
+    val freeBandNow = freeBand(
+        active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
+        locationAllowed = locationAllowed, locationOn = session.locationOn, gpsFix = session.gpsFix, gpsLost = session.gpsLost,
+        precise = session.precise, hasHere = session.here != null, void = freeVoid,
+        // 방금 읽은 속도가 사람 속도를 넘어 버려졌다 — 사람 속도의 점이 다시 들어올 때까지(현재 속도와 같은 신호)
+        speedFlagged = !session.isPaused && session.lastFlaggedAt > (session.track.lastOrNull()?.at ?: 0L),
+    )
+    val freeLiveNumbers = FreeRunNumbers(
+        time = formatDuration(session.elapsedSec), paceSec = freePaceSec(freeSpeed), distance = freeDist,
+        speedKmh = freeSpeed, durability = freeDurability,
+    )
+    // 멈춘 뒤(저장 중 · 저장 실패 · 지우기 실패) — 이번 러닝 전체 평균(GPS 거리)
+    val freeGpsKm = session.gpsKm.takeIf { !timeOnly && it > 0.0 }
+    val freeAverageNumbers = FreeRunNumbers(
+        time = formatDuration(session.elapsedSec), paceSec = freeAveragePaceSec(freeGpsKm, session.elapsedSec),
+        distance = if (freeDist == FreeDistance.Waiting) FreeDistance.Unknown else freeDist,
+        speedKmh = freeGpsKm?.let { averageSpeedKmh(it, session.elapsedSec) }, durability = freeDurability, average = true,
+    )
+
     // 지도 틀 안 — 실제 지도(달린 길 · 지금 자리 · 고른 코스 · 같이 뛰는 사람). 위치 없이 기록하면 안내만
     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
     // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
@@ -500,6 +561,55 @@ fun RunScreen(
             else -> MapWaiting(Modifier.fillMaxSize())
         }
     }
+    // 자유 러닝 지도 — 형광 초록 경로 · 남색 테 · 고리 출발점 · 방향 화살표. 경로 전에는 지금 자리 점만(가짜 길을 그리지 않는다)
+    val freeLiveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
+        val here = session.here
+        when {
+            timeOnly && geoTrack.isEmpty() -> NoLocationMap()
+            geoTrack.isNotEmpty() -> LiveRouteMap(
+                points = geoTrack, modifier = Modifier.fillMaxSize(), follow = true, breaks = breaks, routeColor = FreeRunRoute,
+                live = true, routeOutline = FreeRunRouteOutline, markers = com.stepup.android.ui.components.RouteMarkers.Pin,
+            )
+            here != null -> LiveRouteMap(
+                points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), follow = true,
+                routeColor = FreeRunRoute, live = true,
+            )
+            else -> MapWaiting(Modifier.fillMaxSize())
+        }
+    }
+    // 14 오른쪽 — 자유 러닝 결과의 "다시 시도". 삭제 확인(R06)과 같은 지우기이고, 기록 화면으로는 지운 뒤에만 간다
+    val freeDeleteScope = androidx.compose.runtime.rememberCoroutineScope()
+    val freeDeleteFailedText = stringResource(R.string.run_free_try_again)
+    val retryFreeDelete: () -> Unit = {
+        if (!deleting && finishing) {
+            deleting = true
+            val startedAt = session.lastStartedAt
+            freeDeleteScope.launch {
+                val records = com.stepup.android.core.ServiceLocator.runRecordsRepository
+                val outcome = runCatching {
+                    records.idForStart(startedAt)?.let { records.delete(it) } ?: com.stepup.android.data.repo.RecordDeletion.Missing
+                }.getOrNull()
+                kotlinx.coroutines.withContext(Dispatchers.Main.immediate) {
+                    deleting = false
+                    when (outcome) {
+                        com.stepup.android.data.repo.RecordDeletion.Deleted,
+                        com.stepup.android.data.repo.RecordDeletion.Missing -> {
+                            deleteFailed = null
+                            viewModel.clearReward()
+                            onOpenRecords()
+                        }
+                        else -> deleteFailed = freeDeleteFailedText
+                    }
+                }
+            }
+        }
+    }
+    // S01 — 저장이 실패하면 한 번 알린다. 기록은 화면에 남고, 같은 러닝으로 다시 저장하거나 기록을 확인한다
+    // (자유 러닝은 시트 대신 화면 아래 "화면에 머물기"가 이 알림을 맡는다 — 아래 화면 갈래가 읽으므로 여기서 둔다)
+    var saveFailedDialog by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(session.saveStatus) {
+        if (session.saveStatus == RunSaveStatus.FAILED) saveFailedDialog = true
+    }
 
     Box(Modifier.fillMaxSize()) {
         val dietFinished = finishing && diet != null && diet.finished(session.lastElapsedSec)
@@ -509,8 +619,43 @@ fun RunScreen(
             onHome()
         }
         when {
+            finishing && showShare && freeRunResult -> FreeRunShareScreen(session, onClose = { showShare = false })
             finishing && showShare -> RunShareScreen(session, lastServerPoints, lastUpload, onClose = { showShare = false })
             finishing && crewShare && crewShareId != null -> CrewShareFor(session, crewShareId, party.crewName, onClose = { crewShare = false })
+            // 08 · 14 — 자유 러닝 결과. 기록 저장만 보고 보상 상태(예상 · 확인 중 · 무효 · 미지급 · 로그아웃)로 나누지 않는다
+            finishing && freeRunResult -> {
+                val km = freeResultKm(session.lastGpsKm)
+                val lastTrackBreaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
+                FreeRunResult(
+                    numbers = FreeRunNumbers(
+                        time = formatDuration(session.lastElapsedSec),
+                        paceSec = freeAveragePaceSec(km, session.lastElapsedSec),
+                        distance = km?.let { FreeDistance.Km(it) } ?: FreeDistance.Unknown,
+                        speedKmh = km?.let { averageSpeedKmh(it, session.lastElapsedSec) },
+                        durability = freeDurability,
+                        average = true,
+                    ),
+                    map = if (geoTrack.size >= 2) ({
+                        LiveRouteMap(
+                            points = geoTrack, modifier = Modifier.fillMaxSize().testTag("run-result-map"), breaks = lastTrackBreaks,
+                            routeColor = FreeRunRoute, routeOutline = FreeRunRouteOutline,
+                            markers = com.stepup.android.ui.components.RouteMarkers.Pin,
+                        )
+                    }) else null,
+                    onDone = done,
+                    onShare = { showShare = true },
+                    onRecords = {
+                        viewModel.clearReward()
+                        onOpenRecords()
+                    },
+                    onDelete = { deleteFailed = null; deleteSheet = true },
+                    deleteFailed = deleteFailed != null,
+                    deleting = deleting,
+                    onRetryDelete = retryFreeDelete,
+                    onDeleteBack = { deleteFailed = null },
+                    modifier = Modifier.reveal(session.lastStartedAt),
+                )
+            }
             finishing -> {
                 val km = finishKm(session)
                 val paceSec = finishPace(session)
@@ -636,6 +781,10 @@ fun RunScreen(
                         .celebrate(if (finishConfirmed(session, lastServerPoints, lastUpload)) session.lastStartedAt else null),
                 )
             }
+            // 06 — 자유 러닝 기록 저장 중. 같은 지도 · 판, 버튼 하나(누를 수 없음). 보상을 기다리는 것이 아니다
+            session.isActive && session.saveStatus == RunSaveStatus.SAVING && freeRunNow -> FreeRunLive(
+                mode = FreeLiveMode.Saving, numbers = freeAverageNumbers, map = freeLiveMap, onPrimary = {}, onSecondary = {},
+            )
             session.isActive && session.saveStatus == RunSaveStatus.SAVING -> RunSavingContent(
                 stats = listOf(
                     RunStat(stringResource(R.string.run_label_distance), liveKmText, "km"),
@@ -653,7 +802,8 @@ fun RunScreen(
                 title = stringResource(if (courseRun) R.string.run_course_map_title else R.string.run_full_map_title),
                 courseName = if (courseRun) course?.name else null,
                 stats = buildList {
-                    add(RunStat(stringResource(R.string.run_label_run_distance), liveKmText, "km"))
+                    add(RunStat(stringResource(R.string.run_label_run_distance),
+                        if (freeRunNow) (freeDist as? FreeDistance.Km)?.let { "%.2f".format(it.km) } ?: "—" else liveKmText, "km"))
                     if (courseRun && course != null) add(RunStat(stringResource(R.string.run_total_distance), "%.2f".format(course.distanceKm), "km"))
                     else add(RunStat(stringResource(R.string.run_label_time), formatDuration(session.elapsedSec)))
                 },
@@ -663,13 +813,22 @@ fun RunScreen(
                     val here = session.here
                     LiveRouteMap(
                         points = geoTrack.ifEmpty { hereOnly }, modifier = Modifier.fillMaxSize(),
-                        interactive = true, others = others, breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true,
+                        interactive = true, others = others, breaks = breaks, course = coursePoints,
+                        routeColor = if (freeRunNow) FreeRunRoute else tone.cyan, live = true,
+                        routeOutline = if (freeRunNow) FreeRunRouteOutline else null,
+                        markers = if (freeRunNow) com.stepup.android.ui.components.RouteMarkers.Pin else com.stepup.android.ui.components.RouteMarkers.Classic,
                         controlLabels = com.stepup.android.ui.components.MapControlLabels(
                             zoomIn = stringResource(R.string.rec_zoom_in), zoomOut = stringResource(R.string.rec_zoom_out),
                             recenter = stringResource(R.string.rec_map_recenter),
                         ),
                     )
                 },
+            )
+            // 07 — 자유 러닝 기록 저장 실패. 위 노란 띠는 남고, "화면에 머물기"는 한 번 누르면 숨는다. 기록은 서비스에 그대로 있다
+            session.isActive && session.saveStatus == RunSaveStatus.FAILED && freeRunNow -> FreeRunLive(
+                mode = FreeLiveMode.Failed, numbers = freeAverageNumbers, map = freeLiveMap,
+                onPrimary = { WalkSessionService.stop(context) }, onSecondary = { saveFailedDialog = false },
+                showSecondary = saveFailedDialog,
             )
             session.isActive && session.saveStatus == RunSaveStatus.FAILED -> RunLiveContent(
                 // S01 — 저장 전 요약. 기록은 서비스에 그대로 있고, 같은 러닝으로 다시 저장한다
@@ -689,6 +848,50 @@ fun RunScreen(
                         kind = RunNoticeKind.Error, tag = "run-save-error")
                 },
             )
+            // 01 · 03 · 13 · 14 오른쪽 — 자유 러닝 중(시작 전 · 일시정지 · 위치 · 속도 띠 · 저장 없이 종료 실패)
+            freeRunNow -> {
+                val discardFailedNow = discardFailedBand && session.isActive && session.isPaused
+                FreeRunLive(
+                    mode = when {
+                        !session.isActive -> FreeLiveMode.Idle
+                        discardFailedNow -> FreeLiveMode.DiscardFailed
+                        else -> FreeLiveMode.Live
+                    },
+                    numbers = if (discardFailedNow) freeAverageNumbers else freeLiveNumbers,
+                    map = freeLiveMap,
+                    band = freeBandNow,
+                    paused = session.isPaused,
+                    noLocation = !locationAllowed,
+                    onPrimary = {
+                        when {
+                            !session.isActive -> requestStart()
+                            discardFailedNow -> if (WalkSessionService.canDiscard(session) && !party.isActive && !discarding) {
+                                discardFailedBand = false
+                                discarding = true
+                                WalkSessionService.discard(context)
+                            }
+                            running -> WalkSessionService.pause(context)
+                            else -> WalkSessionService.resume(context)
+                        }
+                    },
+                    onSecondary = {
+                        when {
+                            // 돌아가기 — 러닝은 멈춘 채 그대로
+                            discardFailedNow -> discardFailedBand = false
+                            session.isActive -> askEnd()
+                            else -> onBack()
+                        }
+                    },
+                    onDetails = { showDetails = true },
+                    // 크게 보기는 달리는 중에만(K07)
+                    onExpandMap = if (!session.isActive || (timeOnly && geoTrack.isEmpty())) null else ({ showFullMap = true }),
+                    onBandTap = { showDetails = true },
+                    onBandAction = {
+                        if (freeBandNow == FreeBand.LocationOff) ExternalIntents.openLocationSettings(context)
+                        else ExternalIntents.openAppSettings(context)
+                    },
+                )
+            }
             else -> {
                 val ui = liveRunUi(
                     plan = plan, diet = diet, dietPos = dietPos, goal = goal, goalReached = goalReached,
@@ -773,6 +976,7 @@ fun RunScreen(
         }
         if (startPending && !session.isActive) {
             RunPermissionFlow(
+                minimal = freeRunNow,
                 onReady = {
                     startPending = false
                     locationAllowed = StepPermissions.hasLocation(context)
@@ -821,6 +1025,7 @@ fun RunScreen(
                 locationAllowed = locationAllowed,
                 locationServicesOn = servicesOn,
                 title = planTitle(plan),
+                freeRun = freeRunNow,
                 onGo = {
                     countingDown = false
                     if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
@@ -838,12 +1043,22 @@ fun RunScreen(
         com.stepup.android.ui.components.RunSheet(onDismiss = { showDetails = false }) {
             RunDetailsContent(
                 ui = RunDetailsUi(
-                    time = formatDuration(session.elapsedSec), km = liveKmText, goalKm = goalKm,
-                    goalFraction = if (goalKm > 0) (liveKm / goalKm).toFloat().coerceIn(0f, 1f) else 0f,
-                    estimate = "+" + rewardAmount(estimate.points), courseName = course?.name,
-                    speed = speedKmh?.let { "%.1f".format(it) } ?: "—",
+                    time = formatDuration(session.elapsedSec),
+                    // 자유 러닝은 GPS 거리만(걸음으로 셈한 거리를 쓰지 않는다)
+                    km = if (freeRunNow) (freeDist as? FreeDistance.Km)?.let { "%.2f".format(it.km) } ?: "—" else liveKmText,
+                    goalKm = goalKm,
+                    goalFraction = if (goalKm > 0) {
+                        ((if (freeRunNow) (freeDist as? FreeDistance.Km)?.km ?: 0.0 else liveKm) / goalKm).toFloat().coerceIn(0f, 1f)
+                    } else 0f,
+                    // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
+                    estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
+                    speed = (if (freeRunNow) freeSpeed else speedKmh)?.let { "%.1f".format(it) } ?: "—",
                     durability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPoints(it).toString() } ?: "—",
-                    reasons = buildList {
+                    // 자유 러닝은 측정 까닭만 — 적립 한도 · 부스터 · 크루 보너스 같은 보상 줄은 두지 않는다
+                    reasons = if (freeRunNow) buildList {
+                        if (freeVoid) add(context.getString(R.string.run_free_measure_invalid))
+                        else if (session.flaggedSegments > 0) add(context.getString(R.string.run_flagged_body, session.flaggedSegments))
+                    } else buildList {
                         if (session.flaggedSegments > 0) {
                             add(if (session.liveVerdict == RunVerdict.VOID) context.getString(R.string.run_void_body)
                             else context.getString(R.string.run_flagged_body, session.flaggedSegments))
@@ -936,12 +1151,7 @@ fun RunScreen(
         }
     }
 
-    // S01 — 저장이 실패하면 한 번 알린다. 기록은 화면에 남고, 같은 러닝으로 다시 저장하거나 기록을 확인한다
-    var saveFailedDialog by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(session.saveStatus) {
-        if (session.saveStatus == RunSaveStatus.FAILED) saveFailedDialog = true
-    }
-    if (saveFailedDialog && session.saveStatus == RunSaveStatus.FAILED) {
+    if (saveFailedDialog && session.saveStatus == RunSaveStatus.FAILED && !freeRunNow) {
         com.stepup.android.ui.components.RunSheet(onDismiss = { saveFailedDialog = false }, modifier = Modifier.testTag("run-save-failed-dialog")) {
             SaveFailedContent(
                 onRetry = {
@@ -953,8 +1163,32 @@ fun RunScreen(
         }
     }
 
+    // 04 — 자유 러닝: 러닝을 마칠까요? 저장하고 종료 · 계속 달리기 · 저장하지 않고 종료. 닫으면 멈춘 채로 둔다
+    if (confirmStop && canAskEnd && freeRunNow) {
+        com.stepup.android.ui.components.RunSheet(
+            onDismiss = { confirmStop = false }, modifier = Modifier.testTag("run-end-dialog"), showClose = false,
+        ) {
+            FreeFinishSheetContent(
+                line = freeTimeDistance(formatDuration(session.elapsedSec), freeDist),
+                onSave = {
+                    confirmStop = false
+                    WalkSessionService.stop(context)
+                },
+                onContinue = {
+                    confirmStop = false
+                    WalkSessionService.resume(context)
+                },
+                onDiscard = if (WalkSessionService.canDiscard(session) && !party.isActive) {
+                    {
+                        confirmStop = false
+                        discardDialog = true
+                    }
+                } else null,
+            )
+        }
+    }
     // R04 — 러닝을 마칠까요? 저장하고 마치기 · 계속 달리기 · 기록 없이 끝내기. 닫으면 멈춘 채로 둔다
-    if (confirmStop && canAskEnd) {
+    if (confirmStop && canAskEnd && !freeRunNow) {
         val partyOpen = party.isActive
         com.stepup.android.ui.components.RunSheet(onDismiss = { confirmStop = false }, modifier = Modifier.testTag("run-end-dialog")) {
             FinishSheetContent(
@@ -981,8 +1215,25 @@ fun RunScreen(
         }
     }
 
+    // 05 — 자유 러닝: 저장하지 않고 종료할까요? 돌아가기 · 바깥 · 뒤로는 04 로(러닝은 멈춘 채)
+    if (discardDialog && canAskEnd && !discarding && freeRunNow) {
+        com.stepup.android.ui.components.RunSheet(
+            onDismiss = { discardDialog = false; confirmStop = true }, modifier = Modifier.testTag("run-discard-dialog"), showClose = false,
+        ) {
+            FreeDiscardSheetContent(
+                line = freeTimeDistance(formatDuration(session.elapsedSec), freeDist),
+                onDiscard = {
+                    discardDialog = false
+                    discardFailedBand = false
+                    discarding = true
+                    WalkSessionService.discard(context)
+                },
+                onCancel = { discardDialog = false; confirmStop = true },
+            )
+        }
+    }
     // R07 — 저장 없이 끝낼까요? 취소 · 바깥 · 뒤로는 마칠까요(R04)로 돌아간다(러닝은 멈춘 채)
-    if (discardDialog && canAskEnd && !discarding) {
+    if (discardDialog && canAskEnd && !discarding && !freeRunNow) {
         com.stepup.android.ui.components.RunSheet(
             onDismiss = { discardDialog = false; confirmStop = true }, modifier = Modifier.testTag("run-discard-dialog"),
         ) {
@@ -1022,7 +1273,9 @@ fun RunScreen(
             java.time.Instant.ofEpochMilli(session.lastStartedAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                 .format(java.time.format.DateTimeFormatter.ofPattern(stringResource(R.string.date_month_day),
                     androidx.compose.ui.platform.LocalConfiguration.current.locales[0])),
-            "%.2f".format(finishKm(session)), minSecText(session.lastElapsedSec),
+            // 자유 러닝은 GPS 거리만(없으면 "—") — 걸음으로 셈한 거리를 적지 않는다
+            if (freeRunResult) freeResultKm(session.lastGpsKm)?.let { "%.2f".format(it) } ?: "—" else "%.2f".format(finishKm(session)),
+            minSecText(session.lastElapsedSec),
         )
         val uploadingText = stringResource(R.string.run_delete_uploading)
         val keptText = stringResource(R.string.run_delete_kept)
@@ -2044,6 +2297,85 @@ private fun RunShareScreen(session: WalkSessionState, points: Double?, upload: S
         onCancel = onClose,
         shareLabel = stringResource(R.string.run_share),
         onSaveImage = save,
+    )
+}
+
+/**
+ * 자유 러닝 공유(전달본 10) — 그림과 함께 보내는 글 모두 보상(SUP) 없이 거리 · 시간만. 받은 값으로 글이 바뀌지 않는다(보상 흐름을 읽지 않는다).
+ * 그림을 만들지 못하면 글만 보낼 수 있고, 그림 공유가 실패해도 글로 다시 연다. 경로 포함은 기본 꺼짐(그대로).
+ */
+@Composable
+private fun FreeRunShareScreen(session: WalkSessionState, onClose: () -> Unit) {
+    val context = LocalContext.current
+    var includeRoute by rememberSaveable { mutableStateOf(false) }
+    val km = freeResultKm(session.lastGpsKm)
+    val elapsed = formatDuration(session.lastElapsedSec)
+    val pace = freeAveragePaceSec(km, session.lastElapsedSec)?.let { formatPacePrime(it) } ?: "—"
+    val textRes = freeShareTextRes(session.lastGpsKm)
+    val shareText = if (km != null) stringResource(textRes, "%.1f".format(km), elapsed) else stringResource(textRes, elapsed)
+    val labels = RunShareCard.Labels(
+        distance = stringResource(R.string.share_card_distance),
+        time = stringResource(R.string.share_card_time),
+        pace = stringResource(R.string.run_label_pace),
+        footer = "",
+    )
+    val datePattern = stringResource(R.string.run_free_share_date_pattern)
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val date = remember(session.lastStartedAt, datePattern, locale) {
+        if (session.lastStartedAt > 0L) {
+            runCatching { java.text.SimpleDateFormat(datePattern, locale).format(java.util.Date(session.lastStartedAt)) }.getOrNull()
+        } else null
+    }
+    // 경로를 끄면 빈 자리로 그린다 — 지도 · 출발 · 도착이 그림에 남지 않는다
+    var card by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var renderFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(includeRoute, session.lastStartedAt) {
+        card = null
+        renderFailed = false
+        val track = if (includeRoute) session.geoTrack else emptyList()
+        val shot = kotlinx.coroutines.withContext(Dispatchers.Default) {
+            runCatching {
+                RunShareCard.render(
+                    context, km ?: 0.0, elapsed, pace, track, labels, date,
+                    style = RunShareCard.Style.Free, distance = km?.let { "%.2f".format(it) } ?: "—",
+                )
+            }.getOrNull()
+        }
+        card = shot
+        renderFailed = shot == null
+    }
+    val preview = remember(card) { card?.asImageBitmap() }
+    val save = rememberCardSave(card, "StepUp-run-${session.lastStartedAt}")
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    RunSharePreviewContent(
+        title = stringResource(R.string.run_share_title),
+        subtitle = stringResource(R.string.run_share_sub),
+        preview = preview,
+        includeRoute = includeRoute,
+        onRouteChange = { includeRoute = it },
+        onShare = {
+            val shot = card
+            if (shot == null) {
+                RunShareCard.shareText(context, shareText)
+            } else {
+                shareScope.launch {
+                    val sent = try {
+                        RunShareCard.share(context, shot, shareText, null)
+                        true
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        false
+                    }
+                    if (!sent) RunShareCard.shareText(context, shareText)
+                }
+            }
+        },
+        onCancel = onClose,
+        shareLabel = stringResource(R.string.run_share),
+        onSaveImage = if (renderFailed) null else save,
+        shareEnabled = card != null || renderFailed,
+        failedNote = if (renderFailed) stringResource(R.string.run_free_share_image_failed) else null,
     )
 }
 

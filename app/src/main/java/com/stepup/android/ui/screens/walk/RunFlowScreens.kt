@@ -100,7 +100,9 @@ fun RunStartMenuScreen(
         onOpenWallet = onOpenWallet,
     )
     if (freeRunPending) {
+        // 자유 러닝 카드에서만 오는 권한 안내 — 자유 러닝의 짧은 카드(2026-10-14 v2)
         RunPermissionFlow(
+            minimal = true,
             onReady = {
                 freeRunPending = false
                 onFreeRun()
