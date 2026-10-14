@@ -72,8 +72,11 @@ class RunLocationStateTest {
         compose.onNodeWithTag("run-rough-location", useUnmergedTree = true).assertExists()
         // 대략적인 위치 · GPS 찾는 중 — 지도 위 띠 안의 글
         compose.onNodeWithTag("run-rough-band").assertIsDisplayed()
-        compose.onNode(hasText(compose.activity.getString(R.string.run_gps_search_rough)) and hasAnyAncestor(hasTestTag("run-rough-band")))
-            .assertIsDisplayed()
+        // 띠는 글을 하나로 읽히게 합친다 — 띠 안의 글 자체는 합치기 전 나무에서 찾는다
+        compose.onNode(
+            hasText(compose.activity.getString(R.string.run_gps_search_rough)) and hasAnyAncestor(hasTestTag("run-rough-band")),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
         // 띠는 한 번에 하나 — 대략적인 자리가 있으면 "GPS 찾는 중" 띠는 없다
         compose.onNodeWithTag("run-gps-searching").assertDoesNotExist()
         capture("run-rough-location.png")
@@ -94,8 +97,10 @@ class RunLocationStateTest {
     @Test fun approximateOnlyIsExplained() {
         show(running.copy(precise = false))
         compose.onNodeWithTag("run-location-approx").assertIsDisplayed()
-        compose.onNode(hasText(compose.activity.getString(R.string.run_gps_approx)) and hasAnyAncestor(hasTestTag("run-location-approx")))
-            .assertIsDisplayed()
+        compose.onNode(
+            hasText(compose.activity.getString(R.string.run_gps_approx)) and hasAnyAncestor(hasTestTag("run-location-approx")),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
         // 정확한 위치 허용은 띠 안 "설정" 알약(앱 설정)
         compose.onNodeWithTag("run-location-approx-action").assertIsDisplayed().assertHasClickAction()
             .assertTextEquals(compose.activity.getString(R.string.run_free_settings))
