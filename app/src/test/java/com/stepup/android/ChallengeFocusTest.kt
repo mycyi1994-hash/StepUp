@@ -43,4 +43,28 @@ class ChallengeFocusTest {
             com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
         }
     }
+
+    @Test fun challengeRunWithoutProgressStaysAChallengeRun() {
+        val run = com.stepup.android.ui.screens.events.ChallengeRunFocus
+        run.startWithoutProgress()
+        try {
+            val first = seoul(9)
+            // 진행값을 몰라 막대는 없지만 챌린지 러닝이다 — 러닝 화면이 자유 러닝(보상 표시 없음)으로 그리지 않는다
+            assertEquals(null, run.current.value)
+            assertEquals(false, run.matches(first))
+            assertEquals(true, run.isChallengeRun(first))
+            run.bind(first)
+            assertEquals(true, run.isChallengeRun(first))
+            // 다른 러닝(모임 · 알림에서 시작)을 만나면 챌린지 러닝이 아니다
+            val later = seoul(21)
+            assertEquals(false, run.isChallengeRun(later))
+            run.bind(later)
+            assertEquals(false, run.launched.value)
+            assertEquals(false, run.isChallengeRun(first))
+        } finally {
+            run.clear()
+        }
+        // 홈에서 그냥 시작한 러닝 — 챌린지 러닝이 아니다
+        assertEquals(false, run.isChallengeRun(seoul(9)))
+    }
 }

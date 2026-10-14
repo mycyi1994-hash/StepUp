@@ -45,25 +45,44 @@ object ChallengeRunFocus {
     private val _current = MutableStateFlow<ChallengeFocus?>(null)
     val current: StateFlow<ChallengeFocus?> = _current.asStateFlow()
 
+    /**
+     * 챌린지 화면에서 시작한 러닝인가 — 진행값을 아직 못 읽어 [current] 가 비어도 챌린지 러닝이다.
+     * 러닝 화면은 이것으로 챌린지 러닝을 예전 화면에 두고(자유 러닝 화면으로 보내지 않는다), 막대는 [current] 가 있을 때만 그린다.
+     */
+    private val _launched = MutableStateFlow(false)
+    val launched: StateFlow<Boolean> = _launched.asStateFlow()
+
     /** 묶인 러닝의 시작 시각. 아직 러닝을 만나지 않았으면 null */
     private var boundTo: Long? = null
 
     fun set(focus: ChallengeFocus) {
         boundTo = null
         _current.value = focus
+        _launched.value = true
+    }
+
+    /** 진행값을 아직 못 읽은 채 챌린지 러닝을 시작한다 — 예상 진행 막대는 없다(모르는 값을 0으로 꾸미지 않게) */
+    fun startWithoutProgress() {
+        boundTo = null
+        _current.value = null
+        _launched.value = true
     }
 
     fun clear() {
         boundTo = null
         _current.value = null
+        _launched.value = false
     }
 
     /** [startedAt] 러닝에 보여도 되는가 — 아직 묶이지 않았거나 그 러닝에 묶였을 때만 */
     fun matches(startedAt: Long): Boolean = _current.value != null && (boundTo == null || boundTo == startedAt)
 
+    /** [startedAt] 러닝이 챌린지 화면에서 시작한 러닝인가 — 진행값을 몰라도 */
+    fun isChallengeRun(startedAt: Long): Boolean = _launched.value && (boundTo == null || boundTo == startedAt)
+
     /** 달리는 중인 러닝을 만나면 부른다 — 처음이면 묶고, 다른 러닝이면 비운다 */
     fun bind(startedAt: Long) {
-        if (_current.value == null || startedAt <= 0) return
+        if (!_launched.value || startedAt <= 0) return
         val bound = boundTo
         if (bound == null) boundTo = startedAt else if (bound != startedAt) clear()
     }

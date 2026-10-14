@@ -280,8 +280,9 @@ fun EventsScreen(
                             1 -> weekSteps?.let { ChallengeFocus(ChallengeKind.WEEKLY, it.toDouble(), Events.STEP_SURGE.target) }
                             else -> nightKm?.let { ChallengeFocus(ChallengeKind.NIGHT, it, Events.NIGHT_QUEST.target) }
                         }
-                        // 진행값을 아직 못 읽었으면 러닝 화면에 예상 진행을 보이지 않는다(모르는 값을 0으로 꾸미지 않게)
-                        if (focus != null) ChallengeRunFocus.set(focus) else ChallengeRunFocus.clear()
+                        // 진행값을 아직 못 읽었으면 러닝 화면에 예상 진행을 보이지 않는다(모르는 값을 0으로 꾸미지 않게).
+                        // 그래도 챌린지 러닝이다 — 러닝 화면이 자유 러닝(보상 표시 없음)으로 그리지 않게
+                        if (focus != null) ChallengeRunFocus.set(focus) else ChallengeRunFocus.startWithoutProgress()
                         onStartRun()
                     }
                 },

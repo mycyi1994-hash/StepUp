@@ -418,19 +418,34 @@ fun RunScreen(
 
     // 자유 러닝(2026-10-14 v2) — 보상 UI 없는 지도 중심 화면. 시작 메뉴 · 러닝 홈에서 고른 자유 러닝만 그린다.
     // 코스 · 코스 만들기 · 크루 · 이벤트 챌린지 러닝도 계획은 자유(RunPlan.Free)지만 예전 화면 그대로다.
-    val challengeFocus by com.stepup.android.ui.screens.events.ChallengeRunFocus.current.collectAsStateWithLifecycle()
+    // 챌린지 화면에서 시작한 러닝 — 진행값을 못 읽었어도(막대 없음) 챌린지 러닝이다
+    val challengeLaunched by com.stepup.android.ui.screens.events.ChallengeRunFocus.launched.collectAsStateWithLifecycle()
     LaunchedEffect(session.isActive, session.startedAt) {
         if (session.isActive) com.stepup.android.ui.screens.events.ChallengeRunFocus.bind(session.startedAt)
     }
-    val focusRun = challengeFocus != null &&
-        com.stepup.android.ui.screens.events.ChallengeRunFocus.matches(if (session.isActive) session.startedAt else session.lastStartedAt)
+    val focusRun = challengeLaunched &&
+        com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
     val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !party.isActive && !recordingCourse && !focusRun
-    // 결과 · 공유는 저장된 순간의 판단을 지킨다 — 코스 저장 창을 닫거나 코스를 바꿔도 결과 모습이 바뀌지 않게(회전에도)
-    val freeRunResult = rememberSaveable(session.lastStartedAt, finishing) { freeRunNow }
+    // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
+    // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
+    var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
+    var freeLatch by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(session.isActive, session.startedAt, freeRunNow) {
+        if (session.isActive && session.startedAt > 0) {
+            freeLatchStart = session.startedAt
+            freeLatch = freeRunNow
+        }
+    }
+    // 결과 · 공유는 저장된 순간의 판단을 지킨다 — 코스 저장 창을 닫거나 코스를 바꿔도 결과 모습이 바뀌지 않게(회전에도).
+    // 달리는 모습을 보지 못한 러닝(되살린 러닝 등)만 지금 상태로 정한다
+    val freeRunResult = rememberSaveable(session.lastStartedAt, finishing) {
+        if (freeLatchStart > 0 && freeLatchStart == session.lastStartedAt) freeLatch else freeRunNow
+    }
     LaunchedEffect(discardFailures) {
         if (discarding) {
             discarding = false
-            if (freeRunNow) discardFailedBand = true
+            // 띠는 멈춘 러닝에만 — 그사이 다시 달리고 있으면 띠를 남기지 않는다(다음 일시정지에 "다시 시도"가 확인 없이 지우지 않게)
+            if (freeRunNow) { if (session.isPaused) discardFailedBand = true }
             else android.widget.Toast.makeText(context, discardFailedText, android.widget.Toast.LENGTH_LONG).show()
         }
     }
