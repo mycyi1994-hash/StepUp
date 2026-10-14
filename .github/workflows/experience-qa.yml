@@ -63,6 +63,14 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: bash tools/run_device_qa.sh
+      # 에뮬레이터가 아무 말 없이 통째로 사라지면(PR #86 Experience QA 38545387775 · 38555432814) 까닭을 남긴다 —
+      # 러너 커널이 메모리 부족으로 프로세스를 끝냈는지(OOM), 그때 메모리를 많이 쓰던 프로세스
+      - name: Host memory diagnostics
+        if: failure()
+        run: |
+          free -m
+          sudo dmesg -T | grep -iE "out of memory|oom-kill|killed process" | tail -20 || true
+          ps -eo pid,rss,comm --sort=-rss | head -8
       # 검토용 화면 캡처 — 브랜치 푸시와 수동 실행에서만. 풀 리퀘스트에서는 올리지 않는다.
       #
       # 아티팩트는 로그인해야 받을 수 있지만, 사전 배포의 첨부 파일은 테스트 APK 와

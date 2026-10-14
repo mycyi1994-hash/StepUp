@@ -762,21 +762,17 @@ data class TilePlan(
  */
 private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter, roads: ColorFilter? = null): Int {
     var drawn = 0
+    val side = (MapTiles.TILE_SIZE * plan.scale).toInt()
     for (ty in plan.minTileY..plan.maxTileY) {
         for (tx in plan.minTileX..plan.maxTileX) {
             val image = MapTiles.cached(plan.zoom, plan.wrapX(tx), ty) ?: continue
             // floor로 내림해야 음수 구간에서 타일 사이가 1px 벌어지지 않는다
             val left = floor((tx * MapTiles.TILE_SIZE - plan.originX) * plan.scale).toInt()
             val top = floor((ty * MapTiles.TILE_SIZE - plan.originY) * plan.scale).toInt()
-            // 다음 타일이 시작하는 자리까지 채운다 — 배율이 정수가 아니면 (TILE_SIZE × 배율)을 버림한 크기가 1px 모자라
-            // 타일 사이에 어두운 줄이 보였다(지도를 밝게 한 뒤 눈에 띄었다)
-            val right = floor(((tx + 1) * MapTiles.TILE_SIZE - plan.originX) * plan.scale).toInt()
-            val bottom = floor(((ty + 1) * MapTiles.TILE_SIZE - plan.originY) * plan.scale).toInt()
-            val size = IntSize(right - left, bottom - top)
             drawImage(
                 image = image,
                 dstOffset = IntOffset(left, top),
-                dstSize = size,
+                dstSize = IntSize(side, side),
                 colorFilter = filter,
             )
             if (roads != null) {
@@ -784,7 +780,7 @@ private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter, roads: Colo
                 drawImage(
                     image = image,
                     dstOffset = IntOffset(left, top),
-                    dstSize = size,
+                    dstSize = IntSize(side, side),
                     colorFilter = roads,
                     blendMode = androidx.compose.ui.graphics.BlendMode.Plus,
                 )
