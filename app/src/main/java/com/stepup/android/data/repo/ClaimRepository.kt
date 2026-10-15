@@ -76,6 +76,7 @@ class ClaimRepository(
         var signed = 0
         var rejected = 0
         var failed = 0
+        var retriesInRow = 0
 
         for (session in pending) {
             when (val result = recorder.record(session)) {
@@ -124,9 +125,11 @@ class ClaimRepository(
                         ),
                     )
                     failed++
-                    // 한 번 끊기면 다음 것도 끊긴다. 남은 세션까지 줄줄이
-                    // 실패시켜 시도 횟수만 올릴 이유가 없다.
-                    break
+                    // 연달아 두 번 끊기면 서버나 연결이 멈춘 것이다 — 남은 세션까지 줄줄이 실패시켜 시도 횟수만 올릴
+                    // 이유가 없다. 한 번이면 그 러닝만의 문제일 수 있다 — 가장 오래된 러닝 하나가 계속 실패하면 뒤의
+                    // 러닝이 모두 기다리다 서버의 7일 기한을 넘겼다. 다음 것을 계속 올린다.
+                    if (++retriesInRow >= 2) break
+                    continue
                 }
 
                 is ServerResult.SignInRequired -> {
@@ -142,6 +145,7 @@ class ClaimRepository(
                     )
                 }
             }
+            retriesInRow = 0
         }
 
         if (signed > 0) runCatching { onSigned() }

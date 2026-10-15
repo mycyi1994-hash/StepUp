@@ -584,7 +584,8 @@
     <string name="party_problem_network">서버에 닿지 못했어요. 다시 시도하는 중…</string>
     <string name="party_problem_closed">방이 닫혔어요.</string>
     <string name="party_problem_failed">처리되지 않았어요. 다시 눌러 주세요.</string>
-    <string name="party_gps_rule">파티장에게서 %1$dm 이상 떨어지면 자동으로 파티에서 빠져요.</string>
+    <string name="party_problem_missed_start">함께 출발한 지 오래돼 새 대기실을 열었어요.</string>
+    <string name="party_gps_rule">출발 2분 뒤에도 서로 %1$dm 안에서 달린 사람만 파티 인원으로 세요.</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">거절</string>
@@ -798,7 +799,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="guide4_tip">팁: + 글쓰기 버튼으로 새 글을 올려요.</string>
     <string name="guide5_title">크루와 파티런</string>
     <string name="guide5_body" formatted="false">크루에 가입하거나 직접 만들고 파티 로비를 열어보세요. 전원 준비되면 파티장이 시작하고, 1명당 적립 +10% 부스트가 붙어요.</string>
-    <string name="guide5_tip">팁: 파티장에게서 100m 넘게 떨어지면 자동 이탈!</string>
+    <string name="guide5_tip">팁: 함께 출발해 서로 200m 안에서 달려야 같이 달린 인원으로 세요!</string>
     <string name="guide6_title">이벤트와 보상</string>
     <string name="guide6_body">주간 걸음 캠페인과 친구 초대 보상으로 실제 SUP를 받아요. 알림함에서 바로 보상을 수령할 수도 있어요.</string>
     <string name="guide6_tip">팁: 이벤트 탭에서 진행 중인 캠페인을 확인하세요.</string>
@@ -1302,6 +1303,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="finish_pending">러닝 완료 · 서버 확인 중</string>
     <string name="finish_pending_note">러닝 기록을 저장했어요. 보상은 서버 확인 후 확정돼요.</string>
     <string name="finish_rejected">서버가 이 기록을 인정하지 않았어요</string>
+    <string name="finish_simulated">테스트용 걸음 흉내가 섞인 러닝은 서버에 올리지 않고 적립하지 않아요.</string>
     <string name="finish_balance">보유</string>
     <string name="finish_done">완료</string>
     <string name="finish_share">기록 공유</string>

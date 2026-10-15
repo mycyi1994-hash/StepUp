@@ -262,15 +262,28 @@ class ClaimUploadTest {
     }
 
     @Test
-    fun `한 번 끊기면 남은 세션은 건드리지 않는다`() = runBlocking {
-        // 연달아 보내봐야 다 실패한다. 시도 횟수만 축내고 배터리를 태운다.
+    fun `연달아 두 번 끊기면 남은 세션은 건드리지 않는다`() = runBlocking {
+        // 연결이 멈췄으면 연달아 보내봐야 다 실패한다. 시도 횟수만 축내고 배터리를 태운다.
         val dao = FakeDao((1L..5L).map { session(it, startedAt = 1_000_000_000_000L + it) })
         val recorder = FakeRecorder { ServerResult.Retry("통신 실패") }
         val run = repo(dao, recorder).uploadPending()
 
-        assertEquals("한 번만 시도해야 한다", 1, recorder.seen.size)
+        assertEquals("두 번만 시도해야 한다", 2, recorder.seen.size)
+        assertEquals(2, run.failed)
+        assertEquals(3, dao.rows.values.count { it.uploadState == UploadState.PENDING.name })
+    }
+
+    @Test
+    fun `가장 오래된 러닝 하나만 계속 실패해도 뒤의 러닝은 올라간다`() = runBlocking {
+        // 예전엔 첫 실패에서 멈춰, 그 하나가 계속 실패하면 뒤의 러닝이 모두 기다리다 서버의 7일 기한을 넘겼다
+        val dao = FakeDao((1L..4L).map { session(it, startedAt = 1_000_000_000_000L + it) })
+        val recorder = FakeRecorder { if (it.id == 1L) ServerResult.Retry("서버 오류") else okAnswer(it) }
+        val run = repo(dao, recorder).uploadPending()
+
+        assertEquals(3, run.signed)
         assertEquals(1, run.failed)
-        assertEquals(4, dao.rows.values.count { it.uploadState == UploadState.PENDING.name })
+        assertEquals(UploadState.FAILED.name, dao.rows.getValue(1L).uploadState)
+        assertTrue("일꾼이 다시 깨어나야 한다", run.shouldRetry)
     }
 
     @Test

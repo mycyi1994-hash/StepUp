@@ -128,7 +128,11 @@ class WalkViewModel(
     val sensorAvailable: Boolean get() = stepRepository.stepSensorAvailable
 
     /** 에뮬레이터/센서 미지원 기기 데모용 */
-    fun simulateSteps(count: Int) = stepRepository.simulateSteps(count)
+    fun simulateSteps(count: Int) {
+        // 흉내 걸음이 섞인 러닝은 실제 서버에 적립을 받지 않게 표시한다
+        WalkSessionService.markSimulated()
+        stepRepository.simulateSteps(count)
+    }
 
     fun clearReward() = WalkSessionService.clearLastReward()
 

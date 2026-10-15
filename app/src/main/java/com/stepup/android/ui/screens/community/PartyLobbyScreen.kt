@@ -130,6 +130,12 @@ fun PartyLobbyScreen(
     var notify by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(crewId, flashPostId) {
+        // 이미 달리는 중이면 새 대기실을 열지 않고 지금 러닝으로 간다 — 다른 방을 열면 달리던 방에서 말없이
+        // 나오고, 그 방 진행자가 출발하면 러닝이 하나 더 켜졌다
+        if (WalkSessionService.state.value.isActive) {
+            onRunStarted()
+            return@LaunchedEffect
+        }
         when {
             flashPostId != null -> viewModel.openFlashLobby(flashPostId, flashPost?.title.orEmpty())
             crewId.isNotEmpty() -> viewModel.openLobby(crewId)
@@ -139,8 +145,16 @@ fun PartyLobbyScreen(
     // 서버가 정한 출발 시각이 되면 실제 세션을 시작한다.
     LaunchedEffect(party.phase) {
         if (party.phase == PartyPhase.RUNNING) {
-            val missing = StepPermissions.missing(context)
-            if (missing.isEmpty()) startRun() else permissionLauncher.launch(missing)
+            when {
+                // 이 폰의 러닝이 이미 돌고 있다 — 하나 더 켜지 않고 그 러닝으로 간다
+                WalkSessionService.state.value.isActive -> onRunStarted()
+                // 출발한 지 오래됐다(대기실을 떠나 있었다) — 옛 방의 러닝을 늦게 켜지 않고 새 대기실을 연다
+                !viewModel.startIsFresh() -> viewModel.missedStart()
+                else -> {
+                    val missing = StepPermissions.missing(context)
+                    if (missing.isEmpty()) startRun() else permissionLauncher.launch(missing)
+                }
+            }
         }
     }
 
@@ -287,8 +301,9 @@ fun PartyLobbyContent(
             when {
                 party.phase == PartyPhase.FINISHED ->
                     RunButton(stringResource(R.string.common_ok), onDismissResult, Modifier.testTag("party-result-ok"))
-                // 누른 것이 막힌 것뿐(FAILED)이면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
-                !lobby || (party.problem != null && party.problem != PartyProblem.FAILED) || party.partyId == null -> Unit
+                // 누른 것이 막힌 것뿐(FAILED)이거나 새 대기실 안내면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
+                !lobby || (party.problem != null && party.problem != PartyProblem.FAILED &&
+                    party.problem != PartyProblem.MISSED_START) || party.partyId == null -> Unit
                 !party.myReady -> {
                     RunButton(stringResource(R.string.run_cr_get_ready), onReady, Modifier.testTag("party-ready"))
                     if (alone && canNotify) {
@@ -357,7 +372,7 @@ fun PartyLobbyContent(
                         chevron = true)
                 }
                 Text(
-                    stringResource(R.string.party_gps_rule, com.stepup.android.data.repo.CrewRepository.MAX_PARTY_DISTANCE_M),
+                    stringResource(R.string.party_gps_rule, com.stepup.android.data.repo.CrewRepository.NEAR_DISTANCE_M),
                     style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -453,16 +468,19 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onLeave: (
             PartyProblem.NETWORK -> R.string.party_problem_network
             PartyProblem.CLOSED -> R.string.party_problem_closed
             PartyProblem.FAILED -> R.string.party_problem_failed
+            PartyProblem.MISSED_START -> R.string.party_problem_missed_start
         },
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         RunNotice(
-            message, kind = if (problem == PartyProblem.NETWORK) RunNoticeKind.Warn else RunNoticeKind.Error, tag = "party-problem",
+            message,
+            kind = if (problem == PartyProblem.NETWORK || problem == PartyProblem.MISSED_START) RunNoticeKind.Warn else RunNoticeKind.Error,
+            tag = "party-problem",
             action = if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) stringResource(R.string.crew_retry) else null,
             onAction = if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) onRetry else null,
         )
-        // 누른 것이 막힌 것뿐이면 방에는 그대로 있다
-        if (problem != PartyProblem.FAILED) {
+        // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
+        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {
             RunButton(stringResource(R.string.run_cr_leave), onLeave, Modifier.testTag("party-leave"), kind = RunButtonKind.Secondary)
         }
     }

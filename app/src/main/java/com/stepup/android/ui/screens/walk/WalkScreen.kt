@@ -560,7 +560,10 @@ fun RunScreen(
     // 지도 틀 안 — 실제 지도(달린 길 · 지금 자리 · 고른 코스 · 같이 뛰는 사람). 위치 없이 기록하면 안내만
     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
     // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
-    val showOthers = together && !party.networkProblem
+    // 방과 끊겼으면(내보냄 · 로그인 필요 · 방 닫힘) 더 묻지 않아 남은 점이 굳는다 — 지금 위치처럼 그리지 않는다
+    val showOthers = together && !party.networkProblem && !party.roomClosed &&
+        party.problem != com.stepup.android.data.repo.PartyProblem.REMOVED &&
+        party.problem != com.stepup.android.data.repo.PartyProblem.SIGN_IN
     val others = remember(party.members, showOthers, crewRun, crewLinkNow) {
         when {
             // 크루 달리기 — 이어져 있는 동안, 위치 공유를 켠 사람만(공유하지 않는 사람은 줄에만 있다)
@@ -2290,7 +2293,8 @@ private fun finishReward(session: WalkSessionState, points: Double?, upload: Str
     val noReward = !voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0
     val reward = stringResource(R.string.result_reward)
     return when {
-        voided -> ResultReward(reward, "0", Settle.VOID, listOf(stringResource(R.string.run_void_body)))
+        voided -> ResultReward(reward, "0", Settle.VOID,
+            listOf(stringResource(if (session.lastSimulated) R.string.finish_simulated else R.string.run_void_body)))
         // 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게 — 확정은 서버 금액까지 읽었을 때만
         finishConfirmed(session, points, upload) && points != null -> ResultReward(reward, "+" + rewardAmount(points), Settle.DONE)
         nothingToUpload -> ResultReward(reward, "0", Settle.NOT_PAID, listOf(stringResource(R.string.finish_no_steps)))

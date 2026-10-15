@@ -93,6 +93,7 @@ class UserPrefs(
         val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
         val WEATHER_BACKGROUND = booleanPreferencesKey("weather_background")
         val PARTY_SHARE_LOCATION = booleanPreferencesKey("party_share_location")
+        val EXITED_PARTIES = stringPreferencesKey("exited_parties")
         val RUN_MODE = stringPreferencesKey("run_mode")
         val BODY_HEIGHT_CM = intPreferencesKey("body_height_cm")
         val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
@@ -803,6 +804,16 @@ class UserPrefs(
 
     suspend fun setPartyShareLocation(on: Boolean) {
         store.edit { it[Keys.PARTY_SHARE_LOCATION] = on }
+    }
+
+    /** 러닝을 마치고 나온 함께 달리기 방(최근 20개) — 나가기가 서버에 닿지 않았어도 그 방에 다시 붙지 않게 */
+    val exitedParties: Flow<Set<Long>> = store.data.map { it[Keys.EXITED_PARTIES].toIdList().toSet() }
+
+    suspend fun addExitedParty(id: Long) {
+        store.edit { prefs ->
+            prefs[Keys.EXITED_PARTIES] = (prefs[Keys.EXITED_PARTIES].toIdList().filter { it != id } + id)
+                .takeLast(20).joinToString(",")
+        }
     }
 
     /** 홈 구성 모드. 적립 규칙과는 상관없다. */

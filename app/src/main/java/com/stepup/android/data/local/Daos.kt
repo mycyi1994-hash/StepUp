@@ -93,8 +93,11 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
-    /** 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중" */
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
+    /**
+     * 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중".
+     * 주인이 정해지기 전(legacy)의 러닝은 어느 계정으로도 올리지 않으므로 세지 않는다 — 영영 "확인 중"으로 남았다.
+     */
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCountFor(owner: String): Flow<Int>
 
     /**
@@ -190,10 +193,11 @@ interface WalkSessionDao {
     /**
      * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음 있음)은
      * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다. 지운 수를 돌려준다(0이면 지우지 않았다).
+     * 주인이 정해지기 전(legacy)의 러닝은 올라가지 않으므로 확인을 기다리는 중이어도 지울 수 있다.
      */
     @Query(
         "DELETE FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy') " +
-            "AND NOT (uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
+            "AND NOT (recordingOwner != 'legacy' AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
     )
     suspend fun deleteRecord(owner: String, id: Long): Int
 }

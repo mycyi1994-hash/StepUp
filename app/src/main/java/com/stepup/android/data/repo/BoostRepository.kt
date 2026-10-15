@@ -49,6 +49,8 @@ class BoostRepository(
      *
      * @return 실패 사유. null이면 성공.
      */
+    private val pendingRequests = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     suspend fun purchase(type: BoostType): PurchaseError? {
         val api = economy
         if (api != null) {
@@ -56,7 +58,11 @@ class BoostRepository(
             if (!type.isInstant && boostDao.activeOf(type.id, System.currentTimeMillis()) != null) {
                 return PurchaseError.ALREADY_ACTIVE
             }
-            return when (val outcome = api.boostBuy(type.id).toEconomyOutcome()) {
+            // 응답을 잃은 구매를 다시 누르면 같은 요청 번호로 보낸다 — 서버가 한 번만 치른다(0057). 답을 받으면 버린다
+            val key = pendingRequests.getOrPut(type.id) { java.util.UUID.randomUUID().toString() }
+            val result = api.boostBuy(type.id, key).toEconomyOutcome()
+            if (result != EconomyOutcome.Offline) pendingRequests.remove(type.id, key)
+            return when (val outcome = result) {
                 EconomyOutcome.Ok -> {
                     sync?.refresh()
                     rewardRepository.notify(NotificationType.BOOST_ACTIVATED, type.id, type.cost)

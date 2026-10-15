@@ -584,7 +584,8 @@
     <string name="party_problem_network">无法连接服务器，正在重试…</string>
     <string name="party_problem_closed">房间已关闭。</string>
     <string name="party_problem_failed">操作未成功，请再试一次。</string>
-    <string name="party_gps_rule">离队长超过 %1$d 米会被自动移出队伍。</string>
+    <string name="party_problem_missed_start">距离一起出发已过去较久，已为你打开新的等候室。</string>
+    <string name="party_gps_rule">出发2分钟后仍彼此相距%1$d米以内的成员，才会计入队伍人数。</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">拒绝</string>
@@ -798,7 +799,7 @@
     <string name="guide4_tip">提示：点 + 按钮发新帖。</string>
     <string name="guide5_title">跑团与组队跑</string>
     <string name="guide5_body" formatted="false">加入或创建跑团，然后打开组队大厅。全员准备好后队长开跑，每名成员 +10% 加成。</string>
-    <string name="guide5_tip">提示：离队长超过 100 米会自动退出！</string>
+    <string name="guide5_tip">提示：一起出发并彼此保持在 200 米以内，才会计入一起跑的人数！</string>
     <string name="guide6_title">活动与奖励</string>
     <string name="guide6_body">每周步数活动和邀请奖励都发真 SUP。在通知里就能直接领取奖励。</string>
     <string name="guide6_tip">提示：在活动页查看进行中的活动。</string>
@@ -1302,6 +1303,7 @@
     <string name="finish_pending">跑步完成 · 服务器确认中</string>
     <string name="finish_pending_note">跑步记录已保存。奖励将在服务器确认后确定。</string>
     <string name="finish_rejected">服务器未认可此记录</string>
+    <string name="finish_simulated">含有测试模拟步数的跑步不会上传到服务器，也不会发放奖励。</string>
     <string name="finish_balance">持有</string>
     <string name="finish_done">完成</string>
     <string name="finish_share">分享记录</string>

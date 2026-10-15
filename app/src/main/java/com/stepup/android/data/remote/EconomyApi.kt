@@ -66,8 +66,8 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
         rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
 
     /** 예전 강화(SUP 를 내고 레벨 +1). 새 앱의 강화 화면은 부르지 않는다 — 신발 강화는 아래 forge_* 다. 새 레벨을 돌려준다. */
-    suspend fun upgrade(id: Long): ServerResult<Int> =
-        rpc("sneaker_upgrade", jsonBody { put("p_id", id) }) { it.trim().toIntOrNull() }
+    suspend fun upgrade(id: Long, request: String? = null): ServerResult<Int> =
+        rpc("sneaker_upgrade", jsonBody { put("p_id", id); request?.let { put("p_request", it) } }) { it.trim().toIntOrNull() }
 
     // ── 신발 강화(0054, 규칙 forge-v2) — 재료 신발 3개 · 확률. 응답은 JSON 한 덩어리(ForgeRepository 가 읽는다) ──
 
@@ -92,15 +92,16 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
         rpc("forge_result", "{\"p_key\":${key.asJsonString()}}") { it }
 
     /** 내구도를 가득 채운다. 채운 뒤의 내구도를 돌려준다. */
-    suspend fun repair(id: Long): ServerResult<Double> =
-        rpc("sneaker_repair", jsonBody { put("p_id", id) }) { it.trim().toDoubleOrNull() }
+    /** 수리. [request] 는 요청 번호 — 응답을 잃은 같은 요청을 다시 보낼 때 같은 번호면 서버가 다시 치르지 않는다(0057) */
+    suspend fun repair(id: Long, request: String? = null): ServerResult<Double> =
+        rpc("sneaker_repair", jsonBody { put("p_id", id); request?.let { put("p_request", it) } }) { it.trim().toDoubleOrNull() }
 
     suspend fun equip(id: Long): ServerResult<Unit> =
         rpc("sneaker_equip", jsonBody { put("p_id", id) }) { Unit }
 
     /** 부스터 구매. 남은 잔고를 돌려준다. */
-    suspend fun boostBuy(kind: String): ServerResult<Double> =
-        rpc("boost_buy", jsonBody { put("p_kind", kind) }) { it.trim().toDoubleOrNull() }
+    suspend fun boostBuy(kind: String, request: String? = null): ServerResult<Double> =
+        rpc("boost_buy", jsonBody { put("p_kind", kind); request?.let { put("p_request", it) } }) { it.trim().toDoubleOrNull() }
 
     /** 하루 목표를 서버에 적는다 — 목표 달성 보너스를 서버가 이 값으로 판정한다. 적힌 값을 돌려준다. */
     suspend fun setDailyGoal(goal: Int): ServerResult<Int> =
