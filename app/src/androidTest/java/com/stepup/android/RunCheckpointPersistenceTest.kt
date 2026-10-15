@@ -92,6 +92,55 @@ class RunCheckpointPersistenceTest {
         } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
     }
 
+    @Test fun crewGroupSurvivesReopen() = runBlocking {
+        // 크루 달리기는 앱을 죽였다 살려도 크루 달리기다 — 혼자 출발했어도(인원 1) 그 크루 · 이름으로 결과 · 공유가 이어진다
+        val file = file()
+        try {
+            val crew = checkpoint().let {
+                it.copy(state = it.state.copy(partySize = 1, group = RunGroup.CREW, groupCrewId = "crew-1", groupName = "여의도 퇴근런"))
+            }
+            RunCheckpointStore(file).save(crew)
+            val restored = RunCheckpointStore(file).read()!!
+            assertEquals(crew, restored)
+            val paused = restored.pausedForRecovery()
+            assertEquals(RunGroup.CREW, paused.group)
+            assertEquals("crew-1", paused.groupCrewId)
+            assertEquals("여의도 퇴근런", paused.groupName)
+        } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
+    }
+
+    @Test fun olderCheckpointsKeepTheirGroup() = runBlocking {
+        // 판 2(모임 칸 없음)에서 — 크루가 적힌 여럿 러닝은 크루 달리기, 크루 없는 여럿 러닝은 번개, 혼자는 모임 없음
+        fun v2(partySize: Int, crewId: String): ByteArray {
+            val bytes = java.io.ByteArrayOutputStream()
+            java.io.DataOutputStream(bytes).apply {
+                writeInt(2); writeUTF(RunCheckpointPhase.RECORDING.name); writeLong(500_000); writeDouble(5.0)
+                writeLong(1_000); writeUTF("account:runner-a"); writeBoolean(false); writeInt(partySize)
+                writeInt(725); writeLong(490); writeDouble(0.51); writeDouble(9.7); writeInt(42); writeInt(1)
+                writeInt(0); writeInt(0)
+                writeBoolean(false); writeUTF(crewId)
+                flush()
+            }
+            return bytes.toByteArray()
+        }
+        val cases = listOf(
+            Triple(3, "crew-1", RunGroup.CREW),
+            Triple(3, "", RunGroup.FLASH),
+            Triple(1, "", RunGroup.NONE),
+        )
+        for ((size, crewId, group) in cases) {
+            val file = file()
+            try {
+                file.writeBytes(v2(size, crewId))
+                val restored = RunCheckpointStore(file).read()!!
+                assertEquals(group, restored.state.group)
+                assertEquals(crewId, restored.state.groupCrewId)
+                assertEquals(crewId, restored.state.partyCrewId)
+                assertEquals(size, restored.state.partySize)
+            } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
+        }
+    }
+
     @Test fun fakeLocationFlagSurvivesReopen() = runBlocking {
         // 가짜 위치를 본 러닝은 앱을 죽였다 살려도 무효 표시가 남아야 한다
         val file = file()

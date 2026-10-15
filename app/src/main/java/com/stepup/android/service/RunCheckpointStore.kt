@@ -95,6 +95,10 @@ class RunCheckpointStore(file: File) {
                     // 파티런의 크루도 남긴다 — 되살아난 앱에는 로비 상태가 없다.
                     data.writeBoolean(mockLocation)
                     data.writeUTF(partyCrewId)
+                    // 판 3: 이 러닝을 연 모임(크루 달리기 · 번개)도 남긴다 — 되살린 크루 달리기가 자유 러닝으로 보이지 않게
+                    data.writeUTF(group.name)
+                    data.writeUTF(groupCrewId)
+                    data.writeUTF(groupName.take(StartGroup.NAME_MAX))
                 }
                 data.flush()
                 storage.finishWrite(output)
@@ -139,11 +143,11 @@ class RunCheckpointStore(file: File) {
         if (!storage.baseFile.exists() && !File(storage.baseFile.path + ".bak").exists()) return null
         return DataInputStream(storage.openRead()).use { input ->
             val version = input.readInt()
-            if (version != 1 && version != VERSION) throw IOException("Unsupported run checkpoint version")
+            if (version !in 1..VERSION) throw IOException("Unsupported run checkpoint version")
             val phase = RunCheckpointPhase.valueOf(input.readUTF())
             val savedAt = input.readLong()
             val goal = input.readDouble()
-            val state = WalkSessionState(
+            val read = WalkSessionState(
                 isActive = true,
                 startedAt = input.readLong(), recordingOwner = input.readUTF(),
                 isPaused = input.readBoolean(), partySize = input.readInt(),
@@ -156,6 +160,25 @@ class RunCheckpointStore(file: File) {
                 mockLocation = version >= 2 && input.readBoolean(),
                 partyCrewId = if (version >= 2) input.readUTF() else "",
             )
+            val state = if (version >= 3) {
+                read.copy(
+                    group = RunGroup.entries.firstOrNull { it.name == input.readUTF() }
+                        ?: throw IOException("Unknown run group"),
+                    groupCrewId = input.readUTF(),
+                    groupName = input.readUTF(),
+                )
+            } else {
+                // 판 1 · 2 에는 모임이 없었다 — 크루가 적힌 여럿 러닝은 크루 달리기, 크루 없는 여럿 러닝은 번개로 본다.
+                // 혼자 출발한 크루 달리기는 그때 적은 것이 없어 알 수 없다(혼자 러닝으로 둔다)
+                read.copy(
+                    group = when {
+                        read.partyCrewId.isNotBlank() -> RunGroup.CREW
+                        read.partySize > 1 -> RunGroup.FLASH
+                        else -> RunGroup.NONE
+                    },
+                    groupCrewId = read.partyCrewId,
+                )
+            }
             if (input.read() != -1) throw IOException("Unexpected checkpoint trailing data")
             RunCheckpoint(state, goal, savedAt, phase)
         }
@@ -165,5 +188,5 @@ class RunCheckpointStore(file: File) {
         if (it !in 0..1_000_000) throw IOException("Invalid checkpoint collection length")
     }
 
-    private companion object { const val VERSION = 2 }
+    private companion object { const val VERSION = 3 }
 }

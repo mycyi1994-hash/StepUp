@@ -83,6 +83,32 @@ object GpsSignal {
 /** 워킹 세션의 현재 상태. 화면과 서비스가 공유한다. */
 enum class RunSaveStatus { IDLE, SAVING, FAILED }
 
+/**
+ * 이 러닝을 연 모임 — 화면이 크루 달리기 · 번개 러닝을 가르는 근거(크루 달리기 v2, 2026-10-16).
+ * 정산 인원(partySize) · 크루 순위용 크루(partyCrewId)와 따로 둔다 — 혼자 출발해도 크루 달리기지만 모임 보너스 · 순위는 붙지 않는다.
+ */
+enum class RunGroup { NONE, CREW, FLASH }
+
+/** 대기실에서 출발한 러닝의 모임 — 서비스를 켤 때 넘긴다([WalkSessionService.start]) */
+data class StartGroup(val group: RunGroup, val crewId: String, val name: String) {
+    companion object {
+        val NONE = StartGroup(RunGroup.NONE, "", "")
+
+        /** 저장본에 남길 이름 길이 — 번개 글 제목이 길어도 저장본 칸(writeUTF)을 넘기지 않게 */
+        const val NAME_MAX = 80
+
+        /**
+         * 출발한 방에서 — 번개 글의 방이면 번개, 크루가 있으면 크루, 둘 다 아니면 모임 없음.
+         * [name] 은 대기실이 보인 이름(크루 이름 · 번개 글 제목)이다.
+         */
+        fun of(room: com.stepup.android.data.repo.PartyState, name: String): StartGroup = when {
+            room.flashPostId != null -> StartGroup(RunGroup.FLASH, "", name.trim().take(NAME_MAX))
+            !room.crewId.isNullOrBlank() -> StartGroup(RunGroup.CREW, room.crewId, name.trim().take(NAME_MAX))
+            else -> NONE
+        }
+    }
+}
+
 data class WalkSessionState(
     val isActive: Boolean = false,
     val isPaused: Boolean = false,
@@ -98,11 +124,26 @@ data class WalkSessionState(
      * 상태가 비어 있으므로, 되살린 러닝은 이 값으로 크루 순위에 들어간다.
      */
     val partyCrewId: String = "",
+    /**
+     * 이 러닝을 연 모임과 그 크루 · 이름(크루 이름 · 번개 글 제목) — 대기실에서 출발할 때 적고 저장본에도 남긴다.
+     * 되살린 러닝 · 혼자 남은 러닝 · 끝난 결과도 같은 모임으로 보이고, 크루에 기록 공유는 이 크루로만 간다. 화면 표시용이다.
+     */
+    val group: RunGroup = RunGroup.NONE,
+    val groupCrewId: String = "",
+    val groupName: String = "",
     /** 마지막 세션 정산 결과 (종료 직후 화면 표시용) */
     val lastRewardPoints: Double? = null,
     val lastRewardedSteps: Int = 0,
     val lastSessionSteps: Int = 0,
     val lastPartySize: Int = 1,
+    /**
+     * 방금 끝난 러닝의 모임 — 결과 · 공유 화면용. [lastGroupSize] 는 함께 출발한 인원(나 포함)으로 정산 인원([lastPartySize])과
+     * 다를 수 있다. 다른 계정의 러닝을 되살려 저장했으면 크루([lastGroupCrewId])는 비운다(지금 계정으로 그 크루에 공유하지 않게).
+     */
+    val lastGroup: RunGroup = RunGroup.NONE,
+    val lastGroupCrewId: String = "",
+    val lastGroupName: String = "",
+    val lastGroupSize: Int = 1,
     /**
      * 이번 세션의 랩 기록. 화면이 아니라 세션과 함께 살아서,
      * 러닝 중 화면을 나갔다 돌아와도 랩이 사라지거나 꼬이지 않는다.
@@ -400,7 +441,14 @@ class WalkSessionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> startSession(intent.getIntExtra(EXTRA_PARTY_SIZE, 1).coerceAtLeast(1))
+            ACTION_START -> startSession(
+                intent.getIntExtra(EXTRA_PARTY_SIZE, 1).coerceAtLeast(1),
+                StartGroup(
+                    runCatching { RunGroup.valueOf(intent.getStringExtra(EXTRA_GROUP).orEmpty()) }.getOrDefault(RunGroup.NONE),
+                    intent.getStringExtra(EXTRA_GROUP_CREW).orEmpty(),
+                    intent.getStringExtra(EXTRA_GROUP_NAME).orEmpty(),
+                ),
+            )
             ACTION_PAUSE -> setPaused(true)
             ACTION_RESUME -> setPaused(false)
             ACTION_STOP -> stopSession()
@@ -410,7 +458,7 @@ class WalkSessionService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun startSession(partySize: Int) {
+    private fun startSession(partySize: Int, group: StartGroup) {
         if (_state.value.isActive || startJob?.isActive == true) return
         enterForeground()
         startJob = scope.launch(Dispatchers.Main.immediate) {
@@ -444,7 +492,7 @@ class WalkSessionService : Service() {
             // Begin tracking only after the recording account has been captured.
             // Finishing later must never read the replacement login account.
             val owner = ServiceLocator.sessionHolder.recordingOwner()
-            beginTracking(partySize, owner)
+            beginTracking(partySize, owner, group = group)
         }
     }
 
@@ -503,7 +551,12 @@ class WalkSessionService : Service() {
         )
     }
 
-    private fun beginTracking(partySize: Int, owner: String, restored: WalkSessionState? = null) {
+    private fun beginTracking(
+        partySize: Int,
+        owner: String,
+        restored: WalkSessionState? = null,
+        group: StartGroup = StartGroup.NONE,
+    ) {
         followupsAttempted = false
         resumedSettling = false
         _state.value = restored ?: WalkSessionState(
@@ -512,6 +565,9 @@ class WalkSessionService : Service() {
             recordingOwner = owner,
             partySize = partySize,
             partyCrewId = if (partySize > 1) ServiceLocator.crewRepository.currentPartyCrewId() else "",
+            group = group.group,
+            groupCrewId = group.crewId,
+            groupName = group.name,
         )
         activeMs = (restored?.elapsedSec ?: 0L) * 1000
 
@@ -770,6 +826,11 @@ class WalkSessionService : Service() {
                 lastRewardedSteps = reward.rewardedSteps,
                 lastSessionSteps = session.steps,
                 lastPartySize = settleSize,
+                // 결과 · 공유는 출발할 때 적은 모임으로 — 끝난 뒤의 방 상태(닫힘 · 혼자 남음 · 되살린 앱의 빈 방)로 다시 셈하지 않는다
+                lastGroup = session.group,
+                lastGroupCrewId = if (foreignOwner) "" else session.groupCrewId,
+                lastGroupName = session.groupName,
+                lastGroupSize = session.partySize,
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,
@@ -926,6 +987,9 @@ class WalkSessionService : Service() {
         }
 
         const val EXTRA_PARTY_SIZE = "com.stepup.android.extra.PARTY_SIZE"
+        const val EXTRA_GROUP = "com.stepup.android.extra.GROUP"
+        const val EXTRA_GROUP_CREW = "com.stepup.android.extra.GROUP_CREW"
+        const val EXTRA_GROUP_NAME = "com.stepup.android.extra.GROUP_NAME"
 
         const val ACTION_START = "com.stepup.android.action.SESSION_START"
         const val ACTION_PAUSE = "com.stepup.android.action.SESSION_PAUSE"
@@ -957,10 +1021,16 @@ class WalkSessionService : Service() {
         private const val CHANNEL_ID = "walk_session"
         private const val NOTIFICATION_ID = 1001
 
-        /** @param partySize 파티런 인원(본인 포함). 1이면 개인 러닝. */
-        fun start(context: Context, partySize: Int = 1) {
+        /**
+         * @param partySize 파티런 인원(본인 포함). 1이면 개인 러닝.
+         * @param group 대기실에서 출발한 러닝이면 그 모임([StartGroup.of]) — 화면 표시용이고 정산에는 쓰지 않는다.
+         */
+        fun start(context: Context, partySize: Int = 1, group: StartGroup = StartGroup.NONE) {
             val intent = intent(context, ACTION_START)
                 .putExtra(EXTRA_PARTY_SIZE, partySize.coerceAtLeast(1))
+                .putExtra(EXTRA_GROUP, group.group.name)
+                .putExtra(EXTRA_GROUP_CREW, group.crewId)
+                .putExtra(EXTRA_GROUP_NAME, group.name)
             ContextCompat.startForegroundService(context, intent)
         }
 

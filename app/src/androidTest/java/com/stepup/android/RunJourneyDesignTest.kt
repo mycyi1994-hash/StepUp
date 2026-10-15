@@ -796,9 +796,10 @@ class RunJourneyDesignTest {
     }
 
     /**
-     * CR — 크루 달리기. 입구(고른 크루 · 크루 없음) · 크루 선택 · 대기실(크루원 준비 전 · 준비 완료 · 진행자 · 혼자) · 출발 확인 ·
-     * 준비 전 확인 · 크루에게 알리기 · 3-2-1 · 기록 공유는 화면 부품에 예시 크루를 넣어 찍고, 같이 달리는 중 · 함께 달리는 사람 ·
-     * 일시정지 · 마치기 · 연결 끊김 · 결과는 실제 앱(MainScaffold)에서 표시용 러닝 · 방 상태로 찍는다(서버 · 채팅에 보내지 않는다).
+     * CR — 크루 달리기 v2(2026-10-16 전달본). 입구(고른 크루 · 크루 없음) · 크루 선택 · 대기실(크루원 준비 전 · 준비 완료 · 진행자 · 혼자) ·
+     * 출발 확인 · 준비 전 확인 · 크루에게 알리기 · 3-2-1 · 기록 공유는 화면 부품에 예시 크루를 넣어 찍고, 같이 달리는 중 · 함께 달리는 사람 ·
+     * 일시정지 · 마치기 · 연결 끊김 · 방 닫힘 · 되살린 러닝 · 결과는 실제 앱(MainScaffold)에서 표시용 러닝 · 방 상태로 찍는다(서버 · 채팅에
+     * 보내지 않는다). 러닝의 모임(크루 · 번개)은 출발할 때 적은 값으로 보이는지 — 혼자 출발 · 되살린 러닝 · 번개러닝 이름표를 함께 본다.
      */
     @Test fun crew() {
         seed()
@@ -857,7 +858,9 @@ class RunJourneyDesignTest {
             show("CR04", "party-ready") { room(lobby) }
             show("CR05", "party-waiting") { room(lobby.copy(members = members.map { if (it.isMe) it.copy(ready = true) else it })) }
             show("CR06", "party-start") { room(hosting) }
-            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_cr_start_n, 2))
+            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_crew_start_n, 2))
+            // 크루 대기실은 크루 이름 머리와 정확히 "크루 달리기" 배지
+            compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
             show("CR15", "party-alone") { room(alone) }
             compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_cr_start_alone))
             // CR07 — 준비 전 인원을 두고 출발할지
@@ -905,40 +908,112 @@ class RunJourneyDesignTest {
                     member("b", "혜진", ready = true).copy(sharing = true, km = 1.30, point = GeoPoint(37.5222, 126.9431)),
                 ),
             )
+            // 대기실에서 출발한 러닝 — 그 크루 · 이름이 러닝에 적혀 있다(출발할 때)
+            val crewRun = running(now).copy(
+                partySize = 4, group = com.stepup.android.service.RunGroup.CREW, groupCrewId = "c1", groupName = name,
+            )
             RunPlans.set(RunPlan.Free)
             repo.showPartyForTest(together)
-            WalkSessionService.showStateForTest(running(now).copy(partySize = 4))
+            WalkSessionService.showStateForTest(crewRun)
             compose.runOnIdle { scene = { MainScaffold() } }
             tap("home-start-run")
             awaitTag("run-together-row")
+            compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("crew-header-title", useUnmergedTree = true).assertTextEquals(name)
+            // 참여 인원만 적는다 — "모두 달리는 중"이라 하지 않는다
+            compose.onNodeWithTag("crew-header-sub", useUnmergedTree = true).assertTextEquals(label(R.string.run_cr_joined, 4))
+            assertRunFits("CR09")
             shot("CR09", settle = 2_500)
             tap("run-together-row")
             awaitTag("run-together-list")
+            // 위치를 공유하지 않는 사람은 거리 대신 "비공개"
+            compose.onNodeWithTag("run-together-km-a", useUnmergedTree = true).assertTextEquals(label(R.string.run_together_hidden))
             shot("CR10")
             tap("run-together-close")
             awaitGone("run-together-list")
-            WalkSessionService.showStateForTest(running(now).copy(partySize = 4, isPaused = true))
+            WalkSessionService.showStateForTest(crewRun.copy(isPaused = true))
             awaitTag("run-crew-others")
             shot("CR11")
             tap("run-finish")
             awaitTag("run-end-dialog")
+            // 참가자가 마치면 방에서 나온다 — 진행자 안내(방이 닫힌다)가 아니다
+            awaitTag("run-crew-end-member")
             shot("CR12")
             back()
             awaitGone("run-end-dialog")
-            WalkSessionService.showStateForTest(running(now).copy(partySize = 4))
+            WalkSessionService.showStateForTest(crewRun)
             repo.showPartyForTest(together.copy(liveOffline = true))
             awaitTag("run-crew-offline")
+            // 연결이 끊긴 동안 옛 명단 · 위치를 보이지 않는다
+            compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).assertCountEquals(0)
             shot("CR18")
-            // CR13 — 내 크루 러닝 저장 완료: 함께 출발한 인원 · 크루에 기록 공유
+            // 진행자가 마쳐 방이 닫혔다 — 남은 사람의 러닝은 이어지고, 옛 명단 · 위치는 보이지 않는다
+            repo.showPartyForTest(together.copy(roomClosed = true))
+            awaitTag("run-crew-closed")
+            compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).assertCountEquals(0)
+            shot("CR-closed")
+            // 앱이 다시 켜져 방 상태가 비었다(되살린 러닝) — 여전히 크루 달리기(자유 러닝 v2 가 아니다)
+            repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
+            WalkSessionService.showStateForTest(crewRun.copy(isPaused = true))
+            awaitTag("run-crew-detached")
+            compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("crew-header-title", useUnmergedTree = true).assertTextEquals(name)
+            shot("CR-restored")
+            // 좁은 화면 · 큰 글씨에서도 일시정지 · 종료가 화면 안
+            repo.showPartyForTest(together)
+            WalkSessionService.showStateForTest(crewRun)
+            for (v in listOf(Viewport(360, 640), Viewport(320, 640), Viewport(390, 844, font = 1.3f))) {
+                viewport = v
+                awaitTag("home-start-run")
+                tap("home-start-run")
+                awaitTag("run-together-row")
+                assertRunFits("CR09-${v.label}")
+                shot("CR09-${v.label}", settle = 1_500)
+            }
+            viewport = Viewport(390, 844)
+            awaitTag("home-start-run")
+            tap("home-start-run")
+            awaitTag("run-together-row")
+            // 번개러닝은 크루 달리기가 아니다 — 예전 화면, 이름표 "번개러닝"(크루 달리기 배지 없음)
+            val flashRoom = together.copy(crewId = null, flashPostId = 101L, crewName = "한강 번개")
+            repo.showPartyForTest(flashRoom)
+            WalkSessionService.showStateForTest(
+                running(now).copy(partySize = 3, group = com.stepup.android.service.RunGroup.FLASH, groupName = "한강 번개"),
+            )
+            awaitGone("crew-badge")
+            compose.onAllNodesWithText(label(R.string.post_cat_flash), useUnmergedTree = true).fetchSemanticsNodes().let {
+                assertTrue("flash run is labelled as a flash run", it.isNotEmpty())
+            }
+            compose.onAllNodesWithText(label(R.string.run_crew_title), useUnmergedTree = true).assertCountEquals(0)
+            shot("CR-flash")
+            // CR13 — 내 크루 러닝 저장 완료: 함께 출발한 인원 · 크루에 기록 공유. 방이 끝난 뒤에도 출발할 때 적은 크루로
             repo.showPartyForTest(together.copy(phase = com.stepup.android.data.repo.PartyPhase.FINISHED, resultStartedAt = now - 750_000))
-            WalkSessionService.showStateForTest(finished(now).copy(lastPartySize = 4))
+            val crewDone = finished(now).copy(
+                lastPartySize = 4, lastGroup = com.stepup.android.service.RunGroup.CREW, lastGroupCrewId = "c1", lastGroupName = name,
+                lastGroupSize = 4,
+            )
+            WalkSessionService.showStateForTest(crewDone)
             awaitTag("run-result-crew")
             signedIn()
             compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
+            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_line, name, 4))
+            // 보상은 서버가 확인하기 전 "예상 · 확인 중"
+            compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
+            assertResultFits("CR13")
             shot("CR13")
             tap("run-result-share")
             awaitTag("crew-share")
+            compose.onNodeWithTag("crew-share-route-toggle").assertIsOff()
             shot("CR21-app")
+            back()
+            awaitGone("crew-share")
+            // 혼자 출발한 크루 달리기(정산 인원 1) — 결과도 크루 달리기, 그 크루에 기록 공유
+            repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
+            WalkSessionService.showStateForTest(crewDone.copy(lastPartySize = 1, lastGroupSize = 1))
+            awaitTag("run-result-crew")
+            compose.onNodeWithTag("run-result-title", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_solo))
+            compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
+            shot("CR13-solo")
         } finally {
             repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
             WalkSessionService.showStateForTest(WalkSessionState())

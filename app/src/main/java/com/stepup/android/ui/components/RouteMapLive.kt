@@ -125,6 +125,8 @@ fun LiveRouteMap(
     routeOutline: Color? = null,
     /** 출발 · 끝 표시 — [RouteMarkers.Pin] 은 고리 출발점 · 방향 화살표 끝점(자유 러닝) */
     markers: RouteMarkers = RouteMarkers.Classic,
+    /** 같이 뛰는 사람 점을 크루 달리기 v2 모습으로 — 남색 원 · 흰 테 · 흰 머리글자(시안 CR09). false 면 예전 흰 점 */
+    crewPins: Boolean = false,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
@@ -152,14 +154,24 @@ fun LiveRouteMap(
         }
         others.forEach { (point, name) ->
             val at = plan.toScreen(point)
-            drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
-            drawCircle(Color(0xFFF3F5FF), radius = 9.5f.dp.toPx(), center = at)
-            val label = measurer.measure(
-                // 이모지 · 확장 한자처럼 두 글자 단위(서로게이트)로 된 첫 글자를 반으로 자르지 않는다
-                name.trim().takeIf { it.isNotEmpty() }?.let { String(Character.toChars(it.codePointAt(0))) } ?: "?",
-                androidx.compose.ui.text.TextStyle(color = Color(0xFF070B12), fontSize = 10.sp),
-            )
-            drawText(label, topLeft = Offset(at.x - label.size.width / 2f, at.y - label.size.height / 2f))
+            // 이모지 · 확장 한자처럼 두 글자 단위(서로게이트)로 된 첫 글자를 반으로 자르지 않는다
+            val initial = name.trim().takeIf { it.isNotEmpty() }?.let { String(Character.toChars(it.codePointAt(0))) } ?: "?"
+            if (crewPins) {
+                drawCircle(Color(0xFFF5F8FF), radius = 15.dp.toPx(), center = at)
+                drawCircle(Color(0xFF203E60), radius = 13.dp.toPx(), center = at)
+                val label = measurer.measure(
+                    initial,
+                    androidx.compose.ui.text.TextStyle(
+                        color = Color.White, fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    ),
+                )
+                drawText(label, topLeft = Offset(at.x - label.size.width / 2f, at.y - label.size.height / 2f))
+            } else {
+                drawCircle(Color(0xFF05080E), radius = 11.dp.toPx(), center = at)
+                drawCircle(Color(0xFFF3F5FF), radius = 9.5f.dp.toPx(), center = at)
+                val label = measurer.measure(initial, androidx.compose.ui.text.TextStyle(color = Color(0xFF070B12), fontSize = 10.sp))
+                drawText(label, topLeft = Offset(at.x - label.size.width / 2f, at.y - label.size.height / 2f))
+            }
         }
     }
 }

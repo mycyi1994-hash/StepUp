@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.walk
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -23,8 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.PeopleAlt
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -39,19 +44,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -66,32 +70,27 @@ import com.stepup.android.domain.ChatMessage
 import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunButtonKind
 import com.stepup.android.ui.components.RunCard
-import com.stepup.android.ui.components.RunChoiceRow
-import com.stepup.android.ui.components.RunEmptyState
-import com.stepup.android.ui.components.RunNotice
-import com.stepup.android.ui.components.RunNoticeKind
-import com.stepup.android.ui.components.RunNumber
-import com.stepup.android.ui.components.RunPage
 import com.stepup.android.ui.components.RunSheet
 import com.stepup.android.ui.components.RunSheetText
 import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.components.RunStat
 import com.stepup.android.ui.components.RunStatRow
-import com.stepup.android.ui.components.RunStateArt
 import com.stepup.android.ui.components.RunSwitch
-import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.experience.FeedbackCue
+import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpSans
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 /*
- * 크루 달리기(러닝 전체 리메이크 2026-10-02 · 시안 CR02–CR08 · CR13–CR17 · CR19–CR21) — 시작 메뉴(U01)의 크루 달리기 입구,
+ * 크루 달리기(크루 달리기 v2 · 2026-10-16 전달본 CR03 · CR07 · CR14 · CR17 · CR19 · CR20 · CR21) — 시작 메뉴(U01)의 크루 달리기 입구,
  * 크루 선택, 준비 전 확인, 출발 확인, 크루에게 알리기, 크루에 기록 공유.
  *
  * 대기실(party_open)은 들어가는 순간 참가 · 생성을 일으킨다. 입구에서는 부르지 않고 "대기실 들어가기"를 눌러야만 연다.
- * 참가 없이 대기실을 들여다보는 서버 함수가 없어(남은 연동) 준비 중인 대기실의 러닝 정보는 입구에 보이지 않는다.
+ * 참가 없이 대기실을 들여다보는 서버 함수가 없어(CR02 · CR16 — 남은 연동) 준비 중인 대기실 · 이미 출발한 러닝은 입구에 보이지 않는다.
+ * 알리기 · 공유는 보낸 뒤에만 "크루 채팅 보기"로 그 크루의 채팅방에 간다(보내기 전에 옮기지 않는다).
  */
 
 /** 크루 달리기에서 마지막으로 고른 크루(CR19) — 앱이 켜져 있는 동안 */
@@ -172,87 +171,152 @@ fun CrewRunEntryContent(
     onRetry: () -> Unit,
     onSignIn: () -> Unit,
 ) {
-    val t = runTone()
-    when (ui) {
-        CrewEntryUi.Loading -> RunPage(onBack = onBack, modifier = Modifier.testTag("crew-entry-loading"),
-            title = stringResource(R.string.run_crew_title)) {
-            Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) { RunSpinner(Modifier.size(40.dp)) }
-        }
-        CrewEntryUi.SignIn -> RunPage(
-            onBack = onBack, modifier = Modifier.testTag("crew-entry-sign-in"), title = stringResource(R.string.run_crew_title),
-            bottom = { RunButton(stringResource(R.string.run_cr_sign_in), onSignIn, Modifier.testTag("crew-entry-sign-in-go")) },
-        ) {
-            Spacer(Modifier.height(40.dp))
-            RunEmptyState(Icons.Filled.Groups, stringResource(R.string.run_cr_sign_in_title))
-        }
-        is CrewEntryUi.Failed -> RunPage(
-            onBack = onBack, modifier = Modifier.testTag("crew-entry-failed"), title = stringResource(R.string.run_crew_title),
-            bottom = { RunButton(stringResource(R.string.run_rec_reload), onRetry, Modifier.testTag("crew-entry-retry"), italic = true) },
-        ) {
-            Spacer(Modifier.height(40.dp))
-            RunEmptyState(Icons.Outlined.CloudOff, stringResource(R.string.run_cr_load_failed), alert = true)
-        }
-        // CR14 — 가입한 크루가 없다. 찾기 · 만들기는 기존 크루 기능으로, 자유 러닝은 바로
-        CrewEntryUi.NoCrew -> RunPage(
-            onBack = onBack, modifier = Modifier.testTag("crew-entry-none"), title = stringResource(R.string.run_crew_title),
-            bottom = {
-                RunButton(stringResource(R.string.run_cr_find), onFindCrew, Modifier.testTag("crew-entry-find"), italic = true)
-                RunButton(stringResource(R.string.run_cr_create), onCreateCrew, Modifier.testTag("crew-entry-create"),
-                    kind = RunButtonKind.Secondary)
-                RunTextAction(stringResource(R.string.run_cr_free), onFreeRun, Modifier.fillMaxWidth().testTag("crew-entry-free"),
-                    chevron = true)
-            },
-        ) {
-            Spacer(Modifier.height(24.dp))
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { RunStateArt(Icons.Filled.Groups, size = 200.dp) }
-            Spacer(Modifier.height(26.dp))
-            Text(
-                stringResource(R.string.run_cr_none_title),
-                style = TextStyle(
-                    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, lineHeight = 1.22.em,
-                    letterSpacing = (-0.03).em, color = t.text,
-                ),
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().semantics { heading() },
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.run_cr_none_body), style = runTextStyle(17.sp, t.label, FontWeight.Medium),
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        }
-        // 고른 크루(CR03 의 자리) — 대기실은 눌러야만 열린다
-        is CrewEntryUi.Ready -> RunPage(
-            onBack = onBack, modifier = Modifier.testTag("crew-entry"), crumb = stringResource(R.string.run_crew_title),
-            bottom = {
-                RunButton(stringResource(R.string.run_cr_enter), { onEnter(ui.crew.id) }, Modifier.testTag("crew-entry-enter"), italic = true)
-                if (ui.crews.size > 1) {
-                    RunButton(stringResource(R.string.run_cr_change), onChange, Modifier.testTag("crew-entry-change"),
-                        kind = RunButtonKind.Secondary)
+    val tag = when (ui) {
+        CrewEntryUi.Loading -> "crew-entry-loading"
+        CrewEntryUi.SignIn -> "crew-entry-sign-in"
+        is CrewEntryUi.Failed -> "crew-entry-failed"
+        CrewEntryUi.NoCrew -> "crew-entry-none"
+        is CrewEntryUi.Ready -> "crew-entry"
+    }
+    CrewPage(
+        title = stringResource(R.string.run_crew_title), subtitle = stringResource(R.string.run_crew_entry_sub), onBack = onBack,
+        badge = false, headerIcon = true, modifier = Modifier.testTag(tag),
+        bottom = {
+            when (ui) {
+                CrewEntryUi.Loading -> Unit
+                CrewEntryUi.SignIn ->
+                    FreeRunButton(stringResource(R.string.run_cr_sign_in), onSignIn, Modifier.fillMaxWidth().testTag("crew-entry-sign-in-go"))
+                is CrewEntryUi.Failed ->
+                    FreeRunButton(stringResource(R.string.run_rec_reload), onRetry, Modifier.fillMaxWidth().testTag("crew-entry-retry"))
+                // CR14 — 찾기 · 만들기는 기존 크루 기능으로, 자유 러닝은 바로
+                CrewEntryUi.NoCrew -> {
+                    FreeRunButton(stringResource(R.string.run_cr_find), onFindCrew, Modifier.fillMaxWidth().testTag("crew-entry-find"))
+                    FreeRunButton(stringResource(R.string.run_cr_create), onCreateCrew, Modifier.fillMaxWidth().testTag("crew-entry-create"),
+                        kind = FreeButtonKind.Secondary)
+                    CrewTextAction(stringResource(R.string.run_cr_free), onFreeRun, Modifier.fillMaxWidth().testTag("crew-entry-free"),
+                        center = true)
                 }
-            },
-        ) {
-            CrewTitleRow(ui.crew.name, ui.crew.monogram, ui.crew.tagline.takeIf { it.isNotBlank() })
-            Spacer(Modifier.height(16.dp))
-            RunCard(padding = PaddingValues(horizontal = 18.dp, vertical = 22.dp), tag = "crew-entry-card") {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    RunStateArt(Icons.Filled.Groups, size = 96.dp)
-                    Spacer(Modifier.height(14.dp))
-                    Text(stringResource(R.string.run_cr_enter_title), style = runTextStyle(21.sp, t.text, FontWeight.ExtraBold),
-                        textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.run_cr_enter_body), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.5f),
-                        textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.run_cr_enter_note), style = runTextStyle(13.sp, t.muted, FontWeight.Medium),
-                        textAlign = TextAlign.Center)
+                // 대기실은 눌러야만 열린다
+                is CrewEntryUi.Ready -> {
+                    FreeRunButton(stringResource(R.string.run_cr_enter), { onEnter(ui.crew.id) },
+                        Modifier.fillMaxWidth().testTag("crew-entry-enter"))
+                    if (ui.crews.size > 1) {
+                        FreeRunButton(stringResource(R.string.run_crew_pick_other), onChange, Modifier.fillMaxWidth().testTag("crew-entry-change"),
+                            kind = FreeButtonKind.Secondary)
+                    }
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            RunStatRow(
-                listOfNotNull(
-                    RunStat(stringResource(R.string.run_crew_label), stringResource(R.string.run_crew_people, ui.crew.memberCount)),
-                    ui.crew.area.takeIf { it.isNotBlank() }?.let { RunStat(stringResource(R.string.run_cr_area), it) },
-                ),
-                framed = true, valueSize = 24.sp,
+        },
+    ) {
+        val c = crewColors()
+        when (ui) {
+            CrewEntryUi.Loading -> Box(Modifier.fillMaxWidth().padding(top = 96.dp), contentAlignment = Alignment.Center) {
+                RunSpinner(Modifier.size(40.dp))
+            }
+            CrewEntryUi.SignIn -> CrewEmpty(Icons.Outlined.PeopleAlt, stringResource(R.string.run_cr_sign_in_title), null)
+            is CrewEntryUi.Failed -> CrewEmpty(Icons.Outlined.CloudOff, stringResource(R.string.run_cr_load_failed), null)
+            CrewEntryUi.NoCrew -> CrewEmpty(
+                Icons.Outlined.PeopleAlt, stringResource(R.string.run_crew_none_title), stringResource(R.string.run_crew_none_body),
             )
+            is CrewEntryUi.Ready -> {
+                Spacer(Modifier.height(18.dp))
+                CrewTitleRow(ui.crew.name, ui.crew.monogram, ui.crew.tagline.takeIf { it.isNotBlank() })
+                Spacer(Modifier.height(30.dp))
+                Text(
+                    stringResource(R.string.run_crew_entry_title),
+                    style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 27.sp, lineHeight = 1.35.em,
+                        letterSpacing = (-0.05).em, color = c.text),
+                    modifier = Modifier.semantics { heading() },
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.run_cr_enter_body), style = runTextStyle(15.sp, c.label, FontWeight.Medium, 1.6f),
+                    modifier = Modifier.testTag("crew-entry-card"))
+                Spacer(Modifier.height(6.dp))
+                Text(stringResource(R.string.run_cr_enter_note), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.5f))
+                Spacer(Modifier.height(18.dp))
+                CrewLine()
+                Spacer(Modifier.height(14.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.run_crew_members_label), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
+                        Text(stringResource(R.string.run_crew_people, ui.crew.memberCount),
+                            style = runTextStyle(22.sp, c.text, FontWeight.ExtraBold, 1.25f))
+                    }
+                    ui.crew.area.takeIf { it.isNotBlank() }?.let { area ->
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(stringResource(R.string.run_crew_area_label), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
+                            Text(area, style = runTextStyle(22.sp, c.text, FontWeight.ExtraBold, 1.25f), maxLines = 1,
+                                overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 크루 화면 틀 — 남색 바탕 · 머리(크루 이름 · 배지) · 내용(넘김) · 아래 버튼. 버튼은 시스템 아래 영역 위에 선다.
+ * [headerIcon] 이면 배지 대신 동그란 사람들 아이콘(제목이 이미 "크루 달리기"인 입구).
+ */
+@Composable
+internal fun CrewPage(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    badge: Boolean = true,
+    headerIcon: Boolean = false,
+    bottom: (@Composable ColumnScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val c = crewColors()
+    Box(modifier.fillMaxSize().background(c.screen)) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            CrewHeader(
+                title, subtitle = subtitle, onBack = onBack, badge = badge,
+                trailing = if (headerIcon) {
+                    {
+                        Box(Modifier.size(44.dp).clip(CircleShape).background(c.badge), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.PeopleAlt, contentDescription = null, tint = c.badgeInk, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                } else null,
+            )
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+                content = content,
+            )
+            if (bottom != null) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = bottom,
+                )
+            }
+        }
+    }
+}
+
+/** 빈 상태 — 둥근 네모 아이콘 · 큰 제목 · 설명(가운데) */
+@Composable
+private fun CrewEmpty(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, body: String?) {
+    val c = crewColors()
+    Column(Modifier.fillMaxWidth().padding(top = 36.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(92.dp).clip(RoundedCornerShape(28.dp)).background(c.inset), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = c.link, modifier = Modifier.size(46.dp))
+        }
+        Spacer(Modifier.height(24.dp))
+        Text(
+            title,
+            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp, lineHeight = 1.35.em,
+                letterSpacing = (-0.04).em, color = c.text),
+            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().semantics { heading() },
+        )
+        if (body != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(body, style = runTextStyle(15.sp, c.label, FontWeight.Medium, 1.6f), textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -260,79 +324,75 @@ fun CrewRunEntryContent(
 /** 크루 이름 줄 — 크루 표시(이니셜) · 큰 이름 · (한 줄 소개) */
 @Composable
 internal fun CrewTitleRow(name: String, monogram: String, tagline: String? = null) {
-    val t = runTone()
+    val c = crewColors()
     Row(verticalAlignment = Alignment.CenterVertically) {
-        CrewMark(monogram.ifBlank { initialsOf(name) }, 56.dp)
+        CrewMark(monogram.ifBlank { initialsOf(name) }, 64.dp)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 name,
-                style = TextStyle(
-                    fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, letterSpacing = (-0.03).em,
-                    color = t.text,
-                ),
+                style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp, letterSpacing = (-0.03).em,
+                    color = c.text),
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.semantics { heading() }.testTag("crew-title"),
             )
             if (tagline != null) {
-                Text(tagline, style = runTextStyle(15.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(tagline, style = runTextStyle(14.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-    }
-}
-
-/** 크루 표시 — 파란 둥근 네모 안에 크루 이니셜(크루가 정한 글자) */
-@Composable
-internal fun CrewMark(text: String, size: Dp) {
-    val shape = RoundedCornerShape(size * 0.28f)
-    Box(
-        Modifier.size(size).clip(shape)
-            .background(Brush.linearGradient(listOf(Color(0xFF1D6BFF), Color(0xFF0A3FC0)))),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text.take(2).uppercase(),
-            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = (size.value * 0.36f).sp, color = Color.White),
-            maxLines = 1,
-        )
     }
 }
 
 /** 내 크루 선택(CR19) — 가입한 크루 중 하나. 고르기만 하고 대기실은 열지 않는다 */
 @Composable
 internal fun CrewPickSheet(crews: List<Crew>, selected: String, onApply: (String) -> Unit, onDismiss: () -> Unit) {
-    val t = runTone()
+    val c = crewColors()
     var pending by rememberSaveable { mutableStateOf(selected) }
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("crew-pick-sheet")) {
-        Text(
-            stringResource(R.string.run_cr_pick_title),
-            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp, color = t.text),
-            modifier = Modifier.fillMaxWidth().semantics { heading() },
-        )
-        Text(stringResource(R.string.run_cr_pick_body), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+        CrewSheetTitle(stringResource(R.string.run_crew_pick_title))
         Spacer(Modifier.height(14.dp))
         Column(
             Modifier.fillMaxWidth().heightIn(max = 340.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             crews.forEach { crew ->
-                RunChoiceRow(
-                    crew.name, Modifier.testTag("crew-pick-${crew.id}"),
-                    description = stringResource(R.string.run_cr_members, crew.memberCount),
-                    selected = pending == crew.id, onSelect = { pending = crew.id },
-                    leading = { CrewMark(crew.monogram.ifBlank { initialsOf(crew.name) }, 44.dp) },
-                )
+                val on = pending == crew.id
+                val shape = RoundedCornerShape(14.dp)
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(shape).background(if (on) c.selectedFace else c.card, shape)
+                        .border(1.dp, if (on) c.selectedEdge else c.line, shape)
+                        .feedbackClickable(role = Role.RadioButton, cue = FeedbackCue.Select, onClick = { pending = crew.id })
+                        .semantics { this.selected = on }.padding(horizontal = 14.dp, vertical = 12.dp).testTag("crew-pick-${crew.id}"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CrewMark(crew.monogram.ifBlank { initialsOf(crew.name) }, 44.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(crew.name, style = runTextStyle(16.sp, c.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            crew.area.takeIf { it.isNotBlank() }?.let { stringResource(R.string.run_crew_pick_line, it, crew.memberCount) }
+                                ?: stringResource(R.string.run_cr_members, crew.memberCount),
+                            style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        Modifier.size(20.dp).clip(CircleShape)
+                            .then(if (on) Modifier.border(5.dp, c.selectedEdge, CircleShape).background(androidx.compose.ui.graphics.Color.White)
+                            else Modifier.border(2.dp, c.muted, CircleShape)),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
-        RunButton(stringResource(R.string.run_cr_pick_apply), { onApply(pending) }, Modifier.testTag("crew-pick-apply"))
+        FreeRunButton(stringResource(R.string.run_crew_pick_apply), { onApply(pending) }, Modifier.fillMaxWidth().testTag("crew-pick-apply"))
     }
 }
 
 /**
- * 준비 전 확인(CR17) — 위치 사용(OS 권한)과 크루원에게 위치 공유(기본 끔)는 따로. 허용은 OS 창을 띄울 뿐이고,
+ * 준비 전 확인(CR17) — 위치 사용(OS 권한)과 크루원에게 위치 공유(처음엔 끔 · 고른 대로 기억)는 따로. 허용은 OS 창을 띄울 뿐이고,
  * 돌아오면 다시 읽어 걸음 권한이 있으면 준비한다(위치 없이도 준비할 수 있다). 나중에는 준비 전으로 남는다.
+ * [v2] 가 false 면 예전 모습(번개러닝 대기실 — 번개 디자인은 그대로 둔다).
  */
 @Composable
 internal fun CrewReadyCheckSheet(
@@ -341,14 +401,57 @@ internal fun CrewReadyCheckSheet(
     onShare: (Boolean) -> Unit,
     onAllow: () -> Unit,
     onLater: () -> Unit,
+    v2: Boolean = true,
 ) {
     RunSheet(onDismiss = onLater, modifier = Modifier.testTag("crew-ready-check"), showClose = false) {
-        CrewReadyCheckBody(locationAllowed, share, onShare, onAllow, onLater)
+        if (v2) CrewReadyCheckBody(locationAllowed, share, onShare, onAllow, onLater)
+        else FlashReadyCheckBody(locationAllowed, share, onShare, onAllow, onLater)
     }
 }
 
 @Composable
 internal fun ColumnScope.CrewReadyCheckBody(
+    locationAllowed: Boolean,
+    share: Boolean,
+    onShare: (Boolean) -> Unit,
+    onAllow: () -> Unit,
+    onLater: () -> Unit,
+) {
+    val c = crewColors()
+    CrewSheetTitle(stringResource(R.string.run_crew_check_title), body = stringResource(R.string.run_crew_check_body))
+    Spacer(Modifier.height(16.dp))
+    CrewCard(padding = 16.dp) {
+        Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = c.text, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.run_cr_check_location), style = runTextStyle(16.sp, c.text, FontWeight.SemiBold),
+                modifier = Modifier.weight(1f))
+            Text(
+                stringResource(if (locationAllowed) R.string.run_cr_check_allowed else R.string.run_cr_check_needed),
+                style = runTextStyle(14.sp, if (locationAllowed) c.ready else freeRunColors().dangerText, FontWeight.Bold),
+                modifier = Modifier.testTag("crew-ready-check-location"),
+            )
+        }
+        Text(stringResource(R.string.run_crew_check_location_body), style = runTextStyle(13.sp, c.label, FontWeight.Normal, 1.45f),
+            modifier = Modifier.padding(bottom = 12.dp))
+    }
+    Spacer(Modifier.height(8.dp))
+    CrewToggleRow(
+        stringResource(R.string.run_crew_check_share), stringResource(R.string.run_crew_check_share_body), share, onShare,
+        "crew-ready-check-share",
+    )
+    Text(stringResource(R.string.run_crew_check_note), style = runTextStyle(13.sp, c.muted, FontWeight.Normal, 1.45f),
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+    Spacer(Modifier.height(16.dp))
+    FreeRunButton(stringResource(R.string.run_cr_check_allow), onAllow, Modifier.fillMaxWidth().testTag("crew-ready-check-allow"))
+    Spacer(Modifier.height(10.dp))
+    FreeRunButton(stringResource(R.string.run_perm_later), onLater, Modifier.fillMaxWidth().testTag("crew-ready-check-later"),
+        kind = FreeButtonKind.Secondary)
+}
+
+/** 번개러닝 대기실의 준비 전 확인 — 예전 모습 그대로(번개 디자인은 바꾸지 않는다) */
+@Composable
+private fun ColumnScope.FlashReadyCheckBody(
     locationAllowed: Boolean,
     share: Boolean,
     onShare: (Boolean) -> Unit,
@@ -392,16 +495,48 @@ internal fun ColumnScope.CrewReadyCheckBody(
     RunButton(stringResource(R.string.run_perm_later), onLater, Modifier.testTag("crew-ready-check-later"), kind = RunButtonKind.Secondary)
 }
 
-/** 준비한 사람끼리 출발(CR07) — 준비 완료 · 준비 전 인원은 지금 방 상태 그대로(출발은 서버가 명단을 정한다) */
+/**
+ * 준비한 사람끼리 출발(CR07) — 준비 완료 · 준비 전 인원은 지금 방 상태 그대로(출발은 서버가 명단을 정한다).
+ * [v2] 가 false 면 예전 모습(번개러닝 대기실).
+ */
 @Composable
-internal fun CrewStartConfirmSheet(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit) {
+internal fun CrewStartConfirmSheet(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit, v2: Boolean = true) {
     RunSheet(onDismiss = onWait, modifier = Modifier.testTag("crew-start-confirm"), showClose = false) {
-        CrewStartConfirmBody(ready, notReady, onGo, onWait)
+        if (v2) CrewStartConfirmBody(ready, notReady, onGo, onWait) else FlashStartConfirmBody(ready, notReady, onGo, onWait)
     }
 }
 
 @Composable
 internal fun ColumnScope.CrewStartConfirmBody(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit) {
+    val c = crewColors()
+    CrewSheetTitle(stringResource(R.string.run_crew_go_title, ready), body = stringResource(R.string.run_crew_go_body, notReady))
+    Row(Modifier.fillMaxWidth().padding(vertical = 18.dp)) {
+        for ((value, label, tag, accent) in listOf(
+            Quad("$ready", stringResource(R.string.run_cr_ready), "crew-start-ready", true),
+            Quad("$notReady", stringResource(R.string.run_cr_not_ready), "crew-start-not-ready", false),
+        )) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    value,
+                    style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp,
+                        color = if (accent) c.goal else c.text, letterSpacing = (-0.05).em),
+                    modifier = Modifier.testTag(tag),
+                )
+                Text(label, style = runTextStyle(14.sp, c.label, FontWeight.Medium))
+            }
+        }
+    }
+    FreeRunButton(stringResource(R.string.run_crew_go_n, ready), onGo, Modifier.fillMaxWidth().testTag("crew-start-go"))
+    Spacer(Modifier.height(10.dp))
+    FreeRunButton(stringResource(R.string.run_crew_wait), onWait, Modifier.fillMaxWidth().testTag("crew-start-wait"),
+        kind = FreeButtonKind.Secondary)
+}
+
+private data class Quad(val value: String, val label: String, val tag: String, val accent: Boolean)
+
+/** 번개러닝 대기실의 출발 확인 — 예전 모습 그대로 */
+@Composable
+private fun ColumnScope.FlashStartConfirmBody(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit) {
     RunSheetText(
         stringResource(R.string.run_cr_go_confirm_title, ready),
         body = stringResource(R.string.run_cr_go_confirm_body, ready, notReady),
@@ -426,9 +561,16 @@ enum class CrewSend { Idle, Sending, Sent, Failed }
 /**
  * 크루에게 알리기(CR20) — 보낼 곳(크루 채팅)과 내용을 먼저 보이고 "알림 보내기"를 눌러야만 보낸다.
  * 실패하면 같은 메시지(같은 요청 키)로 다시 보낸다 — 서버에는 하나만 남는다.
+ * 보낸 뒤에만 [onOpenChat](그 크루의 채팅방)을 보인다 — null 이면 채팅으로 가지 않는다(곧 출발할 수 있는 준비 완료 참가자).
  */
 @Composable
-internal fun CrewNotifySheet(crewId: String, crewName: String, waiting: Int, onDismiss: () -> Unit) {
+internal fun CrewNotifySheet(
+    crewId: String,
+    crewName: String,
+    waiting: Int,
+    onDismiss: () -> Unit,
+    onOpenChat: (() -> Unit)? = null,
+) {
     val chat = ServiceLocator.crewChat
     val scope = rememberCoroutineScope()
     val body = stringResource(R.string.run_cr_notify_message, crewName, waiting)
@@ -449,71 +591,71 @@ internal fun CrewNotifySheet(crewId: String, crewName: String, waiting: Int, onD
                 }
             },
             onCancel = onDismiss,
+            onOpenChat = onOpenChat?.let { open -> { onDismiss(); open() } },
         )
     }
 }
 
 @Composable
-internal fun ColumnScope.CrewNotifyBody(crewName: String, text: String, state: CrewSend, onSend: () -> Unit, onCancel: () -> Unit) {
-    val t = runTone()
-    Text(stringResource(R.string.run_cr_notify_title), style = runTextStyle(20.sp, t.text, FontWeight.ExtraBold), textAlign = TextAlign.Center)
+internal fun ColumnScope.CrewNotifyBody(
+    crewName: String,
+    text: String,
+    state: CrewSend,
+    onSend: () -> Unit,
+    onCancel: () -> Unit,
+    onOpenChat: (() -> Unit)? = null,
+) {
+    val c = crewColors()
+    CrewSheetTitle(stringResource(R.string.run_cr_notify_title), body = stringResource(R.string.run_crew_notify_body, crewName))
     Spacer(Modifier.height(14.dp))
-    RunCard(padding = PaddingValues(14.dp), tag = "crew-notify-preview") {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CrewMark(initialsOf(crewName), 30.dp)
-            Spacer(Modifier.width(10.dp))
-            Text(crewName, style = runTextStyle(16.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+    CrewCard(Modifier.testTag("crew-notify-preview"), padding = 16.dp) {
+        Spacer(Modifier.height(8.dp))
+        Text(crewName, style = runTextStyle(14.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(6.dp))
+        Text(text, style = runTextStyle(15.sp, c.text, FontWeight.Medium, 1.55f), modifier = Modifier.testTag("crew-notify-text"))
         Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(t.inset).padding(14.dp),
-        ) {
-            Text(text, style = runTextStyle(15.sp, t.text, FontWeight.Medium, 1.5f), modifier = Modifier.testTag("crew-notify-text"))
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text(stringResource(R.string.run_cr_notify_where), style = runTextStyle(12.sp, t.label))
-                Text(stringResource(R.string.run_cr_notify_chat), style = runTextStyle(15.sp, t.text, FontWeight.Bold))
-            }
-        }
     }
     when (state) {
-        CrewSend.Sent -> RunNotice(stringResource(R.string.run_cr_notify_sent), Modifier.padding(top = 10.dp), tag = "crew-notify-sent")
-        CrewSend.Failed -> RunNotice(stringResource(R.string.run_cr_send_failed), Modifier.padding(top = 10.dp), kind = RunNoticeKind.Error,
-            tag = "crew-notify-failed")
+        CrewSend.Sent -> CrewNote(stringResource(R.string.run_cr_notify_sent), Modifier.padding(top = 10.dp),
+            icon = Icons.Outlined.CheckCircle, tag = "crew-notify-sent")
+        CrewSend.Failed -> CrewError(stringResource(R.string.run_cr_send_failed), Modifier.padding(top = 10.dp), tag = "crew-notify-failed")
         else -> Unit
     }
     Spacer(Modifier.height(16.dp))
     if (state == CrewSend.Sent) {
-        RunButton(stringResource(R.string.common_close), onCancel, Modifier.testTag("crew-notify-close"))
+        if (onOpenChat != null) {
+            FreeRunButton(stringResource(R.string.run_crew_open_chat), onOpenChat, Modifier.fillMaxWidth().testTag("crew-notify-chat"),
+                icon = Icons.AutoMirrored.Outlined.Chat)
+            Spacer(Modifier.height(10.dp))
+        }
+        FreeRunButton(stringResource(R.string.common_close), onCancel, Modifier.fillMaxWidth().testTag("crew-notify-close"),
+            kind = if (onOpenChat != null) FreeButtonKind.Secondary else FreeButtonKind.Primary)
     } else {
-        RunButton(
-            stringResource(R.string.run_cr_notify_send), onSend, Modifier.testTag("crew-notify-send"),
-            busy = state == CrewSend.Sending,
-        )
+        FreeRunButton(stringResource(R.string.run_cr_notify_send), onSend, Modifier.fillMaxWidth().testTag("crew-notify-send"),
+            busy = state == CrewSend.Sending)
         Spacer(Modifier.height(10.dp))
-        RunButton(stringResource(R.string.common_cancel), onCancel, Modifier.testTag("crew-notify-cancel"),
-            kind = RunButtonKind.Secondary, enabled = state != CrewSend.Sending)
+        FreeRunButton(stringResource(R.string.common_cancel), onCancel, Modifier.fillMaxWidth().testTag("crew-notify-cancel"),
+            kind = FreeButtonKind.Secondary, enabled = state != CrewSend.Sending)
     }
 }
 
 /**
- * 크루에 기록 공유(CR21) — 내 기록(거리 · 시간 · 페이스) · 보낼 곳(크루 채팅) · 경로 포함(처음엔 끔). 미리보기는 보낼 그대로.
- * "공유하기"를 눌러야만 보낸다. 경로를 켜면 공유 카드 그림(지도 · 경로)을 함께 보낸다. 실패하면 같은 내용으로 다시 보낸다.
+ * 크루에 기록 공유(CR21) — 내 기록(거리 · 시간 · 페이스) · 보낼 곳(그 러닝의 크루 채팅) · 경로 포함(처음엔 끔). 미리보기는 보낼 그대로.
+ * "공유하기"를 눌러야만 보낸다. 경로를 켜면 공유 카드 그림(지도 · 경로)을 함께 보내고, 끄면 그림 없이 글만 보낸다.
+ * 실패하면 같은 내용으로 다시 보낸다. 보낸 뒤에만 "크루 채팅 보기"([onOpenChat]).
  */
 @Composable
 internal fun CrewShareScreen(
     crewId: String,
     crewName: String,
+    monogram: String,
     km: String,
     time: String,
     pace: String,
     card: suspend (Boolean) -> Bitmap?,
     hasRoute: Boolean,
     onClose: () -> Unit,
+    onOpenChat: (() -> Unit)? = null,
 ) {
     val chat = ServiceLocator.crewChat
     val scope = rememberCoroutineScope()
@@ -537,8 +679,8 @@ internal fun CrewShareScreen(
         if (includeRoute) preview = card(true)
     }
     CrewShareContent(
-        crewName = crewName, km = km, time = time, pace = pace, message = text, includeRoute = includeRoute, hasRoute = hasRoute,
-        preview = preview, state = state,
+        crewName = crewName, monogram = monogram, km = km, time = time, pace = pace, message = text, includeRoute = includeRoute,
+        hasRoute = hasRoute, preview = preview, state = state,
         onRoute = { if (state != CrewSend.Sending && state != CrewSend.Sent) includeRoute = it },
         onShare = {
             if (state == CrewSend.Sending || state == CrewSend.Sent) return@CrewShareContent
@@ -552,6 +694,7 @@ internal fun CrewShareScreen(
             }
         },
         onClose = onClose,
+        onOpenChat = onOpenChat,
     )
 }
 
@@ -569,64 +712,73 @@ internal fun CrewShareContent(
     onRoute: (Boolean) -> Unit,
     onShare: () -> Unit,
     onClose: () -> Unit,
+    monogram: String = "",
+    onOpenChat: (() -> Unit)? = null,
 ) {
-    val t = runTone()
-    RunPage(
-        onBack = onClose, modifier = Modifier.testTag("crew-share"),
-        title = stringResource(R.string.run_cr_share_title), subtitle = stringResource(R.string.run_cr_share_sub),
+    val c = crewColors()
+    CrewPage(
+        title = stringResource(R.string.run_crew_share_title), subtitle = crewName, onBack = onClose, modifier = Modifier.testTag("crew-share"),
         bottom = {
             if (state == CrewSend.Sent) {
-                RunButton(stringResource(R.string.common_close), onClose, Modifier.testTag("crew-share-close"))
+                if (onOpenChat != null) {
+                    FreeRunButton(stringResource(R.string.run_crew_open_chat), onOpenChat, Modifier.fillMaxWidth().testTag("crew-share-chat"),
+                        icon = Icons.AutoMirrored.Outlined.Chat)
+                }
+                FreeRunButton(stringResource(R.string.common_close), onClose, Modifier.fillMaxWidth().testTag("crew-share-close"),
+                    kind = if (onOpenChat != null) FreeButtonKind.Secondary else FreeButtonKind.Primary)
             } else {
-                RunButton(stringResource(R.string.run_cr_share_do), onShare, Modifier.testTag("crew-share-send"), italic = true,
-                    busy = state == CrewSend.Sending)
-                RunButton(stringResource(R.string.common_cancel), onClose, Modifier.testTag("crew-share-cancel"),
-                    kind = RunButtonKind.Secondary, enabled = state != CrewSend.Sending)
+                FreeRunButton(stringResource(R.string.run_cr_share_do), onShare, Modifier.fillMaxWidth().testTag("crew-share-send"),
+                    icon = Icons.AutoMirrored.Outlined.Send, busy = state == CrewSend.Sending)
+                FreeRunButton(stringResource(R.string.common_cancel), onClose, Modifier.fillMaxWidth().testTag("crew-share-cancel"),
+                    kind = FreeButtonKind.Secondary, enabled = state != CrewSend.Sending)
             }
         },
     ) {
-        RunCard(padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp), tag = "crew-share-record") {
-            Text(stringResource(R.string.run_cr_share_my), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-            RunNumber(km, unit = "km", size = 76.sp, unitSize = 28.sp, align = Alignment.CenterHorizontally,
+        Spacer(Modifier.height(10.dp))
+        Text(
+            stringResource(R.string.run_crew_share_headline),
+            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 27.sp, lineHeight = 1.35.em,
+                letterSpacing = (-0.05).em, color = c.text),
+            modifier = Modifier.semantics { heading() },
+        )
+        Spacer(Modifier.height(16.dp))
+        CrewCard(Modifier.testTag("crew-share-record"), padding = 18.dp) {
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.run_crew_share_my), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
+            FitNumber(km, "km", valueSize = 52.sp, unitSize = 22.sp, valueColor = c.text, unitColor = c.label,
                 modifier = Modifier.fillMaxWidth(), valueTag = "crew-share-km")
-            Box(Modifier.padding(vertical = 8.dp).fillMaxWidth().height(1.dp).background(t.divider))
-            RunStatRow(
-                listOf(
-                    RunStat(stringResource(R.string.run_label_time), time),
-                    RunStat(stringResource(R.string.run_label_pace), pace, "/km"),
-                ),
-                valueSize = 30.sp,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        RunCard(padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), tag = "crew-share-target") {
-            Text(stringResource(R.string.run_cr_share_target), style = runTextStyle(14.sp, t.label, FontWeight.SemiBold))
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(t.inset), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Groups, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
-                }
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(crewName, style = runTextStyle(16.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(stringResource(R.string.run_cr_share_target_body), style = runTextStyle(12.sp, t.label))
-                }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.stat_time), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
+                Spacer(Modifier.width(8.dp))
+                Text(time, style = runTextStyle(16.sp, c.text, FontWeight.Bold), modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.run_label_pace), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
+                Spacer(Modifier.width(8.dp))
+                Text("$pace /km", style = runTextStyle(16.sp, c.text, FontWeight.Bold))
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth().testTag("crew-share-target"), verticalAlignment = Alignment.CenterVertically) {
+            CrewMark(monogram.ifBlank { initialsOf(crewName) }, 44.dp)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(crewName, style = runTextStyle(16.sp, c.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(R.string.run_crew_share_target), style = runTextStyle(13.sp, c.label))
             }
         }
-        Spacer(Modifier.height(12.dp))
-        RunCard(padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), tag = "crew-share-route") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.run_cr_share_route), style = runTextStyle(16.sp, t.text, FontWeight.Bold))
-                    Text(stringResource(R.string.run_cr_share_route_body), style = runTextStyle(12.sp, t.label))
-                }
-                RunSwitch(includeRoute, onRoute, Modifier.testTag("crew-share-route-toggle"), enabled = hasRoute && state != CrewSend.Sent)
-            }
-        }
+        Spacer(Modifier.height(10.dp))
+        CrewToggleRow(
+            stringResource(R.string.run_crew_share_route), stringResource(R.string.run_crew_share_route_body), includeRoute, onRoute,
+            "crew-share-route-toggle", Modifier.testTag("crew-share-route"), enabled = hasRoute && state != CrewSend.Sent,
+        )
+        Spacer(Modifier.height(8.dp))
         // 미리보기 — 보낼 글과(경로를 켜면) 그림
-        Spacer(Modifier.height(12.dp))
-        RunCard(padding = PaddingValues(14.dp), tag = "crew-share-preview") {
-            Text(message, style = runTextStyle(15.sp, t.text, FontWeight.Medium, 1.5f), modifier = Modifier.testTag("crew-share-text"))
+        CrewCard(Modifier.testTag("crew-share-preview"), padding = 18.dp) {
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.run_crew_share_preview), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
+            Spacer(Modifier.height(6.dp))
+            Text(message, style = runTextStyle(15.sp, c.text, FontWeight.Medium, 1.55f), modifier = Modifier.testTag("crew-share-text"))
             val image = preview
             if (includeRoute && image != null) {
                 Spacer(Modifier.height(10.dp))
@@ -635,12 +787,14 @@ internal fun CrewShareContent(
                     modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(12.dp)).testTag("crew-share-image"),
                 )
             }
+            Spacer(Modifier.height(12.dp))
         }
         when (state) {
-            CrewSend.Sent -> RunNotice(stringResource(R.string.run_cr_shared), Modifier.padding(top = 12.dp), tag = "crew-share-sent")
-            CrewSend.Failed -> RunNotice(stringResource(R.string.run_cr_send_failed), Modifier.padding(top = 12.dp),
-                kind = RunNoticeKind.Error, tag = "crew-share-failed")
+            CrewSend.Sent -> CrewNote(stringResource(R.string.run_cr_shared), Modifier.padding(top = 12.dp), icon = Icons.Outlined.CheckCircle,
+                tag = "crew-share-sent")
+            CrewSend.Failed -> CrewError(stringResource(R.string.run_cr_send_failed), Modifier.padding(top = 12.dp), tag = "crew-share-failed")
             else -> Unit
         }
+        Spacer(Modifier.height(12.dp))
     }
 }

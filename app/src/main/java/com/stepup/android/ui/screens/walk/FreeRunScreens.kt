@@ -421,7 +421,7 @@ internal fun FreeRunLive(
 }
 
 /** 달리는 중 지도 위 — 문제 띠 하나, 일시정지 띠, 없으면 "러닝 중" 칩. 마칠지 묻는 동안(멈춤 + 띠 없음)은 비운다 */
-private fun liveTop(
+internal fun liveTop(
     band: FreeBand,
     paused: Boolean,
     noLocation: Boolean,
@@ -947,7 +947,7 @@ internal fun FreeRunButton(
  * [onClick] 이 있으면 띠를 눌러 까닭(러닝 정보)을 연다. [action] 은 오른쪽 작은 버튼(설정).
  */
 @Composable
-private fun FreeRunBand(
+internal fun FreeRunBand(
     text: String,
     tag: String,
     calm: Boolean = false,
@@ -1015,7 +1015,7 @@ private fun FreeRunChip(text: String) {
 
 /** 지도 위 동그란 48dp 버튼 — ⋯(러닝 정보 · 더 보기) · 지도 크게 보기 */
 @Composable
-private fun FreeMapButton(icon: ImageVector, label: String, tag: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 48.dp) {
+internal fun FreeMapButton(icon: ImageVector, label: String, tag: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 48.dp) {
     val c = freeRunColors()
     Box(
         modifier.size(size).clip(CircleShape).background(c.chip, CircleShape).border(1.dp, c.controlEdge, CircleShape)

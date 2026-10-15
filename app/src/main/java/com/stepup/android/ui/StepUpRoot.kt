@@ -1012,6 +1012,8 @@ internal fun MainScaffold(
                         }
                     },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
+                    // CR21 — 크루에 기록을 공유한 뒤 그 러닝의 크루 채팅방(결과는 뒤에 남는다)
+                    onOpenCrewChat = { crewId -> navController.openChatRoom(crewId) },
                 )
             }
             composable(Routes.RUN_MENU) {
@@ -1417,8 +1419,11 @@ internal fun MainScaffold(
                         // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
                         com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
                         com.stepup.android.domain.RunPlans.clear()
-                        navController.navigate(Routes.RUN)
+                        // 대기실은 걷는다 — 결과에서 뒤로 가면 대기실이 다시 열려(party_open) 새 방이 생기지 않게
+                        navController.navigate(Routes.RUN) { popUpTo(Routes.LOBBY) { inclusive = true } }
                     },
+                    // CR20 — 크루에게 알리기를 보낸 뒤 그 크루의 채팅방(대기실은 뒤에 남는다)
+                    onOpenChat = { crewId -> navController.openChatRoom(crewId) },
                 )
             }
             composable(Routes.SNEAKER_DEX) {
@@ -1488,7 +1493,8 @@ internal fun MainScaffold(
                         // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
                         com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
                         com.stepup.android.domain.RunPlans.clear()
-                        navController.navigate(Routes.RUN)
+                        // 대기실은 걷는다 — 결과에서 뒤로 가면 대기실이 다시 열려(party_open) 새 방이 생기지 않게
+                        navController.navigate(Routes.RUN) { popUpTo(Routes.FLASH_LOBBY) { inclusive = true } }
                     },
                 )
             }
