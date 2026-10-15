@@ -250,13 +250,23 @@ private fun CrewRewardRows(reward: ResultReward, onReason: () -> Unit, onHistory
                 Settle.NOT_PAID -> CrewChip(stringResource(R.string.run_reward_not_paid), "run-result-settle-rejected")
             }
         }
-        val notes = when (reward.settle) {
-            Settle.PENDING -> reward.notes.ifEmpty { listOf(stringResource(R.string.run_reward_note)) }
-            Settle.DONE -> listOf(stringResource(R.string.run_reward_done_note))
-            Settle.VOID -> listOf(stringResource(R.string.run_reward_void_note))
+        // 까닭 줄(다시 로그인 · 미지급 까닭)만 "run-result-reward-note" — 결과 화면 보상 칸(ResultRewardCard)과 같은 이름표다.
+        // 늘 붙는 안내 한 줄(확인 중 · 반영 완료 · 지급 제외)은 까닭이 아니라 이름표가 다르다. 보이는 글과 차례는 그대로다
+        val reasons = when (reward.settle) {
+            Settle.PENDING -> reward.notes
             Settle.NOT_PAID -> listOf(reward.notes.firstOrNull() ?: stringResource(R.string.run_reward_not_paid_note))
+            Settle.DONE, Settle.VOID -> emptyList()
         }
-        notes.forEach { line ->
+        val hint = when (reward.settle) {
+            Settle.PENDING -> stringResource(R.string.run_reward_note).takeIf { reward.notes.isEmpty() }
+            Settle.DONE -> stringResource(R.string.run_reward_done_note)
+            Settle.VOID -> stringResource(R.string.run_reward_void_note)
+            Settle.NOT_PAID -> null
+        }
+        hint?.let {
+            Text(it, style = runTextStyle(13.sp, c.muted, FontWeight.Normal, 1.45f), modifier = Modifier.testTag("run-result-reward-hint"))
+        }
+        reasons.forEach { line ->
             Text(line, style = runTextStyle(13.sp, c.muted, FontWeight.Normal, 1.45f), modifier = Modifier.testTag("run-result-reward-note"))
         }
         when (reward.settle) {
