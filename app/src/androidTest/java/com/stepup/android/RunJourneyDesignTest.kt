@@ -1144,22 +1144,27 @@ class RunJourneyDesignTest {
 
     /**
      * 서버 확인을 기다리는 저장 줄(14 오른쪽) — 걸음이 있고 아직 올리지 않은 러닝은 이 휴대폰에서 지우지 않는다(지우면 확인이 끝나지 않는다).
-     * 옛 기록(legacy) 줄이라 로그인 전 CI 기기의 올리기(지금 계정 줄만)는 이 줄을 건드리지 않는다. [dropRow] 로 지운다.
+     * 지금 주인(로그인 전 CI 기기는 손님)의 줄이라야 확인을 기다리는 줄이다 — 주인이 정해지기 전(legacy) 줄은 계정 · 손님이 올리지 않아
+     * 지울 수 있다. 손님의 올리기는 로그인이 필요해 이 줄을 건드리지 않는다. [dropRow] 로 지운다.
      */
     private fun pendingRow(now: Long) = runBlocking {
+        val owner = ServiceLocator.sessionHolder.recordingOwner()
         ServiceLocator.database.walkSessionDao().insert(
             WalkSessionEntity(
                 startedAt = now - 750_000, endedAt = now, steps = 2_100, durationSec = 750, distanceMeters = 1_560.0,
-                calories = 0.0, pointsEarned = 0.0, uploadState = "PENDING",
+                calories = 0.0, pointsEarned = 0.0, uploadState = "PENDING", recordingOwner = owner,
             ),
         )
     }
 
     private fun dropRow(now: Long) = runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        // 이 검사가 넣은 줄 — 옛 기록(legacy) 줄([signedRow])과 지금 주인의 줄([pendingRow])
+        val owner = ServiceLocator.sessionHolder.recordingOwner()
         // Room 거래 안에서 지워야 그 줄을 지켜보는 화면도 지운 것을 안다(밖에서 지우면 다음 쓰기 전까지 옛 값이 남는다)
         ServiceLocator.database.runInTransaction {
             ServiceLocator.database.openHelper.writableDatabase.execSQL(
-                "DELETE FROM walk_sessions WHERE startedAt = ${now - 750_000} AND recordingOwner = 'legacy'",
+                "DELETE FROM walk_sessions WHERE startedAt = ? AND recordingOwner IN ('legacy', ?)",
+                arrayOf<Any>(now - 750_000, owner),
             )
         }
     }

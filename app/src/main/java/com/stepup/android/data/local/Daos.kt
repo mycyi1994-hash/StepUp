@@ -195,11 +195,12 @@ interface WalkSessionDao {
     /**
      * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음 있음)은
      * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다. 지운 수를 돌려준다(0이면 지우지 않았다).
-     * 주인이 정해지기 전(legacy)의 러닝은 올라가지 않으므로 확인을 기다리는 중이어도 지울 수 있다.
+     * 지키는 것은 지금 주인이 올릴 러닝뿐이다 — 주인이 정해지기 전(legacy)의 러닝은 계정 · 손님으로는 올라가지 않아 확인을
+     * 기다리는 중이어도 지울 수 있다. 지금 주인이 legacy(사용자 번호 없이 저장된 옛 로그인)면 그 러닝이 올라가므로 지킨다.
      */
     @Query(
         "DELETE FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy') " +
-            "AND NOT (recordingOwner != 'legacy' AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
+            "AND NOT (recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
     )
     suspend fun deleteRecord(owner: String, id: Long): Int
 }
