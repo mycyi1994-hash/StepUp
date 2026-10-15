@@ -356,9 +356,11 @@ object ServiceLocator {
             // 파티런 중 방에 보내는 위치 — 러닝 서비스가 받은 마지막 GPS 점. 30초 넘게 새 점이 없으면(GPS 를 잃었다)
             // 모른다고 보낸다 — 굴다리에서 멈춘 옛 점이 다른 사람에게 지금 위치처럼 보이지 않게
             currentLocation = {
-                WalkSessionService.state.value.track.lastOrNull()
-                    ?.takeIf { System.currentTimeMillis() - it.at <= 30_000L }
-                    ?.toGeoPoint()
+                // 지금 GPS 위치 — 마지막 GPS 점이 30초 안일 때만. 경로 점(8m 움직여야 생긴다)으로 재면 신호등에서 30초 넘게
+                // 서 있는 사람이 위치를 잃은 것으로 보내져 다른 사람 지도에서 사라지고 곁 판정에서도 빠졌다
+                WalkSessionService.state.value.let { s ->
+                    s.here?.takeIf { s.hereAt > 0 && System.currentTimeMillis() - s.hereAt <= 30_000L }
+                }
             },
             currentKm = {
                 WalkSessionService.state.value.let { s ->

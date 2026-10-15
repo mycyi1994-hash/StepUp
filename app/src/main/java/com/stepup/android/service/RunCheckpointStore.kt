@@ -99,6 +99,8 @@ class RunCheckpointStore(file: File) {
                     data.writeUTF(group.name)
                     data.writeUTF(groupCrewId)
                     data.writeUTF(groupName.take(StartGroup.NAME_MAX))
+                    // 판 4: 테스트 도구의 걸음 흉내 표시 — 빠지면 앱을 죽였다 되살린 러닝의 흉내 걸음이 그대로 올라간다
+                    data.writeBoolean(simulated)
                 }
                 data.flush()
                 storage.finishWrite(output)
@@ -182,8 +184,10 @@ class RunCheckpointStore(file: File) {
                     groupCrewId = read.partyCrewId,
                 )
             }
+            // 판 3 까지는 흉내 표시가 없었다 — 그때 저장된 러닝은 흉내 걸음을 쓴 적이 없다고 친다
+            val restored = if (version >= 4) state.copy(simulated = input.readBoolean()) else state
             if (input.read() != -1) throw IOException("Unexpected checkpoint trailing data")
-            RunCheckpoint(state, goal, savedAt, phase)
+            RunCheckpoint(restored, goal, savedAt, phase)
         }
     }
 
@@ -191,5 +195,5 @@ class RunCheckpointStore(file: File) {
         if (it !in 0..1_000_000) throw IOException("Invalid checkpoint collection length")
     }
 
-    private companion object { const val VERSION = 3 }
+    private companion object { const val VERSION = 4 }
 }

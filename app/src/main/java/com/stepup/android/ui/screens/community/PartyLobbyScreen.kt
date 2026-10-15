@@ -118,7 +118,14 @@ fun PartyLobbyScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) startRun()
+        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
+            when {
+                WalkSessionService.state.value.isActive -> onRunStarted()
+                // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단)
+                !viewModel.startIsFresh() -> viewModel.missedStart()
+                else -> startRun()
+            }
+        }
     }
     // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한이 있으면 준비한다
     var readyCheck by rememberSaveable { mutableStateOf(false) }

@@ -9,7 +9,8 @@
 -- ════════════════════════════════════════════════════════════════════
 
 create table if not exists economy.request_receipts (
-  user_id uuid not null,
+  -- 계정을 지우면 그 사람의 영수증도 지운다(0021 은 auth.users 에서 이어 지운다)
+  user_id uuid not null references auth.users on delete cascade,
   request_id uuid not null,
   kind text not null,
   result numeric,

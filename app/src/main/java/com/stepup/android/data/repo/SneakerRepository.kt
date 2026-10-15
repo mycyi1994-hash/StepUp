@@ -86,14 +86,14 @@ class SneakerRepository(
 
     /**
      * 값을 치르는 요청에 번호를 붙인다. 응답을 잃은(연결이 끊긴) 요청을 다시 보내면 같은 번호로 보내 서버가 한 번만
-     * 치른다(0057). 답을 받으면 번호를 버린다 — 다음 강화 · 수리는 새 요청이다.
+     * 치른다(0057). 답을 받으면 번호를 버린다 — 다음 강화 · 수리는 새 요청이다(답을 잃은 번호도 10분 뒤에는 버린다).
      */
     private suspend fun payOnce(action: String, call: suspend (String) -> EconomyOutcome): EconomyOutcome {
-        val key = pendingRequests.getOrPut(action) { java.util.UUID.randomUUID().toString() }
-        return call(key).also { if (it != EconomyOutcome.Offline) pendingRequests.remove(action, key) }
+        val key = requestKeys.keyFor(action)
+        return call(key).also { if (it != EconomyOutcome.Offline) requestKeys.done(action, key) }
     }
 
-    private val pendingRequests = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val requestKeys = RequestKeys()
 
     /**
      * 뽑기 (서버, 2026-09-27 부터 모두 무료). [kind] 칸의 기회를 한 번 쓴다 — 무료는 오늘 몫 → 가입 선물,

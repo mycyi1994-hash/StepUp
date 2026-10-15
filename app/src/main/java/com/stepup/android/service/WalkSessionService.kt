@@ -168,6 +168,11 @@ data class WalkSessionState(
      * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
      */
     val here: GeoPoint? = null,
+    /**
+     * [here] 를 GPS 점으로 마지막에 고친 때(ms) — 기지국 · 마지막으로 알던 위치는 0 그대로다. 같이 뛰는 사람에게 보내는 위치가
+     * 지금 것인지 가린다(경로 점은 8m 움직여야 생겨 신호등에 서 있으면 낡아 보였다). 저장본에 남기지 않는다.
+     */
+    val hereAt: Long = 0L,
     /** 정확한 위치(ACCESS_FINE_LOCATION)를 허용했는지 — 대략적인 위치만이면 GPS 를 못 쓴다 */
     val precise: Boolean = true,
     /** 휴대폰의 위치 기능 자체가 켜져 있는지 — 꺼져 있으면 권한이 있어도 위치가 오지 않는다 */
@@ -205,7 +210,8 @@ data class WalkSessionState(
     val mockLocation: Boolean = false,
     /**
      * 이번 러닝에 테스트 도구의 "걸음 흉내"를 썼다(테스트 빌드만). 실제 걸음이 아니므로 적립하지 않고 서버에도
-     * 올리지 않는다 — 테스트 APK 가 실제 서버에 흉내 걸음으로 SUP 를 쌓던 것을 막는다. 저장본에는 남기지 않는다.
+     * 올리지 않는다 — 테스트 APK 가 실제 서버에 흉내 걸음으로 SUP 를 쌓던 것을 막는다. 저장본에도 남긴다(판 4) —
+     * 남기지 않으면 앱을 죽였다 되살린 러닝에서 표시가 사라져 흉내 걸음이 그대로 올라갔다.
      */
     val simulated: Boolean = false,
     /** 방금 끝난 러닝이 테스트 걸음 때문에 적립 · 업로드에서 빠졌다 — 결과 화면 안내용 */
@@ -292,6 +298,7 @@ class WalkSessionService : Service() {
                         gpsFix = true,
                         gpsLost = false,
                         here = p,
+                        hereAt = now,
                         flaggedSegments = current.flaggedSegments + 1,
                         lastFlaggedAt = now,
                     )
@@ -309,6 +316,7 @@ class WalkSessionService : Service() {
                     gpsFix = true,
                     gpsLost = false,
                     here = p,
+                    hereAt = now,
                     gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                     validSegments = if (counted) current.validSegments + 1 else current.validSegments,
                     topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),

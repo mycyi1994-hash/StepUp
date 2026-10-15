@@ -56,7 +56,7 @@ class ClaimUploadTest {
                 .filter { it.recordingOwner == owner }
                 .filter { it.uploadState in setOf(UploadState.PENDING.name, UploadState.FAILED.name) }
                 .filter { it.track.isNotEmpty() && it.steps > 0 }
-                .sortedBy { it.startedAt }
+                .sortedWith(compareBy<WalkSessionEntity>({ it.uploadAttemptedAt }, { it.startedAt }))
                 .take(limit)
 
         override fun observeRecent(limit: Int): Flow<List<WalkSessionEntity>> = flowOf(rows.values.toList())
@@ -284,6 +284,26 @@ class ClaimUploadTest {
         assertEquals(1, run.failed)
         assertEquals(UploadState.FAILED.name, dao.rows.getValue(1L).uploadState)
         assertTrue("일꾼이 다시 깨어나야 한다", run.shouldRetry)
+    }
+
+    @Test
+    fun `오래된 러닝 둘이 계속 실패해도 다음 차례에는 뒤의 러닝이 먼저 올라간다`() = runBlocking {
+        // 연달아 둘이 끊기면 그 차례는 멈춘다. 다음 차례에도 같은 둘부터 집으면 뒤의 러닝이 영영 기다렸다
+        val dao = FakeDao((1L..4L).map { session(it, startedAt = 1_000_000_000_000L + it) })
+        val recorder = FakeRecorder { if (it.id <= 2L) ServerResult.Retry("서버 오류") else okAnswer(it) }
+        var clock = 2_000_000_000_000L
+        val repo = ClaimRepository(dao, recorder, now = { clock })
+
+        val first = repo.uploadPending()
+        assertEquals(0, first.signed)
+        assertEquals(2, first.failed)
+
+        clock += 60_000
+        val second = repo.uploadPending()
+        assertEquals(listOf(1L, 2L, 3L, 4L), recorder.seen.take(4).map { it.id })
+        assertEquals(2, second.signed)
+        assertEquals(UploadState.SIGNED.name, dao.rows.getValue(3L).uploadState)
+        assertEquals(UploadState.SIGNED.name, dao.rows.getValue(4L).uploadState)
     }
 
     @Test

@@ -74,6 +74,8 @@ interface WalkSessionDao {
      *
      * 오래된 순인 것은 `RewardDistributor` 의 청구 창이 7일이기 때문이다.
      * 최신 것부터 처리하면 창을 넘긴 세션이 영영 청구되지 않는다.
+     * 다만 시도했다 실패한 세션은 시도한 때 순으로 뒤에 선다 — 오래된 러닝 둘이 계속 실패하면(연달아 둘이면 그 차례를
+     * 멈춘다) 뒤의 러닝이 모두 기다리다 창을 넘겼다. 아직 시도하지 않은 세션은 시도한 때가 0 이라 오래된 순 그대로다.
      *
      * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
      * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
@@ -84,7 +86,7 @@ interface WalkSessionDao {
          WHERE uploadState IN ('PENDING', 'FAILED')
            AND steps > 0
            AND recordingOwner = :owner
-         ORDER BY startedAt ASC
+         ORDER BY uploadAttemptedAt ASC, startedAt ASC
          LIMIT :limit
         """,
     )

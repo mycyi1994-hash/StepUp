@@ -10,6 +10,9 @@
 --     두 사람을 "곁"으로 적고(party_near), 인원은 출발 2분 뒤에 곁이었던 사람들로 이어진 내 무리로 센다
 --     (곁의 곁도 같은 무리 — 속도가 달라 흩어진 무리도 한 무리로 센다). 본인도 무리에 아무도 없으면 1명이다.
 --     인원 상한(+50%) · 한 방에 한 번 · 하루 상한은 그대로다.
+--     진행자가 방을 닫은(마친) 뒤에도 남은 사람의 앱은 자기 러닝이 끝날 때까지 위치를 보낸다 — 닫힌 방의 좌표는
+--     본인 말고 아무에게도 보이지 않고(party_state 는 RUNNING 방만 보인다), 나갈 때(party_leave) 줄과 함께 지워진다.
+--     그러지 않으면 진행자가 2분 전에 마친 방은 끝까지 같이 뛴 사람들도 인원이 1이 됐다.
 --  2) 다른 사람 위치는 "위치를 보낸 시각"(pinged_at)으로 2분 안의 것만 보인다. 0037 은 방 상태를 물을 때마다
 --     적히는 last_seen 으로 봐서, 일시정지하거나 GPS 를 잃은 사람의 옛 점이 계속 지금 위치처럼 보였다.
 --     방이 끝나면 남은 좌표 · 거리를 지운다.
@@ -18,8 +21,9 @@
 --     혼자 달린 옛 러닝도 크루 기록에 얹을 수 있었다.
 --  5) 크루 해산 · 가입 신청 결정은 크루를 잠근 뒤 크루장인지 본다(넘기는 중에 옛 크루장이 해산하지 못하게).
 --  6) 크루 채팅 알림: 지우거나 가린 메시지는 보내다 실패해 다시 보낼 줄에서도 빠지고(지금 보내는 중인 줄은
---     그대로 보내는 쪽에 맡긴다), 합쳐진 알림 줄은 아직 보이는 앞 메시지로 바뀐다. 크루에서 나간(내보내진)
---     사람에게 기다리던 알림은 보내지 않는다.
+--     그대로 보내는 쪽에 맡긴다), 합쳐진 알림 줄은 아직 보이는 앞 메시지로 바뀐다(같은 사람에게 기다리는 다른
+--     줄이 있으면 지운다 — 같은 메시지 알림이 두 번 가지 않게). 크루에서 나간(내보내진) 사람에게 기다리던 알림은
+--     보내지 않는다. 새로 만든 표(party_near · party_kicks)의 사람 칸은 계정을 지우면 함께 지워진다.
 -- ════════════════════════════════════════════════════════════════════
 
 -- ── 1) 곁에서 같이 뛴 짝 ─────────────────────────────────────────────
@@ -28,8 +32,9 @@ alter table public.party_members add column if not exists pinged_at timestamptz;
 
 create table if not exists public.party_near (
   party_id bigint not null references public.parties on delete cascade,
-  user_a uuid not null,
-  user_b uuid not null,
+  -- 계정을 지우면(0021 은 auth.users 에서 이어 지운다) 그 사람의 짝도 지운다
+  user_a uuid not null references auth.users on delete cascade,
+  user_b uuid not null references auth.users on delete cascade,
   first_at timestamptz not null default now(),
   last_at timestamptz not null default now(),
   primary key (party_id, user_a, user_b),
@@ -187,7 +192,7 @@ $$;
 
 create table if not exists public.party_kicks (
   party_id bigint not null references public.parties on delete cascade,
-  user_id uuid not null,
+  user_id uuid not null references auth.users on delete cascade,
   kicked_at timestamptz not null default now(),
   primary key (party_id, user_id)
 );
@@ -398,6 +403,14 @@ begin
        and (q.claimed_at is null or q.claimed_at < now() - interval '2 minutes')
        and q.args->>'msg' = new.id::text
   loop
+    -- 같은 사람에게 이 채팅의 다른 알림 줄이 아직 남아 있으면(더 새 메시지로 기다리는 줄) 이 줄은 지운다 —
+    -- 가장 새 메시지로 고쳐 두면 그 줄과 같은 메시지 알림이 두 번 갔다
+    if exists (select 1 from public.push_outbox q2
+                where q2.id <> o.id and q2.user_id = o.user_id and q2.kind = 'CREW_CHAT'
+                  and q2.link = 'crew-chat/' || new.crew_id and q2.sent_at is null) then
+      delete from public.push_outbox where id = o.id;
+      continue;
+    end if;
     select m.* into v_next from public.crew_chat_messages m
      where m.crew_id = new.crew_id and m.id <> new.id
        and m.kind <> 'SYSTEM' and m.deleted_at is null and m.hidden_at is null

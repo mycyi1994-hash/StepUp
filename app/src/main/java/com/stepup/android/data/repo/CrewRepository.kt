@@ -262,6 +262,9 @@ class CrewRepository(
 
     private val refreshLock = Mutex()
 
+    /** 계정이 바뀔 때마다 늘어난다 — 바뀌기 전에 보낸 목록 요청의 답(앞 계정 것)을 버린다 */
+    @Volatile private var accountEpoch = 0
+
     fun crewOf(id: String): Crew? = crews.value.firstOrNull { it.id == id }
 
     /**
@@ -277,6 +280,7 @@ class CrewRepository(
 
     /** 서버에서 크루 목록을 다시 받는다. 동시에 여러 번 불려도 한 번씩 차례로 한다. */
     suspend fun refresh(): CrewSyncState = refreshLock.withLock {
+        val epoch = accountEpoch
         val before = _sync.value
         if (_crews.value.isEmpty()) _sync.value = CrewSyncState.Loading
         // 받는 중에 부른 화면이 닫혀 취소되면 "불러오는 중"으로 남기지 않는다(같은 상태를 보는 다른 화면이 멈춰 보이지 않게)
@@ -286,6 +290,8 @@ class CrewRepository(
             if (_sync.value == CrewSyncState.Loading) _sync.value = before
             throw cancelled
         }
+        // 받는 사이 계정이 바뀌었다 — 앞 계정의 목록을 새 계정에 채우지 않는다(다음 물음이 새 계정 것을 받는다)
+        if (epoch != accountEpoch) return@withLock _sync.value
         val next = when (result) {
             is ServerResult.Ok -> {
                 val list = result.value.map { it.toDomain() }
@@ -502,7 +508,8 @@ class CrewRepository(
                         }
                         _party.value = _party.value.copy(
                             partyId = id,
-                            problem = notice.takeIf { _party.value.problem == notice },
+                            // 새 대기실 안내(놓친 출발)는 그사이 연결이 잠깐 끊겨 "다시 시도"가 대신 보였어도 되살린다
+                            problem = notice.takeIf { _party.value.problem == notice || _party.value.problem == PartyProblem.NETWORK },
                         )
                         if (shareByDefault()) partyApi.share(id, true)
                         poll(id)
@@ -571,10 +578,28 @@ class CrewRepository(
                 PartyPhase.FINISHED, PartyPhase.IDLE -> return
                 else -> Unit
             }
-            // 방장이 방을 닫았으면 더 물을 것이 없다. 내 러닝은 내가 멈출 때까지 간다.
-            if (_party.value.roomClosed) return
+            // 방장이 방을 닫았으면 방은 더 묻지 않는다. 내 러닝은 내가 멈출 때까지 간다 — 그동안 위치만 계속 보낸다.
+            // 서버는 출발 2분 뒤에도 곁에서 뛴 사람을 함께 달린 인원으로 센다(0056). 진행자가 2분 전에 마치면
+            // 남은 사람들이 끝까지 같이 달려도 보너스를 잃었다. 방 · 명단은 다시 열지 않는다(닫힌 방은 아무에게도 보이지 않는다)
+            if (_party.value.roomClosed) {
+                pingWhileRunning(partyId)
+                return
+            }
             val interval = if (_party.value.phase == PartyPhase.RUNNING) RUN_POLL_MS else LOBBY_POLL_MS
             withTimeoutOrNull(interval) { wake.receive() }
+        }
+    }
+
+    /** 닫힌 방에 내 러닝이 끝날 때까지 위치만 보낸다(곁 판정용) — 마치면([finishParty]) · 다른 방으로 가면 멈춘다 */
+    private suspend fun pingWhileRunning(partyId: Long) {
+        while (_party.value.partyId == partyId && _party.value.phase == PartyPhase.RUNNING) {
+            val run = com.stepup.android.service.WalkSessionService.state.value
+            if (!run.isActive || run.group == com.stepup.android.service.RunGroup.NONE) return
+            if (!run.isPaused) {
+                val here = currentLocation()
+                partyApi.ping(partyId, here?.lat, here?.lng)
+            }
+            delay(RUN_POLL_MS)
         }
     }
 
@@ -770,19 +795,27 @@ class CrewRepository(
         if (state.phase != PartyPhase.RUNNING) return
         pollJob?.cancel()
         _party.value = state.copy(phase = PartyPhase.IDLE)
-        scope.launch {
+        // pollJob 에 둔다 — 나오는 사이 대기실을 떠나거나(leaveLobby) 계정이 바뀌면(resetForAccount) 이 일도 멈춘다.
+        // 멈추지 않으면 사용자가 떠난 뒤에 새 대기실이 열려 보이지 않는 방을 앱이 꺼질 때까지 물었다
+        pollJob = scope.launch {
             rememberExit(id)
             partyApi.leave(id)
+            val now = _party.value
+            if (now.partyId != id || now.phase != PartyPhase.IDLE) return@launch
             open(state.crewId, state.flashPostId, state.crewName, notice = PartyProblem.MISSED_START)
         }
     }
 
-    /** 계정이 바뀌었다 — 앞 계정의 대기실 · 가입 표시를 남기지 않는다(옛 방을 새 계정으로 묻지 않게) */
+    /** 계정이 바뀌었다 — 앞 계정의 대기실 · 크루 목록 · 가입 표시를 남기지 않는다(옛 방을 새 계정으로 묻지 않게) */
     fun resetForAccount() {
         pollJob?.cancel()
         droppedIds.clear()
         startingParty = null
         _party.value = PartyState()
+        // 앞 계정의 가입 · 신청 표시가 남으면 다음 목록에서 "신청 → 가입"으로 읽혀 새 계정에 가입 알림이 갔다(announceApprovals)
+        accountEpoch++
+        _crews.value = emptyList()
+        _sync.value = CrewSyncState.Idle
         clearCards()
     }
 
@@ -817,7 +850,7 @@ class CrewRepository(
                 // 연결이 잠깐 끊겼으면 몇 번 더 보낸다(진행자의 마치기가 닿지 않으면 남은 사람의 방이 닫히지 않는다)
                 for (attempt in 1..EXIT_TRIES) {
                     val result = if (state.isHost) partyApi.finish(id) else partyApi.leave(id)
-                    if (result !is ServerResult.Retry) break
+                    if (result !is ServerResult.Retry || attempt == EXIT_TRIES) break
                     delay(EXIT_RETRY_MS * attempt)
                 }
             }

@@ -141,6 +141,42 @@ class RunCheckpointPersistenceTest {
         }
     }
 
+    @Test fun simulatedFlagSurvivesReopen() = runBlocking {
+        // 테스트 도구의 걸음 흉내를 쓴 러닝은 앱을 죽였다 살려도 흉내 표시가 남는다(판 4) — 되살린 러닝이 적립 · 업로드되지 않게
+        val file = file()
+        try {
+            val simulated = checkpoint().let { it.copy(state = it.state.copy(simulated = true)) }
+            RunCheckpointStore(file).save(simulated)
+            val restored = RunCheckpointStore(file).read()!!
+            assertEquals(simulated, restored)
+            assertTrue(restored.pausedForRecovery().simulated)
+            assertEquals(com.stepup.android.domain.RunVerdict.VOID, restored.pausedForRecovery().liveVerdict)
+        } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
+    }
+
+    @Test fun version3CheckpointKeepsGroupWithoutSimulatedFlag() = runBlocking {
+        // 판 3(흉내 표시 칸 없음)에서 — 모임은 그대로 읽고, 흉내 표시는 없었던 것으로 본다
+        val file = file()
+        try {
+            val bytes = java.io.ByteArrayOutputStream()
+            java.io.DataOutputStream(bytes).apply {
+                writeInt(3); writeUTF(RunCheckpointPhase.RECORDING.name); writeLong(500_000); writeDouble(5.0)
+                writeLong(1_000); writeUTF("account:runner-a"); writeBoolean(false); writeInt(1)
+                writeInt(725); writeLong(490); writeDouble(0.51); writeDouble(9.7); writeInt(42); writeInt(1)
+                writeInt(0); writeInt(0)
+                writeBoolean(false); writeUTF("")
+                writeUTF(RunGroup.CREW.name); writeUTF("crew-1"); writeUTF("여의도 퇴근런")
+                flush()
+            }
+            file.writeBytes(bytes.toByteArray())
+            val restored = RunCheckpointStore(file).read()!!
+            assertEquals(RunGroup.CREW, restored.state.group)
+            assertEquals("crew-1", restored.state.groupCrewId)
+            assertEquals("여의도 퇴근런", restored.state.groupName)
+            assertFalse(restored.state.simulated)
+        } finally { file.delete(); File(file.path + ".new").delete(); File(file.path + ".bak").delete() }
+    }
+
     @Test fun fakeLocationFlagSurvivesReopen() = runBlocking {
         // 가짜 위치를 본 러닝은 앱을 죽였다 살려도 무효 표시가 남아야 한다
         val file = file()
