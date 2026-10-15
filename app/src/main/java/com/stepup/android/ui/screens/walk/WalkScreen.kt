@@ -179,6 +179,8 @@ fun RunScreen(
     onOpenRecords: () -> Unit = {},
     /** 결과 보상 칸의 "내역 보기"(미지급 E09) — 지갑 */
     onOpenWallet: () -> Unit = {},
+    /** 크루에 기록 공유를 보낸 뒤 "크루 채팅 보기"(CR21) — 그 러닝의 크루 채팅방 */
+    onOpenCrewChat: (String) -> Unit = {},
     viewModel: WalkViewModel = viewModel(factory = WalkViewModel.Factory),
 ) {
     // 러닝 서비스는 끝난 러닝을 백그라운드 스레드에서 내놓는다. 화면은 그 값을 메인 스레드에서 받는다 — 기기 테스트의
@@ -410,11 +412,30 @@ fun RunScreen(
     }
     val tone = runTone()
     val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
-    val crewRun = session.isActive && party.isActive || (!session.isActive && session.lastPartySize > 1)
-    // 끝난 크루 러닝의 크루(번개러닝은 크루가 없다) — 결과에서 크루에 기록 공유(CR21)
-    val crewShareId = party.crewId?.takeIf { crewRun && !session.isActive && it.isNotBlank() }
+    // 이 러닝을 연 모임(크루 달리기 v2, 2026-10-16) — 대기실에서 출발할 때 적은 값이다. 혼자 출발 · 혼자 남음 · 되살린 러닝 · 결과도
+    // 같은 모임이고, 지금 방 상태(party.isActive)만으로 번개 러닝을 크루 달리기로 보지 않는다. 달리기 전(결과도 아님)에는 모임이 없다
+    val group = when {
+        session.isActive -> session.group
+        finishing -> session.lastGroup
+        else -> com.stepup.android.service.RunGroup.NONE
+    }
+    val crewRun = group == com.stepup.android.service.RunGroup.CREW
+    val flashRun = group == com.stepup.android.service.RunGroup.FLASH
+    val runCrewId = if (session.isActive) session.groupCrewId else session.lastGroupCrewId
+    val runGroupName = if (session.isActive) session.groupName else session.lastGroupName
+    // 크루 이름 — 출발할 때 적은 이름, 비었으면 같은 크루의 지금 방 · 크루 목록, 그래도 없으면 일반 이름(다른 크루 이름을 쓰지 않는다)
+    val crewTitle = runGroupName
+        .ifBlank { party.crewName.takeIf { runCrewId.isNotBlank() && party.crewId == runCrewId }.orEmpty() }
+        .ifBlank { runCrewId.takeIf { it.isNotBlank() }?.let { com.stepup.android.core.ServiceLocator.crewRepository.crewOf(it)?.name }.orEmpty() }
+        .ifBlank { stringResource(R.string.run_crew_title) }
+    // 번개러닝 이름 — 글 제목(없으면 "번개러닝"). 번개는 크루가 아니다 — "크루 달리기"라고 적지 않는다
+    val flashTitle = runGroupName.ifBlank { stringResource(R.string.post_cat_flash) }
+    // 끝난 크루 러닝의 크루 — 결과에서 그 크루에 기록 공유(CR21). 번개러닝은 크루가 없다. 다른 계정의 러닝이면 비어 있다
+    val crewShareId = runCrewId.takeIf { crewRun && finishing && it.isNotBlank() }
+    // 크루 달리기 중 방과의 연결 — 명단 · 다른 사람 위치를 보일지(CR09 · CR18 · 방 닫힘 · 끊김)
+    val crewLinkNow = crewLink(party, runCrewId)
     val coursePoints = course?.takeIf { it.hasTrack && plan is RunPlan.Free && !recordingCourse }?.points.orEmpty()
-    val courseRun = coursePoints.isNotEmpty() && !crewRun
+    val courseRun = coursePoints.isNotEmpty() && !crewRun && !flashRun
 
     // 자유 러닝(2026-10-14 v2) — 보상 UI 없는 지도 중심 화면. 시작 메뉴 · 러닝 홈에서 고른 자유 러닝만 그린다.
     // 코스 · 코스 만들기 · 크루 · 이벤트 챌린지 러닝도 계획은 자유(RunPlan.Free)지만 예전 화면 그대로다.
@@ -425,7 +446,7 @@ fun RunScreen(
     }
     val focusRun = challengeLaunched &&
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
-    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !party.isActive && !recordingCourse && !focusRun
+    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !party.isActive && !recordingCourse && !focusRun
     // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
     // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
     var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
@@ -452,7 +473,7 @@ fun RunScreen(
 
     // 위치 신호가 끊기면(L04) 한 번 알린다 — 다시 잡히면 다음 끊김에 또 알린다. 자유 러닝은 시트 대신 지도 위 띠로 알린다
     LaunchedEffect(session.gpsLost, running) {
-        if (session.gpsLost && running && !gpsLostSeen && !freeRunNow) {
+        if (session.gpsLost && running && !gpsLostSeen && !freeRunNow && !crewRun) {
             gpsLostSeen = true
             gpsLostSheet = true
         }
@@ -540,8 +561,13 @@ fun RunScreen(
     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
     // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
     val showOthers = together && !party.networkProblem
-    val others = remember(party.members, showOthers) {
-        if (showOthers) party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } } else emptyList()
+    val others = remember(party.members, showOthers, crewRun, crewLinkNow) {
+        when {
+            // 크루 달리기 — 이어져 있는 동안, 위치 공유를 켠 사람만(공유하지 않는 사람은 줄에만 있다)
+            crewRun -> crewPins(party, crewLinkNow).mapNotNull { m -> m.point?.let { it to m.name } }
+            showOthers -> party.members.filter { !it.isMe }.mapNotNull { m -> m.point?.let { it to m.name } }
+            else -> emptyList()
+        }
     }
     val hereOnly = remember(session.here) { listOfNotNull(session.here) }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
@@ -576,6 +602,70 @@ fun RunScreen(
             )
             else -> MapWaiting(Modifier.fillMaxSize())
         }
+    }
+    // 크루 달리기 지도(CR09) — 내 경로(형광 초록 · 남색 테)와 위치를 공유한 사람(남색 원 · 흰 테). 경로 전에는 지금 자리 점만
+    val crewLiveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
+        val here = session.here
+        when {
+            timeOnly && geoTrack.isEmpty() -> NoLocationMap()
+            geoTrack.isNotEmpty() -> LiveRouteMap(
+                points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true, breaks = breaks,
+                routeColor = FreeRunRoute, live = true, routeOutline = FreeRunRouteOutline,
+                markers = com.stepup.android.ui.components.RouteMarkers.Pin, crewPins = true,
+            )
+            here != null -> LiveRouteMap(
+                points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others, follow = true,
+                routeColor = FreeRunRoute, live = true, crewPins = true,
+            )
+            else -> MapWaiting(Modifier.fillMaxSize())
+        }
+    }
+    // 크루 달리기 판 — 거리는 다른 러닝(결과 · 정산)과 같은 기준, 위치 없이 기록하면 거리 · 페이스 · 진행률을 적지 않는다
+    val crewPace = if (!timeOnly && liveKm >= 0.05 && session.elapsedSec > 0) formatPacePrime((session.elapsedSec / liveKm).toLong()) else "—"
+    val crewReward = listOfNotNull(
+        // 서버가 확인하기 전 이 폰이 셈한 값 — "예상 · 확인 전"(적립 완료라고 쓰지 않는다)
+        if (session.liveVerdict == RunVerdict.VOID) stringResource(R.string.run_crew_reward_void)
+        else stringResource(R.string.run_crew_reward_live, rewardAmount(estimate.points)),
+        freeDurability?.let { stringResource(R.string.run_crew_durability, it) },
+    ).joinToString(" · ")
+    val crewLiveUi = CrewLiveUi(
+        crewName = crewTitle,
+        members = if (crewLinkNow == CrewLink.Linked) party.members else emptyList(),
+        link = crewLinkNow,
+        paused = session.isPaused,
+        distance = liveKmText,
+        time = formatDuration(session.elapsedSec),
+        pace = crewPace,
+        goalKm = goalKm,
+        goalFraction = if (timeOnly || goalKm <= 0) null else (liveKm / goalKm).toFloat().coerceIn(0f, 1f),
+        reward = crewReward,
+    )
+    // 위치 · 측정 문제는 자유 러닝과 같은 노란 띠로 지도 위에(일시정지는 크루 띠가 맡는다)
+    val crewProblemBand = freeBandNow.takeIf { it != FreeBand.None && it != FreeBand.Paused }?.let { band ->
+        liveTop(
+            band, paused = false, noLocation = !locationAllowed, onBandTap = { showDetails = true },
+            onBandAction = {
+                if (band == FreeBand.LocationOff) ExternalIntents.openLocationSettings(context) else ExternalIntents.openAppSettings(context)
+            },
+        )
+    }
+    val crewLive: @Composable (CrewLiveMode) -> Unit = { mode ->
+        CrewRunLive(
+            ui = crewLiveUi, map = crewLiveMap, mode = mode,
+            onPrimary = {
+                when {
+                    mode == CrewLiveMode.Failed -> WalkSessionService.stop(context)
+                    running -> WalkSessionService.pause(context)
+                    else -> WalkSessionService.resume(context)
+                }
+            },
+            onFinish = askEnd,
+            onTogether = { togetherSheet = true },
+            onDetails = { showDetails = true },
+            onExpandMap = if (mode != CrewLiveMode.Live || (timeOnly && geoTrack.isEmpty())) null else ({ showFullMap = true }),
+            onReconnect = { com.stepup.android.core.ServiceLocator.crewRepository.wakeParty() },
+            problemBand = if (mode == CrewLiveMode.Live) crewProblemBand else null,
+        )
     }
     // 14 오른쪽 — 자유 러닝 결과의 "다시 시도". 삭제 확인(R06)과 같은 지우기이고, 기록 화면으로는 지운 뒤에만 간다
     val freeDeleteScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -621,7 +711,9 @@ fun RunScreen(
         when {
             finishing && showShare && freeRunResult -> FreeRunShareScreen(session, onClose = { showShare = false })
             finishing && showShare -> RunShareScreen(session, lastServerPoints, lastUpload, onClose = { showShare = false })
-            finishing && crewShare && crewShareId != null -> CrewShareFor(session, crewShareId, party.crewName, onClose = { crewShare = false })
+            finishing && crewShare && crewShareId != null -> CrewShareFor(
+                session, crewShareId, crewTitle, onClose = { crewShare = false }, onOpenChat = { onOpenCrewChat(crewShareId) },
+            )
             // 08 · 14 — 자유 러닝 결과. 기록 저장만 보고 보상 상태(예상 · 확인 중 · 무효 · 미지급 · 로그아웃)로 나누지 않는다
             finishing && freeRunResult -> {
                 val km = freeResultKm(session.lastGpsKm)
@@ -654,6 +746,52 @@ fun RunScreen(
                     onRetryDelete = retryFreeDelete,
                     onDeleteBack = { deleteFailed = null },
                     modifier = Modifier.reveal(session.lastStartedAt),
+                )
+            }
+            // CR13 — 크루 러닝 결과. 함께 출발한 인원 · 내 기록 · 저장 · 보상 상태 · 크루에 기록 공유
+            finishing && crewRun -> {
+                val km = finishKm(session)
+                val reward = finishReward(session, lastServerPoints, lastUpload)
+                val lastTrackBreaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
+                // 마친 뒤의 사실 — 이 러닝을 닫은 방(결과 시각이 같은 방)에서만. 진행자가 마치면 방이 닫히고, 참가자는 방에서 나온다
+                val endedRoom = party.takeIf {
+                    it.phase == com.stepup.android.data.repo.PartyPhase.FINISHED && it.resultStartedAt == session.lastStartedAt
+                }
+                val note = when {
+                    endedRoom == null || session.lastGroupSize <= 1 -> null
+                    endedRoom.isHost -> stringResource(R.string.run_crew_result_host)
+                    else -> stringResource(R.string.run_crew_result_member)
+                }
+                CrewRunResult(
+                    ui = CrewResultUi(
+                        crewName = crewTitle, started = session.lastGroupSize.coerceAtLeast(1),
+                        distance = "%.2f".format(km), time = formatDuration(session.lastElapsedSec),
+                        pace = finishPace(session)?.let { formatPacePrime(it) } ?: "—",
+                        note = note,
+                        basis = if (session.lastGpsKm <= 0.0 && km > 0.0) stringResource(R.string.run_result_steps_basis) else null,
+                    ),
+                    reward = reward,
+                    map = if (geoTrack.size >= 2) ({
+                        LiveRouteMap(
+                            points = geoTrack, modifier = Modifier.fillMaxSize().testTag("run-result-map"), breaks = lastTrackBreaks,
+                            routeColor = FreeRunRoute, routeOutline = FreeRunRouteOutline,
+                            markers = com.stepup.android.ui.components.RouteMarkers.Pin,
+                        )
+                    }) else null,
+                    onReason = { voidReason = true },
+                    onHistory = onOpenWallet,
+                    // 크루가 적힌 러닝은 그 크루 채팅으로(CR21), 아니면(다른 계정의 러닝) 공유 그림(E05)
+                    onShare = if (crewShareId != null) ({ crewShare = true }) else ({ showShare = true }),
+                    shareLabel = stringResource(if (crewShareId != null) R.string.run_crew_share else R.string.run_share),
+                    onDone = done,
+                    onRecords = {
+                        viewModel.clearReward()
+                        onOpenRecords()
+                    },
+                    onDelete = { deleteFailed = null; deleteSheet = true },
+                    deleteFailed = deleteFailed,
+                    modifier = Modifier.reveal(session.lastStartedAt)
+                        .celebrate(if (finishConfirmed(session, lastServerPoints, lastUpload)) session.lastStartedAt else null),
                 )
             }
             finishing -> {
@@ -710,9 +848,9 @@ fun RunScreen(
                         heroLine = planTitle(plan), stats = baseStats, message = null,
                     )
                     else -> RunResultUi(
-                        title = if (crewRun) party.crewName ?: stringResource(R.string.run_crew_title) else stringResource(R.string.run_result_title),
+                        title = if (flashRun) flashTitle else stringResource(R.string.run_result_title),
                         subtitle = null,
-                        pill = stringResource(if (crewRun) R.string.run_crew_line else R.string.run_saved_pill),
+                        pill = stringResource(if (flashRun) R.string.run_crew_line else R.string.run_saved_pill),
                         date = date,
                         heroAbove = when {
                             goal != null && goalMissed -> stringResource(R.string.run_result_challenge_tried, challengeTitle(goal), formatDurationWords(session.lastElapsedSec))
@@ -723,7 +861,7 @@ fun RunScreen(
                         },
                         heroValue = "%.2f".format(km), heroUnit = "km",
                         heroLine = when {
-                            crewRun -> stringResource(R.string.run_crew_title)
+                            flashRun -> stringResource(R.string.post_cat_flash)
                             goal != null || courseDone -> null
                             else -> planTitle(plan)
                         },
@@ -762,7 +900,7 @@ fun RunScreen(
                         deleteFailed?.let { why ->
                             FailureBanner(stringResource(R.string.run_delete_failed), why, "run-delete-failed")
                         }
-                        if (crewRun) CrewResultCard(session.lastPartySize.takeIf { it > 1 })
+                        if (flashRun) CrewResultCard(session.lastGroupSize.takeIf { it > 1 })
                         equipped?.let { ResultShoeCard(it) }
                         ResultRewardCard(reward, onReason = { voidReason = true }, onHistory = onOpenWallet)
                     },
@@ -785,6 +923,7 @@ fun RunScreen(
             session.isActive && session.saveStatus == RunSaveStatus.SAVING && freeRunNow -> FreeRunLive(
                 mode = FreeLiveMode.Saving, numbers = freeAverageNumbers, map = freeLiveMap, onPrimary = {}, onSecondary = {},
             )
+            session.isActive && session.saveStatus == RunSaveStatus.SAVING && crewRun -> crewLive(CrewLiveMode.Saving)
             session.isActive && session.saveStatus == RunSaveStatus.SAVING -> RunSavingContent(
                 stats = listOf(
                     RunStat(stringResource(R.string.run_label_distance), liveKmText, "km"),
@@ -830,6 +969,7 @@ fun RunScreen(
                 onPrimary = { WalkSessionService.stop(context) }, onSecondary = { saveFailedDialog = false },
                 showSecondary = saveFailedDialog,
             )
+            session.isActive && session.saveStatus == RunSaveStatus.FAILED && crewRun -> crewLive(CrewLiveMode.Failed)
             session.isActive && session.saveStatus == RunSaveStatus.FAILED -> RunLiveContent(
                 // S01 — 저장 전 요약. 기록은 서비스에 그대로 있고, 같은 러닝으로 다시 저장한다
                 ui = LiveRunUi(
@@ -848,6 +988,8 @@ fun RunScreen(
                         kind = RunNoticeKind.Error, tag = "run-save-error")
                 },
             )
+            // CR09 · CR11 · CR18 — 크루 달리기 중(지도 · 같이 달리는 사람 · 내 기록 · 내 목표 · 일시정지 | 종료)
+            crewRun && session.isActive -> crewLive(CrewLiveMode.Live)
             // 01 · 03 · 13 · 14 오른쪽 — 자유 러닝 중(시작 전 · 일시정지 · 위치 · 속도 띠 · 저장 없이 종료 실패)
             freeRunNow -> {
                 val discardFailedNow = discardFailedBand && session.isActive && session.isPaused
@@ -898,7 +1040,9 @@ fun RunScreen(
                     elapsedSec = session.elapsedSec, km = liveKm, paused = session.isPaused,
                     timeOnly = timeOnly, gps = gpsBadge, distance = distanceStat, pace = paceStat,
                     courseName = if (courseRun) course?.name else null, courseKm = if (courseRun) course?.distanceKm else null,
-                    crewName = if (crewRun) party.crewName ?: "" else null, active = session.isActive,
+                    crewName = if (flashRun) runGroupName else null,
+                    partyLabel = if (flashRun) stringResource(R.string.post_cat_flash) else null,
+                    active = session.isActive,
                     asking = confirmStop || discardDialog,
                 )
                 RunLiveContent(
@@ -947,8 +1091,8 @@ fun RunScreen(
                                 )
                             }
                         }
-                        // CR09 · CR11 · CR18 — 같이 뛰는 중. 연결이 끊기면 옛 인원 · 위치를 보이지 않는다(내 기록은 이어진다)
-                        if (crewRun && session.isActive) {
+                        // 번개러닝 같이 뛰는 중. 연결이 끊기면 옛 인원 · 위치를 보이지 않는다(내 기록은 이어진다)
+                        if (flashRun && session.isActive) {
                             if (party.networkProblem) {
                                 RunNotice(stringResource(R.string.run_crew_reconnect_title), body = stringResource(R.string.run_crew_reconnect_body),
                                     kind = RunNoticeKind.Warn, action = stringResource(R.string.run_crew_reconnect),
@@ -1141,12 +1285,24 @@ fun RunScreen(
     }
 
     // CR10 — 함께 달리는 사람(거리를 보이기로 한 사람만 수, 나머지는 비공개)
-    if (togetherSheet && together) {
+    // 달리는 중에 바꾼 위치 공유도 대기실처럼 기억한다 — 다음 방에서도 이 값으로 시작한다
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    val setShare: (Boolean) -> Unit = { on ->
+        com.stepup.android.core.ServiceLocator.crewRepository.setMyShare(on)
+        shareScope.launch { com.stepup.android.core.ServiceLocator.userPrefs.setPartyShareLocation(on) }
+    }
+    if (togetherSheet && crewRun && session.isActive && crewLinkNow == CrewLink.Linked) {
+        com.stepup.android.ui.components.RunSheet(onDismiss = { togetherSheet = false }) {
+            CrewTogetherSheetContent(
+                members = party.members, myKm = if (timeOnly) null else liveKm, myPaused = session.isPaused, myShare = party.myShare,
+                onShare = setShare, onClose = { togetherSheet = false },
+            )
+        }
+    } else if (togetherSheet && together && !crewRun) {
         com.stepup.android.ui.components.RunSheet(onDismiss = { togetherSheet = false }) {
             TogetherSheetContent(
                 members = party.members, myKm = liveKm, myPaused = session.isPaused, myShare = party.myShare,
-                onShare = { com.stepup.android.core.ServiceLocator.crewRepository.setMyShare(it) },
-                onClose = { togetherSheet = false },
+                onShare = setShare, onClose = { togetherSheet = false },
             )
         }
     }
@@ -1187,8 +1343,32 @@ fun RunScreen(
             )
         }
     }
+    // CR12 — 크루 달리기: 내 러닝을 마칠까요? 진행자가 마치면 방이 닫힌다(서버) — 역할마다 실제로 일어나는 일만 적는다
+    if (confirmStop && canAskEnd && crewRun) {
+        com.stepup.android.ui.components.RunSheet(onDismiss = { confirmStop = false }, modifier = Modifier.testTag("run-end-dialog")) {
+            CrewFinishSheetContent(
+                end = crewEnd(party, crewLinkNow),
+                distance = liveKmText, time = formatDuration(session.elapsedSec), pace = crewPace,
+                onSave = {
+                    confirmStop = false
+                    WalkSessionService.stop(context)
+                },
+                onContinue = {
+                    confirmStop = false
+                    WalkSessionService.resume(context)
+                },
+                // 방에 들어가 있으면(혼자여도) 저장하고 마친다 — 서비스도 같은 까닭으로 거절한다
+                onDiscard = if (WalkSessionService.canDiscard(session) && !party.isActive) {
+                    {
+                        confirmStop = false
+                        discardDialog = true
+                    }
+                } else null,
+            )
+        }
+    }
     // R04 — 러닝을 마칠까요? 저장하고 마치기 · 계속 달리기 · 기록 없이 끝내기. 닫으면 멈춘 채로 둔다
-    if (confirmStop && canAskEnd && !freeRunNow) {
+    if (confirmStop && canAskEnd && !freeRunNow && !crewRun) {
         val partyOpen = party.isActive
         com.stepup.android.ui.components.RunSheet(onDismiss = { confirmStop = false }, modifier = Modifier.testTag("run-end-dialog")) {
             FinishSheetContent(
@@ -1208,9 +1388,9 @@ fun RunScreen(
                         discardDialog = true
                     }
                 } else null,
-                title = stringResource(if (crewRun) R.string.run_crew_finish_title else R.string.run_finish_title),
-                note = if (crewRun) stringResource(R.string.run_crew_finish_note) else stringResource(R.string.run_finish_note),
-                saveLabel = stringResource(if (crewRun) R.string.run_crew_finish_save else R.string.run_save_finish),
+                title = stringResource(if (flashRun) R.string.run_crew_finish_title else R.string.run_finish_title),
+                note = if (flashRun) stringResource(R.string.run_crew_finish_note) else stringResource(R.string.run_finish_note),
+                saveLabel = stringResource(if (flashRun) R.string.run_crew_finish_save else R.string.run_save_finish),
             )
         }
     }
@@ -1378,6 +1558,8 @@ private fun liveRunUi(
     courseKm: Double?,
     crewName: String?,
     active: Boolean,
+    /** 모임 러닝의 이름표 — 번개러닝은 "번개러닝"(크루 달리기라고 적지 않는다). null 이면 "크루 달리기" */
+    partyLabel: String? = null,
     /** 마칠지 묻는 중(R04 · R07) — 뒤 화면은 이번 러닝 이름 · 왼쪽 "일시정지" 알약 그대로 */
     asking: Boolean = false,
 ): LiveRunUi {
@@ -1482,7 +1664,7 @@ private fun liveRunUi(
             )
         }
         crewName != null -> LiveRunUi(
-            title = stringResource(if (paused) R.string.run_my_pause_title else R.string.run_crew_title),
+            title = if (paused) stringResource(R.string.run_my_pause_title) else partyLabel ?: stringResource(R.string.run_crew_title),
             subtitle = crewName.ifBlank { null },
             paused = paused, status = status, gps = gps,
             hero = LiveHero.Clock(timeLabel, time),
@@ -2224,11 +2406,12 @@ private fun RunPlanPanel(
  */
 /** 크루에 기록 공유(CR21) — 이 러닝의 거리 · 시간 · 페이스와(켜면) 공유 카드 그림 */
 @Composable
-private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: String, onClose: () -> Unit) {
+private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: String, onClose: () -> Unit, onOpenChat: () -> Unit) {
     val context = LocalContext.current
     val km = finishKm(session)
     val elapsed = formatDuration(session.lastElapsedSec)
-    val pace = finishPace(session)?.let { formatPace(it) } ?: "—"
+    // 크루 결과와 같은 페이스 표기(7′30″)
+    val pace = finishPace(session)?.let { formatPacePrime(it) } ?: "—"
     val labels = RunShareCard.Labels(
         distance = stringResource(R.string.share_card_distance),
         time = stringResource(R.string.share_card_time),
@@ -2237,6 +2420,7 @@ private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: St
     )
     CrewShareScreen(
         crewId = crewId, crewName = crewName.ifBlank { stringResource(R.string.run_crew_title) },
+        monogram = com.stepup.android.core.ServiceLocator.crewRepository.crewOf(crewId)?.monogram.orEmpty(),
         km = "%.2f".format(km), time = elapsed, pace = pace,
         card = { route ->
             kotlinx.coroutines.withContext(Dispatchers.Default) {
@@ -2247,6 +2431,7 @@ private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: St
         },
         hasRoute = session.geoTrack.size >= 2,
         onClose = onClose,
+        onOpenChat = onOpenChat,
     )
 }
 

@@ -499,13 +499,10 @@ class CrewRepository(
             when (val result = partyApi.state(partyId)) {
                 is ServerResult.Ok -> applyRoom(result.value)
                 // 방장이 내보냈거나 방이 없어졌다. 더 물어도 같다.
-                // 서버에 닿기는 했다 — 같이 뛰는 중 "연결 끊김"(CR18)은 풀어 둔다(더 묻지 않으니 다시 켜질 일도 없다)
+                // 서버에 닿기는 했다 — 같이 뛰는 중 "연결 끊김"(CR18)은 풀어 둔다(더 묻지 않으니 다시 켜질 일도 없다).
+                // 같이 뛰는 중에도 방과 끊겼다고 적는다 — 더 묻지 않아 굳은 명단 · 위치를 화면이 지금 것처럼 보이지 않게(내 러닝은 이어진다)
                 is ServerResult.Rejected -> {
-                    if (_party.value.phase != PartyPhase.RUNNING) {
-                        _party.value = _party.value.copy(problem = PartyProblem.REMOVED, liveOffline = false)
-                    } else {
-                        _party.value = _party.value.copy(liveOffline = false)
-                    }
+                    _party.value = _party.value.copy(problem = PartyProblem.REMOVED, liveOffline = false)
                     return
                 }
                 is ServerResult.SignInRequired -> {
