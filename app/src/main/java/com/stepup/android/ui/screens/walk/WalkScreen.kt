@@ -446,7 +446,8 @@ fun RunScreen(
     }
     val focusRun = challengeLaunched &&
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
-    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !party.isActive && !recordingCourse && !focusRun
+    // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
+    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
     // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
     // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
     var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
