@@ -32,7 +32,8 @@ concurrency:
 
 jobs:
   schema:
-    runs-on: ubuntu-latest
+    # ubuntu-24.04 로 고정 — run.sh 는 이 이미지에 든 PostgreSQL 16(/usr/lib/postgresql/16/bin)을 쓴다. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 이다
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4

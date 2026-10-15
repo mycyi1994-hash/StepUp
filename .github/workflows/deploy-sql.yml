@@ -5,6 +5,10 @@
 # 다시 올려도 안전하고(test-sql.yml 이 두 번 올려 확인한다) 한 트랜잭션이라
 # 중간에 실패하면 아무것도 바뀌지 않는다.
 #
+# 올리기 전에 test-sql.yml 과 같은 스키마 검사(test)를 여기서 먼저 돌린다. 두 워크플로는 따로
+# 나란히 돌고 main 에는 브랜치 보호가 없어서, 검사에 떨어진 마이그레이션도 운영 DB 에 올라갈 수
+# 있었다. 이제 검사를 통과해야 적용(apply)이 돈다.
+#
 # 필요한 것: 저장소 Settings → Secrets and variables → Actions 에
 # SUPABASE_DB_URL (Supabase › Connect › Session pooler 의 연결 문자열,
 # 비밀번호를 채운 것). GitHub 러너는 IPv6 가 없어 db.<ref>.supabase.co
@@ -18,6 +22,10 @@ on:
       - "main"
     paths:
       - "supabase/setup.sql"
+      # setup.sql 을 다시 만들지 않고 마이그레이션만 합쳐도 여기서 돈다 — 그때는 아래 일치 검사가 빨갛게 알린다
+      # (예전에는 아무것도 돌지 않아 배포가 빠진 것을 아무도 몰랐다)
+      - "supabase/migrations/**"
+      - "scripts/build-setup-sql.py"
       - ".github/workflows/deploy-sql.yml"
   workflow_dispatch:
 
@@ -30,10 +38,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  apply:
-    # 손으로 돌려도 main 의 것만 올린다 — 작업 브랜치의 검토 전 스키마가 운영 DB 로 가지 않게
+  # test-sql.yml 의 스키마 검사와 같다 — 깨끗한 Postgres 16 에 setup.sql 을 올려 보고 앱 권한으로 규칙을 두드린다.
+  test:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # ubuntu-24.04 로 고정 — run.sh 는 이 이미지에 든 PostgreSQL 16(/usr/lib/postgresql/16/bin)을 쓴다. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 이다
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,9 +52,25 @@ jobs:
         run: |
           python3 scripts/build-setup-sql.py
           if ! git diff --quiet -- supabase/setup.sql; then
-            echo "::error::supabase/setup.sql 이 migrations/ 와 다릅니다. 올리지 않습니다."
+            echo "::error::supabase/setup.sql 이 migrations/ 와 다릅니다. 올리지 않습니다. scripts/build-setup-sql.py 를 실행해 다시 만들고 커밋하세요."
+            git --no-pager diff --stat -- supabase/setup.sql
             exit 1
           fi
+
+      - name: 스키마 검사
+        run: supabase/tests/run.sh
+
+  apply:
+    # 검사에 떨어지면 올리지 않는다
+    needs: test
+    # 손으로 돌려도 main 의 것만 올린다 — 작업 브랜치의 검토 전 스키마가 운영 DB 로 가지 않게
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    # 한 번 올리는 데 5~6분 걸린다(2026-10-04). 세 번 시도와 기다림까지 넣고도 남게 — 멈춘 배포가 운영 DB 연결을 붙잡고 있지 않게
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Supabase 에 적용
         env:
@@ -55,6 +81,18 @@ jobs:
             exit 0
           fi
           command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -yq postgresql-client; }
+          # 표가 바빠 잠금을 10초 안에 못 얻거나(setup.sql 머리의 lock_timeout) 연결이 끊기면 30초 뒤 다시 올린다 — 세 번까지.
+          # setup.sql 은 한 트랜잭션이라 실패한 시도는 통째로 되돌려지고, 몇 번을 다시 올려도 안전하다.
           # 연결 문자열은 로그에 찍지 않는다(비밀번호가 들어 있다).
-          PGCONNECT_TIMEOUT=20 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/setup.sql
-          echo "적용했습니다: $(git log -1 --format=%h -- supabase/setup.sql)"
+          for attempt in 1 2 3; do
+            if PGCONNECT_TIMEOUT=20 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/setup.sql; then
+              echo "적용했습니다: $(git log -1 --format=%h -- supabase/setup.sql)"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::적용 실패 ($attempt/3) — 30초 뒤 다시 올립니다."
+              sleep 30
+            fi
+          done
+          echo "::error::세 번 모두 적용하지 못했습니다 — 위 psql 오류를 보세요."
+          exit 1

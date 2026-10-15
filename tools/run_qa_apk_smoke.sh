@@ -3,7 +3,7 @@
 #
 # 기기 검사는 debug 빌드로 돈다. R8 이 줄인 qa 빌드만 깨지는 문제(지워진 클래스 · 직렬화 · 리플렉션)는
 # 거기서 드러나지 않으므로, 기기 검사를 마친 뒤 qa APK 를 같은 서명으로 덮어 설치하고 켜서 이리저리 눌러 본다.
-# 앱이 뜨지 않거나 R8 이 원인인 오류로 죽으면 실패한다. 결과와 프레임 통계는 screen-gallery/qa-apk-smoke/ 에 남긴다.
+# 앱이 뜨지 않거나 누르는 중에 앱이 죽으면 실패한다(R8 이 원인인 오류는 따로 알린다). 결과와 프레임 통계는 screen-gallery/qa-apk-smoke/ 에 남긴다.
 set -uo pipefail
 apk="app/build/outputs/apk/qa/app-qa.apk"
 pkg="com.stepup.android"
@@ -37,8 +37,24 @@ adb shell dumpsys gfxinfo "$pkg" > "$out/gfxinfo.txt" 2>&1 || true
 grep -E "Total frames|Janky frames|percentile" "$out/gfxinfo.txt" | head -8 || true
 adb logcat -d -b crash > "$out/crash.txt" 2>&1 || true
 adb logcat -d > "$out/logcat.txt" 2>&1 || true
-# R8 이 원인일 때 나는 오류들 — 이것만 실패로 본다(몽키가 우연히 낸 다른 앱 오류는 기록만)
+# R8 이 원인일 때 나는 오류들 — 걸리면 R8 문제라고 따로 알린다
 r8='ClassNotFoundException|NoClassDefFoundError|NoSuchMethodError|NoSuchMethodException|NoSuchFieldError|NoSuchFieldException|AbstractMethodError|IncompatibleClassChangeError|VerifyError|SerializationException|Serializer for class|InstantiationException'
+# 몽키 중에 앱이 죽으면 원인이 무엇이든 실패다. 앱 밖(시스템 · 구글 서비스 · 에뮬레이터) 탓으로 확인된 오류만
+# 여기에 확장 정규식으로 적어 경고로 넘긴다. 기본은 비어 있다 — 2026-10-04 ~ 10-14 Experience QA 에서 몽키 중 앱 오류는 없었다.
+known_external_crash=''
+# 앱의 오류 묶음(AndroidRuntime 의 FATAL EXCEPTION 부터 다음 묶음 전까지)이 하나 이상 있고 모두 위 목록에 맞을 때만 참
+only_known_external_crashes() {
+  [[ -n "$known_external_crash" ]] || return 1
+  PROC="Process: $pkg" ALLOW="$known_external_crash" awk '
+    function end_block() { if (app) { apps++; if (!ok) bad++ } app = 0; ok = 0 }
+    /AndroidRuntime/ && /FATAL EXCEPTION/ { end_block(); next }
+    /AndroidRuntime/ {
+      if (index($0, ENVIRON["PROC"])) app = 1
+      if ($0 ~ ENVIRON["ALLOW"]) ok = 1
+    }
+    END { end_block(); exit !(apps > 0 && bad == 0) }
+  ' "$out/crash.txt"
+}
 if grep -q "Process: $pkg" "$out/crash.txt"; then
   echo "── qa APK 오류 기록 ──"
   sed -n '1,80p' "$out/crash.txt"
@@ -46,6 +62,10 @@ if grep -q "Process: $pkg" "$out/crash.txt"; then
     echo "::error::qa APK(R8) 에서만 날 수 있는 오류로 앱이 꺼졌습니다 — screen-gallery/qa-apk-smoke/crash.txt"
     exit 1
   fi
-  echo "::warning::qa APK 가 몽키 중 꺼졌습니다(R8 원인 아님) — screen-gallery/qa-apk-smoke/crash.txt"
+  if ! only_known_external_crashes; then
+    echo "::error::qa APK 가 몽키 중 앱 오류로 꺼졌습니다(R8 원인 아님) — screen-gallery/qa-apk-smoke/crash.txt"
+    exit 1
+  fi
+  echo "::warning::qa APK 가 몽키 중 꺼졌지만 알려진 바깥 오류(known_external_crash)뿐입니다 — screen-gallery/qa-apk-smoke/crash.txt"
 fi
 echo "qa APK smoke OK"
