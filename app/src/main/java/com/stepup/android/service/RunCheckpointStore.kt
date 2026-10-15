@@ -161,8 +161,11 @@ class RunCheckpointStore(file: File) {
                 partyCrewId = if (version >= 2) input.readUTF() else "",
             )
             val state = if (version >= 3) {
+                // 모임 이름은 한 번만 읽는다 — 찾는 식 안에서 읽으면 견줘 보는 모임마다 다음 칸을 읽어
+                // 크루 · 번개 러닝의 저장본을 읽지 못했다(되살리기 실패)
+                val groupKey = input.readUTF()
                 read.copy(
-                    group = RunGroup.entries.firstOrNull { it.name == input.readUTF() }
+                    group = RunGroup.entries.firstOrNull { it.name == groupKey }
                         ?: throw IOException("Unknown run group"),
                     groupCrewId = input.readUTF(),
                     groupName = input.readUTF(),
