@@ -1,0 +1,16 @@
+import fs from 'node:fs/promises';
+const directory=new URL('./',import.meta.url);
+const source=await fs.readFile(new URL('preview.html',directory),'utf8');
+const shared=await fs.readFile(new URL('shared-style.html',directory),'utf8');
+const logo=await fs.readFile(new URL('../assets/logo.png',directory));
+const output=new URL('../reference-fragment.html',directory);
+const fragment=(shared+source).replaceAll('__LOGO__','data:image/png;base64,'+logo.toString('base64'));
+if(Buffer.byteLength(fragment)>1000000)throw new Error('Fragment exceeds 1 MB');
+if(/<!doctype|<html|<head>|<body>/i.test(fragment))throw new Error('Expected fragment');
+if(fragment.includes('\\"')||fragment.includes('\\n'))throw new Error('Escaped markup');
+if(fragment.includes('__LOGO__'))throw new Error('Unresolved logo');
+const script=fragment.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+if(!script)throw new Error('Missing script');
+new Function(script);
+await fs.writeFile(output,fragment);
+console.log(JSON.stringify({output:output.pathname,bytes:Buffer.byteLength(fragment),scriptSyntax:'pass'}));

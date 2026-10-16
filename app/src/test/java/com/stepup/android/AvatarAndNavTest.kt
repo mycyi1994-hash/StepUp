@@ -90,7 +90,7 @@ class AvatarAndNavTest {
     fun `크루와 글은 커뮤니티 탭 밑이다`() {
         assertEquals(Screen.Community, parentTabOf(Routes.CREW_BOARD))
         assertEquals(Screen.Community, parentTabOf(Routes.POST_COMPOSE))
-        assertEquals(Screen.Community, parentTabOf(Routes.RANKING))
+        assertEquals(Screen.Run, parentTabOf(Routes.RANKING))
         assertEquals(Screen.Community, parentTabOf(Routes.MAP))
     }
 

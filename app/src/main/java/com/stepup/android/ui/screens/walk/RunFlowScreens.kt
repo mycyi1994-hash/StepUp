@@ -67,7 +67,8 @@ import kotlinx.coroutines.launch
 
 /**
  * 러닝 시작(시안 U01) — 홈의 "러닝 시작"과 첫 안내의 "러닝 시작"에서 연다. 자유 러닝 · 크루 달리기 · 러닝 챌린지 ·
- * 추천 코스 · 다이어트 모드 다섯 가지를 같은 크기의 가로 버튼으로, 아래에 내 러닝 기록 · AI 코칭(2026-10-16 사용자 결정 — 코칭의 입구).
+ * 추천 코스 · 다이어트 모드 다섯 가지를 같은 크기의 가로 버튼으로, 아래에 내 러닝 기록 · AI 코칭(2026-10-16 사용자 결정 — 코칭의 입구) ·
+ * 이번 주 순위(리더보드, 2026-10-17).
  *
  * 자유 러닝을 누르면 그 뜻을 한 번 기억하고 필요한 권한 안내를 이 화면 위에 차례로 보인다 — 홈을 보는 것만으로는
  * 묻지 않는다. 안내를 닫으면 아무것도 시작하지 않고 이 메뉴에 남는다. 준비가 끝나야 한 번만 [onFreeRun](3-2-1)으로 간다.
@@ -86,6 +87,8 @@ fun RunStartMenuScreen(
     onOpenWallet: (() -> Unit)? = null,
     /** AI 코칭(오늘 · 분석 · 변화) — 없으면 줄을 두지 않는다 */
     onCoaching: (() -> Unit)? = null,
+    /** 리더보드(크루 · 개인 · 주간 포인트) — 없으면 줄을 두지 않는다 */
+    onLeaderboard: (() -> Unit)? = null,
 ) {
     // 한 번 고른 자유 러닝 — 권한 안내를 지나는 동안(회전 · 설정 다녀오기 포함) 이 값 하나로 잇는다
     var freeRunPending by rememberSaveable { mutableStateOf(false) }
@@ -101,6 +104,7 @@ fun RunStartMenuScreen(
         balance = balance,
         onOpenWallet = onOpenWallet,
         onCoaching = onCoaching,
+        onLeaderboard = onLeaderboard,
     )
     if (freeRunPending) {
         // 자유 러닝 카드에서만 오는 권한 안내 — 자유 러닝의 짧은 카드(2026-10-14 v2)
@@ -133,6 +137,7 @@ internal fun RunStartMenuContent(
     balance: Double? = null,
     onOpenWallet: (() -> Unit)? = null,
     onCoaching: (() -> Unit)? = null,
+    onLeaderboard: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val soon = stringResource(R.string.runflow_soon_toast)
@@ -180,6 +185,9 @@ internal fun RunStartMenuContent(
             RunLinkRow(stringResource(R.string.run_menu_records), onRecords, Modifier.testTag("run-menu-records"))
             if (onCoaching != null) {
                 RunLinkRow(stringResource(R.string.coach_menu_entry), onCoaching, Modifier.testTag("run-menu-coaching"))
+            }
+            if (onLeaderboard != null) {
+                RunLinkRow(stringResource(R.string.lb_menu_entry), onLeaderboard, Modifier.testTag("run-menu-leaderboard"))
             }
         }
     }

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "feature": "StepUp leaderboard animated background",
+  "date": "2026-10-17",
+  "status": "prototype; production integration pending",
+  "referenceViewport": {"width": 360, "height": 824, "units": "CSS px; adapt to actual native density, safe areas and scrolling"},
+  "palette": {"base": "#061B30", "accent": "#1450FF", "foreground": "#FFFFFF", "track": "#3F79E544"},
+  "layerOrder": ["navy-base", "blue-glow", "track-and-moving-light", "content", "pinned-own-rank", "detail-sheet"],
+  "track": {
+    "fieldSize": [560, 336],
+    "lanes": [{"inset": 0, "radius": 168}, {"inset": 20, "radius": 148}, {"inset": 40, "radius": 128}],
+    "strokeWidth": 2,
+    "fieldOpacity": 0.9,
+    "trackGeometryMoves": false,
+    "light": {
+      "referenceTextureSize": [660, 660],
+      "rotationDegrees": [0, 360],
+      "durationMs": 18000,
+      "easing": "linear",
+      "repeat": "while visible and enabled",
+      "initialPhaseMs": [-1000, -7000, -13000],
+      "conicGradientFromDegrees": -90,
+      "gradientStops": [{"degrees": 0, "color": "transparent"}, {"degrees": 235, "color": "transparent"}, {"degrees": 260, "color": "#1450FF1A"}, {"degrees": 320, "color": "#1450FF88"}, {"degrees": 354, "color": "#75A9FF"}, {"degrees": 359, "color": "#DAE9FF"}, {"degrees": 360, "color": "transparent"}]
+    }
+  },
+  "glow": {
+    "size": [430, 430],
+    "radialStops": [{"position": 0, "color": "#1450FF66"}, {"position": 0.43, "color": "#1450FF22"}, {"position": 0.71, "color": "transparent"}],
+    "durationMs": 16000,
+    "initialPhaseMs": -5000,
+    "direction": "alternate",
+    "opacity": [0.58, 1],
+    "translation": [[0, 0], [-12, 10]],
+    "easing": [0.77, 0, 0.175, 1]
+  },
+  "screens": {
+    "crew": {"backgroundIntensity": 0.8, "track": {"top": 105, "right": -270, "rotationDegrees": -29}, "glow": {"top": 35, "right": -195}},
+    "personal": {"backgroundIntensity": 0.9, "track": {"top": 145, "right": -200, "rotationDegrees": -36}, "glow": {"top": 90, "right": -175}},
+    "points": {"backgroundIntensity": 0.8, "track": {"top": 155, "right": -230, "rotationDegrees": -63}, "glow": {"top": 85, "right": -220}}
+  },
+  "verticalVisibilityMask": [{"screenHeightFraction": 0.01, "alpha": 0}, {"screenHeightFraction": 0.13, "alpha": 1}, {"screenHeightFraction": 0.51, "alpha": 1}, {"screenHeightFraction": 0.73, "alpha": 0}],
+  "championSheen": {
+    "screen": "crew",
+    "referenceSize": [90, 420],
+    "referenceInitialPosition": {"left": -160, "top": -100},
+    "color": "#C1D7FF44",
+    "durationMs": 10000,
+    "initialPhaseMs": -3000,
+    "easing": "linear",
+    "rotationDegrees": -22,
+    "translationX": [0, 640],
+    "opacityKeyframes": [{"offset": 0, "opacity": 0}, {"offset": 0.1, "opacity": 0.2}, {"offset": 0.5, "opacity": 0.65}, {"offset": 0.9, "opacity": 0.2}, {"offset": 1, "opacity": 0}]
+  },
+  "pauseWhen": ["screen visible fraction below 0.05", "app backgrounded", "detail sheet open", "motion disabled by existing app preference"],
+  "reducedMotion": {"trackLightRotation": false, "glowTranslation": false, "glowOpacity": 0.7, "championSheen": false, "preserveStaticTrack": true},
+  "constraints": ["rank values and content stay stationary", "do not recreate on data refresh or filter changes", "opaque navy list surface", "no video or GIF", "no new heavy 3D engine", "verify compositor behavior and frame times on target devices"],
+  "previewOnly": ["background comparison checkbox", "Tweak intensity and row spacing sliders", "carousel", "fake device frame", "window.openai state integration"]
+}

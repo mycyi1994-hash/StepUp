@@ -1,0 +1,141 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+#stepup-rankings-refined{--lb-navy:#061b30;--lb-blue:#1450ff;--lb-white:#fff;--lb-ice:#b4c9e2;--lb-muted:#9db0c8;--lb-line:#29435f;--lb-surface:#102b46;--lb-row-height:60px}
+#stepup-rankings-refined [hidden]{display:none!important}
+#stepup-rankings-refined .lb-stage{display:flex;justify-content:center;align-items:flex-start;height:846px;padding:20px 8px}
+#stepup-rankings-refined .lb-phone{position:relative;width:360px;max-width:100%;height:806px;overflow:hidden;border-radius:28px;background:var(--lb-navy);color:var(--lb-white);font:400 14px/1.4 Pretendard,'Noto Sans KR',sans-serif;color-scheme:dark;isolation:isolate;box-shadow:0 14px 38px #0003}
+#stepup-rankings-refined .lb-phone *,#stepup-rankings-refined .lb-phone *:before,#stepup-rankings-refined .lb-phone *:after{box-sizing:border-box}
+#stepup-rankings-refined .lb-phone :where(h1,h2,h3,p){margin:0}
+#stepup-rankings-refined .lb-phone :where(button){font:inherit;color:inherit;border:0;background:none;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#stepup-rankings-refined .lb-phone button:focus-visible{outline:3px solid #8db5ff;outline-offset:3px}
+#stepup-rankings-refined .lb-status{position:absolute;top:14px;left:22px;right:22px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600}
+#stepup-rankings-refined .lb-status-icons{display:flex;align-items:center;gap:5px}
+#stepup-rankings-refined .lb-status-icons svg{width:14px;height:14px;stroke-width:1.8}
+#stepup-rankings-refined .lb-body{padding:52px 20px 108px}
+#stepup-rankings-refined .lb-appbar{display:flex;justify-content:space-between;align-items:center;height:30px;margin-bottom:17px}
+#stepup-rankings-refined .lb-logo{display:block;width:92px;height:18px;object-fit:contain}
+#stepup-rankings-refined .lb-info{width:44px;height:44px;display:flex;align-items:center;justify-content:flex-end;color:var(--lb-ice)!important}
+#stepup-rankings-refined .lb-info svg{width:20px;height:20px}
+#stepup-rankings-refined .lb-heading h2{font-size:30px;font-weight:750;line-height:1.18;letter-spacing:-1.1px}
+#stepup-rankings-refined .lb-heading p{font-size:12px;color:var(--lb-muted);margin-top:7px}
+#stepup-rankings-refined .lb-tabs{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:3px;padding:4px;background:#0e2944;border-radius:13px;margin-top:18px;height:45px}
+#stepup-rankings-refined .lb-tabs button{border-radius:9px;font-size:13px;font-weight:600;color:var(--lb-muted);min-height:37px}
+#stepup-rankings-refined .lb-tabs button[aria-pressed="true"]{background:var(--lb-blue);color:var(--lb-white)}
+#stepup-rankings-refined .lb-period{display:flex;align-items:center;justify-content:space-between;margin-top:16px;height:23px;font-size:12px;color:var(--lb-muted);gap:8px}
+#stepup-rankings-refined .lb-period strong{font-weight:600;color:var(--lb-ice)}
+#stepup-rankings-refined .lb-period span{white-space:nowrap}
+#stepup-rankings-refined .lb-podium{display:grid;grid-template-columns:1fr 1.13fr 1fr;align-items:end;gap:10px;height:180px;margin:17px 0 0}
+#stepup-rankings-refined .lb-podium-person{text-align:center;min-width:0}
+#stepup-rankings-refined .lb-avatar{display:flex;align-items:center;justify-content:center;flex:none;width:36px;height:36px;border-radius:50%;background:#23435f;color:#e4efff;font-size:14px;font-weight:700;letter-spacing:-.5px}
+#stepup-rankings-refined .lb-avatar.crew{border-radius:11px;font-style:italic;font-weight:850;background:#174776}
+#stepup-rankings-refined .lb-podium .lb-avatar{width:44px;height:44px;margin:0 auto 8px;font-size:18px}
+#stepup-rankings-refined .lb-podium .lb-first .lb-avatar{width:56px;height:56px;background:var(--lb-blue);font-size:23px}
+#stepup-rankings-refined .lb-podium-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stepup-rankings-refined .lb-podium-score{font:650 19px/1.15 Bahnschrift,Pretendard,sans-serif;margin-top:5px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+#stepup-rankings-refined .lb-podium-score small{font:400 11px/1 Pretendard,sans-serif;color:var(--lb-muted);margin-left:2px}
+#stepup-rankings-refined .lb-stand{height:37px;display:flex;align-items:center;justify-content:center;margin-top:10px;background:#12314c;border-radius:11px 11px 0 0;font:700 italic 24px/1 Bahnschrift,Pretendard,sans-serif;color:#bdd5f2}
+#stepup-rankings-refined .lb-first .lb-stand{height:56px;background:var(--lb-blue);color:#fff;font-size:31px}
+#stepup-rankings-refined .lb-third .lb-stand{height:29px}
+#stepup-rankings-refined .lb-list-head{display:flex;align-items:center;justify-content:space-between;margin-top:21px;margin-bottom:5px;font-size:11px;color:var(--lb-muted);min-height:18px}
+#stepup-rankings-refined .lb-list-head b{font-size:13px;font-weight:600;color:var(--lb-white)}
+#stepup-rankings-refined .lb-row{display:flex;align-items:center;gap:10px;min-height:var(--lb-row-height);border-bottom:1px solid #29435f8c}
+#stepup-rankings-refined .lb-rank{width:22px;flex:none;text-align:center;font:600 18px/1 Bahnschrift,Pretendard,sans-serif;color:var(--lb-ice);font-variant-numeric:tabular-nums}
+#stepup-rankings-refined .lb-person{min-width:0;flex:1}
+#stepup-rankings-refined .lb-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stepup-rankings-refined .lb-sub{font-size:11px;color:var(--lb-muted);margin-top:3px;white-space:nowrap}
+#stepup-rankings-refined .lb-value{text-align:right;font:600 20px/1.1 Bahnschrift,Pretendard,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.4px;white-space:nowrap}
+#stepup-rankings-refined .lb-value small{display:block;font:400 11px/1.2 Pretendard,sans-serif;color:var(--lb-muted);margin-top:4px;letter-spacing:0}
+#stepup-rankings-refined .lb-move{display:inline-flex;align-items:center;gap:1px;color:#78a7ff;font-size:11px;font-weight:600}
+#stepup-rankings-refined .lb-move svg{width:11px;height:11px;stroke-width:2.3}
+#stepup-rankings-refined .lb-move.down{color:var(--lb-muted)}
+#stepup-rankings-refined .lb-footer{position:absolute;bottom:28px;left:20px;right:20px}
+#stepup-rankings-refined .lb-mybar{display:flex;align-items:center;gap:10px;padding:14px 13px;border-radius:16px;background:#173b63;min-height:73px;text-align:left;width:100%}
+#stepup-rankings-refined .lb-mybar .lb-rank{width:30px;color:#fff;font-size:22px}
+#stepup-rankings-refined .lb-mybar .lb-name{font-size:13px}
+#stepup-rankings-refined .lb-mybar .lb-value{font-size:23px}
+#stepup-rankings-refined .lb-mybar .lb-value small{font-size:11px}
+#stepup-rankings-refined .lb-mybar>.lb-chevron{width:16px;height:16px;color:var(--lb-ice)}
+#stepup-rankings-refined .lb-indicator{position:absolute;bottom:9px;left:calc(50% - 45px);width:90px;height:4px;border-radius:4px;background:#fff;opacity:.6;z-index:30;pointer-events:none}
+#stepup-rankings-refined .lb-team-hero{margin-top:18px;background:var(--lb-blue);border-radius:22px;padding:19px 18px 17px;position:relative;overflow:hidden}
+#stepup-rankings-refined .lb-team-line{display:flex;align-items:center;gap:12px}
+#stepup-rankings-refined .lb-team-mark{width:50px;height:55px;display:flex;align-items:center;justify-content:center;flex:none;border-radius:13px;background:#ffffff21;font-size:32px;font-weight:850;font-style:italic}
+#stepup-rankings-refined .lb-team-label{font-size:11px;color:#e0e9ff}
+#stepup-rankings-refined .lb-team-name{font-size:21px;font-weight:700;letter-spacing:-.7px;margin-top:3px}
+#stepup-rankings-refined .lb-team-rank{margin-left:auto;align-self:flex-start;font:700 36px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-1.5px}
+#stepup-rankings-refined .lb-team-rank small{font:500 11px/1 Pretendard,sans-serif;letter-spacing:0;margin-left:2px}
+#stepup-rankings-refined .lb-team-bottom{display:flex;align-items:flex-end;justify-content:space-between;margin-top:24px;gap:10px}
+#stepup-rankings-refined .lb-team-bottom strong{font:650 33px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+#stepup-rankings-refined .lb-team-bottom strong small{font:500 13px/1 Pretendard,sans-serif;margin-left:4px}
+#stepup-rankings-refined .lb-team-bottom p{color:#e0e9ff;font-size:11px;margin-top:6px}
+#stepup-rankings-refined .lb-people{display:flex;align-items:center;justify-content:flex-end;padding-right:5px;margin-bottom:6px}
+#stepup-rankings-refined .lb-people span{display:flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:#1b3f8a;border:2px solid var(--lb-blue);font-size:9px;font-weight:600;margin-right:-5px}
+#stepup-rankings-refined .lb-team-note{text-align:right;font-size:11px;color:#e0e9ff}
+#stepup-rankings-refined .lb-team-list .lb-row{gap:10px}
+#stepup-rankings-refined .lb-team-list .lb-avatar{width:42px;height:42px;border-radius:12px;font-size:19px}
+#stepup-rankings-refined .lb-team-list .lb-value{font-size:22px}
+#stepup-rankings-refined .lb-wide-action{width:100%;min-height:52px;border:1px solid #3e6184!important;border-radius:14px;background:#102e4c!important;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px!important;font-weight:600!important}
+#stepup-rankings-refined .lb-wide-action svg{width:17px;height:17px}
+#stepup-rankings-refined .lb-focus-hero{margin-top:17px;position:relative;display:flex;align-items:center;justify-content:space-between;min-height:132px;padding:4px 0 19px;border-bottom:1px solid var(--lb-line)}
+#stepup-rankings-refined .lb-focus-label{font-size:12px;color:var(--lb-muted)}
+#stepup-rankings-refined .lb-big-rank{font:700 italic 72px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-3px;margin-top:7px}
+#stepup-rankings-refined .lb-big-rank small{font:600 16px/1 Pretendard,sans-serif;letter-spacing:0;margin-left:5px}
+#stepup-rankings-refined .lb-focus-next{text-align:right;max-width:136px;padding-top:16px}
+#stepup-rankings-refined .lb-focus-next strong{font:650 34px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-1px;color:#8bb3ff}
+#stepup-rankings-refined .lb-focus-next strong small{font:500 12px/1 Pretendard,sans-serif;letter-spacing:0;margin-left:3px}
+#stepup-rankings-refined .lb-focus-next p{font-size:12px;color:var(--lb-muted);margin-top:7px}
+#stepup-rankings-refined .lb-local-toggle{display:flex;align-items:center;gap:17px;margin:15px 0 3px;height:38px}
+#stepup-rankings-refined .lb-local-toggle button{min-height:38px;font-size:13px;font-weight:600;color:var(--lb-muted)}
+#stepup-rankings-refined .lb-local-toggle button[aria-pressed="true"]{color:#fff;border-bottom:2px solid #6599ff}
+#stepup-rankings-refined .lb-ladder{position:relative}
+#stepup-rankings-refined .lb-ladder .lb-row{position:relative;margin-left:-8px;margin-right:-8px;padding:0 8px;border-bottom:0}
+#stepup-rankings-refined .lb-ladder .lb-rank{width:34px;font-size:16px}
+#stepup-rankings-refined .lb-ladder .lb-avatar{width:30px;height:30px;font-size:12px}
+#stepup-rankings-refined .lb-ladder .lb-name{font-size:13px}
+#stepup-rankings-refined .lb-ladder .lb-value{font-size:19px}
+#stepup-rankings-refined .lb-ladder .lb-value small{display:inline;margin-left:4px;font-size:11px}
+#stepup-rankings-refined .lb-row.is-me{background:var(--lb-blue);border-radius:12px;color:#fff}
+#stepup-rankings-refined .lb-row.is-me .lb-rank,#stepup-rankings-refined .lb-row.is-me .lb-sub,#stepup-rankings-refined .lb-row.is-me .lb-value small{color:#e1ebff}
+#stepup-rankings-refined .lb-row.is-me .lb-avatar{background:#ffffff29}
+#stepup-rankings-refined .lb-focus-footer{padding-top:14px;border-top:1px solid var(--lb-line);display:flex;align-items:center;gap:10px}
+#stepup-rankings-refined .lb-focus-footer .lb-avatar{background:#1d467a}
+#stepup-rankings-refined .lb-focus-footer .lb-value{font-size:27px}
+#stepup-rankings-refined .lb-focus-footer .lb-sub{font-size:12px}
+#stepup-rankings-refined .lb-week-heading{display:flex;align-items:flex-start;justify-content:space-between;margin-top:2px}
+#stepup-rankings-refined .lb-week-heading h2{font-size:32px;line-height:1.15;font-weight:750;letter-spacing:-1.2px}
+#stepup-rankings-refined .lb-week-stamp{padding:8px 10px;border-radius:10px;background:#143b67;color:#bdd6ff;font-size:12px;font-weight:600;line-height:1.5;text-align:center}
+#stepup-rankings-refined .lb-week-switch{display:flex;align-items:center;gap:7px;margin-top:17px;margin-bottom:11px;font-size:12px;color:var(--lb-muted)}
+#stepup-rankings-refined .lb-week-switch button{min-height:36px;padding:0 12px;border-radius:9px;background:#112c47;font-size:12px;font-weight:600}
+#stepup-rankings-refined .lb-week-switch button[aria-pressed="true"]{background:var(--lb-blue);color:#fff}
+#stepup-rankings-refined .lb-week-switch span{margin-left:auto;white-space:nowrap;font-size:11px}
+#stepup-rankings-refined .lb-summary-section{padding-top:10px;padding-bottom:9px;border-bottom:1px solid var(--lb-line)}
+#stepup-rankings-refined .lb-summary-title{display:flex;align-items:center;justify-content:space-between}
+#stepup-rankings-refined .lb-summary-title h3{font-size:15px;letter-spacing:-.3px;font-weight:650;display:flex;gap:8px;align-items:center}
+#stepup-rankings-refined .lb-summary-title h3 svg{width:16px;height:16px;color:#7eabff}
+#stepup-rankings-refined .lb-summary-title button{display:flex;align-items:center;gap:1px;min-height:32px;font-size:11px;color:var(--lb-muted)}
+#stepup-rankings-refined .lb-summary-title button svg{width:13px;height:13px}
+#stepup-rankings-refined .lb-summary-section .lb-row{min-height:var(--lb-row-height);border-bottom:0;gap:9px}
+#stepup-rankings-refined .lb-summary-section .lb-avatar{width:25px;height:25px;font-size:10px;border-radius:8px}
+#stepup-rankings-refined .lb-summary-section .lb-rank{width:18px;font-size:14px}
+#stepup-rankings-refined .lb-summary-section .lb-name{font-size:12px}
+#stepup-rankings-refined .lb-summary-section .lb-value{font-size:17px}
+#stepup-rankings-refined .lb-summary-section .lb-value small{display:inline;margin-left:4px;font-size:11px}
+#stepup-rankings-refined .lb-summary-me{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;padding:5px 9px;background:#123859;border-radius:8px;margin-top:2px;color:#d5e6ff}
+#stepup-rankings-refined .lb-summary-me b{font-weight:600;color:#fff}
+#stepup-rankings-refined .lb-week-footer{display:flex;align-items:center;gap:9px;color:var(--lb-muted);font-size:12px;padding:12px 0 0}
+#stepup-rankings-refined .lb-week-footer svg{width:17px;height:17px;color:#8bb3ff;flex:none}
+#stepup-rankings-refined .lb-overlay{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;background:#020b16ba}
+#stepup-rankings-refined .lb-sheet{position:relative;max-height:750px;width:100%;border-radius:25px 25px 0 0;background:#102b46;padding:26px 20px 35px;box-shadow:0 -14px 50px #0003}
+#stepup-rankings-refined .lb-sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+#stepup-rankings-refined .lb-sheet h3{font-size:22px;letter-spacing:-.6px;font-weight:700}
+#stepup-rankings-refined .lb-close{width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:-10px -8px -10px 0;color:var(--lb-ice)!important}
+#stepup-rankings-refined .lb-close svg{width:20px;height:20px}
+#stepup-rankings-refined .lb-rule{padding:15px 0;border-bottom:1px solid #34516b}
+#stepup-rankings-refined .lb-rule:last-child{border-bottom:0}
+#stepup-rankings-refined .lb-rule h4{margin:0 0 6px;font-size:15px;font-weight:650;color:#d4e5ff}
+#stepup-rankings-refined .lb-rule p{font-size:13px;line-height:1.65;color:var(--lb-ice)}
+#stepup-rankings-refined .lb-sheet-note{font-size:12px;color:var(--lb-muted);margin:4px 0 18px}
+#stepup-rankings-refined .lb-sheet .lb-row{min-height:61px}
+#stepup-rankings-refined .lb-sheet .lb-row.is-me{padding-left:9px;padding-right:9px}
+#stepup-rankings-refined .lb-sample{text-align:center;margin:8px 0 0}
+@media(max-width:380px){#stepup-rankings-refined .lb-stage{padding-left:0;padding-right:0}#stepup-rankings-refined .lb-phone{border-radius:23px}#stepup-rankings-refined .lb-body{padding-left:17px;padding-right:17px}#stepup-rankings-refined .lb-footer{left:17px;right:17px}#stepup-rankings-refined .lb-heading h2{font-size:28px}#stepup-rankings-refined .lb-podium{gap:6px}#stepup-rankings-refined .lb-podium-name{font-size:11px}#stepup-rankings-refined .lb-team-hero{padding-left:14px;padding-right:14px}#stepup-rankings-refined .lb-team-name{font-size:19px}#stepup-rankings-refined .lb-team-rank{font-size:32px}#stepup-rankings-refined .lb-team-mark{width:44px}#stepup-rankings-refined .lb-team-line{gap:9px}#stepup-rankings-refined .lb-team-bottom strong{font-size:30px}#stepup-rankings-refined .lb-week-heading h2{font-size:30px}}
+</style>

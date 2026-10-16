@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey coaching; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey coaching leaderboard; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -283,6 +283,12 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/coaching-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/coaching-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/coaching/. screen-gallery/coaching/ || status=1
+  # 리더보드(2026-10-17) — 크루 · 개인 · 주간 포인트 세 판 · 시트 · 상태(개발용 고정 값) + 배경이 흐르는 프레임
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  run_instrumentation leaderboard "com.stepup.android.LeaderboardDesignTest"
+  mkdir -p screen-gallery/leaderboard-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/leaderboard-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/leaderboard/. screen-gallery/leaderboard/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

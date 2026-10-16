@@ -192,7 +192,7 @@ class ExperienceUiTest {
             14 -> SupportScreen()
             15 -> ConnectedAccountsScreen()
             16 -> LanguageScreen()
-            17 -> RankingScreen()
+            17 -> com.stepup.android.ui.screens.leaderboard.LeaderboardScreen(onBack = {})
             18 -> MainScaffold(initialRoute = Routes.CREW_CREATE)
             19 -> PostComposeScreen()
             20 -> SneakerDetailScreen(sneakerId)

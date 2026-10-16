@@ -11,6 +11,16 @@
 - 로고는 `logo_wordmark_white.png`(전달본 원본)다. 숫자는 앱 숫자 서체(Pretendard)를 이탤릭으로 쓴다.
 - 이전 자유 러닝 3-2-1(지도 · 바로 시작 | 취소)은 이것으로 바꿨다. 챌린지 · 코스 · 다이어트의 3-2-1 은 그대로다.
 
+## 최신 — 리더보드 3판 (2026-10-17 전달본)
+
+[docs/redesign/leaderboard-2026-10-17/README.md](docs/redesign/leaderboard-2026-10-17/README.md) — 데이터 연결 · 집계 규칙 · 시안과 다른 점 · 상태 · 남은 결정.
+
+- 입구는 러닝 시작 메뉴(U01)의 "이번 주 순위" 링크. 길은 예전 순위표 길 `Routes.RANKING` 그대로(하단 탭 없이). 판은 크루 · 개인 · 포인트 글자 탭.
+- 크루 · 개인은 서버 0061 `weekly_crew_board` · `weekly_runner_board`(읽기만) — 한국 시간 월요일 주, 무효 제외, 지난주 순위는 같은 규칙으로 다시 센다.
+  - 크루는 **크루 전체 거리**(기존 규칙). 시안의 "1인당 거리"는 사용자 결정 전이다.
+- 주간 포인트는 서버 순위가 없어 '준비 중'이다(P 정의는 사용자 결정 전). 개발용 고정 값은 기기 검사에서만(`LeaderboardSource` 경계).
+- 배경은 `LeaderboardBackdrop`(Canvas · 시계 하나) — 시트 · 뒤에 있을 때 · 모션 줄이기면 멈춘다.
+
 ## 최신 — 크루 달리기 정리 (2026-10-16 크루 전달본)
 
 [docs/redesign/crew-run-2026-10-16/README.md](docs/redesign/crew-run-2026-10-16/README.md) — 화면별 변경 · CR02~CR21 검수표 · 시안과 다른 점 · 바뀐 사용자 동작.

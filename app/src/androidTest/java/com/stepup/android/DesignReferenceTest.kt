@@ -287,11 +287,13 @@ class DesignReferenceTest {
                     capture("$name-open")
                 }
                 if (s == Scene.RANKING) {
-                    compose.onNodeWithText(korean(R.string.rank_period_week)).performClick()
-                    capture("$name-week")
-                    compose.onNodeWithTag("ranking-board-tabs").performScrollToNode(hasText(korean(R.string.rank_board_crew)))
-                    compose.onNodeWithText(korean(R.string.rank_board_crew)).performClick()
-                    capture("$name-crew")
+                    // 리더보드(2026-10-17) — 크루 판에서 시작해 개인 · 포인트 판으로(CI 기기는 로그인 전이라 각 판은 로그인 안내 · 준비 중)
+                    compose.onNodeWithTag("lb-board-1").performClick()
+                    compose.waitForIdle()
+                    capture("$name-personal")
+                    compose.onNodeWithTag("lb-board-2").performClick()
+                    compose.waitForIdle()
+                    capture("$name-points")
                 }
             }
         }
@@ -405,7 +407,9 @@ class DesignReferenceTest {
             Scene.INBOX -> "bottom-nav"
             // 코스(K09~K18)는 러닝 화면처럼 하단 탭이 없다
             Scene.COURSES -> "courses-title"
-            Scene.EXPLORE_MAP, Scene.RANKING -> "bottom-nav"
+            Scene.EXPLORE_MAP -> "bottom-nav"
+            // 리더보드는 하단 탭 없는 남색 전면 화면(2026-10-17)
+            Scene.RANKING -> "lb-board-0"
             Scene.RUN_MENU -> "run-menu-free"
             Scene.RUN_GOALS -> "run-goal-10min"
             Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM -> "run-hero-value"

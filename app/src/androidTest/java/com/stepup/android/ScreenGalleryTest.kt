@@ -316,10 +316,9 @@ class ScreenGalleryTest {
             Triple(7, "courses-create", listOf(R.string.courses_make)),
             Triple(7, "courses-board", listOf(R.string.courses_board)),
             Triple(9, "analytics-quarter", listOf(R.string.analytics_tab_quarter)),
-            Triple(17, "ranking-time", listOf(R.string.rank_board_time)),
-            Triple(17, "ranking-speed", listOf(R.string.rank_board_speed)),
-            Triple(17, "ranking-sup", listOf(R.string.rank_board_sup)),
-            Triple(17, "ranking-crews", listOf(R.string.rank_board_crew)),
+            // 리더보드(2026-10-17) — 크루 · 개인 · 포인트 판(이 화면의 첫 판은 크루)
+            Triple(17, "ranking-personal", listOf(R.string.lb_board_personal)),
+            Triple(17, "ranking-points", listOf(R.string.lb_board_points)),
             Triple(19, "compose-free", listOf(R.string.post_cat_free)),
             Triple(19, "compose-tip", listOf(R.string.post_cat_tip)),
             Triple(27, "news-health", listOf(R.string.news_tab_health)),
