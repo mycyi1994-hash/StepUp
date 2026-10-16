@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -269,6 +270,27 @@ fun Wordmark(role: BrandLogoRole = BrandLogoRole.Header, modifier: Modifier = Mo
 @Composable
 fun ResultCardBrand(modifier: Modifier = Modifier) {
     Wordmark(BrandLogoRole.Card, modifier)
+}
+
+/**
+ * 자유러닝 시작의 StepUP!(2026-10-17 전달본) — 전부 흰색인 워드마크 원본(900×156). 네이비 시작 화면에서만 쓴다.
+ * 화면은 너비만 정한다(비율은 그림 그대로). 화면이 로고 그림을 직접 고르지 않도록 공통 부품으로 둔다.
+ */
+@Composable
+fun RunStartWordmark(width: Dp, modifier: Modifier = Modifier) {
+    Image(
+        painter = cachedPainterResource(R.drawable.logo_wordmark_white),
+        contentDescription = null,
+        modifier = modifier.width(width).aspectRatio(RunStartWordmarkRatio),
+        contentScale = ContentScale.Fit,
+    )
+}
+
+private const val RunStartWordmarkRatio = 900f / 156f
+
+/** [RunStartWordmark] 를 뒤에서 미리 푼다 — 카운트다운이 시작되기 전에(신발 점검 동안) 부른다. 화면 스레드를 막지 않는다 */
+fun prewarmRunStartWordmark(context: android.content.Context) {
+    RasterCache.prewarm(context.resources, R.drawable.logo_wordmark_white)
 }
 
 /** 섹션 헤더 (제목 + 우측 액션) */
