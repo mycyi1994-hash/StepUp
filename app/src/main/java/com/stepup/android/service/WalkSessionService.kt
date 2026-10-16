@@ -18,8 +18,15 @@ import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.stepup.android.MainActivity
 import com.stepup.android.R
+import com.stepup.android.core.LocationEngine
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.domain.Faction
@@ -28,6 +35,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunIntegrity
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.RunVerdict
+import com.stepup.android.domain.TrackFixRule
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.simplify
@@ -255,89 +263,115 @@ class WalkSessionService : Service() {
     @Volatile private var foregroundHasLocation = false
 
     /**
-     * GPS 리스너 — 8m 이상 움직였을 때만 경로에 점을 추가해
-     * 제자리 노이즈로 트랙이 지저분해지는 것을 막는다.
+     * 위치 하나를 러닝에 넣는다 — 구글 위치 서비스(구글 지도와 같은 엔진: GPS · 와이파이 · 기지국) · 위성 GPS · 와이파이 · 기지국
+     * 어디서 왔든 여기로 온다(메인 루퍼). 8m 이상 움직였을 때만 경로에 점을 더해 제자리 노이즈로 트랙이 지저분해지는 것을 막는다.
+     *
+     * 위성 GPS(LocationManager 의 GPS)는 예전 그대로 받는다. 그 밖의 위치는 오차가 클 수 있어 [TrackFixRule] 로 거른다 —
+     * 오차가 50m 보다 크면 지도의 지금 자리만 옮기고, 기준점에서 오차(둘 중 큰 쪽)의 두 배보다 멀리 움직였을 때만 경로 · 거리에
+     * 넣는다. 실내에서 제자리에 있어도 흔들리는 와이파이 위치가 거리로 쌓이지 않게(2026-10-16 사용자 결정 "그래 다 되도록 만들어").
      */
-    private val locationListener = object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            if (isMockLocation(location)) {
-                // 가짜 GPS 앱이 넣은 좌표 — 경로에도 거리에도 넣지 않고, 이번 러닝을 표시만 한다
+    private fun onFix(location: Location) {
+        if (isMockLocation(location)) {
+            // 가짜 GPS 앱이 넣은 좌표 — 경로에도 거리에도 넣지 않고, 이번 러닝을 표시만 한다
+            _state.update { current ->
+                if (!current.isActive || current.isPaused) current else current.copy(mockLocation = true)
+            }
+            return
+        }
+        val p = GeoPoint(location.latitude, location.longitude)
+        val now = System.currentTimeMillis()
+        lastFixElapsed = SystemClock.elapsedRealtime()
+        stepsAtLastFix = _state.value.steps
+        val satellite = location.provider == LocationManager.GPS_PROVIDER
+        // 위성 GPS 가 잡혔으면 와이파이 · 기지국 위치는 그만 받는다 — 둘을 섞으면 점이 튄다
+        if (satellite && networkRegistered) {
+            locationManager?.removeUpdates(networkListener)
+            networkRegistered = false
+        }
+        // 위치 신호가 끊겼다 돌아온 첫 점(시안 L04)은 새 구간의 시작이다 — 끊기기 전 마지막 점과 이어
+        // 그 사이를 직선 거리로 세지 않는다(지도에서도 그 사이는 잇지 않는다, RunTrack.segmentBreaks)
+        if (_state.value.gpsLost) {
+            speedAnchor = null
+            speedAnchorAt = 0L
+            speedAnchorAccuracy = null
+        }
+        val accuracy = if (location.hasAccuracy()) location.accuracy else null
+        if (!satellite) {
+            val fix = TrackFixRule.decide(accuracy, speedAnchor?.let { haversineMeters(it, p) }, speedAnchorAccuracy)
+            if (fix != TrackFixRule.Fix.COMMIT) {
+                // 지도의 지금 자리만 — 경로 · 거리 · 속도 판정에는 넣지 않는다(기준점은 그대로)
                 _state.update { current ->
-                    if (!current.isActive || current.isPaused) current else current.copy(mockLocation = true)
+                    if (!current.isActive || current.isPaused) current
+                    else current.copy(gpsFix = true, gpsLost = false, here = p, hereAt = now)
                 }
                 return
             }
-            val p = GeoPoint(location.latitude, location.longitude)
-            val now = System.currentTimeMillis()
-            lastFixElapsed = SystemClock.elapsedRealtime()
-            stepsAtLastFix = _state.value.steps
-            // GPS 가 잡혔으면 기지국 위치(대략)는 그만 받는다 — 둘을 섞으면 점이 튄다
-            if (location.provider == LocationManager.GPS_PROVIDER && roughRegistered) {
-                locationManager?.removeUpdates(roughListener)
-                roughRegistered = false
-            }
-            // 속도 판정 기준점은 트랙과 따로 든다. 튄 구간의 점은 트랙에 넣지
-            // 않지만 기준점은 옮겨야, 다음 구간이 연쇄로 튀지 않는다.
-            // 위치 신호가 끊겼다 돌아온 첫 점(시안 L04)은 새 구간의 시작이다 — 끊기기 전 마지막 점과 이어
-            // 그 사이를 직선 거리로 세지 않는다(지도에서도 그 사이는 잇지 않는다, RunTrack.segmentBreaks)
-            val resumedAfterLoss = _state.value.gpsLost
-            val prev = if (resumedAfterLoss) null else speedAnchor
-            val prevAt = if (resumedAfterLoss) 0L else speedAnchorAt
-            speedAnchor = p
-            speedAnchorAt = now
+        }
+        // 속도 판정 기준점은 트랙과 따로 든다. 튄 구간의 점은 트랙에 넣지
+        // 않지만 기준점은 옮겨야, 다음 구간이 연쇄로 튀지 않는다.
+        val prev = speedAnchor
+        val prevAt = speedAnchorAt
+        speedAnchor = p
+        speedAnchorAt = now
+        speedAnchorAccuracy = accuracy
 
-            val meters = if (prev == null) 0.0 else haversineMeters(prev, p)
-            // 어테스터(economy.js)와 같이 반올림한다. 버리면 2.5초 간격이 2초가 되어
-            // 서버보다 25% 엄격하게 튄 구간으로 잡힌다.
-            val seconds = if (prevAt == 0L) 0L else (now - prevAt + 500) / 1000
-            val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
+        val meters = if (prev == null) 0.0 else haversineMeters(prev, p)
+        // 어테스터(economy.js)와 같이 반올림한다. 버리면 2.5초 간격이 2초가 되어
+        // 서버보다 25% 엄격하게 튄 구간으로 잡힌다.
+        val seconds = if (prevAt == 0L) 0L else (now - prevAt + 500) / 1000
+        val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
 
-            // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
-            _state.update { current ->
-                if (!current.isActive || current.isPaused) return@update current
-                if (!plausible) {
-                    // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다
-                    return@update current.copy(
-                        gpsFix = true,
-                        gpsLost = false,
-                        here = p,
-                        hereAt = now,
-                        flaggedSegments = current.flaggedSegments + 1,
-                        lastFlaggedAt = now,
-                    )
-                }
-                val track = current.track
-                val moved = track.isEmpty() ||
-                    haversineMeters(track.last().toGeoPoint(), p) >= 8.0
-                val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS &&
-                    seconds >= RunIntegrity.MIN_SEGMENT_SEC
-                // 폰 시계를 뒤로 돌려도 점의 시각이 거꾸로 가지 않게 — 저장본 검사가 시작 전 · 거꾸로 간
-                // 시각을 거절해 그 뒤 저장이 모두 막힌다
-                val at = maxOf(now, current.startedAt, track.lastOrNull()?.at ?: 0L)
-                current.copy(
-                    track = if (moved) track + TrackPoint(p.lat, p.lng, at) else track,
+        // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
+        _state.update { current ->
+            if (!current.isActive || current.isPaused) return@update current
+            if (!plausible) {
+                // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다
+                return@update current.copy(
                     gpsFix = true,
                     gpsLost = false,
                     here = p,
                     hereAt = now,
-                    gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
-                    validSegments = if (counted) current.validSegments + 1 else current.validSegments,
-                    topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
+                    flaggedSegments = current.flaggedSegments + 1,
+                    lastFlaggedAt = now,
                 )
             }
+            val track = current.track
+            val moved = track.isEmpty() ||
+                haversineMeters(track.last().toGeoPoint(), p) >= TrackFixRule.MIN_STEP_M
+            val counted = prev != null && meters >= RunIntegrity.MIN_SEGMENT_METERS &&
+                seconds >= RunIntegrity.MIN_SEGMENT_SEC
+            // 폰 시계를 뒤로 돌려도 점의 시각이 거꾸로 가지 않게 — 저장본 검사가 시작 전 · 거꾸로 간
+            // 시각을 거절해 그 뒤 저장이 모두 막힌다
+            val at = maxOf(now, current.startedAt, track.lastOrNull()?.at ?: 0L)
+            current.copy(
+                track = if (moved) track + TrackPoint(p.lat, p.lng, at) else track,
+                gpsFix = true,
+                gpsLost = false,
+                here = p,
+                hereAt = now,
+                gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
+                validSegments = if (counted) current.validSegments + 1 else current.validSegments,
+                topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
+            )
         }
+    }
+
+    /** 위성 GPS(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서만 쓴다 */
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) = onFix(location)
 
         // API 29 이하에서는 아래 셋이 추상 메서드라 반드시 구현해야 한다
         @Deprecated("Deprecated in Java")
         override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
         override fun onProviderEnabled(provider: String) {
             refreshLocationOn()
-            // 러닝 중에 GPS 를 켰다 — 대신 쓰던 기지국 위치는 그만 받는다(둘을 섞으면 점이 튄다)
-            if (provider == LocationManager.GPS_PROVIDER && locationManager != null) {
+            // 러닝 중에 GPS 를 켰다 — 다시 등록해 GPS 를 먼저 받는다(대신 쓰던 와이파이 · 기지국 위치는 그만 받는다)
+            if (provider == LocationManager.GPS_PROVIDER && locationManager != null && fusedClient == null) {
                 stopLocation()
-                // 기지국 위치의 마지막 점과 첫 GPS 점을 한 구간으로 재지 않는다(튄 구간 · 거저 생긴 거리)
+                // 와이파이 · 기지국 위치의 마지막 점과 첫 GPS 점을 한 구간으로 재지 않는다(튄 구간 · 거저 생긴 거리)
                 speedAnchor = null
                 speedAnchorAt = 0L
+                speedAnchorAccuracy = null
                 startLocation()
             }
         }
@@ -345,28 +379,25 @@ class WalkSessionService : Service() {
     }
 
     /**
-     * GPS 가 잡히기 전의 대략적인 위치(기지국 · 와이파이) — 지도에 "여기쯤"만 보인다.
-     * 경로 · 거리 · 속도 판정에는 넣지 않는다. 첫 GPS 점이 오면 등록을 푼다.
+     * 와이파이 · 기지국 위치(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서, GPS 가 잡히기 전(실내 · 빌딩 사이)이거나
+     * GPS 가 없을 때. [onFix] 가 오차를 보고 거른다. 첫 위성 GPS 점이 오면 등록을 푼다.
      */
-    private var roughRegistered = false
-    private val roughListener = object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            if (isMockLocation(location)) {
-                _state.update { current ->
-                    if (!current.isActive || current.isPaused) current else current.copy(mockLocation = true)
-                }
-                return
-            }
-            _state.update { current ->
-                if (!current.isActive || current.gpsFix) current
-                else current.copy(here = GeoPoint(location.latitude, location.longitude))
-            }
-        }
+    private var networkRegistered = false
+    private val networkListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) = onFix(location)
 
         @Deprecated("Deprecated in Java")
         override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
         override fun onProviderEnabled(provider: String) = Unit
         override fun onProviderDisabled(provider: String) = Unit
+    }
+
+    /** 구글 위치 서비스(구글 지도와 같은 엔진). 쓰는 동안만 값이 있다 — Play 서비스가 없으면 null 이고 LocationManager 로 받는다 */
+    private var fusedClient: FusedLocationProviderClient? = null
+    private val fusedCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.locations.forEach(::onFix)
+        }
     }
 
     private fun refreshLocationOn() {
@@ -392,14 +423,51 @@ class WalkSessionService : Service() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
 
+    private fun hasFineLocation(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
     private fun startLocation() {
         if (!hasLocationPermission()) return
         val lm = getSystemService(LOCATION_SERVICE) as LocationManager
         locationManager = lm
+        val fine = hasFineLocation()
+        // 구글 지도와 같은 위치 엔진을 먼저 쓴다 — 실내에서는 와이파이로, 밖에서는 GPS 로 잡힌다. 없으면 휴대폰 위치로
+        if (!startFused()) startLocationManagerFeed(lm, fine)
+        val seed = if (_state.value.here == null) freshLastKnown(lm) else null
+        val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
+        _state.update { current ->
+            if (!current.isActive) current
+            else current.copy(precise = fine, locationOn = on, here = current.here ?: seed)
+        }
+    }
+
+    /** 구글 위치 서비스로 받기 시작한다. 쓸 수 없으면 false — 휴대폰 위치(LocationManager)로 받는다 */
+    private fun startFused(): Boolean {
+        if (!LocationEngine.fusedAvailable(this)) return false
+        val client = LocationServices.getFusedLocationProviderClient(this)
+        // 2.5초마다(예전 GPS 와 같다), 거리 거름 없이 — 제자리에서도 위치가 와야 "신호 약함"으로 잘못 보지 않는다
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2_500L)
+            .setMinUpdateIntervalMillis(1_000L)
+            .build()
+        return try {
+            client.requestLocationUpdates(request, fusedCallback, mainLooper).addOnFailureListener {
+                // Play 서비스가 받지 않았다 — 그사이 멈추지 않았으면 휴대폰 위치로 바꿔 받는다
+                if (fusedClient === client) {
+                    fusedClient = null
+                    locationManager?.let { lm -> startLocationManagerFeed(lm, hasFineLocation()) }
+                }
+            }
+            fusedClient = client
+            true
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    /** 휴대폰 위치(LocationManager) — 위성 GPS 와, GPS 가 잡히기 전 · GPS 가 없을 때의 와이파이 · 기지국 위치 */
+    private fun startLocationManagerFeed(lm: LocationManager, fine: Boolean) {
         // 둘을 따로 등록한다 — 대략 위치 권한만 있으면(API 30 이하) GPS 등록이 거절되는데, 그 때문에
         // 기지국 위치까지 못 받으면 안 된다. 권한이 그 사이 회수됐다면 위치 없이 진행한다.
-        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
         var gps = false
         // GPS 는 꺼져 있어도 등록해 둔다 — 러닝 중에 위치를 켜면 그때부터 점이 들어온다
         // (예전엔 시작할 때 꺼져 있으면 러닝 내내 경로가 비었다)
@@ -410,34 +478,27 @@ class WalkSessionService : Service() {
         }
         val gpsOn = gps && runCatching { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false)
         val networkOn = runCatching { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false)
-        if (!gpsOn && networkOn) {
-            runCatching {
-                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4_000L, 10f, locationListener, mainLooper)
-            }
-        } else if (gpsOn && networkOn && !_state.value.gpsFix) {
-            // GPS 첫 위치는 실내 · 빌딩 사이에서 몇 분 걸리기도 한다. 그동안 기지국 위치로 "여기쯤"을 보인다.
-            roughRegistered = runCatching {
-                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3_000L, 0f, roughListener, mainLooper)
+        // GPS 첫 위치는 실내 · 빌딩 사이에서 몇 분 걸리기도 한다 — 그동안(또는 GPS 가 없으면 내내) 와이파이 · 기지국 위치로
+        if (networkOn && (!gpsOn || !_state.value.gpsFix)) {
+            networkRegistered = runCatching {
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3_000L, 0f, networkListener, mainLooper)
             }.isSuccess
-        }
-        val seed = if (_state.value.here == null) freshLastKnown(lm) else null
-        val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
-        _state.update { current ->
-            if (!current.isActive) current
-            else current.copy(precise = fine, locationOn = on, here = current.here ?: seed)
         }
     }
 
     private fun stopLocation() {
+        fusedClient?.let { client -> runCatching { client.removeLocationUpdates(fusedCallback) } }
+        fusedClient = null
         locationManager?.removeUpdates(locationListener)
-        if (roughRegistered) locationManager?.removeUpdates(roughListener)
-        roughRegistered = false
+        if (networkRegistered) locationManager?.removeUpdates(networkListener)
+        networkRegistered = false
         locationManager = null
     }
 
-    /** 속도 판정용 직전 좌표와 시각. GPS 리스너(메인 루퍼)에서만 만진다. */
+    /** 속도 판정용 직전 좌표 · 시각 · 그 위치의 오차(m). 위치 콜백(메인 루퍼)에서만 만진다. */
     private var speedAnchor: GeoPoint? = null
     private var speedAnchorAt: Long = 0L
+    private var speedAnchorAccuracy: Float? = null
 
     /** 세션 걸음 집계 기준점. 첫 실측값 방출로 초기화된다(null = 아직 미정). */
     private var lastTodaySteps: Int? = null
@@ -551,6 +612,7 @@ class WalkSessionService : Service() {
     private fun enterForeground() {
         speedAnchor = null
         speedAnchorAt = 0L
+        speedAnchorAccuracy = null
         createChannel()
         // 위치 권한이 있을 때만 location 타입을 함께 선언한다 —
         // 권한 없이 선언하면 API 34+에서 시작 자체가 거부된다.
@@ -580,6 +642,8 @@ class WalkSessionService : Service() {
     private fun catchUpLocation() {
         if (!_state.value.isActive || settling || !hasLocationPermission()) return
         if (locationManager == null) startLocation()
+        // 구글 위치 서비스는 위치 기능을 켜고 끄는 것을 알려 주지 않는다 — 여기서 다시 읽는다(꺼짐 안내 · 다시 켬)
+        refreshLocationOn()
         if (!foregroundHasLocation) {
             foregroundHasLocation = runCatching {
                 ServiceCompat.startForeground(
@@ -664,8 +728,8 @@ class WalkSessionService : Service() {
                 // 제자리 · 러닝머신에서는 6m 를 못 움직여 좌표 알림이 오지 않는다 — GPS 가 실제로 고친
                 // 마지막 위치(알림 거리와 무관)도 본다. 그것까지 오래됐을 때만 신호가 약하다고 본다
                 if (seconds % 5 == 0L) lastKnownFixElapsed = lastKnownGpsFixElapsed()
-                // 러닝 중에 위치 권한을 허용했으면 GPS 를 켠다(위의 catchUpLocation)
-                if (seconds % 5 == 0L && (locationManager == null || !foregroundHasLocation)) {
+                // 러닝 중에 위치 권한을 허용했으면 위치를 켜고, 위치 기능 켜짐을 다시 읽는다(위의 catchUpLocation)
+                if (seconds % 5 == 0L) {
                     launch(Dispatchers.Main) { catchUpLocation() }
                 }
                 val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)

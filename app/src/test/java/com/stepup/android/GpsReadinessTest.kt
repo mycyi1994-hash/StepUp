@@ -3,69 +3,66 @@ package com.stepup.android
 import com.stepup.android.domain.GpsFixRule
 import com.stepup.android.domain.GpsHint
 import com.stepup.android.domain.GpsWait
+import com.stepup.android.domain.TrackFixRule
 import com.stepup.android.domain.gpsHintOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 시작 전 GPS 대기(2026-10-16 — GPS 가 없으면 러닝을 시작하지 않는다) — 무엇을 "잡혔다"로 보고, 오래 걸리면 무엇을 먼저 알리는가 */
+/**
+ * 시작 전 위치 대기와 달리는 중 위치 거르기(2026-10-16 사용자 결정 "그래 다 되도록 만들어") — 구글 지도처럼 GPS · 와이파이 · 기지국
+ * 어느 위치든 잡히면 시작하고, 위성 GPS 가 아닌 위치의 떨림은 거리로 쌓지 않는다.
+ */
 class GpsReadinessTest {
 
-    @Test fun `a fresh real GPS fix within 50m starts the run`() {
-        assertTrue(GpsFixRule.accepts(fromGps = true, mock = false, accuracyM = 8f, ageMs = 0))
-        assertTrue(GpsFixRule.accepts(fromGps = true, mock = false, accuracyM = 50f, ageMs = 30_000))
-        // 정확도를 알려 주지 않는 기기 — 그 때문에 영영 시작하지 못하게 하지 않는다
-        assertTrue(GpsFixRule.accepts(fromGps = true, mock = false, accuracyM = null, ageMs = 1_000))
+    @Test fun `any fresh real location starts the run — gps, wifi or cell like google maps`() {
+        assertTrue(GpsFixRule.accepts(mock = false, ageMs = 0))
+        assertTrue(GpsFixRule.accepts(mock = false, ageMs = GpsFixRule.FRESH_MS))
+        // 휴대폰 시계와 위치 시각이 조금 어긋나도(음수) 받는다
+        assertTrue(GpsFixRule.accepts(mock = false, ageMs = -500))
     }
 
-    @Test fun `network fixes, mock fixes, stale fixes and loose fixes do not count`() {
-        // 기지국 · 와이파이 위치 — GPS 가 아니다
-        assertFalse(GpsFixRule.accepts(fromGps = false, mock = false, accuracyM = 20f, ageMs = 0))
+    @Test fun `mock fixes and stale fixes do not count`() {
         // 모의 위치 앱이 넣은 좌표
-        assertFalse(GpsFixRule.accepts(fromGps = true, mock = true, accuracyM = 3f, ageMs = 0))
+        assertFalse(GpsFixRule.accepts(mock = true, ageMs = 0))
         // 휴대폰이 30초보다 전에 알던 위치
-        assertFalse(GpsFixRule.accepts(fromGps = true, mock = false, accuracyM = 5f, ageMs = 30_001))
-        // 아직 50m 보다 부정확하다
-        assertFalse(GpsFixRule.accepts(fromGps = true, mock = false, accuracyM = 51f, ageMs = 0))
+        assertFalse(GpsFixRule.accepts(mock = false, ageMs = GpsFixRule.FRESH_MS + 1))
     }
 
-    @Test fun `blocking causes are told at once, waiting causes after 20 seconds`() {
-        // 막는 까닭 — 기다려도 소용없으니 바로
-        assertEquals(GpsHint.NO_GPS, gpsHintOf(GpsWait(hasGps = false)))
+    @Test fun `blocking causes are told at once, a missing location after 20 seconds`() {
         assertEquals(GpsHint.LOCATION_OFF, gpsHintOf(GpsWait(locationOn = false)))
-        assertEquals(GpsHint.GPS_OFF, gpsHintOf(GpsWait(gpsOn = false)))
         assertEquals(GpsHint.MOCK, gpsHintOf(GpsWait(mock = true)))
-        // 기다리는 중 — 20초 전에는 아무것도 알리지 않는다
-        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(elapsedSec = 19, satellitesSeen = 0, satellitesUsed = 0)))
+        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC - 1)))
+        assertEquals(GpsHint.NO_FIX, gpsHintOf(GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC)))
+        // 잡혔으면 아무것도 알리지 않는다
+        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(fixed = true, elapsedSec = 300, locationOn = true)))
     }
 
-    @Test fun `after 20 seconds the hint says why — no satellites, weak signal or a slow first fix`() {
-        val waited = GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC)
-        // 받는 위성이 하나도 없다 — 실내 · 지하
-        assertEquals(GpsHint.NO_SATELLITES, gpsHintOf(waited.copy(satellitesSeen = 0, satellitesUsed = 0)))
-        // 위치는 오는데 아직 50m 밖이다
-        assertEquals(GpsHint.WEAK, gpsHintOf(waited.copy(satellitesSeen = 6, satellitesUsed = 3, accuracyM = 120f)))
-        // 위성은 보이는데 첫 위치가 늦다 — 유심 없는 휴대폰 · 오래 안 쓴 GPS
-        assertEquals(GpsHint.SLOW, gpsHintOf(waited.copy(satellitesSeen = 7, satellitesUsed = 0)))
-        // 위성 수를 알려 주지 않는 휴대폰도 늦은 첫 위치로 안내한다
-        assertEquals(GpsHint.SLOW, gpsHintOf(waited))
+    @Test fun `first usable non-gps fix starts the track, cell-sized fixes only move the map dot`() {
+        // 첫 점 · 끊긴 뒤 새 구간 — 오차가 50m 안이면 경로를 시작한다
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 18f, anchorDistanceM = null, anchorAccuracyM = null))
+        // 기지국 위치처럼 오차가 크면 지도의 지금 자리만
+        assertEquals(TrackFixRule.Fix.MAP_ONLY, TrackFixRule.decide(accuracyM = 900f, anchorDistanceM = null, anchorAccuracyM = null))
+        assertEquals(TrackFixRule.Fix.MAP_ONLY, TrackFixRule.decide(accuracyM = 51f, anchorDistanceM = 400.0, anchorAccuracyM = 10f))
     }
 
-    @Test fun `wifi location alone explains why maps works indoors but the run waits for satellites`() {
-        val waited = GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC)
-        // 실내 — 와이파이 위치는 있는데 위성은 하나도 쓰지 못한다(구글 지도는 이걸로 위치를 보인다)
-        assertEquals(GpsHint.WIFI_ONLY, gpsHintOf(waited.copy(roughFix = true, roughAccuracyM = 22f, satellitesSeen = 0, satellitesUsed = 0)))
-        assertEquals(GpsHint.WIFI_ONLY, gpsHintOf(waited.copy(roughFix = true)))
-        // 와이파이 위치만으로는 잡힘이 아니다 — 20초 전에는 알리지도 않는다
-        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(elapsedSec = 5, roughFix = true, roughAccuracyM = 15f)))
-        // GPS 위치가 오기 시작했으면 신호 약함이 더 정확한 까닭이다
-        assertEquals(GpsHint.WEAK, gpsHintOf(waited.copy(roughFix = true, accuracyM = 80f, satellitesUsed = 3)))
-        // 위성을 쓰기 시작했으면 곧 잡힌다 — 첫 위치 늦음
-        assertEquals(GpsHint.SLOW, gpsHintOf(waited.copy(roughFix = true, satellitesSeen = 9, satellitesUsed = 4)))
+    @Test fun `indoor wifi jitter does not add distance but real running does`() {
+        // 실내 제자리 — 오차 20m 짜리 위치가 25m 튀었다: 두 배(40m)를 못 넘으니 거리로 넣지 않는다
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 20f, anchorDistanceM = 25.0, anchorAccuracyM = 20f))
+        // 기준점 오차가 더 크면 그 오차의 두 배까지 기다린다(와이파이로 시작해 GPS 로 넘어갈 때 한 번에 튀지 않게)
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 45.0, anchorAccuracyM = 30f))
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 61.0, anchorAccuracyM = 30f))
+        // 밖에서 GPS 급 위치(오차 5m) — 10m 움직이면 넣는다(달리면 몇 초 안)
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 9.0, anchorAccuracyM = 5f))
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 10.0, anchorAccuracyM = 5f))
+        // 아주 정확해도 경로 점 사이는 8m 이상
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 2f, anchorDistanceM = 7.5, anchorAccuracyM = 2f))
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 2f, anchorDistanceM = 8.0, anchorAccuracyM = 2f))
     }
 
-    @Test fun `once fixed nothing is hinted`() {
-        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(fixed = true, elapsedSec = 300, satellitesSeen = 0, accuracyM = 30f)))
+    @Test fun `fixes without accuracy are treated as 30m`() {
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 59.0, anchorAccuracyM = null))
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 60.0, anchorAccuracyM = null))
     }
 }

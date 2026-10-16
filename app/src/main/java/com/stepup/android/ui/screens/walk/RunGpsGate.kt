@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.GpsNotFixed
-import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -43,9 +42,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.location.GnssStatusCompat
 import androidx.core.location.LocationManagerCompat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.stepup.android.R
+import com.stepup.android.core.LocationEngine
 import com.stepup.android.domain.GpsFixRule
 import com.stepup.android.domain.GpsHint
 import com.stepup.android.domain.GpsWait
@@ -67,18 +71,16 @@ import com.stepup.android.ui.theme.StepUpSans
 import kotlinx.coroutines.delay
 
 /*
- * 시작 전 GPS 대기(2026-10-16 사용자 결정 — "GPS 안 되면 못 하는 거야").
+ * 시작 전 위치 대기(2026-10-16 사용자 결정 — "GPS 안 되면 못 하는 거야" → "그래 다 되도록 만들어").
  *
- * 권한(정확한 위치)과 위치 기능을 확인한 뒤, 3-2-1 전에 실제 GPS 위치를 하나 받을 때까지 기다린다. 시간만 기록하는 길은 없다.
- * 기다리는 동안 휴대폰이 알려 주는 위성 수 · 정확도 · 와이파이 위치 · 기다린 시간을 그대로 보이고, 오래 걸리면 까닭과 할 일을 알린다
- * (실내 · 와이파이 위치만 잡힘 · 유심 없는 휴대폰의 첫 위치 · 가짜 위치 앱 · Android 8 이하 절전 위치 방식). 받아들이는 기준은 [GpsFixRule].
- * 와이파이 · 기지국 위치는 보이기만 한다 — 구글 지도는 실내에서 이것으로 위치를 보이지만, 러닝은 위성 GPS 로만 시작한다
- * (2026-10-16 사용자 결정 "위성 GPS만").
+ * 권한(정확한 위치)과 위치 기능을 확인한 뒤, 3-2-1 전에 지금 자리를 하나 받을 때까지 기다린다. 시간만 기록하는 길은 없다.
+ * 위치는 구글 지도와 같은 엔진(구글 위치 서비스 — GPS · 와이파이 · 기지국)으로 받으니, 실내에서도 보통 1~2초면 잡힌다.
+ * 구글 Play 서비스가 없는 휴대폰은 휴대폰 위치(GPS · 와이파이 · 기지국)로 받는다. 받아들이는 기준은 [GpsFixRule].
  */
 
 /**
- * [enabled] 동안 GPS 를 켜고 기다린다 — 끄거나 화면을 떠나면 바로 끊는다. 정확한 위치 권한이 있을 때만 켠다(부르는 쪽이 확인한다).
- * 휴대폰이 이미 알던 새 GPS 위치([GpsFixRule.FRESH_MS] 안)가 있으면 기다리지 않는다.
+ * [enabled] 동안 위치를 받으며 기다린다 — 끄거나 화면을 떠나면 바로 끊는다. 정확한 위치 권한이 있을 때만 켠다(부르는 쪽이 확인한다).
+ * 휴대폰이 이미 알던 새 위치([GpsFixRule.FRESH_MS] 안)가 있으면 기다리지 않는다.
  */
 @Composable
 internal fun rememberGpsWait(enabled: Boolean): GpsWait {
@@ -92,143 +94,98 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
             return@DisposableEffect onDispose { }
         }
         val lm = manager
-        val providers = runCatching { lm?.allProviders }.getOrNull().orEmpty()
-        if (lm == null || LocationManager.GPS_PROVIDER !in providers) {
-            wait = GpsWait(hasGps = false)
-            return@DisposableEffect onDispose { }
-        }
-        wait = GpsWait(locationOn = lm.locationOn(), gpsOn = lm.gpsOn())
-
-        fun ageMs(location: Location): Long = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
-
-        fun accepted(location: Location): Boolean = GpsFixRule.accepts(
-            location.provider == LocationManager.GPS_PROVIDER, isMockLocation(location),
-            if (location.hasAccuracy()) location.accuracy else null, ageMs(location),
-        )
+        wait = GpsWait(locationOn = lm?.locationOn() ?: true)
+        // 끊은 뒤에 늦게 온 위치(구글 위치 서비스의 마지막 위치 등)는 버린다
+        var listening = true
 
         fun take(location: Location) {
+            if (!listening) return
             val mock = isMockLocation(location)
+            val ageMs = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
             val accuracy = if (location.hasAccuracy()) location.accuracy else null
             wait = wait.copy(
-                fixed = wait.fixed || accepted(location),
+                fixed = wait.fixed || GpsFixRule.accepts(mock, ageMs),
                 // 가짜 위치의 정확도는 보이지 않는다 — 받아들이지 않는 값이다
                 accuracyM = if (mock) wait.accuracyM else accuracy ?: wait.accuracyM,
                 mock = mock,
             )
         }
 
-        // 와이파이 · 기지국 위치(대략) — 보이기만 한다. 위성 GPS 가 아니라 잡힘으로 세지 않는다(사용자 결정 "위성 GPS만")
-        fun takeRough(location: Location) {
-            if (isMockLocation(location) || location.provider == LocationManager.GPS_PROVIDER) return
-            if (ageMs(location) > ROUGH_FRESH_MS) return
-            wait = wait.copy(roughFix = true, roughAccuracyM = if (location.hasAccuracy()) location.accuracy else wait.roughAccuracyM)
+        // 1) 구글 위치 서비스 — 구글 지도와 같은 엔진
+        val fused = if (LocationEngine.fusedAvailable(context)) LocationServices.getFusedLocationProviderClient(context) else null
+        val fusedCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.locations.forEach(::take)
+            }
+        }
+        val fusedOn = fused != null && try {
+            fused.lastLocation.addOnSuccessListener { last -> last?.let(::take) }
+            fused.requestLocationUpdates(
+                LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L).build(), fusedCallback, Looper.getMainLooper(),
+            )
+            true
+        } catch (_: SecurityException) {
+            false
         }
 
+        // 2) Play 서비스가 없으면 휴대폰 위치 — GPS 와 와이파이 · 기지국 둘 다(먼저 오는 쪽)
         // API 29 이하에서는 넷 모두 추상 메서드다 — 하나라도 빠지면 위치를 켜고 끌 때 앱이 죽는다
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) = take(location)
             override fun onProviderEnabled(provider: String) {
-                wait = wait.copy(gpsOn = lm.gpsOn(), locationOn = lm.locationOn())
+                if (listening) wait = wait.copy(locationOn = lm?.locationOn() ?: true)
             }
             override fun onProviderDisabled(provider: String) {
-                wait = wait.copy(gpsOn = lm.gpsOn(), locationOn = lm.locationOn())
+                if (listening) wait = wait.copy(locationOn = lm?.locationOn() ?: true)
             }
 
             @Deprecated("Deprecated in Java")
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
         }
-        val roughListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) = takeRough(location)
-            override fun onProviderEnabled(provider: String) = Unit
-            override fun onProviderDisabled(provider: String) = Unit
-
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
-        }
-        // 위성 수 — 신호를 받는 위성(세기 > 0)과 위치 계산에 쓰는 위성. GPS 를 켠 동안에만 온다
-        val satellites = object : GnssStatusCompat.Callback() {
-            override fun onSatelliteStatusChanged(status: GnssStatusCompat) {
-                var seen = 0
-                var used = 0
-                for (i in 0 until status.satelliteCount) {
-                    if (status.getCn0DbHz(i) > 0f) seen++
-                    if (status.usedInFix(i)) used++
+        var managerOn = false
+        if (!fusedOn && lm != null) {
+            val providers = runCatching { lm.allProviders }.getOrDefault(emptyList())
+            for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
+                if (provider !in providers) continue
+                try {
+                    lm.getLastKnownLocation(provider)?.let(::take)
+                    lm.requestLocationUpdates(provider, 1_000L, 0f, listener, Looper.getMainLooper())
+                    managerOn = true
+                } catch (_: SecurityException) {
+                    // 그 사이 권한을 거뒀다 — 부르는 쪽이 돌아올 때 다시 확인한다
+                } catch (_: IllegalArgumentException) {
                 }
-                wait = wait.copy(satellitesSeen = seen, satellitesUsed = used)
             }
-        }
-
-        // 휴대폰이 이미 알던 GPS 위치 — 새것이면 바로 잡힘. 오래된 것은 지금 신호가 아니니 정확도도 보이지 않는다
-        try {
-            lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.takeIf(::accepted)?.let(::take)
-        } catch (_: SecurityException) {
-        } catch (_: IllegalArgumentException) {
-        }
-        for (provider in listOf(LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)) {
-            try {
-                lm.getLastKnownLocation(provider)?.let(::takeRough)
-            } catch (_: SecurityException) {
-            } catch (_: IllegalArgumentException) {
-            }
-        }
-        try {
-            // 1초 · 0m — 첫 위치를 받는 대로 알고, 정확도가 좋아지는 것을 바로 보인다
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1_000L, 0f, listener, Looper.getMainLooper())
-        } catch (_: SecurityException) {
-            // 그 사이 권한을 거뒀다 — 부르는 쪽이 돌아올 때 다시 확인한다
-        } catch (_: IllegalArgumentException) {
-            wait = wait.copy(hasGps = false)
-        }
-        val satellitesOn = try {
-            LocationManagerCompat.registerGnssStatusCallback(lm, ContextCompat.getMainExecutor(context), satellites)
-        } catch (_: SecurityException) {
-            false
-        }
-        val roughOn = LocationManager.NETWORK_PROVIDER in providers && try {
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_000L, 0f, roughListener, Looper.getMainLooper())
-            true
-        } catch (_: SecurityException) {
-            false
-        } catch (_: IllegalArgumentException) {
-            false
         }
 
         onDispose {
-            runCatching { lm.removeUpdates(listener) }
-            if (roughOn) runCatching { lm.removeUpdates(roughListener) }
-            if (satellitesOn) runCatching { LocationManagerCompat.unregisterGnssStatusCallback(lm, satellites) }
+            listening = false
+            if (fusedOn) runCatching { fused?.removeLocationUpdates(fusedCallback) }
+            if (managerOn) runCatching { lm?.removeUpdates(listener) }
         }
     }
 
     // 기다린 시간 · 위치 기능(설정에서 끄고 켠 것)을 1초마다 다시 읽는다
     LaunchedEffect(enabled) {
         if (!enabled) return@LaunchedEffect
-        val lm = manager ?: return@LaunchedEffect
         val started = SystemClock.elapsedRealtime()
         while (true) {
             delay(1_000)
             wait = wait.copy(
                 elapsedSec = ((SystemClock.elapsedRealtime() - started) / 1_000).toInt(),
-                locationOn = lm.locationOn(),
-                gpsOn = lm.gpsOn(),
+                locationOn = manager?.locationOn() ?: true,
             )
         }
     }
     return wait
 }
 
-/** 와이파이 · 기지국 위치는 이만큼 새것만 보인다(ms) — 보이기만 하는 값이라 GPS([GpsFixRule.FRESH_MS])보다 느슨하다 */
-private const val ROUGH_FRESH_MS = 2 * 60_000L
-
 private fun LocationManager.locationOn(): Boolean =
     runCatching { LocationManagerCompat.isLocationEnabled(this) }.getOrDefault(true)
 
-private fun LocationManager.gpsOn(): Boolean =
-    runCatching { isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(true)
-
 /**
- * GPS 대기 화면(혼자 러닝 · 자유 러닝 · 챌린지 · 다이어트) — 권한 · 위치 기능 다음, 3-2-1 전.
- * 그림 · 큰 한 줄 · 설명 · 위성 · 정확도 · 기다린 시간 · (오래 걸리면) 까닭과 할 일. 잡히면 부른 쪽이 바로 3-2-1 로 간다.
+ * 위치 대기 화면(혼자 러닝 · 자유 러닝 · 챌린지 · 다이어트) — 권한 · 위치 기능 다음, 3-2-1 전.
+ * 그림 · 큰 한 줄 · 설명 · 정확도 · 기다린 시간 · (오래 걸리면) 할 일. 잡히면 부른 쪽이 바로 3-2-1 로 간다.
  * 주 버튼은 없다(기다리는 것이 할 일) — 아래는 취소 하나. 위치 기능이 꺼진 경우만 안내 띠에 "위치 설정 열기".
  */
 @Composable
@@ -272,7 +229,7 @@ internal fun RunGpsGateContent(
 }
 
 /**
- * 크루 · 번개 대기실의 GPS 확인(준비 전) — 잡히면 부른 쪽이 준비 완료로 바꾸고 닫는다. 닫기 · 취소는 준비 전으로 남는다.
+ * 크루 · 번개 대기실의 위치 확인(준비 전) — 잡히면 부른 쪽이 준비 완료로 바꾸고 닫는다. 닫기 · 취소는 준비 전으로 남는다.
  */
 @Composable
 internal fun RunGpsWaitSheet(wait: GpsWait, onDismiss: () -> Unit, onOpenLocationSettings: () -> Unit) {
@@ -296,20 +253,14 @@ internal fun ColumnScope.GpsWaitSheetBody(wait: GpsWait, onCancel: () -> Unit, o
 }
 
 @Composable
-private fun gpsHeadline(wait: GpsWait): String = stringResource(
-    when {
-        wait.fixed -> R.string.run_gps_wait_found
-        !wait.hasGps -> R.string.run_gps_hint_no_gps_title
-        else -> R.string.run_gps_wait_title
-    },
-)
+private fun gpsHeadline(wait: GpsWait): String =
+    stringResource(if (wait.fixed) R.string.run_gps_wait_found else R.string.run_gps_wait_title)
 
-/** 찾는 중이면 GPS 표시 둘레로 퍼지는 고리(동작 줄이기에서는 멈춘 고리), 잡히면 채운 표시, GPS 가 없으면 꺼진 표시 */
+/** 찾는 중이면 위치 표시 둘레로 퍼지는 고리(동작 줄이기에서는 멈춘 고리), 잡히면 채운 표시 */
 @Composable
 private fun GpsSearchArt(wait: GpsWait, size: Dp) {
     val t = runTone()
-    val searching = !wait.fixed && wait.hasGps
-    val phase = if (searching) ambientPhase(1_800) else null
+    val phase = if (!wait.fixed) ambientPhase(1_800) else null
     Box(
         Modifier.size(size).drawBehind {
             val p = phase?.value ?: return@drawBehind
@@ -320,68 +271,36 @@ private fun GpsSearchArt(wait: GpsWait, size: Dp) {
         },
         contentAlignment = Alignment.Center,
     ) {
-        RunStateArt(
-            when {
-                wait.fixed -> Icons.Filled.GpsFixed
-                !wait.hasGps -> Icons.Filled.GpsOff
-                else -> Icons.Filled.GpsNotFixed
-            },
-            size = size, alert = !wait.hasGps,
-        )
+        RunStateArt(if (wait.fixed) Icons.Filled.GpsFixed else Icons.Filled.GpsNotFixed, size = size)
     }
 }
 
-/** 위성 · 정확도 · 기다린 시간 한 판과, 까닭이 있으면 그 아래 안내 띠 */
+/** 정확도 · 기다린 시간 한 판과, 할 일이 있으면 그 아래 안내 띠 */
 @Composable
 private fun ColumnScope.GpsWaitDetails(wait: GpsWait, onOpenLocationSettings: () -> Unit) {
-    if (wait.hasGps) {
-        RunCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp), tag = "run-gps-status") {
-            val satellites = if (wait.satellitesSeen != null && wait.satellitesUsed != null) {
-                stringResource(R.string.run_gps_wait_satellites_value, wait.satellitesUsed, wait.satellitesSeen)
-            } else {
-                stringResource(R.string.run_gps_wait_checking)
-            }
-            GpsStatusRow(stringResource(R.string.run_gps_wait_satellites), satellites, "run-gps-satellites")
-            GpsStatusRow(
-                stringResource(R.string.run_gps_wait_accuracy),
-                wait.accuracyM?.let { stringResource(R.string.run_gps_wait_accuracy_value, Math.round(it)) } ?: "—",
-                "run-gps-accuracy",
-                note = stringResource(R.string.run_gps_wait_accuracy_need, GpsFixRule.MAX_ACCURACY_M.toInt()),
-            )
-            // 와이파이 위치 — 구글 지도가 실내에서 보이는 위치. 러닝 거리에는 쓰지 않는다
-            GpsStatusRow(
-                stringResource(R.string.run_gps_wait_rough),
-                when {
-                    !wait.roughFix -> "—"
-                    wait.roughAccuracyM != null -> stringResource(R.string.run_gps_wait_accuracy_value, Math.round(wait.roughAccuracyM))
-                    else -> stringResource(R.string.run_gps_wait_rough_found)
-                },
-                "run-gps-rough",
-                note = stringResource(R.string.run_gps_wait_rough_note),
-            )
-            GpsStatusRow(
-                stringResource(R.string.run_gps_wait_time), "%d:%02d".format(wait.elapsedSec / 60, wait.elapsedSec % 60), "run-gps-elapsed",
-            )
-        }
+    RunCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp), tag = "run-gps-status") {
+        GpsStatusRow(
+            stringResource(R.string.run_gps_wait_accuracy),
+            wait.accuracyM?.let { stringResource(R.string.run_gps_wait_accuracy_value, Math.round(it)) } ?: "—",
+            "run-gps-accuracy",
+        )
+        GpsStatusRow(
+            stringResource(R.string.run_gps_wait_time), "%d:%02d".format(wait.elapsedSec / 60, wait.elapsedSec % 60), "run-gps-elapsed",
+        )
     }
     val hint = gpsHintOf(wait)
     if (hint != GpsHint.NONE) {
         Spacer(Modifier.height(12.dp))
         val (title, body) = when (hint) {
-            GpsHint.NO_GPS -> R.string.run_gps_hint_no_gps_title to R.string.run_gps_hint_no_gps_body
             GpsHint.LOCATION_OFF -> R.string.run_loc_off_title to R.string.run_loc_off_body
-            GpsHint.GPS_OFF -> R.string.run_gps_hint_gps_off_title to R.string.run_gps_hint_gps_off_body
             GpsHint.MOCK -> R.string.run_gps_hint_mock_title to R.string.run_gps_hint_mock_body
-            GpsHint.WIFI_ONLY -> R.string.run_gps_hint_wifi_only_title to R.string.run_gps_hint_wifi_only_body
-            GpsHint.NO_SATELLITES -> R.string.run_gps_hint_no_satellites_title to R.string.run_gps_hint_no_satellites_body
-            GpsHint.WEAK -> R.string.run_gps_hint_weak_title to R.string.run_gps_hint_weak_body
-            GpsHint.SLOW, GpsHint.NONE -> R.string.run_gps_hint_slow_title to R.string.run_gps_hint_slow_body
+            GpsHint.NO_FIX, GpsHint.NONE -> R.string.run_gps_hint_no_fix_title to R.string.run_gps_hint_no_fix_body
         }
-        val settings = hint == GpsHint.LOCATION_OFF || hint == GpsHint.GPS_OFF
+        val settings = hint == GpsHint.LOCATION_OFF
         RunNotice(
             stringResource(title),
-            body = if (hint == GpsHint.WEAK) stringResource(body, GpsFixRule.MAX_ACCURACY_M.toInt()) else stringResource(body),
-            kind = if (hint == GpsHint.NO_GPS || hint == GpsHint.MOCK) RunNoticeKind.Error else RunNoticeKind.Warn,
+            body = stringResource(body),
+            kind = if (hint == GpsHint.MOCK) RunNoticeKind.Error else RunNoticeKind.Warn,
             action = if (settings) stringResource(R.string.run_loc_off_open) else null,
             onAction = if (settings) onOpenLocationSettings else null,
             tag = "run-gps-hint-${hint.name.lowercase()}",
@@ -390,13 +309,10 @@ private fun ColumnScope.GpsWaitDetails(wait: GpsWait, onOpenLocationSettings: ()
 }
 
 @Composable
-private fun GpsStatusRow(label: String, value: String, tag: String, note: String? = null) {
+private fun GpsStatusRow(label: String, value: String, tag: String) {
     val t = runTone()
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-            Text(label, style = runTextStyle(15.sp, t.label, FontWeight.Medium))
-            if (note != null) Text(note, style = runTextStyle(12.sp, t.label, FontWeight.Normal))
-        }
+        Text(label, style = runTextStyle(15.sp, t.label, FontWeight.Medium), modifier = Modifier.weight(1f))
         Text(value, style = runTextStyle(17.sp, t.text, FontWeight.Bold), textAlign = TextAlign.End, modifier = Modifier.testTag(tag))
     }
 }

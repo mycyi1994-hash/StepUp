@@ -1510,7 +1510,7 @@ StepUp と走り出そう。</string>
     <string name="run_countdown_kicker">ラン開始</string>
     <string name="run_countdown_kicker_course">ラン開始 · %1$s</string>
     <string name="run_countdown_tap">タップですぐ開始</string>
-    <string name="run_countdown_gps_on">GPS接続済み · ルートを記録します</string>
+    <string name="run_countdown_gps_on">位置情報に接続 · ルートを記録します</string>
     <string name="settings_body">身体情報・目標</string>
     <string name="settings_body_clear">すべて削除</string>
     <string name="settings_mode">モード</string>

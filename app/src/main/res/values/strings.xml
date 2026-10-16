@@ -1511,7 +1511,7 @@ Start running with StepUp.</string>
     <string name="run_countdown_kicker">Starting your run</string>
     <string name="run_countdown_kicker_course">Starting · %1$s</string>
     <string name="run_countdown_tap">Tap to start now</string>
-    <string name="run_countdown_gps_on">GPS connected · recording your route</string>
+    <string name="run_countdown_gps_on">Location connected · recording your route</string>
     <string name="settings_body">Body info &amp; goal</string>
     <string name="settings_body_clear">Delete all</string>
     <string name="settings_mode">Mode</string>
