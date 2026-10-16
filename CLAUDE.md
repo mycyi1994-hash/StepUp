@@ -10,13 +10,14 @@
 - 공유는 실제 보낼 글(과 그림) 미리보기 하나다. 미리보기와 보내는 글은 같은 값이다. 보내는 동안 뒤로 가기를 막는다.
 - CR02 · CR16 은 보기 전용 방 조회 API 가 없어 서버 의존 · 미완료다.
 
-## 최신 — AI 코칭 16장 (2026-10-16, 작업 브랜치)
+## 최신 — AI 코칭 16장 (2026-10-16)
 
 [docs/redesign/ai-coaching-2026-10/README.md](docs/redesign/ai-coaching-2026-10/README.md) — 데이터 감사 · 화면표 · 시안과 다른 점 · 남은 결정.
 
 - 입구는 러닝 시작 메뉴(U01)의 "내 러닝 기록" 아래 링크 한 줄. 길은 `ui/screens/coaching/CoachingNavGraph.kt`(러닝 탭 아래 `Header.Detail`).
 - 숫자 · 그래프 · 주간 띠 · 계획은 코드가 만든다(`domain/coaching/`). AI 는 서버가 만든 근거 · 후보 id 를 고르고 짧은 글만 쓴다.
-- 서버 0060(`coaching` 스키마) — 운영 설정은 모두 꺼진 쪽이 기본(`coaching_enabled=false` · 공급자 `none` · 한도 · 예산 비어 있음).
+- 서버 0060(`coaching` 스키마)은 운영 DB 에 적용됐다(#92). 운영 설정은 모두 꺼진 쪽이 기본이다(`coaching_enabled=false` · 공급자 `none` · 한도 · 예산 비어 있음).
+  - 꺼진 동안 앱은 AI 칸을 숨기고 동의를 받지 않는다(`shownAi` — 서버는 동의를 먼저 보아 `no_consent` 로 답한다).
 - 일꾼 `coach-worker/` 는 모의 공급자만, 배포하지 않았다. 실제 공급자 · 모델 · 예산 · 동의 문구는 사용자 결정 전이다.
 - 앱 ↔ 서버 규칙 값은 `scripts/check-coaching-twin.py` 가 맞대어 본다(CI).
 - 폰 DB 판 19 — 러닝의 랩(`walk_sessions.laps`)을 남긴다. 그 전 기록은 구간 분석을 하지 않는다.

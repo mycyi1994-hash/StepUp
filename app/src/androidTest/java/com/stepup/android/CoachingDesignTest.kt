@@ -23,6 +23,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
@@ -332,6 +333,9 @@ class CoachingDesignTest {
 
     private fun tap(tag: String) {
         awaitTag(tag)
+        // 넘기는 화면 아래쪽의 줄(분석의 "다음에 해 볼 것" · 설정 맨 끝의 해제)은 보이게 넘긴 뒤 누른다 — 화면 밖을 누르면 빗나간다.
+        // 넘길 곳이 없는 칸(위 탭 · 시트 버튼)은 그대로 누른다
+        runCatching { compose.onNodeWithTag(tag).performScrollTo() }
         compose.onNodeWithTag(tag).performClick()
         compose.waitForIdle()
     }
