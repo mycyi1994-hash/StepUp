@@ -61,7 +61,6 @@ import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.walk.CrewNotifyBody
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
-import com.stepup.android.ui.screens.walk.GpsWaitSheetBody
 import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
@@ -727,7 +726,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · G01~G05 · CR17g · L03 · K01 · K17 · K18 · U04 · K02) */
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · L03 · K01 · K17 · K18 · U04 · K02) */
     @Test fun states() {
         seed()
         val repo = ServiceLocator.courseRepository
@@ -758,33 +757,6 @@ class RunJourneyDesignTest {
             }
             compose.onNodeWithTag("run-location-off-open").assertIsDisplayed()
             compose.onAllNodesWithTag("run-location-off-time").assertCountEquals(0)
-            // G01~G05 — 시작 전 위치 대기(2026-10-16 — 구글 지도처럼 GPS · 와이파이 · 기지국 어느 위치든 잡히면 시작). 휴대폰이 알려 준 값을 그대로 그린다
-            fun gate(wait: com.stepup.android.domain.GpsWait): @Composable () -> Unit = {
-                com.stepup.android.ui.screens.walk.RunGpsGateContent(label(R.string.runflow_free), wait, {}, {})
-            }
-            val gps = com.stepup.android.domain.GpsWait()
-            show("G01", "run-gps-gate", gate(gps.copy(elapsedSec = 2)))
-            compose.onNodeWithTag("run-gps-gate-title").assertTextEquals(label(R.string.run_gps_wait_title))
-            compose.onNodeWithTag("run-gps-accuracy").assertTextEquals("—")
-            compose.onNodeWithTag("run-gps-gate-cancel").assertIsDisplayed().assertHasClickAction()
-            // 위성 · 와이파이 글은 없다 — 위치가 잡히는지만 본다
-            compose.onAllNodesWithTag("run-gps-satellites").assertCountEquals(0)
-            compose.onAllNodesWithTag("run-gps-rough").assertCountEquals(0)
-            show("G02", "run-gps-hint-no_fix", gate(gps.copy(elapsedSec = 32)))
-            show("G03", "run-gps-hint-mock", gate(gps.copy(elapsedSec = 3, mock = true)))
-            show("G04", "run-gps-hint-location_off", gate(gps.copy(elapsedSec = 1, locationOn = false)))
-            compose.onNodeWithTag("run-gps-hint-location_off").assertIsDisplayed()
-            show("G05", "run-gps-gate-title", gate(gps.copy(fixed = true, elapsedSec = 1, accuracyM = 18f)))
-            compose.onNodeWithTag("run-gps-gate-title").assertTextEquals(label(R.string.run_gps_wait_found))
-            compose.onNodeWithTag("run-gps-accuracy").assertTextEquals(label(R.string.run_gps_wait_accuracy_value, 18))
-            // CR17g — 크루 대기실의 준비 전 위치 확인(시트 안). 잡히면 준비 완료로 바뀐다
-            show("CR17g", "run-gps-wait-cancel") {
-                Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
-                    com.stepup.android.ui.components.RunSheetPanel(onClose = {}) {
-                        GpsWaitSheetBody(gps.copy(elapsedSec = 3), {}, {})
-                    }
-                }
-            }
             // L03 — 추천 코스 전 지금 자리 확인 중(자리를 모르면 지도에 아무 자리도 그리지 않는다) · K01 — 자리를 알고 코스를 찾는 중
             show("L03", "run-course-locating") {
                 com.stepup.android.ui.screens.walk.CourseRecommendContent(

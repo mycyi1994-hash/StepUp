@@ -394,8 +394,18 @@ class WalkSessionService : Service() {
 
     /** 구글 위치 서비스(구글 지도와 같은 엔진). 쓰는 동안만 값이 있다 — Play 서비스가 없으면 null 이고 LocationManager 로 받는다 */
     private var fusedClient: FusedLocationProviderClient? = null
+
+    /** 구글 위치 서비스를 켠 때와 처음 위치를 준 때(부팅 기준 ms, 없으면 0) — 아무것도 안 주면 휴대폰 위치도 듣는다 */
+    private var fusedSince = 0L
+    private var fusedFirstAt = 0L
+
+    /** 구글 위치 서비스가 조용해 휴대폰 위치(GPS · 와이파이 · 기지국)도 함께 듣는 중 */
+    private var backupFeed = false
     private val fusedCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
+            if (fusedFirstAt == 0L) fusedFirstAt = SystemClock.elapsedRealtime()
+            // 구글 위치 서비스가 늦게라도 위치를 주기 시작했다 — 함께 듣던 휴대폰 위치는 그만(둘을 섞으면 점이 튄다)
+            if (backupFeed) stopBackupFeed()
             result.locations.forEach(::onFix)
         }
     }
@@ -445,23 +455,55 @@ class WalkSessionService : Service() {
     private fun startFused(): Boolean {
         if (!LocationEngine.fusedAvailable(this)) return false
         val client = LocationServices.getFusedLocationProviderClient(this)
-        // 2.5초마다(예전 GPS 와 같다), 거리 거름 없이 — 제자리에서도 위치가 와야 "신호 약함"으로 잘못 보지 않는다
+        // 2.5초마다(예전 GPS 와 같다), 거리 거름 없이 — 제자리에서도 위치가 와야 "신호 약함"으로 잘못 보지 않는다.
+        // 첫 위치는 정확한 것이 올 때까지 미루지 않는다 — 와이파이 위치라도 먼저 받고, 거리는 onFix 가 거른다
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2_500L)
             .setMinUpdateIntervalMillis(1_000L)
+            .setWaitForAccurateLocation(false)
             .build()
         return try {
             client.requestLocationUpdates(request, fusedCallback, mainLooper).addOnFailureListener {
                 // Play 서비스가 받지 않았다 — 그사이 멈추지 않았으면 휴대폰 위치로 바꿔 받는다
                 if (fusedClient === client) {
                     fusedClient = null
-                    locationManager?.let { lm -> startLocationManagerFeed(lm, hasFineLocation()) }
+                    if (!backupFeed) locationManager?.let { lm -> startLocationManagerFeed(lm, hasFineLocation()) }
+                    backupFeed = false
                 }
             }
             fusedClient = client
+            fusedSince = SystemClock.elapsedRealtime()
+            fusedFirstAt = 0L
+            // 구글 위치 서비스가 아는 마지막 위치 — 첫 위치가 오기 전에 지도를 내 자리에 맞춘다(경로 · 거리에는 넣지 않는다)
+            if (_state.value.here == null) {
+                client.lastLocation.addOnSuccessListener { last ->
+                    if (last == null || isMockLocation(last) || System.currentTimeMillis() - last.time > 2 * 60_000L) return@addOnSuccessListener
+                    val p = GeoPoint(last.latitude, last.longitude)
+                    _state.update { if (!it.isActive || it.here != null) it else it.copy(here = p) }
+                }
+            }
             true
         } catch (_: SecurityException) {
             false
         }
+    }
+
+    /**
+     * 구글 위치 서비스가 켠 지 [FUSED_SILENT_MS] 가 지나도 아무 위치도 주지 않았다 — 휴대폰 위치(GPS · 와이파이 · 기지국)도
+     * 함께 듣는다. 구글 위치 서비스가 늦게라도 위치를 주면 그만 듣는다. 메인 스레드에서 부른다.
+     */
+    private fun startBackupFeedIfSilent() {
+        val lm = locationManager ?: return
+        if (fusedClient == null || backupFeed || fusedSince == 0L || fusedFirstAt != 0L) return
+        if (SystemClock.elapsedRealtime() - fusedSince < FUSED_SILENT_MS) return
+        backupFeed = true
+        startLocationManagerFeed(lm, hasFineLocation())
+    }
+
+    private fun stopBackupFeed() {
+        backupFeed = false
+        locationManager?.removeUpdates(locationListener)
+        if (networkRegistered) locationManager?.removeUpdates(networkListener)
+        networkRegistered = false
     }
 
     /** 휴대폰 위치(LocationManager) — 위성 GPS 와, GPS 가 잡히기 전 · GPS 가 없을 때의 와이파이 · 기지국 위치 */
@@ -489,6 +531,9 @@ class WalkSessionService : Service() {
     private fun stopLocation() {
         fusedClient?.let { client -> runCatching { client.removeLocationUpdates(fusedCallback) } }
         fusedClient = null
+        fusedSince = 0L
+        fusedFirstAt = 0L
+        backupFeed = false
         locationManager?.removeUpdates(locationListener)
         if (networkRegistered) locationManager?.removeUpdates(networkListener)
         networkRegistered = false
@@ -644,6 +689,7 @@ class WalkSessionService : Service() {
         if (locationManager == null) startLocation()
         // 구글 위치 서비스는 위치 기능을 켜고 끄는 것을 알려 주지 않는다 — 여기서 다시 읽는다(꺼짐 안내 · 다시 켬)
         refreshLocationOn()
+        startBackupFeedIfSilent()
         if (!foregroundHasLocation) {
             foregroundHasLocation = runCatching {
                 ServiceCompat.startForeground(
@@ -1118,6 +1164,9 @@ class WalkSessionService : Service() {
         const val ACTION_RECOVER = "com.stepup.android.action.SESSION_RECOVER"
         const val EXTRA_FINISH = "com.stepup.android.extra.FINISH"
         private const val CHECKPOINT_EVERY_MS = 5_000L
+
+        /** 구글 위치 서비스가 이만큼 아무 위치도 주지 않으면 휴대폰 위치도 함께 듣는다(ms) */
+        private const val FUSED_SILENT_MS = 15_000L
 
         /** 앱이 죽어 멈춘 채 남은 러닝 — 화면이 "이어 달리기 / 여기서 끝내기"를 묻는다 */
         val recovery = MutableStateFlow<RunCheckpoint?>(null)

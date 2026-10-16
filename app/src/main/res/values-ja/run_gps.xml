@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 開始前の位置待ち(2026-10-16 — Googleマップのように GPS・Wi-Fi・基地局のどの位置でも始める)。時間だけ記録する道はない。 -->
+<!-- クルー・フラッシュ待機室の準備には正確な位置が必要(2026-10-16)。ランは位置を待たずにすぐ始まる。 -->
 <resources>
-    <string name="run_gps_wait_title">位置を探しています</string>
-    <string name="run_gps_wait_found">位置が見つかりました</string>
-    <string name="run_gps_wait_body">少しお待ちください。\n位置がわかるとすぐに始まります。</string>
-    <string name="run_gps_lobby_body">位置がわかるとすぐに準備完了になります。</string>
-    <string name="run_gps_wait_accuracy">精度</string>
-    <string name="run_gps_wait_accuracy_value">±%1$dm</string>
-    <string name="run_gps_wait_time">待ち時間</string>
-    <string name="run_gps_hint_mock_title">仮の位置情報アプリがオンです</string>
-    <string name="run_gps_hint_mock_body">開発者向けオプションの「仮の現在地情報アプリ」をオフにすると実際のGPSを使えます。</string>
-    <string name="run_gps_hint_no_fix_title">まだ位置がわかりません</string>
-    <string name="run_gps_hint_no_fix_body">Wi-Fiかモバイルデータをオンにするか、空が見える場所に移動してください。</string>
     <string name="run_gps_need_precise">一緒に走るには正確な位置情報が必要です。設定 › 権限 › 位置情報で「正確な位置情報を使用」をオンにしてください。</string>
 </resources>
