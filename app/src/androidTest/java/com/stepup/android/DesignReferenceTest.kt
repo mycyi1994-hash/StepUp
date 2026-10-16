@@ -198,8 +198,9 @@ class DesignReferenceTest {
                 try {
                     awaitScene(s)
                 } catch (failure: Throwable) {
-                    capture("$name-failed")
-                    throw failure
+                    runCatching { capture("$name-failed") }
+                    // 어느 장면에서 멈췄는지 실패 요약(android_test_failures.py)에 남긴다
+                    throw AssertionError("scene $name: ${failure.message}", failure)
                 }
                 try {
                     assertReviewedLayout(s, enlarged)

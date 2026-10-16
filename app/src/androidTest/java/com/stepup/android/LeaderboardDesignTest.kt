@@ -133,13 +133,13 @@ class LeaderboardDesignTest {
         tap("lb-board-2")
         awaitTag("lb-points-hero")
         compose.onNodeWithTag("lb-points-mine", useUnmergedTree = true).assertTextContains("2,680")
-        compose.onNodeWithTag("lb-points-rank", useUnmergedTree = true).assertTextContains("84")
+        compose.onNodeWithTag("lb-points-rank-value", useUnmergedTree = true).assertTextContains("84")
         compose.onNodeWithTag("lb-points-gap", useUnmergedTree = true).assertTextContains("80")
         shot("L07-points")
         // L08 우리 크루 범위 — 목록 · 내 순위 · 차이가 함께 바뀐다
         tap("lb-scope-1")
         compose.waitUntil(15_000) {
-            runCatching { compose.onNodeWithTag("lb-points-rank", useUnmergedTree = true).assertTextContains("8") }.isSuccess
+            runCatching { compose.onNodeWithTag("lb-points-rank-value", useUnmergedTree = true).assertTextContains("8") }.isSuccess
         }
         compose.onNodeWithTag("lb-points-gap", useUnmergedTree = true).assertTextContains("80")
         shot("L08-points-crew")
