@@ -586,7 +586,8 @@
     <string name="party_problem_network">Can\'t reach the server. Trying again…</string>
     <string name="party_problem_closed">This room has closed.</string>
     <string name="party_problem_failed">That didn\'t go through. Try again.</string>
-    <string name="party_gps_rule">Members further than %1$dm from the host are dropped automatically.</string>
+    <string name="party_problem_missed_start">The group start already passed, so a new lobby was opened.</string>
+    <string name="party_gps_rule">Only members still within %1$dm of each other 2 minutes after the start count toward the party.</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">Decline</string>
@@ -800,7 +801,7 @@ Start running with StepUp.</string>
     <string name="guide4_tip">Tip: the + button writes a new post.</string>
     <string name="guide5_title">Crews &amp; party runs</string>
     <string name="guide5_body" formatted="false">Join or create a crew, then open the party lobby. When everyone is ready the host starts the run — each member adds +10% boost.</string>
-    <string name="guide5_tip">Tip: stay within 100m of the host or you\'ll drop out!</string>
+    <string name="guide5_tip">Tip: start together and stay within 200m of each other to count toward the group!</string>
     <string name="guide6_title">Events &amp; rewards</string>
     <string name="guide6_body">Weekly step campaigns and invite rewards pay real SUP. Actionable notifications let you claim rewards right from the inbox.</string>
     <string name="guide6_tip">Tip: check the events tab for active campaigns.</string>
@@ -1304,6 +1305,7 @@ Start running with StepUp.</string>
     <string name="finish_pending">Run complete · server check pending</string>
     <string name="finish_pending_note">Your run is saved. Your reward is final only after the server confirms it.</string>
     <string name="finish_rejected">The server did not accept this record</string>
+    <string name="finish_simulated">Runs with simulated test steps aren\'t uploaded or rewarded.</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>
     <string name="finish_share">Share run</string>

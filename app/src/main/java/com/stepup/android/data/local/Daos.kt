@@ -74,6 +74,8 @@ interface WalkSessionDao {
      *
      * 오래된 순인 것은 `RewardDistributor` 의 청구 창이 7일이기 때문이다.
      * 최신 것부터 처리하면 창을 넘긴 세션이 영영 청구되지 않는다.
+     * 다만 시도했다 실패한 세션은 시도한 때 순으로 뒤에 선다 — 오래된 러닝 둘이 계속 실패하면(연달아 둘이면 그 차례를
+     * 멈춘다) 뒤의 러닝이 모두 기다리다 창을 넘겼다. 아직 시도하지 않은 세션은 시도한 때가 0 이라 오래된 순 그대로다.
      *
      * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
      * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
@@ -84,7 +86,7 @@ interface WalkSessionDao {
          WHERE uploadState IN ('PENDING', 'FAILED')
            AND steps > 0
            AND recordingOwner = :owner
-         ORDER BY startedAt ASC
+         ORDER BY uploadAttemptedAt ASC, startedAt ASC
          LIMIT :limit
         """,
     )
@@ -93,8 +95,11 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCount(): Flow<Int>
 
-    /** 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중" */
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
+    /**
+     * 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중".
+     * 주인이 정해지기 전(legacy)의 러닝은 어느 계정으로도 올리지 않으므로 세지 않는다 — 영영 "확인 중"으로 남았다.
+     */
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
     fun observePendingUploadCountFor(owner: String): Flow<Int>
 
     /**
@@ -190,10 +195,12 @@ interface WalkSessionDao {
     /**
      * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음 있음)은
      * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다. 지운 수를 돌려준다(0이면 지우지 않았다).
+     * 지키는 것은 지금 주인이 올릴 러닝뿐이다 — 주인이 정해지기 전(legacy)의 러닝은 계정 · 손님으로는 올라가지 않아 확인을
+     * 기다리는 중이어도 지울 수 있다. 지금 주인이 legacy(사용자 번호 없이 저장된 옛 로그인)면 그 러닝이 올라가므로 지킨다.
      */
     @Query(
         "DELETE FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy') " +
-            "AND NOT (uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
+            "AND NOT (recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
     )
     suspend fun deleteRecord(owner: String, id: Long): Int
 }

@@ -129,7 +129,7 @@ internal fun CrewLobbyContent(
                             }
                         }
                         Text(
-                            stringResource(R.string.run_crew_gps_rule, com.stepup.android.data.repo.CrewRepository.MAX_PARTY_DISTANCE_M),
+                            stringResource(R.string.run_crew_gps_rule, com.stepup.android.data.repo.CrewRepository.NEAR_DISTANCE_M),
                             style = runTextStyle(12.sp, c.muted), modifier = Modifier.padding(top = 10.dp),
                         )
                     }
@@ -143,8 +143,9 @@ internal fun CrewLobbyContent(
                 when {
                     party.phase == PartyPhase.FINISHED ->
                         FreeRunButton(stringResource(R.string.common_ok), onDismissResult, Modifier.fillMaxWidth().testTag("party-result-ok"))
-                    // 누른 것이 막힌 것뿐(FAILED)이면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
-                    !lobby || (party.problem != null && party.problem != PartyProblem.FAILED) || party.partyId == null -> Unit
+                    // 누른 것이 막힌 것뿐(FAILED)이거나 새 대기실 안내면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
+                    !lobby || (party.problem != null && party.problem != PartyProblem.FAILED &&
+                        party.problem != PartyProblem.MISSED_START) || party.partyId == null -> Unit
                     !party.myReady -> {
                         FreeRunButton(stringResource(R.string.run_crew_get_ready), onReady, Modifier.fillMaxWidth().testTag("party-ready"))
                         if (alone && canNotify) {
@@ -243,15 +244,17 @@ private fun CrewProblem(problem: PartyProblem, onRetry: () -> Unit, onLeave: () 
             PartyProblem.NETWORK -> R.string.party_problem_network
             PartyProblem.CLOSED -> R.string.party_problem_closed
             PartyProblem.FAILED -> R.string.party_problem_failed
+            PartyProblem.MISSED_START -> R.string.party_problem_missed_start
         },
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        CrewError(message, tag = "party-problem")
+        // 새 대기실 안내는 알림일 뿐 — 대기실은 그대로 쓴다
+        if (problem == PartyProblem.MISSED_START) CrewNote(message, tag = "party-problem") else CrewError(message, tag = "party-problem")
         if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) {
             FreeRunButton(stringResource(R.string.crew_retry), onRetry, Modifier.fillMaxWidth().testTag("party-retry"))
         }
-        // 누른 것이 막힌 것뿐이면 방에는 그대로 있다
-        if (problem != PartyProblem.FAILED) {
+        // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
+        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {
             FreeRunButton(stringResource(R.string.run_cr_leave), onLeave, Modifier.fillMaxWidth().testTag("party-leave"),
                 kind = FreeButtonKind.Secondary)
         }

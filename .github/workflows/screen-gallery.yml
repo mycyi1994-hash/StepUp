@@ -1,7 +1,6 @@
 name: Screen Gallery Capture
 on:
-  push:
-    branches: ["codex/screen-captures-20260924", "codex/stepup-cohesive-redesign"]
+  # 손으로만 돈다 — 9월에 멈춘 작업 브랜치(codex/screen-captures-20260924 · codex/stepup-cohesive-redesign)의 푸시 트리거는 뺐다
   workflow_dispatch:
     inputs:
       scope:
@@ -13,7 +12,8 @@ permissions:
   contents: read
 jobs:
   capture:
-    runs-on: ubuntu-latest
+    # ubuntu-24.04 로 고정 — 에뮬레이터 설정(KVM · 메모리)은 이 이미지에서만 확인했다. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 이다
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false

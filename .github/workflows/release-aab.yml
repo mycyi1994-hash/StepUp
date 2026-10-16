@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   bundle:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,14 +54,16 @@ jobs:
         if: steps.signing.outputs.ready == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
           mkdir -p "${RUNNER_TEMP}/signing"
           printf '%s' "$KEYSTORE_B64" | base64 -d > "${RUNNER_TEMP}/signing/upload.jks"
           # 복호화가 실제로 키스토어를 만들었는지 확인한다. base64가 깨져 있으면
           # 여기서 잡지 않으면 한참 뒤 서명 단계에서 알기 어려운 오류가 난다.
+          # 비밀번호는 스크립트 글자에 넣지 않고 환경 변수 이름으로 넘긴다(:env — 명령줄 인자에도 남지 않는다).
           keytool -list -keystore "${RUNNER_TEMP}/signing/upload.jks" \
-            -storepass "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" > /dev/null
+            -storepass:env RELEASE_KEYSTORE_PASSWORD > /dev/null
           echo "✓ 키스토어 복호화 확인"
 
       - name: Build AAB

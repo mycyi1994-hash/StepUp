@@ -168,6 +168,11 @@ data class WalkSessionState(
      * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
      */
     val here: GeoPoint? = null,
+    /**
+     * [here] 를 GPS 점으로 마지막에 고친 때(ms) — 기지국 · 마지막으로 알던 위치는 0 그대로다. 같이 뛰는 사람에게 보내는 위치가
+     * 지금 것인지 가린다(경로 점은 8m 움직여야 생겨 신호등에 서 있으면 낡아 보였다). 저장본에 남기지 않는다.
+     */
+    val hereAt: Long = 0L,
     /** 정확한 위치(ACCESS_FINE_LOCATION)를 허용했는지 — 대략적인 위치만이면 GPS 를 못 쓴다 */
     val precise: Boolean = true,
     /** 휴대폰의 위치 기능 자체가 켜져 있는지 — 꺼져 있으면 권한이 있어도 위치가 오지 않는다 */
@@ -203,13 +208,21 @@ data class WalkSessionState(
      * 그런 러닝은 적립하지 않는다 — 서버도 같은 이유로 무효 처리한다.
      */
     val mockLocation: Boolean = false,
+    /**
+     * 이번 러닝에 테스트 도구의 "걸음 흉내"를 썼다(테스트 빌드만). 실제 걸음이 아니므로 적립하지 않고 서버에도
+     * 올리지 않는다 — 테스트 APK 가 실제 서버에 흉내 걸음으로 SUP 를 쌓던 것을 막는다. 저장본에도 남긴다(판 4) —
+     * 남기지 않으면 앱을 죽였다 되살린 러닝에서 표시가 사라져 흉내 걸음이 그대로 올라갔다.
+     */
+    val simulated: Boolean = false,
+    /** 방금 끝난 러닝이 테스트 걸음 때문에 적립 · 업로드에서 빠졌다 — 결과 화면 안내용 */
+    val lastSimulated: Boolean = false,
 ) {
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
 
     /** 러닝 중 실시간 판정 — 화면에 경고 배지를 띄우는 근거 */
     val liveVerdict: RunVerdict
-        get() = if (mockLocation) {
+        get() = if (mockLocation || simulated) {
             RunVerdict.VOID
         } else {
             RunIntegrity.verdict(validSegments, flaggedSegments, steps, elapsedSec)
@@ -285,6 +298,7 @@ class WalkSessionService : Service() {
                         gpsFix = true,
                         gpsLost = false,
                         here = p,
+                        hereAt = now,
                         flaggedSegments = current.flaggedSegments + 1,
                         lastFlaggedAt = now,
                     )
@@ -302,6 +316,7 @@ class WalkSessionService : Service() {
                     gpsFix = true,
                     gpsLost = false,
                     here = p,
+                    hereAt = now,
                     gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                     validSegments = if (counted) current.validSegments + 1 else current.validSegments,
                     topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
@@ -715,7 +730,8 @@ class WalkSessionService : Service() {
             // 러닝으로 볼 수 없는 세션은 여기서 걸러진다 — 걸음 0으로 정산해
             // 적립도, 에너지 소모도, 코스 완주도 일어나지 않게 한다.
             // 모의 위치가 한 번이라도 보였으면 러닝으로 치지 않는다
-            val verdict = if (session.mockLocation) {
+            // 테스트 도구로 흉내 낸 걸음이 섞였으면 적립하지 않는다 — 아래 걸음 0 으로 적혀 서버에도 올라가지 않는다
+            val verdict = if (session.mockLocation || session.simulated) {
                 RunVerdict.VOID
             } else {
                 RunIntegrity.verdict(
@@ -831,6 +847,7 @@ class WalkSessionService : Service() {
                 lastGroupCrewId = if (foreignOwner) "" else session.groupCrewId,
                 lastGroupName = session.groupName,
                 lastGroupSize = session.partySize,
+                lastSimulated = session.simulated,
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,
@@ -840,7 +857,9 @@ class WalkSessionService : Service() {
             // 파티런이었다면 로비를 결과 화면으로 전환하고 방에서 나온다. 혼자 남은
             // 방에서 출발했어도(인원 1) 방은 닫아야 한다 — 안 그러면 로비가 계속
             // 뛰는 중으로 남아 위치를 보낸다.
-            if (ServiceLocator.crewRepository.party.value.isActive) {
+            // 이 러닝이 모임(크루 · 번개)에서 출발한 러닝일 때만 — 대기실을 떠나 따로 켠 자유 러닝을 저장하면서
+            // 남의 방을 닫거나(진행자) 방에서 나오지 않게
+            if (session.group != RunGroup.NONE && ServiceLocator.crewRepository.party.value.isActive) {
                 ServiceLocator.crewRepository.finishParty(session.startedAt, reward.rewardedSteps)
             }
             // 저장까지 끝났다 — 저장본을 지운다(실패해도 다음 실행이 같은 러닝을 다시 저장할 뿐이다)
@@ -1055,6 +1074,11 @@ class WalkSessionService : Service() {
 
         fun stop(context: Context) {
             context.startService(intent(context, ACTION_STOP))
+        }
+
+        /** 테스트 도구의 "걸음 흉내"를 썼다 — 달리는 중인 러닝을 적립 · 업로드에서 뺀다 */
+        fun markSimulated() {
+            _state.update { if (it.isActive) it.copy(simulated = true) else it }
         }
 
         /** 종료 정산 카드 노출 후 초기 상태로 되돌린다. */

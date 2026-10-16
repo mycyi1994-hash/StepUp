@@ -2,6 +2,7 @@ package com.stepup.android.ui.screens.community.chat
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.runtime.saveable.Saver
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -17,6 +18,7 @@ import com.stepup.android.data.repo.ChatSync
 import com.stepup.android.data.repo.CrewChatRepository
 import com.stepup.android.data.repo.CrewPhotos
 import com.stepup.android.domain.ChatDelivery
+import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatNotice
 import com.stepup.android.domain.ChatNoticeDraft
@@ -118,6 +120,11 @@ data class ChatRoomUi(
     val online: Boolean = true,
     val olderLoading: Boolean = false,
     val olderDone: Boolean = false,
+    /**
+     * 이전 대화를 이어 받을 자리 — 처음부터 받은 쪽(reset) · 이전 대화 쪽의 맨 앞 방 순서. 따라오기로는 옮기지 않는다
+     * (지우거나 숨긴 옛 메시지가 와도 그 앞부터 읽어 사이가 비지 않게). 받은 것이 없으면 null
+     */
+    val oldestSeq: Long? = null,
     /** 검색에서 온 메시지 — 잠깐 강조 */
     val highlight: Long? = null,
 )
@@ -231,7 +238,10 @@ class ChatRoomViewModel(
 
     private fun apply(sync: ChatSync) {
         val current = _ui.value.messages
-        val merged = if (sync.reset) ChatRules.replace(current, sync.messages) else ChatRules.merge(current, sync.messages)
+        // 처음부터 다시 받으면(reset) 이어 받을 자리도 그 쪽의 맨 앞으로. 따라오기는 자리를 두고, 그보다 앞의 옛 메시지
+        // (지웠거나 숨겨 rev 가 오른 것 · 그 답장)는 받아 둔 것만 바꾼다
+        val oldest = if (sync.reset) ChatRules.oldestSeq(sync.messages) else _ui.value.oldestSeq
+        val merged = if (sync.reset) ChatRules.replace(current, sync.messages) else ChatRules.merge(current, sync.messages, oldest)
         lastRev = sync.lastRev
         readSent = maxOf(readSent, sync.meta.myReadSeq)
         // 크루장 권한만 사라졌다 — 크루원 화면으로 돌아가고 한 번 알린다(소속은 그대로)
@@ -246,10 +256,13 @@ class ChatRoomViewModel(
                 meta = sync.meta,
                 messages = merged,
                 online = true,
-                olderDone = it.olderDone || (sync.reset && sync.messages.size < ChatRules.PAGE),
+                oldestSeq = oldest,
+                // 처음부터 다시 받았으면 그 쪽으로만 정한다 — 전에 끝까지 읽었어도 이제 그 앞이 있을 수 있다
+                olderDone = if (sync.reset) sync.messages.size < ChatRules.PAGE else it.olderDone,
             )
         }
-        repo.keepSnapshot(crewId, ChatSync(sync.meta, merged.filter { it.id != null }, true, sync.lastRev))
+        // 다시 열면 처음부터 받은 쪽처럼 맨 앞을 이어 받을 자리로 삼는다 — 같은 자리부터만 담는다
+        repo.keepSnapshot(crewId, ChatSync(sync.meta, ChatRules.window(merged, oldest), true, sync.lastRev))
     }
 
     private suspend fun end() {
@@ -339,7 +352,8 @@ class ChatRoomViewModel(
     }
 
     private fun reconcile(messages: List<ChatMessage>) {
-        val merged = ChatRules.merge(_ui.value.messages, messages)
+        // 받아 둔 구간보다 앞의 내 옛 메시지(확인해 보니 오래전에 받았다)는 이 폰의 것만 빼고 이전 대화 자리에 둔다
+        val merged = ChatRules.merge(_ui.value.messages, messages, _ui.value.oldestSeq)
         _ui.update { it.copy(messages = merged) }
         repo.setLocal(crewId, merged.filter { it.id == null })
     }
@@ -364,15 +378,28 @@ class ChatRoomViewModel(
     }
 
     private suspend fun older(): Boolean {
-        val oldest = _ui.value.messages.mapNotNull { it.seq }.minOrNull() ?: run {
+        // 받아 둔 구간의 맨 앞부터 — 목록에서 가장 앞의 메시지가 아니다(따라오기로 온 옛 메시지 앞부터 읽으면 사이가 빈다)
+        val oldest = _ui.value.oldestSeq ?: run {
             _ui.update { it.copy(olderDone = true) }
             return false
         }
         _ui.update { it.copy(olderLoading = true) }
         return when (val outcome = repo.history(crewId, oldest)) {
             is ChatOutcome.Ok -> {
-                val merged = ChatRules.merge(_ui.value.messages, outcome.value)
-                _ui.update { it.copy(messages = merged, olderLoading = false, olderDone = outcome.value.size < ChatRules.PAGE) }
+                if (_ui.value.oldestSeq == oldest) {
+                    val merged = ChatRules.merge(_ui.value.messages, outcome.value)
+                    _ui.update {
+                        it.copy(
+                            messages = merged,
+                            oldestSeq = ChatRules.oldestSeq(outcome.value) ?: oldest,
+                            olderLoading = false,
+                            olderDone = outcome.value.size < ChatRules.PAGE,
+                        )
+                    }
+                } else {
+                    // 그새 처음부터 다시 받았다(reset) — 옛 자리 앞의 쪽은 지금 구간과 이어지지 않으니 버린다(다음엔 새 자리부터)
+                    _ui.update { it.copy(olderLoading = false) }
+                }
                 outcome.value.isNotEmpty()
             }
             is ChatOutcome.Ended -> {
@@ -391,7 +418,7 @@ class ChatRoomViewModel(
         viewModelScope.launch {
             var pages = 0
             while (_ui.value.messages.none { it.id == messageId } && pages < 20) {
-                val oldest = _ui.value.messages.mapNotNull { it.seq }.minOrNull() ?: break
+                val oldest = _ui.value.oldestSeq ?: break
                 if (oldest <= seq || _ui.value.olderDone) break
                 if (!older()) break
                 pages++
@@ -1191,4 +1218,62 @@ internal suspend fun prepareChatPhoto(context: Context, crewId: String, uri: Uri
     val (photo, loaded) = ServiceLocator.crewChat.preparePhoto(context, uri)
     if (photo != null) ChatPhotoDraft.put(crewId, photo)
     return if (photo == null && loaded is CrewPhotos.Loaded.Ok) CrewPhotos.Loaded.Broken else loaded
+}
+
+// ─────────────────────────────────────────────────────────────
+// 크루 달리기에서 보내는 메시지(CR20 크루에게 알리기 · CR21 기록 공유) — 저장 상태
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 보내기 전 내 메시지를 저장 상태에 담는다 — 화면을 돌리거나 앱이 다시 만들어져도 같은 요청 키로 다시 보내게(서버에는 하나).
+ * 이 폰에서 만든 것(서버 번호 · 답장 없음)만 담고, 그 밖은 담지 않는다(다시 보낼 때 새로 만든다).
+ */
+val ChatOutgoingSaver: Saver<ChatMessage?, Any> = Saver(
+    save = { message -> message?.let(::outgoingState) },
+    restore = { raw -> outgoingOf(raw) },
+)
+
+/**
+ * 기록 공유(CR21)의 보낼 메시지와 사진 — 사진은 앱 안 파일 자리만 담고(저장 상태가 커지지 않게) 되살릴 때 그 파일을
+ * 다시 읽는다. 파일이 없으면 담지 않은 것처럼(다시 보낼 때 새로 만든다).
+ */
+val ChatOutgoingPhotoSaver: Saver<Pair<ChatMessage, ChatPhoto?>?, Any> = Saver(
+    save = { pending ->
+        pending?.let { (message, photo) ->
+            outgoingState(message)?.let { arrayListOf<Any?>(it, photo?.file?.path, photo?.width, photo?.height) }
+        }
+    },
+    restore = { raw ->
+        val saved = raw as? List<*>
+        val message = outgoingOf(saved?.getOrNull(0))
+        when {
+            message == null -> null
+            !message.hasImage -> message to null
+            else -> savedPhoto(saved?.getOrNull(1) as? String, saved?.getOrNull(2) as? Int, saved?.getOrNull(3) as? Int)
+                ?.let { message to it }
+        }
+    },
+)
+
+private fun outgoingState(message: ChatMessage): ArrayList<Any?>? {
+    val clientId = message.clientId ?: return null
+    if (message.id != null || message.reply != null) return null
+    return arrayListOf<Any?>(clientId, message.authorId, message.kind.name, message.body, message.hasImage, message.createdAt, message.localImage)
+}
+
+private fun outgoingOf(raw: Any?): ChatMessage? {
+    val saved = (raw as? List<*>)?.takeIf { it.size == 7 } ?: return null
+    val clientId = saved[0] as? String ?: return null
+    return ChatMessage(
+        id = null, seq = null, authorId = saved[1] as? String, authorName = null, kind = ChatKind.of(saved[2] as? String),
+        body = saved[3] as? String, hasImage = saved[4] == true, clientId = clientId, createdAt = saved[5] as? Long ?: 0L,
+        delivery = ChatDelivery.SENDING, localImage = saved[6] as? String,
+    )
+}
+
+/** 앱 안 파일에서 보낼 사진을 다시 — 올릴 모양은 그 파일 그대로의 JPEG base64(줄바꿈 없이). 없거나 읽을 수 없으면 null */
+private fun savedPhoto(path: String?, width: Int?, height: Int?): ChatPhoto? {
+    val file = path?.let { java.io.File(it) }?.takeIf { it.isFile } ?: return null
+    val bytes = runCatching { file.readBytes() }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return null
+    return ChatPhoto(java.util.Base64.getEncoder().encodeToString(bytes), file, width ?: 0, height ?: 0)
 }

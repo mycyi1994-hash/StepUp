@@ -103,6 +103,29 @@ class DatabaseMigrationTest {
         } finally { db.close(); context.deleteDatabase(name) }
     }
 
+    @Test fun onlyRunsTheCurrentOwnerUploadsAreKeptFromDeletion() = runBlocking {
+        // 확인을 기다리는 러닝(PENDING · 걸음 있음)은 지금 주인이 올릴 것만 지킨다. 주인 없는(legacy) 러닝은 계정 · 손님으로는
+        // 올라가지 않아 지울 수 있고, 지금 주인이 legacy(사용자 번호 없이 저장된 옛 로그인)면 올라가므로 지킨다
+        val name = "record-delete-owner-test.db"
+        context.deleteDatabase(name)
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
+            .addMigrations(*AppDatabase.MIGRATIONS).build()
+        try {
+            val dao = db.walkSessionDao()
+            fun pending(id: Long, owner: String) = WalkSessionEntity(
+                id = id, startedAt = id + 1000L, endedAt = 10000, steps = 100, durationSec = 300,
+                distanceMeters = 76.0, calories = 4.0, pointsEarned = 1.0, track = "retained-track",
+                recordingOwner = owner,
+            )
+            dao.insert(pending(1, "legacy"))
+            dao.insert(pending(2, "guest"))
+            dao.insert(pending(3, "legacy"))
+            assertEquals("legacy run the guest never uploads can be deleted", 1, dao.deleteRecord("guest", 1))
+            assertEquals("the guest's own pending run is kept", 0, dao.deleteRecord("guest", 2))
+            assertEquals("legacy run is kept while the current owner uploads it", 0, dao.deleteRecord("legacy", 3))
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
     @Test fun versionSixUpgradePreservesRecordsBalanceAndInventory() {
         val name = "migration-v6-test.db"
         context.deleteDatabase(name)

@@ -160,12 +160,15 @@ data class CrewRankRow(
  */
 class CrewApi(private val server: StepUpServer) {
 
-    /** 크루 목록. 사람이 많은 크루가 위로 온다. */
+    /**
+     * 크루 목록. 사람이 많은 크루가 위로 온다. 내가 가입했거나 신청한 크루는 늘 맨 앞에 — 목록은 200개까지라,
+     * 크루가 많아지면 사람이 적은 내 크루가 잘려 가입 표시 · 크루 달리기에서 "가입 안 한 크루"로 보였다.
+     */
     suspend fun crews(): ServerResult<List<CrewRow>> =
         server.authed { token ->
             server.http.get(
                 "${server.restUrl}/crew_feed?select=*" +
-                    "&order=member_count.desc,created_at.desc&limit=200",
+                    "&order=joined.desc,requested.desc,member_count.desc,created_at.desc&limit=200",
                 server.headers(token),
             )
         }.mapBody { serverJson.decodeFromString<List<CrewRow>>(it) }

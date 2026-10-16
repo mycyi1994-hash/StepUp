@@ -44,6 +44,8 @@ class BoostRepository(
     suspend fun isActive(type: BoostType): Boolean =
         boostDao.activeOf(type.id, System.currentTimeMillis()) != null
 
+    private val requestKeys = RequestKeys()
+
     /**
      * 부스트 구매. 잔액이 부족하거나 이미 같은 지속형 부스트가 활성이면 실패한다.
      *
@@ -56,7 +58,12 @@ class BoostRepository(
             if (!type.isInstant && boostDao.activeOf(type.id, System.currentTimeMillis()) != null) {
                 return PurchaseError.ALREADY_ACTIVE
             }
-            return when (val outcome = api.boostBuy(type.id).toEconomyOutcome()) {
+            // 응답을 잃은 구매를 다시 누르면 같은 요청 번호로 보낸다 — 서버가 한 번만 치른다(0057). 답을 받으면 버린다
+            // (답을 잃은 번호도 10분 뒤에는 버린다 — 한참 뒤의 새 구매가 옛 영수증을 받지 않게)
+            val key = requestKeys.keyFor(type.id)
+            val result = api.boostBuy(type.id, key).toEconomyOutcome()
+            if (result != EconomyOutcome.Offline) requestKeys.done(type.id, key)
+            return when (val outcome = result) {
                 EconomyOutcome.Ok -> {
                     sync?.refresh()
                     rewardRepository.notify(NotificationType.BOOST_ACTIVATED, type.id, type.cost)

@@ -60,6 +60,12 @@ class PartyLobbyViewModel(
 
     fun startParty() = crewRepository.startParty()
 
+    /** 출발 시각에 맞춰 러닝을 켜도 되는가(출발한 지 2분 안) */
+    fun startIsFresh(): Boolean = crewRepository.startIsFresh()
+
+    /** 함께 출발을 놓쳤다 — 그 방에서 나오고 새 대기실을 연다 */
+    fun missedStart() = crewRepository.missedStart()
+
     fun kick(memberId: String) = crewRepository.kick(memberId)
 
     companion object {

@@ -446,7 +446,8 @@ fun RunScreen(
     }
     val focusRun = challengeLaunched &&
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
-    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !party.isActive && !recordingCourse && !focusRun
+    // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
+    val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
     // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
     // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
     var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
@@ -560,7 +561,10 @@ fun RunScreen(
     // 지도 틀 안 — 실제 지도(달린 길 · 지금 자리 · 고른 코스 · 같이 뛰는 사람). 위치 없이 기록하면 안내만
     val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
     // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
-    val showOthers = together && !party.networkProblem
+    // 방과 끊겼으면(내보냄 · 로그인 필요 · 방 닫힘) 더 묻지 않아 남은 점이 굳는다 — 지금 위치처럼 그리지 않는다
+    val showOthers = together && !party.networkProblem && !party.roomClosed &&
+        party.problem != com.stepup.android.data.repo.PartyProblem.REMOVED &&
+        party.problem != com.stepup.android.data.repo.PartyProblem.SIGN_IN
     val others = remember(party.members, showOthers, crewRun, crewLinkNow) {
         when {
             // 크루 달리기 — 이어져 있는 동안, 위치 공유를 켠 사람만(공유하지 않는 사람은 줄에만 있다)
@@ -2290,7 +2294,8 @@ private fun finishReward(session: WalkSessionState, points: Double?, upload: Str
     val noReward = !voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0
     val reward = stringResource(R.string.result_reward)
     return when {
-        voided -> ResultReward(reward, "0", Settle.VOID, listOf(stringResource(R.string.run_void_body)))
+        voided -> ResultReward(reward, "0", Settle.VOID,
+            listOf(stringResource(if (session.lastSimulated) R.string.finish_simulated else R.string.run_void_body)))
         // 따로 도는 두 흐름이 잠깐 어긋나도 "+0" 을 보이지 않게 — 확정은 서버 금액까지 읽었을 때만
         finishConfirmed(session, points, upload) && points != null -> ResultReward(reward, "+" + rewardAmount(points), Settle.DONE)
         nothingToUpload -> ResultReward(reward, "0", Settle.NOT_PAID, listOf(stringResource(R.string.finish_no_steps)))

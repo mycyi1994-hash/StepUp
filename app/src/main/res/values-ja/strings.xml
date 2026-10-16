@@ -585,7 +585,8 @@
     <string name="party_problem_network">サーバーに接続できません。再試行中…</string>
     <string name="party_problem_closed">ルームは閉じられました。</string>
     <string name="party_problem_failed">処理できませんでした。もう一度お試しください。</string>
-    <string name="party_gps_rule">ホストから %1$dm 以上離れると自動的にパーティから外れます。</string>
+    <string name="party_problem_missed_start">一緒の出発から時間が経ったため、新しい待機室を開きました。</string>
+    <string name="party_gps_rule">出発から2分後も互いに%1$dm以内で走ったメンバーだけがパーティ人数に数えられます。</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">辞退</string>
@@ -799,7 +800,7 @@ StepUp と走り出そう。</string>
     <string name="guide4_tip">ヒント: ＋ボタンで新規投稿。</string>
     <string name="guide5_title">クルーとパーティラン</string>
     <string name="guide5_body" formatted="false">クルーに参加または作成してロビーへ。全員準備完了でホストがスタート、1人につき+10%ブースト。</string>
-    <string name="guide5_tip">ヒント: ホストから100m以上離れると自動離脱!</string>
+    <string name="guide5_tip">ヒント: 一緒に出発して互いに200m以内で走ると、一緒に走った人数に数えられます!</string>
     <string name="guide6_title">イベントと報酬</string>
     <string name="guide6_body">週間キャンペーンや招待報酬で SUP をゲット。通知からそのまま受け取りもできます。</string>
     <string name="guide6_tip">ヒント: イベントタブで開催中のキャンペーンを確認。</string>
@@ -1303,6 +1304,7 @@ StepUp と走り出そう。</string>
     <string name="finish_pending">ラン完了 · サーバー確認中</string>
     <string name="finish_pending_note">ランの記録を保存しました。報酬はサーバーの確認後に確定します。</string>
     <string name="finish_rejected">サーバーがこの記録を認めませんでした</string>
+    <string name="finish_simulated">テスト用の歩数シミュレーションを含むランはサーバーに送らず、付与もしません。</string>
     <string name="finish_balance">保有</string>
     <string name="finish_done">完了</string>
     <string name="finish_share">記録をシェア</string>

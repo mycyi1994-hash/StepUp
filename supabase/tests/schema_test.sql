@@ -1781,6 +1781,7 @@ end $$;
 -- 카운트다운이 지난 것으로 만든다.
 reset role;
 update public.parties set starts_at = now() - interval '1 second' where id = pg_temp.fx('party')::bigint;
+update public.party_runs set starts_at = now() - interval '1 second' where party_id = pg_temp.fx('party')::bigint;
 set role authenticated;
 call pg_temp.login('22222222-2222-2222-2222-222222222222');
 
@@ -1825,6 +1826,55 @@ begin
    where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
   perform pg_temp.ok((v_other->>'lat')::double precision = 37.5301 and (v_other->>'km')::numeric = 1.234,
     '켠 사람의 위치 · 거리는 달리는 동안 같은 방 사람에게 보인다');
+  -- 0056: 1번이 2번 곁(약 14m)에서 위치를 보낸다
+  perform public.party_ping(v_party, 37.5302, 126.9341);
+end $$;
+reset role;
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform pg_temp.ok((select count(*) from public.party_near where party_id = v_party) = 1,
+    '30초 안에 위치를 보낸 같이 출발한 사람이 200m 안이면 곁으로 적힌다 (0056)');
+  update public.party_near set last_at = now() - interval '1 hour' where party_id = v_party;
+end $$;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_ping(pg_temp.fx('party')::bigint, 35.1796, 129.0756); end $$;
+reset role;
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform pg_temp.ok((select last_at < now() - interval '30 minutes' from public.party_near where party_id = v_party),
+    '멀리(부산)서 보낸 위치는 곁으로 적히지 않는다 (0056)');
+  -- 2번이 일시정지해 위치를 안 보내면서 방 상태만 계속 묻는다
+  update public.party_members set pinged_at = now() - interval '3 minutes', last_seen = now()
+   where party_id = v_party and user_id = '22222222-2222-2222-2222-222222222222';
+end $$;
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and (v_other->>'seen_sec')::int < 5,
+    '2분 넘게 위치를 안 보낸 사람의 옛 점은 방 상태를 계속 물어도 보이지 않는다 (0056)');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint;
+begin
+  perform public.party_ping(v_party, 37.5301, 126.9340);
+  perform public.party_ping(v_party, null, null);
+end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint := pg_temp.fx('party')::bigint; v_other json;
+begin
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'lng' is null,
+    'GPS 를 잃어 위치 없이 보내면 옛 점이 바로 지워진다 (0056)');
 end $$;
 call pg_temp.login('22222222-2222-2222-2222-222222222222');
 do $$ begin perform public.party_share(pg_temp.fx('party')::bigint, false); end $$;
@@ -1870,6 +1920,120 @@ begin
   perform pg_temp.ok(
     (select status from public.parties where id = pg_temp.fx('party')::bigint) = 'FINISHED',
     '아무도 안 남으면 방이 닫힌다');
+end $$;
+set role authenticated;
+
+-- 0056: 진행자가 내보낸 사람은 그 방에 다시 들어오지 못한다
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint;
+begin
+  v_party := public.party_open(pg_temp.fx('crew')::uuid, null);
+  insert into fix (k, v) values ('party_kick', v_party::text);
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_open(pg_temp.fx('crew')::uuid, null); end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.party_kick(pg_temp.fx('party_kick')::bigint, '22222222-2222-2222-2222-222222222222'); end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+call pg_temp.must_fail(
+  format($q$ select public.party_open('%s', null) $q$, pg_temp.fx('crew')),
+  '진행자가 내보낸 사람은 대기실을 다시 열어도 그 방에 들어가지 못한다 (0056)');
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.party_leave(pg_temp.fx('party_kick')::bigint); end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+declare v_party bigint;
+begin
+  v_party := public.party_open(pg_temp.fx('crew')::uuid, null);
+  perform pg_temp.ok(v_party <> pg_temp.fx('party_kick')::bigint, '그 방이 닫히면 새 대기실은 열 수 있다');
+  perform public.party_leave(v_party);
+end $$;
+
+-- 0056: 진행자가 마치면 방에 남은 위치 · 거리를 지운다
+reset role;
+do $$
+declare v_party bigint;
+begin
+  insert into public.parties (crew_id, host_id, status, starts_at)
+  values (pg_temp.fx('crew')::uuid, '11111111-1111-1111-1111-111111111111', 'RUNNING', now() - interval '5 minutes')
+  returning id into v_party;
+  insert into public.party_members (party_id, user_id, ready, lat, lng, km, share_location, pinged_at) values
+    (v_party, '11111111-1111-1111-1111-111111111111', true, 37.5301, 126.9340, 1.2, true, now()),
+    (v_party, '22222222-2222-2222-2222-222222222222', true, 37.5302, 126.9341, 1.1, true, now());
+  insert into fix (k, v) values ('party_fin', v_party::text);
+end $$;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_finish(pg_temp.fx('party_fin')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select status from public.parties where id = pg_temp.fx('party_fin')::bigint) = 'RUNNING'
+    and (select count(*) from public.party_members
+          where party_id = pg_temp.fx('party_fin')::bigint and lat is not null) = 2,
+    '진행자가 아니면 마치기로 방을 닫지 못한다');
+end $$;
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.party_finish(pg_temp.fx('party_fin')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select status from public.parties where id = pg_temp.fx('party_fin')::bigint) = 'FINISHED'
+    and (select count(*) from public.party_members
+          where party_id = pg_temp.fx('party_fin')::bigint and (lat is not null or lng is not null or km is not null)) = 0,
+    '진행자가 마치면 방이 닫히고 남은 위치 · 거리가 지워진다 (0056)');
+end $$;
+set role authenticated;
+-- 0056: 진행자가 2분 전에 마쳐도 남은 사람들은 자기 러닝이 끝날 때까지 위치를 보내 곁으로 적힌다(보너스 인원).
+--       닫힌 방의 좌표는 본인 말고 아무에게도 보이지 않고, 나가면 지워진다
+reset role;
+do $$
+declare v_party bigint := pg_temp.fx('party_fin')::bigint;
+begin
+  insert into public.party_members (party_id, user_id, ready, share_location) values
+    (v_party, '33333333-3333-3333-3333-333333333333', true, true);
+  insert into public.party_runs (party_id, user_id, starts_at) values
+    (v_party, '22222222-2222-2222-2222-222222222222', now() - interval '5 minutes'),
+    (v_party, '33333333-3333-3333-3333-333333333333', now() - interval '5 minutes');
+end $$;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_ping(pg_temp.fx('party_fin')::bigint, 37.5302, 126.9341); end $$;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$
+declare v_party bigint := pg_temp.fx('party_fin')::bigint; v_other json;
+begin
+  perform public.party_ping(v_party, 37.5303, 126.9342);
+  select m into v_other from json_array_elements(public.party_state(v_party)->'members') m
+   where m->>'user_id' = '22222222-2222-2222-2222-222222222222';
+  perform pg_temp.ok(v_other->>'lat' is null and v_other->>'km' is null,
+    '닫힌 방에서 보낸 위치는 다른 사람에게 보이지 않는다 (0056)');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(exists (select 1 from public.party_near
+                              where party_id = pg_temp.fx('party_fin')::bigint
+                                and user_a = '22222222-2222-2222-2222-222222222222'
+                                and user_b = '33333333-3333-3333-3333-333333333333'),
+    '진행자가 마친 뒤에도 남아 같이 뛰는 사람들은 곁으로 적힌다 — 진행자가 일찍 마쳐도 보너스 인원을 잃지 않는다 (0056)');
+end $$;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin perform public.party_leave(pg_temp.fx('party_fin')::bigint); end $$;
+call pg_temp.login('33333333-3333-3333-3333-333333333333');
+do $$ begin perform public.party_leave(pg_temp.fx('party_fin')::bigint); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.party_members
+      where party_id = pg_temp.fx('party_fin')::bigint and (lat is not null or lng is not null)) = 0,
+    '닫힌 방에서 나가면 그 사람의 위치도 지워진다');
 end $$;
 set role authenticated;
 
@@ -2065,6 +2229,30 @@ values
   ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-20 07:00+09', timestamptz '2026-09-20 07:40+09', 2400, 6000, 5000, 'CLEAN'),
   ('11111111-1111-1111-1111-111111111111', timestamptz '2026-09-21 07:00+09', timestamptz '2026-09-21 07:40+09', 2400, 6000, 9000, 'VOID');
 
+set role authenticated;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+begin
+  perform pg_temp.ok(
+    not public.session_tag_crew(timestamptz '2026-09-20 07:00+09', pg_temp.fx('crew')::uuid),
+    '크루의 함께 달리기 방에 묶이지 않은 러닝(혼자 달린 러닝)은 크루 기록에 적히지 않는다 (0056)');
+end $$;
+-- 정산이 두 러닝을 그 크루의 함께 달리기 방에 묶었다
+reset role;
+do $$
+declare v_p1 bigint; v_p2 bigint;
+begin
+  insert into public.parties (crew_id, host_id, status, starts_at)
+  values (pg_temp.fx('crew')::uuid, '11111111-1111-1111-1111-111111111111', 'FINISHED', timestamptz '2026-09-20 07:00+09')
+  returning id into v_p1;
+  insert into public.parties (crew_id, host_id, status, starts_at)
+  values (pg_temp.fx('crew')::uuid, '11111111-1111-1111-1111-111111111111', 'FINISHED', timestamptz '2026-09-21 07:00+09')
+  returning id into v_p2;
+  update public.walk_sessions set party_id = v_p1
+   where user_id = '11111111-1111-1111-1111-111111111111' and started_at = timestamptz '2026-09-20 07:00+09';
+  update public.walk_sessions set party_id = v_p2
+   where user_id = '11111111-1111-1111-1111-111111111111' and started_at = timestamptz '2026-09-21 07:00+09';
+end $$;
 set role authenticated;
 call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
@@ -2427,8 +2615,26 @@ begin
     (select cells from public.territory_board(20) where crew_id = v_a) = v_marks,
     '크루 순위에 차지한 칸 수가 나온다');
 
-  -- 크루 러닝이었다고 나중에 적으면 칸이 그 크루로 옮겨 간다
   v_b := public.crew_create('새벽 크루', 'SB', '', '서울 성수', 'OPEN');
+  insert into fix (k, v) values ('terr_crew_b', v_b::text);
+end $$;
+-- 그 러닝은 새벽 크루의 함께 달리기 방에서 달린 것이었다(정산이 방에 묶었다 — 0056 부터 크루 기록의 조건)
+reset role;
+do $$
+declare v_party bigint;
+begin
+  insert into public.parties (crew_id, host_id, status, starts_at)
+  values (pg_temp.fx('terr_crew_b')::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'FINISHED',
+          pg_temp.fx('terr_start')::timestamptz)
+  returning id into v_party;
+  update public.walk_sessions set party_id = v_party where id = pg_temp.fx('terr_session')::bigint;
+end $$;
+set role authenticated;
+call pg_temp.login('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+do $$
+declare v_b uuid := pg_temp.fx('terr_crew_b')::uuid; r record; v_start timestamptz := pg_temp.fx('terr_start')::timestamptz;
+begin
+  -- 크루 러닝이었다고 나중에 적으면 칸이 그 크루로 옮겨 간다
   perform public.session_tag_crew(v_start, v_b);
   perform pg_temp.ok(
     (select bool_and(crew_id = v_b) from public.territory_view(37.49, 128.99, 37.53, 129.01)),
@@ -2779,9 +2985,14 @@ begin
 
   v_before := (select balance - (select upgrade_cost from public.my_sneakers() where id = v_id)
                  from public.my_economy());
-  v_lv := public.sneaker_upgrade(v_id);
+  v_lv := public.sneaker_upgrade(v_id, '0057a000-0000-0000-0000-000000000002');
   perform pg_temp.ok(v_lv = 2, '강화하면 레벨이 오른다');
   perform pg_temp.ok((select balance from public.my_economy()) = v_before, '강화 값만큼 잔고가 준다');
+  -- 응답을 잃어 같은 요청 번호로 다시 보냈다 — 한 단계 더 올리거나 다시 치르지 않는다 (0057)
+  perform pg_temp.ok(public.sneaker_upgrade(v_id, '0057a000-0000-0000-0000-000000000002') = 2
+                     and (select level from public.my_sneakers() where id = v_id) = 2
+                     and (select balance from public.my_economy()) = v_before,
+    '같은 요청 번호로 다시 보낸 강화는 다시 치르지 않는다 (0057)');
 
   perform public.sneaker_equip(v_id);
   perform pg_temp.ok((select count(*) from public.my_sneakers() where equipped) = 1, '신는 신발은 하나');
@@ -2836,12 +3047,18 @@ end $$;
 
 -- 수리: 태운 SUP 만큼 잔고가 줄고 내구도가 100 으로
 do $$
-declare v_before numeric; v_dur numeric;
+declare v_before numeric; v_dur numeric; v_after numeric;
 begin
   v_before := (select balance from public.my_economy());
-  v_dur := public.sneaker_repair(pg_temp.fx('paid_shoe')::bigint);
+  v_dur := public.sneaker_repair(pg_temp.fx('paid_shoe')::bigint, null, '0057a000-0000-0000-0000-000000000001');
   perform pg_temp.ok(v_dur = 100, '수리하면 내구도가 가득 찬다');
-  perform pg_temp.ok((select balance from public.my_economy()) < v_before, '수리 값이 빠진다');
+  v_after := (select balance from public.my_economy());
+  perform pg_temp.ok(v_after < v_before, '수리 값이 빠진다');
+  -- 응답을 잃어 같은 요청 번호로 다시 보냈다 — 다시 치르지 않고 처음 결과를 돌려준다 (0057)
+  perform pg_temp.ok(
+    public.sneaker_repair(pg_temp.fx('paid_shoe')::bigint, null, '0057a000-0000-0000-0000-000000000001') = 100
+    and (select balance from public.my_economy()) = v_after,
+    '같은 요청 번호로 다시 보낸 수리는 다시 치르지 않는다 (0057)');
 end $$;
 call pg_temp.must_fail(format($q$ select public.sneaker_repair(%s) $q$, pg_temp.fx('paid_shoe')),
   '고칠 곳이 없으면 값을 받지 않는다');
@@ -2878,7 +3095,14 @@ begin
     (v_party, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', v_at, null),
     (v_party, 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', v_at, v_at + interval '5 minutes'),
     (v_party, '33333333-3333-3333-3333-333333333333', v_at, v_at + interval '10 seconds');
+  -- 0056: f1 과 f2 는 5분째에도 서로 곁(200m)이었고, 3333 은 출발 직후(30초)에만 f1 곁이었다
+  insert into public.party_near (party_id, user_a, user_b, first_at, last_at) values
+    (v_party, 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2',
+     v_at + interval '20 seconds', v_at + interval '5 minutes'),
+    (v_party, '33333333-3333-3333-3333-333333333333', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
+     v_at + interval '10 seconds', v_at + interval '30 seconds');
   insert into fix (k, v) values ('party_at', v_at::text);
+  insert into fix (k, v) values ('party_x2', v_party::text);
 end $$;
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
@@ -2888,19 +3112,26 @@ begin
   select * into r from public.record_session(v_at + interval '5 seconds', v_at + interval '605 seconds', 600, 600,
     '', 0, 9, '', false);
   perform pg_temp.ok((select party_size from public.walk_sessions where id = r.session_id) = 2,
-    '폰이 9명이라고 해도 출발 명단에서 실제로 뛴 2명으로 센다 (X2)');
+    '폰이 9명이라고 해도 출발 명단에서 곁에서 같이 뛴 2명으로 센다 (X2 · 0056)');
 end $$;
--- 출발 명단에 있어도 뛰지 않은 사람은 세지 않는다 (0032)
+-- 출발 명단에 있어도 곁에서 같이 뛰지 않은 사람은 세지 않는다 (0056 — 0032 의 "기록을 올린 사람"도 이제 세지 않는다)
 reset role;
 do $$
-declare v_at timestamptz := pg_temp.fx('party_at')::timestamptz; v_size int;
+declare v_at timestamptz := pg_temp.fx('party_at')::timestamptz; v_party bigint := pg_temp.fx('party_x2')::bigint;
+  v_size int;
 begin
   select size into v_size from economy.party_for('33333333-3333-3333-3333-333333333333', v_at);
-  perform pg_temp.ok(v_size = 3, '본인 · 위치를 계속 보낸 사람 · 기록을 올린 사람을 센다');
-  update public.party_runs set last_ping = null
-   where user_id = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2' and starts_at = v_at;
+  perform pg_temp.ok(v_size = 1,
+    '출발 직후에만 곁에 있던 사람은 기록을 올린 사람(f1)이 있어도 혼자로 센다 — 열 걸음 뒤 마치는 계정으로 부풀리지 못하게');
+  -- 3333 이 6분째에 f2 곁에 있었다 — f2 는 f1 곁이었으니 셋이 한 무리다
+  insert into public.party_near (party_id, user_a, user_b, first_at, last_at) values
+    (v_party, '33333333-3333-3333-3333-333333333333', 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2',
+     v_at + interval '6 minutes', v_at + interval '6 minutes');
   select size into v_size from economy.party_for('33333333-3333-3333-3333-333333333333', v_at);
-  perform pg_temp.ok(v_size = 2, '위치를 안 보내고 기록도 없는 사람은 빠진다');
+  perform pg_temp.ok(v_size = 3, '곁의 곁도 같은 무리로 센다 — 속도가 달라 흩어진 무리도 한 무리');
+  delete from public.party_near
+   where party_id = v_party and user_a = '33333333-3333-3333-3333-333333333333'
+     and user_b = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2';
 end $$;
 
 -- 하루 금액 상한 — 가입 7일 안은 절반
@@ -5511,6 +5742,94 @@ begin
     '연결이 끊겼을 때 보내던 메시지는 서버가 받은 것만 확인된다');
 end $$;
 
+-- 0056: 보내다 실패해 다시 보낼 알림 줄도, 메시지가 지워지면 아직 보이는 앞 메시지로 바뀐다(없으면 지운다)
+reset role;
+delete from public.push_outbox;
+set role authenticated;
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('m21', public.crew_chat_send(pg_temp.fx('ch')::uuid,
+    'c0000000-0000-0000-0000-000000000021', '먼저 출발할게요.')->>'id');
+end $$;
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+begin
+  insert into fix (k, v) values ('m22', public.crew_chat_send(pg_temp.fx('ch')::uuid,
+    'c0000000-0000-0000-0000-000000000022', '잘못 보냈어요.')->>'id');
+end $$;
+reset role;
+update public.push_outbox set claimed_at = now() - interval '3 minutes', attempts = 1
+ where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT';
+set role authenticated;
+do $$
+begin
+  perform public.crew_chat_delete(pg_temp.fx('m22')::bigint);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT' and sent_at is null) = 1
+    and (select args->>'text' from public.push_outbox
+          where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT') = '먼저 출발할게요.',
+    '지운 메시지의 알림 줄(보내다 실패한 줄 포함)은 아직 보이는 앞 메시지로 바뀐다 (0056)');
+end $$;
+set role authenticated;
+do $$
+begin
+  perform public.crew_chat_hide(pg_temp.fx('m21')::bigint);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT') = 0,
+    '알릴 메시지가 모두 가려지면 알림 줄을 지운다 (0056)');
+end $$;
+set role authenticated;
+-- 0056: 보내다 실패한 줄(옛 메시지)과 새 메시지로 기다리는 줄이 함께 있을 때 옛 메시지가 지워지면 실패한 줄은 지운다
+--       (가장 새 메시지로 고치면 기다리는 줄과 같은 메시지 알림이 두 번 갔다)
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+begin
+  insert into fix (k, v) values ('m24', public.crew_chat_send(pg_temp.fx('ch')::uuid,
+    'c0000000-0000-0000-0000-000000000024', '지울 메시지예요.')->>'id');
+end $$;
+reset role;
+update public.push_outbox set claimed_at = now() - interval '3 minutes', attempts = 1
+ where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT';
+set role authenticated;
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+do $$
+begin
+  perform public.crew_chat_send(pg_temp.fx('ch')::uuid, 'c0000000-0000-0000-0000-000000000025', '새 소식이에요.');
+end $$;
+call pg_temp.login('49000000-0000-0000-0000-000000000002');
+do $$
+begin
+  perform public.crew_chat_delete(pg_temp.fx('m24')::bigint);
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT' and sent_at is null) = 1
+    and (select args->>'text' from public.push_outbox
+          where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT') = '새 소식이에요.',
+    '지운 메시지의 실패한 알림 줄은 새 메시지로 기다리는 줄이 있으면 지운다 — 같은 알림이 두 번 가지 않는다 (0056)');
+end $$;
+set role authenticated;
+call pg_temp.login('49000000-0000-0000-0000-000000000001');
+-- 내보내기 직전에 민수에게 알림이 하나 기다리고 있다
+do $$
+begin
+  perform public.crew_chat_send(pg_temp.fx('ch')::uuid, 'c0000000-0000-0000-0000-000000000023', '곧 시작해요.');
+end $$;
+
 -- 크루장이 민수를 내보낸다 → 대화에 한 줄, 민수는 바로 참여 종료
 call pg_temp.login('49000000-0000-0000-0000-000000000001');
 do $$
@@ -5529,6 +5848,15 @@ do $$
 begin
   perform pg_temp.ok(jsonb_array_length(public.crew_chat_rooms()) = 0, '내보내진 사람의 대화 목록에서 방이 빠진다');
 end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(
+    (select count(*) from public.push_outbox
+      where user_id = '49000000-0000-0000-0000-000000000003' and kind = 'CREW_CHAT' and sent_at is null) = 0,
+    '내보내진 사람에게 기다리던 크루 채팅 알림은 보내지 않는다 (0056)');
+end $$;
+set role authenticated;
 
 -- 크루장을 넘기면 숨기기 · 공지는 새 크루장만
 call pg_temp.login('49000000-0000-0000-0000-000000000001');

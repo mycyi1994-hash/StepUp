@@ -43,7 +43,7 @@
     <string name="run_crew_lobby_label">一起出发的跑团成员</string>
     <string name="run_crew_joined_unit">人参与</string>
     <string name="run_crew_member">跑团成员</string>
-    <string name="run_crew_gps_rule">跑步时与组织者相距超过%1$d米，就会从一起跑的人数中移出。</string>
+    <string name="run_crew_gps_rule">出发2分钟后仍彼此相距%1$d米以内一起跑的人，才会计入一起跑的人数。</string>
     <string name="run_crew_go_ready_sub">出发准备完成</string>
     <string name="run_crew_go_pill">一起出发</string>
     <string name="run_crew_go_together">%1$d人一起跑</string>

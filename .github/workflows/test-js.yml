@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       # 한쪽이 실패해도 다른 쪽 결과를 봐야 어디가 문제인지 안다.
       fail-fast: false

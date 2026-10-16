@@ -170,8 +170,12 @@ sealed interface ChatPreview {
 sealed interface ChatItem {
     val key: String
 
-    data class Day(val day: LocalDate) : ChatItem {
-        override val key: String get() = "d:$day"
+    data class Day(
+        val day: LocalDate,
+        /** 바로 아래 첫 메시지의 열쇠 — 자정 무렵 방 순서와 보낸 시각이 엇갈려 같은 날짜 줄이 또 생겨도 열쇠는 겹치지 않게 */
+        val first: String,
+    ) : ChatItem {
+        override val key: String get() = "d:$day:$first"
     }
 
     data class Line(val message: ChatMessage) : ChatItem {
@@ -249,8 +253,12 @@ object ChatRules {
      * 서버에서 온 메시지를 지금 목록에 합친다. 같은 서버 번호는 더 늦게 바뀐 것(rev)으로, 이 폰에만 있는 내 메시지
      * (보내는 중 · 전송 대기 · 실패)는 서버가 같은 요청 키의 메시지를 돌려주면 빠진다 — 두 개로 보이지 않는다.
      * 서버 메시지는 방 순서대로, 이 폰에만 있는 것은 맨 아래(보낸 차례대로).
+     *
+     * [from](받아 둔 구간의 맨 앞 — 이전 대화를 이어 받을 자리)을 주면 그보다 앞의 옛 메시지는 이미 받아 둔 것만 바꾼다.
+     * 따라오기는 지우거나 숨긴 옛 메시지(와 그 답장)도 돌려주는데, 받아 두지 않은 것이 끼면 그 사이가 빈 채로 남는다 —
+     * 그런 메시지는 이전 대화로 읽을 때 지금 상태로 온다. 넣지 않은 것도 서버가 받은 내 메시지면 이 폰의 것은 뺀다.
      */
-    fun merge(current: List<ChatMessage>, incoming: List<ChatMessage>): List<ChatMessage> {
+    fun merge(current: List<ChatMessage>, incoming: List<ChatMessage>, from: Long? = null): List<ChatMessage> {
         val byId = LinkedHashMap<Long, ChatMessage>()
         for (message in current) {
             val id = message.id ?: continue
@@ -259,9 +267,10 @@ object ChatRules {
         for (message in incoming) {
             val id = message.id ?: continue
             val before = byId[id]
+            if (before == null && from != null && (message.seq ?: Long.MAX_VALUE) < from) continue
             if (before == null || message.rev >= before.rev) byId[id] = message
         }
-        val acknowledged = byId.values.mapNotNullTo(HashSet()) { it.clientId }
+        val acknowledged = (byId.values + incoming.filter { it.id != null }).mapNotNullTo(HashSet()) { it.clientId }
         val local = current.filter { it.id == null && it.clientId !in acknowledged }
         return byId.values.sortedWith(compareBy<ChatMessage> { it.seq ?: Long.MAX_VALUE }.thenBy { it.id }) + local
     }
@@ -269,6 +278,16 @@ object ChatRules {
     /** 방이 처음부터 다시 왔을 때(reset) — 이 폰에만 있는 내 메시지는 남기고 서버 것은 새로 받은 것으로 */
     fun replace(current: List<ChatMessage>, incoming: List<ChatMessage>): List<ChatMessage> =
         merge(current.filter { it.id == null }, incoming)
+
+    /** 이전 대화를 이어 받을 자리 — 처음부터 받은 쪽(reset) · 이전 대화 쪽의 맨 앞 방 순서(빈 쪽이면 null) */
+    fun oldestSeq(page: List<ChatMessage>): Long? = page.mapNotNull { it.seq }.minOrNull()
+
+    /**
+     * 다시 열 때 먼저 보일 대화 — 서버가 받은 것 중 받아 둔 구간([from] 부터)만. 다시 열면 처음부터 받은 쪽처럼
+     * 맨 앞을 이어 받을 자리로 삼으니, 그 앞의 옛 메시지가 끼면 사이가 빈 채로 남는다.
+     */
+    fun window(messages: List<ChatMessage>, from: Long?): List<ChatMessage> =
+        messages.filter { it.id != null && (from == null || (it.seq ?: Long.MAX_VALUE) >= from) }
 
     /**
      * 내 메시지 옆 미확인 수 — 나를 뺀 지금 크루원 중 그 메시지보다 앞까지만 읽은 사람(메시지 뒤에 가입한 사람은 빼고).
@@ -313,7 +332,7 @@ object ChatRules {
         for ((index, message) in messages.withIndex()) {
             val day = Instant.ofEpochMilli(message.createdAt).atZone(zone).toLocalDate()
             if (day != lastDay) {
-                items += ChatItem.Day(day)
+                items += ChatItem.Day(day, message.key)
                 lastDay = day
             }
             if (message.kind == ChatKind.SYSTEM) {

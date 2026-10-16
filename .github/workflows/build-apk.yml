@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "claude/**"
-      - "codex/stepup-cohesive-redesign"
       - "main"
   pull_request:
   workflow_dispatch:
@@ -21,7 +20,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # 가장 오래 걸린 빌드가 17분 남짓(2026-10-14) — 그 두 배에서 끊는다. 멈춘 빌드가 기본값 6시간을 잡아먹지 않게
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4

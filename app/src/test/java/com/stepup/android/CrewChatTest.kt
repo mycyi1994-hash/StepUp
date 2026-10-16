@@ -1,11 +1,13 @@
 package com.stepup.android
 
+import androidx.compose.runtime.saveable.SaverScope
 import com.stepup.android.data.remote.ChatMessageRow
 import com.stepup.android.data.remote.ChatRoomRow
 import com.stepup.android.data.remote.ChatSyncRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.serverJson
 import com.stepup.android.data.repo.ChatOutcome
+import com.stepup.android.data.repo.ChatPhoto
 import com.stepup.android.data.repo.chat
 import com.stepup.android.domain.ChatDelivery
 import com.stepup.android.domain.ChatEvent
@@ -14,14 +16,19 @@ import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatPreview
 import com.stepup.android.domain.ChatRead
+import com.stepup.android.domain.ChatReply
 import com.stepup.android.domain.ChatRole
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRules
 import com.stepup.android.domain.ChatState
 import com.stepup.android.ui.AppChromePolicy
+import com.stepup.android.ui.screens.community.chat.ChatOutgoingPhotoSaver
+import com.stepup.android.ui.screens.community.chat.ChatOutgoingSaver
 import com.stepup.android.ui.screens.community.chat.ChatRoutes
+import java.io.File
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -29,7 +36,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 크루 채팅(2026-09-29) — 서버 메시지와 이 폰의 내 메시지를 합치는 규칙, 미확인 수, 줄 묶음, 미리보기, 서버 답 읽기.
+ * 크루 채팅(2026-09-29) — 서버 메시지와 이 폰의 내 메시지를 합치는 규칙, 이전 대화를 이어 받을 자리, 미확인 수, 줄 묶음,
+ * 미리보기, 서버 답 읽기, 다시 보낼 때의 요청 키.
  */
 class CrewChatTest {
     private val me = "u-me"
@@ -82,6 +90,41 @@ class CrewChatTest {
     }
 
     @Test
+    fun `따라오기로 온 받아 두지 않은 옛 메시지는 넣지 않는다 — 이전 대화가 그 앞에서 끊기지 않게`() {
+        // 451~500 을 보고 있다(이어 받을 자리 451). 크루장이 100 을 숨겼다 — 서버는 100 과 그 답장(120 · 470)의 rev 를 올려 돌려준다
+        val window = (451L..500L).map { server(it, "u-a") }
+        val hidden = server(100, "u-b", rev = 600).copy(state = ChatState.HIDDEN, body = null)
+        val quoted = ChatReply(100, 100, "u-b", "b", ChatKind.TEXT, ChatState.HIDDEN, null)
+        val incoming = listOf(hidden, server(120, "u-c", rev = 600), server(470, "u-a", rev = 600).copy(reply = quoted), server(501, "u-d", rev = 601))
+        val merged = ChatRules.merge(window, incoming, from = 451)
+        // 옛 메시지는 빠지고 새 메시지는 이어 붙는다 — 목록의 맨 앞이 그대로 이어 받을 자리다
+        assertEquals((451L..501L).toList(), merged.map { it.seq })
+        // 받아 둔 답장은 원문이 숨겨진 것으로 바뀐다
+        assertEquals(ChatState.HIDDEN, merged.first { it.id == 470L }.reply?.state)
+        // 이전 대화 쪽은 자리 없이 그대로 합친다(지금 상태로 온다)
+        assertEquals(ChatState.HIDDEN, ChatRules.merge(merged, listOf(hidden)).first().state)
+    }
+
+    @Test
+    fun `받아 둔 구간보다 앞의 내 옛 메시지가 확인되면 이 폰의 것만 빠진다`() {
+        val current = listOf(server(900, "u-a"), server(901, "u-b"), local("k1", "오래전에 보낸 것", ChatDelivery.PENDING))
+        val merged = ChatRules.merge(current, listOf(server(500, me, "오래전에 보낸 것", client = "k1")), from = 900)
+        assertEquals(listOf(900L, 901L), merged.map { it.seq })
+        assertTrue(merged.none { it.clientId == "k1" })
+    }
+
+    @Test
+    fun `다시 열 때 먼저 보일 대화는 이어 받을 자리부터 — 다시 열어도 맨 앞이 같은 자리다`() {
+        val messages = listOf(server(100, "u-b"), server(451, "u-a"), server(452, "u-a"), local("k1", "보내는 중"))
+        val kept = ChatRules.window(messages, from = 451)
+        assertEquals(listOf(451L, 452L), kept.map { it.seq })
+        assertEquals(451L, ChatRules.oldestSeq(kept))
+        // 빈 쪽은 자리가 없다 · 자리가 없으면(빈 방에서 시작) 서버가 받은 것 모두
+        assertNull(ChatRules.oldestSeq(emptyList()))
+        assertEquals(listOf(100L, 451L, 452L), ChatRules.window(messages, from = null).map { it.seq })
+    }
+
+    @Test
     fun `내 메시지 옆 미확인 수 — 나를 빼고 그 메시지보다 앞까지만 읽은 사람, 뒤에 가입한 사람은 빼고`() {
         val message = server(10, me, minute = 10)
         val reads = listOf(
@@ -125,6 +168,21 @@ class CrewChatTest {
         val bubbles = items.filterIsInstance<ChatItem.Bubble>()
         assertEquals(listOf(true, false, false, true), bubbles.map { it.header })
         assertEquals(listOf(false, true, true, true), bubbles.map { it.time })
+    }
+
+    @Test
+    fun `자정 무렵 방 순서와 보낸 시각이 엇갈려도(둘째 날 · 첫날 · 둘째 날) 목록 열쇠는 겹치지 않는다`() {
+        // 19시 + 300분 = 다음 날 0시 — 첫날 23:59 에 시작한 메시지가 다음 날 0시 메시지보다 늦게 순서를 받았다
+        val messages = listOf(
+            server(1, "u-a", minute = 300),
+            server(2, "u-b", minute = 299),
+            server(3, "u-a", minute = 301),
+            // 시계가 늦은 폰에서 아직 보내는 중인 내 메시지(첫날로 찍혔다)
+            local("k1", "늦은 시계"),
+        )
+        val items = ChatRules.timeline(messages, meta(), me, zone)
+        assertEquals(4, items.count { it is ChatItem.Day })
+        assertEquals(items.size, items.map { it.key }.toSet().size)
     }
 
     @Test
@@ -206,6 +264,32 @@ class CrewChatTest {
         assertTrue(ServerResult.Rejected("message_gone").chat() is ChatOutcome.Rejected)
         assertTrue(ServerResult.Retry("503").chat() is ChatOutcome.Offline)
         assertEquals(ChatOutcome.Ok(3L), ServerResult.Ok(3L).chat())
+    }
+
+    @Test
+    fun `크루에게 알리기 · 기록 공유는 화면이 다시 만들어져도 같은 요청 키로 다시 보낸다`() {
+        val scope = SaverScope { true }
+        val saved = with(ChatOutgoingSaver) { scope.save(local("k1", "같이 달려요")) }!!
+        val restored = ChatOutgoingSaver.restore(saved)
+        assertEquals("k1", restored?.clientId)
+        assertEquals("같이 달려요", restored?.body)
+        // 서버가 받은 메시지는 담지 않는다(되살릴 것이 없다)
+        assertNull(with(ChatOutgoingSaver) { scope.save(server(1, me, client = "k0")) })
+
+        // 사진은 앱 안 파일 자리만 담고, 되살릴 때 그 파일을 다시 읽는다(올릴 모양 그대로)
+        val bytes = byteArrayOf(1, 2, 3)
+        val file = File.createTempFile("chat-photo", ".jpg").apply { writeBytes(bytes); deleteOnExit() }
+        val photo = ChatPhoto(Base64.getEncoder().encodeToString(bytes), file, 640, 480)
+        val message = local("k2", "기록").copy(kind = ChatKind.IMAGE, hasImage = true, localImage = file.path)
+        val savedPair = with(ChatOutgoingPhotoSaver) { scope.save(message to photo) }!!
+        val restoredPair = ChatOutgoingPhotoSaver.restore(savedPair)
+        assertEquals("k2", restoredPair?.first?.clientId)
+        assertEquals(photo, restoredPair?.second)
+        // 그림 없이 보내던 것은 그대로 · 파일이 없어졌으면 담지 않은 것처럼(새로 만든다)
+        val textOnly = with(ChatOutgoingPhotoSaver) { scope.save(local("k3", "기록") to null) }!!
+        assertEquals("k3", ChatOutgoingPhotoSaver.restore(textOnly)?.first?.clientId)
+        file.delete()
+        assertNull(ChatOutgoingPhotoSaver.restore(savedPair))
     }
 
     @Test

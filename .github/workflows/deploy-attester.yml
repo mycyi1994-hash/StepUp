@@ -35,7 +35,7 @@ jobs:
   deploy:
     # 손으로 돌려도 main 의 것만 올린다
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: attester
