@@ -893,7 +893,8 @@ private fun PointsHero(board: PointsBoard, compact: Boolean) {
                         .padding(horizontal = if (compact) 8.dp else 10.dp, vertical = 16.dp).testTag("lb-points-rank"),
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    Text(rank.toString(), style = lbNumber(29.sp, Lb.White, FontWeight.SemiBold), maxLines = 1, modifier = Modifier.alignByBaseline())
+                    Text(rank.toString(), style = lbNumber(29.sp, Lb.White, FontWeight.SemiBold), maxLines = 1,
+                        modifier = Modifier.alignByBaseline().testTag("lb-points-rank-value"))
                     val suffix = stringResource(R.string.lb_rank_suffix)
                     if (suffix.isNotEmpty()) {
                         Spacer(Modifier.width(3.dp))

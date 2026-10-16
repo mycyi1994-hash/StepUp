@@ -299,7 +299,8 @@ internal fun LbFooterSurface(
     Box(
         modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(face, shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
-            .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
+            // 누를 수 없는 줄(크루 없음 · 순위 없음)도 한 덩어리로 읽힌다
+            .semantics(mergeDescendants = true) { if (label != null) contentDescription = label }
             .padding(horizontal = 13.dp, vertical = 12.dp),
         contentAlignment = Alignment.CenterStart,
     ) { content() }

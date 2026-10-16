@@ -45,7 +45,25 @@ import org.junit.Test
  * 고정 값 화면은 모양만 확인한다. 장면은 leaderboard/ 에 남는다(L01~ 장면, M01~ 배경이 흐르는 프레임).
  */
 class LeaderboardDesignTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    // 앞 검사가 앱 언어를 바꿔 두었을 수 있다 — 한국어로 찍고 끝나면 되돌린다(RunJourneyDesignTest 와 같은 방식)
+    @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
+        private var previous = ""
+        override fun before() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val context = instrumentation.targetContext
+            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            previous = com.stepup.android.core.AppLocale.tag
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+        }
+        override fun after() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+        }
+    }
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
+
+    /** 화면이 실제로 쓰는 언어의 글(검사는 글자를 지어 맞추지 않는다) */
+    private fun text(id: Int): String = compose.activity.getString(id)
 
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "leaderboard").apply { mkdirs() }
 
@@ -74,7 +92,7 @@ class LeaderboardDesignTest {
         awaitTag("lb-crew-footer")
         compose.onNodeWithTag("lb-crew-winner-name", useUnmergedTree = true).assertTextContains("서울러닝클럽")
         compose.onNodeWithTag("lb-crew-footer-rank", useUnmergedTree = true).assertTextContains("12")
-        compose.onNodeWithTag("lb-criterion", useUnmergedTree = true).assertTextContains("크루 전체 거리")
+        compose.onNodeWithTag("lb-criterion", useUnmergedTree = true).assertTextContains(text(com.stepup.android.R.string.lb_criterion_crew))
         shot("L01-crew")
         // L02 우리 크루 앞뒤 — 시트가 열린 동안 배경은 멈춘다
         tap("lb-crew-footer")
@@ -115,13 +133,13 @@ class LeaderboardDesignTest {
         tap("lb-board-2")
         awaitTag("lb-points-hero")
         compose.onNodeWithTag("lb-points-mine", useUnmergedTree = true).assertTextContains("2,680")
-        compose.onNodeWithTag("lb-points-rank", useUnmergedTree = true).assertTextContains("84")
+        compose.onNodeWithTag("lb-points-rank-value", useUnmergedTree = true).assertTextContains("84")
         compose.onNodeWithTag("lb-points-gap", useUnmergedTree = true).assertTextContains("80")
         shot("L07-points")
         // L08 우리 크루 범위 — 목록 · 내 순위 · 차이가 함께 바뀐다
         tap("lb-scope-1")
         compose.waitUntil(15_000) {
-            runCatching { compose.onNodeWithTag("lb-points-rank", useUnmergedTree = true).assertTextContains("8") }.isSuccess
+            runCatching { compose.onNodeWithTag("lb-points-rank-value", useUnmergedTree = true).assertTextContains("8") }.isSuccess
         }
         compose.onNodeWithTag("lb-points-gap", useUnmergedTree = true).assertTextContains("80")
         shot("L08-points-crew")
@@ -142,7 +160,8 @@ class LeaderboardDesignTest {
         shot("L11-personal-unranked")
         // L12 크루 없음
         open(FixtureLeaderboards(crews = LeaderLoad.Ready(LeaderboardSamples.crews(mine = false))), tag = "lb-crew-footer")
-        compose.onNodeWithTag("lb-crew-footer", useUnmergedTree = true).assertTextContains("아직 크루가 없어요", substring = true)
+        compose.onNodeWithTag("lb-crew-footer")
+            .assertTextContains(text(com.stepup.android.R.string.lb_crew_none_title), substring = true)
         shot("L12-crew-no-crew")
         // L13 통신 실패 — 다시 시도
         open(FixtureLeaderboards(crews = LeaderLoad.Failed(offline = true)), tag = "lb-failed")
@@ -171,8 +190,15 @@ class LeaderboardDesignTest {
             val model = LeaderboardViewModel(FixtureLeaderboards())
             scene = { LeaderboardScreen(onBack = {}, viewModel = model) }
         }
-        compose.mainClock.advanceTimeBy(500)
-        compose.waitUntil(15_000) { exists("lb-crew-winner") }
+        // 시계를 멈춰 두었으니(배경이 끝없이 돈다) 기다림도 시계를 손으로 넘기며 — 순위가 오면 다음 프레임에 그려진다
+        var ready = false
+        repeat(150) {
+            if (!ready) {
+                compose.mainClock.advanceTimeBy(100)
+                ready = exists("lb-crew-winner")
+            }
+        }
+        check(ready) { "크루 1위 면이 그려지지 않았다" }
         listOf(0L, 1_500L, 1_500L, 1_500L).forEachIndexed { i, step ->
             compose.mainClock.advanceTimeBy(step)
             awaitFrameOnScreen(compose.activity)

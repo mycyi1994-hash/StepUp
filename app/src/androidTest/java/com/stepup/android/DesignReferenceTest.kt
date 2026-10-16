@@ -198,8 +198,9 @@ class DesignReferenceTest {
                 try {
                     awaitScene(s)
                 } catch (failure: Throwable) {
-                    capture("$name-failed")
-                    throw failure
+                    runCatching { capture("$name-failed") }
+                    // 어느 장면에서 멈췄는지 실패 요약(android_test_failures.py)에 남긴다
+                    throw AssertionError("scene $name: ${failure.message}", failure)
                 }
                 try {
                     assertReviewedLayout(s, enlarged)
@@ -430,7 +431,9 @@ class DesignReferenceTest {
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
             Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
-            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST, Scene.COURSES ->
+            Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST, Scene.COURSES,
+            // 리더보드(2026-10-17)는 하단 탭 없는 남색 전면 화면
+            Scene.RANKING ->
                 compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
             else -> compose.onNodeWithTag(BOTTOM_NAV_TAG).assertExists()
         }
