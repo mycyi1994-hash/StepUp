@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 자유러닝 시작(2026-10-17 전달본): 신발 점검 → 3·2·1·0 → StepUP! → 지도 펼침. 보상 · SUP 글은 두지 않는다. -->
+<resources>
+    <string name="run_free_check_title">출발 전,\n신발을 확인해요</string>
+    <string name="run_free_check_equipped">장착 중인 러닝화</string>
+    <string name="run_free_check_durability">남은 내구도</string>
+    <string name="run_free_check_ready">이 신발로 달릴 준비가 됐어요</string>
+    <string name="run_free_check_back">돌아가기</string>
+    <string name="run_free_check_go">이 신발로 출발</string>
+    <string name="run_free_check_close">점검창 닫기</string>
+    <string name="run_free_check_grade_level">%1$s · Lv. %2$d</string>
+</resources>

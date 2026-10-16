@@ -24,7 +24,6 @@
     <string name="run_free_delete_failed">未能删除记录</string>
     <string name="run_free_try_again">请重试</string>
     <string name="run_free_retry">重试</string>
-    <string name="run_free_go_now">立即开始</string>
     <string name="run_free_more">更多</string>
     <string name="run_free_share">分享</string>
     <string name="run_free_share_time">我在StepUp跑了%1$s。</string>

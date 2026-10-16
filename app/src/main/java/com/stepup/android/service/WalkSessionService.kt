@@ -621,6 +621,7 @@ class WalkSessionService : Service() {
                                 this@WalkSessionService, R.string.run_storage_blocked, android.widget.Toast.LENGTH_LONG,
                             ).show()
                         }
+                        startRefusals.value += 1
                         ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                         stopSelf()
                         return@launch
@@ -628,6 +629,7 @@ class WalkSessionService : Service() {
                 }
             if (pending != null) {
                 recovery.value = pending
+                startRefusals.value += 1
                 ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return@launch
@@ -1235,6 +1237,12 @@ class WalkSessionService : Service() {
 
         /** 저장 없이 끝내기가 실패한 횟수 — 바뀌면 화면이 알린다(러닝은 그대로 이어진다) */
         val discardFailures = MutableStateFlow(0)
+
+        /**
+         * 시작 요청이 러닝을 켜지 않은 횟수 — 끝나지 않은 러닝이 있어 먼저 묻거나([recovery]) 저장 공간을 못 써 알렸다.
+         * 바뀌면 자유러닝 시작 연출이 지도를 펼치지 않고 거둔다(실패한 러닝을 시작한 것처럼 보이지 않게).
+         */
+        val startRefusals = MutableStateFlow(0)
 
         fun discard(context: Context) {
             context.startService(intent(context, ACTION_DISCARD))

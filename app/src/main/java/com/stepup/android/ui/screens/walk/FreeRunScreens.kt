@@ -1,9 +1,6 @@
 package com.stepup.android.ui.screens.walk
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -49,12 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -70,9 +63,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
-import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.TrackPoint
-import com.stepup.android.ui.components.LiveRouteMap
 import com.stepup.android.ui.components.LocalMapTone
 import com.stepup.android.ui.components.MapTone
 import com.stepup.android.ui.components.RunMapPlaceholder
@@ -81,7 +72,6 @@ import com.stepup.android.ui.components.RunSheetText
 import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
-import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
 
@@ -281,7 +271,6 @@ private class FreeTags(val time: String, val pace: String, val distance: String,
 private val LiveTags = FreeTags("run-hero-value", "run-pace-value", "run-distance-value", "run-speed-value", "run-durability-value")
 private val ResultTags = FreeTags("run-result-time", "run-result-pace", "run-result-distance", "run-result-speed", "run-result-durability")
 /** 3-2-1 의 판(00:00 | —) — 러닝 중 화면의 이름표와 겹치지 않게 */
-private val CountdownTags = FreeTags("run-countdown-time", "run-countdown-pace", "run-countdown-distance", "run-countdown-speed", "run-countdown-durability")
 
 /** 시트 · 실패 화면의 한 줄 — "24:18 · 3.24 km". 거리를 모르면 시간만 */
 internal fun freeTimeDistance(time: String, distance: FreeDistance): String = when (distance) {
@@ -603,79 +592,6 @@ internal fun ColumnScope.FreeDiscardSheetContent(line: String, onDiscard: () -> 
             kind = FreeButtonKind.Secondary)
         FreeRunButton(stringResource(R.string.run_free_discard_confirm), onDiscard, Modifier.weight(1f).testTag("run-discard-confirm"),
             kind = FreeButtonKind.Danger)
-    }
-}
-
-// ── 3-2-1 ──────────────────────────────────────────────────────────
-
-/**
- * 자유 러닝 3-2-1(02) — 지금 자리만 보이는 지도(경로는 아직 없다) · 곧 시작해요 · 남은 만큼 도는 고리 안 숫자 ·
- * 기록 판(00:00 | —) · 바로 시작 | 취소. "GPS 연결됨"은 적지 않는다 — 러닝 전에는 마지막으로 알던 자리뿐이다.
- */
-@Composable
-internal fun FreeRunCountdownStage(
-    kicker: String,
-    digit: Int,
-    caption: String?,
-    here: GeoPoint?,
-    onGo: () -> Unit,
-    onCancel: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = freeRunColors()
-    val motion = LocalMotion.current
-    val sweep by animateFloatAsState(360f * digit.coerceIn(0, 3) / 3f, tween(motion.duration(600)), label = "freeCountdownRing")
-    FreeRunFrame(
-        rootTag = "run-countdown",
-        modifier = modifier,
-        map = {
-            if (here != null) {
-                LiveRouteMap(
-                    points = listOf(here), modifier = Modifier.fillMaxSize().testTag("run-countdown-map"),
-                    follow = true, live = true, routeColor = FreeRunRoute,
-                )
-            } else {
-                Box(Modifier.fillMaxSize().background(c.screen))
-            }
-            Column(
-                Modifier.align(Alignment.Center).background(
-                    Brush.radialGradient(listOf(c.screen.copy(alpha = 0.78f), c.screen.copy(alpha = 0f))), CircleShape,
-                ).padding(28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(kicker, style = runTextStyle(22.sp, c.text, FontWeight.ExtraBold, 1.2f), textAlign = TextAlign.Center,
-                    modifier = Modifier.testTag("run-countdown-kicker"))
-                Spacer(Modifier.height(12.dp))
-                Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.fillMaxSize()) {
-                        val stroke = 6.dp.toPx()
-                        val inset = stroke / 2f
-                        val arc = Size(size.width - stroke, size.height - stroke)
-                        drawArc(c.ring, 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(stroke))
-                        drawArc(c.primary, -90f, sweep, false, topLeft = Offset(inset, inset), size = arc,
-                            style = Stroke(stroke, cap = StrokeCap.Round))
-                    }
-                    Text(digit.toString(), style = runTextStyle(92.sp, c.text, FontWeight.ExtraBold, 1.0f),
-                        modifier = Modifier.testTag("run-countdown-digit"))
-                }
-            }
-        },
-        mapTag = null,
-        top = null,
-        onMore = null,
-        moreLabel = "",
-        moreTag = "",
-        onExpand = null,
-    ) { compact ->
-        FreeTopRow(FreeRunNumbers("00:00", null, FreeDistance.Waiting, null, null), CountdownTags, compact)
-        if (caption != null) FreeCaption(caption, tag = "run-countdown-caption")
-        Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
-        FreeButtonRow {
-            FreeRunButton(stringResource(R.string.run_free_go_now), onGo, Modifier.weight(1.15f).testTag("run-countdown-go"),
-                icon = Icons.Filled.PlayArrow)
-            FreeRunButton(stringResource(R.string.run_cancel), onCancel, Modifier.weight(1f).testTag("run-countdown-cancel"),
-                kind = FreeButtonKind.Secondary)
-        }
     }
 }
 

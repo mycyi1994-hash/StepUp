@@ -393,11 +393,11 @@ private fun DrawScope.drawEllipseShadow(center: Offset, rx: Float, ry: Float, co
 
 /**
  * 목록 칸 · 켤레 줄의 작은 신발 — 보이는 부분만 칸에 맞춘다(비율 그대로, 가운데).
- * 그림을 읽지 못하면 다른 신발 대신 작은 그림 아이콘을 둔다.
+ * 그림을 읽지 못하면 다른 신발 대신 작은 그림 아이콘을 둔다. 크게 보이는 자리(자유러닝 신발 점검)는 [sample] 을 원본([ShoeArtFull])으로.
  */
 @Composable
-fun ShoeArtThumbnail(sneaker: Sneaker, modifier: Modifier = Modifier, failedTint: Color = Color.Gray) {
-    val load by rememberShoeArt(sneaker, ShoeArtThumb)
+fun ShoeArtThumbnail(sneaker: Sneaker, modifier: Modifier = Modifier, failedTint: Color = Color.Gray, sample: Int = ShoeArtThumb) {
+    val load by rememberShoeArt(sneaker, sample)
     Box(modifier, contentAlignment = Alignment.Center) {
         when (val current = load) {
             is ShoeArtLoad.Ready -> Canvas(Modifier.fillMaxSize()) {

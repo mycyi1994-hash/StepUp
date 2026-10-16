@@ -24,7 +24,6 @@
     <string name="run_free_delete_failed">記録を削除できませんでした</string>
     <string name="run_free_try_again">もう一度お試しください</string>
     <string name="run_free_retry">再試行</string>
-    <string name="run_free_go_now">すぐ開始</string>
     <string name="run_free_more">その他</string>
     <string name="run_free_share">共有</string>
     <string name="run_free_share_time">StepUpで%1$s走りました。</string>

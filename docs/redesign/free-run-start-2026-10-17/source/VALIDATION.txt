@@ -1,0 +1,23 @@
+검증 기록 — 2026-10-17
+
+수행 완료:
+- 최신 시안과 핸드오프 패키지의 fragment 내용 일치.
+- 작업용 및 이동 가능한 패키지 빌더 실행 성공.
+- fragment의 JavaScript 구문 검사 통과(new Function).
+- 모든 정적 querySelector/querySelectorAll 대상 존재 확인.
+- 이미지 4개 모두 data URI로 포함됨. 자산 자리 표시자 해소.
+- fragment 크기 1MB 미만.
+- 카운트다운 제목·보조 문구·취소 버튼 제거 확인.
+- 로고 레이어의 불투명 배경 제거 및 공통 startTime 코드 확인.
+- 이미지 decode 사전 요청, 연속 원호 회전 코드 확인.
+- motion-spec.json 파싱과 정상 타임라인 합계 일치 확인.
+- reference.html 독립 실행 래퍼 생성 완료.
+- window.openai 사용은 widgetState/setWidgetState로 제한됨.
+
+수행하지 않은 검증:
+- 브라우저 실제 렌더링 및 프레임별 재생 검증.
+- 실제 Android/iOS 앱 컴파일, SDK 지도 합성 동작 검증.
+- 실제 기기 60/120Hz 부드러움, 프레임 시간 측정.
+- 권한 거부, 세션 시작 실패, 백그라운드 복귀의 실제 앱 검증.
+
+구조상 끊김 원인을 수정했고 정적 검증을 수행했다. 기기에서의 체감과 성능이 검증된 상태로 간주하지 않는다. 실제 앱 구현 후 HANDOFF.txt의 완료 기준을 확인한다.

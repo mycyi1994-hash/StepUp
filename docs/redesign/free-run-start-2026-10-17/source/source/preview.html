@@ -1,0 +1,328 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+#su-free-start{--su-navy:#061b30;--su-blue:#1450ff;--su-white:#fff;--su-ice:#a9c2e4;--su-muted:#9db0c8;--su-line:#29435f;--su-surface:#102b46;--su-ease:cubic-bezier(.23,1,.32,1);--su-morph:cubic-bezier(.77,0,.175,1)}
+#su-free-start .su-preview{display:flex;justify-content:center;padding:22px 8px 25px;min-height:790px}
+#su-free-start .su-toolbar{justify-content:center;gap:8px;margin:0 0 8px}
+#su-free-start .su-frame{position:relative;width:360px;max-width:100%;height:748px;overflow:hidden;border-radius:28px;background:var(--su-navy);color:var(--su-white);font:400 14px/1.45 Pretendard,'Noto Sans KR',sans-serif;box-shadow:0 14px 38px #0003;isolation:isolate;color-scheme:dark}
+#su-free-start .su-frame *,#su-free-start .su-frame *:before,#su-free-start .su-frame *:after{box-sizing:border-box}
+#su-free-start .su-frame :where(h1,h2,h3,p){margin:0}
+#su-free-start .su-frame :where(button){font:inherit;color:inherit;border:0;background:none;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#su-free-start .su-frame :where(button):focus-visible{outline:3px solid #8db5ff;outline-offset:4px}
+#su-free-start [hidden]{display:none!important}
+#su-free-start .su-layer{position:absolute;inset:0}
+#su-free-start .su-status{position:absolute;top:14px;left:22px;right:21px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;z-index:4}
+#su-free-start .su-status-icons{display:flex;align-items:center;gap:6px}
+#su-free-start .su-frame .su-status-icons svg{width:14px;height:14px;stroke-width:1.8}
+#su-free-start .su-home{padding:60px 24px 24px;background:var(--su-navy)}
+#su-free-start .su-brand{display:block;width:112px;height:23px;object-fit:contain;margin-bottom:42px}
+#su-free-start .su-home h2{font-size:28px;font-weight:700;letter-spacing:-1px}
+#su-free-start .su-home .su-home-sub{color:var(--su-muted);margin-top:7px;font-size:13px}
+#su-free-start .su-home-shoe{height:280px;position:relative;overflow:hidden;margin:12px -10px 0;background:radial-gradient(ellipse 50% 16% at 50% 80%,#224e7560,transparent 85%)}
+#su-free-start .su-home-shoe img{position:absolute;width:320px;max-width:100%;height:auto;left:50%;top:-10px;transform:translateX(-50%)}
+#su-free-start .su-equipped{font-size:18px;font-weight:600;margin:0 0 4px}
+#su-free-start .su-level{font-size:12px;color:var(--su-ice)}
+#su-free-start .su-primary{background:var(--su-blue)!important;border-radius:15px;min-height:54px;font-size:16px!important;font-weight:600!important;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 120ms var(--su-ease),background-color 160ms ease}
+#su-free-start .su-primary:active{transform:scale(.98)}
+#su-free-start .su-home-start{width:100%;margin-top:35px}
+#su-free-start .su-home-footer{display:flex;justify-content:space-between;margin-top:30px;padding-top:18px;border-top:1px solid var(--su-line);color:var(--su-muted);font-size:12px}
+#su-free-start .su-home-footer b{color:var(--su-white);font-size:20px;font-weight:600}
+#su-free-start .su-home-indicator{position:absolute;width:90px;height:4px;border-radius:4px;background:currentColor;opacity:.6;bottom:9px;left:calc(50% - 45px);z-index:30;pointer-events:none}
+#su-free-start .su-check{z-index:8;display:flex;align-items:center;justify-content:center;padding:22px}
+#su-free-start .su-backdrop{position:absolute;inset:0;background:#020b16ba}
+#su-free-start .su-check-card{position:relative;width:100%;max-width:316px;background:#102940;border:1px solid #32516d;border-radius:25px;padding:27px 22px 21px;box-shadow:0 24px 50px #0005}
+#su-free-start .su-check-card h2{font-size:25px;line-height:1.33;letter-spacing:-.9px;font-weight:700}
+#su-free-start .su-close{position:absolute;right:12px;top:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#aac0d8!important}
+#su-free-start .su-close svg{width:20px;height:20px}
+#su-free-start .su-check-shoe{height:174px;position:relative;overflow:hidden;margin:10px -12px 3px;background:radial-gradient(ellipse 45% 10% at 50% 91%,#436b8b55,transparent)}
+#su-free-start .su-check-shoe img{position:absolute;width:276px;height:276px;object-fit:contain;max-width:none;left:50%;top:-55px;transform:translateX(-50%)}
+#su-free-start .su-shoe-name{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:17px;font-weight:600}
+#su-free-start .su-shoe-name small{font-size:12px;color:#a9c5e7;font-weight:500;white-space:nowrap}
+#su-free-start .su-durability{margin-top:26px}
+#su-free-start .su-meter-label{display:flex;align-items:center;justify-content:space-between;color:#afc2da;font-size:13px;margin-bottom:10px}
+#su-free-start .su-meter-label strong{font-family:Bahnschrift,Pretendard,sans-serif;color:#60d5ee;font-weight:600;font-size:22px;line-height:1}
+#su-free-start .su-meter{height:7px;border-radius:8px;background:#294663;overflow:hidden}
+#su-free-start .su-meter-fill{width:92%;height:100%;border-radius:8px;background:#4ed2e8}
+#su-free-start .su-ready{margin-top:14px;display:flex;align-items:center;gap:7px;font-size:12px;color:#adc4da}
+#su-free-start .su-ready svg{width:15px;height:15px;color:#61d6b6;stroke-width:2}
+#su-free-start .su-check-actions{display:grid;grid-template-columns:80px 1fr;gap:10px;margin-top:29px}
+#su-free-start .su-back{min-height:54px;color:#b5c6da!important;font-size:14px!important}
+#su-free-start .su-count{z-index:10;background:var(--su-navy);color:var(--su-white)}
+#su-free-start .su-count:before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 90% 46% at 50% 48%,#1450ff1f,transparent 80%);pointer-events:none}
+#su-free-start .su-film{position:absolute;width:244px;height:244px;left:calc(50% - 122px);top:calc(50% - 122px);isolation:isolate;will-change:transform,opacity}
+#su-free-start .su-film-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 240deg,#1450ff22 250deg,#1450ff 350deg,#72a6ff 360deg);mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));transform:rotate(0deg);z-index:3}
+#su-free-start .su-film-ring{position:absolute;inset:1px;border:2px solid #a9c2e421;border-radius:50%;z-index:1}
+#su-free-start .su-number{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:4;font:700 italic 154px/1 Bahnschrift,'Arial Narrow',sans-serif;letter-spacing:-6px;padding:7px 16px 0 0;font-variant-numeric:tabular-nums;color:var(--su-white)}
+#su-free-start .su-launch{z-index:11;pointer-events:none}
+#su-free-start .su-launch-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#su-free-start .su-launch-wordmark{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 48px);max-width:296px;height:82px;will-change:transform,opacity}
+#su-free-start .su-launch-wordmark img{display:block;width:calc(100% - 30px);height:auto;flex:none}
+#su-free-start .su-launch-bang{display:block;flex:none;width:22px;font:italic 900 70px/1 'Arial Black',Arial,sans-serif;letter-spacing:-6px;transform:skewX(-5deg);color:var(--su-white);margin-top:-2px}
+#su-free-start .su-iris-wash{z-index:12;background:#5287ff;clip-path:circle(0px at 50% 50%);pointer-events:none}
+#su-free-start .su-iris-blue{z-index:13;background:var(--su-blue);clip-path:circle(0px at 50% 50%);pointer-events:none}
+#su-free-start .su-run{z-index:14;background:var(--su-navy);clip-path:circle(0px at 50% 50%)}
+#su-free-start .su-run-map{position:absolute;left:0;right:0;top:0;height:65%;overflow:hidden;background:#173b59}
+#su-free-start .su-map-art{width:100%;height:100%;display:block}
+#su-free-start .su-map-art text{font-family:Pretendard,'Noto Sans KR',sans-serif}
+#su-free-start .su-run-map:after{content:'';position:absolute;inset:auto 0 0;height:90px;background:linear-gradient(transparent,var(--su-navy))}
+#su-free-start .su-run-top{position:absolute;top:62px;left:20px;right:20px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+#su-free-start .su-live{display:flex;align-items:center;gap:7px;background:#061b30e8;padding:10px 13px;border:1px solid #41627c;border-radius:50px;font-size:13px;font-weight:600}
+#su-free-start .su-live-dot{width:6px;height:6px;border-radius:50%;background:#64d4ff}
+#su-free-start .su-map-button{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#061b30e8!important;border:1px solid #41627c!important}
+#su-free-start .su-map-button svg{width:18px;height:18px}
+#su-free-start .su-position{position:absolute;left:calc(50% - 11px);top:45%;width:22px;height:22px;border-radius:50%;background:var(--su-blue);border:4px solid #fff;box-shadow:0 0 0 14px #82b7ff24,0 0 0 36px #82b7ff12;z-index:1}
+#su-free-start .su-run-data{position:absolute;left:22px;right:22px;bottom:112px}
+#su-free-start .su-time-label{font-size:13px;color:var(--su-muted);margin-bottom:6px}
+#su-free-start .su-time{font:600 70px/1.1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+#su-free-start .su-run-stats{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--su-line);margin-top:20px;padding-top:18px}
+#su-free-start .su-run-stats p{color:var(--su-muted);font-size:11px;margin-bottom:7px}
+#su-free-start .su-run-stats b{font-family:Bahnschrift,Pretendard,sans-serif;font-size:23px;font-weight:500}
+#su-free-start .su-run-stats small{font:400 11px/1 Pretendard,sans-serif;color:var(--su-muted);margin-left:3px}
+#su-free-start .su-run-actions{position:absolute;left:22px;right:22px;bottom:35px;display:grid;grid-template-columns:1.2fr 1fr;gap:11px}
+#su-free-start .su-run-actions button{min-height:57px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600}
+#su-free-start .su-run-actions svg{width:18px;height:18px}
+#su-free-start .su-stop{background:#183c5f!important;border:1px solid #345a80!important}
+#su-free-start .su-stop svg{color:#ff8b94;fill:currentColor;width:12px;height:12px}
+#su-free-start .su-sample{font-size:12px;text-align:center;color:var(--muted-foreground);margin:0 0 8px}
+#su-free-start .su-cursor{cursor:inherit}
+@media(hover:hover) and (pointer:fine){#su-free-start .su-primary:hover{background:#3068ff!important}#su-free-start .su-back:hover,#su-free-start .su-close:hover{color:#fff!important}}
+@media(max-width:380px){#su-free-start .su-preview{padding:18px 0 20px}#su-free-start .su-frame{height:724px;border-radius:23px}#su-free-start .su-check{padding:16px}#su-free-start .su-check-card{padding-left:19px;padding-right:19px}#su-free-start .su-check-card h2{font-size:24px}#su-free-start .su-time{font-size:64px}#su-free-start .su-film{width:224px;height:224px;left:calc(50% - 112px);top:calc(50% - 112px)}#su-free-start .su-number{font-size:142px}}
+@media(prefers-reduced-motion:reduce){#su-free-start .su-primary{transition:background-color 160ms ease}#su-free-start .su-primary:active{transform:none}#su-free-start .su-film-sweep{display:none}#su-free-start .su-launch-wordmark{will-change:opacity}}
+</style>
+<div id="su-free-start">
+  <div class="viz-controls su-toolbar" aria-label="자유러닝 시작 단계별 시안">
+    <button type="button" class="btn cursor-interaction" data-preview="check" aria-pressed="true">신발 점검</button>
+    <button type="button" class="btn cursor-interaction" data-preview="count" aria-pressed="false">카운트다운</button>
+    <button type="button" class="btn cursor-interaction" data-preview="reveal" aria-pressed="false">StepUP! → 지도</button>
+    <button type="button" class="btn btn-primary cursor-interaction" data-preview="all">전체 재생</button>
+  </div>
+  <div class="su-preview viz-dotted-background">
+    <div class="su-frame" aria-label="StepUp 자유러닝 시작 시안" data-phase="check">
+      <div class="su-layer su-home">
+        <div class="su-status"><span>9:41</span><span class="su-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <img class="su-brand" src="__LOGO__" alt="StepUp">
+        <h2>자유러닝</h2><p class="su-home-sub">나만의 페이스로 달려볼까요?</p>
+        <div class="su-home-shoe"><img src="__SHOE__" alt="장착한 파란색 러닝화"></div>
+        <p class="su-equipped">장착 중인 러닝화</p><p class="su-level">레어 · Lv. 3</p>
+        <button type="button" class="su-primary su-home-start cursor-interaction" data-action="open-check"><i data-lucide="play" aria-hidden="true"></i>자유러닝 시작</button>
+        <div class="su-home-footer"><span>오늘 달린 거리<br><b>0.00 km</b></span><span>내구도<br><b>92%</b></span></div>
+      </div>
+      <div class="su-layer su-check" role="dialog" aria-modal="true" aria-labelledby="su-check-title">
+        <div class="su-backdrop"></div>
+        <div class="su-check-card">
+          <button type="button" class="su-close cursor-interaction" data-action="cancel" aria-label="점검창 닫기"><i data-lucide="x" aria-hidden="true"></i></button>
+          <h2 id="su-check-title">출발 전,<br>신발을 확인해요</h2>
+          <div class="su-check-shoe"><img src="__SHOE__" alt="현재 장착된 러닝화"></div>
+          <p class="su-shoe-name">장착 중인 러닝화<small>레어 · Lv. 3</small></p>
+          <div class="su-durability"><div class="su-meter-label"><span>남은 내구도</span><strong>92%</strong></div><div class="su-meter" role="meter" aria-label="신발 내구도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="92"><div class="su-meter-fill"></div></div></div>
+          <p class="su-ready"><i data-lucide="circle-check" aria-hidden="true"></i>이 신발로 달릴 준비가 됐어요</p>
+          <div class="su-check-actions"><button type="button" class="su-back cursor-interaction" data-action="cancel">돌아가기</button><button type="button" class="su-primary cursor-interaction" data-action="start">이 신발로 출발</button></div>
+        </div>
+      </div>
+      <div class="su-layer su-count" hidden aria-label="러닝 시작 카운트다운">
+        <div class="su-status"><span>9:41</span><span class="su-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <div class="su-film" aria-hidden="true"><div class="su-film-sweep"></div><div class="su-film-ring"></div><span class="su-number">3</span></div>
+      </div>
+      <div class="su-layer su-launch" hidden aria-label="StepUP!">
+        <div class="su-launch-center"><div class="su-launch-wordmark" aria-hidden="true"><img src="__LOGO__" alt=""><span class="su-launch-bang">!</span></div></div>
+      </div>
+      <div class="su-layer su-iris-wash" hidden></div><div class="su-layer su-iris-blue" hidden></div>
+      <div class="su-layer su-run" hidden aria-label="자유러닝 진행 화면">
+        <div class="su-run-map">
+          <svg class="su-map-art" viewBox="0 0 360 490" preserveAspectRatio="xMidYMid slice" role="img" aria-label="여의도 한강공원 위치를 표현한 시안용 지도">
+            <rect width="360" height="490" fill="#173b59"/>
+            <path d="M-90 160 C40 125 125 145 204 226 S332 314 440 300 L450 445 C315 444 241 400 158 328 S2 254 -90 288Z" fill="#164f7c"/>
+            <path d="M-50 155 C50 137 118 154 194 225 S327 330 414 303 M-40 291 C35 258 100 290 170 350 S330 456 423 434" fill="none" stroke="#51819a" stroke-width="5" opacity=".6"/>
+            <path d="M120 -40 L58 155 M276 -20 L159 186 M357 29 L240 259 M-20 432 L100 273 M197 520 L260 366 M64 490 L167 332" fill="none" stroke="#566f83" stroke-width="7"/>
+            <path d="M120 -40 L58 155 M276 -20 L159 186 M357 29 L240 259 M-20 432 L100 273 M197 520 L260 366 M64 490 L167 332" fill="none" stroke="#7c91a1" stroke-width="1.2"/>
+            <path d="M-20 61 L311 161 M-20 107 L290 203 M230 340 L392 398 M16 411 L197 472 M208 -30 L151 169 M15 -20 L-20 111 M292 402 L265 510" fill="none" stroke="#48627a" stroke-width="2"/>
+            <path d="M96 168 L194 330 M227 238 L314 393" fill="none" stroke="#7293a8" stroke-width="8"/>
+            <path d="M96 168 L194 330 M227 238 L314 393" fill="none" stroke="#b0c0ca" stroke-width="1.2" opacity=".45"/>
+            <path d="M-15 326 C43 300 90 318 136 357 L109 399 L-16 356Z" fill="#254f59"/>
+            <text x="182" y="274" fill="#7cabcb" font-size="15" transform="rotate(34 182 274)">한강</text><text x="25" y="403" fill="#a7bbc9" font-size="12">여의도</text><text x="104" y="360" fill="#9fb6c5" font-size="10">여의나루역</text><text x="38" y="277" fill="#b1cbd9" font-size="11">한강공원</text>
+          </svg>
+          <div class="su-position"></div>
+        </div>
+        <div class="su-status"><span>9:41</span><span class="su-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <div class="su-run-top"><span class="su-live"><span class="su-live-dot"></span><span class="su-live-label">러닝 중</span></span><button type="button" class="su-map-button cursor-interaction" aria-label="내 위치로 이동" data-action="locate"><i data-lucide="locate-fixed" aria-hidden="true"></i></button></div>
+        <div class="su-run-data"><p class="su-time-label">달린 시간</p><div class="su-time">00:00</div><div class="su-run-stats"><div><p>거리</p><b>0.00<small>km</small></b></div><div><p>평균 페이스</p><b>--′--″</b></div><div><p>내구도</p><b>92<small>%</small></b></div></div></div>
+        <div class="su-run-actions"><button type="button" class="su-primary cursor-interaction" data-action="pause"><i data-lucide="pause" aria-hidden="true"></i><span class="su-pause-label">일시정지</span></button><button type="button" class="su-stop cursor-interaction" data-action="stop"><i data-lucide="square" aria-hidden="true"></i>종료</button></div>
+      </div>
+      <span class="su-home-indicator" aria-hidden="true"></span>
+    </div>
+  </div>
+  <p class="su-sample">기존 StepUp 신발 이미지 사용 · 수치와 지도는 시안용</p>
+  <div class="sr-only" role="status" aria-live="polite" data-live></div>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('su-free-start');
+  const frame = root.querySelector('.su-frame');
+  const check = root.querySelector('.su-check');
+  const count = root.querySelector('.su-count');
+  const film = root.querySelector('.su-film');
+  const number = root.querySelector('.su-number');
+  const sweep = root.querySelector('.su-film-sweep');
+  const launch = root.querySelector('.su-launch');
+  const wordmark = root.querySelector('.su-launch-wordmark');
+  const wash = root.querySelector('.su-iris-wash');
+  const blue = root.querySelector('.su-iris-blue');
+  const run = root.querySelector('.su-run');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const buttons = [...root.querySelectorAll('[data-preview]')];
+  const live = root.querySelector('[data-live]');
+  const assetsReady = Promise.all([...root.querySelectorAll('img')].map(img => typeof img.decode === 'function' ? img.decode().catch(() => {}) : Promise.resolve()));
+  let controller = null, animations = [], clock = null, elapsed = 0, paused = false, returnFocus = null;
+  function announce(text) { live.textContent = text; }
+  function wait(ms, signal) {
+    return new Promise(resolve => {
+      if (signal.aborted) { resolve(false); return; }
+      const abort = () => { clearTimeout(timer); resolve(false); };
+      const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(true); }, ms);
+      signal.addEventListener('abort', abort, { once: true });
+    });
+  }
+  function reset() {
+    if (controller) controller.abort(); controller = new AbortController();
+    animations.forEach(a => a.cancel()); animations = [];
+    if (clock) clearInterval(clock); clock = null; elapsed = 0; paused = false;
+    check.hidden = true; count.hidden = true; launch.hidden = true; wash.hidden = true; blue.hidden = true; run.hidden = true;
+    check.inert = false; count.inert = false; run.inert = false;
+    root.querySelector('.su-home').inert = false;
+    [wash, blue, run].forEach(el => { el.style.clipPath = 'circle(0px at 50% 50%)'; el.style.opacity = '1'; });
+    root.querySelector('.su-time').textContent = '00:00';
+    root.querySelector('.su-live-label').textContent = '러닝 중';
+    root.querySelector('.su-pause-label').textContent = '일시정지';
+    root.querySelector('.su-home-indicator').style.color = '#fff';
+    return controller.signal;
+  }
+  function active(name) { buttons.forEach(b => { if (b.dataset.preview !== 'all') b.setAttribute('aria-pressed', String(b.dataset.preview === name)); }); }
+  function motion(el, keys, options) {
+    const { startAt, ...timing } = options;
+    const a = el.animate(keys, { fill: 'forwards', ...timing });
+    if (startAt != null) a.startTime = startAt;
+    animations.push(a); a.finished.catch(() => {}); return a;
+  }
+  function save(view) {
+    if (window.openai?.setWidgetState) window.openai.setWidgetState({modelContent:{stepupStartPreview:view},privateContent:{view}}).catch(() => {});
+  }
+  function showCheck(animate = true, focus = false) {
+    reset(); frame.dataset.phase = 'check'; check.hidden = false;
+    root.querySelector('.su-home').inert = true;
+    root.querySelector('.su-home-indicator').style.color = '#fff'; active('check'); announce('출발 전 신발 점검');
+    if (animate) {
+      motion(root.querySelector('.su-backdrop'), [{opacity:0},{opacity:1}], {duration:250,easing:'cubic-bezier(.23,1,.32,1)'});
+      motion(root.querySelector('.su-check-card'), reduced.matches ? [{opacity:0},{opacity:1}] : [{opacity:0,transform:'scale(.96)'},{opacity:1,transform:'scale(1)'}], {duration:250,easing:'cubic-bezier(.23,1,.32,1)'});
+    }
+    if (focus) { returnFocus = document.activeElement; root.querySelector('[data-action="start"]').focus({preventScroll:true}); }
+  }
+  function showHome() {
+    reset(); frame.dataset.phase = 'home'; active('check'); announce('자유러닝 시작 화면');
+    if (returnFocus?.isConnected) returnFocus.focus({preventScroll:true});
+  }
+  function showCountBase() {
+    count.hidden = false; frame.dataset.phase = 'count'; root.querySelector('.su-home').inert = true;
+    root.querySelector('.su-home-indicator').style.color = '#fff'; active('count');
+  }
+  function setCount(value) {
+    number.textContent=String(value); announce(String(value));
+    if (!reduced.matches) motion(number,[{opacity:.6,transform:'translateY(6px) scale(.96)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:160,easing:'cubic-bezier(.23,1,.32,1)'});
+  }
+  async function countdown(continueToRun = true) {
+    const signal = reset(); showCountBase(); number.textContent='3';
+    await assetsReady; if (signal.aborted) return;
+    if (!reduced.matches) motion(sweep,[{transform:'rotate(0deg)'},{transform:'rotate(1260deg)'}],{duration:3500,easing:'linear'});
+    for (const value of [3,2,1]) {
+      setCount(value);
+      if (!await wait(1000, signal)) return;
+    }
+    setCount(0);
+    if (!await wait(180, signal)) return;
+    if (!await showLaunch(signal)) return;
+    if (continueToRun) await reveal(signal);
+  }
+  async function showLaunch(signal) {
+    if (signal.aborted) return false;
+    frame.dataset.phase='launch'; launch.hidden=false; count.inert=true; announce('StepUP!');
+    const startAt=document.timeline.currentTime;
+    motion(film,reduced.matches ? [{opacity:1},{opacity:0}] : [
+      {opacity:1,transform:'translateY(0) scale(1)'},
+      {opacity:0,transform:'translateY(-10px) scale(1.04)'}
+    ],{startAt,duration:reduced.matches?200:300,easing:'cubic-bezier(.23,1,.32,1)'});
+    motion(wordmark,reduced.matches ? [{opacity:0},{opacity:1}] : [
+      {opacity:0,transform:'translateX(-18px) scale(.96)',offset:0},
+      {opacity:1,transform:'translateX(3px) scale(1.025)',offset:.72},
+      {opacity:1,transform:'translateX(0) scale(1)',offset:1}
+    ],{startAt,duration:reduced.matches?200:300,easing:'cubic-bezier(.23,1,.32,1)'});
+    return await wait(580,signal);
+  }
+  function startClock() {
+    clock = setInterval(() => {
+      if (paused) return; elapsed++;
+      root.querySelector('.su-time').textContent = String(Math.floor(elapsed/60)).padStart(2,'0') + ':' + String(elapsed%60).padStart(2,'0');
+    },1000);
+  }
+  async function reveal(signal) {
+    if (signal.aborted) return;
+    frame.dataset.phase = 'reveal'; active('reveal'); count.inert = true; run.hidden = false; startClock();
+    const startAt=document.timeline.currentTime;
+    const radius = Math.ceil(Math.hypot(frame.clientWidth/2,frame.clientHeight/2)) + 12;
+    if (reduced.matches) {
+      motion(wordmark,[{opacity:1},{opacity:0}],{startAt,duration:200,easing:'linear'});
+      run.style.clipPath = 'none'; motion(run,[{opacity:0},{opacity:1}],{startAt,duration:200,easing:'linear'});
+      if (!await wait(200,signal)) return;
+    } else {
+      motion(wordmark,[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(1.045)'}],{startAt,duration:300,delay:120,easing:'cubic-bezier(.23,1,.32,1)'});
+      wash.hidden = false; blue.hidden = false;
+      const keys=[{clipPath:'circle(0px at 50% 50%)'},{clipPath:'circle('+radius+'px at 50% 50%)'}];
+      motion(wash,keys,{startAt,duration:500,easing:'cubic-bezier(.77,0,.175,1)'});
+      motion(blue,keys,{startAt,duration:540,delay:35,easing:'cubic-bezier(.77,0,.175,1)'});
+      motion(run,keys,{startAt,duration:580,delay:70,easing:'cubic-bezier(.77,0,.175,1)'});
+      if (!await wait(650,signal)) return;
+    }
+    run.style.clipPath='none'; wash.hidden=true; blue.hidden=true; count.hidden=true; launch.hidden=true; count.inert=false;
+    frame.dataset.phase='running'; root.querySelector('.su-home-indicator').style.color='#fff'; announce('자유러닝을 시작했어요');
+  }
+  async function previewReveal() {
+    const signal=reset(); showCountBase(); number.textContent='0';
+    await assetsReady; if (signal.aborted) return;
+    if (!reduced.matches) motion(sweep,[{transform:'rotate(1080deg)'},{transform:'rotate(1260deg)'}],{duration:500,easing:'linear'});
+    if (!await wait(180,signal)) return;
+    if (!await showLaunch(signal)) return;
+    await reveal(signal);
+  }
+  async function playAll() {
+    showCheck(true,false); const signal=controller.signal;
+    if (!await wait(1100,signal)) return; await countdown(true);
+  }
+  buttons.forEach(b => b.addEventListener('click',() => {
+    const view=b.dataset.preview; save(view);
+    if(view==='check') showCheck(true,false); else if(view==='count') countdown(false); else if(view==='reveal') previewReveal(); else playAll();
+  }));
+  root.querySelectorAll('[data-action="cancel"]').forEach(b => b.addEventListener('click', showHome));
+  root.querySelector('[data-action="open-check"]').addEventListener('click',() => showCheck(true,true));
+  root.querySelector('[data-action="start"]').addEventListener('click',() => { save('all'); countdown(true); });
+  root.querySelector('[data-action="stop"]').addEventListener('click',showHome);
+  root.querySelector('[data-action="pause"]').addEventListener('click',() => {
+    paused=!paused; root.querySelector('.su-pause-label').textContent=paused?'계속 달리기':'일시정지'; root.querySelector('.su-live-label').textContent=paused?'일시정지':'러닝 중'; announce(paused?'러닝을 일시정지했어요':'러닝을 계속해요');
+  });
+  root.querySelector('[data-action="locate"]').addEventListener('click',() => {
+    motion(root.querySelector('.su-position'),[{opacity:.4},{opacity:1}],{duration:200,easing:'linear'});announce('현재 위치를 보고 있어요');
+  });
+  frame.addEventListener('keydown',e => {
+    if(e.key==='Escape'&&frame.dataset.phase!=='running'){e.preventDefault();showHome();return;}
+    if(e.key==='Tab'&&!check.hidden){
+      const focusable=[...check.querySelectorAll('button')]; const first=focusable[0],last=focusable.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
+  window.addEventListener('pagehide',reset,{once:true});
+  window.addEventListener('openai:set_globals',event => {
+    const state=event.detail?.globals?.widgetState?.privateContent;
+    if(state?.view==='check')showCheck(false,false);
+  });
+  const saved=window.openai?.widgetState?.privateContent?.view;
+  if(saved==='reveal'){reset();run.hidden=false;run.style.clipPath='none';root.querySelector('.su-home').inert=true;frame.dataset.phase='running';active('reveal');}
+  else if(saved==='check'){showCheck(false,false);}
+  else {reset();showCountBase();number.textContent='3';}
+})();
+</script>

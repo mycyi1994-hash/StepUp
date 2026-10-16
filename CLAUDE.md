@@ -1,5 +1,16 @@
 # StepUp — 작업 메모
 
+## 최신 — 자유러닝 시작 플로 (2026-10-17 전달본)
+
+[docs/redesign/free-run-start-2026-10-17/README.md](docs/redesign/free-run-start-2026-10-17/README.md) — 자유러닝 시작 → 신발 점검 → 출발 확인 → 3·2·1·0 → StepUP! → 가운데에서 지도 펼침 → 기존 자유 러닝 화면.
+
+- 코드는 `ui/screens/walk/FreeRunStart.kt`(점검창 · 시퀀스 · 그림)와 `FreeRunStartMotion.kt`(시간표 — `FreeRunStartMotionTest`)다.
+- 러닝 기록은 펼침 진입(3,760ms)에서 한 번 시작한다(`WalkSessionService.start`). 러닝이 실제로 켜진 것을 본 뒤에 펼친다.
+  - 거절되면(`WalkSessionService.startRefusals`) 연출을 거둔다.
+- 카운트다운에는 숫자와 원호만 둔다. 제목 · 안내 · 취소 버튼은 다시 넣지 않는다. 기록 전 그만두기는 시스템 뒤로 가기다.
+- 로고는 `logo_wordmark_white.png`(전달본 원본)다. 숫자는 앱 숫자 서체(Pretendard)를 이탤릭으로 쓴다.
+- 이전 자유 러닝 3-2-1(지도 · 바로 시작 | 취소)은 이것으로 바꿨다. 챌린지 · 코스 · 다이어트의 3-2-1 은 그대로다.
+
 ## 최신 — 크루 달리기 정리 (2026-10-16 크루 전달본)
 
 [docs/redesign/crew-run-2026-10-16/README.md](docs/redesign/crew-run-2026-10-16/README.md) — 화면별 변경 · CR02~CR21 검수표 · 시안과 다른 점 · 바뀐 사용자 동작.

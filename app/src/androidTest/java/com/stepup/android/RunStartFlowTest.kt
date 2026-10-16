@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -19,6 +21,14 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.domain.RunPermissionSheet
+import com.stepup.android.domain.Faction
+import com.stepup.android.domain.Rarity
+import com.stepup.android.domain.ServerStats
+import com.stepup.android.domain.ShoeTier
+import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.tier
+import com.stepup.android.ui.screens.walk.FreeRunShoeCheckContent
+import com.stepup.android.ui.screens.walk.FreeRunStartSequence
 import com.stepup.android.ui.screens.walk.RunCountdown
 import com.stepup.android.ui.screens.walk.RunPermissionSheetView
 import com.stepup.android.ui.theme.StepUpTheme
@@ -32,7 +42,8 @@ import org.junit.runner.RunWith
 /**
  * S2 러닝 시작 전 화면 — 권한 안내(시작·로그인·첫 사용 v1 시안 13~19)와 3-2-1(시안 24).
  * 러닝 서비스를 실제로 켜지 않도록 부품을 직접 그리고, 시작 콜백 횟수만 센다.
- * 자유 러닝(2026-10-14 v2)은 3-2-1 과 권한 안내를 다른 모습(지도 3-2-1 · 짧은 카드)으로 그린다 — 세기 · 시작 · 버튼의 뜻은 같다.
+ * 자유 러닝(2026-10-14 v2)은 권한 안내를 짧은 카드로 그린다 — 차례 · 버튼의 뜻은 같다. 자유러닝의 3-2-1 은 신발 점검 →
+ * 3·2·1·0 → StepUP! → 지도 펼침(2026-10-17 전달본, FreeRunStartSequence)이다.
  */
 @RunWith(AndroidJUnit4::class)
 class RunStartFlowTest {
@@ -197,41 +208,50 @@ class RunStartFlowTest {
     }
 
     /**
-     * 자유 러닝 3-2-1(지도 · 고리 숫자 · 바로 시작 | 취소) — 바로 시작을 두 번 누르고 화면을 또 눌러도, 세기가 끝나도 시작은 한 번뿐이다.
-     * 위치 권한이 없으면 지도를 그리지 않는다(지금 자리를 꾸미지 않는다).
+     * 자유러닝 시작(2026-10-17 전달본) — 3·2·1·0 → StepUP! → 지도 펼침. 러닝 기록은 펼침에 들어갈 때(3,760ms) 한 번만 시작하고,
+     * 러닝이 실제로 켜진 것을 본 뒤에 펼친다. 프레임이 쌓이고 다시 그려져도 시작은 한 번이다.
      */
-    @Test fun freeCountdownStartsOnce() {
+    @Test fun freeStartSequenceStartsOnceAtReveal() {
         var starts = 0
-        var cancels = 0
+        var finished = 0
+        var failed = 0
+        var active by mutableStateOf(false)
+        var shown by mutableStateOf(true)
         compose.mainClock.autoAdvance = false
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                RunCountdown(
-                    courseName = null, locationAllowed = false, onGo = { starts++ }, onCancel = { cancels++ },
-                    locationServicesOn = false, title = "", freeRun = true,
-                )
+                if (shown) {
+                    FreeRunStartSequence(
+                        sessionActive = active, startRefusals = 0,
+                        onStartSession = { starts++; active = true; true },
+                        onFinished = { finished++; shown = false },
+                        onFailed = { failed++ },
+                        onCancel = {},
+                    )
+                }
             } }
         }
         compose.mainClock.advanceTimeByFrame()
-        // 바탕 전체가 누를 수 있는 한 덩어리로 묶여 있어 안쪽 숫자 · 안내 · 지도는 묶이기 전 노드에서 찾는다
+        // 숫자와 원호만 — 제목 · 안내 · 취소 버튼이 없다
         compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("3")
-        // 위치를 모르면 안내 줄도 지도도 그리지 않는다 — "걸음으로만 기록" 같은 위치 없는 길을 알리지 않는다
-        compose.onNodeWithTag("run-countdown-caption", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithTag("run-countdown-map", useUnmergedTree = true).assertDoesNotExist()
-        assertEquals("누르기 전에는 시작하지 않는다", 0, starts)
-
-        compose.onNodeWithTag("run-countdown-go").assertIsDisplayed().performClick()
-        compose.mainClock.advanceTimeByFrame()
-        assertEquals("바로 시작은 바로 한 번 시작한다", 1, starts)
-        compose.onNodeWithTag("run-countdown-go").performClick()
-        compose.onNodeWithTag("run-countdown").performClick()
-        compose.mainClock.advanceTimeBy(5_000)
-        assertEquals("다시 눌러도 · 화면을 눌러도 · 세기가 끝나도 더 시작하지 않는다", 1, starts)
-        assertEquals(0, cancels)
+        compose.onAllNodesWithTag("run-countdown-cancel").assertCountEquals(0)
+        compose.onAllNodesWithTag("run-countdown-kicker", useUnmergedTree = true).assertCountEquals(0)
+        compose.mainClock.advanceTimeBy(1_050)
+        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("2")
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("0")
+        compose.mainClock.advanceTimeBy(600)
+        assertEquals("StepUP! 까지는 기록을 시작하지 않는다", 0, starts)
+        compose.mainClock.advanceTimeBy(200)
+        assertEquals("펼침에 들어가며 한 번 시작한다", 1, starts)
+        compose.mainClock.advanceTimeBy(2_000)
+        assertEquals("다시 그려져도 시작은 한 번", 1, starts)
+        assertEquals(1, finished)
+        assertEquals(0, failed)
     }
 
-    /** 자유 러닝 3-2-1 의 취소 — 취소는 한 번, 시작은 한 번도 없다(앱처럼 취소하면 3-2-1 을 치운다) */
-    @Test fun freeCountdownCancelNeverStarts() {
+    /** 기록 전 뒤로 가기 — 시작 취소. 아무것도 시작하지 않는다 */
+    @Test fun freeStartBackBeforeRevealNeverStarts() {
         var starts = 0
         var cancels = 0
         var shown by mutableStateOf(true)
@@ -239,19 +259,119 @@ class RunStartFlowTest {
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
                 if (shown) {
-                    RunCountdown(
-                        courseName = null, locationAllowed = false, onGo = { starts++ },
-                        onCancel = { cancels++; shown = false }, locationServicesOn = false, title = "", freeRun = true,
+                    FreeRunStartSequence(
+                        sessionActive = false, startRefusals = 0,
+                        onStartSession = { starts++; true }, onFinished = {}, onFailed = {},
+                        onCancel = { cancels++; shown = false },
                     )
                 }
             } }
         }
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithTag("run-countdown-cancel").assertIsDisplayed().performClick()
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.mainClock.advanceTimeBy(5_000)
-        compose.onNodeWithTag("run-countdown").assertDoesNotExist()
+        compose.onNodeWithTag("run-start-sequence").assertDoesNotExist()
         assertEquals(1, cancels)
-        assertEquals("취소한 3-2-1 은 시작하지 않는다", 0, starts)
+        assertEquals("취소한 카운트다운은 시작하지 않는다", 0, starts)
+    }
+
+    /** 시작이 거절됐다(끝나지 않은 러닝 · 저장 공간) — 지도를 펼치지 않고 거둔다. 실패한 러닝을 시작한 것처럼 보이지 않는다 */
+    @Test fun freeStartRefusedStartDoesNotReveal() {
+        var failed = 0
+        var finished = 0
+        var refusals by mutableIntStateOf(0)
+        var shown by mutableStateOf(true)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                if (shown) {
+                    FreeRunStartSequence(
+                        sessionActive = false, startRefusals = refusals,
+                        onStartSession = { refusals++; true },
+                        onFinished = { finished++ }, onFailed = { failed++; shown = false }, onCancel = {},
+                    )
+                }
+            } }
+        }
+        compose.mainClock.advanceTimeBy(4_500)
+        assertEquals(1, failed)
+        assertEquals(0, finished)
+        compose.onNodeWithTag("run-start-sequence").assertDoesNotExist()
+    }
+
+    /** 이미 달리는 러닝으로 돌아왔다 — 카운트다운을 다시 보이지 않고 그 러닝으로 */
+    @Test fun freeStartSkipsCountdownForActiveRun() {
+        var starts = 0
+        var finished = 0
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                FreeRunStartSequence(
+                    sessionActive = true, startRefusals = 0,
+                    onStartSession = { starts++; true }, onFinished = { finished++ }, onFailed = {}, onCancel = {},
+                )
+            } }
+        }
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(1, finished)
+        assertEquals(0, starts)
+    }
+
+    /** 신발 점검 — 신고 있는 신발의 실제 등급 · 레벨 · 내구도. 출발은 연타해도 한 번, 돌아가기 · 닫기는 시작하지 않는다 */
+    @Test fun shoeCheckShowsTheEquippedShoeAndStartsOnce() {
+        var starts = 0
+        var cancels = 0
+        val shoe = checkShoe
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                FreeRunShoeCheckContent(shoe = shoe, onStart = { starts++ }, onCancel = { cancels++ })
+            } }
+        }
+        val grade = compose.activity.getString(
+            R.string.run_free_check_grade_level, compose.activity.getString(tierLabel(shoe.tier)), shoe.level,
+        )
+        compose.onNodeWithTag("run-shoe-check-grade", useUnmergedTree = true).assertTextEquals(grade)
+        compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("68%")
+        compose.onNodeWithTag("run-shoe-check-back").performClick()
+        compose.onNodeWithTag("run-shoe-check-close").performClick()
+        assertEquals(2, cancels)
+        assertEquals("돌아가기 · 닫기는 시작하지 않는다", 0, starts)
+        compose.onNodeWithTag("run-shoe-check-go").performClick()
+        compose.onNodeWithTag("run-shoe-check-go").performClick()
+        assertEquals("출발 연타는 한 번", 1, starts)
+    }
+
+    /** 신발을 신지 않았다 — 지금처럼 신발 없이도 달릴 수 있다. 그 사실을 알리고 "러닝 시작"으로 잇는다 */
+    @Test fun shoeCheckWithoutShoeSaysSo() {
+        var starts = 0
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                FreeRunShoeCheckContent(shoe = null, onStart = { starts++ }, onCancel = {})
+            } }
+        }
+        compose.onNodeWithTag("run-shoe-check-none").assertIsDisplayed()
+        compose.onAllNodesWithTag("run-shoe-check-durability").assertCountEquals(0)
+        compose.onNodeWithTag("run-shoe-check-go").performClick()
+        assertEquals(1, starts)
+    }
+
+    private val checkShoe = Sneaker(
+        id = 9_301, faction = Faction.WIND, rarity = Rarity.RARE, variant = 0, level = 3, mintNumber = 12,
+        luck = 1.0, comfort = 1.0, durability = 68, equipped = true, acquiredAt = 1_790_000_000_000L,
+        server = ServerStats(
+            origin = "DRAW", efficiencyBps = 800, comfortBps = 580, durabilityPts = 68.0, maxLevel = 15,
+            status = "OWNED", chainState = "APP", canWithdraw = true, upgradeCost = 625.0, repairCostPerPoint = 1.5625, genesisNo = 0,
+        ),
+        modelId = 1201,
+    )
+
+    private fun tierLabel(tier: ShoeTier): Int = when (tier) {
+        ShoeTier.COMMON -> R.string.shoe_tier_common
+        ShoeTier.RARE -> R.string.shoe_tier_rare
+        ShoeTier.EPIC -> R.string.shoe_tier_epic
+        ShoeTier.LEGENDARY -> R.string.shoe_tier_legendary
+        ShoeTier.REDLINE -> R.string.shoe_tier_redline
+        ShoeTier.FINISH -> R.string.shoe_tier_finish
     }
 
     @Test fun togetherRankingOrdersSharedDistanceAndHidesTheRest() {

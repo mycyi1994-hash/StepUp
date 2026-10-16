@@ -128,16 +128,7 @@ internal fun RunPermissionFlow(
     var finished by remember { mutableStateOf(false) }
     val settingsFailed = stringResource(R.string.onb_settings_open_failed)
 
-    suspend fun current(): RunPermissionState = RunPermissionState(
-        api = Build.VERSION.SDK_INT,
-        activityGranted = StepPermissions.hasActivityRecognition(context),
-        preciseLocation = StepPermissions.hasPreciseLocation(context),
-        approximateLocation = StepPermissions.hasLocation(context),
-        notificationsGranted = StepPermissions.hasNotificationPermission(context),
-        activityHistory = prefs.runActivityHistory.first(),
-        activityRationale = context.activityRationale(),
-        notificationChosen = prefs.runNotificationChosen.first(),
-    )
+    suspend fun current(): RunPermissionState = readRunPermissionState(context)
 
     fun apply(step: RunPermissionStep) {
         when (step) {
@@ -714,6 +705,24 @@ private fun NotificationArt() {
 }
 
 /** OS 가 지금 걸음 권한 설명을 권하는가 — 화면(Activity)이 없으면 false */
+/**
+ * 지금 권한 상태 — OS 에서 매번 다시 읽는다. [RunPermissionRules.next] 가 [RunPermissionStep.Ready] 면 안내 없이 시작할 수 있다
+ * (자유러닝 신발 점검이 이것으로 점검창 안에서 준비를 마친다).
+ */
+internal suspend fun readRunPermissionState(context: Context): RunPermissionState {
+    val prefs = ServiceLocator.userPrefs
+    return RunPermissionState(
+        api = Build.VERSION.SDK_INT,
+        activityGranted = StepPermissions.hasActivityRecognition(context),
+        preciseLocation = StepPermissions.hasPreciseLocation(context),
+        approximateLocation = StepPermissions.hasLocation(context),
+        notificationsGranted = StepPermissions.hasNotificationPermission(context),
+        activityHistory = prefs.runActivityHistory.first(),
+        activityRationale = context.activityRationale(),
+        notificationChosen = prefs.runNotificationChosen.first(),
+    )
+}
+
 private fun Context.activityRationale(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
     val activity = findActivity() ?: return false
