@@ -25,7 +25,7 @@ old_ks="$root/app/debug.keystore"
 sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}
 apksigner=""
 if [[ -n "$sdk" && -d "$sdk/build-tools" ]]; then
-  apksigner=$(find "$sdk/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
+  apksigner=$(find -L "$sdk/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
 fi
 if [[ -z "$apksigner" ]]; then
   echo "::error::apksigner 를 찾지 못했습니다(ANDROID_HOME 의 build-tools)" >&2
@@ -68,11 +68,12 @@ old_sha=$(keytool -exportcert -keystore "$old_ks" -storepass android -alias andr
   | openssl x509 -noout -fingerprint -sha256 | sed 's/.*=//; s/://g' | tr 'A-F' 'a-f')
 grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<<"$verify" \
   || { echo "::error::v3 서명이 확인되지 않습니다" >&2; echo "$verify" >&2; exit 1; }
-grep -q "Signer #1 certificate SHA-256 digest: $new_sha" <<<"$verify" \
+# apksigner 판마다 서명자 줄 모양이 다르다 — 35 는 "Signer #1 certificate …", 37 은 "V3.0 Signer: certificate …"
+grep -Eq "^(Signer #1|V3[.0-9]* Signer:) certificate SHA-256 digest: ${new_sha}\$" <<<"$verify" \
   || { echo "::error::v3 서명자가 새 키가 아닙니다" >&2; echo "$verify" >&2; exit 1; }
 lineage=$("$apksigner" lineage --in "$out" --print-certs 2>/dev/null)
-first=$(grep -m1 "SHA-256 digest" <<<"$lineage" | sed 's/.*: //')
-last=$(grep "SHA-256 digest" <<<"$lineage" | tail -1 | sed 's/.*: //')
+first=$(grep -m1 "certificate SHA-256 digest" <<<"$lineage" | sed 's/.*: //')
+last=$(grep "certificate SHA-256 digest" <<<"$lineage" | tail -1 | sed 's/.*: //')
 if [[ "$first" != "$old_sha" || "$last" != "$new_sha" ]]; then
   echo "::error::서명 이력이 옛 키 → 새 키가 아닙니다" >&2
   echo "$lineage" >&2
