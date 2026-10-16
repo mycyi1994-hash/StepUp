@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 开始前等待 GPS(2026-10-16 — 没有 GPS 就不开始跑步)。没有只记录时间的方式。 -->
+<resources>
+    <string name="run_gps_wait_title">正在搜索 GPS</string>
+    <string name="run_gps_wait_found">已找到 GPS</string>
+    <string name="run_gps_wait_body">请在能看到天空的地方稍等。\n搜到 GPS 后马上开始。</string>
+    <string name="run_gps_lobby_body">搜到 GPS 后会马上变为准备完成。</string>
+    <string name="run_gps_wait_satellites">卫星</string>
+    <string name="run_gps_wait_satellites_value">使用 %1$d 颗 · 接收 %2$d 颗</string>
+    <string name="run_gps_wait_checking">检查中</string>
+    <string name="run_gps_wait_accuracy">精度</string>
+    <string name="run_gps_wait_accuracy_value">±%1$d米</string>
+    <string name="run_gps_wait_accuracy_need">%1$d 米以内即开始</string>
+    <string name="run_gps_wait_time">已等待</string>
+    <string name="run_gps_hint_no_gps_title">这部手机没有 GPS</string>
+    <string name="run_gps_hint_no_gps_body">跑步用 GPS 测量距离和路线。请使用有 GPS 的手机跑步。</string>
+    <string name="run_gps_hint_gps_off_title">GPS 已关闭</string>
+    <string name="run_gps_hint_gps_off_body">请在位置设置中把定位模式改为“高精确度”或“GPS”。</string>
+    <string name="run_gps_hint_mock_title">模拟位置应用已开启</string>
+    <string name="run_gps_hint_mock_body">在开发者选项中关闭“模拟位置信息应用”即可使用真实 GPS。</string>
+    <string name="run_gps_hint_no_satellites_title">没有卫星信号</string>
+    <string name="run_gps_hint_no_satellites_body">室内和地下搜不到 GPS。请到室外能看到天空的地方。</string>
+    <string name="run_gps_hint_weak_title">信号还很弱</string>
+    <string name="run_gps_hint_weak_body">请离高楼或树木远一点。精度进入 %1$d 米以内即开始。</string>
+    <string name="run_gps_hint_slow_title">第一次可能需要几分钟</string>
+    <string name="run_gps_hint_slow_body">没有 SIM 卡或很久没用 GPS 的手机，第一次定位会比较慢。请连上 Wi-Fi 并在室外等待。</string>
+    <string name="run_gps_need_precise">需要允许精确位置才能一起跑。请在 设置 › 权限 › 位置信息 中开启“使用精确位置”。</string>
+</resources>

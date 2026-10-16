@@ -34,7 +34,7 @@ class OnboardingRulesTest {
         assertEquals(show(RunPermissionSheet.ActivityRationale), RunPermissionRules.next(fresh))
         val activity = fresh.copy(activityGranted = true, activityHistory = ActivityRequestHistory.ASKED)
         assertEquals(show(RunPermissionSheet.LocationRationale), RunPermissionRules.next(activity))
-        val located = activity.copy(preciseLocation = true, approximateLocation = true, locationChosen = true)
+        val located = activity.copy(preciseLocation = true, approximateLocation = true)
         assertEquals(show(RunPermissionSheet.NotificationRationale), RunPermissionRules.next(located))
         assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(located.copy(notificationChosen = true)))
     }
@@ -45,31 +45,34 @@ class OnboardingRulesTest {
     }
 
     @Test fun `older android skips the steps it cannot ask`() {
-        // Android 9 — 신체 활동 · 알림은 실행 중에 묻지 않는다. 위치만 한 번
+        // Android 9 — 신체 활동 · 알림은 실행 중에 묻지 않는다. 위치만
         val pie = fresh.copy(api = 28)
         assertEquals(show(RunPermissionSheet.LocationRationale), RunPermissionRules.next(pie))
-        assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(pie.copy(locationChosen = true)))
+        assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(pie.copy(preciseLocation = true, approximateLocation = true)))
         // Android 12 — 알림 권한이 없다
-        val s = fresh.copy(api = 31, activityGranted = true, approximateLocation = true)
+        val s = fresh.copy(api = 31, activityGranted = true, preciseLocation = true, approximateLocation = true)
         assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(s))
     }
 
-    @Test fun `optional permissions refused or deferred never block the run and are not asked again`() {
-        val activity = fresh.copy(activityGranted = true)
-        // 위치를 거절했거나 "경로 없이 계속"을 골랐다 — 다시 묻지 않고 알림으로
-        assertEquals(show(RunPermissionSheet.NotificationRationale), RunPermissionRules.next(activity.copy(locationChosen = true)))
-        // 알림을 거절했거나 "나중에" — 러닝으로
-        assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(activity.copy(locationChosen = true, notificationChosen = true)))
+    @Test fun `location is required — refusing it never reaches the countdown and it is asked again every run`() {
+        // 2026-10-16 — 러닝은 GPS 로 잰다. 위치를 거절해도 "경로 없이 계속"은 없고, 다음 러닝에도 위치부터 묻는다
+        val activity = fresh.copy(activityGranted = true, notificationChosen = true)
+        assertEquals(show(RunPermissionSheet.LocationRationale), RunPermissionRules.next(activity))
+        assertEquals(show(RunPermissionSheet.LocationRationale), RunPermissionRules.next(activity.copy(notificationsGranted = true)))
+        // 알림은 거절해도 러닝을 막지 않는다
+        assertEquals(RunPermissionStep.Ready,
+            RunPermissionRules.next(activity.copy(preciseLocation = true, approximateLocation = true)))
     }
 
-    @Test fun `approximate location is respected and not asked again`() {
+    @Test fun `approximate location is not enough — precise location is required`() {
         val approximate = fresh.copy(activityGranted = true, approximateLocation = true, notificationsGranted = true)
-        assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(approximate))
+        assertEquals(show(RunPermissionSheet.ApproximateLocation), RunPermissionRules.next(approximate))
+        assertEquals(RunPermissionStep.Ready, RunPermissionRules.next(approximate.copy(preciseLocation = true)))
     }
 
     @Test fun `activity permission is asked every time until allowed`() {
-        val refusedBefore = fresh.copy(locationChosen = true, notificationChosen = true, activityHistory = ActivityRequestHistory.ASKED,
-            activityRationale = true)
+        val refusedBefore = fresh.copy(preciseLocation = true, approximateLocation = true, notificationChosen = true,
+            activityHistory = ActivityRequestHistory.ASKED, activityRationale = true)
         assertEquals(show(RunPermissionSheet.ActivityRationale), RunPermissionRules.next(refusedBefore))
     }
 
@@ -116,12 +119,13 @@ class OnboardingRulesTest {
     }
 
     @Test fun `returning from settings rereads the os and never assumes success`() {
-        val blocked = fresh.copy(activityHistory = ActivityRequestHistory.BLOCKED, locationChosen = true, notificationChosen = true)
+        val blocked = fresh.copy(activityHistory = ActivityRequestHistory.BLOCKED, preciseLocation = true, approximateLocation = true,
+            notificationChosen = true)
         // 바꾸지 않고 돌아왔다 — 같은 안내
         assertEquals(show(RunPermissionSheet.ActivitySettings), RunPermissionRules.afterReturn(RunPermissionSheet.ActivitySettings, blocked))
         // 허용하고 돌아왔다 — 러닝 준비를 잇는다
         assertEquals(RunPermissionStep.Ready, RunPermissionRules.afterReturn(RunPermissionSheet.ActivitySettings, blocked.copy(activityGranted = true)))
-        val located = fresh.copy(activityGranted = true, locationChosen = true, notificationChosen = true)
+        val located = fresh.copy(activityGranted = true, notificationChosen = true)
         // 대략적인 위치에서 설정에 다녀왔다 — 정확한 위치면 잇고, 그대로면 17, 위치를 껐으면 18
         assertEquals(RunPermissionStep.Ready,
             RunPermissionRules.afterReturn(RunPermissionSheet.ApproximateLocation, located.copy(preciseLocation = true, approximateLocation = true)))
@@ -130,11 +134,16 @@ class OnboardingRulesTest {
         assertEquals(show(RunPermissionSheet.WithoutLocation), RunPermissionRules.afterReturn(RunPermissionSheet.ApproximateLocation, located))
         assertEquals(show(RunPermissionSheet.ApproximateLocation),
             RunPermissionRules.afterReturn(RunPermissionSheet.WithoutLocation, located.copy(approximateLocation = true)))
-        // 알림 안내 중 다른 앱에서 알림을 허용하고 왔다 — 잇는다
+        // 위치 권한 없음(18)에서 설정에 다녀왔다 — 그대로면 18, 허용했으면 잇는다
+        assertEquals(show(RunPermissionSheet.WithoutLocation), RunPermissionRules.afterReturn(RunPermissionSheet.WithoutLocation, located))
         assertEquals(RunPermissionStep.Ready,
-            RunPermissionRules.afterReturn(RunPermissionSheet.NotificationRationale, located.copy(notificationChosen = false, notificationsGranted = true)))
+            RunPermissionRules.afterReturn(RunPermissionSheet.WithoutLocation, located.copy(preciseLocation = true, approximateLocation = true)))
+        // 알림 안내 중 다른 앱에서 알림을 허용하고 왔다 — 잇는다
+        val precise = located.copy(preciseLocation = true, approximateLocation = true)
+        assertEquals(RunPermissionStep.Ready,
+            RunPermissionRules.afterReturn(RunPermissionSheet.NotificationRationale, precise.copy(notificationChosen = false, notificationsGranted = true)))
         assertEquals(show(RunPermissionSheet.NotificationRationale),
-            RunPermissionRules.afterReturn(RunPermissionSheet.NotificationRationale, located.copy(notificationChosen = false)))
+            RunPermissionRules.afterReturn(RunPermissionSheet.NotificationRationale, precise.copy(notificationChosen = false)))
     }
 
     // ── 첫 안내 · 첫 러닝 홈 ─────────────────────────────────────

@@ -11,9 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasAnyDescendant
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -91,6 +88,7 @@ class RunStartFlowTest {
     @Test fun countdownCapture() = countdownCapture(located = true, name = "run-countdown.png")
 
     // 한 화면에서 값만 바꿔 다시 찍으면 같은 장면이 두 번 찍혔다 — 장면마다 새로 그린다
+    // 3-2-1 은 GPS 를 잡은 뒤에만 온다(2026-10-16). 위치를 모르는 3-2-1 은 위치 안내 줄을 꾸미지 않는다(시간만 기록 안내 없음)
     @Test fun countdownNoGpsCapture() = countdownCapture(located = false, name = "run-countdown-no-gps.png")
 
     private fun countdownCapture(located: Boolean, name: String) {
@@ -100,10 +98,11 @@ class RunStartFlowTest {
             } }
         }
         compose.onNodeWithTag("run-countdown-cancel").assertIsDisplayed()
-        val gps = compose.activity.getString(
-            if (located) R.string.run_countdown_gps_on else R.string.run_countdown_gps_off,
-        )
-        compose.onNodeWithText(gps).assertIsDisplayed()
+        if (located) {
+            compose.onNodeWithText(compose.activity.getString(R.string.run_countdown_gps_on)).assertIsDisplayed()
+        } else {
+            compose.onNodeWithTag("run-countdown-caption", useUnmergedTree = true).assertDoesNotExist()
+        }
         capture(name)
     }
 
@@ -147,8 +146,8 @@ class RunStartFlowTest {
 
     /**
      * 자유 러닝의 짧은 권한 카드(minimal) — 꼬리표는 예전 안내와 같고, 각 버튼이 부르는 행동도 그대로다.
-     * 위치 권한 없음만 보이는 차례가 바뀐다: 앞 버튼(perm-primary)이 "경로 없이 시작"(시간만 기록 = onSecondary),
-     * 옆 버튼(perm-secondary)이 "위치 설정"(설정 열기 = onPrimary). 닫기(뒤로)는 장면마다 onDismiss 한 번.
+     * 위치 장면(허용 · 대략적 위치 · 권한 없음)의 보조 버튼은 "취소"다 — 위치 없이 시작하는 길은 없다(2026-10-16).
+     * 닫기(뒤로)는 장면마다 onDismiss 한 번.
      */
     @Test fun minimalPermissionCardsKeepEachMeaning() {
         var sheet by mutableStateOf(RunPermissionSheet.ActivityRationale)
@@ -170,18 +169,18 @@ class RunStartFlowTest {
             compose.waitUntil(5_000) {
                 compose.onAllNodesWithTag(permissionSheetTags.getValue(next)).fetchSemanticsNodes().isNotEmpty()
             }
-            val swapped = next == RunPermissionSheet.WithoutLocation
-            if (swapped) {
-                compose.onNodeWithTag("perm-primary").assertTextEquals(compose.activity.getString(R.string.run_free_pm_no_route))
-                compose.onNodeWithTag("perm-secondary").assertTextEquals(compose.activity.getString(R.string.run_pm_location_settings))
+            val location = next == RunPermissionSheet.LocationRationale || next == RunPermissionSheet.ApproximateLocation ||
+                next == RunPermissionSheet.WithoutLocation
+            if (location) {
+                compose.onNodeWithTag("perm-secondary").assertTextEquals(compose.activity.getString(R.string.common_cancel))
             }
             val primaryBefore = primary
             val secondaryBefore = secondary
             compose.onNodeWithTag("perm-primary").assertIsDisplayed().performClick()
             compose.runOnIdle {
-                // 보이는 앞 버튼 — 위치 권한 없음이면 시간만 기록(onSecondary), 그 밖에는 주 행동(onPrimary)
-                assertEquals("$next primary", primaryBefore + if (swapped) 0 else 1, primary)
-                assertEquals("$next primary", secondaryBefore + if (swapped) 1 else 0, secondary)
+                // 보이는 앞 버튼은 언제나 주 행동(onPrimary)
+                assertEquals("$next primary", primaryBefore + 1, primary)
+                assertEquals("$next primary", secondaryBefore, secondary)
             }
             compose.onNodeWithTag("perm-secondary").assertIsDisplayed().performClick()
             compose.runOnIdle {
@@ -216,10 +215,8 @@ class RunStartFlowTest {
         compose.mainClock.advanceTimeByFrame()
         // 바탕 전체가 누를 수 있는 한 덩어리로 묶여 있어 안쪽 숫자 · 안내 · 지도는 묶이기 전 노드에서 찾는다
         compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("3")
-        // 안내 줄은 줄(Row)에 꼬리표가 있고 글은 그 안에 있다
-        val gpsOff = compose.activity.getString(R.string.run_countdown_gps_off)
-        compose.onNode(hasTestTag("run-countdown-caption") and hasAnyDescendant(hasText(gpsOff)), useUnmergedTree = true)
-            .assertIsDisplayed()
+        // 위치를 모르면 안내 줄도 지도도 그리지 않는다 — "걸음으로만 기록" 같은 위치 없는 길을 알리지 않는다
+        compose.onNodeWithTag("run-countdown-caption", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("run-countdown-map", useUnmergedTree = true).assertDoesNotExist()
         assertEquals("누르기 전에는 시작하지 않는다", 0, starts)
 

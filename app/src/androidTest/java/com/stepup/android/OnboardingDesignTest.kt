@@ -159,9 +159,15 @@ class OnboardingDesignTest {
         compose.onNodeWithTag("perm-secondary").assertTextEquals(text(R.string.run_go_home))
         show("s15-activity-settings", "perm-sheet-activity-settings", menuWith(RunPermissionSheet.ActivitySettings))
         compose.onNodeWithTag("perm-primary").assertTextEquals(text(R.string.run_pm_open_settings))
+        // 위치 안내 셋 — 위치 없이 시작하는 길은 없다(2026-10-16). 보조 버튼은 모두 "취소"
         show("s16-location-rationale", "perm-sheet-location", menuWith(RunPermissionSheet.LocationRationale))
+        compose.onNodeWithTag("perm-secondary").assertTextEquals(text(R.string.common_cancel))
         show("s17-approximate-location", "perm-sheet-location-approximate", menuWith(RunPermissionSheet.ApproximateLocation))
+        compose.onNodeWithTag("perm-primary").assertTextEquals(text(R.string.run_pm_open_settings))
+        compose.onNodeWithTag("perm-secondary").assertTextEquals(text(R.string.common_cancel))
         show("s18-without-location", "perm-sheet-location-off", menuWith(RunPermissionSheet.WithoutLocation))
+        compose.onNodeWithTag("perm-primary").assertTextEquals(text(R.string.run_pm_turn_on_location))
+        compose.onNodeWithTag("perm-secondary").assertTextEquals(text(R.string.common_cancel))
         show("s19-notification-rationale", "perm-sheet-notification", menuWith(RunPermissionSheet.NotificationRationale))
 
         // 20 — 사용 안내 다시 보기
@@ -240,26 +246,25 @@ class OnboardingDesignTest {
     /**
      * 자유 러닝의 짧은 권한 안내(2026-10-14 v2, 전달본 11 · 12) — 러닝 방법의 자유 러닝 카드가 minimal 로 띄우는 카드 한 장.
      * 태그는 예전 안내와 같다(perm-sheet-* · perm-primary · perm-secondary). 버튼 하나에 콜백 하나만 불리고 닫기는 불리지 않는다.
-     * 위치 권한 없음은 보이는 차례만 바뀐다 — 앞의 "경로 없이 시작"이 시간만 기록(onSecondary), 옆의 "위치 설정"이 설정 열기(onPrimary).
+     * 위치 장면(허용 · 대략적 위치 · 권한 없음)의 보조 버튼은 "취소"다 — 위치 없이 시작하는 길은 없다(2026-10-16).
      */
     @Test fun freeRunPermissionCards() {
         prepare()
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider { Box(Modifier.fillMaxSize()) { scene() } } }
         }
-        // 장면 이름 · 안내 · 카드 태그 · 보이는 주 버튼 글 · 보조 버튼 글 · 보이는 주 버튼이 보조 행동을 하는지
+        // 장면 이름 · 안내 · 카드 태그 · 주 버튼 글 · 보조 버튼 글
         class Card(
             val name: String,
             val sheet: RunPermissionSheet,
             val tag: String,
             val primary: Int,
             val secondary: Int,
-            val swapped: Boolean = false,
         )
         val cards = listOf(
             Card("fr11-activity", RunPermissionSheet.ActivityRationale, "activity", R.string.run_pm_allow, R.string.run_perm_later),
             Card("fr11-location", RunPermissionSheet.LocationRationale, "location",
-                R.string.run_free_pm_location_allow, R.string.run_free_pm_no_route),
+                R.string.run_free_pm_location_allow, R.string.common_cancel),
             Card("fr11-notification", RunPermissionSheet.NotificationRationale, "notification",
                 R.string.run_pm_notify_allow, R.string.run_perm_later),
             Card("fr12-activity-denied", RunPermissionSheet.ActivityDenied, "activity-denied",
@@ -267,9 +272,9 @@ class OnboardingDesignTest {
             Card("fr12-activity-settings", RunPermissionSheet.ActivitySettings, "activity-settings",
                 R.string.run_pm_open_settings, R.string.run_free_pm_home),
             Card("fr12-approximate", RunPermissionSheet.ApproximateLocation, "location-approximate",
-                R.string.run_free_pm_keep_going, R.string.run_pm_location_settings),
+                R.string.run_pm_open_settings, R.string.common_cancel),
             Card("fr12-no-location", RunPermissionSheet.WithoutLocation, "location-off",
-                R.string.run_free_pm_no_route, R.string.run_pm_location_settings, swapped = true),
+                R.string.run_pm_open_settings, R.string.common_cancel),
         )
         assertEquals("안내 일곱 가지를 모두 찍는다", RunPermissionSheet.entries.toSet(), cards.map { it.sheet }.toSet())
 
@@ -292,23 +297,17 @@ class OnboardingDesignTest {
             compose.onNodeWithTag("perm-primary").assertExists().assertHasClickAction().assertTextEquals(text(card.primary))
             compose.onNodeWithTag("perm-secondary").assertExists().assertHasClickAction().assertTextEquals(text(card.secondary))
 
-            // 보이는 주 버튼 — 위치 권한 없음만 보조 행동(시간만 기록), 나머지는 주 행동
+            // 주 버튼 — 주 행동 하나만
             compose.onNodeWithTag("perm-primary").performClick()
             compose.waitForIdle()
             val afterPrimary = Triple(primary.get(), secondary.get(), dismissed.get())
-            assertEquals(
-                "${card.name}: 보이는 주 버튼은 콜백 하나만",
-                if (card.swapped) Triple(0, 1, 0) else Triple(1, 0, 0), afterPrimary,
-            )
+            assertEquals("${card.name}: 주 버튼은 콜백 하나만", Triple(1, 0, 0), afterPrimary)
 
-            // 보이는 보조 버튼 — 위치 권한 없음만 주 행동(설정 열기), 나머지는 보조 행동
+            // 보조 버튼 — 보조 행동 하나만(위치 장면은 취소)
             compose.onNodeWithTag("perm-secondary").performClick()
             compose.waitForIdle()
             val afterSecondary = Triple(primary.get() - afterPrimary.first, secondary.get() - afterPrimary.second, dismissed.get())
-            assertEquals(
-                "${card.name}: 보이는 보조 버튼은 콜백 하나만",
-                if (card.swapped) Triple(1, 0, 0) else Triple(0, 1, 0), afterSecondary,
-            )
+            assertEquals("${card.name}: 보조 버튼은 콜백 하나만", Triple(0, 1, 0), afterSecondary)
         }
     }
 

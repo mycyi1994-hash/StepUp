@@ -53,10 +53,17 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
 
         here = manager.lastKnown() ?: here
 
+        // API 29 이하에서는 넷 모두 추상 메서드다 — 하나라도 빠지면 이 화면에서 위치를 켜고 끌 때 앱이 죽는다(AbstractMethodError)
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
                 here = GeoPoint(location.latitude, location.longitude)
             }
+
+            override fun onProviderEnabled(provider: String) = Unit
+            override fun onProviderDisabled(provider: String) = Unit
+
+            @Deprecated("Deprecated in Java")
+            override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
         }
 
         val provider = manager.bestProvider()

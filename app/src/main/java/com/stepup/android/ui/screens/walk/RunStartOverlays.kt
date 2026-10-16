@@ -59,6 +59,7 @@ import kotlinx.coroutines.flow.first
 /**
  * 혼자 러닝 3-2-1(시안 R01). 끝나면 [onGo] 가 한 번만 불린다.
  * 화면을 누르면 바로 시작하고, 시작 취소나 뒤로 가기는 아무것도 시작하지 않는다(기록이 생기지 않는다).
+ * GPS 를 잡은 뒤에만 온다(RunGpsGate.kt) — 위치 없이 시작하는 3-2-1 은 없다. 위치를 모르면 지도 · 안내 줄을 그리지 않는다.
  */
 @Composable
 internal fun RunCountdown(
@@ -103,13 +104,7 @@ internal fun RunCountdown(
     }
     val tapToStart = stringResource(R.string.run_countdown_tap)
     val here = rememberCurrentLocation(enabled = locationAllowed && locationServicesOn)
-    val caption = stringResource(
-        when {
-            !locationAllowed -> R.string.run_countdown_gps_off
-            !locationServicesOn -> R.string.run_countdown_location_services_off
-            else -> R.string.run_countdown_gps_on
-        },
-    )
+    val caption = if (locationAllowed && locationServicesOn) stringResource(R.string.run_countdown_gps_on) else null
     val stageModifier = Modifier.semantics { contentDescription = tapToStart }
         .clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -214,14 +209,14 @@ internal fun RunCountdownStage(
 
 /**
  * 휴대폰 위치 기능 꺼짐(시안 E07) — 위치 권한은 있는데 기기의 위치 기능이 꺼져 있다(앱 권한 거절 L02 와 다른 원인).
- * 위치 설정 열기(돌아오면 다시 읽는다) · 시간만 기록하기(R01 → R02_TIME). 위치가 없으니 지도는 그리지 않는다.
+ * 위치 설정 열기(돌아오면 다시 읽고 GPS 를 기다린다) 하나. 위치 없이 시작하는 길은 없다(2026-10-16) — 그만두기는 뒤로.
+ * 위치가 없으니 지도는 그리지 않는다.
  */
 @Composable
 internal fun RunLocationOffContent(
     title: String,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
-    onTimeOnly: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val t = runTone()
@@ -229,8 +224,6 @@ internal fun RunLocationOffContent(
         onBack = onBack, modifier = modifier.testTag("run-location-off-gate"), title = title.ifBlank { null },
         bottom = {
             RunButton(stringResource(R.string.run_loc_off_open), onOpenSettings, Modifier.testTag("run-location-off-open"), hero = true)
-            RunButton(stringResource(R.string.run_loc_off_time_only), onTimeOnly, Modifier.testTag("run-location-off-time"),
-                kind = RunButtonKind.Secondary)
         },
     ) {
         Spacer(Modifier.height(24.dp))

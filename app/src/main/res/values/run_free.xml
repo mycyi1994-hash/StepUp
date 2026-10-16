@@ -32,9 +32,8 @@
     <string name="run_free_pm_activity_title">We\'ll record your steps</string>
     <string name="run_free_pm_activity_body">Physical activity permission is needed.</string>
     <string name="run_free_pm_location_title">Keep your route on the map</string>
-    <string name="run_free_pm_location_body">Without location permission, your route isn\'t recorded.</string>
+    <string name="run_free_pm_location_body">Runs are recorded with GPS. Allow location to start.</string>
     <string name="run_free_pm_location_allow">Allow location</string>
-    <string name="run_free_pm_no_route">Start without route</string>
     <string name="run_free_pm_notify_title">We\'ll show your run status</string>
     <string name="run_free_pm_notify_body">Check your progress in notifications.</string>
     <string name="run_free_pm_denied_title">Step permission is needed</string>
@@ -44,10 +43,9 @@
     <string name="run_free_pm_settings_title">Turn on the permission in Settings</string>
     <string name="run_free_pm_settings_body">Check the physical activity permission.</string>
     <string name="run_free_pm_approx_title">Approximate location is on</string>
-    <string name="run_free_pm_approx_body">Your route may be inaccurate.</string>
-    <string name="run_free_pm_keep_going">Continue as is</string>
-    <string name="run_free_pm_no_location_title">Start without a route?</string>
-    <string name="run_free_pm_no_location_body">Time and steps are still recorded.</string>
+    <string name="run_free_pm_approx_body">Turn on precise location to start.</string>
+    <string name="run_free_pm_no_location_title">Location permission needed</string>
+    <string name="run_free_pm_no_location_body">Allow location in Settings to start.</string>
     <!-- 공유 그림의 날짜(2026.10.14) — 모든 언어에서 같은 모양 -->
     <string name="run_free_share_date_pattern" translatable="false">yyyy.MM.dd</string>
 </resources>
