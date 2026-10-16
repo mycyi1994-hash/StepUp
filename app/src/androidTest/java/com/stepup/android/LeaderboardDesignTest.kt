@@ -160,7 +160,7 @@ class LeaderboardDesignTest {
         shot("L11-personal-unranked")
         // L12 크루 없음
         open(FixtureLeaderboards(crews = LeaderLoad.Ready(LeaderboardSamples.crews(mine = false))), tag = "lb-crew-footer")
-        compose.onNodeWithTag("lb-crew-footer", useUnmergedTree = true)
+        compose.onNodeWithTag("lb-crew-footer")
             .assertTextContains(text(com.stepup.android.R.string.lb_crew_none_title), substring = true)
         shot("L12-crew-no-crew")
         // L13 통신 실패 — 다시 시도
