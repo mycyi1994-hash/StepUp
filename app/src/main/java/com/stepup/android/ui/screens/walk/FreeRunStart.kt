@@ -5,7 +5,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,7 +67,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -98,6 +95,8 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.MapTiles
+import com.stepup.android.ui.components.RunStartWordmark
+import com.stepup.android.ui.components.prewarmRunStartWordmark
 import com.stepup.android.ui.components.ShoeArtFull
 import com.stepup.android.ui.components.ShoeArtThumbnail
 import com.stepup.android.ui.components.TilePlan
@@ -177,7 +176,12 @@ internal fun FreeRunShoeCheckContent(
 ) {
     val reduced = LocalMotion.current.reduced
     val shown = remember { Animatable(if (reduced) 1f else 0f) }
-    LaunchedEffect(Unit) { shown.animateTo(1f, tween(250, easing = FreeRunStartMotion.ExitEnter)) }
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        // 카운트다운 전에 StepUP! 그림을 뒤에서 풀어 둔다(전환 중에 풀지 않게)
+        prewarmRunStartWordmark(context)
+        shown.animateTo(1f, tween(250, easing = FreeRunStartMotion.ExitEnter))
+    }
     // 출발은 한 번만 — 연타 · 겹친 누름에도 시작 요청은 하나다
     var fired by remember { mutableStateOf(false) }
     val start = {
@@ -585,10 +589,7 @@ internal fun FreeRunStartStage(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                painterResource(R.drawable.logo_wordmark_white), contentDescription = null,
-                modifier = Modifier.width(groupWidth - 30.dp).aspectRatio(900f / 156f),
-            )
+            RunStartWordmark(groupWidth - 30.dp)
             Box(Modifier.width(22.dp), contentAlignment = Alignment.Center) {
                 Text(
                     "!", style = bangStyle, maxLines = 1, softWrap = false,
