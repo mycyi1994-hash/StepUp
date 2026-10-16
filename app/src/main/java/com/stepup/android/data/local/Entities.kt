@@ -101,7 +101,7 @@ data class WalkSessionEntity(
     /**
      * 러닝 중 찍힌 랩 — `LapCodec.encode` 글자(순번 · 누적 km · 누적 활성 초). AI 코칭의 1km 구간이 이것으로 센다.
      *
-     * 판 18(2026-10-16) 전에 저장된 러닝은 빈 글자다 — 랩은 러닝 저장본에만 있다가 저장이 끝나면 함께 지워졌다.
+     * 판 19(2026-10-16) 전에 저장된 러닝은 빈 글자다 — 랩은 러닝 저장본에만 있다가 저장이 끝나면 함께 지워졌다.
      * 경로 시각으로 다시 만들지 않는다(벽시계라 일시정지가 섞인다). 무효 러닝(거리 0)도 비운다.
      */
     @ColumnInfo(defaultValue = "''")
@@ -206,6 +206,25 @@ data class SneakerEntity(
     @ColumnInfo(defaultValue = "0") val modelId: Int = 0,
     /** 체인 토큰 번호 — v2(1~) · v3 금고(1,000,001~). 0 이면 아직 체인에 없다 */
     @ColumnInfo(defaultValue = "0") val tokenId: Long = 0,
+    // ── 0059 — 신발마다 다른 최대 내구도(1 = 10m) · 레벨업 스탯 포인트. 0 이면 서버가 아직 보내지 않았다 ──
+    /** 남은 내구도 · 최대 내구도(1 = 10m). [durabilityPts] 는 남은 비율(%) */
+    @ColumnInfo(defaultValue = "0") val durabilityNow: Int = 0,
+    @ColumnInfo(defaultValue = "0") val durabilityMax: Int = 0,
+    /** 만들 때 고른 최대 내구도 — 최대 내구도 = 이 값 + 내구도 포인트 × 100 */
+    @ColumnInfo(defaultValue = "0") val durabilityBase: Int = 0,
+    /** 레벨 1 의 효율 · 착화감(bps) */
+    @ColumnInfo(defaultValue = "0") val efficiencyBaseBps: Int = 0,
+    @ColumnInfo(defaultValue = "0") val comfortBaseBps: Int = 0,
+    /** 받은 포인트 · 남은 포인트 · 나눈 포인트(효율 · 착화감 · 내구도) */
+    @ColumnInfo(defaultValue = "0") val pointsTotal: Int = 0,
+    @ColumnInfo(defaultValue = "0") val pointsFree: Int = 0,
+    @ColumnInfo(defaultValue = "0") val pointsEfficiency: Int = 0,
+    @ColumnInfo(defaultValue = "0") val pointsComfort: Int = 0,
+    @ColumnInfo(defaultValue = "0") val pointsDurability: Int = 0,
+    /** 한 번 처음부터 다시 나눌 수 있다 */
+    @ColumnInfo(defaultValue = "0") val pointsRespec: Boolean = false,
+    /** 내구도 1(10m) 고치는 값 */
+    @ColumnInfo(defaultValue = "0") val repairCostPerUnit: Double = 0.0,
 )
 
 /**

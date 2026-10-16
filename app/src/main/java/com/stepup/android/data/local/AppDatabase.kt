@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotificationEntity::class,
         NewsItemEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -201,10 +201,33 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
+         * 신발마다 다른 최대 내구도(1 = 10m)와 레벨업 스탯 포인트(서버 0059). 받기 전에는 0 — 화면은 예전처럼
+         * 남은 비율(durabilityPts, 100 기준)을 쓰고, 다음 동기화에서 서버 값으로 채워진다.
+         */
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                listOf(
+                    "durabilityNow INTEGER NOT NULL DEFAULT 0",
+                    "durabilityMax INTEGER NOT NULL DEFAULT 0",
+                    "durabilityBase INTEGER NOT NULL DEFAULT 0",
+                    "efficiencyBaseBps INTEGER NOT NULL DEFAULT 0",
+                    "comfortBaseBps INTEGER NOT NULL DEFAULT 0",
+                    "pointsTotal INTEGER NOT NULL DEFAULT 0",
+                    "pointsFree INTEGER NOT NULL DEFAULT 0",
+                    "pointsEfficiency INTEGER NOT NULL DEFAULT 0",
+                    "pointsComfort INTEGER NOT NULL DEFAULT 0",
+                    "pointsDurability INTEGER NOT NULL DEFAULT 0",
+                    "pointsRespec INTEGER NOT NULL DEFAULT 0",
+                    "repairCostPerUnit REAL NOT NULL DEFAULT 0",
+                ).forEach { db.execSQL("ALTER TABLE sneakers ADD COLUMN $it") }
+            }
+        }
+
+        /**
          * AI 코칭(2026-10-16)의 1km 구간 — 러닝의 랩을 기록에 남긴다. 그 전의 기록은 랩을 모르므로 빈 글자로 둔다
          * (구간을 지어내지 않는다 — 코칭 화면이 "구간 정보 없음"으로 보인다).
          */
-        val MIGRATION_17_18 = object : Migration(17, 18) {
+        val MIGRATION_18_19 = object : Migration(18, 19) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE walk_sessions ADD COLUMN laps TEXT NOT NULL DEFAULT ''")
             }
@@ -213,6 +236,7 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATIONS = arrayOf(
             MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
             MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
+            MIGRATION_18_19,
         )
     }
 }

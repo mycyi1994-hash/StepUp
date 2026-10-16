@@ -173,7 +173,7 @@ object ServiceLocator {
     }
 
     /**
-     * AI 코칭(2026-10-16, docs/redesign/ai-coaching-2026-10) — 지금 계정의 기록과 서버 코칭(0059). 사본은 백업하지 않는 폴더에.
+     * AI 코칭(2026-10-16, docs/redesign/ai-coaching-2026-10) — 지금 계정의 기록과 서버 코칭(0060). 사본은 백업하지 않는 폴더에.
      * 서버가 켜지기 전(coaching_provider none)에는 AI 칸 없이 기록 숫자 · 기본 훈련만 보인다.
      */
     val coachingRepository: com.stepup.android.data.repo.CoachingRepository by lazy {

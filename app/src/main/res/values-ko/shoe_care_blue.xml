@@ -57,7 +57,7 @@
     <string name="care_repair_state">수리 상태</string>
     <string name="care_needs_check">확인 필요</string>
     <string name="care_repair_observed_full">지금 내구도는 100이에요. 차감 내역은 내 정보 › 지갑에서 볼 수 있어요.</string>
-    <string name="care_repair_observed_short">지금 내구도는 %1$d / 100이에요. 수리가 반영되지 않았다면 다시 수리할 수 있어요.</string>
+    <string name="care_repair_observed_short">지금 내구도는 %1$s이에요. 수리가 반영되지 않았다면 다시 수리할 수 있어요.</string>
     <string name="care_repair_done_title">수리했어요</string>
     <string name="care_repair_done_body">내구도가 모두 회복됐어요.</string>
     <string name="care_balance_left">남은 잔액</string>

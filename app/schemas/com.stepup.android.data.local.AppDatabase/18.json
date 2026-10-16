@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 18,
-    "identityHash": "dc0b5e2c49e3039865669419d3bcd173",
+    "identityHash": "0d20eca26bf64131de4ee5b204eb7142",
     "entities": [
       {
         "tableName": "daily_steps",
@@ -44,7 +44,7 @@
       },
       {
         "tableName": "walk_sessions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER NOT NULL, `steps` INTEGER NOT NULL, `durationSec` INTEGER NOT NULL, `distanceMeters` REAL NOT NULL, `calories` REAL NOT NULL, `pointsEarned` REAL NOT NULL, `recordingOwner` TEXT NOT NULL DEFAULT 'legacy', `track` TEXT NOT NULL, `boostBps` INTEGER NOT NULL, `partySize` INTEGER NOT NULL, `faction` TEXT NOT NULL, `crewId` TEXT NOT NULL, `uploadState` TEXT NOT NULL, `uploadAttemptedAt` INTEGER NOT NULL, `uploadAttempts` INTEGER NOT NULL, `uploadError` TEXT NOT NULL, `verdict` TEXT NOT NULL, `claimSignature` TEXT NOT NULL, `claimSessionHash` TEXT NOT NULL, `claimAmount` TEXT NOT NULL, `claimDay` INTEGER NOT NULL, `claimDeadline` INTEGER NOT NULL, `mockLocation` INTEGER NOT NULL DEFAULT 0, `laps` TEXT NOT NULL DEFAULT '')",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER NOT NULL, `steps` INTEGER NOT NULL, `durationSec` INTEGER NOT NULL, `distanceMeters` REAL NOT NULL, `calories` REAL NOT NULL, `pointsEarned` REAL NOT NULL, `recordingOwner` TEXT NOT NULL DEFAULT 'legacy', `track` TEXT NOT NULL, `boostBps` INTEGER NOT NULL, `partySize` INTEGER NOT NULL, `faction` TEXT NOT NULL, `crewId` TEXT NOT NULL, `uploadState` TEXT NOT NULL, `uploadAttemptedAt` INTEGER NOT NULL, `uploadAttempts` INTEGER NOT NULL, `uploadError` TEXT NOT NULL, `verdict` TEXT NOT NULL, `claimSignature` TEXT NOT NULL, `claimSessionHash` TEXT NOT NULL, `claimAmount` TEXT NOT NULL, `claimDay` INTEGER NOT NULL, `claimDeadline` INTEGER NOT NULL, `mockLocation` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -197,13 +197,6 @@
             "affinity": "INTEGER",
             "notNull": true,
             "defaultValue": "0"
-          },
-          {
-            "fieldPath": "laps",
-            "columnName": "laps",
-            "affinity": "TEXT",
-            "notNull": true,
-            "defaultValue": "''"
           }
         ],
         "primaryKey": {
@@ -261,7 +254,7 @@
       },
       {
         "tableName": "sneakers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `factionId` TEXT NOT NULL, `rarity` TEXT NOT NULL, `variant` INTEGER NOT NULL, `level` INTEGER NOT NULL, `mintNumber` INTEGER NOT NULL, `luck` REAL NOT NULL, `comfort` REAL NOT NULL, `durability` INTEGER NOT NULL, `equipped` INTEGER NOT NULL, `acquiredAt` INTEGER NOT NULL, `serverId` INTEGER NOT NULL, `origin` TEXT NOT NULL DEFAULT '', `efficiencyBps` INTEGER NOT NULL DEFAULT 0, `comfortBps` INTEGER NOT NULL DEFAULT 0, `durabilityPts` REAL NOT NULL DEFAULT 100, `maxLevel` INTEGER NOT NULL DEFAULT 0, `status` TEXT NOT NULL DEFAULT 'OWNED', `chainState` TEXT NOT NULL DEFAULT 'APP', `canWithdraw` INTEGER NOT NULL DEFAULT 0, `serverUpgradeCost` REAL NOT NULL DEFAULT 0, `repairCostPerPoint` REAL NOT NULL DEFAULT 0, `genesisNo` INTEGER NOT NULL DEFAULT 0, `modelId` INTEGER NOT NULL DEFAULT 0, `tokenId` INTEGER NOT NULL DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `factionId` TEXT NOT NULL, `rarity` TEXT NOT NULL, `variant` INTEGER NOT NULL, `level` INTEGER NOT NULL, `mintNumber` INTEGER NOT NULL, `luck` REAL NOT NULL, `comfort` REAL NOT NULL, `durability` INTEGER NOT NULL, `equipped` INTEGER NOT NULL, `acquiredAt` INTEGER NOT NULL, `serverId` INTEGER NOT NULL, `origin` TEXT NOT NULL DEFAULT '', `efficiencyBps` INTEGER NOT NULL DEFAULT 0, `comfortBps` INTEGER NOT NULL DEFAULT 0, `durabilityPts` REAL NOT NULL DEFAULT 100, `maxLevel` INTEGER NOT NULL DEFAULT 0, `status` TEXT NOT NULL DEFAULT 'OWNED', `chainState` TEXT NOT NULL DEFAULT 'APP', `canWithdraw` INTEGER NOT NULL DEFAULT 0, `serverUpgradeCost` REAL NOT NULL DEFAULT 0, `repairCostPerPoint` REAL NOT NULL DEFAULT 0, `genesisNo` INTEGER NOT NULL DEFAULT 0, `modelId` INTEGER NOT NULL DEFAULT 0, `tokenId` INTEGER NOT NULL DEFAULT 0, `durabilityNow` INTEGER NOT NULL DEFAULT 0, `durabilityMax` INTEGER NOT NULL DEFAULT 0, `durabilityBase` INTEGER NOT NULL DEFAULT 0, `efficiencyBaseBps` INTEGER NOT NULL DEFAULT 0, `comfortBaseBps` INTEGER NOT NULL DEFAULT 0, `pointsTotal` INTEGER NOT NULL DEFAULT 0, `pointsFree` INTEGER NOT NULL DEFAULT 0, `pointsEfficiency` INTEGER NOT NULL DEFAULT 0, `pointsComfort` INTEGER NOT NULL DEFAULT 0, `pointsDurability` INTEGER NOT NULL DEFAULT 0, `pointsRespec` INTEGER NOT NULL DEFAULT 0, `repairCostPerUnit` REAL NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -423,6 +416,90 @@
             "fieldPath": "tokenId",
             "columnName": "tokenId",
             "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "durabilityNow",
+            "columnName": "durabilityNow",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "durabilityMax",
+            "columnName": "durabilityMax",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "durabilityBase",
+            "columnName": "durabilityBase",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "efficiencyBaseBps",
+            "columnName": "efficiencyBaseBps",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "comfortBaseBps",
+            "columnName": "comfortBaseBps",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsTotal",
+            "columnName": "pointsTotal",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsFree",
+            "columnName": "pointsFree",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsEfficiency",
+            "columnName": "pointsEfficiency",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsComfort",
+            "columnName": "pointsComfort",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsDurability",
+            "columnName": "pointsDurability",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "pointsRespec",
+            "columnName": "pointsRespec",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "repairCostPerUnit",
+            "columnName": "repairCostPerUnit",
+            "affinity": "REAL",
             "notNull": true,
             "defaultValue": "0"
           }
@@ -1081,7 +1158,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dc0b5e2c49e3039865669419d3bcd173')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0d20eca26bf64131de4ee5b204eb7142')"
     ]
   }
 }

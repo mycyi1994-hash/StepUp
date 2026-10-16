@@ -483,8 +483,9 @@ test('꺼내기: 금고로 발행된 v3 신발은 v3 컨트랙트 · v3 서명 �
   )
 })
 
-test('메타데이터: /v3/meta 는 v3 컨트랙트를 읽는다', async () => {
+test('메타데이터: /v3/meta 는 v3 컨트랙트를 읽고, 나눈 스탯 포인트는 서버에서 더한다', async () => {
   const read = []
+  const rpcs = []
   const deps = {
     clients: () => ({
       addresses: { sneakers: '0x' + '2'.repeat(40), sneakersV3: V3 },
@@ -497,11 +498,26 @@ test('메타데이터: /v3/meta 는 v3 컨트랙트를 읽는다', async () => {
         },
       },
     }),
+    rpc: async (env, fn, args) => {
+      rpcs.push([fn, args])
+      return [{ efficiency_points: 2, comfort_points: 1, durability_points: 1, durability_max: 2310 }]
+    },
   }
   const meta = await sneakerMetadata({}, deps, '1000001', '3')
   assert.ok(read.every((a) => a === V3))
+  assert.deepEqual(rpcs, [['attester_sneaker_points', { p_token: '1000001' }]])
   assert.ok(meta.name.endsWith('#1000001'))
-  assert.equal(meta.attributes.find((a) => a.trait_type === 'Level').value, 3)
+  const attr = Object.fromEntries(meta.attributes.map((a) => [a.trait_type, a.value]))
+  assert.equal(attr.Level, 3)
+  assert.equal(attr.Efficiency, '+8.5%')
+  assert.equal(attr.Comfort, '7.1%')
+  assert.equal(attr['Max Durability'], 2310)
+
+  // 서버를 못 읽으면 레벨 1 값으로 낮춰 보이지 않는다 — 503(캐시하지 않는다)
+  deps.rpc = async () => {
+    throw new HttpError(502, 'down')
+  }
+  await assert.rejects(() => sneakerMetadata({}, deps, '1000001', '3'), (e) => e.status === 503)
 })
 
 test('v3 서명 재료 — 계정 가명 · v3 토큰만', () => {

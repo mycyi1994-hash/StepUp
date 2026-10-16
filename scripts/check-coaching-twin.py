@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI 코칭의 규칙이 앱(Kotlin)과 서버(0059 SQL) 두 곳에 있다 — 둘이 같은지 맞대어 본다.
+"""AI 코칭의 규칙이 앱(Kotlin)과 서버(0060 SQL) 두 곳에 있다 — 둘이 같은지 맞대어 본다.
 
 앱은 오프라인에서도 구간 · 템플릿 · 계획을 그려야 하고, 서버는 앱을 믿지 않으려고 같은 것을 스스로 만든다.
 두 곳에 같은 값을 두면 한쪽만 자란다. 그래서 값이 하나라도 다르면 여기서 빨갛게 멈춘다:
@@ -16,7 +16,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 KT = ROOT / "app/src/main/java/com/stepup/android/domain"
-SQL = (ROOT / "supabase/migrations/0059_coaching.sql").read_text(encoding="utf-8")
+SQL = (ROOT / "supabase/migrations/0060_coaching.sql").read_text(encoding="utf-8")
 splits = (KT / "coaching/CoachingSplits.kt").read_text(encoding="utf-8")
 plans = (KT / "coaching/CoachingPlans.kt").read_text(encoding="utf-8")
 ai = (KT / "coaching/CoachingAi.kt").read_text(encoding="utf-8")

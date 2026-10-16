@@ -57,7 +57,7 @@
     <string name="care_repair_state">修理状态</string>
     <string name="care_needs_check">需确认</string>
     <string name="care_repair_observed_full">当前耐久度为 100。扣款记录可在 我的 › 钱包 中查看。</string>
-    <string name="care_repair_observed_short">当前耐久度为 %1$d / 100。如果修理未生效，可以再次修理。</string>
+    <string name="care_repair_observed_short">当前耐久度为 %1$s。如果修理未生效，可以再次修理。</string>
     <string name="care_repair_done_title">修理完成</string>
     <string name="care_repair_done_body">耐久度已完全恢复。</string>
     <string name="care_balance_left">剩余余额</string>

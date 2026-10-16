@@ -58,7 +58,7 @@ echo "── setup.sql 재적용 (다시 붙여넣어도 안전한가) ───
 run -f "$RUNDIR/setup.sql" >/dev/null
 echo "OK"
 run -f "$RUNDIR/schema_test.sql"
-# AI 코칭(0059) — 동의 · 소유권 · 큐 · 한도 · 출력 검사(모의 공급자만)
+# AI 코칭(0060) — 동의 · 소유권 · 큐 · 한도 · 출력 검사(모의 공급자만)
 run -f "$RUNDIR/coaching_test.sql"
 # 코칭 워커 한 바퀴를 이 데이터베이스의 서버 함수에 붙여 본다(모의 공급자). node 가 없으면 못 본 것이라고 적는다
 echo "── AI 코칭 워커 ↔ 서버 함수 ─────────────────────────────────────"

@@ -37,17 +37,26 @@ fun formatSupExact(amount: Double): String = if (amount.isFinite()) formatSupExa
 
 // ── 수리 ───────────────────────────────────────────────────────────
 
+/** 수리 1점(10m) 값의 소수 자리 — 서버 economy.repair_cost_per_unit(round 8). 4자리로 자르면 차감액과 어긋난다 */
+private const val UNIT_PRICE_SCALE = 8
+
 /**
- * 수리 견적 — 서버 sneaker_repair 와 같은 계산(0023): 수리 포인트 = round(100 − 실제 내구도, 2),
- * 비용 = round(포인트 × 단가, 4). 단가는 서버가 준 값(my_sneakers.repair_cost_per_point)을 그대로 쓴다.
- * 표시용으로 내린 내구도(99)가 아니라 원래 값(99.6)으로 계산한다. 실제 차감은 서버가 다시 계산한다 — 이 값은 확인용이다.
+ * 수리 견적 — 서버 sneaker_repair 와 같은 계산(0059): 고칠 양 = 최대 내구도 − 남은 내구도(1 = 10m),
+ * 비용 = round(고칠 양 × 1점 값, 4). 1점 값은 서버가 준 값(my_sneakers.repair_cost_per_unit)을 그대로 쓴다 — 1km(100점)
+ * 고치는 값이 예전과 같다. 서버가 아직 최대 내구도를 보내지 않으면(예전 서버) 예전 계산(0023): 고칠 양 = round(100 − 남은 비율, 2),
+ * 1점 값 = repair_cost_per_point. 실제 차감은 서버가 다시 계산한다 — 이 값은 확인용이다.
  */
 data class RepairQuote(
     val shoeId: Long,
     val level: Int,
-    /** 서버의 실제 내구도(소수) */
+    /** 서버의 실제 남은 비율(%, 소수) — 수리가 끝났는지(100)를 이것으로 본다 */
     val durability: Double,
+    /** 보이는 남은 · 최대 내구도(1 = 10m). 예전 서버면 내린 남은 비율 · 100 */
+    val durabilityNow: Int,
+    val durabilityMax: Int,
+    /** 고칠 양 — 내구도 점(예전 서버는 남은 비율 점) */
     val points: BigDecimal,
+    /** 1점 값(SUP) */
     val perPoint: BigDecimal,
     val cost: BigDecimal,
 ) {
@@ -60,11 +69,21 @@ data class RepairQuote(
 /** 서버 신발이 아니면(폰에만 있는 예전 신발) null — 수리는 서버만 한다 */
 fun repairQuoteOf(shoe: Sneaker): RepairQuote? {
     val server = shoe.server ?: return null
+    if (server.hasDurabilityMax && server.repairCostPerUnit > 0.0) {
+        val now = server.durabilityNow.coerceIn(0, server.durabilityMax)
+        val points = BigDecimal.valueOf((server.durabilityMax - now).toLong())
+        val perPoint = BigDecimal.valueOf(server.repairCostPerUnit).setScale(UNIT_PRICE_SCALE, RoundingMode.HALF_UP)
+        val cost = points.multiply(perPoint).setScale(LEDGER_SCALE, RoundingMode.HALF_UP)
+        return RepairQuote(shoe.id, shoe.level, server.durabilityPts, now, server.durabilityMax, points, perPoint, cost)
+    }
     val points = BigDecimal.valueOf(100.0).subtract(BigDecimal.valueOf(server.durabilityPts))
         .max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP)
     val perPoint = BigDecimal.valueOf(server.repairCostPerPoint).setScale(LEDGER_SCALE, RoundingMode.HALF_UP)
     val cost = points.multiply(perPoint).setScale(LEDGER_SCALE, RoundingMode.HALF_UP)
-    return RepairQuote(shoe.id, shoe.level, server.durabilityPts, points, perPoint, cost)
+    return RepairQuote(
+        shoe.id, shoe.level, server.durabilityPts,
+        kotlin.math.floor(server.durabilityPts).toInt().coerceIn(0, 100), 100, points, perPoint, cost,
+    )
 }
 
 /** 부족한 금액 — max(비용 − 잔고, 0) */
@@ -179,6 +198,8 @@ data class UpgradeRow(
 /**
  * 서버 값 [before] → [after] 의 세 줄. [after] 가 null 이면 지금 값만. 막대는 실제 값 ÷ 표시 스케일 —
  * 레벨은 서버가 준 상한(대개 20), 효율 27.5% · 착화감 20%(StatScale). 값 아래에 정규화 비율을 쓰지 않는다.
+ * 레벨이 올라도 효율 · 착화감은 그대로라(0059 — 레벨마다 포인트 4) 값이 같으면 화살표를 그리지 않는다.
+ * 받는 포인트는 [forgePointsGain] 으로 따로 보인다.
  */
 fun forgeRows(before: ForgeStats, after: ForgeStats?): List<UpgradeRow> {
     val max = (after ?: before).maxLevel.toDouble()
@@ -189,15 +210,27 @@ fun forgeRows(before: ForgeStats, after: ForgeStats?): List<UpgradeRow> {
     fun comfort(s: ForgeStats) = com.stepup.android.ui.screens.customize.barFraction(
         s.comfortPercent, com.stepup.android.ui.screens.customize.StatScale.ENERGY_MAX_PERCENT,
     )
+    val effAfter = after?.takeIf { it.efficiencyBps != before.efficiencyBps }
+    val comfortAfter = after?.takeIf { it.comfortBps != before.comfortBps }
     return listOf(
         UpgradeRow(DetailStat.LEVEL, before.level.toString(), after?.level?.toString(), level(before), after?.let(::level)),
         UpgradeRow(
-            DetailStat.EFFICIENCY, formatBonus(before.efficiencyPercent), after?.let { formatBonus(it.efficiencyPercent) },
-            eff(before), after?.let(::eff),
+            DetailStat.EFFICIENCY, formatBonus(before.efficiencyPercent), effAfter?.let { formatBonus(it.efficiencyPercent) },
+            eff(before), effAfter?.let(::eff),
         ),
         UpgradeRow(
-            DetailStat.COMFORT, formatPercent(before.comfortPercent), after?.let { formatPercent(it.comfortPercent) },
-            comfort(before), after?.let(::comfort),
+            DetailStat.COMFORT, formatPercent(before.comfortPercent), comfortAfter?.let { formatPercent(it.comfortPercent) },
+            comfort(before), comfortAfter?.let(::comfort),
         ),
     )
+}
+
+/**
+ * 강화 성공으로 받는 스탯 포인트 — 레벨이 오른 만큼 4 씩(0059). 서버가 포인트를 보내지 않으면(예전 서버) 레벨 차이로 센다.
+ * 레벨이 오르지 않으면 0.
+ */
+fun forgePointsGain(before: ForgeStats, after: ForgeStats): Int {
+    val levels = (after.level - before.level).coerceAtLeast(0)
+    val reported = after.pointsTotal - before.pointsTotal
+    return if (reported > 0) reported else levels * com.stepup.android.domain.StatPoints.PER_LEVEL
 }

@@ -95,11 +95,13 @@ private fun ColumnScope.RepairBody(
     val t = runTone()
     val title = stringResource(R.string.care_repair_title)
     val subtitle = shoe.nameAndNumber()
-    val lastDurability = shoe.server?.durabilityPts ?: shoe.durability.toDouble()
+    // 마지막으로 확인한 남은 · 최대 내구도(1 = 10m) — 견적이 없는 장면(읽는 중 · 실패 · 가득 · 완료)에 보인다
+    val lastNow = durabilityLeft(shoe)
+    val lastMax = durabilityMax(shoe)
     when (phase) {
         RepairPhase.Loading -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(lastDurability, if (lastDurability < 100.0) 100.0 else null)
+            RepairDurabilityRow(lastNow, lastMax, if (lastNow < lastMax) lastMax else null)
             Text(stringResource(R.string.care_repair_loading), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             RunDivider()
@@ -113,7 +115,7 @@ private fun ColumnScope.RepairBody(
                 Text(stringResource(R.string.care_repair_changed), style = runTextStyle(14.sp, t.cyan, FontWeight.SemiBold),
                     modifier = Modifier.testTag("repair-changed").semantics { liveRegion = LiveRegionMode.Polite })
             }
-            RepairDurabilityRow(phase.quote.durability, 100.0)
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
@@ -129,7 +131,7 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Insufficient -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(phase.quote.durability, 100.0)
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
@@ -146,7 +148,7 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.NotNeeded -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(phase.durability, null)
+            RepairDurabilityRow(lastNow, lastMax, null)
             Spacer(Modifier.height(4.dp))
             RunSheetText(stringResource(R.string.care_repair_not_needed_title), body = null,
                 note = stringResource(R.string.care_repair_not_needed_body))
@@ -161,7 +163,7 @@ private fun ColumnScope.RepairBody(
         RepairPhase.LoadFailed -> {
             RunSheetText(stringResource(R.string.care_repair_load_failed_title), body = subtitle,
                 note = stringResource(R.string.care_repair_load_failed_body))
-            RepairDurabilityRow(lastDurability, null)
+            RepairDurabilityRow(lastNow, lastMax, null)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RunButton(stringResource(R.string.common_close), onClose, kind = RunButtonKind.Secondary,
                     modifier = Modifier.weight(1f).testTag("repair-dismiss"))
@@ -180,7 +182,7 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Sending -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(phase.quote.durability, 100.0)
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
             Text(stringResource(R.string.care_repair_sending_note), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             RunDivider()
@@ -203,7 +205,7 @@ private fun ColumnScope.RepairBody(
             if (observed != null) {
                 Text(
                     if (observed >= 100.0) stringResource(R.string.care_repair_observed_full)
-                    else stringResource(R.string.care_repair_observed_short, kotlin.math.floor(observed).toInt()),
+                    else stringResource(R.string.care_repair_observed_short, formatDurability(shoe)),
                     style = runTextStyle(14.sp, t.text, FontWeight.Medium),
                     modifier = Modifier.testTag("repair-observed").semantics { liveRegion = LiveRegionMode.Polite },
                 )
@@ -217,7 +219,7 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Done -> {
             CareSheetTitle(stringResource(R.string.care_repair_done_title), subtitle)
-            RepairDurabilityRow(phase.durability, null)
+            RepairDurabilityRow(lastNow, lastMax, null)
             Text(stringResource(R.string.care_repair_done_body), style = runTextStyle(16.sp, t.text, FontWeight.SemiBold),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             RunDivider()

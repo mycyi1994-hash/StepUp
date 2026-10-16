@@ -20,7 +20,7 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.add
 
 /**
- * AI 코칭(서버 0059 coaching_*). 앱은 러닝을 "시작 시각"으로만 가리킨다 — 서버가 토큰의 사용자와 시작 시각으로 자기 표에서
+ * AI 코칭(서버 0060 coaching_*). 앱은 러닝을 "시작 시각"으로만 가리킨다 — 서버가 토큰의 사용자와 시작 시각으로 자기 표에서
  * 찾는다. 로컬 기록 번호 · 사용자 번호 · 앱이 계산한 숫자는 보내지 않는다(구간 랩만 — 서버가 자기 러닝과 맞대어 본다).
  *
  * 모든 호출은 [expectedUserId] 의 토큰으로만 한다 — 그 사이 계정이 바뀌었으면 보내지 않고 SignInRequired 다

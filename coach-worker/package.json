@@ -2,7 +2,7 @@
   "name": "stepup-coach-worker",
   "version": "0.1.0",
   "private": true,
-  "description": "StepUp AI 코칭 워커 — 서버 큐(0059 coaching_jobs)의 작업을 빌려 공급자에게 보내고 결과를 돌려준다. 지금은 모의 공급자만, 배포하지 않았다.",
+  "description": "StepUp AI 코칭 워커 — 서버 큐(0060 coaching_jobs)의 작업을 빌려 공급자에게 보내고 결과를 돌려준다. 지금은 모의 공급자만, 배포하지 않았다.",
   "type": "module",
   "scripts": {
     "test": "node --test \"test/*.test.js\""

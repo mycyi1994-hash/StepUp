@@ -108,14 +108,35 @@ test('신발 메타데이터: 모델 번호 → 앱 도감 이름 · 그림 파�
   )
   assert.equal(modelInfo(modelId('FIRE', 'LEGENDARY', 0)).name, 'INFERNO CROWN')
   assert.equal(modelInfo(modelId('WIND', 'COMMON', 0)).file, 'sneaker_wind_10.webp')
-  const md = metadataOf('12', { model: 21, level: 3, efficiencyBps: 800, comfortBps: 700, durability: 9050, genesisNo: 4 }, true, 'https://x/')
+  // Lv3 — 받은 포인트 8 을 효율 4 · 착화감 4 로 나눴다(0059 전에 강화한 신발이 옮겨진 모양): 예전 레벨 계산과 같은 값
+  const stats = { model: 21, level: 3, efficiencyBps: 800, comfortBps: 700, durability: 9050, genesisNo: 4 }
+  const md = metadataOf('12', stats, true, 'https://x/',
+    { efficiency_points: 4, comfort_points: 4, durability_points: 0, durability_max: 2210 })
   assert.equal(md.name, 'PHOENIX SURGE · Genesis #4 #12'.replace('PHOENIX SURGE', modelInfo(21).name))
   assert.equal(md.image, `https://x/${modelInfo(21).file}`)
   const attr = Object.fromEntries(md.attributes.map((a) => [a.trait_type, a.value]))
   assert.equal(attr.Efficiency, '+9%')
   assert.equal(attr.Comfort, '7.4%')
   assert.equal(attr.Durability, 90.5)
+  assert.equal(attr['Max Durability'], 2210)
   assert.equal(attr.Genesis, 4)
+  assert.equal(md.attributes.at(-2).trait_type, 'Transfer')
+  // 레벨은 더 이상 스탯을 올리지 않는다 — 포인트를 내구도에 몰면 효율 · 착화감은 레벨 1 값
+  const dur = Object.fromEntries(metadataOf('12', stats, true, 'https://x/',
+    { efficiency_points: 0, comfort_points: 0, durability_points: 8, durability_max: 3010 }).attributes
+    .map((a) => [a.trait_type, a.value]))
+  assert.equal(dur.Efficiency, '+8%')
+  assert.equal(dur.Comfort, '7%')
+  assert.equal(dur['Max Durability'], 3010)
+  // 서버가 모르는 토큰 — 레벨 1 값, 최대 내구도 없음
+  const bare = Object.fromEntries(metadataOf('12', stats, true, 'https://x/').attributes.map((a) => [a.trait_type, a.value]))
+  assert.equal(bare.Efficiency, '+8%')
+  assert.equal(bare['Max Durability'], undefined)
+  // 착화감은 20% 까지
+  const cap = Object.fromEntries(metadataOf('12', { ...stats, comfortBps: 1200 }, true, 'https://x/',
+    { efficiency_points: 0, comfort_points: 90, durability_points: 0, durability_max: 2500 }).attributes
+    .map((a) => [a.trait_type, a.value]))
+  assert.equal(cap.Comfort, '20%')
 })
 
 test('52종 모두 이름과 그림 파일이 있다', async () => {

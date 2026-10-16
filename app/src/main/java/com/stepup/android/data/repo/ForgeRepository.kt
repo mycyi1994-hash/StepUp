@@ -183,6 +183,8 @@ class ForgeRepository(
             maxLevel = o.int("max_level") ?: return null,
             efficiencyBps = o.int("efficiency_bps") ?: 0,
             comfortBps = o.int("comfort_bps") ?: 0,
+            pointsTotal = o.int("points_total") ?: 0,
+            pointsFree = o.int("points_free") ?: 0,
         )
     }
 

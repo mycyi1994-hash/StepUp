@@ -22,10 +22,10 @@
 
     <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
     <string name="my_shoes_basis_open">막대 기준</string>
-    <string name="my_shoes_basis_intro">세 막대는 모든 신발에 같은 기준을 써요. 신발끼리 비교할 수 있어요.</string>
-    <string name="my_shoes_basis_efficiency">효율(SUP 적립 보너스): 막대 끝 %1$s — 신발이 오를 수 있는 가장 높은 값(레전더리 %2$d레벨)</string>
+    <string name="my_shoes_basis_intro">효율 · 착화감 막대는 모든 신발에 같은 기준을 써요. 신발끼리 비교할 수 있어요.</string>
+    <string name="my_shoes_basis_efficiency">효율(SUP 적립 보너스): 막대 끝 %1$s — 레전더리 %2$d레벨에 포인트를 고르게 나눈 값. 효율에 더 나누면 막대가 가득 차요</string>
     <string name="my_shoes_basis_comfort">착화감(에너지 절감): 막대 끝 %1$s — 서버가 정한 상한</string>
-    <string name="my_shoes_basis_durability">내구도: 막대 끝 %1$d</string>
+    <string name="my_shoes_basis_durability">내구도: 막대 끝은 그 신발의 최대 내구도예요(1 = 10m, 신발마다 달라요). 100m 달리면 10 줄어요</string>
     <string name="my_shoes_basis_note">효율은 적립 보너스 비율이에요. 실제로 받는 SUP는 러닝을 마친 뒤 서버가 확인해요.</string>
 
     <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->

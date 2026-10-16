@@ -238,6 +238,18 @@ class EconomySync(
         genesisNo = genesisNo ?: 0,
         modelId = modelId ?: 0,
         tokenId = tokenId ?: 0,
+        durabilityNow = durabilityNow,
+        durabilityMax = durabilityMax,
+        durabilityBase = durabilityBase,
+        efficiencyBaseBps = efficiencyBaseBps,
+        comfortBaseBps = comfortBaseBps,
+        pointsTotal = pointsTotal,
+        pointsFree = pointsFree,
+        pointsEfficiency = pointsEfficiency,
+        pointsComfort = pointsComfort,
+        pointsDurability = pointsDurability,
+        pointsRespec = pointsRespec,
+        repairCostPerUnit = repairCostPerUnit,
     )
 
     companion object {

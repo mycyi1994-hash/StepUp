@@ -7,7 +7,8 @@ import { HttpError } from './supabase.js'
  * 신발 NFT 메타데이터 — tokenURI(= baseURI + 번호) 가 가리키는 곳.
  *
  * 신발마다 레벨 · 스탯이 달라지므로 IPFS 에 미리 올려 둘 수 없다. 대신 체인의
- * statsOf 를 그 자리에서 읽어 만든다. 그림은 웹사이트의 앱 그림 그대로
+ * statsOf 를 그 자리에서 읽어 만든다. 레벨업 때 받은 스탯 포인트를 어디에 나눴는지는 체인에 없어
+ * 서버(attester_sneaker_points, 0059)에서 함께 읽는다. 그림은 웹사이트의 앱 그림 그대로
  * (web/assets/sneakers — res/drawable-nodpi/sneaker_*.webp 와 같은 파일).
  *
  * 컨트랙트 배포 때 SNEAKER_BASE_URI 를 `https://<워커 주소>/v2/meta/` 로 준다.
@@ -58,13 +59,23 @@ export function modelInfo(model) {
   }
 }
 
-/** 체인 스탯 → OpenSea 형식 메타데이터 */
-export function metadataOf(tokenId, stats, locked, imageBase) {
+/** 스탯 포인트 1 의 값(서버 economy.point_*, 0059) — 효율 +0.25%p · 착화감 +0.1%p · 최대 내구도 +100(1km) */
+export const POINT_EFFICIENCY_BPS = 25
+export const POINT_COMFORT_BPS = 10
+const COMFORT_CAP_BPS = 2000
+
+/**
+ * 체인 스탯 + 서버의 나눈 포인트 → OpenSea 형식 메타데이터.
+ * 체인의 효율 · 착화감은 레벨 1 값이고, 앱 화면과 같은 실효 값은 여기에 나눈 포인트를 더한 것이다.
+ * 레벨은 더 이상 스탯을 올리지 않는다(레벨마다 포인트 4 — 0059). 내구도는 체인 값 그대로 남은 비율(%).
+ * `points` 가 없으면(서버가 모르는 토큰) 레벨 1 값 그대로다.
+ */
+export function metadataOf(tokenId, stats, locked, imageBase, points = null) {
   const m = modelInfo(Number(stats.model))
   const level = Number(stats.level)
-  // 화면과 같은 실효 값 — 레벨 한 칸에 효율성 +0.5%p, 착화감 +0.2%p (최대 20%)
-  const efficiency = (Number(stats.efficiencyBps) + 50 * (level - 1)) / 100
-  const comfort = Math.min(Number(stats.comfortBps) + 20 * (level - 1), 2000) / 100
+  const efficiency = (Number(stats.efficiencyBps) + POINT_EFFICIENCY_BPS * Number(points?.efficiency_points ?? 0)) / 100
+  const comfort =
+    Math.min(Number(stats.comfortBps) + POINT_COMFORT_BPS * Number(points?.comfort_points ?? 0), COMFORT_CAP_BPS) / 100
   const genesis = Number(stats.genesisNo)
   const attributes = [
     { trait_type: 'Rarity', value: RARITY_LABEL[m.rarityIndex] },
@@ -78,11 +89,16 @@ export function metadataOf(tokenId, stats, locked, imageBase) {
     { display_type: 'number', trait_type: 'Durability', value: Number(stats.durability) / 100 },
     { trait_type: 'Transfer', value: locked ? 'Locked (run 50 km in the app)' : 'Unlocked' },
   ]
+  // 최대 내구도(1 = 10m) — 신발마다 다르고 체인에는 없다
+  if (points?.durability_max != null) {
+    attributes.splice(attributes.length - 1, 0,
+      { display_type: 'number', trait_type: 'Max Durability', value: Number(points.durability_max) })
+  }
   if (genesis) attributes.push({ display_type: 'number', trait_type: 'Genesis', value: genesis })
   return {
     name: `${m.name}${genesis ? ` · Genesis #${genesis}` : ''} #${tokenId}`,
     description:
-      'StepUp 러닝 신발. 앱으로 넣으면 신고 달릴 수 있고, 레벨 · 내구도는 앱에서 달라진다. ' +
+      'StepUp 러닝 신발. 앱으로 넣으면 신고 달릴 수 있고, 레벨 · 스탯 포인트 · 내구도는 앱에서 달라진다. ' +
       'A StepUp running sneaker — deposit it into the app to run with it.',
     image: `${imageBase}${m.file}`,
     external_url: 'https://stepupcrew.com',
@@ -114,5 +130,14 @@ export async function sneakerMetadata(env, deps, id, version = '2') {
     if (reverted) throw new HttpError(404, '없는 신발입니다')
     throw new HttpError(503, '잠시 뒤에 다시 해 주세요')
   }
-  return metadataOf(id, stats, locked, env.IMAGE_BASE ?? 'https://stepupcrew.com/assets/sneakers/')
+  // 나눈 스탯 포인트 · 최대 내구도(서버). 못 읽으면 레벨 1 값으로 낮춰 보이지 않고 잠시 뒤에 다시 받게 한다(503 은 캐시하지 않는다)
+  let points = null
+  try {
+    const rows = await deps.rpc(env, 'attester_sneaker_points', { p_token: id })
+    points = Array.isArray(rows) ? rows[0] ?? null : rows ?? null
+  } catch (e) {
+    console.error('sneaker points read failed', id, e?.status ?? '', e?.message ?? e)
+    throw new HttpError(503, '잠시 뒤에 다시 해 주세요')
+  }
+  return metadataOf(id, stats, locked, env.IMAGE_BASE ?? 'https://stepupcrew.com/assets/sneakers/', points)
 }

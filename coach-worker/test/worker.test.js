@@ -5,9 +5,9 @@ import { inputProblem } from '../src/input-guard.js'
 import { ProviderError, mockProvider, providerFor } from '../src/providers.js'
 import { failureForStatus, runOnce } from '../src/worker.js'
 
-const SQL = fs.readFileSync(new URL('../../supabase/migrations/0059_coaching.sql', import.meta.url), 'utf8')
+const SQL = fs.readFileSync(new URL('../../supabase/migrations/0060_coaching.sql', import.meta.url), 'utf8')
 
-// 서버(0059 coaching.run_input)가 검수 숫자로 만드는 입력 — supabase/tests/coaching_test.sql 이 같은 값을 확인한다
+// 서버(0060 coaching.run_input)가 검수 숫자로 만드는 입력 — supabase/tests/coaching_test.sql 이 같은 값을 확인한다
 const RUN_INPUT = {
   kind: 'run',
   locale: 'ko',
@@ -88,7 +88,7 @@ test('모의 공급자 — 구간 비교 근거와 첫 후보를 고르고, 숫�
   assert.equal(rec.action_reason, 'ウォーキングで体をほぐしてから始めましょう。')
 })
 
-test('모의 문장은 모두 서버의 글 검사(0059)를 통과한다 — 숫자 · 길이 · 금지 문구 · 언어', async () => {
+test('모의 문장은 모두 서버의 글 검사(0060)를 통과한다 — 숫자 · 길이 · 금지 문구 · 언어', async () => {
   const terms = SQL.match(/function coaching\.forbidden_terms\(\)[\s\S]*?array\[([\s\S]*?)\]\s*\$\$/)[1]
     .match(/'([^']+)'/g).map((t) => t.slice(1, -1))
   assert.ok(terms.length > 40)

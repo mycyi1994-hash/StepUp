@@ -22,7 +22,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** AI 코칭 서버 호출(0059) — 보내는 것(시작 시각 · 랩만), 계정 대조, 답 읽기(서버가 실제로 내는 JSON 모양) */
+/** AI 코칭 서버 호출(0060) — 보내는 것(시작 시각 · 랩만), 계정 대조, 답 읽기(서버가 실제로 내는 JSON 모양) */
 class CoachingApiTest {
     private class Store(var value: AuthSession?) : AuthSessionStore {
         override suspend fun load() = value

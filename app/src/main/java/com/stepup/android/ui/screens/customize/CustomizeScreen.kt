@@ -445,18 +445,12 @@ private fun StatsBlock(shoe: Sneaker, compact: Boolean, onExplain: () -> Unit) {
 @Composable
 private fun StatBarRow(bar: StatBar) {
     val p = shoeInk()
-    val (title, hint, full) = when (bar.stat) {
-        BarStat.EFFICIENCY -> Triple(
-            stringResource(R.string.my_shoes_stat_efficiency), stringResource(R.string.sdv_stat_bonus),
-            formatPercent(StatScale.EFFICIENCY_MAX_PERCENT),
-        )
-        BarStat.COMFORT -> Triple(
-            stringResource(R.string.sdv_stat_comfort), stringResource(R.string.sdv_stat_energy),
-            formatPercent(StatScale.ENERGY_MAX_PERCENT),
-        )
-        BarStat.DURABILITY -> Triple(stringResource(R.string.sdv_stat_durability), null, StatScale.DURABILITY_MAX.toString())
+    val (title, hint) = when (bar.stat) {
+        BarStat.EFFICIENCY -> stringResource(R.string.my_shoes_stat_efficiency) to stringResource(R.string.sdv_stat_bonus)
+        BarStat.COMFORT -> stringResource(R.string.sdv_stat_comfort) to stringResource(R.string.sdv_stat_energy)
+        BarStat.DURABILITY -> stringResource(R.string.sdv_stat_durability) to null
     }
-    val cd = stringResource(R.string.my_shoes_stat_cd, title, hint ?: title, bar.value, full)
+    val cd = stringResource(R.string.my_shoes_stat_cd, title, hint ?: title, bar.value, bar.end)
     val tag = when (bar.stat) {
         BarStat.EFFICIENCY -> "bonus"
         BarStat.COMFORT -> "energy"
@@ -613,7 +607,7 @@ private fun StatBasisSheet(onClose: () -> Unit) {
             stringResource(R.string.my_shoes_basis_intro),
             stringResource(R.string.my_shoes_basis_efficiency, formatPercent(StatScale.EFFICIENCY_MAX_PERCENT), StatScale.EFFICIENCY_MAX_LEVEL),
             stringResource(R.string.my_shoes_basis_comfort, formatPercent(StatScale.ENERGY_MAX_PERCENT)),
-            stringResource(R.string.my_shoes_basis_durability, StatScale.DURABILITY_MAX),
+            stringResource(R.string.my_shoes_basis_durability),
         ).forEach { line ->
             Text(line, color = p.text, fontSize = 15.sp, lineHeight = 1.45.em)
         }

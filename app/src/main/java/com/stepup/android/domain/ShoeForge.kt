@@ -93,8 +93,18 @@ enum class ForgeMaterialBlock {
     }
 }
 
-/** 대상의 능력치 한 벌 — 효율 · 착화감은 서버 실효 값(bps) */
-data class ForgeStats(val level: Int, val maxLevel: Int, val efficiencyBps: Int, val comfortBps: Int) {
+/**
+ * 대상의 능력치 한 벌 — 효율 · 착화감은 서버 실효 값(bps, 레벨 1 값 + 나눈 포인트). [pointsTotal] · [pointsFree] 는 이 레벨까지
+ * 받은 · 남은 스탯 포인트(0059 — 레벨마다 4). 예전 서버는 포인트를 보내지 않는다(0).
+ */
+data class ForgeStats(
+    val level: Int,
+    val maxLevel: Int,
+    val efficiencyBps: Int,
+    val comfortBps: Int,
+    val pointsTotal: Int = 0,
+    val pointsFree: Int = 0,
+) {
     val efficiencyPercent: Double get() = efficiencyBps / 100.0
     val comfortPercent: Double get() = comfortBps / 100.0
 }
@@ -108,13 +118,13 @@ data class ForgeTarget(
     val block: ForgeTargetBlock?,
 ) {
     /**
-     * 성공 시 값의 미리보기 — 서버 실효 계산(economy.sneaker_effective)과 같은 규칙: 레벨 +1, 효율 +0.5%p,
-     * 착화감 +0.2%p(20% 상한). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
+     * 성공 시 값의 미리보기 — 서버 규칙(0059)과 같다: 레벨 +1, 스탯 포인트 +4. 효율 · 착화감은 저절로 오르지 않는다
+     * (받은 포인트를 사용자가 효율 · 착화감 · 내구도에 나눈다). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
      */
     fun previewNext(): ForgeStats = stats.copy(
         level = stats.level + 1,
-        efficiencyBps = stats.efficiencyBps + 50,
-        comfortBps = (stats.comfortBps + 20).coerceAtMost(maxOf(2000, stats.comfortBps)),
+        pointsTotal = stats.pointsTotal + StatPoints.PER_LEVEL,
+        pointsFree = stats.pointsFree + StatPoints.PER_LEVEL,
     )
 }
 

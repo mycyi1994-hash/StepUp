@@ -107,7 +107,7 @@ fun runSplits(distanceMeters: Double, durationSec: Long, lapsRaw: String): RunSp
 }
 
 /**
- * 분석 규칙의 값 — 한곳에 둔다. 서버(0059 `coaching.*`)도 같은 값을 쓴다(scripts/check-coaching-twin.py 가 맞대어 본다).
+ * 분석 규칙의 값 — 한곳에 둔다. 서버(0060 `coaching.*`)도 같은 값을 쓴다(scripts/check-coaching-twin.py 가 맞대어 본다).
  * 실제 데이터로 정하기 전의 초안이다(지시서 14절 "데이터 품질 · 최소 표본 기준") — 사람이 낼 수 없는 값만 거른다.
  */
 object CoachingQuality {

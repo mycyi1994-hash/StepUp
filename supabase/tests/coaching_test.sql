@@ -1,4 +1,4 @@
--- AI 코칭(0059)이 약속한 것을 실제로 지키는지 — 지시서 13절 "상태와 보안"을 앱 권한으로 두드린다.
+-- AI 코칭(0060)이 약속한 것을 실제로 지키는지 — 지시서 13절 "상태와 보안"을 앱 권한으로 두드린다.
 --
 --   supabase/tests/run.sh 가 schema_test.sql 다음에 돌린다(같은 데이터베이스, 새 세션).
 --
@@ -39,7 +39,7 @@ create or replace function pg_temp.fx(p_key text) returns text
 language sql as $$ select v from fix where k = p_key $$;
 
 \echo ''
-\echo '── AI 코칭(0059) ──────────────────────────────────────────────'
+\echo '── AI 코칭(0060) ──────────────────────────────────────────────'
 
 -- 가 · 나 · 코칭 워커
 insert into auth.users (id, email) values

@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.ui.screens.customize.StatScale
 
 /*
  * 신발 상세의 능력치 네 칸 — 카툰 입체형(2026-09-30 사용자 확정안 1번, docs/redesign/shoe-detail-cartoon-2026-09-30).
@@ -114,23 +113,16 @@ fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
         }
         maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(rows.map { it.value }, valueStyle))
     }
-    val levelMax = shoe.maxLevel.toString()
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
         val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             rows.forEachIndexed { index, row ->
-                val full = when (row.stat) {
-                    DetailStat.LEVEL -> levelMax
-                    DetailStat.EFFICIENCY -> formatPercent(StatScale.EFFICIENCY_MAX_PERCENT)
-                    DetailStat.COMFORT -> formatPercent(StatScale.ENERGY_MAX_PERCENT)
-                    DetailStat.DURABILITY -> StatScale.DURABILITY_MAX.toString()
-                }
                 StatCell(
                     label = labels[index], value = row.value, fraction = row.fraction, fill = fillOf(row.stat),
                     labelWidth = labelWidth, valueWidth = valueWidth, labelStyle = labelStyle, valueStyle = valueStyle,
                     stacked = stacked,
-                    description = stringResource(R.string.sdv_bar_cd, labels[index], row.value, full),
+                    description = stringResource(R.string.sdv_bar_cd, labels[index], row.value, row.end),
                     tag = "shoe-cell-" + row.stat.name.lowercase(),
                 )
             }

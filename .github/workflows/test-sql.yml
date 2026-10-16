@@ -55,7 +55,7 @@ jobs:
       - name: 스키마 검사
         run: supabase/tests/run.sh
 
-      # AI 코칭(0059)의 규칙은 앱에도 있다 — 서버만 고쳐 앱과 어긋나지 않게
+      # AI 코칭(0060)의 규칙은 앱에도 있다 — 서버만 고쳐 앱과 어긋나지 않게
       - name: AI 코칭 쌍둥이(앱 = 서버)
         run: python3 scripts/check-coaching-twin.py
 

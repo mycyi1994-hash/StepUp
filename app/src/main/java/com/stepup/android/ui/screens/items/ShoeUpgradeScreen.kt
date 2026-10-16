@@ -264,13 +264,14 @@ private fun EditingBody(state: ShoeUpgradeState, actions: UpgradeActions) {
             )
             MaterialSlots(state.applied, onAdd = actions.onOpenPicker, onRemove = actions.onRemove)
         }
-        // 성공 시 변화 — 레벨 · 효율 · 착화감 세 줄(내구도 없음)
+        // 성공 시 변화 — 레벨 · 효율 · 착화감 세 줄(내구도 없음). 레벨이 오르면 스탯 포인트를 받는다(0059 — 효율 · 착화감은 그대로)
         if (info != null) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SectionTitle(stringResource(R.string.upg_changes))
                 val next = state.quote?.takeIf { it.materialIds.sorted() == state.selection.applied.sorted() }?.after
                     ?: info.previewNext()
                 UpgradeStatRows(forgeRows(info.stats, next), next.maxLevel, Modifier.testTag("upgrade-rows"))
+                PointsGainLine(stringResource(R.string.upg_points_gain, forgePointsGain(info.stats, next)), "upgrade-points-gain")
             }
         }
         RunDivider()
@@ -319,6 +320,12 @@ private fun RunningBody(state: ShoeUpgradeState) {
     }
 }
 
+/** 강화로 받는(받은) 스탯 포인트 한 줄 — 나누기는 신발 상세에서 한다 */
+@Composable
+private fun PointsGainLine(text: String, tag: String) {
+    Text(text, style = runTextStyle(14.sp, runTone().label, FontWeight.Medium), modifier = Modifier.testTag(tag))
+}
+
 @Composable
 private fun SuccessBody(state: ShoeUpgradeState, phase: UpgradePhase.Succeeded) {
     val t = runTone()
@@ -355,6 +362,8 @@ private fun SuccessBody(state: ShoeUpgradeState, phase: UpgradePhase.Succeeded) 
             ?: stringResource(R.string.upg_level, level))
         if (after != null) {
             UpgradeStatRows(forgeRows(before ?: after, after), after.maxLevel, Modifier.testTag("upgrade-rows"))
+            val gained = before?.let { forgePointsGain(it, after) } ?: com.stepup.android.domain.StatPoints.PER_LEVEL
+            PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got")
         }
         RunDivider()
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

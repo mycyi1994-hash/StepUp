@@ -69,7 +69,7 @@ import com.stepup.android.ui.components.ShoeArtThumbnail
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.formatSupDown
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.items.durabilityPoints
+import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpSans
@@ -362,7 +362,8 @@ internal fun RunBottomPanel(
     val unit = stringResource(R.string.run_speed_unit)
     val unknown = stringResource(R.string.run_speed_unknown)
     val durabilityLabel = stringResource(R.string.sdv_stat_durability)
-    val points = shoe?.let { durabilityPoints(it) }
+    // 남은 비율(%) — 남은 · 최대 내구도(1 = 10m)는 신발 상세에
+    val points = shoe?.let { durabilityPercent(it) }
     RunPanel(modifier.testTag("run-bottom-panel")) {
         DividedRow(columns = 2, gap = 28.dp) {
             Column(
@@ -387,13 +388,13 @@ internal fun RunBottomPanel(
             }
             Column(
                 Modifier.weight(1f).semantics(mergeDescendants = true) {
-                    contentDescription = "$durabilityLabel ${points ?: "—"} / 100"
+                    contentDescription = "$durabilityLabel ${points ?: "—"}%"
                 }.testTag("run-durability"),
             ) {
                 Text(durabilityLabel, color = p.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(4.dp))
                 FitNumber(
-                    points?.toString() ?: "—", "/ 100", valueSize = 32.sp, unitSize = 18.sp,
+                    points?.toString() ?: "—", "%", valueSize = 32.sp, unitSize = 18.sp,
                     valueColor = p.text, unitColor = p.label, modifier = Modifier.fillMaxWidth(),
                     valueTag = "run-durability-value", unitWeight = FontWeight.Normal,
                 )
@@ -685,7 +686,7 @@ private fun ResultStat(label: String, value: String, unit: String?, modifier: Mo
 @Composable
 private fun ResultShoe(shoe: Sneaker) {
     val p = runPalette()
-    val points = durabilityPoints(shoe)
+    val points = durabilityPercent(shoe)
     Row(Modifier.fillMaxWidth().testTag("run-result-shoe"), verticalAlignment = Alignment.CenterVertically) {
         ShoeArtThumbnail(shoe, Modifier.width(120.dp).height(68.dp).testTag("run-result-shoe-image"))
         Spacer(Modifier.width(14.dp))
@@ -702,7 +703,7 @@ private fun ResultShoe(shoe: Sneaker) {
                 Spacer(Modifier.width(8.dp))
                 Text("$points", color = p.text, fontSize = 17.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.alignByBaseline().testTag("run-result-durability"))
-                Text(" / 100", color = p.label, fontSize = 13.sp, modifier = Modifier.alignByBaseline())
+                Text("%", color = p.label, fontSize = 13.sp, modifier = Modifier.alignByBaseline())
             }
             Spacer(Modifier.height(6.dp))
             RunBar(points / 100f, Modifier.fillMaxWidth().height(8.dp))

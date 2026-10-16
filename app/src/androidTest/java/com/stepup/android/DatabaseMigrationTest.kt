@@ -44,7 +44,7 @@ class DatabaseMigrationTest {
                 assertEquals("62820000", it.getString(4))
                 assertEquals(62.82, it.getDouble(5), 0.001)
             }
-            // 판 18 — 옛 러닝은 랩을 모른다: 빈 글자(코칭이 구간을 지어내지 않는다)
+            // 판 19 — 옛 러닝은 랩을 모른다: 빈 글자(코칭이 구간을 지어내지 않는다)
             sql.query("SELECT laps FROM walk_sessions WHERE id=17").use {
                 assertTrue(it.moveToFirst())
                 assertEquals("", it.getString(0))

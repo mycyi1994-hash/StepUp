@@ -3,7 +3,7 @@ package com.stepup.android.domain.coaching
 /*
  * AI 코칭 — 서버가 돌려준 코칭 결과와 화면의 AI 칸 상태.
  *
- * 숫자는 코드가 만든다. 서버(0059)가 저장된 기록으로 근거(fact)와 허용 후보(candidate)를 숫자와 함께 만들고, AI 는 그중
+ * 숫자는 코드가 만든다. 서버(0060)가 저장된 기록으로 근거(fact)와 허용 후보(candidate)를 숫자와 함께 만들고, AI 는 그중
  * 근거 id 하나 · 후보 id 하나를 고르고 짧은 해석 · 이유만 쓴다(지시서 7절). 화면의 "3km 구간이 첫 구간보다 40초 느렸어요"는
  * 고른 근거 id 를 앱의 번역 글자로 그린 것이다 — 모델이 쓴 숫자가 아니다. 모르는 id 는 그리지 않는다.
  */
@@ -20,7 +20,7 @@ enum class CoachKind(val key: String) {
     }
 }
 
-/** 앱이 그릴 줄 아는 근거 · 후보 id 와 그 값의 이름. 서버(0059)와 같은 글자다 */
+/** 앱이 그릴 줄 아는 근거 · 후보 id 와 그 값의 이름. 서버(0060)와 같은 글자다 */
 object CoachIds {
     /** 마지막 1km 구간 − 첫 1km 구간(초, +면 느렸다) — last_km · delta_sec */
     const val FACT_SPLIT_LAST_VS_FIRST = "run.split_last_vs_first"
@@ -94,7 +94,7 @@ data class CoachResult(
     val mock: Boolean get() = provider == "mock"
 }
 
-/** 서버가 알려 준 코칭 작업 상태(0059 coaching_*_status · coaching_request) */
+/** 서버가 알려 준 코칭 작업 상태(0060 coaching_*_status · coaching_request) */
 enum class CoachServerState(val key: String) {
     /** 운영자가 코칭을 꺼 두었다(준비 전 · 긴급 중지) */
     DISABLED("disabled"),
