@@ -85,6 +85,12 @@ class CoachingAiStateTest {
     @Test fun `결과는 입력이 바뀌었으면 오래된 결과로 표시한다`() {
         val ready = ai(server = CoachStatus(CoachServerState.READY, result = result, stale = true)) as CoachAi.Ready
         assertTrue(ready.stale)
+        // 서버는 새 작업이 없다고(none) 하면서 옛 결과를 함께 준다 — 결과를 보이되 오래된 결과로
+        val none = ai(server = CoachStatus(CoachServerState.NONE, result = result, stale = true)) as CoachAi.Ready
+        assertTrue(none.stale)
+        // 판만 바뀌었으면(입력 같음) 그냥 결과
+        val sameInput = ai(server = CoachStatus(CoachServerState.NONE, result = result, stale = false)) as CoachAi.Ready
+        assertTrue(!sameInput.stale)
     }
 
     @Test fun `결과라고 했는데 내용이 없으면 성공으로 보이지 않는다`() {

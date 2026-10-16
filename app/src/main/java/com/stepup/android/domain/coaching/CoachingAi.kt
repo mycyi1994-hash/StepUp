@@ -211,11 +211,15 @@ fun coachAiFor(
     }
     val saved = server.result ?: cache?.result
     return when (server.state) {
-        CoachServerState.DISABLED -> saved?.let { CoachAi.Ready(it, cache?.savedAt, offline = false, stale = server.stale) } ?: CoachAi.Hidden
+        CoachServerState.DISABLED -> server.result?.let { CoachAi.Ready(it, null, offline = false, stale = server.stale) }
+            ?: cache?.let { CoachAi.Ready(it.result, it.savedAt, offline = false, stale = false) }
+            ?: CoachAi.Hidden
         CoachServerState.NO_CONSENT -> CoachAi.NeedsConsent
         CoachServerState.NOT_FOUND -> CoachAi.NotVerified
         CoachServerState.SKIPPED -> CoachAi.Skipped(server.reason)
-        CoachServerState.NONE -> CoachAi.Requestable
+        // 새 작업은 없지만 저장된 결과가 있다(판이 바뀜 · 입력이 바뀜) — 결과를 보이고, 입력이 바뀌었으면 오래된 결과로
+        CoachServerState.NONE -> server.result?.let { CoachAi.Ready(it, null, offline = false, stale = server.stale) }
+            ?: CoachAi.Requestable
         CoachServerState.QUEUED -> CoachAi.Working(server.jobId, running = false)
         CoachServerState.RUNNING -> CoachAi.Working(server.jobId, running = true)
         CoachServerState.READY -> server.result?.let { CoachAi.Ready(it, null, offline = false, stale = server.stale) }

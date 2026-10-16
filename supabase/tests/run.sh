@@ -24,6 +24,7 @@ if [ "$(id -u)" = "0" ]; then
   cp "$ROOT/supabase/setup.sql" "$RUNDIR/setup.sql"
   cp "$ROOT/supabase/tests/schema_test.sql" "$RUNDIR/schema_test.sql"
   cp "$ROOT/supabase/tests/stub_auth.sql" "$RUNDIR/stub_auth.sql"
+  cp "$ROOT/supabase/tests/coaching_test.sql" "$RUNDIR/coaching_test.sql"
   chown postgres "$RUNDIR"/*.sql
   exec su postgres -c "RUNDIR='$RUNDIR' PGPORT='$PORT' PGBIN='$PGBIN' STANDALONE=1 bash '$ROOT/supabase/tests/run.sh'"
 fi
@@ -33,6 +34,7 @@ if [ "${STANDALONE:-0}" != "1" ]; then
   cp "$ROOT/supabase/setup.sql" "$RUNDIR/setup.sql"
   cp "$ROOT/supabase/tests/schema_test.sql" "$RUNDIR/schema_test.sql"
   cp "$ROOT/supabase/tests/stub_auth.sql" "$RUNDIR/stub_auth.sql"
+  cp "$ROOT/supabase/tests/coaching_test.sql" "$RUNDIR/coaching_test.sql"
 fi
 
 if [ ! -s "$RUNDIR/data/PG_VERSION" ]; then
@@ -56,6 +58,15 @@ echo "── setup.sql 재적용 (다시 붙여넣어도 안전한가) ───
 run -f "$RUNDIR/setup.sql" >/dev/null
 echo "OK"
 run -f "$RUNDIR/schema_test.sql"
+# AI 코칭(0059) — 동의 · 소유권 · 큐 · 한도 · 출력 검사(모의 공급자만)
+run -f "$RUNDIR/coaching_test.sql"
+# 코칭 워커 한 바퀴를 이 데이터베이스의 서버 함수에 붙여 본다(모의 공급자). node 가 없으면 못 본 것이라고 적는다
+echo "── AI 코칭 워커 ↔ 서버 함수 ─────────────────────────────────────"
+if command -v node >/dev/null 2>&1; then
+  node "$ROOT/coach-worker/test/e2e-psql.mjs" "$RUNDIR" "$PORT" "$DB"
+else
+  echo "  못 봄 — node 가 없어 워커 연결 검사를 돌리지 않았다"
+fi
 
 # ── 크루장 일이 동시에 겹칠 때 ─────────────────────────────────────
 # 한 세션으로는 겹침을 만들 수 없어 두 세션을 함께 띄운다. 앞 세션은 일을 마치고 1초 동안 커밋하지 않고
@@ -131,6 +142,51 @@ race_check "내보내는 중인 멤버에게는 넘어가지 않는다" "$(race 
   "$RACE_A" "select public.crew_member_remove('$RACE_CREW', '$RACE_B')" \
   "$RACE_A" "select public.crew_transfer_owner('$RACE_CREW', '$RACE_B')")"
 run -c "delete from public.crews where id = '$RACE_CREW'"
+
+# ── AI 코칭 — 같은 요청이 두 기기에서 동시에 ─────────────────────────
+# 같은 러닝의 분석을 동시에 두 번 요청해도 작업은 하나, 한도가 1 이면 서로 다른 두 요청 중 하나만 만들어진다.
+echo "── AI 코칭 요청이 동시에 겹칠 때 ───────────────────────────────"
+COACH_U=59100000-0000-0000-0000-00000000000c
+run <<SQL
+insert into auth.users (id, email) values ('$COACH_U', 'coach-race@test') on conflict (id) do nothing;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict) values
+  ('$COACH_U', timestamptz '2026-01-05 07:00+09', timestamptz '2026-01-05 07:30+09', 1458, 4252, 'CLEAN'),
+  ('$COACH_U', timestamptz '2026-01-07 07:00+09', timestamptz '2026-01-07 07:30+09', 1458, 4252, 'CLEAN');
+insert into public.coaching_consents (user_id, version) values ('$COACH_U', 'draft-2026-10-16');
+insert into public.coaching_run_splits (session_id, user_id, laps)
+  select id, user_id, array[432, 878, 1350] from public.walk_sessions where user_id = '$COACH_U';
+update public.economy_settings set value = 'true'::jsonb where key = 'coaching_enabled';
+update public.economy_settings set value = '"mock"'::jsonb where key = 'coaching_provider';
+update public.economy_settings set value = '5'::jsonb where key = 'coaching_user_daily_limit';
+SQL
+
+# $1 설명, $2 기대한 작업 수
+coach_check() {
+  run <<SQL
+do \$\$
+declare v_jobs int;
+begin
+  select count(*) into v_jobs from public.coaching_jobs where user_id = '$COACH_U';
+  if v_jobs <> $2 then
+    raise exception 'FAIL  % — 작업 %개(기대 %개)', '$1', v_jobs, $2;
+  end if;
+  raise notice '  OK   %', '$1';
+end \$\$;
+SQL
+}
+
+race "$COACH_U" "select public.coaching_run(timestamptz '2026-01-05 07:00+09', 'ko', true)" \
+     "$COACH_U" "select public.coaching_run(timestamptz '2026-01-05 07:00+09', 'ko', true)" >/dev/null
+coach_check "같은 러닝을 두 기기에서 동시에 요청해도 작업은 하나다" 1
+run -c "delete from public.coaching_jobs where user_id = '$COACH_U'" \
+    -c "update public.economy_settings set value = '1'::jsonb where key = 'coaching_user_daily_limit'"
+race "$COACH_U" "select public.coaching_run(timestamptz '2026-01-05 07:00+09', 'ko', true)" \
+     "$COACH_U" "select public.coaching_run(timestamptz '2026-01-07 07:00+09', 'ko', true)" >/dev/null
+coach_check "하루 한도가 1 이면 동시에 온 서로 다른 두 요청 중 하나만 만든다" 1
+run -c "delete from auth.users where id = '$COACH_U'" \
+    -c "update public.economy_settings set value = 'false'::jsonb where key = 'coaching_enabled'" \
+    -c "update public.economy_settings set value = '\"none\"'::jsonb where key = 'coaching_provider'" \
+    -c "update public.economy_settings set value = 'null'::jsonb where key = 'coaching_user_daily_limit'"
 
 echo "── setup.sql 재적용 (기록이 쌓인 데이터베이스에서도 배포가 멈추지 않는가) ──"
 run -f "$RUNDIR/setup.sql" >/dev/null

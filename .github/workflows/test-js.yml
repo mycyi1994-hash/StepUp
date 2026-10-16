@@ -38,6 +38,9 @@ jobs:
             dir: attester
           - name: web
             dir: web
+          # AI 코칭 워커 — 입력 문 · 모의 공급자 · 실패 갈래(서버 함수와의 연결은 test-sql.yml 의 run.sh 가 본다)
+          - name: coach-worker
+            dir: coach-worker
     name: ${{ matrix.name }}
     steps:
       - name: Checkout
