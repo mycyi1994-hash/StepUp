@@ -165,7 +165,47 @@ object ServiceLocator {
 
     /** 내 러닝 기록 — 이 휴대폰에 저장된 지금 계정의 러닝(목록 · 기간 합계 · 통계 · 하나 · 지우기) */
     val runRecordsRepository: com.stepup.android.data.repo.RunRecordsRepository by lazy {
-        com.stepup.android.data.repo.RunRecordsRepository(database.walkSessionDao(), recordingOwnerFlow())
+        com.stepup.android.data.repo.RunRecordsRepository(
+            database.walkSessionDao(), recordingOwnerFlow(),
+            // 지운 기록의 AI 코칭 사본도 지운다(서버의 분석은 그대로 — 서버에 러닝 삭제 계약이 없다)
+            onDeleted = { record -> coachingRepository.forgetRun(record) },
+        )
+    }
+
+    /**
+     * AI 코칭(2026-10-16, docs/redesign/ai-coaching-2026-10) — 지금 계정의 기록과 서버 코칭(0059). 사본은 백업하지 않는 폴더에.
+     * 서버가 켜지기 전(coaching_provider none)에는 AI 칸 없이 기록 숫자 · 기본 훈련만 보인다.
+     */
+    val coachingRepository: com.stepup.android.data.repo.CoachingRepository by lazy {
+        com.stepup.android.data.repo.CoachingRepository(
+            dao = database.walkSessionDao(),
+            api = com.stepup.android.data.remote.CoachingApi(server),
+            cache = com.stepup.android.data.repo.CoachingCacheStore(java.io.File(appContext.noBackupFilesDir, "coaching")),
+            owner = recordingOwnerFlow(),
+            online = { hasNetwork(appContext) },
+        )
+    }
+
+    private val coachingScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+    )
+
+    /** 서버가 러닝을 확인한 뒤 — 자동 분석을 켠 사람만(서버가 동의 · 토글을 다시 본다). 올리기 일꾼을 기다리게 하지 않는다 */
+    private fun coachAfterUpload() {
+        coachingScope.launch {
+            runCatching {
+                val language = AppLocale.tag.ifEmpty { java.util.Locale.getDefault().language }
+                coachingRepository.autoAnalyzeRecent(
+                    sessionHolder.recordingOwner(), com.stepup.android.data.repo.coachLocale(language),
+                )
+            }
+        }
+    }
+
+    private fun hasNetwork(context: Context): Boolean {
+        val manager = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return true
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
+        return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     /**
@@ -286,6 +326,8 @@ object ServiceLocator {
             uploadOwner = { sessionHolder.recordingOwner() },
             // 서버가 러닝을 확인했으면 목표 보너스를 청구해 보고 잔고 · 에너지를 다시 받는다
             onSigned = {
+                // AI 코칭 자동 분석(켠 사람만) — 따로 돌아 올리기 · 잔고 맞추기를 늦추거나 막지 않는다
+                coachAfterUpload()
                 if (serverEconomy) {
                     economyApi.goalClaim()
                     economySync.refresh()

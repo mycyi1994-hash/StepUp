@@ -18,9 +18,10 @@ import java.time.ZoneId
  * 코칭이 세는 러닝 하나 — 지금 계정(account:…)의 저장된 러닝 중 거리와 활성 시간이 모두 있는 것.
  * 무효(VOID — 거리 0) · 걸음 없는 기록은 넣지 않는다(코칭의 "러닝"이 아니다).
  */
-data class CoachRun(val id: Long, val startedAt: Long, val meters: Double, val seconds: Long) {
-    val measured: Boolean get() = meters.isFinite() && meters > 0.0 && seconds > 0L
-}
+data class CoachRun(val id: Long, val startedAt: Long, val meters: Double, val seconds: Long)
+
+/** 거리와 활성 시간이 모두 있는가 — 확장 속성으로 둔다(Room 이 결과를 이 클래스로 읽으므로 칸은 생성자 넷뿐) */
+val CoachRun.measured: Boolean get() = meters.isFinite() && meters > 0.0 && seconds > 0L
 
 /** 01 의 주간 띠 한 칸 — [runs] 는 그날 시작한 러닝 수(미래 날은 늘 0) */
 data class WeekDay(val date: LocalDate, val runs: Int, val today: Boolean, val future: Boolean) {
