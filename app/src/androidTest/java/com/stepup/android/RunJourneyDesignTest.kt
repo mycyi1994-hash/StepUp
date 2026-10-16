@@ -727,7 +727,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · G01~G08 · CR17g · L03 · K01 · K17 · K18 · U04 · K02) */
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · G01~G09 · CR17g · L03 · K01 · K17 · K18 · U04 · K02) */
     @Test fun states() {
         seed()
         val repo = ServiceLocator.courseRepository
@@ -777,6 +777,12 @@ class RunJourneyDesignTest {
             compose.onAllNodesWithTag("run-gps-status").assertCountEquals(0)
             show("G08", "run-gps-gate-title", gate(gps.copy(fixed = true, elapsedSec = 12, satellitesSeen = 12, satellitesUsed = 8, accuracyM = 6f)))
             compose.onNodeWithTag("run-gps-gate-title").assertTextEquals(label(R.string.run_gps_wait_found))
+            // G09 — 실내: 와이파이 위치는 잡혔지만 위성은 0 — 구글 지도는 되는데 러닝은 기다리는 까닭을 보인다
+            show("G09", "run-gps-hint-wifi_only",
+                gate(gps.copy(elapsedSec = 34, satellitesSeen = 0, satellitesUsed = 0, roughFix = true, roughAccuracyM = 21f)))
+            compose.onNodeWithTag("run-gps-rough").assertTextEquals(label(R.string.run_gps_wait_accuracy_value, 21))
+            compose.onNodeWithTag("run-gps-accuracy").assertTextEquals("—")
+            compose.onNodeWithTag("run-gps-gate-title").assertTextEquals(label(R.string.run_gps_wait_title))
             // CR17g — 크루 대기실의 준비 전 GPS 확인(시트 안). 잡히면 준비 완료로 바뀐다
             show("CR17g", "run-gps-wait-cancel") {
                 Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {

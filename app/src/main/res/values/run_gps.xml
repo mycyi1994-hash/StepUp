@@ -12,12 +12,17 @@
     <string name="run_gps_wait_accuracy_value">±%1$dm</string>
     <string name="run_gps_wait_accuracy_need">Starts within %1$dm</string>
     <string name="run_gps_wait_time">Waiting</string>
+    <string name="run_gps_wait_rough">Wi-Fi location</string>
+    <string name="run_gps_wait_rough_note">Not used for run distance</string>
+    <string name="run_gps_wait_rough_found">Found</string>
     <string name="run_gps_hint_no_gps_title">This phone has no GPS</string>
     <string name="run_gps_hint_no_gps_body">Runs measure distance and route with GPS. Please run with a phone that has GPS.</string>
     <string name="run_gps_hint_gps_off_title">GPS is off</string>
     <string name="run_gps_hint_gps_off_body">In location settings, set the mode to “High accuracy” or “GPS”.</string>
     <string name="run_gps_hint_mock_title">A mock location app is on</string>
     <string name="run_gps_hint_mock_body">Turn off the mock location app in developer options to use real GPS.</string>
+    <string name="run_gps_hint_wifi_only_title">Only Wi-Fi location so far</string>
+    <string name="run_gps_hint_wifi_only_body">Maps can show your location from Wi-Fi, but runs measure distance with satellite GPS. If you\'re indoors, step outside where you can see the sky.</string>
     <string name="run_gps_hint_no_satellites_title">No satellite signal</string>
     <string name="run_gps_hint_no_satellites_body">GPS doesn\'t work indoors or underground. Step outside where you can see the sky.</string>
     <string name="run_gps_hint_weak_title">Signal is still weak</string>

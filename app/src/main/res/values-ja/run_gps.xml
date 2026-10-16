@@ -12,12 +12,17 @@
     <string name="run_gps_wait_accuracy_value">±%1$dm</string>
     <string name="run_gps_wait_accuracy_need">%1$dm以内で開始</string>
     <string name="run_gps_wait_time">待ち時間</string>
+    <string name="run_gps_wait_rough">Wi-Fiの位置</string>
+    <string name="run_gps_wait_rough_note">ランの距離には使いません</string>
+    <string name="run_gps_wait_rough_found">取得済み</string>
     <string name="run_gps_hint_no_gps_title">このスマホにはGPSがありません</string>
     <string name="run_gps_hint_no_gps_body">ランはGPSで距離とルートを測ります。GPSのあるスマホで走ってください。</string>
     <string name="run_gps_hint_gps_off_title">GPSがオフです</string>
     <string name="run_gps_hint_gps_off_body">位置情報の設定でモードを「高精度」または「GPS」にしてください。</string>
     <string name="run_gps_hint_mock_title">仮の位置情報アプリがオンです</string>
     <string name="run_gps_hint_mock_body">開発者向けオプションの「仮の現在地情報アプリ」をオフにすると実際のGPSを使えます。</string>
+    <string name="run_gps_hint_wifi_only_title">Wi-Fiの位置だけ取得できています</string>
+    <string name="run_gps_hint_wifi_only_body">地図アプリはWi-Fiでも位置を表示しますが、ランの距離は衛星GPSで測ります。屋内なら外に出て空が見える場所でお待ちください。</string>
     <string name="run_gps_hint_no_satellites_title">衛星の信号がありません</string>
     <string name="run_gps_hint_no_satellites_body">屋内や地下ではGPSがつかまりません。外に出て空が見える場所に立ってください。</string>
     <string name="run_gps_hint_weak_title">信号がまだ弱いです</string>

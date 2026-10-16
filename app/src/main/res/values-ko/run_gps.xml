@@ -12,12 +12,17 @@
     <string name="run_gps_wait_accuracy_value">±%1$dm</string>
     <string name="run_gps_wait_accuracy_need">%1$dm 안이면 시작해요</string>
     <string name="run_gps_wait_time">기다린 시간</string>
+    <string name="run_gps_wait_rough">와이파이 위치</string>
+    <string name="run_gps_wait_rough_note">러닝 거리에는 쓰지 않아요</string>
+    <string name="run_gps_wait_rough_found">잡힘</string>
     <string name="run_gps_hint_no_gps_title">이 휴대폰에는 GPS가 없어요</string>
     <string name="run_gps_hint_no_gps_body">러닝은 GPS로 거리와 경로를 재요. GPS가 있는 휴대폰에서 달려 주세요.</string>
     <string name="run_gps_hint_gps_off_title">GPS가 꺼져 있어요</string>
     <string name="run_gps_hint_gps_off_body">위치 설정에서 위치 방식을 ‘높은 정확도’ 또는 ‘GPS’로 바꿔 주세요.</string>
     <string name="run_gps_hint_mock_title">가짜 위치 앱이 켜져 있어요</string>
     <string name="run_gps_hint_mock_body">개발자 옵션의 ‘모의 위치 앱’을 끄면 실제 GPS를 쓸 수 있어요.</string>
+    <string name="run_gps_hint_wifi_only_title">와이파이 위치만 잡혔어요</string>
+    <string name="run_gps_hint_wifi_only_body">구글 지도는 와이파이로도 위치를 보여 주지만, 러닝 거리는 위성 GPS로 재요. 실내라면 밖으로 나가 하늘이 보이는 곳에서 기다려 주세요.</string>
     <string name="run_gps_hint_no_satellites_title">위성 신호가 없어요</string>
     <string name="run_gps_hint_no_satellites_body">실내 · 지하에서는 GPS가 잡히지 않아요. 밖으로 나가 하늘이 보이는 곳에 서 주세요.</string>
     <string name="run_gps_hint_weak_title">신호가 아직 약해요</string>

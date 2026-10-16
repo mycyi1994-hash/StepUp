@@ -12,12 +12,17 @@
     <string name="run_gps_wait_accuracy_value">±%1$d米</string>
     <string name="run_gps_wait_accuracy_need">%1$d 米以内即开始</string>
     <string name="run_gps_wait_time">已等待</string>
+    <string name="run_gps_wait_rough">Wi-Fi 位置</string>
+    <string name="run_gps_wait_rough_note">不用于跑步距离</string>
+    <string name="run_gps_wait_rough_found">已获取</string>
     <string name="run_gps_hint_no_gps_title">这部手机没有 GPS</string>
     <string name="run_gps_hint_no_gps_body">跑步用 GPS 测量距离和路线。请使用有 GPS 的手机跑步。</string>
     <string name="run_gps_hint_gps_off_title">GPS 已关闭</string>
     <string name="run_gps_hint_gps_off_body">请在位置设置中把定位模式改为“高精确度”或“GPS”。</string>
     <string name="run_gps_hint_mock_title">模拟位置应用已开启</string>
     <string name="run_gps_hint_mock_body">在开发者选项中关闭“模拟位置信息应用”即可使用真实 GPS。</string>
+    <string name="run_gps_hint_wifi_only_title">目前只有 Wi-Fi 位置</string>
+    <string name="run_gps_hint_wifi_only_body">地图应用用 Wi-Fi 也能显示位置，但跑步距离要用卫星 GPS 测量。如果在室内，请到室外能看到天空的地方等待。</string>
     <string name="run_gps_hint_no_satellites_title">没有卫星信号</string>
     <string name="run_gps_hint_no_satellites_body">室内和地下搜不到 GPS。请到室外能看到天空的地方。</string>
     <string name="run_gps_hint_weak_title">信号还很弱</string>
