@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stat points (server 0059) — 4 per level · 1 = efficiency +0.25%p · comfort +0.1%p · max durability +100 -->
+<resources>
+    <string name="points_title">Stat points</string>
+    <string name="points_free">Points left</string>
+    <string name="points_per_level">4 per level</string>
+    <string name="points_hint_efficiency" formatted="false">1 point = +0.25%p</string>
+    <string name="points_hint_comfort" formatted="false">1 point = +0.1%p · up to 20%</string>
+    <string name="points_hint_durability">1 point = +100 max (1 km)</string>
+    <string name="points_add_cd">Add one point to %1$s</string>
+    <string name="points_remove_cd">Remove one point from %1$s</string>
+    <string name="points_count_cd">%1$s: %2$d points</string>
+    <string name="points_note_final">Points can\'t be taken back once spent.</string>
+    <string name="points_note_respec">This shoe can be reset once. The efficiency and comfort it gained from levels before are already spent as points.</string>
+    <string name="points_action">Spend points</string>
+    <string name="points_confirm_title">Spend points like this?</string>
+    <string name="points_confirm_body">Points can\'t be taken back once spent.</string>
+    <string name="points_confirm_respec">This uses the reset. It works only once.</string>
+    <string name="points_send">Spend</string>
+    <string name="points_sending">Spending…</string>
+    <string name="points_done_title">Points spent</string>
+    <string name="points_retry">Send again</string>
+    <string name="points_error_offline">The connection dropped before we could confirm. Sending again won\'t spend twice.</string>
+    <string name="points_error_rejected">Couldn\'t spend the points. We reloaded the latest values.</string>
+    <string name="points_error_sign_in">Sign in to spend points.</string>
+    <string name="points_notice_title">%1$d stat points to spend</string>
+    <string name="points_notice_body">Pick efficiency, comfort or durability.</string>
+    <string name="points_open">Spend</string>
+    <string name="points_manage_free">%1$d points left</string>
+    <string name="points_manage_respec">Can be reset once</string>
+    <string name="points_manage_done">All spent · you get 4 per level</string>
+    <string name="upg_points_gain">On success: +%1$d stat points to spend on efficiency, comfort or durability</string>
+    <string name="upg_points_got">+%1$d stat points. Spend them on the shoe page.</string>
+</resources>

@@ -5,9 +5,11 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.screens.items.ItemSort
 import com.stepup.android.ui.screens.items.bonusPercent
-import com.stepup.android.ui.screens.items.durabilityPoints
+import com.stepup.android.ui.screens.items.durabilityFraction
+import com.stepup.android.ui.screens.items.durabilityMax
 import com.stepup.android.ui.screens.items.energySavingPercent
 import com.stepup.android.ui.screens.items.formatBonus
+import com.stepup.android.ui.screens.items.formatCount
 import com.stepup.android.ui.screens.items.formatDurability
 import com.stepup.android.ui.screens.items.formatPercent
 
@@ -19,14 +21,14 @@ import com.stepup.android.ui.screens.items.formatPercent
  */
 
 /**
- * 막대 끝 — 서버가 정한 최대 · 상한. 모든 신발(서버 신발 · 폰에만 있던 예전 신발)에 같은 기준을 쓴다.
- * 값을 100점으로 바꾸지 않는다: 막대 길이 = 실제 값 ÷ 막대 끝.
+ * 막대 끝 — 효율 · 착화감은 모든 신발(서버 신발 · 폰에만 있던 예전 신발)에 같은 기준을 쓴다. 내구도는 신발마다 최대
+ * 내구도가 달라(서버 0059) 그 신발의 최대 내구도가 끝이다. 값을 100점으로 바꾸지 않는다: 막대 길이 = 실제 값 ÷ 막대 끝.
  */
 object StatScale {
     /**
-     * 효율(SUP 적립 보너스) — 레전더리 최고 효율 1,300bps + 레벨당 50bps × (최고 30레벨 − 1) = 2,750bps = 27.5%.
-     * supabase/migrations/0022_economy_core.sql 의 economy.efficiency_range · efficiency_per_level_bps · max_level.
-     * 예전 신발(도감 값 + 레벨당 0.5%)은 이 안에 든다.
+     * 효율(SUP 적립 보너스) — 레전더리 최고 효율 1,300bps + 레벨마다 0.5%p(포인트를 효율 2 · 착화감 2 로 고르게 나눈 값,
+     * 0059 전의 자동 증가와 같다) × (최고 30레벨 − 1) = 2,750bps = 27.5%. 포인트를 효율에 더 몰면 이보다 높아질 수 있고,
+     * 그때는 막대가 가득 찬다. supabase/migrations/0022 · 0059 의 economy.efficiency_range · point_efficiency_bps · max_level.
      */
     const val EFFICIENCY_MAX_PERCENT = 27.5
 
@@ -35,15 +37,12 @@ object StatScale {
 
     /** 착화감(에너지 절감) — economy.comfort_cap_bps() 2,000bps = 20%. 예전 신발은 최대 15%(Sneaker.energyEfficiency) */
     const val ENERGY_MAX_PERCENT = 20.0
-
-    /** 내구도 — 100 */
-    const val DURABILITY_MAX = 100
 }
 
 enum class BarStat { EFFICIENCY, COMFORT, DURABILITY }
 
-/** 막대 한 줄 — 보이는 값("+4.8%")과 막대 길이(0 ~ 1) */
-data class StatBar(val stat: BarStat, val value: String, val fraction: Float)
+/** 막대 한 줄 — 보이는 값("+4.8%"), 막대 길이(0 ~ 1), 막대 끝("27.5%" · "20%" · 그 신발의 최대 내구도 "1,230") */
+data class StatBar(val stat: BarStat, val value: String, val fraction: Float, val end: String)
 
 /** 막대 길이 — 값 ÷ 막대 끝, 0 ~ 1 로 자른다 */
 fun barFraction(value: Double, max: Double): Float =
@@ -54,12 +53,15 @@ fun statBars(shoe: Sneaker): List<StatBar> {
     val bonus = bonusPercent(shoe)
     val energy = energySavingPercent(shoe)
     return listOf(
-        StatBar(BarStat.EFFICIENCY, formatBonus(bonus), barFraction(bonus, StatScale.EFFICIENCY_MAX_PERCENT)),
-        StatBar(BarStat.COMFORT, formatPercent(energy), barFraction(energy, StatScale.ENERGY_MAX_PERCENT)),
         StatBar(
-            BarStat.DURABILITY, formatDurability(shoe),
-            barFraction(durabilityPoints(shoe).toDouble(), StatScale.DURABILITY_MAX.toDouble()),
+            BarStat.EFFICIENCY, formatBonus(bonus), barFraction(bonus, StatScale.EFFICIENCY_MAX_PERCENT),
+            formatPercent(StatScale.EFFICIENCY_MAX_PERCENT),
         ),
+        StatBar(
+            BarStat.COMFORT, formatPercent(energy), barFraction(energy, StatScale.ENERGY_MAX_PERCENT),
+            formatPercent(StatScale.ENERGY_MAX_PERCENT),
+        ),
+        StatBar(BarStat.DURABILITY, formatDurability(shoe), durabilityFraction(shoe), formatCount(durabilityMax(shoe))),
     )
 }
 

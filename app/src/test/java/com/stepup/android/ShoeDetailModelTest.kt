@@ -21,6 +21,11 @@ import com.stepup.android.ui.screens.items.detailStateOf
 import com.stepup.android.ui.screens.items.formatShoeNumber
 import com.stepup.android.ui.screens.items.energySavingPercent
 import com.stepup.android.ui.screens.items.formatBonus
+import com.stepup.android.ui.screens.items.durabilityFraction
+import com.stepup.android.ui.screens.items.durabilityLeft
+import com.stepup.android.ui.screens.items.durabilityMax
+import com.stepup.android.ui.screens.items.durabilityPercent
+import com.stepup.android.ui.screens.items.formatCount
 import com.stepup.android.ui.screens.items.formatDurability
 import com.stepup.android.ui.screens.items.formatPercent
 import com.stepup.android.ui.screens.items.ownedGroups
@@ -103,10 +108,25 @@ class ShoeDetailModelTest {
     }
 
     @Test
-    fun `내구도는 100 기준, 서버 소수는 내려서 — 수리할 곳을 가리지 않는다`() {
+    fun `최대 내구도를 모르면 100 기준, 서버 소수는 내려서 — 수리할 곳을 가리지 않는다`() {
         assertEquals("100 / 100", formatDurability(legacy()))
         assertEquals("99 / 100", formatDurability(server(durability = 99.6)))
         assertEquals("0 / 100", formatDurability(server(durability = 0.4)))
+        assertEquals(99, durabilityPercent(server(durability = 99.6)))
+    }
+
+    @Test
+    fun `내구도는 남은 · 최대 내구도(1 = 10m) — 신발마다 최대가 다르고, 러닝 칸은 남은 비율`() {
+        val shoe = server(durability = 47.97).let {
+            it.copy(server = it.server!!.copy(durabilityNow = 590, durabilityMax = 1_230, durabilityBase = 1_130))
+        }
+        assertEquals("590 / 1,230", formatDurability(shoe))
+        assertEquals(590 to 1_230, durabilityLeft(shoe) to durabilityMax(shoe))
+        assertEquals(590f / 1_230f, durabilityFraction(shoe), 0.0001f)
+        // 러닝 화면의 작은 칸 · 적립 배율(50% · 20%)은 남은 비율
+        assertEquals(47, durabilityPercent(shoe))
+        assertEquals(0.7, shoe.server!!.durabilityFactor, 0.0)
+        assertEquals("12,345", formatCount(12_345))
     }
 
     // ── 체인 ───────────────────────────────────────────────────

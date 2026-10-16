@@ -47,12 +47,17 @@ class MyShoesModelTest {
     // ── 막대 ─────────────────────────────────────────────────────
 
     @Test
-    fun `막대 끝은 서버의 최대 · 상한 — 효율 27_5퍼센트 · 에너지 절감 20퍼센트 · 내구도 100`() {
-        // 레전더리 최고 효율 1300 + 레벨당 50 × 29 = 2750bps
+    fun `막대 끝은 서버의 최대 · 상한 — 효율 27_5퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
+        // 레전더리 최고 효율 1300 + 레벨마다 0.5%p(포인트를 효율 2 · 착화감 2 로 고르게) × 29 = 2750bps
         assertEquals(27.5, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
-        assertEquals((1300 + 50 * (StatScale.EFFICIENCY_MAX_LEVEL - 1)) / 100.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
+        assertEquals((1300 + 2 * 25 * (StatScale.EFFICIENCY_MAX_LEVEL - 1)) / 100.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
         assertEquals(20.0, StatScale.ENERGY_MAX_PERCENT, 0.0)
-        assertEquals(100, StatScale.DURABILITY_MAX)
+        val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 95.93, now = 1_180, max = 1_230))
+        assertEquals(listOf("27.5%", "20.0%", "1,230"), bars.map { it.end })
+        assertEquals("1,180 / 1,230", bars[2].value)
+        assertEquals(1_180f / 1_230f, bars[2].fraction, 0.0001f)
+        // 최대 내구도를 모르는 예전 서버 · 폰에만 있던 신발은 100 기준
+        assertEquals("100", statBars(shoe())[2].end)
     }
 
     @Test
@@ -165,11 +170,12 @@ class MyShoesModelTest {
         luck = 1.0, comfort = comfort, durability = durability, equipped = worn, acquiredAt = acquired, modelId = model,
     )
 
-    private fun server(efficiencyBps: Int, comfortBps: Int, durability: Double) = shoe(model = 1107, rarity = Rarity.RARE).copy(
-        server = ServerStats(
-            origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = durability,
-            maxLevel = 15, status = "OWNED", chainState = "APP", canWithdraw = false, upgradeCost = 0.0,
-            repairCostPerPoint = 0.0, genesisNo = 0,
-        ),
-    )
+    private fun server(efficiencyBps: Int, comfortBps: Int, durability: Double, now: Int = 0, max: Int = 0) =
+        shoe(model = 1107, rarity = Rarity.RARE).copy(
+            server = ServerStats(
+                origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = durability,
+                maxLevel = 15, status = "OWNED", chainState = "APP", canWithdraw = false, upgradeCost = 0.0,
+                repairCostPerPoint = 0.0, genesisNo = 0, durabilityNow = now, durabilityMax = max, durabilityBase = max,
+            ),
+        )
 }

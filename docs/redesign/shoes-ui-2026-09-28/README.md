@@ -38,9 +38,9 @@
 
 | 줄 | 짧은 설명 | 값(기존 상세와 같은 출처) | 막대 끝 | 근거 |
 |---|---|---|---|---|
-| 효율 | SUP 적립 보너스 | `bonusPercent` — 서버 신발 `efficiencyBps ÷ 100`, 예전 신발 도감 값 + 레벨당 0.5 | 27.5% | 레전더리 최고 효율 1,300bps + 레벨당 50bps × (최고 30레벨 − 1) = 2,750bps (`economy.efficiency_range` · `efficiency_per_level_bps` · `max_level`, 0022) |
+| 효율 | SUP 적립 보너스 | `bonusPercent` — 서버 신발 `efficiencyBps ÷ 100`, 예전 신발 도감 값 + 레벨당 0.5 | 27.5% | 레전더리 최고 효율 1,300bps + 레벨당 50bps × (최고 30레벨 − 1) = 2,750bps (`economy.efficiency_range` · `efficiency_per_level_bps` · `max_level`, 0022). 0059 부터는 포인트를 효율 2 · 착화감 2 로 고르게 나눈 값 — 효율에 더 나누면 막대가 가득 찬다 |
 | 착화감 | 에너지 절감 | `energySavingPercent` — (1 − `energyEfficiency`) × 100 | 20% | `economy.comfort_cap_bps()` = 2,000bps (0022). 예전 신발은 최대 15% |
-| 내구도 | — | `durabilityPoints` — 서버 값은 내려서(99.6 → 99) | 100 | 내구도 0~100 |
+| 내구도 | — | `durabilityLeft` / `durabilityMax` — 남은 / 최대 내구도(1 = 10m) | 그 신발의 최대 내구도 | 2026-10-16(0059)부터 신발마다 다르다 — [shoe-durability-points-2026-10-16](../../shoe-durability-points-2026-10-16.md). 최대 내구도를 모르면(예전 서버) 0~100, 서버 값은 내려서(99.6 → 99) |
 
 - 막대 길이 = 실제 값 ÷ 막대 끝(0~1로 자름). 4.8% 를 48% 길이로 늘이지 않는다. 세 막대는 같은 트랙 폭 · 두께 · 정렬, 색은 등급과 상관없이 같은 파랑
   (레드라인의 붉은색이 "내구도 위험"처럼 읽히지 않게).

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ステータスポイント(サーバー 0059) — レベルごとに4 · 1 = 効率 +0.25%p · 履き心地 +0.1%p · 最大耐久度 +100 -->
+<resources>
+    <string name="points_title">ステータスポイント</string>
+    <string name="points_free">残りポイント</string>
+    <string name="points_per_level">レベルごとに4</string>
+    <string name="points_hint_efficiency" formatted="false">1ポイント = +0.25%p</string>
+    <string name="points_hint_comfort" formatted="false">1ポイント = +0.1%p · 最大20%</string>
+    <string name="points_hint_durability">1ポイント = 最大 +100(1km)</string>
+    <string name="points_add_cd">%1$sに1ポイント足す</string>
+    <string name="points_remove_cd">%1$sから1ポイント減らす</string>
+    <string name="points_count_cd">%1$s %2$dポイント</string>
+    <string name="points_note_final">振り分けたポイントは元に戻せません。</string>
+    <string name="points_note_respec">このシューズは一度だけ最初から振り直せます。以前レベルごとに上がっていた効率・履き心地をポイントとして振り分けてあります。</string>
+    <string name="points_action">ポイントを振り分ける</string>
+    <string name="points_confirm_title">この振り分けでよいですか？</string>
+    <string name="points_confirm_body">振り分けたポイントは元に戻せません。</string>
+    <string name="points_confirm_respec">振り直しを使います。一度だけです。</string>
+    <string name="points_send">振り分ける</string>
+    <string name="points_sending">振り分け中…</string>
+    <string name="points_done_title">ポイントを振り分けました</string>
+    <string name="points_retry">もう一度送る</string>
+    <string name="points_error_offline">接続が切れて確認できませんでした。もう一度送っても二重には振り分けられません。</string>
+    <string name="points_error_rejected">ポイントを振り分けられませんでした。最新の値を読み込み直しました。</string>
+    <string name="points_error_sign_in">ログインするとポイントを振り分けられます。</string>
+    <string name="points_notice_title">ステータスポイントが%1$d残っています</string>
+    <string name="points_notice_body">効率・履き心地・耐久度から選べます。</string>
+    <string name="points_open">振り分ける</string>
+    <string name="points_manage_free">残り%1$dポイント</string>
+    <string name="points_manage_respec">一度だけ最初から振り直せます</string>
+    <string name="points_manage_done">すべて振り分け済み · レベルが上がると4ずつ増えます</string>
+    <string name="upg_points_gain">成功するとステータスポイント +%1$d — 効率・履き心地・耐久度に自分で振り分けます</string>
+    <string name="upg_points_got">ステータスポイント +%1$d — シューズの詳細で振り分けます</string>
+</resources>

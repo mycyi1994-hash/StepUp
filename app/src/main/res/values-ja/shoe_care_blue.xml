@@ -57,7 +57,7 @@
     <string name="care_repair_state">修理状態</string>
     <string name="care_needs_check">要確認</string>
     <string name="care_repair_observed_full">現在の耐久度は100です。差し引き履歴はマイページ › ウォレットで確認できます。</string>
-    <string name="care_repair_observed_short">現在の耐久度は%1$d / 100です。修理が反映されていなければ、もう一度修理できます。</string>
+    <string name="care_repair_observed_short">現在の耐久度は%1$sです。修理が反映されていなければ、もう一度修理できます。</string>
     <string name="care_repair_done_title">修理しました</string>
     <string name="care_repair_done_body">耐久度がすべて回復しました。</string>
     <string name="care_balance_left">残りの残高</string>

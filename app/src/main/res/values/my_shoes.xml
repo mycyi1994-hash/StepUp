@@ -22,10 +22,10 @@
 
     <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
     <string name="my_shoes_basis_open">How the bars are scaled</string>
-    <string name="my_shoes_basis_intro">All shoes use the same scale, so you can compare pairs.</string>
-    <string name="my_shoes_basis_efficiency">Efficiency (SUP earning bonus): full bar %1$s, the highest a shoe can reach (Legendary, level %2$d).</string>
+    <string name="my_shoes_basis_intro">Efficiency and comfort use the same scale for all shoes, so you can compare pairs.</string>
+    <string name="my_shoes_basis_efficiency">Efficiency (SUP earning bonus): full bar %1$s, a Legendary at level %2$d with points spread evenly. Putting more points into efficiency fills the bar.</string>
     <string name="my_shoes_basis_comfort">Comfort (energy saving): full bar %1$s, the server cap.</string>
-    <string name="my_shoes_basis_durability">Durability: full bar %1$d.</string>
+    <string name="my_shoes_basis_durability">Durability: the full bar is that shoe\'s max durability (1 = 10 m, different for every shoe). Every 100 m you run uses 10.</string>
     <string name="my_shoes_basis_note">Efficiency is a bonus rate, not an amount. The SUP you actually receive is confirmed by the server after each run.</string>
 
     <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->

@@ -99,6 +99,22 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun equip(id: Long): ServerResult<Unit> =
         rpc("sneaker_equip", jsonBody { put("p_id", id) }) { Unit }
 
+    /**
+     * 스탯 포인트 나누기(0059) — 더할 값이 아니라 나눈 뒤의 합계(효율 · 착화감 · 내구도)를 보낸다. 늘리기만 된다
+     * (다시 나누기가 남은 신발만 한 번 줄일 수 있다). 남은 포인트를 돌려준다. [request] 가 같으면 서버가 처음 결과를 돌려준다.
+     */
+    suspend fun setPoints(id: Long, efficiency: Int, comfort: Int, durability: Int, request: String? = null): ServerResult<Int> =
+        rpc(
+            "sneaker_points_set",
+            jsonBody {
+                put("p_id", id)
+                put("p_efficiency", efficiency)
+                put("p_comfort", comfort)
+                put("p_durability", durability)
+                request?.let { put("p_request", it) }
+            },
+        ) { it.trim().toIntOrNull() }
+
     /** 부스터 구매. 남은 잔고를 돌려준다. */
     suspend fun boostBuy(kind: String, request: String? = null): ServerResult<Double> =
         rpc("boost_buy", jsonBody { put("p_kind", kind); request?.let { put("p_request", it) } }) { it.trim().toDoubleOrNull() }
@@ -154,6 +170,24 @@ data class ServerSneakerRow(
     @SerialName("model_id") val modelId: Int? = null,
     /** 체인 토큰 번호 — v2(1~) · v3(1,000,001~). 아직 체인에 없으면 null */
     @SerialName("token_id") val tokenId: Long? = null,
+    // ── 0059 — 신발마다 다른 최대 내구도(1 = 10m) · 레벨업 스탯 포인트. 예전 서버는 보내지 않는다(0 · false) ──
+    /** 남은 내구도 · 최대 내구도 · 만들 때 고른 최대 내구도(1 = 10m). [durability] 는 남은 비율(%) */
+    @SerialName("durability_now") val durabilityNow: Int = 0,
+    @SerialName("durability_max") val durabilityMax: Int = 0,
+    @SerialName("durability_base") val durabilityBase: Int = 0,
+    /** 레벨 1 의 효율 · 착화감(bps) — [efficiencyBps] · [comfortBps] 는 여기에 나눈 포인트를 더한 값 */
+    @SerialName("efficiency_base_bps") val efficiencyBaseBps: Int = 0,
+    @SerialName("comfort_base_bps") val comfortBaseBps: Int = 0,
+    /** 받은 포인트(레벨마다 4) · 남은 포인트 · 효율 · 착화감 · 내구도에 나눈 포인트 */
+    @SerialName("points_total") val pointsTotal: Int = 0,
+    @SerialName("points_free") val pointsFree: Int = 0,
+    @SerialName("points_efficiency") val pointsEfficiency: Int = 0,
+    @SerialName("points_comfort") val pointsComfort: Int = 0,
+    @SerialName("points_durability") val pointsDurability: Int = 0,
+    /** 한 번 처음부터 다시 나눌 수 있다(0059 전에 강화한 신발) */
+    @SerialName("points_respec") val pointsRespec: Boolean = false,
+    /** 내구도 1(10m) 고치는 값 — [repairCostPerPoint] 는 예전 앱이 읽는 1% 값 */
+    @SerialName("repair_cost_per_unit") val repairCostPerUnit: Double = 0.0,
 )
 
 @Serializable

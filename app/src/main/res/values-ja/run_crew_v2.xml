@@ -16,7 +16,7 @@
     <string name="run_crew_goal_unknown">自分の目標 %1$skm · 進捗は確認できません</string>
     <string name="run_crew_reward_live">予想 +%1$s SUP · 確認前</string>
     <string name="run_crew_reward_void">測定無効 · 報酬なし</string>
-    <string name="run_crew_durability">耐久度 %1$d/100</string>
+    <string name="run_crew_durability">耐久度 %1$d%%</string>
     <string name="run_crew_share_location">自分の位置・距離を共有</string>
     <string name="run_crew_host_me">主催者 · 自分のラン</string>
     <string name="run_crew_my_run">自分のラン</string>

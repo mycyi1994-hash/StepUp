@@ -446,7 +446,30 @@ enum class UpgradeBlock {
 }
 
 /**
+ * 레벨업 스탯 포인트(서버 0059) — 레벨이 하나 오를 때마다 4. 포인트 1 은 효율 +0.25%p · 착화감 +0.1%p(20% 까지) ·
+ * 최대 내구도 +100(1km) 중 하나. 나눈 포인트는 되돌리지 않는다 — [respec] 인 신발(0059 전에 강화한 신발)만 한 번 처음부터 다시 나눈다.
+ */
+data class StatPoints(
+    val total: Int = 0,
+    val free: Int = 0,
+    val efficiency: Int = 0,
+    val comfort: Int = 0,
+    val durability: Int = 0,
+    val respec: Boolean = false,
+) {
+    companion object {
+        const val PER_LEVEL = 4
+        const val EFFICIENCY_BPS = 25
+        const val COMFORT_BPS = 10
+        const val DURABILITY = 100
+        /** 착화감 상한(economy.comfort_cap_bps) */
+        const val COMFORT_CAP_BPS = 2000
+    }
+}
+
+/**
  * 서버 신발의 스탯 (my_sneakers). 등급 · 레벨 · 효율 · 착화감 · 내구도.
+ * [efficiencyBps] · [comfortBps] 는 레벨 1 값에 나눈 포인트를 더한 실효 값, [durabilityPts] 는 남은 비율(%).
  */
 data class ServerStats(
     val origin: String,
@@ -460,14 +483,28 @@ data class ServerStats(
     val upgradeCost: Double,
     val repairCostPerPoint: Double,
     val genesisNo: Int,
+    /** 남은 · 최대 내구도(1 = 10m, 0059). 0 이면 서버가 아직 보내지 않았다 — 그때는 남은 비율(100 기준)을 쓴다 */
+    val durabilityNow: Int = 0,
+    val durabilityMax: Int = 0,
+    /** 만들 때 고른 최대 내구도 — 최대 내구도 = 이 값 + 내구도 포인트 × 100 */
+    val durabilityBase: Int = 0,
+    /** 레벨 1 의 효율 · 착화감(bps) — 포인트를 나누기 전 값 */
+    val efficiencyBaseBps: Int = 0,
+    val comfortBaseBps: Int = 0,
+    val points: StatPoints = StatPoints(),
+    /** 내구도 1(10m) 고치는 값 — 0 이면 예전 서버(1% 값 [repairCostPerPoint] 를 쓴다) */
+    val repairCostPerUnit: Double = 0.0,
 ) {
-    /** 내구도 계수 — 50 이상 1, 20 이상 0.7, 그 아래 0 (서버 economy.durability_factor) */
+    /** 내구도 계수 — 남은 비율 50% 이상 1, 20% 이상 0.7, 그 아래 0 (서버 economy.durability_factor) */
     val durabilityFactor: Double
         get() = when {
             durabilityPts >= 50 -> 1.0
             durabilityPts >= 20 -> 0.7
             else -> 0.0
         }
+
+    /** 서버가 신발마다 다른 최대 내구도(0059)를 보냈는가 */
+    val hasDurabilityMax: Boolean get() = durabilityMax > 0
 
     /** 폰에서 올린 옛 신발(IMPORT · MINT)은 서버가 강화 · 수리를 받지 않는다 */
     val upgradable: Boolean get() = origin !in setOf("IMPORT", "MINT")

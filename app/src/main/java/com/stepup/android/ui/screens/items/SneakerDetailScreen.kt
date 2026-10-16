@@ -151,6 +151,8 @@ fun SneakerDetailScreen(
     val scope = rememberCoroutineScope()
 
     var repairOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
+    // 스탯 포인트 시트(0059) — 서버가 받았다고 답한 뒤에만 완료. 화면을 나가면 지운다(같은 초안은 다시 보내도 한 번만 적힌다)
+    var pointsPhase by remember(sneakerId) { mutableStateOf<PointsPhase?>(null) }
 
     // 로그인 화면으로 — 돌아온 뒤 자동으로 착용 · 수리 · 강화하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
     val signIn: (() -> Unit)? = if (!ServiceLocator.serverEconomyOn) null else ({
@@ -185,6 +187,26 @@ fun SneakerDetailScreen(
         if (repairOpen && store.repair.value[sneakerId] == null) store.openRepair(sneakerId)
     }
 
+    val pointsActions = PointsActions(
+        onOpen = {
+            val shoe = (state as? ShoeDetailState.Ready)?.shoe
+            val basis = shoe?.let(::pointsBasisOf)
+            if (basis != null && !care.busy) pointsPhase = startPoints(basis)
+        },
+        onAdd = { stat -> pointsPhase = pointsPhase?.add(stat) },
+        onRemove = { stat -> pointsPhase = pointsPhase?.remove(stat) },
+        onReview = { pointsPhase = pointsPhase?.review() },
+        onBack = { pointsPhase = pointsPhase?.backToEdit() },
+        onSend = {
+            val sending = pointsPhase?.send()
+            if (sending != null) {
+                pointsPhase = sending
+                scope.launch { pointsPhase = sendPoints(sending) }
+            }
+        },
+        onClose = { if (pointsPhase !is PointsPhase.Sending) pointsPhase = null },
+    )
+
     ShoeDetailContent(
         state = state,
         equipping = equipping,
@@ -211,6 +233,8 @@ fun SneakerDetailScreen(
         },
         onSignIn = signIn,
         onCheckWear = viewModel::reloadOwned,
+        points = pointsPhase,
+        pointsActions = pointsActions,
     )
 }
 
@@ -241,6 +265,9 @@ fun ShoeDetailContent(
     onRepairClose: () -> Unit = {},
     onSignIn: (() -> Unit)? = null,
     onCheckWear: () -> Unit = {},
+    /** 스탯 포인트 시트(0059) — 있으면 그 장면으로 띄운다 */
+    points: PointsPhase? = null,
+    pointsActions: PointsActions = PointsActions(),
 ) {
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let(DetailSheet::valueOf) ?: DetailSheet.None) }
     var artAttempt by rememberSaveable { mutableIntStateOf(0) }
@@ -345,6 +372,7 @@ fun ShoeDetailContent(
                     },
                     onShowUpgrade = onEnhance,
                     onShowRepair = onOpenRepair,
+                    onOpenPoints = pointsActions.onOpen,
                 )
             }
         }
@@ -367,8 +395,15 @@ fun ShoeDetailContent(
                     onSell(shoe)
                 },
                 onOpenRecord = { sheet = DetailSheet.Record },
+                onPoints = {
+                    sheet = DetailSheet.None
+                    pointsActions.onOpen()
+                },
             )
             DetailSheet.None -> Unit
+        }
+        if (points != null && sheet == DetailSheet.None && repair == null) {
+            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn)
         }
         if (repair != null && sheet == DetailSheet.None) {
             ShoeRepairSheet(
@@ -379,7 +414,7 @@ fun ShoeDetailContent(
         }
         // SD05 · SD06 · SD07 — 바뀌지 않았거나 확인하지 못했다
         val failure = result as? EquipResult.NotWorn
-        if (failure != null && failure.targetId == shoe.id && wearing?.id != shoe.id && repair == null) {
+        if (failure != null && failure.targetId == shoe.id && wearing?.id != shoe.id && repair == null && points == null) {
             EquipErrorSheet(
                 failure = failure,
                 wearing = wearing,
@@ -410,6 +445,7 @@ private fun DetailBody(
     onRetryArt: () -> Unit,
     onShowUpgrade: () -> Unit,
     onShowRepair: () -> Unit,
+    onOpenPoints: () -> Unit,
 ) {
     val t = runTone()
     val shoe = state.shoe
@@ -459,6 +495,15 @@ private fun DetailBody(
             RunNotice(
                 stringResource(R.string.care_pending_repair_title), body = stringResource(R.string.care_pending_repair_body),
                 action = stringResource(R.string.care_check_result), onAction = onShowRepair, tag = "shoe-repair-pending",
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        // 레벨업으로 받은 스탯 포인트(0059)가 남았으면 — 나누기는 시트에서. 판매 중 · 체인 · 결과 미확인 중에는 띄우지 않는다
+        val entry = pointsEntryOf(shoe)
+        if (entry is PointsEntry.Free && pointsAvailable(shoe) && !care.busy && !care.upgradePending) {
+            RunNotice(
+                stringResource(R.string.points_notice_title, entry.free), body = stringResource(R.string.points_notice_body),
+                action = stringResource(R.string.points_open), onAction = onOpenPoints, tag = "shoe-points-notice",
             )
             Spacer(Modifier.height(8.dp))
         }
@@ -618,6 +663,7 @@ private fun ManageSheet(
     onRepair: () -> Unit,
     onSell: () -> Unit,
     onOpenRecord: () -> Unit,
+    onPoints: () -> Unit,
 ) {
     val t = runTone()
     RunSheet(onDismiss = onClose, modifier = Modifier.testTag("shoe-manage-sheet")) {
@@ -643,6 +689,26 @@ private fun ManageSheet(
                 onClick = onSell,
                 tag = "shoe-manage-sell",
             )
+            // 스탯 포인트(0059) — 포인트가 있는 신발만. 남은 포인트 · 다시 나누기 · 다 나눔을 설명으로
+            val entry = pointsEntryOf(shoe)
+            if (entry != PointsEntry.None) {
+                val available = pointsAvailable(shoe)
+                CareMenuRow(
+                    title = stringResource(R.string.points_title),
+                    description = when {
+                        busy -> stringResource(R.string.care_busy_note)
+                        !available -> careBlockText(
+                            if (shoe.server?.status != "OWNED") CareBlock.LISTED else CareBlock.ON_CHAIN,
+                        )
+                        entry is PointsEntry.Free -> stringResource(R.string.points_manage_free, entry.free)
+                        entry == PointsEntry.Respec -> stringResource(R.string.points_manage_respec)
+                        else -> stringResource(R.string.points_manage_done)
+                    },
+                    enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
+                    onClick = onPoints,
+                    tag = "shoe-manage-points",
+                )
+            }
             CareMenuRow(stringResource(R.string.care_record), null, enabled = true, onClick = onOpenRecord, tag = "shoe-row-info")
             // 이 NFT 정보(이전 상세의 설명) — 네 속성 이야기라 예전 52종에만
             if (shoe.modelId == null) {

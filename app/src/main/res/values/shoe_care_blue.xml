@@ -57,7 +57,7 @@
     <string name="care_repair_state">Repair status</string>
     <string name="care_needs_check">Needs check</string>
     <string name="care_repair_observed_full">Durability is now 100. You can see the charge in Me › Wallet.</string>
-    <string name="care_repair_observed_short">Durability is still %1$d / 100. If the repair wasn\'t applied, you can repair again.</string>
+    <string name="care_repair_observed_short">Durability is still %1$s. If the repair wasn\'t applied, you can repair again.</string>
     <string name="care_repair_done_title">Repaired</string>
     <string name="care_repair_done_body">Durability is fully restored.</string>
     <string name="care_balance_left">Remaining balance</string>

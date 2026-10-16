@@ -798,7 +798,7 @@ private fun FreeDetailRow(numbers: FreeRunNumbers, tags: FreeTags) {
             Arrangement.Center,
         )
         val points = numbers.durability?.toString() ?: "—"
-        FreeSmallCell(points, "/100", tags.durability, "$durabilityLabel $points / 100", Arrangement.End, lead = durabilityLabel)
+        FreeSmallCell(points, "%", tags.durability, "$durabilityLabel $points%", Arrangement.End, lead = durabilityLabel)
     }
 }
 

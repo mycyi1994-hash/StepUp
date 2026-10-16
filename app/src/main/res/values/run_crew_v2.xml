@@ -16,7 +16,7 @@
     <string name="run_crew_goal_unknown">My goal %1$s km · progress unavailable</string>
     <string name="run_crew_reward_live">Estimated +%1$s SUP · not confirmed yet</string>
     <string name="run_crew_reward_void">Measurement invalid · no reward</string>
-    <string name="run_crew_durability">Durability %1$d/100</string>
+    <string name="run_crew_durability">Durability %1$d%%</string>
     <string name="run_crew_share_location">Share my location and distance</string>
     <string name="run_crew_host_me">Host · my run</string>
     <string name="run_crew_my_run">My run</string>

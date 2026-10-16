@@ -104,7 +104,7 @@ import com.stepup.android.ui.components.ShoeGradeBadge
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.items.durabilityPoints
+import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpSans
 
@@ -690,7 +690,7 @@ internal fun ColumnScope.RunDetailsContent(
         Spacer(Modifier.height(10.dp))
         RunStatRow(
             listOf(RunStat(stringResource(R.string.run_speed_now), ui.speed, "km/h", tag = "run-speed"),
-                RunStat(stringResource(R.string.run_durability), ui.durability, "/ 100", tag = "run-durability")),
+                RunStat(stringResource(R.string.run_durability), ui.durability, "%", tag = "run-durability")),
             framed = true, valueSize = 26.sp,
         )
         ui.reasons.forEach { reason ->
@@ -911,7 +911,7 @@ internal fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHist
 @Composable
 internal fun ResultShoeCard(shoe: Sneaker) {
     val t = runTone()
-    val points = durabilityPoints(shoe)
+    val points = durabilityPercent(shoe)
     RunCard(padding = PaddingValues(horizontal = 12.dp, vertical = 10.dp), tag = "run-result-shoe") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ShoeArtThumbnail(shoe, Modifier.width(96.dp).height(58.dp).testTag("run-result-shoe-image"))
@@ -931,7 +931,7 @@ internal fun ResultShoeCard(shoe: Sneaker) {
                     Text(stringResource(R.string.run_durability), style = runTextStyle(12.sp, t.label))
                     Spacer(Modifier.width(6.dp))
                     Text("$points", style = runTextStyle(14.sp, t.cyan, FontWeight.ExtraBold), modifier = Modifier.testTag("run-result-durability"))
-                    Text(" / 100", style = runTextStyle(12.sp, t.label))
+                    Text("%", style = runTextStyle(12.sp, t.label))
                 }
                 Spacer(Modifier.height(6.dp))
                 RunMeter(points / 100f, height = 8.dp, fill = listOf(Color(0xFF2FB5F0), t.cyan))

@@ -81,28 +81,52 @@ fun formatPercent(percent: Double): String = trimmedDecimal(percent) + "%"
 /** 행운 · 착화감 — 도감 표처럼 두 자리("1.08") */
 fun formatStat(value: Double): String = String.format(Locale.ROOT, "%.2f", value)
 
-/** 내구도 점수(100 기준). 서버 값(소수)은 내려서 쓴다: 99.6 을 100 으로 올려 보이면 수리할 곳이 가려진다 */
-fun durabilityPoints(shoe: Sneaker): Int =
-    (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceAtLeast(0)
+/**
+ * 남은 비율(%, 0 ~ 100) — 러닝 화면의 작은 칸 · 막대, 적립 배율(50% · 20%)의 기준. 서버 값(소수)은 내려서 쓴다:
+ * 99.6 을 100 으로 올려 보이면 수리할 곳이 가려진다. 폰에만 있던 예전 신발은 그 신발의 0 ~ 100 값.
+ */
+fun durabilityPercent(shoe: Sneaker): Int =
+    (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceIn(0, 100)
 
-/** 내구도 "100 / 100" */
-fun formatDurability(shoe: Sneaker): String = "${durabilityPoints(shoe)} / 100"
+/**
+ * 남은 내구도(1 = 10m, 서버 0059 — 100m 달리면 10 준다). 서버가 아직 최대 내구도를 보내지 않았거나(예전 서버)
+ * 폰에만 있던 신발이면 남은 비율(100 기준)을 그대로 쓴다.
+ */
+fun durabilityLeft(shoe: Sneaker): Int {
+    val server = shoe.server?.takeIf { it.hasDurabilityMax } ?: return durabilityPercent(shoe)
+    return server.durabilityNow.coerceIn(0, server.durabilityMax)
+}
+
+/** 최대 내구도 — 신발마다 다르다(등급 범위 안에서 정해지고, 내구도 포인트 1 에 +100). 모르면 100 */
+fun durabilityMax(shoe: Sneaker): Int = shoe.server?.takeIf { it.hasDurabilityMax }?.durabilityMax ?: 100
+
+/** 내구도 막대 길이 — 남은 내구도 ÷ 그 신발의 최대 내구도 */
+fun durabilityFraction(shoe: Sneaker): Float =
+    com.stepup.android.ui.screens.customize.barFraction(durabilityLeft(shoe).toDouble(), durabilityMax(shoe).toDouble())
+
+/** 천 단위 쉼표 — 1180 → "1,180" */
+fun formatCount(value: Int): String = String.format(Locale.ROOT, "%,d", value)
+
+/** 내구도 "1,180 / 1,230"(예전 값은 "100 / 100") */
+fun formatDurability(shoe: Sneaker): String = formatCount(durabilityLeft(shoe)) + " / " + formatCount(durabilityMax(shoe))
 
 // ── 상세 본문의 네 줄(카툰 입체형, 2026-09-30 확정) ──────────────
 
 enum class DetailStat { LEVEL, EFFICIENCY, COMFORT, DURABILITY }
 
-/** 상세 본문 한 줄 — 보이는 값("5 / 15")과 막대 길이(0 ~ 1) */
-data class DetailStatRow(val stat: DetailStat, val value: String, val fraction: Float)
+/** 상세 본문 한 줄 — 보이는 값("5 / 15"), 막대 길이(0 ~ 1), 막대 끝("15" · "27.5%" · "1,230") */
+data class DetailStatRow(val stat: DetailStat, val value: String, val fraction: Float, val end: String)
 
 /**
  * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
- * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 27.5% · 착화감 20% · 내구도 100). 행운 · 원시 착화감은 넣지 않는다.
+ * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 27.5% · 착화감 20% · 내구도는 그 신발의 최대 내구도).
+ * 행운 · 원시 착화감은 넣지 않는다.
  */
 fun detailStatRows(shoe: Sneaker): List<DetailStatRow> {
     val level = DetailStatRow(
         DetailStat.LEVEL, "${shoe.level} / ${shoe.maxLevel}",
         com.stepup.android.ui.screens.customize.barFraction(shoe.level.toDouble(), shoe.maxLevel.toDouble()),
+        shoe.maxLevel.toString(),
     )
     return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe).map { bar ->
         val stat = when (bar.stat) {
@@ -110,7 +134,7 @@ fun detailStatRows(shoe: Sneaker): List<DetailStatRow> {
             com.stepup.android.ui.screens.customize.BarStat.COMFORT -> DetailStat.COMFORT
             com.stepup.android.ui.screens.customize.BarStat.DURABILITY -> DetailStat.DURABILITY
         }
-        DetailStatRow(stat, bar.value, bar.fraction)
+        DetailStatRow(stat, bar.value, bar.fraction, bar.end)
     }
 }
 
