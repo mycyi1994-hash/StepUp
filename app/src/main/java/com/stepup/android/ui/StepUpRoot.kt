@@ -93,6 +93,7 @@ import com.stepup.android.ui.screens.community.CrewBoardScreen
 import com.stepup.android.ui.screens.community.crew.crewGraph
 import com.stepup.android.ui.screens.community.chat.chatGraph
 import com.stepup.android.ui.screens.community.home.crewHomeGraph
+import com.stepup.android.ui.screens.coaching.coachingGraph
 import com.stepup.android.ui.screens.community.chat.openChatRoom
 import com.stepup.android.ui.screens.community.FlashRunDetailScreen
 import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
@@ -590,6 +591,9 @@ internal fun MainScaffold(
         com.stepup.android.ui.components.RunnerScene(
             Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
         )
+    } else if (currentRoute in com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL) {
+        // AI 코칭(2026-10-16) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
+        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("coaching-backdrop"))
     } else if (currentRoute in listOf(
             Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
             Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
@@ -1452,6 +1456,22 @@ internal fun MainScaffold(
                 communityRoute = Screen.Community.route,
                 boardRoute = { crewId -> Routes.crewBoard(crewId) },
                 lobbyRoute = { crewId -> Routes.lobby(crewId) },
+            )
+            // AI 코칭(2026-10-16 인계 16장) — 오늘 · 분석 · 변화 · 훈련 · 동의 · 목표 · 계획 · 설정. 러닝을 스스로 시작하지 않는다
+            coachingGraph(
+                navController,
+                onGoRun = { startRunFromRecords(navController) },
+                // 02 "이 훈련으로 시작" — 기존 자유 러닝 시작(달리던 러닝이 있으면 그 러닝으로)
+                onStartFreeRun = {
+                    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                        navController.backToRun()
+                    } else {
+                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                        com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                        navController.navigate(Routes.RUN_NOW)
+                    }
+                },
+                onOpenRecord = { id -> navController.navigate(Routes.runRecord(id)) },
             )
             // 크루 채팅(2026-09-29) — 크루마다 크루원 전용 방 하나. 크루원 목록의 "나"는 내 정보 탭
             chatGraph(

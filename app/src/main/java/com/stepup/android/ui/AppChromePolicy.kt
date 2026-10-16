@@ -75,6 +75,9 @@ object AppChromePolicy {
     } + com.stepup.android.ui.screens.community.home.CrewHomeRoutes.ALL.map {
         // 내 크루 홈(확정 4번) — 홈과 상세는 자기 머리(뒤로 · 제목 · 더보기)와 아래 큰 버튼 하나, 뒤로 가면 들어온 곳
         Destination(it, Screen.Community, Header.Form)
+    } + com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL.map {
+        // AI 코칭(2026-10-16) — 러닝 탭 아래 상세. 하단 탭은 그대로 두고 머리(뒤로 · 로고 · 설정)는 화면이 공용 머리로 그린다
+        Destination(it, Screen.Run, Header.Detail)
     } + listOf(
         Destination(Routes.WALLET, Screen.Profile, Header.Detail),
         Destination(Routes.CHAIN_ACTIVITY, Screen.Profile, Header.Detail),

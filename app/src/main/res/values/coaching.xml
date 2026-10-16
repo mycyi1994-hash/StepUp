@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI coaching (2026-10-16 handoff, docs/redesign/ai-coaching-2026-10) — Today · Analysis · Progress, workout detail, consent · goals · settings · turn off, plan · target pace -->
+<resources>
+    <!-- Coaching language sent to the server (ko · en · ja · zh) — analyses come back in the language the screen shows -->
+    <string name="coach_locale">en</string>
+    <string name="coach_date_md">MMM d</string>
+    <string name="coach_date_d">d</string>
+    <string name="coach_date_short">M/d</string>
+    <string name="coach_date_wd">EEE d</string>
+
+    <string name="coach_title">Coaching</string>
+    <string name="coach_ai_badge">AI</string>
+    <string name="coach_settings_cd">AI coaching settings</string>
+    <string name="coach_tab_today">Today</string>
+    <string name="coach_tab_analysis">Analysis</string>
+    <string name="coach_tab_change">Progress</string>
+    <string name="coach_minutes">%1$d min</string>
+    <string name="coach_times">%1$d×</string>
+    <string name="coach_unit_minutes">min</string>
+    <string name="coach_unit_times">runs</string>
+    <string name="coach_km">km</string>
+    <string name="coach_per_km">/km</string>
+    <string name="coach_week_range">%1$s – %2$s</string>
+    <string name="coach_cancel">Cancel</string>
+    <string name="coach_retry">Try again</string>
+    <string name="coach_load_failed">Couldn\'t load coaching.</string>
+    <string name="coach_save_failed">Couldn\'t save. Your previous settings are unchanged.</string>
+    <string name="coach_conflict">This was changed on another device first. Please check again.</string>
+    <string name="coach_signin">Only runs from your signed-in account are analyzed by AI.</string>
+
+    <!-- Today (01) · no records (08) -->
+    <string name="coach_week_progress">This week %1$d / %2$d</string>
+    <string name="coach_week_progress_nogoal">This week %1$d runs</string>
+    <string name="coach_day_done_cd">%1$s, ran</string>
+    <string name="coach_day_today_cd">%1$s, today</string>
+    <string name="coach_today_pick">Today\'s pick</string>
+    <string name="coach_today_basic">Basic workout</string>
+    <string name="coach_today_plan">Today\'s plan</string>
+    <string name="coach_step_warmup">Walk</string>
+    <string name="coach_step_run">Run</string>
+    <string name="coach_step_runwalk">Run · walk</string>
+    <string name="coach_step_cooldown">Walk</string>
+    <string name="coach_workout_open">See workout details</string>
+    <string name="coach_ai_coach_label">AI coach suggests</string>
+    <string name="coach_ai_label">AI coaching</string>
+    <string name="coach_ai_mock">Test response</string>
+    <string name="coach_recent_title">Latest run analysis</string>
+    <string name="coach_recent_line">%1$s · %2$s</string>
+    <string name="coach_no_records_pill">No runs yet</string>
+    <string name="coach_no_records_title">Let\'s start with\nyour first run</string>
+    <string name="coach_no_records_body">One easy step today\ncan lead to a better change.</string>
+    <string name="coach_no_records_later">Once you have runs</string>
+    <string name="coach_no_records_analysis">Run analysis</string>
+    <string name="coach_no_records_analysis_sub">Look at your split pace.</string>
+    <string name="coach_no_records_change">Your progress</string>
+    <string name="coach_no_records_change_sub">See how steady you are.</string>
+    <string name="coach_guide_label">Coaching tip</string>
+    <string name="coach_no_records_guide">Personal suggestions appear as your runs add up.</string>
+    <string name="coach_go_run">Go for a run</string>
+    <string name="coach_set_goal">Set a goal</string>
+    <string name="coach_need_goal_line">Set a goal to see a basic workout that fits your time.</string>
+
+    <!-- Workout detail (02) -->
+    <string name="coach_workout_title">Today\'s workout</string>
+    <string name="coach_family_easy">Easy run</string>
+    <string name="coach_family_walk_run">Walk and run</string>
+    <string name="coach_family_easy_sub">Walk and run\nat an easy pace</string>
+    <string name="coach_family_walk_run_sub">Take turns\nrunning and walking</string>
+    <string name="coach_step_warmup_title">Warm up</string>
+    <string name="coach_step_warmup_sub">Walk slowly</string>
+    <string name="coach_step_easy_title">Easy run</string>
+    <string name="coach_step_easy_sub">Easy enough to talk</string>
+    <string name="coach_step_runwalk_title">Run and walk</string>
+    <string name="coach_step_runwalk_sub">Run %1$d min · walk %2$d min × %3$d</string>
+    <string name="coach_step_cooldown_title">Cool down</string>
+    <string name="coach_step_cooldown_sub">Walk and slow down</string>
+    <string name="coach_workout_start">Start this workout</string>
+    <string name="coach_workout_continue">Back to your run</string>
+    <string name="coach_workout_free_note">Starts as a free run. The run screen doesn\'t guide these steps.</string>
+    <string name="coach_workout_basic_note">This is a basic workout, not an AI pick.</string>
+    <string name="coach_workout_missing">This workout couldn\'t be found.</string>
+
+    <!-- Analysis (03 · 07 · 09 · 10 · 11 · 12) -->
+    <string name="coach_run_title_date">%1$s run</string>
+    <string name="coach_pick_record_cd">Choose another run</string>
+    <string name="coach_pick_record_title">Run to analyze</string>
+    <string name="coach_time">Time</string>
+    <string name="coach_avg_pace">Avg pace</string>
+    <string name="coach_pace">Pace</string>
+    <string name="coach_splits_title">1 km split pace</string>
+    <string name="coach_splits_basis">Completed 1 km splits</string>
+    <string name="coach_avg_line">Avg</string>
+    <string name="coach_partial">Last %1$s km at %2$s/km — left out of the 1 km comparison</string>
+    <string name="coach_split_cd">Kilometer %1$d at %2$s/km</string>
+    <string name="coach_splits_none_title">No split analysis</string>
+    <string name="coach_gap_not_saved">This run was saved before split data was kept.</string>
+    <string name="coach_gap_too_short">Under 1 km, so there are no splits to compare.</string>
+    <string name="coach_gap_no_distance">No distance was recorded, so splits can\'t be made.</string>
+    <string name="coach_gap_manual">Manual laps are mixed in, so 1 km splits are unknown.</string>
+    <string name="coach_gap_mismatch">Split data doesn\'t match this run, so it isn\'t shown.</string>
+    <string name="coach_gap_range">Some splits are out of the normal range, so they aren\'t shown.</string>
+    <string name="coach_no_analysis_records">No runs to analyze yet.</string>
+    <string name="coach_ai_loading">Checking coaching status.</string>
+    <string name="coach_ai_waiting_server">Waiting for server confirmation.</string>
+    <string name="coach_ai_waiting_server_sub">Your run is safely saved on this phone.</string>
+    <string name="coach_ai_not_verified">The server hasn\'t confirmed this run, so AI won\'t analyze it.</string>
+    <string name="coach_ai_consent">Turn on AI coaching to analyze this run.</string>
+    <string name="coach_ai_consent_action">Start AI coaching</string>
+    <string name="coach_ai_skipped_label">For this run</string>
+    <string name="coach_ai_skipped">AI analysis was skipped.</string>
+    <string name="coach_skip_no_splits">Accurate split data isn\'t available.</string>
+    <string name="coach_skip_too_short">Runs under 1 km aren\'t analyzed.</string>
+    <string name="coach_skip_not_run">This record wasn\'t counted as a run.</string>
+    <string name="coach_skip_other">This run doesn\'t meet the analysis criteria.</string>
+    <string name="coach_ai_request_title">Look at this run with AI?</string>
+    <string name="coach_ai_request">Get AI analysis</string>
+    <string name="coach_rec_request">Get an AI pick</string>
+    <string name="coach_ai_request_note">You can turn on automatic analysis in settings.</string>
+    <string name="coach_ai_working_label">AI analyzing</string>
+    <string name="coach_ai_queued_label">AI analysis queued</string>
+    <string name="coach_ai_working">Looking at your run.</string>
+    <string name="coach_ai_working_sub">Your basic stats are ready to see now.</string>
+    <string name="coach_ai_leave_ok">You can go to other screens.</string>
+    <string name="coach_next_label">Next run suggestion</string>
+    <string name="coach_cand_start_easier">Start the first km a bit easier</string>
+    <string name="coach_cand_start_easier_long">Start the first km\na little easier.</string>
+    <string name="coach_cand_keep">Keep this pace</string>
+    <string name="coach_cand_keep_long">Keep this pace\ncomfortable.</string>
+    <string name="coach_cand_pace_sub">Try starting at %1$s/km</string>
+    <string name="coach_cand_keep_sub">Aim for %1$s/km</string>
+    <string name="coach_offline_banner">Offline · saved analysis</string>
+    <string name="coach_ai_generated_at">Analysis from %1$s</string>
+    <string name="coach_offline_foot">Reconnect to see new runs.</string>
+    <string name="coach_offline_none">Reconnect to see AI analysis.</string>
+    <string name="coach_ai_stale">This run changed, so it needs a new analysis.</string>
+    <string name="coach_ai_reanalyze">Analyze again</string>
+    <string name="coach_ai_failed">Couldn\'t load the AI analysis.</string>
+    <string name="coach_ai_failed_safe">Your run is safely saved.</string>
+    <string name="coach_ai_failed_hint">Please try again in a moment.</string>
+    <string name="coach_ai_failed_final">This run can\'t be analyzed right now.</string>
+    <string name="coach_ai_retry">Retry analysis</string>
+    <string name="coach_ai_basic_only">Basic stats only</string>
+    <string name="coach_limit_label">AI analysis limit</string>
+    <string name="coach_limit_title">New analyses aren\'t available right now.</string>
+    <string name="coach_limit_sub">Your basic stats and saved analyses are still here.</string>
+    <string name="coach_limit_reset">Available again after %1$s.</string>
+    <string name="coach_limit_saved">See saved analysis</string>
+
+    <!-- Fact sentences — the numbers are server-calculated -->
+    <string name="coach_fact_last_slower">Kilometer %1$d was\n%2$d s slower than the first.</string>
+    <string name="coach_fact_last_faster">Kilometer %1$d was\n%2$d s faster than the first.</string>
+    <string name="coach_fact_even">Your 1 km splits\nstayed even.</string>
+    <string name="coach_fact_avg_pace">You ran at %1$s/km on average.</string>
+    <string name="coach_fact_streak">You\'ve kept running for %1$d weeks.</string>
+    <string name="coach_fact_week_runs_goal">%1$d runs this week · goal %2$d.</string>
+    <string name="coach_fact_week_runs">%1$d runs this week.</string>
+    <string name="coach_fact_week_distance">You ran %1$s km this week.</string>
+
+    <!-- Target pace confirmation (16) -->
+    <string name="coach_pace_current">Current goal</string>
+    <string name="coach_pace_none">Not set</string>
+    <string name="coach_pace_suggested">Suggested pace</string>
+    <string name="coach_pace_note">Setting a goal doesn\'t start a run.</string>
+    <string name="coach_pace_apply">Apply target pace</string>
+    <string name="coach_pace_applied">Target pace applied.</string>
+
+    <!-- Progress (04) -->
+    <string name="coach_prev_week_cd">Previous week</string>
+    <string name="coach_next_week_cd">Next week</string>
+    <string name="coach_week_last_label">Last week</string>
+    <string name="coach_week_this_label">This week · in progress</string>
+    <string name="coach_week_past_label">That week</string>
+    <string name="coach_week_head_steady">%1$d runs,\nkept it steady.</string>
+    <string name="coach_week_head_runs">%1$d runs this week.</string>
+    <string name="coach_week_head_none">No runs\nthat week.</string>
+    <string name="coach_week_head_current">Run %1$d this week.</string>
+    <string name="coach_stat_runs">Runs</string>
+    <string name="coach_stat_distance">Distance</string>
+    <string name="coach_stat_time">Time</string>
+    <string name="coach_recent4">Last 4 weeks</string>
+    <string name="coach_bar_cd">Week of %1$s, %2$s km</string>
+    <string name="coach_next_plan">See next week\'s plan</string>
+    <string name="coach_week_ai_progress">AI sums up the week after it ends.</string>
+
+    <!-- Next week plan (13) -->
+    <string name="coach_plan_title">Next week\'s plan</string>
+    <string name="coach_plan_pill">Suggestion · not applied</string>
+    <string name="coach_plan_applied_pill">Applied plan</string>
+    <string name="coach_plan_head">%1$d runs a week,\nnice and easy.</string>
+    <string name="coach_plan_day_cd">Run planned %1$s</string>
+    <string name="coach_plan_note">Your current plan stays until you apply this one.</string>
+    <string name="coach_plan_apply">Apply this plan</string>
+    <string name="coach_plan_later">Decide later</string>
+    <string name="coach_plan_applied">Plan applied. Start runs whenever you like.</string>
+    <string name="coach_plan_need_goal">Set your coaching goal first.</string>
+
+    <!-- First-use consent (05) · data use -->
+    <string name="coach_consent_title">Start AI coaching</string>
+    <string name="coach_consent_head">Understand your runs,\nget ready for the next one</string>
+    <string name="coach_flow_record">Run record</string>
+    <string name="coach_flow_summary">Number summary</string>
+    <string name="coach_flow_ai">AI coaching</string>
+    <string name="coach_consent_send">What we send</string>
+    <string name="coach_consent_send_sub">Distance · time · split pace · recent summary</string>
+    <string name="coach_consent_not_send">What we don\'t send</string>
+    <string name="coach_consent_not_send_sub">Name · exact location · GPS route</string>
+    <string name="coach_consent_provider">Analysis by</string>
+    <string name="coach_consent_provider_name">Anthropic</string>
+    <string name="coach_consent_data_link">How data is used</string>
+    <string name="coach_consent_optional">You can keep running without agreeing.</string>
+    <string name="coach_consent_check">I agree to send run summaries for AI analysis</string>
+    <string name="coach_consent_start">Agree and start</string>
+    <string name="coach_consent_later">Later</string>
+    <string name="coach_consent_unavailable">AI coaching isn\'t available yet. Run analysis and basic workouts still work.</string>
+    <string name="coach_data_title">How data is used</string>
+    <string name="coach_data_send">What we send — a run\'s distance, active time and 1 km split times; a week\'s runs, distance and time; the goal you chose.</string>
+    <string name="coach_data_not_send">What we don\'t send — name, contacts, exact location, GPS route, dates, crew, rewards.</string>
+    <string name="coach_data_account">Even without your name, results stay linked to your account.</string>
+    <string name="coach_data_withdraw">You can turn this off in settings anytime. Pending analyses are canceled, but requests already sent can\'t be undone.</string>
+    <string name="coach_data_retention">Storage and deletion follow the finalized privacy policy.</string>
+
+    <!-- Coaching goals (06) -->
+    <string name="coach_goals_title">Coaching goal</string>
+    <string name="coach_goals_head">What kind of running do you want?</string>
+    <string name="coach_goal_steady">Run regularly</string>
+    <string name="coach_goal_5k">Finish 5 km</string>
+    <string name="coach_goal_improve">Improve my time</string>
+    <string name="coach_goals_runs">How many times a week?</string>
+    <string name="coach_goals_minutes">Time per run</string>
+    <string name="coach_goals_note">You can change your goal anytime.</string>
+    <string name="coach_goals_start">Start with this goal</string>
+    <string name="coach_goals_save">Save goal</string>
+
+    <!-- AI coaching settings (14) · turn off (15) -->
+    <string name="coach_settings_title">AI coaching settings</string>
+    <string name="coach_settings_analysis">Analysis</string>
+    <string name="coach_settings_use">Use AI coaching</string>
+    <string name="coach_settings_auto">Analyze after runs</string>
+    <string name="coach_settings_auto_sub">After the run is saved and confirmed by the server</string>
+    <string name="coach_settings_weekly">Weekly report</string>
+    <string name="coach_settings_weekly_sub">Separate from notification settings</string>
+    <string name="coach_settings_goal">My goal</string>
+    <string name="coach_goal_summary">%1$d× a week · %2$d min</string>
+    <string name="coach_goal_unset">Not set yet</string>
+    <string name="coach_target_pace">Target pace %1$s/km</string>
+    <string name="coach_settings_data">Data</string>
+    <string name="coach_settings_data_guide">How data is used</string>
+    <string name="coach_settings_off">Turn off AI</string>
+    <string name="coach_settings_note">Even with automatic analysis off, you can request it yourself.</string>
+    <string name="coach_off_title">Turn off AI coaching?</string>
+    <string name="coach_off_body">New and automatic AI analyses will stop.\nRunning and basic stats stay available.</string>
+    <string name="coach_off_delete">Also delete saved AI analyses</string>
+    <string name="coach_off_delete_sub">If unchecked, existing analyses are kept.</string>
+    <string name="coach_off_data_link">How data is handled</string>
+    <string name="coach_off_keep">Keep using</string>
+    <string name="coach_off_confirm">Turn off AI coaching</string>
+    <string name="coach_off_done">AI coaching is off.</string>
+    <string name="coach_off_done_deleted">AI coaching is off and %1$d saved analyses were deleted.</string>
+</resources>

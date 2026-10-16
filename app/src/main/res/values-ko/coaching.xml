@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI 코칭(2026-10-16 전달본, docs/redesign/ai-coaching-2026-10) — 오늘 · 분석 · 변화, 훈련 상세, 동의 · 목표 · 설정 · 해제, 계획 · 목표 페이스 -->
+<resources>
+    <!-- 서버에 보내는 코칭 언어(ko · en · ja · zh) — 화면 글자와 같은 언어로 분석을 받는다 -->
+    <string name="coach_locale">ko</string>
+    <string name="coach_date_md">M월 d일</string>
+    <string name="coach_date_d">d일</string>
+    <string name="coach_date_short">M.d</string>
+    <string name="coach_date_wd">E d일</string>
+
+    <string name="coach_title">코칭</string>
+    <string name="coach_ai_badge">AI</string>
+    <string name="coach_settings_cd">AI 코칭 설정</string>
+    <string name="coach_tab_today">오늘</string>
+    <string name="coach_tab_analysis">분석</string>
+    <string name="coach_tab_change">변화</string>
+    <string name="coach_minutes">%1$d분</string>
+    <string name="coach_times">%1$d회</string>
+    <string name="coach_unit_minutes">분</string>
+    <string name="coach_unit_times">회</string>
+    <string name="coach_km">km</string>
+    <string name="coach_per_km">/km</string>
+    <string name="coach_week_range">%1$s – %2$s</string>
+    <string name="coach_cancel">취소</string>
+    <string name="coach_retry">다시 시도</string>
+    <string name="coach_load_failed">코칭 정보를 불러오지 못했어요.</string>
+    <string name="coach_save_failed">저장하지 못했어요. 기존 설정은 그대로예요.</string>
+    <string name="coach_conflict">다른 기기에서 먼저 바뀌었어요. 다시 확인해 주세요.</string>
+    <string name="coach_signin">로그인한 계정의 기록만 AI로 분석해요.</string>
+
+    <!-- 오늘(01) · 기록 없음(08) -->
+    <string name="coach_week_progress">이번 주 %1$d / %2$d</string>
+    <string name="coach_week_progress_nogoal">이번 주 %1$d회</string>
+    <string name="coach_day_done_cd">%1$s 러닝 완료</string>
+    <string name="coach_day_today_cd">%1$s 오늘</string>
+    <string name="coach_today_pick">오늘의 추천</string>
+    <string name="coach_today_basic">기본 훈련</string>
+    <string name="coach_today_plan">오늘의 계획</string>
+    <string name="coach_step_warmup">걷기</string>
+    <string name="coach_step_run">달리기</string>
+    <string name="coach_step_runwalk">달리기 · 걷기</string>
+    <string name="coach_step_cooldown">걷기</string>
+    <string name="coach_workout_open">훈련 자세히 보기</string>
+    <string name="coach_ai_coach_label">AI 코치의 제안</string>
+    <string name="coach_ai_label">AI 코칭</string>
+    <string name="coach_ai_mock">모의 응답</string>
+    <string name="coach_recent_title">최근 러닝 분석</string>
+    <string name="coach_recent_line">%1$s · %2$s</string>
+    <string name="coach_no_records_pill">아직 러닝 기록이 없어요</string>
+    <string name="coach_no_records_title">첫 러닝부터\n함께 시작해요</string>
+    <string name="coach_no_records_body">지금, 가벼운 한 걸음이\n더 좋은 변화를 만들어줄 거예요.</string>
+    <string name="coach_no_records_later">기록이 생기면</string>
+    <string name="coach_no_records_analysis">러닝 분석</string>
+    <string name="coach_no_records_analysis_sub">구간 페이스를 살펴봐요.</string>
+    <string name="coach_no_records_change">나의 변화</string>
+    <string name="coach_no_records_change_sub">꾸준함을 확인해요.</string>
+    <string name="coach_guide_label">코칭 안내</string>
+    <string name="coach_no_records_guide">기록이 쌓이면 맞춤 제안을 보여드려요.</string>
+    <string name="coach_go_run">러닝하러 가기</string>
+    <string name="coach_set_goal">목표 설정하기</string>
+    <string name="coach_need_goal_line">목표를 정하면 시간에 맞춘 기본 훈련을 보여드려요.</string>
+
+    <!-- 훈련 상세(02) -->
+    <string name="coach_workout_title">오늘의 훈련</string>
+    <string name="coach_family_easy">편안한 러닝</string>
+    <string name="coach_family_walk_run">걷기와 달리기</string>
+    <string name="coach_family_easy_sub">걷기와 달리기를\n가볍게 이어가요</string>
+    <string name="coach_family_walk_run_sub">달리기와 걷기를\n번갈아 해요</string>
+    <string name="coach_step_warmup_title">몸풀기</string>
+    <string name="coach_step_warmup_sub">천천히 걷기</string>
+    <string name="coach_step_easy_title">편안하게 달리기</string>
+    <string name="coach_step_easy_sub">말할 수 있을 정도로</string>
+    <string name="coach_step_runwalk_title">달리기와 걷기</string>
+    <string name="coach_step_runwalk_sub">달리기 %1$d분 · 걷기 %2$d분 × %3$d회</string>
+    <string name="coach_step_cooldown_title">마무리</string>
+    <string name="coach_step_cooldown_sub">속도를 낮추며 걷기</string>
+    <string name="coach_workout_start">이 훈련으로 시작</string>
+    <string name="coach_workout_continue">달리던 러닝으로</string>
+    <string name="coach_workout_free_note">자유 러닝으로 시작해요. 단계 안내는 러닝 화면에 나오지 않아요.</string>
+    <string name="coach_workout_basic_note">기본 훈련이에요. AI가 고른 추천이 아니에요.</string>
+    <string name="coach_workout_missing">이 훈련을 찾을 수 없어요.</string>
+
+    <!-- 분석(03 · 07 · 09 · 10 · 11 · 12) -->
+    <string name="coach_run_title_date">%1$s 러닝</string>
+    <string name="coach_pick_record_cd">다른 기록 고르기</string>
+    <string name="coach_pick_record_title">분석할 기록</string>
+    <string name="coach_time">시간</string>
+    <string name="coach_avg_pace">평균페이스</string>
+    <string name="coach_pace">페이스</string>
+    <string name="coach_splits_title">1km 구간 페이스</string>
+    <string name="coach_splits_basis">완료한 1km 구간 기준</string>
+    <string name="coach_avg_line">평균</string>
+    <string name="coach_partial">마지막 %1$skm는 %2$s/km — 1km 구간 비교에서 뺐어요</string>
+    <string name="coach_split_cd">%1$dkm 구간 %2$s/km</string>
+    <string name="coach_splits_none_title">구간 분석 불가</string>
+    <string name="coach_gap_not_saved">구간 정보를 남기기 전에 저장된 기록이에요.</string>
+    <string name="coach_gap_too_short">1km를 채우지 못해 비교할 구간이 없어요.</string>
+    <string name="coach_gap_no_distance">거리 정보가 없어 구간을 나눌 수 없어요.</string>
+    <string name="coach_gap_manual">직접 찍은 랩이 섞여 1km 구간을 알 수 없어요.</string>
+    <string name="coach_gap_mismatch">구간 정보가 기록과 맞지 않아 보여드리지 않아요.</string>
+    <string name="coach_gap_range">정상 범위를 벗어난 구간이 있어 보여드리지 않아요.</string>
+    <string name="coach_no_analysis_records">분석할 수 있는 기록이 없어요.</string>
+    <string name="coach_ai_loading">코칭 상태를 확인하고 있어요.</string>
+    <string name="coach_ai_waiting_server">서버 확인을 기다리고 있어요.</string>
+    <string name="coach_ai_waiting_server_sub">기록은 이 휴대폰에 안전하게 저장됐어요.</string>
+    <string name="coach_ai_not_verified">서버가 확인하지 않은 기록이라 AI로 분석하지 않아요.</string>
+    <string name="coach_ai_consent">AI 코칭을 켜면 이 기록을 분석할 수 있어요.</string>
+    <string name="coach_ai_consent_action">AI 코칭 시작</string>
+    <string name="coach_ai_skipped_label">이번 기록은</string>
+    <string name="coach_ai_skipped">AI 분석을 건너뛰었어요.</string>
+    <string name="coach_skip_no_splits">정확한 구간 정보를 확인할 수 없어요.</string>
+    <string name="coach_skip_too_short">1km 미만 기록은 분석하지 않아요.</string>
+    <string name="coach_skip_not_run">러닝으로 인정되지 않은 기록이에요.</string>
+    <string name="coach_skip_other">이 기록은 분석 기준에 맞지 않아요.</string>
+    <string name="coach_ai_request_title">AI로 이 기록을 살펴볼까요?</string>
+    <string name="coach_ai_request">AI 분석 받기</string>
+    <string name="coach_rec_request">AI 추천 받기</string>
+    <string name="coach_ai_request_note">자동 분석은 설정에서 켤 수 있어요.</string>
+    <string name="coach_ai_working_label">AI 분석 중</string>
+    <string name="coach_ai_queued_label">AI 분석 대기 중</string>
+    <string name="coach_ai_working">기록을 살펴보고 있어요.</string>
+    <string name="coach_ai_working_sub">기본 기록은 먼저 확인할 수 있어요.</string>
+    <string name="coach_ai_leave_ok">다른 화면을 봐도 괜찮아요.</string>
+    <string name="coach_next_label">다음 러닝 제안</string>
+    <string name="coach_cand_start_easier">첫 1km를 조금 천천히</string>
+    <string name="coach_cand_start_easier_long">첫 1km를\n조금 천천히 시작해요.</string>
+    <string name="coach_cand_keep">지금 페이스를 이어가요</string>
+    <string name="coach_cand_keep_long">지금 페이스를\n편하게 이어가요.</string>
+    <string name="coach_cand_pace_sub">%1$s/km로 시작해 보세요</string>
+    <string name="coach_cand_keep_sub">%1$s/km를 목표로 해요</string>
+    <string name="coach_offline_banner">오프라인 · 저장된 분석</string>
+    <string name="coach_ai_generated_at">%1$s에 생성된 분석</string>
+    <string name="coach_offline_foot">연결되면 새 기록을 확인할 수 있어요.</string>
+    <string name="coach_offline_none">연결되면 AI 분석을 확인할 수 있어요.</string>
+    <string name="coach_ai_stale">기록이 바뀌어 다시 분석이 필요해요.</string>
+    <string name="coach_ai_reanalyze">다시 분석</string>
+    <string name="coach_ai_failed">AI 분석을 불러오지 못했어요.</string>
+    <string name="coach_ai_failed_safe">기록은 안전하게 저장됐어요.</string>
+    <string name="coach_ai_failed_hint">잠시 후 다시 시도해 주세요.</string>
+    <string name="coach_ai_failed_final">이 기록은 지금 분석할 수 없어요.</string>
+    <string name="coach_ai_retry">분석 다시 시도</string>
+    <string name="coach_ai_basic_only">기본 기록만 보기</string>
+    <string name="coach_limit_label">AI 분석 이용 안내</string>
+    <string name="coach_limit_title">지금은 새 분석을 만들 수 없어요.</string>
+    <string name="coach_limit_sub">기본 기록과 저장된 분석은 계속 볼 수 있어요.</string>
+    <string name="coach_limit_reset">%1$s 이후 다시 만들 수 있어요.</string>
+    <string name="coach_limit_saved">저장된 분석 보기</string>
+
+    <!-- 근거 문장 — 숫자는 서버가 계산한 값 -->
+    <string name="coach_fact_last_slower">%1$dkm 구간이\n첫 구간보다 %2$d초 느렸어요.</string>
+    <string name="coach_fact_last_faster">%1$dkm 구간이\n첫 구간보다 %2$d초 빨랐어요.</string>
+    <string name="coach_fact_even">1km 구간이\n고르게 이어졌어요.</string>
+    <string name="coach_fact_avg_pace">평균 %1$s/km로 달렸어요.</string>
+    <string name="coach_fact_streak">%1$d주째 러닝을 이어가고 있어요.</string>
+    <string name="coach_fact_week_runs_goal">주 %1$d회 · 목표 %2$d회예요.</string>
+    <string name="coach_fact_week_runs">주 %1$d회 달렸어요.</string>
+    <string name="coach_fact_week_distance">이 주에 %1$skm를 달렸어요.</string>
+
+    <!-- 목표 페이스 확인(16) -->
+    <string name="coach_pace_current">현재 목표</string>
+    <string name="coach_pace_none">설정 안 함</string>
+    <string name="coach_pace_suggested">제안 페이스</string>
+    <string name="coach_pace_note">목표로 설정해도 러닝은 바로 시작되지 않아요.</string>
+    <string name="coach_pace_apply">목표 페이스 적용</string>
+    <string name="coach_pace_applied">목표 페이스를 적용했어요.</string>
+
+    <!-- 변화(04) -->
+    <string name="coach_prev_week_cd">이전 주</string>
+    <string name="coach_next_week_cd">다음 주</string>
+    <string name="coach_week_last_label">지난주 기록</string>
+    <string name="coach_week_this_label">이번 주 기록 · 진행 중</string>
+    <string name="coach_week_past_label">그 주 기록</string>
+    <string name="coach_week_head_steady">주 %1$d회,\n꾸준히 이어갔어요.</string>
+    <string name="coach_week_head_runs">주 %1$d회 달렸어요.</string>
+    <string name="coach_week_head_none">이 주에는\n기록이 없어요.</string>
+    <string name="coach_week_head_current">이번 주 %1$d회째예요.</string>
+    <string name="coach_stat_runs">러닝</string>
+    <string name="coach_stat_distance">총거리</string>
+    <string name="coach_stat_time">총시간</string>
+    <string name="coach_recent4">최근 4주</string>
+    <string name="coach_bar_cd">%1$s 주 %2$skm</string>
+    <string name="coach_next_plan">다음 주 계획 보기</string>
+    <string name="coach_week_ai_progress">이번 주가 끝나면 AI가 한 주를 정리해요.</string>
+
+    <!-- 다음 주 계획(13) -->
+    <string name="coach_plan_title">다음 주 계획</string>
+    <string name="coach_plan_pill">제안 · 아직 적용 전</string>
+    <string name="coach_plan_applied_pill">적용한 계획</string>
+    <string name="coach_plan_head">주 %1$d회,\n가볍게 이어가요.</string>
+    <string name="coach_plan_day_cd">%1$s 러닝 계획</string>
+    <string name="coach_plan_note">적용하기 전에는 기존 계획이 바뀌지 않아요.</string>
+    <string name="coach_plan_apply">이 계획 적용</string>
+    <string name="coach_plan_later">나중에 결정</string>
+    <string name="coach_plan_applied">계획을 적용했어요. 러닝은 원할 때 시작해요.</string>
+    <string name="coach_plan_need_goal">먼저 코칭 목표를 정해 주세요.</string>
+
+    <!-- 첫 사용 동의(05) · 데이터 이용 안내 -->
+    <string name="coach_consent_title">AI 코칭 시작</string>
+    <string name="coach_consent_head">기록을 이해하고,\n다음 러닝을 준비해요</string>
+    <string name="coach_flow_record">러닝 기록</string>
+    <string name="coach_flow_summary">숫자 요약</string>
+    <string name="coach_flow_ai">AI 코칭</string>
+    <string name="coach_consent_send">보내는 정보</string>
+    <string name="coach_consent_send_sub">거리 · 시간 · 구간 페이스 · 최근 기록 요약</string>
+    <string name="coach_consent_not_send">보내지 않는 정보</string>
+    <string name="coach_consent_not_send_sub">이름 · 정확한 위치 · GPS 경로</string>
+    <string name="coach_consent_provider">분석 제공</string>
+    <string name="coach_consent_provider_name">Anthropic</string>
+    <string name="coach_consent_data_link">데이터 이용 안내</string>
+    <string name="coach_consent_optional">동의하지 않아도 러닝은 계속 이용할 수 있어요.</string>
+    <string name="coach_consent_check">AI 분석을 위한 기록 요약 전송에 동의해요</string>
+    <string name="coach_consent_start">동의하고 시작하기</string>
+    <string name="coach_consent_later">나중에</string>
+    <string name="coach_consent_unavailable">AI 코칭은 아직 준비 중이에요. 기록 분석과 기본 훈련은 그대로 쓸 수 있어요.</string>
+    <string name="coach_data_title">데이터 이용 안내</string>
+    <string name="coach_data_send">보내는 정보 — 러닝 한 번의 거리 · 활성 시간 · 1km 구간 시간, 한 주의 횟수 · 거리 · 시간, 고른 목표.</string>
+    <string name="coach_data_not_send">보내지 않는 정보 — 이름 · 연락처 · 정확한 위치 · GPS 경로 · 날짜 · 크루 · 보상.</string>
+    <string name="coach_data_account">이름을 보내지 않아도 분석 결과는 내 계정에 연결돼요.</string>
+    <string name="coach_data_withdraw">설정에서 언제든 끌 수 있어요. 끄면 기다리던 분석은 취소되지만, 이미 보낸 요청은 되돌릴 수 없어요.</string>
+    <string name="coach_data_retention">보관 · 삭제 기준은 확정된 개인정보 처리방침을 따라요.</string>
+
+    <!-- 코칭 목표(06) -->
+    <string name="coach_goals_title">코칭 목표</string>
+    <string name="coach_goals_head">어떤 러닝을 원하세요?</string>
+    <string name="coach_goal_steady">꾸준히 달리기</string>
+    <string name="coach_goal_5k">5km 완주</string>
+    <string name="coach_goal_improve">기록 개선</string>
+    <string name="coach_goals_runs">일주일에 몇 번?</string>
+    <string name="coach_goals_minutes">한 번에 가능한 시간</string>
+    <string name="coach_goals_note">목표는 언제든 바꿀 수 있어요.</string>
+    <string name="coach_goals_start">이 목표로 시작</string>
+    <string name="coach_goals_save">목표 저장</string>
+
+    <!-- AI 코칭 설정(14) · 해제 확인(15) -->
+    <string name="coach_settings_title">AI 코칭 설정</string>
+    <string name="coach_settings_analysis">분석</string>
+    <string name="coach_settings_use">AI 코칭 사용</string>
+    <string name="coach_settings_auto">러닝 후 자동 분석</string>
+    <string name="coach_settings_auto_sub">기록 저장과 서버 확인 후 분석해요</string>
+    <string name="coach_settings_weekly">주간 리포트</string>
+    <string name="coach_settings_weekly_sub">알림 설정과는 따로예요</string>
+    <string name="coach_settings_goal">내 목표</string>
+    <string name="coach_goal_summary">주 %1$d회 · %2$d분</string>
+    <string name="coach_goal_unset">아직 정하지 않았어요</string>
+    <string name="coach_target_pace">목표 페이스 %1$s/km</string>
+    <string name="coach_settings_data">데이터</string>
+    <string name="coach_settings_data_guide">데이터 이용 안내</string>
+    <string name="coach_settings_off">AI 사용 해제</string>
+    <string name="coach_settings_note">자동 분석을 꺼도 직접 요청할 수 있어요.</string>
+    <string name="coach_off_title">AI 코칭을 끌까요?</string>
+    <string name="coach_off_body">새 AI 분석과 자동 분석을 중단해요.\n러닝과 기본 기록은 계속 이용할 수 있어요.</string>
+    <string name="coach_off_delete">저장된 AI 분석도 삭제</string>
+    <string name="coach_off_delete_sub">선택하지 않으면 기존 분석은 보관돼요.</string>
+    <string name="coach_off_data_link">데이터 처리 안내</string>
+    <string name="coach_off_keep">계속 사용</string>
+    <string name="coach_off_confirm">AI 코칭 끄기</string>
+    <string name="coach_off_done">AI 코칭을 껐어요.</string>
+    <string name="coach_off_done_deleted">AI 코칭을 끄고 저장된 분석 %1$d개를 지웠어요.</string>
+</resources>
