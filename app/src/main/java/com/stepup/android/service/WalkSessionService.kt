@@ -806,6 +806,14 @@ class WalkSessionService : Service() {
                     faction = equippedFaction?.id.orEmpty(),
                     crewId = partyCrewId,
                     mockLocation = session.mockLocation,
+                    // AI 코칭의 1km 구간 — 랩은 걸음 거리 기준이라 거리가 남는(인정) 러닝만. 무효 러닝은 거리가 0 이라 비운다
+                    laps = if (creditedSteps > 0) {
+                        com.stepup.android.domain.coaching.LapCodec.encode(
+                            session.laps.map { com.stepup.android.domain.coaching.SavedLap(it.index, it.km, it.splitSec) },
+                        )
+                    } else {
+                        ""
+                    },
                 )
             ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
             // These legacy follow-ups are not durable yet. A same-process save retry
