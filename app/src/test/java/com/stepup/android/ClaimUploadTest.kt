@@ -2,6 +2,7 @@ package com.stepup.android
 
 import com.stepup.android.data.local.UploadState
 import com.stepup.android.data.local.CrewDistance
+import com.stepup.android.data.local.RunRecordRow
 import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.remote.ServerResult
@@ -10,6 +11,7 @@ import com.stepup.android.data.repo.ClaimRepository
 import com.stepup.android.data.repo.SessionRecorder
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.TrackPoint
+import com.stepup.android.domain.coaching.CoachRun
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -95,6 +97,28 @@ class ClaimUploadTest {
                 .map { (crewId, runs) ->
                     CrewDistance(crewId, runs.sumOf { it.distanceMeters }, runs.size)
                 }
+
+        // AI 코칭 — 실제 질의와 같은 거르기(이 계정의 기록만, 거리 · 시간이 있는 것)
+        override fun observeCoachRuns(owner: String, from: Long, until: Long): Flow<List<CoachRun>> = flowOf(
+            rows.values.filter { it.recordingOwner == owner && it.startedAt >= from && it.startedAt < until && it.distanceMeters > 0 && it.durationSec > 0 }
+                .map { CoachRun(it.id, it.startedAt, it.distanceMeters, it.durationSec) },
+        )
+
+        override fun observeCoachRows(owner: String, limit: Int): Flow<List<RunRecordRow>> = flowOf(
+            rows.values.filter { it.recordingOwner == owner && it.distanceMeters > 0 && it.durationSec > 0 }
+                .sortedWith(compareByDescending<WalkSessionEntity> { it.startedAt }.thenByDescending { it.id })
+                .take(limit)
+                .map { RunRecordRow(it.id, it.startedAt, it.endedAt, it.durationSec, it.distanceMeters, it.steps, it.uploadState, it.track.isNotEmpty()) },
+        )
+
+        override fun observeCoachRecord(owner: String, id: Long): Flow<WalkSessionEntity?> =
+            flowOf(rows[id]?.takeIf { it.recordingOwner == owner })
+
+        override suspend fun recentSignedWithLaps(owner: String, since: Long, limit: Int): List<WalkSessionEntity> =
+            rows.values.filter {
+                it.recordingOwner == owner && it.uploadState == UploadState.SIGNED.name && it.laps.isNotEmpty() &&
+                    it.distanceMeters > 0 && it.startedAt >= since
+            }.sortedByDescending { it.startedAt }.take(limit)
 
         private fun pendingCount() = rows.values.count {
             it.uploadState in setOf(UploadState.PENDING.name, UploadState.FAILED.name) && it.track.isNotEmpty()
