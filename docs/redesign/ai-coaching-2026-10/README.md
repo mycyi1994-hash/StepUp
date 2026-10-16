@@ -38,6 +38,8 @@
 
 `app/src/main/java/com/stepup/android/ui/screens/coaching/` — 길 `CoachingNavGraph.kt`(러닝 탭 아래 `Header.Detail`, 하단 탭 그대로),
 상태 `CoachingViewModels.kt`, 공용 조각 `CoachingParts.kt`, 탭 셋 `CoachingHomeScreen.kt`, 설정 쪽 `CoachingSetupScreens.kt`.
+**입구는 러닝 시작 메뉴(U01)의 "내 러닝 기록" 아래 링크 한 줄 "AI 코칭"**(2026-10-16 사용자 결정) — 기록 · 추천 코스가 들어가는 자리다.
+러닝 홈(전시장 디자인)과 하단 탭 · 전역 메뉴는 바꾸지 않았다.
 머리는 러닝 화면의 공용 `RunTopBar`(뒤로 · 공식 로고), 버튼 · 시트 · 알림은 `RunStyle` 그대로다. 모달(15 · 16 · 기록 고르기 ·
 데이터 안내)은 `RunSheet`(하단 탭까지 덮는다).
 
@@ -93,8 +95,7 @@
 
 ## 남은 결정(사용자)
 
-1. **코칭으로 들어오는 자리** — 러닝 홈 · 시작 메뉴(U01) · 기록 상세 중 어디에 둘지. 지금은 어느 화면도 코칭을 열지 않는다
-   (길만 등록 — `CoachingRoutes.home()`).
+1. ~~코칭으로 들어오는 자리~~ — 정했다: 러닝 시작 메뉴(U01)의 링크 한 줄. 기록 상세 · 결과 화면에서 "이 기록 분석"으로 바로 가는 길은 아직 없다.
 2. **공급자 · 모델 · 계약** — API 키는 서버 비밀로만. 정해지면 일꾼의 실제 공급자를 붙이고 `coaching_provider` · `coaching_model` 을 넣는다.
 3. **한도 · 예산** — `coaching_user_daily_limit` · `coaching_monthly_budget_micro` · `coaching_reserve_micro`. 시안의 예시 숫자는 쓰지 않았다.
 4. **동의 · 보관 문구** — 05 · 15 · 데이터 안내는 초안이다. 공급자가 정해지면 동의 판(`coaching_consent_version`)을 올려 다시 받는다.

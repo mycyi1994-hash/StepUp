@@ -9,6 +9,8 @@
     <string name="coach_date_wd">E d일</string>
 
     <string name="coach_title">코칭</string>
+    <!-- 러닝 시작 메뉴(U01)의 코칭 입구 -->
+    <string name="coach_menu_entry">AI 코칭</string>
     <string name="coach_ai_badge">AI</string>
     <string name="coach_settings_cd">AI 코칭 설정</string>
     <string name="coach_tab_today">오늘</string>

@@ -8,6 +8,8 @@
     <string name="coach_date_wd">d日(E)</string>
 
     <string name="coach_title">コーチング</string>
+    <!-- ラン開始メニュー(U01)からコーチングへ -->
+    <string name="coach_menu_entry">AIコーチング</string>
     <string name="coach_ai_badge">AI</string>
     <string name="coach_settings_cd">AIコーチング設定</string>
     <string name="coach_tab_today">今日</string>

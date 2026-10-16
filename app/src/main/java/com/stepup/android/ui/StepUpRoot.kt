@@ -1051,6 +1051,10 @@ internal fun MainScaffold(
                     },
                     // 추천 코스(U04)
                     onCourse = { navController.navigate(Routes.RUN_COURSE) { launchSingleTop = true } },
+                    // AI 코칭(2026-10-16) — 내 러닝 기록 아래 링크 한 줄. 러닝을 시작하지 않는다
+                    onCoaching = {
+                        navController.navigate(com.stepup.android.ui.screens.coaching.CoachingRoutes.home()) { launchSingleTop = true }
+                    },
                     // 크루 달리기 — 달리던 러닝이 있으면 그 러닝, 들어가 있던 대기실이 있으면 그 대기실, 아니면 크루 입구
                     onCrew = {
                         val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value

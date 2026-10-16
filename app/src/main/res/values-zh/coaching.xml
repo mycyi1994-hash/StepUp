@@ -8,6 +8,8 @@
     <string name="coach_date_wd">d日 E</string>
 
     <string name="coach_title">教练</string>
+    <!-- 跑步开始菜单(U01)进入教练 -->
+    <string name="coach_menu_entry">AI 教练</string>
     <string name="coach_ai_badge">AI</string>
     <string name="coach_settings_cd">AI 教练设置</string>
     <string name="coach_tab_today">今天</string>

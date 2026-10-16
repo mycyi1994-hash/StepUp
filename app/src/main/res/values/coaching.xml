@@ -9,6 +9,8 @@
     <string name="coach_date_wd">EEE d</string>
 
     <string name="coach_title">Coaching</string>
+    <!-- Run start menu (U01) link into coaching -->
+    <string name="coach_menu_entry">AI coaching</string>
     <string name="coach_ai_badge">AI</string>
     <string name="coach_settings_cd">AI coaching settings</string>
     <string name="coach_tab_today">Today</string>
