@@ -154,7 +154,7 @@ fun ChatViewerScreen(viewModel: ChatViewerViewModel, onBack: () -> Unit, onRoom:
                 Text(
                     stringResource(
                         R.string.chat_viewer_meta,
-                        message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
+                        chatAuthorName(message.authorName, message.authorDeleted),
                         "${chatDate(message.createdAt)} ${chatTime(message.createdAt)}",
                     ),
                     style = blueText(15.sp, ink.secondary, FontWeight.Medium), textAlign = TextAlign.Center,

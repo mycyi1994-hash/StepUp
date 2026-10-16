@@ -53,6 +53,8 @@
   <li>다른 이용자와의 거래 기록 — 거래 사실은 상대방 기록에 남고, 내 계정 정보만 지워집니다.</li>
   <li>이용 통계(Firebase Analytics) — 계정과 연결되지 않은 형태로 Google 보존 기간(기본 2개월) 뒤 지워집니다.</li>
   <li>크루장이었다면 크루는 가장 오래된 크루원에게 넘어갑니다(크루원이 없으면 크루도 지워집니다).</li>
+  <li>크루 채팅에 남긴 메시지·사진·공지 — 대화가 끊기지 않도록 남고, 계정과의 연결이 지워져 작성자가 “탈퇴한 사용자”로 보입니다.
+      남기고 싶지 않은 메시지는 계정을 지우기 전에 채팅에서 지울 수 있습니다.</li>
 </ul>
 </section>
 
@@ -67,7 +69,9 @@ from the Google account you used to sign in. We verify and delete within 7 days.
 <p><strong>Deleted:</strong> account and profile, runs and GPS routes, step history, SUP history, posts, comments, likes,
 shared courses and course records, territory marks, crew memberships, push tokens and notification settings.</p>
 <p><strong>Kept:</strong> trades with other users keep the fact of the trade without your account; analytics data not tied to
-your account expires under Google's retention (2 months by default). Crews you owned pass to the longest-standing member.</p>
+your account expires under Google's retention (2 months by default). Crews you owned pass to the longest-standing member.
+Messages, photos and notices you left in crew chats stay so the conversation stays whole, unlinked from your account and
+shown as from a “Deleted user” — delete any message in the chat first if you do not want it kept.</p>
 </section>
 </div></main>
 

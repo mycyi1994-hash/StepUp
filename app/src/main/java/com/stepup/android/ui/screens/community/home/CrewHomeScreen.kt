@@ -61,6 +61,7 @@ import com.stepup.android.ui.screens.community.chat.BlueRow
 import com.stepup.android.ui.screens.community.chat.BlueSheet
 import com.stepup.android.ui.screens.community.chat.BlueTopBar
 import com.stepup.android.ui.screens.community.chat.blueInk
+import com.stepup.android.ui.screens.community.chat.chatAuthorName
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewHomeSummary
 import com.stepup.android.domain.CrewMeeting
@@ -220,7 +221,7 @@ private fun HomeContent(
                 HomeDivider()
                 NoticeLine(
                     title = notice.title,
-                    author = notice.authorName,
+                    author = chatAuthorName(notice.authorName, notice.authorDeleted),
                     authorOwner = notice.authorId != null && notice.authorId == home.ownerId,
                     onClick = { actions.onNotice(notice.id) },
                 )

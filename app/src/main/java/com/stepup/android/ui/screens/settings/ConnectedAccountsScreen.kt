@@ -275,6 +275,8 @@ private fun DeleteAccountSheet(step: DeleteStep, onDelete: () -> Unit, onDismiss
             }
         }
         Text(stringResource(R.string.set_delete_crew_leader), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f))
+        // 크루 채팅은 지우지 않고 작성자만 비운다(0058) — 지워지는 목록에 없는 것을 따로 알린다
+        Text(stringResource(R.string.set_delete_crew_chat), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f))
         BlueSheetDivider()
         Text(stringResource(R.string.set_delete_cannot_undo), style = runTextStyle(17.sp, t.dangerText, FontWeight.Bold))
         Text(stringResource(R.string.set_delete_phone_note), style = runTextStyle(15.sp, t.text.copy(alpha = 0.9f), FontWeight.Medium, 1.45f))

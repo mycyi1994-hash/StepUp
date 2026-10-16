@@ -96,6 +96,7 @@
     <string name="set_delete_item_places">Courses · place marks</string>
     <string name="set_delete_cannot_undo">Deleted information can\'t be restored.</string>
     <string name="set_delete_crew_leader">If you lead a crew, its longest-standing member becomes the leader.</string>
+    <string name="set_delete_crew_chat">Messages and notices you left in crew chats stay, shown as from a deleted user.</string>
     <string name="set_delete_phone_note">Records left on this phone are removed when you delete the app.</string>
     <string name="set_delete_action">Delete account</string>
     <string name="set_deleting">Deleting…</string>
