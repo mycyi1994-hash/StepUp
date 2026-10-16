@@ -7,7 +7,7 @@
 # 만들어 폰의 테스트 앱 위에 덮어 깔 수 있었다(앱 데이터 · 로그인이 그대로 넘어간다). 새 키는 Actions 비밀에만 있다.
 #
 # 서명 이력(APK Signature Scheme v3 키 회전)을 붙이므로 이미 깔린 테스트 앱(옛 키) 위에 그대로 덮어 설치된다(안드로이드 9 이상).
-# 옛 키에는 "앱 데이터 이어받기"만 남기고 되돌리기 · 서명 권한 · 공유 UID · 인증 신뢰는 뺀다 — 새 키로 한 번 올라간 폰에는
+# 옛 키에는 "앱 데이터 이어받기"와 "서명 권한"만 남기고 되돌리기 · 공유 UID · 인증 신뢰는 뺀다 — 새 키로 한 번 올라간 폰에는
 # 옛 키로만 서명한 APK 가 더는 덮어 깔리지 않는다. 안드로이드 8(API 26 · 27)은 v3 를 몰라 v1 · v2(옛 키)로 확인한다.
 set -euo pipefail
 
@@ -42,10 +42,15 @@ fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-# 서명 이력: 옛 키(공개 debug 키)가 새 키를 이어받는 키로 서명한다. 옛 키에 남기는 신뢰는 앱 데이터 이어받기 하나
+# 서명 이력: 옛 키(공개 debug 키)가 새 키를 이어받는 키로 서명한다. 옛 키에 남기는 신뢰는 둘이다.
+#  · 앱 데이터 이어받기 — 이게 없으면 지우고 다시 깔아야 한다.
+#  · 서명 권한 — 앱이 스스로 정한 권한(androidx 의 DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION)을 업데이트가 다시 선언하려면
+#    안드로이드가 옛 키에 이 신뢰를 요구한다. 빼면 INSTALL_FAILED_DUPLICATE_PERMISSION 으로 덮어 설치가 막힌다
+#    (2026-10-16 Experience QA 에서 확인). 대신 옛 키로 서명한 다른 앱이 그 권한을 받을 수 있다 — 안드로이드 12 이하에서
+#    라이브러리가 등록한 내보내지 않는 수신기에 신호를 보낼 수 있는 정도다.
 "$apksigner" rotate --out "$work/lineage" \
   --old-signer --ks "$old_ks" --ks-pass pass:android --ks-key-alias androiddebugkey \
-    --set-installed-data true --set-shared-uid false --set-permission false --set-rollback false --set-auth false \
+    --set-installed-data true --set-shared-uid false --set-permission true --set-rollback false --set-auth false \
   --new-signer --key "$key" --cert "$cert"
 
 # v1 · v2 는 서명 이력의 처음(옛 키), v3 는 새 키 + 서명 이력. 회전은 안드로이드 9(API 28)부터 쓴다
