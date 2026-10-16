@@ -868,6 +868,11 @@ class RunJourneyDesignTest {
                 awaitTag(tag)
                 shot(shotName, settle = 1_500)
             }
+            // 장면만 두고 찍지 않는다(시트를 연 뒤 찍을 때)
+            fun put(tag: String, content: @Composable () -> Unit) {
+                compose.runOnIdle { scene = content }
+                awaitTag(tag)
+            }
             val entry = @Composable { ui: com.stepup.android.ui.screens.walk.CrewEntryUi ->
                 com.stepup.android.ui.screens.walk.CrewRunEntryContent(ui, {}, {}, {}, {}, {}, {}, {}, {})
             }
@@ -921,12 +926,103 @@ class RunJourneyDesignTest {
             // CR21 — 크루에 기록 공유(경로는 처음에 꺼져 있다)
             show("CR21", "crew-share") {
                 com.stepup.android.ui.screens.walk.CrewShareContent(
-                    name, "1.56", "12:30", "8'01\"", label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""),
+                    name, label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""),
                     includeRoute = false, hasRoute = true, preview = null, state = com.stepup.android.ui.screens.walk.CrewSend.Idle,
-                    onRoute = {}, onShare = {}, onClose = {},
+                    onRoute = {}, onShare = {}, onClose = {}, monogram = "YD",
                 )
             }
             compose.onNodeWithTag("crew-share-route-toggle").assertIsOff()
+            // 미리보기는 하나 — 보낼 글 그대로(경로를 끄면 그림이 없다)
+            compose.onNodeWithTag("crew-share-text", useUnmergedTree = true)
+                .assertTextEquals(label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""))
+            compose.onAllNodesWithTag("crew-share-image", useUnmergedTree = true).assertCountEquals(0)
+
+            // ── 2026-10-16 크루 전달본 검수 장면 ──
+            // 대기실 — 3×2 그리드는 6명까지, 더 많으면 다섯 + "+N"(전체 명단). 긴 이름은 한 줄에서 줄인다
+            val crowd = lobby.copy(members = listOf(
+                member("h", "준호", ready = true, host = true), member("me", "도윤", ready = true, me = true),
+                member("a", "윤호", ready = true), member("b", "혜진", ready = false),
+                member("c", "알렉산드라 크리스티나 김", ready = true), member("d", "서윤", ready = false),
+                member("e", "민지", ready = true), member("f", "지훈", ready = false),
+            ))
+            put("party-more") { room(crowd) }
+            // 준비 글 · 점은 같은 명단에서 센다(8명 중 5명). 내가 준비를 마쳤으면 "준비하기"가 없다
+            compose.onNodeWithTag("party-ready-count", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_ready_of, 5, 8))
+            compose.onAllNodesWithTag("party-ready", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("party-waiting").assertExists()
+            shot("CR04-many", settle = 1_500)
+            tap("party-more")
+            awaitTag("party-roster-list")
+            shot("CR04-roster")
+            // 함께 달린 인원 기준(서버 규칙)은 열어 볼 때만
+            put("party-rule-open") { room(lobby) }
+            tap("party-rule-open")
+            awaitTag("party-rule-sheet")
+            shot("CR04-rule")
+
+            // 결과 — 보상 네 상태(예상 · 확인 중은 CR13). 화면 부품에는 지도가 없어 "경로 없음" 자리도 함께 본다
+            val resultUi = com.stepup.android.ui.screens.walk.CrewResultUi(
+                crewName = name, monogram = "YD", started = 4, distance = "1.56", time = "12:30", pace = "8'01\"", note = null, basis = null,
+            )
+            val result = @Composable { reward: com.stepup.android.ui.screens.walk.ResultReward ->
+                com.stepup.android.ui.screens.walk.CrewRunResult(
+                    resultUi, reward, map = null, onReason = {}, onHistory = {}, onShare = {}, shareLabel = label(R.string.run_crew_share),
+                    onDone = {}, onRecords = {}, onDelete = {},
+                )
+            }
+            val pending = com.stepup.android.ui.screens.walk.ResultReward(
+                label(R.string.result_estimated_reward), "+0.80", com.stepup.android.ui.screens.walk.Settle.PENDING,
+            )
+            show("CR13-done", "run-result-settle-done") {
+                result(pending.copy(label = label(R.string.result_reward), settle = com.stepup.android.ui.screens.walk.Settle.DONE))
+            }
+            show("CR13-void", "run-result-void-reason") {
+                result(com.stepup.android.ui.screens.walk.ResultReward(label(R.string.result_reward), "0",
+                    com.stepup.android.ui.screens.walk.Settle.VOID, listOf(label(R.string.run_void_body))))
+            }
+            compose.onAllNodesWithTag("run-result-reward", useUnmergedTree = true).assertCountEquals(0)
+            show("CR13-unpaid", "run-result-history") {
+                result(com.stepup.android.ui.screens.walk.ResultReward(label(R.string.result_reward), "0",
+                    com.stepup.android.ui.screens.walk.Settle.NOT_PAID, listOf(label(R.string.finish_no_reward))))
+            }
+            show("CR13-sign-in", "run-result-reward-note") {
+                result(pending.copy(notes = listOf(label(R.string.finish_sign_in_needed)), signIn = true))
+            }
+            compose.onNodeWithTag("run-result-no-route", useUnmergedTree = true).assertExists()
+            // 늘 붙던 보상 설명은 누를 때만(시트)
+            tap("run-result-reward-open")
+            awaitTag("run-result-reward-sheet")
+            shot("CR13-reward-sheet")
+
+            // 공유 — 보내는 중 · 보냄(크루 채팅 보기) · 실패(같은 내용으로 다시) · 경로 없음(켤 수 없고 까닭)
+            val shareMessage = label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\"")
+            val share = @Composable { state: com.stepup.android.ui.screens.walk.CrewSend, hasRoute: Boolean ->
+                com.stepup.android.ui.screens.walk.CrewShareContent(
+                    name, shareMessage, includeRoute = false, hasRoute = hasRoute, preview = null, state = state,
+                    onRoute = {}, onShare = {}, onClose = {}, monogram = "YD", onOpenChat = {},
+                )
+            }
+            show("CR21-sending", "crew-share-send") { share(com.stepup.android.ui.screens.walk.CrewSend.Sending, true) }
+            show("CR21-sent", "crew-share-sent") { share(com.stepup.android.ui.screens.walk.CrewSend.Sent, true) }
+            compose.onNodeWithTag("crew-share-chat").assertExists()
+            show("CR21-failed", "crew-share-failed") { share(com.stepup.android.ui.screens.walk.CrewSend.Failed, true) }
+            show("CR21-no-route", "crew-share-route") { share(com.stepup.android.ui.screens.walk.CrewSend.Idle, false) }
+            compose.onNodeWithTag("crew-share-route-toggle").assertIsNotEnabled()
+
+            // 작은 화면 · 큰 글씨 · 밝은 테마 — 대기실 · 결과 · 공유의 아래 행동이 화면 안
+            for (v in listOf(
+                Viewport(360, 640), Viewport(320, 640), Viewport(390, 844, font = 1.3f), Viewport(390, 844, mode = ThemeMode.LIGHT),
+            )) {
+                viewport = v
+                show("CR04-${v.label}", "party-ready") { room(lobby) }
+                assertInFrame("party-ready", "CR04-${v.label}")
+                show("CR13-${v.label}", "run-result-done") { result(pending) }
+                assertInFrame("run-result-share", "CR13-${v.label}")
+                assertInFrame("run-result-done", "CR13-${v.label}")
+                show("CR21-${v.label}", "crew-share-send") { share(com.stepup.android.ui.screens.walk.CrewSend.Idle, true) }
+                assertInFrame("crew-share-send", "CR21-${v.label}")
+            }
+            viewport = Viewport(390, 844)
 
             // CR09 · CR10 · CR11 · CR12 · CR18 · CR13 — 실제 앱에서 같이 달리는 중(표시용 러닝 · 방)
             val now = System.currentTimeMillis()
@@ -956,6 +1052,13 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("crew-header-sub", useUnmergedTree = true).assertTextEquals(label(R.string.run_cr_joined, 4))
             assertRunFits("CR09")
             shot("CR09", settle = 2_500)
+            // 예상 보상 · 내구도는 정상 화면에 두지 않고 러닝 정보(E03)에서 본다
+            tap("run-details-open")
+            awaitTag("run-details")
+            compose.onNodeWithTag("run-details-estimate", useUnmergedTree = true).assertExists()
+            shot("CR09-details")
+            tap("run-details-close")
+            awaitGone("run-details")
             tap("run-together-row")
             awaitTag("run-together-list")
             // 위치를 공유하지 않는 사람은 거리 대신 "비공개"
@@ -1028,7 +1131,12 @@ class RunJourneyDesignTest {
             awaitTag("run-result-crew")
             signedIn()
             compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
-            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_line, name, 4))
+            // 크루 이름 · 함께 출발한 인원(출발 명단) — 큰 완료 제목 · 체크는 두지 않는다
+            compose.onNodeWithTag("run-result-crew-name", useUnmergedTree = true).assertTextEquals(name)
+            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_started_n, 4))
+            compose.onAllNodesWithTag("run-result-title", useUnmergedTree = true).assertCountEquals(0)
+            // 저장 표시는 한 번
+            compose.onAllNodesWithTag("run-result-saved", useUnmergedTree = true).assertCountEquals(1)
             // 보상은 서버가 확인하기 전 "예상 · 확인 중"
             compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
             assertResultFits("CR13")
@@ -1037,15 +1145,29 @@ class RunJourneyDesignTest {
             awaitTag("crew-share")
             compose.onNodeWithTag("crew-share-route-toggle").assertIsOff()
             shot("CR21-app")
+            // 경로를 켜면 실제로 만든 경로 그림(보내는 그림과 같은 것)이 미리보기에 함께
+            tap("crew-share-route-toggle")
+            awaitTag("crew-share-image", timeout = 20_000)
+            shot("CR21-app-route")
             back()
             awaitGone("crew-share")
             // 혼자 출발한 크루 달리기(정산 인원 1) — 결과도 크루 달리기, 그 크루에 기록 공유
             repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
             WalkSessionService.showStateForTest(crewDone.copy(lastPartySize = 1, lastGroupSize = 1))
             awaitTag("run-result-crew")
-            compose.onNodeWithTag("run-result-title", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_solo))
+            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_started_solo))
             compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
             shot("CR13-solo")
+            // 기록 저장 중 · 저장 실패 — 크루 화면 그대로(저장 중에는 버튼 하나, 실패하면 같은 러닝으로 다시 저장)
+            repo.showPartyForTest(together)
+            WalkSessionService.showStateForTest(crewRun.copy(isPaused = true, saveStatus = RunSaveStatus.SAVING))
+            awaitTag("run-live")
+            awaitGone("run-result")
+            compose.onAllNodesWithTag("run-finish", useUnmergedTree = true).assertCountEquals(0)
+            shot("CR-saving")
+            WalkSessionService.showStateForTest(crewRun.copy(isPaused = true, saveStatus = RunSaveStatus.FAILED))
+            awaitTag("run-save-error")
+            shot("CR-save-failed")
         } finally {
             repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
             WalkSessionService.showStateForTest(WalkSessionState())
@@ -1227,6 +1349,14 @@ class RunJourneyDesignTest {
         assertTrue("done inside the screen at $where: $done / $frame", done.top >= frame.top - 1 && done.bottom <= frame.bottom + 1)
         assertTrue("share inside the screen at $where: $share / $frame", share.top >= frame.top - 1 && share.bottom <= frame.bottom + 1)
         assertTrue("share above or level with done at $where: $share / $done", share.top <= done.top + 1)
+    }
+
+    /** 크루 화면의 아래 행동 하나가 화면(틀) 안에 다 보이는지 — 작은 화면 · 큰 글씨에서 잘리지 않게 */
+    private fun assertInFrame(tag: String, where: String) {
+        compose.waitForIdle()
+        val box = bounds(tag)
+        val frame = bounds(FRAME)
+        assertTrue("$tag inside the screen at $where: $box / $frame", box.top >= frame.top - 1 && box.bottom <= frame.bottom + 1)
     }
 
     /**

@@ -88,6 +88,14 @@ jobs:
                    qa-captures/ref-*.png qa-captures/ref-audit.jsonl; do
             if [ -f "$f" ]; then cp "$f" review/; fi
           done
+          # 크루 달리기 장면(RunJourneyDesignTest#crew — CR03~CR21 · 작은 화면 · 큰 글씨 · 밝은 테마) — 시안과 견줘 보려고 함께
+          for f in screen-gallery/run-journey/CR*.png; do
+            if [ -f "$f" ]; then cp "$f" "review/crew-$(basename "$f")"; fi
+          done
+          # AI 코칭 화면(CoachingDesignTest — 가짜 서버 · 시험 계정 기록)
+          for f in screen-gallery/coaching/*.png; do
+            if [ -f "$f" ]; then cp "$f" "review/coach-$(basename "$f")"; fi
+          done
           cp qa-captures/layout-audit.jsonl qa-captures/android-crashes.txt review/ 2>/dev/null || true
           count=$(ls review | wc -l)
           echo "review files: $count"

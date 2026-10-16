@@ -179,7 +179,7 @@ fun CrewRunEntryContent(
         is CrewEntryUi.Ready -> "crew-entry"
     }
     CrewPage(
-        title = stringResource(R.string.run_crew_title), subtitle = stringResource(R.string.run_crew_entry_sub), onBack = onBack,
+        title = stringResource(R.string.run_crew_title), onBack = onBack,
         badge = false, headerIcon = true, modifier = Modifier.testTag(tag),
         bottom = {
             when (ui) {
@@ -196,15 +196,10 @@ fun CrewRunEntryContent(
                     CrewTextAction(stringResource(R.string.run_cr_free), onFreeRun, Modifier.fillMaxWidth().testTag("crew-entry-free"),
                         center = true)
                 }
-                // 대기실은 눌러야만 열린다
-                is CrewEntryUi.Ready -> {
+                // 대기실은 눌러야만 열린다 — 큰 버튼은 이것 하나(크루 바꾸기는 크루 카드 안)
+                is CrewEntryUi.Ready ->
                     FreeRunButton(stringResource(R.string.run_cr_enter), { onEnter(ui.crew.id) },
                         Modifier.fillMaxWidth().testTag("crew-entry-enter"))
-                    if (ui.crews.size > 1) {
-                        FreeRunButton(stringResource(R.string.run_crew_pick_other), onChange, Modifier.fillMaxWidth().testTag("crew-entry-change"),
-                            kind = FreeButtonKind.Secondary)
-                    }
-                }
             }
         },
     ) {
@@ -215,41 +210,36 @@ fun CrewRunEntryContent(
             }
             CrewEntryUi.SignIn -> CrewEmpty(Icons.Outlined.PeopleAlt, stringResource(R.string.run_cr_sign_in_title), null)
             is CrewEntryUi.Failed -> CrewEmpty(Icons.Outlined.CloudOff, stringResource(R.string.run_cr_load_failed), null)
-            CrewEntryUi.NoCrew -> CrewEmpty(
-                Icons.Outlined.PeopleAlt, stringResource(R.string.run_crew_none_title), stringResource(R.string.run_crew_none_body),
-            )
+            // CR14 — 한 줄 안내와 아래 행동(찾기 · 만들기 · 자유 러닝)만
+            CrewEntryUi.NoCrew -> CrewEmpty(Icons.Outlined.PeopleAlt, stringResource(R.string.run_crew_none_title), null)
+            // CR03 — 고른 크루(표시 · 이름 · 인원 · 지역)와 바꾸기, 그리고 대기실 들어가기. 큰 설명 문단은 두지 않는다
             is CrewEntryUi.Ready -> {
-                Spacer(Modifier.height(18.dp))
-                CrewTitleRow(ui.crew.name, ui.crew.monogram, ui.crew.tagline.takeIf { it.isNotBlank() })
-                Spacer(Modifier.height(30.dp))
-                Text(
-                    stringResource(R.string.run_crew_entry_title),
-                    style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 27.sp, lineHeight = 1.35.em,
-                        letterSpacing = (-0.05).em, color = c.text),
-                    modifier = Modifier.semantics { heading() },
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.run_cr_enter_body), style = runTextStyle(15.sp, c.label, FontWeight.Medium, 1.6f),
-                    modifier = Modifier.testTag("crew-entry-card"))
-                Spacer(Modifier.height(6.dp))
-                Text(stringResource(R.string.run_cr_enter_note), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.5f))
-                Spacer(Modifier.height(18.dp))
-                CrewLine()
-                Spacer(Modifier.height(14.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.run_crew_members_label), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
-                        Text(stringResource(R.string.run_crew_people, ui.crew.memberCount),
-                            style = runTextStyle(22.sp, c.text, FontWeight.ExtraBold, 1.25f))
-                    }
-                    ui.crew.area.takeIf { it.isNotBlank() }?.let { area ->
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(stringResource(R.string.run_crew_area_label), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
-                            Text(area, style = runTextStyle(22.sp, c.text, FontWeight.ExtraBold, 1.25f), maxLines = 1,
-                                overflow = TextOverflow.Ellipsis)
-                        }
+                Spacer(Modifier.height(12.dp))
+                CrewCard(Modifier.testTag("crew-entry-card"), padding = 16.dp) {
+                    Spacer(Modifier.height(12.dp))
+                    CrewTitleRow(ui.crew.name, ui.crew.monogram, ui.crew.tagline.takeIf { it.isNotBlank() })
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        ui.crew.area.takeIf { it.isNotBlank() }?.let { stringResource(R.string.run_crew_pick_line, it, ui.crew.memberCount) }
+                            ?: stringResource(R.string.run_cr_members, ui.crew.memberCount),
+                        style = runTextStyle(15.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag("crew-entry-meta"),
+                    )
+                    if (ui.crews.size > 1) {
+                        Spacer(Modifier.height(8.dp))
+                        CrewLine()
+                        // 고르기만 한다 — 대기실은 열지 않는다(CR19)
+                        CrewTextAction(stringResource(R.string.run_crew_pick_other), onChange, Modifier.testTag("crew-entry-change"),
+                            chevron = true)
+                    } else {
+                        Spacer(Modifier.height(12.dp))
                     }
                 }
+                // 들어가는 순간 참가 · 생성이 일어난다 — 보기 전용 조회가 없어(CR02) 누르기 전에는 아무것도 하지 않는다는 한 줄
+                Text(
+                    stringResource(R.string.run_cr_enter_note), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f),
+                    modifier = Modifier.padding(top = 12.dp, start = 4.dp).testTag("crew-entry-note"),
+                )
             }
         }
     }
@@ -641,9 +631,9 @@ internal fun ColumnScope.CrewNotifyBody(
 }
 
 /**
- * 크루에 기록 공유(CR21) — 내 기록(거리 · 시간 · 페이스) · 보낼 곳(그 러닝의 크루 채팅) · 경로 포함(처음엔 끔). 미리보기는 보낼 그대로.
- * "공유하기"를 눌러야만 보낸다. 경로를 켜면 공유 카드 그림(지도 · 경로)을 함께 보내고, 끄면 그림 없이 글만 보낸다.
- * 실패하면 같은 내용으로 다시 보낸다. 보낸 뒤에만 "크루 채팅 보기"([onOpenChat]).
+ * 크루에 기록 공유(CR21, 2026-10-16 크루 전달본) — 받는 크루(그 러닝의 크루 채팅) · 보낼 메시지 미리보기 하나 · 경로 포함(처음엔 끔).
+ * 미리보기의 글은 보내는 글과 같은 값([text])이다. "크루 채팅에 보내기"를 눌러야만 보낸다. 경로를 켜면 공유 카드 그림(지도 · 경로)을
+ * 함께 보내고(미리보기에도 그 그림), 끄면 그림 없이 글만 보낸다. 실패하면 같은 내용으로 다시 보낸다. 보낸 뒤에만 "크루 채팅 보기"([onOpenChat]).
  */
 @Composable
 internal fun CrewShareScreen(
@@ -680,7 +670,7 @@ internal fun CrewShareScreen(
         if (includeRoute) preview = card(true)
     }
     CrewShareContent(
-        crewName = crewName, monogram = monogram, km = km, time = time, pace = pace, message = text, includeRoute = includeRoute,
+        crewName = crewName, monogram = monogram, message = text, includeRoute = includeRoute,
         hasRoute = hasRoute, preview = preview, state = state,
         onRoute = { if (state != CrewSend.Sending && state != CrewSend.Sent) includeRoute = it },
         onShare = {
@@ -702,9 +692,6 @@ internal fun CrewShareScreen(
 @Composable
 internal fun CrewShareContent(
     crewName: String,
-    km: String,
-    time: String,
-    pace: String,
     message: String,
     includeRoute: Boolean,
     hasRoute: Boolean,
@@ -717,8 +704,11 @@ internal fun CrewShareContent(
     onOpenChat: (() -> Unit)? = null,
 ) {
     val c = crewColors()
+    // 보내는 동안에는 닫지 않는다(뒤로 · 시스템 뒤로) — 닫으면 보내기가 끊겨 같은 요청 키로 다시 보낼 수 없다
+    androidx.activity.compose.BackHandler(enabled = state == CrewSend.Sending) {}
     CrewPage(
-        title = stringResource(R.string.run_crew_share_title), subtitle = crewName, onBack = onClose, modifier = Modifier.testTag("crew-share"),
+        title = stringResource(R.string.run_crew_share_title), onBack = { if (state != CrewSend.Sending) onClose() },
+        modifier = Modifier.testTag("crew-share"),
         bottom = {
             if (state == CrewSend.Sent) {
                 if (onOpenChat != null) {
@@ -728,68 +718,56 @@ internal fun CrewShareContent(
                 FreeRunButton(stringResource(R.string.common_close), onClose, Modifier.fillMaxWidth().testTag("crew-share-close"),
                     kind = if (onOpenChat != null) FreeButtonKind.Secondary else FreeButtonKind.Primary)
             } else {
-                FreeRunButton(stringResource(R.string.run_cr_share_do), onShare, Modifier.fillMaxWidth().testTag("crew-share-send"),
+                // 취소는 뒤로 가기가 맡는다 — 큰 버튼은 보내기 하나
+                FreeRunButton(stringResource(R.string.run_crew_share_send), onShare, Modifier.fillMaxWidth().testTag("crew-share-send"),
                     icon = Icons.AutoMirrored.Outlined.Send, busy = state == CrewSend.Sending)
-                FreeRunButton(stringResource(R.string.common_cancel), onClose, Modifier.fillMaxWidth().testTag("crew-share-cancel"),
-                    kind = FreeButtonKind.Secondary, enabled = state != CrewSend.Sending)
             }
         },
     ) {
-        Spacer(Modifier.height(10.dp))
-        Text(
-            stringResource(R.string.run_crew_share_headline),
-            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 27.sp, lineHeight = 1.35.em,
-                letterSpacing = (-0.05).em, color = c.text),
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(16.dp))
-        CrewCard(Modifier.testTag("crew-share-record"), padding = 18.dp) {
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.run_crew_share_my), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
-            FitNumber(km, "km", valueSize = 52.sp, unitSize = 22.sp, valueColor = c.text, unitColor = c.label,
-                modifier = Modifier.fillMaxWidth(), valueTag = "crew-share-km")
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.stat_time), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
-                Spacer(Modifier.width(8.dp))
-                Text(time, style = runTextStyle(16.sp, c.text, FontWeight.Bold), modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.run_label_pace), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
-                Spacer(Modifier.width(8.dp))
-                Text("$pace /km", style = runTextStyle(16.sp, c.text, FontWeight.Bold))
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-        Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth().testTag("crew-share-target"), verticalAlignment = Alignment.CenterVertically) {
-            CrewMark(monogram.ifBlank { initialsOf(crewName) }, 44.dp)
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(crewName, style = runTextStyle(16.sp, c.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(stringResource(R.string.run_crew_share_target), style = runTextStyle(13.sp, c.label))
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        CrewToggleRow(
-            stringResource(R.string.run_crew_share_route), stringResource(R.string.run_crew_share_route_body), includeRoute, onRoute,
-            "crew-share-route-toggle", Modifier.testTag("crew-share-route"), enabled = hasRoute && state != CrewSend.Sent,
-        )
         Spacer(Modifier.height(8.dp))
-        // 미리보기 — 보낼 글과(경로를 켜면) 그림
-        CrewCard(Modifier.testTag("crew-share-preview"), padding = 18.dp) {
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.run_crew_share_preview), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
-            Spacer(Modifier.height(6.dp))
-            Text(message, style = runTextStyle(15.sp, c.text, FontWeight.Medium, 1.55f), modifier = Modifier.testTag("crew-share-text"))
-            val image = preview
-            if (includeRoute && image != null) {
-                Spacer(Modifier.height(10.dp))
-                Image(
-                    image.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(12.dp)).testTag("crew-share-image"),
-                )
+        // 받는 크루 — 이 러닝의 크루(출발할 때 적은 값). 다른 크루로 바꾸지 않는다
+        Row(Modifier.fillMaxWidth().testTag("crew-share-target"), verticalAlignment = Alignment.CenterVertically) {
+            CrewMark(monogram.ifBlank { initialsOf(crewName) }, 48.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(crewName, style = runTextStyle(17.sp, c.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(R.string.run_crew_share_target), style = runTextStyle(14.sp, c.label))
             }
-            Spacer(Modifier.height(12.dp))
         }
+        Spacer(Modifier.height(16.dp))
+        // 미리보기 하나 — 보낼 글 그대로(전송하는 것과 같은 값), 경로를 켜면 실제로 만든 경로 그림. 보내지 않는 것을 넣지 않는다
+        CrewCard(Modifier.testTag("crew-share-preview"), padding = 16.dp) {
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.run_crew_share_message_label), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
+            Spacer(Modifier.height(6.dp))
+            Text(message, style = runTextStyle(16.sp, c.text, FontWeight.SemiBold, 1.55f), modifier = Modifier.testTag("crew-share-text"))
+            if (includeRoute) {
+                Spacer(Modifier.height(10.dp))
+                val image = preview
+                if (image != null) {
+                    Image(
+                        image.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(12.dp)).testTag("crew-share-image"),
+                    )
+                } else {
+                    // 그림을 만드는 중 — 빈 자리만(가짜 그림을 두지 않는다)
+                    Box(
+                        Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(12.dp)).background(c.inset)
+                            .testTag("crew-share-image-loading"),
+                        contentAlignment = Alignment.Center,
+                    ) { RunSpinner(Modifier.size(32.dp)) }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        // 경로가 없으면 켤 수 없다 — 왜인지 같은 자리에 적는다
+        CrewToggleRow(
+            stringResource(R.string.run_crew_share_route),
+            stringResource(if (hasRoute) R.string.run_crew_share_route_body else R.string.run_result_route_none),
+            includeRoute, onRoute, "crew-share-route-toggle", Modifier.testTag("crew-share-route"),
+            enabled = hasRoute && state != CrewSend.Sent && state != CrewSend.Sending,
+        )
         when (state) {
             CrewSend.Sent -> CrewNote(stringResource(R.string.run_cr_shared), Modifier.padding(top = 12.dp), icon = Icons.Outlined.CheckCircle,
                 tag = "crew-share-sent")

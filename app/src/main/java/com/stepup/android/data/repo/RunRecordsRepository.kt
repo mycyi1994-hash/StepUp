@@ -42,6 +42,8 @@ enum class RecordDeletion {
 class RunRecordsRepository(
     private val dao: WalkSessionDao,
     private val owner: Flow<String>,
+    /** 기록 하나를 지운 뒤 — 그 기록에서 나온 것(AI 코칭의 이 휴대폰 사본)을 함께 지운다. 실패해도 지우기는 끝난 것이다 */
+    private val onDeleted: suspend (WalkSessionEntity) -> Unit = {},
 ) {
     fun rows(range: TimeRange, limit: Int): Flow<List<RunRecordRow>> =
         owner.flatMapLatest { dao.observeRecordRows(it, range.from, range.until, limit) }
@@ -67,7 +69,11 @@ class RunRecordsRepository(
 
     suspend fun delete(id: Long): RecordDeletion {
         val who = owner.first()
-        if (dao.deleteRecord(who, id) > 0) return RecordDeletion.Deleted
+        val before = dao.observeRecord(who, id).first()
+        if (dao.deleteRecord(who, id) > 0) {
+            if (before != null) runCatching { onDeleted(before) }
+            return RecordDeletion.Deleted
+        }
         val left = dao.observeRecord(who, id).first() ?: return RecordDeletion.Missing
         return if (left.isUploading()) RecordDeletion.Uploading else RecordDeletion.Missing
     }

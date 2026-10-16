@@ -42,14 +42,24 @@ if 'CrewHomeRoutes.ALL.map' in policy:
         errors.append(f'Crew home route policy mismatch: missing={home_registered-home_listed}, stale={home_listed-home_registered}')
     if 'it' in declared:
         declared.remove('it')
+# AI 코칭(2026-10-16)도 같은 방식(coachingGraph · CoachingRoutes.ALL)
+if 'CoachingRoutes.ALL.map' in policy:
+    coach_graph = (UI/'screens/coaching/CoachingNavGraph.kt').read_text(encoding='utf-8')
+    coach_registered = set(re.findall(r'composable\(\s*(CoachingRoutes\.[A-Z_]+)', coach_graph))
+    coach_all = re.search(r'val ALL: List<String> = listOf\(([^)]*)\)', coach_graph)
+    coach_listed = {f'CoachingRoutes.{name.strip()}' for name in coach_all.group(1).split(',') if name.strip()} if coach_all else set()
+    if not coach_registered or coach_registered != coach_listed:
+        errors.append(f'Coaching route policy mismatch: missing={coach_registered-coach_listed}, stale={coach_listed-coach_registered}')
+    if 'it' in declared:
+        declared.remove('it')
 if registered != set(declared):
     errors.append(f'Route policy mismatch: missing={registered-set(declared)}, stale={set(declared)-registered}')
 if len(declared) != len(set(declared)):
     errors.append('Duplicate route policies')
 inventory = json.loads((ROOT/'docs/redesign/screen-inventory.json').read_text(encoding='utf-8'))
-# 목록에는 뿌리 길과 함께 기능별 길 묶음(크루 명함 · 크루 채팅 · 내 크루 홈)도 오른다
+# 목록에는 뿌리 길과 함께 기능별 길 묶음(크루 명함 · 크루 채팅 · 내 크루 홈 · AI 코칭)도 오른다
 grouped = set()
-for name in ('crew_registered', 'chat_registered', 'home_registered'):
+for name in ('crew_registered', 'chat_registered', 'home_registered', 'coach_registered'):
     grouped |= globals().get(name, set())
 if {row['id'] for row in inventory['routes']} != registered | grouped:
     errors.append('Screen inventory routes are stale; run tools/ui_inventory.py')

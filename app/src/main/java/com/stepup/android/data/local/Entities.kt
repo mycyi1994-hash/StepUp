@@ -98,6 +98,14 @@ data class WalkSessionEntity(
      */
     @ColumnInfo(defaultValue = "0")
     val mockLocation: Boolean = false,
+    /**
+     * 러닝 중 찍힌 랩 — `LapCodec.encode` 글자(순번 · 누적 km · 누적 활성 초). AI 코칭의 1km 구간이 이것으로 센다.
+     *
+     * 판 19(2026-10-16) 전에 저장된 러닝은 빈 글자다 — 랩은 러닝 저장본에만 있다가 저장이 끝나면 함께 지워졌다.
+     * 경로 시각으로 다시 만들지 않는다(벽시계라 일시정지가 섞인다). 무효 러닝(거리 0)도 비운다.
+     */
+    @ColumnInfo(defaultValue = "''")
+    val laps: String = "",
 )
 
 /**

@@ -1,5 +1,8 @@
 # 크루 달리기 v2 — 구현 기록 (2026-10-15)
 
+> 2026-10-16 크루 전달본이 대기실 · 달리는 중 · 결과 · 공유 · 진입을 다시 정리했다.
+> 지금 화면과 검수표는 [crew-run-2026-10-16](../crew-run-2026-10-16/README.md)에 있다. 아래는 v2 당시 기록이다.
+
 전달본: `stepup-crew-design-package.zip` — [지시서](source/stepup-crew-claude-handoff.md) · [시안 HTML](source/stepup-crew-running.html)
 (SHA-256 `2b24898e3f5c587193515cbe0c3b25a3b6da69cced28dd03eed22a417d3ef089`) · [시안 20장](source/mockup/).
 기준 커밋 `da6a3d3`(자유 러닝 v2). HTML 은 시각 참고다 — 바깥 상태 선택 · 휴대폰 틀 · 고정 지도 · 경로 · 예시 숫자 · 토스트 버튼 ·

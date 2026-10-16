@@ -203,6 +203,38 @@ interface WalkSessionDao {
             "AND NOT (recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
     )
     suspend fun deleteRecord(owner: String, id: Long): Int
+
+    // ── AI 코칭(2026-10-16) — 지금 계정(account:…)의 기록만. 옛 기록(legacy) · 손님 기록은 코칭에 쓰지 않는다 ──
+    // (내 러닝 기록 화면은 옛 기록을 함께 보이지만, 로컬에 보이는 것과 외부 AI 로 보낼 권한은 다르다)
+
+    /** 기간 안의 코칭 러닝 — 거리와 활성 시간이 모두 있는 것(무효 · 걸음 없는 기록은 빼고) */
+    @Query(
+        "SELECT id, startedAt, distanceMeters AS meters, durationSec AS seconds FROM walk_sessions " +
+            "WHERE recordingOwner = :owner AND startedAt >= :from AND startedAt < :until AND distanceMeters > 0 AND durationSec > 0",
+    )
+    fun observeCoachRuns(owner: String, from: Long, until: Long): Flow<List<com.stepup.android.domain.coaching.CoachRun>>
+
+    /** 분석을 고를 수 있는 기록 — 최근 먼저(분석 탭의 기록 전환) */
+    @Query(
+        """
+        SELECT id, startedAt, endedAt, durationSec, distanceMeters, steps, uploadState, length(track) > 0 AS hasTrack
+          FROM walk_sessions
+         WHERE recordingOwner = :owner AND distanceMeters > 0 AND durationSec > 0
+         ORDER BY startedAt DESC, id DESC
+         LIMIT :limit
+        """,
+    )
+    fun observeCoachRows(owner: String, limit: Int): Flow<List<RunRecordRow>>
+
+    @Query("SELECT * FROM walk_sessions WHERE id = :id AND recordingOwner = :owner")
+    fun observeCoachRecord(owner: String, id: Long): Flow<WalkSessionEntity?>
+
+    /** 자동 분석 — 서버가 확인했고 랩이 남은 최근 러닝 */
+    @Query(
+        "SELECT * FROM walk_sessions WHERE recordingOwner = :owner AND uploadState = 'SIGNED' AND laps != '' " +
+            "AND distanceMeters > 0 AND startedAt >= :since ORDER BY startedAt DESC LIMIT :limit",
+    )
+    suspend fun recentSignedWithLaps(owner: String, since: Long, limit: Int): List<WalkSessionEntity>
 }
 
 /** 기록 목록 한 줄 — [WalkSessionDao.observeRecordRows] */

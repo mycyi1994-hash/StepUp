@@ -419,7 +419,6 @@
     <string name="run_loc_off_open">位置情報の設定を開く</string>
     <string name="run_cr_room_title">クルーラン待機室</string>
     <string name="run_cr_enter_title">クルーと一緒に出発しましょう</string>
-    <string name="run_cr_enter_body">待機室で集まったメンバーと一緒に準備します。開いている待機室がなければ、入ると新しく開きます。</string>
     <string name="run_cr_enter_note">タップするまで待機室の作成や参加はしません。</string>
     <string name="run_cr_enter">待機室に入る</string>
     <string name="run_cr_change">クルーを変更</string>
@@ -482,8 +481,7 @@
     <string name="run_cr_share_target_body">クルーチャットで共有されます。</string>
     <string name="run_cr_share_route">ルートも共有する</string>
     <string name="run_cr_share_route_body">ランのルート地図もクルーチャットに共有します。</string>
-    <string name="run_cr_share_do">共有する</string>
-    <string name="run_cr_share_message">クルーラン · %1$s km · %2$s · %3$s</string>
+    <string name="run_cr_share_message">クルーラン · %1$s km\n%2$s · 平均ペース %3$s /km</string>
     <string name="run_cr_shared">クルーチャットに共有しました。</string>
     <string name="run_cr_result_points">確認済みの報酬</string>
     <string name="run_cr_area">エリア</string>

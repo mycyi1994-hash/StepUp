@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotificationEntity::class,
         NewsItemEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -223,9 +223,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * AI 코칭(2026-10-16)의 1km 구간 — 러닝의 랩을 기록에 남긴다. 그 전의 기록은 랩을 모르므로 빈 글자로 둔다
+         * (구간을 지어내지 않는다 — 코칭 화면이 "구간 정보 없음"으로 보인다).
+         */
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE walk_sessions ADD COLUMN laps TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
             MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
+            MIGRATION_18_19,
         )
     }
 }

@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-107 registered navigation routes; 111 screen functions; 11 overlay declarations. These counts are different measures, not completed screens.
+113 registered navigation routes; 118 screen functions; 12 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -69,6 +69,12 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Routes.FLASH_DETAIL | Community | Detail | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed; no capture with a real meetup/lobby (guest test data) — populated S2 layout not visually verified |
 | Routes.FLASH_LOBBY | Community | Focus | S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md | S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed |
 | Routes.POST_COMPOSE | Community | Form | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
+| CoachingRoutes.HOME | Run | Detail | pending | pending |
+| CoachingRoutes.WORKOUT | Run | Detail | pending | pending |
+| CoachingRoutes.CONSENT | Run | Detail | pending | pending |
+| CoachingRoutes.GOALS | Run | Detail | pending | pending |
+| CoachingRoutes.PLAN | Run | Detail | pending | pending |
+| CoachingRoutes.SETTINGS | Run | Detail | pending | pending |
 | ChatRoutes.ROOM | Community | Form | 크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md | CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review |
 | ChatRoutes.INFO | Community | Form | 크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md | CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review |
 | ChatRoutes.MEMBERS | Community | Form | 크루 채팅(2026-09-29 전달본) — 방 · 정보 · 크루원 · 공지 · 검색 · 사진 · 참여 종료: see docs/redesign/crew-chat/README.md | CrewChatDesignTest (screen-gallery/crew-chat/, 시안 01–44) + CrewChatTest (unit). PR #61 merged at 593c14e while its final Experience QA run 36515416305 was still in the device stage — earlier run on 7c00073 passed all but 4 chat tests (fixed in 593c14e); final device result pending review |
@@ -120,10 +126,16 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 | Function | Source | Implementation | Verification |
 |---|---|---|---|
+| CoachingHomeScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingHomeScreen.kt:142 | pending | pending |
+| CoachingConsentScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:136 | pending | pending |
+| CoachingGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:242 | pending | pending |
+| CoachingSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:325 | pending | pending |
+| CoachingPlanScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:476 | pending | pending |
+| CoachingWorkoutScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:610 | pending | pending |
 | CommunityScreen | app/src/main/java/com/stepup/android/ui/screens/community/CommunityScreen.kt:100 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
 | CrewBoardScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt:51 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:88 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed; no capture with a real meetup/lobby (guest test data) — populated S2 layout not visually verified |
-| PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:91 | S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md | S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed |
+| PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:92 | S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md | S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed |
 | PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:34 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:72 | character-free visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md; 5단계(1): faction board removed — four boards | Android 14/15 all/week/crew captures; live ranking unverified; PR #20 Experience QA captures |
 | ChatInfoScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt:75 | pending | pending |
@@ -164,7 +176,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CrewLevelScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt:142 | pending | pending |
 | CrewMembersHomeScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt:224 | pending | pending |
 | CrewPersonHomeScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt:339 | pending | pending |
-| CrewHomeScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeScreen.kt:103 | pending | pending |
+| CrewHomeScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeScreen.kt:104 | pending | pending |
 | CrewMeetingScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt:90 | pending | pending |
 | CrewAttendeesScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt:366 | pending | pending |
 | CrewPlaceScreen | app/src/main/java/com/stepup/android/ui/screens/community/home/CrewMeetingScreens.kt:458 | pending | pending |
@@ -221,16 +233,17 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ModeSettingsScreen | app/src/main/java/com/stepup/android/ui/screens/setup/S2SetupScreens.kt:325 | pending | pending |
 | SplashScreen | app/src/main/java/com/stepup/android/ui/screens/splash/SplashScreen.kt:46 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scenes 03 · 04 (real preparation, no decorative wait) | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending |
 | CourseHubScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt:103 | character-free course card/tabs visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md | Android 14/15 three-state captures; save/share interaction unverified |
-| CrewRunEntryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt:118 | pending | pending |
-| CrewShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt:508 | pending | pending |
+| CrewRunEntryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt:117 | pending | pending |
+| CrewShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt:648 | pending | pending |
 | DietInputScreen | app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt:155 | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
 | DietPlanScreen | app/src/main/java/com/stepup/android/ui/screens/walk/DietScreens.kt:511 | Designer handoff part C (diet mode): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
 | CourseRecommendScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunCourseScreens.kt:84 | pending | pending |
 | RunStartMenuScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:76 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 12 + run permission sheets 13~19 | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; RunStartFlowTest |
-| RunGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:181 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
-| RunGoalHistoryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:236 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
+| RunGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:183 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
+| RunGoalHistoryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:238 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
 | RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:165 | character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md | 29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md |
-| RunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2001 | pending | pending |
+| RunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2444 | pending | pending |
+| FreeRunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2498 | pending | pending |
 
 ## Dialog / sheet / menu declarations
 
@@ -240,13 +253,14 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:148 | pending |
 | FlashMembersDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:277 | pending |
 | CrewSheet | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewUi.kt:751 | pending |
-| InviteDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:418 | pending |
-| DrawSheetFrame | Dialog | app/src/main/java/com/stepup/android/ui/screens/gacha/DrawBlueParts.kt:249 | pending |
+| InviteDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:419 | pending |
+| DrawSheetFrame | Dialog | app/src/main/java/com/stepup/android/ui/screens/gacha/DrawBlueParts.kt:248 | pending |
 | InviteScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/invite/InviteScreen.kt:207 | pending |
 | CopiesDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:519 | pending |
 | BidDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:329 | pending |
 | AskDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:356 | pending |
-| RunPermissionSheetView | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt:404 | pending |
+| RunPermissionSheetView | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt:425 | pending |
+| MinimalPermissionCard | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt:500 | pending |
 
 ## State review
 

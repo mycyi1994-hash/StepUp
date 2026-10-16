@@ -631,12 +631,7 @@ fun RunScreen(
     }
     // 크루 달리기 판 — 거리는 다른 러닝(결과 · 정산)과 같은 기준, 위치 없이 기록하면 거리 · 페이스 · 진행률을 적지 않는다
     val crewPace = if (!timeOnly && liveKm >= 0.05 && session.elapsedSec > 0) formatPacePrime((session.elapsedSec / liveKm).toLong()) else "—"
-    val crewReward = listOfNotNull(
-        // 서버가 확인하기 전 이 폰이 셈한 값 — "예상 · 확인 전"(적립 완료라고 쓰지 않는다)
-        if (session.liveVerdict == RunVerdict.VOID) stringResource(R.string.run_crew_reward_void)
-        else stringResource(R.string.run_crew_reward_live, rewardAmount(estimate.points)),
-        freeDurability?.let { stringResource(R.string.run_crew_durability, it) },
-    ).joinToString(" · ")
+    // 예상 보상(확인 전) · 내구도는 러닝 정보(E03)가 보인다 — 정상 화면에 문장으로 두지 않는다(2026-10-16 크루 전달본)
     val crewLiveUi = CrewLiveUi(
         crewName = crewTitle,
         members = if (crewLinkNow == CrewLink.Linked) party.members else emptyList(),
@@ -647,7 +642,6 @@ fun RunScreen(
         pace = crewPace,
         goalKm = goalKm,
         goalFraction = if (timeOnly || goalKm <= 0) null else (liveKm / goalKm).toFloat().coerceIn(0f, 1f),
-        reward = crewReward,
     )
     // 위치 · 측정 문제는 자유 러닝과 같은 노란 띠로 지도 위에(일시정지는 크루 띠가 맡는다)
     val crewProblemBand = freeBandNow.takeIf { it != FreeBand.None && it != FreeBand.Paused }?.let { band ->
@@ -773,7 +767,11 @@ fun RunScreen(
                 }
                 CrewRunResult(
                     ui = CrewResultUi(
-                        crewName = crewTitle, started = session.lastGroupSize.coerceAtLeast(1),
+                        crewName = crewTitle,
+                        // 크루 표시 — 이 러닝의 크루(출발할 때 적은 값)가 크루 목록에 있을 때 그 머리글자
+                        monogram = runCrewId.takeIf { it.isNotBlank() }
+                            ?.let { com.stepup.android.core.ServiceLocator.crewRepository.crewOf(it)?.monogram },
+                        started = session.lastGroupSize.coerceAtLeast(1),
                         distance = "%.2f".format(km), time = formatDuration(session.lastElapsedSec),
                         pace = finishPace(session)?.let { formatPacePrime(it) } ?: "—",
                         note = note,
