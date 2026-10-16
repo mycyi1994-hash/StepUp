@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 시작 전 위치 대기(2026-10-16 사용자 결정 — 구글 지도처럼 GPS · 와이파이 · 기지국 어느 위치든 잡히면 시작). 시간만 기록하는 길은 없다. -->
+<!-- 크루 · 번개 대기실 준비에는 정확한 위치가 필요하다(2026-10-16). 러닝은 위치를 기다리지 않고 바로 시작한다. -->
 <resources>
-    <string name="run_gps_wait_title">위치를 찾고 있어요</string>
-    <string name="run_gps_wait_found">위치를 찾았어요</string>
-    <string name="run_gps_wait_body">잠시만 기다려 주세요.\n위치가 잡히면 바로 시작해요.</string>
-    <string name="run_gps_lobby_body">위치가 잡히면 바로 준비 완료로 바뀌어요.</string>
-    <string name="run_gps_wait_accuracy">정확도</string>
-    <string name="run_gps_wait_accuracy_value">±%1$dm</string>
-    <string name="run_gps_wait_time">기다린 시간</string>
-    <string name="run_gps_hint_mock_title">가짜 위치 앱이 켜져 있어요</string>
-    <string name="run_gps_hint_mock_body">개발자 옵션의 ‘모의 위치 앱’을 끄면 실제 GPS를 쓸 수 있어요.</string>
-    <string name="run_gps_hint_no_fix_title">아직 위치를 못 찾았어요</string>
-    <string name="run_gps_hint_no_fix_body">와이파이나 모바일 데이터를 켜 두거나, 하늘이 보이는 곳으로 가 주세요.</string>
     <string name="run_gps_need_precise">정확한 위치를 허용해야 함께 달릴 수 있어요. 설정 › 권한 › 위치에서 ‘정확한 위치 사용’을 켜 주세요.</string>
 </resources>

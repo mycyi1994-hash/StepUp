@@ -15,6 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.stepup.android.core.LocationEngine
 import com.stepup.android.domain.GeoPoint
 
 /**
@@ -30,8 +36,11 @@ import com.stepup.android.domain.GeoPoint
  *  2. 그다음 갱신 — 화면이 떠 있는 동안만 받는다. [enabled] 가 꺼지거나
  *     화면을 떠나면 바로 끊는다.
  *
- * 권한이 없거나 위치가 꺼져 있으면 조용히 null 을 낸다. 러닝 자체는 걸음
- * 센서로 되므로, 여기서 권한을 다시 조르지 않는다.
+ * 갱신은 구글 지도와 같은 엔진(구글 위치 서비스 — GPS · 와이파이 · 기지국을 섞는다)으로 받는다. 실내에서도 와이파이로
+ * 바로 잡히고, 3-2-1 동안 켜 두면 러닝이 시작될 때 위치가 이미 잡혀 있다. 구글 Play 서비스가 없거나 받지 않으면
+ * 휴대폰 위치(LocationManager)로 받는다.
+ *
+ * 권한이 없거나 위치가 꺼져 있으면 조용히 null 을 낸다. 여기서 권한을 다시 조르지 않는다.
  *
  * @param enabled 끄면 갱신을 받지 않고 마지막 값도 지운다. 보여 줄 다른 것(코스·
  *   실시간 경로)이 생기면 꺼서, 안 보이는 지도를 위해 GPS 를 켜 두지 않는다.
@@ -47,17 +56,28 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
             return@DisposableEffect onDispose { }
         }
         val manager = ContextCompat.getSystemService(context, LocationManager::class.java)
-        if (manager == null) {
-            return@DisposableEffect onDispose { }
+        // 끊은 뒤에 늦게 온 위치(구글 위치 서비스의 마지막 위치 등)는 버린다
+        var listening = true
+        // 지금 보이는 "마지막으로 알려진 위치"의 시각 — 더 오래된 마지막 위치로 되돌리지 않는다
+        var seedTime = 0L
+        // 새 위치를 한 번이라도 받았다 — 늦게 온 마지막 위치로 되돌리지 않는다
+        var live = false
+
+        val seed = manager?.lastKnown()
+        if (seed != null) {
+            here = GeoPoint(seed.latitude, seed.longitude)
+            seedTime = seed.time
         }
 
-        here = manager.lastKnown() ?: here
+        fun take(location: Location) {
+            if (!listening) return
+            live = true
+            here = GeoPoint(location.latitude, location.longitude)
+        }
 
         // API 29 이하에서는 넷 모두 추상 메서드다 — 하나라도 빠지면 이 화면에서 위치를 켜고 끌 때 앱이 죽는다(AbstractMethodError)
         val listener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                here = GeoPoint(location.latitude, location.longitude)
-            }
+            override fun onLocationChanged(location: Location) = take(location)
 
             override fun onProviderEnabled(provider: String) = Unit
             override fun onProviderDisabled(provider: String) = Unit
@@ -65,14 +85,14 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
             @Deprecated("Deprecated in Java")
             override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
         }
-
-        val provider = manager.bestProvider()
-        if (provider != null) {
+        var managerOn = false
+        fun startManager() {
+            if (!listening || managerOn || manager == null) return
+            val provider = manager.bestProvider() ?: return
             try {
-                // 3초·5m — 지도를 내 자리에 맞추는 데 필요한 만큼이다.
-                // 러닝 중의 경로 기록(2.5초·6m)과 달리 여기서는 정밀도가
-                // 아니라 "대충 어디냐"만 있으면 된다.
+                // 3초·5m — 지도를 내 자리에 맞추는 데 필요한 만큼이다
                 manager.requestLocationUpdates(provider, 3_000L, 5f, listener, Looper.getMainLooper())
+                managerOn = true
             } catch (_: SecurityException) {
                 // Permission can be revoked after the initial check.
                 here = null
@@ -81,7 +101,36 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
             }
         }
 
-        onDispose { runCatching { manager.removeUpdates(listener) } }
+        // 1) 구글 위치 서비스 — 마지막 위치부터 바로, 그다음 3초마다(처음 위치를 정확한 것이 올 때까지 미루지 않는다)
+        val fused = if (LocationEngine.fusedAvailable(context)) LocationServices.getFusedLocationProviderClient(context) else null
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let(::take)
+            }
+        }
+        val fusedOn = fused != null && try {
+            fused.lastLocation.addOnSuccessListener { last ->
+                if (listening && !live && last != null && last.time >= seedTime) here = GeoPoint(last.latitude, last.longitude)
+            }
+            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3_000L)
+                .setMinUpdateIntervalMillis(1_000L)
+                .setMinUpdateDistanceMeters(5f)
+                .setWaitForAccurateLocation(false)
+                .build()
+            // Play 서비스가 받지 않았다 — 휴대폰 위치로 바꿔 받는다
+            fused.requestLocationUpdates(request, callback, Looper.getMainLooper()).addOnFailureListener { startManager() }
+            true
+        } catch (_: SecurityException) {
+            false
+        }
+        // 2) Play 서비스가 없으면 휴대폰 위치
+        if (!fusedOn) startManager()
+
+        onDispose {
+            listening = false
+            if (fusedOn) runCatching { fused?.removeLocationUpdates(callback) }
+            if (managerOn) runCatching { manager?.removeUpdates(listener) }
+        }
     }
 
     return here
@@ -99,7 +148,7 @@ private fun Context.canReadLocation(): Boolean =
  * 공급자마다 따로 들고 있어서, GPS 만 물으면 실내에서 몇 시간 전 것이 나오고
  * 네트워크 쪽에 있는 1분 전 위치를 놓친다. 셋 다 물어 보고 시각으로 고른다.
  */
-private fun LocationManager.lastKnown(): GeoPoint? = runCatching {
+private fun LocationManager.lastKnown(): Location? = runCatching {
     listOf(
         LocationManager.GPS_PROVIDER,
         LocationManager.NETWORK_PROVIDER,
@@ -115,7 +164,6 @@ private fun LocationManager.lastKnown(): GeoPoint? = runCatching {
             }
         }
         .maxByOrNull { it.time }
-        ?.let { GeoPoint(it.latitude, it.longitude) }
 }.getOrNull()
 
 /** 지금 쓸 수 있는 공급자. GPS 가 꺼져 있으면 네트워크로 내려간다. */

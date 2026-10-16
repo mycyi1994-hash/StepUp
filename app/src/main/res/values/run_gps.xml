@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pre-run location wait (2026-10-16 decision — like Google Maps, any GPS, Wi-Fi or cell location starts the run). There is no time-only path. -->
+<!-- Crew/flash lobby: precise location is needed to get ready (2026-10-16). Runs no longer wait for a fix before starting. -->
 <resources>
-    <string name="run_gps_wait_title">Finding your location</string>
-    <string name="run_gps_wait_found">Location found</string>
-    <string name="run_gps_wait_body">Just a moment.\nYour run starts as soon as your location is found.</string>
-    <string name="run_gps_lobby_body">You\'ll be marked ready as soon as your location is found.</string>
-    <string name="run_gps_wait_accuracy">Accuracy</string>
-    <string name="run_gps_wait_accuracy_value">±%1$dm</string>
-    <string name="run_gps_wait_time">Waiting</string>
-    <string name="run_gps_hint_mock_title">A mock location app is on</string>
-    <string name="run_gps_hint_mock_body">Turn off the mock location app in developer options to use real GPS.</string>
-    <string name="run_gps_hint_no_fix_title">Location not found yet</string>
-    <string name="run_gps_hint_no_fix_body">Turn on Wi-Fi or mobile data, or move somewhere with a view of the sky.</string>
     <string name="run_gps_need_precise">Allow precise location to run together. Turn on “Use precise location” in Settings › Permissions › Location.</string>
 </resources>

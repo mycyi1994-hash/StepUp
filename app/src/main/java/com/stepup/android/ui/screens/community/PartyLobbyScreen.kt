@@ -73,8 +73,6 @@ import com.stepup.android.ui.screens.walk.CrewNotifySheet
 import com.stepup.android.ui.screens.walk.CrewReadyCheckSheet
 import com.stepup.android.ui.screens.walk.CrewStartConfirmSheet
 import com.stepup.android.ui.screens.walk.RunCountdownStage
-import com.stepup.android.ui.screens.walk.RunGpsWaitSheet
-import com.stepup.android.ui.screens.walk.rememberGpsWait
 import com.stepup.android.ui.screens.walk.initialsOf
 
 /**
@@ -86,7 +84,7 @@ import com.stepup.android.ui.screens.walk.initialsOf
  * 진행자는 사람을 내보낼 수 있고, **준비를 마친 사람들끼리** 출발한다 — 준비 전 인원이 있으면 한 번 묻는다(CR07).
  * 출발 시각은 서버가 정하고 모두 같은 시각에 3-2-1(CR08). 이미 출발한 방에 늦게 온 사람은 서버가 새 방에 넣는다.
  * 준비하기 전에 권한이 없으면 위치 사용 · 위치 공유(기본 끔)를 따로 묻는다(CR17).
- * 준비는 GPS 가 잡힌 뒤에만 된다(2026-10-16 — GPS 가 없으면 달리지 않는다) — 정확한 위치 · 위치 기능 · GPS 신호를 확인한다.
+ * 준비는 정확한 위치 권한과 위치 기능이 있어야 된다(2026-10-16). 위치 신호는 기다리지 않는다 — 출발 뒤 러닝이 찾는다.
  *
  * @param crewId 크루 대기실이면 크루 id, 번개러닝 대기실이면 빈 문자열
  * @param flashPostId 번개러닝 대기실이면 그 글의 id
@@ -134,24 +132,23 @@ fun PartyLobbyScreen(
             }
         }
     }
-    // 준비 전 GPS 확인 — 잡히면 준비 완료로 바꾸고 닫는다. 닫으면 준비 전 그대로
-    var gpsCheck by rememberSaveable { mutableStateOf(false) }
-    val gpsWait = rememberGpsWait(enabled = gpsCheck && party.phase == PartyPhase.LOBBY)
-    LaunchedEffect(gpsCheck, gpsWait.fixed) {
-        if (gpsCheck && gpsWait.fixed && party.phase == PartyPhase.LOBBY) {
-            gpsCheck = false
+    // 권한이 모두 있으면 바로 준비 — 위치 신호는 기다리지 않는다. 휴대폰 위치 기능이 꺼져 있으면 켜는 곳으로 보낸다
+    val locationOff = stringResource(R.string.run_loc_off_body)
+    val markReady: () -> Unit = {
+        if (com.stepup.android.ui.screens.walk.locationServicesOn(context)) {
             viewModel.setReady(true)
+        } else {
+            android.widget.Toast.makeText(context, locationOff, android.widget.Toast.LENGTH_LONG).show()
+            com.stepup.android.core.ExternalIntents.openLocationSettings(context)
         }
     }
-    // 확인하는 사이 방이 출발했다(준비 전이라 이번 출발 명단에 없다) — 다음 대기실에서 저절로 다시 뜨지 않게 거둔다
-    LaunchedEffect(party.phase) { if (party.phase != PartyPhase.LOBBY) gpsCheck = false }
-    // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한 · 정확한 위치가 있으면 GPS 를 확인한다
+    // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한 · 정확한 위치가 있으면 준비한다
     var readyCheck by rememberSaveable { mutableStateOf(false) }
     val readyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         readyCheck = false
         when {
             !StepPermissions.hasActivityRecognition(context) -> Unit
-            StepPermissions.hasPreciseLocation(context) -> gpsCheck = true
+            StepPermissions.hasPreciseLocation(context) -> markReady()
             // 대략적인 위치만 허용했거나 거절했다 — 설정에서 정확한 위치를 켜야 준비할 수 있다
             else -> android.widget.Toast.makeText(context, needPrecise, android.widget.Toast.LENGTH_LONG).show()
         }
@@ -209,8 +206,8 @@ fun PartyLobbyScreen(
         party = party, title = title, resultPoints = resultPoints, canNotify = canNotify, here = here, monogram = monogram,
         onBack = leave,
         onReady = {
-            // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 GPS 가 잡히는지 보고 준비
-            if (StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) gpsCheck = true
+            // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 바로 준비
+            if (StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) markReady()
             else readyCheck = true
         },
         onCancelReady = { viewModel.setReady(false) },
@@ -232,20 +229,13 @@ fun PartyLobbyScreen(
                 val missing = readyPermissions()
                 if (missing.isEmpty()) {
                     readyCheck = false
-                    gpsCheck = true
+                    markReady()
                 } else {
                     readyLauncher.launch(missing)
                 }
             },
             onLater = { readyCheck = false },
             v2 = crewRoom,
-        )
-    }
-    if (gpsCheck && party.phase == PartyPhase.LOBBY) {
-        RunGpsWaitSheet(
-            wait = gpsWait,
-            onDismiss = { gpsCheck = false },
-            onOpenLocationSettings = { com.stepup.android.core.ExternalIntents.openLocationSettings(context) },
         )
     }
     if (confirmStart && party.phase == PartyPhase.LOBBY && party.canStart) {

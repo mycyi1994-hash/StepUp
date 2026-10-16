@@ -220,16 +220,12 @@ fun RunScreen(
     var startPending by rememberSaveable { mutableStateOf(false) }
     // E07 — 위치 권한은 있는데 휴대폰 위치 기능이 꺼져 있어 시작 전에 묻는 중
     var locationOffGate by rememberSaveable { mutableStateOf(false) }
-    // 권한 · 위치 기능 다음, 3-2-1 전에 실제 GPS 위치를 기다리는 중(2026-10-16 — GPS 가 없으면 러닝을 시작하지 않는다)
-    var gpsGate by rememberSaveable { mutableStateOf(false) }
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         locationAllowed = StepPermissions.hasLocation(context)
         onPauseOrDispose { }
     }
-    val requestStart = { if (!startPending && !countingDown && !gpsGate && !locationOffGate) startPending = true }
-    // 3-2-1 동안에도 GPS 를 켜 둔다 — 러닝 서비스가 이어 켤 때 다시 처음부터 찾지 않게
-    val gpsWait = rememberGpsWait(enabled = (gpsGate || countingDown) && !session.isActive)
+    val requestStart = { if (!startPending && !countingDown && !locationOffGate) startPending = true }
 
     // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
     // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
@@ -1132,8 +1128,8 @@ fun RunScreen(
                     startPending = false
                     locationAllowed = StepPermissions.hasLocation(context)
                     // 권한은 있는데 휴대폰 위치 기능이 꺼져 있으면(E07) 시작 전에 묻는다 — 앱 권한 거절(L02)과 다른 원인.
-                    // 켜져 있으면 GPS 가 잡힐 때까지 기다린다
-                    if (!locationServicesOn(context)) locationOffGate = true else gpsGate = true
+                    // 켜져 있으면 바로 3-2-1 — 위치는 기다리지 않고 3-2-1 · 러닝 동안 찾는다(2026-10-16 "안 뜨게")
+                    if (!locationServicesOn(context)) locationOffGate = true else countingDown = true
                 },
                 // 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴 · 챌린지 · 다이어트)에서 왔으면 그리로
                 onCancel = {
@@ -1147,11 +1143,11 @@ fun RunScreen(
             )
         }
         if (locationOffGate && !session.isActive) {
-            // 위치 설정에서 돌아와 켜져 있으면 GPS 를 기다린다. 위치 없이 시작하는 길은 없다
+            // 위치 설정에서 돌아와 켜져 있으면 바로 3-2-1. 위치 기능이 꺼진 채 시작하는 길은 없다
             androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 if (locationServicesOn(context)) {
                     locationOffGate = false
-                    gpsGate = true
+                    countingDown = true
                 }
             }
             val leave = {
@@ -1163,39 +1159,6 @@ fun RunScreen(
                 title = planTitle(plan),
                 onBack = leave,
                 onOpenSettings = { ExternalIntents.openLocationSettings(context) },
-            )
-        }
-        if (gpsGate && !session.isActive) {
-            // 잡히면 바로 3-2-1. 기다리는 동안 위치 기능을 끄면 E07, 권한을 거두면 권한 안내부터 다시
-            LaunchedEffect(gpsWait.fixed) {
-                if (gpsWait.fixed) {
-                    gpsGate = false
-                    countingDown = true
-                }
-            }
-            LaunchedEffect(gpsWait.locationOn) {
-                if (!gpsWait.locationOn) {
-                    gpsGate = false
-                    locationOffGate = true
-                }
-            }
-            androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
-                if (!StepPermissions.hasPreciseLocation(context)) {
-                    gpsGate = false
-                    startPending = true
-                }
-                onPauseOrDispose { }
-            }
-            val leave = {
-                gpsGate = false
-                if (autoStart) onBack()
-            }
-            androidx.activity.compose.BackHandler { leave() }
-            RunGpsGateContent(
-                title = planTitle(plan),
-                wait = gpsWait,
-                onBack = leave,
-                onOpenLocationSettings = { ExternalIntents.openLocationSettings(context) },
             )
         }
         if (countingDown && !session.isActive) {

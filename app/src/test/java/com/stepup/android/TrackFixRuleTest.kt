@@ -1,43 +1,14 @@
 package com.stepup.android
 
-import com.stepup.android.domain.GpsFixRule
-import com.stepup.android.domain.GpsHint
-import com.stepup.android.domain.GpsWait
 import com.stepup.android.domain.TrackFixRule
-import com.stepup.android.domain.gpsHintOf
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 시작 전 위치 대기와 달리는 중 위치 거르기(2026-10-16 사용자 결정 "그래 다 되도록 만들어") — 구글 지도처럼 GPS · 와이파이 · 기지국
- * 어느 위치든 잡히면 시작하고, 위성 GPS 가 아닌 위치의 떨림은 거리로 쌓지 않는다.
+ * 달리는 중 위치 거르기(2026-10-16 사용자 결정 "그래 다 되도록 만들어") — 구글 지도처럼 GPS · 와이파이 · 기지국 어느 위치든
+ * 받되, 위성 GPS 가 아닌 위치의 떨림은 거리로 쌓지 않는다.
  */
-class GpsReadinessTest {
-
-    @Test fun `any fresh real location starts the run — gps, wifi or cell like google maps`() {
-        assertTrue(GpsFixRule.accepts(mock = false, ageMs = 0))
-        assertTrue(GpsFixRule.accepts(mock = false, ageMs = GpsFixRule.FRESH_MS))
-        // 휴대폰 시계와 위치 시각이 조금 어긋나도(음수) 받는다
-        assertTrue(GpsFixRule.accepts(mock = false, ageMs = -500))
-    }
-
-    @Test fun `mock fixes and stale fixes do not count`() {
-        // 모의 위치 앱이 넣은 좌표
-        assertFalse(GpsFixRule.accepts(mock = true, ageMs = 0))
-        // 휴대폰이 30초보다 전에 알던 위치
-        assertFalse(GpsFixRule.accepts(mock = false, ageMs = GpsFixRule.FRESH_MS + 1))
-    }
-
-    @Test fun `blocking causes are told at once, a missing location after 20 seconds`() {
-        assertEquals(GpsHint.LOCATION_OFF, gpsHintOf(GpsWait(locationOn = false)))
-        assertEquals(GpsHint.MOCK, gpsHintOf(GpsWait(mock = true)))
-        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC - 1)))
-        assertEquals(GpsHint.NO_FIX, gpsHintOf(GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC)))
-        // 잡혔으면 아무것도 알리지 않는다
-        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(fixed = true, elapsedSec = 300, locationOn = true)))
-    }
+class TrackFixRuleTest {
 
     @Test fun `first usable non-gps fix starts the track, cell-sized fixes only move the map dot`() {
         // 첫 점 · 끊긴 뒤 새 구간 — 오차가 50m 안이면 경로를 시작한다
