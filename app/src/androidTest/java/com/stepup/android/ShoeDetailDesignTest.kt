@@ -29,6 +29,8 @@ import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.ServerStats
 import com.stepup.android.domain.ShoeCatalog
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.StatPoints
+import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.CommerceBackdrop
@@ -43,6 +45,15 @@ import com.stepup.android.ui.screens.items.EquipResult
 import com.stepup.android.ui.screens.items.OwnedLoad
 import com.stepup.android.ui.screens.items.ShoeDetailContent
 import com.stepup.android.ui.screens.items.ShoeDetailState
+import com.stepup.android.ui.screens.items.PointStat
+import com.stepup.android.ui.screens.items.PointsPhase
+import com.stepup.android.ui.screens.items.add
+import com.stepup.android.ui.screens.items.pointsAfterSend
+import com.stepup.android.ui.screens.items.pointsBasisOf
+import com.stepup.android.ui.screens.items.remove
+import com.stepup.android.ui.screens.items.review
+import com.stepup.android.ui.screens.items.send
+import com.stepup.android.ui.screens.items.startPoints
 import com.stepup.android.ui.screens.items.withObjectParticle
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
@@ -212,8 +223,9 @@ class ShoeDetailDesignTest {
             equipping: Boolean = false,
             result: EquipResult? = null,
             sheet: String? = null,
+            points: PointsPhase? = null,
         ): @Composable () -> Unit = {
-            ShoeDetailContent(state = state, equipping = equipping, result = result, zone = SEOUL, initialSheet = sheet)
+            ShoeDetailContent(state = state, equipping = equipping, result = result, zone = SEOUL, initialSheet = sheet, points = points)
         }
         fun tab(load: OwnedLoad, selected: Long?): @Composable () -> Unit = {
             Column(Modifier.fillMaxSize()) {
@@ -345,11 +357,49 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
         compose.onNodeWithTag("shoe-row-info").assertHasClickAction()
 
+        // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
+        val withPoints = all + POINTS + RESPEC
+        show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
+        assertCell("durability", "1,180 / 1,330")
+        compose.onNodeWithTag("shoe-points-notice").assertExists()
+        // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
+        show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))
+        compose.onAllNodesWithTag("shoe-points-notice").assertCountEquals(0)
+        show("s41-manage-points", "shoe-manage-sheet", detail(ready(POINTS, withPoints), sheet = "Manage"))
+        compose.onNodeWithTag("shoe-manage-points").assertIsEnabled()
+        val basis = requireNotNull(pointsBasisOf(POINTS))
+        val editing = startPoints(basis).add(PointStat.EFFICIENCY).add(PointStat.DURABILITY)
+        show("s42-points-editing", "points-editing", detail(ready(POINTS, withPoints), points = editing))
+        compose.onNodeWithTag("points-free-value", useUnmergedTree = true).assertTextEquals("2")
+        compose.onNodeWithTag("points-count-efficiency", useUnmergedTree = true).assertTextEquals("3")
+        compose.onNodeWithTag("points-count-durability", useUnmergedTree = true).assertTextEquals("2")
+        compose.onNodeWithTag("points-save").assertIsEnabled()
+        // 이미 나눈 효율 2 아래로는 못 뺀다
+        compose.onNodeWithTag("points-remove-comfort").assertIsNotEnabled()
+        val confirm = editing.review()
+        show("s43-points-confirm", "points-confirm", detail(ready(POINTS, withPoints), points = confirm))
+        compose.onNodeWithTag("points-confirm-note", useUnmergedTree = true).assertTextEquals(string(R.string.points_confirm_body))
+        val sending = requireNotNull(confirm.send())
+        show("s44-points-sending", "points-sending", detail(ready(POINTS, withPoints), points = sending))
+        show("s44b-points-offline", "points-offline",
+            detail(ready(POINTS, withPoints), points = pointsAfterSend(sending, EconomyOutcome.Offline, null)))
+        compose.onNodeWithTag("points-retry").assertIsEnabled()
+        show("s45-points-done", "points-done", detail(ready(POINTS, withPoints), points = PointsPhase.Done(basis, sending.draft)))
+        // 다시 나누기 — 효율 8 · 착화감 8 로 나눠 둔 채로 받은 Lv5 를 내구도로 옮긴다
+        val respecBasis = requireNotNull(pointsBasisOf(RESPEC))
+        var moved: PointsPhase = startPoints(respecBasis)
+        repeat(8) { moved = moved.remove(PointStat.COMFORT).add(PointStat.DURABILITY) }
+        show("s46-points-respec", "points-editing", detail(ready(RESPEC, withPoints), points = moved))
+        compose.onNodeWithTag("points-note", useUnmergedTree = true).assertTextEquals(string(R.string.points_note_respec))
+        show("s46b-points-respec-confirm", "points-confirm", detail(ready(RESPEC, withPoints), points = moved.review()))
+        compose.onNodeWithTag("points-confirm-note", useUnmergedTree = true).assertTextEquals(string(R.string.points_confirm_respec))
+
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
         show("s30-light-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         show("s30b-light-detail", "shoe-art", detail(ready(PAIR_A)))
         show("s30c-light-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
+        show("s30d-light-points", "points-editing", detail(ready(POINTS, all + POINTS), points = editing))
         compose.runOnIdle { light = false; large = true }
         show("s31-large-font-detail", "shoe-art", detail(ready(SPIKE)))
         assertBarsAligned()
@@ -371,6 +421,7 @@ class ShoeDetailDesignTest {
             assertTrue("$stat bar keeps a visible width: $width", width > 100)
         }
         show("s32b-narrow-entry", "shoe-hero", tab(OwnedLoad.Ready(all), SPIKE.id))
+        show("s33b-narrow-large-points", "points-editing", detail(ready(POINTS, all + POINTS), points = editing))
         show("s32c-narrow-error", "shoe-equip-error",
             detail(ready(SPIKE), result = EquipResult.NotWorn(SPIKE.id, EquipFailure.SIGN_IN, WORN.id, confirmed = true)))
     }
@@ -572,6 +623,35 @@ class ShoeDetailDesignTest {
             id = 9008, faction = Faction.WIND, rarity = Rarity.LEGENDARY, variant = 0, level = 30, mintNumber = 12_345,
             luck = 1.0, comfort = 1.001, durability = 100, equipped = false, acquiredAt = at(2026, 9, 29),
             server = server(0, 10, maxLevel = 30), modelId = 1311,
+        )
+
+        /**
+         * 포인트(0059) 예시 — 레어 Lv3, 받은 포인트 8 중 효율 2 · 착화감 1 · 내구도 1 을 나눠 4 가 남았다.
+         * 최대 내구도 1,230 + 100 = 1,330, 남은 1,180(88.72%)
+         */
+        val POINTS = Sneaker(
+            id = 9010, faction = Faction.WIND, rarity = Rarity.RARE, variant = 0, level = 3, mintNumber = 10,
+            luck = 1.0, comfort = 1.031, durability = 88, equipped = false, acquiredAt = at(2026, 10, 16),
+            server = server(450, 310, durability = 88.72).copy(
+                durabilityNow = 1_180, durabilityMax = 1_330, durabilityBase = 1_230,
+                efficiencyBaseBps = 400, comfortBaseBps = 300,
+                points = StatPoints(total = 8, free = 4, efficiency = 2, comfort = 1, durability = 1),
+                repairCostPerUnit = 0.0137,
+            ),
+            modelId = 1107,
+        )
+
+        /** 0059 전에 강화한 에픽 Lv5 — 포인트 16 을 효율 8 · 착화감 8 로 나눠 둔 채로 받았고 한 번 다시 나눌 수 있다 */
+        val RESPEC = Sneaker(
+            id = 9011, faction = Faction.WIND, rarity = Rarity.EPIC, variant = 0, level = 5, mintNumber = 11,
+            luck = 1.0, comfort = 1.068, durability = 75, equipped = false, acquiredAt = at(2026, 10, 1),
+            server = server(1_000, 680, durability = 75.0).copy(
+                durabilityNow = 1_650, durabilityMax = 2_200, durabilityBase = 2_200,
+                efficiencyBaseBps = 800, comfortBaseBps = 600,
+                points = StatPoints(total = 16, free = 0, efficiency = 8, comfort = 8, durability = 0, respec = true),
+                repairCostPerUnit = 0.0152,
+            ),
+            modelId = 1201,
         )
 
         val PAIR_B = Sneaker(

@@ -538,7 +538,8 @@ fun RunScreen(
         void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt,
     )
     val freeDist = freeDistance(timeOnly, session.gpsKm, geoTrack.isNotEmpty())
-    val freeDurability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPoints(it) }
+    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸
+    val freeDurability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPercent(it) }
     val freeBandNow = freeBand(
         active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
         locationAllowed = locationAllowed, locationOn = session.locationOn, gpsFix = session.gpsFix, gpsLost = session.gpsLost,
@@ -1201,7 +1202,7 @@ fun RunScreen(
                     // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
                     estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
                     speed = (if (freeRunNow) freeSpeed else speedKmh)?.let { "%.1f".format(it) } ?: "—",
-                    durability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPoints(it).toString() } ?: "—",
+                    durability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPercent(it).toString() } ?: "—",
                     // 자유 러닝은 측정 까닭만 — 적립 한도 · 부스터 · 크루 보너스 같은 보상 줄은 두지 않는다
                     reasons = if (freeRunNow) buildList {
                         if (freeVoid) add(context.getString(R.string.run_free_measure_invalid))

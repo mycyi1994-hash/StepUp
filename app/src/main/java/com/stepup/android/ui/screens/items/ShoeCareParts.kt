@@ -415,11 +415,11 @@ fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = 
     }
 }
 
-/** 시트 안 내구도 한 줄(수리) — "내구도 · 막대(지금 → 가득 미리보기) · 68 → 100" */
+/** 시트 안 내구도 한 줄(수리) — "내구도 · 막대(지금 → 가득 미리보기) · 680 → 1,230"(1 = 10m, 막대 끝은 그 신발의 최대 내구도) */
 @Composable
-fun RepairDurabilityRow(now: Double, to: Double?, modifier: Modifier = Modifier) {
-    val shown = kotlin.math.floor(now).toInt().coerceAtLeast(0)
-    val text = if (to != null) "$shown → ${kotlin.math.floor(to).toInt()}" else "$shown / 100"
+fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modifier) {
+    val shown = now.coerceIn(0, maxOf(max, 0))
+    val text = if (to != null) "${formatCount(shown)} → ${formatCount(to)}" else "${formatCount(shown)} / ${formatCount(max)}"
     val label = stringResource(R.string.sdv_stat_durability)
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).background(CartoonColors.Cell, RoundedCornerShape(14.dp))
@@ -431,8 +431,9 @@ fun RepairDurabilityRow(now: Double, to: Double?, modifier: Modifier = Modifier)
         Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1, softWrap = false)
         Spacer(Modifier.width(10.dp))
         CartoonStatBar(
-            (now / 100.0).toFloat(), CartoonColors.Durability, Modifier.weight(1f).height(28.dp),
-            preview = to?.let { (it / 100.0).toFloat() },
+            com.stepup.android.ui.screens.customize.barFraction(shown.toDouble(), max.toDouble()),
+            CartoonColors.Durability, Modifier.weight(1f).height(28.dp),
+            preview = to?.let { com.stepup.android.ui.screens.customize.barFraction(it.toDouble(), max.toDouble()) },
         )
         Spacer(Modifier.width(10.dp))
         Text(text, style = runTextStyle(15.sp, CartoonColors.Text, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),

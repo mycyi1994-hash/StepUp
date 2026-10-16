@@ -22,10 +22,10 @@
 
     <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
     <string name="my_shoes_basis_open">バーの基準</string>
-    <string name="my_shoes_basis_intro">3本のバーはすべてのシューズで同じ基準です。シューズ同士を比べられます。</string>
-    <string name="my_shoes_basis_efficiency">効率(SUP獲得ボーナス): バーの最大 %1$s — シューズが到達できる最高値(レジェンダリー Lv.%2$d)</string>
+    <string name="my_shoes_basis_intro">効率・履き心地のバーはすべてのシューズで同じ基準です。シューズ同士を比べられます。</string>
+    <string name="my_shoes_basis_efficiency">効率(SUP獲得ボーナス): バーの最大 %1$s — レジェンダリー Lv.%2$d にポイントを均等に振った値。効率に多く振るとバーがいっぱいになります</string>
     <string name="my_shoes_basis_comfort">履き心地(エネルギー節約): バーの最大 %1$s — サーバーの上限</string>
-    <string name="my_shoes_basis_durability">耐久度: バーの最大 %1$d</string>
+    <string name="my_shoes_basis_durability">耐久度: バーの最大はそのシューズの最大耐久度です(1 = 10m、シューズごとに違います)。100m走るごとに10減ります</string>
     <string name="my_shoes_basis_note">効率はボーナスの割合で、金額ではありません。実際に受け取るSUPはラン終了後にサーバーが確定します。</string>
 
     <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->

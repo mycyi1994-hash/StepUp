@@ -16,7 +16,7 @@
     <string name="run_crew_goal_unknown">我的目标 %1$s公里 · 无法确认进度</string>
     <string name="run_crew_reward_live">预计 +%1$s SUP · 尚未确认</string>
     <string name="run_crew_reward_void">测量无效 · 无奖励</string>
-    <string name="run_crew_durability">耐久度 %1$d/100</string>
+    <string name="run_crew_durability">耐久度 %1$d%%</string>
     <string name="run_crew_share_location">共享我的位置和距离</string>
     <string name="run_crew_host_me">组织者 · 我的跑步</string>
     <string name="run_crew_my_run">我的跑步</string>

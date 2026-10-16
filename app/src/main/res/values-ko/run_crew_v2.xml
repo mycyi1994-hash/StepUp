@@ -16,7 +16,7 @@
     <string name="run_crew_goal_unknown">내 목표 %1$skm · 진행률 확인 불가</string>
     <string name="run_crew_reward_live">예상 +%1$s SUP · 확인 전</string>
     <string name="run_crew_reward_void">측정 무효 · 보상 없음</string>
-    <string name="run_crew_durability">내구도 %1$d/100</string>
+    <string name="run_crew_durability">내구도 %1$d%%</string>
     <string name="run_crew_share_location">내 위치·거리 공유</string>
     <string name="run_crew_host_me">진행자 · 내 러닝</string>
     <string name="run_crew_my_run">내 러닝</string>

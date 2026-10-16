@@ -15,6 +15,7 @@ import com.stepup.android.ui.screens.items.ShoeCareBackend
 import com.stepup.android.ui.screens.items.ShoeCareStore
 import com.stepup.android.ui.screens.items.balanceAfter
 import com.stepup.android.ui.screens.items.careBlockOf
+import com.stepup.android.ui.screens.items.forgePointsGain
 import com.stepup.android.ui.screens.items.forgeRows
 import com.stepup.android.ui.screens.items.formatSupExact
 import com.stepup.android.ui.screens.items.holds
@@ -47,6 +48,20 @@ class ShoeCareTest {
     }
 
     // ── 수리 견적 ──────────────────────────────────────────────
+
+    @Test fun `내구도 1점은 10m — 일반 Lv1 의 1km(100점) 수리는 예전처럼 1_05 SUP, 1점 값은 소수 8자리까지 쓴다`() {
+        val q = requireNotNull(repairQuoteOf(absolute(now = 730, max = 1_230, perUnit = 0.0105)))
+        assertEquals(0, BigDecimal("500").compareTo(q.points))
+        assertEquals(0, BigDecimal("5.25").compareTo(q.cost))
+        assertEquals(730 to 1_230, q.durabilityNow to q.durabilityMax)
+        assertEquals(0, BigDecimal("1.05").compareTo(BigDecimal("100").multiply(q.perPoint)))
+        // 레전더리 Lv7 — 1점 0.0165375. 4자리(0.0165)로 자르면 서버 차감액(14.3876)과 어긋난다
+        val legendary = requireNotNull(repairQuoteOf(absolute(now = 2_000, max = 2_870, perUnit = 0.0165375)))
+        assertEquals(0, BigDecimal("14.3876").compareTo(legendary.cost))
+        // 가득이면 고칠 것이 없다
+        assertTrue(repairGate(absolute(now = 1_230, max = 1_230, perUnit = 0.0105), 50.0, true) is RepairPhase.NotNeeded)
+        assertTrue(repairGate(absolute(now = 1_220, max = 1_230, perUnit = 0.0105), 50.0, true) is RepairPhase.Confirm)
+    }
 
     @Test fun `레어 Lv5 68 에서 100 은 50 SUP, 92 에서 100 은 12_5 SUP`() {
         val q68 = requireNotNull(repairQuoteOf(server(durability = 68.0)))
@@ -172,19 +187,27 @@ class ShoeCareTest {
 
     // ── 강화 화면의 세 줄(서버 forge 값) ────────────────────────
 
-    @Test fun `강화 미리보기는 서버 실효 값에 레벨 한 칸 몫(효율 +0_5 · 착화감 +0_2, 20 상한) — 내구도 줄은 없다`() {
-        val stats = ForgeStats(level = 10, maxLevel = 20, efficiencyBps = 1_800, comfortBps = 800)
+    @Test fun `강화 미리보기는 레벨 +1 · 스탯 포인트 +4 — 효율 · 착화감은 저절로 오르지 않고 내구도 줄은 없다`() {
+        val stats = ForgeStats(level = 10, maxLevel = 20, efficiencyBps = 1_800, comfortBps = 800, pointsTotal = 36, pointsFree = 4)
         val target = ForgeTarget(ID, Rarity.LEGENDARY, stats, basePermille = 700, block = null)
-        val rows = forgeRows(stats, target.previewNext())
+        val next = target.previewNext()
+        assertEquals(listOf(11, 40, 8), listOf(next.level, next.pointsTotal, next.pointsFree))
+        assertEquals(1_800 to 800, next.efficiencyBps to next.comfortBps)
+        val rows = forgeRows(stats, next)
         assertEquals(listOf(DetailStat.LEVEL, DetailStat.EFFICIENCY, DetailStat.COMFORT), rows.map { it.stat })
         assertEquals("10" to "11", rows[0].now to rows[0].next)
-        assertEquals("+18.0%" to "+18.5%", rows[1].now to rows[1].next)
-        assertEquals("8.0%" to "8.2%", rows[2].now to rows[2].next)
+        // 그대로인 효율 · 착화감은 화살표를 그리지 않는다
+        assertEquals("+18.0%" to null, rows[1].now to rows[1].next)
+        assertEquals("8.0%" to null, rows[2].now to rows[2].next)
+        assertNull(rows[1].nextFraction)
+        assertEquals(4, forgePointsGain(stats, next))
+        // 포인트를 보내지 않는 예전 서버 — 오른 레벨 × 4 로 센다. 서버가 바뀐 효율을 주면 그대로 보인다
+        assertEquals(4, forgePointsGain(stats.copy(pointsTotal = 0), next.copy(pointsTotal = 0)))
+        assertEquals("+18.0%" to "+18.5%", forgeRows(stats, next.copy(efficiencyBps = 1_850))[1].let { it.now to it.next })
+        assertEquals(0, forgePointsGain(stats, stats))
         // 레벨 분모는 서버가 준 상한(20)
         assertEquals(10f / 20f, rows[0].nowFraction, 1e-6f)
         assertEquals(11f / 20f, rows[0].nextFraction!!, 1e-6f)
-        val capped = target.copy(stats = stats.copy(comfortBps = 1_990)).previewNext()
-        assertEquals(2_000, capped.comfortBps)
         // 실패 · 결과 미확인 · 최대 화면은 다음 값을 그리지 않는다
         assertNull(forgeRows(stats, null)[0].next)
         assertNull(forgeRows(stats, null)[0].nextFraction)
@@ -214,6 +237,15 @@ class ShoeCareTest {
 
     private companion object {
         const val ID = 7L
+
+        /** 최대 내구도를 보내는 서버(0059) — 남은 · 최대 내구도(1 = 10m)와 10m 수리 값 */
+        fun absolute(now: Int, max: Int, perUnit: Double) = server(durability = Math.round(10_000.0 * now / max) / 100.0).let {
+            it.copy(
+                server = it.server!!.copy(
+                    durabilityNow = now, durabilityMax = max, durabilityBase = max, repairCostPerUnit = perUnit,
+                ),
+            )
+        }
 
         /** 레어 Lv5 — 서버 단가 (1 + 0.25 × 1) × (1 + 0.05 × 5) = 1.5625 */
         fun server(

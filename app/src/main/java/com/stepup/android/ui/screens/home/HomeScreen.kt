@@ -364,7 +364,8 @@ private fun StepsBlock(
 private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
     if (shoe == null) return
     val t = com.stepup.android.ui.components.runTone()
-    val points = com.stepup.android.ui.screens.items.durabilityPoints(shoe)
+    // 남은 비율(%) — 신발마다 최대 내구도가 달라(0059) 좁은 칸에는 비율로 보인다. 남은 · 최대 내구도는 신발 상세에
+    val points = com.stepup.android.ui.screens.items.durabilityPercent(shoe)
     Row(modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("home-shoe-info"), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1.1f)) {
             Text(
@@ -399,7 +400,7 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
                     "$points", color = t.cyan, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.alignByBaseline().testTag("home-stat-durability-value"),
                 )
-                Text(" / 100", color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.alignByBaseline())
+                Text("%", color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.alignByBaseline())
             }
             Spacer(Modifier.height(8.dp))
             com.stepup.android.ui.components.RunMeter(
