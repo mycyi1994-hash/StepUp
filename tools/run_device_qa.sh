@@ -23,6 +23,8 @@ bash tools/run_screen_gallery.sh explore || status=1
 bash tools/run_screen_gallery.sh community || status=1
 # 폰에 올리는 최적화 테스트 APK(qa, R8)를 마지막에 덮어 설치해 켜 본다 — debug 로 도는 위 검사가 못 잡는 R8 문제
 bash tools/run_qa_apk_smoke.sh || status=1
+# 테스트 APK 서명 키 교체 — 회전 서명한 APK 가 옛 키 앱 위에 덮어 깔리고, 그 뒤 옛 키 APK 는 막히는지(일회용 키로)
+bash tools/check_test_apk_rotation.sh || status=1
 # 실패한 기기 검사 이름을 로그 맨 끝에 모은다 — 앞쪽 묶음의 실패는 긴 로그 앞부분에만 남아 끝에서 읽으면 보이지 않았다(PR #87)
 python3 tools/android_test_failures.py screen-gallery || true
 exit "$status"

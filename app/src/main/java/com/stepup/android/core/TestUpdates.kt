@@ -24,6 +24,11 @@ data class TestBuild(
     val commitTime: Long = 0,
     val commit: String = "",
     val version: String = "",
+    /**
+     * 안드로이드 versionCode — 테스트 빌드는 앱 데이터베이스 판을 담는다(app/build.gradle.kts). 이 폰의 앱보다 낮으면
+     * 안드로이드가 설치를 막으므로(데이터베이스가 더 새 작업 브랜치 빌드 위) 새 버전으로 알리지 않는다. 0 = 모름(예전 빌드 정보)
+     */
+    val versionCode: Int = 0,
 )
 
 /**
@@ -77,10 +82,14 @@ object TestUpdates {
         json.decodeFromString(TestBuild.serializer(), body).takeIf { it.commitTime > 0 }
     }.getOrNull()
 
-    /** 올라가 있는 빌드가 지금 빌드보다 나중 커밋인가. 같은 커밋이거나 지금 빌드를 모르면 아니다. */
-    fun isNewer(remote: TestBuild, localCommitTime: Long, localCommit: String): Boolean =
+    /**
+     * 올라가 있는 빌드가 지금 빌드보다 나중 커밋인가. 같은 커밋이거나 지금 빌드를 모르면 아니다.
+     * versionCode 가 이 폰의 것보다 낮으면(데이터베이스가 더 옛 빌드) 깔 수 없으니 알리지 않는다.
+     */
+    fun isNewer(remote: TestBuild, localCommitTime: Long, localCommit: String, localVersionCode: Int = 0): Boolean =
         localCommitTime > 0 && remote.commitTime > localCommitTime &&
-            (localCommit.isBlank() || !remote.commit.startsWith(localCommit))
+            (localCommit.isBlank() || !remote.commit.startsWith(localCommit)) &&
+            (remote.versionCode == 0 || remote.versionCode >= localVersionCode)
 
     /**
      * 새 빌드가 있는지 묻는다. 앱을 켤 때 한 번, 설정에서 누르면 [force] 로 다시.
@@ -97,7 +106,7 @@ object TestUpdates {
             val remote = if (response.status in 200..299) parse(response.body) else null
             _state.value = when {
                 remote == null -> if (force) State.CheckFailed else State.Idle
-                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT) -> State.Available(remote)
+                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT, BuildConfig.VERSION_CODE) -> State.Available(remote)
                 else -> State.UpToDate
             }
         } finally {

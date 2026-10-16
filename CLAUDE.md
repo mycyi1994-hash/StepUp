@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 사용자 결정 반영: 테스트 APK 서명 · CI 권한 · versionCode · 탈퇴한 사용자 채팅 (2026-10-16)
+
+[점검 문서의 "사용자 결정 반영"](docs/점검-2026-10-15-크루-통신-인프라.md) — 테스트 APK 는 main 의 `publish` 작업에서만 저장소 밖 키
+(GitHub 환경 `test-apk` 의 `TEST_APK_SIGNING_KEY`)로 다시 서명한다(옛 공개 키 → 새 키 서명 이력 — [TEST-APK-SIGNING.md](docs/TEST-APK-SIGNING.md),
+키가 없으면 전처럼 debug 키). Build APK 의 빌드 작업은 읽기 권한만. 테스트 · 개발 빌드 versionCode = 데이터베이스 판 × 1000 + 스토어 versionCode
+(데이터베이스 판을 올리면 저절로 오른다). 계정을 지운 사람의 크루 채팅 · 공지는 남고 작성자만 빈다(0058, "탈퇴한 사용자"). attester-logs 는 main 에서 손으로만.
+
 ## 최신 — 점검 수정: 크루 통신 · 채팅 · 기록 · 배포 (2026-10-15)
 
 [docs/점검-2026-10-15-크루-통신-인프라.md](docs/점검-2026-10-15-크루-통신-인프라.md) — 함께 달리기 보너스 인원은 서버가 "출발 2분 뒤에도 서로
@@ -64,7 +71,8 @@
 `ANDROID_HOME=/opt/android-sdk LC_ALL=C.UTF-8 ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:lintDebug` —
 한글 테스트 이름 때문에 UTF-8 로케일이 필요하다. 서버는 `supabase/tests/run.sh`, 워커는 `cd attester && npm test`.)
 
-- Build APK → `test-apk` 사전 배포에 `StepUp-test.apk`(최적화 빌드 `qa` — R8 · 디버그 불가 · debug 키 서명. debug 를 올리면 화면 전체가 끊긴다) — **main 에 들어간 것만** 올라간다.
+- Build APK → `test-apk` 사전 배포에 `StepUp-test.apk`(최적화 빌드 `qa` — R8 · 디버그 불가. debug 를 올리면 화면 전체가 끊긴다.
+  서명은 main 의 publish 작업이 테스트 전용 키로 다시 한다 — 작업 브랜치 아티팩트는 debug 키) — **main 에 들어간 것만** 올라간다.
   작업 브랜치의 APK 는 그 실행의 Actions 아티팩트에서 받는다. 사용자가 받을 앱은 main 에 합쳐야 바뀐다.
 - Experience QA → 에뮬레이터 캡처를 `qa-captures` 사전 배포의 `qa-review.zip` 에.
 - 로컬에서 되는 검사: `python3 scripts/check-strings.py`,
