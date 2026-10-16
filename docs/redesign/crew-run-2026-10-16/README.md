@@ -88,7 +88,8 @@
 
 구분:
 
-- **구현 · 검수**: 코드가 있고 CI 에뮬레이터 렌더 캡처로 확인했다.
+- **구현 · 검수**: 코드가 있고, CI 에뮬레이터가 그 장면을 그려 단언(상태 · 글 · 아래 행동이 화면 안)이 통과했다.
+  캡처를 시안과 눈으로 맞대어 본 것은 아니다(아래 "실행한 검사").
 - **서버 의존 · 미완료**: 서버 API 가 없어 만들지 않았다.
 
 실제 기기 검증은 하지 않았다.
@@ -171,10 +172,23 @@
   - `scripts/check-strings.py` · `tools/check_design_contract.py` · `scripts/check-fakes.py` · `scripts/check-coaching-twin.py` · `tools/check_experience_assets.py`
   - 도메인 · 저장소 단위 검사(kotlinc 2.0.21, 69개)
   - Compose 화면은 이 컨테이너에 안드로이드 SDK 가 없어 CI 에서 컴파일한다.
-- CI Build APK(문자열 · 디자인 계약 · 단위 검사 · debug/qa/release 빌드): 결과는 아래 "CI 결과"에 적는다.
-- CI Experience QA(에뮬레이터 API 35 렌더 캡처, `RunJourneyDesignTest#crew` 포함): 결과는 아래 "CI 결과"에 적는다.
+- CI Build APK(문자열 · 디자인 계약 · 단위 검사 · debug/qa/release 빌드): 작업 브랜치(74f72bc · 620eafc)와 main(286b804) 모두 통과.
+- CI Experience QA(에뮬레이터 API 35) — PR #92 의 620eafc(main 286b804 와 같은 트리)
+  - 단위 검사 · lint · 기기 검사 컴파일 통과.
+  - 기기 검사: `RunJourneyDesignTest#crew` 통과(위 표의 장면 · 단언 모두).
+  - 실패는 새 AI 코칭 기기 검사 하나였다. 검사가 화면 밖 줄을 눌렀다(앱 문제가 아니다) — 후속 PR 에서 고쳤다.
+- 캡처를 직접 열어 보지는 못했다.
+  - 이 세션은 Actions 아티팩트 저장소(`productionresultssa5.blob.core.windows.net`)가 네트워크 정책에 막혀 있다.
+  - 캡처는 Experience QA 아티팩트 `StepUp-experience-qa` 의 `screen-gallery/run-journey/CR*.png` 에 있다.
+  - Experience QA 를 손으로 돌리면 `qa-captures` 사전 배포의 `qa-review.zip` 에 `crew-CR*.png` 로 함께 올라간다.
 - 실제 기기 · 여러 기기(진행자 + 참가자 동시) 검증은 하지 않았다.
   - 캡처는 에뮬레이터 렌더다. 다른 사람 · 방 상태는 표시용이다(서버 · 채팅에 보내지 않는다).
+
+## 배포
+
+- 2026-10-16 main 286b804(#92)로 합쳐 배포했다 — 사용자 지시("지금 바로 머지 배포하고 그 후에 QA").
+  - 테스트 APK: `test-apk` 사전 배포 1.17.0(286b804, versionCode 19025).
+  - 크루 쪽 서버 변경은 없다(같은 배포에서 AI 코칭 서버 0060 이 적용됐다).
 
 ## 남은 것
 
