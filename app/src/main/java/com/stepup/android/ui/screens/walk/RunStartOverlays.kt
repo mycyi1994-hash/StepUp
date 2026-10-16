@@ -70,10 +70,8 @@ internal fun RunCountdown(
     onCancel: () -> Unit,
     /** 휴대폰 위치 기능이 켜져 있는가(권한과 별개) */
     locationServicesOn: Boolean = true,
-    /** 이번 러닝 이름 — "자유 러닝" · "10분 챌린지"(시안 R01 제목) */
+    /** 이번 러닝 이름 — "10분 챌린지" · 코스 이름(시안 R01 제목). 자유러닝은 FreeRunStartSequence(2026-10-17 전달본)가 센다 */
     title: String = "",
-    /** 자유 러닝(2026-10-14 v2) — 지도 · 고리 숫자 · 기록 판 · 바로 시작 | 취소. 세기 · 시작은 같다 */
-    freeRun: Boolean = false,
 ) {
     val feedback = LocalFeedback.current
     var remaining by rememberSaveable { mutableIntStateOf(3) }
@@ -111,18 +109,6 @@ internal fun RunCountdown(
             interactionSource = remember { MutableInteractionSource() },
             indication = null, role = Role.Button,
         ) { go() }
-    if (freeRun) {
-        FreeRunCountdownStage(
-            kicker = stringResource(R.string.run_countdown_soon),
-            digit = remaining.coerceAtLeast(1),
-            caption = caption,
-            here = here,
-            onGo = go,
-            onCancel = { if (!fired) onCancel() },
-            modifier = stageModifier,
-        )
-        return
-    }
     RunCountdownStage(
         title = title,
         subtitle = courseName?.takeIf { it.isNotBlank() },

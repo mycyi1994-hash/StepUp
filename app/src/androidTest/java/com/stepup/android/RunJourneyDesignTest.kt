@@ -726,7 +726,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · L03 · K01 · K17 · K18 · U04 · K02) */
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · F01~F07 · L03 · K01 · K17 · K18 · U04 · K02) */
     @Test fun states() {
         seed()
         val repo = ServiceLocator.courseRepository
@@ -757,6 +757,31 @@ class RunJourneyDesignTest {
             }
             compose.onNodeWithTag("run-location-off-open").assertIsDisplayed()
             compose.onAllNodesWithTag("run-location-off-time").assertCountEquals(0)
+            // F01~F07 — 자유러닝 시작(2026-10-17 전달본): 신발 점검 → 3·2·1·0 → StepUP! → 지도 펼침. 시각을 고정해 그 순간을 찍는다
+            val checkShoe = com.stepup.android.domain.Sneaker(
+                id = 9_401, faction = com.stepup.android.domain.Faction.WIND, rarity = com.stepup.android.domain.Rarity.RARE,
+                variant = 0, level = 3, mintNumber = 12, luck = 1.0, comfort = 1.0, durability = 92, equipped = true,
+                acquiredAt = 1_790_000_000_000L, modelId = 1201,
+            )
+            show("F01-shoe-check", "run-shoe-check") {
+                com.stepup.android.ui.screens.walk.FreeRunShoeCheckContent(checkShoe, {}, {})
+            }
+            compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("92%")
+            fun stage(name: String, clock: Long, reveal: Long? = null, reduced: Boolean = false) = show(name, "run-start-sequence") {
+                Box(Modifier.fillMaxSize()) {
+                    // 펼침 아래의 러닝 화면 자리 — 실제 지도(지금 자리)
+                    com.stepup.android.ui.components.LiveRouteMap(points = listOf(spot), modifier = Modifier.fillMaxSize(), follow = true, live = true)
+                    com.stepup.android.ui.screens.walk.FreeRunStartStage(clock = { clock }, revealSince = { reveal }, reduced = reduced)
+                }
+            }
+            stage("F02-count-3", 400)
+            compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("3")
+            stage("F03-count-0", 3_100)
+            compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("0")
+            stage("F04-launch-cross", 3_180 + 120)
+            stage("F05-stepup", 3_700)
+            stage("F06-reveal", 3_760 + 300, reveal = 300)
+            stage("F07-reduced-cross", 3_180 + 100, reduced = true)
             // L03 — 추천 코스 전 지금 자리 확인 중(자리를 모르면 지도에 아무 자리도 그리지 않는다) · K01 — 자리를 알고 코스를 찾는 중
             show("L03", "run-course-locating") {
                 com.stepup.android.ui.screens.walk.CourseRecommendContent(

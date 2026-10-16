@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "product": "StepUp",
+  "feature": "free-run-start",
+  "date": "2026-10-17",
+  "status": "prototype-updated; production-implementation-pending",
+  "colors": {
+    "background": "#061B30",
+    "accent": "#1450FF",
+    "foreground": "#FFFFFF",
+    "arcTip": "#72A6FF",
+    "revealLead": "#5287FF"
+  },
+  "reference": {
+    "width": 360,
+    "height": 748,
+    "compactHeight": 724,
+    "circleDiameter": 244,
+    "compactCircleDiameter": 224,
+    "arcThickness": 8,
+    "numberSize": 154,
+    "compactNumberSize": 142,
+    "wordmarkMaxGroupWidth": 296,
+    "wordmarkSideInset": 24,
+    "wordmarkBangGap": 8,
+    "units": "CSS pixels; adapt to native density and safe areas"
+  },
+  "curves": {
+    "exitEnter": [0.23, 1, 0.32, 1],
+    "reveal": [0.77, 0, 0.175, 1],
+    "rotation": "linear"
+  },
+  "sequence": ["IDLE", "SHOE_CHECK", "PREPARING", "COUNTDOWN", "LAUNCH", "REVEAL", "RUNNING"],
+  "countdown": {
+    "values": [3, 2, 1, 0],
+    "valueOnsetsMs": [0, 1000, 2000, 3000],
+    "zeroHoldMs": 180,
+    "numberEnter": {"durationMs": 160, "opacity": [0.6, 1], "translateY": [6, 0], "scale": [0.96, 1]},
+    "continuousArc": {"durationMs": 3500, "rotationDegrees": [0, 1260], "easing": "linear"},
+    "showTitle": false,
+    "showSubtitle": false,
+    "showCancelButton": false
+  },
+  "launch": {
+    "onsetFromCountdownMs": 3180,
+    "transparentOverlay": true,
+    "sharedStartTimeWithCountExit": true,
+    "countExit": {"durationMs": 300, "opacity": [1, 0], "translateY": [0, -10], "scale": [1, 1.04], "easing": "exitEnter"},
+    "wordmarkEnter": {
+      "durationMs": 300,
+      "easing": "exitEnter",
+      "keyframes": [
+        {"offset": 0, "opacity": 0, "translateX": -18, "scale": 0.96},
+        {"offset": 0.72, "opacity": 1, "translateX": 3, "scale": 1.025},
+        {"offset": 1, "opacity": 1, "translateX": 0, "scale": 1}
+      ]
+    },
+    "settledHoldMs": 280,
+    "totalDurationMs": 580,
+    "wordmarkAsset": "assets/logo.png",
+    "bang": "separate bold italic !; match reference"
+  },
+  "reveal": {
+    "onsetFromCountdownMs": 3760,
+    "center": [0.5, 0.5],
+    "radiusFormula": "ceil(hypot(width/2, height/2)) + 12",
+    "easing": "reveal",
+    "sharedStartTime": true,
+    "layers": [
+      {"content": "lead-color", "color": "#5287FF", "delayMs": 0, "durationMs": 500},
+      {"content": "accent-color", "color": "#1450FF", "delayMs": 35, "durationMs": 540},
+      {"content": "existing-running-screen", "delayMs": 70, "durationMs": 580}
+    ],
+    "wordmarkExit": {"delayMs": 120, "durationMs": 300, "opacity": [1, 0], "scale": [1, 1.045], "easing": "exitEnter"},
+    "totalDurationMs": 650,
+    "runningFullyVisibleFromCountdownMs": 4410,
+    "sessionStartEvent": "REVEAL_ENTER; once; proceed only after actual start succeeds"
+  },
+  "reducedMotion": {
+    "numberTransforms": false,
+    "arcRotation": false,
+    "launchTransforms": false,
+    "countToWordmarkCrossfadeMs": 200,
+    "launchTotalDurationMs": 580,
+    "radialReveal": false,
+    "mapCrossfadeMs": 200,
+    "sessionStartEvent": "REVEAL_ENTER"
+  },
+  "preparation": ["validate current equipped shoe", "resolve existing permission requirements", "decode local wordmark", "prepare existing map view without waiting indefinitely for all network tiles"],
+  "prototypeOnly": ["toolbar", "auto-advance shoe check after 1100ms in full replay", "sample shoe stats", "schematic map", "sample running values", "window.openai state integration"],
+  "implementationConstraints": ["keep existing app stack", "use current business rules", "single sequence owner", "abort pending transitions on pre-start exit", "preserve existing session lifecycle after recording starts", "do not replay countdown for an active session"]
+}

@@ -24,7 +24,6 @@
     <string name="run_free_delete_failed">Couldn\'t delete the run</string>
     <string name="run_free_try_again">Please try again</string>
     <string name="run_free_retry">Try again</string>
-    <string name="run_free_go_now">Start now</string>
     <string name="run_free_more">More</string>
     <string name="run_free_share">Share</string>
     <string name="run_free_share_time">I ran for %1$s on StepUp.</string>

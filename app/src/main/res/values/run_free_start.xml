@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Free-run start (2026-10-17 handoff): shoe check → 3·2·1·0 → StepUP! → map reveal. No reward/SUP text here. -->
+<resources>
+    <string name="run_free_check_title">Before you go,\ncheck your shoes</string>
+    <string name="run_free_check_equipped">Running shoes on</string>
+    <string name="run_free_check_durability">Durability left</string>
+    <string name="run_free_check_ready">Ready to run in these shoes</string>
+    <string name="run_free_check_back">Back</string>
+    <string name="run_free_check_go">Go in these shoes</string>
+    <string name="run_free_check_close">Close shoe check</string>
+    <string name="run_free_check_grade_level">%1$s · Lv. %2$d</string>
+    <string name="run_free_start_wordmark" translatable="false">StepUP!</string>
+</resources>

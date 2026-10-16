@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自由跑开始(2026-10-17)：确认跑鞋 → 3·2·1·0 → StepUP! → 地图展开。这里不放奖励 · SUP 文案。 -->
+<resources>
+    <string name="run_free_check_title">出发前，\n确认一下跑鞋</string>
+    <string name="run_free_check_equipped">当前穿着的跑鞋</string>
+    <string name="run_free_check_durability">剩余耐久度</string>
+    <string name="run_free_check_ready">可以穿这双鞋跑步了</string>
+    <string name="run_free_check_back">返回</string>
+    <string name="run_free_check_go">穿这双出发</string>
+    <string name="run_free_check_close">关闭跑鞋确认</string>
+    <string name="run_free_check_grade_level">%1$s · Lv. %2$d</string>
+</resources>

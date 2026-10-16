@@ -6,6 +6,8 @@ import com.stepup.android.domain.DietSegmentKind
 import com.stepup.android.domain.GoalAttempt
 import com.stepup.android.domain.RunPlan
 import com.stepup.android.domain.RunPlans
+import com.stepup.android.domain.RunPermissionRules
+import com.stepup.android.domain.RunPermissionStep
 import com.stepup.android.ui.components.KitButton
 import com.stepup.android.ui.components.KitDialog
 import com.stepup.android.ui.components.KitNotice
@@ -220,24 +222,13 @@ fun RunScreen(
     var startPending by rememberSaveable { mutableStateOf(false) }
     // E07 — 위치 권한은 있는데 휴대폰 위치 기능이 꺼져 있어 시작 전에 묻는 중
     var locationOffGate by rememberSaveable { mutableStateOf(false) }
+    // 자유러닝 — 시작 전에 신고 있는 신발을 확인하는 중(2026-10-17 전달본 SHOE_CHECK). 닫으면 아무것도 시작하지 않는다
+    var shoeCheck by rememberSaveable { mutableStateOf(false) }
+    val startScope = androidx.compose.runtime.rememberCoroutineScope()
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         locationAllowed = StepPermissions.hasLocation(context)
         onPauseOrDispose { }
-    }
-    val requestStart = { if (!startPending && !countingDown && !locationOffGate) startPending = true }
-
-    // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
-    // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
-    var autoStartDone by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(autoStart) {
-        if (autoStart && !autoStartDone) {
-            autoStartDone = true
-            if (!WalkSessionService.state.value.isActive) {
-                viewModel.clearReward()
-                requestStart()
-            }
-        }
     }
 
     // 착용 스니커즈 · 파티 인원 · XP 부스터를 모두 반영한 예상 적립
@@ -448,6 +439,27 @@ fun RunScreen(
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
     // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
     val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
+    // 시작 — 자유러닝은 신발 점검부터(출발을 확인해야 3-2-1), 다른 러닝은 권한 안내부터
+    val requestStart = {
+        if (!startPending && !countingDown && !locationOffGate && !shoeCheck) {
+            if (freeRunNow) shoeCheck = true else startPending = true
+        }
+    }
+    // 달리기 시작했으면(알림 · 다른 화면) 점검창을 거둔다 — 그 러닝이 끝난 뒤에 저절로 다시 뜨지 않게
+    LaunchedEffect(session.isActive) { if (session.isActive) shoeCheck = false }
+
+    // 러닝 홈에서 "러닝 시작"을 눌렀으면 이 화면에서 한 번 더 누르게 하지 않는다.
+    // 한 번만 — 화면을 돌리거나 돌아와도 다시 시작하지 않는다.
+    var autoStartDone by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(autoStart) {
+        if (autoStart && !autoStartDone) {
+            autoStartDone = true
+            if (!WalkSessionService.state.value.isActive) {
+                viewModel.clearReward()
+                requestStart()
+            }
+        }
+    }
     // 달리는 동안의 판단을 러닝(시작 시각)마다 기억한다 — 끝난 뒤의 모임 상태(모임 종료 · 혼자 남아 인원 1)로 다시 셈하면
     // 크루 · 번개 러닝이 보상 없는 자유 러닝 결과로 바뀐다
     var freeLatchStart by rememberSaveable { mutableLongStateOf(0L) }
@@ -1165,14 +1177,56 @@ fun RunScreen(
                 onOpenSettings = { ExternalIntents.openLocationSettings(context) },
             )
         }
-        if (countingDown && !session.isActive) {
+        if (shoeCheck && !session.isActive) {
+            FreeRunShoeCheck(
+                shoe = equipped,
+                onStart = {
+                    // PREPARING — 권한 · 위치 기능이 다 있으면 점검창에서 바로 3-2-1. 아니면 기존 안내(권한 · E07)를 지난다
+                    startScope.launch {
+                        val ready = RunPermissionRules.next(readRunPermissionState(context)) == RunPermissionStep.Ready
+                        // 읽는 사이 닫았다(뒤로) — 시작하지 않는다
+                        if (!shoeCheck) return@launch
+                        shoeCheck = false
+                        locationAllowed = StepPermissions.hasLocation(context)
+                        when {
+                            !ready -> startPending = true
+                            !locationServicesOn(context) -> locationOffGate = true
+                            else -> countingDown = true
+                        }
+                    }
+                },
+                // 돌아가기 · 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴)에서 왔으면 그리로
+                onCancel = {
+                    shoeCheck = false
+                    if (autoStart) onBack()
+                },
+            )
+        }
+        // 3-2-1 을 시작한 순간의 러닝 종류로 끝까지 — 기록이 시작된 뒤 모습이 바뀌어도(챌린지로 묶임 등) 연출이 끊기지 않게
+        val freeLaunch = rememberSaveable(countingDown) { countingDown && freeRunNow }
+        if (countingDown && freeLaunch) {
+            // 자유러닝 3·2·1·0 → StepUP! → 지도 펼침(2026-10-17 전달본). 러닝 기록은 펼침에 들어갈 때 한 번 시작한다
+            val refusals by WalkSessionService.startRefusals.collectAsStateWithLifecycle()
+            FreeRunStartSequence(
+                sessionActive = session.isActive,
+                startRefusals = refusals,
+                onStartSession = {
+                    // 앱이 화면에 있을 때만 불린다 — 서비스를 켜지 못하면(안드로이드의 제한 등) 시작하지 않은 것으로 거둔다
+                    WalkSessionService.state.value.isActive || runCatching { WalkSessionService.start(context) }.isSuccess
+                },
+                onFinished = { countingDown = false },
+                // 시작이 거절됐다 — 끝나지 않은 러닝 묻기 · 저장 공간 안내는 서비스 · 앱이 띄운다. 연출만 거두고 시작 전 화면으로
+                onFailed = { countingDown = false },
+                // 기록 전 뒤로 가기 — 이 러닝을 연 화면(시작 메뉴)으로 돌아간다(시안 R01 의 시작 취소와 같다)
+                onCancel = { countingDown = false; onBack() },
+            )
+        } else if (countingDown && !session.isActive) {
             val servicesOn = remember { locationServicesOn(context) }
             RunCountdown(
                 courseName = course?.name,
                 locationAllowed = locationAllowed,
                 locationServicesOn = servicesOn,
                 title = planTitle(plan),
-                freeRun = freeRunNow,
                 onGo = {
                     countingDown = false
                     if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
